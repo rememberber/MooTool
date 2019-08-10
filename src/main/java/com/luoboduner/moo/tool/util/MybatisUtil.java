@@ -1,4 +1,4 @@
-package com.luoboduner.moo.tools.util;
+package com.luoboduner.moo.tool.util;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.CharsetUtil;

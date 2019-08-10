@@ -1,4 +1,4 @@
-package com.luoboduner.moo.tools.ui;
+package com.luoboduner.moo.tool.ui;
 
 import java.awt.*;
 

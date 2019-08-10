@@ -1,10 +1,10 @@
-package com.luoboduner.moo.tools.ui.frame;
+package com.luoboduner.moo.tool.ui.frame;
 
 import com.apple.eawt.Application;
 import com.google.common.collect.Lists;
-import com.luoboduner.moo.tools.ui.UiConsts;
-import com.luoboduner.moo.tools.util.ComponentUtil;
-import com.luoboduner.moo.tools.util.SystemUtil;
+import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.SystemUtil;
 
 import javax.swing.*;
 import java.awt.*;

@@ -1,7 +1,7 @@
-package com.luoboduner.moo.tools;
+package com.luoboduner.moo.tool;
 
-import com.luoboduner.moo.tools.ui.frame.MainFrame;
-import com.luoboduner.moo.tools.util.ConfigUtil;
+import com.luoboduner.moo.tool.ui.frame.MainFrame;
+import com.luoboduner.moo.tool.util.ConfigUtil;
 import lombok.extern.slf4j.Slf4j;
 
 /**

@@ -1,4 +1,4 @@
-package com.luoboduner.moo.tools;
+package com.luoboduner.moo.tool;
 
 import org.junit.Test;
 

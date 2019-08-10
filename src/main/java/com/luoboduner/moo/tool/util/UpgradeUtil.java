@@ -1,13 +1,13 @@
-package com.luoboduner.moo.tools.util;
+package com.luoboduner.moo.tool.util;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson.JSON;
-import com.luoboduner.moo.tools.App;
-import com.luoboduner.moo.tools.bean.VersionSummary;
-import com.luoboduner.moo.tools.ui.UiConsts;
-import com.luoboduner.moo.tools.ui.dialog.UpdateInfoDialog;
+import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.bean.VersionSummary;
+import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.dialog.UpdateInfoDialog;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 

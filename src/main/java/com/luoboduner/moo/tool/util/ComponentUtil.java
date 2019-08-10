@@ -1,6 +1,6 @@
-package com.luoboduner.moo.tools.util;
+package com.luoboduner.moo.tool.util;
 
-import com.luoboduner.moo.tools.App;
+import com.luoboduner.moo.tool.App;
 
 import java.awt.*;
 

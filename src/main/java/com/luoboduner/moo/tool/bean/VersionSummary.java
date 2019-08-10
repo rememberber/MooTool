@@ -1,4 +1,4 @@
-package com.luoboduner.moo.tools.bean;
+package com.luoboduner.moo.tool.bean;
 
 import lombok.Data;
 

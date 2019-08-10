@@ -1,4 +1,4 @@
-package com.luoboduner.moo.tools.ui.dialog;
+package com.luoboduner.moo.tool.ui.dialog;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.io.StreamProgress;
@@ -7,8 +7,8 @@ import cn.hutool.http.HttpUtil;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
-import com.luoboduner.moo.tools.App;
-import com.luoboduner.moo.tools.util.ComponentUtil;
+import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.util.ComponentUtil;
 
 import javax.swing.*;
 import java.awt.*;

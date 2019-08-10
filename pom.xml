@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.luoboduner.moly</groupId>
-    <artifactId>MooTools</artifactId>
+    <groupId>com.luoboduner.moo.tool</groupId>
+    <artifactId>MooTool</artifactId>
     <version>1.0</version>
     <packaging>jar</packaging>
 
@@ -158,7 +158,7 @@
                         <manifest>
                             <addClasspath>true</addClasspath>
                             <classpathPrefix>lib/</classpathPrefix>
-                            <mainClass>com.luoboduner.moo.tools.App</mainClass>
+                            <mainClass>com.luoboduner.moo.tool.App</mainClass>
                         </manifest>
                     </archive>
                 </configuration>
