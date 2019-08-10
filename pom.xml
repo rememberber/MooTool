@@ -9,7 +9,7 @@
     <version>1.0</version>
     <packaging>jar</packaging>
 
-    <name>moly-tools</name>
+    <name>MooTool</name>
     <url>http://www.luoboduner.com</url>
 
     <properties>
