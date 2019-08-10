@@ -1,0 +1,13 @@
+{
+  "currentVersion": "v1.0.0",
+  "versionIndex": {
+    "v1.0.0": "0"
+  },
+  "versionDetailList": [
+    {
+      "version": "v1.0.0",
+      "title": "第一个版本",
+      "log": "第一个版本\n"
+    }
+  ]
+}
