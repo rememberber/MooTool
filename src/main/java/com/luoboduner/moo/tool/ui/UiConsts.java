@@ -15,7 +15,7 @@ public class UiConsts {
     /**
      * 软件名称,版本
      */
-    public final static String APP_NAME = "WePush";
+    public final static String APP_NAME = "MooTool";
     public final static String APP_VERSION = "v1.0.0";
 
     /**

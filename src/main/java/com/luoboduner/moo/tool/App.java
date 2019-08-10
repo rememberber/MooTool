@@ -1,8 +1,14 @@
 package com.luoboduner.moo.tool;
 
+import com.luoboduner.moo.tool.ui.Init;
+import com.luoboduner.moo.tool.ui.form.LoadingForm;
 import com.luoboduner.moo.tool.ui.frame.MainFrame;
 import com.luoboduner.moo.tool.util.ConfigUtil;
+import com.luoboduner.moo.tool.util.UpgradeUtil;
 import lombok.extern.slf4j.Slf4j;
+
+import javax.swing.*;
+import java.awt.*;
 
 /**
  * <pre>
@@ -20,6 +26,18 @@ public class App {
     public static MainFrame mainFrame;
 
     public static void main(String[] args) {
-        System.out.println("Hello World!");
+        Init.initTheme();
+        mainFrame = new MainFrame();
+        mainFrame.init();
+        JPanel loadingPanel = new LoadingForm().getLoadingPanel();
+        mainFrame.add(loadingPanel);
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        if (screenSize.getWidth() <= 1366) {
+            // 低分辨率下自动最大化窗口
+            mainFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+        }
+        mainFrame.pack();
+        mainFrame.setVisible(true);
+        UpgradeUtil.smoothUpgrade();
     }
 }
