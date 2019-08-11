@@ -64,22 +64,34 @@ public class MainWindow {
         tabbedPane1.addTab("Host切换", panel5);
         final JPanel panel6 = new JPanel();
         panel6.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("编码转换", panel6);
+        tabbedPane1.addTab("HTTP请求", panel6);
         final JPanel panel7 = new JPanel();
         panel7.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("二维码生成", panel7);
+        tabbedPane1.addTab("编码转换", panel7);
         final JPanel panel8 = new JPanel();
         panel8.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("随机/密钥", panel8);
+        tabbedPane1.addTab("二维码生成", panel8);
         final JPanel panel9 = new JPanel();
         panel9.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("HTTP请求", panel9);
+        tabbedPane1.addTab("随机/密钥", panel9);
         final JPanel panel10 = new JPanel();
         panel10.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane1.addTab("正则表达式", panel10);
         final JPanel panel11 = new JPanel();
         panel11.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("设置", panel11);
+        tabbedPane1.addTab("Cron表达式", panel11);
+        final JPanel panel12 = new JPanel();
+        panel12.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPane1.addTab("图片压缩", panel12);
+        final JPanel panel13 = new JPanel();
+        panel13.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPane1.addTab("短网址", panel13);
+        final JPanel panel14 = new JPanel();
+        panel14.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPane1.addTab("色值转换", panel14);
+        final JPanel panel15 = new JPanel();
+        panel15.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPane1.addTab("设置", panel15);
     }
 
     /**
