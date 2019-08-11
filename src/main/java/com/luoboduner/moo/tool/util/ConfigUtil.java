@@ -4,8 +4,6 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.setting.Setting;
 
-import java.io.File;
-
 /**
  * <pre>
  * 配置管理
@@ -14,15 +12,17 @@ import java.io.File;
  * @author <a href="https://github.com/rememberber">RememBerBer</a>
  * @since 2017/6/14.
  */
-public class ConfigUtil {
-    /**
-     * 设置文件路径
-     */
-    private String settingFilePath = SystemUtil.configHome + "config" + File.separator + "config.setting";
-
-    private Setting setting;
+public class ConfigUtil extends ConfigBaseUtil {
 
     private static ConfigUtil configUtil = new ConfigUtil();
+
+    public static ConfigUtil getInstance() {
+        return configUtil;
+    }
+
+    private ConfigUtil() {
+        super();
+    }
 
     private boolean autoCheckUpdate;
 
@@ -33,29 +33,6 @@ public class ConfigUtil {
     private String font;
 
     private int fontSize;
-
-    public static ConfigUtil getInstance() {
-        return configUtil;
-    }
-
-    private ConfigUtil() {
-        setting = new Setting(FileUtil.touch(settingFilePath), CharsetUtil.CHARSET_UTF_8, false);
-    }
-
-    public void setProps(String key, String value) {
-        setting.put(key, value);
-    }
-
-    public String getProps(String key) {
-        return setting.get(key);
-    }
-
-    /**
-     * 存盘
-     */
-    public void save() {
-        setting.store(settingFilePath);
-    }
 
     public boolean isAutoCheckUpdate() {
         return setting.getBool("autoCheckUpdate", "setting.normal", true);
