@@ -4,8 +4,10 @@ import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.form.LoadingForm;
 import com.luoboduner.moo.tool.ui.frame.MainFrame;
 import com.luoboduner.moo.tool.util.ConfigUtil;
+import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.ibatis.session.SqlSession;
 
 import javax.swing.*;
 import java.awt.*;
@@ -24,6 +26,8 @@ public class App {
     public static ConfigUtil config = ConfigUtil.getInstance();
 
     public static MainFrame mainFrame;
+
+    public static SqlSession sqlSession = MybatisUtil.getSqlSession();
 
     public static void main(String[] args) {
         Init.initTheme();
