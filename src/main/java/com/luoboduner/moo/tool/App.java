@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool;
 
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.form.LoadingForm;
+import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.frame.MainFrame;
 import com.luoboduner.moo.tool.util.ConfigUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
@@ -42,13 +43,13 @@ public class App {
         }
         mainFrame.pack();
         mainFrame.setVisible(true);
-        UpgradeUtil.smoothUpgrade();
+//        UpgradeUtil.smoothUpgrade();
 
         SwingUtilities.invokeLater(() -> {
             mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
             Init.initGlobalFont();
-//            mainFrame.setContentPane(MainWindow.mainWindow.getMainPanel());
-//            MainWindow.mainWindow.init();
+            mainFrame.setContentPane(MainWindow.mainWindow.getMainPanel());
+            MainWindow.mainWindow.init();
             Init.initAllTab();
             Init.initOthers();
             mainFrame.addListeners();
