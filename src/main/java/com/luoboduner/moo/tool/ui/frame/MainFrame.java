@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.frame;
 import com.apple.eawt.Application;
 import com.google.common.collect.Lists;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.listener.FrameListener;
 import com.luoboduner.moo.tool.util.ComponentUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 
@@ -46,5 +47,6 @@ public class MainFrame extends JFrame {
      * 添加事件监听
      */
     public void addListeners() {
+        FrameListener.addListeners();
     }
 }
