@@ -46,7 +46,7 @@ public class UpdateDialog extends JDialog {
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
 
-        ComponentUtil.setPrefersizeAndLocateToCenter(this, 600, 200);
+        ComponentUtil.setPreferSizeAndLocateToCenter(this, 600, 200);
 
         buttonOK.addActionListener(e -> onOK());
 
@@ -66,7 +66,7 @@ public class UpdateDialog extends JDialog {
         buttonDownloadFromWeb.addActionListener(e -> {
             Desktop desktop = Desktop.getDesktop();
             try {
-                desktop.browse(new URI("https://github.com/rememberber/WePush/releases"));
+                desktop.browse(new URI("https://github.com/rememberber/MooTool/releases"));
             } catch (IOException | URISyntaxException ex) {
                 ex.printStackTrace();
             }
@@ -77,7 +77,7 @@ public class UpdateDialog extends JDialog {
         buttonOK.setEnabled(false);
         ThreadUtil.execute(
                 () -> {
-                    String fileUrl = "http://download.zhoubochina.com/exe/WePush-" + newVersion.replace("v_", "v") + "-x64-Setup.exe";
+                    String fileUrl = "http://download.zhoubochina.com/exe/MooTool-" + newVersion + "-x64-Setup.exe";
                     String fileName = FileUtil.getName(fileUrl);
                     URL url;
                     try {
@@ -90,7 +90,7 @@ public class UpdateDialog extends JDialog {
                         e.printStackTrace();
                     }
 
-                    File tempDir = new File(FileUtil.getTmpDirPath() + "WePush");
+                    File tempDir = new File(FileUtil.getTmpDirPath() + "MooTool");
                     if (!tempDir.exists()) {
                         tempDir.mkdirs();
                     }

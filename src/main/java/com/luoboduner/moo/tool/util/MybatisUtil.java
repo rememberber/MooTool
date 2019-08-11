@@ -33,7 +33,7 @@ public class MybatisUtil {
      */
     private static boolean needInit = false;
 
-    private static File dbFile = new File(SystemUtil.configHome + "WePush.db");
+    private static File dbFile = new File(SystemUtil.configHome + "MooTool.db");
 
     static {
         try {

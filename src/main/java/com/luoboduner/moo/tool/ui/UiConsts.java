@@ -57,21 +57,16 @@ public class UiConsts {
     /**
      * 软件版本检查url
      */
-    public final static String CHECK_VERSION_URL = "https://raw.githubusercontent.com/rememberber/WePush/master/src/main/resources/version_summary.json";
-
-    /**
-     * 用户案例url
-     */
-    public final static String USER_CASE_URL = "http://download.zhoubochina.com/file/user_case.json";
+    public final static String CHECK_VERSION_URL = "https://raw.githubusercontent.com/rememberber/MooTool/master/src/main/resources/version_summary.json";
 
     /**
      * 二维码url
      */
-    public final static String QR_CODE_URL = "http://download.zhoubochina.com/file/wepush_qrcode.json";
+    public final static String QR_CODE_URL = "http://download.zhoubochina.com/file/mootool_qrcode.json";
 
     /**
      * 介绍二维码URL
      */
-    public final static String INTRODUCE_QRCODE_URL = "http://download.zhoubochina.com/qrcode/introduce-wepush-qrcode.png";
+    public final static String INTRODUCE_QRCODE_URL = "http://download.zhoubochina.com/qrcode/introduce-mootool-qrcode.png";
 
 }

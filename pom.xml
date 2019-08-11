@@ -29,7 +29,6 @@
         <mybatis.version>3.5.1</mybatis.version>
         <sqlite-jdbc.version>3.27.2.1</sqlite-jdbc.version>
         <junit.version>4.12</junit.version>
-        <HikariCP.version>3.3.1</HikariCP.version>
         <commons-lang3.version>3.9</commons-lang3.version>
         <guava.version>28.0-jre</guava.version>
     </properties>
@@ -108,12 +107,6 @@
             <groupId>org.xerial</groupId>
             <artifactId>sqlite-jdbc</artifactId>
             <version>${sqlite-jdbc.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.zaxxer</groupId>
-            <artifactId>HikariCP</artifactId>
-            <version>${HikariCP.version}</version>
         </dependency>
 
         <dependency>

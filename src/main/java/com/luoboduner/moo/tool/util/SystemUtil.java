@@ -12,7 +12,7 @@ import java.io.File;
  */
 public class SystemUtil {
     private static String osName = System.getProperty("os.name");
-    public static String configHome = System.getProperty("user.home") + File.separator + ".wepush"
+    public static String configHome = System.getProperty("user.home") + File.separator + ".MooTool"
             + File.separator;
 
     public static boolean isMacOs() {

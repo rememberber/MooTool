@@ -47,7 +47,7 @@ public class UpdateInfoDialog extends JDialog {
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
 
-        ComponentUtil.setPrefersizeAndLocateToCenter(this, 0.4, 0.64);
+        ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.4, 0.64);
 
         buttonOK.addActionListener(e -> onOK());
 
@@ -70,7 +70,7 @@ public class UpdateInfoDialog extends JDialog {
         if (SystemUtil.isMacOs()) {
             Desktop desktop = Desktop.getDesktop();
             try {
-                desktop.browse(new URI("https://github.com/rememberber/WePush/releases"));
+                desktop.browse(new URI("https://github.com/rememberber/MooTool/releases"));
             } catch (IOException | URISyntaxException ex) {
                 ex.printStackTrace();
             }
@@ -89,8 +89,6 @@ public class UpdateInfoDialog extends JDialog {
 
     public void setPlaneText(String planeText) {
         textPane1.setContentType("text/plain; charset=utf-8");
-//        DefaultEditorKit kit = new DefaultEditorKit();
-//        textPane1.setEditorKit(kit);
         textPane1.setText(planeText);
     }
 
