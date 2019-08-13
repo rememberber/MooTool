@@ -22,25 +22,25 @@ public class UiConsts {
      * 主窗口图标-大
      */
     public final static Image IMAGE_ICON_LG = Toolkit.getDefaultToolkit()
-            .getImage(UiConsts.class.getResource("/icon/logo-lg.png"));
+            .getImage(UiConsts.class.getResource("/icon/logo-512.png"));
 
     /**
      * 主窗口图标-中
      */
     public final static Image IMAGE_ICON_MD = Toolkit.getDefaultToolkit()
-            .getImage(UiConsts.class.getResource("/icon/logo-md.png"));
+            .getImage(UiConsts.class.getResource("/icon/logo-128.png"));
 
     /**
      * 主窗口图标-小
      */
     public final static Image IMAGE_ICON_SM = Toolkit.getDefaultToolkit()
-            .getImage(UiConsts.class.getResource("/icon/logo-sm.png"));
+            .getImage(UiConsts.class.getResource("/icon/logo-64.png"));
 
     /**
      * 主窗口图标-超小
      */
     public final static Image IMAGE_ICON_XS = Toolkit.getDefaultToolkit()
-            .getImage(UiConsts.class.getResource("/icon/logo-xs.png"));
+            .getImage(UiConsts.class.getResource("/icon/logo-32.png"));
 
     /**
      * 帮助图标
