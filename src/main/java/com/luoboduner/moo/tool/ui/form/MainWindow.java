@@ -88,10 +88,7 @@ public class MainWindow {
         tabbedPane1.addTab("短网址", panel13);
         final JPanel panel14 = new JPanel();
         panel14.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("色值转换", panel14);
-        final JPanel panel15 = new JPanel();
-        panel15.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("设置", panel15);
+        tabbedPane1.addTab("设置", panel14);
     }
 
     /**
