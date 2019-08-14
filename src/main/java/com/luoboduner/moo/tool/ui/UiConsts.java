@@ -19,28 +19,58 @@ public class UiConsts {
     public final static String APP_VERSION = "v1.0.0";
 
     /**
-     * 主窗口图标-大
+     * Logo-1024*1024
      */
-    public final static Image IMAGE_ICON_LG = Toolkit.getDefaultToolkit()
+    public final static Image IMAGE_LOGO_1024 = Toolkit.getDefaultToolkit()
+            .getImage(UiConsts.class.getResource("/icon/logo-1024.png"));
+
+    /**
+     * Logo-512*512
+     */
+    public final static Image IMAGE_LOGO_512 = Toolkit.getDefaultToolkit()
             .getImage(UiConsts.class.getResource("/icon/logo-512.png"));
 
     /**
-     * 主窗口图标-中
+     * Logo-256*256
      */
-    public final static Image IMAGE_ICON_MD = Toolkit.getDefaultToolkit()
+    public final static Image IMAGE_LOGO_256 = Toolkit.getDefaultToolkit()
+            .getImage(UiConsts.class.getResource("/icon/logo-256.png"));
+
+    /**
+     * Logo-128*128
+     */
+    public final static Image IMAGE_LOGO_128 = Toolkit.getDefaultToolkit()
             .getImage(UiConsts.class.getResource("/icon/logo-128.png"));
 
     /**
-     * 主窗口图标-小
+     * Logo-64*64
      */
-    public final static Image IMAGE_ICON_SM = Toolkit.getDefaultToolkit()
+    public final static Image IMAGE_LOGO_64 = Toolkit.getDefaultToolkit()
             .getImage(UiConsts.class.getResource("/icon/logo-64.png"));
 
     /**
-     * 主窗口图标-超小
+     * Logo-48*48
      */
-    public final static Image IMAGE_ICON_XS = Toolkit.getDefaultToolkit()
+    public final static Image IMAGE_LOGO_48 = Toolkit.getDefaultToolkit()
+            .getImage(UiConsts.class.getResource("/icon/logo-48.png"));
+
+    /**
+     * Logo-32*32
+     */
+    public final static Image IMAGE_LOGO_32 = Toolkit.getDefaultToolkit()
             .getImage(UiConsts.class.getResource("/icon/logo-32.png"));
+
+    /**
+     * Logo-24*24
+     */
+    public final static Image IMAGE_LOGO_24 = Toolkit.getDefaultToolkit()
+            .getImage(UiConsts.class.getResource("/icon/logo-24.png"));
+
+    /**
+     * Logo-16*16
+     */
+    public final static Image IMAGE_LOGO_16 = Toolkit.getDefaultToolkit()
+            .getImage(UiConsts.class.getResource("/icon/logo-16.png"));
 
     /**
      * 帮助图标
