@@ -39,6 +39,8 @@ public class UpgradeUtil {
                     "检查超时，请关注GitHub Release！", "网络错误",
                     JOptionPane.INFORMATION_MESSAGE);
             return;
+        } else if (StringUtils.isEmpty(versionSummaryJsonContent) || versionSummaryJsonContent.contains("404: Not Found")) {
+            return;
         }
         versionSummaryJsonContent = versionSummaryJsonContent.replace("\n", "");
 

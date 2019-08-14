@@ -104,7 +104,7 @@ public class Init {
 
         // 检查新版版
         if (App.config.isAutoCheckUpdate()) {
-//            ThreadUtil.execute(() -> UpgradeUtil.checkUpdate(true));
+            ThreadUtil.execute(() -> UpgradeUtil.checkUpdate(true));
         }
     }
 
