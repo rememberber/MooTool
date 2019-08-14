@@ -17,9 +17,10 @@ import java.awt.*;
  */
 @Getter
 public class MainWindow {
-    private JTabbedPane tabbedPane1;
+    private JTabbedPane tabbedPane;
     private JPanel mainPanel;
     private JPanel aboutPanel;
+    private JPanel settingPanel;
 
     private static MainWindow mainWindow;
 
@@ -39,6 +40,7 @@ public class MainWindow {
         mainWindow = getInstance();
         mainWindow.getMainPanel().updateUI();
         mainWindow.getAboutPanel().add(AboutForm.getInstance().getAboutPanel(), gridConstraints);
+        mainWindow.getSettingPanel().add(SettingForm.getInstance().getSettingPanel(), gridConstraints);
     }
 
     {
@@ -58,50 +60,50 @@ public class MainWindow {
     private void $$$setupUI$$$() {
         mainPanel = new JPanel();
         mainPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1 = new JTabbedPane();
-        mainPanel.add(tabbedPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
+        tabbedPane = new JTabbedPane();
+        mainPanel.add(tabbedPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         aboutPanel = new JPanel();
         aboutPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("关于", aboutPanel);
+        tabbedPane.addTab("关于", aboutPanel);
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("随手记", panel1);
+        tabbedPane.addTab("随手记", panel1);
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("时间转换", panel2);
+        tabbedPane.addTab("时间转换", panel2);
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("Json格式化", panel3);
+        tabbedPane.addTab("Json格式化", panel3);
         final JPanel panel4 = new JPanel();
         panel4.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("Host切换", panel4);
+        tabbedPane.addTab("Host切换", panel4);
         final JPanel panel5 = new JPanel();
         panel5.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("HTTP请求", panel5);
+        tabbedPane.addTab("HTTP请求", panel5);
         final JPanel panel6 = new JPanel();
         panel6.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("编码转换", panel6);
+        tabbedPane.addTab("编码转换", panel6);
         final JPanel panel7 = new JPanel();
         panel7.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("二维码生成", panel7);
+        tabbedPane.addTab("二维码生成", panel7);
         final JPanel panel8 = new JPanel();
         panel8.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("随机/密钥", panel8);
+        tabbedPane.addTab("随机/密钥", panel8);
         final JPanel panel9 = new JPanel();
         panel9.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("正则表达式", panel9);
+        tabbedPane.addTab("正则表达式", panel9);
         final JPanel panel10 = new JPanel();
         panel10.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("Cron表达式", panel10);
+        tabbedPane.addTab("Cron表达式", panel10);
         final JPanel panel11 = new JPanel();
         panel11.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("图片压缩", panel11);
+        tabbedPane.addTab("图片压缩", panel11);
         final JPanel panel12 = new JPanel();
         panel12.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("短网址", panel12);
-        final JPanel panel13 = new JPanel();
-        panel13.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("设置", panel13);
+        tabbedPane.addTab("短网址", panel12);
+        settingPanel = new JPanel();
+        settingPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPane.addTab("设置", settingPanel);
     }
 
     /**

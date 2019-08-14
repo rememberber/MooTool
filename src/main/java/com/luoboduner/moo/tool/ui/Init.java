@@ -4,6 +4,7 @@ import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.form.SettingForm;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UIUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
@@ -70,7 +71,8 @@ public class Init {
      */
     public static void initOthers() {
         // 设置滚动条速度
-
+        SettingForm.getInstance().getSettingScrollPane().getVerticalScrollBar().setUnitIncrement(16);
+        SettingForm.getInstance().getSettingScrollPane().getVerticalScrollBar().setDoubleBuffered(true);
     }
 
     /**
@@ -101,6 +103,7 @@ public class Init {
      * 初始化所有tab
      */
     public static void initAllTab() {
+        SettingForm.init();
 
         // 检查新版版
         if (App.config.isAutoCheckUpdate()) {
