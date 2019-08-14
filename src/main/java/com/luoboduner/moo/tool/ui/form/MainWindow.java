@@ -21,13 +21,24 @@ public class MainWindow {
     private JPanel mainPanel;
     private JPanel aboutPanel;
 
-    public static MainWindow mainWindow = new MainWindow();
+    private static MainWindow mainWindow;
+
+    private MainWindow() {
+    }
+
+    public static MainWindow getInstance() {
+        if (mainWindow == null) {
+            mainWindow = new MainWindow();
+        }
+        return mainWindow;
+    }
 
     private static GridConstraints gridConstraints = new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false);
 
     public void init() {
+        mainWindow = getInstance();
         mainWindow.getMainPanel().updateUI();
-        mainWindow.getAboutPanel().add(AboutForm.aboutForm.getAboutPanel(), gridConstraints);
+        mainWindow.getAboutPanel().add(AboutForm.getInstance().getAboutPanel(), gridConstraints);
     }
 
     {

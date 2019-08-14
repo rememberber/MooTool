@@ -43,13 +43,13 @@ public class App {
         }
         mainFrame.pack();
         mainFrame.setVisible(true);
-//        UpgradeUtil.smoothUpgrade();
+        UpgradeUtil.smoothUpgrade();
 
         SwingUtilities.invokeLater(() -> {
             mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
             Init.initGlobalFont();
-            mainFrame.setContentPane(MainWindow.mainWindow.getMainPanel());
-            MainWindow.mainWindow.init();
+            mainFrame.setContentPane(MainWindow.getInstance().getMainPanel());
+            MainWindow.getInstance().init();
             Init.initAllTab();
             Init.initOthers();
             mainFrame.addListeners();

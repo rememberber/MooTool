@@ -43,7 +43,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public String getBeforeVersion() {
-        return setting.getStr("beforeVersion", "setting.normal", "v_3.0.0_190516");
+        return setting.getStr("beforeVersion", "setting.normal", "v1.0.0");
     }
 
     public void setBeforeVersion(String beforeVersion) {
