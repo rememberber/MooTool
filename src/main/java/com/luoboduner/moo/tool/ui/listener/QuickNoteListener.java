@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.listener;
 
+import cn.hutool.core.thread.ThreadUtil;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.form.fun.QuickNoteForm;
@@ -11,6 +12,8 @@ import org.apache.ibatis.exceptions.PersistenceException;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 /**
  * <pre>
@@ -24,10 +27,13 @@ public class QuickNoteListener {
 
     private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
 
+    private static String selectedName;
+
     public static void addListeners() {
         QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
+
         quickNoteForm.getSaveButton().addActionListener(e -> {
-            String name = JOptionPane.showInputDialog("请命名", "");
+            String name = JOptionPane.showInputDialog("请命名", selectedName);
             if (StringUtils.isNotBlank(name)) {
                 TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
                 if (tQuickNote == null) {
@@ -45,6 +51,22 @@ public class QuickNoteListener {
                 }
 
                 QuickNoteForm.init();
+                selectedName = name;
+            }
+        });
+
+        // 点击左侧表格事件
+        quickNoteForm.getNoteListTable().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                ThreadUtil.execute(() -> {
+                    int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
+                    String name = quickNoteForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
+                    selectedName = name;
+                    TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
+                    quickNoteForm.getTextArea().setText(tQuickNote.getContent());
+                });
+                super.mousePressed(e);
             }
         });
     }
