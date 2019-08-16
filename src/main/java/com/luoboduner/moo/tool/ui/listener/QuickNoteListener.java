@@ -1,15 +1,18 @@
 package com.luoboduner.moo.tool.ui.listener;
 
 import cn.hutool.core.thread.ThreadUtil;
+import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.form.fun.QuickNoteForm;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.exceptions.PersistenceException;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
@@ -25,6 +28,7 @@ import java.awt.event.MouseEvent;
  * @author <a href="https://github.com/rememberber">Zhou Bo</a>
  * @since 2019/8/15.
  */
+@Slf4j
 public class QuickNoteListener {
 
     private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
@@ -108,5 +112,34 @@ public class QuickNoteListener {
             public void keyTyped(KeyEvent arg0) {
             }
         });
+
+        // 删除按钮事件
+        quickNoteForm.getDeleteButton().addActionListener(e -> ThreadUtil.execute(() -> {
+            try {
+                int[] selectedRows = quickNoteForm.getNoteListTable().getSelectedRows();
+
+                if (selectedRows.length == 0) {
+                    JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                    if (isDelete == JOptionPane.YES_OPTION) {
+                        DefaultTableModel tableModel = (DefaultTableModel) quickNoteForm.getNoteListTable().getModel();
+
+                        for (int i = selectedRows.length; i > 0; i--) {
+                            int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
+                            Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
+                            quickNoteMapper.deleteByPrimaryKey(id);
+
+                            tableModel.removeRow(selectedRow);
+                        }
+                        selectedName = null;
+                    }
+                }
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(e1.toString());
+            }
+        }));
     }
 }
