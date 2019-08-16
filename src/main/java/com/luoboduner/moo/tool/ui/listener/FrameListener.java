@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.ui.listener;
 
 
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.form.MainWindow;
 
 import javax.swing.*;
 import java.awt.event.WindowEvent;
@@ -42,6 +43,8 @@ public class FrameListener {
 
             @Override
             public void windowClosing(WindowEvent e) {
+                App.config.setRecentTabIndex(MainWindow.getInstance().getTabbedPane().getSelectedIndex());
+                App.config.save();
                 App.sqlSession.close();
                 App.mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
             }

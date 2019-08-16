@@ -40,20 +40,33 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     private String httpProxyPassword;
 
+    /**
+     * 上次关闭前所在的tab
+     */
+    private int recentTabIndex;
+
     public boolean isAutoCheckUpdate() {
-        return setting.getBool("autoCheckUpdate", "setting.normal", true);
+        return setting.getBool("autoCheckUpdate", "setting.common", true);
     }
 
     public void setAutoCheckUpdate(boolean autoCheckUpdate) {
-        setting.put("setting.normal", "autoCheckUpdate", String.valueOf(autoCheckUpdate));
+        setting.put("setting.common", "autoCheckUpdate", String.valueOf(autoCheckUpdate));
+    }
+
+    public int getRecentTabIndex() {
+        return setting.getInt("recentTabIndex", "setting.common", 0);
+    }
+
+    public void setRecentTabIndex(int recentTabIndex) {
+        setting.put("setting.common", "recentTabIndex", String.valueOf(recentTabIndex));
     }
 
     public String getBeforeVersion() {
-        return setting.getStr("beforeVersion", "setting.normal", "v1.0.0");
+        return setting.getStr("beforeVersion", "setting.common", "v1.0.0");
     }
 
     public void setBeforeVersion(String beforeVersion) {
-        setting.put("setting.normal", "beforeVersion", beforeVersion);
+        setting.put("setting.common", "beforeVersion", beforeVersion);
     }
 
     public String getTheme() {

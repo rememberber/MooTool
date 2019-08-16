@@ -5,6 +5,7 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
+import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.SettingForm;
 import com.luoboduner.moo.tool.ui.form.fun.QuickNoteForm;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -72,6 +73,7 @@ public class Init {
      * 其他初始化
      */
     public static void initOthers() {
+        MainWindow.getInstance().getTabbedPane().setSelectedIndex(App.config.getRecentTabIndex());
         // 设置滚动条速度
         SettingForm.getInstance().getSettingScrollPane().getVerticalScrollBar().setUnitIncrement(16);
         SettingForm.getInstance().getSettingScrollPane().getVerticalScrollBar().setDoubleBuffered(true);
