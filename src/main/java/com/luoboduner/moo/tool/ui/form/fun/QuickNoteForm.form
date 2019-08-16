@@ -44,6 +44,7 @@
                     <properties>
                       <icon value="icon/remove.png"/>
                       <text value=""/>
+                      <toolTipText value="删除"/>
                     </properties>
                   </component>
                   <hspacer id="2a1a6">
@@ -91,6 +92,7 @@
                     <properties>
                       <icon value="icon/menu-saveall_dark.png"/>
                       <text value=""/>
+                      <toolTipText value="保存"/>
                     </properties>
                   </component>
                   <hspacer id="d3a69">

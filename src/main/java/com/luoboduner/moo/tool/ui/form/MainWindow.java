@@ -73,7 +73,7 @@ public class MainWindow {
         tabbedPane.addTab("随手记", quickNotePanel);
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("时间转换", panel1);
+        tabbedPane.addTab("时间转换", new ImageIcon(getClass().getResource("/icon/clock.png")), panel1);
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("Json格式化", panel2);
