@@ -14,5 +14,6 @@
     </environments>
     <mappers>
         <mapper resource="mapper/TMsgHttpMapper.xml"/>
+        <mapper resource="mapper/TQuickNoteMapper.xml"/>
     </mappers>
 </configuration>
