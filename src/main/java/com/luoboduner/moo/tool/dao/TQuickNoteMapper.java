@@ -18,4 +18,6 @@ public interface TQuickNoteMapper {
     int updateByPrimaryKey(TQuickNote record);
 
     List<TQuickNote> selectAll();
+
+    TQuickNote selectByName(String name);
 }

@@ -51,7 +51,7 @@ public class QuickNoteForm {
     public static void init() {
         quickNoteForm = getInstance();
 
-        quickNoteForm.getSplitPane().setDividerLocation(App.mainFrame.getWidth() / 4.2);
+        quickNoteForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
         quickNoteForm.getNoteListTable().setRowHeight(36);
 
         String[] headerNames = {"id", "名称"};

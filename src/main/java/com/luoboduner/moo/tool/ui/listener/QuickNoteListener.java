@@ -6,6 +6,7 @@ import com.luoboduner.moo.tool.ui.form.fun.QuickNoteForm;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.ibatis.exceptions.PersistenceException;
 
 import javax.swing.*;
 import java.awt.event.ActionEvent;
@@ -25,21 +26,25 @@ public class QuickNoteListener {
 
     public static void addListeners() {
         QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
-        quickNoteForm.getSaveButton().addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                String name = JOptionPane.showInputDialog("请命名", "");
-                if (StringUtils.isNotBlank(name)) {
-                    String now = SqliteUtil.nowDateForSqlite();
-                    TQuickNote tQuickNote = new TQuickNote();
-                    tQuickNote.setName(name);
-                    tQuickNote.setContent(QuickNoteForm.getInstance().getTextArea().getText());
-                    tQuickNote.setCreateTime(now);
-                    tQuickNote.setModifiedTime(now);
-
-                    quickNoteMapper.insert(tQuickNote);
-                    QuickNoteForm.init();
+        quickNoteForm.getSaveButton().addActionListener(e -> {
+            String name = JOptionPane.showInputDialog("请命名", "");
+            if (StringUtils.isNotBlank(name)) {
+                TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
+                if (tQuickNote == null) {
+                    tQuickNote = new TQuickNote();
                 }
+                String now = SqliteUtil.nowDateForSqlite();
+                tQuickNote.setName(name);
+                tQuickNote.setContent(QuickNoteForm.getInstance().getTextArea().getText());
+                tQuickNote.setCreateTime(now);
+                tQuickNote.setModifiedTime(now);
+                if (tQuickNote.getId() == null) {
+                    quickNoteMapper.insert(tQuickNote);
+                } else {
+                    quickNoteMapper.updateByPrimaryKey(tQuickNote);
+                }
+
+                QuickNoteForm.init();
             }
         });
     }

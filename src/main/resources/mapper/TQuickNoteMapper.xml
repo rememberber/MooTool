@@ -87,7 +87,6 @@
         update t_quick_note
         set name          = #{name,jdbcType=VARCHAR},
             content       = #{content,jdbcType=VARCHAR},
-            create_time   = #{createTime,jdbcType=VARCHAR},
             modified_time = #{modifiedTime,jdbcType=VARCHAR}
         where id = #{id,jdbcType=INTEGER}
     </update>
@@ -96,5 +95,11 @@
         <include refid="Base_Column_List"/>
         from t_quick_note
         order by modified_time desc
+    </select>
+    <select id="selectByName" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from t_quick_note
+        where name = #{name,jdbcType=VARCHAR}
     </select>
 </mapper>
