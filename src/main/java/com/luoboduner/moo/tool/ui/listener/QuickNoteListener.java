@@ -9,12 +9,9 @@ import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.ibatis.exceptions.PersistenceException;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
@@ -33,7 +30,7 @@ public class QuickNoteListener {
 
     private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
 
-    private static String selectedName;
+    public static String selectedName;
 
     public static void addListeners() {
         QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
