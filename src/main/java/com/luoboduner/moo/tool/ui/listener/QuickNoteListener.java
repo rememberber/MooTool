@@ -9,6 +9,7 @@ import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateFormatUtils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -16,6 +17,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Date;
 
 /**
  * <pre>
@@ -36,7 +38,10 @@ public class QuickNoteListener {
         QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
 
         quickNoteForm.getSaveButton().addActionListener(e -> {
-            String name = JOptionPane.showInputDialog("请命名", selectedName);
+            if (StringUtils.isEmpty(selectedName)) {
+                selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+            }
+            String name = JOptionPane.showInputDialog("名称", selectedName);
             if (StringUtils.isNotBlank(name)) {
                 TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
                 if (tQuickNote == null) {
@@ -91,7 +96,8 @@ public class QuickNoteListener {
 
                         quickNoteMapper.updateByName(tQuickNote);
                     } else {
-                        String name = JOptionPane.showInputDialog("请命名", selectedName);
+                        String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                        String name = JOptionPane.showInputDialog("名称", tempName);
                         TQuickNote tQuickNote = new TQuickNote();
                         tQuickNote.setName(name);
                         tQuickNote.setContent(quickNoteForm.getTextArea().getText());
