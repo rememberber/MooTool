@@ -74,9 +74,6 @@ public class Init {
      */
     public static void initOthers() {
         MainWindow.getInstance().getTabbedPane().setSelectedIndex(App.config.getRecentTabIndex());
-        // 设置滚动条速度
-        SettingForm.getInstance().getSettingScrollPane().getVerticalScrollBar().setUnitIncrement(16);
-        SettingForm.getInstance().getSettingScrollPane().getVerticalScrollBar().setDoubleBuffered(true);
     }
 
     /**

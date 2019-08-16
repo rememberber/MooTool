@@ -55,6 +55,10 @@ public class SettingForm {
      */
     public static void init() {
         settingForm = SettingForm.getInstance();
+        // 设置滚动条速度
+        settingForm.getSettingScrollPane().getVerticalScrollBar().setUnitIncrement(16);
+        settingForm.getSettingScrollPane().getVerticalScrollBar().setDoubleBuffered(true);
+
         // 常规
         settingForm.getAutoCheckUpdateCheckBox().setSelected(App.config.isAutoCheckUpdate());
 
