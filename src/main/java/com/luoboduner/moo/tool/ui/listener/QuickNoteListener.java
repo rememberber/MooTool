@@ -12,6 +12,8 @@ import org.apache.ibatis.exceptions.PersistenceException;
 import javax.swing.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -46,12 +48,12 @@ public class QuickNoteListener {
                 tQuickNote.setModifiedTime(now);
                 if (tQuickNote.getId() == null) {
                     quickNoteMapper.insert(tQuickNote);
+                    QuickNoteForm.init();
+                    selectedName = name;
                 } else {
                     quickNoteMapper.updateByPrimaryKey(tQuickNote);
                 }
 
-                QuickNoteForm.init();
-                selectedName = name;
             }
         });
 
@@ -67,6 +69,43 @@ public class QuickNoteListener {
                     quickNoteForm.getTextArea().setText(tQuickNote.getContent());
                 });
                 super.mousePressed(e);
+            }
+        });
+
+        // 文本域按键事件
+        quickNoteForm.getTextArea().addKeyListener(new KeyListener() {
+            @Override
+            public void keyReleased(KeyEvent arg0) {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent evt) {
+                if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
+                    String now = SqliteUtil.nowDateForSqlite();
+                    if (selectedName != null) {
+                        TQuickNote tQuickNote = new TQuickNote();
+                        tQuickNote.setName(selectedName);
+                        tQuickNote.setContent(quickNoteForm.getTextArea().getText());
+                        tQuickNote.setModifiedTime(now);
+
+                        quickNoteMapper.updateByName(tQuickNote);
+                    } else {
+                        String name = JOptionPane.showInputDialog("请命名", selectedName);
+                        TQuickNote tQuickNote = new TQuickNote();
+                        tQuickNote.setName(name);
+                        tQuickNote.setContent(quickNoteForm.getTextArea().getText());
+                        tQuickNote.setCreateTime(now);
+                        tQuickNote.setModifiedTime(now);
+
+                        quickNoteMapper.insert(tQuickNote);
+                        QuickNoteForm.init();
+                        selectedName = name;
+                    }
+                }
+            }
+
+            @Override
+            public void keyTyped(KeyEvent arg0) {
             }
         });
     }

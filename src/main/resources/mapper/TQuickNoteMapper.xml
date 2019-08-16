@@ -102,4 +102,10 @@
         from t_quick_note
         where name = #{name,jdbcType=VARCHAR}
     </select>
+    <update id="updateByName" parameterType="com.luoboduner.moo.tool.domain.TQuickNote">
+        update t_quick_note
+        set content       = #{content,jdbcType=VARCHAR},
+            modified_time = #{modifiedTime,jdbcType=VARCHAR}
+        where name = #{name,jdbcType=INTEGER}
+    </update>
 </mapper>

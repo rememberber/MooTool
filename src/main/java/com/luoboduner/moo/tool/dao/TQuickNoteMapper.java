@@ -20,4 +20,6 @@ public interface TQuickNoteMapper {
     List<TQuickNote> selectAll();
 
     TQuickNote selectByName(String name);
+
+    int updateByName(TQuickNote tQuickNote);
 }
