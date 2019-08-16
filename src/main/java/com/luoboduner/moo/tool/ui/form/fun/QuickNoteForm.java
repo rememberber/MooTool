@@ -3,13 +3,17 @@ package com.luoboduner.moo.tool.ui.form.fun;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
+import com.luoboduner.moo.tool.domain.TQuickNote;
+import com.luoboduner.moo.tool.util.JTableUtil;
+import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.util.List;
 
 /**
  * <pre>
@@ -22,12 +26,13 @@ import java.awt.event.ActionListener;
 @Getter
 public class QuickNoteForm {
     private JPanel quickNotePanel;
-    private JTable table1;
+    private JTable noteListTable;
     private JButton deleteButton;
-    private JTextArea textArea1;
+    private JTextArea textArea;
     private JButton saveButton;
 
     private static QuickNoteForm quickNoteForm;
+    private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
 
     private QuickNoteForm() {
         UndoUtil.register(this);
@@ -39,6 +44,31 @@ public class QuickNoteForm {
             quickNoteForm = new QuickNoteForm();
         }
         return quickNoteForm;
+    }
+
+    public static void init() {
+        quickNoteForm = getInstance();
+
+        quickNoteForm.getNoteListTable().setRowHeight(36);
+
+        String[] headerNames = {"id", "名称"};
+        DefaultTableModel model = new DefaultTableModel(null, headerNames);
+        quickNoteForm.getNoteListTable().setModel(model);
+        // 隐藏表头
+        JTableUtil.hideTableHeader(quickNoteForm.getNoteListTable());
+        // 隐藏id列
+        JTableUtil.hideColumn(quickNoteForm.getNoteListTable(), 0);
+
+        Object[] data;
+
+        List<TQuickNote> quickNoteList = quickNoteMapper.selectAll();
+        for (TQuickNote tQuickNote : quickNoteList) {
+            data = new Object[2];
+            data[0] = tQuickNote.getId();
+            data[1] = tQuickNote.getName();
+            model.addRow(data);
+        }
+
     }
 
     {
@@ -77,8 +107,8 @@ public class QuickNoteForm {
         panel2.add(spacer1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         final JScrollPane scrollPane1 = new JScrollPane();
         panel1.add(scrollPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        table1 = new JTable();
-        scrollPane1.setViewportView(table1);
+        noteListTable = new JTable();
+        scrollPane1.setViewportView(noteListTable);
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane1.setRightComponent(panel3);
@@ -93,8 +123,8 @@ public class QuickNoteForm {
         panel4.add(spacer2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         final JScrollPane scrollPane2 = new JScrollPane();
         panel3.add(scrollPane2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        textArea1 = new JTextArea();
-        scrollPane2.setViewportView(textArea1);
+        textArea = new JTextArea();
+        scrollPane2.setViewportView(textArea);
     }
 
     /**

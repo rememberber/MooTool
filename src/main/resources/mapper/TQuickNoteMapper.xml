@@ -91,4 +91,10 @@
             modified_time = #{modifiedTime,jdbcType=VARCHAR}
         where id = #{id,jdbcType=INTEGER}
     </update>
+    <select id="selectAll" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from t_quick_note
+        order by modified_time desc
+    </select>
 </mapper>

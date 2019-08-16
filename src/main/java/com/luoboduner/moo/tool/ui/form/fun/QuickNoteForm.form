@@ -60,7 +60,7 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="f180d" class="javax.swing.JTable" binding="table1" default-binding="true">
+                  <component id="f180d" class="javax.swing.JTable" binding="noteListTable">
                     <constraints/>
                     <properties/>
                   </component>
@@ -107,7 +107,7 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="5f181" class="javax.swing.JTextArea" binding="textArea1" default-binding="true">
+                  <component id="5f181" class="javax.swing.JTextArea" binding="textArea">
                     <constraints/>
                     <properties/>
                   </component>
