@@ -5,6 +5,7 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
+import com.luoboduner.moo.tool.ui.form.AboutForm;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.SettingForm;
 import com.luoboduner.moo.tool.ui.form.fun.QuickNoteForm;
@@ -106,6 +107,7 @@ public class Init {
     public static void initAllTab() {
         SettingForm.init();
         QuickNoteForm.init();
+        AboutForm.init();
 
         // 检查新版版
         if (App.config.isAutoCheckUpdate()) {
