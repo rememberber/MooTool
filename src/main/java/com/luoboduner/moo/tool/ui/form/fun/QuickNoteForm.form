@@ -109,6 +109,7 @@
                     <properties>
                       <icon value="icon/add.png"/>
                       <text value=""/>
+                      <toolTipText value="新建"/>
                     </properties>
                   </component>
                   <component id="df702" class="javax.swing.JComboBox" binding="fontNameComboBox">
@@ -162,11 +163,12 @@
                   </component>
                   <component id="57aca" class="javax.swing.JButton" binding="findButton">
                     <constraints>
-                      <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                      <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="1" use-parent-layout="false"/>
                     </constraints>
                     <properties>
                       <icon value="icon/find_dark.png"/>
                       <text value=""/>
+                      <toolTipText value="查找"/>
                     </properties>
                   </component>
                 </children>
