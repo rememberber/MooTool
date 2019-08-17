@@ -41,6 +41,7 @@ public class QuickNoteForm {
     private JTextField findTextField;
     private JButton findButton;
     private JPanel deletePanel;
+    private JScrollPane scrollPane;
 
     private static QuickNoteForm quickNoteForm;
     private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
@@ -69,6 +70,12 @@ public class QuickNoteForm {
 
         quickNoteForm.getDeletePanel().setVisible(false);
         quickNoteForm.getTextArea().grabFocus();
+        if ("Darcula(推荐)".equals(App.config.getTheme())) {
+            Color bgColor = new Color(43, 43, 43);
+            quickNoteForm.getTextArea().setBackground(bgColor);
+            Color foreColor = new Color(169, 183, 198);
+            quickNoteForm.getTextArea().setForeground(foreColor);
+        }
     }
 
     public static void initNoteListTable() {
@@ -222,11 +229,11 @@ public class QuickNoteForm {
         findButton.setText("");
         findButton.setToolTipText("查找");
         panel3.add(findButton, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
-        final JScrollPane scrollPane2 = new JScrollPane();
-        panel2.add(scrollPane2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        scrollPane = new JScrollPane();
+        panel2.add(scrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         textArea = new JTextArea();
         textArea.setMargin(new Insets(20, 20, 20, 20));
-        scrollPane2.setViewportView(textArea);
+        scrollPane.setViewportView(textArea);
     }
 
     /**
