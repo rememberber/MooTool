@@ -62,7 +62,7 @@ public class AboutForm {
         scrollPane = new JScrollPane();
         aboutPanel.add(scrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(9, 2, new Insets(20, 60, 0, 60), -1, -1));
+        panel1.setLayout(new GridLayoutManager(9, 2, new Insets(20, 160, 0, 0), -1, -1));
         scrollPane.setViewportView(panel1);
         panel1.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), null));
         final JLabel label1 = new JLabel();
