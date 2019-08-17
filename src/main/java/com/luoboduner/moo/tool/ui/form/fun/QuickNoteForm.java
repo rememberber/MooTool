@@ -65,6 +65,8 @@ public class QuickNoteForm {
         initNoteListTable();
 
         initTextAreaFont();
+
+        quickNoteForm.getTextArea().grabFocus();
     }
 
     public static void initNoteListTable() {
