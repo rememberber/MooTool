@@ -261,7 +261,7 @@ public class QuickNoteListener {
                     tQuickNote.setId(noteId);
                     tQuickNote.setName(noteName);
                     try {
-                        quickNoteMapper.updateByPrimaryKey(tQuickNote);
+                        quickNoteMapper.updateByPrimaryKeySelective(tQuickNote);
                     } catch (Exception e) {
                         JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
                         QuickNoteForm.initNoteListTable();
