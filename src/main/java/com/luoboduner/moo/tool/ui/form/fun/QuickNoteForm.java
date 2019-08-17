@@ -34,7 +34,7 @@ public class QuickNoteForm {
     private JTextArea textArea;
     private JButton saveButton;
     private JSplitPane splitPane;
-    private JButton button1;
+    private JButton addButton;
     private JComboBox fontNameComboBox;
     private JComboBox fontSizeComboBox;
 
@@ -78,6 +78,17 @@ public class QuickNoteForm {
         }
 
         getSysFontList();
+
+        String fontName = App.config.getQuickNoteFontName();
+        int fontSize = App.config.getQuickNoteFontSize();
+        if (fontSize == 0) {
+            fontSize = quickNoteForm.getTextArea().getFont().getSize() + 2;
+        }
+        quickNoteForm.getFontNameComboBox().setSelectedItem(fontName);
+        quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(fontSize));
+
+        Font font = new Font(fontName, Font.PLAIN, fontSize);
+        quickNoteForm.getTextArea().setFont(font);
 
     }
 
@@ -138,7 +149,7 @@ public class QuickNoteForm {
         panel3.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane.setRightComponent(panel3);
         final JPanel panel4 = new JPanel();
-        panel4.setLayout(new GridLayoutManager(1, 5, new Insets(0, 0, 0, 0), -1, -1));
+        panel4.setLayout(new GridLayoutManager(1, 5, new Insets(0, 10, 0, 0), -1, -1));
         panel3.add(panel4, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         saveButton = new JButton();
         saveButton.setIcon(new ImageIcon(getClass().getResource("/icon/menu-saveall_dark.png")));
@@ -147,10 +158,10 @@ public class QuickNoteForm {
         panel4.add(saveButton, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
         panel4.add(spacer2, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        button1 = new JButton();
-        button1.setIcon(new ImageIcon(getClass().getResource("/icon/add.png")));
-        button1.setText("");
-        panel4.add(button1, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        addButton = new JButton();
+        addButton.setIcon(new ImageIcon(getClass().getResource("/icon/add.png")));
+        addButton.setText("");
+        panel4.add(addButton, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         fontNameComboBox = new JComboBox();
         panel4.add(fontNameComboBox, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         fontSizeComboBox = new JComboBox();
@@ -186,6 +197,7 @@ public class QuickNoteForm {
         final JScrollPane scrollPane2 = new JScrollPane();
         panel3.add(scrollPane2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         textArea = new JTextArea();
+        textArea.setMargin(new Insets(20, 20, 20, 20));
         scrollPane2.setViewportView(textArea);
     }
 

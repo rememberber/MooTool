@@ -45,6 +45,10 @@ public class ConfigUtil extends ConfigBaseUtil {
      */
     private int recentTabIndex;
 
+    private String quickNoteFontName;
+
+    private int quickNoteFontSize;
+
     public boolean isAutoCheckUpdate() {
         return setting.getBool("autoCheckUpdate", "setting.common", true);
     }
@@ -131,5 +135,21 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setHttpProxyPassword(String httpProxyPassword) {
         setting.put("setting.http", "httpProxyPassword", httpProxyPassword);
+    }
+
+    public String getQuickNoteFontName() {
+        return setting.getStr("quickNoteFontName", "setting.quickNote", "等线");
+    }
+
+    public void setQuickNoteFontName(String quickNoteFontName) {
+        setting.put("setting.quickNote", "quickNoteFontName", quickNoteFontName);
+    }
+
+    public int getQuickNoteFontSize() {
+        return setting.getInt("quickNoteFontSize", "setting.quickNote", 0);
+    }
+
+    public void setQuickNoteFontSize(int quickNoteFontSize) {
+        setting.put("setting.quickNote", "quickNoteFontSize", String.valueOf(quickNoteFontSize));
     }
 }

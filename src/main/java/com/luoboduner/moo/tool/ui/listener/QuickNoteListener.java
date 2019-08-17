@@ -13,6 +13,8 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.awt.event.ItemEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
@@ -144,5 +146,40 @@ public class QuickNoteListener {
                 log.error(e1.toString());
             }
         }));
+
+        // 字体名称下拉框事件
+        quickNoteForm.getFontNameComboBox().addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                String fontName = e.getItem().toString();
+                int fontSize = Integer.parseInt(quickNoteForm.getFontSizeComboBox().getSelectedItem().toString());
+                Font font = new Font(fontName, Font.PLAIN, fontSize);
+                quickNoteForm.getTextArea().setFont(font);
+
+                App.config.setQuickNoteFontName(fontName);
+                App.config.setQuickNoteFontSize(fontSize);
+                App.config.save();
+            }
+        });
+
+        // 字体大小下拉框事件
+        quickNoteForm.getFontSizeComboBox().addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                int fontSize = Integer.parseInt(e.getItem().toString());
+                String fontName = quickNoteForm.getFontNameComboBox().getSelectedItem().toString();
+                Font font = new Font(fontName, Font.PLAIN, fontSize);
+                quickNoteForm.getTextArea().setFont(font);
+
+                App.config.setQuickNoteFontName(fontName);
+                App.config.setQuickNoteFontSize(fontSize);
+                App.config.save();
+            }
+        });
+
+        // 添加按钮事件
+        quickNoteForm.getAddButton().addActionListener(e -> {
+            quickNoteForm.getTextArea().setText("");
+            selectedName = null;
+        });
+
     }
 }
