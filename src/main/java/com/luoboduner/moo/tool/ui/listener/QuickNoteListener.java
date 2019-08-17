@@ -183,15 +183,16 @@ public class QuickNoteListener {
             selectedName = null;
         });
 
+        // 左侧列表鼠标点击事件（显示下方删除按钮）
         quickNoteForm.getNoteListTable().addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
-
+                quickNoteForm.getDeletePanel().setVisible(true);
             }
 
             @Override
             public void mousePressed(MouseEvent e) {
-                quickNoteForm.getDeletePanel().setVisible(true);
+
             }
 
             @Override
@@ -210,15 +211,16 @@ public class QuickNoteListener {
             }
         });
 
+        // 文本域鼠标点击事件，隐藏删除按钮
         quickNoteForm.getTextArea().addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
-
+                quickNoteForm.getDeletePanel().setVisible(false);
             }
 
             @Override
             public void mousePressed(MouseEvent e) {
-                quickNoteForm.getDeletePanel().setVisible(false);
+
             }
 
             @Override
@@ -234,6 +236,38 @@ public class QuickNoteListener {
             @Override
             public void mouseExited(MouseEvent e) {
 
+            }
+        });
+
+        // 左侧列表按键事件（重命名）
+        quickNoteForm.getNoteListTable().addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+
+            }
+
+            @Override
+            public void keyPressed(KeyEvent evt) {
+
+            }
+
+            @Override
+            public void keyReleased(KeyEvent evt) {
+                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+                    int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
+                    int noteId = Integer.parseInt(String.valueOf(quickNoteForm.getNoteListTable().getValueAt(selectedRow, 0)));
+                    String noteName = String.valueOf(quickNoteForm.getNoteListTable().getValueAt(selectedRow, 1));
+                    TQuickNote tQuickNote = new TQuickNote();
+                    tQuickNote.setId(noteId);
+                    tQuickNote.setName(noteName);
+                    try {
+                        quickNoteMapper.updateByPrimaryKey(tQuickNote);
+                    } catch (Exception e) {
+                        JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
+                        QuickNoteForm.initNoteListTable();
+                        log.error(e.toString());
+                    }
+                }
             }
         });
 
