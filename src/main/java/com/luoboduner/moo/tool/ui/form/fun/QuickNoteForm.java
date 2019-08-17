@@ -7,6 +7,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.listener.QuickNoteListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
@@ -59,6 +60,12 @@ public class QuickNoteForm {
         quickNoteForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
         quickNoteForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
 
+        initNoteListTable();
+
+        initTextAreaFont();
+    }
+
+    private static void initNoteListTable() {
         String[] headerNames = {"id", "名称"};
         DefaultTableModel model = new DefaultTableModel(null, headerNames);
         quickNoteForm.getNoteListTable().setModel(model);
@@ -76,7 +83,14 @@ public class QuickNoteForm {
             data[1] = tQuickNote.getName();
             model.addRow(data);
         }
+        if (quickNoteList.size() > 0) {
+            quickNoteForm.getTextArea().setText(quickNoteList.get(0).getContent());
+            quickNoteForm.getNoteListTable().setRowSelectionInterval(0, 0);
+            QuickNoteListener.selectedName = quickNoteList.get(0).getName();
+        }
+    }
 
+    private static void initTextAreaFont() {
         getSysFontList();
 
         String fontName = App.config.getQuickNoteFontName();
@@ -89,7 +103,6 @@ public class QuickNoteForm {
 
         Font font = new Font(fontName, Font.PLAIN, fontSize);
         quickNoteForm.getTextArea().setFont(font);
-
     }
 
     /**
