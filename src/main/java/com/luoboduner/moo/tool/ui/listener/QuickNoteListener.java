@@ -56,7 +56,7 @@ public class QuickNoteListener {
                 tQuickNote.setModifiedTime(now);
                 if (tQuickNote.getId() == null) {
                     quickNoteMapper.insert(tQuickNote);
-                    QuickNoteForm.init();
+                    QuickNoteForm.initNoteListTable();
                     selectedName = name;
                 } else {
                     quickNoteMapper.updateByPrimaryKey(tQuickNote);
@@ -107,7 +107,7 @@ public class QuickNoteListener {
                         tQuickNote.setModifiedTime(now);
 
                         quickNoteMapper.insert(tQuickNote);
-                        QuickNoteForm.init();
+                        QuickNoteForm.initNoteListTable();
                         selectedName = name;
                     }
                 }
@@ -138,6 +138,7 @@ public class QuickNoteListener {
                             tableModel.removeRow(selectedRow);
                         }
                         selectedName = null;
+                        QuickNoteForm.initNoteListTable();
                     }
                 }
             } catch (Exception e1) {

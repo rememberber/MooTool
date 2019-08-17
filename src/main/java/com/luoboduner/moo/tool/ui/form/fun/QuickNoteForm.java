@@ -65,7 +65,7 @@ public class QuickNoteForm {
         initTextAreaFont();
     }
 
-    private static void initNoteListTable() {
+    public static void initNoteListTable() {
         String[] headerNames = {"id", "名称"};
         DefaultTableModel model = new DefaultTableModel(null, headerNames);
         quickNoteForm.getNoteListTable().setModel(model);
