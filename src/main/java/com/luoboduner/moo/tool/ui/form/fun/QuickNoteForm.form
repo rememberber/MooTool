@@ -26,7 +26,9 @@
             <constraints>
               <splitpane position="left"/>
             </constraints>
-            <properties/>
+            <properties>
+              <minimumSize width="0" height="64"/>
+            </properties>
             <border type="none"/>
             <children>
               <grid id="3e7dd" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
