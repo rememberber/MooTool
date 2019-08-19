@@ -31,4 +31,18 @@ create table if not exists t_quick_note
 );
 
 create unique index if not exists t_quick_note_name_uindex
-    on t_quick_note (name)
+    on t_quick_note (name);
+
+create table if not exists t_json_beauty
+(
+    id            integer
+        constraint t_json_beauty_pk
+            primary key autoincrement,
+    name          text,
+    content       text,
+    create_time   datetime,
+    modified_time datetime
+);
+
+create unique index if not exists t_json_beauty_name_uindex
+    on t_json_beauty (name);
