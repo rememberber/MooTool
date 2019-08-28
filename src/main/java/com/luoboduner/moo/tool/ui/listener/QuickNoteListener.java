@@ -177,6 +177,11 @@ public class QuickNoteListener {
             }
         });
 
+        // 自动换行按钮事件
+        quickNoteForm.getWrapButton().addActionListener(e -> {
+            quickNoteForm.getTextArea().setLineWrap(!quickNoteForm.getTextArea().getLineWrap());
+        });
+
         // 添加按钮事件
         quickNoteForm.getAddButton().addActionListener(e -> {
             quickNoteForm.getTextArea().setText("");
