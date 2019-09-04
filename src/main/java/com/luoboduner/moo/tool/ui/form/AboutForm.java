@@ -40,6 +40,7 @@ public class AboutForm {
 
         aboutForm.getScrollPane().getVerticalScrollBar().setUnitIncrement(16);
         aboutForm.getScrollPane().getVerticalScrollBar().setDoubleBuffered(true);
+        aboutForm.getAboutPanel().updateUI();
     }
 
     {

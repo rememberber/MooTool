@@ -77,6 +77,7 @@ public class QuickNoteForm {
             Color foreColor = new Color(187, 187, 187);
             quickNoteForm.getTextArea().setForeground(foreColor);
         }
+        quickNoteForm.getQuickNotePanel().updateUI();
     }
 
     public static void initNoteListTable() {

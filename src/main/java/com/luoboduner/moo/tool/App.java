@@ -45,17 +45,15 @@ public class App {
         mainFrame.setVisible(true);
         UpgradeUtil.smoothUpgrade();
 
-        SwingUtilities.invokeLater(() -> {
-            mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-            Init.initGlobalFont();
-            mainFrame.setContentPane(MainWindow.getInstance().getMainPanel());
-            MainWindow.getInstance().init();
-            Init.initAllTab();
-            Init.initOthers();
-            mainFrame.addListeners();
-            mainFrame.remove(loadingPanel);
-            Init.initFontSize();
-        });
+        mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+        Init.initGlobalFont();
+        mainFrame.setContentPane(MainWindow.getInstance().getMainPanel());
+        MainWindow.getInstance().init();
+        Init.initAllTab();
+        Init.initOthers();
+        mainFrame.addListeners();
+        mainFrame.remove(loadingPanel);
+        Init.initFontSize();
 
     }
 }

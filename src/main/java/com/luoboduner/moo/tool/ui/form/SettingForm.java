@@ -76,6 +76,7 @@ public class SettingForm {
         settingForm.getSettingFontSizeComboBox().setSelectedItem(String.valueOf(App.config.getFontSize()));
 
         toggleHttpProxyPanel();
+        settingForm.getSettingPanel().updateUI();
     }
 
     /**
