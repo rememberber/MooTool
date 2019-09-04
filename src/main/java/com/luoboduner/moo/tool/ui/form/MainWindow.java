@@ -44,6 +44,7 @@ public class MainWindow {
         mainWindow.getAboutPanel().add(AboutForm.getInstance().getAboutPanel(), gridConstraints);
         mainWindow.getSettingPanel().add(SettingForm.getInstance().getSettingPanel(), gridConstraints);
         mainWindow.getQuickNotePanel().add(QuickNoteForm.getInstance().getQuickNotePanel(), gridConstraints);
+        mainWindow.getMainPanel().updateUI();
     }
 
     {
