@@ -72,7 +72,7 @@ public class QuickNoteForm {
         quickNoteForm.getDeletePanel().setVisible(false);
         quickNoteForm.getTextArea().grabFocus();
         if ("Darcula(推荐)".equals(App.config.getTheme())) {
-            Color bgColor = new Color(43, 43, 43);
+            Color bgColor = new Color(30, 30, 30);
             quickNoteForm.getTextArea().setBackground(bgColor);
             Color foreColor = new Color(187, 187, 187);
             quickNoteForm.getTextArea().setForeground(foreColor);
