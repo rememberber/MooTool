@@ -8,6 +8,7 @@ import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
 import com.luoboduner.moo.tool.ui.form.AboutForm;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.SettingForm;
+import com.luoboduner.moo.tool.ui.form.fun.JsonBeautyForm;
 import com.luoboduner.moo.tool.ui.form.fun.QuickNoteForm;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UIUtil;
@@ -107,6 +108,7 @@ public class Init {
     public static void initAllTab() {
         SettingForm.init();
         QuickNoteForm.init();
+        JsonBeautyForm.init();
         AboutForm.init();
 
         // 检查新版版

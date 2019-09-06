@@ -49,6 +49,10 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     private int quickNoteFontSize;
 
+    private String jsonBeautyFontName;
+
+    private int jsonBeautyFontSize;
+
     public boolean isAutoCheckUpdate() {
         return setting.getBool("autoCheckUpdate", "setting.common", true);
     }
@@ -151,5 +155,21 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setQuickNoteFontSize(int quickNoteFontSize) {
         setting.put("setting.quickNote", "quickNoteFontSize", String.valueOf(quickNoteFontSize));
+    }
+
+    public String getJsonBeautyFontName() {
+        return setting.getStr("jsonBeautyFontName", "setting.jsonBeauty", "等线");
+    }
+
+    public void setJsonBeautyFontName(String jsonBeautyFontName) {
+        setting.put("setting.jsonBeauty", "jsonBeautyFontName", jsonBeautyFontName);
+    }
+
+    public int getJsonBeautyFontSize() {
+        return setting.getInt("jsonBeautyFontSize", "setting.jsonBeauty", 0);
+    }
+
+    public void setJsonBeautyFontSize(int jsonBeautyFontSize) {
+        setting.put("setting.jsonBeauty", "jsonBeautyFontSize", String.valueOf(jsonBeautyFontSize));
     }
 }

@@ -1,6 +1,9 @@
 package com.luoboduner.moo.tool.dao;
 
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
+import com.luoboduner.moo.tool.domain.TQuickNote;
+
+import java.util.List;
 
 public interface TJsonBeautyMapper {
     int deleteByPrimaryKey(Integer id);
@@ -14,4 +17,10 @@ public interface TJsonBeautyMapper {
     int updateByPrimaryKeySelective(TJsonBeauty record);
 
     int updateByPrimaryKey(TJsonBeauty record);
+
+    List<TJsonBeauty> selectAll();
+
+    TJsonBeauty selectByName(String name);
+
+    int updateByName(TJsonBeauty tJsonBeauty);
 }

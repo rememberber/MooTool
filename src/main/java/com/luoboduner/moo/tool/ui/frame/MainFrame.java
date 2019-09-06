@@ -4,6 +4,7 @@ import com.apple.eawt.Application;
 import com.google.common.collect.Lists;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
+import com.luoboduner.moo.tool.ui.listener.JsonBeautyListener;
 import com.luoboduner.moo.tool.ui.listener.QuickNoteListener;
 import com.luoboduner.moo.tool.ui.listener.SettingListener;
 import com.luoboduner.moo.tool.util.ComponentUtil;
@@ -56,6 +57,7 @@ public class MainFrame extends JFrame {
     public void addListeners() {
         FrameListener.addListeners();
         QuickNoteListener.addListeners();
+        JsonBeautyListener.addListeners();
         SettingListener.addListeners();
     }
 }
