@@ -74,7 +74,7 @@ public class Init {
      * 其他初始化
      */
     public static void initOthers() {
-        MainWindow.getInstance().getTabbedPane().setSelectedIndex(App.config.getRecentTabIndex());
+
     }
 
     /**
