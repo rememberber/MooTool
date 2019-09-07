@@ -8,6 +8,7 @@ import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
 import com.luoboduner.moo.tool.ui.form.AboutForm;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.SettingForm;
+import com.luoboduner.moo.tool.ui.form.fun.HostForm;
 import com.luoboduner.moo.tool.ui.form.fun.JsonBeautyForm;
 import com.luoboduner.moo.tool.ui.form.fun.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.form.fun.TimeConvertForm;
@@ -111,6 +112,7 @@ public class Init {
         QuickNoteForm.init();
         JsonBeautyForm.init();
         TimeConvertForm.init();
+        HostForm.init();
         AboutForm.init();
 
         // 检查新版版

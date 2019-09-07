@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.ui.form;
 
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.luoboduner.moo.tool.ui.form.fun.HostForm;
 import com.luoboduner.moo.tool.ui.form.fun.JsonBeautyForm;
 import com.luoboduner.moo.tool.ui.form.fun.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.form.fun.TimeConvertForm;
@@ -27,6 +28,7 @@ public class MainWindow {
     private JPanel quickNotePanel;
     private JPanel jsonBeautyPanel;
     private JPanel timeConvertPanel;
+    private JPanel hostPanel;
 
     private static MainWindow mainWindow;
 
@@ -50,6 +52,7 @@ public class MainWindow {
         mainWindow.getQuickNotePanel().add(QuickNoteForm.getInstance().getQuickNotePanel(), gridConstraints);
         mainWindow.getJsonBeautyPanel().add(JsonBeautyForm.getInstance().getJsonBeautyPanel(), gridConstraints);
         mainWindow.getTimeConvertPanel().add(TimeConvertForm.getInstance().getTimeConvertPanel(), gridConstraints);
+        mainWindow.getHostPanel().add(HostForm.getInstance().getHostPanel(), gridConstraints);
         mainWindow.getMainPanel().updateUI();
     }
 
@@ -81,33 +84,33 @@ public class MainWindow {
         jsonBeautyPanel = new JPanel();
         jsonBeautyPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("Json格式化", new ImageIcon(getClass().getResource("/icon/object_dark.png")), jsonBeautyPanel);
+        hostPanel = new JPanel();
+        hostPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPane.addTab("Host切换", hostPanel);
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("Host切换", panel1);
+        tabbedPane.addTab("HTTP请求", panel1);
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("HTTP请求", panel2);
+        tabbedPane.addTab("编码转换", panel2);
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("编码转换", panel3);
+        tabbedPane.addTab("二维码生成", panel3);
         final JPanel panel4 = new JPanel();
         panel4.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("二维码生成", panel4);
+        tabbedPane.addTab("随机/密钥", panel4);
         final JPanel panel5 = new JPanel();
         panel5.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("随机/密钥", panel5);
+        tabbedPane.addTab("正则表达式", panel5);
         final JPanel panel6 = new JPanel();
         panel6.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("正则表达式", panel6);
+        tabbedPane.addTab("Cron表达式", panel6);
         final JPanel panel7 = new JPanel();
         panel7.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("Cron表达式", panel7);
+        tabbedPane.addTab("图片压缩", panel7);
         final JPanel panel8 = new JPanel();
         panel8.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("图片压缩", panel8);
-        final JPanel panel9 = new JPanel();
-        panel9.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("短网址", panel9);
+        tabbedPane.addTab("短网址", panel8);
         settingPanel = new JPanel();
         settingPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("设置", settingPanel);
