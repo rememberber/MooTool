@@ -1,6 +1,8 @@
 package com.luoboduner.moo.tool.ui.listener;
 
+import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.thread.ThreadUtil;
+import cn.hutool.json.JSONUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
@@ -9,10 +11,12 @@ import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.KeyEvent;
@@ -40,6 +44,29 @@ public class JsonBeautyListener {
     public static void addListeners() {
         JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
 
+        // 格式化按钮事件
+        jsonBeautyForm.getBeautifyButton().addActionListener(e -> formatJson(jsonBeautyForm));
+
+        jsonBeautyForm.getTextArea().addKeyListener(new KeyListener() {
+            @Override
+            public void keyReleased(KeyEvent arg0) {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent evt) {
+                if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                    formatJson(jsonBeautyForm);
+                } else if (evt.isControlDown() && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                    formatJson(jsonBeautyForm);
+                }
+            }
+
+            @Override
+            public void keyTyped(KeyEvent arg0) {
+            }
+        });
+
+        // 保存按钮事件
         jsonBeautyForm.getSaveButton().addActionListener(e -> {
             if (StringUtils.isEmpty(selectedName)) {
                 selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
@@ -276,5 +303,16 @@ public class JsonBeautyListener {
             }
         });
 
+    }
+
+    private static void formatJson(JsonBeautyForm jsonBeautyForm) {
+        String jsonText = jsonBeautyForm.getTextArea().getText();
+        try {
+            jsonText = JSONUtil.toJsonPrettyStr(jsonText);
+        } catch (Exception e1) {
+            log.error(ExceptionUtils.getStackTrace(e1));
+            jsonText = JSONUtil.formatJsonStr(jsonText);
+        }
+        jsonBeautyForm.getTextArea().setText(jsonText);
     }
 }
