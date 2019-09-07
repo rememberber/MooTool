@@ -46,3 +46,17 @@ create table if not exists t_json_beauty
 
 create unique index if not exists t_json_beauty_name_uindex
     on t_json_beauty (name);
+
+create table if not exists t_host
+(
+    id            integer
+        constraint t_host_pk
+            primary key autoincrement,
+    name          text,
+    content       text,
+    create_time   datetime,
+    modified_time datetime
+);
+
+create unique index if not exists t_host_name_uindex
+    on t_host (name);

@@ -16,5 +16,6 @@
         <mapper resource="mapper/TMsgHttpMapper.xml"/>
         <mapper resource="mapper/TQuickNoteMapper.xml"/>
         <mapper resource="mapper/TJsonBeautyMapper.xml"/>
+        <mapper resource="mapper/THostMapper.xml"/>
     </mappers>
 </configuration>
