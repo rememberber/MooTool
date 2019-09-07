@@ -85,7 +85,7 @@ public class TimeConvertForm {
      */
     private void $$$setupUI$$$() {
         timeConvertPanel = new JPanel();
-        timeConvertPanel.setLayout(new GridLayoutManager(3, 5, new Insets(30, 20, 0, 50), -1, -1));
+        timeConvertPanel.setLayout(new GridLayoutManager(3, 5, new Insets(50, 50, 0, 50), -1, -1));
         final Spacer spacer1 = new Spacer();
         timeConvertPanel.add(spacer1, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JPanel panel1 = new JPanel();
@@ -97,6 +97,7 @@ public class TimeConvertForm {
         currentGmtLabel = new JLabel();
         Font currentGmtLabelFont = this.$$$getFont$$$(null, -1, 36, currentGmtLabel.getFont());
         if (currentGmtLabelFont != null) currentGmtLabel.setFont(currentGmtLabelFont);
+        currentGmtLabel.setForeground(new Color(-14739));
         currentGmtLabel.setText("--");
         panel2.add(currentGmtLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         复制Button2 = new JButton();
@@ -110,6 +111,7 @@ public class TimeConvertForm {
         currentTimeStampLabel = new JLabel();
         Font currentTimeStampLabelFont = this.$$$getFont$$$(null, -1, 36, currentTimeStampLabel.getFont());
         if (currentTimeStampLabelFont != null) currentTimeStampLabel.setFont(currentTimeStampLabelFont);
+        currentTimeStampLabel.setForeground(new Color(-14739));
         currentTimeStampLabel.setText("--");
         panel3.add(currentTimeStampLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         复制Button3 = new JButton();
