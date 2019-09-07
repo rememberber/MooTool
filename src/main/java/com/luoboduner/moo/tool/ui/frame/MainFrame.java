@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
 import com.luoboduner.moo.tool.ui.listener.HostListener;
+import com.luoboduner.moo.tool.ui.listener.HttpRequestListener;
 import com.luoboduner.moo.tool.ui.listener.JsonBeautyListener;
 import com.luoboduner.moo.tool.ui.listener.QuickNoteListener;
 import com.luoboduner.moo.tool.ui.listener.SettingListener;
@@ -60,6 +61,7 @@ public class MainFrame extends JFrame {
         QuickNoteListener.addListeners();
         JsonBeautyListener.addListeners();
         HostListener.addListeners();
+        HttpRequestListener.addListeners();
         SettingListener.addListeners();
     }
 }
