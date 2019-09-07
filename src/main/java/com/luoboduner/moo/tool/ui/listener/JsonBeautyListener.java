@@ -45,7 +45,10 @@ public class JsonBeautyListener {
         JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
 
         // 格式化按钮事件
-        jsonBeautyForm.getBeautifyButton().addActionListener(e -> formatJson(jsonBeautyForm));
+        jsonBeautyForm.getBeautifyButton().addActionListener(e -> {
+            String jsonText = jsonBeautyForm.getTextArea().getText();
+            jsonBeautyForm.getTextArea().setText(formatJson(jsonText));
+        });
 
         jsonBeautyForm.getTextArea().addKeyListener(new KeyListener() {
             @Override
@@ -55,9 +58,11 @@ public class JsonBeautyListener {
             @Override
             public void keyPressed(KeyEvent evt) {
                 if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
-                    formatJson(jsonBeautyForm);
+                    String jsonText = jsonBeautyForm.getTextArea().getText();
+                    jsonBeautyForm.getTextArea().setText(formatJson(jsonText));
                 } else if (evt.isControlDown() && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
-                    formatJson(jsonBeautyForm);
+                    String jsonText = jsonBeautyForm.getTextArea().getText();
+                    jsonBeautyForm.getTextArea().setText(formatJson(jsonText));
                 }
             }
 
@@ -305,14 +310,21 @@ public class JsonBeautyListener {
 
     }
 
-    private static void formatJson(JsonBeautyForm jsonBeautyForm) {
-        String jsonText = jsonBeautyForm.getTextArea().getText();
+    private static String formatJson(String jsonText) {
         try {
             jsonText = JSONUtil.toJsonPrettyStr(jsonText);
         } catch (Exception e1) {
+            JOptionPane.showMessageDialog(App.mainFrame, "格式化失败！\n\n" + e1.getMessage(), "失败",
+                    JOptionPane.ERROR_MESSAGE);
             log.error(ExceptionUtils.getStackTrace(e1));
-            jsonText = JSONUtil.formatJsonStr(jsonText);
+            try {
+                jsonText = JSONUtil.formatJsonStr(jsonText);
+            } catch (Exception e) {
+                JOptionPane.showMessageDialog(App.mainFrame, "格式化失败！\n\n" + e.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e));
+            }
         }
-        jsonBeautyForm.getTextArea().setText(jsonText);
+        return jsonText;
     }
 }

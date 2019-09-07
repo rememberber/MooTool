@@ -168,6 +168,7 @@
                 <properties>
                   <icon value="icon/arrow-down.png"/>
                   <text value="转换"/>
+                  <toolTipText value="时间戳转换为本地时间"/>
                 </properties>
               </component>
               <component id="39565" class="javax.swing.JButton" binding="转换Button1" default-binding="true">
@@ -177,6 +178,7 @@
                 <properties>
                   <icon value="icon/arrow-up.png"/>
                   <text value="转换"/>
+                  <toolTipText value="本地时间转换为时间戳"/>
                 </properties>
               </component>
               <component id="4ee9c" class="javax.swing.JComboBox" binding="comboBox1" default-binding="true">

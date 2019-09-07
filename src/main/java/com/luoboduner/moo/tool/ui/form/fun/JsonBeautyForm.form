@@ -116,7 +116,9 @@
                     <constraints>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
-                    <properties/>
+                    <properties>
+                      <toolTipText value="设置字体"/>
+                    </properties>
                   </component>
                   <component id="3a5b0" class="javax.swing.JComboBox" binding="fontSizeComboBox">
                     <constraints>
@@ -151,6 +153,7 @@
                         <item value="29"/>
                         <item value="30"/>
                       </model>
+                      <toolTipText value="字号"/>
                     </properties>
                   </component>
                   <component id="9de90" class="javax.swing.JTextField" binding="findTextField">
@@ -159,7 +162,9 @@
                         <preferred-size width="150" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties/>
+                    <properties>
+                      <toolTipText value="输入搜索内容"/>
+                    </properties>
                   </component>
                   <component id="57aca" class="javax.swing.JButton" binding="findButton">
                     <constraints>
@@ -178,6 +183,7 @@
                     <properties>
                       <icon value="icon/toggleSoftWrap_dark.png"/>
                       <text value=""/>
+                      <toolTipText value="自动换行"/>
                     </properties>
                   </component>
                   <component id="138ed" class="javax.swing.JButton" binding="beautifyButton">

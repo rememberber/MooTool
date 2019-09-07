@@ -17,6 +17,8 @@ import org.apache.commons.lang3.StringUtils;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.util.List;
 
 /**
@@ -51,6 +53,12 @@ public class JsonBeautyForm {
     private JsonBeautyForm() {
         UndoUtil.register(this);
 
+        findButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                JOptionPane.showMessageDialog(App.mainFrame, "功能开发中，敬请期待");
+            }
+        });
     }
 
     public static JsonBeautyForm getInstance() {
@@ -194,6 +202,7 @@ public class JsonBeautyForm {
         addButton.setToolTipText("新建");
         panel3.add(addButton, new GridConstraints(0, 6, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         fontNameComboBox = new JComboBox();
+        fontNameComboBox.setToolTipText("设置字体");
         panel3.add(fontNameComboBox, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         fontSizeComboBox = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
@@ -224,8 +233,10 @@ public class JsonBeautyForm {
         defaultComboBoxModel1.addElement("29");
         defaultComboBoxModel1.addElement("30");
         fontSizeComboBox.setModel(defaultComboBoxModel1);
+        fontSizeComboBox.setToolTipText("字号");
         panel3.add(fontSizeComboBox, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         findTextField = new JTextField();
+        findTextField.setToolTipText("输入搜索内容");
         panel3.add(findTextField, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         findButton = new JButton();
         findButton.setIcon(new ImageIcon(getClass().getResource("/icon/find_dark.png")));
@@ -235,6 +246,7 @@ public class JsonBeautyForm {
         wrapButton = new JButton();
         wrapButton.setIcon(new ImageIcon(getClass().getResource("/icon/toggleSoftWrap_dark.png")));
         wrapButton.setText("");
+        wrapButton.setToolTipText("自动换行");
         panel3.add(wrapButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         beautifyButton = new JButton();
         beautifyButton.setIcon(new ImageIcon(getClass().getResource("/icon/object_dark.png")));

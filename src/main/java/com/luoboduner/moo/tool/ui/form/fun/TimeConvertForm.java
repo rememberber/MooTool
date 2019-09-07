@@ -152,10 +152,12 @@ public class TimeConvertForm {
         转换Button = new JButton();
         转换Button.setIcon(new ImageIcon(getClass().getResource("/icon/arrow-down.png")));
         转换Button.setText("转换");
+        转换Button.setToolTipText("时间戳转换为本地时间");
         panel5.add(转换Button, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         转换Button1 = new JButton();
         转换Button1.setIcon(new ImageIcon(getClass().getResource("/icon/arrow-up.png")));
         转换Button1.setText("转换");
+        转换Button1.setToolTipText("本地时间转换为时间戳");
         panel5.add(转换Button1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         comboBox1 = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
