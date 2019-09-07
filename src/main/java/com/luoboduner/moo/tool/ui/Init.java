@@ -10,6 +10,7 @@ import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.SettingForm;
 import com.luoboduner.moo.tool.ui.form.fun.JsonBeautyForm;
 import com.luoboduner.moo.tool.ui.form.fun.QuickNoteForm;
+import com.luoboduner.moo.tool.ui.form.fun.TimeConvertForm;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UIUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
@@ -109,6 +110,7 @@ public class Init {
         SettingForm.init();
         QuickNoteForm.init();
         JsonBeautyForm.init();
+        TimeConvertForm.init();
         AboutForm.init();
 
         // 检查新版版
