@@ -74,7 +74,7 @@ public class JsonBeautyForm {
         jsonBeautyForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
         jsonBeautyForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
 
-        initNoteListTable();
+        initListTable();
 
         initTextAreaFont();
 
@@ -89,7 +89,7 @@ public class JsonBeautyForm {
         jsonBeautyForm.getJsonBeautyPanel().updateUI();
     }
 
-    public static void initNoteListTable() {
+    public static void initListTable() {
         String[] headerNames = {"id", "名称"};
         DefaultTableModel model = new DefaultTableModel(null, headerNames);
         jsonBeautyForm.getNoteListTable().setModel(model);

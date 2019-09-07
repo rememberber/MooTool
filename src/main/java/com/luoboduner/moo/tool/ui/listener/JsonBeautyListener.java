@@ -1,6 +1,5 @@
 package com.luoboduner.moo.tool.ui.listener;
 
-import cn.hutool.core.exceptions.ExceptionUtil;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.json.JSONUtil;
 import com.luoboduner.moo.tool.App;
@@ -16,7 +15,6 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.text.JTextComponent;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.KeyEvent;
@@ -89,7 +87,7 @@ public class JsonBeautyListener {
                 tJsonBeauty.setModifiedTime(now);
                 if (tJsonBeauty.getId() == null) {
                     jsonBeautyMapper.insert(tJsonBeauty);
-                    JsonBeautyForm.initNoteListTable();
+                    JsonBeautyForm.initListTable();
                     selectedName = name;
                 } else {
                     jsonBeautyMapper.updateByPrimaryKey(tJsonBeauty);
@@ -140,7 +138,7 @@ public class JsonBeautyListener {
                         tJsonBeauty.setModifiedTime(now);
 
                         jsonBeautyMapper.insert(tJsonBeauty);
-                        JsonBeautyForm.initNoteListTable();
+                        JsonBeautyForm.initListTable();
                         selectedName = name;
                     }
                 }
@@ -171,7 +169,7 @@ public class JsonBeautyListener {
                             tableModel.removeRow(selectedRow);
                         }
                         selectedName = null;
-                        JsonBeautyForm.initNoteListTable();
+                        JsonBeautyForm.initListTable();
                     }
                 }
             } catch (Exception e1) {
@@ -301,7 +299,7 @@ public class JsonBeautyListener {
                         jsonBeautyMapper.updateByPrimaryKeySelective(tJsonBeauty);
                     } catch (Exception e) {
                         JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
-                        JsonBeautyForm.initNoteListTable();
+                        JsonBeautyForm.initListTable();
                         log.error(e.toString());
                     }
                 }
