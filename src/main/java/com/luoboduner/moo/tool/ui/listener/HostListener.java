@@ -2,8 +2,8 @@ package com.luoboduner.moo.tool.ui.listener;
 
 import cn.hutool.core.thread.ThreadUtil;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
-import com.luoboduner.moo.tool.domain.TQuickNote;
+import com.luoboduner.moo.tool.dao.THostMapper;
+import com.luoboduner.moo.tool.domain.THost;
 import com.luoboduner.moo.tool.ui.form.fun.HostForm;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
@@ -33,7 +33,7 @@ import java.util.Date;
 @Slf4j
 public class HostListener {
 
-    private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
+    private static THostMapper hostMapper = MybatisUtil.getSqlSession().getMapper(THostMapper.class);
 
     public static String selectedName;
 
@@ -46,21 +46,21 @@ public class HostListener {
             }
             String name = JOptionPane.showInputDialog("名称", selectedName);
             if (StringUtils.isNotBlank(name)) {
-                TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
-                if (tQuickNote == null) {
-                    tQuickNote = new TQuickNote();
+                THost tHost = hostMapper.selectByName(name);
+                if (tHost == null) {
+                    tHost = new THost();
                 }
                 String now = SqliteUtil.nowDateForSqlite();
-                tQuickNote.setName(name);
-                tQuickNote.setContent(HostForm.getInstance().getTextArea().getText());
-                tQuickNote.setCreateTime(now);
-                tQuickNote.setModifiedTime(now);
-                if (tQuickNote.getId() == null) {
-                    quickNoteMapper.insert(tQuickNote);
+                tHost.setName(name);
+                tHost.setContent(HostForm.getInstance().getTextArea().getText());
+                tHost.setCreateTime(now);
+                tHost.setModifiedTime(now);
+                if (tHost.getId() == null) {
+                    hostMapper.insert(tHost);
                     HostForm.initNoteListTable();
                     selectedName = name;
                 } else {
-                    quickNoteMapper.updateByPrimaryKey(tQuickNote);
+                    hostMapper.updateByPrimaryKey(tHost);
                 }
 
             }
@@ -74,8 +74,8 @@ public class HostListener {
                     int selectedRow = hostForm.getNoteListTable().getSelectedRow();
                     String name = hostForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
                     selectedName = name;
-                    TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
-                    hostForm.getTextArea().setText(tQuickNote.getContent());
+                    THost tHost = hostMapper.selectByName(name);
+                    hostForm.getTextArea().setText(tHost.getContent());
                 });
                 super.mousePressed(e);
             }
@@ -92,22 +92,22 @@ public class HostListener {
                 if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
                     String now = SqliteUtil.nowDateForSqlite();
                     if (selectedName != null) {
-                        TQuickNote tQuickNote = new TQuickNote();
-                        tQuickNote.setName(selectedName);
-                        tQuickNote.setContent(hostForm.getTextArea().getText());
-                        tQuickNote.setModifiedTime(now);
+                        THost tHost = new THost();
+                        tHost.setName(selectedName);
+                        tHost.setContent(hostForm.getTextArea().getText());
+                        tHost.setModifiedTime(now);
 
-                        quickNoteMapper.updateByName(tQuickNote);
+                        hostMapper.updateByName(tHost);
                     } else {
                         String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
                         String name = JOptionPane.showInputDialog("名称", tempName);
-                        TQuickNote tQuickNote = new TQuickNote();
-                        tQuickNote.setName(name);
-                        tQuickNote.setContent(hostForm.getTextArea().getText());
-                        tQuickNote.setCreateTime(now);
-                        tQuickNote.setModifiedTime(now);
+                        THost tHost = new THost();
+                        tHost.setName(name);
+                        tHost.setContent(hostForm.getTextArea().getText());
+                        tHost.setCreateTime(now);
+                        tHost.setModifiedTime(now);
 
-                        quickNoteMapper.insert(tQuickNote);
+                        hostMapper.insert(tHost);
                         HostForm.initNoteListTable();
                         selectedName = name;
                     }
@@ -134,7 +134,7 @@ public class HostListener {
                         for (int i = selectedRows.length; i > 0; i--) {
                             int selectedRow = hostForm.getNoteListTable().getSelectedRow();
                             Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
-                            quickNoteMapper.deleteByPrimaryKey(id);
+                            hostMapper.deleteByPrimaryKey(id);
 
                             tableModel.removeRow(selectedRow);
                         }
@@ -262,11 +262,11 @@ public class HostListener {
                     int selectedRow = hostForm.getNoteListTable().getSelectedRow();
                     int noteId = Integer.parseInt(String.valueOf(hostForm.getNoteListTable().getValueAt(selectedRow, 0)));
                     String noteName = String.valueOf(hostForm.getNoteListTable().getValueAt(selectedRow, 1));
-                    TQuickNote tQuickNote = new TQuickNote();
-                    tQuickNote.setId(noteId);
-                    tQuickNote.setName(noteName);
+                    THost tHost = new THost();
+                    tHost.setId(noteId);
+                    tHost.setName(noteName);
                     try {
-                        quickNoteMapper.updateByPrimaryKeySelective(tQuickNote);
+                        hostMapper.updateByPrimaryKeySelective(tHost);
                     } catch (Exception e) {
                         JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
                         HostForm.initNoteListTable();

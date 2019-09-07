@@ -4,10 +4,10 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
-import com.luoboduner.moo.tool.domain.TQuickNote;
+import com.luoboduner.moo.tool.dao.THostMapper;
+import com.luoboduner.moo.tool.domain.THost;
 import com.luoboduner.moo.tool.ui.UiConsts;
-import com.luoboduner.moo.tool.ui.listener.QuickNoteListener;
+import com.luoboduner.moo.tool.ui.listener.HostListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
@@ -47,7 +47,7 @@ public class HostForm {
     private JButton wrapButton;
 
     private static HostForm hostForm;
-    private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
+    private static THostMapper hostMapper = MybatisUtil.getSqlSession().getMapper(THostMapper.class);
 
     private HostForm() {
         UndoUtil.register(this);
@@ -99,17 +99,17 @@ public class HostForm {
 
         Object[] data;
 
-        List<TQuickNote> quickNoteList = quickNoteMapper.selectAll();
-        for (TQuickNote tQuickNote : quickNoteList) {
+        List<THost> hostList = hostMapper.selectAll();
+        for (THost tHost : hostList) {
             data = new Object[2];
-            data[0] = tQuickNote.getId();
-            data[1] = tQuickNote.getName();
+            data[0] = tHost.getId();
+            data[1] = tHost.getName();
             model.addRow(data);
         }
-        if (quickNoteList.size() > 0) {
-            hostForm.getTextArea().setText(quickNoteList.get(0).getContent());
+        if (hostList.size() > 0) {
+            hostForm.getTextArea().setText(hostList.get(0).getContent());
             hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
-            QuickNoteListener.selectedName = quickNoteList.get(0).getName();
+            HostListener.selectedName = hostList.get(0).getName();
         }
     }
 

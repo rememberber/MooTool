@@ -2,6 +2,8 @@ package com.luoboduner.moo.tool.dao;
 
 import com.luoboduner.moo.tool.domain.THost;
 
+import java.util.List;
+
 public interface THostMapper {
     int deleteByPrimaryKey(Integer id);
 
@@ -14,4 +16,10 @@ public interface THostMapper {
     int updateByPrimaryKeySelective(THost record);
 
     int updateByPrimaryKey(THost record);
+
+    List<THost> selectAll();
+
+    THost selectByName(String name);
+
+    int updateByName(THost tHost);
 }

@@ -1,7 +1,6 @@
 package com.luoboduner.moo.tool.dao;
 
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
-import com.luoboduner.moo.tool.domain.TQuickNote;
 
 import java.util.List;
 
