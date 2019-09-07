@@ -55,7 +55,7 @@ public class HostListener {
                 tHost.setModifiedTime(now);
                 if (tHost.getId() == null) {
                     hostMapper.insert(tHost);
-                    HostForm.initNoteListTable();
+                    HostForm.initListTable();
                     selectedName = name;
                 } else {
                     hostMapper.updateByPrimaryKey(tHost);
@@ -106,7 +106,7 @@ public class HostListener {
                         tHost.setModifiedTime(now);
 
                         hostMapper.insert(tHost);
-                        HostForm.initNoteListTable();
+                        HostForm.initListTable();
                         selectedName = name;
                     }
                 }
@@ -137,7 +137,7 @@ public class HostListener {
                             tableModel.removeRow(selectedRow);
                         }
                         selectedName = null;
-                        HostForm.initNoteListTable();
+                        HostForm.initListTable();
                     }
                 }
             } catch (Exception e1) {
@@ -234,7 +234,7 @@ public class HostListener {
                         hostMapper.updateByPrimaryKeySelective(tHost);
                     } catch (Exception e) {
                         JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
-                        HostForm.initNoteListTable();
+                        HostForm.initListTable();
                         log.error(e.toString());
                     }
                 }

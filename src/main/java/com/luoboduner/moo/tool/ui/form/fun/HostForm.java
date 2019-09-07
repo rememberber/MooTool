@@ -37,6 +37,7 @@ public class HostForm {
     private JButton addButton;
     private JPanel deletePanel;
     private JScrollPane scrollPane;
+    private JButton button1;
 
     private static HostForm hostForm;
     private static THostMapper hostMapper = MybatisUtil.getSqlSession().getMapper(THostMapper.class);
@@ -58,7 +59,7 @@ public class HostForm {
         hostForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
         hostForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
 
-        initNoteListTable();
+        initListTable();
 
         hostForm.getDeletePanel().setVisible(false);
         hostForm.getTextArea().grabFocus();
@@ -71,7 +72,7 @@ public class HostForm {
         hostForm.getHostPanel().updateUI();
     }
 
-    public static void initNoteListTable() {
+    public static void initListTable() {
         String[] headerNames = {"id", "名称"};
         DefaultTableModel model = new DefaultTableModel(null, headerNames);
         hostForm.getNoteListTable().setModel(model);
@@ -140,10 +141,10 @@ public class HostForm {
         panel2.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane.setRightComponent(panel2);
         final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(1, 3, new Insets(0, 10, 5, 5), -1, -1));
+        panel3.setLayout(new GridLayoutManager(1, 4, new Insets(0, 10, 5, 5), -1, -1));
         panel2.add(panel3, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         saveButton = new JButton();
-        saveButton.setIcon(new ImageIcon(getClass().getResource("/icon/menu-saveall_dark.png")));
+        saveButton.setIcon(new ImageIcon(getClass().getResource("/icon/save.png")));
         saveButton.setText("");
         saveButton.setToolTipText("保存");
         panel3.add(saveButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -154,6 +155,10 @@ public class HostForm {
         addButton.setText("");
         addButton.setToolTipText("新建");
         panel3.add(addButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        button1 = new JButton();
+        button1.setIcon(new ImageIcon(getClass().getResource("/icon/check.png")));
+        button1.setText("");
+        panel3.add(button1, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         scrollPane = new JScrollPane();
         panel2.add(scrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         textArea = new JTextArea();

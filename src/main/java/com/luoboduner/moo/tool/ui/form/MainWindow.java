@@ -89,7 +89,7 @@ public class MainWindow {
         tabbedPane.addTab("Json格式化", new ImageIcon(getClass().getResource("/icon/object_dark.png")), jsonBeautyPanel);
         hostPanel = new JPanel();
         hostPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("Host切换", hostPanel);
+        tabbedPane.addTab("Host切换", new ImageIcon(getClass().getResource("/icon/check.png")), hostPanel);
         httpRequestPanel = new JPanel();
         httpRequestPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("HTTP请求", httpRequestPanel);
@@ -101,7 +101,7 @@ public class MainWindow {
         tabbedPane.addTab("二维码生成", panel2);
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("随机/密钥", panel3);
+        tabbedPane.addTab("随机/密钥", new ImageIcon(getClass().getResource("/icon/method.png")), panel3);
         final JPanel panel4 = new JPanel();
         panel4.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("正则表达式", panel4);
@@ -116,7 +116,7 @@ public class MainWindow {
         tabbedPane.addTab("短网址", panel7);
         settingPanel = new JPanel();
         settingPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("设置", settingPanel);
+        tabbedPane.addTab("设置", new ImageIcon(getClass().getResource("/icon/gear.png")), settingPanel);
         aboutPanel = new JPanel();
         aboutPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("关于", new ImageIcon(getClass().getResource("/icon/logo-16.png")), aboutPanel);
