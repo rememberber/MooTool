@@ -110,7 +110,7 @@
                       <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <text value="I learned it before and loved it so much I felt this uncontrollable desire to design and develop for it."/>
+                      <text value="but I still love to design and develop by it."/>
                     </properties>
                   </component>
                   <component id="8da3c" class="javax.swing.JLabel">
@@ -126,7 +126,7 @@
                       <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <text value="I did it finaly, although there are so many same toolsets on webpage."/>
+                      <text value="I did some works finaly, although there are so many same toolsets on webpage."/>
                     </properties>
                   </component>
                   <component id="fb9ce" class="javax.swing.JLabel">
