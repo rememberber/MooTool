@@ -38,11 +38,13 @@ public class HttpRequestListener {
         HttpRequestForm httpRequestForm = HttpRequestForm.getInstance();
 
         httpRequestForm.getSaveButton().addActionListener(e -> {
-            if (StringUtils.isEmpty(selectedName)) {
+            if (StringUtils.isBlank(selectedName)) {
                 selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
             }
             String name = JOptionPane.showInputDialog("名称", selectedName);
-            HttpRequestForm.save(name);
+            if (StringUtils.isNotBlank(name)) {
+                HttpRequestForm.save(name);
+            }
         });
 
         // 点击左侧表格事件

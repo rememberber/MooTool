@@ -323,6 +323,7 @@ public class HttpRequestForm {
                 msgHttpMapper.updateByMsgName(tMsgHttp);
             } else {
                 msgHttpMapper.insertSelective(tMsgHttp);
+                initListTable();
             }
             JOptionPane.showMessageDialog(App.mainFrame, "保存成功！", "成功",
                     JOptionPane.INFORMATION_MESSAGE);
