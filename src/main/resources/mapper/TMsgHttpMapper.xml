@@ -184,5 +184,6 @@
         select
         <include refid="Base_Column_List"/>
         from t_msg_http
+        order by modified_time desc
     </select>
 </mapper>

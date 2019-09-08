@@ -1,14 +1,20 @@
 package com.luoboduner.moo.tool.ui.form.fun;
 
 import cn.hutool.json.JSONUtil;
+import cn.hutool.log.Log;
+import cn.hutool.log.LogFactory;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TMsgHttpMapper;
 import com.luoboduner.moo.tool.domain.TMsgHttp;
+import com.luoboduner.moo.tool.service.HttpMsgMaker;
+import com.luoboduner.moo.tool.service.HttpMsgSender;
+import com.luoboduner.moo.tool.service.HttpSendResult;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.TableInCellButtonColumn;
+import com.luoboduner.moo.tool.ui.frame.HttpResultFrame;
 import com.luoboduner.moo.tool.ui.listener.HttpRequestListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
@@ -17,6 +23,7 @@ import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableCellRenderer;
@@ -67,11 +74,14 @@ public class HttpRequestForm {
     private JTextField cookieExpiryTextField;
     private JTextArea bodyTextArea;
     private JComboBox bodyTypeComboBox;
+    private JButton sendButton;
 
+    private static final Log logger = LogFactory.get();
     private static HttpRequestForm httpRequestForm;
     private static TMsgHttpMapper msgHttpMapper = MybatisUtil.getSqlSession().getMapper(TMsgHttpMapper.class);
 
     private HttpRequestForm() {
+        UndoUtil.register(this);
         paramAddButton.addActionListener(e -> {
             String[] data = new String[2];
             data[0] = getInstance().getParamNameTextField().getText();
@@ -179,7 +189,28 @@ public class HttpRequestForm {
             bodyTextArea.setForeground(foreColor);
         }
 
-        UndoUtil.register(this);
+        sendButton.addActionListener(e -> {
+            try {
+                HttpMsgMaker.prepare();
+                HttpMsgSender httpMsgSender = new HttpMsgSender();
+                HttpSendResult httpSendResult = httpMsgSender.send();
+
+                if (httpSendResult.isSuccess()) {
+                    HttpResultForm.getInstance().getBodyTextArea().setText(httpSendResult.getBody());
+                    HttpResultForm.getInstance().getHeadersTextArea().setText(httpSendResult.getHeaders());
+                    HttpResultForm.getInstance().getCookiesTextArea().setText(httpSendResult.getCookies());
+                    HttpResultFrame.showResultWindow();
+                } else {
+                    JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + httpSendResult.getInfo(), "失败",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
     }
 
     public static HttpRequestForm getInstance() {
@@ -589,7 +620,7 @@ public class HttpRequestForm {
         panel2.setLayout(new GridLayoutManager(2, 1, new Insets(10, 0, 0, 0), -1, -1));
         splitPane.setRightComponent(panel2);
         final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(1, 3, new Insets(0, 10, 5, 5), -1, -1));
+        panel3.setLayout(new GridLayoutManager(1, 4, new Insets(0, 10, 5, 5), -1, -1));
         panel2.add(panel3, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         saveButton = new JButton();
         saveButton.setIcon(new ImageIcon(getClass().getResource("/icon/menu-saveall_dark.png")));
@@ -603,6 +634,9 @@ public class HttpRequestForm {
         addButton.setText("");
         addButton.setToolTipText("新建");
         panel3.add(addButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        sendButton = new JButton();
+        sendButton.setText("Button");
+        panel3.add(sendButton, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel4 = new JPanel();
         panel4.setLayout(new GridLayoutManager(2, 1, new Insets(8, 10, 10, 10), -1, -1));
         panel2.add(panel4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));

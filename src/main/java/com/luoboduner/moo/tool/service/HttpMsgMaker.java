@@ -32,7 +32,7 @@ public class HttpMsgMaker {
     public static List<HttpRequestForm.NameValueObject> headerList;
     public static List<HttpRequestForm.CookieObject> cookieList;
 
-    public void prepare() {
+    public static void prepare() {
         method = (String) HttpRequestForm.getInstance().getMethodComboBox().getSelectedItem();
         url = HttpRequestForm.getInstance().getUrlTextField().getText().trim();
         body = HttpRequestForm.getInstance().getBodyTextArea().getText();
@@ -93,7 +93,7 @@ public class HttpMsgMaker {
         }
     }
 
-    public HttpMsg makeMsg(String[] msgData) {
+    public HttpMsg makeMsg() {
         HttpMsg httpMsg = new HttpMsg();
 
         httpMsg.setUrl(url);

@@ -47,19 +47,15 @@ public class HttpMsgSender {
         okHttpClient = getOkHttpClient();
     }
 
-    public HttpSendResult send(String[] msgData) {
-        return sendUseOkHttp(msgData);
+    public HttpSendResult send() {
+        return sendUseOkHttp();
     }
 
-    public SendResult asyncSend(String[] msgData) {
-        return null;
-    }
-
-    public HttpSendResult sendUseHutool(String[] msgData) {
+    public HttpSendResult sendUseHutool() {
         HttpSendResult sendResult = new HttpSendResult();
         HttpResponse httpResponse;
         try {
-            HttpMsg httpMsg = httpMsgMaker.makeMsg(msgData);
+            HttpMsg httpMsg = httpMsgMaker.makeMsg();
             HttpRequest httpRequest;
             switch (HttpMsgMaker.method) {
                 case "GET":
@@ -148,10 +144,10 @@ public class HttpMsgSender {
         return sendResult;
     }
 
-    public HttpSendResult sendUseOkHttp(String[] msgData) {
+    public HttpSendResult sendUseOkHttp() {
         HttpSendResult sendResult = new HttpSendResult();
         try {
-            HttpMsg httpMsg = httpMsgMaker.makeMsg(msgData);
+            HttpMsg httpMsg = httpMsgMaker.makeMsg();
 
             Request.Builder requestBuilder = new Request.Builder();
 
@@ -202,7 +198,7 @@ public class HttpMsgSender {
                     requestBuilder.url(httpMsg.getUrl()).head();
                     break;
                 case "OPTIONS":
-                    return sendUseHutool(msgData);
+                    return sendUseHutool();
                 default:
                     requestBuilder.url(httpMsg.getUrl());
             }
@@ -244,7 +240,7 @@ public class HttpMsgSender {
             return sendResult;
         } catch (Exception e) {
             sendResult.setSuccess(false);
-            sendResult.setInfo(e.getMessage());
+            sendResult.setInfo(e.toString());
             log.error(e.toString());
             return sendResult;
         }
