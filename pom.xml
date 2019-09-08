@@ -31,6 +31,7 @@
         <junit.version>4.12</junit.version>
         <commons-lang3.version>3.9</commons-lang3.version>
         <guava.version>28.0-jre</guava.version>
+        <okhttp.version>4.0.1</okhttp.version>
     </properties>
 
     <dependencies>
@@ -121,6 +122,11 @@
             <version>${guava.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.squareup.okhttp3</groupId>
+            <artifactId>okhttp</artifactId>
+            <version>${okhttp.version}</version>
+        </dependency>
     </dependencies>
 
     <build>

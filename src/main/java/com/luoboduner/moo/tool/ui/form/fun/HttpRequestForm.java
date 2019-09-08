@@ -212,11 +212,11 @@ public class HttpRequestForm {
 
         // Params=====================================
         initParamTable();
-        List<HttpMsgForm.NameValueObject> params = JSONUtil.toList(JSONUtil.parseArray(tMsgHttp.getParams()), HttpMsgForm.NameValueObject.class);
+        List<NameValueObject> params = JSONUtil.toList(JSONUtil.parseArray(tMsgHttp.getParams()), NameValueObject.class);
         String[] headerNames = {"Name", "Value", ""};
         Object[][] cellData = new String[params.size()][headerNames.length];
         for (int i = 0; i < params.size(); i++) {
-            HttpMsgForm.NameValueObject nameValueObject = params.get(i);
+            NameValueObject nameValueObject = params.get(i);
             cellData[i][0] = nameValueObject.getName();
             cellData[i][1] = nameValueObject.getValue();
         }
@@ -233,10 +233,10 @@ public class HttpRequestForm {
         paramTableColumnModel.getColumn(2).setMaxWidth(46);
         // Headers=====================================
         initHeaderTable();
-        List<HttpMsgForm.NameValueObject> headers = JSONUtil.toList(JSONUtil.parseArray(tMsgHttp.getHeaders()), HttpMsgForm.NameValueObject.class);
+        List<NameValueObject> headers = JSONUtil.toList(JSONUtil.parseArray(tMsgHttp.getHeaders()), NameValueObject.class);
         cellData = new String[headers.size()][headerNames.length];
         for (int i = 0; i < headers.size(); i++) {
-            HttpMsgForm.NameValueObject nameValueObject = headers.get(i);
+            NameValueObject nameValueObject = headers.get(i);
             cellData[i][0] = nameValueObject.getName();
             cellData[i][1] = nameValueObject.getValue();
         }
@@ -253,11 +253,11 @@ public class HttpRequestForm {
         headerTableColumnModel.getColumn(2).setMaxWidth(46);
         // Cookies=====================================
         initCookieTable();
-        List<HttpMsgForm.CookieObject> cookies = JSONUtil.toList(JSONUtil.parseArray(tMsgHttp.getCookies()), HttpMsgForm.CookieObject.class);
+        List<CookieObject> cookies = JSONUtil.toList(JSONUtil.parseArray(tMsgHttp.getCookies()), CookieObject.class);
         headerNames = new String[]{"Name", "Value", "Domain", "Path", "Expiry", ""};
         cellData = new String[cookies.size()][headerNames.length];
         for (int i = 0; i < cookies.size(); i++) {
-            HttpMsgForm.CookieObject cookieObject = cookies.get(i);
+            CookieObject cookieObject = cookies.get(i);
             cellData[i][0] = cookieObject.getName();
             cellData[i][1] = cookieObject.getValue();
             cellData[i][2] = cookieObject.getDomain();
