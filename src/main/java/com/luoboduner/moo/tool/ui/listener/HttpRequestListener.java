@@ -6,7 +6,6 @@ import com.luoboduner.moo.tool.dao.TMsgHttpMapper;
 import com.luoboduner.moo.tool.domain.TMsgHttp;
 import com.luoboduner.moo.tool.ui.form.fun.HttpRequestForm;
 import com.luoboduner.moo.tool.util.MybatisUtil;
-import com.luoboduner.moo.tool.util.SqliteUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -43,24 +42,7 @@ public class HttpRequestListener {
                 selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
             }
             String name = JOptionPane.showInputDialog("名称", selectedName);
-            if (StringUtils.isNotBlank(name)) {
-                TMsgHttp msgHttp = msgHttpMapper.selectByMsgName(name);
-                if (msgHttp == null) {
-                    msgHttp = new TMsgHttp();
-                }
-                String now = SqliteUtil.nowDateForSqlite();
-                msgHttp.setMsgName(name);
-                msgHttp.setCreateTime(now);
-                msgHttp.setModifiedTime(now);
-                if (msgHttp.getId() == null) {
-                    msgHttpMapper.insert(msgHttp);
-                    HttpRequestForm.initNoteListTable();
-                    selectedName = name;
-                } else {
-                    msgHttpMapper.updateByPrimaryKey(msgHttp);
-                }
-
-            }
+            HttpRequestForm.save(name);
         });
 
         // 点击左侧表格事件
@@ -97,7 +79,7 @@ public class HttpRequestListener {
                             tableModel.removeRow(selectedRow);
                         }
                         selectedName = null;
-                        HttpRequestForm.initNoteListTable();
+                        HttpRequestForm.initListTable();
                     }
                 }
             } catch (Exception e1) {
@@ -109,6 +91,7 @@ public class HttpRequestListener {
 
         // 添加按钮事件
         httpRequestForm.getAddButton().addActionListener(e -> {
+            HttpRequestForm.clearAllField();
         });
 
         // 左侧列表鼠标点击事件（显示下方删除按钮）
@@ -164,7 +147,7 @@ public class HttpRequestListener {
                         msgHttpMapper.updateByPrimaryKeySelective(tMsgHttp);
                     } catch (Exception e) {
                         JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
-                        HttpRequestForm.initNoteListTable();
+                        HttpRequestForm.initListTable();
                         log.error(e.toString());
                     }
                 }

@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.form.fun;
 
+import cn.hutool.json.JSONUtil;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -7,16 +8,27 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TMsgHttpMapper;
 import com.luoboduner.moo.tool.domain.TMsgHttp;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.TableInCellButtonColumn;
 import com.luoboduner.moo.tool.ui.listener.HttpRequestListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
+import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
+import lombok.Setter;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumnModel;
 import java.awt.*;
+import java.awt.event.ItemEvent;
+import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * <pre>
@@ -60,6 +72,113 @@ public class HttpRequestForm {
     private static TMsgHttpMapper msgHttpMapper = MybatisUtil.getSqlSession().getMapper(TMsgHttpMapper.class);
 
     private HttpRequestForm() {
+        paramAddButton.addActionListener(e -> {
+            String[] data = new String[2];
+            data[0] = getInstance().getParamNameTextField().getText();
+            data[1] = getInstance().getParamValueTextField().getText();
+
+            if (getInstance().getParamTable().getModel().getRowCount() == 0) {
+                initParamTable();
+            }
+
+            DefaultTableModel tableModel = (DefaultTableModel) getInstance().getParamTable().getModel();
+            int rowCount = tableModel.getRowCount();
+
+            Set<String> keySet = new HashSet<>();
+            String keyData;
+            for (int i = 0; i < rowCount; i++) {
+                keyData = (String) tableModel.getValueAt(i, 0);
+                keySet.add(keyData);
+            }
+
+            if (StringUtils.isEmpty(data[0]) || StringUtils.isEmpty(data[1])) {
+                JOptionPane.showMessageDialog(App.mainFrame, "Name和Value不能为空！", "提示",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } else if (keySet.contains(data[0])) {
+                JOptionPane.showMessageDialog(App.mainFrame, "Name不能重复！", "提示",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                tableModel.addRow(data);
+            }
+        });
+
+        headerAddButton.addActionListener(e -> {
+            String[] data = new String[2];
+            data[0] = getInstance().getHeaderNameTextField().getText();
+            data[1] = getInstance().getHeaderValueTextField5().getText();
+
+            if (getInstance().getHeaderTable().getModel().getRowCount() == 0) {
+                initHeaderTable();
+            }
+
+            DefaultTableModel tableModel = (DefaultTableModel) getInstance().getHeaderTable().getModel();
+            int rowCount = tableModel.getRowCount();
+
+            Set<String> keySet = new HashSet<>();
+            String keyData;
+            for (int i = 0; i < rowCount; i++) {
+                keyData = (String) tableModel.getValueAt(i, 0);
+                keySet.add(keyData);
+            }
+
+            if (StringUtils.isEmpty(data[0]) || StringUtils.isEmpty(data[1])) {
+                JOptionPane.showMessageDialog(App.mainFrame, "Name和Value不能为空！", "提示",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } else if (keySet.contains(data[0])) {
+                JOptionPane.showMessageDialog(App.mainFrame, "Name不能重复！", "提示",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                tableModel.addRow(data);
+            }
+        });
+
+        cookieAddButton.addActionListener(e -> {
+            String[] data = new String[5];
+            data[0] = getInstance().getCookieNameTextField().getText();
+            data[1] = getInstance().getCookieValueTextField().getText();
+            data[2] = getInstance().getCookieDomainTextField().getText();
+            data[3] = getInstance().getCookiePathTextField().getText();
+            data[4] = getInstance().getCookieExpiryTextField().getText();
+
+            if (getInstance().getCookieTable().getModel().getRowCount() == 0) {
+                initCookieTable();
+            }
+
+            DefaultTableModel tableModel = (DefaultTableModel) getInstance().getCookieTable().getModel();
+            int rowCount = tableModel.getRowCount();
+
+            Set<String> keySet = new HashSet<>();
+            String keyData;
+            for (int i = 0; i < rowCount; i++) {
+                keyData = (String) tableModel.getValueAt(i, 0);
+                keySet.add(keyData);
+            }
+
+            if (StringUtils.isEmpty(data[0]) || StringUtils.isEmpty(data[1]) || StringUtils.isEmpty(data[4])) {
+                JOptionPane.showMessageDialog(App.mainFrame, "Name、Value、Expiry不能为空！", "提示",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } else if (keySet.contains(data[0])) {
+                JOptionPane.showMessageDialog(App.mainFrame, "Name不能重复！", "提示",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                tableModel.addRow(data);
+            }
+        });
+
+        // 消息类型切换事件
+        methodComboBox.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                switchMethod(e.getItem().toString());
+            }
+        });
+
+        if ("Darcula(推荐)".equals(App.config.getTheme())) {
+            Color bgColor = new Color(43, 43, 43);
+            bodyTextArea.setBackground(bgColor);
+            Color foreColor = new Color(187, 187, 187);
+            bodyTextArea.setForeground(foreColor);
+        }
+
         UndoUtil.register(this);
     }
 
@@ -76,13 +195,13 @@ public class HttpRequestForm {
         httpRequestForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
         httpRequestForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
 
-        initNoteListTable();
+        initListTable();
 
         httpRequestForm.getDeletePanel().setVisible(false);
         httpRequestForm.getHttpRequestPanel().updateUI();
     }
 
-    public static void initNoteListTable() {
+    public static void initListTable() {
         String[] headerNames = {"id", "名称"};
         DefaultTableModel model = new DefaultTableModel(null, headerNames);
         httpRequestForm.getNoteListTable().setModel(model);
@@ -104,6 +223,248 @@ public class HttpRequestForm {
             httpRequestForm.getNoteListTable().setRowSelectionInterval(0, 0);
             HttpRequestListener.selectedName = msgHttpList.get(0).getMsgName();
         }
+    }
+
+    public static void save(String msgName) {
+        boolean existSameMsg = false;
+
+        TMsgHttp tMsgHttp1 = msgHttpMapper.selectByMsgName(msgName);
+        if (tMsgHttp1 != null) {
+            existSameMsg = true;
+        }
+
+        int isCover = JOptionPane.NO_OPTION;
+        if (existSameMsg) {
+            // 如果存在，是否覆盖
+            isCover = JOptionPane.showConfirmDialog(App.mainFrame, "已经存在同名的历史消息，\n是否覆盖？", "确认",
+                    JOptionPane.YES_NO_OPTION);
+        }
+
+        if (!existSameMsg || isCover == JOptionPane.YES_OPTION) {
+            String method = (String) getInstance().getMethodComboBox().getSelectedItem();
+            String url = getInstance().getUrlTextField().getText();
+            String body = getInstance().getBodyTextArea().getText();
+            String bodyType = (String) getInstance().getBodyTypeComboBox().getSelectedItem();
+            String now = SqliteUtil.nowDateForSqlite();
+
+            TMsgHttp tMsgHttp = new TMsgHttp();
+            tMsgHttp.setMsgName(msgName);
+            tMsgHttp.setMethod(method);
+            tMsgHttp.setUrl(url);
+            tMsgHttp.setBody(body);
+            tMsgHttp.setBodyType(bodyType);
+            tMsgHttp.setCreateTime(now);
+            tMsgHttp.setModifiedTime(now);
+
+            // =============params
+            // 如果table为空，则初始化
+            if (getInstance().getParamTable().getModel().getRowCount() == 0) {
+                initParamTable();
+            }
+            // 逐行读取
+            DefaultTableModel paraTableModel = (DefaultTableModel) getInstance().getParamTable().getModel();
+            int rowCount = paraTableModel.getRowCount();
+            List<NameValueObject> params = new ArrayList<>();
+            NameValueObject nameValueObject;
+            for (int i = 0; i < rowCount; i++) {
+                String name = (String) paraTableModel.getValueAt(i, 0);
+                String value = (String) paraTableModel.getValueAt(i, 1);
+                nameValueObject = new NameValueObject();
+                nameValueObject.setName(name);
+                nameValueObject.setValue(value);
+                params.add(nameValueObject);
+            }
+            tMsgHttp.setParams(JSONUtil.toJsonStr(params));
+            // =============headers
+            // 如果table为空，则初始化
+            if (getInstance().getHeaderTable().getModel().getRowCount() == 0) {
+                initHeaderTable();
+            }
+            // 逐行读取
+            DefaultTableModel headerTableModel = (DefaultTableModel) getInstance().getHeaderTable().getModel();
+            rowCount = headerTableModel.getRowCount();
+            List<NameValueObject> headers = new ArrayList<>();
+            for (int i = 0; i < rowCount; i++) {
+                String name = (String) headerTableModel.getValueAt(i, 0);
+                String value = (String) headerTableModel.getValueAt(i, 1);
+                nameValueObject = new NameValueObject();
+                nameValueObject.setName(name);
+                nameValueObject.setValue(value);
+                headers.add(nameValueObject);
+            }
+            tMsgHttp.setHeaders(JSONUtil.toJsonStr(headers));
+            // =============cookies
+            // 如果table为空，则初始化
+            if (getInstance().getCookieTable().getModel().getRowCount() == 0) {
+                initCookieTable();
+            }
+            // 逐行读取
+            DefaultTableModel cookiesTableModel = (DefaultTableModel) getInstance().getCookieTable().getModel();
+            rowCount = cookiesTableModel.getRowCount();
+            List<CookieObject> cookies = new ArrayList<>();
+            CookieObject cookieObject;
+            for (int i = 0; i < rowCount; i++) {
+                String name = (String) cookiesTableModel.getValueAt(i, 0);
+                String value = (String) cookiesTableModel.getValueAt(i, 1);
+                String domain = (String) cookiesTableModel.getValueAt(i, 2);
+                String path = (String) cookiesTableModel.getValueAt(i, 3);
+                String expiry = (String) cookiesTableModel.getValueAt(i, 4);
+                cookieObject = new CookieObject();
+                cookieObject.setName(name);
+                cookieObject.setValue(value);
+                cookieObject.setDomain(domain);
+                cookieObject.setPath(path);
+                cookieObject.setExpiry(expiry);
+                cookies.add(cookieObject);
+            }
+            tMsgHttp.setCookies(JSONUtil.toJsonStr(cookies));
+
+            if (existSameMsg) {
+                msgHttpMapper.updateByMsgName(tMsgHttp);
+            } else {
+                msgHttpMapper.insertSelective(tMsgHttp);
+            }
+            JOptionPane.showMessageDialog(App.mainFrame, "保存成功！", "成功",
+                    JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    /**
+     * 清空所有界面字段
+     */
+    public static void clearAllField() {
+        getInstance().getMethodComboBox().setSelectedIndex(0);
+        getInstance().getUrlTextField().setText("");
+        getInstance().getParamNameTextField().setText("");
+        getInstance().getParamValueTextField().setText("");
+        getInstance().getHeaderNameTextField().setText("");
+        getInstance().getHeaderValueTextField5().setText("");
+        getInstance().getCookieNameTextField().setText("");
+        getInstance().getCookieValueTextField().setText("");
+        getInstance().getCookieDomainTextField().setText("");
+        getInstance().getCookiePathTextField().setText("");
+        getInstance().getCookieExpiryTextField().setText("");
+        getInstance().getBodyTextArea().setText("");
+        getInstance().getBodyTypeComboBox().setSelectedIndex(0);
+        initParamTable();
+        initHeaderTable();
+        initCookieTable();
+    }
+
+    /**
+     * 切换方法
+     *
+     * @param method
+     */
+    private static void switchMethod(String method) {
+        if ("GET".equals(method)) {
+            getInstance().getBodyTextArea().setText("");
+            getInstance().getTabbedPane1().setEnabledAt(3, false);
+        } else {
+            getInstance().getTabbedPane1().setEnabledAt(3, true);
+        }
+    }
+
+    /**
+     * 初始化ParamTable
+     */
+    public static void initParamTable() {
+        JTable paramTable = getInstance().getParamTable();
+        paramTable.setRowHeight(36);
+        String[] headerNames = {"Name", "Value", ""};
+        DefaultTableModel model = new DefaultTableModel(null, headerNames);
+        paramTable.setModel(model);
+        paramTable.updateUI();
+        DefaultTableCellRenderer hr = (DefaultTableCellRenderer) paramTable.getTableHeader().getDefaultRenderer();
+        // 表头列名居左
+        hr.setHorizontalAlignment(DefaultTableCellRenderer.LEFT);
+
+        TableColumnModel tableColumnModel = paramTable.getColumnModel();
+        tableColumnModel.getColumn(headerNames.length - 1).
+                setCellRenderer(new TableInCellButtonColumn(paramTable, headerNames.length - 1));
+        tableColumnModel.getColumn(headerNames.length - 1).
+                setCellEditor(new TableInCellButtonColumn(paramTable, headerNames.length - 1));
+
+        // 设置列宽
+        tableColumnModel.getColumn(headerNames.length - 1).setPreferredWidth(46);
+        tableColumnModel.getColumn(headerNames.length - 1).setMaxWidth(46);
+    }
+
+    /**
+     * 初始化HeaderTable
+     */
+    public static void initHeaderTable() {
+        JTable paramTable = getInstance().getHeaderTable();
+        paramTable.setRowHeight(36);
+        String[] headerNames = {"Name", "Value", ""};
+        DefaultTableModel model = new DefaultTableModel(null, headerNames);
+        paramTable.setModel(model);
+        paramTable.updateUI();
+        DefaultTableCellRenderer hr = (DefaultTableCellRenderer) paramTable.getTableHeader().getDefaultRenderer();
+        // 表头列名居左
+        hr.setHorizontalAlignment(DefaultTableCellRenderer.LEFT);
+
+        TableColumnModel tableColumnModel = paramTable.getColumnModel();
+        tableColumnModel.getColumn(headerNames.length - 1).
+                setCellRenderer(new TableInCellButtonColumn(paramTable, headerNames.length - 1));
+        tableColumnModel.getColumn(headerNames.length - 1).
+                setCellEditor(new TableInCellButtonColumn(paramTable, headerNames.length - 1));
+
+        // 设置列宽
+        tableColumnModel.getColumn(headerNames.length - 1).setPreferredWidth(46);
+        tableColumnModel.getColumn(headerNames.length - 1).setMaxWidth(46);
+    }
+
+    /**
+     * 初始化CookieTable
+     */
+    public static void initCookieTable() {
+        JTable paramTable = getInstance().getCookieTable();
+        paramTable.setRowHeight(36);
+        String[] headerNames = {"Name", "Value", "Domain", "Path", "Expiry", ""};
+        DefaultTableModel model = new DefaultTableModel(null, headerNames);
+        paramTable.setModel(model);
+        paramTable.updateUI();
+        DefaultTableCellRenderer hr = (DefaultTableCellRenderer) paramTable.getTableHeader().getDefaultRenderer();
+        // 表头列名居左
+        hr.setHorizontalAlignment(DefaultTableCellRenderer.LEFT);
+
+        TableColumnModel tableColumnModel = paramTable.getColumnModel();
+        tableColumnModel.getColumn(headerNames.length - 1).
+                setCellRenderer(new TableInCellButtonColumn(paramTable, headerNames.length - 1));
+        tableColumnModel.getColumn(headerNames.length - 1).
+                setCellEditor(new TableInCellButtonColumn(paramTable, headerNames.length - 1));
+
+        // 设置列宽
+        tableColumnModel.getColumn(headerNames.length - 1).setPreferredWidth(46);
+        tableColumnModel.getColumn(headerNames.length - 1).setMaxWidth(46);
+    }
+
+    @Getter
+    @Setter
+    public static class NameValueObject implements Serializable {
+        private static final long serialVersionUID = -3828939498243146605L;
+
+        private String name;
+
+        private String value;
+    }
+
+    @Getter
+    @Setter
+    public static class CookieObject implements Serializable {
+
+        private static final long serialVersionUID = 810193087944524307L;
+
+        private String name;
+
+        private String value;
+
+        private String domain;
+
+        private String path;
+
+        private String expiry;
     }
 
     {
