@@ -55,7 +55,7 @@ public class HttpRequestListener {
                     int selectedRow = httpRequestForm.getNoteListTable().getSelectedRow();
                     String name = httpRequestForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
                     selectedName = name;
-                    TMsgHttp tMsgHttp = msgHttpMapper.selectByMsgName(name);
+                    HttpRequestForm.initMsg(name);
                 });
                 super.mousePressed(e);
             }

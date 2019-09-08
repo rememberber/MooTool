@@ -201,6 +201,82 @@ public class HttpRequestForm {
         httpRequestForm.getHttpRequestPanel().updateUI();
     }
 
+    public static void initMsg(String msgName) {
+        clearAllField();
+        TMsgHttp tMsgHttp = msgHttpMapper.selectByMsgName(msgName);
+        getInstance().getMethodComboBox().setSelectedItem(tMsgHttp.getMethod());
+        getInstance().getUrlTextField().setText(tMsgHttp.getUrl());
+        getInstance().getBodyTextArea().setText(tMsgHttp.getBody());
+        getInstance().getBodyTypeComboBox().setSelectedItem(tMsgHttp.getBodyType());
+        switchMethod(tMsgHttp.getMethod());
+
+        // Params=====================================
+        initParamTable();
+        List<HttpMsgForm.NameValueObject> params = JSONUtil.toList(JSONUtil.parseArray(tMsgHttp.getParams()), HttpMsgForm.NameValueObject.class);
+        String[] headerNames = {"Name", "Value", ""};
+        Object[][] cellData = new String[params.size()][headerNames.length];
+        for (int i = 0; i < params.size(); i++) {
+            HttpMsgForm.NameValueObject nameValueObject = params.get(i);
+            cellData[i][0] = nameValueObject.getName();
+            cellData[i][1] = nameValueObject.getValue();
+        }
+        DefaultTableModel model = new DefaultTableModel(cellData, headerNames);
+        getInstance().getParamTable().setModel(model);
+        TableColumnModel paramTableColumnModel = getInstance().getParamTable().getColumnModel();
+        paramTableColumnModel.getColumn(headerNames.length - 1).
+                setCellRenderer(new TableInCellButtonColumn(getInstance().getParamTable(), headerNames.length - 1));
+        paramTableColumnModel.getColumn(headerNames.length - 1).
+                setCellEditor(new TableInCellButtonColumn(getInstance().getParamTable(), headerNames.length - 1));
+
+        // 设置列宽
+        paramTableColumnModel.getColumn(2).setPreferredWidth(46);
+        paramTableColumnModel.getColumn(2).setMaxWidth(46);
+        // Headers=====================================
+        initHeaderTable();
+        List<HttpMsgForm.NameValueObject> headers = JSONUtil.toList(JSONUtil.parseArray(tMsgHttp.getHeaders()), HttpMsgForm.NameValueObject.class);
+        cellData = new String[headers.size()][headerNames.length];
+        for (int i = 0; i < headers.size(); i++) {
+            HttpMsgForm.NameValueObject nameValueObject = headers.get(i);
+            cellData[i][0] = nameValueObject.getName();
+            cellData[i][1] = nameValueObject.getValue();
+        }
+        model = new DefaultTableModel(cellData, headerNames);
+        getInstance().getHeaderTable().setModel(model);
+        TableColumnModel headerTableColumnModel = getInstance().getHeaderTable().getColumnModel();
+        headerTableColumnModel.getColumn(headerNames.length - 1).
+                setCellRenderer(new TableInCellButtonColumn(getInstance().getHeaderTable(), headerNames.length - 1));
+        headerTableColumnModel.getColumn(headerNames.length - 1).
+                setCellEditor(new TableInCellButtonColumn(getInstance().getHeaderTable(), headerNames.length - 1));
+
+        // 设置列宽
+        headerTableColumnModel.getColumn(2).setPreferredWidth(46);
+        headerTableColumnModel.getColumn(2).setMaxWidth(46);
+        // Cookies=====================================
+        initCookieTable();
+        List<HttpMsgForm.CookieObject> cookies = JSONUtil.toList(JSONUtil.parseArray(tMsgHttp.getCookies()), HttpMsgForm.CookieObject.class);
+        headerNames = new String[]{"Name", "Value", "Domain", "Path", "Expiry", ""};
+        cellData = new String[cookies.size()][headerNames.length];
+        for (int i = 0; i < cookies.size(); i++) {
+            HttpMsgForm.CookieObject cookieObject = cookies.get(i);
+            cellData[i][0] = cookieObject.getName();
+            cellData[i][1] = cookieObject.getValue();
+            cellData[i][2] = cookieObject.getDomain();
+            cellData[i][3] = cookieObject.getPath();
+            cellData[i][4] = cookieObject.getExpiry();
+        }
+        model = new DefaultTableModel(cellData, headerNames);
+        getInstance().getCookieTable().setModel(model);
+        TableColumnModel cookieTableColumnModel = getInstance().getCookieTable().getColumnModel();
+        cookieTableColumnModel.getColumn(headerNames.length - 1).
+                setCellRenderer(new TableInCellButtonColumn(getInstance().getCookieTable(), headerNames.length - 1));
+        cookieTableColumnModel.getColumn(headerNames.length - 1).
+                setCellEditor(new TableInCellButtonColumn(getInstance().getCookieTable(), headerNames.length - 1));
+
+        // 设置列宽
+        cookieTableColumnModel.getColumn(5).setPreferredWidth(46);
+        cookieTableColumnModel.getColumn(5).setMaxWidth(46);
+    }
+
     public static void initListTable() {
         String[] headerNames = {"id", "名称"};
         DefaultTableModel model = new DefaultTableModel(null, headerNames);
@@ -220,6 +296,7 @@ public class HttpRequestForm {
             model.addRow(data);
         }
         if (msgHttpList.size() > 0) {
+            initMsg(msgHttpList.get(0).getMsgName());
             httpRequestForm.getNoteListTable().setRowSelectionInterval(0, 0);
             HttpRequestListener.selectedName = msgHttpList.get(0).getMsgName();
         }
