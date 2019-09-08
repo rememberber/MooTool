@@ -4,10 +4,10 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
-import com.luoboduner.moo.tool.domain.TQuickNote;
+import com.luoboduner.moo.tool.dao.TMsgHttpMapper;
+import com.luoboduner.moo.tool.domain.TMsgHttp;
 import com.luoboduner.moo.tool.ui.UiConsts;
-import com.luoboduner.moo.tool.ui.listener.QuickNoteListener;
+import com.luoboduner.moo.tool.ui.listener.HttpRequestListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
@@ -57,7 +57,7 @@ public class HttpRequestForm {
     private JComboBox bodyTypeComboBox;
 
     private static HttpRequestForm httpRequestForm;
-    private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
+    private static TMsgHttpMapper msgHttpMapper = MybatisUtil.getSqlSession().getMapper(TMsgHttpMapper.class);
 
     private HttpRequestForm() {
         UndoUtil.register(this);
@@ -93,16 +93,16 @@ public class HttpRequestForm {
 
         Object[] data;
 
-        List<TQuickNote> quickNoteList = quickNoteMapper.selectAll();
-        for (TQuickNote tQuickNote : quickNoteList) {
+        List<TMsgHttp> msgHttpList = msgHttpMapper.selectAll();
+        for (TMsgHttp tMsgHttp : msgHttpList) {
             data = new Object[2];
-            data[0] = tQuickNote.getId();
-            data[1] = tQuickNote.getName();
+            data[0] = tMsgHttp.getId();
+            data[1] = tMsgHttp.getMsgName();
             model.addRow(data);
         }
-        if (quickNoteList.size() > 0) {
+        if (msgHttpList.size() > 0) {
             httpRequestForm.getNoteListTable().setRowSelectionInterval(0, 0);
-            QuickNoteListener.selectedName = quickNoteList.get(0).getName();
+            HttpRequestListener.selectedName = msgHttpList.get(0).getMsgName();
         }
     }
 

@@ -17,7 +17,7 @@ public interface TMsgHttpMapper {
 
     int updateByPrimaryKey(TMsgHttp record);
 
-    List<TMsgHttp> selectByMsgName(String msgName);
+    TMsgHttp selectByMsgName(String msgName);
 
     int updateByMsgName(TMsgHttp tMsgHttp);
 

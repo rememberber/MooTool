@@ -2,8 +2,8 @@ package com.luoboduner.moo.tool.ui.listener;
 
 import cn.hutool.core.thread.ThreadUtil;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
-import com.luoboduner.moo.tool.domain.TQuickNote;
+import com.luoboduner.moo.tool.dao.TMsgHttpMapper;
+import com.luoboduner.moo.tool.domain.TMsgHttp;
 import com.luoboduner.moo.tool.ui.form.fun.HttpRequestForm;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
@@ -31,7 +31,7 @@ import java.util.Date;
 @Slf4j
 public class HttpRequestListener {
 
-    private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
+    private static TMsgHttpMapper msgHttpMapper = MybatisUtil.getSqlSession().getMapper(TMsgHttpMapper.class);
 
     public static String selectedName;
 
@@ -44,20 +44,20 @@ public class HttpRequestListener {
             }
             String name = JOptionPane.showInputDialog("名称", selectedName);
             if (StringUtils.isNotBlank(name)) {
-                TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
-                if (tQuickNote == null) {
-                    tQuickNote = new TQuickNote();
+                TMsgHttp msgHttp = msgHttpMapper.selectByMsgName(name);
+                if (msgHttp == null) {
+                    msgHttp = new TMsgHttp();
                 }
                 String now = SqliteUtil.nowDateForSqlite();
-                tQuickNote.setName(name);
-                tQuickNote.setCreateTime(now);
-                tQuickNote.setModifiedTime(now);
-                if (tQuickNote.getId() == null) {
-                    quickNoteMapper.insert(tQuickNote);
+                msgHttp.setMsgName(name);
+                msgHttp.setCreateTime(now);
+                msgHttp.setModifiedTime(now);
+                if (msgHttp.getId() == null) {
+                    msgHttpMapper.insert(msgHttp);
                     HttpRequestForm.initNoteListTable();
                     selectedName = name;
                 } else {
-                    quickNoteMapper.updateByPrimaryKey(tQuickNote);
+                    msgHttpMapper.updateByPrimaryKey(msgHttp);
                 }
 
             }
@@ -71,7 +71,7 @@ public class HttpRequestListener {
                     int selectedRow = httpRequestForm.getNoteListTable().getSelectedRow();
                     String name = httpRequestForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
                     selectedName = name;
-                    TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
+                    TMsgHttp tMsgHttp = msgHttpMapper.selectByMsgName(name);
                 });
                 super.mousePressed(e);
             }
@@ -92,7 +92,7 @@ public class HttpRequestListener {
                         for (int i = selectedRows.length; i > 0; i--) {
                             int selectedRow = httpRequestForm.getNoteListTable().getSelectedRow();
                             Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
-                            quickNoteMapper.deleteByPrimaryKey(id);
+                            msgHttpMapper.deleteByPrimaryKey(id);
 
                             tableModel.removeRow(selectedRow);
                         }
@@ -157,11 +157,11 @@ public class HttpRequestListener {
                     int selectedRow = httpRequestForm.getNoteListTable().getSelectedRow();
                     int noteId = Integer.parseInt(String.valueOf(httpRequestForm.getNoteListTable().getValueAt(selectedRow, 0)));
                     String noteName = String.valueOf(httpRequestForm.getNoteListTable().getValueAt(selectedRow, 1));
-                    TQuickNote tQuickNote = new TQuickNote();
-                    tQuickNote.setId(noteId);
-                    tQuickNote.setName(noteName);
+                    TMsgHttp tMsgHttp = new TMsgHttp();
+                    tMsgHttp.setId(noteId);
+                    tMsgHttp.setMsgName(noteName);
                     try {
-                        quickNoteMapper.updateByPrimaryKeySelective(tQuickNote);
+                        msgHttpMapper.updateByPrimaryKeySelective(tMsgHttp);
                     } catch (Exception e) {
                         JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
                         HttpRequestForm.initNoteListTable();

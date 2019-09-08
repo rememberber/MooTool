@@ -15,9 +15,9 @@
         <result column="modified_time" jdbcType="VARCHAR" property="modifiedTime"/>
     </resultMap>
     <sql id="Base_Column_List">
-    id, msg_name, method, url, params, headers, cookies, body, body_type, create_time, 
+        id, msg_name, method, url, params, headers, cookies, body, body_type, create_time,
     modified_time
-  </sql>
+    </sql>
     <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List"/>
@@ -25,19 +25,20 @@
         where id = #{id,jdbcType=INTEGER}
     </select>
     <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
-    delete from t_msg_http
-    where id = #{id,jdbcType=INTEGER}
-  </delete>
+        delete
+        from t_msg_http
+        where id = #{id,jdbcType=INTEGER}
+    </delete>
     <insert id="insert" parameterType="com.luoboduner.moo.tool.domain.TMsgHttp">
-    insert into t_msg_http (id, msg_name, method, 
-      url, params, headers, 
-      cookies, body, body_type, 
-      create_time, modified_time)
-    values (#{id,jdbcType=INTEGER}, #{msgName,jdbcType=VARCHAR}, #{method,jdbcType=VARCHAR}, 
-      #{url,jdbcType=VARCHAR}, #{params,jdbcType=VARCHAR}, #{headers,jdbcType=VARCHAR}, 
-      #{cookies,jdbcType=VARCHAR}, #{body,jdbcType=VARCHAR}, #{bodyType,jdbcType=VARCHAR}, 
-      #{createTime,jdbcType=VARCHAR}, #{modifiedTime,jdbcType=VARCHAR})
-  </insert>
+        insert into t_msg_http (id, msg_name, method,
+                                url, params, headers,
+                                cookies, body, body_type,
+                                create_time, modified_time)
+        values (#{id,jdbcType=INTEGER}, #{msgName,jdbcType=VARCHAR}, #{method,jdbcType=VARCHAR},
+                #{url,jdbcType=VARCHAR}, #{params,jdbcType=VARCHAR}, #{headers,jdbcType=VARCHAR},
+                #{cookies,jdbcType=VARCHAR}, #{body,jdbcType=VARCHAR}, #{bodyType,jdbcType=VARCHAR},
+                #{createTime,jdbcType=VARCHAR}, #{modifiedTime,jdbcType=VARCHAR})
+    </insert>
     <insert id="insertSelective" parameterType="com.luoboduner.moo.tool.domain.TMsgHttp">
         insert into t_msg_http
         <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -148,19 +149,19 @@
         where id = #{id,jdbcType=INTEGER}
     </update>
     <update id="updateByPrimaryKey" parameterType="com.luoboduner.moo.tool.domain.TMsgHttp">
-    update t_msg_http
-    set msg_name = #{msgName,jdbcType=VARCHAR},
-      method = #{method,jdbcType=VARCHAR},
-      url = #{url,jdbcType=VARCHAR},
-      params = #{params,jdbcType=VARCHAR},
-      headers = #{headers,jdbcType=VARCHAR},
-      cookies = #{cookies,jdbcType=VARCHAR},
-      body = #{body,jdbcType=VARCHAR},
-      body_type = #{bodyType,jdbcType=VARCHAR},
-      create_time = #{createTime,jdbcType=VARCHAR},
-      modified_time = #{modifiedTime,jdbcType=VARCHAR}
-    where id = #{id,jdbcType=INTEGER}
-  </update>
+        update t_msg_http
+        set msg_name      = #{msgName,jdbcType=VARCHAR},
+            method        = #{method,jdbcType=VARCHAR},
+            url           = #{url,jdbcType=VARCHAR},
+            params        = #{params,jdbcType=VARCHAR},
+            headers       = #{headers,jdbcType=VARCHAR},
+            cookies       = #{cookies,jdbcType=VARCHAR},
+            body          = #{body,jdbcType=VARCHAR},
+            body_type     = #{bodyType,jdbcType=VARCHAR},
+            create_time   = #{createTime,jdbcType=VARCHAR},
+            modified_time = #{modifiedTime,jdbcType=VARCHAR}
+        where id = #{id,jdbcType=INTEGER}
+    </update>
     <select id="selectByMsgName" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List"/>
