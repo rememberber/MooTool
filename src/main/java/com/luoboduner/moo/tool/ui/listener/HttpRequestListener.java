@@ -13,8 +13,6 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import java.awt.*;
-import java.awt.event.ItemEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
@@ -52,7 +50,6 @@ public class HttpRequestListener {
                 }
                 String now = SqliteUtil.nowDateForSqlite();
                 tQuickNote.setName(name);
-                tQuickNote.setContent(HttpRequestForm.getInstance().getTextArea().getText());
                 tQuickNote.setCreateTime(now);
                 tQuickNote.setModifiedTime(now);
                 if (tQuickNote.getId() == null) {
@@ -75,47 +72,8 @@ public class HttpRequestListener {
                     String name = httpRequestForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
                     selectedName = name;
                     TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
-                    httpRequestForm.getTextArea().setText(tQuickNote.getContent());
                 });
                 super.mousePressed(e);
-            }
-        });
-
-        // 文本域按键事件
-        httpRequestForm.getTextArea().addKeyListener(new KeyListener() {
-            @Override
-            public void keyReleased(KeyEvent arg0) {
-            }
-
-            @Override
-            public void keyPressed(KeyEvent evt) {
-                if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
-                    String now = SqliteUtil.nowDateForSqlite();
-                    if (selectedName != null) {
-                        TQuickNote tQuickNote = new TQuickNote();
-                        tQuickNote.setName(selectedName);
-                        tQuickNote.setContent(httpRequestForm.getTextArea().getText());
-                        tQuickNote.setModifiedTime(now);
-
-                        quickNoteMapper.updateByName(tQuickNote);
-                    } else {
-                        String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-                        String name = JOptionPane.showInputDialog("名称", tempName);
-                        TQuickNote tQuickNote = new TQuickNote();
-                        tQuickNote.setName(name);
-                        tQuickNote.setContent(httpRequestForm.getTextArea().getText());
-                        tQuickNote.setCreateTime(now);
-                        tQuickNote.setModifiedTime(now);
-
-                        quickNoteMapper.insert(tQuickNote);
-                        HttpRequestForm.initNoteListTable();
-                        selectedName = name;
-                    }
-                }
-            }
-
-            @Override
-            public void keyTyped(KeyEvent arg0) {
             }
         });
 
@@ -149,43 +107,8 @@ public class HttpRequestListener {
             }
         }));
 
-        // 字体名称下拉框事件
-        httpRequestForm.getFontNameComboBox().addItemListener(e -> {
-            if (e.getStateChange() == ItemEvent.SELECTED) {
-                String fontName = e.getItem().toString();
-                int fontSize = Integer.parseInt(httpRequestForm.getFontSizeComboBox().getSelectedItem().toString());
-                Font font = new Font(fontName, Font.PLAIN, fontSize);
-                httpRequestForm.getTextArea().setFont(font);
-
-                App.config.setQuickNoteFontName(fontName);
-                App.config.setQuickNoteFontSize(fontSize);
-                App.config.save();
-            }
-        });
-
-        // 字体大小下拉框事件
-        httpRequestForm.getFontSizeComboBox().addItemListener(e -> {
-            if (e.getStateChange() == ItemEvent.SELECTED) {
-                int fontSize = Integer.parseInt(e.getItem().toString());
-                String fontName = httpRequestForm.getFontNameComboBox().getSelectedItem().toString();
-                Font font = new Font(fontName, Font.PLAIN, fontSize);
-                httpRequestForm.getTextArea().setFont(font);
-
-                App.config.setQuickNoteFontName(fontName);
-                App.config.setQuickNoteFontSize(fontSize);
-                App.config.save();
-            }
-        });
-
-        // 自动换行按钮事件
-        httpRequestForm.getWrapButton().addActionListener(e -> {
-            httpRequestForm.getTextArea().setLineWrap(!httpRequestForm.getTextArea().getLineWrap());
-        });
-
         // 添加按钮事件
         httpRequestForm.getAddButton().addActionListener(e -> {
-            httpRequestForm.getTextArea().setText("");
-            selectedName = null;
         });
 
         // 左侧列表鼠标点击事件（显示下方删除按钮）
@@ -193,34 +116,6 @@ public class HttpRequestListener {
             @Override
             public void mouseClicked(MouseEvent e) {
                 httpRequestForm.getDeletePanel().setVisible(true);
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-
-            }
-        });
-
-        // 文本域鼠标点击事件，隐藏删除按钮
-        httpRequestForm.getTextArea().addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                httpRequestForm.getDeletePanel().setVisible(false);
             }
 
             @Override

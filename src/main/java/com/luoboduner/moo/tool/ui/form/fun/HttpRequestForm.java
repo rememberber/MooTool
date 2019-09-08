@@ -12,13 +12,10 @@ import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.List;
 
 /**
@@ -34,30 +31,17 @@ public class HttpRequestForm {
     private JPanel httpRequestPanel;
     private JTable noteListTable;
     private JButton deleteButton;
-    private JTextArea textArea;
     private JButton saveButton;
     private JSplitPane splitPane;
     private JButton addButton;
-    private JComboBox fontNameComboBox;
-    private JComboBox fontSizeComboBox;
-    private JTextField findTextField;
-    private JButton findButton;
     private JPanel deletePanel;
     private JScrollPane scrollPane;
-    private JButton wrapButton;
 
     private static HttpRequestForm httpRequestForm;
     private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
 
     private HttpRequestForm() {
         UndoUtil.register(this);
-
-        findButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JOptionPane.showMessageDialog(App.mainFrame, "功能开发中，敬请期待");
-            }
-        });
     }
 
     public static HttpRequestForm getInstance() {
@@ -75,16 +59,7 @@ public class HttpRequestForm {
 
         initNoteListTable();
 
-        initTextAreaFont();
-
         httpRequestForm.getDeletePanel().setVisible(false);
-        httpRequestForm.getTextArea().grabFocus();
-        if ("Darcula(推荐)".equals(App.config.getTheme())) {
-            Color bgColor = new Color(30, 30, 30);
-            httpRequestForm.getTextArea().setBackground(bgColor);
-            Color foreColor = new Color(187, 187, 187);
-            httpRequestForm.getTextArea().setForeground(foreColor);
-        }
         httpRequestForm.getHttpRequestPanel().updateUI();
     }
 
@@ -107,38 +82,8 @@ public class HttpRequestForm {
             model.addRow(data);
         }
         if (quickNoteList.size() > 0) {
-            httpRequestForm.getTextArea().setText(quickNoteList.get(0).getContent());
             httpRequestForm.getNoteListTable().setRowSelectionInterval(0, 0);
             QuickNoteListener.selectedName = quickNoteList.get(0).getName();
-        }
-    }
-
-    private static void initTextAreaFont() {
-        getSysFontList();
-
-        String fontName = App.config.getQuickNoteFontName();
-        int fontSize = App.config.getQuickNoteFontSize();
-        if (fontSize == 0) {
-            fontSize = httpRequestForm.getTextArea().getFont().getSize() + 2;
-        }
-        httpRequestForm.getFontNameComboBox().setSelectedItem(fontName);
-        httpRequestForm.getFontSizeComboBox().setSelectedItem(String.valueOf(fontSize));
-
-        Font font = new Font(fontName, Font.PLAIN, fontSize);
-        httpRequestForm.getTextArea().setFont(font);
-    }
-
-    /**
-     * 获取系统字体列表
-     */
-    private static void getSysFontList() {
-        httpRequestForm.getFontNameComboBox().removeAllItems();
-        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-        String[] fonts = ge.getAvailableFontFamilyNames();
-        for (String font : fonts) {
-            if (StringUtils.isNotBlank(font)) {
-                httpRequestForm.getFontNameComboBox().addItem(font);
-            }
         }
     }
 
@@ -161,7 +106,7 @@ public class HttpRequestForm {
         httpRequestPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane = new JSplitPane();
         splitPane.setContinuousLayout(true);
-        splitPane.setDividerLocation(74);
+        splitPane.setDividerLocation(0);
         splitPane.setDividerSize(2);
         httpRequestPanel.add(splitPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         final JPanel panel1 = new JPanel();
@@ -186,72 +131,22 @@ public class HttpRequestForm {
         panel2.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane.setRightComponent(panel2);
         final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(1, 8, new Insets(0, 10, 5, 5), -1, -1));
+        panel3.setLayout(new GridLayoutManager(1, 3, new Insets(0, 10, 5, 5), -1, -1));
         panel2.add(panel3, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         saveButton = new JButton();
         saveButton.setIcon(new ImageIcon(getClass().getResource("/icon/menu-saveall_dark.png")));
         saveButton.setText("");
         saveButton.setToolTipText("保存");
-        panel3.add(saveButton, new GridConstraints(0, 7, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel3.add(saveButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
-        panel3.add(spacer2, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        panel3.add(spacer2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         addButton = new JButton();
         addButton.setIcon(new ImageIcon(getClass().getResource("/icon/add.png")));
         addButton.setText("");
         addButton.setToolTipText("新建");
-        panel3.add(addButton, new GridConstraints(0, 6, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        fontNameComboBox = new JComboBox();
-        fontNameComboBox.setToolTipText("设置字体");
-        panel3.add(fontNameComboBox, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        fontSizeComboBox = new JComboBox();
-        final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
-        defaultComboBoxModel1.addElement("5");
-        defaultComboBoxModel1.addElement("6");
-        defaultComboBoxModel1.addElement("7");
-        defaultComboBoxModel1.addElement("8");
-        defaultComboBoxModel1.addElement("9");
-        defaultComboBoxModel1.addElement("10");
-        defaultComboBoxModel1.addElement("11");
-        defaultComboBoxModel1.addElement("12");
-        defaultComboBoxModel1.addElement("13");
-        defaultComboBoxModel1.addElement("14");
-        defaultComboBoxModel1.addElement("15");
-        defaultComboBoxModel1.addElement("16");
-        defaultComboBoxModel1.addElement("17");
-        defaultComboBoxModel1.addElement("18");
-        defaultComboBoxModel1.addElement("19");
-        defaultComboBoxModel1.addElement("20");
-        defaultComboBoxModel1.addElement("21");
-        defaultComboBoxModel1.addElement("22");
-        defaultComboBoxModel1.addElement("23");
-        defaultComboBoxModel1.addElement("24");
-        defaultComboBoxModel1.addElement("25");
-        defaultComboBoxModel1.addElement("26");
-        defaultComboBoxModel1.addElement("27");
-        defaultComboBoxModel1.addElement("28");
-        defaultComboBoxModel1.addElement("29");
-        defaultComboBoxModel1.addElement("30");
-        fontSizeComboBox.setModel(defaultComboBoxModel1);
-        fontSizeComboBox.setToolTipText("字号");
-        panel3.add(fontSizeComboBox, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        findTextField = new JTextField();
-        findTextField.setToolTipText("输入搜索内容");
-        panel3.add(findTextField, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-        findButton = new JButton();
-        findButton.setIcon(new ImageIcon(getClass().getResource("/icon/find_dark.png")));
-        findButton.setText("");
-        findButton.setToolTipText("查找");
-        panel3.add(findButton, new GridConstraints(0, 5, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
-        wrapButton = new JButton();
-        wrapButton.setIcon(new ImageIcon(getClass().getResource("/icon/toggleSoftWrap_dark.png")));
-        wrapButton.setText("");
-        wrapButton.setToolTipText("自动换行");
-        panel3.add(wrapButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel3.add(addButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         scrollPane = new JScrollPane();
         panel2.add(scrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        textArea = new JTextArea();
-        textArea.setMargin(new Insets(20, 20, 20, 20));
-        scrollPane.setViewportView(textArea);
     }
 
     /**
