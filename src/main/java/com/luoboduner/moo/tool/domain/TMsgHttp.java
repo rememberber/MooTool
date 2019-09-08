@@ -5,8 +5,6 @@ import java.io.Serializable;
 public class TMsgHttp implements Serializable {
     private Integer id;
 
-    private Integer msgType;
-
     private String msgName;
 
     private String method;
@@ -21,11 +19,11 @@ public class TMsgHttp implements Serializable {
 
     private String body;
 
+    private String bodyType;
+
     private String createTime;
 
     private String modifiedTime;
-
-    private String bodyType;
 
     private static final long serialVersionUID = 1L;
 
@@ -35,14 +33,6 @@ public class TMsgHttp implements Serializable {
 
     public void setId(Integer id) {
         this.id = id;
-    }
-
-    public Integer getMsgType() {
-        return msgType;
-    }
-
-    public void setMsgType(Integer msgType) {
-        this.msgType = msgType;
     }
 
     public String getMsgName() {
@@ -101,6 +91,14 @@ public class TMsgHttp implements Serializable {
         this.body = body == null ? null : body.trim();
     }
 
+    public String getBodyType() {
+        return bodyType;
+    }
+
+    public void setBodyType(String bodyType) {
+        this.bodyType = bodyType == null ? null : bodyType.trim();
+    }
+
     public String getCreateTime() {
         return createTime;
     }
@@ -115,13 +113,5 @@ public class TMsgHttp implements Serializable {
 
     public void setModifiedTime(String modifiedTime) {
         this.modifiedTime = modifiedTime == null ? null : modifiedTime.trim();
-    }
-
-    public String getBodyType() {
-        return bodyType;
-    }
-
-    public void setBodyType(String bodyType) {
-        this.bodyType = bodyType == null ? null : bodyType.trim();
     }
 }

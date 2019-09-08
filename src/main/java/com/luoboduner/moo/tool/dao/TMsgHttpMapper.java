@@ -1,7 +1,6 @@
 package com.luoboduner.moo.tool.dao;
 
 import com.luoboduner.moo.tool.domain.TMsgHttp;
-import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -18,9 +17,9 @@ public interface TMsgHttpMapper {
 
     int updateByPrimaryKey(TMsgHttp record);
 
-    List<TMsgHttp> selectByMsgTypeAndMsgName(@Param("msgType") int msgType, @Param("msgName") String msgName);
+    List<TMsgHttp> selectByMsgName(String msgName);
 
-    int updateByMsgTypeAndMsgName(TMsgHttp tMsgHttp);
+    int updateByMsgName(TMsgHttp tMsgHttp);
 
-    List<TMsgHttp> selectByMsgType(int msgType);
+    List<TMsgHttp> selectAll();
 }
