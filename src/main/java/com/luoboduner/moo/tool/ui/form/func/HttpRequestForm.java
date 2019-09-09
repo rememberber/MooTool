@@ -1,4 +1,4 @@
-package com.luoboduner.moo.tool.ui.form.fun;
+package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.json.JSONUtil;
 import cn.hutool.log.Log;

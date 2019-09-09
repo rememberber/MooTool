@@ -2,11 +2,11 @@ package com.luoboduner.moo.tool.ui.form;
 
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.luoboduner.moo.tool.ui.form.fun.HostForm;
-import com.luoboduner.moo.tool.ui.form.fun.HttpRequestForm;
-import com.luoboduner.moo.tool.ui.form.fun.JsonBeautyForm;
-import com.luoboduner.moo.tool.ui.form.fun.QuickNoteForm;
-import com.luoboduner.moo.tool.ui.form.fun.TimeConvertForm;
+import com.luoboduner.moo.tool.ui.form.func.HostForm;
+import com.luoboduner.moo.tool.ui.form.func.HttpRequestForm;
+import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
+import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
+import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
 import lombok.Getter;
 
 import javax.swing.*;

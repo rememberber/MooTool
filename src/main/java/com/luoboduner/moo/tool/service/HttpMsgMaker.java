@@ -3,7 +3,7 @@ package com.luoboduner.moo.tool.service;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.luoboduner.moo.tool.bean.HttpMsg;
-import com.luoboduner.moo.tool.ui.form.fun.HttpRequestForm;
+import com.luoboduner.moo.tool.ui.form.func.HttpRequestForm;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.time.DateUtils;
 

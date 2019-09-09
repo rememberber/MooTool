@@ -1,4 +1,4 @@
-package com.luoboduner.moo.tool.ui.form.fun;
+package com.luoboduner.moo.tool.ui.form.func;
 
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;

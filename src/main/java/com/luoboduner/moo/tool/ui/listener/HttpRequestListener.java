@@ -4,7 +4,7 @@ import cn.hutool.core.thread.ThreadUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TMsgHttpMapper;
 import com.luoboduner.moo.tool.domain.TMsgHttp;
-import com.luoboduner.moo.tool.ui.form.fun.HttpRequestForm;
+import com.luoboduner.moo.tool.ui.form.func.HttpRequestForm;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;

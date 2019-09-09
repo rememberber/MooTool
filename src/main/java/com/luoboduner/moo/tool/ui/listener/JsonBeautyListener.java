@@ -5,7 +5,7 @@ import cn.hutool.json.JSONUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
-import com.luoboduner.moo.tool.ui.form.fun.JsonBeautyForm;
+import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import lombok.extern.slf4j.Slf4j;

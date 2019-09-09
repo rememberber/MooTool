@@ -3,7 +3,7 @@ package com.luoboduner.moo.tool.ui.frame;
 import com.apple.eawt.Application;
 import com.google.common.collect.Lists;
 import com.luoboduner.moo.tool.ui.UiConsts;
-import com.luoboduner.moo.tool.ui.form.fun.HttpResultForm;
+import com.luoboduner.moo.tool.ui.form.func.HttpResultForm;
 import com.luoboduner.moo.tool.util.ComponentUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 

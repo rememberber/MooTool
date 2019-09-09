@@ -4,7 +4,7 @@ import cn.hutool.core.thread.ThreadUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.THostMapper;
 import com.luoboduner.moo.tool.domain.THost;
-import com.luoboduner.moo.tool.ui.form.fun.HostForm;
+import com.luoboduner.moo.tool.ui.form.func.HostForm;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import lombok.extern.slf4j.Slf4j;

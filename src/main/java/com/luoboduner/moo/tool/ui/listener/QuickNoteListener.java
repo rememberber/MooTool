@@ -4,7 +4,7 @@ import cn.hutool.core.thread.ThreadUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
-import com.luoboduner.moo.tool.ui.form.fun.QuickNoteForm;
+import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import lombok.extern.slf4j.Slf4j;
