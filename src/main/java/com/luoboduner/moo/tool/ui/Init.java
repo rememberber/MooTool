@@ -7,6 +7,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
 import com.luoboduner.moo.tool.ui.form.AboutForm;
 import com.luoboduner.moo.tool.ui.form.SettingForm;
+import com.luoboduner.moo.tool.ui.form.func.EnCodeForm;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
 import com.luoboduner.moo.tool.ui.form.func.HttpRequestForm;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
@@ -115,6 +116,7 @@ public class Init {
         HostForm.init();
         HttpRequestForm.init();
         AboutForm.init();
+        EnCodeForm.init();
 
         // 检查新版版
         if (App.config.isAutoCheckUpdate()) {
