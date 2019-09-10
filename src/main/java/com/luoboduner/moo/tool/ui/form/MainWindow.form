@@ -80,10 +80,10 @@
             <border type="none"/>
             <children/>
           </grid>
-          <grid id="d8eac" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="d8eac" binding="cryptoPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <tabbedpane title="随机/密钥" icon="icon/method.png"/>
+              <tabbedpane title="加解密/随机" icon="icon/method.png"/>
             </constraints>
             <properties/>
             <border type="none"/>
