@@ -48,7 +48,7 @@
                 <properties/>
                 <border type="empty" title="MooTool">
                   <font size="20" style="1"/>
-                  <title-color color="-3840"/>
+                  <title-color color="-7883"/>
                 </border>
                 <children>
                   <component id="45c73" class="javax.swing.JLabel">
