@@ -6,6 +6,7 @@ import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
 import com.luoboduner.moo.tool.ui.form.AboutForm;
+import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.SettingForm;
 import com.luoboduner.moo.tool.ui.form.func.CryptoForm;
 import com.luoboduner.moo.tool.ui.form.func.EnCodeForm;
@@ -15,15 +16,21 @@ import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
 import com.luoboduner.moo.tool.ui.form.func.QrCodeForm;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
+import com.luoboduner.moo.tool.ui.listener.FrameListener;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UIUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.jb2011.lnf.beautyeye.BeautyEyeLNFHelper;
 
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.Enumeration;
 
 /**
@@ -140,5 +147,81 @@ public class Init {
 
         App.config.setProps(FONT_SIZE_INIT_PROP, "true");
         App.config.save();
+    }
+
+    /**
+     * 初始化系统托盘
+     */
+    public static void initTray() {
+
+        try {
+            if (SystemTray.isSupported()) {
+                SystemTray tray = SystemTray.getSystemTray();
+
+                PopupMenu popupMenu = new PopupMenu();
+
+                MenuItem openItem = new MenuItem("MooTool");
+                MenuItem exitItem = new MenuItem("Quit");
+
+                openItem.addActionListener(e -> {
+                    App.mainFrame.setExtendedState(JFrame.NORMAL);
+                });
+                exitItem.addActionListener(e -> {
+                    FrameListener.saveBeforeExit();
+                    App.config.setRecentTabIndex(MainWindow.getInstance().getTabbedPane().getSelectedIndex());
+                    App.config.save();
+                    App.sqlSession.close();
+                    System.exit(0);
+                });
+
+                popupMenu.add(openItem);
+                popupMenu.add(exitItem);
+
+                TrayIcon trayIcon = new TrayIcon(UiConsts.IMAGE_LOGO_64, "MooTool", popupMenu);
+                trayIcon.setImageAutoSize(true);
+
+                trayIcon.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        System.out.println("托盘图标被右键点击");
+                    }
+                });
+                trayIcon.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        switch (e.getButton()) {
+                            case MouseEvent.BUTTON1: {
+                                System.out.println("托盘图标被鼠标左键被点击");
+                                break;
+                            }
+                            case MouseEvent.BUTTON2: {
+                                System.out.println("托盘图标被鼠标中键被点击");
+                                break;
+                            }
+                            case MouseEvent.BUTTON3: {
+                                System.out.println("托盘图标被鼠标右键被点击");
+                                break;
+                            }
+                            default: {
+                                break;
+                            }
+                        }
+                    }
+                });
+
+                // 添加托盘图标到系统托盘
+                try {
+                    tray.add(trayIcon);
+                    trayIcon.displayMessage("MooTool", "MooTool已在系统托盘展示", TrayIcon.MessageType.INFO);
+                } catch (AWTException e) {
+                    e.printStackTrace();
+                    logger.error(ExceptionUtils.getStackTrace(e));
+                }
+
+            }
+
+        } catch (Exception e) {
+            logger.error(ExceptionUtils.getStackTrace(e));
+        }
     }
 }

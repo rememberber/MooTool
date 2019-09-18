@@ -55,6 +55,6 @@ public class App {
         mainFrame.addListeners();
         mainFrame.remove(loadingPanel);
         Init.initFontSize();
-
+        Init.initTray();
     }
 }
