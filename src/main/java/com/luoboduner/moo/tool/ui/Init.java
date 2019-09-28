@@ -27,8 +27,6 @@ import org.jb2011.lnf.beautyeye.BeautyEyeLNFHelper;
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Enumeration;
@@ -165,6 +163,8 @@ public class Init {
 
                 openItem.addActionListener(e -> {
                     App.mainFrame.setExtendedState(JFrame.NORMAL);
+                    App.mainFrame.setVisible(true);
+                    App.mainFrame.requestFocus();
                 });
                 exitItem.addActionListener(e -> {
                     FrameListener.saveBeforeExit();
@@ -180,26 +180,27 @@ public class Init {
                 TrayIcon trayIcon = new TrayIcon(UiConsts.IMAGE_LOGO_64, "MooTool", popupMenu);
                 trayIcon.setImageAutoSize(true);
 
-                trayIcon.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent e) {
-                        System.out.println("托盘图标被右键点击");
-                    }
+                trayIcon.addActionListener(e -> {
+                    App.mainFrame.setExtendedState(JFrame.NORMAL);
+                    App.mainFrame.setVisible(true);
+                    App.mainFrame.requestFocus();
                 });
                 trayIcon.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mouseClicked(MouseEvent e) {
                         switch (e.getButton()) {
                             case MouseEvent.BUTTON1: {
-                                System.out.println("托盘图标被鼠标左键被点击");
+                                App.mainFrame.setExtendedState(JFrame.NORMAL);
+                                App.mainFrame.setVisible(true);
+                                App.mainFrame.requestFocus();
                                 break;
                             }
                             case MouseEvent.BUTTON2: {
-                                System.out.println("托盘图标被鼠标中键被点击");
+                                logger.debug("托盘图标被鼠标中键被点击");
                                 break;
                             }
                             case MouseEvent.BUTTON3: {
-                                System.out.println("托盘图标被鼠标右键被点击");
+                                logger.debug("托盘图标被鼠标右键被点击");
                                 break;
                             }
                             default: {
@@ -209,7 +210,6 @@ public class Init {
                     }
                 });
 
-                // 添加托盘图标到系统托盘
                 try {
                     tray.add(trayIcon);
                     trayIcon.displayMessage("MooTool", "MooTool已在系统托盘展示", TrayIcon.MessageType.INFO);
