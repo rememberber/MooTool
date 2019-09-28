@@ -157,6 +157,7 @@ public class Init {
                 SystemTray tray = SystemTray.getSystemTray();
 
                 PopupMenu popupMenu = new PopupMenu();
+                popupMenu.setFont(App.mainFrame.getContentPane().getFont());
 
                 MenuItem openItem = new MenuItem("MooTool");
                 MenuItem exitItem = new MenuItem("Quit");
@@ -212,7 +213,7 @@ public class Init {
 
                 try {
                     tray.add(trayIcon);
-                    trayIcon.displayMessage("MooTool", "MooTool已在系统托盘展示", TrayIcon.MessageType.INFO);
+                    trayIcon.displayMessage("MooTool", "MooTool已显示在系统托盘", TrayIcon.MessageType.INFO);
                 } catch (AWTException e) {
                     e.printStackTrace();
                     logger.error(ExceptionUtils.getStackTrace(e));
