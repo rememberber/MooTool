@@ -60,6 +60,7 @@ public class TimeConvertForm {
                 }
                 String localTime = DateFormatUtils.format(new Date(timeStamp), TIME_FORMAT);
                 gmtTextField.setText(localTime);
+                gmtTextField.grabFocus();
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
@@ -76,6 +77,7 @@ public class TimeConvertForm {
                     timeStamp = timeStamp / 1000;
                 }
                 timestampTextField.setText(String.valueOf(timeStamp));
+                timestampTextField.grabFocus();
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
