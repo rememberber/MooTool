@@ -156,8 +156,8 @@ public class Init {
             if (SystemTray.isSupported()) {
                 App.tray = SystemTray.getSystemTray();
 
-                PopupMenu popupMenu = new PopupMenu();
-                popupMenu.setFont(App.mainFrame.getContentPane().getFont());
+                App.popupMenu = new PopupMenu();
+                App.popupMenu.setFont(App.mainFrame.getContentPane().getFont());
 
                 MenuItem openItem = new MenuItem("MooTool");
                 MenuItem exitItem = new MenuItem("Quit");
@@ -175,10 +175,11 @@ public class Init {
                     System.exit(0);
                 });
 
-                popupMenu.add(openItem);
-                popupMenu.add(exitItem);
+                App.popupMenu.add(openItem);
+                App.popupMenu.addSeparator();
+                App.popupMenu.add(exitItem);
 
-                App.trayIcon = new TrayIcon(UiConsts.IMAGE_LOGO_64, "MooTool", popupMenu);
+                App.trayIcon = new TrayIcon(UiConsts.IMAGE_LOGO_64, "MooTool", App.popupMenu);
                 App.trayIcon.setImageAutoSize(true);
 
                 App.trayIcon.addActionListener(e -> {

@@ -34,6 +34,8 @@ public class App {
 
     public static TrayIcon trayIcon;
 
+    public static PopupMenu popupMenu;
+
     public static void main(String[] args) {
         Init.initTheme();
         mainFrame = new MainFrame();
@@ -59,6 +61,5 @@ public class App {
         mainFrame.addListeners();
         mainFrame.remove(loadingPanel);
         Init.initFontSize();
-        Init.initTray();
     }
 }

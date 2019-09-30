@@ -8,7 +8,10 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.THostMapper;
 import com.luoboduner.moo.tool.domain.THost;
+import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.form.MainWindow;
+import com.luoboduner.moo.tool.ui.listener.FrameListener;
 import com.luoboduner.moo.tool.ui.listener.HostListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
@@ -85,6 +88,7 @@ public class HostForm {
     }
 
     public static void init() {
+        Init.initTray();
         hostForm = getInstance();
 
         hostForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
@@ -119,13 +123,41 @@ public class HostForm {
         data[1] = SYS_CURRENT_HOST_NAME;
         model.addRow(data);
 
+        App.popupMenu.removeAll();
+        MenuItem openItem = new MenuItem("MooTool");
+        MenuItem exitItem = new MenuItem("Quit");
+
+        openItem.addActionListener(e -> {
+            App.mainFrame.setExtendedState(JFrame.NORMAL);
+            App.mainFrame.setVisible(true);
+            App.mainFrame.requestFocus();
+        });
+        exitItem.addActionListener(e -> {
+            FrameListener.saveBeforeExit();
+            App.config.setRecentTabIndex(MainWindow.getInstance().getTabbedPane().getSelectedIndex());
+            App.config.save();
+            App.sqlSession.close();
+            System.exit(0);
+        });
+
+        App.popupMenu.add(openItem);
+        App.popupMenu.addSeparator();
+
         List<THost> hostList = hostMapper.selectAll();
+        MenuItem menuItem;
         for (THost tHost : hostList) {
             data = new Object[2];
             data[0] = tHost.getId();
             data[1] = tHost.getName();
             model.addRow(data);
+            menuItem = new MenuItem(tHost.getName());
+            menuItem.addActionListener(e -> {
+            });
+            App.popupMenu.add(menuItem);
         }
+        App.popupMenu.addSeparator();
+        App.popupMenu.add(exitItem);
+
         if (hostList.size() > 0) {
             hostForm.getTextArea().setText(hostList.get(0).getContent());
             hostForm.getTextArea().setEditable(true);
