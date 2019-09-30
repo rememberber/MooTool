@@ -154,7 +154,7 @@ public class Init {
 
         try {
             if (SystemTray.isSupported()) {
-                SystemTray tray = SystemTray.getSystemTray();
+                App.tray = SystemTray.getSystemTray();
 
                 PopupMenu popupMenu = new PopupMenu();
                 popupMenu.setFont(App.mainFrame.getContentPane().getFont());
@@ -178,15 +178,15 @@ public class Init {
                 popupMenu.add(openItem);
                 popupMenu.add(exitItem);
 
-                TrayIcon trayIcon = new TrayIcon(UiConsts.IMAGE_LOGO_64, "MooTool", popupMenu);
-                trayIcon.setImageAutoSize(true);
+                App.trayIcon = new TrayIcon(UiConsts.IMAGE_LOGO_64, "MooTool", popupMenu);
+                App.trayIcon.setImageAutoSize(true);
 
-                trayIcon.addActionListener(e -> {
+                App.trayIcon.addActionListener(e -> {
                     App.mainFrame.setExtendedState(JFrame.NORMAL);
                     App.mainFrame.setVisible(true);
                     App.mainFrame.requestFocus();
                 });
-                trayIcon.addMouseListener(new MouseAdapter() {
+                App.trayIcon.addMouseListener(new MouseAdapter() {
                     @Override
                     public void mouseClicked(MouseEvent e) {
                         switch (e.getButton()) {
@@ -212,7 +212,7 @@ public class Init {
                 });
 
                 try {
-                    tray.add(trayIcon);
+                    App.tray.add(App.trayIcon);
                 } catch (AWTException e) {
                     e.printStackTrace();
                     logger.error(ExceptionUtils.getStackTrace(e));

@@ -62,6 +62,9 @@ public class HostForm {
                     File hostFile = FileUtil.file(WIN_HOST_FILE_PATH);
                     String hostText = textArea.getText();
                     FileUtil.writeUtf8String(hostText, hostFile);
+                    if (App.trayIcon != null) {
+                        App.trayIcon.displayMessage("MooTool", HostListener.selectedName + "-Host已切换！", TrayIcon.MessageType.INFO);
+                    }
                 } else {
                     JOptionPane.showMessageDialog(hostPanel, NOT_SUPPORTED_TIPS, "抱歉！", JOptionPane.INFORMATION_MESSAGE);
                 }
