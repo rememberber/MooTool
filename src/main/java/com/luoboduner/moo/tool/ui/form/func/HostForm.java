@@ -46,7 +46,11 @@ public class HostForm {
     private static HostForm hostForm;
     private static THostMapper hostMapper = MybatisUtil.getSqlSession().getMapper(THostMapper.class);
 
-    private static final String WIN_HOST_FILE_PATH = "C:\\Windows\\System32\\drivers\\etc\\hosts";
+    public static final String WIN_HOST_FILE_PATH = "C:\\Windows\\System32\\drivers\\etc\\hosts";
+
+    public static final String NOT_SUPPORTED_TIPS = "目前只支持Windows系统！";
+
+    public static final String SYS_CURRENT_HOST_NAME = "> 系统当前Host内容";
 
     private HostForm() {
         UndoUtil.register(this);
@@ -59,7 +63,7 @@ public class HostForm {
                     String hostText = textArea.getText();
                     FileUtil.writeUtf8String(hostText, hostFile);
                 } else {
-                    JOptionPane.showMessageDialog(hostPanel, "目前只支持Windows系统！", "抱歉！", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(hostPanel, NOT_SUPPORTED_TIPS, "抱歉！", JOptionPane.INFORMATION_MESSAGE);
                 }
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -106,6 +110,11 @@ public class HostForm {
         JTableUtil.hideColumn(hostForm.getNoteListTable(), 0);
 
         Object[] data;
+
+        data = new Object[2];
+        data[0] = -1;
+        data[1] = SYS_CURRENT_HOST_NAME;
+        model.addRow(data);
 
         List<THost> hostList = hostMapper.selectAll();
         for (THost tHost : hostList) {

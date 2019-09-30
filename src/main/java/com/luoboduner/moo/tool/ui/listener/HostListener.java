@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.listener;
 
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.thread.ThreadUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.THostMapper;
@@ -7,6 +8,7 @@ import com.luoboduner.moo.tool.domain.THost;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
+import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -72,8 +74,22 @@ public class HostListener {
                     int selectedRow = hostForm.getNoteListTable().getSelectedRow();
                     String name = hostForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
                     selectedName = name;
-                    THost tHost = hostMapper.selectByName(name);
-                    hostForm.getTextArea().setText(tHost.getContent());
+                    String content = "";
+                    if (HostForm.SYS_CURRENT_HOST_NAME.equals(name)) {
+                        if (SystemUtil.isWindowsOs()) {
+                            content = FileUtil.readUtf8String(HostForm.WIN_HOST_FILE_PATH);
+                        } else {
+                            content = HostForm.NOT_SUPPORTED_TIPS;
+                        }
+                        hostForm.getTextArea().setEditable(false);
+                        hostForm.getSwitchButton().setVisible(false);
+                    } else {
+                        THost tHost = hostMapper.selectByName(name);
+                        content = tHost.getContent();
+                        hostForm.getTextArea().setEditable(true);
+                        hostForm.getSwitchButton().setVisible(true);
+                    }
+                    hostForm.getTextArea().setText(content);
                 });
                 super.mousePressed(e);
             }
