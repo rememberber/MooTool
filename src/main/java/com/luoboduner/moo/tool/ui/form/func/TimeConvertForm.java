@@ -53,6 +53,8 @@ public class TimeConvertForm {
                 long timeStamp = Long.parseLong(timestampTextField.getText());
                 if (String.valueOf(timeStamp).length() >= 13) {
                     unitComboBox.setSelectedItem("毫秒(ms)");
+                } else {
+                    unitComboBox.setSelectedItem("秒(s)");
                 }
                 String unit = (String) unitComboBox.getSelectedItem();
                 if ("秒(s)".equals(unit)) {
