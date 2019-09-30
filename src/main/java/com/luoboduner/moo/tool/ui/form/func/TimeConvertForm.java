@@ -49,13 +49,19 @@ public class TimeConvertForm {
     private TimeConvertForm() {
         UndoUtil.register(this);
         toLocalTimeButton.addActionListener(e -> {
-            long timeStamp = Long.parseLong(timestampTextField.getText());
-            String unit = (String) unitComboBox.getSelectedItem();
-            if ("秒(s)".equals(unit)) {
-                timeStamp = timeStamp * 1000;
+            try {
+                long timeStamp = Long.parseLong(timestampTextField.getText());
+                String unit = (String) unitComboBox.getSelectedItem();
+                if ("秒(s)".equals(unit)) {
+                    timeStamp = timeStamp * 1000;
+                }
+                String localTime = DateFormatUtils.format(new Date(timeStamp), TIME_FORMAT);
+                gmtTextField.setText(localTime);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                logger.error(ExceptionUtils.getStackTrace(ex));
+                JOptionPane.showMessageDialog(timeConvertPanel, ex.getMessage(), "转换失败！", JOptionPane.ERROR_MESSAGE);
             }
-            String localTime = DateFormatUtils.format(new Date(timeStamp), TIME_FORMAT);
-            gmtTextField.setText(localTime);
         });
         toTimestampButton.addActionListener(e -> {
             try {
@@ -70,14 +76,14 @@ public class TimeConvertForm {
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
+                JOptionPane.showMessageDialog(timeConvertPanel, ex.getMessage(), "转换失败！", JOptionPane.ERROR_MESSAGE);
             }
         });
         copyCurrentGmtButton.addActionListener(e -> ThreadUtil.execute(() -> {
             try {
                 copyCurrentGmtButton.setEnabled(false);
                 ClipboardUtil.setStr(currentGmtLabel.getText());
-                JOptionPane.showMessageDialog(timeConvertPanel, "内容已经复制到剪贴板！", "复制成功",
-                        JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(timeConvertPanel, "内容已经复制到剪贴板！", "复制成功", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e1) {
                 logger.error(e1);
             } finally {
@@ -88,8 +94,7 @@ public class TimeConvertForm {
             try {
                 copyCurrentTimestampButton.setEnabled(false);
                 ClipboardUtil.setStr(currentTimestampLabel.getText());
-                JOptionPane.showMessageDialog(timeConvertPanel, "内容已经复制到剪贴板！", "复制成功",
-                        JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(timeConvertPanel, "内容已经复制到剪贴板！", "复制成功", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e1) {
                 logger.error(e1);
             } finally {
@@ -100,8 +105,7 @@ public class TimeConvertForm {
             try {
                 copyGeneratedTimestampButton.setEnabled(false);
                 ClipboardUtil.setStr(timestampTextField.getText());
-                JOptionPane.showMessageDialog(timeConvertPanel, "内容已经复制到剪贴板！", "复制成功",
-                        JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(timeConvertPanel, "内容已经复制到剪贴板！", "复制成功", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e1) {
                 logger.error(e1);
             } finally {
@@ -112,8 +116,7 @@ public class TimeConvertForm {
             try {
                 copyGeneratedLocalTimeButton.setEnabled(false);
                 ClipboardUtil.setStr(gmtTextField.getText());
-                JOptionPane.showMessageDialog(timeConvertPanel, "内容已经复制到剪贴板！", "复制成功",
-                        JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(timeConvertPanel, "内容已经复制到剪贴板！", "复制成功", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e1) {
                 logger.error(e1);
             } finally {
