@@ -1,5 +1,7 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
+import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.thread.ThreadUtil;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -10,12 +12,14 @@ import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.listener.HostListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
+import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.io.File;
 import java.util.List;
 
 /**
@@ -37,13 +41,33 @@ public class HostForm {
     private JButton addButton;
     private JPanel deletePanel;
     private JScrollPane scrollPane;
-    private JButton button1;
+    private JButton switchButton;
 
     private static HostForm hostForm;
     private static THostMapper hostMapper = MybatisUtil.getSqlSession().getMapper(THostMapper.class);
 
+    private static final String WIN_HOST_FILE_PATH = "C:\\Windows\\System32\\drivers\\etc\\hosts";
+
     private HostForm() {
         UndoUtil.register(this);
+
+        switchButton.addActionListener(e -> ThreadUtil.execute(() -> {
+            try {
+                switchButton.setEnabled(false);
+                if (SystemUtil.isWindowsOs()) {
+                    File hostFile = FileUtil.file(WIN_HOST_FILE_PATH);
+                    String hostText = textArea.getText();
+                    FileUtil.writeUtf8String(hostText, hostFile);
+                } else {
+                    JOptionPane.showMessageDialog(hostPanel, "目前只支持Windows系统！", "抱歉！", JOptionPane.INFORMATION_MESSAGE);
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(hostPanel, "需要以管理员身份运行才可以哦！" + ex.getMessage(), "切换失败！", JOptionPane.ERROR_MESSAGE);
+            } finally {
+                switchButton.setEnabled(true);
+            }
+        }));
     }
 
     public static HostForm getInstance() {
@@ -155,10 +179,10 @@ public class HostForm {
         addButton.setText("");
         addButton.setToolTipText("新建");
         panel3.add(addButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        button1 = new JButton();
-        button1.setIcon(new ImageIcon(getClass().getResource("/icon/check.png")));
-        button1.setText("");
-        panel3.add(button1, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        switchButton = new JButton();
+        switchButton.setIcon(new ImageIcon(getClass().getResource("/icon/check.png")));
+        switchButton.setText("");
+        panel3.add(switchButton, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         scrollPane = new JScrollPane();
         panel2.add(scrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         textArea = new JTextArea();

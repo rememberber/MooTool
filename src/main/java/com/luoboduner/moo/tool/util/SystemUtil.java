@@ -18,4 +18,8 @@ public class SystemUtil {
     public static boolean isMacOs() {
         return osName.contains("Mac");
     }
+
+    public static boolean isWindowsOs() {
+        return osName.contains("Windows");
+    }
 }
