@@ -59,25 +59,30 @@ public class HostForm {
         UndoUtil.register(this);
 
         switchButton.addActionListener(e -> ThreadUtil.execute(() -> {
-            try {
-                switchButton.setEnabled(false);
-                if (SystemUtil.isWindowsOs()) {
-                    File hostFile = FileUtil.file(WIN_HOST_FILE_PATH);
-                    String hostText = textArea.getText();
-                    FileUtil.writeUtf8String(hostText, hostFile);
-                    if (App.trayIcon != null) {
-                        App.trayIcon.displayMessage("MooTool", HostListener.selectedName + "-Host已切换！", TrayIcon.MessageType.INFO);
-                    }
-                } else {
-                    JOptionPane.showMessageDialog(hostPanel, NOT_SUPPORTED_TIPS, "抱歉！", JOptionPane.INFORMATION_MESSAGE);
-                }
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                JOptionPane.showMessageDialog(hostPanel, "需要以管理员身份运行才可以哦！\n\n" + ex.getMessage(), "切换失败！", JOptionPane.ERROR_MESSAGE);
-            } finally {
-                switchButton.setEnabled(true);
-            }
+            String hostText = textArea.getText();
+            setHost(hostText);
         }));
+    }
+
+    private static void setHost(String hostText) {
+        try {
+            HostForm hostForm = HostForm.getInstance();
+            hostForm.getSwitchButton().setEnabled(false);
+            if (SystemUtil.isWindowsOs()) {
+                File hostFile = FileUtil.file(WIN_HOST_FILE_PATH);
+                FileUtil.writeUtf8String(hostText, hostFile);
+                if (App.trayIcon != null) {
+                    App.trayIcon.displayMessage("MooTool", HostListener.selectedName + "-Host已切换！", TrayIcon.MessageType.INFO);
+                }
+            } else {
+                JOptionPane.showMessageDialog(hostForm.getHostPanel(), NOT_SUPPORTED_TIPS, "抱歉！", JOptionPane.INFORMATION_MESSAGE);
+            }
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(hostForm.getHostPanel(), "需要以管理员身份运行才可以哦！\n\n" + ex.getMessage(), "切换失败！", JOptionPane.ERROR_MESSAGE);
+        } finally {
+            hostForm.getSwitchButton().setEnabled(true);
+        }
     }
 
     public static HostForm getInstance() {
@@ -91,7 +96,7 @@ public class HostForm {
         Init.initTray();
         hostForm = getInstance();
 
-        hostForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
+        hostForm.getSplitPane().setDividerLocation(App.mainFrame.getWidth() / 5);
         hostForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
 
         initListTable();
@@ -152,6 +157,8 @@ public class HostForm {
             model.addRow(data);
             menuItem = new MenuItem(tHost.getName());
             menuItem.addActionListener(e -> {
+                THost tHost1 = hostMapper.selectByName(tHost.getName());
+                setHost(tHost1.getContent());
             });
             App.popupMenu.add(menuItem);
         }
