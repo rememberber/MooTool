@@ -213,7 +213,6 @@ public class Init {
 
                 try {
                     tray.add(trayIcon);
-                    trayIcon.displayMessage("MooTool", "MooTool已显示在系统托盘", TrayIcon.MessageType.INFO);
                 } catch (AWTException e) {
                     e.printStackTrace();
                     logger.error(ExceptionUtils.getStackTrace(e));

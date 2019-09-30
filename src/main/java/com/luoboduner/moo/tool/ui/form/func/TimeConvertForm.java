@@ -1,12 +1,17 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
+import cn.hutool.core.swing.clipboard.ClipboardUtil;
 import cn.hutool.core.thread.ThreadUtil;
+import cn.hutool.log.Log;
+import cn.hutool.log.LogFactory;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.apache.commons.lang3.time.DateUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -22,23 +27,99 @@ import java.util.Date;
  */
 @Getter
 public class TimeConvertForm {
-    private JTextField timeStampTextField;
-    private JComboBox comboBox1;
-    private JButton 转换Button;
+    private JTextField timestampTextField;
+    private JComboBox unitComboBox;
+    private JButton toLocalTimeButton;
     private JTextField gmtTextField;
-    private JButton 转换Button1;
+    private JButton toTimestampButton;
     private JPanel timeConvertPanel;
-    private JLabel currentTimeStampLabel;
+    private JLabel currentTimestampLabel;
     private JLabel currentGmtLabel;
-    private JButton 复制Button;
-    private JButton 复制Button1;
-    private JButton 复制Button2;
-    private JButton 复制Button3;
+    private JButton copyGeneratedTimestampButton;
+    private JButton copyGeneratedLocalTimeButton;
+    private JButton copyCurrentGmtButton;
+    private JButton copyCurrentTimestampButton;
+
+    private static final Log logger = LogFactory.get();
 
     private static TimeConvertForm timeConvertForm;
 
+    private static final String TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
     private TimeConvertForm() {
         UndoUtil.register(this);
+        toLocalTimeButton.addActionListener(e -> {
+            long timeStamp = Long.parseLong(timestampTextField.getText());
+            String unit = (String) unitComboBox.getSelectedItem();
+            if ("秒(s)".equals(unit)) {
+                timeStamp = timeStamp * 1000;
+            }
+            String localTime = DateFormatUtils.format(new Date(timeStamp), TIME_FORMAT);
+            gmtTextField.setText(localTime);
+        });
+        toTimestampButton.addActionListener(e -> {
+            try {
+                String localTime = gmtTextField.getText();
+                String unit = (String) unitComboBox.getSelectedItem();
+                Date date = DateUtils.parseDate(localTime, TIME_FORMAT);
+                long timeStamp = date.getTime();
+                if ("秒(s)".equals(unit)) {
+                    timeStamp = timeStamp / 1000;
+                }
+                timestampTextField.setText(String.valueOf(timeStamp));
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
+        copyCurrentGmtButton.addActionListener(e -> ThreadUtil.execute(() -> {
+            try {
+                copyCurrentGmtButton.setEnabled(false);
+                ClipboardUtil.setStr(currentGmtLabel.getText());
+                JOptionPane.showMessageDialog(timeConvertPanel, "内容已经复制到剪贴板！", "复制成功",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception e1) {
+                logger.error(e1);
+            } finally {
+                copyCurrentGmtButton.setEnabled(true);
+            }
+        }));
+        copyCurrentTimestampButton.addActionListener(e -> ThreadUtil.execute(() -> {
+            try {
+                copyCurrentTimestampButton.setEnabled(false);
+                ClipboardUtil.setStr(currentTimestampLabel.getText());
+                JOptionPane.showMessageDialog(timeConvertPanel, "内容已经复制到剪贴板！", "复制成功",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception e1) {
+                logger.error(e1);
+            } finally {
+                copyCurrentTimestampButton.setEnabled(true);
+            }
+        }));
+        copyGeneratedTimestampButton.addActionListener(e -> ThreadUtil.execute(() -> {
+            try {
+                copyGeneratedTimestampButton.setEnabled(false);
+                ClipboardUtil.setStr(timestampTextField.getText());
+                JOptionPane.showMessageDialog(timeConvertPanel, "内容已经复制到剪贴板！", "复制成功",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception e1) {
+                logger.error(e1);
+            } finally {
+                copyGeneratedTimestampButton.setEnabled(true);
+            }
+        }));
+        copyGeneratedLocalTimeButton.addActionListener(e -> ThreadUtil.execute(() -> {
+            try {
+                copyGeneratedLocalTimeButton.setEnabled(false);
+                ClipboardUtil.setStr(gmtTextField.getText());
+                JOptionPane.showMessageDialog(timeConvertPanel, "内容已经复制到剪贴板！", "复制成功",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception e1) {
+                logger.error(e1);
+            } finally {
+                copyGeneratedLocalTimeButton.setEnabled(true);
+            }
+        }));
     }
 
     public static TimeConvertForm getInstance() {
@@ -53,17 +134,17 @@ public class TimeConvertForm {
 
         ThreadUtil.execute(() -> {
             while (true) {
-                timeConvertForm.getCurrentTimeStampLabel().setText(String.valueOf(System.currentTimeMillis() / 1000));
-                timeConvertForm.getCurrentGmtLabel().setText(DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
+                timeConvertForm.getCurrentTimestampLabel().setText(String.valueOf(System.currentTimeMillis() / 1000));
+                timeConvertForm.getCurrentGmtLabel().setText(DateFormatUtils.format(new Date(), TIME_FORMAT));
                 ThreadUtil.safeSleep(1000);
             }
         });
 
-        if ("".equals(timeConvertForm.getTimeStampTextField().getText())) {
-            timeConvertForm.getTimeStampTextField().setText(String.valueOf(System.currentTimeMillis()));
+        if ("".equals(timeConvertForm.getTimestampTextField().getText())) {
+            timeConvertForm.getTimestampTextField().setText(String.valueOf(System.currentTimeMillis()));
         }
         if ("".equals(timeConvertForm.getGmtTextField().getText())) {
-            timeConvertForm.getGmtTextField().setText(DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss"));
+            timeConvertForm.getGmtTextField().setText(DateFormatUtils.format(new Date(), TIME_FORMAT));
         }
 
         timeConvertForm.getTimeConvertPanel().updateUI();
@@ -100,23 +181,23 @@ public class TimeConvertForm {
         currentGmtLabel.setForeground(new Color(-14739));
         currentGmtLabel.setText("--");
         panel2.add(currentGmtLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        复制Button2 = new JButton();
-        复制Button2.setText("复制");
-        panel2.add(复制Button2, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        copyCurrentGmtButton = new JButton();
+        copyCurrentGmtButton.setText("复制");
+        panel2.add(copyCurrentGmtButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
         panel2.add(spacer2, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
         panel1.add(panel3, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        currentTimeStampLabel = new JLabel();
-        Font currentTimeStampLabelFont = this.$$$getFont$$$(null, -1, 36, currentTimeStampLabel.getFont());
-        if (currentTimeStampLabelFont != null) currentTimeStampLabel.setFont(currentTimeStampLabelFont);
-        currentTimeStampLabel.setForeground(new Color(-14739));
-        currentTimeStampLabel.setText("--");
-        panel3.add(currentTimeStampLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        复制Button3 = new JButton();
-        复制Button3.setText("复制");
-        panel3.add(复制Button3, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        currentTimestampLabel = new JLabel();
+        Font currentTimestampLabelFont = this.$$$getFont$$$(null, -1, 36, currentTimestampLabel.getFont());
+        if (currentTimestampLabelFont != null) currentTimestampLabel.setFont(currentTimestampLabelFont);
+        currentTimestampLabel.setForeground(new Color(-14739));
+        currentTimestampLabel.setText("--");
+        panel3.add(currentTimestampLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        copyCurrentTimestampButton = new JButton();
+        copyCurrentTimestampButton.setText("复制");
+        panel3.add(copyCurrentTimestampButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer3 = new Spacer();
         panel3.add(spacer3, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         final JPanel panel4 = new JPanel();
@@ -127,13 +208,13 @@ public class TimeConvertForm {
         label1.setHorizontalTextPosition(11);
         label1.setText("时间戳(Unix timestamp)");
         panel4.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        timeStampTextField = new JTextField();
-        Font timeStampTextFieldFont = this.$$$getFont$$$(null, -1, 26, timeStampTextField.getFont());
-        if (timeStampTextFieldFont != null) timeStampTextField.setFont(timeStampTextFieldFont);
-        panel4.add(timeStampTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-        复制Button = new JButton();
-        复制Button.setText("复制");
-        panel4.add(复制Button, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, 1, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        timestampTextField = new JTextField();
+        Font timestampTextFieldFont = this.$$$getFont$$$(null, -1, 26, timestampTextField.getFont());
+        if (timestampTextFieldFont != null) timestampTextField.setFont(timestampTextFieldFont);
+        panel4.add(timestampTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        copyGeneratedTimestampButton = new JButton();
+        copyGeneratedTimestampButton.setText("复制");
+        panel4.add(copyGeneratedTimestampButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, 1, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label2 = new JLabel();
         label2.setHorizontalAlignment(10);
         label2.setHorizontalTextPosition(11);
@@ -143,28 +224,28 @@ public class TimeConvertForm {
         Font gmtTextFieldFont = this.$$$getFont$$$(null, -1, 26, gmtTextField.getFont());
         if (gmtTextFieldFont != null) gmtTextField.setFont(gmtTextFieldFont);
         panel4.add(gmtTextField, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-        复制Button1 = new JButton();
-        复制Button1.setText("复制");
-        panel4.add(复制Button1, new GridConstraints(2, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, 1, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        copyGeneratedLocalTimeButton = new JButton();
+        copyGeneratedLocalTimeButton.setText("复制");
+        panel4.add(copyGeneratedLocalTimeButton, new GridConstraints(2, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, 1, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel5 = new JPanel();
         panel5.setLayout(new GridLayoutManager(1, 4, new Insets(10, 0, 10, 0), -1, -1));
         panel4.add(panel5, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        转换Button = new JButton();
-        转换Button.setIcon(new ImageIcon(getClass().getResource("/icon/arrow-down.png")));
-        转换Button.setText("转换");
-        转换Button.setToolTipText("时间戳转换为本地时间");
-        panel5.add(转换Button, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        转换Button1 = new JButton();
-        转换Button1.setIcon(new ImageIcon(getClass().getResource("/icon/arrow-up.png")));
-        转换Button1.setText("转换");
-        转换Button1.setToolTipText("本地时间转换为时间戳");
-        panel5.add(转换Button1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        comboBox1 = new JComboBox();
+        toLocalTimeButton = new JButton();
+        toLocalTimeButton.setIcon(new ImageIcon(getClass().getResource("/icon/arrow-down.png")));
+        toLocalTimeButton.setText("转换");
+        toLocalTimeButton.setToolTipText("时间戳转换为本地时间");
+        panel5.add(toLocalTimeButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        toTimestampButton = new JButton();
+        toTimestampButton.setIcon(new ImageIcon(getClass().getResource("/icon/arrow-up.png")));
+        toTimestampButton.setText("转换");
+        toTimestampButton.setToolTipText("本地时间转换为时间戳");
+        panel5.add(toTimestampButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        unitComboBox = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
         defaultComboBoxModel1.addElement("秒(s)");
         defaultComboBoxModel1.addElement("毫秒(ms)");
-        comboBox1.setModel(defaultComboBoxModel1);
-        panel5.add(comboBox1, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        unitComboBox.setModel(defaultComboBoxModel1);
+        panel5.add(unitComboBox, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer4 = new Spacer();
         panel5.add(spacer4, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
     }

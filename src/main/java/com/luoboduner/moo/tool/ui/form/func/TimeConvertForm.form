@@ -39,7 +39,7 @@
                   <text value="--"/>
                 </properties>
               </component>
-              <component id="d9795" class="javax.swing.JButton" binding="复制Button2" default-binding="true">
+              <component id="d9795" class="javax.swing.JButton" binding="copyCurrentGmtButton">
                 <constraints>
                   <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
@@ -62,7 +62,7 @@
             <properties/>
             <border type="none"/>
             <children>
-              <component id="7ac4b" class="javax.swing.JLabel" binding="currentTimeStampLabel">
+              <component id="7ac4b" class="javax.swing.JLabel" binding="currentTimestampLabel">
                 <constraints>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
@@ -72,7 +72,7 @@
                   <text value="--"/>
                 </properties>
               </component>
-              <component id="c0dd2" class="javax.swing.JButton" binding="复制Button3" default-binding="true">
+              <component id="c0dd2" class="javax.swing.JButton" binding="copyCurrentTimestampButton">
                 <constraints>
                   <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
@@ -107,7 +107,7 @@
               <text value="时间戳(Unix timestamp)"/>
             </properties>
           </component>
-          <component id="3f634" class="javax.swing.JTextField" binding="timeStampTextField">
+          <component id="3f634" class="javax.swing.JTextField" binding="timestampTextField">
             <constraints>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                 <preferred-size width="150" height="-1"/>
@@ -117,7 +117,7 @@
               <font size="26"/>
             </properties>
           </component>
-          <component id="2b420" class="javax.swing.JButton" binding="复制Button" default-binding="true">
+          <component id="2b420" class="javax.swing.JButton" binding="copyGeneratedTimestampButton">
             <constraints>
               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
@@ -145,7 +145,7 @@
               <font size="26"/>
             </properties>
           </component>
-          <component id="d6f14" class="javax.swing.JButton" binding="复制Button1" default-binding="true">
+          <component id="d6f14" class="javax.swing.JButton" binding="copyGeneratedLocalTimeButton">
             <constraints>
               <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
@@ -161,7 +161,7 @@
             <properties/>
             <border type="none"/>
             <children>
-              <component id="b5457" class="javax.swing.JButton" binding="转换Button" default-binding="true">
+              <component id="b5457" class="javax.swing.JButton" binding="toLocalTimeButton">
                 <constraints>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
@@ -171,7 +171,7 @@
                   <toolTipText value="时间戳转换为本地时间"/>
                 </properties>
               </component>
-              <component id="39565" class="javax.swing.JButton" binding="转换Button1" default-binding="true">
+              <component id="39565" class="javax.swing.JButton" binding="toTimestampButton">
                 <constraints>
                   <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
@@ -181,7 +181,7 @@
                   <toolTipText value="本地时间转换为时间戳"/>
                 </properties>
               </component>
-              <component id="4ee9c" class="javax.swing.JComboBox" binding="comboBox1" default-binding="true">
+              <component id="4ee9c" class="javax.swing.JComboBox" binding="unitComboBox">
                 <constraints>
                   <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
