@@ -51,6 +51,9 @@ public class TimeConvertForm {
         toLocalTimeButton.addActionListener(e -> {
             try {
                 long timeStamp = Long.parseLong(timestampTextField.getText());
+                if (String.valueOf(timeStamp).length() >= 13) {
+                    unitComboBox.setSelectedItem("毫秒(ms)");
+                }
                 String unit = (String) unitComboBox.getSelectedItem();
                 if ("秒(s)".equals(unit)) {
                     timeStamp = timeStamp * 1000;
