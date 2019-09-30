@@ -125,8 +125,21 @@ public class HostForm {
         }
         if (hostList.size() > 0) {
             hostForm.getTextArea().setText(hostList.get(0).getContent());
-            hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
+            hostForm.getTextArea().setEditable(true);
+            hostForm.getSwitchButton().setVisible(true);
+            hostForm.getNoteListTable().setRowSelectionInterval(1, 1);
             HostListener.selectedName = hostList.get(0).getName();
+        } else {
+            String content;
+            if (SystemUtil.isWindowsOs()) {
+                content = FileUtil.readUtf8String(HostForm.WIN_HOST_FILE_PATH);
+            } else {
+                content = HostForm.NOT_SUPPORTED_TIPS;
+            }
+            hostForm.getTextArea().setEditable(false);
+            hostForm.getSwitchButton().setVisible(false);
+            hostForm.getTextArea().setText(content);
+            hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
         }
     }
 

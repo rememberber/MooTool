@@ -73,7 +73,6 @@ public class HostListener {
                 ThreadUtil.execute(() -> {
                     int selectedRow = hostForm.getNoteListTable().getSelectedRow();
                     String name = hostForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
-                    selectedName = name;
                     String content = "";
                     if (HostForm.SYS_CURRENT_HOST_NAME.equals(name)) {
                         if (SystemUtil.isWindowsOs()) {
@@ -84,6 +83,7 @@ public class HostListener {
                         hostForm.getTextArea().setEditable(false);
                         hostForm.getSwitchButton().setVisible(false);
                     } else {
+                        selectedName = name;
                         THost tHost = hostMapper.selectByName(name);
                         content = tHost.getContent();
                         hostForm.getTextArea().setEditable(true);
