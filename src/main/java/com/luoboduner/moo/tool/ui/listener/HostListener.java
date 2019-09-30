@@ -73,7 +73,7 @@ public class HostListener {
                 ThreadUtil.execute(() -> {
                     int selectedRow = hostForm.getNoteListTable().getSelectedRow();
                     String name = hostForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
-                    String content = "";
+                    String content;
                     if (HostForm.SYS_CURRENT_HOST_NAME.equals(name)) {
                         if (SystemUtil.isWindowsOs()) {
                             content = FileUtil.readUtf8String(HostForm.WIN_HOST_FILE_PATH);
@@ -166,6 +166,7 @@ public class HostListener {
         // 添加按钮事件
         hostForm.getAddButton().addActionListener(e -> {
             hostForm.getTextArea().setText("");
+            hostForm.getTextArea().setEditable(true);
             selectedName = null;
         });
 
@@ -173,7 +174,13 @@ public class HostListener {
         hostForm.getNoteListTable().addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                hostForm.getDeletePanel().setVisible(true);
+                int selectedRow = hostForm.getNoteListTable().getSelectedRow();
+                String name = hostForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
+                if (HostForm.SYS_CURRENT_HOST_NAME.equals(name)) {
+                    hostForm.getDeletePanel().setVisible(false);
+                } else {
+                    hostForm.getDeletePanel().setVisible(true);
+                }
             }
 
             @Override
