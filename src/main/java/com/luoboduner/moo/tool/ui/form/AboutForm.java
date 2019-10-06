@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.form;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.luoboduner.moo.tool.ui.UiConsts;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -212,6 +213,7 @@ public class AboutForm {
 
     public static void init() {
         aboutForm = getInstance();
+        aboutForm.versionLabel.setText(UiConsts.APP_VERSION);
 
         aboutForm.getScrollPane().getVerticalScrollBar().setUnitIncrement(16);
         aboutForm.getScrollPane().getVerticalScrollBar().setDoubleBuffered(true);
@@ -262,7 +264,7 @@ public class AboutForm {
         versionLabel = new JLabel();
         Font versionLabelFont = this.$$$getFont$$$(null, Font.BOLD, -1, versionLabel.getFont());
         if (versionLabelFont != null) versionLabel.setFont(versionLabelFont);
-        versionLabel.setText("v1.0.0");
+        versionLabel.setText("v0.0.0");
         versionLabel.setToolTipText("Check for updates");
         panel2.add(versionLabel, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel3 = new JPanel();
