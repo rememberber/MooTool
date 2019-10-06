@@ -32,6 +32,7 @@
         <commons-lang3.version>3.9</commons-lang3.version>
         <guava.version>28.0-jre</guava.version>
         <okhttp.version>4.0.1</okhttp.version>
+        <google.zxing.core.version>3.4.0</google.zxing.core.version>
     </properties>
 
     <dependencies>
@@ -127,6 +128,13 @@
             <artifactId>okhttp</artifactId>
             <version>${okhttp.version}</version>
         </dependency>
+
+        <dependency>
+            <groupId>com.google.zxing</groupId>
+            <artifactId>core</artifactId>
+            <version>${google.zxing.core.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>
