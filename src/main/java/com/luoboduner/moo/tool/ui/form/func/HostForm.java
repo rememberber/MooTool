@@ -53,7 +53,7 @@ public class HostForm {
 
     public static final String NOT_SUPPORTED_TIPS = "目前只支持Windows系统！";
 
-    public static final String SYS_CURRENT_HOST_NAME = "> 系统当前Host内容";
+    public static final String SYS_CURRENT_HOST_NAME = ">_系统当前Host";
 
     private HostForm() {
         UndoUtil.register(this);
