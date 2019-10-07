@@ -21,6 +21,8 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -61,6 +63,25 @@ public class QrCodeForm {
     private QrCodeForm() {
         UndoUtil.register(this);
         generateButton.addActionListener(e -> ThreadUtil.execute(QrCodeForm::generate));
+        exploreButton.addActionListener(e -> {
+            qrCodeForm = getInstance();
+            File beforeFile = new File(qrCodeForm.getLogoPathTextField().getText());
+            JFileChooser fileChooser;
+
+            if (beforeFile.exists()) {
+                fileChooser = new JFileChooser(beforeFile);
+            } else {
+                fileChooser = new JFileChooser();
+            }
+
+            FileFilter filter = new FileNameExtensionFilter("*.png,*.jpg,*.jpeg", "png", "jpg", "jpeg");
+            fileChooser.setFileFilter(filter);
+
+            int approve = fileChooser.showOpenDialog(qrCodePanel);
+            if (approve == JFileChooser.APPROVE_OPTION) {
+                qrCodeForm.getLogoPathTextField().setText(fileChooser.getSelectedFile().getAbsolutePath());
+            }
+        });
     }
 
     private static void generate() {
