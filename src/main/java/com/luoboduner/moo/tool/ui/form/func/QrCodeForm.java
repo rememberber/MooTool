@@ -6,12 +6,14 @@ import cn.hutool.extra.qrcode.QrCodeUtil;
 import cn.hutool.extra.qrcode.QrConfig;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQrCodeMapper;
 import com.luoboduner.moo.tool.domain.TQrCode;
 import com.luoboduner.moo.tool.util.MybatisUtil;
+import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -58,9 +60,7 @@ public class QrCodeForm {
 
     private QrCodeForm() {
         UndoUtil.register(this);
-        generateButton.addActionListener(e -> ThreadUtil.execute(() -> {
-            generate();
-        }));
+        generateButton.addActionListener(e -> ThreadUtil.execute(QrCodeForm::generate));
     }
 
     private static void generate() {
@@ -79,16 +79,50 @@ public class QrCodeForm {
             if (StringUtils.isNotBlank(logoPath)) {
                 config.setImg(logoPath);
             }
+            String errorCorrectionLevel = (String) qrCodeForm.getErrorCorrectionLevelComboBox().getSelectedItem();
+            if ("低".equals(errorCorrectionLevel)) {
+                config.setErrorCorrection(ErrorCorrectionLevel.L);
+            } else if ("中低".equals(errorCorrectionLevel)) {
+                config.setErrorCorrection(ErrorCorrectionLevel.M);
+            } else if ("中高".equals(errorCorrectionLevel)) {
+                config.setErrorCorrection(ErrorCorrectionLevel.Q);
+            } else if ("高".equals(errorCorrectionLevel)) {
+                config.setErrorCorrection(ErrorCorrectionLevel.H);
+            }
             QrCodeUtil.generate(qrCodeForm.getToGenerateContentTextArea().getText(), config, qrCodeImageTempFile);
             BufferedImage image = ImageIO.read(qrCodeImageTempFile);
             ImageIcon imageIcon = new ImageIcon(image);
             qrCodeForm.getQrCodeImageLabel().setIcon(imageIcon);
             qrCodeForm.getQrCodePanel().updateUI();
+
+            saveConfig();
         } catch (Exception ex) {
             ex.printStackTrace();
             JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
                     JOptionPane.ERROR_MESSAGE);
             logger.error(ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
+    /**
+     * 保存界面的配置信息
+     */
+    private static void saveConfig() {
+        App.config.setQrCodeSize(Integer.parseInt(qrCodeForm.getSizeTextField().getText()));
+        App.config.setQrCodeErrorCorrectionLevel(String.valueOf(qrCodeForm.getErrorCorrectionLevelComboBox().getSelectedItem()));
+        App.config.setQrCodeLogoPath(qrCodeForm.getLogoPathTextField().getText());
+        App.config.save();
+        TQrCode tQrCode = new TQrCode();
+        tQrCode.setId(DEFAULT_PRIMARY_KEY);
+        tQrCode.setContent(qrCodeForm.getToGenerateContentTextArea().getText());
+        String now = SqliteUtil.nowDateForSqlite();
+        tQrCode.setModifiedTime(now);
+
+        if (qrCodeMapper.selectByPrimaryKey(DEFAULT_PRIMARY_KEY) == null) {
+            tQrCode.setCreateTime(now);
+            qrCodeMapper.insert(tQrCode);
+        } else {
+            qrCodeMapper.updateByPrimaryKeySelective(tQrCode);
         }
     }
 

@@ -188,7 +188,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public String getQrCodeErrorCorrectionLevel() {
-        return setting.getStr("qrCodeErrorCorrectionLevel", "func.qrCode", "中高");
+        return setting.getStr("qrCodeErrorCorrectionLevel", "func.qrCode", "中低");
     }
 
     public void setQrCodeErrorCorrectionLevel(String qrCodeErrorCorrectionLevel) {
