@@ -6,10 +6,13 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.dao.TQrCodeMapper;
+import com.luoboduner.moo.tool.domain.TQrCode;
+import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.imageio.ImageIO;
@@ -31,21 +34,26 @@ import java.io.IOException;
 public class QrCodeForm {
     private JTabbedPane tabbedPane1;
     private JPanel qrCodePanel;
-    private JTextField textField1;
-    private JButton button1;
-    private JTextArea textArea1;
-    private JTextArea textArea2;
-    private JButton 生成Button;
+    private JTextField recognitionImagePathTextField;
+    private JButton recognitionExploreButton;
+    private JTextArea recognitionContentTextArea;
+    private JTextArea toGenerateContentTextArea;
+    private JButton generateButton;
     private JLabel qrCodeImageLabel;
-    private JComboBox comboBox1;
-    private JTextField textField2;
-    private JTextField textField3;
-    private JButton 浏览Button;
-    private JButton 保存为Button;
+    private JComboBox errorCorrectionLevelComboBox;
+    private JTextField sizeTextField;
+    private JTextField logoPathTextField;
+    private JButton exploreButton;
+    private JButton saveAsButton;
+    private JButton recognitionButton;
 
     private static final Log logger = LogFactory.get();
 
     private static QrCodeForm qrCodeForm;
+
+    private static TQrCodeMapper qrCodeMapper = MybatisUtil.getSqlSession().getMapper(TQrCodeMapper.class);
+
+    private static final int DEFAULT_PRIMARY_KEY = 1;
 
     private QrCodeForm() {
         UndoUtil.register(this);
@@ -64,11 +72,21 @@ public class QrCodeForm {
         if ("Darcula(推荐)".equals(App.config.getTheme())) {
             Color bgColor = new Color(30, 30, 30);
             Color foreColor = new Color(187, 187, 187);
-            qrCodeForm.getTextArea1().setBackground(bgColor);
-            qrCodeForm.getTextArea1().setForeground(foreColor);
+            qrCodeForm.getRecognitionContentTextArea().setBackground(bgColor);
+            qrCodeForm.getRecognitionContentTextArea().setForeground(foreColor);
 
-            qrCodeForm.getTextArea2().setBackground(bgColor);
-            qrCodeForm.getTextArea2().setForeground(foreColor);
+            qrCodeForm.getToGenerateContentTextArea().setBackground(bgColor);
+            qrCodeForm.getToGenerateContentTextArea().setForeground(foreColor);
+        }
+
+        qrCodeForm.getSizeTextField().setText(String.valueOf(App.config.getQrCodeSize()));
+        qrCodeForm.getErrorCorrectionLevelComboBox().setSelectedItem(App.config.getQrCodeErrorCorrectionLevel());
+        qrCodeForm.getLogoPathTextField().setText(App.config.getQrCodeLogoPath());
+        TQrCode tQrCode = qrCodeMapper.selectByPrimaryKey(DEFAULT_PRIMARY_KEY);
+        if (tQrCode != null && StringUtils.isNotEmpty(tQrCode.getContent())) {
+            qrCodeForm.getToGenerateContentTextArea().setText(tQrCode.getContent());
+        } else {
+            qrCodeForm.getToGenerateContentTextArea().setText("https://github.com/rememberber/MooTool");
         }
 
         File tempDir = new File(FileUtil.getTmpDirPath() + "MooTool");
@@ -119,59 +137,65 @@ public class QrCodeForm {
         panel1.add(qrCodeImageLabel, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JScrollPane scrollPane1 = new JScrollPane();
         panel1.add(scrollPane1, new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        textArea2 = new JTextArea();
-        scrollPane1.setViewportView(textArea2);
+        toGenerateContentTextArea = new JTextArea();
+        scrollPane1.setViewportView(toGenerateContentTextArea);
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(1, 10, new Insets(0, 5, 5, 5), -1, -1));
         panel1.add(panel2, new GridConstraints(1, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        生成Button = new JButton();
-        生成Button.setText("生成");
-        panel2.add(生成Button, new GridConstraints(0, 8, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        generateButton = new JButton();
+        generateButton.setText("生成");
+        panel2.add(generateButton, new GridConstraints(0, 8, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label1 = new JLabel();
         label1.setText("px");
         panel2.add(label1, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        comboBox1 = new JComboBox();
+        errorCorrectionLevelComboBox = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
         defaultComboBoxModel1.addElement("低");
         defaultComboBoxModel1.addElement("中低");
         defaultComboBoxModel1.addElement("中高");
         defaultComboBoxModel1.addElement("高");
-        comboBox1.setModel(defaultComboBoxModel1);
-        panel2.add(comboBox1, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        errorCorrectionLevelComboBox.setModel(defaultComboBoxModel1);
+        panel2.add(errorCorrectionLevelComboBox, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label2 = new JLabel();
         label2.setText("大小");
         panel2.add(label2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        textField2 = new JTextField();
-        panel2.add(textField2, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        sizeTextField = new JTextField();
+        panel2.add(sizeTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         final JLabel label3 = new JLabel();
         label3.setText("纠错级别");
         panel2.add(label3, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label4 = new JLabel();
         label4.setText("Logo");
         panel2.add(label4, new GridConstraints(0, 5, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        textField3 = new JTextField();
-        panel2.add(textField3, new GridConstraints(0, 6, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-        浏览Button = new JButton();
-        浏览Button.setText("浏览");
-        panel2.add(浏览Button, new GridConstraints(0, 7, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        保存为Button = new JButton();
-        保存为Button.setText("保存为");
-        panel2.add(保存为Button, new GridConstraints(0, 9, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        logoPathTextField = new JTextField();
+        panel2.add(logoPathTextField, new GridConstraints(0, 6, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        exploreButton = new JButton();
+        exploreButton.setText("…");
+        panel2.add(exploreButton, new GridConstraints(0, 7, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        saveAsButton = new JButton();
+        saveAsButton.setText("保存为");
+        panel2.add(saveAsButton, new GridConstraints(0, 9, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(3, 3, new Insets(0, 0, 0, 0), -1, -1));
+        panel3.setLayout(new GridLayoutManager(2, 3, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane1.addTab("识别", panel3);
+        final JPanel panel4 = new JPanel();
+        panel4.setLayout(new GridLayoutManager(1, 4, new Insets(5, 5, 5, 5), -1, -1));
+        panel3.add(panel4, new GridConstraints(0, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JLabel label5 = new JLabel();
-        label5.setText("Label");
-        panel3.add(label5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer1 = new Spacer();
-        panel3.add(spacer1, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        textField1 = new JTextField();
-        panel3.add(textField1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-        button1 = new JButton();
-        button1.setText("Button");
-        panel3.add(button1, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        textArea1 = new JTextArea();
-        panel3.add(textArea1, new GridConstraints(1, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(150, 50), null, 0, false));
+        label5.setText("二维码图片路径");
+        panel4.add(label5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        recognitionImagePathTextField = new JTextField();
+        panel4.add(recognitionImagePathTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        recognitionExploreButton = new JButton();
+        recognitionExploreButton.setText("…");
+        panel4.add(recognitionExploreButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        recognitionButton = new JButton();
+        recognitionButton.setText("识别");
+        panel4.add(recognitionButton, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JScrollPane scrollPane2 = new JScrollPane();
+        panel3.add(scrollPane2, new GridConstraints(1, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        recognitionContentTextArea = new JTextArea();
+        scrollPane2.setViewportView(recognitionContentTextArea);
     }
 
     /**

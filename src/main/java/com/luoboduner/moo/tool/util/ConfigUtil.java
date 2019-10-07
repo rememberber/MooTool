@@ -53,6 +53,12 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     private int jsonBeautyFontSize;
 
+    private int qrCodeSize;
+
+    private String qrCodeErrorCorrectionLevel;
+
+    private String qrCodeLogoPath;
+
     public boolean isAutoCheckUpdate() {
         return setting.getBool("autoCheckUpdate", "setting.common", true);
     }
@@ -142,34 +148,58 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public String getQuickNoteFontName() {
-        return setting.getStr("quickNoteFontName", "setting.quickNote", "等线");
+        return setting.getStr("quickNoteFontName", "func.quickNote", "等线");
     }
 
     public void setQuickNoteFontName(String quickNoteFontName) {
-        setting.put("setting.quickNote", "quickNoteFontName", quickNoteFontName);
+        setting.put("func.quickNote", "quickNoteFontName", quickNoteFontName);
     }
 
     public int getQuickNoteFontSize() {
-        return setting.getInt("quickNoteFontSize", "setting.quickNote", 0);
+        return setting.getInt("quickNoteFontSize", "func.quickNote", 0);
     }
 
     public void setQuickNoteFontSize(int quickNoteFontSize) {
-        setting.put("setting.quickNote", "quickNoteFontSize", String.valueOf(quickNoteFontSize));
+        setting.put("func.quickNote", "quickNoteFontSize", String.valueOf(quickNoteFontSize));
     }
 
     public String getJsonBeautyFontName() {
-        return setting.getStr("jsonBeautyFontName", "setting.jsonBeauty", "等线");
+        return setting.getStr("jsonBeautyFontName", "func.jsonBeauty", "等线");
     }
 
     public void setJsonBeautyFontName(String jsonBeautyFontName) {
-        setting.put("setting.jsonBeauty", "jsonBeautyFontName", jsonBeautyFontName);
+        setting.put("func.jsonBeauty", "jsonBeautyFontName", jsonBeautyFontName);
     }
 
     public int getJsonBeautyFontSize() {
-        return setting.getInt("jsonBeautyFontSize", "setting.jsonBeauty", 0);
+        return setting.getInt("jsonBeautyFontSize", "func.jsonBeauty", 0);
     }
 
     public void setJsonBeautyFontSize(int jsonBeautyFontSize) {
-        setting.put("setting.jsonBeauty", "jsonBeautyFontSize", String.valueOf(jsonBeautyFontSize));
+        setting.put("func.jsonBeauty", "jsonBeautyFontSize", String.valueOf(jsonBeautyFontSize));
+    }
+
+    public int getQrCodeSize() {
+        return setting.getInt("qrCodeSize", "func.qrCode", 320);
+    }
+
+    public void setQrCodeSize(int qrCodeSize) {
+        setting.put("func.qrCode", "qrCodeSize", String.valueOf(qrCodeSize));
+    }
+
+    public String getQrCodeErrorCorrectionLevel() {
+        return setting.getStr("qrCodeErrorCorrectionLevel", "func.qrCode", "中高");
+    }
+
+    public void setQrCodeErrorCorrectionLevel(String qrCodeErrorCorrectionLevel) {
+        setting.put("func.qrCode", "qrCodeErrorCorrectionLevel", qrCodeErrorCorrectionLevel);
+    }
+
+    public String getQrCodeLogoPath() {
+        return setting.getStr("qrCodeLogoPath", "func.qrCode", "");
+    }
+
+    public void setQrCodeLogoPath(String qrCodeLogoPath) {
+        setting.put("func.qrCode", "qrCodeLogoPath", qrCodeLogoPath);
     }
 }
