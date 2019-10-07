@@ -1,7 +1,9 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.extra.qrcode.QrCodeUtil;
+import cn.hutool.extra.qrcode.QrConfig;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.intellij.uiDesigner.core.GridConstraints;
@@ -20,7 +22,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
-import java.io.IOException;
 
 /**
  * <pre>
@@ -57,6 +58,34 @@ public class QrCodeForm {
 
     private QrCodeForm() {
         UndoUtil.register(this);
+        generateButton.addActionListener(e -> ThreadUtil.execute(() -> {
+            generate();
+        }));
+    }
+
+    private static void generate() {
+        try {
+            qrCodeForm = getInstance();
+            File tempDir = new File(FileUtil.getTmpDirPath() + "MooTool");
+            if (!tempDir.exists()) {
+                tempDir.mkdirs();
+            }
+            FileUtil.clean(tempDir);
+            File qrCodeImageTempFile = FileUtil.file(tempDir + File.separator + "qrCode.jpg");
+
+            int size = Integer.parseInt(qrCodeForm.getSizeTextField().getText());
+            QrConfig config = new QrConfig(size, size);
+            QrCodeUtil.generate(qrCodeForm.getToGenerateContentTextArea().getText(), config, qrCodeImageTempFile);
+            BufferedImage image = ImageIO.read(qrCodeImageTempFile);
+            ImageIcon imageIcon = new ImageIcon(image);
+            qrCodeForm.getQrCodeImageLabel().setIcon(imageIcon);
+            qrCodeForm.getQrCodePanel().updateUI();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
+                    JOptionPane.ERROR_MESSAGE);
+            logger.error(ExceptionUtils.getStackTrace(ex));
+        }
     }
 
     public static QrCodeForm getInstance() {
@@ -89,23 +118,9 @@ public class QrCodeForm {
             qrCodeForm.getToGenerateContentTextArea().setText("https://github.com/rememberber/MooTool");
         }
 
-        File tempDir = new File(FileUtil.getTmpDirPath() + "MooTool");
-        if (!tempDir.exists()) {
-            tempDir.mkdirs();
-        }
-        FileUtil.clean(tempDir);
-        File qrCodeImageTempFile = FileUtil.file(tempDir + File.separator + "qrCode.jpg");
-        QrCodeUtil.generate("https://hutool.cn/", 300, 300, qrCodeImageTempFile);
-        BufferedImage image = null;
-        try {
-            image = ImageIO.read(qrCodeImageTempFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-            logger.error(ExceptionUtils.getStackTrace(e));
-        }
-        ImageIcon imageIcon = new ImageIcon(image);
-        qrCodeForm.qrCodeImageLabel.setIcon(imageIcon);
         qrCodeForm.getQrCodePanel().updateUI();
+
+        generate();
     }
 
     {
