@@ -138,6 +138,7 @@ public class QrCodeForm {
         final JScrollPane scrollPane1 = new JScrollPane();
         panel1.add(scrollPane1, new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         toGenerateContentTextArea = new JTextArea();
+        toGenerateContentTextArea.setMargin(new Insets(8, 8, 8, 8));
         scrollPane1.setViewportView(toGenerateContentTextArea);
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(1, 10, new Insets(0, 5, 5, 5), -1, -1));
@@ -195,6 +196,7 @@ public class QrCodeForm {
         final JScrollPane scrollPane2 = new JScrollPane();
         panel3.add(scrollPane2, new GridConstraints(1, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         recognitionContentTextArea = new JTextArea();
+        recognitionContentTextArea.setMargin(new Insets(8, 8, 8, 8));
         scrollPane2.setViewportView(recognitionContentTextArea);
     }
 

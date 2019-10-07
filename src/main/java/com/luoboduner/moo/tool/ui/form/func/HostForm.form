@@ -133,7 +133,7 @@
                   <component id="5f181" class="javax.swing.JTextArea" binding="textArea">
                     <constraints/>
                     <properties>
-                      <margin top="20" left="20" bottom="20" right="20"/>
+                      <margin top="10" left="10" bottom="10" right="10"/>
                     </properties>
                   </component>
                 </children>

@@ -44,7 +44,9 @@
                 <children>
                   <component id="90a1e" class="javax.swing.JTextArea" binding="toGenerateContentTextArea">
                     <constraints/>
-                    <properties/>
+                    <properties>
+                      <margin top="8" left="8" bottom="8" right="8"/>
+                    </properties>
                   </component>
                 </children>
               </scrollpane>
@@ -204,7 +206,9 @@
                 <children>
                   <component id="f5a9e" class="javax.swing.JTextArea" binding="recognitionContentTextArea">
                     <constraints/>
-                    <properties/>
+                    <properties>
+                      <margin top="8" left="8" bottom="8" right="8"/>
+                    </properties>
                   </component>
                 </children>
               </scrollpane>
