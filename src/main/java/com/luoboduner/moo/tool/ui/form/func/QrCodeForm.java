@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.extra.qrcode.QrCodeUtil;
@@ -60,6 +61,10 @@ public class QrCodeForm {
 
     private static final int DEFAULT_PRIMARY_KEY = 1;
 
+    private static File tempDir = null;
+
+    private static File qrCodeImageTempFile = null;
+
     private QrCodeForm() {
         UndoUtil.register(this);
         generateButton.addActionListener(e -> ThreadUtil.execute(QrCodeForm::generate));
@@ -99,11 +104,6 @@ public class QrCodeForm {
                 return;
             }
 
-            File tempDir = new File(FileUtil.getTmpDirPath() + "MooTool");
-            if (!tempDir.exists()) {
-                tempDir.mkdirs();
-            }
-            File qrCodeImageTempFile = FileUtil.file(tempDir + File.separator + "qrCode.jpg");
             if (qrCodeImageTempFile.exists()) {
                 FileUtil.copy(qrCodeImageTempFile.getAbsolutePath(), exportPath, true);
                 JOptionPane.showMessageDialog(qrCodePanel, "保存成功！", "提示",
@@ -123,12 +123,8 @@ public class QrCodeForm {
     private static void generate() {
         try {
             qrCodeForm = getInstance();
-            File tempDir = new File(FileUtil.getTmpDirPath() + "MooTool");
-            if (!tempDir.exists()) {
-                tempDir.mkdirs();
-            }
-            FileUtil.clean(tempDir);
-            File qrCodeImageTempFile = FileUtil.file(tempDir + File.separator + "qrCode.jpg");
+            String nowTime = DateUtil.now().replace(":", "-").replace(" ", "-");
+            qrCodeImageTempFile = FileUtil.file(tempDir + File.separator + "qrCode-" + nowTime + ".jpg");
 
             int size = Integer.parseInt(qrCodeForm.getSizeTextField().getText());
             QrConfig config = new QrConfig(size, size);
@@ -214,6 +210,12 @@ public class QrCodeForm {
         }
 
         qrCodeForm.getQrCodePanel().updateUI();
+
+        tempDir = new File(FileUtil.getTmpDirPath() + "MooTool");
+        if (!tempDir.exists()) {
+            tempDir.mkdirs();
+        }
+        FileUtil.clean(tempDir);
 
         generate();
     }
