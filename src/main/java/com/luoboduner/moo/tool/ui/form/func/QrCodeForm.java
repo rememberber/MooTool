@@ -118,6 +118,46 @@ public class QrCodeForm {
                 }
             }
         });
+        recognitionExploreButton.addActionListener(e -> {
+            qrCodeForm = getInstance();
+            File beforeFile = new File(qrCodeForm.getRecognitionImagePathTextField().getText());
+            JFileChooser fileChooser;
+
+            if (beforeFile.exists()) {
+                fileChooser = new JFileChooser(beforeFile);
+            } else {
+                fileChooser = new JFileChooser();
+            }
+
+            FileFilter filter = new FileNameExtensionFilter("*.png,*.jpg,*.jpeg", "png", "jpg", "jpeg");
+            fileChooser.setFileFilter(filter);
+
+            int approve = fileChooser.showOpenDialog(qrCodePanel);
+            if (approve == JFileChooser.APPROVE_OPTION) {
+                qrCodeForm.getRecognitionImagePathTextField().setText(fileChooser.getSelectedFile().getAbsolutePath());
+                recognition();
+            }
+        });
+        recognitionButton.addActionListener(e -> recognition());
+    }
+
+    private static void recognition() {
+        ThreadUtil.execute(() -> {
+            try {
+                qrCodeForm = getInstance();
+                String recognitionImagePath = qrCodeForm.getRecognitionImagePathTextField().getText().trim();
+                String decode = QrCodeUtil.decode(FileUtil.file(recognitionImagePath));
+                qrCodeForm.getRecognitionContentTextArea().setText(decode);
+                App.config.setQrCodeRecognitionImagePath(recognitionImagePath);
+                App.config.save();
+                qrCodeForm.getQrCodePanel().updateUI();
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                JOptionPane.showMessageDialog(App.mainFrame, "识别失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
     }
 
     private static void generate() {
@@ -202,6 +242,7 @@ public class QrCodeForm {
         qrCodeForm.getSizeTextField().setText(String.valueOf(App.config.getQrCodeSize()));
         qrCodeForm.getErrorCorrectionLevelComboBox().setSelectedItem(App.config.getQrCodeErrorCorrectionLevel());
         qrCodeForm.getLogoPathTextField().setText(App.config.getQrCodeLogoPath());
+        qrCodeForm.getRecognitionImagePathTextField().setText(App.config.getQrCodeRecognitionImagePath());
         TQrCode tQrCode = qrCodeMapper.selectByPrimaryKey(DEFAULT_PRIMARY_KEY);
         if (tQrCode != null && StringUtils.isNotEmpty(tQrCode.getContent())) {
             qrCodeForm.getToGenerateContentTextArea().setText(tQrCode.getContent());
