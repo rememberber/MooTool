@@ -82,6 +82,34 @@ public class QrCodeForm {
                 qrCodeForm.getLogoPathTextField().setText(fileChooser.getSelectedFile().getAbsolutePath());
             }
         });
+        saveAsButton.addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser();
+            fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            int approve = fileChooser.showOpenDialog(qrCodePanel);
+            String exportPath;
+            if (approve == JFileChooser.APPROVE_OPTION) {
+                exportPath = fileChooser.getSelectedFile().getAbsolutePath();
+            } else {
+                return;
+            }
+
+            File tempDir = new File(FileUtil.getTmpDirPath() + "MooTool");
+            if (!tempDir.exists()) {
+                tempDir.mkdirs();
+            }
+            File qrCodeImageTempFile = FileUtil.file(tempDir + File.separator + "qrCode.jpg");
+            if (qrCodeImageTempFile.exists()) {
+                FileUtil.copy(qrCodeImageTempFile.getAbsolutePath(), exportPath, true);
+            }
+            JOptionPane.showMessageDialog(qrCodePanel, "导出成功！", "提示",
+                    JOptionPane.INFORMATION_MESSAGE);
+            try {
+                Desktop desktop = Desktop.getDesktop();
+                desktop.open(new File(exportPath));
+            } catch (Exception e2) {
+                logger.error(e2);
+            }
+        });
     }
 
     private static void generate() {
