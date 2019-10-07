@@ -59,3 +59,13 @@ create table if not exists t_host
 
 create unique index if not exists t_host_name_uindex
     on t_host (name);
+
+create table if not exists t_qr_code
+(
+    id            integer
+        constraint t_qr_code_pk
+            primary key,
+    content       text,
+    create_time   datetime,
+    modified_time datetime
+);
