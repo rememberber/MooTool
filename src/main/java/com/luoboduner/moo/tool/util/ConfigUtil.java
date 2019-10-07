@@ -59,6 +59,8 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     private String qrCodeLogoPath;
 
+    private String qrCodeSaveAsPath;
+
     public boolean isAutoCheckUpdate() {
         return setting.getBool("autoCheckUpdate", "setting.common", true);
     }
@@ -201,5 +203,13 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setQrCodeLogoPath(String qrCodeLogoPath) {
         setting.put("func.qrCode", "qrCodeLogoPath", qrCodeLogoPath);
+    }
+
+    public String getQrCodeSaveAsPath() {
+        return setting.getStr("qrCodeSaveAsPath", "func.qrCode", "");
+    }
+
+    public void setQrCodeSaveAsPath(String qrCodeSaveAsPath) {
+        setting.put("func.qrCode", "qrCodeSaveAsPath", qrCodeSaveAsPath);
     }
 }

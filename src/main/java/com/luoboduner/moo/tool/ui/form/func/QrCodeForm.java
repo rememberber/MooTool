@@ -83,7 +83,13 @@ public class QrCodeForm {
             }
         });
         saveAsButton.addActionListener(e -> {
-            JFileChooser fileChooser = new JFileChooser();
+            File beforeFile = new File(App.config.getQrCodeSaveAsPath());
+            JFileChooser fileChooser;
+            if (beforeFile.exists()) {
+                fileChooser = new JFileChooser(beforeFile);
+            } else {
+                fileChooser = new JFileChooser();
+            }
             fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
             int approve = fileChooser.showOpenDialog(qrCodePanel);
             String exportPath;
@@ -100,14 +106,16 @@ public class QrCodeForm {
             File qrCodeImageTempFile = FileUtil.file(tempDir + File.separator + "qrCode.jpg");
             if (qrCodeImageTempFile.exists()) {
                 FileUtil.copy(qrCodeImageTempFile.getAbsolutePath(), exportPath, true);
-            }
-            JOptionPane.showMessageDialog(qrCodePanel, "导出成功！", "提示",
-                    JOptionPane.INFORMATION_MESSAGE);
-            try {
-                Desktop desktop = Desktop.getDesktop();
-                desktop.open(new File(exportPath));
-            } catch (Exception e2) {
-                logger.error(e2);
+                JOptionPane.showMessageDialog(qrCodePanel, "保存成功！", "提示",
+                        JOptionPane.INFORMATION_MESSAGE);
+                App.config.setQrCodeSaveAsPath(exportPath);
+                App.config.save();
+                try {
+                    Desktop desktop = Desktop.getDesktop();
+                    desktop.open(new File(exportPath));
+                } catch (Exception e2) {
+                    logger.error(e2);
+                }
             }
         });
     }
