@@ -40,31 +40,13 @@ public class HostListener {
     public static void addListeners() {
         HostForm hostForm = HostForm.getInstance();
 
-        hostForm.getSaveButton().addActionListener(e -> {
-            if (StringUtils.isEmpty(selectedName)) {
-                selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-            }
-            String name = JOptionPane.showInputDialog("名称", selectedName);
-            if (StringUtils.isNotBlank(name)) {
-                THost tHost = hostMapper.selectByName(name);
-                if (tHost == null) {
-                    tHost = new THost();
-                }
-                String now = SqliteUtil.nowDateForSqlite();
-                tHost.setName(name);
-                tHost.setContent(HostForm.getInstance().getTextArea().getText());
-                tHost.setCreateTime(now);
-                tHost.setModifiedTime(now);
-                if (tHost.getId() == null) {
-                    hostMapper.insert(tHost);
-                    HostForm.initListTable();
-                    selectedName = name;
-                } else {
-                    hostMapper.updateByPrimaryKey(tHost);
-                }
+        hostForm.getSaveButton().addActionListener(e -> save(true));
 
-            }
-        });
+        hostForm.getSwitchButton().addActionListener(e -> ThreadUtil.execute(() -> {
+            String hostText = hostForm.getTextArea().getText();
+            HostForm.setHost(selectedName, hostText);
+            save(false);
+        }));
 
         // 点击左侧表格事件
         hostForm.getNoteListTable().addMouseListener(new MouseAdapter() {
@@ -264,5 +246,33 @@ public class HostListener {
             }
         });
 
+    }
+
+    private static void save(boolean needRename) {
+        if (StringUtils.isEmpty(selectedName)) {
+            selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+        }
+        String name = selectedName;
+        if (needRename) {
+            name = JOptionPane.showInputDialog("名称", selectedName);
+        }
+        if (StringUtils.isNotBlank(name)) {
+            THost tHost = hostMapper.selectByName(name);
+            if (tHost == null) {
+                tHost = new THost();
+            }
+            String now = SqliteUtil.nowDateForSqlite();
+            tHost.setName(name);
+            tHost.setContent(HostForm.getInstance().getTextArea().getText());
+            tHost.setCreateTime(now);
+            tHost.setModifiedTime(now);
+            if (tHost.getId() == null) {
+                hostMapper.insert(tHost);
+                HostForm.initListTable();
+                selectedName = name;
+            } else {
+                hostMapper.updateByPrimaryKey(tHost);
+            }
+        }
     }
 }

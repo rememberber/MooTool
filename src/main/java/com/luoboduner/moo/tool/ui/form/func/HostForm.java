@@ -1,7 +1,6 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.thread.ThreadUtil;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -57,14 +56,9 @@ public class HostForm {
 
     private HostForm() {
         UndoUtil.register(this);
-
-        switchButton.addActionListener(e -> ThreadUtil.execute(() -> {
-            String hostText = textArea.getText();
-            setHost(hostText);
-        }));
     }
 
-    private static void setHost(String hostText) {
+    public static void setHost(String hostName, String hostText) {
         try {
             HostForm hostForm = HostForm.getInstance();
             hostForm.getSwitchButton().setEnabled(false);
@@ -72,7 +66,7 @@ public class HostForm {
                 File hostFile = FileUtil.file(WIN_HOST_FILE_PATH);
                 FileUtil.writeUtf8String(hostText, hostFile);
                 if (App.trayIcon != null) {
-                    App.trayIcon.displayMessage("MooTool", "Host已切换！\n" + HostListener.selectedName, TrayIcon.MessageType.INFO);
+                    App.trayIcon.displayMessage("MooTool", "Host已切换！\n" + hostName, TrayIcon.MessageType.INFO);
                 }
             } else {
                 JOptionPane.showMessageDialog(hostForm.getHostPanel(), NOT_SUPPORTED_TIPS, "抱歉！", JOptionPane.INFORMATION_MESSAGE);
@@ -158,7 +152,7 @@ public class HostForm {
             menuItem = new MenuItem(tHost.getName());
             menuItem.addActionListener(e -> {
                 THost tHost1 = hostMapper.selectByName(tHost.getName());
-                setHost(tHost1.getContent());
+                setHost(tHost1.getName(), tHost1.getContent());
             });
             App.popupMenu.add(menuItem);
         }
