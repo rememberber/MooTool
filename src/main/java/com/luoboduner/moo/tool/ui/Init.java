@@ -183,8 +183,8 @@ public class Init {
                 App.trayIcon.setImageAutoSize(true);
 
                 App.trayIcon.addActionListener(e -> {
-                    App.mainFrame.setExtendedState(JFrame.NORMAL);
                     App.mainFrame.setVisible(true);
+                    App.mainFrame.setExtendedState(JFrame.NORMAL);
                     App.mainFrame.requestFocus();
                 });
                 App.trayIcon.addMouseListener(new MouseAdapter() {
@@ -192,8 +192,8 @@ public class Init {
                     public void mouseClicked(MouseEvent e) {
                         switch (e.getButton()) {
                             case MouseEvent.BUTTON1: {
-                                App.mainFrame.setExtendedState(JFrame.NORMAL);
                                 App.mainFrame.setVisible(true);
+                                App.mainFrame.setExtendedState(JFrame.NORMAL);
                                 App.mainFrame.requestFocus();
                                 break;
                             }

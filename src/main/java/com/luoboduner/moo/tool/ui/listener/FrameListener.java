@@ -54,6 +54,7 @@ public class FrameListener {
             public void windowClosing(WindowEvent e) {
                 saveBeforeExit();
                 App.mainFrame.setExtendedState(JFrame.HIDE_ON_CLOSE);
+                App.mainFrame.setVisible(false);
             }
 
             @Override

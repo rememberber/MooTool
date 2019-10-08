@@ -133,8 +133,8 @@ public class HostForm {
         MenuItem exitItem = new MenuItem("Quit");
 
         openItem.addActionListener(e -> {
-            App.mainFrame.setExtendedState(JFrame.NORMAL);
             App.mainFrame.setVisible(true);
+            App.mainFrame.setExtendedState(JFrame.NORMAL);
             App.mainFrame.requestFocus();
         });
         exitItem.addActionListener(e -> {
