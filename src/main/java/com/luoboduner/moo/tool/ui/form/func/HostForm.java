@@ -152,7 +152,10 @@ public class HostForm {
             menuItem = new MenuItem(tHost.getName());
             menuItem.addActionListener(e -> {
                 THost tHost1 = hostMapper.selectByName(tHost.getName());
-                setHost(tHost1.getName(), tHost1.getContent());
+                String hostName = tHost1.getName();
+                setHost(hostName, tHost1.getContent());
+
+                highlightHostMenu(hostName);
             });
             App.popupMenu.add(menuItem);
         }
@@ -176,6 +179,19 @@ public class HostForm {
             hostForm.getSwitchButton().setVisible(false);
             hostForm.getTextArea().setText(content);
             hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
+        }
+    }
+
+    private static void highlightHostMenu(String hostName) {
+        Font fontBold = new Font(App.config.getFont(), Font.BOLD, App.config.getFontSize());
+        Font fontPlain = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
+        for (int i = 0; i < App.popupMenu.getItemCount(); i++) {
+            MenuItem item = App.popupMenu.getItem(i);
+            if (hostName.equals(item.getLabel())) {
+                item.setFont(fontBold);
+            } else {
+                item.setFont(fontPlain);
+            }
         }
     }
 
