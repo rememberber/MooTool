@@ -53,6 +53,8 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     private int jsonBeautyFontSize;
 
+    private String currentHostName;
+
     private int qrCodeSize;
 
     private String qrCodeErrorCorrectionLevel;
@@ -221,5 +223,13 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setQrCodeRecognitionImagePath(String qrCodeRecognitionImagePath) {
         setting.put("func.qrCode", "qrCodeRecognitionImagePath", qrCodeRecognitionImagePath);
+    }
+
+    public String getCurrentHostName() {
+        return setting.getStr("currentHostName", "func.host", "");
+    }
+
+    public void setCurrentHostName(String currentHostName) {
+        setting.put("func.host", "currentHostName", currentHostName);
     }
 }

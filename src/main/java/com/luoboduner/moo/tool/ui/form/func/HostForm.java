@@ -9,8 +9,6 @@ import com.luoboduner.moo.tool.dao.THostMapper;
 import com.luoboduner.moo.tool.domain.THost;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.UiConsts;
-import com.luoboduner.moo.tool.ui.form.MainWindow;
-import com.luoboduner.moo.tool.ui.listener.FrameListener;
 import com.luoboduner.moo.tool.ui.listener.HostListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
@@ -67,6 +65,7 @@ public class HostForm {
                 FileUtil.writeUtf8String(hostText, hostFile);
                 if (App.trayIcon != null) {
                     App.trayIcon.displayMessage("MooTool", "Host已切换！\n" + hostName, TrayIcon.MessageType.INFO);
+                    highlightHostMenu(hostName);
                 }
             } else {
                 JOptionPane.showMessageDialog(hostForm.getHostPanel(), NOT_SUPPORTED_TIPS, "抱歉！", JOptionPane.INFORMATION_MESSAGE);
@@ -127,16 +126,10 @@ public class HostForm {
         MenuItem exitItem = new MenuItem("Quit");
 
         openItem.addActionListener(e -> {
-            App.mainFrame.setVisible(true);
-            App.mainFrame.setExtendedState(JFrame.NORMAL);
-            App.mainFrame.requestFocus();
+            Init.showMainFrame();
         });
         exitItem.addActionListener(e -> {
-            FrameListener.saveBeforeExit();
-            App.config.setRecentTabIndex(MainWindow.getInstance().getTabbedPane().getSelectedIndex());
-            App.config.save();
-            App.sqlSession.close();
-            System.exit(0);
+            Init.shutdown();
         });
 
         App.popupMenu.add(openItem);
@@ -154,8 +147,6 @@ public class HostForm {
                 THost tHost1 = hostMapper.selectByName(tHost.getName());
                 String hostName = tHost1.getName();
                 setHost(hostName, tHost1.getContent());
-
-                highlightHostMenu(hostName);
             });
             App.popupMenu.add(menuItem);
         }

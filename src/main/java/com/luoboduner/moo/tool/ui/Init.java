@@ -219,13 +219,13 @@ public class Init {
         }
     }
 
-    private static void showMainFrame() {
+    public static void showMainFrame() {
         App.mainFrame.setExtendedState(JFrame.NORMAL);
         App.mainFrame.setVisible(true);
         App.mainFrame.requestFocus();
     }
 
-    private static void shutdown() {
+    public static void shutdown() {
         FrameListener.saveBeforeExit();
         App.sqlSession.close();
         System.exit(0);
