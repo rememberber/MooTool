@@ -53,25 +53,7 @@ public class HostListener {
             @Override
             public void mousePressed(MouseEvent e) {
                 ThreadUtil.execute(() -> {
-                    int selectedRow = hostForm.getNoteListTable().getSelectedRow();
-                    String name = hostForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
-                    String content;
-                    if (HostForm.SYS_CURRENT_HOST_NAME.equals(name)) {
-                        if (SystemUtil.isWindowsOs()) {
-                            content = FileUtil.readUtf8String(HostForm.WIN_HOST_FILE_PATH);
-                        } else {
-                            content = HostForm.NOT_SUPPORTED_TIPS;
-                        }
-                        hostForm.getTextArea().setEditable(false);
-                        hostForm.getSwitchButton().setVisible(false);
-                    } else {
-                        selectedName = name;
-                        THost tHost = hostMapper.selectByName(name);
-                        content = tHost.getContent();
-                        hostForm.getTextArea().setEditable(true);
-                        hostForm.getSwitchButton().setVisible(true);
-                    }
-                    hostForm.getTextArea().setText(content);
+                    refreshHostContentInTextArea();
                 });
                 super.mousePressed(e);
             }
@@ -246,6 +228,29 @@ public class HostListener {
             }
         });
 
+    }
+
+    public static void refreshHostContentInTextArea() {
+        HostForm hostForm = HostForm.getInstance();
+        int selectedRow = hostForm.getNoteListTable().getSelectedRow();
+        String name = hostForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
+        String content;
+        if (HostForm.SYS_CURRENT_HOST_NAME.equals(name)) {
+            if (SystemUtil.isWindowsOs()) {
+                content = FileUtil.readUtf8String(HostForm.WIN_HOST_FILE_PATH);
+            } else {
+                content = HostForm.NOT_SUPPORTED_TIPS;
+            }
+            hostForm.getTextArea().setEditable(false);
+            hostForm.getSwitchButton().setVisible(false);
+        } else {
+            selectedName = name;
+            THost tHost = hostMapper.selectByName(name);
+            content = tHost.getContent();
+            hostForm.getTextArea().setEditable(true);
+            hostForm.getSwitchButton().setVisible(true);
+        }
+        hostForm.getTextArea().setText(content);
     }
 
     private static void save(boolean needRename) {

@@ -103,6 +103,7 @@ public class HostForm {
             hostForm.getTextArea().setForeground(foreColor);
         }
         hostForm.getHostPanel().updateUI();
+        highlightHostMenu(App.config.getCurrentHostName());
     }
 
     public static void initListTable() {
@@ -176,7 +177,7 @@ public class HostForm {
     private static void highlightHostMenu(String hostName) {
         Font fontBold = new Font(App.config.getFont(), Font.BOLD, App.config.getFontSize());
         Font fontPlain = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
-        for (int i = 0; i < App.popupMenu.getItemCount(); i++) {
+        for (int i = 2; i < App.popupMenu.getItemCount(); i++) {
             MenuItem item = App.popupMenu.getItem(i);
             if (hostName.equals(item.getLabel())) {
                 item.setFont(fontBold);
@@ -184,6 +185,9 @@ public class HostForm {
                 item.setFont(fontPlain);
             }
         }
+        App.config.setCurrentHostName(hostName);
+        App.config.save();
+        HostListener.refreshHostContentInTextArea();
     }
 
     {
