@@ -154,24 +154,16 @@ public class HostForm {
         App.popupMenu.addSeparator();
         App.popupMenu.add(exitItem);
 
-        if (hostList.size() > 0) {
-            hostForm.getTextArea().setText(hostList.get(0).getContent());
-            hostForm.getTextArea().setEditable(true);
-            hostForm.getSwitchButton().setVisible(true);
-            hostForm.getNoteListTable().setRowSelectionInterval(1, 1);
-            HostListener.selectedName = hostList.get(0).getName();
+        String content;
+        if (SystemUtil.isWindowsOs()) {
+            content = FileUtil.readUtf8String(HostForm.WIN_HOST_FILE_PATH);
         } else {
-            String content;
-            if (SystemUtil.isWindowsOs()) {
-                content = FileUtil.readUtf8String(HostForm.WIN_HOST_FILE_PATH);
-            } else {
-                content = HostForm.NOT_SUPPORTED_TIPS;
-            }
-            hostForm.getTextArea().setEditable(false);
-            hostForm.getSwitchButton().setVisible(false);
-            hostForm.getTextArea().setText(content);
-            hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
+            content = HostForm.NOT_SUPPORTED_TIPS;
         }
+        hostForm.getTextArea().setEditable(false);
+        hostForm.getSwitchButton().setVisible(false);
+        hostForm.getTextArea().setText(content);
+        hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
     }
 
     private static void highlightHostMenu(String hostName) {
