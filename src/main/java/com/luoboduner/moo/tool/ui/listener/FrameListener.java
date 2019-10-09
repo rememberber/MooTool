@@ -71,25 +71,27 @@ public class FrameListener {
     }
 
     public static void saveBeforeExit() {
-        String quickNoteName = QuickNoteListener.selectedName;
         QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
-        String now = SqliteUtil.nowDateForSqlite();
-        if (StringUtils.isEmpty(quickNoteName)) {
-            quickNoteName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-            TQuickNote tQuickNote = new TQuickNote();
-            tQuickNote.setName(quickNoteName);
-            tQuickNote.setContent(quickNoteForm.getTextArea().getText());
-            tQuickNote.setCreateTime(now);
-            tQuickNote.setModifiedTime(now);
+        if (StringUtils.isNotBlank(quickNoteForm.getTextArea().getText())) {
+            String quickNoteName = QuickNoteListener.selectedName;
+            String now = SqliteUtil.nowDateForSqlite();
+            if (StringUtils.isEmpty(quickNoteName)) {
+                quickNoteName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                TQuickNote tQuickNote = new TQuickNote();
+                tQuickNote.setName(quickNoteName);
+                tQuickNote.setContent(quickNoteForm.getTextArea().getText());
+                tQuickNote.setCreateTime(now);
+                tQuickNote.setModifiedTime(now);
 
-            quickNoteMapper.insert(tQuickNote);
-        } else {
-            TQuickNote tQuickNote = new TQuickNote();
-            tQuickNote.setName(quickNoteName);
-            tQuickNote.setContent(quickNoteForm.getTextArea().getText());
-            tQuickNote.setModifiedTime(now);
+                quickNoteMapper.insert(tQuickNote);
+            } else {
+                TQuickNote tQuickNote = new TQuickNote();
+                tQuickNote.setName(quickNoteName);
+                tQuickNote.setContent(quickNoteForm.getTextArea().getText());
+                tQuickNote.setModifiedTime(now);
 
-            quickNoteMapper.updateByName(tQuickNote);
+                quickNoteMapper.updateByName(tQuickNote);
+            }
         }
         App.config.setRecentTabIndex(MainWindow.getInstance().getTabbedPane().getSelectedIndex());
         App.config.save();
