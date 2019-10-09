@@ -6,7 +6,6 @@ import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
 import com.luoboduner.moo.tool.ui.form.AboutForm;
-import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.SettingForm;
 import com.luoboduner.moo.tool.ui.form.func.CryptoForm;
 import com.luoboduner.moo.tool.ui.form.func.EnCodeForm;
@@ -163,16 +162,10 @@ public class Init {
                 MenuItem exitItem = new MenuItem("Quit");
 
                 openItem.addActionListener(e -> {
-                    App.mainFrame.setExtendedState(JFrame.NORMAL);
-                    App.mainFrame.setVisible(true);
-                    App.mainFrame.requestFocus();
+                    showMainFrame();
                 });
                 exitItem.addActionListener(e -> {
-                    FrameListener.saveBeforeExit();
-                    App.config.setRecentTabIndex(MainWindow.getInstance().getTabbedPane().getSelectedIndex());
-                    App.config.save();
-                    App.sqlSession.close();
-                    System.exit(0);
+                    shutdown();
                 });
 
                 App.popupMenu.add(openItem);
@@ -224,5 +217,17 @@ public class Init {
         } catch (Exception e) {
             logger.error(ExceptionUtils.getStackTrace(e));
         }
+    }
+
+    private static void showMainFrame() {
+        App.mainFrame.setExtendedState(JFrame.NORMAL);
+        App.mainFrame.setVisible(true);
+        App.mainFrame.requestFocus();
+    }
+
+    private static void shutdown() {
+        FrameListener.saveBeforeExit();
+        App.sqlSession.close();
+        System.exit(0);
     }
 }

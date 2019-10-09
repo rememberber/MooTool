@@ -4,6 +4,7 @@ package com.luoboduner.moo.tool.ui.listener;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
+import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
@@ -90,5 +91,7 @@ public class FrameListener {
 
             quickNoteMapper.updateByName(tQuickNote);
         }
+        App.config.setRecentTabIndex(MainWindow.getInstance().getTabbedPane().getSelectedIndex());
+        App.config.save();
     }
 }
