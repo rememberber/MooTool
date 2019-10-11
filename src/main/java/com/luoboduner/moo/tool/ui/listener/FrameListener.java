@@ -84,11 +84,12 @@ public class FrameListener {
                 tQuickNote.setModifiedTime(now);
 
                 quickNoteMapper.insert(tQuickNote);
+                QuickNoteListener.selectedName = quickNoteName;
+                QuickNoteForm.initNoteListTable();
             } else {
                 TQuickNote tQuickNote = new TQuickNote();
                 tQuickNote.setName(quickNoteName);
                 tQuickNote.setContent(quickNoteForm.getTextArea().getText());
-                tQuickNote.setModifiedTime(now);
 
                 quickNoteMapper.updateByName(tQuickNote);
             }
