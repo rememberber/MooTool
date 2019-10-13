@@ -1,0 +1,14 @@
+language: java
+
+before_install:
+  - mvn install:install-file -Dfile=./lib/beautyeye_lnf.jar -DgroupId=com.beautyeye -DartifactId=beautyeye-lnf -Dpackaging=jar -Dversion=1.0 -DgeneratePom=true -DcreateChecksum=true
+  - mvn install:install-file -Dfile=./lib/darcula.jar -DgroupId=com.darcula -DartifactId=darcula-lnf -Dpackaging=jar -Dversion=1.0 -DgeneratePom=true -DcreateChecksum=true
+  - mvn install:install-file -Dfile=./lib/weblaf-1.29.jar -DgroupId=com.weblaf -DartifactId=weblaf-lnf -Dpackaging=jar -Dversion=1.2.9 -DgeneratePom=true -DcreateChecksum=true
+
+jdk:
+  - openjdk8
+script: "mvn clean package -Dmaven.test.skip=true"
+
+notifications:
+  email:
+    - rememberber@163.com
