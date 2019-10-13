@@ -33,20 +33,20 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="9d7e0" class="javax.swing.JButton" binding="button1" default-binding="true">
+                  <component id="9d7e0" class="javax.swing.JButton" binding="nativeToUnicodeButton">
                     <constraints>
                       <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <text value="Button"/>
+                      <text value="Native --&gt; Unicode"/>
                     </properties>
                   </component>
-                  <component id="d812b" class="javax.swing.JButton" binding="button2" default-binding="true">
+                  <component id="d812b" class="javax.swing.JButton" binding="unicodeToNativeButton">
                     <constraints>
                       <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
-                      <text value="Button"/>
+                      <text value="Native &lt;-- Unicode"/>
                     </properties>
                   </component>
                   <vspacer id="b346f">
@@ -68,7 +68,7 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="f4ae7" class="javax.swing.JTextArea" binding="textArea1" default-binding="true">
+                  <component id="f4ae7" class="javax.swing.JTextArea" binding="nativeTextArea1">
                     <constraints/>
                     <properties/>
                   </component>
@@ -81,7 +81,7 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="4df6a" class="javax.swing.JTextArea" binding="textArea2" default-binding="true">
+                  <component id="4df6a" class="javax.swing.JTextArea" binding="unicodeTextArea">
                     <constraints/>
                     <properties/>
                   </component>

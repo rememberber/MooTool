@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
+import cn.hutool.core.text.UnicodeUtil;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -22,10 +23,10 @@ import java.awt.*;
 public class EnCodeForm {
     private JTabbedPane tabbedPane1;
     private JPanel enCodePanel;
-    private JTextArea textArea1;
-    private JTextArea textArea2;
-    private JButton button1;
-    private JButton button2;
+    private JTextArea nativeTextArea1;
+    private JTextArea unicodeTextArea;
+    private JButton nativeToUnicodeButton;
+    private JButton unicodeToNativeButton;
     private JTextArea textArea3;
     private JTextArea textArea4;
     private JButton button3;
@@ -43,6 +44,16 @@ public class EnCodeForm {
 
     private EnCodeForm() {
         UndoUtil.register(this);
+        nativeToUnicodeButton.addActionListener(e -> {
+            String nativeText1 = enCodeForm.getNativeTextArea1().getText();
+            String unicodeText = UnicodeUtil.toUnicode(nativeText1);
+            enCodeForm.getUnicodeTextArea().setText(unicodeText);
+        });
+        unicodeToNativeButton.addActionListener(e -> {
+            String unicodeText = enCodeForm.getUnicodeTextArea().getText();
+            String nativeText1 = UnicodeUtil.toString(unicodeText);
+            enCodeForm.getNativeTextArea1().setText(nativeText1);
+        });
     }
 
     public static EnCodeForm getInstance() {
@@ -58,11 +69,11 @@ public class EnCodeForm {
         if ("Darcula(推荐)".equals(App.config.getTheme())) {
             Color bgColor = new Color(30, 30, 30);
             Color foreColor = new Color(187, 187, 187);
-            enCodeForm.getTextArea1().setBackground(bgColor);
-            enCodeForm.getTextArea1().setForeground(foreColor);
+            enCodeForm.getNativeTextArea1().setBackground(bgColor);
+            enCodeForm.getNativeTextArea1().setForeground(foreColor);
 
-            enCodeForm.getTextArea2().setBackground(bgColor);
-            enCodeForm.getTextArea2().setForeground(foreColor);
+            enCodeForm.getUnicodeTextArea().setBackground(bgColor);
+            enCodeForm.getUnicodeTextArea().setForeground(foreColor);
         }
         enCodeForm.getEnCodePanel().updateUI();
     }
@@ -93,24 +104,24 @@ public class EnCodeForm {
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(4, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel1.add(panel2, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        button1 = new JButton();
-        button1.setText("Button");
-        panel2.add(button1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        button2 = new JButton();
-        button2.setText("Button");
-        panel2.add(button2, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        nativeToUnicodeButton = new JButton();
+        nativeToUnicodeButton.setText("Native --> Unicode");
+        panel2.add(nativeToUnicodeButton, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        unicodeToNativeButton = new JButton();
+        unicodeToNativeButton.setText("Native <-- Unicode");
+        panel2.add(unicodeToNativeButton, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer1 = new Spacer();
         panel2.add(spacer1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
         panel2.add(spacer2, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JScrollPane scrollPane1 = new JScrollPane();
         panel1.add(scrollPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        textArea1 = new JTextArea();
-        scrollPane1.setViewportView(textArea1);
+        nativeTextArea1 = new JTextArea();
+        scrollPane1.setViewportView(nativeTextArea1);
         final JScrollPane scrollPane2 = new JScrollPane();
         panel1.add(scrollPane2, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        textArea2 = new JTextArea();
-        scrollPane2.setViewportView(textArea2);
+        unicodeTextArea = new JTextArea();
+        scrollPane2.setViewportView(unicodeTextArea);
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane1.addTab("Native/UTF-8", panel3);
