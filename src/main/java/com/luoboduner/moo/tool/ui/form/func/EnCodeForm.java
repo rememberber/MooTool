@@ -1,6 +1,7 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.core.text.UnicodeUtil;
+import cn.hutool.core.util.URLUtil;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -27,18 +28,11 @@ public class EnCodeForm {
     private JTextArea unicodeTextArea;
     private JButton nativeToUnicodeButton;
     private JButton unicodeToNativeButton;
-    private JTextArea textArea3;
-    private JTextArea textArea4;
-    private JButton button3;
-    private JButton button4;
-    private JTextArea textArea5;
-    private JTextArea textArea6;
-    private JButton button5;
-    private JButton button6;
-    private JTextArea textArea7;
-    private JTextArea textArea8;
-    private JButton button7;
-    private JButton button8;
+    private JTextArea urlTextArea;
+    private JTextArea urlEncodeTextArea;
+    private JButton urlEncodeButton;
+    private JButton urlDecodeButton;
+    private JComboBox urlEncodeCharsetComboBox;
 
     private static EnCodeForm enCodeForm;
 
@@ -53,6 +47,18 @@ public class EnCodeForm {
             String unicodeText = enCodeForm.getUnicodeTextArea().getText();
             String nativeText1 = UnicodeUtil.toString(unicodeText);
             enCodeForm.getNativeTextArea1().setText(nativeText1);
+        });
+        urlEncodeButton.addActionListener(e -> {
+            String url = enCodeForm.getUrlTextArea().getText();
+            String urlEncodeCharset = (String) enCodeForm.getUrlEncodeCharsetComboBox().getSelectedItem();
+            String urlEncode = URLUtil.encode(url, urlEncodeCharset);
+            enCodeForm.getUrlEncodeTextArea().setText(urlEncode);
+        });
+        urlDecodeButton.addActionListener(e -> {
+            String urlEncode = enCodeForm.getUrlEncodeTextArea().getText();
+            String urlEncodeCharset = (String) enCodeForm.getUrlEncodeCharsetComboBox().getSelectedItem();
+            String urlDecode = URLUtil.decode(urlEncode, urlEncodeCharset);
+            enCodeForm.getUrlTextArea().setText(urlDecode);
         });
     }
 
@@ -74,6 +80,12 @@ public class EnCodeForm {
 
             enCodeForm.getUnicodeTextArea().setBackground(bgColor);
             enCodeForm.getUnicodeTextArea().setForeground(foreColor);
+
+            enCodeForm.getUrlTextArea().setBackground(bgColor);
+            enCodeForm.getUrlTextArea().setForeground(foreColor);
+
+            enCodeForm.getUrlEncodeTextArea().setBackground(bgColor);
+            enCodeForm.getUrlEncodeTextArea().setForeground(foreColor);
         }
         enCodeForm.getEnCodePanel().updateUI();
     }
@@ -124,64 +136,32 @@ public class EnCodeForm {
         scrollPane2.setViewportView(unicodeTextArea);
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("Native/UTF-8", panel3);
-        textArea3 = new JTextArea();
-        panel3.add(textArea3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(150, 50), null, 0, false));
-        textArea4 = new JTextArea();
-        panel3.add(textArea4, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(150, 50), null, 0, false));
+        tabbedPane1.addTab("URL转码", panel3);
+        urlTextArea = new JTextArea();
+        panel3.add(urlTextArea, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(150, 50), null, 0, false));
+        urlEncodeTextArea = new JTextArea();
+        panel3.add(urlEncodeTextArea, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(150, 50), null, 0, false));
         final JPanel panel4 = new JPanel();
-        panel4.setLayout(new GridLayoutManager(4, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel4.setLayout(new GridLayoutManager(5, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel3.add(panel4, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        button3 = new JButton();
-        button3.setText("Button");
-        panel4.add(button3, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        button4 = new JButton();
-        button4.setText("Button");
-        panel4.add(button4, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        urlEncodeButton = new JButton();
+        urlEncodeButton.setIcon(new ImageIcon(getClass().getResource("/icon/arrow-right.png")));
+        urlEncodeButton.setText("Encode编码");
+        panel4.add(urlEncodeButton, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        urlDecodeButton = new JButton();
+        urlDecodeButton.setIcon(new ImageIcon(getClass().getResource("/icon/arrow-left.png")));
+        urlDecodeButton.setText("Decode解码");
+        panel4.add(urlDecodeButton, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer3 = new Spacer();
         panel4.add(spacer3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final Spacer spacer4 = new Spacer();
-        panel4.add(spacer4, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        final JPanel panel5 = new JPanel();
-        panel5.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("Native/ASCII", panel5);
-        textArea5 = new JTextArea();
-        panel5.add(textArea5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(150, 50), null, 0, false));
-        textArea6 = new JTextArea();
-        panel5.add(textArea6, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(150, 50), null, 0, false));
-        final JPanel panel6 = new JPanel();
-        panel6.setLayout(new GridLayoutManager(4, 1, new Insets(0, 0, 0, 0), -1, -1));
-        panel5.add(panel6, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        button5 = new JButton();
-        button5.setText("Button");
-        panel6.add(button5, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        button6 = new JButton();
-        button6.setText("Button");
-        panel6.add(button6, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer5 = new Spacer();
-        panel6.add(spacer5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        final Spacer spacer6 = new Spacer();
-        panel6.add(spacer6, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        final JPanel panel7 = new JPanel();
-        panel7.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("URL转码", panel7);
-        textArea7 = new JTextArea();
-        panel7.add(textArea7, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(150, 50), null, 0, false));
-        textArea8 = new JTextArea();
-        panel7.add(textArea8, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(150, 50), null, 0, false));
-        final JPanel panel8 = new JPanel();
-        panel8.setLayout(new GridLayoutManager(4, 1, new Insets(0, 0, 0, 0), -1, -1));
-        panel7.add(panel8, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        button7 = new JButton();
-        button7.setText("Button");
-        panel8.add(button7, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        button8 = new JButton();
-        button8.setText("Button");
-        panel8.add(button8, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer7 = new Spacer();
-        panel8.add(spacer7, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        final Spacer spacer8 = new Spacer();
-        panel8.add(spacer8, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        panel4.add(spacer4, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        urlEncodeCharsetComboBox = new JComboBox();
+        final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
+        defaultComboBoxModel1.addElement("utf-8");
+        defaultComboBoxModel1.addElement("gb2312");
+        urlEncodeCharsetComboBox.setModel(defaultComboBoxModel1);
+        panel4.add(urlEncodeCharsetComboBox, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     /**
