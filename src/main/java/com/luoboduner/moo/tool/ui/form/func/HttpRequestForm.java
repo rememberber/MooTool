@@ -15,7 +15,7 @@ import com.luoboduner.moo.tool.service.HttpSendResult;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.TableInCellButtonColumn;
 import com.luoboduner.moo.tool.ui.frame.HttpResultFrame;
-import com.luoboduner.moo.tool.ui.listener.HttpRequestListener;
+import com.luoboduner.moo.tool.ui.listener.func.HttpRequestListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
