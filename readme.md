@@ -9,7 +9,7 @@
 [![GitHub stars](https://img.shields.io/github/stars/rememberber/MooTool.svg)](https://github.com/rememberber/MooTool)
 [![Build Status](https://travis-ci.org/rememberber/MooTool.svg?branch=master)](https://travis-ci.org/rememberber/MooTool)
 [![GitHub release](https://img.shields.io/github/release/rememberber/MooTool.svg)](https://github.com/rememberber/MooTool/releases)
-[![GitHub license](https://img.shields.io/github/license/rememberber/MooTool.svg)](https://github.com/rememberber/MooTool/blob/master/LICENSE.txt)
+[![GitHub license](https://img.shields.io/github/license/rememberber/MooTool)](https://github.com/rememberber/MooTool/blob/master/LICENSE.txt)
 
 ### 支持的功能
 + Host切换  
