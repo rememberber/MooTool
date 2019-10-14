@@ -4,6 +4,7 @@ import com.apple.eawt.Application;
 import com.google.common.collect.Lists;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
+import com.luoboduner.moo.tool.ui.listener.func.EnCodeListener;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
 import com.luoboduner.moo.tool.ui.listener.func.HttpRequestListener;
 import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
@@ -62,6 +63,7 @@ public class MainFrame extends JFrame {
         JsonBeautyListener.addListeners();
         HostListener.addListeners();
         HttpRequestListener.addListeners();
+        EnCodeListener.addListeners();
         SettingListener.addListeners();
     }
 }

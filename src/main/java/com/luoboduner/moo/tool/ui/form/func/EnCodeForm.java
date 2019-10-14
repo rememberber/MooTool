@@ -1,7 +1,5 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
-import cn.hutool.core.text.UnicodeUtil;
-import cn.hutool.core.util.URLUtil;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -38,28 +36,6 @@ public class EnCodeForm {
 
     private EnCodeForm() {
         UndoUtil.register(this);
-        nativeToUnicodeButton.addActionListener(e -> {
-            String nativeText1 = enCodeForm.getNativeTextArea1().getText();
-            String unicodeText = UnicodeUtil.toUnicode(nativeText1);
-            enCodeForm.getUnicodeTextArea().setText(unicodeText);
-        });
-        unicodeToNativeButton.addActionListener(e -> {
-            String unicodeText = enCodeForm.getUnicodeTextArea().getText();
-            String nativeText1 = UnicodeUtil.toString(unicodeText);
-            enCodeForm.getNativeTextArea1().setText(nativeText1);
-        });
-        urlEncodeButton.addActionListener(e -> {
-            String url = enCodeForm.getUrlTextArea().getText();
-            String urlEncodeCharset = (String) enCodeForm.getUrlEncodeCharsetComboBox().getSelectedItem();
-            String urlEncode = URLUtil.encode(url, urlEncodeCharset);
-            enCodeForm.getUrlEncodeTextArea().setText(urlEncode);
-        });
-        urlDecodeButton.addActionListener(e -> {
-            String urlEncode = enCodeForm.getUrlEncodeTextArea().getText();
-            String urlEncodeCharset = (String) enCodeForm.getUrlEncodeCharsetComboBox().getSelectedItem();
-            String urlDecode = URLUtil.decode(urlEncode, urlEncodeCharset);
-            enCodeForm.getUrlTextArea().setText(urlDecode);
-        });
     }
 
     public static EnCodeForm getInstance() {
@@ -71,7 +47,10 @@ public class EnCodeForm {
 
     public static void init() {
         enCodeForm = getInstance();
+        initUi();
+    }
 
+    private static void initUi() {
         if ("Darcula(推荐)".equals(App.config.getTheme())) {
             Color bgColor = new Color(30, 30, 30);
             Color foreColor = new Color(187, 187, 187);
