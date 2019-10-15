@@ -86,13 +86,17 @@ public class HostForm {
     }
 
     public static void init() {
-        Init.initTray();
         hostForm = getInstance();
+        Init.initTray();
 
+        initUi();
+        initListTable();
+        highlightHostMenu(App.config.getCurrentHostName());
+    }
+
+    private static void initUi() {
         hostForm.getSplitPane().setDividerLocation(App.mainFrame.getWidth() / 5);
         hostForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
-
-        initListTable();
 
         hostForm.getDeletePanel().setVisible(false);
         hostForm.getTextArea().grabFocus();
@@ -103,7 +107,6 @@ public class HostForm {
             hostForm.getTextArea().setForeground(foreColor);
         }
         hostForm.getHostPanel().updateUI();
-        highlightHostMenu(App.config.getCurrentHostName());
     }
 
     public static void initListTable() {

@@ -82,135 +82,7 @@ public class HttpRequestForm {
 
     private HttpRequestForm() {
         UndoUtil.register(this);
-        paramAddButton.addActionListener(e -> {
-            String[] data = new String[2];
-            data[0] = getInstance().getParamNameTextField().getText();
-            data[1] = getInstance().getParamValueTextField().getText();
 
-            if (getInstance().getParamTable().getModel().getRowCount() == 0) {
-                initParamTable();
-            }
-
-            DefaultTableModel tableModel = (DefaultTableModel) getInstance().getParamTable().getModel();
-            int rowCount = tableModel.getRowCount();
-
-            Set<String> keySet = new HashSet<>();
-            String keyData;
-            for (int i = 0; i < rowCount; i++) {
-                keyData = (String) tableModel.getValueAt(i, 0);
-                keySet.add(keyData);
-            }
-
-            if (StringUtils.isEmpty(data[0]) || StringUtils.isEmpty(data[1])) {
-                JOptionPane.showMessageDialog(App.mainFrame, "Name和Value不能为空！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
-            } else if (keySet.contains(data[0])) {
-                JOptionPane.showMessageDialog(App.mainFrame, "Name不能重复！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                tableModel.addRow(data);
-            }
-        });
-
-        headerAddButton.addActionListener(e -> {
-            String[] data = new String[2];
-            data[0] = getInstance().getHeaderNameTextField().getText();
-            data[1] = getInstance().getHeaderValueTextField5().getText();
-
-            if (getInstance().getHeaderTable().getModel().getRowCount() == 0) {
-                initHeaderTable();
-            }
-
-            DefaultTableModel tableModel = (DefaultTableModel) getInstance().getHeaderTable().getModel();
-            int rowCount = tableModel.getRowCount();
-
-            Set<String> keySet = new HashSet<>();
-            String keyData;
-            for (int i = 0; i < rowCount; i++) {
-                keyData = (String) tableModel.getValueAt(i, 0);
-                keySet.add(keyData);
-            }
-
-            if (StringUtils.isEmpty(data[0]) || StringUtils.isEmpty(data[1])) {
-                JOptionPane.showMessageDialog(App.mainFrame, "Name和Value不能为空！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
-            } else if (keySet.contains(data[0])) {
-                JOptionPane.showMessageDialog(App.mainFrame, "Name不能重复！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                tableModel.addRow(data);
-            }
-        });
-
-        cookieAddButton.addActionListener(e -> {
-            String[] data = new String[5];
-            data[0] = getInstance().getCookieNameTextField().getText();
-            data[1] = getInstance().getCookieValueTextField().getText();
-            data[2] = getInstance().getCookieDomainTextField().getText();
-            data[3] = getInstance().getCookiePathTextField().getText();
-            data[4] = getInstance().getCookieExpiryTextField().getText();
-
-            if (getInstance().getCookieTable().getModel().getRowCount() == 0) {
-                initCookieTable();
-            }
-
-            DefaultTableModel tableModel = (DefaultTableModel) getInstance().getCookieTable().getModel();
-            int rowCount = tableModel.getRowCount();
-
-            Set<String> keySet = new HashSet<>();
-            String keyData;
-            for (int i = 0; i < rowCount; i++) {
-                keyData = (String) tableModel.getValueAt(i, 0);
-                keySet.add(keyData);
-            }
-
-            if (StringUtils.isEmpty(data[0]) || StringUtils.isEmpty(data[1]) || StringUtils.isEmpty(data[4])) {
-                JOptionPane.showMessageDialog(App.mainFrame, "Name、Value、Expiry不能为空！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
-            } else if (keySet.contains(data[0])) {
-                JOptionPane.showMessageDialog(App.mainFrame, "Name不能重复！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                tableModel.addRow(data);
-            }
-        });
-
-        // 消息类型切换事件
-        methodComboBox.addItemListener(e -> {
-            if (e.getStateChange() == ItemEvent.SELECTED) {
-                switchMethod(e.getItem().toString());
-            }
-        });
-
-        if ("Darcula(推荐)".equals(App.config.getTheme())) {
-            Color bgColor = new Color(43, 43, 43);
-            bodyTextArea.setBackground(bgColor);
-            Color foreColor = new Color(187, 187, 187);
-            bodyTextArea.setForeground(foreColor);
-        }
-
-        sendButton.addActionListener(e -> {
-            try {
-                HttpMsgMaker.prepare();
-                HttpMsgSender httpMsgSender = new HttpMsgSender();
-                HttpSendResult httpSendResult = httpMsgSender.send();
-
-                if (httpSendResult.isSuccess()) {
-                    HttpResultForm.getInstance().getBodyTextArea().setText(httpSendResult.getBody());
-                    HttpResultForm.getInstance().getHeadersTextArea().setText(httpSendResult.getHeaders());
-                    HttpResultForm.getInstance().getCookiesTextArea().setText(httpSendResult.getCookies());
-                    HttpResultFrame.showResultWindow();
-                } else {
-                    JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + httpSendResult.getInfo(), "失败",
-                            JOptionPane.ERROR_MESSAGE);
-                }
-
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
-                logger.error(ExceptionUtils.getStackTrace(ex));
-            }
-        });
     }
 
     public static HttpRequestForm getInstance() {
@@ -223,10 +95,19 @@ public class HttpRequestForm {
     public static void init() {
         httpRequestForm = getInstance();
 
+        initUi();
+        initListTable();
+    }
+
+    private static void initUi() {
         httpRequestForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
         httpRequestForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
-
-        initListTable();
+        if ("Darcula(推荐)".equals(App.config.getTheme())) {
+            Color bgColor = new Color(43, 43, 43);
+            httpRequestForm.getBodyTextArea().setBackground(bgColor);
+            Color foreColor = new Color(187, 187, 187);
+            httpRequestForm.getBodyTextArea().setForeground(foreColor);
+        }
 
         httpRequestForm.getDeletePanel().setVisible(false);
         httpRequestForm.getHttpRequestPanel().updateUI();
@@ -456,7 +337,7 @@ public class HttpRequestForm {
      *
      * @param method
      */
-    private static void switchMethod(String method) {
+    public static void switchMethod(String method) {
         if ("GET".equals(method)) {
             getInstance().getBodyTextArea().setText("");
             getInstance().getTabbedPane1().setEnabledAt(3, false);

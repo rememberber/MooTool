@@ -1,23 +1,34 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.thread.ThreadUtil;
+import cn.hutool.log.Log;
+import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TMsgHttpMapper;
 import com.luoboduner.moo.tool.domain.TMsgHttp;
+import com.luoboduner.moo.tool.service.HttpMsgMaker;
+import com.luoboduner.moo.tool.service.HttpMsgSender;
+import com.luoboduner.moo.tool.service.HttpSendResult;
 import com.luoboduner.moo.tool.ui.form.func.HttpRequestForm;
+import com.luoboduner.moo.tool.ui.form.func.HttpResultForm;
+import com.luoboduner.moo.tool.ui.frame.HttpResultFrame;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import java.awt.event.ItemEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.util.Date;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * <pre>
@@ -29,6 +40,8 @@ import java.util.Date;
  */
 @Slf4j
 public class HttpRequestListener {
+
+    private static final Log logger = LogFactory.get();
 
     private static TMsgHttpMapper msgHttpMapper = MybatisUtil.getSqlSession().getMapper(TMsgHttpMapper.class);
 
@@ -153,6 +166,129 @@ public class HttpRequestListener {
                         log.error(e.toString());
                     }
                 }
+            }
+        });
+
+        httpRequestForm.getParamAddButton().addActionListener(e -> {
+            String[] data = new String[2];
+            data[0] = httpRequestForm.getParamNameTextField().getText();
+            data[1] = httpRequestForm.getParamValueTextField().getText();
+
+            if (httpRequestForm.getParamTable().getModel().getRowCount() == 0) {
+                HttpRequestForm.initParamTable();
+            }
+
+            DefaultTableModel tableModel = (DefaultTableModel) httpRequestForm.getParamTable().getModel();
+            int rowCount = tableModel.getRowCount();
+
+            Set<String> keySet = new HashSet<>();
+            String keyData;
+            for (int i = 0; i < rowCount; i++) {
+                keyData = (String) tableModel.getValueAt(i, 0);
+                keySet.add(keyData);
+            }
+
+            if (StringUtils.isEmpty(data[0]) || StringUtils.isEmpty(data[1])) {
+                JOptionPane.showMessageDialog(App.mainFrame, "Name和Value不能为空！", "提示",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } else if (keySet.contains(data[0])) {
+                JOptionPane.showMessageDialog(App.mainFrame, "Name不能重复！", "提示",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                tableModel.addRow(data);
+            }
+        });
+
+        httpRequestForm.getHeaderAddButton().addActionListener(e -> {
+            String[] data = new String[2];
+            data[0] = httpRequestForm.getHeaderNameTextField().getText();
+            data[1] = httpRequestForm.getHeaderValueTextField5().getText();
+
+            if (httpRequestForm.getHeaderTable().getModel().getRowCount() == 0) {
+                HttpRequestForm.initHeaderTable();
+            }
+
+            DefaultTableModel tableModel = (DefaultTableModel) httpRequestForm.getHeaderTable().getModel();
+            int rowCount = tableModel.getRowCount();
+
+            Set<String> keySet = new HashSet<>();
+            String keyData;
+            for (int i = 0; i < rowCount; i++) {
+                keyData = (String) tableModel.getValueAt(i, 0);
+                keySet.add(keyData);
+            }
+
+            if (StringUtils.isEmpty(data[0]) || StringUtils.isEmpty(data[1])) {
+                JOptionPane.showMessageDialog(App.mainFrame, "Name和Value不能为空！", "提示",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } else if (keySet.contains(data[0])) {
+                JOptionPane.showMessageDialog(App.mainFrame, "Name不能重复！", "提示",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                tableModel.addRow(data);
+            }
+        });
+
+        httpRequestForm.getCookieAddButton().addActionListener(e -> {
+            String[] data = new String[5];
+            data[0] = httpRequestForm.getCookieNameTextField().getText();
+            data[1] = httpRequestForm.getCookieValueTextField().getText();
+            data[2] = httpRequestForm.getCookieDomainTextField().getText();
+            data[3] = httpRequestForm.getCookiePathTextField().getText();
+            data[4] = httpRequestForm.getCookieExpiryTextField().getText();
+
+            if (httpRequestForm.getCookieTable().getModel().getRowCount() == 0) {
+                HttpRequestForm.initCookieTable();
+            }
+
+            DefaultTableModel tableModel = (DefaultTableModel) httpRequestForm.getCookieTable().getModel();
+            int rowCount = tableModel.getRowCount();
+
+            Set<String> keySet = new HashSet<>();
+            String keyData;
+            for (int i = 0; i < rowCount; i++) {
+                keyData = (String) tableModel.getValueAt(i, 0);
+                keySet.add(keyData);
+            }
+
+            if (StringUtils.isEmpty(data[0]) || StringUtils.isEmpty(data[1]) || StringUtils.isEmpty(data[4])) {
+                JOptionPane.showMessageDialog(App.mainFrame, "Name、Value、Expiry不能为空！", "提示",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } else if (keySet.contains(data[0])) {
+                JOptionPane.showMessageDialog(App.mainFrame, "Name不能重复！", "提示",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                tableModel.addRow(data);
+            }
+        });
+
+        // 消息类型切换事件
+        httpRequestForm.getMethodComboBox().addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                HttpRequestForm.switchMethod(e.getItem().toString());
+            }
+        });
+
+        httpRequestForm.getSendButton().addActionListener(e -> {
+            try {
+                HttpMsgMaker.prepare();
+                HttpMsgSender httpMsgSender = new HttpMsgSender();
+                HttpSendResult httpSendResult = httpMsgSender.send();
+
+                if (httpSendResult.isSuccess()) {
+                    HttpResultForm.getInstance().getBodyTextArea().setText(httpSendResult.getBody());
+                    HttpResultForm.getInstance().getHeadersTextArea().setText(httpSendResult.getHeaders());
+                    HttpResultForm.getInstance().getCookiesTextArea().setText(httpSendResult.getCookies());
+                    HttpResultFrame.showResultWindow();
+                } else {
+                    JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + httpSendResult.getInfo(), "失败",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
 

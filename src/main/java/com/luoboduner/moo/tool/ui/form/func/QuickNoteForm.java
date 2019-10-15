@@ -17,8 +17,6 @@ import org.apache.commons.lang3.StringUtils;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.List;
 
 /**
@@ -51,13 +49,6 @@ public class QuickNoteForm {
 
     private QuickNoteForm() {
         UndoUtil.register(this);
-
-        findButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JOptionPane.showMessageDialog(App.mainFrame, "功能开发中，敬请期待");
-            }
-        });
     }
 
     public static QuickNoteForm getInstance() {
@@ -70,12 +61,16 @@ public class QuickNoteForm {
     public static void init() {
         quickNoteForm = getInstance();
 
-        quickNoteForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
-        quickNoteForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
+        initUi();
 
         initNoteListTable();
 
         initTextAreaFont();
+    }
+
+    private static void initUi() {
+        quickNoteForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
+        quickNoteForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
 
         quickNoteForm.getDeletePanel().setVisible(false);
         quickNoteForm.getTextArea().grabFocus();

@@ -306,6 +306,8 @@ public class JsonBeautyListener {
             }
         });
 
+        jsonBeautyForm.getFindButton().addActionListener(e -> JOptionPane.showMessageDialog(App.mainFrame, "功能开发中，敬请期待"));
+
     }
 
     private static String formatJson(String jsonText) {

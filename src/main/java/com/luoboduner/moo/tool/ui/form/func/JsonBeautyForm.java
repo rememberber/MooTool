@@ -17,8 +17,6 @@ import org.apache.commons.lang3.StringUtils;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.List;
 
 /**
@@ -52,13 +50,6 @@ public class JsonBeautyForm {
 
     private JsonBeautyForm() {
         UndoUtil.register(this);
-
-        findButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                JOptionPane.showMessageDialog(App.mainFrame, "功能开发中，敬请期待");
-            }
-        });
     }
 
     public static JsonBeautyForm getInstance() {
@@ -71,12 +62,16 @@ public class JsonBeautyForm {
     public static void init() {
         jsonBeautyForm = getInstance();
 
-        jsonBeautyForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
-        jsonBeautyForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
+        initUi();
 
         initListTable();
 
         initTextAreaFont();
+    }
+
+    private static void initUi() {
+        jsonBeautyForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
+        jsonBeautyForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
 
         jsonBeautyForm.getDeletePanel().setVisible(false);
         jsonBeautyForm.getTextArea().grabFocus();

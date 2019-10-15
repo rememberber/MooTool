@@ -276,5 +276,7 @@ public class QuickNoteListener {
             }
         });
 
+        quickNoteForm.getFindButton().addActionListener(e -> JOptionPane.showMessageDialog(App.mainFrame, "功能开发中，敬请期待"));
+
     }
 }
