@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.frame;
 import com.apple.eawt.Application;
 import com.google.common.collect.Lists;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.listener.AboutListener;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
 import com.luoboduner.moo.tool.ui.listener.func.EnCodeListener;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
@@ -61,6 +62,7 @@ public class MainFrame extends JFrame {
      */
     public void addListeners() {
         FrameListener.addListeners();
+        AboutListener.addListeners();
         QuickNoteListener.addListeners();
         TimeConvertListener.addListeners();
         JsonBeautyListener.addListeners();
