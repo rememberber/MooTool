@@ -22,8 +22,6 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.filechooser.FileFilter;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -63,85 +61,13 @@ public class QrCodeForm {
 
     private static File tempDir = null;
 
-    private static File qrCodeImageTempFile = null;
+    public static File qrCodeImageTempFile = null;
 
     private QrCodeForm() {
         UndoUtil.register(this);
-        generateButton.addActionListener(e -> ThreadUtil.execute(QrCodeForm::generate));
-        exploreButton.addActionListener(e -> {
-            qrCodeForm = getInstance();
-            File beforeFile = new File(qrCodeForm.getLogoPathTextField().getText());
-            JFileChooser fileChooser;
-
-            if (beforeFile.exists()) {
-                fileChooser = new JFileChooser(beforeFile);
-            } else {
-                fileChooser = new JFileChooser();
-            }
-
-            FileFilter filter = new FileNameExtensionFilter("*.png,*.jpg,*.jpeg", "png", "jpg", "jpeg");
-            fileChooser.setFileFilter(filter);
-
-            int approve = fileChooser.showOpenDialog(qrCodePanel);
-            if (approve == JFileChooser.APPROVE_OPTION) {
-                qrCodeForm.getLogoPathTextField().setText(fileChooser.getSelectedFile().getAbsolutePath());
-            }
-        });
-        saveAsButton.addActionListener(e -> {
-            File beforeFile = new File(App.config.getQrCodeSaveAsPath());
-            JFileChooser fileChooser;
-            if (beforeFile.exists()) {
-                fileChooser = new JFileChooser(beforeFile);
-            } else {
-                fileChooser = new JFileChooser();
-            }
-            fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-            int approve = fileChooser.showOpenDialog(qrCodePanel);
-            String exportPath;
-            if (approve == JFileChooser.APPROVE_OPTION) {
-                exportPath = fileChooser.getSelectedFile().getAbsolutePath();
-            } else {
-                return;
-            }
-
-            if (qrCodeImageTempFile.exists()) {
-                FileUtil.copy(qrCodeImageTempFile.getAbsolutePath(), exportPath, true);
-                JOptionPane.showMessageDialog(qrCodePanel, "保存成功！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
-                App.config.setQrCodeSaveAsPath(exportPath);
-                App.config.save();
-                try {
-                    Desktop desktop = Desktop.getDesktop();
-                    desktop.open(new File(exportPath));
-                } catch (Exception e2) {
-                    logger.error(e2);
-                }
-            }
-        });
-        recognitionExploreButton.addActionListener(e -> {
-            qrCodeForm = getInstance();
-            File beforeFile = new File(qrCodeForm.getRecognitionImagePathTextField().getText());
-            JFileChooser fileChooser;
-
-            if (beforeFile.exists()) {
-                fileChooser = new JFileChooser(beforeFile);
-            } else {
-                fileChooser = new JFileChooser();
-            }
-
-            FileFilter filter = new FileNameExtensionFilter("*.png,*.jpg,*.jpeg", "png", "jpg", "jpeg");
-            fileChooser.setFileFilter(filter);
-
-            int approve = fileChooser.showOpenDialog(qrCodePanel);
-            if (approve == JFileChooser.APPROVE_OPTION) {
-                qrCodeForm.getRecognitionImagePathTextField().setText(fileChooser.getSelectedFile().getAbsolutePath());
-                recognition();
-            }
-        });
-        recognitionButton.addActionListener(e -> recognition());
     }
 
-    private static void recognition() {
+    public static void recognition() {
         ThreadUtil.execute(() -> {
             try {
                 qrCodeForm = getInstance();
@@ -160,7 +86,7 @@ public class QrCodeForm {
         });
     }
 
-    private static void generate() {
+    public static void generate() {
         try {
             qrCodeForm = getInstance();
             String nowTime = DateUtil.now().replace(":", "-").replace(" ", "-");
@@ -229,6 +155,18 @@ public class QrCodeForm {
     public static void init() {
         qrCodeForm = getInstance();
 
+        initUi();
+
+        tempDir = new File(FileUtil.getTmpDirPath() + "MooTool");
+        if (!tempDir.exists()) {
+            tempDir.mkdirs();
+        }
+        FileUtil.clean(tempDir);
+
+        generate();
+    }
+
+    private static void initUi() {
         if ("Darcula(推荐)".equals(App.config.getTheme())) {
             Color bgColor = new Color(30, 30, 30);
             Color foreColor = new Color(187, 187, 187);
@@ -251,14 +189,6 @@ public class QrCodeForm {
         }
 
         qrCodeForm.getQrCodePanel().updateUI();
-
-        tempDir = new File(FileUtil.getTmpDirPath() + "MooTool");
-        if (!tempDir.exists()) {
-            tempDir.mkdirs();
-        }
-        FileUtil.clean(tempDir);
-
-        generate();
     }
 
     {

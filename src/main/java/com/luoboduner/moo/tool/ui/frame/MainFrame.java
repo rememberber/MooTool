@@ -8,8 +8,10 @@ import com.luoboduner.moo.tool.ui.listener.func.EnCodeListener;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
 import com.luoboduner.moo.tool.ui.listener.func.HttpRequestListener;
 import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
+import com.luoboduner.moo.tool.ui.listener.func.QrCodeListener;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.ui.listener.SettingListener;
+import com.luoboduner.moo.tool.ui.listener.func.TimeConvertListener;
 import com.luoboduner.moo.tool.util.ComponentUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 
@@ -60,9 +62,11 @@ public class MainFrame extends JFrame {
     public void addListeners() {
         FrameListener.addListeners();
         QuickNoteListener.addListeners();
+        TimeConvertListener.addListeners();
         JsonBeautyListener.addListeners();
         HostListener.addListeners();
         HttpRequestListener.addListeners();
+        QrCodeListener.addListeners();
         EnCodeListener.addListeners();
         SettingListener.addListeners();
     }
