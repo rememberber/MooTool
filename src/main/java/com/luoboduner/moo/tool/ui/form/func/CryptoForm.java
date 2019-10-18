@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.form.func;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 
@@ -71,6 +72,37 @@ public class CryptoForm {
     public static void init() {
         cryptoForm = getInstance();
 
+        initUi();
+    }
+
+    private static void initUi() {
+        if ("Darcula(推荐)".equals(App.config.getTheme())) {
+            Color bgColor = new Color(30, 30, 30);
+            Color foreColor = new Color(187, 187, 187);
+            cryptoForm.getSymTextAreaLeft().setBackground(bgColor);
+            cryptoForm.getSymTextAreaLeft().setForeground(foreColor);
+
+            cryptoForm.getSymTextAreaRight().setBackground(bgColor);
+            cryptoForm.getSymTextAreaRight().setForeground(foreColor);
+
+            cryptoForm.getAsymPubKeyTextArea().setBackground(bgColor);
+            cryptoForm.getAsymPubKeyTextArea().setForeground(foreColor);
+
+            cryptoForm.getAsymPrivateKeyTextArea().setBackground(bgColor);
+            cryptoForm.getAsymPrivateKeyTextArea().setForeground(foreColor);
+
+            cryptoForm.getAsymLeftTextArea().setBackground(bgColor);
+            cryptoForm.getAsymLeftTextArea().setForeground(foreColor);
+
+            cryptoForm.getAsymRightTextArea().setBackground(bgColor);
+            cryptoForm.getAsymRightTextArea().setForeground(foreColor);
+
+            cryptoForm.getDigestContentTextArea().setBackground(bgColor);
+            cryptoForm.getDigestContentTextArea().setForeground(foreColor);
+
+            cryptoForm.getDigestResultTextArea().setBackground(bgColor);
+            cryptoForm.getDigestResultTextArea().setForeground(foreColor);
+        }
         cryptoForm.getCryptoPanel().updateUI();
     }
 
