@@ -101,13 +101,13 @@ public class MainWindow {
         tabbedPane.addTab("Host切换", new ImageIcon(getClass().getResource("/icon/check.png")), hostPanel);
         httpRequestPanel = new JPanel();
         httpRequestPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("HTTP请求", httpRequestPanel);
+        tabbedPane.addTab("HTTP请求", new ImageIcon(getClass().getResource("/icon/global.png")), httpRequestPanel);
         encodePanel = new JPanel();
         encodePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("编码转换", encodePanel);
+        tabbedPane.addTab("编码转换", new ImageIcon(getClass().getResource("/icon/exchange.png")), encodePanel);
         qrCodePanel = new JPanel();
         qrCodePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("二维码生成", qrCodePanel);
+        tabbedPane.addTab("二维码生成", new ImageIcon(getClass().getResource("/icon/QR_code.png")), qrCodePanel);
         cryptoPanel = new JPanel();
         cryptoPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("加解密/随机", new ImageIcon(getClass().getResource("/icon/method.png")), cryptoPanel);
