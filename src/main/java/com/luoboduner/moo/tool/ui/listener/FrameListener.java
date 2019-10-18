@@ -13,6 +13,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 
 import javax.swing.*;
+import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.Date;
@@ -55,8 +56,7 @@ public class FrameListener {
             @Override
             public void windowClosing(WindowEvent e) {
                 saveBeforeExit();
-                App.mainFrame.setExtendedState(JFrame.HIDE_ON_CLOSE);
-                App.mainFrame.setVisible(false);
+                App.mainFrame.dispose();
             }
 
             @Override
@@ -69,6 +69,8 @@ public class FrameListener {
 
             }
         });
+
+        MainWindow.getInstance().getMainPanel().registerKeyboardAction(e -> App.mainFrame.dispose(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
     }
 
     public static void saveBeforeExit() {
