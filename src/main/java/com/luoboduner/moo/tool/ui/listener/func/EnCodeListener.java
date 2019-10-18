@@ -6,7 +6,7 @@ import com.luoboduner.moo.tool.ui.form.func.EnCodeForm;
 
 /**
  * <pre>
- * Description
+ * EnCodeListener
  * </pre>
  *
  * @author <a href="https://github.com/rememberber">RememBerBer</a>
