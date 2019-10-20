@@ -63,6 +63,7 @@ public class FindResultForm {
         styleSheet.addRule("span{background-color:#FBC87A;color:2B2B2B}");
         styleSheet.addRule("body{font-family:" + findResultCount.getFont().getName() + ";font-size:" + findResultCount.getFont().getSize() + ";}");
         editorPane.setText(htmlText);
+        editorPane.setCaretPosition(0);
     }
 
     {

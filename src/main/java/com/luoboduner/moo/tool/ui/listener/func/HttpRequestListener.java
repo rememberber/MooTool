@@ -105,9 +105,7 @@ public class HttpRequestListener {
         }));
 
         // 添加按钮事件
-        httpRequestForm.getAddButton().addActionListener(e -> {
-            HttpRequestForm.clearAllField();
-        });
+        httpRequestForm.getAddButton().addActionListener(e -> HttpRequestForm.clearAllField());
 
         // 左侧列表鼠标点击事件（显示下方删除按钮）
         httpRequestForm.getNoteListTable().addMouseListener(new MouseListener() {
@@ -277,8 +275,11 @@ public class HttpRequestListener {
 
                 if (httpSendResult.isSuccess()) {
                     HttpResultForm.getInstance().getBodyTextArea().setText(httpSendResult.getBody());
+                    HttpResultForm.getInstance().getBodyTextArea().setCaretPosition(0);
                     HttpResultForm.getInstance().getHeadersTextArea().setText(httpSendResult.getHeaders());
+                    HttpResultForm.getInstance().getHeadersTextArea().setCaretPosition(0);
                     HttpResultForm.getInstance().getCookiesTextArea().setText(httpSendResult.getCookies());
+                    HttpResultForm.getInstance().getCookiesTextArea().setCaretPosition(0);
                     HttpResultFrame.showResultWindow();
                 } else {
                     JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + httpSendResult.getInfo(), "失败",
