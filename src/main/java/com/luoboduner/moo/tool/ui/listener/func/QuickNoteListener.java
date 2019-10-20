@@ -1,6 +1,7 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.thread.ThreadUtil;
+import cn.hutool.core.util.StrUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
@@ -281,6 +282,8 @@ public class QuickNoteListener {
         quickNoteForm.getFindButton().addActionListener(e -> {
             String content = quickNoteForm.getTextArea().getText();
             String findKeyWord = quickNoteForm.getFindTextField().getText();
+            int count = StrUtil.count(content, findKeyWord);
+            FindResultForm.getInstance().getFindResultCount().setText(String.valueOf(count));
             content = content.replace(findKeyWord, "<span>" + findKeyWord + "</span>");
             FindResultForm.getInstance().setHtmlText(content);
             FindResultFrame.showResultWindow();
