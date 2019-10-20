@@ -22,7 +22,7 @@ import java.awt.*;
 public class EnCodeForm {
     private JTabbedPane tabbedPane1;
     private JPanel enCodePanel;
-    private JTextArea nativeTextArea1;
+    private JTextArea nativeTextArea;
     private JTextArea unicodeTextArea;
     private JButton nativeToUnicodeButton;
     private JButton unicodeToNativeButton;
@@ -54,8 +54,8 @@ public class EnCodeForm {
         if ("Darcula(推荐)".equals(App.config.getTheme())) {
             Color bgColor = new Color(30, 30, 30);
             Color foreColor = new Color(187, 187, 187);
-            enCodeForm.getNativeTextArea1().setBackground(bgColor);
-            enCodeForm.getNativeTextArea1().setForeground(foreColor);
+            enCodeForm.getNativeTextArea().setBackground(bgColor);
+            enCodeForm.getNativeTextArea().setForeground(foreColor);
 
             enCodeForm.getUnicodeTextArea().setBackground(bgColor);
             enCodeForm.getUnicodeTextArea().setForeground(foreColor);
@@ -107,8 +107,8 @@ public class EnCodeForm {
         panel2.add(spacer2, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JScrollPane scrollPane1 = new JScrollPane();
         panel1.add(scrollPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        nativeTextArea1 = new JTextArea();
-        scrollPane1.setViewportView(nativeTextArea1);
+        nativeTextArea = new JTextArea();
+        scrollPane1.setViewportView(nativeTextArea);
         final JScrollPane scrollPane2 = new JScrollPane();
         panel1.add(scrollPane2, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         unicodeTextArea = new JTextArea();

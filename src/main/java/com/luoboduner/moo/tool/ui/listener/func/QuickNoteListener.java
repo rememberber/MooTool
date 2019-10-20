@@ -1,10 +1,13 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.thread.ThreadUtil;
+import cn.hutool.core.util.StrUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
+import com.luoboduner.moo.tool.ui.form.func.FindResultForm;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
+import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -111,6 +114,10 @@ public class QuickNoteListener {
                         QuickNoteForm.initNoteListTable();
                         selectedName = name;
                     }
+                }
+
+                if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                    quickNoteForm.getFindTextField().grabFocus();
                 }
             }
 
@@ -276,7 +283,34 @@ public class QuickNoteListener {
             }
         });
 
-        quickNoteForm.getFindButton().addActionListener(e -> JOptionPane.showMessageDialog(App.mainFrame, "功能开发中，敬请期待"));
+        quickNoteForm.getFindButton().addActionListener(e -> find());
 
+        quickNoteForm.getFindTextField().addKeyListener(new KeyListener() {
+            @Override
+            public void keyReleased(KeyEvent arg0) {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent evt) {
+                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+                    find();
+                }
+            }
+
+            @Override
+            public void keyTyped(KeyEvent arg0) {
+            }
+        });
+
+    }
+
+    private static void find() {
+        String content = QuickNoteForm.getInstance().getTextArea().getText();
+        String findKeyWord = QuickNoteForm.getInstance().getFindTextField().getText();
+        int count = StrUtil.count(content, findKeyWord);
+        FindResultForm.getInstance().getFindResultCount().setText(String.valueOf(count));
+        content = content.replace(findKeyWord, "<span>" + findKeyWord + "</span>");
+        FindResultForm.getInstance().setHtmlText(content);
+        FindResultFrame.showResultWindow();
     }
 }
