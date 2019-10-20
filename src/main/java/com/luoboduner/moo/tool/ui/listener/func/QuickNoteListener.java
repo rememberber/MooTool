@@ -115,6 +115,10 @@ public class QuickNoteListener {
                         selectedName = name;
                     }
                 }
+
+                if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                    quickNoteForm.getFindTextField().grabFocus();
+                }
             }
 
             @Override
@@ -280,14 +284,35 @@ public class QuickNoteListener {
         });
 
         quickNoteForm.getFindButton().addActionListener(e -> {
-            String content = quickNoteForm.getTextArea().getText();
-            String findKeyWord = quickNoteForm.getFindTextField().getText();
-            int count = StrUtil.count(content, findKeyWord);
-            FindResultForm.getInstance().getFindResultCount().setText(String.valueOf(count));
-            content = content.replace(findKeyWord, "<span>" + findKeyWord + "</span>");
-            FindResultForm.getInstance().setHtmlText(content);
-            FindResultFrame.showResultWindow();
+            find();
         });
 
+        quickNoteForm.getFindTextField().addKeyListener(new KeyListener() {
+            @Override
+            public void keyReleased(KeyEvent arg0) {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent evt) {
+                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+                    find();
+                }
+            }
+
+            @Override
+            public void keyTyped(KeyEvent arg0) {
+            }
+        });
+
+    }
+
+    private static void find() {
+        String content = QuickNoteForm.getInstance().getTextArea().getText();
+        String findKeyWord = QuickNoteForm.getInstance().getFindTextField().getText();
+        int count = StrUtil.count(content, findKeyWord);
+        FindResultForm.getInstance().getFindResultCount().setText(String.valueOf(count));
+        content = content.replace(findKeyWord, "<span>" + findKeyWord + "</span>");
+        FindResultForm.getInstance().setHtmlText(content);
+        FindResultFrame.showResultWindow();
     }
 }
