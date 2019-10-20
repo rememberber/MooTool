@@ -279,7 +279,10 @@ public class QuickNoteListener {
         });
 
         quickNoteForm.getFindButton().addActionListener(e -> {
-            FindResultForm.getInstance().setHtmlText(quickNoteForm.getTextArea().getText());
+            String content = quickNoteForm.getTextArea().getText();
+            String findKeyWord = quickNoteForm.getFindTextField().getText();
+            content = content.replace(findKeyWord, "<span>" + findKeyWord + "</span>");
+            FindResultForm.getInstance().setHtmlText(content);
             FindResultFrame.showResultWindow();
         });
 
