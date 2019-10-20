@@ -283,9 +283,7 @@ public class QuickNoteListener {
             }
         });
 
-        quickNoteForm.getFindButton().addActionListener(e -> {
-            find();
-        });
+        quickNoteForm.getFindButton().addActionListener(e -> find());
 
         quickNoteForm.getFindTextField().addKeyListener(new KeyListener() {
             @Override

@@ -1,11 +1,14 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.thread.ThreadUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.json.JSONUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
+import com.luoboduner.moo.tool.ui.form.func.FindResultForm;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
+import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -56,8 +59,7 @@ public class JsonBeautyListener {
             @Override
             public void keyPressed(KeyEvent evt) {
                 if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
-                    String jsonText = jsonBeautyForm.getTextArea().getText();
-                    jsonBeautyForm.getTextArea().setText(formatJson(jsonText));
+                    jsonBeautyForm.getFindTextField().grabFocus();
                 } else if (evt.isControlDown() && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
                     String jsonText = jsonBeautyForm.getTextArea().getText();
                     jsonBeautyForm.getTextArea().setText(formatJson(jsonText));
@@ -306,7 +308,24 @@ public class JsonBeautyListener {
             }
         });
 
-        jsonBeautyForm.getFindButton().addActionListener(e -> JOptionPane.showMessageDialog(App.mainFrame, "功能开发中，敬请期待"));
+        jsonBeautyForm.getFindButton().addActionListener(e -> find());
+
+        jsonBeautyForm.getFindTextField().addKeyListener(new KeyListener() {
+            @Override
+            public void keyReleased(KeyEvent arg0) {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent evt) {
+                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+                    find();
+                }
+            }
+
+            @Override
+            public void keyTyped(KeyEvent arg0) {
+            }
+        });
 
     }
 
@@ -326,5 +345,15 @@ public class JsonBeautyListener {
             }
         }
         return jsonText;
+    }
+
+    private static void find() {
+        String content = JsonBeautyForm.getInstance().getTextArea().getText();
+        String findKeyWord = JsonBeautyForm.getInstance().getFindTextField().getText();
+        int count = StrUtil.count(content, findKeyWord);
+        FindResultForm.getInstance().getFindResultCount().setText(String.valueOf(count));
+        content = content.replace(findKeyWord, "<span>" + findKeyWord + "</span>");
+        FindResultForm.getInstance().setHtmlText(content);
+        FindResultFrame.showResultWindow();
     }
 }

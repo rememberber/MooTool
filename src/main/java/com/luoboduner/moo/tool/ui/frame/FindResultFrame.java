@@ -46,7 +46,7 @@ public class FindResultFrame extends JFrame {
             application.setDockIconImage(UiConsts.IMAGE_LOGO_1024);
         }
 
-        ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.76, 0.68);
+        ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.72, 0.68);
     }
 
     public static FindResultFrame getInstance() {
