@@ -4,7 +4,9 @@ import cn.hutool.core.thread.ThreadUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
+import com.luoboduner.moo.tool.ui.form.func.FindResultForm;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
+import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -276,7 +278,10 @@ public class QuickNoteListener {
             }
         });
 
-        quickNoteForm.getFindButton().addActionListener(e -> JOptionPane.showMessageDialog(App.mainFrame, "功能开发中，敬请期待"));
+        quickNoteForm.getFindButton().addActionListener(e -> {
+            FindResultForm.getInstance().getEditorPane().setText(quickNoteForm.getTextArea().getText());
+            FindResultFrame.showResultWindow();
+        });
 
     }
 }
