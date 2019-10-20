@@ -8,6 +8,8 @@ import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 
 import javax.swing.*;
+import javax.swing.text.html.HTMLEditorKit;
+import javax.swing.text.html.StyleSheet;
 import java.awt.*;
 
 /**
@@ -23,6 +25,7 @@ public class FindResultForm {
     private JEditorPane editorPane;
     private JScrollPane scrollPane;
     private JPanel findResultPanel;
+    private JLabel findResultCount;
 
     private static FindResultForm findResultForm;
 
@@ -36,6 +39,7 @@ public class FindResultForm {
             Color foreColor = new Color(187, 187, 187);
             editorPane.setForeground(foreColor);
         }
+        editorPane.setEditable(false);
     }
 
     public static FindResultForm getInstance() {
@@ -44,6 +48,16 @@ public class FindResultForm {
             UndoUtil.register(findResultForm);
         }
         return findResultForm;
+    }
+
+    public void setHtmlText(String htmlText) {
+        htmlText = htmlText.replaceAll("\n", "<br/>");
+        editorPane.setContentType("text/html; charset=utf-8");
+        HTMLEditorKit kit = new HTMLEditorKit();
+        editorPane.setEditorKit(kit);
+        StyleSheet styleSheet = kit.getStyleSheet();
+        styleSheet.addRule("body{font-family:" + findResultCount.getFont().getName() + ";font-size:" + findResultCount.getFont().getSize() + ";}");
+        editorPane.setText(htmlText);
     }
 
     {
@@ -69,12 +83,12 @@ public class FindResultForm {
         final JLabel label1 = new JLabel();
         label1.setText("共找到");
         panel1.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        findResultCount = new JLabel();
+        findResultCount.setText("0");
+        panel1.add(findResultCount, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label2 = new JLabel();
-        label2.setText("0");
-        panel1.add(label2, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JLabel label3 = new JLabel();
-        label3.setText("处");
-        panel1.add(label3, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        label2.setText("处");
+        panel1.add(label2, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer1 = new Spacer();
         panel1.add(spacer1, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         final JPanel panel2 = new JPanel();
@@ -83,6 +97,7 @@ public class FindResultForm {
         scrollPane = new JScrollPane();
         panel2.add(scrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         editorPane = new JEditorPane();
+        editorPane.setMargin(new Insets(10, 10, 10, 10));
         scrollPane.setViewportView(editorPane);
     }
 

@@ -24,7 +24,7 @@
               <text value="共找到"/>
             </properties>
           </component>
-          <component id="3b1f4" class="javax.swing.JLabel">
+          <component id="3b1f4" class="javax.swing.JLabel" binding="findResultCount">
             <constraints>
               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
@@ -64,7 +64,9 @@
             <children>
               <component id="54a1a" class="javax.swing.JEditorPane" binding="editorPane">
                 <constraints/>
-                <properties/>
+                <properties>
+                  <margin top="10" left="10" bottom="10" right="10"/>
+                </properties>
               </component>
             </children>
           </scrollpane>
