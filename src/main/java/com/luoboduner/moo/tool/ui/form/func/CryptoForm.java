@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.crypto.SecureUtil;
 import cn.hutool.crypto.symmetric.AES;
+import cn.hutool.crypto.symmetric.DES;
 import cn.hutool.crypto.symmetric.SymmetricAlgorithm;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
@@ -70,15 +71,25 @@ public class CryptoForm {
         UndoUtil.register(this);
         symEncryptButton.addActionListener(e -> {
             try {
+                String symType = (String) cryptoForm.getSymTypeComboBox().getSelectedItem();
                 String content = cryptoForm.getSymTextAreaLeft().getText();
                 String key = cryptoForm.getSymKeyTextField().getText();
 
-                byte[] generatedKey = SecureUtil.generateKey(SymmetricAlgorithm.AES.getValue(), key.getBytes()).getEncoded();
+                if ("AES".equals(symType)) {
+                    byte[] generatedKey = SecureUtil.generateKey(SymmetricAlgorithm.AES.getValue(), key.getBytes()).getEncoded();
 
-                AES aes = SecureUtil.aes(generatedKey);
-                // 加密为16进制表示
-                String encryptHex = aes.encryptHex(content);
-                cryptoForm.getSymTextAreaRight().setText(encryptHex);
+                    AES aes = SecureUtil.aes(generatedKey);
+                    // 加密为16进制表示
+                    String encryptHex = aes.encryptHex(content);
+                    cryptoForm.getSymTextAreaRight().setText(encryptHex);
+                } else if ("DES".equals(symType)) {
+                    byte[] generatedKey = SecureUtil.generateKey(SymmetricAlgorithm.DES.getValue(), key.getBytes()).getEncoded();
+
+                    DES des = SecureUtil.des(generatedKey);
+                    // 加密为16进制表示
+                    String encryptHex = des.encryptHex(content);
+                    cryptoForm.getSymTextAreaRight().setText(encryptHex);
+                }
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
