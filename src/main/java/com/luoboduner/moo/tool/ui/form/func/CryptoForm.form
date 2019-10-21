@@ -93,7 +93,9 @@
                         <preferred-size width="150" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties/>
+                    <properties>
+                      <toolTipText value="输入16位字符"/>
+                    </properties>
                   </component>
                   <component id="c4288" class="javax.swing.JComboBox" binding="symTypeComboBox">
                     <constraints>

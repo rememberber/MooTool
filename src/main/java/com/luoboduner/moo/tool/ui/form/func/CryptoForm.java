@@ -1,11 +1,17 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
+import cn.hutool.crypto.SecureUtil;
+import cn.hutool.crypto.symmetric.AES;
+import cn.hutool.crypto.symmetric.SymmetricAlgorithm;
+import cn.hutool.log.Log;
+import cn.hutool.log.LogFactory;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -58,8 +64,27 @@ public class CryptoForm {
 
     private static CryptoForm cryptoForm;
 
+    private static final Log logger = LogFactory.get();
+
     private CryptoForm() {
         UndoUtil.register(this);
+        symEncryptButton.addActionListener(e -> {
+            try {
+                String content = cryptoForm.getSymTextAreaLeft().getText();
+                String key = cryptoForm.getSymKeyTextField().getText();
+
+                byte[] generatedKey = SecureUtil.generateKey(SymmetricAlgorithm.AES.getValue(), key.getBytes()).getEncoded();
+
+                AES aes = SecureUtil.aes(generatedKey);
+                // 加密为16进制表示
+                String encryptHex = aes.encryptHex(content);
+                cryptoForm.getSymTextAreaRight().setText(encryptHex);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
     }
 
     public static CryptoForm getInstance() {
@@ -152,6 +177,7 @@ public class CryptoForm {
         symDecryptButton.setText("解密");
         panel2.add(symDecryptButton, new GridConstraints(4, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         symKeyTextField = new JTextField();
+        symKeyTextField.setToolTipText("输入16位字符");
         panel2.add(symKeyTextField, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         symTypeComboBox = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
