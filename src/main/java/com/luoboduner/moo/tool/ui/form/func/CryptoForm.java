@@ -1,6 +1,10 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
+import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.crypto.SecureUtil;
+import cn.hutool.crypto.digest.DigestAlgorithm;
+import cn.hutool.crypto.digest.DigestUtil;
+import cn.hutool.crypto.digest.Digester;
 import cn.hutool.crypto.symmetric.AES;
 import cn.hutool.crypto.symmetric.DES;
 import cn.hutool.crypto.symmetric.SymmetricAlgorithm;
@@ -52,8 +56,8 @@ public class CryptoForm {
     private JTextArea digestResultTextArea;
     private JTextField textField1;
     private JButton exploreButton;
-    private JButton digestHashButton;
-    private JComboBox digestComboBox;
+    private JButton digestTextButton;
+    private JComboBox digestTypeComboBox;
     private JTextField uuidTextField;
     private JTextField randomNumTextField;
     private JTextField randomPasswordTextField;
@@ -62,6 +66,7 @@ public class CryptoForm {
     private JButton copyRandomNumButton;
     private JButton copyRadomStringButton;
     private JButton copyRandomPasswordButton;
+    private JButton digestFileButtonButton;
 
     private static CryptoForm cryptoForm;
 
@@ -100,22 +105,61 @@ public class CryptoForm {
         });
         // 对称-解密按钮
         symDecryptButton.addActionListener(e -> {
-            String symType = (String) cryptoForm.getSymTypeComboBox().getSelectedItem();
-            String content = cryptoForm.getSymTextAreaRight().getText();
-            String key = cryptoForm.getSymKeyTextField().getText();
-            if ("AES".equals(symType)) {
-                byte[] generatedKey = SecureUtil.generateKey(SymmetricAlgorithm.AES.getValue(), key.getBytes()).getEncoded();
+            try {
+                String symType = (String) cryptoForm.getSymTypeComboBox().getSelectedItem();
+                String content = cryptoForm.getSymTextAreaRight().getText();
+                String key = cryptoForm.getSymKeyTextField().getText();
+                if ("AES".equals(symType)) {
+                    byte[] generatedKey = SecureUtil.generateKey(SymmetricAlgorithm.AES.getValue(), key.getBytes()).getEncoded();
 
-                AES aes = SecureUtil.aes(generatedKey);
-                String decryptStr = aes.decryptStr(content);
-                cryptoForm.getSymTextAreaLeft().setText(decryptStr);
-            } else if ("DES".equals(symType)) {
-                byte[] generatedKey = SecureUtil.generateKey(SymmetricAlgorithm.DES.getValue(), key.getBytes()).getEncoded();
+                    AES aes = SecureUtil.aes(generatedKey);
+                    String decryptStr = aes.decryptStr(content);
+                    cryptoForm.getSymTextAreaLeft().setText(decryptStr);
+                } else if ("DES".equals(symType)) {
+                    byte[] generatedKey = SecureUtil.generateKey(SymmetricAlgorithm.DES.getValue(), key.getBytes()).getEncoded();
 
-                DES des = SecureUtil.des(generatedKey);
-                // 加密为16进制表示
-                String decryptStr = des.decryptStr(content);
-                cryptoForm.getSymTextAreaLeft().setText(decryptStr);
+                    DES des = SecureUtil.des(generatedKey);
+                    String decryptStr = des.decryptStr(content);
+                    cryptoForm.getSymTextAreaLeft().setText(decryptStr);
+                }
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "解密失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
+
+        // 摘要加密
+        digestTextButton.addActionListener(e -> {
+            try {
+                String digestContent = cryptoForm.getDigestContentTextArea().getText();
+                String digestType = (String) cryptoForm.getDigestTypeComboBox().getSelectedItem();
+                String digestResult = "";
+                assert digestType != null;
+                switch (digestType) {
+                    case "MD5":
+                        digestResult = DigestUtil.md5Hex(digestContent);
+                        break;
+                    case "SHA-1":
+                        digestResult = DigestUtil.sha1Hex(digestContent);
+                        break;
+                    case "SHA-256":
+                        digestResult = DigestUtil.sha256Hex(digestContent);
+                        break;
+                    case "SHA-384":
+                        digestResult = new Digester(DigestAlgorithm.SHA384).digestHex(digestContent, CharsetUtil.UTF_8);
+                        break;
+                    case "SHA-512":
+                        digestResult = new Digester(DigestAlgorithm.SHA512).digestHex(digestContent, CharsetUtil.UTF_8);
+                        break;
+                    default:
+                        digestResult = "";
+                }
+                cryptoForm.getDigestResultTextArea().setText(digestResult);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
     }
@@ -299,7 +343,7 @@ public class CryptoForm {
         panel7.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel6.add(panel7, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JPanel panel8 = new JPanel();
-        panel8.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
+        panel8.setLayout(new GridLayoutManager(1, 3, new Insets(5, 5, 5, 0), -1, -1));
         panel7.add(panel8, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JLabel label6 = new JLabel();
         label6.setText("文件");
@@ -321,25 +365,29 @@ public class CryptoForm {
         digestResultTextArea = new JTextArea();
         scrollPane8.setViewportView(digestResultTextArea);
         final JPanel panel10 = new JPanel();
-        panel10.setLayout(new GridLayoutManager(4, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel10.setLayout(new GridLayoutManager(5, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel6.add(panel10, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        digestHashButton = new JButton();
-        digestHashButton.setIcon(new ImageIcon(getClass().getResource("/icon/arrow-right.png")));
-        digestHashButton.setText("摘要加密/哈希");
-        panel10.add(digestHashButton, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        digestTextButton = new JButton();
+        digestTextButton.setIcon(new ImageIcon(getClass().getResource("/icon/arrow-right.png")));
+        digestTextButton.setText("文本摘要加密/哈希");
+        panel10.add(digestTextButton, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        digestFileButtonButton = new JButton();
+        digestFileButtonButton.setIcon(new ImageIcon(getClass().getResource("/icon/arrow-right.png")));
+        digestFileButtonButton.setText("文件摘要加密/哈希");
+        panel10.add(digestFileButtonButton, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer5 = new Spacer();
         panel10.add(spacer5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final Spacer spacer6 = new Spacer();
-        panel10.add(spacer6, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        digestComboBox = new JComboBox();
+        panel10.add(spacer6, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        digestTypeComboBox = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel2 = new DefaultComboBoxModel();
         defaultComboBoxModel2.addElement("MD5");
         defaultComboBoxModel2.addElement("SHA-1");
         defaultComboBoxModel2.addElement("SHA-256");
         defaultComboBoxModel2.addElement("SHA-384");
         defaultComboBoxModel2.addElement("SHA-512");
-        digestComboBox.setModel(defaultComboBoxModel2);
-        panel10.add(digestComboBox, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        digestTypeComboBox.setModel(defaultComboBoxModel2);
+        panel10.add(digestTypeComboBox, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel11 = new JPanel();
         panel11.setLayout(new GridLayoutManager(9, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane1.addTab("随机", panel11);
