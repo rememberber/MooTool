@@ -69,6 +69,8 @@ public class CryptoForm {
 
     private CryptoForm() {
         UndoUtil.register(this);
+
+        // 对称-加密按钮
         symEncryptButton.addActionListener(e -> {
             try {
                 String symType = (String) cryptoForm.getSymTypeComboBox().getSelectedItem();
@@ -94,6 +96,26 @@ public class CryptoForm {
                 JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
                 logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
+        // 对称-解密按钮
+        symDecryptButton.addActionListener(e -> {
+            String symType = (String) cryptoForm.getSymTypeComboBox().getSelectedItem();
+            String content = cryptoForm.getSymTextAreaRight().getText();
+            String key = cryptoForm.getSymKeyTextField().getText();
+            if ("AES".equals(symType)) {
+                byte[] generatedKey = SecureUtil.generateKey(SymmetricAlgorithm.AES.getValue(), key.getBytes()).getEncoded();
+
+                AES aes = SecureUtil.aes(generatedKey);
+                String decryptStr = aes.decryptStr(content);
+                cryptoForm.getSymTextAreaLeft().setText(decryptStr);
+            } else if ("DES".equals(symType)) {
+                byte[] generatedKey = SecureUtil.generateKey(SymmetricAlgorithm.DES.getValue(), key.getBytes()).getEncoded();
+
+                DES des = SecureUtil.des(generatedKey);
+                // 加密为16进制表示
+                String decryptStr = des.decryptStr(content);
+                cryptoForm.getSymTextAreaLeft().setText(decryptStr);
             }
         });
     }
