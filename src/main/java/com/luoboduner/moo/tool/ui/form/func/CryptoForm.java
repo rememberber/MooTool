@@ -2,6 +2,8 @@ package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.CharsetUtil;
+import cn.hutool.core.util.IdUtil;
+import cn.hutool.core.util.RandomUtil;
 import cn.hutool.crypto.SecureUtil;
 import cn.hutool.crypto.digest.DigestAlgorithm;
 import cn.hutool.crypto.digest.DigestUtil;
@@ -69,6 +71,13 @@ public class CryptoForm {
     private JButton copyRadomStringButton;
     private JButton copyRandomPasswordButton;
     private JButton digestFileButton;
+    private JButton generateUuidButton;
+    private JButton generateRandomNumButton;
+    private JButton generateRadomStringButton;
+    private JButton generateRandomPasswordButton;
+    private JTextField textField1;
+    private JTextField textField2;
+    private JTextField textField3;
 
     private static CryptoForm cryptoForm;
 
@@ -214,6 +223,22 @@ public class CryptoForm {
             if (approve == JFileChooser.APPROVE_OPTION) {
                 cryptoForm.getDigestFilePathTextField().setText(fileChooser.getSelectedFile().getAbsolutePath());
             }
+        });
+        generateUuidButton.addActionListener(e -> {
+            String randomUUID = IdUtil.randomUUID();
+            cryptoForm.getUuidTextField().setText(randomUUID);
+        });
+        generateRandomNumButton.addActionListener(e -> {
+            String randomNumbers = RandomUtil.randomNumbers(11);
+            cryptoForm.getRandomNumTextField().setText(randomNumbers);
+        });
+        generateRadomStringButton.addActionListener(e -> {
+            String randomString = RandomUtil.randomString(11);
+            cryptoForm.getRandomStringTextField().setText(randomString);
+        });
+        generateRandomPasswordButton.addActionListener(e -> {
+            String randomPassword = RandomUtil.randomString("abcdefg123456!.", 11);
+            cryptoForm.getRandomPasswordTextField().setText(randomPassword);
         });
     }
 
@@ -450,49 +475,76 @@ public class CryptoForm {
         panel12.setLayout(new GridLayoutManager(8, 1, new Insets(10, 10, 0, 10), -1, -1));
         panel11.add(panel12, new GridConstraints(0, 0, 8, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JPanel panel13 = new JPanel();
-        panel13.setLayout(new GridLayoutManager(2, 2, new Insets(10, 0, 0, 0), -1, -1));
+        panel13.setLayout(new GridLayoutManager(2, 3, new Insets(10, 0, 0, 0), -1, -1));
         panel12.add(panel13, new GridConstraints(0, 0, 2, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JLabel label7 = new JLabel();
         label7.setText("随机UUID");
         panel13.add(label7, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         uuidTextField = new JTextField();
-        panel13.add(uuidTextField, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        panel13.add(uuidTextField, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         copyUuidButton = new JButton();
         copyUuidButton.setText("复制");
-        panel13.add(copyUuidButton, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel13.add(copyUuidButton, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        generateUuidButton = new JButton();
+        generateUuidButton.setText("生成");
+        panel13.add(generateUuidButton, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel14 = new JPanel();
-        panel14.setLayout(new GridLayoutManager(2, 2, new Insets(20, 0, 0, 0), -1, -1));
+        panel14.setLayout(new GridLayoutManager(2, 5, new Insets(20, 0, 0, 0), -1, -1));
         panel12.add(panel14, new GridConstraints(2, 0, 2, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JLabel label8 = new JLabel();
         label8.setText("获得一个只包含数字的字符串");
         panel14.add(label8, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         randomNumTextField = new JTextField();
-        panel14.add(randomNumTextField, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        panel14.add(randomNumTextField, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         copyRandomNumButton = new JButton();
         copyRandomNumButton.setText("复制");
-        panel14.add(copyRandomNumButton, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JPanel panel15 = new JPanel();
-        panel15.setLayout(new GridLayoutManager(2, 2, new Insets(20, 0, 0, 0), -1, -1));
-        panel12.add(panel15, new GridConstraints(4, 0, 2, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel14.add(copyRandomNumButton, new GridConstraints(1, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        generateRandomNumButton = new JButton();
+        generateRandomNumButton.setText("生成");
+        panel14.add(generateRandomNumButton, new GridConstraints(1, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        textField1 = new JTextField();
+        panel14.add(textField1, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(100, -1), null, 0, false));
         final JLabel label9 = new JLabel();
-        label9.setText("获得一个随机的字符串（只包含数字和字符）");
-        panel15.add(label9, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        label9.setText("位数");
+        panel14.add(label9, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel15 = new JPanel();
+        panel15.setLayout(new GridLayoutManager(2, 5, new Insets(20, 0, 0, 0), -1, -1));
+        panel12.add(panel15, new GridConstraints(4, 0, 2, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        final JLabel label10 = new JLabel();
+        label10.setText("获得一个随机的字符串（只包含数字和字符）");
+        panel15.add(label10, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         randomStringTextField = new JTextField();
-        panel15.add(randomStringTextField, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        panel15.add(randomStringTextField, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         copyRadomStringButton = new JButton();
         copyRadomStringButton.setText("复制");
-        panel15.add(copyRadomStringButton, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel15.add(copyRadomStringButton, new GridConstraints(1, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        generateRadomStringButton = new JButton();
+        generateRadomStringButton.setText("生成");
+        panel15.add(generateRadomStringButton, new GridConstraints(1, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label11 = new JLabel();
+        label11.setText("位数");
+        panel15.add(label11, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        textField2 = new JTextField();
+        panel15.add(textField2, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(100, -1), null, 0, false));
         final JPanel panel16 = new JPanel();
-        panel16.setLayout(new GridLayoutManager(2, 2, new Insets(20, 0, 0, 0), -1, -1));
+        panel16.setLayout(new GridLayoutManager(2, 5, new Insets(20, 0, 0, 0), -1, -1));
         panel12.add(panel16, new GridConstraints(6, 0, 2, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        final JLabel label10 = new JLabel();
-        label10.setText("随机生成一个复杂的密码(带特殊符号)");
-        panel16.add(label10, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label12 = new JLabel();
+        label12.setText("随机生成一个复杂的密码（带特殊符号）");
+        panel16.add(label12, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         randomPasswordTextField = new JTextField();
-        panel16.add(randomPasswordTextField, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        panel16.add(randomPasswordTextField, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         copyRandomPasswordButton = new JButton();
         copyRandomPasswordButton.setText("复制");
-        panel16.add(copyRandomPasswordButton, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel16.add(copyRandomPasswordButton, new GridConstraints(1, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        generateRandomPasswordButton = new JButton();
+        generateRandomPasswordButton.setText("生成");
+        panel16.add(generateRandomPasswordButton, new GridConstraints(1, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label13 = new JLabel();
+        label13.setText("位数");
+        panel16.add(label13, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        textField3 = new JTextField();
+        panel16.add(textField3, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(100, -1), null, 0, false));
     }
 
     /**
