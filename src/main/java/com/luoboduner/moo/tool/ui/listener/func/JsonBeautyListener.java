@@ -49,6 +49,7 @@ public class JsonBeautyListener {
         jsonBeautyForm.getBeautifyButton().addActionListener(e -> {
             String jsonText = jsonBeautyForm.getTextArea().getText();
             jsonBeautyForm.getTextArea().setText(formatJson(jsonText));
+            jsonBeautyForm.getTextArea().setCaretPosition(0);
         });
 
         // 保存按钮事件
@@ -125,11 +126,12 @@ public class JsonBeautyListener {
                             selectedName = name;
                         }
                     }
-                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
-                    jsonBeautyForm.getFindTextField().grabFocus();
                 } else if (evt.isControlDown() && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
                     String jsonText = jsonBeautyForm.getTextArea().getText();
                     jsonBeautyForm.getTextArea().setText(formatJson(jsonText));
+                    jsonBeautyForm.getTextArea().setCaretPosition(0);
+                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                    jsonBeautyForm.getFindTextField().grabFocus();
                 }
             }
 
