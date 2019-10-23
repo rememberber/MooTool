@@ -51,26 +51,6 @@ public class JsonBeautyListener {
             jsonBeautyForm.getTextArea().setText(formatJson(jsonText));
         });
 
-        jsonBeautyForm.getTextArea().addKeyListener(new KeyListener() {
-            @Override
-            public void keyReleased(KeyEvent arg0) {
-            }
-
-            @Override
-            public void keyPressed(KeyEvent evt) {
-                if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
-                    jsonBeautyForm.getFindTextField().grabFocus();
-                } else if (evt.isControlDown() && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
-                    String jsonText = jsonBeautyForm.getTextArea().getText();
-                    jsonBeautyForm.getTextArea().setText(formatJson(jsonText));
-                }
-            }
-
-            @Override
-            public void keyTyped(KeyEvent arg0) {
-            }
-        });
-
         // 保存按钮事件
         jsonBeautyForm.getSaveButton().addActionListener(e -> {
             if (StringUtils.isEmpty(selectedName)) {
@@ -133,16 +113,23 @@ public class JsonBeautyListener {
                     } else {
                         String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
                         String name = JOptionPane.showInputDialog("名称", tempName);
-                        TJsonBeauty tJsonBeauty = new TJsonBeauty();
-                        tJsonBeauty.setName(name);
-                        tJsonBeauty.setContent(jsonBeautyForm.getTextArea().getText());
-                        tJsonBeauty.setCreateTime(now);
-                        tJsonBeauty.setModifiedTime(now);
+                        if (StringUtils.isNotBlank(name)) {
+                            TJsonBeauty tJsonBeauty = new TJsonBeauty();
+                            tJsonBeauty.setName(name);
+                            tJsonBeauty.setContent(jsonBeautyForm.getTextArea().getText());
+                            tJsonBeauty.setCreateTime(now);
+                            tJsonBeauty.setModifiedTime(now);
 
-                        jsonBeautyMapper.insert(tJsonBeauty);
-                        JsonBeautyForm.initListTable();
-                        selectedName = name;
+                            jsonBeautyMapper.insert(tJsonBeauty);
+                            JsonBeautyForm.initListTable();
+                            selectedName = name;
+                        }
                     }
+                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                    jsonBeautyForm.getFindTextField().grabFocus();
+                } else if (evt.isControlDown() && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                    String jsonText = jsonBeautyForm.getTextArea().getText();
+                    jsonBeautyForm.getTextArea().setText(formatJson(jsonText));
                 }
             }
 
@@ -293,16 +280,18 @@ public class JsonBeautyListener {
                 if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
                     int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
                     int noteId = Integer.parseInt(String.valueOf(jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 0)));
-                    String noteName = String.valueOf(jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 1));
-                    TJsonBeauty tJsonBeauty = new TJsonBeauty();
-                    tJsonBeauty.setId(noteId);
-                    tJsonBeauty.setName(noteName);
-                    try {
-                        jsonBeautyMapper.updateByPrimaryKeySelective(tJsonBeauty);
-                    } catch (Exception e) {
-                        JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
-                        JsonBeautyForm.initListTable();
-                        log.error(e.toString());
+                    String name = String.valueOf(jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 1));
+                    if (StringUtils.isNotBlank(name)) {
+                        TJsonBeauty tJsonBeauty = new TJsonBeauty();
+                        tJsonBeauty.setId(noteId);
+                        tJsonBeauty.setName(name);
+                        try {
+                            jsonBeautyMapper.updateByPrimaryKeySelective(tJsonBeauty);
+                        } catch (Exception e) {
+                            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
+                            JsonBeautyForm.initListTable();
+                            log.error(e.toString());
+                        }
                     }
                 }
             }

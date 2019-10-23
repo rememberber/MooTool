@@ -79,15 +79,17 @@ public class HostListener {
                     } else {
                         String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
                         String name = JOptionPane.showInputDialog("名称", tempName);
-                        THost tHost = new THost();
-                        tHost.setName(name);
-                        tHost.setContent(hostForm.getTextArea().getText());
-                        tHost.setCreateTime(now);
-                        tHost.setModifiedTime(now);
+                        if (StringUtils.isNotBlank(name)) {
+                            THost tHost = new THost();
+                            tHost.setName(name);
+                            tHost.setContent(hostForm.getTextArea().getText());
+                            tHost.setCreateTime(now);
+                            tHost.setModifiedTime(now);
 
-                        hostMapper.insert(tHost);
-                        HostForm.initListTable();
-                        selectedName = name;
+                            hostMapper.insert(tHost);
+                            HostForm.initListTable();
+                            selectedName = name;
+                        }
                     }
                 }
             }
@@ -213,16 +215,18 @@ public class HostListener {
                 if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
                     int selectedRow = hostForm.getNoteListTable().getSelectedRow();
                     int noteId = Integer.parseInt(String.valueOf(hostForm.getNoteListTable().getValueAt(selectedRow, 0)));
-                    String noteName = String.valueOf(hostForm.getNoteListTable().getValueAt(selectedRow, 1));
-                    THost tHost = new THost();
-                    tHost.setId(noteId);
-                    tHost.setName(noteName);
-                    try {
-                        hostMapper.updateByPrimaryKeySelective(tHost);
-                    } catch (Exception e) {
-                        JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
-                        HostForm.initListTable();
-                        log.error(e.toString());
+                    String name = String.valueOf(hostForm.getNoteListTable().getValueAt(selectedRow, 1));
+                    if (StringUtils.isNotBlank(name)) {
+                        THost tHost = new THost();
+                        tHost.setId(noteId);
+                        tHost.setName(name);
+                        try {
+                            hostMapper.updateByPrimaryKeySelective(tHost);
+                        } catch (Exception e) {
+                            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
+                            HostForm.initListTable();
+                            log.error(e.toString());
+                        }
                     }
                 }
             }
