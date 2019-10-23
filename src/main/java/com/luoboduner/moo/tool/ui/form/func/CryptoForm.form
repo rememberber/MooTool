@@ -356,7 +356,7 @@
                           <text value="文件"/>
                         </properties>
                       </component>
-                      <component id="2a3b2" class="javax.swing.JTextField" binding="textField1" default-binding="true">
+                      <component id="2a3b2" class="javax.swing.JTextField" binding="digestFilePathTextField">
                         <constraints>
                           <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
@@ -427,7 +427,7 @@
                       <text value="文本摘要加密/哈希"/>
                     </properties>
                   </component>
-                  <component id="a91e5" class="javax.swing.JButton" binding="digestFileButtonButton">
+                  <component id="a91e5" class="javax.swing.JButton" binding="digestFileButton">
                     <constraints>
                       <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>

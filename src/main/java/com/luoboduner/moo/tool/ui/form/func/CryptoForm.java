@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.crypto.SecureUtil;
 import cn.hutool.crypto.digest.DigestAlgorithm;
@@ -54,7 +55,7 @@ public class CryptoForm {
     private JButton asymDecryptWithPubKeyButton;
     private JTextArea digestContentTextArea;
     private JTextArea digestResultTextArea;
-    private JTextField textField1;
+    private JTextField digestFilePathTextField;
     private JButton exploreButton;
     private JButton digestTextButton;
     private JComboBox digestTypeComboBox;
@@ -66,7 +67,7 @@ public class CryptoForm {
     private JButton copyRandomNumButton;
     private JButton copyRadomStringButton;
     private JButton copyRandomPasswordButton;
-    private JButton digestFileButtonButton;
+    private JButton digestFileButton;
 
     private static CryptoForm cryptoForm;
 
@@ -129,7 +130,7 @@ public class CryptoForm {
             }
         });
 
-        // 摘要加密
+        // 文本摘要加密
         digestTextButton.addActionListener(e -> {
             try {
                 String digestContent = cryptoForm.getDigestContentTextArea().getText();
@@ -151,6 +152,40 @@ public class CryptoForm {
                         break;
                     case "SHA-512":
                         digestResult = new Digester(DigestAlgorithm.SHA512).digestHex(digestContent, CharsetUtil.UTF_8);
+                        break;
+                    default:
+                        digestResult = "";
+                }
+                cryptoForm.getDigestResultTextArea().setText(digestResult);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
+
+        // 文件摘要加密
+        digestFileButton.addActionListener(e -> {
+            try {
+                String filePath = cryptoForm.getDigestFilePathTextField().getText();
+                String digestType = (String) cryptoForm.getDigestTypeComboBox().getSelectedItem();
+                String digestResult = "";
+                assert digestType != null;
+                switch (digestType) {
+                    case "MD5":
+                        digestResult = DigestUtil.md5Hex(FileUtil.file(filePath));
+                        break;
+                    case "SHA-1":
+                        digestResult = DigestUtil.sha1Hex(FileUtil.file(filePath));
+                        break;
+                    case "SHA-256":
+                        digestResult = DigestUtil.sha256Hex(FileUtil.file(filePath));
+                        break;
+                    case "SHA-384":
+                        digestResult = new Digester(DigestAlgorithm.SHA384).digestHex(FileUtil.file(filePath));
+                        break;
+                    case "SHA-512":
+                        digestResult = new Digester(DigestAlgorithm.SHA512).digestHex(FileUtil.file(filePath));
                         break;
                     default:
                         digestResult = "";
@@ -348,8 +383,8 @@ public class CryptoForm {
         final JLabel label6 = new JLabel();
         label6.setText("文件");
         panel8.add(label6, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        textField1 = new JTextField();
-        panel8.add(textField1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        digestFilePathTextField = new JTextField();
+        panel8.add(digestFilePathTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         exploreButton = new JButton();
         exploreButton.setText("…");
         panel8.add(exploreButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, 1, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -371,10 +406,10 @@ public class CryptoForm {
         digestTextButton.setIcon(new ImageIcon(getClass().getResource("/icon/arrow-right.png")));
         digestTextButton.setText("文本摘要加密/哈希");
         panel10.add(digestTextButton, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        digestFileButtonButton = new JButton();
-        digestFileButtonButton.setIcon(new ImageIcon(getClass().getResource("/icon/arrow-right.png")));
-        digestFileButtonButton.setText("文件摘要加密/哈希");
-        panel10.add(digestFileButtonButton, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        digestFileButton = new JButton();
+        digestFileButton.setIcon(new ImageIcon(getClass().getResource("/icon/arrow-right.png")));
+        digestFileButton.setText("文件摘要加密/哈希");
+        panel10.add(digestFileButton, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer5 = new Spacer();
         panel10.add(spacer5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final Spacer spacer6 = new Spacer();
