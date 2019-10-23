@@ -193,7 +193,7 @@ public class CryptoForm {
                 }
                 cryptoForm.getDigestResultTextArea().setText(digestResult);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "加l密失败！\n\n" + ex.getMessage(), "失败",
+                JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
