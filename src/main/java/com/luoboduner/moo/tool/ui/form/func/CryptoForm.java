@@ -21,6 +21,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
 
 /**
  * <pre>
@@ -192,9 +193,26 @@ public class CryptoForm {
                 }
                 cryptoForm.getDigestResultTextArea().setText(digestResult);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
+                JOptionPane.showMessageDialog(App.mainFrame, "加l密失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
                 logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
+
+        // 文件摘要加密-文件浏览按钮
+        exploreButton.addActionListener(e -> {
+            File beforeFile = new File(cryptoForm.getDigestFilePathTextField().getText());
+            JFileChooser fileChooser;
+
+            if (beforeFile.exists()) {
+                fileChooser = new JFileChooser(beforeFile);
+            } else {
+                fileChooser = new JFileChooser();
+            }
+
+            int approve = fileChooser.showOpenDialog(cryptoForm.getCryptoPanel());
+            if (approve == JFileChooser.APPROVE_OPTION) {
+                cryptoForm.getDigestFilePathTextField().setText(fileChooser.getSelectedFile().getAbsolutePath());
             }
         });
     }
