@@ -567,7 +567,7 @@
                           <text value="生成"/>
                         </properties>
                       </component>
-                      <component id="daad5" class="javax.swing.JTextField" binding="textField1" default-binding="true">
+                      <component id="daad5" class="javax.swing.JTextField" binding="randomNumDigitTextField">
                         <constraints>
                           <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="1" indent="0" use-parent-layout="false">
                             <preferred-size width="100" height="-1"/>
@@ -633,7 +633,7 @@
                           <text value="位数"/>
                         </properties>
                       </component>
-                      <component id="f5adf" class="javax.swing.JTextField" binding="textField2" default-binding="true">
+                      <component id="f5adf" class="javax.swing.JTextField" binding="randomStringDigitTextField">
                         <constraints>
                           <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="1" indent="0" use-parent-layout="false">
                             <preferred-size width="100" height="-1"/>
@@ -691,7 +691,7 @@
                           <text value="位数"/>
                         </properties>
                       </component>
-                      <component id="155bf" class="javax.swing.JTextField" binding="textField3" default-binding="true">
+                      <component id="155bf" class="javax.swing.JTextField" binding="randomPasswordDigitTextField">
                         <constraints>
                           <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="1" indent="0" use-parent-layout="false">
                             <preferred-size width="100" height="-1"/>

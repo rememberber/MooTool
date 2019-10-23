@@ -75,13 +75,15 @@ public class CryptoForm {
     private JButton generateRandomNumButton;
     private JButton generateRadomStringButton;
     private JButton generateRandomPasswordButton;
-    private JTextField textField1;
-    private JTextField textField2;
-    private JTextField textField3;
+    private JTextField randomNumDigitTextField;
+    private JTextField randomStringDigitTextField;
+    private JTextField randomPasswordDigitTextField;
 
     private static CryptoForm cryptoForm;
 
     private static final Log logger = LogFactory.get();
+
+    public final static String RANDOM_BASE_STRING = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890`~!@#$%^&*()_+-=[]{};':,./<>?";
 
     private CryptoForm() {
         UndoUtil.register(this);
@@ -229,16 +231,37 @@ public class CryptoForm {
             cryptoForm.getUuidTextField().setText(randomUUID);
         });
         generateRandomNumButton.addActionListener(e -> {
-            String randomNumbers = RandomUtil.randomNumbers(11);
-            cryptoForm.getRandomNumTextField().setText(randomNumbers);
+            try {
+                int digit = Integer.parseInt(cryptoForm.getRandomNumDigitTextField().getText().trim());
+                String randomNumbers = RandomUtil.randomNumbers(digit);
+                cryptoForm.getRandomNumTextField().setText(randomNumbers);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
         });
         generateRadomStringButton.addActionListener(e -> {
-            String randomString = RandomUtil.randomString(11);
-            cryptoForm.getRandomStringTextField().setText(randomString);
+            try {
+                int digit = Integer.parseInt(cryptoForm.getRandomStringDigitTextField().getText().trim());
+                String randomString = RandomUtil.randomString(digit);
+                cryptoForm.getRandomStringTextField().setText(randomString);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
         });
         generateRandomPasswordButton.addActionListener(e -> {
-            String randomPassword = RandomUtil.randomString("abcdefg123456!.", 11);
-            cryptoForm.getRandomPasswordTextField().setText(randomPassword);
+            try {
+                int digit = Integer.parseInt(cryptoForm.getRandomPasswordDigitTextField().getText().trim());
+                String randomPassword = RandomUtil.randomString(RANDOM_BASE_STRING, digit);
+                cryptoForm.getRandomPasswordTextField().setText(randomPassword);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
         });
     }
 
@@ -502,8 +525,8 @@ public class CryptoForm {
         generateRandomNumButton = new JButton();
         generateRandomNumButton.setText("生成");
         panel14.add(generateRandomNumButton, new GridConstraints(1, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        textField1 = new JTextField();
-        panel14.add(textField1, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(100, -1), null, 0, false));
+        randomNumDigitTextField = new JTextField();
+        panel14.add(randomNumDigitTextField, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(100, -1), null, 0, false));
         final JLabel label9 = new JLabel();
         label9.setText("位数");
         panel14.add(label9, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -524,8 +547,8 @@ public class CryptoForm {
         final JLabel label11 = new JLabel();
         label11.setText("位数");
         panel15.add(label11, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        textField2 = new JTextField();
-        panel15.add(textField2, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(100, -1), null, 0, false));
+        randomStringDigitTextField = new JTextField();
+        panel15.add(randomStringDigitTextField, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(100, -1), null, 0, false));
         final JPanel panel16 = new JPanel();
         panel16.setLayout(new GridLayoutManager(2, 5, new Insets(20, 0, 0, 0), -1, -1));
         panel12.add(panel16, new GridConstraints(6, 0, 2, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
@@ -543,8 +566,8 @@ public class CryptoForm {
         final JLabel label13 = new JLabel();
         label13.setText("位数");
         panel16.add(label13, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        textField3 = new JTextField();
-        panel16.add(textField3, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(100, -1), null, 0, false));
+        randomPasswordDigitTextField = new JTextField();
+        panel16.add(randomPasswordDigitTextField, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(100, -1), null, 0, false));
     }
 
     /**
