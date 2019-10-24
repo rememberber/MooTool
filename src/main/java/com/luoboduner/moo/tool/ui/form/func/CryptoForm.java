@@ -367,6 +367,27 @@ public class CryptoForm {
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
+
+        // 使用私钥加密
+        asymEncryptWithPrivateKeyButton.addActionListener(e -> {
+            try {
+                String asymType = (String) cryptoForm.getAsymComboBox().getSelectedItem();
+                String privateKeyStr = cryptoForm.getAsymPrivateKeyTextArea().getText();
+                String toEncryptStr = cryptoForm.getAsymLeftTextArea().getText();
+                String encryptStr = "";
+                if ("RSA".equals(asymType)) {
+                    RSA rsa = new RSA(privateKeyStr, null);
+                    encryptStr = Base64.encode(rsa.encrypt(StrUtil.bytes(toEncryptStr, CharsetUtil.CHARSET_UTF_8), KeyType.PrivateKey));
+                }
+
+                cryptoForm.getAsymRightTextArea().setText(encryptStr);
+                cryptoForm.getAsymRightTextArea().setCaretPosition(0);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
     }
 
     public static CryptoForm getInstance() {
