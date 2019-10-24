@@ -265,7 +265,6 @@
                     <properties>
                       <model>
                         <item value="RSA"/>
-                        <item value="DSA"/>
                       </model>
                     </properties>
                   </component>

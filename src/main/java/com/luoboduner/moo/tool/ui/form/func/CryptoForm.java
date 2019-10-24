@@ -6,7 +6,10 @@ import cn.hutool.core.swing.clipboard.ClipboardUtil;
 import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.RandomUtil;
+import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.SecureUtil;
+import cn.hutool.crypto.asymmetric.KeyType;
+import cn.hutool.crypto.asymmetric.RSA;
 import cn.hutool.crypto.digest.DigestAlgorithm;
 import cn.hutool.crypto.digest.DigestUtil;
 import cn.hutool.crypto.digest.Digester;
@@ -319,6 +322,27 @@ public class CryptoForm {
                 cryptoForm.getAsymPrivateKeyTextArea().setCaretPosition(0);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
+
+        // 使用公钥加密
+        asymEncryptWithPubKeyButton.addActionListener(e -> {
+            try {
+                String asymType = (String) cryptoForm.getAsymComboBox().getSelectedItem();
+                String publicKeyStr = cryptoForm.getAsymPubKeyTextArea().getText();
+                String toEncryptStr = cryptoForm.getAsymLeftTextArea().getText();
+                String encryptStr = "";
+                if ("RSA".equals(asymType)) {
+                    RSA rsa = new RSA(null, publicKeyStr);
+                    encryptStr = Base64.encode(rsa.encrypt(StrUtil.bytes(toEncryptStr, CharsetUtil.CHARSET_UTF_8), KeyType.PublicKey));
+                }
+
+                cryptoForm.getAsymRightTextArea().setText(encryptStr);
+                cryptoForm.getAsymRightTextArea().setCaretPosition(0);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
