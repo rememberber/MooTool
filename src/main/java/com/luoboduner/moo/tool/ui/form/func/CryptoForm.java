@@ -1,6 +1,7 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.swing.clipboard.ClipboardUtil;
 import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.RandomUtil;
@@ -261,6 +262,38 @@ public class CryptoForm {
                 JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
                 logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
+        copyUuidButton.addActionListener(e -> {
+            try {
+                ClipboardUtil.setStr(cryptoForm.getUuidTextField().getText());
+                JOptionPane.showMessageDialog(cryptoForm.getCryptoPanel(), "内容已经复制到剪贴板！", "复制成功", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception e1) {
+                logger.error(e1);
+            }
+        });
+        copyRandomNumButton.addActionListener(e -> {
+            try {
+                ClipboardUtil.setStr(cryptoForm.getRandomNumTextField().getText());
+                JOptionPane.showMessageDialog(cryptoForm.getCryptoPanel(), "内容已经复制到剪贴板！", "复制成功", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception e1) {
+                logger.error(e1);
+            }
+        });
+        copyRadomStringButton.addActionListener(e -> {
+            try {
+                ClipboardUtil.setStr(cryptoForm.getRandomStringTextField().getText());
+                JOptionPane.showMessageDialog(cryptoForm.getCryptoPanel(), "内容已经复制到剪贴板！", "复制成功", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception e1) {
+                logger.error(e1);
+            }
+        });
+        copyRandomPasswordButton.addActionListener(e -> {
+            try {
+                ClipboardUtil.setStr(cryptoForm.getRandomPasswordTextField().getText());
+                JOptionPane.showMessageDialog(cryptoForm.getCryptoPanel(), "内容已经复制到剪贴板！", "复制成功", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception e1) {
+                logger.error(e1);
             }
         });
     }
