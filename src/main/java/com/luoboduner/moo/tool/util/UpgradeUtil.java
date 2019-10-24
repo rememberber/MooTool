@@ -128,7 +128,7 @@ public class UpgradeUtil {
                         MybatisUtil.executeSql(sql);
                     } catch (SQLException e) {
                         log.error("执行索引为{}的版本对应的sql时异常", i, e);
-                        if (!e.getMessage().contains("duplicate column")) {
+                        if (!e.getMessage().contains("duplicate column") && !e.getMessage().contains("constraint")) {
                             return;
                         }
                     }
