@@ -1,6 +1,8 @@
 package com.luoboduner.moo.tool.ui.listener;
 
+import cn.hutool.core.thread.ThreadUtil;
 import com.luoboduner.moo.tool.ui.form.AboutForm;
+import com.luoboduner.moo.tool.util.UpgradeUtil;
 
 import java.awt.*;
 import java.awt.event.MouseAdapter;
@@ -206,5 +208,20 @@ public class AboutListener {
                 e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
             }
         });
+        // 检查更新
+        aboutForm.getVersionLabel().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                super.mousePressed(e);
+                ThreadUtil.execute(() -> UpgradeUtil.checkUpdate(false));
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                super.mouseEntered(e);
+                e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
+            }
+        });
+
     }
 }
