@@ -347,6 +347,26 @@ public class CryptoForm {
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
+        // 使用私钥解密
+        asymDecryptWithPrivateKeyButton.addActionListener(e -> {
+            try {
+                String asymType = (String) cryptoForm.getAsymComboBox().getSelectedItem();
+                String privateKeyStr = cryptoForm.getAsymPrivateKeyTextArea().getText();
+                String toDecryptStr = cryptoForm.getAsymRightTextArea().getText();
+                String decryptStr = "";
+                if ("RSA".equals(asymType)) {
+                    RSA rsa = new RSA(privateKeyStr, null);
+                    decryptStr = StrUtil.str(rsa.decrypt(Base64.decode(toDecryptStr), KeyType.PrivateKey), CharsetUtil.CHARSET_UTF_8);
+                }
+
+                cryptoForm.getAsymLeftTextArea().setText(decryptStr);
+                cryptoForm.getAsymLeftTextArea().setCaretPosition(0);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "解密失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
     }
 
     public static CryptoForm getInstance() {
@@ -500,7 +520,6 @@ public class CryptoForm {
         asymComboBox = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel2 = new DefaultComboBoxModel();
         defaultComboBoxModel2.addElement("RSA");
-        defaultComboBoxModel2.addElement("DSA");
         asymComboBox.setModel(defaultComboBoxModel2);
         asyPanelCenter.add(asymComboBox, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel4 = new JPanel();
