@@ -347,6 +347,7 @@ public class CryptoForm {
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
+
         // 使用私钥解密
         asymDecryptWithPrivateKeyButton.addActionListener(e -> {
             try {
@@ -384,6 +385,27 @@ public class CryptoForm {
                 cryptoForm.getAsymRightTextArea().setCaretPosition(0);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
+
+        // 使用公钥解密
+        asymDecryptWithPubKeyButton.addActionListener(e -> {
+            try {
+                String asymType = (String) cryptoForm.getAsymComboBox().getSelectedItem();
+                String publicKeyStr = cryptoForm.getAsymPubKeyTextArea().getText();
+                String toDecryptStr = cryptoForm.getAsymRightTextArea().getText();
+                String decryptStr = "";
+                if ("RSA".equals(asymType)) {
+                    RSA rsa = new RSA(null, publicKeyStr);
+                    decryptStr = StrUtil.str(rsa.decrypt(Base64.decode(toDecryptStr), KeyType.PublicKey), CharsetUtil.CHARSET_UTF_8);
+                }
+
+                cryptoForm.getAsymLeftTextArea().setText(decryptStr);
+                cryptoForm.getAsymLeftTextArea().setCaretPosition(0);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "解密失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
