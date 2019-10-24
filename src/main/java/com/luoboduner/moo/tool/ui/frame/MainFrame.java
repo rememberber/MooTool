@@ -5,6 +5,7 @@ import com.google.common.collect.Lists;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.listener.AboutListener;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
+import com.luoboduner.moo.tool.ui.listener.func.CryptoListener;
 import com.luoboduner.moo.tool.ui.listener.func.EnCodeListener;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
 import com.luoboduner.moo.tool.ui.listener.func.HttpRequestListener;
@@ -70,6 +71,7 @@ public class MainFrame extends JFrame {
         HttpRequestListener.addListeners();
         QrCodeListener.addListeners();
         EnCodeListener.addListeners();
+        CryptoListener.addListeners();
         SettingListener.addListeners();
     }
 }
