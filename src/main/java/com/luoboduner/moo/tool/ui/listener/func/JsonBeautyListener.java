@@ -40,7 +40,7 @@ public class JsonBeautyListener {
 
     private static TJsonBeautyMapper jsonBeautyMapper = MybatisUtil.getSqlSession().getMapper(TJsonBeautyMapper.class);
 
-    public static String selectedName;
+    public static String selectedNameJson;
 
     public static void addListeners() {
         JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
@@ -54,10 +54,10 @@ public class JsonBeautyListener {
 
         // 保存按钮事件
         jsonBeautyForm.getSaveButton().addActionListener(e -> {
-            if (StringUtils.isEmpty(selectedName)) {
-                selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+            if (StringUtils.isEmpty(selectedNameJson)) {
+                selectedNameJson = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
             }
-            String name = JOptionPane.showInputDialog("名称", selectedName);
+            String name = JOptionPane.showInputDialog("名称", selectedNameJson);
             if (StringUtils.isNotBlank(name)) {
                 TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByName(name);
                 if (tJsonBeauty == null) {
@@ -71,7 +71,7 @@ public class JsonBeautyListener {
                 if (tJsonBeauty.getId() == null) {
                     jsonBeautyMapper.insert(tJsonBeauty);
                     JsonBeautyForm.initListTable();
-                    selectedName = name;
+                    selectedNameJson = name;
                 } else {
                     jsonBeautyMapper.updateByPrimaryKey(tJsonBeauty);
                 }
@@ -86,7 +86,7 @@ public class JsonBeautyListener {
                 ThreadUtil.execute(() -> {
                     int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
                     String name = jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
-                    selectedName = name;
+                    selectedNameJson = name;
                     TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByName(name);
                     jsonBeautyForm.getTextArea().setText(tJsonBeauty.getContent());
                 });
@@ -104,9 +104,9 @@ public class JsonBeautyListener {
             public void keyPressed(KeyEvent evt) {
                 if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
                     String now = SqliteUtil.nowDateForSqlite();
-                    if (selectedName != null) {
+                    if (selectedNameJson != null) {
                         TJsonBeauty tJsonBeauty = new TJsonBeauty();
-                        tJsonBeauty.setName(selectedName);
+                        tJsonBeauty.setName(selectedNameJson);
                         tJsonBeauty.setContent(jsonBeautyForm.getTextArea().getText());
                         tJsonBeauty.setModifiedTime(now);
 
@@ -123,7 +123,7 @@ public class JsonBeautyListener {
 
                             jsonBeautyMapper.insert(tJsonBeauty);
                             JsonBeautyForm.initListTable();
-                            selectedName = name;
+                            selectedNameJson = name;
                         }
                     }
                 } else if (evt.isControlDown() && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
@@ -159,7 +159,7 @@ public class JsonBeautyListener {
 
                             tableModel.removeRow(selectedRow);
                         }
-                        selectedName = null;
+                        selectedNameJson = null;
                         JsonBeautyForm.initListTable();
                     }
                 }
@@ -206,7 +206,7 @@ public class JsonBeautyListener {
         // 添加按钮事件
         jsonBeautyForm.getAddButton().addActionListener(e -> {
             jsonBeautyForm.getTextArea().setText("");
-            selectedName = null;
+            selectedNameJson = null;
         });
 
         // 左侧列表鼠标点击事件（显示下方删除按钮）

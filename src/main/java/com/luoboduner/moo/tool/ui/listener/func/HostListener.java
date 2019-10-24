@@ -35,7 +35,7 @@ public class HostListener {
 
     private static THostMapper hostMapper = MybatisUtil.getSqlSession().getMapper(THostMapper.class);
 
-    public static String selectedName;
+    public static String selectedNameHost;
 
     public static void addListeners() {
         HostForm hostForm = HostForm.getInstance();
@@ -44,7 +44,7 @@ public class HostListener {
 
         hostForm.getSwitchButton().addActionListener(e -> ThreadUtil.execute(() -> {
             String hostText = hostForm.getTextArea().getText();
-            HostForm.setHost(selectedName, hostText);
+            HostForm.setHost(selectedNameHost, hostText);
             save(false);
         }));
 
@@ -69,9 +69,9 @@ public class HostListener {
             public void keyPressed(KeyEvent evt) {
                 if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
                     String now = SqliteUtil.nowDateForSqlite();
-                    if (selectedName != null) {
+                    if (selectedNameHost != null) {
                         THost tHost = new THost();
-                        tHost.setName(selectedName);
+                        tHost.setName(selectedNameHost);
                         tHost.setContent(hostForm.getTextArea().getText());
                         tHost.setModifiedTime(now);
 
@@ -88,7 +88,7 @@ public class HostListener {
 
                             hostMapper.insert(tHost);
                             HostForm.initListTable();
-                            selectedName = name;
+                            selectedNameHost = name;
                         }
                     }
                 }
@@ -118,7 +118,7 @@ public class HostListener {
 
                             tableModel.removeRow(selectedRow);
                         }
-                        selectedName = null;
+                        selectedNameHost = null;
                         HostForm.initListTable();
                     }
                 }
@@ -133,7 +133,7 @@ public class HostListener {
         hostForm.getAddButton().addActionListener(e -> {
             hostForm.getTextArea().setText("");
             hostForm.getTextArea().setEditable(true);
-            selectedName = null;
+            selectedNameHost = null;
         });
 
         // 左侧列表鼠标点击事件（显示下方删除按钮）
@@ -248,7 +248,7 @@ public class HostListener {
             hostForm.getTextArea().setEditable(false);
             hostForm.getSwitchButton().setVisible(false);
         } else {
-            selectedName = name;
+            selectedNameHost = name;
             THost tHost = hostMapper.selectByName(name);
             content = tHost.getContent();
             hostForm.getTextArea().setEditable(true);
@@ -258,12 +258,12 @@ public class HostListener {
     }
 
     private static void save(boolean needRename) {
-        if (StringUtils.isEmpty(selectedName)) {
-            selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+        if (StringUtils.isEmpty(selectedNameHost)) {
+            selectedNameHost = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
         }
-        String name = selectedName;
+        String name = selectedNameHost;
         if (needRename) {
-            name = JOptionPane.showInputDialog("名称", selectedName);
+            name = JOptionPane.showInputDialog("名称", selectedNameHost);
         }
         if (StringUtils.isNotBlank(name)) {
             THost tHost = hostMapper.selectByName(name);
@@ -278,7 +278,7 @@ public class HostListener {
             if (tHost.getId() == null) {
                 hostMapper.insert(tHost);
                 HostForm.initListTable();
-                selectedName = name;
+                selectedNameHost = name;
             } else {
                 hostMapper.updateByPrimaryKey(tHost);
             }
