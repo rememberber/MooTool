@@ -104,15 +104,17 @@ public class QuickNoteListener {
                     } else {
                         String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
                         String name = JOptionPane.showInputDialog("名称", tempName);
-                        TQuickNote tQuickNote = new TQuickNote();
-                        tQuickNote.setName(name);
-                        tQuickNote.setContent(quickNoteForm.getTextArea().getText());
-                        tQuickNote.setCreateTime(now);
-                        tQuickNote.setModifiedTime(now);
+                        if (StringUtils.isNotBlank(name)) {
+                            TQuickNote tQuickNote = new TQuickNote();
+                            tQuickNote.setName(name);
+                            tQuickNote.setContent(quickNoteForm.getTextArea().getText());
+                            tQuickNote.setCreateTime(now);
+                            tQuickNote.setModifiedTime(now);
 
-                        quickNoteMapper.insert(tQuickNote);
-                        QuickNoteForm.initNoteListTable();
-                        selectedName = name;
+                            quickNoteMapper.insert(tQuickNote);
+                            QuickNoteForm.initNoteListTable();
+                            selectedName = name;
+                        }
                     }
                 }
 
@@ -268,16 +270,19 @@ public class QuickNoteListener {
                 if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
                     int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
                     int noteId = Integer.parseInt(String.valueOf(quickNoteForm.getNoteListTable().getValueAt(selectedRow, 0)));
-                    String noteName = String.valueOf(quickNoteForm.getNoteListTable().getValueAt(selectedRow, 1));
-                    TQuickNote tQuickNote = new TQuickNote();
-                    tQuickNote.setId(noteId);
-                    tQuickNote.setName(noteName);
-                    try {
-                        quickNoteMapper.updateByPrimaryKeySelective(tQuickNote);
-                    } catch (Exception e) {
-                        JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
-                        QuickNoteForm.initNoteListTable();
-                        log.error(e.toString());
+                    String name = String.valueOf(quickNoteForm.getNoteListTable().getValueAt(selectedRow, 1));
+
+                    if (StringUtils.isNotBlank(name)) {
+                        TQuickNote tQuickNote = new TQuickNote();
+                        tQuickNote.setId(noteId);
+                        tQuickNote.setName(name);
+                        try {
+                            quickNoteMapper.updateByPrimaryKeySelective(tQuickNote);
+                        } catch (Exception e) {
+                            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
+                            QuickNoteForm.initNoteListTable();
+                            log.error(e.toString());
+                        }
                     }
                 }
             }

@@ -40,7 +40,7 @@ public class JsonBeautyListener {
 
     private static TJsonBeautyMapper jsonBeautyMapper = MybatisUtil.getSqlSession().getMapper(TJsonBeautyMapper.class);
 
-    public static String selectedName;
+    public static String selectedNameJson;
 
     public static void addListeners() {
         JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
@@ -49,34 +49,15 @@ public class JsonBeautyListener {
         jsonBeautyForm.getBeautifyButton().addActionListener(e -> {
             String jsonText = jsonBeautyForm.getTextArea().getText();
             jsonBeautyForm.getTextArea().setText(formatJson(jsonText));
-        });
-
-        jsonBeautyForm.getTextArea().addKeyListener(new KeyListener() {
-            @Override
-            public void keyReleased(KeyEvent arg0) {
-            }
-
-            @Override
-            public void keyPressed(KeyEvent evt) {
-                if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
-                    jsonBeautyForm.getFindTextField().grabFocus();
-                } else if (evt.isControlDown() && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
-                    String jsonText = jsonBeautyForm.getTextArea().getText();
-                    jsonBeautyForm.getTextArea().setText(formatJson(jsonText));
-                }
-            }
-
-            @Override
-            public void keyTyped(KeyEvent arg0) {
-            }
+            jsonBeautyForm.getTextArea().setCaretPosition(0);
         });
 
         // 保存按钮事件
         jsonBeautyForm.getSaveButton().addActionListener(e -> {
-            if (StringUtils.isEmpty(selectedName)) {
-                selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+            if (StringUtils.isEmpty(selectedNameJson)) {
+                selectedNameJson = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
             }
-            String name = JOptionPane.showInputDialog("名称", selectedName);
+            String name = JOptionPane.showInputDialog("名称", selectedNameJson);
             if (StringUtils.isNotBlank(name)) {
                 TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByName(name);
                 if (tJsonBeauty == null) {
@@ -90,7 +71,7 @@ public class JsonBeautyListener {
                 if (tJsonBeauty.getId() == null) {
                     jsonBeautyMapper.insert(tJsonBeauty);
                     JsonBeautyForm.initListTable();
-                    selectedName = name;
+                    selectedNameJson = name;
                 } else {
                     jsonBeautyMapper.updateByPrimaryKey(tJsonBeauty);
                 }
@@ -105,7 +86,7 @@ public class JsonBeautyListener {
                 ThreadUtil.execute(() -> {
                     int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
                     String name = jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
-                    selectedName = name;
+                    selectedNameJson = name;
                     TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByName(name);
                     jsonBeautyForm.getTextArea().setText(tJsonBeauty.getContent());
                 });
@@ -123,9 +104,9 @@ public class JsonBeautyListener {
             public void keyPressed(KeyEvent evt) {
                 if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
                     String now = SqliteUtil.nowDateForSqlite();
-                    if (selectedName != null) {
+                    if (selectedNameJson != null) {
                         TJsonBeauty tJsonBeauty = new TJsonBeauty();
-                        tJsonBeauty.setName(selectedName);
+                        tJsonBeauty.setName(selectedNameJson);
                         tJsonBeauty.setContent(jsonBeautyForm.getTextArea().getText());
                         tJsonBeauty.setModifiedTime(now);
 
@@ -133,16 +114,24 @@ public class JsonBeautyListener {
                     } else {
                         String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
                         String name = JOptionPane.showInputDialog("名称", tempName);
-                        TJsonBeauty tJsonBeauty = new TJsonBeauty();
-                        tJsonBeauty.setName(name);
-                        tJsonBeauty.setContent(jsonBeautyForm.getTextArea().getText());
-                        tJsonBeauty.setCreateTime(now);
-                        tJsonBeauty.setModifiedTime(now);
+                        if (StringUtils.isNotBlank(name)) {
+                            TJsonBeauty tJsonBeauty = new TJsonBeauty();
+                            tJsonBeauty.setName(name);
+                            tJsonBeauty.setContent(jsonBeautyForm.getTextArea().getText());
+                            tJsonBeauty.setCreateTime(now);
+                            tJsonBeauty.setModifiedTime(now);
 
-                        jsonBeautyMapper.insert(tJsonBeauty);
-                        JsonBeautyForm.initListTable();
-                        selectedName = name;
+                            jsonBeautyMapper.insert(tJsonBeauty);
+                            JsonBeautyForm.initListTable();
+                            selectedNameJson = name;
+                        }
                     }
+                } else if (evt.isControlDown() && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                    String jsonText = jsonBeautyForm.getTextArea().getText();
+                    jsonBeautyForm.getTextArea().setText(formatJson(jsonText));
+                    jsonBeautyForm.getTextArea().setCaretPosition(0);
+                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                    jsonBeautyForm.getFindTextField().grabFocus();
                 }
             }
 
@@ -170,7 +159,7 @@ public class JsonBeautyListener {
 
                             tableModel.removeRow(selectedRow);
                         }
-                        selectedName = null;
+                        selectedNameJson = null;
                         JsonBeautyForm.initListTable();
                     }
                 }
@@ -217,7 +206,7 @@ public class JsonBeautyListener {
         // 添加按钮事件
         jsonBeautyForm.getAddButton().addActionListener(e -> {
             jsonBeautyForm.getTextArea().setText("");
-            selectedName = null;
+            selectedNameJson = null;
         });
 
         // 左侧列表鼠标点击事件（显示下方删除按钮）
@@ -293,16 +282,18 @@ public class JsonBeautyListener {
                 if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
                     int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
                     int noteId = Integer.parseInt(String.valueOf(jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 0)));
-                    String noteName = String.valueOf(jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 1));
-                    TJsonBeauty tJsonBeauty = new TJsonBeauty();
-                    tJsonBeauty.setId(noteId);
-                    tJsonBeauty.setName(noteName);
-                    try {
-                        jsonBeautyMapper.updateByPrimaryKeySelective(tJsonBeauty);
-                    } catch (Exception e) {
-                        JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
-                        JsonBeautyForm.initListTable();
-                        log.error(e.toString());
+                    String name = String.valueOf(jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 1));
+                    if (StringUtils.isNotBlank(name)) {
+                        TJsonBeauty tJsonBeauty = new TJsonBeauty();
+                        tJsonBeauty.setId(noteId);
+                        tJsonBeauty.setName(name);
+                        try {
+                            jsonBeautyMapper.updateByPrimaryKeySelective(tJsonBeauty);
+                        } catch (Exception e) {
+                            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
+                            JsonBeautyForm.initListTable();
+                            log.error(e.toString());
+                        }
                     }
                 }
             }

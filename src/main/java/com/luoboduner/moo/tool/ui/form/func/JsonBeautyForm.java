@@ -7,7 +7,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
 import com.luoboduner.moo.tool.ui.UiConsts;
-import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
+import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
@@ -105,7 +105,7 @@ public class JsonBeautyForm {
         if (jsonBeautyList.size() > 0) {
             jsonBeautyForm.getTextArea().setText(jsonBeautyList.get(0).getContent());
             jsonBeautyForm.getNoteListTable().setRowSelectionInterval(0, 0);
-            QuickNoteListener.selectedName = jsonBeautyList.get(0).getName();
+            JsonBeautyListener.selectedNameJson = jsonBeautyList.get(0).getName();
         }
     }
 
