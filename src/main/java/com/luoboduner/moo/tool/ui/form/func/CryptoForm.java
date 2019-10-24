@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
+import cn.hutool.core.codec.Base64;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.swing.clipboard.ClipboardUtil;
 import cn.hutool.core.util.CharsetUtil;
@@ -25,6 +26,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import javax.swing.*;
 import java.awt.*;
 import java.io.File;
+import java.security.KeyPair;
 
 /**
  * <pre>
@@ -296,6 +298,31 @@ public class CryptoForm {
                 logger.error(e1);
             }
         });
+        // 生成一对密钥
+        asymKeyGenerateButton.addActionListener(e -> {
+            try {
+                String asymType = (String) cryptoForm.getAsymComboBox().getSelectedItem();
+                String privateKeyStr = "";
+                String publicKeyStr = "";
+                if ("RSA".equals(asymType)) {
+                    KeyPair pair = SecureUtil.generateKeyPair("RSA");
+                    privateKeyStr = Base64.encode(pair.getPrivate().getEncoded());
+                    publicKeyStr = Base64.encode(pair.getPublic().getEncoded());
+                } else if ("DSA".equals(asymType)) {
+                    KeyPair pair = SecureUtil.generateKeyPair("DSA");
+                    privateKeyStr = Base64.encode(pair.getPrivate().getEncoded());
+                    publicKeyStr = Base64.encode(pair.getPublic().getEncoded());
+                }
+                cryptoForm.getAsymPubKeyTextArea().setText(publicKeyStr);
+                cryptoForm.getAsymPubKeyTextArea().setCaretPosition(0);
+                cryptoForm.getAsymPrivateKeyTextArea().setText(privateKeyStr);
+                cryptoForm.getAsymPrivateKeyTextArea().setCaretPosition(0);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
     }
 
     public static CryptoForm getInstance() {
@@ -447,6 +474,10 @@ public class CryptoForm {
         final Spacer spacer4 = new Spacer();
         asyPanelCenter.add(spacer4, new GridConstraints(7, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         asymComboBox = new JComboBox();
+        final DefaultComboBoxModel defaultComboBoxModel2 = new DefaultComboBoxModel();
+        defaultComboBoxModel2.addElement("RSA");
+        defaultComboBoxModel2.addElement("DSA");
+        asymComboBox.setModel(defaultComboBoxModel2);
         asyPanelCenter.add(asymComboBox, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel4 = new JPanel();
         panel4.setLayout(new GridLayoutManager(2, 1, new Insets(20, 0, 0, 0), -1, -1));
@@ -514,13 +545,13 @@ public class CryptoForm {
         final Spacer spacer6 = new Spacer();
         panel10.add(spacer6, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         digestTypeComboBox = new JComboBox();
-        final DefaultComboBoxModel defaultComboBoxModel2 = new DefaultComboBoxModel();
-        defaultComboBoxModel2.addElement("MD5");
-        defaultComboBoxModel2.addElement("SHA-1");
-        defaultComboBoxModel2.addElement("SHA-256");
-        defaultComboBoxModel2.addElement("SHA-384");
-        defaultComboBoxModel2.addElement("SHA-512");
-        digestTypeComboBox.setModel(defaultComboBoxModel2);
+        final DefaultComboBoxModel defaultComboBoxModel3 = new DefaultComboBoxModel();
+        defaultComboBoxModel3.addElement("MD5");
+        defaultComboBoxModel3.addElement("SHA-1");
+        defaultComboBoxModel3.addElement("SHA-256");
+        defaultComboBoxModel3.addElement("SHA-384");
+        defaultComboBoxModel3.addElement("SHA-512");
+        digestTypeComboBox.setModel(defaultComboBoxModel3);
         panel10.add(digestTypeComboBox, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel11 = new JPanel();
         panel11.setLayout(new GridLayoutManager(9, 1, new Insets(0, 0, 0, 0), -1, -1));
