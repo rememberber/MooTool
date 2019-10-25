@@ -9,6 +9,7 @@ import com.luoboduner.moo.tool.ui.form.SettingForm;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
 import com.luoboduner.moo.tool.ui.form.func.HttpRequestForm;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
+import com.luoboduner.moo.tool.ui.form.func.QrCodeForm;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 
 import javax.swing.*;
@@ -86,8 +87,9 @@ public class SettingListener {
                 App.config.save();
                 QuickNoteForm.init();
                 JsonBeautyForm.init();
-                HttpRequestForm.init();
                 HostForm.init();
+                HttpRequestForm.init();
+                QrCodeForm.init();
             }
         });
     }
