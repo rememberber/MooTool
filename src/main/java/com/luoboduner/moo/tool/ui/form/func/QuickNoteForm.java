@@ -121,13 +121,14 @@ public class QuickNoteForm {
     }
 
     private static void initTextAreaFont() {
-        getSysFontList();
-
         String fontName = App.config.getQuickNoteFontName();
         int fontSize = App.config.getQuickNoteFontSize();
         if (fontSize == 0) {
             fontSize = quickNoteForm.getTextArea().getFont().getSize() + 2;
         }
+
+        getSysFontList();
+
         quickNoteForm.getFontNameComboBox().setSelectedItem(fontName);
         quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(fontSize));
 

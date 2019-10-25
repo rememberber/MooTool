@@ -6,6 +6,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.SettingForm;
+import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 
 import javax.swing.*;
@@ -80,8 +81,9 @@ public class SettingListener {
         settingForm.getMenuBarPositionComboBox().addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 App.config.setMenuBarPosition(e.getItem().toString());
-                QuickNoteForm.init();
                 App.config.save();
+                QuickNoteForm.init();
+                JsonBeautyForm.init();
             }
         });
     }
