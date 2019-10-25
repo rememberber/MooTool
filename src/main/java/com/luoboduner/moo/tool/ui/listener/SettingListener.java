@@ -7,6 +7,7 @@ import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.SettingForm;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
+import com.luoboduner.moo.tool.ui.form.func.HttpRequestForm;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 
@@ -85,6 +86,7 @@ public class SettingListener {
                 App.config.save();
                 QuickNoteForm.init();
                 JsonBeautyForm.init();
+                HttpRequestForm.init();
                 HostForm.init();
             }
         });
