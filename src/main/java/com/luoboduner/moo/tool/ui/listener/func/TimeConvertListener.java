@@ -10,6 +10,8 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DateUtils;
 
 import javax.swing.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.util.Date;
 
 /**
@@ -26,41 +28,45 @@ public class TimeConvertListener {
     public static void addListeners() {
         TimeConvertForm timeConvertForm = TimeConvertForm.getInstance();
         timeConvertForm.getToLocalTimeButton().addActionListener(e -> {
-            try {
-                long timeStamp = Long.parseLong(timeConvertForm.getTimestampTextField().getText());
-                if (String.valueOf(timeStamp).length() >= 13) {
-                    timeConvertForm.getUnitComboBox().setSelectedItem("毫秒(ms)");
-                } else {
-                    timeConvertForm.getUnitComboBox().setSelectedItem("秒(s)");
-                }
-                String unit = (String) timeConvertForm.getUnitComboBox().getSelectedItem();
-                if ("秒(s)".equals(unit)) {
-                    timeStamp = timeStamp * 1000;
-                }
-                String localTime = DateFormatUtils.format(new Date(timeStamp), TimeConvertForm.TIME_FORMAT);
-                timeConvertForm.getGmtTextField().setText(localTime);
-                timeConvertForm.getGmtTextField().grabFocus();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                logger.error(ExceptionUtils.getStackTrace(ex));
-                JOptionPane.showMessageDialog(timeConvertForm.getTimeConvertPanel(), ex.getMessage(), "转换失败！", JOptionPane.ERROR_MESSAGE);
-            }
+            toLocalTime();
         });
         timeConvertForm.getToTimestampButton().addActionListener(e -> {
-            try {
-                String localTime = timeConvertForm.getGmtTextField().getText();
-                String unit = (String) timeConvertForm.getUnitComboBox().getSelectedItem();
-                Date date = DateUtils.parseDate(localTime, TimeConvertForm.TIME_FORMAT);
-                long timeStamp = date.getTime();
-                if ("秒(s)".equals(unit)) {
-                    timeStamp = timeStamp / 1000;
+            toTimestamp();
+        });
+        timeConvertForm.getTimestampTextField().addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+
+            }
+
+            @Override
+            public void keyPressed(KeyEvent evt) {
+                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+                    toLocalTime();
                 }
-                timeConvertForm.getTimestampTextField().setText(String.valueOf(timeStamp));
-                timeConvertForm.getTimestampTextField().grabFocus();
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                logger.error(ExceptionUtils.getStackTrace(ex));
-                JOptionPane.showMessageDialog(timeConvertForm.getTimeConvertPanel(), ex.getMessage(), "转换失败！", JOptionPane.ERROR_MESSAGE);
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+
+            }
+        });
+        timeConvertForm.getGmtTextField().addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+
+            }
+
+            @Override
+            public void keyPressed(KeyEvent evt) {
+                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+                    toTimestamp();
+                }
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+
             }
         });
         timeConvertForm.getCopyCurrentGmtButton().addActionListener(e -> ThreadUtil.execute(() -> {
@@ -107,5 +113,47 @@ public class TimeConvertListener {
                 timeConvertForm.getCopyGeneratedLocalTimeButton().setEnabled(true);
             }
         }));
+    }
+
+    private static void toTimestamp() {
+        TimeConvertForm timeConvertForm = TimeConvertForm.getInstance();
+        try {
+            String localTime = timeConvertForm.getGmtTextField().getText();
+            String unit = (String) timeConvertForm.getUnitComboBox().getSelectedItem();
+            Date date = DateUtils.parseDate(localTime, TimeConvertForm.TIME_FORMAT);
+            long timeStamp = date.getTime();
+            if ("秒(s)".equals(unit)) {
+                timeStamp = timeStamp / 1000;
+            }
+            timeConvertForm.getTimestampTextField().setText(String.valueOf(timeStamp));
+            timeConvertForm.getTimestampTextField().grabFocus();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            logger.error(ExceptionUtils.getStackTrace(ex));
+            JOptionPane.showMessageDialog(timeConvertForm.getTimeConvertPanel(), ex.getMessage(), "转换失败！", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    private static void toLocalTime() {
+        TimeConvertForm timeConvertForm = TimeConvertForm.getInstance();
+        try {
+            long timeStamp = Long.parseLong(timeConvertForm.getTimestampTextField().getText());
+            if (String.valueOf(timeStamp).length() >= 13) {
+                timeConvertForm.getUnitComboBox().setSelectedItem("毫秒(ms)");
+            } else {
+                timeConvertForm.getUnitComboBox().setSelectedItem("秒(s)");
+            }
+            String unit = (String) timeConvertForm.getUnitComboBox().getSelectedItem();
+            if ("秒(s)".equals(unit)) {
+                timeStamp = timeStamp * 1000;
+            }
+            String localTime = DateFormatUtils.format(new Date(timeStamp), TimeConvertForm.TIME_FORMAT);
+            timeConvertForm.getGmtTextField().setText(localTime);
+            timeConvertForm.getGmtTextField().grabFocus();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            logger.error(ExceptionUtils.getStackTrace(ex));
+            JOptionPane.showMessageDialog(timeConvertForm.getTimeConvertPanel(), ex.getMessage(), "转换失败！", JOptionPane.ERROR_MESSAGE);
+        }
     }
 }
