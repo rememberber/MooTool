@@ -94,7 +94,7 @@
                     <properties>
                       <icon value="icon/menu-saveall_dark.png"/>
                       <text value=""/>
-                      <toolTipText value="保存"/>
+                      <toolTipText value="保存(Ctrl+S)"/>
                     </properties>
                   </component>
                   <hspacer id="d3a69">
@@ -109,7 +109,7 @@
                     <properties>
                       <icon value="icon/add.png"/>
                       <text value=""/>
-                      <toolTipText value="新建"/>
+                      <toolTipText value="新建(Ctrl+N)"/>
                     </properties>
                   </component>
                   <component id="df702" class="javax.swing.JComboBox" binding="fontNameComboBox">
@@ -173,7 +173,7 @@
                     <properties>
                       <icon value="icon/find_dark.png"/>
                       <text value=""/>
-                      <toolTipText value="查找"/>
+                      <toolTipText value="查找(Ctrl+F)"/>
                     </properties>
                   </component>
                   <component id="849d4" class="javax.swing.JButton" binding="wrapButton">
@@ -193,6 +193,7 @@
                     <properties>
                       <icon value="icon/listFiles_dark.png"/>
                       <text value=""/>
+                      <toolTipText value="显示/隐藏列表"/>
                     </properties>
                   </component>
                 </children>

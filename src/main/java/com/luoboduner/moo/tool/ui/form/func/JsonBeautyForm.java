@@ -188,14 +188,14 @@ public class JsonBeautyForm {
         saveButton = new JButton();
         saveButton.setIcon(new ImageIcon(getClass().getResource("/icon/menu-saveall_dark.png")));
         saveButton.setText("");
-        saveButton.setToolTipText("保存");
+        saveButton.setToolTipText("保存(Ctrl+S)");
         panel3.add(saveButton, new GridConstraints(0, 8, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
         panel3.add(spacer2, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         addButton = new JButton();
         addButton.setIcon(new ImageIcon(getClass().getResource("/icon/add.png")));
         addButton.setText("");
-        addButton.setToolTipText("新建");
+        addButton.setToolTipText("新建(Ctrl+N)");
         panel3.add(addButton, new GridConstraints(0, 7, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         fontNameComboBox = new JComboBox();
         fontNameComboBox.setToolTipText("设置字体");
@@ -237,7 +237,7 @@ public class JsonBeautyForm {
         findButton = new JButton();
         findButton.setIcon(new ImageIcon(getClass().getResource("/icon/find_dark.png")));
         findButton.setText("");
-        findButton.setToolTipText("查找");
+        findButton.setToolTipText("查找(Ctrl+F)");
         panel3.add(findButton, new GridConstraints(0, 6, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
         wrapButton = new JButton();
         wrapButton.setIcon(new ImageIcon(getClass().getResource("/icon/toggleSoftWrap_dark.png")));
@@ -247,10 +247,12 @@ public class JsonBeautyForm {
         beautifyButton = new JButton();
         beautifyButton.setIcon(new ImageIcon(getClass().getResource("/icon/object_dark.png")));
         beautifyButton.setText("");
+        beautifyButton.setToolTipText("格式化(Ctrl+Shift+F)");
         panel3.add(beautifyButton, new GridConstraints(0, 9, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         listItemButton = new JButton();
         listItemButton.setIcon(new ImageIcon(getClass().getResource("/icon/listFiles_dark.png")));
         listItemButton.setText("");
+        listItemButton.setToolTipText("显示/隐藏列表");
         panel3.add(listItemButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         scrollPane = new JScrollPane();
         panel2.add(scrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
