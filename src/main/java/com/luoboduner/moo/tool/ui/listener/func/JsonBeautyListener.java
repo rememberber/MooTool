@@ -318,6 +318,15 @@ public class JsonBeautyListener {
             }
         });
 
+        jsonBeautyForm.getListItemButton().addActionListener(e -> {
+            int currentDividerLocation = jsonBeautyForm.getSplitPane().getDividerLocation();
+            if (currentDividerLocation < 5) {
+                jsonBeautyForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
+            } else {
+                jsonBeautyForm.getSplitPane().setDividerLocation(0);
+            }
+        });
+
     }
 
     private static String formatJson(String jsonText) {
