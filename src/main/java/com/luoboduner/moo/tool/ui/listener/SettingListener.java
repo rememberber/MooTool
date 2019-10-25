@@ -6,8 +6,10 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.SettingForm;
+import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 
 import javax.swing.*;
+import java.awt.event.ItemEvent;
 import java.util.Objects;
 
 /**
@@ -73,6 +75,15 @@ public class SettingListener {
         });
 
         settingForm.getHttpUseProxyCheckBox().addChangeListener(e -> SettingForm.toggleHttpProxyPanel());
+
+        // 使用习惯-菜单栏位置
+        settingForm.getMenuBarPositionComboBox().addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                App.config.setMenuBarPosition(e.getItem().toString());
+                QuickNoteForm.init();
+                App.config.save();
+            }
+        });
     }
 
 }

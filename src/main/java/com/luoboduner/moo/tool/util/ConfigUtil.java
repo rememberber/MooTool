@@ -41,6 +41,11 @@ public class ConfigUtil extends ConfigBaseUtil {
     private String httpProxyPassword;
 
     /**
+     * 菜单栏位置
+     */
+    private String menuBarPosition;
+
+    /**
      * 上次关闭前所在的tab
      */
     private int recentTabIndex;
@@ -271,5 +276,13 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setRandomPasswordDigit(int randomPasswordDigit) {
         setting.put("func.crypto", "randomPasswordDigit", String.valueOf(randomPasswordDigit));
+    }
+
+    public String getMenuBarPosition() {
+        return setting.getStr("menuBarPosition", "setting.custom", "上方");
+    }
+
+    public void setMenuBarPosition(String menuBarPosition) {
+        setting.put("setting.custom", "menuBarPosition", menuBarPosition);
     }
 }
