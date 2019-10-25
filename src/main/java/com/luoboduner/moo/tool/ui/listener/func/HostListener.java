@@ -91,6 +91,8 @@ public class HostListener {
                             selectedNameHost = name;
                         }
                     }
+                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
+                    newHost();
                 }
             }
 
@@ -131,9 +133,7 @@ public class HostListener {
 
         // 添加按钮事件
         hostForm.getAddButton().addActionListener(e -> {
-            hostForm.getTextArea().setText("");
-            hostForm.getTextArea().setEditable(true);
-            selectedNameHost = null;
+            newHost();
         });
 
         // 左侧列表鼠标点击事件（显示下方删除按钮）
@@ -232,6 +232,13 @@ public class HostListener {
             }
         });
 
+    }
+
+    private static void newHost() {
+        HostForm hostForm = HostForm.getInstance();
+        hostForm.getTextArea().setText("");
+        hostForm.getTextArea().setEditable(true);
+        selectedNameHost = null;
     }
 
     public static void refreshHostContentInTextArea() {

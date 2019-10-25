@@ -132,6 +132,8 @@ public class JsonBeautyListener {
                     jsonBeautyForm.getTextArea().setCaretPosition(0);
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
                     jsonBeautyForm.getFindTextField().grabFocus();
+                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
+                    newJson();
                 }
             }
 
@@ -205,8 +207,7 @@ public class JsonBeautyListener {
 
         // 添加按钮事件
         jsonBeautyForm.getAddButton().addActionListener(e -> {
-            jsonBeautyForm.getTextArea().setText("");
-            selectedNameJson = null;
+            newJson();
         });
 
         // 左侧列表鼠标点击事件（显示下方删除按钮）
@@ -318,6 +319,21 @@ public class JsonBeautyListener {
             }
         });
 
+        jsonBeautyForm.getListItemButton().addActionListener(e -> {
+            int currentDividerLocation = jsonBeautyForm.getSplitPane().getDividerLocation();
+            if (currentDividerLocation < 5) {
+                jsonBeautyForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
+            } else {
+                jsonBeautyForm.getSplitPane().setDividerLocation(0);
+            }
+        });
+
+    }
+
+    private static void newJson() {
+        JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
+        jsonBeautyForm.getTextArea().setText("");
+        selectedNameJson = null;
     }
 
     private static String formatJson(String jsonText) {

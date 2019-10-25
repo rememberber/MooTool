@@ -41,6 +41,11 @@ public class ConfigUtil extends ConfigBaseUtil {
     private String httpProxyPassword;
 
     /**
+     * 菜单栏位置
+     */
+    private String menuBarPosition;
+
+    /**
      * 上次关闭前所在的tab
      */
     private int recentTabIndex;
@@ -64,6 +69,14 @@ public class ConfigUtil extends ConfigBaseUtil {
     private String qrCodeSaveAsPath;
 
     private String qrCodeRecognitionImagePath;
+
+    private String digestFilePath;
+
+    private int randomNumDigit;
+
+    private int randomStringDigit;
+
+    private int randomPasswordDigit;
 
     public boolean isAutoCheckUpdate() {
         return setting.getBool("autoCheckUpdate", "setting.common", true);
@@ -231,5 +244,45 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setCurrentHostName(String currentHostName) {
         setting.put("func.host", "currentHostName", currentHostName);
+    }
+
+    public String getDigestFilePath() {
+        return setting.getStr("digestFilePath", "func.crypto", "");
+    }
+
+    public void setDigestFilePath(String digestFilePath) {
+        setting.put("func.crypto", "digestFilePath", digestFilePath);
+    }
+
+    public int getRandomNumDigit() {
+        return setting.getInt("randomNumDigit", "func.crypto", 16);
+    }
+
+    public void setRandomNumDigit(int randomNumDigit) {
+        setting.put("func.crypto", "randomNumDigit", String.valueOf(randomNumDigit));
+    }
+
+    public int getRandomStringDigit() {
+        return setting.getInt("randomStringDigit", "func.crypto", 16);
+    }
+
+    public void setRandomStringDigit(int randomStringDigit) {
+        setting.put("func.crypto", "randomStringDigit", String.valueOf(randomStringDigit));
+    }
+
+    public int getRandomPasswordDigit() {
+        return setting.getInt("randomPasswordDigit", "func.crypto", 16);
+    }
+
+    public void setRandomPasswordDigit(int randomPasswordDigit) {
+        setting.put("func.crypto", "randomPasswordDigit", String.valueOf(randomPasswordDigit));
+    }
+
+    public String getMenuBarPosition() {
+        return setting.getStr("menuBarPosition", "setting.custom", "上方");
+    }
+
+    public void setMenuBarPosition(String menuBarPosition) {
+        setting.put("setting.custom", "menuBarPosition", menuBarPosition);
     }
 }
