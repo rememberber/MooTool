@@ -6,6 +6,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.SettingForm;
+import com.luoboduner.moo.tool.ui.form.func.CryptoForm;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
 import com.luoboduner.moo.tool.ui.form.func.HttpRequestForm;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
@@ -90,6 +91,7 @@ public class SettingListener {
                 HostForm.init();
                 HttpRequestForm.init();
                 QrCodeForm.init();
+                CryptoForm.init();
             }
         });
     }
