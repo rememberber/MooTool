@@ -116,10 +116,10 @@ public class QuickNoteListener {
                             selectedName = name;
                         }
                     }
-                }
-
-                if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
                     quickNoteForm.getFindTextField().grabFocus();
+                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
+                    newNote();
                 }
             }
 
@@ -193,8 +193,7 @@ public class QuickNoteListener {
 
         // 添加按钮事件
         quickNoteForm.getAddButton().addActionListener(e -> {
-            quickNoteForm.getTextArea().setText("");
-            selectedName = null;
+            newNote();
         });
 
         // 左侧列表鼠标点击事件（显示下方删除按钮）
@@ -307,6 +306,21 @@ public class QuickNoteListener {
             }
         });
 
+        quickNoteForm.getListItemButton().addActionListener(e -> {
+            int currentDividerLocation = quickNoteForm.getSplitPane().getDividerLocation();
+            if (currentDividerLocation < 5) {
+                quickNoteForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
+            } else {
+                quickNoteForm.getSplitPane().setDividerLocation(0);
+            }
+        });
+
+    }
+
+    private static void newNote() {
+        QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
+        quickNoteForm.getTextArea().setText("");
+        selectedName = null;
     }
 
     private static void find() {
