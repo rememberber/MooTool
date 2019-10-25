@@ -94,7 +94,7 @@
                     <properties>
                       <icon value="icon/menu-saveall_dark.png"/>
                       <text value=""/>
-                      <toolTipText value="保存"/>
+                      <toolTipText value="保存(Ctrl+S)"/>
                     </properties>
                   </component>
                   <hspacer id="d3a69">
@@ -109,7 +109,7 @@
                     <properties>
                       <icon value="icon/add.png"/>
                       <text value=""/>
-                      <toolTipText value="新建"/>
+                      <toolTipText value="新建(Ctrl+N)"/>
                     </properties>
                   </component>
                   <component id="df188" class="javax.swing.JButton" binding="switchButton">
@@ -119,6 +119,7 @@
                     <properties>
                       <icon value="icon/check.png"/>
                       <text value=""/>
+                      <toolTipText value="切换host"/>
                     </properties>
                   </component>
                 </children>
