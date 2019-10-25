@@ -152,7 +152,7 @@ public class Init {
     public static void initTray() {
 
         try {
-            if (SystemTray.isSupported()) {
+            if (SystemTray.isSupported() && App.tray == null) {
                 App.tray = SystemTray.getSystemTray();
 
                 App.popupMenu = new PopupMenu();
