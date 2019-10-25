@@ -70,7 +70,10 @@ public class FrameListener {
             }
         });
 
-        MainWindow.getInstance().getMainPanel().registerKeyboardAction(e -> App.mainFrame.dispose(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        MainWindow.getInstance().getMainPanel().registerKeyboardAction(e -> {
+            App.mainFrame.dispose();
+            saveBeforeExit();
+        }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
     }
 
     public static void saveBeforeExit() {
