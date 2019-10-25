@@ -50,7 +50,9 @@ public class HostForm {
 
     public static final String WIN_HOST_FILE_PATH = "C:\\Windows\\System32\\drivers\\etc\\hosts";
 
-    public static final String NOT_SUPPORTED_TIPS = "目前只支持Windows系统！";
+    public static final String MAC_HOST_FILE_PATH = "/etc/hosts";
+
+    public static final String NOT_SUPPORTED_TIPS = "暂不支持该操作系统！";
 
     public static final String SYS_CURRENT_HOST_NAME = ">_系统当前Host";
 
@@ -64,6 +66,13 @@ public class HostForm {
             hostForm.getSwitchButton().setEnabled(false);
             if (SystemUtil.isWindowsOs()) {
                 File hostFile = FileUtil.file(WIN_HOST_FILE_PATH);
+                FileUtil.writeUtf8String(hostText, hostFile);
+                if (App.trayIcon != null) {
+                    App.trayIcon.displayMessage("MooTool", "Host已切换！\n" + hostName, TrayIcon.MessageType.INFO);
+                    highlightHostMenu(hostName);
+                }
+            } else if (SystemUtil.isMacOs()) {
+                File hostFile = FileUtil.file(MAC_HOST_FILE_PATH);
                 FileUtil.writeUtf8String(hostText, hostFile);
                 if (App.trayIcon != null) {
                     App.trayIcon.displayMessage("MooTool", "Host已切换！\n" + hostName, TrayIcon.MessageType.INFO);
@@ -171,6 +180,8 @@ public class HostForm {
         String content;
         if (SystemUtil.isWindowsOs()) {
             content = FileUtil.readUtf8String(HostForm.WIN_HOST_FILE_PATH);
+        } else if (SystemUtil.isMacOs()) {
+            content = FileUtil.readUtf8String(HostForm.MAC_HOST_FILE_PATH);
         } else {
             content = HostForm.NOT_SUPPORTED_TIPS;
         }
