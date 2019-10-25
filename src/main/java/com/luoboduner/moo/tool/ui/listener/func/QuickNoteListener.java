@@ -307,6 +307,15 @@ public class QuickNoteListener {
             }
         });
 
+        quickNoteForm.getListItemButton().addActionListener(e -> {
+            int currentDividerLocation = quickNoteForm.getSplitPane().getDividerLocation();
+            if (currentDividerLocation < 5) {
+                quickNoteForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
+            } else {
+                quickNoteForm.getSplitPane().setDividerLocation(0);
+            }
+        });
+
     }
 
     private static void find() {
