@@ -226,7 +226,7 @@ public class QrCodeForm {
         generatePanel.setLayout(new GridLayoutManager(2, 3, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane1.addTab("生成", generatePanel);
         controlPanel = new JPanel();
-        controlPanel.setLayout(new GridLayoutManager(1, 10, new Insets(0, 5, 5, 5), -1, -1));
+        controlPanel.setLayout(new GridLayoutManager(1, 10, new Insets(5, 5, 5, 5), -1, -1));
         generatePanel.add(controlPanel, new GridConstraints(1, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         generateButton = new JButton();
         generateButton.setText("生成");

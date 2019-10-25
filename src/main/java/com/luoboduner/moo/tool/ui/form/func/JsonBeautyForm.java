@@ -195,7 +195,7 @@ public class JsonBeautyForm {
         rightPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane.setRightComponent(rightPanel);
         controlPanel = new JPanel();
-        controlPanel.setLayout(new GridLayoutManager(1, 10, new Insets(0, 10, 5, 5), -1, -1));
+        controlPanel.setLayout(new GridLayoutManager(1, 10, new Insets(5, 5, 5, 5), -1, -1));
         rightPanel.add(controlPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         saveButton = new JButton();
         saveButton.setIcon(new ImageIcon(getClass().getResource("/icon/menu-saveall_dark.png")));
