@@ -116,6 +116,10 @@ public class CryptoForm {
             cryptoForm.getDigestResultTextArea().setForeground(foreColor);
         }
         cryptoForm.getCryptoPanel().updateUI();
+        cryptoForm.getDigestFilePathTextField().setText(App.config.getDigestFilePath());
+        cryptoForm.getRandomNumDigitTextField().setText(String.valueOf(App.config.getRandomNumDigit()));
+        cryptoForm.getRandomStringDigitTextField().setText(String.valueOf(App.config.getRandomStringDigit()));
+        cryptoForm.getRandomPasswordDigitTextField().setText(String.valueOf(App.config.getRandomPasswordDigit()));
     }
 
     {

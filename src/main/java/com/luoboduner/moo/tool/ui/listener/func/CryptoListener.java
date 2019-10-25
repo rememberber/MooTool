@@ -157,6 +157,8 @@ public class CryptoListener {
                         digestResult = "";
                 }
                 cryptoForm.getDigestResultTextArea().setText(digestResult);
+                App.config.setDigestFilePath(filePath);
+                App.config.save();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
@@ -166,7 +168,7 @@ public class CryptoListener {
 
         // 文件摘要加密-文件浏览按钮
         cryptoForm.getExploreButton().addActionListener(e -> {
-            File beforeFile = new File(cryptoForm.getDigestFilePathTextField().getText());
+            File beforeFile = new File(App.config.getDigestFilePath());
             JFileChooser fileChooser;
 
             if (beforeFile.exists()) {
@@ -191,6 +193,8 @@ public class CryptoListener {
                 int digit = Integer.parseInt(cryptoForm.getRandomNumDigitTextField().getText().trim());
                 String randomNumbers = RandomUtil.randomNumbers(digit);
                 cryptoForm.getRandomNumTextField().setText(randomNumbers);
+                App.config.setRandomNumDigit(digit);
+                App.config.save();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
@@ -203,6 +207,8 @@ public class CryptoListener {
                 int digit = Integer.parseInt(cryptoForm.getRandomStringDigitTextField().getText().trim());
                 String randomString = RandomUtil.randomString(digit);
                 cryptoForm.getRandomStringTextField().setText(randomString);
+                App.config.setRandomStringDigit(digit);
+                App.config.save();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
@@ -215,6 +221,8 @@ public class CryptoListener {
                 int digit = Integer.parseInt(cryptoForm.getRandomPasswordDigitTextField().getText().trim());
                 String randomPassword = RandomUtil.randomString(RANDOM_BASE_STRING, digit);
                 cryptoForm.getRandomPasswordTextField().setText(randomPassword);
+                App.config.setRandomPasswordDigit(digit);
+                App.config.save();
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
