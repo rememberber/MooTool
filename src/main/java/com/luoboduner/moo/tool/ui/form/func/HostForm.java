@@ -83,7 +83,7 @@ public class HostForm {
             }
         } catch (Exception ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(hostForm.getHostPanel(), "需要以管理员身份运行才可以哦！\n\n" + ex.getMessage(), "切换失败！", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(hostForm.getHostPanel(), "需要管理员或root权限运行！\n\n" + ex.getMessage(), "切换失败！", JOptionPane.ERROR_MESSAGE);
         } finally {
             hostForm.getSwitchButton().setEnabled(true);
         }

@@ -9,6 +9,7 @@ import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
+import com.luoboduner.moo.tool.util.SystemUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 
@@ -56,7 +57,11 @@ public class FrameListener {
             @Override
             public void windowClosing(WindowEvent e) {
                 saveBeforeExit();
-                App.mainFrame.dispose();
+                if (SystemUtil.isWindowsOs()) {
+                    App.mainFrame.dispose();
+                } else {
+                    App.mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+                }
             }
 
             @Override
