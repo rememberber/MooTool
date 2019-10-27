@@ -50,7 +50,9 @@ public class HostForm {
 
     public static final String WIN_HOST_FILE_PATH = "C:\\Windows\\System32\\drivers\\etc\\hosts";
 
-    public static final String NOT_SUPPORTED_TIPS = "目前只支持Windows系统！";
+    public static final String MAC_HOST_FILE_PATH = "/etc/hosts";
+
+    public static final String NOT_SUPPORTED_TIPS = "暂不支持该操作系统！";
 
     public static final String SYS_CURRENT_HOST_NAME = ">_系统当前Host";
 
@@ -69,12 +71,19 @@ public class HostForm {
                     App.trayIcon.displayMessage("MooTool", "Host已切换！\n" + hostName, TrayIcon.MessageType.INFO);
                     highlightHostMenu(hostName);
                 }
+            } else if (SystemUtil.isMacOs()) {
+                File hostFile = FileUtil.file(MAC_HOST_FILE_PATH);
+                FileUtil.writeUtf8String(hostText, hostFile);
+                if (App.trayIcon != null) {
+                    App.trayIcon.displayMessage("MooTool", "Host已切换！\n" + hostName, TrayIcon.MessageType.INFO);
+                    highlightHostMenu(hostName);
+                }
             } else {
                 JOptionPane.showMessageDialog(hostForm.getHostPanel(), NOT_SUPPORTED_TIPS, "抱歉！", JOptionPane.INFORMATION_MESSAGE);
             }
         } catch (Exception ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(hostForm.getHostPanel(), "需要以管理员身份运行才可以哦！\n\n" + ex.getMessage(), "切换失败！", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(hostForm.getHostPanel(), "需要管理员或root权限运行！\n\n" + ex.getMessage(), "切换失败！", JOptionPane.ERROR_MESSAGE);
         } finally {
             hostForm.getSwitchButton().setEnabled(true);
         }
@@ -171,6 +180,8 @@ public class HostForm {
         String content;
         if (SystemUtil.isWindowsOs()) {
             content = FileUtil.readUtf8String(HostForm.WIN_HOST_FILE_PATH);
+        } else if (SystemUtil.isMacOs()) {
+            content = FileUtil.readUtf8String(HostForm.MAC_HOST_FILE_PATH);
         } else {
             content = HostForm.NOT_SUPPORTED_TIPS;
         }

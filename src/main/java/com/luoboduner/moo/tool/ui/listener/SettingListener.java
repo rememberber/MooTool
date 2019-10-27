@@ -70,7 +70,7 @@ public class SettingListener {
                 SwingUtilities.updateComponentTreeUI(App.mainFrame);
                 SwingUtilities.updateComponentTreeUI(MainWindow.getInstance().getTabbedPane());
 
-                JOptionPane.showMessageDialog(settingPanel, "保存成功！\n\n部分细节将在下次启动时生效！\n\n", "成功",
+                JOptionPane.showMessageDialog(settingPanel, "保存成功！\n\n重启应用生效！\n\n", "成功",
                         JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e1) {
                 JOptionPane.showMessageDialog(settingPanel, "保存失败！\n\n" + e1.getMessage(), "失败",
