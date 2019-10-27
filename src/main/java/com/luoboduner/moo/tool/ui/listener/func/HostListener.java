@@ -249,6 +249,8 @@ public class HostListener {
         if (HostForm.SYS_CURRENT_HOST_NAME.equals(name)) {
             if (SystemUtil.isWindowsOs()) {
                 content = FileUtil.readUtf8String(HostForm.WIN_HOST_FILE_PATH);
+            } else if (SystemUtil.isMacOs()) {
+                content = FileUtil.readUtf8String(HostForm.MAC_HOST_FILE_PATH);
             } else {
                 content = HostForm.NOT_SUPPORTED_TIPS;
             }
