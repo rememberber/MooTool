@@ -77,7 +77,7 @@ public class UpdateDialog extends JDialog {
         buttonOK.setEnabled(false);
         ThreadUtil.execute(
                 () -> {
-                    String fileUrl = "http://download.zhoubochina.com/exe/MooTool-" + newVersion + "-x64-Setup.exe";
+                    String fileUrl = "http://download.zhoubochina.com/moo/exe/MooTool-" + newVersion + "-x64-Setup.exe";
                     String fileName = FileUtil.getName(fileUrl);
                     URL url;
                     try {
