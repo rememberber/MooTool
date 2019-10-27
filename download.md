@@ -3,6 +3,7 @@
 <details>
 <summary>Windows</summary>
 
+[MooTool-v1.1.0-x64-Setup.exe](http://download.zhoubochina.com/moo/exe/MooTool-v1.1.0-x64-Setup.exe)  
 [MooTool-v1.0.0-x64-Setup.exe](http://download.zhoubochina.com/moo/exe/MooTool-v1.0.0-x64-Setup.exe)  
 
 </details>
