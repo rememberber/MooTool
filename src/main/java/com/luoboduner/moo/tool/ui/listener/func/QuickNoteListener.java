@@ -324,7 +324,6 @@ public class QuickNoteListener {
             try {
                 if (selectedRows.length > 0) {
                     JFileChooser fileChooser = new JFileChooser();
-                    fileChooser.setToolTipText("导出到");
                     fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
                     int approve = fileChooser.showOpenDialog(quickNoteForm.getQuickNotePanel());
                     String exportPath;
