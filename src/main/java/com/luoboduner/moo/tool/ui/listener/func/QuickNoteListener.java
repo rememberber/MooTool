@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.StrUtil;
 import com.luoboduner.moo.tool.App;
@@ -12,6 +13,7 @@ import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 
 import javax.swing.*;
@@ -23,6 +25,7 @@ import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.File;
 import java.util.Date;
 
 /**
@@ -313,6 +316,49 @@ public class QuickNoteListener {
             } else {
                 quickNoteForm.getSplitPane().setDividerLocation(0);
             }
+        });
+
+        quickNoteForm.getExportButton().addActionListener(e -> {
+            int[] selectedRows = quickNoteForm.getNoteListTable().getSelectedRows();
+
+            try {
+                if (selectedRows.length > 0) {
+                    JFileChooser fileChooser = new JFileChooser();
+                    fileChooser.setToolTipText("导出到");
+                    fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    int approve = fileChooser.showOpenDialog(quickNoteForm.getQuickNotePanel());
+                    String exportPath;
+                    if (approve == JFileChooser.APPROVE_OPTION) {
+                        exportPath = fileChooser.getSelectedFile().getAbsolutePath();
+                    } else {
+                        return;
+                    }
+
+                    for (int row : selectedRows) {
+                        Integer selectedId = (Integer) quickNoteForm.getNoteListTable().getValueAt(row, 0);
+                        TQuickNote tQuickNote = quickNoteMapper.selectByPrimaryKey(selectedId);
+                        File exportFile = FileUtil.touch(exportPath + File.separator + tQuickNote.getName() + ".txt");
+                        FileUtil.writeUtf8String(tQuickNote.getContent(), exportFile);
+                    }
+                    JOptionPane.showMessageDialog(quickNoteForm.getQuickNotePanel(), "导出成功！", "提示",
+                            JOptionPane.INFORMATION_MESSAGE);
+                    try {
+                        Desktop desktop = Desktop.getDesktop();
+                        desktop.open(new File(exportPath));
+                    } catch (Exception e2) {
+                        log.error(ExceptionUtils.getStackTrace(e2));
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(quickNoteForm.getQuickNotePanel(), "请至少选择一个！", "提示",
+                            JOptionPane.INFORMATION_MESSAGE);
+                }
+
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(quickNoteForm.getQuickNotePanel(), "导出失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
+            }
+
         });
 
     }
