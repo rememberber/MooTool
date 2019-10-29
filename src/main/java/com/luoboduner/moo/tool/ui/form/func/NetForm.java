@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
+import cn.hutool.core.net.NetUtil;
 import cn.hutool.core.util.RuntimeUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
@@ -12,6 +13,7 @@ import lombok.Getter;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.LinkedHashSet;
 
 /**
  * <pre>
@@ -35,7 +37,7 @@ public class NetForm {
     private JButton refreshIpv4ListButton;
     private JTextArea ipv4ListTextArea;
     private JTextArea ipv6ListTextArea;
-    private JButton refreshIpv6ListButton1;
+    private JButton refreshIpv6ListButton;
     private JTextField hostTextField;
     private JButton hostToIpButton;
     private JTextField ipTextField;
@@ -46,6 +48,37 @@ public class NetForm {
 
     private NetForm() {
         UndoUtil.register(this);
+        ipConfigButton.addActionListener(e -> {
+            String ipConfigStr = RuntimeUtil.execForStr("ipconfig");
+            netForm.getIpConfigTextArea().setText(ipConfigStr);
+        });
+        ipConfigAllButton.addActionListener(e -> {
+            String ipConfigStr = RuntimeUtil.execForStr("ipconfig /all");
+            netForm.getIpConfigTextArea().setText(ipConfigStr);
+        });
+        ipv4ToLongButton.addActionListener(e -> {
+            String ipv4 = netForm.getIpv4TextField().getText().trim();
+            long ipv4Long = NetUtil.ipv4ToLong(ipv4);
+            netForm.getLongTextField().setText(String.valueOf(ipv4Long));
+        });
+        longToIpv4Button.addActionListener(e -> {
+            String ipv4Long = netForm.getLongTextField().getText().trim();
+            String ipv4 = NetUtil.longToIpv4(Long.parseLong(ipv4Long));
+            netForm.getIpv4TextField().setText(ipv4);
+        });
+        refreshIpv4ListButton.addActionListener(e -> {
+            LinkedHashSet<String> ipv4Set = NetUtil.localIpv4s();
+            netForm.getIpv4ListTextArea().setText(String.join("\n", ipv4Set));
+        });
+        refreshIpv6ListButton.addActionListener(e -> {
+            LinkedHashSet<String> ipv6Set = NetUtil.localIpv6s();
+            netForm.getIpv6ListTextArea().setText(String.join("\n", ipv6Set));
+        });
+        hostToIpButton.addActionListener(e -> {
+            String hostStr = netForm.getHostTextField().getText().trim();
+            String ipByHost = NetUtil.getIpByHost(hostStr);
+            netForm.getIpTextField().setText(ipByHost);
+        });
     }
 
     public static NetForm getInstance() {
@@ -59,9 +92,6 @@ public class NetForm {
         netForm = getInstance();
 
         initUi();
-
-        String ipConfigStr = RuntimeUtil.execForStr("ipconfig /all");
-        netForm.getIpConfigTextArea().setText(ipConfigStr);
     }
 
     private static void initUi() {
@@ -165,9 +195,9 @@ public class NetForm {
         panel7.setLayout(new GridLayoutManager(2, 2, new Insets(0, 5, 5, 5), -1, -1));
         panel3.add(panel7, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         panel7.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), "获取本机ipv6列表"));
-        refreshIpv6ListButton1 = new JButton();
-        refreshIpv6ListButton1.setText("刷新");
-        panel7.add(refreshIpv6ListButton1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        refreshIpv6ListButton = new JButton();
+        refreshIpv6ListButton.setText("刷新");
+        panel7.add(refreshIpv6ListButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         ipv6ListTextArea = new JTextArea();
         panel7.add(ipv6ListTextArea, new GridConstraints(1, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(150, 50), null, 0, false));
         final Spacer spacer5 = new Spacer();
