@@ -36,7 +36,7 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="c0428" class="javax.swing.JTextArea" binding="ipconfigTextArea">
+                  <component id="c0428" class="javax.swing.JTextArea" binding="ipConfigTextArea">
                     <constraints/>
                     <properties>
                       <margin top="5" left="5" bottom="5" right="5"/>
@@ -52,7 +52,7 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="b5b71" class="javax.swing.JButton" binding="刷新IpconfigButton" default-binding="true">
+                  <component id="b5b71" class="javax.swing.JButton" binding="ipConfigButton">
                     <constraints>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
@@ -60,7 +60,7 @@
                       <text value="刷新（ipconfig）"/>
                     </properties>
                   </component>
-                  <component id="1ec49" class="javax.swing.JButton" binding="刷新IpconfigAllButton" default-binding="true">
+                  <component id="1ec49" class="javax.swing.JButton" binding="ipConfigAllButton">
                     <constraints>
                       <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
@@ -106,7 +106,7 @@
                           <text value="ipv4"/>
                         </properties>
                       </component>
-                      <component id="5918" class="javax.swing.JTextField" binding="textField1" default-binding="true">
+                      <component id="5918" class="javax.swing.JTextField" binding="ipv4TextField">
                         <constraints>
                           <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                             <preferred-size width="150" height="-1"/>
@@ -122,7 +122,7 @@
                           <text value="Long"/>
                         </properties>
                       </component>
-                      <component id="42f58" class="javax.swing.JTextField" binding="textField2" default-binding="true">
+                      <component id="42f58" class="javax.swing.JTextField" binding="longTextField">
                         <constraints>
                           <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                             <preferred-size width="150" height="-1"/>
@@ -138,7 +138,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="259d1" class="javax.swing.JButton" binding="转换Button" default-binding="true">
+                          <component id="259d1" class="javax.swing.JButton" binding="ipv4ToLongButton">
                             <constraints>
                               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -147,7 +147,7 @@
                               <text value="转换"/>
                             </properties>
                           </component>
-                          <component id="c8794" class="javax.swing.JButton" binding="转换Button1" default-binding="true">
+                          <component id="c8794" class="javax.swing.JButton" binding="longToIpv4Button">
                             <constraints>
                               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -178,7 +178,7 @@
                     <properties/>
                     <border type="etched" title="获取本机ipv4列表"/>
                     <children>
-                      <component id="b1dc8" class="javax.swing.JButton" binding="刷新Button" default-binding="true">
+                      <component id="b1dc8" class="javax.swing.JButton" binding="refreshIpv4ListButton">
                         <constraints>
                           <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
@@ -186,7 +186,7 @@
                           <text value="刷新"/>
                         </properties>
                       </component>
-                      <component id="9e452" class="javax.swing.JTextArea" binding="textArea1" default-binding="true">
+                      <component id="9e452" class="javax.swing.JTextArea" binding="ipv4ListTextArea">
                         <constraints>
                           <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="6" hsize-policy="6" anchor="0" fill="3" indent="0" use-parent-layout="false">
                             <preferred-size width="150" height="50"/>
@@ -209,7 +209,7 @@
                     <properties/>
                     <border type="etched" title="获取本机ipv6列表"/>
                     <children>
-                      <component id="261ba" class="javax.swing.JButton" binding="刷新Button1" default-binding="true">
+                      <component id="261ba" class="javax.swing.JButton" binding="refreshIpv6ListButton1">
                         <constraints>
                           <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
@@ -217,7 +217,7 @@
                           <text value="刷新"/>
                         </properties>
                       </component>
-                      <component id="ce660" class="javax.swing.JTextArea" binding="textArea2" default-binding="true">
+                      <component id="ce660" class="javax.swing.JTextArea" binding="ipv6ListTextArea">
                         <constraints>
                           <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="6" hsize-policy="6" anchor="0" fill="3" indent="0" use-parent-layout="false">
                             <preferred-size width="150" height="50"/>
@@ -240,7 +240,7 @@
                     <properties/>
                     <border type="etched" title="通过域名获取IP"/>
                     <children>
-                      <component id="6a652" class="javax.swing.JTextField" binding="textField3" default-binding="true">
+                      <component id="6a652" class="javax.swing.JTextField" binding="hostTextField">
                         <constraints>
                           <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                             <preferred-size width="150" height="-1"/>
@@ -248,7 +248,7 @@
                         </constraints>
                         <properties/>
                       </component>
-                      <component id="8d850" class="javax.swing.JTextField" binding="textField4" default-binding="true">
+                      <component id="8d850" class="javax.swing.JTextField" binding="ipTextField">
                         <constraints>
                           <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                             <preferred-size width="150" height="-1"/>
@@ -282,7 +282,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="f050a" class="javax.swing.JButton" binding="获取Button" default-binding="true">
+                          <component id="f050a" class="javax.swing.JButton" binding="hostToIpButton">
                             <constraints>
                               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
