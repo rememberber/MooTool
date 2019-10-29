@@ -222,9 +222,6 @@ public class CalculatorForm {
     private void $$$setupUI$$$() {
         calculatorPanel = new JPanel();
         calculatorPanel.setLayout(new GridLayoutManager(4, 2, new Insets(0, 0, 0, 0), -1, -1));
-        outputTextArea = new JTextArea();
-        outputTextArea.setEditable(false);
-        calculatorPanel.add(outputTextArea, new GridConstraints(3, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(150, 50), null, 0, false));
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new GridLayoutManager(3, 2, new Insets(5, 5, 5, 5), -1, -1));
         calculatorPanel.add(panel1, new GridConstraints(0, 0, 3, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
@@ -242,6 +239,12 @@ public class CalculatorForm {
         Font resultTextFieldFont = this.$$$getFont$$$(null, -1, 26, resultTextField.getFont());
         if (resultTextFieldFont != null) resultTextField.setFont(resultTextFieldFont);
         panel1.add(resultTextField, new GridConstraints(2, 0, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        final JScrollPane scrollPane1 = new JScrollPane();
+        calculatorPanel.add(scrollPane1, new GridConstraints(3, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        outputTextArea = new JTextArea();
+        outputTextArea.setEditable(false);
+        outputTextArea.setMargin(new Insets(5, 5, 5, 5));
+        scrollPane1.setViewportView(outputTextArea);
     }
 
     /**
