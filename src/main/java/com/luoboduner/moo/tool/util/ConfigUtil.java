@@ -78,6 +78,8 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     private int randomPasswordDigit;
 
+    private String calculatorInputExpress;
+
     public boolean isAutoCheckUpdate() {
         return setting.getBool("autoCheckUpdate", "setting.common", true);
     }
@@ -284,5 +286,13 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setMenuBarPosition(String menuBarPosition) {
         setting.put("setting.custom", "menuBarPosition", menuBarPosition);
+    }
+
+    public String getCalculatorInputExpress() {
+        return setting.getStr("calculatorInputExpress", "func.calculator", "3*(8-1)");
+    }
+
+    public void setCalculatorInputExpress(String calculatorInputExpress) {
+        setting.put("func.calculator", "calculatorInputExpress", calculatorInputExpress);
     }
 }

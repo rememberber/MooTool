@@ -116,7 +116,7 @@ public class MainWindow {
         tabbedPane.addTab("加解密/随机", new ImageIcon(getClass().getResource("/icon/method.png")), cryptoPanel);
         calculatorPanel = new JPanel();
         calculatorPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("计算器", calculatorPanel);
+        tabbedPane.addTab("计算器", new ImageIcon(getClass().getResource("/icon/calculator.png")), calculatorPanel);
         settingPanel = new JPanel();
         settingPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("设置", new ImageIcon(getClass().getResource("/icon/gear.png")), settingPanel);

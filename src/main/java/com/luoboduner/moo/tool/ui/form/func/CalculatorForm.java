@@ -8,6 +8,7 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -65,11 +66,19 @@ public class CalculatorForm {
     }
 
     private void calculate() {
-        String inputExpress = calculatorForm.getInputExpressTextField().getText();
-        int result = calculate(inputExpress + "#");
-        String resultStr = result + "";
-        calculatorForm.getResultTextField().setText(resultStr);
-        calculatorForm.getOutputTextArea().append(inputExpress + " = " + resultStr + "\n");
+        try {
+            String inputExpress = calculatorForm.getInputExpressTextField().getText();
+            int result = calculate(inputExpress + "#");
+            String resultStr = result + "";
+            calculatorForm.getResultTextField().setText(resultStr);
+            calculatorForm.getOutputTextArea().append(inputExpress + " = " + resultStr + "\n");
+            App.config.setCalculatorInputExpress(inputExpress);
+            App.config.save();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            logger.error(ExceptionUtils.getStackTrace(ex));
+            JOptionPane.showMessageDialog(calculatorForm.getCalculatorPanel(), ex.getMessage(), "计算失败！", JOptionPane.ERROR_MESSAGE);
+        }
     }
 
     public static CalculatorForm getInstance() {
@@ -83,6 +92,11 @@ public class CalculatorForm {
         calculatorForm = getInstance();
 
         initUi();
+
+        calculatorForm.getInputExpressTextField().setText(App.config.getCalculatorInputExpress());
+        brace.add('{');
+        brace.add('(');
+        brace.add('[');
     }
 
     private static void initUi() {
@@ -97,6 +111,8 @@ public class CalculatorForm {
     }
 
     private static int calculate(String exp) {
+
+
         // 初始化栈
         Stack<Integer> opStack = new Stack<>();
         Stack<Character> otStack = new Stack<>();
