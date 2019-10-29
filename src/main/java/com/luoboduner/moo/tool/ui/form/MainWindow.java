@@ -8,6 +8,7 @@ import com.luoboduner.moo.tool.ui.form.func.EnCodeForm;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
 import com.luoboduner.moo.tool.ui.form.func.HttpRequestForm;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
+import com.luoboduner.moo.tool.ui.form.func.NetForm;
 import com.luoboduner.moo.tool.ui.form.func.QrCodeForm;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
@@ -39,6 +40,7 @@ public class MainWindow {
     private JPanel qrCodePanel;
     private JPanel cryptoPanel;
     private JPanel calculatorPanel;
+    private JPanel netPanel;
 
     private static MainWindow mainWindow;
 
@@ -68,6 +70,7 @@ public class MainWindow {
         mainWindow.getQrCodePanel().add(QrCodeForm.getInstance().getQrCodePanel(), gridConstraints);
         mainWindow.getCryptoPanel().add(CryptoForm.getInstance().getCryptoPanel(), gridConstraints);
         mainWindow.getCalculatorPanel().add(CalculatorForm.getInstance().getCalculatorPanel(), gridConstraints);
+        mainWindow.getNetPanel().add(NetForm.getInstance().getNetPanel(), gridConstraints);
         mainWindow.getMainPanel().updateUI();
     }
 
@@ -117,6 +120,9 @@ public class MainWindow {
         calculatorPanel = new JPanel();
         calculatorPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("计算器", new ImageIcon(getClass().getResource("/icon/calculator.png")), calculatorPanel);
+        netPanel = new JPanel();
+        netPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPane.addTab("网络/IP", new ImageIcon(getClass().getResource("/icon/network.png")), netPanel);
         settingPanel = new JPanel();
         settingPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("设置", new ImageIcon(getClass().getResource("/icon/gear.png")), settingPanel);

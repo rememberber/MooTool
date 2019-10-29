@@ -13,6 +13,7 @@ import com.luoboduner.moo.tool.ui.form.func.EnCodeForm;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
 import com.luoboduner.moo.tool.ui.form.func.HttpRequestForm;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
+import com.luoboduner.moo.tool.ui.form.func.NetForm;
 import com.luoboduner.moo.tool.ui.form.func.QrCodeForm;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
@@ -127,6 +128,7 @@ public class Init {
         QrCodeForm.init();
         CryptoForm.init();
         CalculatorForm.init();
+        NetForm.init();
 
         // 检查新版版
         if (App.config.isAutoCheckUpdate()) {
