@@ -24,6 +24,7 @@
             </constraints>
             <properties>
               <font size="26"/>
+              <toolTipText value="输入四则运算表达式"/>
             </properties>
           </component>
           <component id="9827b" class="javax.swing.JButton" binding="calculateButton">
@@ -48,6 +49,7 @@
             <properties>
               <editable value="false"/>
               <font size="26"/>
+              <toolTipText value="计算结果"/>
             </properties>
           </component>
         </children>

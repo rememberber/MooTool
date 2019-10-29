@@ -244,6 +244,7 @@ public class CalculatorForm {
         inputExpressTextField = new JTextField();
         Font inputExpressTextFieldFont = this.$$$getFont$$$(null, -1, 26, inputExpressTextField.getFont());
         if (inputExpressTextFieldFont != null) inputExpressTextField.setFont(inputExpressTextFieldFont);
+        inputExpressTextField.setToolTipText("输入四则运算表达式");
         panel1.add(inputExpressTextField, new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         calculateButton = new JButton();
         calculateButton.setText("=");
@@ -254,6 +255,7 @@ public class CalculatorForm {
         resultTextField.setEditable(false);
         Font resultTextFieldFont = this.$$$getFont$$$(null, -1, 26, resultTextField.getFont());
         if (resultTextFieldFont != null) resultTextField.setFont(resultTextFieldFont);
+        resultTextField.setToolTipText("计算结果");
         panel1.add(resultTextField, new GridConstraints(2, 0, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         final JScrollPane scrollPane1 = new JScrollPane();
         calculatorPanel.add(scrollPane1, new GridConstraints(3, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
