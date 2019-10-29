@@ -9,8 +9,24 @@
 </details>
 
 <details>
+<summary>MacOS</summary>
+
+[v1.1.0.zip](http://download.zhoubochina.com/moo/mac/MooTool-v1.1.0.zip)  
+
+</details>
+
+<details>
 <summary>Linux</summary>
 
+[v1.1.0.zip](http://download.zhoubochina.com/moo/linux/MooTool-1.1.0.zip)  
+[v1.0.0.zip](http://download.zhoubochina.com/moo/linux/MooTool-1.0.0.zip)  
+
+</details>
+
+<details>
+<summary>Portable(绿色便携版32/64位)</summary>
+
+[v1.1.0.zip](http://download.zhoubochina.com/moo/linux/MooTool-1.1.0.zip)  
 [v1.0.0.zip](http://download.zhoubochina.com/moo/linux/MooTool-1.0.0.zip)  
 
 </details>
