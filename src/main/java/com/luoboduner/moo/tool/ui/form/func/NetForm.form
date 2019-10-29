@@ -38,7 +38,9 @@
                 <children>
                   <component id="c0428" class="javax.swing.JTextArea" binding="ipconfigTextArea">
                     <constraints/>
-                    <properties/>
+                    <properties>
+                      <margin top="5" left="5" bottom="5" right="5"/>
+                    </properties>
                   </component>
                 </children>
               </scrollpane>
@@ -252,7 +254,9 @@
                             <preferred-size width="150" height="-1"/>
                           </grid>
                         </constraints>
-                        <properties/>
+                        <properties>
+                          <editable value="false"/>
+                        </properties>
                       </component>
                       <component id="8a3e3" class="javax.swing.JLabel">
                         <constraints>
