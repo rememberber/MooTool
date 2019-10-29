@@ -10,6 +10,7 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -49,35 +50,75 @@ public class NetForm {
     private NetForm() {
         UndoUtil.register(this);
         ipConfigButton.addActionListener(e -> {
-            String ipConfigStr = RuntimeUtil.execForStr("ipconfig");
-            netForm.getIpConfigTextArea().setText(ipConfigStr);
+            try {
+                String ipConfigStr = RuntimeUtil.execForStr("ipconfig");
+                netForm.getIpConfigTextArea().setText(ipConfigStr);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
         });
         ipConfigAllButton.addActionListener(e -> {
-            String ipConfigStr = RuntimeUtil.execForStr("ipconfig /all");
-            netForm.getIpConfigTextArea().setText(ipConfigStr);
+            try {
+                String ipConfigStr = RuntimeUtil.execForStr("ipconfig /all");
+                netForm.getIpConfigTextArea().setText(ipConfigStr);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
         });
         ipv4ToLongButton.addActionListener(e -> {
-            String ipv4 = netForm.getIpv4TextField().getText().trim();
-            long ipv4Long = NetUtil.ipv4ToLong(ipv4);
-            netForm.getLongTextField().setText(String.valueOf(ipv4Long));
+            try {
+                String ipv4 = netForm.getIpv4TextField().getText().trim();
+                long ipv4Long = NetUtil.ipv4ToLong(ipv4);
+                netForm.getLongTextField().setText(String.valueOf(ipv4Long));
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                logger.error(ExceptionUtils.getStackTrace(ex));
+                JOptionPane.showMessageDialog(netForm.getNetPanel(), ex.getMessage(), "转换失败！", JOptionPane.ERROR_MESSAGE);
+            }
         });
         longToIpv4Button.addActionListener(e -> {
-            String ipv4Long = netForm.getLongTextField().getText().trim();
-            String ipv4 = NetUtil.longToIpv4(Long.parseLong(ipv4Long));
-            netForm.getIpv4TextField().setText(ipv4);
+            try {
+                String ipv4Long = netForm.getLongTextField().getText().trim();
+                String ipv4 = NetUtil.longToIpv4(Long.parseLong(ipv4Long));
+                netForm.getIpv4TextField().setText(ipv4);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                logger.error(ExceptionUtils.getStackTrace(ex));
+                JOptionPane.showMessageDialog(netForm.getNetPanel(), ex.getMessage(), "转换失败！", JOptionPane.ERROR_MESSAGE);
+            }
         });
         refreshIpv4ListButton.addActionListener(e -> {
-            LinkedHashSet<String> ipv4Set = NetUtil.localIpv4s();
-            netForm.getIpv4ListTextArea().setText(String.join("\n", ipv4Set));
+            try {
+                LinkedHashSet<String> ipv4Set = NetUtil.localIpv4s();
+                netForm.getIpv4ListTextArea().setText(String.join("\n", ipv4Set));
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                logger.error(ExceptionUtils.getStackTrace(ex));
+                JOptionPane.showMessageDialog(netForm.getNetPanel(), ex.getMessage(), "刷新失败！", JOptionPane.ERROR_MESSAGE);
+            }
         });
         refreshIpv6ListButton.addActionListener(e -> {
-            LinkedHashSet<String> ipv6Set = NetUtil.localIpv6s();
-            netForm.getIpv6ListTextArea().setText(String.join("\n", ipv6Set));
+            try {
+                LinkedHashSet<String> ipv6Set = NetUtil.localIpv6s();
+                netForm.getIpv6ListTextArea().setText(String.join("\n", ipv6Set));
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                logger.error(ExceptionUtils.getStackTrace(ex));
+                JOptionPane.showMessageDialog(netForm.getNetPanel(), ex.getMessage(), "刷新失败！", JOptionPane.ERROR_MESSAGE);
+            }
         });
         hostToIpButton.addActionListener(e -> {
-            String hostStr = netForm.getHostTextField().getText().trim();
-            String ipByHost = NetUtil.getIpByHost(hostStr);
-            netForm.getIpTextField().setText(ipByHost);
+            try {
+                String hostStr = netForm.getHostTextField().getText().trim();
+                String ipByHost = NetUtil.getIpByHost(hostStr);
+                netForm.getIpTextField().setText(ipByHost);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                logger.error(ExceptionUtils.getStackTrace(ex));
+                JOptionPane.showMessageDialog(netForm.getNetPanel(), ex.getMessage(), "获取失败！", JOptionPane.ERROR_MESSAGE);
+            }
         });
     }
 
