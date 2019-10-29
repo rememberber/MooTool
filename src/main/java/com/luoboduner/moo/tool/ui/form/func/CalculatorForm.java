@@ -258,7 +258,7 @@ public class CalculatorForm {
         final JScrollPane scrollPane1 = new JScrollPane();
         calculatorPanel.add(scrollPane1, new GridConstraints(3, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         outputTextArea = new JTextArea();
-        outputTextArea.setEditable(false);
+        outputTextArea.setEditable(true);
         outputTextArea.setMargin(new Insets(5, 5, 5, 5));
         scrollPane1.setViewportView(outputTextArea);
     }

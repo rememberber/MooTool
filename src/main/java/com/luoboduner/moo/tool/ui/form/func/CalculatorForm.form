@@ -62,7 +62,7 @@
           <component id="a0494" class="javax.swing.JTextArea" binding="outputTextArea">
             <constraints/>
             <properties>
-              <editable value="false"/>
+              <editable value="true"/>
               <margin top="5" left="5" bottom="5" right="5"/>
             </properties>
           </component>
