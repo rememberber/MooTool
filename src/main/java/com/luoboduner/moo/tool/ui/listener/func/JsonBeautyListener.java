@@ -12,6 +12,7 @@ import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
 import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
+import com.luoboduner.moo.tool.util.TextAreaUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -136,6 +137,8 @@ public class JsonBeautyListener {
                     jsonBeautyForm.getFindTextField().grabFocus();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
                     newJson();
+                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
+                    TextAreaUtil.deleteSelectedLine(jsonBeautyForm.getTextArea());
                 }
             }
 

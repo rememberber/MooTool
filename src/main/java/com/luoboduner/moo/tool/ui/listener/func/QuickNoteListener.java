@@ -11,6 +11,7 @@ import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
+import com.luoboduner.moo.tool.util.TextAreaUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -18,7 +19,6 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import javax.swing.text.BadLocationException;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.KeyEvent;
@@ -125,15 +125,7 @@ public class QuickNoteListener {
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
                     newNote();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
-                    try {
-                        int startLine = quickNoteForm.getTextArea().getLineOfOffset(quickNoteForm.getTextArea().getSelectionStart());
-                        int endLine = quickNoteForm.getTextArea().getLineOfOffset(quickNoteForm.getTextArea().getSelectionEnd());
-                        quickNoteForm.getTextArea().replaceRange("", quickNoteForm.getTextArea().getLineStartOffset(startLine), quickNoteForm.getTextArea().getLineEndOffset(endLine));
-                    } catch (BadLocationException e) {
-                        e.printStackTrace();
-                        log.error(ExceptionUtils.getStackTrace(e));
-                    }
-
+                    TextAreaUtil.deleteSelectedLine(quickNoteForm.getTextArea());
                 }
             }
 
