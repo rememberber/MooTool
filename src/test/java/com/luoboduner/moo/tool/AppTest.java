@@ -1,8 +1,7 @@
 package com.luoboduner.moo.tool;
 
+import cn.hutool.core.util.HexUtil;
 import org.junit.Test;
-
-import static org.junit.Assert.assertTrue;
 
 /**
  * Unit test for simple App.
@@ -15,6 +14,7 @@ public class AppTest
     @Test
     public void shouldAnswerWithTrue()
     {
-        assertTrue( true );
+        String s = HexUtil.toHex(12);
+        System.err.println(s);
     }
 }
