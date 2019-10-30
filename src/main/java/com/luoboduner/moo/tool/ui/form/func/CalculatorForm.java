@@ -87,56 +87,104 @@ public class CalculatorForm {
             }
         });
         hexToDecButton.addActionListener(e -> {
-            String hex = calculatorForm.getHexTextField().getText().trim();
-            long dec = Long.parseLong(hex, 16);
-            calculatorForm.getDecTextField().setText(String.valueOf(dec));
-            calculatorForm.getOutputTextArea().append("DEC(" + hex + ") = " + dec + "\n\n");
+            try {
+                String hex = calculatorForm.getHexTextField().getText().trim();
+                long dec = Long.parseLong(hex, 16);
+                calculatorForm.getDecTextField().setText(String.valueOf(dec));
+                calculatorForm.getOutputTextArea().append("DEC(" + hex + ") = " + dec + "\n\n");
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                logger.error(ExceptionUtils.getStackTrace(ex));
+                JOptionPane.showMessageDialog(calculatorForm.getCalculatorPanel(), ex.getMessage(), "转换失败！", JOptionPane.ERROR_MESSAGE);
+            }
         });
         decToHexButton.addActionListener(e -> {
-            long dec = Long.parseLong(calculatorForm.getDecTextField().getText().trim());
-            String strHex = Long.toHexString(dec);
-            calculatorForm.getHexTextField().setText(strHex);
-            calculatorForm.getOutputTextArea().append("HEX(" + dec + ") = " + strHex + "\n\n");
+            try {
+                long dec = Long.parseLong(calculatorForm.getDecTextField().getText().trim());
+                String strHex = Long.toHexString(dec);
+                calculatorForm.getHexTextField().setText(strHex);
+                calculatorForm.getOutputTextArea().append("HEX(" + dec + ") = " + strHex + "\n\n");
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                logger.error(ExceptionUtils.getStackTrace(ex));
+                JOptionPane.showMessageDialog(calculatorForm.getCalculatorPanel(), ex.getMessage(), "转换失败！", JOptionPane.ERROR_MESSAGE);
+            }
         });
         decToBinaryButton.addActionListener(e -> {
-            long dec = Long.parseLong(calculatorForm.getDecTextField().getText().trim());
-            String binaryString = Long.toBinaryString(dec);
-            calculatorForm.getBinaryTextField().setText(binaryString);
-            calculatorForm.getOutputTextArea().append("BIN(" + dec + ") = " + binaryString + "\n\n");
+            try {
+                long dec = Long.parseLong(calculatorForm.getDecTextField().getText().trim());
+                String binaryString = Long.toBinaryString(dec);
+                calculatorForm.getBinaryTextField().setText(binaryString);
+                calculatorForm.getOutputTextArea().append("BIN(" + dec + ") = " + binaryString + "\n\n");
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                logger.error(ExceptionUtils.getStackTrace(ex));
+                JOptionPane.showMessageDialog(calculatorForm.getCalculatorPanel(), ex.getMessage(), "转换失败！", JOptionPane.ERROR_MESSAGE);
+            }
         });
         binaryToDecButton.addActionListener(e -> {
-            String binaryStr = calculatorForm.getBinaryTextField().getText().trim();
-            long dec = NumberUtil.binaryToLong(binaryStr);
-            calculatorForm.getDecTextField().setText(String.valueOf(dec));
-            calculatorForm.getOutputTextArea().append("DEC(" + binaryStr + ") = " + dec + "\n\n");
+            try {
+                String binaryStr = calculatorForm.getBinaryTextField().getText().trim();
+                long dec = NumberUtil.binaryToLong(binaryStr);
+                calculatorForm.getDecTextField().setText(String.valueOf(dec));
+                calculatorForm.getOutputTextArea().append("DEC(" + binaryStr + ") = " + dec + "\n\n");
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                logger.error(ExceptionUtils.getStackTrace(ex));
+                JOptionPane.showMessageDialog(calculatorForm.getCalculatorPanel(), ex.getMessage(), "转换失败！", JOptionPane.ERROR_MESSAGE);
+            }
         });
         divisorButton.addActionListener(e -> {
-            String num1 = calculatorForm.getDivisorNum1TextField().getText().trim();
-            String num2 = calculatorForm.getDivisorNum2TextField().getText().trim();
-            int divisor = NumberUtil.divisor(Integer.parseInt(num1), Integer.parseInt(num2));
-            calculatorForm.getResultTextField().setText(String.valueOf(divisor));
-            calculatorForm.getOutputTextArea().append(num1 + "和" + num2 + "的最大公约数" + " = " + divisor + "\n\n");
+            try {
+                String num1 = calculatorForm.getDivisorNum1TextField().getText().trim();
+                String num2 = calculatorForm.getDivisorNum2TextField().getText().trim();
+                int divisor = NumberUtil.divisor(Integer.parseInt(num1), Integer.parseInt(num2));
+                calculatorForm.getResultTextField().setText(String.valueOf(divisor));
+                calculatorForm.getOutputTextArea().append(num1 + "和" + num2 + "的最大公约数" + " = " + divisor + "\n\n");
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                logger.error(ExceptionUtils.getStackTrace(ex));
+                JOptionPane.showMessageDialog(calculatorForm.getCalculatorPanel(), ex.getMessage(), "计算失败！", JOptionPane.ERROR_MESSAGE);
+            }
         });
         multipleButton.addActionListener(e -> {
-            String num1 = calculatorForm.getMultipleNum1TextField().getText().trim();
-            String num2 = calculatorForm.getMultipleNum2TextField().getText().trim();
-            int multiple = NumberUtil.multiple(Integer.parseInt(num1), Integer.parseInt(num2));
-            calculatorForm.getResultTextField().setText(String.valueOf(multiple));
-            calculatorForm.getOutputTextArea().append(num1 + "和" + num2 + "的最小公倍数" + " = " + multiple + "\n\n");
+            try {
+                String num1 = calculatorForm.getMultipleNum1TextField().getText().trim();
+                String num2 = calculatorForm.getMultipleNum2TextField().getText().trim();
+                int multiple = NumberUtil.multiple(Integer.parseInt(num1), Integer.parseInt(num2));
+                calculatorForm.getResultTextField().setText(String.valueOf(multiple));
+                calculatorForm.getOutputTextArea().append(num1 + "和" + num2 + "的最小公倍数" + " = " + multiple + "\n\n");
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                logger.error(ExceptionUtils.getStackTrace(ex));
+                JOptionPane.showMessageDialog(calculatorForm.getCalculatorPanel(), ex.getMessage(), "计算失败！", JOptionPane.ERROR_MESSAGE);
+            }
         });
         arrangementCountButton.addActionListener(e -> {
-            String n = calculatorForm.getArrangementCountNTextField().getText().trim();
-            String m = calculatorForm.getArrangementCountMTextField().getText().trim();
-            long arrangementCount = MathUtil.arrangementCount(Integer.parseInt(n), Integer.parseInt(m));
-            calculatorForm.getResultTextField().setText(String.valueOf(arrangementCount));
-            calculatorForm.getOutputTextArea().append("A(" + n + "," + m + ")" + " = " + arrangementCount + "\n\n");
+            try {
+                String n = calculatorForm.getArrangementCountNTextField().getText().trim();
+                String m = calculatorForm.getArrangementCountMTextField().getText().trim();
+                long arrangementCount = MathUtil.arrangementCount(Integer.parseInt(n), Integer.parseInt(m));
+                calculatorForm.getResultTextField().setText(String.valueOf(arrangementCount));
+                calculatorForm.getOutputTextArea().append("A(" + n + "," + m + ")" + " = " + arrangementCount + "\n\n");
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                logger.error(ExceptionUtils.getStackTrace(ex));
+                JOptionPane.showMessageDialog(calculatorForm.getCalculatorPanel(), ex.getMessage(), "计算失败！", JOptionPane.ERROR_MESSAGE);
+            }
         });
         combinationCountButton.addActionListener(e -> {
-            String n = calculatorForm.getCombinationCountNTextField().getText().trim();
-            String m = calculatorForm.getCombinationCountMTextField().getText().trim();
-            long combinationCount = MathUtil.combinationCount(Integer.parseInt(n), Integer.parseInt(m));
-            calculatorForm.getResultTextField().setText(String.valueOf(combinationCount));
-            calculatorForm.getOutputTextArea().append("C(" + n + "," + m + ")" + " = " + combinationCount + "\n\n");
+            try {
+                String n = calculatorForm.getCombinationCountNTextField().getText().trim();
+                String m = calculatorForm.getCombinationCountMTextField().getText().trim();
+                long combinationCount = MathUtil.combinationCount(Integer.parseInt(n), Integer.parseInt(m));
+                calculatorForm.getResultTextField().setText(String.valueOf(combinationCount));
+                calculatorForm.getOutputTextArea().append("C(" + n + "," + m + ")" + " = " + combinationCount + "\n\n");
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                logger.error(ExceptionUtils.getStackTrace(ex));
+                JOptionPane.showMessageDialog(calculatorForm.getCalculatorPanel(), ex.getMessage(), "计算失败！", JOptionPane.ERROR_MESSAGE);
+            }
         });
     }
 
