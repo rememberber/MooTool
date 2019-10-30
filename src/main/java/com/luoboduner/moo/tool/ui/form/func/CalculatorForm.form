@@ -8,7 +8,7 @@
     <properties/>
     <border type="none"/>
     <children>
-      <splitpane id="97ed9">
+      <splitpane id="97ed9" binding="splitPane">
         <constraints>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
             <preferred-size width="200" height="200"/>
@@ -16,7 +16,8 @@
         </constraints>
         <properties>
           <continuousLayout value="true"/>
-          <dividerLocation value="2"/>
+          <dividerLocation value="200"/>
+          <dividerSize value="2"/>
         </properties>
         <border type="none"/>
         <children>

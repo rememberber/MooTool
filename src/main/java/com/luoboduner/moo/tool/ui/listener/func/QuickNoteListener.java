@@ -18,6 +18,7 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.BadLocationException;
 import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.KeyEvent;
@@ -123,6 +124,16 @@ public class QuickNoteListener {
                     quickNoteForm.getFindTextField().grabFocus();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
                     newNote();
+                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
+                    try {
+                        int startLine = quickNoteForm.getTextArea().getLineOfOffset(quickNoteForm.getTextArea().getSelectionStart());
+                        int endLine = quickNoteForm.getTextArea().getLineOfOffset(quickNoteForm.getTextArea().getSelectionEnd());
+                        quickNoteForm.getTextArea().replaceRange("", quickNoteForm.getTextArea().getLineStartOffset(startLine), quickNoteForm.getTextArea().getLineEndOffset(endLine));
+                    } catch (BadLocationException e) {
+                        e.printStackTrace();
+                        log.error(ExceptionUtils.getStackTrace(e));
+                    }
+
                 }
             }
 
@@ -157,7 +168,7 @@ public class QuickNoteListener {
             } catch (Exception e1) {
                 JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
-                log.error(e1.toString());
+                log.error(ExceptionUtils.getStackTrace(e1));
             }
         }));
 
@@ -283,7 +294,7 @@ public class QuickNoteListener {
                         } catch (Exception e) {
                             JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
                             QuickNoteForm.initNoteListTable();
-                            log.error(e.toString());
+                            log.error(ExceptionUtils.getStackTrace(e));
                         }
                     }
                 }
