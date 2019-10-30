@@ -80,7 +80,7 @@
             <border type="none"/>
             <children>
               <grid id="381eb" layout-manager="GridLayoutManager" row-count="5" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                <margin top="5" left="5" bottom="5" right="5"/>
+                <margin top="15" left="5" bottom="5" right="5"/>
                 <constraints/>
                 <properties/>
                 <border type="none"/>
@@ -91,7 +91,7 @@
                     </constraints>
                   </vspacer>
                   <grid id="9434b" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                    <margin top="15" left="15" bottom="15" right="5"/>
+                    <margin top="10" left="15" bottom="25" right="5"/>
                     <constraints>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                     </constraints>
@@ -173,7 +173,7 @@
                     </children>
                   </grid>
                   <grid id="e79da" layout-manager="GridLayoutManager" row-count="2" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                    <margin top="15" left="15" bottom="15" right="5"/>
+                    <margin top="10" left="15" bottom="25" right="5"/>
                     <constraints>
                       <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                     </constraints>
@@ -206,7 +206,7 @@
                     </children>
                   </grid>
                   <grid id="872e6" layout-manager="GridLayoutManager" row-count="2" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                    <margin top="15" left="15" bottom="15" right="5"/>
+                    <margin top="10" left="15" bottom="25" right="5"/>
                     <constraints>
                       <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                     </constraints>
@@ -239,7 +239,7 @@
                     </children>
                   </grid>
                   <grid id="6a384" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                    <margin top="15" left="15" bottom="10" right="5"/>
+                    <margin top="10" left="15" bottom="10" right="5"/>
                     <constraints>
                       <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                     </constraints>
