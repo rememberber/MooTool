@@ -16,7 +16,7 @@
         </constraints>
         <properties>
           <continuousLayout value="true"/>
-          <dividerLocation value="418"/>
+          <dividerLocation value="332"/>
           <dividerSize value="2"/>
         </properties>
         <border type="none"/>
@@ -124,7 +124,7 @@
                       <font style="1"/>
                     </border>
                     <children>
-                      <component id="eaf87" class="javax.swing.JTextField" binding="textField2" default-binding="true">
+                      <component id="eaf87" class="javax.swing.JTextField" binding="hexTextField">
                         <constraints>
                           <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                             <preferred-size width="150" height="-1"/>
@@ -135,7 +135,7 @@
                           <toolTipText value="输入四则运算表达式"/>
                         </properties>
                       </component>
-                      <component id="3bb0f" class="javax.swing.JTextField" binding="textField1" default-binding="true">
+                      <component id="3bb0f" class="javax.swing.JTextField" binding="decTextField">
                         <constraints>
                           <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                             <preferred-size width="150" height="-1"/>
@@ -147,7 +147,7 @@
                           <toolTipText value="计算结果"/>
                         </properties>
                       </component>
-                      <component id="f7b85" class="javax.swing.JTextField" binding="textField3" default-binding="true">
+                      <component id="f7b85" class="javax.swing.JTextField" binding="binaryTextField">
                         <constraints>
                           <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                             <preferred-size width="150" height="-1"/>
@@ -167,7 +167,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="72201" class="javax.swing.JButton" binding="转换Button" default-binding="true">
+                          <component id="72201" class="javax.swing.JButton" binding="hexToDecButton">
                             <constraints>
                               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -186,7 +186,7 @@
                               <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
                           </hspacer>
-                          <component id="eadce" class="javax.swing.JButton" binding="转换Button1" default-binding="true">
+                          <component id="eadce" class="javax.swing.JButton" binding="decToHexButton">
                             <constraints>
                               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -229,7 +229,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="a457c" class="javax.swing.JButton" binding="转换Button3" default-binding="true">
+                          <component id="a457c" class="javax.swing.JButton" binding="decToBinaryButton">
                             <constraints>
                               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -248,7 +248,7 @@
                               <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
                           </hspacer>
-                          <component id="89c34" class="javax.swing.JButton" binding="转换Button2" default-binding="true">
+                          <component id="89c34" class="javax.swing.JButton" binding="binaryToDecButton">
                             <constraints>
                               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>

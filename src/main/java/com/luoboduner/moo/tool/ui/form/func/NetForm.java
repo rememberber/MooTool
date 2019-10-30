@@ -54,6 +54,7 @@ public class NetForm {
             try {
                 String ipConfigStr = RuntimeUtil.execForStr("ipconfig");
                 netForm.getIpConfigTextArea().setText(ipConfigStr);
+                netForm.getIpConfigTextArea().setCaretPosition(0);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
@@ -63,6 +64,7 @@ public class NetForm {
             try {
                 String ipConfigStr = RuntimeUtil.execForStr("ipconfig /all");
                 netForm.getIpConfigTextArea().setText(ipConfigStr);
+                netForm.getIpConfigTextArea().setCaretPosition(0);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
