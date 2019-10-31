@@ -69,7 +69,7 @@
               </grid>
             </children>
           </grid>
-          <scrollpane id="f14a9">
+          <scrollpane id="f14a9" binding="leftScrollPane">
             <constraints>
               <splitpane position="left"/>
             </constraints>

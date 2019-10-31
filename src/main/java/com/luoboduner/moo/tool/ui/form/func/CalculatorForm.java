@@ -57,6 +57,7 @@ public class CalculatorForm {
     private JButton multipleButton;
     private JTextField multipleNum2TextField;
     private JTextField multipleNum1TextField;
+    private JScrollPane leftScrollPane;
 
     private static CalculatorForm calculatorForm;
 
@@ -230,6 +231,9 @@ public class CalculatorForm {
             calculatorForm.getOutputTextArea().setBackground(bgColor);
             calculatorForm.getOutputTextArea().setForeground(foreColor);
         }
+        // 设置滚动条速度
+        calculatorForm.getLeftScrollPane().getVerticalScrollBar().setUnitIncrement(16);
+        calculatorForm.getLeftScrollPane().getVerticalScrollBar().setDoubleBuffered(true);
         calculatorForm.getCalculatorPanel().updateUI();
     }
 
@@ -402,11 +406,11 @@ public class CalculatorForm {
         if (resultTextFieldFont != null) resultTextField.setFont(resultTextFieldFont);
         resultTextField.setToolTipText("计算结果");
         panel2.add(resultTextField, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-        final JScrollPane scrollPane2 = new JScrollPane();
-        splitPane.setLeftComponent(scrollPane2);
+        leftScrollPane = new JScrollPane();
+        splitPane.setLeftComponent(leftScrollPane);
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new GridLayoutManager(10, 1, new Insets(15, 5, 0, 5), -1, -1));
-        scrollPane2.setViewportView(panel3);
+        leftScrollPane.setViewportView(panel3);
         final JPanel panel4 = new JPanel();
         panel4.setLayout(new GridLayoutManager(1, 2, new Insets(10, 15, 25, 5), -1, -1));
         panel3.add(panel4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));

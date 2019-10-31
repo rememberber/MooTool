@@ -3,7 +3,7 @@
   <grid id="27dc6" binding="netPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="20" y="20" width="680" height="650"/>
+      <xy x="20" y="20" width="680" height="838"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -72,7 +72,7 @@
               </grid>
             </children>
           </grid>
-          <scrollpane id="8284a">
+          <scrollpane id="8284a" binding="rightScrollPane">
             <constraints>
               <splitpane position="right"/>
             </constraints>
@@ -85,11 +85,6 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <vspacer id="94d3b">
-                    <constraints>
-                      <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                  </vspacer>
                   <grid id="9434b" layout-manager="GridLayoutManager" row-count="3" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                     <margin top="10" left="15" bottom="25" right="5"/>
                     <constraints>
@@ -325,6 +320,11 @@
                     </constraints>
                     <properties/>
                   </component>
+                  <vspacer id="46566">
+                    <constraints>
+                      <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                  </vspacer>
                 </children>
               </grid>
             </children>
