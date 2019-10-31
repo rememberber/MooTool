@@ -2,7 +2,7 @@ package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.thread.ThreadUtil;
-import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.util.ReUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
@@ -423,11 +423,22 @@ public class QuickNoteListener {
     }
 
     private static void find() {
-        String content = QuickNoteForm.getInstance().getTextArea().getText();
-        String findKeyWord = QuickNoteForm.getInstance().getFindTextField().getText();
-        int count = StrUtil.count(content, findKeyWord);
+        QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
+
+        String content = quickNoteForm.getTextArea().getText();
+        String findKeyWord = quickNoteForm.getFindTextField().getText();
+        boolean matchCase = quickNoteForm.getFindMatchCaseCheckBox().isSelected();
+
+        int count;
+        if (matchCase) {
+            count = ReUtil.findAll(findKeyWord, content, 0).size();
+            content = content.replace(findKeyWord, "<span>" + findKeyWord + "</span>");
+        } else {
+            count = ReUtil.findAll("(?i)" + findKeyWord, content, 0).size();
+            content = ReUtil.replaceAll(content, "(?i)" + findKeyWord, "<span>$0</span>");
+        }
+
         FindResultForm.getInstance().getFindResultCount().setText(String.valueOf(count));
-        content = content.replace(findKeyWord, "<span>" + findKeyWord + "</span>");
         FindResultForm.getInstance().setHtmlText(content);
         FindResultFrame.showResultWindow();
     }
