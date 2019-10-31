@@ -431,22 +431,21 @@ public class QuickNoteListener {
         boolean isWords = quickNoteForm.getFindWordsCheckBox().isSelected();
 
         int count;
+        String regex = findKeyWord;
+
         if (isMatchCase) {
-            String regex = findKeyWord;
             if (isWords) {
                 regex = "\\b" + regex + "\\b";
             }
-            count = ReUtil.findAll(regex, content, 0).size();
-            content = content.replaceAll(regex, "<span>" + findKeyWord + "</span>");
         } else {
-            String regex = findKeyWord;
             if (isWords) {
                 regex = "\\b" + regex + "\\b";
             }
             regex = "(?i)" + regex;
-            count = ReUtil.findAll(regex, content, 0).size();
-            content = ReUtil.replaceAll(content, regex, "<span>$0</span>");
         }
+
+        count = ReUtil.findAll(regex, content, 0).size();
+        content = ReUtil.replaceAll(content, regex, "<span>$0</span>");
 
         FindResultForm.getInstance().getFindResultCount().setText(String.valueOf(count));
         FindResultForm.getInstance().setHtmlText(content);
