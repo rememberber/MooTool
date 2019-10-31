@@ -437,18 +437,11 @@ public class QuickNoteListener {
         if (!useRegex) {
             regex = ReUtil.escape(regex);
         }
-
-        if (useRegex) {
-            if (!isMatchCase) {
-                regex = "(?i)" + regex;
-            }
-        } else {
-            if (isWords) {
-                regex = "\\b" + regex + "\\b";
-            }
-            if (!isMatchCase) {
-                regex = "(?i)" + regex;
-            }
+        if (isWords) {
+            regex = "\\b" + regex + "\\b";
+        }
+        if (!isMatchCase) {
+            regex = "(?i)" + regex;
         }
 
         count = ReUtil.findAll(regex, content, 0).size();
