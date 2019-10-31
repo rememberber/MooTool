@@ -367,7 +367,7 @@ public class QuickNoteListener {
 
         });
 
-        quickNoteForm.getFindButton2().addActionListener(e -> find());
+        quickNoteForm.getDoFindButton().addActionListener(e -> find());
 
         quickNoteForm.getFindReplaceCloseLabel().addMouseListener(new MouseAdapter() {
             @Override

@@ -47,7 +47,7 @@ public class QuickNoteForm {
     private JPanel controlPanel;
     private JButton exportButton;
     private JTextField findTextField;
-    private JButton findButton2;
+    private JButton doFindButton;
     private JButton 替换Button;
     private JTextField textField2;
     private JPanel findReplacePanel;
@@ -287,9 +287,9 @@ public class QuickNoteForm {
         findReplacePanel.add(spacer3, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         final Spacer spacer4 = new Spacer();
         findReplacePanel.add(spacer4, new GridConstraints(2, 2, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        findButton2 = new JButton();
-        findButton2.setText("查找");
-        findReplacePanel.add(findButton2, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        doFindButton = new JButton();
+        doFindButton.setText("查找");
+        findReplacePanel.add(doFindButton, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         替换Button = new JButton();
         替换Button.setText("替换");
         findReplacePanel.add(替换Button, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
