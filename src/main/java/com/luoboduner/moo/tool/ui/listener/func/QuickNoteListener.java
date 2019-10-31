@@ -11,6 +11,7 @@ import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
+import com.luoboduner.moo.tool.util.TextAreaUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -120,9 +121,12 @@ public class QuickNoteListener {
                         }
                     }
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                    quickNoteForm.getFindReplacePanel().setVisible(true);
                     quickNoteForm.getFindTextField().grabFocus();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
                     newNote();
+                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
+                    TextAreaUtil.deleteSelectedLine(quickNoteForm.getTextArea());
                 }
             }
 
@@ -157,7 +161,7 @@ public class QuickNoteListener {
             } catch (Exception e1) {
                 JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
-                log.error(e1.toString());
+                log.error(ExceptionUtils.getStackTrace(e1));
             }
         }));
 
@@ -283,14 +287,17 @@ public class QuickNoteListener {
                         } catch (Exception e) {
                             JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
                             QuickNoteForm.initNoteListTable();
-                            log.error(e.toString());
+                            log.error(ExceptionUtils.getStackTrace(e));
                         }
                     }
                 }
             }
         });
 
-        quickNoteForm.getFindButton().addActionListener(e -> find());
+        quickNoteForm.getFindButton().addActionListener(e -> {
+            quickNoteForm.getFindReplacePanel().setVisible(true);
+            quickNoteForm.getFindTextField().grabFocus();
+        });
 
         quickNoteForm.getFindTextField().addKeyListener(new KeyListener() {
             @Override
@@ -360,6 +367,25 @@ public class QuickNoteListener {
 
         });
 
+        quickNoteForm.getDoFindButton().addActionListener(e -> find());
+
+        quickNoteForm.getFindReplaceCloseLabel().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                quickNoteForm.getFindReplacePanel().setVisible(false);
+                super.mouseClicked(e);
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                super.mousePressed(e);
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                super.mouseEntered(e);
+            }
+        });
     }
 
     private static void newNote() {
