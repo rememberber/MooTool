@@ -121,6 +121,7 @@ public class QuickNoteListener {
                         }
                     }
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                    quickNoteForm.getFindReplacePanel().setVisible(true);
                     quickNoteForm.getFindTextField().grabFocus();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
                     newNote();
@@ -293,7 +294,10 @@ public class QuickNoteListener {
             }
         });
 
-        quickNoteForm.getFindButton().addActionListener(e -> find());
+        quickNoteForm.getFindButton().addActionListener(e -> {
+            quickNoteForm.getFindReplacePanel().setVisible(true);
+            quickNoteForm.getFindTextField().grabFocus();
+        });
 
         quickNoteForm.getFindTextField().addKeyListener(new KeyListener() {
             @Override
@@ -363,6 +367,25 @@ public class QuickNoteListener {
 
         });
 
+        quickNoteForm.getFindButton2().addActionListener(e -> find());
+
+        quickNoteForm.getFindReplaceCloseLabel().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                quickNoteForm.getFindReplacePanel().setVisible(false);
+                super.mouseClicked(e);
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                super.mousePressed(e);
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                super.mouseEntered(e);
+            }
+        });
     }
 
     private static void newNote() {
