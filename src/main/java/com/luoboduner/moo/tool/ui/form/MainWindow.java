@@ -119,7 +119,7 @@ public class MainWindow {
         tabbedPane.addTab("加解密/随机", new ImageIcon(getClass().getResource("/icon/method.png")), cryptoPanel);
         calculatorPanel = new JPanel();
         calculatorPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("计算器", new ImageIcon(getClass().getResource("/icon/calculator.png")), calculatorPanel);
+        tabbedPane.addTab("计算", new ImageIcon(getClass().getResource("/icon/calculator.png")), calculatorPanel);
         netPanel = new JPanel();
         netPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("网络/IP", new ImageIcon(getClass().getResource("/icon/network.png")), netPanel);
