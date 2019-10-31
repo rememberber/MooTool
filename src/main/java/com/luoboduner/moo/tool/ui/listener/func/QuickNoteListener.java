@@ -386,6 +386,24 @@ public class QuickNoteListener {
                 super.mouseEntered(e);
             }
         });
+
+        quickNoteForm.getDoReplaceButton().addActionListener(e -> replace());
+        quickNoteForm.getReplaceTextField().addKeyListener(new KeyListener() {
+            @Override
+            public void keyReleased(KeyEvent arg0) {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent evt) {
+                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+                    replace();
+                }
+            }
+
+            @Override
+            public void keyTyped(KeyEvent arg0) {
+            }
+        });
     }
 
     private static void newNote() {
@@ -402,5 +420,14 @@ public class QuickNoteListener {
         content = content.replace(findKeyWord, "<span>" + findKeyWord + "</span>");
         FindResultForm.getInstance().setHtmlText(content);
         FindResultFrame.showResultWindow();
+    }
+
+    private static void replace() {
+        QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
+        String target = quickNoteForm.getFindTextField().getText();
+        String replacement = quickNoteForm.getReplaceTextField().getText();
+        String content = quickNoteForm.getTextArea().getText();
+        content = content.replace(target, replacement);
+        quickNoteForm.getTextArea().setText(content);
     }
 }
