@@ -2,7 +2,7 @@ package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.thread.ThreadUtil;
-import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.util.ReUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
@@ -386,6 +386,34 @@ public class QuickNoteListener {
                 super.mouseEntered(e);
             }
         });
+
+        quickNoteForm.getDoReplaceButton().addActionListener(e -> replace());
+        quickNoteForm.getReplaceTextField().addKeyListener(new KeyListener() {
+            @Override
+            public void keyReleased(KeyEvent arg0) {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent evt) {
+                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+                    replace();
+                }
+            }
+
+            @Override
+            public void keyTyped(KeyEvent arg0) {
+            }
+        });
+
+        quickNoteForm.getFindUseRegexCheckBox().addActionListener(e -> {
+            boolean selected = quickNoteForm.getFindUseRegexCheckBox().isSelected();
+            if (selected) {
+                quickNoteForm.getFindWordsCheckBox().setSelected(false);
+                quickNoteForm.getFindWordsCheckBox().setEnabled(false);
+            } else {
+                quickNoteForm.getFindWordsCheckBox().setEnabled(true);
+            }
+        });
     }
 
     private static void newNote() {
@@ -395,12 +423,58 @@ public class QuickNoteListener {
     }
 
     private static void find() {
-        String content = QuickNoteForm.getInstance().getTextArea().getText();
-        String findKeyWord = QuickNoteForm.getInstance().getFindTextField().getText();
-        int count = StrUtil.count(content, findKeyWord);
+        QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
+
+        String content = quickNoteForm.getTextArea().getText();
+        String findKeyWord = quickNoteForm.getFindTextField().getText();
+        boolean isMatchCase = quickNoteForm.getFindMatchCaseCheckBox().isSelected();
+        boolean isWords = quickNoteForm.getFindWordsCheckBox().isSelected();
+        boolean useRegex = quickNoteForm.getFindUseRegexCheckBox().isSelected();
+
+        int count;
+        String regex = findKeyWord;
+
+        if (!useRegex) {
+            regex = ReUtil.escape(regex);
+        }
+        if (isWords) {
+            regex = "\\b" + regex + "\\b";
+        }
+        if (!isMatchCase) {
+            regex = "(?i)" + regex;
+        }
+
+        count = ReUtil.findAll(regex, content, 0).size();
+        content = ReUtil.replaceAll(content, regex, "<span>$0</span>");
+
         FindResultForm.getInstance().getFindResultCount().setText(String.valueOf(count));
-        content = content.replace(findKeyWord, "<span>" + findKeyWord + "</span>");
         FindResultForm.getInstance().setHtmlText(content);
         FindResultFrame.showResultWindow();
+    }
+
+    private static void replace() {
+        QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
+        String target = quickNoteForm.getFindTextField().getText();
+        String replacement = quickNoteForm.getReplaceTextField().getText();
+        String content = quickNoteForm.getTextArea().getText();
+        boolean isMatchCase = quickNoteForm.getFindMatchCaseCheckBox().isSelected();
+        boolean isWords = quickNoteForm.getFindWordsCheckBox().isSelected();
+        boolean useRegex = quickNoteForm.getFindUseRegexCheckBox().isSelected();
+
+        String regex = target;
+
+        if (!useRegex) {
+            regex = ReUtil.escape(regex);
+        }
+        if (isWords) {
+            regex = "\\b" + regex + "\\b";
+        }
+        if (!isMatchCase) {
+            regex = "(?i)" + regex;
+        }
+
+        content = ReUtil.replaceAll(content, regex, replacement);
+
+        quickNoteForm.getTextArea().setText(content);
     }
 }
