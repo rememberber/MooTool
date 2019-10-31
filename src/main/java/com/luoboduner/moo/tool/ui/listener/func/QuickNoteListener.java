@@ -429,19 +429,22 @@ public class QuickNoteListener {
         String findKeyWord = quickNoteForm.getFindTextField().getText();
         boolean isMatchCase = quickNoteForm.getFindMatchCaseCheckBox().isSelected();
         boolean isWords = quickNoteForm.getFindWordsCheckBox().isSelected();
+        boolean useRegex = quickNoteForm.getFindUseRegexCheckBox().isSelected();
 
         int count;
         String regex = findKeyWord;
 
-        if (isMatchCase) {
-            if (isWords) {
-                regex = "\\b" + regex + "\\b";
+        if (useRegex) {
+            if (!isMatchCase) {
+                regex = "(?i)" + regex;
             }
         } else {
             if (isWords) {
                 regex = "\\b" + regex + "\\b";
             }
-            regex = "(?i)" + regex;
+            if (!isMatchCase) {
+                regex = "(?i)" + regex;
+            }
         }
 
         count = ReUtil.findAll(regex, content, 0).size();
