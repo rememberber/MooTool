@@ -427,15 +427,25 @@ public class QuickNoteListener {
 
         String content = quickNoteForm.getTextArea().getText();
         String findKeyWord = quickNoteForm.getFindTextField().getText();
-        boolean matchCase = quickNoteForm.getFindMatchCaseCheckBox().isSelected();
+        boolean isMatchCase = quickNoteForm.getFindMatchCaseCheckBox().isSelected();
+        boolean isWords = quickNoteForm.getFindWordsCheckBox().isSelected();
 
         int count;
-        if (matchCase) {
-            count = ReUtil.findAll(findKeyWord, content, 0).size();
-            content = content.replace(findKeyWord, "<span>" + findKeyWord + "</span>");
+        if (isMatchCase) {
+            String regex = findKeyWord;
+            if (isWords) {
+                regex = "\\b" + regex + "\\b";
+            }
+            count = ReUtil.findAll(regex, content, 0).size();
+            content = content.replaceAll(regex, "<span>" + findKeyWord + "</span>");
         } else {
-            count = ReUtil.findAll("(?i)" + findKeyWord, content, 0).size();
-            content = ReUtil.replaceAll(content, "(?i)" + findKeyWord, "<span>$0</span>");
+            String regex = findKeyWord;
+            if (isWords) {
+                regex = "\\b" + regex + "\\b";
+            }
+            regex = "(?i)" + regex;
+            count = ReUtil.findAll(regex, content, 0).size();
+            content = ReUtil.replaceAll(content, regex, "<span>$0</span>");
         }
 
         FindResultForm.getInstance().getFindResultCount().setText(String.valueOf(count));
