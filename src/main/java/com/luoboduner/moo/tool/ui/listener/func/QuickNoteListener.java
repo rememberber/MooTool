@@ -457,13 +457,23 @@ public class QuickNoteListener {
         String target = quickNoteForm.getFindTextField().getText();
         String replacement = quickNoteForm.getReplaceTextField().getText();
         String content = quickNoteForm.getTextArea().getText();
-
+        boolean isMatchCase = quickNoteForm.getFindMatchCaseCheckBox().isSelected();
+        boolean isWords = quickNoteForm.getFindWordsCheckBox().isSelected();
         boolean useRegex = quickNoteForm.getFindUseRegexCheckBox().isSelected();
-        if (useRegex) {
-            content = content.replaceAll(target, replacement);
-        } else {
-            content = content.replace(target, replacement);
+
+        String regex = target;
+
+        if (!useRegex) {
+            regex = ReUtil.escape(regex);
         }
+        if (isWords) {
+            regex = "\\b" + regex + "\\b";
+        }
+        if (!isMatchCase) {
+            regex = "(?i)" + regex;
+        }
+
+        content = ReUtil.replaceAll(content, regex, replacement);
 
         quickNoteForm.getTextArea().setText(content);
     }
