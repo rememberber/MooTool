@@ -52,9 +52,9 @@ public class QuickNoteForm {
     private JTextField replaceTextField;
     private JPanel findReplacePanel;
     private JLabel findReplaceCloseLabel;
-    private JCheckBox 区分大小写CheckBox;
-    private JCheckBox 全词匹配CheckBox;
-    private JCheckBox 使用正则CheckBox;
+    private JCheckBox findMatchCaseCheckBox;
+    private JCheckBox findWordsCheckBox;
+    private JCheckBox findUseRegexCheckBox;
 
     private static QuickNoteForm quickNoteForm;
     private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
@@ -300,15 +300,15 @@ public class QuickNoteForm {
         findReplaceCloseLabel.setIcon(new ImageIcon(getClass().getResource("/icon/remove_dark.png")));
         findReplaceCloseLabel.setText("");
         findReplacePanel.add(findReplaceCloseLabel, new GridConstraints(1, 5, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        区分大小写CheckBox = new JCheckBox();
-        区分大小写CheckBox.setText("区分大小写");
-        findReplacePanel.add(区分大小写CheckBox, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        全词匹配CheckBox = new JCheckBox();
-        全词匹配CheckBox.setText("全词匹配");
-        findReplacePanel.add(全词匹配CheckBox, new GridConstraints(1, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        使用正则CheckBox = new JCheckBox();
-        使用正则CheckBox.setText("使用正则");
-        findReplacePanel.add(使用正则CheckBox, new GridConstraints(2, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        findMatchCaseCheckBox = new JCheckBox();
+        findMatchCaseCheckBox.setText("区分大小写");
+        findReplacePanel.add(findMatchCaseCheckBox, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        findWordsCheckBox = new JCheckBox();
+        findWordsCheckBox.setText("全词匹配");
+        findReplacePanel.add(findWordsCheckBox, new GridConstraints(1, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        findUseRegexCheckBox = new JCheckBox();
+        findUseRegexCheckBox.setText("使用正则");
+        findReplacePanel.add(findUseRegexCheckBox, new GridConstraints(2, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         scrollPane = new JScrollPane();
         rightPanel.add(scrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         textArea = new JTextArea();

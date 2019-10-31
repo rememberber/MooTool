@@ -404,6 +404,16 @@ public class QuickNoteListener {
             public void keyTyped(KeyEvent arg0) {
             }
         });
+
+        quickNoteForm.getFindUseRegexCheckBox().addActionListener(e -> {
+            boolean selected = quickNoteForm.getFindUseRegexCheckBox().isSelected();
+            if (selected) {
+                quickNoteForm.getFindWordsCheckBox().setSelected(false);
+                quickNoteForm.getFindWordsCheckBox().setEnabled(false);
+            } else {
+                quickNoteForm.getFindWordsCheckBox().setEnabled(true);
+            }
+        });
     }
 
     private static void newNote() {
@@ -427,7 +437,14 @@ public class QuickNoteListener {
         String target = quickNoteForm.getFindTextField().getText();
         String replacement = quickNoteForm.getReplaceTextField().getText();
         String content = quickNoteForm.getTextArea().getText();
-        content = content.replace(target, replacement);
+
+        boolean useRegex = quickNoteForm.getFindUseRegexCheckBox().isSelected();
+        if (useRegex) {
+            content = content.replaceAll(target, replacement);
+        } else {
+            content = content.replace(target, replacement);
+        }
+
         quickNoteForm.getTextArea().setText(content);
     }
 }

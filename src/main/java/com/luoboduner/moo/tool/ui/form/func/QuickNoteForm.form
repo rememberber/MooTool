@@ -273,7 +273,7 @@
                           <text value=""/>
                         </properties>
                       </component>
-                      <component id="9eff" class="javax.swing.JCheckBox" binding="区分大小写CheckBox" default-binding="true">
+                      <component id="9eff" class="javax.swing.JCheckBox" binding="findMatchCaseCheckBox">
                         <constraints>
                           <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
@@ -281,7 +281,7 @@
                           <text value="区分大小写"/>
                         </properties>
                       </component>
-                      <component id="65ab1" class="javax.swing.JCheckBox" binding="全词匹配CheckBox" default-binding="true">
+                      <component id="65ab1" class="javax.swing.JCheckBox" binding="findWordsCheckBox">
                         <constraints>
                           <grid row="1" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
@@ -289,7 +289,7 @@
                           <text value="全词匹配"/>
                         </properties>
                       </component>
-                      <component id="791fb" class="javax.swing.JCheckBox" binding="使用正则CheckBox" default-binding="true">
+                      <component id="791fb" class="javax.swing.JCheckBox" binding="findUseRegexCheckBox">
                         <constraints>
                           <grid row="2" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                         </constraints>
