@@ -12,6 +12,7 @@ import com.luoboduner.moo.tool.ui.listener.func.EnCodeListener;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
 import com.luoboduner.moo.tool.ui.listener.func.HttpRequestListener;
 import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
+import com.luoboduner.moo.tool.ui.listener.func.NetListener;
 import com.luoboduner.moo.tool.ui.listener.func.QrCodeListener;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.ui.listener.SettingListener;
@@ -75,6 +76,7 @@ public class MainFrame extends JFrame {
         EnCodeListener.addListeners();
         CryptoListener.addListeners();
         CalculatorListener.addListeners();
+        NetListener.addListeners();
         SettingListener.addListeners();
         TabListener.addListeners();
     }
