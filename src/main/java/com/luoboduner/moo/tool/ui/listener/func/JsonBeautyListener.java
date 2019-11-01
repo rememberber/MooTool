@@ -136,6 +136,9 @@ public class JsonBeautyListener {
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
                     jsonBeautyForm.getFindReplacePanel().setVisible(true);
                     jsonBeautyForm.getFindTextField().grabFocus();
+                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_R) {
+                    jsonBeautyForm.getFindReplacePanel().setVisible(true);
+                    jsonBeautyForm.getReplaceTextField().grabFocus();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
                     newJson();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
