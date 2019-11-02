@@ -5,6 +5,7 @@ import cn.hutool.core.util.RuntimeUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.ui.form.func.NetForm;
+import com.luoboduner.moo.tool.util.SystemUtil;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
@@ -27,7 +28,13 @@ public class NetListener {
         NetForm netForm = NetForm.getInstance();
         netForm.getIpConfigButton().addActionListener(e -> {
             try {
-                String ipConfigStr = RuntimeUtil.execForStr("ipconfig");
+
+                String ipConfigStr;
+                if (SystemUtil.isWindowsOs()) {
+                    ipConfigStr = RuntimeUtil.execForStr("ipconfig");
+                } else {
+                    ipConfigStr = RuntimeUtil.execForStr("ifconfig");
+                }
                 netForm.getIpConfigTextArea().setText(ipConfigStr);
                 netForm.getIpConfigTextArea().setCaretPosition(0);
             } catch (Exception ex) {
@@ -37,7 +44,12 @@ public class NetListener {
         });
         netForm.getIpConfigAllButton().addActionListener(e -> {
             try {
-                String ipConfigStr = RuntimeUtil.execForStr("ipconfig /all");
+                String ipConfigStr;
+                if (SystemUtil.isWindowsOs()) {
+                    ipConfigStr = RuntimeUtil.execForStr("ipconfig /all");
+                } else {
+                    ipConfigStr = RuntimeUtil.execForStr("netstat -nat");
+                }
                 netForm.getIpConfigTextArea().setText(ipConfigStr);
                 netForm.getIpConfigTextArea().setCaretPosition(0);
             } catch (Exception ex) {

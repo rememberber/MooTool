@@ -13,30 +13,21 @@ A handy desktop toolset for developers.
 [![GitHub license](https://img.shields.io/github/license/rememberber/MooTool)](https://github.com/rememberber/MooTool/blob/master/LICENSE.txt)
 
 ### 支持的功能
-+ Host切换  
-+ 时间转换  
-+ Json格式化  
-+ 发送HTTP请求  
-+ 编码转换  
-+ 二维码生成/二维码识别 
-+ 加解密/随机  
-+ 随手记  
++ **Host切换**（支持系统托盘快速切换）  
++ **时间转换**（时间戳和高可读性本地时间的相互转换，对网上常见的转换页重新设计，支持快速复制，简单高效）  
++ **Json格式化**  
++ **发送HTTP请求**（支持GET、POST、PUT、DELETE等常用请求方式，支持参数、header、cookie、body等）  
++ **编码转换**  
++ **二维码生成/二维码识别**（支持自定义尺寸、纠错级别、logo图片）  
++ **加解密/随机**  
++ **随手记**（可以用来快速记录一些：代码片段、常用的SQL、常用的接口、常用的数据、暂存一些临时log等）  
++ **计算**（四则运算/进制转换/最大公约数/最小公倍数/排列组合数）
++ **网络/IP**（ip地址转换/本机ip信息/根据域名获取ip）
 
 ### 计划中支持的功能
 + 正则表达式  
 + Cron表达式  
 + 图片压缩  
-
-### 功能&亮点
-1. 整合开发者使用频率比较高的工具  
-2. 随手记：可记录待办事项、需求点、代码片段、常用SQL、常用数据暂存、关键log保存、常用接口保存等
-3. 时间戳：时间戳和高可读性本地时间的相互转换，对网上常见的转换页重新设计，支持快速复制，简单高效  
-4. Json格式化：目前仅支持json串的美化，暂不支持分节点展开和收起  
-5. Host切换：自动获取系统host文件修改权限，支持系统托盘快速切换  
-6. Http请求：支持GET、POST、PUT、DELETE等常用请求方式，支持参数、header、cookie、body等  
-7. 编码转换：支持常用编码转换  
-8. 二维码生成：支持自定义尺寸、纠错级别、logo图片  
-……
 
 ### 截图速览
 
@@ -95,12 +86,6 @@ A handy desktop toolset for developers.
 </p>  
 
 <p align="center">
-  <a href="http://download.zhoubochina.com/moo/img/mt-about.png">
-   <img alt="MooTool" src="http://download.zhoubochina.com/moo/img/mt-about.png">
-  </a>
-</p>  
-
-<p align="center">
   <a href="http://download.zhoubochina.com/moo/img/mt-calculator.png">
    <img alt="MooTool" src="http://download.zhoubochina.com/moo/img/mt-calculator.png">
   </a>
@@ -109,6 +94,12 @@ A handy desktop toolset for developers.
 <p align="center">
   <a href="http://download.zhoubochina.com/moo/img/mt-net.png">
    <img alt="MooTool" src="http://download.zhoubochina.com/moo/img/mt-net.png">
+  </a>
+</p>  
+
+<p align="center">
+  <a href="http://download.zhoubochina.com/moo/img/mt-about.png">
+   <img alt="MooTool" src="http://download.zhoubochina.com/moo/img/mt-about.png">
   </a>
 </p>  
 
