@@ -4,6 +4,7 @@ package com.luoboduner.moo.tool.ui.listener;
 import cn.hutool.core.util.RuntimeUtil;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.NetForm;
+import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -36,7 +37,12 @@ public class TabListener {
                 switch (index) {
                     case 9:
                         try {
-                            String ipConfigStr = RuntimeUtil.execForStr("ipconfig");
+                            String ipConfigStr;
+                            if (SystemUtil.isWindowsOs()) {
+                                ipConfigStr = RuntimeUtil.execForStr("ipconfig");
+                            } else {
+                                ipConfigStr = RuntimeUtil.execForStr("ifconfig");
+                            }
                             NetForm.getInstance().getIpConfigTextArea().setText(ipConfigStr);
                             NetForm.getInstance().getIpConfigTextArea().setCaretPosition(0);
                         } catch (Exception ex) {
