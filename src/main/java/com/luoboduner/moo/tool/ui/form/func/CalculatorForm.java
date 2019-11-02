@@ -6,6 +6,8 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.util.Calculator;
+import com.luoboduner.moo.tool.util.CalculatorUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -13,14 +15,10 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.Stack;
 
 /**
  * <pre>
  * CalculatorForm
- * 计算部分代码来源：https://blog.csdn.net/qq_34120430/article/details/79674993
  * </pre>
  *
  * @author <a href="https://github.com/rememberber">RememBerBer</a>
@@ -59,8 +57,6 @@ public class CalculatorForm {
 
     private static final Log logger = LogFactory.get();
 
-    static Set<Character> brace = new HashSet<>();
-
     private CalculatorForm() {
         UndoUtil.register(this);
     }
@@ -68,8 +64,9 @@ public class CalculatorForm {
     public static void calculate() {
         try {
             String inputExpress = calculatorForm.getInputExpressTextField().getText();
-            int result = calculate(inputExpress + "#");
-            String resultStr = result + "";
+            Calculator calc = new Calculator();
+            Double str = calc.prepareParam(inputExpress + "=");
+            String resultStr = CalculatorUtil.formatResult(String.format("%." + CalculatorUtil.RESULT_DECIMAL_MAX_LENGTH + "f", str));
             calculatorForm.getResultTextField().setText(resultStr);
             calculatorForm.getOutputTextArea().append(inputExpress + " = " + resultStr + "\n\n");
             App.config.setCalculatorInputExpress(inputExpress);
@@ -94,9 +91,6 @@ public class CalculatorForm {
         initUi();
 
         calculatorForm.getInputExpressTextField().setText(App.config.getCalculatorInputExpress());
-        brace.add('{');
-        brace.add('(');
-        brace.add('[');
     }
 
     private static void initUi() {
@@ -111,135 +105,6 @@ public class CalculatorForm {
         calculatorForm.getLeftScrollPane().getVerticalScrollBar().setUnitIncrement(16);
         calculatorForm.getLeftScrollPane().getVerticalScrollBar().setDoubleBuffered(true);
         calculatorForm.getCalculatorPanel().updateUI();
-    }
-
-    /**
-     * 代码来源：https://blog.csdn.net/qq_34120430/article/details/79674993
-     *
-     * @param exp
-     * @return
-     */
-    private static int calculate(String exp) {
-
-
-        // 初始化栈
-        Stack<Integer> opStack = new Stack<>();
-        Stack<Character> otStack = new Stack<>();
-
-        // 整数记录器  当num是多位时将 num += c 知道遇见运算符
-        String num = "";
-        for (int i = 0; i < exp.length(); i++) {
-            // 抽取字符
-            char c = exp.charAt(i);
-            // 如果字符是数字，则加这个数字累加到num后面
-            if (Character.isDigit(c)) {
-                num += c;
-            }
-            // 如果不是数字
-            else {
-                // 如果有字符串被记录，则操作数入栈，并清空
-                if (!num.isEmpty()) {
-                    int n = Integer.parseInt(num);
-                    num = "";
-                    opStack.push(n);
-                }
-                // 如果遇上了终结符则退出
-                if (c == '#')
-                    break;
-                    // 如果遇上了+-
-                else if (c == '+' || c == '-') {
-                    // 空栈或者操作符栈顶遇到正括号，则入栈
-                    if (otStack.isEmpty() || brace.contains(otStack.peek())) {
-                        otStack.push(c);
-                    } else {
-                        // 否则一直做弹栈计算，直到空或者遇到正括号为止，最后入栈
-                        while (!otStack.isEmpty() && !brace.contains(otStack.peek()))
-                            popAndCal(opStack, otStack);
-                        otStack.push(c);
-                    }
-                }
-                // 如果遇上*/
-                else if (c == '*' || c == '/') {
-                    // 空栈或者遇到操作符栈顶是括号，或者遇到优先级低的运算符，则入栈
-                    if (otStack.isEmpty()
-                            || brace.contains(otStack.peek())
-                            || otStack.peek() == '+' || otStack.peek() == '-') {
-                        otStack.push(c);
-                    } else {
-                        // 否则遇到*或/则一直做弹栈计算，直到栈顶是优先级比自己低的符号，最后入栈
-                        while (!otStack.isEmpty()
-                                && otStack.peek() != '+' && otStack.peek() != '-'
-                                && !brace.contains(otStack.peek()))
-                            popAndCal(opStack, otStack);
-                        otStack.push(c);
-                    }
-                } else {
-                    // 如果是正括号就压栈
-                    if (brace.contains(c))
-                        otStack.push(c);
-                    else {
-                        // 反括号就一直做弹栈计算，直到遇到正括号为止
-                        char r = getBrace(c);
-                        while (otStack.peek() != r) {
-                            popAndCal(opStack, otStack);
-                        }
-                        // 最后弹出正括号
-                        otStack.pop();
-                    }
-                }
-            }
-        }
-        // 将剩下的计算完，直到运算符栈为空
-        while (!otStack.isEmpty())
-            popAndCal(opStack, otStack);
-        // 返回结果
-        return opStack.pop();
-    }
-
-    /**
-     * 代码来源：https://blog.csdn.net/qq_34120430/article/details/79674993
-     *
-     * @param opStack
-     * @param otStack
-     */
-    private static void popAndCal(Stack<Integer> opStack, Stack<Character> otStack) {
-        int op2 = opStack.pop();
-        int op1 = opStack.pop();
-        char ot = otStack.pop();
-        int res = 0;
-        switch (ot) {
-            case '+':
-                res = op1 + op2;
-                break;
-            case '-':
-                res = op1 - op2;
-                break;
-            case '*':
-                res = op1 * op2;
-                break;
-            case '/':
-                res = op1 / op2;
-                break;
-        }
-        opStack.push(res);
-    }
-
-    /**
-     * 代码来源：https://blog.csdn.net/qq_34120430/article/details/79674993
-     *
-     * @param brace
-     * @return
-     */
-    private static char getBrace(char brace) {
-        switch (brace) {
-            case ')':
-                return '(';
-            case ']':
-                return '[';
-            case '}':
-                return '{';
-        }
-        return '#';
     }
 
     {
