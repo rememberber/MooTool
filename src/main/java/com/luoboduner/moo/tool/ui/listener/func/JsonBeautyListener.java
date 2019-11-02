@@ -2,7 +2,7 @@ package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.thread.ThreadUtil;
-import cn.hutool.core.util.StrUtil;
+import cn.hutool.core.util.ReUtil;
 import cn.hutool.json.JSONUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
@@ -134,7 +134,11 @@ public class JsonBeautyListener {
                     jsonBeautyForm.getTextArea().setText(formatJson(jsonText));
                     jsonBeautyForm.getTextArea().setCaretPosition(0);
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                    jsonBeautyForm.getFindReplacePanel().setVisible(true);
                     jsonBeautyForm.getFindTextField().grabFocus();
+                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_R) {
+                    jsonBeautyForm.getFindReplacePanel().setVisible(true);
+                    jsonBeautyForm.getReplaceTextField().grabFocus();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
                     newJson();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
@@ -305,7 +309,10 @@ public class JsonBeautyListener {
             }
         });
 
-        jsonBeautyForm.getFindButton().addActionListener(e -> find());
+        jsonBeautyForm.getFindButton().addActionListener(e -> {
+            jsonBeautyForm.getFindReplacePanel().setVisible(true);
+            jsonBeautyForm.getFindTextField().grabFocus();
+        });
 
         jsonBeautyForm.getFindTextField().addKeyListener(new KeyListener() {
             @Override
@@ -375,6 +382,54 @@ public class JsonBeautyListener {
 
         });
 
+        jsonBeautyForm.getDoFindButton().addActionListener(e -> find());
+
+        jsonBeautyForm.getFindReplaceCloseLabel().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                jsonBeautyForm.getFindReplacePanel().setVisible(false);
+                super.mouseClicked(e);
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                super.mousePressed(e);
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                super.mouseEntered(e);
+            }
+        });
+
+        jsonBeautyForm.getDoReplaceButton().addActionListener(e -> replace());
+        jsonBeautyForm.getReplaceTextField().addKeyListener(new KeyListener() {
+            @Override
+            public void keyReleased(KeyEvent arg0) {
+            }
+
+            @Override
+            public void keyPressed(KeyEvent evt) {
+                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+                    replace();
+                }
+            }
+
+            @Override
+            public void keyTyped(KeyEvent arg0) {
+            }
+        });
+
+        jsonBeautyForm.getFindUseRegexCheckBox().addActionListener(e -> {
+            boolean selected = jsonBeautyForm.getFindUseRegexCheckBox().isSelected();
+            if (selected) {
+                jsonBeautyForm.getFindWordsCheckBox().setSelected(false);
+                jsonBeautyForm.getFindWordsCheckBox().setEnabled(false);
+            } else {
+                jsonBeautyForm.getFindWordsCheckBox().setEnabled(true);
+            }
+        });
+
     }
 
     private static void newJson() {
@@ -402,12 +457,58 @@ public class JsonBeautyListener {
     }
 
     private static void find() {
-        String content = JsonBeautyForm.getInstance().getTextArea().getText();
-        String findKeyWord = JsonBeautyForm.getInstance().getFindTextField().getText();
-        int count = StrUtil.count(content, findKeyWord);
+        JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
+
+        String content = jsonBeautyForm.getTextArea().getText();
+        String findKeyWord = jsonBeautyForm.getFindTextField().getText();
+        boolean isMatchCase = jsonBeautyForm.getFindMatchCaseCheckBox().isSelected();
+        boolean isWords = jsonBeautyForm.getFindWordsCheckBox().isSelected();
+        boolean useRegex = jsonBeautyForm.getFindUseRegexCheckBox().isSelected();
+
+        int count;
+        String regex = findKeyWord;
+
+        if (!useRegex) {
+            regex = ReUtil.escape(regex);
+        }
+        if (isWords) {
+            regex = "\\b" + regex + "\\b";
+        }
+        if (!isMatchCase) {
+            regex = "(?i)" + regex;
+        }
+
+        count = ReUtil.findAll(regex, content, 0).size();
+        content = ReUtil.replaceAll(content, regex, "<span>$0</span>");
+
         FindResultForm.getInstance().getFindResultCount().setText(String.valueOf(count));
-        content = content.replace(findKeyWord, "<span>" + findKeyWord + "</span>");
         FindResultForm.getInstance().setHtmlText(content);
         FindResultFrame.showResultWindow();
+    }
+
+    private static void replace() {
+        JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
+        String target = jsonBeautyForm.getFindTextField().getText();
+        String replacement = jsonBeautyForm.getReplaceTextField().getText();
+        String content = jsonBeautyForm.getTextArea().getText();
+        boolean isMatchCase = jsonBeautyForm.getFindMatchCaseCheckBox().isSelected();
+        boolean isWords = jsonBeautyForm.getFindWordsCheckBox().isSelected();
+        boolean useRegex = jsonBeautyForm.getFindUseRegexCheckBox().isSelected();
+
+        String regex = target;
+
+        if (!useRegex) {
+            regex = ReUtil.escape(regex);
+        }
+        if (isWords) {
+            regex = "\\b" + regex + "\\b";
+        }
+        if (!isMatchCase) {
+            regex = "(?i)" + regex;
+        }
+
+        content = ReUtil.replaceAll(content, regex, replacement);
+
+        jsonBeautyForm.getTextArea().setText(content);
     }
 }
