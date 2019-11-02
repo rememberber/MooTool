@@ -114,7 +114,7 @@ A handy desktop toolset for developers.
 
 ### 安装文件下载
 
-[MooTool下载地址](https://gitee.com/zhoubochina/MooTool/wikis/download)  
+[MooTool下载地址](https://github.com/rememberber/MooTool/wiki/download)  
 
 安装之前请确认已经安装了jre1.8或者以上版本   
 [jre下载地址](http://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html)  
