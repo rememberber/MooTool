@@ -123,6 +123,9 @@ public class QuickNoteListener {
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
                     quickNoteForm.getFindReplacePanel().setVisible(true);
                     quickNoteForm.getFindTextField().grabFocus();
+                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_R) {
+                    quickNoteForm.getFindReplacePanel().setVisible(true);
+                    quickNoteForm.getReplaceTextField().grabFocus();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
                     newNote();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
