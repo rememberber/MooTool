@@ -89,7 +89,7 @@ public class UiConsts {
     /**
      * 软件版本检查url
      */
-    public static final String CHECK_VERSION_URL = "https://raw.githubusercontent.com/rememberber/MooTool/master/src/main/resources/version_summary.json";
+    public static final String CHECK_VERSION_URL = "https://gitee.com/zhoubochina/MooTool/raw/master/src/main/resources/version_summary.json";
 
     /**
      * 二维码url
