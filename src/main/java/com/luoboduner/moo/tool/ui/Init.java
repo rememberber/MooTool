@@ -106,7 +106,11 @@ public class Init {
                 case "weblaf":
                 case "Darcula(推荐)":
                 default:
-                    UIManager.setLookAndFeel("com.bulenkov.darcula.DarculaLaf");
+                    if (SystemUtil.isLinuxOs()) {
+                        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                    } else {
+                        UIManager.setLookAndFeel("com.bulenkov.darcula.DarculaLaf");
+                    }
             }
         } catch (Exception e) {
             logger.error(e);

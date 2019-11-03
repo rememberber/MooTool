@@ -15,6 +15,7 @@ import com.luoboduner.moo.tool.dao.TQrCodeMapper;
 import com.luoboduner.moo.tool.domain.TQrCode;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
+import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -161,7 +162,11 @@ public class QrCodeForm {
 
         initUi();
 
-        tempDir = new File(FileUtil.getTmpDirPath() + "MooTool");
+        if (SystemUtil.isLinuxOs()) {
+            tempDir = new File(SystemUtil.configHome + File.separator + "temp");
+        } else {
+            tempDir = new File(FileUtil.getTmpDirPath() + "MooTool");
+        }
         if (!tempDir.exists()) {
             tempDir.mkdirs();
         }
