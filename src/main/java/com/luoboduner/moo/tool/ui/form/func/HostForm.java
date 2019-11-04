@@ -146,37 +146,39 @@ public class HostForm {
         data[1] = SYS_CURRENT_HOST_NAME;
         model.addRow(data);
 
-        App.popupMenu.removeAll();
-        MenuItem openItem = new MenuItem("MooTool");
-        MenuItem exitItem = new MenuItem("Quit");
+        if (!SystemUtil.isLinuxOs()) {
+            App.popupMenu.removeAll();
+            MenuItem openItem = new MenuItem("MooTool");
+            MenuItem exitItem = new MenuItem("Quit");
 
-        openItem.addActionListener(e -> {
-            Init.showMainFrame();
-        });
-        exitItem.addActionListener(e -> {
-            Init.shutdown();
-        });
-
-        App.popupMenu.add(openItem);
-        App.popupMenu.addSeparator();
-
-        List<THost> hostList = hostMapper.selectAll();
-        MenuItem menuItem;
-        for (THost tHost : hostList) {
-            data = new Object[2];
-            data[0] = tHost.getId();
-            data[1] = tHost.getName();
-            model.addRow(data);
-            menuItem = new MenuItem(tHost.getName());
-            menuItem.addActionListener(e -> {
-                THost tHost1 = hostMapper.selectByName(tHost.getName());
-                String hostName = tHost1.getName();
-                setHost(hostName, tHost1.getContent());
+            openItem.addActionListener(e -> {
+                Init.showMainFrame();
             });
-            App.popupMenu.add(menuItem);
+            exitItem.addActionListener(e -> {
+                Init.shutdown();
+            });
+
+            App.popupMenu.add(openItem);
+            App.popupMenu.addSeparator();
+
+            List<THost> hostList = hostMapper.selectAll();
+            MenuItem menuItem;
+            for (THost tHost : hostList) {
+                data = new Object[2];
+                data[0] = tHost.getId();
+                data[1] = tHost.getName();
+                model.addRow(data);
+                menuItem = new MenuItem(tHost.getName());
+                menuItem.addActionListener(e -> {
+                    THost tHost1 = hostMapper.selectByName(tHost.getName());
+                    String hostName = tHost1.getName();
+                    setHost(hostName, tHost1.getContent());
+                });
+                App.popupMenu.add(menuItem);
+            }
+            App.popupMenu.addSeparator();
+            App.popupMenu.add(exitItem);
         }
-        App.popupMenu.addSeparator();
-        App.popupMenu.add(exitItem);
 
         String content;
         if (SystemUtil.isWindowsOs()) {
@@ -193,19 +195,21 @@ public class HostForm {
     }
 
     private static void highlightHostMenu(String hostName) {
-        Font fontBold = new Font(App.config.getFont(), Font.BOLD, App.config.getFontSize());
-        Font fontPlain = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
-        for (int i = 2; i < App.popupMenu.getItemCount(); i++) {
-            MenuItem item = App.popupMenu.getItem(i);
-            if (hostName.equals(item.getLabel())) {
-                item.setFont(fontBold);
-            } else {
-                item.setFont(fontPlain);
+        if (!SystemUtil.isLinuxOs()) {
+            Font fontBold = new Font(App.config.getFont(), Font.BOLD, App.config.getFontSize());
+            Font fontPlain = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
+            for (int i = 2; i < App.popupMenu.getItemCount(); i++) {
+                MenuItem item = App.popupMenu.getItem(i);
+                if (hostName.equals(item.getLabel())) {
+                    item.setFont(fontBold);
+                } else {
+                    item.setFont(fontPlain);
+                }
             }
+            App.config.setCurrentHostName(hostName);
+            App.config.save();
+            HostListener.refreshHostContentInTextArea();
         }
-        App.config.setCurrentHostName(hostName);
-        App.config.save();
-        HostListener.refreshHostContentInTextArea();
     }
 
     {
