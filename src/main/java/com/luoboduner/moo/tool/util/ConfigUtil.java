@@ -105,7 +105,11 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public String getTheme() {
-        return setting.getStr("theme", "setting.appearance", "Darcula(推荐)");
+        if (SystemUtil.isLinuxOs()) {
+            return setting.getStr("theme", "setting.appearance", "系统默认");
+        } else {
+            return setting.getStr("theme", "setting.appearance", "Darcula(推荐)");
+        }
     }
 
     public void setTheme(String theme) {
@@ -113,7 +117,11 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public String getFont() {
-        return setting.getStr("font", "setting.appearance", "微软雅黑");
+        if (SystemUtil.isLinuxOs()) {
+            return setting.getStr("font", "setting.appearance", "Noto Sans CJK HK");
+        } else {
+            return setting.getStr("font", "setting.appearance", "微软雅黑");
+        }
     }
 
     public void setFont(String font) {
@@ -169,7 +177,11 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public String getQuickNoteFontName() {
-        return setting.getStr("quickNoteFontName", "func.quickNote", "等线");
+        if (SystemUtil.isLinuxOs()) {
+            return setting.getStr("font", "setting.appearance", "Noto Sans CJK HK");
+        } else {
+            return setting.getStr("quickNoteFontName", "func.quickNote", "等线");
+        }
     }
 
     public void setQuickNoteFontName(String quickNoteFontName) {
@@ -185,7 +197,11 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public String getJsonBeautyFontName() {
-        return setting.getStr("jsonBeautyFontName", "func.jsonBeauty", "等线");
+        if (SystemUtil.isLinuxOs()) {
+            return setting.getStr("font", "setting.appearance", "Noto Sans CJK HK");
+        } else {
+            return setting.getStr("jsonBeautyFontName", "func.jsonBeauty", "等线");
+        }
     }
 
     public void setJsonBeautyFontName(String jsonBeautyFontName) {

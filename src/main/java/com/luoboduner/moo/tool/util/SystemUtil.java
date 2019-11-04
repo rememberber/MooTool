@@ -22,4 +22,8 @@ public class SystemUtil {
     public static boolean isWindowsOs() {
         return osName.contains("Windows");
     }
+
+    public static boolean isLinuxOs() {
+        return osName.contains("Linux");
+    }
 }
