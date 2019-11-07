@@ -82,6 +82,8 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     private String dbFilePath;
 
+    private String dbFilePathBefore;
+
     public boolean isAutoCheckUpdate() {
         return setting.getBool("autoCheckUpdate", "setting.common", true);
     }
@@ -320,5 +322,13 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setDbFilePath(String dbFilePath) {
         setting.put("func.advanced", "dbFilePath", dbFilePath);
+    }
+
+    public String getDbFilePathBefore() {
+        return setting.getStr("dbFilePathBefore", "func.advanced", "");
+    }
+
+    public void setDbFilePathBefore(String dbFilePathBefore) {
+        setting.put("func.advanced", "dbFilePathBefore", dbFilePathBefore);
     }
 }
