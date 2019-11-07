@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.listener;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.service.HttpMsgSender;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.SettingForm;
@@ -47,7 +48,7 @@ public class SettingListener {
                 App.config.setHttpProxyPassword(settingForm.getHttpProxyPasswordTextField().getText());
                 App.config.save();
 
-//                HttpMsgSender.proxy = null;
+                HttpMsgSender.proxy = null;
                 JOptionPane.showMessageDialog(settingPanel, "保存成功！", "成功",
                         JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e1) {
@@ -93,6 +94,13 @@ public class SettingListener {
                 QrCodeForm.init();
                 CryptoForm.init();
             }
+        });
+
+        // 高级数据文件路径设置
+        settingForm.getDbFilePathSaveButton().addActionListener(e -> {
+            String dbFilePath = settingForm.getDbFilePathTextField().getText();
+            App.config.setDbFilePath(dbFilePath);
+            App.config.save();
         });
     }
 

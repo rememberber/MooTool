@@ -80,6 +80,8 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     private String calculatorInputExpress;
 
+    private String dbFilePath;
+
     public boolean isAutoCheckUpdate() {
         return setting.getBool("autoCheckUpdate", "setting.common", true);
     }
@@ -310,5 +312,13 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setCalculatorInputExpress(String calculatorInputExpress) {
         setting.put("func.calculator", "calculatorInputExpress", calculatorInputExpress);
+    }
+
+    public String getDbFilePath() {
+        return setting.getStr("dbFilePath", "func.advanced", "");
+    }
+
+    public void setDbFilePath(String dbFilePath) {
+        setting.put("func.advanced", "dbFilePath", dbFilePath);
     }
 }
