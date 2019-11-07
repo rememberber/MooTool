@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
+import cn.hutool.core.codec.Base32;
 import cn.hutool.core.codec.Base64;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.swing.clipboard.ClipboardUtil;
@@ -377,6 +378,48 @@ public class CryptoListener {
 
                 cryptoForm.getAsymLeftTextArea().setText(decryptStr);
                 cryptoForm.getAsymLeftTextArea().setCaretPosition(0);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "解密失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
+
+        // Base64加密
+        cryptoForm.getBase64EncodeButton().addActionListener(e -> {
+            try {
+                String type = (String) cryptoForm.getBase64ComboBox().getSelectedItem();
+                String text = cryptoForm.getBase64LeftTextArea().getText();
+                String encode = "";
+                if ("Base64".equals(type)) {
+                    encode = Base64.encode(text);
+                } else if ("Base32".equals(type)) {
+                    encode = Base32.encode(text);
+                }
+
+                cryptoForm.getBase64RightTextArea().setText(encode);
+                cryptoForm.getBase64RightTextArea().setCaretPosition(0);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
+
+        // Base64解密
+        cryptoForm.getBase64DecodeButton().addActionListener(e -> {
+            try {
+                String type = (String) cryptoForm.getBase64ComboBox().getSelectedItem();
+                String text = cryptoForm.getBase64RightTextArea().getText();
+                String decode = "";
+                if ("Base64".equals(type)) {
+                    decode = Base64.decodeStr(text);
+                } else if ("Base32".equals(type)) {
+                    decode = Base32.decodeStr(text);
+                }
+
+                cryptoForm.getBase64LeftTextArea().setText(decode);
+                cryptoForm.getBase64LeftTextArea().setCaretPosition(0);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "解密失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
