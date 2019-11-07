@@ -101,6 +101,18 @@ public class SettingListener {
             String dbFilePath = settingForm.getDbFilePathTextField().getText();
             App.config.setDbFilePath(dbFilePath);
             App.config.save();
+            JOptionPane.showMessageDialog(settingPanel, "保存成功！", "成功", JOptionPane.INFORMATION_MESSAGE);
+        });
+
+        settingForm.getDbFilePathExploreButton().addActionListener(e -> {
+            JFileChooser fileChooser = new JFileChooser(settingForm.getDbFilePathTextField().getText());
+            fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            int approve = fileChooser.showOpenDialog(settingForm.getSettingPanel());
+            String dbFilePath;
+            if (approve == JFileChooser.APPROVE_OPTION) {
+                dbFilePath = fileChooser.getSelectedFile().getAbsolutePath();
+                settingForm.getDbFilePathTextField().setText(dbFilePath);
+            }
         });
     }
 
