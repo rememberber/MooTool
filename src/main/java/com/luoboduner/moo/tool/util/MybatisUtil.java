@@ -2,7 +2,9 @@ package com.luoboduner.moo.tool.util;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.CharsetUtil;
+import com.luoboduner.moo.tool.App;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.ibatis.io.Resources;
 import org.apache.ibatis.session.SqlSession;
 import org.apache.ibatis.session.SqlSessionFactory;
@@ -33,33 +35,39 @@ public class MybatisUtil {
      */
     private static boolean needInit = false;
 
-    private static File dbFile = new File(SystemUtil.configHome + "MooTool.db");
-
-    static {
-        try {
-            if (!dbFile.exists()) {
-                initDbFile();
-            }
-            String resource = "mybatis-config.xml";
-            InputStream inputStream = Resources.getResourceAsStream(resource);
-            Properties properties = new Properties();
-            properties.setProperty("url", "jdbc:sqlite:" + dbFile.getAbsolutePath());
-            SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream, properties);
-            sqlSession = sqlSessionFactory.openSession(true);
-            inputStream.close();
-
-            initTables();
-        } catch (Exception e) {
-            log.error("get sqlSession error!", e);
-        }
-    }
+    private static File dbFile = new File(SystemUtil.configHome + File.separator + "MooTool.db");
 
     private MybatisUtil() {
 
     }
 
     public static SqlSession getSqlSession() {
+        if (sqlSession == null) {
+            try {
+                if (!dbFile.exists()) {
+                    initDbFile();
+                }
+                if (StringUtils.isNotBlank(App.config.getDbFilePath())) {
+                    dbFile = new File(App.config.getDbFilePath() + File.separator + "MooTool.db");
+                }
+                String resource = "mybatis-config.xml";
+                InputStream inputStream = Resources.getResourceAsStream(resource);
+                Properties properties = new Properties();
+                properties.setProperty("url", "jdbc:sqlite:" + dbFile.getAbsolutePath());
+                SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream, properties);
+                sqlSession = sqlSessionFactory.openSession(true);
+                inputStream.close();
+
+                initTables();
+            } catch (Exception e) {
+                log.error("get sqlSession error!", e);
+            }
+        }
         return sqlSession;
+    }
+
+    public static void setSqlSession(SqlSession sqlSession) {
+        MybatisUtil.sqlSession = sqlSession;
     }
 
     /**
