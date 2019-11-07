@@ -205,7 +205,7 @@ public class CryptoListener {
         cryptoForm.getGenerateRadomStringButton().addActionListener(e -> {
             try {
                 int digit = Integer.parseInt(cryptoForm.getRandomStringDigitTextField().getText().trim());
-                String randomString = RandomUtil.randomString(digit);
+                String randomString = RandomUtil.randomString(RandomUtil.BASE_NUMBER + RandomUtil.BASE_CHAR + RandomUtil.BASE_CHAR.toUpperCase(), digit);
                 cryptoForm.getRandomStringTextField().setText(randomString);
                 App.config.setRandomStringDigit(digit);
                 App.config.save();
@@ -214,6 +214,14 @@ public class CryptoListener {
                         JOptionPane.ERROR_MESSAGE);
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
+        });
+
+        cryptoForm.getToUpperCaseButton().addActionListener(e -> {
+            cryptoForm.getRandomStringTextField().setText(cryptoForm.getRandomStringTextField().getText().toUpperCase());
+        });
+
+        cryptoForm.getToLowerCaseButton().addActionListener(e -> {
+            cryptoForm.getRandomStringTextField().setText(cryptoForm.getRandomStringTextField().getText().toLowerCase());
         });
 
         cryptoForm.getGenerateRandomPasswordButton().addActionListener(e -> {
