@@ -8,6 +8,7 @@ import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
 import com.luoboduner.moo.tool.ui.form.AboutForm;
 import com.luoboduner.moo.tool.ui.form.SettingForm;
 import com.luoboduner.moo.tool.ui.form.func.CalculatorForm;
+import com.luoboduner.moo.tool.ui.form.func.ColorBoardForm;
 import com.luoboduner.moo.tool.ui.form.func.CryptoForm;
 import com.luoboduner.moo.tool.ui.form.func.EnCodeForm;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
@@ -132,6 +133,7 @@ public class Init {
         QrCodeForm.init();
         CryptoForm.init();
         CalculatorForm.init();
+        ColorBoardForm.init();
         NetForm.init();
 
         // 检查新版版
