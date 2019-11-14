@@ -128,7 +128,7 @@ public class MainWindow {
         tabbedPane.addTab("网络/IP", new ImageIcon(getClass().getResource("/icon/network.png")), netPanel);
         colorBoardPanel = new JPanel();
         colorBoardPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("调色板", colorBoardPanel);
+        tabbedPane.addTab("调色板", new ImageIcon(getClass().getResource("/icon/color.png")), colorBoardPanel);
         settingPanel = new JPanel();
         settingPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("设置", new ImageIcon(getClass().getResource("/icon/gear.png")), settingPanel);
