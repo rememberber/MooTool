@@ -122,19 +122,19 @@ public class Init {
      * 初始化所有tab
      */
     public static void initAllTab() {
-        SettingForm.init();
-        QuickNoteForm.init();
-        JsonBeautyForm.init();
-        TimeConvertForm.init();
-        HostForm.init();
-        HttpRequestForm.init();
-        AboutForm.init();
-        EnCodeForm.init();
-        QrCodeForm.init();
-        CryptoForm.init();
-        CalculatorForm.init();
-        ColorBoardForm.init();
-        NetForm.init();
+        ThreadUtil.execute(SettingForm::init);
+        ThreadUtil.execute(QuickNoteForm::init);
+        ThreadUtil.execute(JsonBeautyForm::init);
+        ThreadUtil.execute(TimeConvertForm::init);
+        ThreadUtil.execute(HostForm::init);
+        ThreadUtil.execute(HttpRequestForm::init);
+        ThreadUtil.execute(AboutForm::init);
+        ThreadUtil.execute(EnCodeForm::init);
+        ThreadUtil.execute(QrCodeForm::init);
+        ThreadUtil.execute(CryptoForm::init);
+        ThreadUtil.execute(CalculatorForm::init);
+        ThreadUtil.execute(ColorBoardForm::init);
+        ThreadUtil.execute(NetForm::init);
 
         // 检查新版版
         if (App.config.isAutoCheckUpdate()) {
