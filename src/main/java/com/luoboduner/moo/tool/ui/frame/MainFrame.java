@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.frame;
 
+import cn.hutool.core.thread.ThreadUtil;
 import com.apple.eawt.Application;
 import com.google.common.collect.Lists;
 import com.luoboduner.moo.tool.ui.UiConsts;
@@ -65,19 +66,19 @@ public class MainFrame extends JFrame {
      * 添加事件监听
      */
     public void addListeners() {
-        FrameListener.addListeners();
-        AboutListener.addListeners();
-        QuickNoteListener.addListeners();
-        TimeConvertListener.addListeners();
-        JsonBeautyListener.addListeners();
-        HostListener.addListeners();
-        HttpRequestListener.addListeners();
-        QrCodeListener.addListeners();
-        EnCodeListener.addListeners();
-        CryptoListener.addListeners();
-        CalculatorListener.addListeners();
-        NetListener.addListeners();
-        SettingListener.addListeners();
-        TabListener.addListeners();
+        ThreadUtil.execute(FrameListener::addListeners);
+        ThreadUtil.execute(AboutListener::addListeners);
+        ThreadUtil.execute(QuickNoteListener::addListeners);
+        ThreadUtil.execute(TimeConvertListener::addListeners);
+        ThreadUtil.execute(JsonBeautyListener::addListeners);
+        ThreadUtil.execute(HostListener::addListeners);
+        ThreadUtil.execute(HttpRequestListener::addListeners);
+        ThreadUtil.execute(QrCodeListener::addListeners);
+        ThreadUtil.execute(EnCodeListener::addListeners);
+        ThreadUtil.execute(CryptoListener::addListeners);
+        ThreadUtil.execute(CalculatorListener::addListeners);
+        ThreadUtil.execute(NetListener::addListeners);
+        ThreadUtil.execute(SettingListener::addListeners);
+        ThreadUtil.execute(TabListener::addListeners);
     }
 }
