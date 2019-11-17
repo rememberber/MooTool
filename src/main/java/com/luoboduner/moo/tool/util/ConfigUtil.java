@@ -84,6 +84,12 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     private String dbFilePathBefore;
 
+    private String quickNoteExportPath;
+
+    private String jsonBeautyExportPath;
+
+    private String hostExportPath;
+
     public boolean isAutoCheckUpdate() {
         return setting.getBool("autoCheckUpdate", "setting.common", true);
     }
@@ -330,5 +336,29 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setDbFilePathBefore(String dbFilePathBefore) {
         setting.put("func.advanced", "dbFilePathBefore", dbFilePathBefore);
+    }
+
+    public String getQuickNoteExportPath() {
+        return setting.getStr("quickNoteExportPath", "func.quickNote", "");
+    }
+
+    public void setQuickNoteExportPath(String quickNoteExportPath) {
+        setting.put("func.quickNote", "quickNoteExportPath", quickNoteExportPath);
+    }
+
+    public String getJsonBeautyExportPath() {
+        return setting.getStr("jsonBeautyExportPath", "func.jsonBeauty", "");
+    }
+
+    public void setJsonBeautyExportPath(String jsonBeautyExportPath) {
+        setting.put("func.jsonBeauty", "jsonBeautyExportPath", jsonBeautyExportPath);
+    }
+
+    public String getHostExportPath() {
+        return setting.getStr("hostExportPath", "func.host", "");
+    }
+
+    public void setHostExportPath(String hostExportPath) {
+        setting.put("func.host", "hostExportPath", hostExportPath);
     }
 }

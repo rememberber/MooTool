@@ -243,12 +243,14 @@ public class HostListener {
 
             try {
                 if (selectedRows.length > 0) {
-                    JFileChooser fileChooser = new JFileChooser();
+                    JFileChooser fileChooser = new JFileChooser(App.config.getHostExportPath());
                     fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
                     int approve = fileChooser.showOpenDialog(hostForm.getHostPanel());
                     String exportPath;
                     if (approve == JFileChooser.APPROVE_OPTION) {
                         exportPath = fileChooser.getSelectedFile().getAbsolutePath();
+                        App.config.setHostExportPath(exportPath);
+                        App.config.save();
                     } else {
                         return;
                     }

@@ -333,12 +333,14 @@ public class QuickNoteListener {
 
             try {
                 if (selectedRows.length > 0) {
-                    JFileChooser fileChooser = new JFileChooser();
+                    JFileChooser fileChooser = new JFileChooser(App.config.getQuickNoteExportPath());
                     fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
                     int approve = fileChooser.showOpenDialog(quickNoteForm.getQuickNotePanel());
                     String exportPath;
                     if (approve == JFileChooser.APPROVE_OPTION) {
                         exportPath = fileChooser.getSelectedFile().getAbsolutePath();
+                        App.config.setQuickNoteExportPath(exportPath);
+                        App.config.save();
                     } else {
                         return;
                     }
