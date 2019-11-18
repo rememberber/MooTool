@@ -345,12 +345,14 @@ public class JsonBeautyListener {
 
             try {
                 if (selectedRows.length > 0) {
-                    JFileChooser fileChooser = new JFileChooser();
+                    JFileChooser fileChooser = new JFileChooser(App.config.getJsonBeautyExportPath());
                     fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
                     int approve = fileChooser.showOpenDialog(jsonBeautyForm.getJsonBeautyPanel());
                     String exportPath;
                     if (approve == JFileChooser.APPROVE_OPTION) {
                         exportPath = fileChooser.getSelectedFile().getAbsolutePath();
+                        App.config.setJsonBeautyExportPath(exportPath);
+                        App.config.save();
                     } else {
                         return;
                     }

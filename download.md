@@ -12,6 +12,7 @@
 <details>
 <summary>MacOS</summary>
 
+[MooToolWithJre-v1.2.0.zip](http://download.zhoubochina.com/moo/mac/MooToolWithJre-v1.2.0.zip)  
 [v1.2.0.zip](http://download.zhoubochina.com/moo/mac/MooTool-v1.2.0.zip)  
 [v1.1.0.zip](http://download.zhoubochina.com/moo/mac/MooTool-v1.1.0.zip)  
 
