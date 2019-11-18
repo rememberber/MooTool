@@ -66,30 +66,7 @@ public class ColorBoardForm {
             panel.setBackground(ColorUtil.fromHex(colorHex));
             panel.setSize(dimensionColorBlock);
             panel.setPreferredSize(dimensionColorBlock);
-            panel.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    JPanel clickedPanel = (JPanel) e.getComponent();
-                    Color background = clickedPanel.getBackground();
-                    colorBoardForm.getShowColorPanel().setBackground(background);
-                    colorBoardForm.getColorCodeTextField().setText(ColorUtil.toHex(background));
-                    super.mouseClicked(e);
-                }
-
-                @Override
-                public void mouseEntered(MouseEvent e) {
-                    JPanel enteredPanel = (JPanel) e.getComponent();
-                    enteredPanel.setBorder(BorderFactory.createEtchedBorder());
-                    super.mouseEntered(e);
-                }
-
-                @Override
-                public void mouseExited(MouseEvent e) {
-                    JPanel enteredPanel = (JPanel) e.getComponent();
-                    enteredPanel.setBorder(BorderFactory.createEmptyBorder());
-                    super.mouseExited(e);
-                }
-            });
+            addColorSelectionListener(panel);
             colorBoardForm.getStandardColorPanel().add(panel);
         }
 
@@ -98,30 +75,7 @@ public class ColorBoardForm {
             panel.setBackground(ColorUtil.fromHex(colorHex));
             panel.setSize(dimensionColorBlock);
             panel.setPreferredSize(dimensionColorBlock);
-            panel.addMouseListener(new MouseAdapter() {
-                @Override
-                public void mouseClicked(MouseEvent e) {
-                    JPanel clickedPanel = (JPanel) e.getComponent();
-                    Color background = clickedPanel.getBackground();
-                    colorBoardForm.getShowColorPanel().setBackground(background);
-                    colorBoardForm.getColorCodeTextField().setText(ColorUtil.toHex(background));
-                    super.mouseClicked(e);
-                }
-
-                @Override
-                public void mouseEntered(MouseEvent e) {
-                    JPanel enteredPanel = (JPanel) e.getComponent();
-                    enteredPanel.setBorder(BorderFactory.createEtchedBorder());
-                    super.mouseEntered(e);
-                }
-
-                @Override
-                public void mouseExited(MouseEvent e) {
-                    JPanel enteredPanel = (JPanel) e.getComponent();
-                    enteredPanel.setBorder(BorderFactory.createEmptyBorder());
-                    super.mouseExited(e);
-                }
-            });
+            addColorSelectionListener(panel);
             colorBoardForm.getThemeColorMainPanel().add(panel);
         }
 
@@ -135,34 +89,38 @@ public class ColorBoardForm {
                 panel.setBackground(ColorUtil.fromHex(colorHex));
                 panel.setSize(dimensionColorBlock);
                 panel.setPreferredSize(dimensionColorBlock);
-                panel.addMouseListener(new MouseAdapter() {
-                    @Override
-                    public void mouseClicked(MouseEvent e) {
-                        JPanel clickedPanel = (JPanel) e.getComponent();
-                        Color background = clickedPanel.getBackground();
-                        colorBoardForm.getShowColorPanel().setBackground(background);
-                        colorBoardForm.getColorCodeTextField().setText(ColorUtil.toHex(background));
-                        super.mouseClicked(e);
-                    }
-
-                    @Override
-                    public void mouseEntered(MouseEvent e) {
-                        JPanel enteredPanel = (JPanel) e.getComponent();
-                        enteredPanel.setBorder(BorderFactory.createEtchedBorder());
-                        super.mouseEntered(e);
-                    }
-
-                    @Override
-                    public void mouseExited(MouseEvent e) {
-                        JPanel enteredPanel = (JPanel) e.getComponent();
-                        enteredPanel.setBorder(BorderFactory.createEmptyBorder());
-                        super.mouseExited(e);
-                    }
-                });
+                addColorSelectionListener(panel);
                 subPanel.add(panel);
             }
             colorBoardForm.getThemeColorSubPanel().add(subPanel);
         }
+    }
+
+    private static void addColorSelectionListener(JPanel panel) {
+        panel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                JPanel clickedPanel = (JPanel) e.getComponent();
+                Color background = clickedPanel.getBackground();
+                colorBoardForm.getShowColorPanel().setBackground(background);
+                colorBoardForm.getColorCodeTextField().setText(ColorUtil.toHex(background));
+                super.mouseClicked(e);
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                JPanel enteredPanel = (JPanel) e.getComponent();
+                enteredPanel.setBorder(BorderFactory.createEtchedBorder());
+                super.mouseEntered(e);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                JPanel enteredPanel = (JPanel) e.getComponent();
+                enteredPanel.setBorder(BorderFactory.createEmptyBorder());
+                super.mouseExited(e);
+            }
+        });
     }
 
     {
@@ -187,10 +145,10 @@ public class ColorBoardForm {
         colorBoardPanel.add(panel1, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
-        panel1.add(panel2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel1.add(panel2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, 1, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         themeColorPanel = new JPanel();
         themeColorPanel.setLayout(new GridLayoutManager(3, 1, new Insets(5, 5, 5, 5), -1, -1));
-        panel2.add(themeColorPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        panel2.add(themeColorPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, 1, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         themeColorPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "主题颜色", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, themeColorPanel.getFont())));
         comboBox2 = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
@@ -198,10 +156,10 @@ public class ColorBoardForm {
         defaultComboBoxModel1.addElement("主题1");
         defaultComboBoxModel1.addElement("主题2");
         comboBox2.setModel(defaultComboBoxModel1);
-        themeColorPanel.add(comboBox2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        themeColorPanel.add(comboBox2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, 1, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         themeColorMainPanel = new JPanel();
         themeColorMainPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
-        themeColorPanel.add(themeColorMainPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_VERTICAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        themeColorPanel.add(themeColorMainPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         themeColorSubPanel = new JPanel();
         themeColorSubPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
         themeColorPanel.add(themeColorSubPanel, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
