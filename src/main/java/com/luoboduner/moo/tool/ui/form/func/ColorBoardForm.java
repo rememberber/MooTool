@@ -12,6 +12,8 @@ import lombok.Getter;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 /**
  * <pre>
@@ -26,7 +28,7 @@ public class ColorBoardForm {
     private JPanel colorBoardPanel;
     private JButton 取色器Button;
     private JComboBox comboBox1;
-    private JTextField textField1;
+    private JTextField colorCodeTextField;
     private JButton 复制Button;
     private JPanel showColorPanel;
     private JButton 收藏Button;
@@ -64,6 +66,30 @@ public class ColorBoardForm {
             panel.setBackground(ColorUtil.fromHex(colorHex));
             panel.setSize(dimensionColorBlock);
             panel.setPreferredSize(dimensionColorBlock);
+            panel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    JPanel clickedPanel = (JPanel) e.getComponent();
+                    Color background = clickedPanel.getBackground();
+                    colorBoardForm.getShowColorPanel().setBackground(background);
+                    colorBoardForm.getColorCodeTextField().setText(ColorUtil.toHex(background));
+                    super.mouseClicked(e);
+                }
+
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    JPanel enteredPanel = (JPanel) e.getComponent();
+                    enteredPanel.setBorder(BorderFactory.createEtchedBorder());
+                    super.mouseEntered(e);
+                }
+
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    JPanel enteredPanel = (JPanel) e.getComponent();
+                    enteredPanel.setBorder(BorderFactory.createEmptyBorder());
+                    super.mouseExited(e);
+                }
+            });
             colorBoardForm.getStandardColorPanel().add(panel);
         }
 
@@ -72,6 +98,30 @@ public class ColorBoardForm {
             panel.setBackground(ColorUtil.fromHex(colorHex));
             panel.setSize(dimensionColorBlock);
             panel.setPreferredSize(dimensionColorBlock);
+            panel.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    JPanel clickedPanel = (JPanel) e.getComponent();
+                    Color background = clickedPanel.getBackground();
+                    colorBoardForm.getShowColorPanel().setBackground(background);
+                    colorBoardForm.getColorCodeTextField().setText(ColorUtil.toHex(background));
+                    super.mouseClicked(e);
+                }
+
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    JPanel enteredPanel = (JPanel) e.getComponent();
+                    enteredPanel.setBorder(BorderFactory.createEtchedBorder());
+                    super.mouseEntered(e);
+                }
+
+                @Override
+                public void mouseExited(MouseEvent e) {
+                    JPanel enteredPanel = (JPanel) e.getComponent();
+                    enteredPanel.setBorder(BorderFactory.createEmptyBorder());
+                    super.mouseExited(e);
+                }
+            });
             colorBoardForm.getThemeColorMainPanel().add(panel);
         }
 
@@ -85,6 +135,30 @@ public class ColorBoardForm {
                 panel.setBackground(ColorUtil.fromHex(colorHex));
                 panel.setSize(dimensionColorBlock);
                 panel.setPreferredSize(dimensionColorBlock);
+                panel.addMouseListener(new MouseAdapter() {
+                    @Override
+                    public void mouseClicked(MouseEvent e) {
+                        JPanel clickedPanel = (JPanel) e.getComponent();
+                        Color background = clickedPanel.getBackground();
+                        colorBoardForm.getShowColorPanel().setBackground(background);
+                        colorBoardForm.getColorCodeTextField().setText(ColorUtil.toHex(background));
+                        super.mouseClicked(e);
+                    }
+
+                    @Override
+                    public void mouseEntered(MouseEvent e) {
+                        JPanel enteredPanel = (JPanel) e.getComponent();
+                        enteredPanel.setBorder(BorderFactory.createEtchedBorder());
+                        super.mouseEntered(e);
+                    }
+
+                    @Override
+                    public void mouseExited(MouseEvent e) {
+                        JPanel enteredPanel = (JPanel) e.getComponent();
+                        enteredPanel.setBorder(BorderFactory.createEmptyBorder());
+                        super.mouseExited(e);
+                    }
+                });
                 subPanel.add(panel);
             }
             colorBoardForm.getThemeColorSubPanel().add(subPanel);
@@ -155,8 +229,8 @@ public class ColorBoardForm {
         defaultComboBoxModel2.addElement("RGB");
         comboBox1.setModel(defaultComboBoxModel2);
         panel3.add(comboBox1, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        textField1 = new JTextField();
-        panel3.add(textField1, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(100, -1), null, 0, false));
+        colorCodeTextField = new JTextField();
+        panel3.add(colorCodeTextField, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(100, -1), null, 0, false));
         复制Button = new JButton();
         复制Button.setIcon(new ImageIcon(getClass().getResource("/icon/copy.png")));
         复制Button.setText("复制");
