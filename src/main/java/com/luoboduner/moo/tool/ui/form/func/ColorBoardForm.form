@@ -54,118 +54,13 @@
                     <border type="none"/>
                     <children/>
                   </grid>
-                  <grid id="44172" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="0">
+                  <grid id="44172" binding="themeColorSubPanel" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="0">
                     <constraints>
                       <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="1" anchor="8" fill="2" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties/>
                     <border type="none"/>
-                    <children>
-                      <grid id="a06fa" binding="themColorSubPanel0" layout-manager="FlowLayout" hgap="0" vgap="0" flow-align="0">
-                        <constraints/>
-                        <properties>
-                          <maximumSize width="50" height="500"/>
-                          <minimumSize width="50" height="500"/>
-                          <preferredSize width="50" height="500"/>
-                        </properties>
-                        <border type="none"/>
-                        <children/>
-                      </grid>
-                      <grid id="8f54e" binding="themColorSubPanel1" layout-manager="FlowLayout" hgap="0" vgap="0" flow-align="0">
-                        <constraints/>
-                        <properties>
-                          <maximumSize width="50" height="500"/>
-                          <minimumSize width="50" height="500"/>
-                          <preferredSize width="50" height="500"/>
-                        </properties>
-                        <border type="none"/>
-                        <children/>
-                      </grid>
-                      <grid id="f87f8" binding="themColorSubPanel2" layout-manager="FlowLayout" hgap="0" vgap="0" flow-align="0">
-                        <constraints/>
-                        <properties>
-                          <maximumSize width="50" height="500"/>
-                          <minimumSize width="50" height="500"/>
-                          <preferredSize width="50" height="500"/>
-                        </properties>
-                        <border type="none"/>
-                        <children/>
-                      </grid>
-                      <grid id="7fa55" binding="themColorSubPanel3" layout-manager="FlowLayout" hgap="0" vgap="0" flow-align="0">
-                        <constraints/>
-                        <properties>
-                          <maximumSize width="50" height="500"/>
-                          <minimumSize width="50" height="500"/>
-                          <preferredSize width="50" height="500"/>
-                        </properties>
-                        <border type="none"/>
-                        <children/>
-                      </grid>
-                      <grid id="b45c0" binding="themColorSubPanel4" layout-manager="FlowLayout" hgap="0" vgap="0" flow-align="0">
-                        <constraints/>
-                        <properties>
-                          <maximumSize width="50" height="500"/>
-                          <minimumSize width="50" height="500"/>
-                          <preferredSize width="50" height="500"/>
-                          <requestFocusEnabled value="false"/>
-                        </properties>
-                        <border type="none"/>
-                        <children/>
-                      </grid>
-                      <grid id="34e44" binding="themColorSubPanel5" layout-manager="FlowLayout" hgap="0" vgap="0" flow-align="0">
-                        <constraints/>
-                        <properties>
-                          <maximumSize width="50" height="500"/>
-                          <minimumSize width="50" height="500"/>
-                          <preferredSize width="50" height="500"/>
-                        </properties>
-                        <border type="none"/>
-                        <children/>
-                      </grid>
-                      <grid id="f5e45" binding="themColorSubPanel6" layout-manager="FlowLayout" hgap="0" vgap="0" flow-align="0">
-                        <constraints/>
-                        <properties>
-                          <maximumSize width="50" height="500"/>
-                          <minimumSize width="50" height="500"/>
-                          <preferredSize width="50" height="500"/>
-                        </properties>
-                        <border type="none"/>
-                        <children/>
-                      </grid>
-                      <grid id="9f38c" binding="themColorSubPanel7" layout-manager="FlowLayout" hgap="0" vgap="0" flow-align="0">
-                        <constraints/>
-                        <properties>
-                          <maximumSize width="50" height="500"/>
-                          <minimumSize width="50" height="500"/>
-                          <preferredSize width="50" height="500"/>
-                        </properties>
-                        <border type="none"/>
-                        <children/>
-                      </grid>
-                      <grid id="b5905" binding="themColorSubPanel8" layout-manager="FlowLayout" hgap="0" vgap="0" flow-align="0">
-                        <constraints/>
-                        <properties>
-                          <maximumSize width="50" height="500"/>
-                          <minimumSize width="50" height="500"/>
-                          <preferredSize width="50" height="500"/>
-                        </properties>
-                        <border type="none"/>
-                        <children/>
-                      </grid>
-                      <grid id="20074" binding="themColorSubPanel9" layout-manager="FlowLayout" hgap="0" vgap="0" flow-align="0">
-                        <constraints/>
-                        <properties>
-                          <maximumSize width="50" height="500"/>
-                          <minimumSize width="50" height="500"/>
-                          <preferredSize width="50" height="500"/>
-                        </properties>
-                        <border type="none"/>
-                        <children/>
-                      </grid>
-                      <hspacer id="8b917">
-                        <constraints/>
-                      </hspacer>
-                    </children>
+                    <children/>
                   </grid>
                 </children>
               </grid>

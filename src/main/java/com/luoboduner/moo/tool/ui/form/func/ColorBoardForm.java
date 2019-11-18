@@ -1,11 +1,11 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
-import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.luoboduner.moo.tool.util.ColorUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 
@@ -35,16 +35,7 @@ public class ColorBoardForm {
     private JPanel themeColorPanel;
     private JComboBox comboBox2;
     private JPanel themeColorMainPanel;
-    private JPanel themColorSubPanel0;
-    private JPanel themColorSubPanel1;
-    private JPanel themColorSubPanel2;
-    private JPanel themColorSubPanel3;
-    private JPanel themColorSubPanel4;
-    private JPanel themColorSubPanel5;
-    private JPanel themColorSubPanel6;
-    private JPanel themColorSubPanel7;
-    private JPanel themColorSubPanel8;
-    private JPanel themColorSubPanel9;
+    private JPanel themeColorSubPanel;
 
     private static ColorBoardForm colorBoardForm;
 
@@ -63,60 +54,40 @@ public class ColorBoardForm {
 
     public static void init() {
         colorBoardForm = getInstance();
-        colorBoardForm.getShowColorPanel().setBackground(new Color(163, 73, 164));
+        colorBoardForm.getShowColorPanel().setBackground(new Color(166, 166, 166));
 
-        Dimension dimension = new Dimension(50, 50);
-        for (int i = 0; i < 10; i++) {
+        Dimension dimensionColorBlock = new Dimension(50, 50);
+        Dimension dimensionSubPanel = new Dimension(50, 250);
+
+        for (String colorHex : ColorConsts.STANDARD) {
             JPanel panel = new JPanel();
-            switch (i) {
-                case 0:
-                    panel.setBackground(new Color(192, 0, 0));
-                    break;
-                case 1:
-                    panel.setBackground(new Color(255, 0, 0));
-                    break;
-                case 2:
-                    panel.setBackground(new Color(255, 192, 0));
-                    break;
-                case 3:
-                    panel.setBackground(new Color(255, 255, 0));
-                    break;
-                case 4:
-                    panel.setBackground(new Color(146, 208, 80));
-                    break;
-                case 5:
-                    panel.setBackground(new Color(0, 176, 80));
-                    break;
-                case 6:
-                    panel.setBackground(new Color(0, 176, 240));
-                    break;
-                case 7:
-                    panel.setBackground(new Color(0, 112, 192));
-                    break;
-                case 8:
-                    panel.setBackground(new Color(0, 32, 96));
-                    break;
-                case 9:
-                    panel.setBackground(new Color(112, 48, 160));
-                    break;
-                default:
-                    break;
-
-            }
-            panel.setSize(dimension);
-            panel.setPreferredSize(dimension);
+            panel.setBackground(ColorUtil.fromHex(colorHex));
+            panel.setSize(dimensionColorBlock);
+            panel.setPreferredSize(dimensionColorBlock);
             colorBoardForm.getStandardColorPanel().add(panel);
-            colorBoardForm.getThemeColorMainPanel().add(ObjectUtil.cloneByStream(panel));
-            colorBoardForm.getThemColorSubPanel0().add(ObjectUtil.cloneByStream(panel));
-            colorBoardForm.getThemColorSubPanel1().add(ObjectUtil.cloneByStream(panel));
-            colorBoardForm.getThemColorSubPanel2().add(ObjectUtil.cloneByStream(panel));
-            colorBoardForm.getThemColorSubPanel3().add(ObjectUtil.cloneByStream(panel));
-            colorBoardForm.getThemColorSubPanel4().add(ObjectUtil.cloneByStream(panel));
-            colorBoardForm.getThemColorSubPanel5().add(ObjectUtil.cloneByStream(panel));
-            colorBoardForm.getThemColorSubPanel6().add(ObjectUtil.cloneByStream(panel));
-            colorBoardForm.getThemColorSubPanel7().add(ObjectUtil.cloneByStream(panel));
-            colorBoardForm.getThemColorSubPanel8().add(ObjectUtil.cloneByStream(panel));
-            colorBoardForm.getThemColorSubPanel9().add(ObjectUtil.cloneByStream(panel));
+        }
+
+        for (String colorHex : ColorConsts.DEFAULT_MAIN) {
+            JPanel panel = new JPanel();
+            panel.setBackground(ColorUtil.fromHex(colorHex));
+            panel.setSize(dimensionColorBlock);
+            panel.setPreferredSize(dimensionColorBlock);
+            colorBoardForm.getThemeColorMainPanel().add(panel);
+        }
+
+        for (String[] colors : ColorConsts.DEFAULT_SUB) {
+            JPanel subPanel = new JPanel();
+            subPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+            subPanel.setSize(dimensionSubPanel);
+            subPanel.setPreferredSize(dimensionSubPanel);
+            for (String colorHex : colors) {
+                JPanel panel = new JPanel();
+                panel.setBackground(ColorUtil.fromHex(colorHex));
+                panel.setSize(dimensionColorBlock);
+                panel.setPreferredSize(dimensionColorBlock);
+                subPanel.add(panel);
+            }
+            colorBoardForm.getThemeColorSubPanel().add(subPanel);
         }
     }
 
@@ -157,72 +128,9 @@ public class ColorBoardForm {
         themeColorMainPanel = new JPanel();
         themeColorMainPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
         themeColorPanel.add(themeColorMainPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_VERTICAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        final JPanel panel3 = new JPanel();
-        panel3.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
-        themeColorPanel.add(panel3, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        themColorSubPanel0 = new JPanel();
-        themColorSubPanel0.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        themColorSubPanel0.setMaximumSize(new Dimension(50, 500));
-        themColorSubPanel0.setMinimumSize(new Dimension(50, 500));
-        themColorSubPanel0.setPreferredSize(new Dimension(50, 500));
-        panel3.add(themColorSubPanel0);
-        themColorSubPanel1 = new JPanel();
-        themColorSubPanel1.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        themColorSubPanel1.setMaximumSize(new Dimension(50, 500));
-        themColorSubPanel1.setMinimumSize(new Dimension(50, 500));
-        themColorSubPanel1.setPreferredSize(new Dimension(50, 500));
-        panel3.add(themColorSubPanel1);
-        themColorSubPanel2 = new JPanel();
-        themColorSubPanel2.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        themColorSubPanel2.setMaximumSize(new Dimension(50, 500));
-        themColorSubPanel2.setMinimumSize(new Dimension(50, 500));
-        themColorSubPanel2.setPreferredSize(new Dimension(50, 500));
-        panel3.add(themColorSubPanel2);
-        themColorSubPanel3 = new JPanel();
-        themColorSubPanel3.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        themColorSubPanel3.setMaximumSize(new Dimension(50, 500));
-        themColorSubPanel3.setMinimumSize(new Dimension(50, 500));
-        themColorSubPanel3.setPreferredSize(new Dimension(50, 500));
-        panel3.add(themColorSubPanel3);
-        themColorSubPanel4 = new JPanel();
-        themColorSubPanel4.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        themColorSubPanel4.setMaximumSize(new Dimension(50, 500));
-        themColorSubPanel4.setMinimumSize(new Dimension(50, 500));
-        themColorSubPanel4.setPreferredSize(new Dimension(50, 500));
-        themColorSubPanel4.setRequestFocusEnabled(false);
-        panel3.add(themColorSubPanel4);
-        themColorSubPanel5 = new JPanel();
-        themColorSubPanel5.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        themColorSubPanel5.setMaximumSize(new Dimension(50, 500));
-        themColorSubPanel5.setMinimumSize(new Dimension(50, 500));
-        themColorSubPanel5.setPreferredSize(new Dimension(50, 500));
-        panel3.add(themColorSubPanel5);
-        themColorSubPanel6 = new JPanel();
-        themColorSubPanel6.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        themColorSubPanel6.setMaximumSize(new Dimension(50, 500));
-        themColorSubPanel6.setMinimumSize(new Dimension(50, 500));
-        themColorSubPanel6.setPreferredSize(new Dimension(50, 500));
-        panel3.add(themColorSubPanel6);
-        themColorSubPanel7 = new JPanel();
-        themColorSubPanel7.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        themColorSubPanel7.setMaximumSize(new Dimension(50, 500));
-        themColorSubPanel7.setMinimumSize(new Dimension(50, 500));
-        themColorSubPanel7.setPreferredSize(new Dimension(50, 500));
-        panel3.add(themColorSubPanel7);
-        themColorSubPanel8 = new JPanel();
-        themColorSubPanel8.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        themColorSubPanel8.setMaximumSize(new Dimension(50, 500));
-        themColorSubPanel8.setMinimumSize(new Dimension(50, 500));
-        themColorSubPanel8.setPreferredSize(new Dimension(50, 500));
-        panel3.add(themColorSubPanel8);
-        themColorSubPanel9 = new JPanel();
-        themColorSubPanel9.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        themColorSubPanel9.setMaximumSize(new Dimension(50, 500));
-        themColorSubPanel9.setMinimumSize(new Dimension(50, 500));
-        themColorSubPanel9.setPreferredSize(new Dimension(50, 500));
-        panel3.add(themColorSubPanel9);
-        final Spacer spacer1 = new Spacer();
-        panel3.add(spacer1);
+        themeColorSubPanel = new JPanel();
+        themeColorSubPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
+        themeColorPanel.add(themeColorSubPanel, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         standardColorPanel = new JPanel();
         standardColorPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
         panel2.add(standardColorPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
@@ -231,36 +139,36 @@ public class ColorBoardForm {
         showColorPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 10, 0, 0), -1, -1));
         panel1.add(showColorPanel, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         showColorPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), null));
-        final JPanel panel4 = new JPanel();
-        panel4.setLayout(new GridLayoutManager(1, 7, new Insets(10, 10, 10, 10), -1, -1));
-        colorBoardPanel.add(panel4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        final JPanel panel3 = new JPanel();
+        panel3.setLayout(new GridLayoutManager(1, 7, new Insets(10, 10, 10, 10), -1, -1));
+        colorBoardPanel.add(panel3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         取色器Button = new JButton();
         取色器Button.setIcon(new ImageIcon(getClass().getResource("/icon/color_picker.png")));
         取色器Button.setText("取色器");
-        panel4.add(取色器Button, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer2 = new Spacer();
-        panel4.add(spacer2, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        panel3.add(取色器Button, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final Spacer spacer1 = new Spacer();
+        panel3.add(spacer1, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         comboBox1 = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel2 = new DefaultComboBoxModel();
         defaultComboBoxModel2.addElement("HTML");
         defaultComboBoxModel2.addElement("html");
         defaultComboBoxModel2.addElement("RGB");
         comboBox1.setModel(defaultComboBoxModel2);
-        panel4.add(comboBox1, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel3.add(comboBox1, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         textField1 = new JTextField();
-        panel4.add(textField1, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(100, -1), null, 0, false));
+        panel3.add(textField1, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(100, -1), null, 0, false));
         复制Button = new JButton();
         复制Button.setIcon(new ImageIcon(getClass().getResource("/icon/copy.png")));
         复制Button.setText("复制");
-        panel4.add(复制Button, new GridConstraints(0, 5, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel3.add(复制Button, new GridConstraints(0, 5, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         收藏Button = new JButton();
         收藏Button.setIcon(new ImageIcon(getClass().getResource("/icon/star-empty.png")));
         收藏Button.setText("收藏");
-        panel4.add(收藏Button, new GridConstraints(0, 6, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel3.add(收藏Button, new GridConstraints(0, 6, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         收藏夹Button = new JButton();
         收藏夹Button.setIcon(new ImageIcon(getClass().getResource("/icon/favorite.png")));
         收藏夹Button.setText("收藏夹");
-        panel4.add(收藏夹Button, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel3.add(收藏夹Button, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JSeparator separator1 = new JSeparator();
         colorBoardPanel.add(separator1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, 1, 1, null, null, null, 0, false));
     }
