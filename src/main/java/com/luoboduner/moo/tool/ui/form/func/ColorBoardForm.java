@@ -5,6 +5,8 @@ import cn.hutool.log.LogFactory;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.util.ColorUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
@@ -14,6 +16,8 @@ import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+
+import static java.awt.GraphicsDevice.WindowTranslucency.TRANSLUCENT;
 
 /**
  * <pre>
@@ -26,7 +30,7 @@ import java.awt.event.MouseEvent;
 @Getter
 public class ColorBoardForm {
     private JPanel colorBoardPanel;
-    private JButton 取色器Button;
+    private JButton pickerButton;
     private JComboBox comboBox1;
     private JTextField colorCodeTextField;
     private JButton 复制Button;
@@ -45,6 +49,17 @@ public class ColorBoardForm {
 
     private ColorBoardForm() {
         UndoUtil.register(this);
+
+        pickerButton.addActionListener(e -> {
+            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            GraphicsDevice gd = ge.getDefaultScreenDevice();
+            if (!gd.isWindowTranslucencySupported(TRANSLUCENT)) {
+                JOptionPane.showMessageDialog(colorBoardForm.getColorBoardPanel(), "当前系统环境不支持！", "系统环境", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            App.mainFrame.setVisible(false);
+            ColorPickerFrame.showPicker();
+        });
     }
 
     public static ColorBoardForm getInstance() {
@@ -102,8 +117,7 @@ public class ColorBoardForm {
             public void mouseClicked(MouseEvent e) {
                 JPanel clickedPanel = (JPanel) e.getComponent();
                 Color background = clickedPanel.getBackground();
-                colorBoardForm.getShowColorPanel().setBackground(background);
-                colorBoardForm.getColorCodeTextField().setText(ColorUtil.toHex(background));
+                setSelectedColor(background);
                 super.mouseClicked(e);
             }
 
@@ -121,6 +135,12 @@ public class ColorBoardForm {
                 super.mouseExited(e);
             }
         });
+    }
+
+    public static void setSelectedColor(Color color) {
+        colorBoardForm.getShowColorPanel().setBackground(color);
+        colorBoardForm.getColorCodeTextField().setText(ColorUtil.toHex(color));
+        colorBoardForm.getColorCodeTextField().grabFocus();
     }
 
     {
@@ -174,10 +194,10 @@ public class ColorBoardForm {
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new GridLayoutManager(1, 7, new Insets(10, 10, 10, 10), -1, -1));
         colorBoardPanel.add(panel3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        取色器Button = new JButton();
-        取色器Button.setIcon(new ImageIcon(getClass().getResource("/icon/color_picker.png")));
-        取色器Button.setText("取色器");
-        panel3.add(取色器Button, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        pickerButton = new JButton();
+        pickerButton.setIcon(new ImageIcon(getClass().getResource("/icon/color_picker.png")));
+        pickerButton.setText("取色器");
+        panel3.add(pickerButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer1 = new Spacer();
         panel3.add(spacer1, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         comboBox1 = new JComboBox();
