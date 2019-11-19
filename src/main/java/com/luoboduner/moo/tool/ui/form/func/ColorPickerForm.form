@@ -20,7 +20,7 @@
           </grid>
         </constraints>
         <properties/>
-        <border type="none"/>
+        <border type="etched"/>
         <children/>
       </grid>
       <grid id="81e74" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
