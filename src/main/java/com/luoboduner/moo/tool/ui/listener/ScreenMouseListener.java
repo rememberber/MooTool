@@ -1,6 +1,7 @@
 package com.luoboduner.moo.tool.ui.listener;
 
-import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.Init;
+import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.ColorBoardForm;
 import com.luoboduner.moo.tool.ui.form.func.ColorPickerForm;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
@@ -34,7 +35,8 @@ public class ScreenMouseListener implements MouseInputListener {
         ColorPickerForm.getInstance().getCurrentColorLabel().setText(ColorUtil.toHex(color));
         ColorPickerFrame.getInstance().setVisible(false);
         ScreenFrame.getInstance().setVisible(false);
-        App.mainFrame.setVisible(true);
+        MainWindow.getInstance().getTabbedPane().setSelectedIndex(10);
+        Init.showMainFrame();
     }
 
     @Override

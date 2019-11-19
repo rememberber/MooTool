@@ -18,6 +18,7 @@ import com.luoboduner.moo.tool.ui.form.func.NetForm;
 import com.luoboduner.moo.tool.ui.form.func.QrCodeForm;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
+import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UIUtil;
@@ -32,6 +33,8 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Enumeration;
+
+import static java.awt.GraphicsDevice.WindowTranslucency.TRANSLUCENT;
 
 /**
  * <pre>
@@ -169,16 +172,27 @@ public class Init {
                 App.popupMenu.setFont(App.mainFrame.getContentPane().getFont());
 
                 MenuItem openItem = new MenuItem("MooTool");
+                MenuItem colorPickerItem = new MenuItem("取色器");
                 MenuItem exitItem = new MenuItem("Quit");
 
                 openItem.addActionListener(e -> {
                     showMainFrame();
+                });
+                colorPickerItem.addActionListener(e -> {
+                    GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+                    GraphicsDevice gd = ge.getDefaultScreenDevice();
+                    if (gd.isWindowTranslucencySupported(TRANSLUCENT)) {
+                        App.mainFrame.setVisible(false);
+                        ColorPickerFrame.showPicker();
+                    }
                 });
                 exitItem.addActionListener(e -> {
                     shutdown();
                 });
 
                 App.popupMenu.add(openItem);
+                App.popupMenu.addSeparator();
+                App.popupMenu.add(colorPickerItem);
                 App.popupMenu.addSeparator();
                 App.popupMenu.add(exitItem);
 
