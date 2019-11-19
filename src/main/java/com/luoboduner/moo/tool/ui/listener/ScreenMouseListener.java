@@ -69,9 +69,9 @@ public class ScreenMouseListener implements MouseInputListener {
         int y = point.y;
 
         Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
-        if (x < 220 || y < 230) {
+        if (x < 250 && y < 300) {
             ColorPickerFrame.getInstance().setLocation((int) screen.getWidth() - 220, (int) screen.getHeight() - 300);
-        } else if (x > (screen.getWidth() - 220) || y > (screen.getHeight() - 300)) {
+        } else if (x > (screen.getWidth() - 250) && y > (screen.getHeight() - 350)) {
             ColorPickerFrame.getInstance().setLocation(10, 10);
         }
         Color color = robot.getPixelColor(x, y);
