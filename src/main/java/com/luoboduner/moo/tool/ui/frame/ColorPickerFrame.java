@@ -34,15 +34,14 @@ public class ColorPickerFrame extends JFrame {
     }
 
     public static void showPicker() {
-        ColorPickerFrame.getInstance().setVisible(true);
         ScreenFrame.getInstance().setVisible(true);
+        ColorPickerFrame.getInstance().setVisible(true);
     }
 
     private void init() {
         setDefaultLookAndFeelDecorated(true);
         setUndecorated(true);
         setAutoRequestFocus(false);
-        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setLayout(new GridBagLayout());
         setAlwaysOnTop(true);
 

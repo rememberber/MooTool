@@ -24,11 +24,11 @@ public class ScreenFrame extends JFrame {
     }
 
     private void init() {
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        FrameUtil.setFrameIcon(this);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setAlwaysOnTop(false);
-        setAutoRequestFocus(false);
+        setAutoRequestFocus(true);
         setUndecorated(true);
-        setDefaultLookAndFeelDecorated(true);
         setOpacity(0.05f);
         setPreferredSize(Toolkit.getDefaultToolkit().getScreenSize());
         Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
