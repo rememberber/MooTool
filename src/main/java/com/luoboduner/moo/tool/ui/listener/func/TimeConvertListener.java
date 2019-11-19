@@ -73,7 +73,7 @@ public class TimeConvertListener {
             try {
                 timeConvertForm.getCopyCurrentGmtButton().setEnabled(false);
                 ClipboardUtil.setStr(timeConvertForm.getCurrentGmtLabel().getText());
-                JOptionPane.showMessageDialog(timeConvertForm.getTimeConvertPanel(), "内容已经复制到剪贴板！", "复制成功", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(timeConvertForm.getTimeConvertPanel(), "已复制！", "成功", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e1) {
                 logger.error(e1);
             } finally {
@@ -84,7 +84,7 @@ public class TimeConvertListener {
             try {
                 timeConvertForm.getCopyCurrentTimestampButton().setEnabled(false);
                 ClipboardUtil.setStr(timeConvertForm.getCurrentTimestampLabel().getText());
-                JOptionPane.showMessageDialog(timeConvertForm.getTimeConvertPanel(), "内容已经复制到剪贴板！", "复制成功", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(timeConvertForm.getTimeConvertPanel(), "已复制！", "成功", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e1) {
                 logger.error(e1);
             } finally {
@@ -95,7 +95,7 @@ public class TimeConvertListener {
             try {
                 timeConvertForm.getCopyGeneratedTimestampButton().setEnabled(false);
                 ClipboardUtil.setStr(timeConvertForm.getTimestampTextField().getText());
-                JOptionPane.showMessageDialog(timeConvertForm.getTimeConvertPanel(), "内容已经复制到剪贴板！", "复制成功", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(timeConvertForm.getTimeConvertPanel(), "已复制！", "成功", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e1) {
                 logger.error(e1);
             } finally {
@@ -106,7 +106,7 @@ public class TimeConvertListener {
             try {
                 timeConvertForm.getCopyGeneratedLocalTimeButton().setEnabled(false);
                 ClipboardUtil.setStr(timeConvertForm.getGmtTextField().getText());
-                JOptionPane.showMessageDialog(timeConvertForm.getTimeConvertPanel(), "内容已经复制到剪贴板！", "复制成功", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(timeConvertForm.getTimeConvertPanel(), "已复制！", "成功", JOptionPane.INFORMATION_MESSAGE);
             } catch (Exception e1) {
                 logger.error(e1);
             } finally {

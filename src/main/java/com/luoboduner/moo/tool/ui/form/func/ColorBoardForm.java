@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
+import cn.hutool.core.swing.clipboard.ClipboardUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.intellij.uiDesigner.core.GridConstraints;
@@ -33,7 +34,7 @@ public class ColorBoardForm {
     private JButton pickerButton;
     private JComboBox comboBox1;
     private JTextField colorCodeTextField;
-    private JButton 复制Button;
+    private JButton copyButton;
     private JPanel showColorPanel;
     private JButton 收藏Button;
     private JButton 收藏夹Button;
@@ -59,6 +60,17 @@ public class ColorBoardForm {
             }
             App.mainFrame.setVisible(false);
             ColorPickerFrame.showPicker();
+        });
+        copyButton.addActionListener(e -> {
+            try {
+                colorBoardForm.getCopyButton().setEnabled(false);
+                ClipboardUtil.setStr(colorBoardForm.getColorCodeTextField().getText());
+                JOptionPane.showMessageDialog(colorBoardForm.getColorBoardPanel(), "已复制！", "成功", JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception e1) {
+                logger.error(e1);
+            } finally {
+                colorBoardForm.getCopyButton().setEnabled(true);
+            }
         });
     }
 
@@ -209,10 +221,10 @@ public class ColorBoardForm {
         panel3.add(comboBox1, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         colorCodeTextField = new JTextField();
         panel3.add(colorCodeTextField, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(100, -1), null, 0, false));
-        复制Button = new JButton();
-        复制Button.setIcon(new ImageIcon(getClass().getResource("/icon/copy.png")));
-        复制Button.setText("复制");
-        panel3.add(复制Button, new GridConstraints(0, 5, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        copyButton = new JButton();
+        copyButton.setIcon(new ImageIcon(getClass().getResource("/icon/copy.png")));
+        copyButton.setText("复制");
+        panel3.add(copyButton, new GridConstraints(0, 5, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         收藏Button = new JButton();
         收藏Button.setIcon(new ImageIcon(getClass().getResource("/icon/star-empty.png")));
         收藏Button.setText("收藏");
