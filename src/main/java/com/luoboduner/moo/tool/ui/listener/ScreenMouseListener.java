@@ -20,20 +20,14 @@ import java.awt.event.MouseEvent;
  * @since 2019/11/19.
  */
 public class ScreenMouseListener implements MouseInputListener {
-    private Robot robot;
+    private static Robot robot;
 
     @Override
     public void mouseClicked(MouseEvent e) {
-        try {
-            robot = new Robot();
-        } catch (AWTException eg) {
-            eg.printStackTrace();
-        }
+        robot = getRobot();
         Point point = e.getLocationOnScreen();
-        int x = point.x;
-        int y = point.y;
         ScreenFrame.getInstance().setVisible(false);
-        Color color = robot.getPixelColor(x, y);
+        Color color = robot.getPixelColor(point.x, point.y);
 
         ColorBoardForm.setSelectedColor(color);
         ColorPickerForm.getInstance().getCurrentColorPanel().setBackground(color);
@@ -45,20 +39,6 @@ public class ScreenMouseListener implements MouseInputListener {
 
     @Override
     public void mousePressed(MouseEvent e) {
-        try {
-            robot = new Robot();
-        } catch (AWTException eg) {
-            eg.printStackTrace();
-        }
-        Point point = e.getLocationOnScreen();
-        int x = point.x;
-        int y = point.y;
-        ScreenFrame.getInstance().setVisible(false);
-        Color color = robot.getPixelColor(x, y);
-
-        ColorPickerForm.getInstance().getCurrentColorPanel().setBackground(color);
-        ColorPickerForm.getInstance().getCurrentColorLabel().setText(ColorUtil.toHex(color));
-        ScreenFrame.getInstance().setVisible(false);
     }
 
     @Override
@@ -83,11 +63,7 @@ public class ScreenMouseListener implements MouseInputListener {
 
     @Override
     public void mouseMoved(MouseEvent e) {
-        try {
-            robot = new Robot();
-        } catch (AWTException eg) {
-            eg.printStackTrace();
-        }
+        robot = getRobot();
         Point point = e.getLocationOnScreen();
         int x = point.x;
         int y = point.y;
@@ -103,5 +79,16 @@ public class ScreenMouseListener implements MouseInputListener {
         ColorPickerForm.getInstance().getZoomPanel().setBackground(color);
         ColorPickerForm.getInstance().getCurrentColorPanel().setBackground(color);
         ColorPickerForm.getInstance().getCurrentColorLabel().setText(ColorUtil.toHex(color));
+    }
+
+    private static Robot getRobot() {
+        if (robot == null) {
+            try {
+                robot = new Robot();
+            } catch (AWTException eg) {
+                eg.printStackTrace();
+            }
+        }
+        return robot;
     }
 }

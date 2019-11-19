@@ -28,15 +28,15 @@ public class ScreenFrame extends JFrame {
         setName(UiConsts.APP_NAME);
         setTitle(UiConsts.APP_NAME + "-ColorPickerScreen");
         FrameUtil.setFrameIcon(this);
-        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         setAlwaysOnTop(false);
         setAutoRequestFocus(true);
         setUndecorated(true);
-        setOpacity(0.05f);
+        setOpacity(0.01f);
         Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
         setPreferredSize(screen);
         setBounds(0, 0, (int) screen.getWidth(), (int) screen.getHeight());
-        addMouseListener(new ScreenMouseListener());
-        addMouseMotionListener(new ScreenMouseListener());
+        ScreenMouseListener screenMouseListener = new ScreenMouseListener();
+        addMouseListener(screenMouseListener);
+        addMouseMotionListener(screenMouseListener);
     }
 }
