@@ -116,6 +116,8 @@ public class ColorPickerFrame extends JFrame {
         pack();
         setVisible(true);
 
+        setLocation(10, 10);
+
         ScreenFrame.getInstance().setVisible(true);
     }
 
@@ -191,6 +193,13 @@ public class ColorPickerFrame extends JFrame {
             Point point = e.getLocationOnScreen();
             int x = point.x;
             int y = point.y;
+
+            Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+            if (x < 220 || y < 230) {
+                ColorPickerFrame.getInstance().setLocation((int) screen.getWidth() - 220, (int) screen.getHeight() - 300);
+            } else if (x > (screen.getWidth() - 220) || y > (screen.getHeight() - 300)) {
+                ColorPickerFrame.getInstance().setLocation(10, 10);
+            }
             Color color = robot.getPixelColor(x, y);
 
             ColorPickerForm.getInstance().getZoomPanel().setBackground(color);
