@@ -13,7 +13,7 @@ import java.awt.event.MouseEvent;
 
 /**
  * <pre>
- * Description
+ * ScreenMouseListener
  * </pre>
  *
  * @author <a href="https://github.com/rememberber">RememBerBer</a>
