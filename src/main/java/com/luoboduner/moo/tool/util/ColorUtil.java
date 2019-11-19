@@ -53,4 +53,45 @@ public class ColorUtil {
         return stringBuilder.toString().toUpperCase();
     }
 
+    /**
+     * color RGB String to Hex String
+     *
+     * @param rgb
+     * @return
+     */
+    public static String rgbStrToHex(String rgb) {
+        rgb = rgb.replace("，", ",").replace(" ", "");
+        String[] rgbArray = rgb.split(",");
+        String r, g, b;
+        StringBuilder stringBuilder = new StringBuilder();
+        r = Integer.toHexString(Integer.parseInt(rgbArray[0]));
+        g = Integer.toHexString(Integer.parseInt(rgbArray[1]));
+        b = Integer.toHexString(Integer.parseInt(rgbArray[2]));
+        r = r.length() == 1 ? "0" + r : r;
+        g = g.length() == 1 ? "0" + g : g;
+        b = b.length() == 1 ? "0" + b : b;
+        stringBuilder.append(r);
+        stringBuilder.append(g);
+        stringBuilder.append(b);
+        return stringBuilder.toString().toUpperCase();
+    }
+
+    /**
+     * color object to RGB String
+     *
+     * @param color
+     * @return
+     */
+    public static String toRgbStr(Color color) {
+        String r, g, b;
+        StringBuilder stringBuilder = new StringBuilder();
+        r = String.valueOf(color.getRed());
+        g = String.valueOf(color.getGreen());
+        b = String.valueOf(color.getBlue());
+        stringBuilder.append(r).append(",");
+        stringBuilder.append(g).append(",");
+        stringBuilder.append(b);
+        return stringBuilder.toString().toUpperCase();
+    }
+
 }

@@ -15,6 +15,7 @@ import lombok.Getter;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.awt.event.ItemEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
@@ -32,7 +33,7 @@ import static java.awt.GraphicsDevice.WindowTranslucency.TRANSLUCENT;
 public class ColorBoardForm {
     private JPanel colorBoardPanel;
     private JButton pickerButton;
-    private JComboBox comboBox1;
+    private JComboBox codeTypeComboBox;
     private JTextField colorCodeTextField;
     private JButton copyButton;
     private JPanel showColorPanel;
@@ -70,6 +71,23 @@ public class ColorBoardForm {
                 logger.error(e1);
             } finally {
                 colorBoardForm.getCopyButton().setEnabled(true);
+            }
+        });
+        codeTypeComboBox.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                String codeType = e.getItem().toString();
+                String code = colorBoardForm.getColorCodeTextField().getText();
+                if (code.contains(",")) {
+                    code = ColorUtil.rgbStrToHex(code);
+                }
+                if ("HTML".equals(codeType)) {
+                    code = code.toUpperCase();
+                } else if ("html".equals(codeType)) {
+                    code = code.toLowerCase();
+                } else if ("RGB".equals(codeType)) {
+                    code = ColorUtil.toRgbStr(ColorUtil.fromHex(code));
+                }
+                colorBoardForm.getColorCodeTextField().setText(code);
             }
         });
     }
@@ -212,15 +230,15 @@ public class ColorBoardForm {
         panel3.add(pickerButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer1 = new Spacer();
         panel3.add(spacer1, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        comboBox1 = new JComboBox();
+        codeTypeComboBox = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel2 = new DefaultComboBoxModel();
         defaultComboBoxModel2.addElement("HTML");
         defaultComboBoxModel2.addElement("html");
         defaultComboBoxModel2.addElement("RGB");
-        comboBox1.setModel(defaultComboBoxModel2);
-        panel3.add(comboBox1, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        codeTypeComboBox.setModel(defaultComboBoxModel2);
+        panel3.add(codeTypeComboBox, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         colorCodeTextField = new JTextField();
-        panel3.add(colorCodeTextField, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(100, -1), null, 0, false));
+        panel3.add(colorCodeTextField, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(180, -1), null, 0, false));
         copyButton = new JButton();
         copyButton.setIcon(new ImageIcon(getClass().getResource("/icon/copy.png")));
         copyButton.setText("复制");

@@ -4,6 +4,7 @@ import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.form.func.ColorPickerForm;
 
 import javax.swing.*;
+import java.awt.*;
 
 /**
  * <pre>
@@ -30,6 +31,7 @@ public class ColorPickerFrame extends JFrame {
 
     public static void showPicker() {
         ScreenFrame.getInstance().setVisible(true);
+        ScreenFrame.getInstance().setCursor(new Cursor(Cursor.CROSSHAIR_CURSOR));
         ColorPickerFrame.getInstance().setVisible(true);
     }
 
