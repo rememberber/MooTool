@@ -209,17 +209,15 @@ public class Init {
                     public void mouseClicked(MouseEvent e) {
                         switch (e.getButton()) {
                             case MouseEvent.BUTTON1: {
-                                App.mainFrame.setVisible(true);
-                                App.mainFrame.setExtendedState(JFrame.NORMAL);
-                                App.mainFrame.requestFocus();
+                                showMainFrame();
                                 break;
                             }
                             case MouseEvent.BUTTON2: {
-                                logger.debug("托盘图标被鼠标中键被点击");
+                                logger.debug("托盘图标中键事件");
                                 break;
                             }
                             case MouseEvent.BUTTON3: {
-                                logger.debug("托盘图标被鼠标右键被点击");
+                                logger.debug("托盘图标右键事件");
                                 break;
                             }
                             default: {
@@ -244,8 +242,12 @@ public class Init {
     }
 
     public static void showMainFrame() {
-        App.mainFrame.setExtendedState(JFrame.NORMAL);
         App.mainFrame.setVisible(true);
+        if (App.mainFrame.getExtendedState() == Frame.ICONIFIED) {
+            App.mainFrame.setExtendedState(Frame.NORMAL);
+        } else if (App.mainFrame.getExtendedState() == 7) {
+            App.mainFrame.setExtendedState(Frame.MAXIMIZED_BOTH);
+        }
         App.mainFrame.requestFocus();
     }
 
