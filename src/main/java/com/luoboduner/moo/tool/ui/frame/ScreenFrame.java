@@ -20,8 +20,12 @@ public class ScreenFrame extends JFrame {
             screenFrame = new ScreenFrame();
             screenFrame.init();
         }
-
         return screenFrame;
+    }
+
+    public static void exit() {
+        getInstance().setVisible(false);
+        screenFrame = null;
     }
 
     private void init() {
