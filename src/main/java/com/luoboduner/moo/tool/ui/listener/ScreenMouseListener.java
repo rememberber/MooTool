@@ -76,10 +76,9 @@ public class ScreenMouseListener implements MouseInputListener {
         } else if (x > (screen.getWidth() - 250) && y > (screen.getHeight() - 350)) {
             ColorPickerFrame.getInstance().setLocation(10, 10);
         }
-//        ScreenFrame.getInstance().setOpacity(0);
-        Color color = robot.getPixelColor(x, y);
-        ScreenFrame.getInstance().setOpacity(0.01f);
 
+        // 由于不透明度问题 颜色值存在误差
+        Color color = robot.getPixelColor(x, y);
         ColorPickerForm.getInstance().getZoomPanel().setBackground(color);
         ColorPickerForm.getInstance().getCurrentColorPanel().setBackground(color);
         ColorPickerForm.getInstance().getCurrentColorLabel().setText(ColorUtil.toHex(color));
