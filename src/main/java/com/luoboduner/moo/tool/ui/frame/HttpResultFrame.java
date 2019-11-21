@@ -1,10 +1,7 @@
 package com.luoboduner.moo.tool.ui.frame;
 
-import com.apple.eawt.Application;
-import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.form.func.HttpResultForm;
 import com.luoboduner.moo.tool.util.ComponentUtil;
-import com.luoboduner.moo.tool.util.SystemUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -28,11 +25,6 @@ public class HttpResultFrame extends JFrame {
         this.setName(title);
         this.setTitle(title);
         FrameUtil.setFrameIcon(this);
-        // Mac系统Dock图标
-        if (SystemUtil.isMacOs()) {
-            Application application = Application.getApplication();
-            application.setDockIconImage(UiConsts.IMAGE_LOGO_1024);
-        }
 
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.6, 0.66);
     }

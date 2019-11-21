@@ -8,6 +8,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
+import com.luoboduner.moo.tool.ui.frame.FavoriteColorFrame;
 import com.luoboduner.moo.tool.util.ColorUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
@@ -38,7 +39,7 @@ public class ColorBoardForm {
     private JButton copyButton;
     private JPanel showColorPanel;
     private JButton 收藏Button;
-    private JButton 收藏夹Button;
+    private JButton favoriteBookButton;
     private JPanel standardColorPanel;
     private JPanel themeColorPanel;
     private JComboBox comboBox2;
@@ -90,6 +91,7 @@ public class ColorBoardForm {
                 colorBoardForm.getColorCodeTextField().setText(code);
             }
         });
+        favoriteBookButton.addActionListener(e -> FavoriteColorFrame.showWindow());
     }
 
     public static ColorBoardForm getInstance() {
@@ -247,10 +249,10 @@ public class ColorBoardForm {
         收藏Button.setIcon(new ImageIcon(getClass().getResource("/icon/star-empty.png")));
         收藏Button.setText("收藏");
         panel3.add(收藏Button, new GridConstraints(0, 6, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        收藏夹Button = new JButton();
-        收藏夹Button.setIcon(new ImageIcon(getClass().getResource("/icon/favorite.png")));
-        收藏夹Button.setText("收藏夹");
-        panel3.add(收藏夹Button, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        favoriteBookButton = new JButton();
+        favoriteBookButton.setIcon(new ImageIcon(getClass().getResource("/icon/favorite.png")));
+        favoriteBookButton.setText("收藏夹");
+        panel3.add(favoriteBookButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JSeparator separator1 = new JSeparator();
         colorBoardPanel.add(separator1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, 1, 1, null, null, null, 0, false));
     }
