@@ -5,6 +5,8 @@ import com.luoboduner.moo.tool.util.ComponentUtil;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.WindowEvent;
+import java.awt.event.WindowListener;
 
 /**
  * <pre>
@@ -16,6 +18,46 @@ import java.awt.*;
  */
 public class FavoriteColorFrame extends JFrame {
     private static FavoriteColorFrame favoriteColorFrame;
+
+    public FavoriteColorFrame() throws HeadlessException {
+        addWindowListener(new WindowListener() {
+
+            @Override
+            public void windowOpened(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowIconified(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowDeiconified(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowDeactivated(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowClosing(WindowEvent e) {
+                exit();
+            }
+
+            @Override
+            public void windowClosed(WindowEvent e) {
+
+            }
+
+            @Override
+            public void windowActivated(WindowEvent e) {
+
+            }
+        });
+    }
 
     public void init() {
         String title = "调色板-收藏夹";
@@ -44,5 +86,11 @@ public class FavoriteColorFrame extends JFrame {
 
     public static void showWindow() {
         getInstance().setVisible(true);
+    }
+
+    public static void exit() {
+        getInstance().setVisible(false);
+        favoriteColorFrame = null;
+        FavoriteColorForm.favoriteColorForm = null;
     }
 }

@@ -10,6 +10,7 @@ import com.luoboduner.moo.tool.domain.TFavoriteColorItem;
 import com.luoboduner.moo.tool.domain.TFavoriteColorList;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.TableInCellColorBlockRenderer;
+import com.luoboduner.moo.tool.ui.frame.FavoriteColorFrame;
 import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
@@ -40,7 +41,7 @@ public class FavoriteColorForm {
     private JTable itemTable;
     private JButton button2;
 
-    private static FavoriteColorForm favoriteColorForm;
+    public static FavoriteColorForm favoriteColorForm;
 
     private static TFavoriteColorListMapper favoriteColorListMapper = MybatisUtil.getSqlSession().getMapper(TFavoriteColorListMapper.class);
     private static TFavoriteColorItemMapper favoriteColorItemMapper = MybatisUtil.getSqlSession().getMapper(TFavoriteColorItemMapper.class);
@@ -61,6 +62,8 @@ public class FavoriteColorForm {
                 super.mousePressed(e);
             }
         });
+
+        this.getFavoriteColorPanel().registerKeyboardAction(e -> FavoriteColorFrame.exit(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
     }
 
     public void init() {
