@@ -42,13 +42,17 @@ public class ColorBoardForm {
     private JButton favoriteBookButton;
     private JPanel standardColorPanel;
     private JPanel themeColorPanel;
-    private JComboBox comboBox2;
+    private JComboBox themeComboBox;
     private JPanel themeColorMainPanel;
     private JPanel themeColorSubPanel;
 
     private static ColorBoardForm colorBoardForm;
 
     private static final Log logger = LogFactory.get();
+
+    private static final Dimension DIMENSION_COLOR_BLOCK = new Dimension(50, 50);
+
+    private static final Dimension DIMENSION_SUB_PANEL = new Dimension(50, 250);
 
     private ColorBoardForm() {
         UndoUtil.register(this);
@@ -76,22 +80,35 @@ public class ColorBoardForm {
         });
         codeTypeComboBox.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
-                String codeType = e.getItem().toString();
                 String code = colorBoardForm.getColorCodeTextField().getText();
-                if (code.contains(",")) {
-                    code = ColorUtil.rgbStrToHex(code);
-                }
-                if ("HTML".equals(codeType)) {
-                    code = code.toUpperCase();
-                } else if ("html".equals(codeType)) {
-                    code = code.toLowerCase();
-                } else if ("RGB".equals(codeType)) {
-                    code = ColorUtil.toRgbStr(ColorUtil.fromHex(code));
-                }
-                colorBoardForm.getColorCodeTextField().setText(code);
+                setColorCode(code);
+                App.config.setColorCodeType(e.getItem().toString());
+                App.config.save();
+            }
+        });
+        themeComboBox.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                fillColorBlocks();
+                App.config.setColorTheme(e.getItem().toString());
+                App.config.save();
             }
         });
         favoriteBookButton.addActionListener(e -> FavoriteColorFrame.showWindow());
+    }
+
+    private static void setColorCode(String code) {
+        String codeType = (String) colorBoardForm.getCodeTypeComboBox().getSelectedItem();
+        if (code.contains(",")) {
+            code = ColorUtil.rgbStrToHex(code);
+        }
+        if ("HTML".equals(codeType)) {
+            code = code.toUpperCase();
+        } else if ("html".equals(codeType)) {
+            code = code.toLowerCase();
+        } else if ("RGB".equals(codeType)) {
+            code = ColorUtil.toRgbStr(ColorUtil.fromHex(code));
+        }
+        colorBoardForm.getColorCodeTextField().setText(code);
     }
 
     public static ColorBoardForm getInstance() {
@@ -103,43 +120,69 @@ public class ColorBoardForm {
 
     public static void init() {
         colorBoardForm = getInstance();
-        colorBoardForm.getShowColorPanel().setBackground(new Color(166, 166, 166));
+        colorBoardForm.getColorCodeTextField().setText(App.config.getLastSelectedColor());
+        colorBoardForm.getShowColorPanel().setBackground(ColorUtil.fromHex(App.config.getLastSelectedColor()));
+        colorBoardForm.getCodeTypeComboBox().setSelectedItem(App.config.getColorCodeType());
+        colorBoardForm.getThemeComboBox().setSelectedItem(App.config.getColorTheme());
 
-        Dimension dimensionColorBlock = new Dimension(50, 50);
-        Dimension dimensionSubPanel = new Dimension(50, 250);
+        fillColorBlocks();
+    }
 
+    private static void fillColorBlocks() {
+        colorBoardForm.getStandardColorPanel().removeAll();
         for (String colorHex : ColorConsts.STANDARD) {
             JPanel panel = new JPanel();
             panel.setBackground(ColorUtil.fromHex(colorHex));
-            panel.setSize(dimensionColorBlock);
-            panel.setPreferredSize(dimensionColorBlock);
+            panel.setSize(DIMENSION_COLOR_BLOCK);
+            panel.setPreferredSize(DIMENSION_COLOR_BLOCK);
             addColorSelectionListener(panel);
             colorBoardForm.getStandardColorPanel().add(panel);
+            colorBoardForm.getStandardColorPanel().updateUI();
         }
 
-        for (String colorHex : ColorConsts.DEFAULT_MAIN) {
+        String theme = (String) colorBoardForm.getThemeComboBox().getSelectedItem();
+
+        String[] mainColors;
+        String[][] subColors;
+        if ("主题1".equals(theme)) {
+            mainColors = ColorConsts.THEME_1_MAIN;
+            subColors = ColorConsts.THEME_1_SUB;
+        } else if ("主题2".equals(theme)) {
+            mainColors = ColorConsts.THEME_2_MAIN;
+            subColors = ColorConsts.THEME_2_SUB;
+        } else {
+            mainColors = ColorConsts.THEME_DEFAULT_MAIN;
+            subColors = ColorConsts.THEME_DEFAULT_SUB;
+        }
+
+        colorBoardForm.getThemeColorMainPanel().removeAll();
+        for (String colorHex : mainColors) {
             JPanel panel = new JPanel();
             panel.setBackground(ColorUtil.fromHex(colorHex));
-            panel.setSize(dimensionColorBlock);
-            panel.setPreferredSize(dimensionColorBlock);
+            panel.setSize(DIMENSION_COLOR_BLOCK);
+            panel.setPreferredSize(DIMENSION_COLOR_BLOCK);
             addColorSelectionListener(panel);
             colorBoardForm.getThemeColorMainPanel().add(panel);
+            colorBoardForm.getThemeColorMainPanel().updateUI();
         }
 
-        for (String[] colors : ColorConsts.DEFAULT_SUB) {
+        colorBoardForm.getThemeColorSubPanel().removeAll();
+        for (String[] colors : subColors) {
             JPanel subPanel = new JPanel();
             subPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
-            subPanel.setSize(dimensionSubPanel);
-            subPanel.setPreferredSize(dimensionSubPanel);
+            subPanel.setSize(DIMENSION_SUB_PANEL);
+            subPanel.setPreferredSize(DIMENSION_SUB_PANEL);
             for (String colorHex : colors) {
                 JPanel panel = new JPanel();
                 panel.setBackground(ColorUtil.fromHex(colorHex));
-                panel.setSize(dimensionColorBlock);
-                panel.setPreferredSize(dimensionColorBlock);
+                panel.setSize(DIMENSION_COLOR_BLOCK);
+                panel.setPreferredSize(DIMENSION_COLOR_BLOCK);
                 addColorSelectionListener(panel);
                 subPanel.add(panel);
+                colorBoardForm.getThemeColorSubPanel().updateUI();
             }
             colorBoardForm.getThemeColorSubPanel().add(subPanel);
+            colorBoardForm.getThemeColorSubPanel().updateUI();
         }
     }
 
@@ -170,9 +213,12 @@ public class ColorBoardForm {
     }
 
     public static void setSelectedColor(Color color) {
+        String hex = ColorUtil.toHex(color);
         colorBoardForm.getShowColorPanel().setBackground(color);
-        colorBoardForm.getColorCodeTextField().setText(ColorUtil.toHex(color));
+        setColorCode(hex);
         colorBoardForm.getColorCodeTextField().grabFocus();
+        App.config.setLastSelectedColor(hex);
+        App.config.save();
     }
 
     {
@@ -202,13 +248,13 @@ public class ColorBoardForm {
         themeColorPanel.setLayout(new GridLayoutManager(3, 1, new Insets(5, 5, 5, 5), -1, -1));
         panel2.add(themeColorPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, 1, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         themeColorPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "主题颜色", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, themeColorPanel.getFont())));
-        comboBox2 = new JComboBox();
+        themeComboBox = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
         defaultComboBoxModel1.addElement("默认");
         defaultComboBoxModel1.addElement("主题1");
         defaultComboBoxModel1.addElement("主题2");
-        comboBox2.setModel(defaultComboBoxModel1);
-        themeColorPanel.add(comboBox2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, 1, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        themeComboBox.setModel(defaultComboBoxModel1);
+        themeColorPanel.add(themeComboBox, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, 1, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         themeColorMainPanel = new JPanel();
         themeColorMainPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
         themeColorPanel.add(themeColorMainPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));

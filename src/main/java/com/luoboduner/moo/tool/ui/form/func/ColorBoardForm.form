@@ -34,7 +34,7 @@
                   <font style="1"/>
                 </border>
                 <children>
-                  <component id="a82c" class="javax.swing.JComboBox" binding="comboBox2" default-binding="true">
+                  <component id="a82c" class="javax.swing.JComboBox" binding="themeComboBox">
                     <constraints>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="1" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
