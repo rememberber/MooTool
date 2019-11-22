@@ -99,4 +99,4 @@ create table t_favorite_color_item
 );
 
 create unique index t_favorite_color_item_uindex
-    on t_favorite_color_item (name);
+    on t_favorite_color_item (list_id,name);
