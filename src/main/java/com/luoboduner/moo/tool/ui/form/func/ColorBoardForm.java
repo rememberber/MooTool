@@ -7,6 +7,7 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.dialog.FavoriteColorDialog;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.frame.FavoriteColorFrame;
 import com.luoboduner.moo.tool.util.ColorUtil;
@@ -38,7 +39,7 @@ public class ColorBoardForm {
     private JTextField colorCodeTextField;
     private JButton copyButton;
     private JPanel showColorPanel;
-    private JButton 收藏Button;
+    private JButton favoriteButton;
     private JButton favoriteBookButton;
     private JPanel standardColorPanel;
     private JPanel themeColorPanel;
@@ -94,6 +95,12 @@ public class ColorBoardForm {
             }
         });
         favoriteBookButton.addActionListener(e -> FavoriteColorFrame.showWindow());
+        favoriteButton.addActionListener(e -> {
+            FavoriteColorDialog favoriteColorDialog = new FavoriteColorDialog();
+            favoriteColorDialog.pack();
+            favoriteColorDialog.init(colorBoardForm.getShowColorPanel().getBackground());
+            favoriteColorDialog.setVisible(true);
+        });
     }
 
     private static void setColorCode(String code) {
@@ -291,10 +298,10 @@ public class ColorBoardForm {
         copyButton.setIcon(new ImageIcon(getClass().getResource("/icon/copy.png")));
         copyButton.setText("复制");
         panel3.add(copyButton, new GridConstraints(0, 5, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        收藏Button = new JButton();
-        收藏Button.setIcon(new ImageIcon(getClass().getResource("/icon/star-empty.png")));
-        收藏Button.setText("收藏");
-        panel3.add(收藏Button, new GridConstraints(0, 6, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        favoriteButton = new JButton();
+        favoriteButton.setIcon(new ImageIcon(getClass().getResource("/icon/star-empty.png")));
+        favoriteButton.setText("收藏");
+        panel3.add(favoriteButton, new GridConstraints(0, 6, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         favoriteBookButton = new JButton();
         favoriteBookButton.setIcon(new ImageIcon(getClass().getResource("/icon/favorite.png")));
         favoriteBookButton.setText("收藏夹");

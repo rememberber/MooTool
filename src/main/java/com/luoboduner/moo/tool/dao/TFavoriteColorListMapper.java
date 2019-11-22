@@ -2,6 +2,8 @@ package com.luoboduner.moo.tool.dao;
 
 import com.luoboduner.moo.tool.domain.TFavoriteColorList;
 
+import java.util.List;
+
 public interface TFavoriteColorListMapper {
     int deleteByPrimaryKey(Integer id);
 
@@ -14,4 +16,8 @@ public interface TFavoriteColorListMapper {
     int updateByPrimaryKeySelective(TFavoriteColorList record);
 
     int updateByPrimaryKey(TFavoriteColorList record);
+
+    List<TFavoriteColorList> selectAll();
+
+    TFavoriteColorList selectByTitle(String title);
 }

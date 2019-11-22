@@ -11,7 +11,7 @@ public class TFavoriteColorItem implements Serializable {
 
     private String value;
 
-    private Integer sortNum;
+    private long sortNum;
 
     private String remark;
 
@@ -53,11 +53,11 @@ public class TFavoriteColorItem implements Serializable {
         this.value = value == null ? null : value.trim();
     }
 
-    public Integer getSortNum() {
+    public long getSortNum() {
         return sortNum;
     }
 
-    public void setSortNum(Integer sortNum) {
+    public void setSortNum(long sortNum) {
         this.sortNum = sortNum;
     }
 
