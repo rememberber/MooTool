@@ -20,6 +20,13 @@
         from t_favorite_color_item
         where id = #{id,jdbcType=INTEGER}
     </select>
+    <select id="selectByListId" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from t_favorite_color_item
+        where list_id = #{listId,jdbcType=INTEGER}
+        order by sort_num
+    </select>
     <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
         delete
         from t_favorite_color_item

@@ -36,6 +36,7 @@ public class FavoriteColorFrame extends JFrame {
             }
             favoriteColorFrame.setContentPane(FavoriteColorForm.getInstance().getFavoriteColorPanel());
             favoriteColorFrame.pack();
+            FavoriteColorForm.getInstance().init();
         }
 
         return favoriteColorFrame;
