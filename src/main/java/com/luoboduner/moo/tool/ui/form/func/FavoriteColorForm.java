@@ -114,6 +114,8 @@ public class FavoriteColorForm {
         DefaultTableModel model = new DefaultTableModel(null, headerNames);
         favoriteColorForm.getItemTable().setModel(model);
         favoriteColorForm.getItemTable().getColumn("显示").setCellRenderer(new TableInCellColorBlockRenderer());
+        favoriteColorForm.getItemTable().getColumn("色值").setPreferredWidth(100);
+        favoriteColorForm.getItemTable().getColumn("色值").setMaxWidth(100);
         // 隐藏表头
         JTableUtil.hideTableHeader(favoriteColorForm.getItemTable());
         // 隐藏id列
