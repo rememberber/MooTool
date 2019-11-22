@@ -13,6 +13,7 @@ import com.luoboduner.moo.tool.util.ComponentUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
@@ -75,10 +76,35 @@ public class FavoriteColorDialog extends JDialog {
                 onCancel();
             }
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        newFavoriteBookListButton.addActionListener(e -> {
+            String title = JOptionPane.showInputDialog("收藏夹名称", "");
+            if (StringUtils.isNotBlank(title)) {
+                try {
+                    TFavoriteColorList tFavoriteColorList = new TFavoriteColorList();
+                    tFavoriteColorList.setTitle(title);
+                    String now = SqliteUtil.nowDateForSqlite();
+                    tFavoriteColorList.setCreateTime(now);
+                    tFavoriteColorList.setModifiedTime(now);
+                    favoriteColorListMapper.insert(tFavoriteColorList);
+                    fillFavoriteListComboBox();
+                } catch (Exception ex) {
+                    if (ex.getMessage().contains("constraint")) {
+                        JOptionPane.showMessageDialog(this, "存在相同的名称，请重新命名！", "失败", JOptionPane.WARNING_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(this, "异常：" + ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
+                    }
+                    log.error(ExceptionUtils.getStackTrace(ex));
+                }
+            }
+        });
     }
 
     private void onOK() {
         try {
+            if (favoriteBookListComboBox.getSelectedItem() == null) {
+                favoriteBookListComboBox.grabFocus();
+                return;
+            }
             TFavoriteColorList tFavoriteColorList = favoriteColorListMapper.selectByTitle((String) favoriteBookListComboBox.getSelectedItem());
             TFavoriteColorItem tFavoriteColorItem = new TFavoriteColorItem();
             tFavoriteColorItem.setListId(tFavoriteColorList.getId());
@@ -114,6 +140,10 @@ public class FavoriteColorDialog extends JDialog {
         nameTextField.setText("Color-" + hex);
         nameTextField.grabFocus();
         nameTextField.selectAll();
+        fillFavoriteListComboBox();
+    }
+
+    private void fillFavoriteListComboBox() {
         List<TFavoriteColorList> favoriteColorListList = favoriteColorListMapper.selectAll();
         favoriteBookListComboBox.removeAllItems();
         for (TFavoriteColorList item : favoriteColorListList) {
