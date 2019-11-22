@@ -64,7 +64,7 @@ public class FavoriteColorFrame extends JFrame {
         this.setName(title);
         this.setTitle(title);
         FrameUtil.setFrameIcon(this);
-        ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.72, 0.68);
+        ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.6, 0.6);
     }
 
     public static FavoriteColorFrame getInstance() {
