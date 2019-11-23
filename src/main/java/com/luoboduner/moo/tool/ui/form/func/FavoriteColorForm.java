@@ -71,6 +71,7 @@ public class FavoriteColorForm {
     }
 
     public void init() {
+        favoriteColorForm = getInstance();
         favoriteColorForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
         favoriteColorForm.getListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
         favoriteColorForm.getItemTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
@@ -105,9 +106,8 @@ public class FavoriteColorForm {
             model.addRow(data);
         }
         if (favoriteColorLists.size() > 0) {
-//            quickNoteForm.getTextArea().setText(favoriteColorLists.get(0).getContent());
-//            quickNoteForm.getNoteListTable().setRowSelectionInterval(0, 0);
-//            QuickNoteListener.selectedName = favoriteColorLists.get(0).getName();
+            favoriteColorForm.getListTable().setRowSelectionInterval(0, 0);
+            initItemTable(favoriteColorLists.get(0).getId());
         }
     }
 

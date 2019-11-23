@@ -8,6 +8,7 @@ import com.luoboduner.moo.tool.dao.TFavoriteColorItemMapper;
 import com.luoboduner.moo.tool.dao.TFavoriteColorListMapper;
 import com.luoboduner.moo.tool.domain.TFavoriteColorItem;
 import com.luoboduner.moo.tool.domain.TFavoriteColorList;
+import com.luoboduner.moo.tool.ui.form.func.FavoriteColorForm;
 import com.luoboduner.moo.tool.util.ColorUtil;
 import com.luoboduner.moo.tool.util.ComponentUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
@@ -116,6 +117,7 @@ public class FavoriteColorDialog extends JDialog {
             tFavoriteColorItem.setModifiedTime(now);
             favoriteColorItemMapper.insert(tFavoriteColorItem);
             dispose();
+            FavoriteColorForm.getInstance().init();
         } catch (Exception e) {
             if (e.getMessage().contains("constraint")) {
                 JOptionPane.showMessageDialog(this, "存在相同的名称，请重新命名！", "失败", JOptionPane.WARNING_MESSAGE);
