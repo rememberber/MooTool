@@ -197,6 +197,33 @@ public class FavoriteColorForm {
                 logger.error(ExceptionUtils.getStackTrace(e1));
             }
         }));
+
+        // Item删除按钮事件
+        deleteItemButton.addActionListener(e -> ThreadUtil.execute(() -> {
+            try {
+                int[] selectedRows = favoriteColorForm.getItemTable().getSelectedRows();
+
+                if (selectedRows.length == 0) {
+                    JOptionPane.showMessageDialog(favoriteColorForm.getFavoriteColorPanel(), "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    int isDelete = JOptionPane.showConfirmDialog(favoriteColorForm.getFavoriteColorPanel(), "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                    if (isDelete == JOptionPane.YES_OPTION) {
+                        DefaultTableModel tableModel = (DefaultTableModel) favoriteColorForm.getItemTable().getModel();
+
+                        for (int i = selectedRows.length; i > 0; i--) {
+                            int selectedRow = favoriteColorForm.getItemTable().getSelectedRow();
+                            Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
+                            favoriteColorItemMapper.deleteByPrimaryKey(id);
+                            tableModel.removeRow(selectedRow);
+                        }
+                    }
+                }
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(favoriteColorForm.getFavoriteColorPanel(), "删除失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(e1));
+            }
+        }));
     }
 
     public void init() {
