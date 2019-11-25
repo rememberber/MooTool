@@ -237,12 +237,18 @@ public class FavoriteColorForm {
                 } else if (selectedRows[0] == 0) {
                     JOptionPane.showMessageDialog(favoriteColorForm.getFavoriteColorPanel(), "已到顶部！", "提示", JOptionPane.INFORMATION_MESSAGE);
                 } else {
+                    ListSelectionModel listSelectionModel = new DefaultListSelectionModel();
+
                     DefaultTableModel tableModel = (DefaultTableModel) favoriteColorForm.getItemTable().getModel();
-                    Integer preId = (Integer) tableModel.getValueAt(selectedRows[0] - 1, 0);
-                    Long preSortNum = (Long) tableModel.getValueAt(selectedRows[0] - 1, 4);
+                    int preRow = selectedRows[0] - 1;
+                    Integer preId = (Integer) tableModel.getValueAt(preRow, 0);
+                    Long preSortNum = (Long) tableModel.getValueAt(preRow, 4);
+
                     TFavoriteColorItem tFavoriteColorItem;
                     for (int i = 0; i < selectedRows.length; i++) {
                         int selectedRow = selectedRows[i];
+                        listSelectionModel.addSelectionInterval(selectedRow - 1, selectedRow - 1);
+
                         Long currentSortNum = (Long) tableModel.getValueAt(selectedRow, 4);
                         Integer currentId = (Integer) tableModel.getValueAt(selectedRow, 0);
                         tFavoriteColorItem = new TFavoriteColorItem();
@@ -255,7 +261,9 @@ public class FavoriteColorForm {
                     tFavoriteColorItem.setId(preId);
                     tFavoriteColorItem.setSortNum(preSortNum);
                     favoriteColorItemMapper.updateByPrimaryKeySelective(tFavoriteColorItem);
+
                     initItemTable(null);
+                    favoriteColorForm.getItemTable().setSelectionModel(listSelectionModel);
                 }
             } catch (Exception e1) {
                 JOptionPane.showMessageDialog(favoriteColorForm.getFavoriteColorPanel(), "操作失败！\n\n" + e1.getMessage(), "失败",
