@@ -26,6 +26,8 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -48,8 +50,8 @@ public class FavoriteColorForm {
     private JTable itemTable;
     private JButton deleteItemButton;
     private JSplitPane splitPane;
-    private JButton button3;
-    private JButton button4;
+    private JButton moveUpButton;
+    private JButton moveDownButton;
     private JButton newListButton;
     private JPanel listControlPanel;
     private JPanel itemControlPanel;
@@ -61,6 +63,8 @@ public class FavoriteColorForm {
 
     private static TFavoriteColorListMapper favoriteColorListMapper = MybatisUtil.getSqlSession().getMapper(TFavoriteColorListMapper.class);
     private static TFavoriteColorItemMapper favoriteColorItemMapper = MybatisUtil.getSqlSession().getMapper(TFavoriteColorItemMapper.class);
+
+    private static Integer lastSelectedListId;
 
     private FavoriteColorForm() {
         UndoUtil.register(this);
@@ -224,6 +228,47 @@ public class FavoriteColorForm {
                 logger.error(ExceptionUtils.getStackTrace(e1));
             }
         }));
+        moveUpButton.addActionListener(e -> {
+            try {
+                int[] selectedRows = favoriteColorForm.getItemTable().getSelectedRows();
+
+                if (selectedRows.length == 0) {
+                    JOptionPane.showMessageDialog(favoriteColorForm.getFavoriteColorPanel(), "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                } else if (selectedRows[0] == 0) {
+                    JOptionPane.showMessageDialog(favoriteColorForm.getFavoriteColorPanel(), "已到顶部！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    DefaultTableModel tableModel = (DefaultTableModel) favoriteColorForm.getItemTable().getModel();
+                    Integer preId = (Integer) tableModel.getValueAt(selectedRows[0] - 1, 0);
+                    Long preSortNum = (Long) tableModel.getValueAt(selectedRows[0] - 1, 4);
+                    TFavoriteColorItem tFavoriteColorItem;
+                    for (int i = 0; i < selectedRows.length; i++) {
+                        int selectedRow = selectedRows[i];
+                        Long currentSortNum = (Long) tableModel.getValueAt(selectedRow, 4);
+                        Integer currentId = (Integer) tableModel.getValueAt(selectedRow, 0);
+                        tFavoriteColorItem = new TFavoriteColorItem();
+                        tFavoriteColorItem.setId(currentId);
+                        tFavoriteColorItem.setSortNum(preSortNum);
+                        favoriteColorItemMapper.updateByPrimaryKeySelective(tFavoriteColorItem);
+                        preSortNum = currentSortNum;
+                    }
+                    tFavoriteColorItem = new TFavoriteColorItem();
+                    tFavoriteColorItem.setId(preId);
+                    tFavoriteColorItem.setSortNum(preSortNum);
+                    favoriteColorItemMapper.updateByPrimaryKeySelective(tFavoriteColorItem);
+                    initItemTable(null);
+                }
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(favoriteColorForm.getFavoriteColorPanel(), "操作失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(e1));
+            }
+        });
+        moveDownButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+
+            }
+        });
     }
 
     public void init() {
@@ -269,8 +314,13 @@ public class FavoriteColorForm {
         }
     }
 
-    public static void initItemTable(int listId) {
-        String[] headerNames = {"id", "显示", "色值", "名称"};
+    public static void initItemTable(Integer listId) {
+        if (listId == null) {
+            listId = lastSelectedListId;
+        } else {
+            lastSelectedListId = listId;
+        }
+        String[] headerNames = {"id", "显示", "色值", "名称", "排序号"};
         DefaultTableModel model = new DefaultTableModel(null, headerNames);
         favoriteColorForm.getItemTable().setModel(model);
         favoriteColorForm.getItemTable().getColumn("显示").setCellRenderer(new TableInCellColorBlockRenderer());
@@ -278,18 +328,20 @@ public class FavoriteColorForm {
         favoriteColorForm.getItemTable().getColumn("色值").setMaxWidth(100);
         // 隐藏表头
         JTableUtil.hideTableHeader(favoriteColorForm.getItemTable());
-        // 隐藏id列
+        // 隐藏id列和排序列
         JTableUtil.hideColumn(favoriteColorForm.getItemTable(), 0);
+        JTableUtil.hideColumn(favoriteColorForm.getItemTable(), 4);
 
         Object[] data;
 
         List<TFavoriteColorItem> favoriteColorItems = favoriteColorItemMapper.selectByListId(listId);
         for (TFavoriteColorItem favoriteColorItem : favoriteColorItems) {
-            data = new Object[4];
+            data = new Object[5];
             data[0] = favoriteColorItem.getId();
             data[1] = favoriteColorItem.getValue();
             data[2] = favoriteColorItem.getValue();
             data[3] = favoriteColorItem.getName();
+            data[4] = favoriteColorItem.getSortNum();
             model.addRow(data);
         }
     }
@@ -352,14 +404,14 @@ public class FavoriteColorForm {
         itemControlPanel.add(deleteItemButton, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
         itemControlPanel.add(spacer2, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        button3 = new JButton();
-        button3.setIcon(new ImageIcon(getClass().getResource("/icon/arrow-up.png")));
-        button3.setText("");
-        itemControlPanel.add(button3, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        button4 = new JButton();
-        button4.setIcon(new ImageIcon(getClass().getResource("/icon/arrow-down.png")));
-        button4.setText("");
-        itemControlPanel.add(button4, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        moveUpButton = new JButton();
+        moveUpButton.setIcon(new ImageIcon(getClass().getResource("/icon/arrow-up.png")));
+        moveUpButton.setText("");
+        itemControlPanel.add(moveUpButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        moveDownButton = new JButton();
+        moveDownButton.setIcon(new ImageIcon(getClass().getResource("/icon/arrow-down.png")));
+        moveDownButton.setText("");
+        itemControlPanel.add(moveDownButton, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         listItemButton = new JButton();
         listItemButton.setIcon(new ImageIcon(getClass().getResource("/icon/listFiles_dark.png")));
         listItemButton.setText("");
