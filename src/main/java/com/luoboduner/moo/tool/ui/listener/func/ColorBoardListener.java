@@ -8,10 +8,13 @@ import com.luoboduner.moo.tool.ui.dialog.FavoriteColorDialog;
 import com.luoboduner.moo.tool.ui.form.func.ColorBoardForm;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.frame.FavoriteColorFrame;
+import com.luoboduner.moo.tool.util.ColorUtil;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ItemEvent;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 
 import static java.awt.GraphicsDevice.WindowTranslucency.TRANSLUCENT;
 
@@ -71,6 +74,24 @@ public class ColorBoardListener {
             favoriteColorDialog.pack();
             favoriteColorDialog.init(colorBoardForm.getShowColorPanel().getBackground());
             favoriteColorDialog.setVisible(true);
+        });
+        colorBoardForm.getColorCodeTextField().addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+
+            }
+
+            @Override
+            public void keyPressed(KeyEvent e) {
+                if (e.getKeyCode() == KeyEvent.VK_ENTER) {
+                    ColorBoardForm.setSelectedColor(ColorUtil.fromHex(colorBoardForm.getColorCodeTextField().getText()));
+                }
+            }
+
+            @Override
+            public void keyReleased(KeyEvent e) {
+
+            }
         });
     }
 }
