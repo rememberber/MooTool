@@ -43,6 +43,9 @@
                         <item value="默认"/>
                         <item value="主题1"/>
                         <item value="主题2"/>
+                        <item value="主题3"/>
+                        <item value="主题4"/>
+                        <item value="主题5"/>
                       </model>
                     </properties>
                   </component>

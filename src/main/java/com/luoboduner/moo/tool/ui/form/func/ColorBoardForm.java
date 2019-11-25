@@ -157,6 +157,15 @@ public class ColorBoardForm {
         } else if ("主题2".equals(theme)) {
             mainColors = ColorConsts.THEME_2_MAIN;
             subColors = ColorConsts.THEME_2_SUB;
+        } else if ("主题3".equals(theme)) {
+            mainColors = ColorConsts.THEME_3_MAIN;
+            subColors = ColorConsts.THEME_3_SUB;
+        } else if ("主题4".equals(theme)) {
+            mainColors = ColorConsts.THEME_4_MAIN;
+            subColors = ColorConsts.THEME_4_SUB;
+        } else if ("主题5".equals(theme)) {
+            mainColors = ColorConsts.THEME_5_MAIN;
+            subColors = ColorConsts.THEME_5_SUB;
         } else {
             mainColors = ColorConsts.THEME_DEFAULT_MAIN;
             subColors = ColorConsts.THEME_DEFAULT_SUB;
@@ -260,6 +269,9 @@ public class ColorBoardForm {
         defaultComboBoxModel1.addElement("默认");
         defaultComboBoxModel1.addElement("主题1");
         defaultComboBoxModel1.addElement("主题2");
+        defaultComboBoxModel1.addElement("主题3");
+        defaultComboBoxModel1.addElement("主题4");
+        defaultComboBoxModel1.addElement("主题5");
         themeComboBox.setModel(defaultComboBoxModel1);
         themeColorPanel.add(themeComboBox, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, 1, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         themeColorMainPanel = new JPanel();
