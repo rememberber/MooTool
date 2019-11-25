@@ -28,8 +28,6 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -263,8 +261,7 @@ public class FavoriteColorForm {
                         Long preSortNum = (Long) tableModel.getValueAt(preRow, 4);
 
                         TFavoriteColorItem tFavoriteColorItem;
-                        for (int i = 0; i < selectedRowArray.length; i++) {
-                            int selectedRow = selectedRowArray[i];
+                        for (int selectedRow : selectedRowArray) {
                             listSelectionModel.addSelectionInterval(selectedRow - 1, selectedRow - 1);
 
                             Long currentSortNum = (Long) tableModel.getValueAt(selectedRow, 4);
@@ -290,10 +287,62 @@ public class FavoriteColorForm {
                 logger.error(ExceptionUtils.getStackTrace(e1));
             }
         });
-        moveDownButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
+        moveDownButton.addActionListener(e -> {
+            try {
+                int[] selectedRows = favoriteColorForm.getItemTable().getSelectedRows();
 
+                if (selectedRows.length == 0) {
+                    JOptionPane.showMessageDialog(favoriteColorForm.getFavoriteColorPanel(), "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                } else if (selectedRows[selectedRows.length - 1] == favoriteColorForm.getItemTable().getRowCount() - 1) {
+                    JOptionPane.showMessageDialog(favoriteColorForm.getFavoriteColorPanel(), "已到底部！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    ListSelectionModel listSelectionModel = new DefaultListSelectionModel();
+                    DefaultTableModel tableModel = (DefaultTableModel) favoriteColorForm.getItemTable().getModel();
+
+                    List<int[]> selectedRowArrays = Lists.newArrayList();
+                    int startIndex = 0;
+                    for (int i = 0; i < selectedRows.length; i++) {
+                        int currentRow = selectedRows[i];
+                        if (i + 1 < selectedRows.length) {
+                            int nextRow = selectedRows[i + 1];
+                            if (nextRow - currentRow > 1) {
+                                selectedRowArrays.add(ArrayUtil.sub(selectedRows, startIndex, i + 1));
+                                startIndex = i + 1;
+                            }
+                        } else {
+                            selectedRowArrays.add(ArrayUtil.sub(selectedRows, startIndex, selectedRows.length));
+                        }
+                    }
+
+                    for (int[] selectedRowArray : selectedRowArrays) {
+                        int firstRow = selectedRowArray[0];
+                        Long firstSortNum = (Long) tableModel.getValueAt(firstRow, 4);
+
+                        TFavoriteColorItem tFavoriteColorItem;
+                        for (int selectedRow : selectedRowArray) {
+                            listSelectionModel.addSelectionInterval(selectedRow + 1, selectedRow + 1);
+
+                            Integer currentId = (Integer) tableModel.getValueAt(selectedRow, 0);
+                            int nextRow = selectedRow + 1;
+                            Long nextSortNum = (Long) tableModel.getValueAt(nextRow, 4);
+                            tFavoriteColorItem = new TFavoriteColorItem();
+                            tFavoriteColorItem.setId(currentId);
+                            tFavoriteColorItem.setSortNum(nextSortNum);
+                            favoriteColorItemMapper.updateByPrimaryKeySelective(tFavoriteColorItem);
+                        }
+                        tFavoriteColorItem = new TFavoriteColorItem();
+                        tFavoriteColorItem.setId((Integer) tableModel.getValueAt(selectedRowArray[selectedRowArray.length - 1] + 1, 0));
+                        tFavoriteColorItem.setSortNum(firstSortNum);
+                        favoriteColorItemMapper.updateByPrimaryKeySelective(tFavoriteColorItem);
+                    }
+
+                    initItemTable(null);
+                    favoriteColorForm.getItemTable().setSelectionModel(listSelectionModel);
+                }
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(favoriteColorForm.getFavoriteColorPanel(), "操作失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(e1));
             }
         });
     }
