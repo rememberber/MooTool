@@ -44,9 +44,9 @@ import java.util.List;
 public class FavoriteColorForm {
     private JPanel favoriteColorPanel;
     private JTable listTable;
-    private JButton button1;
+    private JButton deleteListButton;
     private JTable itemTable;
-    private JButton button2;
+    private JButton deleteItemButton;
     private JSplitPane splitPane;
     private JButton button3;
     private JButton button4;
@@ -168,6 +168,35 @@ public class FavoriteColorForm {
                 }
             }
         });
+
+        // 列表删除按钮事件
+        deleteListButton.addActionListener(e -> ThreadUtil.execute(() -> {
+            try {
+                int[] selectedRows = favoriteColorForm.getListTable().getSelectedRows();
+
+                if (selectedRows.length == 0) {
+                    JOptionPane.showMessageDialog(favoriteColorForm.getFavoriteColorPanel(), "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    int isDelete = JOptionPane.showConfirmDialog(favoriteColorForm.getFavoriteColorPanel(), "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                    if (isDelete == JOptionPane.YES_OPTION) {
+                        DefaultTableModel tableModel = (DefaultTableModel) favoriteColorForm.getListTable().getModel();
+
+                        for (int i = selectedRows.length; i > 0; i--) {
+                            int selectedRow = favoriteColorForm.getListTable().getSelectedRow();
+                            Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
+                            favoriteColorListMapper.deleteByPrimaryKey(id);
+
+                            tableModel.removeRow(selectedRow);
+                        }
+                        initListTable();
+                    }
+                }
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(favoriteColorForm.getFavoriteColorPanel(), "删除失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(e1));
+            }
+        }));
     }
 
     public void init() {
@@ -268,10 +297,10 @@ public class FavoriteColorForm {
         panel1.add(listControlPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final Spacer spacer1 = new Spacer();
         listControlPanel.add(spacer1, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        button1 = new JButton();
-        button1.setIcon(new ImageIcon(getClass().getResource("/icon/remove.png")));
-        button1.setText("");
-        listControlPanel.add(button1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        deleteListButton = new JButton();
+        deleteListButton.setIcon(new ImageIcon(getClass().getResource("/icon/remove.png")));
+        deleteListButton.setText("");
+        listControlPanel.add(deleteListButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         newListButton = new JButton();
         newListButton.setIcon(new ImageIcon(getClass().getResource("/icon/add.png")));
         newListButton.setText("");
@@ -290,10 +319,10 @@ public class FavoriteColorForm {
         itemControlPanel = new JPanel();
         itemControlPanel.setLayout(new GridLayoutManager(1, 5, new Insets(5, 5, 5, 5), -1, -1));
         panel2.add(itemControlPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        button2 = new JButton();
-        button2.setIcon(new ImageIcon(getClass().getResource("/icon/remove.png")));
-        button2.setText("");
-        itemControlPanel.add(button2, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        deleteItemButton = new JButton();
+        deleteItemButton.setIcon(new ImageIcon(getClass().getResource("/icon/remove.png")));
+        deleteItemButton.setText("");
+        itemControlPanel.add(deleteItemButton, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
         itemControlPanel.add(spacer2, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         button3 = new JButton();
