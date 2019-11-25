@@ -2,12 +2,13 @@ package com.luoboduner.moo.tool.ui.frame;
 
 import cn.hutool.core.thread.ThreadUtil;
 import com.apple.eawt.Application;
-import com.google.common.collect.Lists;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.listener.AboutListener;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
+import com.luoboduner.moo.tool.ui.listener.SettingListener;
 import com.luoboduner.moo.tool.ui.listener.TabListener;
 import com.luoboduner.moo.tool.ui.listener.func.CalculatorListener;
+import com.luoboduner.moo.tool.ui.listener.func.ColorBoardListener;
 import com.luoboduner.moo.tool.ui.listener.func.CryptoListener;
 import com.luoboduner.moo.tool.ui.listener.func.EnCodeListener;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
@@ -16,14 +17,11 @@ import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
 import com.luoboduner.moo.tool.ui.listener.func.NetListener;
 import com.luoboduner.moo.tool.ui.listener.func.QrCodeListener;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
-import com.luoboduner.moo.tool.ui.listener.SettingListener;
 import com.luoboduner.moo.tool.ui.listener.func.TimeConvertListener;
 import com.luoboduner.moo.tool.util.ComponentUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 
 import javax.swing.*;
-import java.awt.*;
-import java.util.List;
 
 /**
  * <pre>
@@ -40,17 +38,7 @@ public class MainFrame extends JFrame {
     public void init() {
         this.setName(UiConsts.APP_NAME);
         this.setTitle(UiConsts.APP_NAME);
-        List<Image> images = Lists.newArrayList();
-        images.add(UiConsts.IMAGE_LOGO_1024);
-        images.add(UiConsts.IMAGE_LOGO_512);
-        images.add(UiConsts.IMAGE_LOGO_256);
-        images.add(UiConsts.IMAGE_LOGO_128);
-        images.add(UiConsts.IMAGE_LOGO_64);
-        images.add(UiConsts.IMAGE_LOGO_48);
-        images.add(UiConsts.IMAGE_LOGO_32);
-        images.add(UiConsts.IMAGE_LOGO_24);
-        images.add(UiConsts.IMAGE_LOGO_16);
-        this.setIconImages(images);
+        FrameUtil.setFrameIcon(this);
         // Mac系统Dock图标
         if (SystemUtil.isMacOs()) {
             Application application = Application.getApplication();
@@ -78,6 +66,7 @@ public class MainFrame extends JFrame {
         ThreadUtil.execute(CryptoListener::addListeners);
         ThreadUtil.execute(CalculatorListener::addListeners);
         ThreadUtil.execute(NetListener::addListeners);
+        ThreadUtil.execute(ColorBoardListener::addListeners);
         ThreadUtil.execute(SettingListener::addListeners);
         ThreadUtil.execute(TabListener::addListeners);
     }

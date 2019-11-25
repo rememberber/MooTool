@@ -9,6 +9,7 @@ import com.luoboduner.moo.tool.dao.THostMapper;
 import com.luoboduner.moo.tool.domain.THost;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
@@ -21,6 +22,8 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.io.File;
 import java.util.List;
+
+import static java.awt.GraphicsDevice.WindowTranslucency.TRANSLUCENT;
 
 /**
  * <pre>
@@ -149,16 +152,27 @@ public class HostForm {
         if (!SystemUtil.isLinuxOs()) {
             App.popupMenu.removeAll();
             MenuItem openItem = new MenuItem("MooTool");
+            MenuItem colorPickerItem = new MenuItem("取色器");
             MenuItem exitItem = new MenuItem("Quit");
 
             openItem.addActionListener(e -> {
                 Init.showMainFrame();
+            });
+            colorPickerItem.addActionListener(e -> {
+                GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+                GraphicsDevice gd = ge.getDefaultScreenDevice();
+                if (gd.isWindowTranslucencySupported(TRANSLUCENT)) {
+                    App.mainFrame.setVisible(false);
+                    ColorPickerFrame.showPicker();
+                }
             });
             exitItem.addActionListener(e -> {
                 Init.shutdown();
             });
 
             App.popupMenu.add(openItem);
+            App.popupMenu.addSeparator();
+            App.popupMenu.add(colorPickerItem);
             App.popupMenu.addSeparator();
 
             List<THost> hostList = hostMapper.selectAll();
