@@ -1,6 +1,8 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.core.thread.ThreadUtil;
+import cn.hutool.log.Log;
+import cn.hutool.log.LogFactory;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -15,8 +17,11 @@ import com.luoboduner.moo.tool.ui.frame.FavoriteColorFrame;
 import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
+import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -45,11 +50,14 @@ public class FavoriteColorForm {
     private JSplitPane splitPane;
     private JButton button3;
     private JButton button4;
-    private JButton button5;
+    private JButton newListButton;
     private JPanel listControlPanel;
     private JPanel itemControlPanel;
+    private JButton listItemButton;
 
     public static FavoriteColorForm favoriteColorForm;
+
+    private static final Log logger = LogFactory.get();
 
     private static TFavoriteColorListMapper favoriteColorListMapper = MybatisUtil.getSqlSession().getMapper(TFavoriteColorListMapper.class);
     private static TFavoriteColorItemMapper favoriteColorItemMapper = MybatisUtil.getSqlSession().getMapper(TFavoriteColorItemMapper.class);
@@ -128,6 +136,36 @@ public class FavoriteColorForm {
             @Override
             public void mouseExited(MouseEvent e) {
 
+            }
+        });
+
+        listItemButton.addActionListener(e -> {
+            int currentDividerLocation = favoriteColorForm.getSplitPane().getDividerLocation();
+            if (currentDividerLocation < 5) {
+                favoriteColorForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
+            } else {
+                favoriteColorForm.getSplitPane().setDividerLocation(0);
+            }
+        });
+        newListButton.addActionListener(e -> {
+            String title = JOptionPane.showInputDialog("收藏夹名称", "");
+            if (StringUtils.isNotBlank(title)) {
+                try {
+                    TFavoriteColorList tFavoriteColorList = new TFavoriteColorList();
+                    tFavoriteColorList.setTitle(title);
+                    String now = SqliteUtil.nowDateForSqlite();
+                    tFavoriteColorList.setCreateTime(now);
+                    tFavoriteColorList.setModifiedTime(now);
+                    favoriteColorListMapper.insert(tFavoriteColorList);
+                    initListTable();
+                } catch (Exception ex) {
+                    if (ex.getMessage().contains("constraint")) {
+                        JOptionPane.showMessageDialog(favoriteColorForm.getFavoriteColorPanel(), "存在相同的名称，请重新命名！", "失败", JOptionPane.WARNING_MESSAGE);
+                    } else {
+                        JOptionPane.showMessageDialog(favoriteColorForm.getFavoriteColorPanel(), "异常：" + ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
+                    }
+                    logger.error(ExceptionUtils.getStackTrace(ex));
+                }
             }
         });
     }
@@ -234,10 +272,10 @@ public class FavoriteColorForm {
         button1.setIcon(new ImageIcon(getClass().getResource("/icon/remove.png")));
         button1.setText("");
         listControlPanel.add(button1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        button5 = new JButton();
-        button5.setIcon(new ImageIcon(getClass().getResource("/icon/add.png")));
-        button5.setText("");
-        listControlPanel.add(button5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        newListButton = new JButton();
+        newListButton.setIcon(new ImageIcon(getClass().getResource("/icon/add.png")));
+        newListButton.setText("");
+        listControlPanel.add(newListButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JScrollPane scrollPane1 = new JScrollPane();
         panel1.add(scrollPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         listTable = new JTable();
@@ -250,22 +288,26 @@ public class FavoriteColorForm {
         itemTable = new JTable();
         scrollPane2.setViewportView(itemTable);
         itemControlPanel = new JPanel();
-        itemControlPanel.setLayout(new GridLayoutManager(1, 4, new Insets(5, 5, 5, 5), -1, -1));
+        itemControlPanel.setLayout(new GridLayoutManager(1, 5, new Insets(5, 5, 5, 5), -1, -1));
         panel2.add(itemControlPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         button2 = new JButton();
         button2.setIcon(new ImageIcon(getClass().getResource("/icon/remove.png")));
         button2.setText("");
-        itemControlPanel.add(button2, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        itemControlPanel.add(button2, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
-        itemControlPanel.add(spacer2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        itemControlPanel.add(spacer2, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         button3 = new JButton();
         button3.setIcon(new ImageIcon(getClass().getResource("/icon/arrow-up.png")));
         button3.setText("");
-        itemControlPanel.add(button3, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        itemControlPanel.add(button3, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         button4 = new JButton();
         button4.setIcon(new ImageIcon(getClass().getResource("/icon/arrow-down.png")));
         button4.setText("");
-        itemControlPanel.add(button4, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        itemControlPanel.add(button4, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        listItemButton = new JButton();
+        listItemButton.setIcon(new ImageIcon(getClass().getResource("/icon/listFiles_dark.png")));
+        listItemButton.setText("");
+        itemControlPanel.add(listItemButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     /**
