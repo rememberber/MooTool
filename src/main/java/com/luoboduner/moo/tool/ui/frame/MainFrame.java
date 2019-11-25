@@ -8,6 +8,7 @@ import com.luoboduner.moo.tool.ui.listener.FrameListener;
 import com.luoboduner.moo.tool.ui.listener.SettingListener;
 import com.luoboduner.moo.tool.ui.listener.TabListener;
 import com.luoboduner.moo.tool.ui.listener.func.CalculatorListener;
+import com.luoboduner.moo.tool.ui.listener.func.ColorBoardListener;
 import com.luoboduner.moo.tool.ui.listener.func.CryptoListener;
 import com.luoboduner.moo.tool.ui.listener.func.EnCodeListener;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
@@ -65,6 +66,7 @@ public class MainFrame extends JFrame {
         ThreadUtil.execute(CryptoListener::addListeners);
         ThreadUtil.execute(CalculatorListener::addListeners);
         ThreadUtil.execute(NetListener::addListeners);
+        ThreadUtil.execute(ColorBoardListener::addListeners);
         ThreadUtil.execute(SettingListener::addListeners);
         ThreadUtil.execute(TabListener::addListeners);
     }

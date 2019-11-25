@@ -1,15 +1,11 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
-import cn.hutool.core.swing.clipboard.ClipboardUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.ui.dialog.FavoriteColorDialog;
-import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
-import com.luoboduner.moo.tool.ui.frame.FavoriteColorFrame;
 import com.luoboduner.moo.tool.util.ColorUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
@@ -17,11 +13,8 @@ import lombok.Getter;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
-import java.awt.event.ItemEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-
-import static java.awt.GraphicsDevice.WindowTranslucency.TRANSLUCENT;
 
 /**
  * <pre>
@@ -57,53 +50,9 @@ public class ColorBoardForm {
 
     private ColorBoardForm() {
         UndoUtil.register(this);
-
-        pickerButton.addActionListener(e -> {
-            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-            GraphicsDevice gd = ge.getDefaultScreenDevice();
-            if (!gd.isWindowTranslucencySupported(TRANSLUCENT)) {
-                JOptionPane.showMessageDialog(colorBoardForm.getColorBoardPanel(), "当前系统环境不支持！", "系统环境", JOptionPane.INFORMATION_MESSAGE);
-                return;
-            }
-            App.mainFrame.setVisible(false);
-            ColorPickerFrame.showPicker();
-        });
-        copyButton.addActionListener(e -> {
-            try {
-                colorBoardForm.getCopyButton().setEnabled(false);
-                ClipboardUtil.setStr(colorBoardForm.getColorCodeTextField().getText());
-                JOptionPane.showMessageDialog(colorBoardForm.getColorBoardPanel(), "已复制！", "成功", JOptionPane.INFORMATION_MESSAGE);
-            } catch (Exception e1) {
-                logger.error(e1);
-            } finally {
-                colorBoardForm.getCopyButton().setEnabled(true);
-            }
-        });
-        codeTypeComboBox.addItemListener(e -> {
-            if (e.getStateChange() == ItemEvent.SELECTED) {
-                String code = colorBoardForm.getColorCodeTextField().getText();
-                setColorCode(code);
-                App.config.setColorCodeType(e.getItem().toString());
-                App.config.save();
-            }
-        });
-        themeComboBox.addItemListener(e -> {
-            if (e.getStateChange() == ItemEvent.SELECTED) {
-                fillColorBlocks();
-                App.config.setColorTheme(e.getItem().toString());
-                App.config.save();
-            }
-        });
-        favoriteBookButton.addActionListener(e -> FavoriteColorFrame.showWindow());
-        favoriteButton.addActionListener(e -> {
-            FavoriteColorDialog favoriteColorDialog = new FavoriteColorDialog();
-            favoriteColorDialog.pack();
-            favoriteColorDialog.init(colorBoardForm.getShowColorPanel().getBackground());
-            favoriteColorDialog.setVisible(true);
-        });
     }
 
-    private static void setColorCode(String code) {
+    public static void setColorCode(String code) {
         String codeType = (String) colorBoardForm.getCodeTypeComboBox().getSelectedItem();
         if (code.contains(",")) {
             code = ColorUtil.rgbStrToHex(code);
@@ -135,7 +84,7 @@ public class ColorBoardForm {
         fillColorBlocks();
     }
 
-    private static void fillColorBlocks() {
+    public static void fillColorBlocks() {
         colorBoardForm.getStandardColorPanel().removeAll();
         for (String colorHex : ColorConsts.STANDARD) {
             JPanel panel = new JPanel();
