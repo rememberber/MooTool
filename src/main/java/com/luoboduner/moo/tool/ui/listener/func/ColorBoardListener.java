@@ -4,6 +4,8 @@ import cn.hutool.core.swing.clipboard.ClipboardUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.dialog.CommonTipsDialog;
 import com.luoboduner.moo.tool.ui.dialog.FavoriteColorDialog;
 import com.luoboduner.moo.tool.ui.form.func.ColorBoardForm;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
@@ -15,6 +17,8 @@ import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 import static java.awt.GraphicsDevice.WindowTranslucency.TRANSLUCENT;
 
@@ -91,6 +95,39 @@ public class ColorBoardListener {
             @Override
             public void keyReleased(KeyEvent e) {
 
+            }
+        });
+        colorBoardForm.getAboutLabel().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                CommonTipsDialog dialog = new CommonTipsDialog();
+
+                StringBuilder tipsBuilder = new StringBuilder();
+                tipsBuilder.append("<h1>关于调色板</h1>");
+                tipsBuilder.append("<p>调色板和取色器的设计借鉴了PicPick，其中的颜色主题更是完全照搬了过来。</p>");
+                tipsBuilder.append("<p>PicPick是一款非常优秀的集取色、截图、标尺、放大镜、图片编辑等于一身的桌面应用，我非常喜欢它，感谢作者的付出！</p>");
+                tipsBuilder.append("<p>注：取色器实时预览的色值存在微小误差，请以鼠标点击取色后的色值为准</p>");
+
+                dialog.setHtmlText(tipsBuilder.toString());
+                dialog.pack();
+                dialog.setVisible(true);
+
+                super.mousePressed(e);
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                JLabel label = (JLabel) e.getComponent();
+                label.setCursor(new Cursor(Cursor.HAND_CURSOR));
+                label.setIcon(new ImageIcon(UiConsts.HELP_FOCUSED_ICON));
+                super.mouseEntered(e);
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                JLabel label = (JLabel) e.getComponent();
+                label.setIcon(new ImageIcon(UiConsts.HELP_ICON));
+                super.mouseExited(e);
             }
         });
     }
