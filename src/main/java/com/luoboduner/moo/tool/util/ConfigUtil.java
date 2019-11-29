@@ -90,6 +90,12 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     private String hostExportPath;
 
+    private String lastSelectedColor;
+
+    private String colorTheme;
+
+    private String colorCodeType;
+
     public boolean isAutoCheckUpdate() {
         return setting.getBool("autoCheckUpdate", "setting.common", true);
     }
@@ -360,5 +366,29 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setHostExportPath(String hostExportPath) {
         setting.put("func.host", "hostExportPath", hostExportPath);
+    }
+
+    public String getLastSelectedColor() {
+        return setting.getStr("lastSelectedColor", "func.colorBoard", "007AAE");
+    }
+
+    public void setLastSelectedColor(String lastSelectedColor) {
+        setting.put("func.colorBoard", "lastSelectedColor", lastSelectedColor);
+    }
+
+    public String getColorTheme() {
+        return setting.getStr("colorTheme", "func.colorBoard", "默认");
+    }
+
+    public void setColorTheme(String colorTheme) {
+        setting.put("func.colorBoard", "colorTheme", colorTheme);
+    }
+
+    public String getColorCodeType() {
+        return setting.getStr("colorCodeType", "func.colorBoard", "HTML");
+    }
+
+    public void setColorCodeType(String colorCodeType) {
+        setting.put("func.colorBoard", "colorCodeType", colorCodeType);
     }
 }

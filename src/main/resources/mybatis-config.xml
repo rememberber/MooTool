@@ -18,5 +18,7 @@
         <mapper resource="mapper/TJsonBeautyMapper.xml"/>
         <mapper resource="mapper/THostMapper.xml"/>
         <mapper resource="mapper/TQrCodeMapper.xml"/>
+        <mapper resource="mapper/TFavoriteColorListMapper.xml"/>
+        <mapper resource="mapper/TFavoriteColorItemMapper.xml"/>
     </mappers>
 </configuration>

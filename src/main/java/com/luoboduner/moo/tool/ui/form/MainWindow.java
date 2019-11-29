@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.form;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.ui.form.func.CalculatorForm;
+import com.luoboduner.moo.tool.ui.form.func.ColorBoardForm;
 import com.luoboduner.moo.tool.ui.form.func.CryptoForm;
 import com.luoboduner.moo.tool.ui.form.func.EnCodeForm;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
@@ -41,6 +42,7 @@ public class MainWindow {
     private JPanel cryptoPanel;
     private JPanel calculatorPanel;
     private JPanel netPanel;
+    private JPanel colorBoardPanel;
 
     private static MainWindow mainWindow;
 
@@ -71,6 +73,7 @@ public class MainWindow {
         mainWindow.getCryptoPanel().add(CryptoForm.getInstance().getCryptoPanel(), gridConstraints);
         mainWindow.getCalculatorPanel().add(CalculatorForm.getInstance().getCalculatorPanel(), gridConstraints);
         mainWindow.getNetPanel().add(NetForm.getInstance().getNetPanel(), gridConstraints);
+        mainWindow.getColorBoardPanel().add(ColorBoardForm.getInstance().getColorBoardPanel(), gridConstraints);
         mainWindow.getMainPanel().updateUI();
     }
 
@@ -123,6 +126,9 @@ public class MainWindow {
         netPanel = new JPanel();
         netPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("网络/IP", new ImageIcon(getClass().getResource("/icon/network.png")), netPanel);
+        colorBoardPanel = new JPanel();
+        colorBoardPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPane.addTab("调色板", new ImageIcon(getClass().getResource("/icon/color.png")), colorBoardPanel);
         settingPanel = new JPanel();
         settingPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("设置", new ImageIcon(getClass().getResource("/icon/gear.png")), settingPanel);

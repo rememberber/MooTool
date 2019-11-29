@@ -8,6 +8,7 @@ import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
 import com.luoboduner.moo.tool.ui.form.AboutForm;
 import com.luoboduner.moo.tool.ui.form.SettingForm;
 import com.luoboduner.moo.tool.ui.form.func.CalculatorForm;
+import com.luoboduner.moo.tool.ui.form.func.ColorBoardForm;
 import com.luoboduner.moo.tool.ui.form.func.CryptoForm;
 import com.luoboduner.moo.tool.ui.form.func.EnCodeForm;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
@@ -17,6 +18,7 @@ import com.luoboduner.moo.tool.ui.form.func.NetForm;
 import com.luoboduner.moo.tool.ui.form.func.QrCodeForm;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
+import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UIUtil;
@@ -31,6 +33,8 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Enumeration;
+
+import static java.awt.GraphicsDevice.WindowTranslucency.TRANSLUCENT;
 
 /**
  * <pre>
@@ -132,6 +136,7 @@ public class Init {
         ThreadUtil.execute(QrCodeForm::init);
         ThreadUtil.execute(CryptoForm::init);
         ThreadUtil.execute(CalculatorForm::init);
+        ThreadUtil.execute(ColorBoardForm::init);
         ThreadUtil.execute(NetForm::init);
 
         // 检查新版版
@@ -167,16 +172,27 @@ public class Init {
                 App.popupMenu.setFont(App.mainFrame.getContentPane().getFont());
 
                 MenuItem openItem = new MenuItem("MooTool");
+                MenuItem colorPickerItem = new MenuItem("取色器");
                 MenuItem exitItem = new MenuItem("Quit");
 
                 openItem.addActionListener(e -> {
                     showMainFrame();
+                });
+                colorPickerItem.addActionListener(e -> {
+                    GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+                    GraphicsDevice gd = ge.getDefaultScreenDevice();
+                    if (gd.isWindowTranslucencySupported(TRANSLUCENT)) {
+                        App.mainFrame.setVisible(false);
+                        ColorPickerFrame.showPicker();
+                    }
                 });
                 exitItem.addActionListener(e -> {
                     shutdown();
                 });
 
                 App.popupMenu.add(openItem);
+                App.popupMenu.addSeparator();
+                App.popupMenu.add(colorPickerItem);
                 App.popupMenu.addSeparator();
                 App.popupMenu.add(exitItem);
 
@@ -193,17 +209,15 @@ public class Init {
                     public void mouseClicked(MouseEvent e) {
                         switch (e.getButton()) {
                             case MouseEvent.BUTTON1: {
-                                App.mainFrame.setVisible(true);
-                                App.mainFrame.setExtendedState(JFrame.NORMAL);
-                                App.mainFrame.requestFocus();
+                                showMainFrame();
                                 break;
                             }
                             case MouseEvent.BUTTON2: {
-                                logger.debug("托盘图标被鼠标中键被点击");
+                                logger.debug("托盘图标中键事件");
                                 break;
                             }
                             case MouseEvent.BUTTON3: {
-                                logger.debug("托盘图标被鼠标右键被点击");
+                                logger.debug("托盘图标右键事件");
                                 break;
                             }
                             default: {
@@ -228,8 +242,12 @@ public class Init {
     }
 
     public static void showMainFrame() {
-        App.mainFrame.setExtendedState(JFrame.NORMAL);
         App.mainFrame.setVisible(true);
+        if (App.mainFrame.getExtendedState() == Frame.ICONIFIED) {
+            App.mainFrame.setExtendedState(Frame.NORMAL);
+        } else if (App.mainFrame.getExtendedState() == 7) {
+            App.mainFrame.setExtendedState(Frame.MAXIMIZED_BOTH);
+        }
         App.mainFrame.requestFocus();
     }
 
