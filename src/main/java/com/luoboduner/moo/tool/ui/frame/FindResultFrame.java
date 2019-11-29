@@ -1,15 +1,10 @@
 package com.luoboduner.moo.tool.ui.frame;
 
-import com.apple.eawt.Application;
-import com.google.common.collect.Lists;
-import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.form.func.FindResultForm;
 import com.luoboduner.moo.tool.util.ComponentUtil;
-import com.luoboduner.moo.tool.util.SystemUtil;
 
 import javax.swing.*;
 import java.awt.*;
-import java.util.List;
 
 /**
  * <pre>
@@ -29,22 +24,7 @@ public class FindResultFrame extends JFrame {
         String title = "查找结果";
         this.setName(title);
         this.setTitle(title);
-        List<Image> images = Lists.newArrayList();
-        images.add(UiConsts.IMAGE_LOGO_1024);
-        images.add(UiConsts.IMAGE_LOGO_512);
-        images.add(UiConsts.IMAGE_LOGO_256);
-        images.add(UiConsts.IMAGE_LOGO_128);
-        images.add(UiConsts.IMAGE_LOGO_64);
-        images.add(UiConsts.IMAGE_LOGO_48);
-        images.add(UiConsts.IMAGE_LOGO_32);
-        images.add(UiConsts.IMAGE_LOGO_24);
-        images.add(UiConsts.IMAGE_LOGO_16);
-        this.setIconImages(images);
-        // Mac系统Dock图标
-        if (SystemUtil.isMacOs()) {
-            Application application = Application.getApplication();
-            application.setDockIconImage(UiConsts.IMAGE_LOGO_1024);
-        }
+        FrameUtil.setFrameIcon(this);
 
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.72, 0.68);
     }

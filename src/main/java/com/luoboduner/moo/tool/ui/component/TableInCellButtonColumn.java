@@ -21,9 +21,9 @@ import java.awt.event.ActionListener;
  */
 public class TableInCellButtonColumn extends AbstractCellEditor implements
         TableCellRenderer, TableCellEditor, ActionListener {
-    JTable table;
-    JButton renderButton;
-    JButton editButton;
+    private JTable table;
+    private JButton renderButton;
+    private JButton editButton;
 
     public TableInCellButtonColumn(JTable table, int column) {
         super();

@@ -69,3 +69,34 @@ create table if not exists t_qr_code
     create_time   datetime,
     modified_time datetime
 );
+
+create table t_favorite_color_list
+(
+    id            integer
+        constraint t_favorite_color_list_pk
+            primary key autoincrement,
+    title         text,
+    remark        text,
+    create_time   datetime,
+    modified_time datetime
+);
+
+create unique index t_favorite_color_list_uindex
+    on t_favorite_color_list (title);
+
+create table t_favorite_color_item
+(
+    id            integer
+        constraint t_favorite_color_item_pk
+            primary key autoincrement,
+    list_id       integer,
+    name          text,
+    value         text,
+    sort_num      integer,
+    remark        text,
+    create_time   datetime,
+    modified_time datetime
+);
+
+create unique index t_favorite_color_item_uindex
+    on t_favorite_color_item (list_id,name);
