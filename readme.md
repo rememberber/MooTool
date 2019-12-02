@@ -23,6 +23,7 @@ A handy desktop toolset for developers.
 + **随手记**（可以用来快速记录一些：代码片段、常用的SQL、常用的接口、常用的数据、暂存一些临时log等）  
 + **计算**（四则运算/进制转换/最大公约数/最小公倍数/排列组合数）
 + **网络/IP**（ip地址转换/本机ip信息/根据域名获取ip）
++ **调色板**（取色器/颜色管理）
 
 ### 计划中支持的功能
 + 正则表达式  
@@ -94,6 +95,18 @@ A handy desktop toolset for developers.
 <p align="center">
   <a href="http://download.zhoubochina.com/moo/img/mt-net.png">
    <img alt="MooTool" src="http://download.zhoubochina.com/moo/img/mt-net.png">
+  </a>
+</p>  
+
+<p align="center">
+  <a href="http://download.zhoubochina.com/moo/img/mt-colorBoard.png">
+   <img alt="MooTool" src="http://download.zhoubochina.com/moo/img/mt-colorBoard.png">
+  </a>
+</p>  
+
+<p align="center">
+  <a href="http://download.zhoubochina.com/moo/img/mt-favoriteColor.png">
+   <img alt="MooTool" src="http://download.zhoubochina.com/moo/img/mt-favoriteColor.png">
   </a>
 </p>  
 
