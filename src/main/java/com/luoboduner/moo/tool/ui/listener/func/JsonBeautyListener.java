@@ -136,9 +136,11 @@ public class JsonBeautyListener {
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
                     jsonBeautyForm.getFindReplacePanel().setVisible(true);
                     jsonBeautyForm.getFindTextField().grabFocus();
+                    jsonBeautyForm.getFindTextField().selectAll();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_R) {
                     jsonBeautyForm.getFindReplacePanel().setVisible(true);
                     jsonBeautyForm.getReplaceTextField().grabFocus();
+                    jsonBeautyForm.getReplaceTextField().selectAll();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
                     newJson();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
@@ -312,6 +314,7 @@ public class JsonBeautyListener {
         jsonBeautyForm.getFindButton().addActionListener(e -> {
             jsonBeautyForm.getFindReplacePanel().setVisible(true);
             jsonBeautyForm.getFindTextField().grabFocus();
+            jsonBeautyForm.getFindTextField().selectAll();
         });
 
         jsonBeautyForm.getFindTextField().addKeyListener(new KeyListener() {

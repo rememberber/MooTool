@@ -123,9 +123,11 @@ public class QuickNoteListener {
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
                     quickNoteForm.getFindReplacePanel().setVisible(true);
                     quickNoteForm.getFindTextField().grabFocus();
+                    quickNoteForm.getFindTextField().selectAll();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_R) {
                     quickNoteForm.getFindReplacePanel().setVisible(true);
                     quickNoteForm.getReplaceTextField().grabFocus();
+                    quickNoteForm.getReplaceTextField().selectAll();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
                     newNote();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
@@ -300,6 +302,7 @@ public class QuickNoteListener {
         quickNoteForm.getFindButton().addActionListener(e -> {
             quickNoteForm.getFindReplacePanel().setVisible(true);
             quickNoteForm.getFindTextField().grabFocus();
+            quickNoteForm.getFindTextField().selectAll();
         });
 
         quickNoteForm.getFindTextField().addKeyListener(new KeyListener() {
