@@ -1,7 +1,6 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.ReUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
@@ -77,13 +76,12 @@ public class QuickNoteListener {
         quickNoteForm.getNoteListTable().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                ThreadUtil.execute(() -> {
-                    int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
-                    String name = quickNoteForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
-                    selectedName = name;
-                    TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
-                    quickNoteForm.getTextArea().setText(tQuickNote.getContent());
-                });
+                int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
+                String name = quickNoteForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
+                selectedName = name;
+                TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
+                quickNoteForm.getTextArea().setText(tQuickNote.getContent());
+                quickNoteForm.getTextArea().updateUI();
                 super.mousePressed(e);
             }
         });
@@ -141,7 +139,7 @@ public class QuickNoteListener {
         });
 
         // 删除按钮事件
-        quickNoteForm.getDeleteButton().addActionListener(e -> ThreadUtil.execute(() -> {
+        quickNoteForm.getDeleteButton().addActionListener(e -> {
             try {
                 int[] selectedRows = quickNoteForm.getNoteListTable().getSelectedRows();
 
@@ -158,6 +156,7 @@ public class QuickNoteListener {
                             quickNoteMapper.deleteByPrimaryKey(id);
 
                             tableModel.removeRow(selectedRow);
+                            quickNoteForm.getNoteListTable().updateUI();
                         }
                         selectedName = null;
                         QuickNoteForm.initNoteListTable();
@@ -168,7 +167,7 @@ public class QuickNoteListener {
                         JOptionPane.ERROR_MESSAGE);
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
-        }));
+        });
 
         // 字体名称下拉框事件
         quickNoteForm.getFontNameComboBox().addItemListener(e -> {
