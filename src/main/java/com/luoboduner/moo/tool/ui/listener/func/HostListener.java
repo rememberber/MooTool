@@ -56,9 +56,7 @@ public class HostListener {
         hostForm.getNoteListTable().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                ThreadUtil.execute(() -> {
-                    refreshHostContentInTextArea();
-                });
+                refreshHostContentInTextArea();
                 super.mousePressed(e);
             }
         });
@@ -108,7 +106,7 @@ public class HostListener {
         });
 
         // 删除按钮事件
-        hostForm.getDeleteButton().addActionListener(e -> ThreadUtil.execute(() -> {
+        hostForm.getDeleteButton().addActionListener(e -> {
             try {
                 int[] selectedRows = hostForm.getNoteListTable().getSelectedRows();
 
@@ -125,6 +123,7 @@ public class HostListener {
                             hostMapper.deleteByPrimaryKey(id);
 
                             tableModel.removeRow(selectedRow);
+                            hostForm.getNoteListTable().updateUI();
                         }
                         selectedNameHost = null;
                         HostForm.initListTable();
@@ -135,7 +134,7 @@ public class HostListener {
                         JOptionPane.ERROR_MESSAGE);
                 log.error(e1.toString());
             }
-        }));
+        });
 
         // 添加按钮事件
         hostForm.getAddButton().addActionListener(e -> {
