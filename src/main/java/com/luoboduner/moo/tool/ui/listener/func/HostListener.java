@@ -56,6 +56,7 @@ public class HostListener {
         hostForm.getNoteListTable().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
+                quickSave(false);
                 refreshHostContentInTextArea();
                 super.mousePressed(e);
             }
@@ -70,29 +71,7 @@ public class HostListener {
             @Override
             public void keyPressed(KeyEvent evt) {
                 if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
-                    String now = SqliteUtil.nowDateForSqlite();
-                    if (selectedNameHost != null) {
-                        THost tHost = new THost();
-                        tHost.setName(selectedNameHost);
-                        tHost.setContent(hostForm.getTextArea().getText());
-                        tHost.setModifiedTime(now);
-
-                        hostMapper.updateByName(tHost);
-                    } else {
-                        String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-                        String name = JOptionPane.showInputDialog("名称", tempName);
-                        if (StringUtils.isNotBlank(name)) {
-                            THost tHost = new THost();
-                            tHost.setName(name);
-                            tHost.setContent(hostForm.getTextArea().getText());
-                            tHost.setCreateTime(now);
-                            tHost.setModifiedTime(now);
-
-                            hostMapper.insert(tHost);
-                            HostForm.initListTable();
-                            selectedNameHost = name;
-                        }
-                    }
+                    quickSave(true);
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
                     newHost();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
@@ -281,6 +260,40 @@ public class HostListener {
 
         });
 
+    }
+
+    /**
+     * save for quick key and item change
+     *
+     * @param refreshModifiedTime
+     */
+    private static void quickSave(boolean refreshModifiedTime) {
+        HostForm hostForm = HostForm.getInstance();
+        String now = SqliteUtil.nowDateForSqlite();
+        if (selectedNameHost != null) {
+            THost tHost = new THost();
+            tHost.setName(selectedNameHost);
+            tHost.setContent(hostForm.getTextArea().getText());
+            if (refreshModifiedTime) {
+                tHost.setModifiedTime(now);
+            }
+
+            hostMapper.updateByName(tHost);
+        } else {
+            String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+            String name = JOptionPane.showInputDialog("名称", tempName);
+            if (StringUtils.isNotBlank(name)) {
+                THost tHost = new THost();
+                tHost.setName(name);
+                tHost.setContent(hostForm.getTextArea().getText());
+                tHost.setCreateTime(now);
+                tHost.setModifiedTime(now);
+
+                hostMapper.insert(tHost);
+                HostForm.initListTable();
+                selectedNameHost = name;
+            }
+        }
     }
 
     private static void newHost() {
