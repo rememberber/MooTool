@@ -82,6 +82,9 @@ public class QuickNoteListener {
                 selectedName = name;
                 TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
                 quickNoteForm.getTextArea().setText(tQuickNote.getContent());
+                quickNoteForm.getTextArea().setCaretPosition(0);
+                quickNoteForm.getScrollPane().getVerticalScrollBar().setValue(0);
+                quickNoteForm.getScrollPane().getHorizontalScrollBar().setValue(0);
                 quickNoteForm.getTextArea().updateUI();
                 super.mousePressed(e);
             }

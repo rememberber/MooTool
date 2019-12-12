@@ -91,6 +91,9 @@ public class JsonBeautyListener {
                 selectedNameJson = name;
                 TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByName(name);
                 jsonBeautyForm.getTextArea().setText(tJsonBeauty.getContent());
+                jsonBeautyForm.getTextArea().setCaretPosition(0);
+                jsonBeautyForm.getScrollPane().getVerticalScrollBar().setValue(0);
+                jsonBeautyForm.getScrollPane().getHorizontalScrollBar().setValue(0);
                 jsonBeautyForm.getTextArea().updateUI();
                 super.mousePressed(e);
             }

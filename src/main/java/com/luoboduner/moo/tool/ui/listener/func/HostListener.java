@@ -280,18 +280,21 @@ public class HostListener {
 
             hostMapper.updateByName(tHost);
         } else {
-            String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-            String name = JOptionPane.showInputDialog("名称", tempName);
-            if (StringUtils.isNotBlank(name)) {
-                THost tHost = new THost();
-                tHost.setName(name);
-                tHost.setContent(hostForm.getTextArea().getText());
-                tHost.setCreateTime(now);
-                tHost.setModifiedTime(now);
+            if (refreshModifiedTime) {
+                // 通过refreshModifiedTime可以判断是否主动按快捷键保存，只有主动触发时才保存，避免初次点击列表误提示问题
+                String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                String name = JOptionPane.showInputDialog("名称", tempName);
+                if (StringUtils.isNotBlank(name)) {
+                    THost tHost = new THost();
+                    tHost.setName(name);
+                    tHost.setContent(hostForm.getTextArea().getText());
+                    tHost.setCreateTime(now);
+                    tHost.setModifiedTime(now);
 
-                hostMapper.insert(tHost);
-                HostForm.initListTable();
-                selectedNameHost = name;
+                    hostMapper.insert(tHost);
+                    HostForm.initListTable();
+                    selectedNameHost = name;
+                }
             }
         }
     }
@@ -326,6 +329,10 @@ public class HostListener {
             hostForm.getSwitchButton().setVisible(true);
         }
         hostForm.getTextArea().setText(content);
+        hostForm.getTextArea().setCaretPosition(0);
+        hostForm.getScrollPane().getVerticalScrollBar().setValue(0);
+        hostForm.getScrollPane().getHorizontalScrollBar().setValue(0);
+        hostForm.getTextArea().updateUI();
     }
 
     private static void save(boolean needRename) {
