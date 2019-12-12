@@ -1,7 +1,6 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.json.JSONUtil;
 import com.luoboduner.moo.tool.App;
@@ -86,13 +85,12 @@ public class JsonBeautyListener {
         jsonBeautyForm.getNoteListTable().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                ThreadUtil.execute(() -> {
-                    int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
-                    String name = jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
-                    selectedNameJson = name;
-                    TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByName(name);
-                    jsonBeautyForm.getTextArea().setText(tJsonBeauty.getContent());
-                });
+                int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
+                String name = jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
+                selectedNameJson = name;
+                TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByName(name);
+                jsonBeautyForm.getTextArea().setText(tJsonBeauty.getContent());
+                jsonBeautyForm.getTextArea().updateUI();
                 super.mousePressed(e);
             }
         });
@@ -154,7 +152,7 @@ public class JsonBeautyListener {
         });
 
         // 删除按钮事件
-        jsonBeautyForm.getDeleteButton().addActionListener(e -> ThreadUtil.execute(() -> {
+        jsonBeautyForm.getDeleteButton().addActionListener(e -> {
             try {
                 int[] selectedRows = jsonBeautyForm.getNoteListTable().getSelectedRows();
 
@@ -181,7 +179,7 @@ public class JsonBeautyListener {
                         JOptionPane.ERROR_MESSAGE);
                 log.error(e1.toString());
             }
-        }));
+        });
 
         // 字体名称下拉框事件
         jsonBeautyForm.getFontNameComboBox().addItemListener(e -> {
