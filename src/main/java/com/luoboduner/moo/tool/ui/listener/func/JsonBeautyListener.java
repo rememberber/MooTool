@@ -85,6 +85,7 @@ public class JsonBeautyListener {
         jsonBeautyForm.getNoteListTable().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
+                quickSave(false);
                 int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
                 String name = jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
                 selectedNameJson = name;
@@ -104,29 +105,7 @@ public class JsonBeautyListener {
             @Override
             public void keyPressed(KeyEvent evt) {
                 if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
-                    String now = SqliteUtil.nowDateForSqlite();
-                    if (selectedNameJson != null) {
-                        TJsonBeauty tJsonBeauty = new TJsonBeauty();
-                        tJsonBeauty.setName(selectedNameJson);
-                        tJsonBeauty.setContent(jsonBeautyForm.getTextArea().getText());
-                        tJsonBeauty.setModifiedTime(now);
-
-                        jsonBeautyMapper.updateByName(tJsonBeauty);
-                    } else {
-                        String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-                        String name = JOptionPane.showInputDialog("名称", tempName);
-                        if (StringUtils.isNotBlank(name)) {
-                            TJsonBeauty tJsonBeauty = new TJsonBeauty();
-                            tJsonBeauty.setName(name);
-                            tJsonBeauty.setContent(jsonBeautyForm.getTextArea().getText());
-                            tJsonBeauty.setCreateTime(now);
-                            tJsonBeauty.setModifiedTime(now);
-
-                            jsonBeautyMapper.insert(tJsonBeauty);
-                            JsonBeautyForm.initListTable();
-                            selectedNameJson = name;
-                        }
-                    }
+                    quickSave(true);
                 } else if (evt.isControlDown() && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
                     String jsonText = jsonBeautyForm.getTextArea().getText();
                     jsonBeautyForm.getTextArea().setText(formatJson(jsonText));
@@ -169,6 +148,7 @@ public class JsonBeautyListener {
                             jsonBeautyMapper.deleteByPrimaryKey(id);
 
                             tableModel.removeRow(selectedRow);
+                            jsonBeautyForm.getNoteListTable().updateUI();
                         }
                         selectedNameJson = null;
                         JsonBeautyForm.initListTable();
@@ -433,6 +413,39 @@ public class JsonBeautyListener {
             }
         });
 
+    }
+
+    /**
+     * save for quick key and item change
+     *
+     * @param refreshModifiedTime
+     */
+    private static void quickSave(boolean refreshModifiedTime) {
+        JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
+        String now = SqliteUtil.nowDateForSqlite();
+        if (selectedNameJson != null) {
+            TJsonBeauty tJsonBeauty = new TJsonBeauty();
+            tJsonBeauty.setName(selectedNameJson);
+            tJsonBeauty.setContent(jsonBeautyForm.getTextArea().getText());
+            if (refreshModifiedTime) {
+                tJsonBeauty.setModifiedTime(now);
+            }
+            jsonBeautyMapper.updateByName(tJsonBeauty);
+        } else {
+            String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+            String name = JOptionPane.showInputDialog("名称", tempName);
+            if (StringUtils.isNotBlank(name)) {
+                TJsonBeauty tJsonBeauty = new TJsonBeauty();
+                tJsonBeauty.setName(name);
+                tJsonBeauty.setContent(jsonBeautyForm.getTextArea().getText());
+                tJsonBeauty.setCreateTime(now);
+                tJsonBeauty.setModifiedTime(now);
+
+                jsonBeautyMapper.insert(tJsonBeauty);
+                JsonBeautyForm.initListTable();
+                selectedNameJson = name;
+            }
+        }
     }
 
     private static void newJson() {

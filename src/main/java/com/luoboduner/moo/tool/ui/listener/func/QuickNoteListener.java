@@ -404,6 +404,8 @@ public class QuickNoteListener {
 
     /**
      * save for quick key and item change
+     *
+     * @param refreshModifiedTime
      */
     private static void quickSave(boolean refreshModifiedTime) {
         QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
