@@ -5,7 +5,10 @@
     <constraints>
       <xy x="20" y="20" width="676" height="751"/>
     </constraints>
-    <properties/>
+    <properties>
+      <minimumSize width="400" height="300"/>
+      <preferredSize width="400" height="300"/>
+    </properties>
     <border type="none"/>
     <children>
       <grid id="5447b" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">

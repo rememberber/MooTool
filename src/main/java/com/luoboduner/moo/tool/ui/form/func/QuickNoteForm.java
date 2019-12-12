@@ -200,6 +200,8 @@ public class QuickNoteForm {
     private void $$$setupUI$$$() {
         quickNotePanel = new JPanel();
         quickNotePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        quickNotePanel.setMinimumSize(new Dimension(400, 300));
+        quickNotePanel.setPreferredSize(new Dimension(400, 300));
         splitPane = new JSplitPane();
         splitPane.setContinuousLayout(true);
         splitPane.setDividerLocation(7);
