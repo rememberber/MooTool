@@ -64,6 +64,17 @@ public class TranslationForm {
         translationForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
         translationForm.getListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
 
+        if ("Darcula(推荐)".equals(App.config.getTheme())) {
+            Color bgColor = new Color(30, 30, 30);
+            translationForm.getTextArea1().setBackground(bgColor);
+            translationForm.getTextArea2().setBackground(bgColor);
+            translationForm.getTextPane1().setBackground(bgColor);
+            Color foreColor = new Color(187, 187, 187);
+            translationForm.getTextArea1().setForeground(foreColor);
+            translationForm.getTextArea2().setForeground(foreColor);
+            translationForm.getTextPane1().setForeground(foreColor);
+        }
+
         translationForm.getTranslationPanel().updateUI();
     }
 
