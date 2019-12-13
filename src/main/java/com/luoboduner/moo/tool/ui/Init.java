@@ -9,6 +9,7 @@ import com.luoboduner.moo.tool.ui.form.AboutForm;
 import com.luoboduner.moo.tool.ui.form.SettingForm;
 import com.luoboduner.moo.tool.ui.form.func.CalculatorForm;
 import com.luoboduner.moo.tool.ui.form.func.ColorBoardForm;
+import com.luoboduner.moo.tool.ui.form.func.CronForm;
 import com.luoboduner.moo.tool.ui.form.func.CryptoForm;
 import com.luoboduner.moo.tool.ui.form.func.EnCodeForm;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
@@ -138,8 +139,9 @@ public class Init {
         ThreadUtil.execute(CryptoForm::init);
         ThreadUtil.execute(CalculatorForm::init);
         ThreadUtil.execute(ColorBoardForm::init);
-        ThreadUtil.execute(TranslationForm::init);
         ThreadUtil.execute(NetForm::init);
+        ThreadUtil.execute(TranslationForm::init);
+        ThreadUtil.execute(CronForm::init);
 
         // 检查新版版
         if (App.config.isAutoCheckUpdate()) {
