@@ -18,6 +18,7 @@ import com.luoboduner.moo.tool.ui.form.func.NetForm;
 import com.luoboduner.moo.tool.ui.form.func.QrCodeForm;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
+import com.luoboduner.moo.tool.ui.form.func.TranslationForm;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -137,6 +138,7 @@ public class Init {
         ThreadUtil.execute(CryptoForm::init);
         ThreadUtil.execute(CalculatorForm::init);
         ThreadUtil.execute(ColorBoardForm::init);
+        ThreadUtil.execute(TranslationForm::init);
         ThreadUtil.execute(NetForm::init);
 
         // 检查新版版

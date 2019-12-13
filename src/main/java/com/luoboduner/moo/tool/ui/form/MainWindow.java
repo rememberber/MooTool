@@ -13,6 +13,7 @@ import com.luoboduner.moo.tool.ui.form.func.NetForm;
 import com.luoboduner.moo.tool.ui.form.func.QrCodeForm;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
+import com.luoboduner.moo.tool.ui.form.func.TranslationForm;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -43,6 +44,7 @@ public class MainWindow {
     private JPanel calculatorPanel;
     private JPanel netPanel;
     private JPanel colorBoardPanel;
+    private JPanel translationPanel;
 
     private static MainWindow mainWindow;
 
@@ -74,6 +76,7 @@ public class MainWindow {
         mainWindow.getCalculatorPanel().add(CalculatorForm.getInstance().getCalculatorPanel(), gridConstraints);
         mainWindow.getNetPanel().add(NetForm.getInstance().getNetPanel(), gridConstraints);
         mainWindow.getColorBoardPanel().add(ColorBoardForm.getInstance().getColorBoardPanel(), gridConstraints);
+        mainWindow.getTranslationPanel().add(TranslationForm.getInstance().getTranslationPanel(), gridConstraints);
         mainWindow.getMainPanel().updateUI();
     }
 
@@ -132,15 +135,15 @@ public class MainWindow {
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("图片助手", new ImageIcon(getClass().getResource("/icon/image.png")), panel1);
+        translationPanel = new JPanel();
+        translationPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPane.addTab("翻译", new ImageIcon(getClass().getResource("/icon/translate.png")), translationPanel);
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("翻译", new ImageIcon(getClass().getResource("/icon/translate.png")), panel2);
+        tabbedPane.addTab("Cron表达式", new ImageIcon(getClass().getResource("/icon/cron.png")), panel2);
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("Cron表达式", new ImageIcon(getClass().getResource("/icon/cron.png")), panel3);
-        final JPanel panel4 = new JPanel();
-        panel4.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("正则表达式", new ImageIcon(getClass().getResource("/icon/reg.png")), panel4);
+        tabbedPane.addTab("正则表达式", new ImageIcon(getClass().getResource("/icon/reg.png")), panel3);
         settingPanel = new JPanel();
         settingPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("设置", new ImageIcon(getClass().getResource("/icon/gear.png")), settingPanel);
