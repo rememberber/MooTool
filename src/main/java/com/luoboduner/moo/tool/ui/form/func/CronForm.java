@@ -32,6 +32,7 @@ public class CronForm {
     private JButton 反解析到UIButton;
     private JTextField textField3;
     private JSplitPane splitPane;
+    private JButton 常用CronButton;
 
     private static CronForm cronForm;
 
@@ -57,6 +58,13 @@ public class CronForm {
     private static void initUi() {
         cronForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 2));
         cronForm.getTextArea1().setText("最近10次运行时间：");
+        if ("Darcula(推荐)".equals(App.config.getTheme())) {
+            Color bgColor = new Color(30, 30, 30);
+            cronForm.getTextArea1().setBackground(bgColor);
+            Color foreColor = new Color(187, 187, 187);
+            cronForm.getTextArea1().setForeground(foreColor);
+        }
+        cronForm.getCronPanel().updateUI();
     }
 
     {
@@ -111,7 +119,7 @@ public class CronForm {
         panel9.setLayout(new GridLayoutManager(4, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane.setRightComponent(panel9);
         final JPanel panel10 = new JPanel();
-        panel10.setLayout(new GridLayoutManager(3, 2, new Insets(5, 5, 5, 5), -1, -1));
+        panel10.setLayout(new GridLayoutManager(3, 3, new Insets(5, 5, 5, 5), -1, -1));
         panel9.add(panel10, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, 1, null, null, null, 0, false));
         final JLabel label1 = new JLabel();
         label1.setText("Cron 表达式");
@@ -122,10 +130,10 @@ public class CronForm {
         textField1 = new JTextField();
         panel10.add(textField1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         textField2 = new JTextField();
-        panel10.add(textField2, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        panel10.add(textField2, new GridConstraints(2, 1, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         final JPanel panel11 = new JPanel();
         panel11.setLayout(new GridLayoutManager(1, 4, new Insets(0, 0, 0, 0), -1, -1));
-        panel10.add(panel11, new GridConstraints(1, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel10.add(panel11, new GridConstraints(1, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         button1 = new JButton();
         button1.setIcon(new ImageIcon(getClass().getResource("/icon/arrow-down.png")));
         button1.setText("");
@@ -138,6 +146,9 @@ public class CronForm {
         panel11.add(spacer1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
         panel11.add(spacer2, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        常用CronButton = new JButton();
+        常用CronButton.setText("常用Cron");
+        panel10.add(常用CronButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel12 = new JPanel();
         panel12.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel9.add(panel12, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
@@ -147,7 +158,7 @@ public class CronForm {
         textArea1.setText("");
         scrollPane1.setViewportView(textArea1);
         final JPanel panel13 = new JPanel();
-        panel13.setLayout(new GridLayoutManager(2, 7, new Insets(5, 5, 5, 5), -1, -1));
+        panel13.setLayout(new GridLayoutManager(2, 7, new Insets(30, 5, 5, 5), -1, -1));
         panel9.add(panel13, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JLabel label3 = new JLabel();
         label3.setText("秒");
