@@ -13,6 +13,7 @@ import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
 import com.luoboduner.moo.tool.ui.form.func.NetForm;
 import com.luoboduner.moo.tool.ui.form.func.QrCodeForm;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
+import com.luoboduner.moo.tool.ui.form.func.RegexForm;
 import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
 import com.luoboduner.moo.tool.ui.form.func.TranslationForm;
 import lombok.Getter;
@@ -47,6 +48,7 @@ public class MainWindow {
     private JPanel colorBoardPanel;
     private JPanel translationPanel;
     private JPanel cronPanel;
+    private JPanel regexPanel;
 
     private static MainWindow mainWindow;
 
@@ -80,6 +82,7 @@ public class MainWindow {
         mainWindow.getColorBoardPanel().add(ColorBoardForm.getInstance().getColorBoardPanel(), gridConstraints);
         mainWindow.getTranslationPanel().add(TranslationForm.getInstance().getTranslationPanel(), gridConstraints);
         mainWindow.getCronPanel().add(CronForm.getInstance().getCronPanel(), gridConstraints);
+        mainWindow.getRegexPanel().add(RegexForm.getInstance().getRegexPanel(), gridConstraints);
         mainWindow.getMainPanel().updateUI();
     }
 
@@ -144,9 +147,9 @@ public class MainWindow {
         cronPanel = new JPanel();
         cronPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("Cron表达式", new ImageIcon(getClass().getResource("/icon/cron.png")), cronPanel);
-        final JPanel panel2 = new JPanel();
-        panel2.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("正则表达式", new ImageIcon(getClass().getResource("/icon/reg.png")), panel2);
+        regexPanel = new JPanel();
+        regexPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPane.addTab("正则表达式", new ImageIcon(getClass().getResource("/icon/reg.png")), regexPanel);
         settingPanel = new JPanel();
         settingPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("设置", new ImageIcon(getClass().getResource("/icon/gear.png")), settingPanel);

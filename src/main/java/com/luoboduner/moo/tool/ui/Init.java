@@ -18,6 +18,7 @@ import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
 import com.luoboduner.moo.tool.ui.form.func.NetForm;
 import com.luoboduner.moo.tool.ui.form.func.QrCodeForm;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
+import com.luoboduner.moo.tool.ui.form.func.RegexForm;
 import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
 import com.luoboduner.moo.tool.ui.form.func.TranslationForm;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
@@ -142,6 +143,7 @@ public class Init {
         ThreadUtil.execute(NetForm::init);
         ThreadUtil.execute(TranslationForm::init);
         ThreadUtil.execute(CronForm::init);
+        ThreadUtil.execute(RegexForm::init);
 
         // 检查新版版
         if (App.config.isAutoCheckUpdate()) {
