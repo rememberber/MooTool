@@ -106,7 +106,11 @@
                     <constraints>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
-                    <properties/>
+                    <properties>
+                      <model>
+                        <item value="中文"/>
+                      </model>
+                    </properties>
                   </component>
                   <component id="a526d" class="javax.swing.JButton" binding="button3" default-binding="true">
                     <constraints>
@@ -121,7 +125,11 @@
                     <constraints>
                       <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
-                    <properties/>
+                    <properties>
+                      <model>
+                        <item value="English"/>
+                      </model>
+                    </properties>
                   </component>
                   <hspacer id="81b20">
                     <constraints>
