@@ -9,6 +9,7 @@ import com.luoboduner.moo.tool.ui.form.func.CryptoForm;
 import com.luoboduner.moo.tool.ui.form.func.EnCodeForm;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
 import com.luoboduner.moo.tool.ui.form.func.HttpRequestForm;
+import com.luoboduner.moo.tool.ui.form.func.ImageForm;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
 import com.luoboduner.moo.tool.ui.form.func.NetForm;
 import com.luoboduner.moo.tool.ui.form.func.QrCodeForm;
@@ -49,6 +50,7 @@ public class MainWindow {
     private JPanel translationPanel;
     private JPanel cronPanel;
     private JPanel regexPanel;
+    private JPanel imagePanel;
 
     private static MainWindow mainWindow;
 
@@ -83,6 +85,7 @@ public class MainWindow {
         mainWindow.getTranslationPanel().add(TranslationForm.getInstance().getTranslationPanel(), gridConstraints);
         mainWindow.getCronPanel().add(CronForm.getInstance().getCronPanel(), gridConstraints);
         mainWindow.getRegexPanel().add(RegexForm.getInstance().getRegexPanel(), gridConstraints);
+        mainWindow.getImagePanel().add(ImageForm.getInstance().getImagePanel(), gridConstraints);
         mainWindow.getMainPanel().updateUI();
     }
 
@@ -138,9 +141,9 @@ public class MainWindow {
         colorBoardPanel = new JPanel();
         colorBoardPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("调色板", new ImageIcon(getClass().getResource("/icon/color.png")), colorBoardPanel);
-        final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("图片助手", new ImageIcon(getClass().getResource("/icon/image.png")), panel1);
+        imagePanel = new JPanel();
+        imagePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPane.addTab("图片助手", new ImageIcon(getClass().getResource("/icon/image.png")), imagePanel);
         translationPanel = new JPanel();
         translationPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("翻译", new ImageIcon(getClass().getResource("/icon/translate.png")), translationPanel);

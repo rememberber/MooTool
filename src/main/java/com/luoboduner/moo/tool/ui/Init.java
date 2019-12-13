@@ -14,6 +14,7 @@ import com.luoboduner.moo.tool.ui.form.func.CryptoForm;
 import com.luoboduner.moo.tool.ui.form.func.EnCodeForm;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
 import com.luoboduner.moo.tool.ui.form.func.HttpRequestForm;
+import com.luoboduner.moo.tool.ui.form.func.ImageForm;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
 import com.luoboduner.moo.tool.ui.form.func.NetForm;
 import com.luoboduner.moo.tool.ui.form.func.QrCodeForm;
@@ -144,6 +145,7 @@ public class Init {
         ThreadUtil.execute(TranslationForm::init);
         ThreadUtil.execute(CronForm::init);
         ThreadUtil.execute(RegexForm::init);
+        ThreadUtil.execute(ImageForm::init);
 
         // 检查新版版
         if (App.config.isAutoCheckUpdate()) {
