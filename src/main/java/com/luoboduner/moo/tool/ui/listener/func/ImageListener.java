@@ -78,7 +78,7 @@ public class ImageListener {
                     File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + name + ".png"));
                     ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
                     ImageForm.initListTable();
-                } catch (IOException ex) {
+                } catch (Exception ex) {
                     JOptionPane.showMessageDialog(App.mainFrame, "保存失败！\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
                     log.error(ExceptionUtils.getStackTrace(ex));
                 }
