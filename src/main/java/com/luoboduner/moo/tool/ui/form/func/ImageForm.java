@@ -10,15 +10,16 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.listener.func.ImageListener;
-import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -120,7 +121,12 @@ public class ImageForm {
             imageForm.getShowImageLabel().setIcon(new ImageIcon(ImageListener.IMAGE_PATH_PRE_FIX + fileNames.get(0)));
             imageForm.getShowImagePanel().updateUI();
             imageForm.getListTable().setRowSelectionInterval(0, 0);
-            QuickNoteListener.selectedName = fileNames.get(0);
+            ImageListener.selectedName = fileNames.get(0);
+            try {
+                ImageListener.selectedImage = ImageIO.read(FileUtil.newFile(ImageListener.IMAGE_PATH_PRE_FIX + fileNames.get(0)));
+            } catch (IOException e) {
+                logger.error(ExceptionUtils.getStackTrace(e));
+            }
         }
     }
 

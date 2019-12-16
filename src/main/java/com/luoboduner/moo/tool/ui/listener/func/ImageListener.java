@@ -6,7 +6,9 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.ImageForm;
 import com.luoboduner.moo.tool.util.SystemUtil;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 
 import javax.imageio.ImageIO;
@@ -14,6 +16,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
@@ -26,6 +30,7 @@ import java.util.Date;
  * @author <a href="https://github.com/rememberber">RememBerBer</a>
  * @since 2019/12/16.
  */
+@Slf4j
 public class ImageListener {
     public static String selectedName;
 
@@ -71,9 +76,29 @@ public class ImageListener {
                     ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
                     ImageForm.initListTable();
                 } catch (IOException ex) {
-                    ex.printStackTrace();
+                    JOptionPane.showMessageDialog(App.mainFrame, "保存失败！\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+                    log.error(ExceptionUtils.getStackTrace(ex));
                 }
+            }
+        });
 
+        // 点击左侧表格事件
+        imageForm.getListTable().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+//                quickSave(false);
+                int selectedRow = imageForm.getListTable().getSelectedRow();
+                String name = imageForm.getListTable().getValueAt(selectedRow, 1).toString();
+                selectedName = name.replace(".png", "");
+                imageForm.getShowImageLabel().setIcon(new ImageIcon(ImageListener.IMAGE_PATH_PRE_FIX + name));
+                imageForm.getShowImagePanel().updateUI();
+                try {
+                    ImageListener.selectedImage = ImageIO.read(FileUtil.newFile(ImageListener.IMAGE_PATH_PRE_FIX + name));
+                } catch (IOException ex) {
+                    JOptionPane.showMessageDialog(App.mainFrame, ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
+                    log.error(ExceptionUtils.getStackTrace(ex));
+                }
+                super.mousePressed(e);
             }
         });
     }
