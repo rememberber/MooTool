@@ -3,7 +3,7 @@
   <grid id="27dc6" binding="imagePanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="20" y="20" width="719" height="400"/>
+      <xy x="20" y="20" width="740" height="400"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -16,7 +16,7 @@
         </constraints>
         <properties>
           <continuousLayout value="true"/>
-          <dividerLocation value="156"/>
+          <dividerLocation value="106"/>
           <dividerSize value="2"/>
         </properties>
         <border type="none"/>
@@ -86,7 +86,7 @@
             <properties/>
             <border type="none"/>
             <children>
-              <grid id="3e5be" binding="menuPanel" layout-manager="GridLayoutManager" row-count="1" column-count="6" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+              <grid id="3e5be" binding="menuPanel" layout-manager="GridLayoutManager" row-count="1" column-count="7" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="5" left="5" bottom="5" right="5"/>
                 <constraints>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -96,7 +96,7 @@
                 <children>
                   <component id="a2f07" class="javax.swing.JButton" binding="截图Button" default-binding="true">
                     <constraints>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
                       <text value="截图"/>
@@ -104,12 +104,12 @@
                   </component>
                   <hspacer id="6206c">
                     <constraints>
-                      <grid row="0" column="5" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                      <grid row="0" column="6" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
                   </hspacer>
                   <component id="7f3d" class="javax.swing.JButton" binding="saveFromClipboardButton">
                     <constraints>
-                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                      <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
                       <text value="从剪贴板获取"/>
@@ -118,7 +118,7 @@
                   </component>
                   <component id="8d32b" class="javax.swing.JButton" binding="从系统打开Button" default-binding="true">
                     <constraints>
-                      <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                      <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
                       <text value="从系统打开"/>
@@ -126,7 +126,7 @@
                   </component>
                   <component id="7b63e" class="javax.swing.JButton" binding="复制到剪贴板Button" default-binding="true">
                     <constraints>
-                      <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                      <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
                       <text value="复制到剪贴板"/>
@@ -134,10 +134,19 @@
                   </component>
                   <component id="9242b" class="javax.swing.JButton" binding="保存Button" default-binding="true">
                     <constraints>
-                      <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                      <grid row="0" column="5" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
                       <text value="保存"/>
+                    </properties>
+                  </component>
+                  <component id="8d9d7" class="javax.swing.JButton" binding="button2" default-binding="true">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <icon value="icon/listFiles_dark.png"/>
+                      <text value=""/>
                     </properties>
                   </component>
                 </children>
