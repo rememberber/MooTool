@@ -1,6 +1,7 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.swing.clipboard.ClipboardUtil;
 import com.bulenkov.iconloader.util.ImageUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
@@ -230,6 +231,17 @@ public class ImageListener {
                         }
                     }
                 }
+            }
+        });
+
+        // 复制到剪贴板
+        imageForm.getCopyToClipboardButton().addActionListener(e -> {
+            try {
+                ClipboardUtil.setImage(selectedImage);
+                JOptionPane.showMessageDialog(App.mainFrame, "已复制图片到剪贴板！");
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(App.mainFrame, "复制失败！\n\n" + e1.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
             }
         });
     }

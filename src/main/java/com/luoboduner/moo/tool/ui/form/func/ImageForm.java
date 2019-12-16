@@ -43,7 +43,7 @@ public class ImageForm {
     private JLabel showImageLabel;
     private JScrollPane scrollPane;
     private JPanel menuPanel;
-    private JButton 复制到剪贴板Button;
+    private JButton copyToClipboardButton;
     private JButton saveButton;
     private JButton listItemButton;
     private JButton exportButton;
@@ -64,7 +64,7 @@ public class ImageForm {
             if (image != null) {
                 getInstance().getShowImageLabel().setIcon(new ImageIcon(image));
             } else {
-                JOptionPane.showMessageDialog(App.mainFrame, "还没有复制图片到剪贴板吧?\n\n", "失败", JOptionPane.WARNING_MESSAGE);
+                JOptionPane.showMessageDialog(App.mainFrame, "还没有复制图片到剪贴板吧？\n\n", "失败", JOptionPane.WARNING_MESSAGE);
             }
         } catch (HeadlessException ex) {
             ex.printStackTrace();
@@ -199,9 +199,9 @@ public class ImageForm {
         openButton = new JButton();
         openButton.setText("从系统打开");
         menuPanel.add(openButton, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        复制到剪贴板Button = new JButton();
-        复制到剪贴板Button.setText("复制到剪贴板");
-        menuPanel.add(复制到剪贴板Button, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        copyToClipboardButton = new JButton();
+        copyToClipboardButton.setText("复制到剪贴板");
+        menuPanel.add(copyToClipboardButton, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         saveButton = new JButton();
         saveButton.setText("保存");
         menuPanel.add(saveButton, new GridConstraints(0, 5, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));

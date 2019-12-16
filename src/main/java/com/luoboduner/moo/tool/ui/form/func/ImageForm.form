@@ -135,7 +135,7 @@
                       <text value="从系统打开"/>
                     </properties>
                   </component>
-                  <component id="7b63e" class="javax.swing.JButton" binding="复制到剪贴板Button" default-binding="true">
+                  <component id="7b63e" class="javax.swing.JButton" binding="copyToClipboardButton">
                     <constraints>
                       <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
