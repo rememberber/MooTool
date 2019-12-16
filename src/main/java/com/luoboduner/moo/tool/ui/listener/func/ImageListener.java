@@ -158,5 +158,14 @@ public class ImageListener {
 
             }
         });
+
+        // 从系统打开按钮事件
+        imageForm.getOpenButton().addActionListener(e -> {
+            try {
+                Desktop.getDesktop().open(FileUtil.file(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
+            } catch (IOException ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
     }
 }

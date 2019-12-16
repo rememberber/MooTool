@@ -37,7 +37,7 @@ public class ImageForm {
     private JButton deleteButton;
     private JButton 截图Button;
     private JButton saveFromClipboardButton;
-    private JButton 从系统打开Button;
+    private JButton openButton;
     private JSplitPane splitPane;
     private JPanel showImagePanel;
     private JLabel showImageLabel;
@@ -125,7 +125,7 @@ public class ImageForm {
             imageForm.getShowImageLabel().setIcon(new ImageIcon(ImageListener.IMAGE_PATH_PRE_FIX + fileNames.get(0)));
             imageForm.getShowImagePanel().updateUI();
             imageForm.getListTable().setRowSelectionInterval(0, 0);
-            ImageListener.selectedName = fileNames.get(0);
+            ImageListener.selectedName = fileNames.get(0).replace(".png", "");
             try {
                 ImageListener.selectedImage = ImageIO.read(FileUtil.newFile(ImageListener.IMAGE_PATH_PRE_FIX + fileNames.get(0)));
             } catch (IOException e) {
@@ -196,9 +196,9 @@ public class ImageForm {
         saveFromClipboardButton.setText("从剪贴板获取");
         saveFromClipboardButton.setToolTipText("Ctrl+V");
         menuPanel.add(saveFromClipboardButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        从系统打开Button = new JButton();
-        从系统打开Button.setText("从系统打开");
-        menuPanel.add(从系统打开Button, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        openButton = new JButton();
+        openButton.setText("从系统打开");
+        menuPanel.add(openButton, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         复制到剪贴板Button = new JButton();
         复制到剪贴板Button.setText("复制到剪贴板");
         menuPanel.add(复制到剪贴板Button, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
