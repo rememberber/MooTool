@@ -17,6 +17,7 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -193,9 +194,42 @@ public class ImageListener {
                     }
                 }
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
                 log.error(ExceptionUtils.getStackTrace(e1));
+            }
+        });
+
+        // 左侧列表按键事件（重命名）
+        imageForm.getListTable().addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+
+            }
+
+            @Override
+            public void keyPressed(KeyEvent evt) {
+
+            }
+
+            @Override
+            public void keyReleased(KeyEvent evt) {
+                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+                    int selectedRow = imageForm.getListTable().getSelectedRow();
+                    String originalName = String.valueOf(imageForm.getListTable().getValueAt(selectedRow, 0));
+                    String newName = String.valueOf(imageForm.getListTable().getValueAt(selectedRow, 1)).replace(".png", "");
+
+                    if (StringUtils.isNotBlank(newName)) {
+                        try {
+                            FileUtil.rename(FileUtil.file(IMAGE_PATH_PRE_FIX + originalName), newName, true, true);
+                            imageForm.getListTable().setValueAt(newName + ".png", selectedRow, 0);
+                            imageForm.getListTable().setValueAt(newName + ".png", selectedRow, 1);
+                        } catch (Exception e) {
+                            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败" + e.getMessage());
+                            ImageForm.initListTable();
+                            log.error(ExceptionUtils.getStackTrace(e));
+                        }
+                    }
+                }
             }
         });
     }
