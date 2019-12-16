@@ -13,6 +13,7 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
@@ -165,6 +166,36 @@ public class ImageListener {
                 Desktop.getDesktop().open(FileUtil.file(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
             } catch (IOException ex) {
                 log.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
+
+        // 删除按钮事件
+        imageForm.getDeleteButton().addActionListener(e -> {
+            try {
+                int[] selectedRows = imageForm.getListTable().getSelectedRows();
+
+                if (selectedRows.length == 0) {
+                    JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                    if (isDelete == JOptionPane.YES_OPTION) {
+                        DefaultTableModel tableModel = (DefaultTableModel) imageForm.getListTable().getModel();
+
+                        for (int i = selectedRows.length; i > 0; i--) {
+                            int selectedRow = imageForm.getListTable().getSelectedRow();
+                            String fileName = (String) tableModel.getValueAt(selectedRow, 0);
+                            FileUtil.del(IMAGE_PATH_PRE_FIX + fileName);
+                            tableModel.removeRow(selectedRow);
+                            imageForm.getListTable().updateUI();
+                        }
+                        selectedName = null;
+                        ImageForm.initListTable();
+                    }
+                }
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
             }
         });
     }
