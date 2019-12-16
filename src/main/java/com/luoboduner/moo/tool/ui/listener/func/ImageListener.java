@@ -74,8 +74,8 @@ public class ImageListener {
             }
             String name = JOptionPane.showInputDialog("名称", selectedName);
             if (StringUtils.isNotBlank(name)) {
-                File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + name + ".png"));
                 try {
+                    File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + name + ".png"));
                     ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
                     ImageForm.initListTable();
                 } catch (IOException ex) {
