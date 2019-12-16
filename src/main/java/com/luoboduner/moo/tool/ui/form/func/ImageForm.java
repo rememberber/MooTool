@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
+import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.swing.clipboard.ClipboardUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
@@ -8,12 +9,17 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.listener.func.ImageListener;
+import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
+import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.util.List;
 
 /**
  * <pre>
@@ -51,6 +57,7 @@ public class ImageForm {
     public void getImageFromClipboard() {
         try {
             Image image = ClipboardUtil.getImage();
+            ImageListener.selectedImage = image;
             if (image != null) {
                 getInstance().getShowImageLabel().setIcon(new ImageIcon(image));
             } else {
@@ -73,6 +80,7 @@ public class ImageForm {
         imageForm = getInstance();
 
         initUi();
+        initListTable();
     }
 
     private static void initUi() {
@@ -88,6 +96,32 @@ public class ImageForm {
         imageForm.getSaveFromClipboardButton().grabFocus();
 
         imageForm.getImagePanel().updateUI();
+    }
+
+    public static void initListTable() {
+        String[] headerNames = {"id", "名称"};
+        DefaultTableModel model = new DefaultTableModel(null, headerNames);
+        imageForm.getListTable().setModel(model);
+        // 隐藏表头
+        JTableUtil.hideTableHeader(imageForm.getListTable());
+        // 隐藏id列
+        JTableUtil.hideColumn(imageForm.getListTable(), 0);
+
+        Object[] data;
+
+        List<String> fileNames = FileUtil.listFileNames(ImageListener.IMAGE_PATH_PRE_FIX);
+        for (String fileName : fileNames) {
+            data = new Object[2];
+            data[0] = fileName;
+            data[1] = fileName;
+            model.addRow(data);
+        }
+        if (fileNames.size() > 0) {
+            imageForm.getShowImageLabel().setIcon(new ImageIcon(ImageListener.IMAGE_PATH_PRE_FIX + fileNames.get(0)));
+            imageForm.getShowImagePanel().updateUI();
+            imageForm.getListTable().setRowSelectionInterval(0, 0);
+            QuickNoteListener.selectedName = fileNames.get(0);
+        }
     }
 
     {
