@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
+import cn.hutool.core.swing.clipboard.ClipboardUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.intellij.uiDesigner.core.GridConstraints;
@@ -9,6 +10,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -27,9 +29,12 @@ public class ImageForm {
     private JTable listTable;
     private JButton button1;
     private JButton 截图Button;
-    private JButton 剪贴板图片保存Button;
+    private JButton saveFromClipboardButton;
     private JButton 从系统打开Button;
     private JSplitPane splitPane;
+    private JPanel showImagePanel;
+    private JLabel showImageLabel;
+    private JScrollPane scrollPane;
 
     private static ImageForm imageForm;
 
@@ -37,6 +42,20 @@ public class ImageForm {
 
     private ImageForm() {
         UndoUtil.register(this);
+
+        saveFromClipboardButton.addActionListener(e -> {
+            try {
+                Image image = ClipboardUtil.getImage();
+                if (image != null) {
+                    getInstance().getShowImageLabel().setIcon(new ImageIcon(image));
+                } else {
+                    JOptionPane.showMessageDialog(App.mainFrame, "还没有复制图片到剪贴板吧?\n\n", "失败", JOptionPane.WARNING_MESSAGE);
+                }
+            } catch (HeadlessException ex) {
+                ex.printStackTrace();
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
     }
 
     public static ImageForm getInstance() {
@@ -55,6 +74,12 @@ public class ImageForm {
     private static void initUi() {
         imageForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
         imageForm.getListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
+
+        // 设置滚动条速度
+        imageForm.getScrollPane().getVerticalScrollBar().setUnitIncrement(16);
+        imageForm.getScrollPane().getVerticalScrollBar().setDoubleBuffered(true);
+        imageForm.getScrollPane().getHorizontalScrollBar().setUnitIncrement(16);
+        imageForm.getScrollPane().getHorizontalScrollBar().setDoubleBuffered(true);
 
         imageForm.getImagePanel().updateUI();
     }
@@ -111,15 +136,20 @@ public class ImageForm {
         panel5.add(截图Button, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
         panel5.add(spacer2, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        剪贴板图片保存Button = new JButton();
-        剪贴板图片保存Button.setText("剪贴板图片保存");
-        panel5.add(剪贴板图片保存Button, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        saveFromClipboardButton = new JButton();
+        saveFromClipboardButton.setText("剪贴板图片保存");
+        panel5.add(saveFromClipboardButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         从系统打开Button = new JButton();
         从系统打开Button.setText("从系统打开");
         panel5.add(从系统打开Button, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JPanel panel6 = new JPanel();
-        panel6.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        panel4.add(panel6, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        scrollPane = new JScrollPane();
+        panel4.add(scrollPane, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        showImagePanel = new JPanel();
+        showImagePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        scrollPane.setViewportView(showImagePanel);
+        showImageLabel = new JLabel();
+        showImageLabel.setText("");
+        showImagePanel.add(showImageLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     /**

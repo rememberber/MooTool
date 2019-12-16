@@ -209,6 +209,8 @@ public class QrCodeForm {
         // 设置滚动条速度
         qrCodeForm.getGenerateScrollPane().getVerticalScrollBar().setUnitIncrement(16);
         qrCodeForm.getGenerateScrollPane().getVerticalScrollBar().setDoubleBuffered(true);
+        qrCodeForm.getGenerateScrollPane().getHorizontalScrollBar().setUnitIncrement(16);
+        qrCodeForm.getGenerateScrollPane().getHorizontalScrollBar().setDoubleBuffered(true);
 
         qrCodeForm.getQrCodePanel().updateUI();
     }
