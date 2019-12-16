@@ -132,7 +132,7 @@
                       <text value="复制到剪贴板"/>
                     </properties>
                   </component>
-                  <component id="9242b" class="javax.swing.JButton" binding="保存Button" default-binding="true">
+                  <component id="9242b" class="javax.swing.JButton" binding="saveButton">
                     <constraints>
                       <grid row="0" column="5" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
@@ -140,7 +140,7 @@
                       <text value="保存"/>
                     </properties>
                   </component>
-                  <component id="8d9d7" class="javax.swing.JButton" binding="button2" default-binding="true">
+                  <component id="8d9d7" class="javax.swing.JButton" binding="listItemButton">
                     <constraints>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
