@@ -79,6 +79,7 @@ public class ImageListener {
                 quickSave();
                 try {
                     imageForm.getShowImageLabel().setIcon(new ImageIcon(DEFAULT_IMAGE));
+                    imageForm.getShowImagePanel().updateUI();
 
                     int selectedRow = imageForm.getListTable().getSelectedRow();
                     String name = imageForm.getListTable().getValueAt(selectedRow, 1).toString();
