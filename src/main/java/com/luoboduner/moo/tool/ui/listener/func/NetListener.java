@@ -128,23 +128,41 @@ public class NetListener {
                 InputStream inputStream = process.getInputStream();
                 ThreadUtil.execute(() -> {
                     InputStreamReader inputStreamReader = null;
+                    BufferedReader bufferedReader = null;
                     try {
                         inputStreamReader = new InputStreamReader(inputStream, CharsetUtil.GBK);
-                    } catch (UnsupportedEncodingException ex) {
-                        ex.printStackTrace();
-                    }
-                    BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
-                    String line = null;
-                    while (true) {
-                        try {
-                            if ((line = bufferedReader.readLine()) == null) {
-                                break;
+                        bufferedReader = new BufferedReader(inputStreamReader);
+                        String line = null;
+                        while (true) {
+                            try {
+                                if ((line = bufferedReader.readLine()) == null) {
+                                    break;
+                                }
+                            } catch (IOException ex) {
+                                logger.error(ExceptionUtils.getStackTrace(ex));
                             }
-                        } catch (IOException ex) {
-                            ex.printStackTrace();
+                            netForm.getIpConfigTextArea().append(line + "\n");
                         }
-                        netForm.getIpConfigTextArea().append(line + "\n");
+                    } catch (UnsupportedEncodingException ex) {
+                        logger.error(ExceptionUtils.getStackTrace(ex));
+                    } finally {
+                        process.destroy();
+                        if (inputStreamReader != null) {
+                            try {
+                                inputStreamReader.close();
+                            } catch (IOException ex) {
+                                logger.error(ExceptionUtils.getStackTrace(ex));
+                            }
+                        }
+                        if (bufferedReader != null) {
+                            try {
+                                bufferedReader.close();
+                            } catch (IOException ex) {
+                                logger.error(ExceptionUtils.getStackTrace(ex));
+                            }
+                        }
                     }
+
                 });
 //                } else {
 //                }
