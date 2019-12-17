@@ -270,9 +270,11 @@ public class ImageListener {
         String name = JOptionPane.showInputDialog("名称", selectedName);
         if (StringUtils.isNotBlank(name)) {
             try {
-                File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + name + ".png"));
-                ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
-                ImageForm.initListTable();
+                if (selectedImage != null) {
+                    File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + name + ".png"));
+                    ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
+                    ImageForm.initListTable();
+                }
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "保存失败！\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
                 log.error(ExceptionUtils.getStackTrace(ex));
@@ -289,8 +291,10 @@ public class ImageListener {
         }
         try {
             selectedName = selectedName.replace(".png", "");
-            File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
-            ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
+            if (selectedImage != null) {
+                File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
+                ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
+            }
         } catch (Exception ex) {
             log.error(ExceptionUtils.getStackTrace(ex));
         }
