@@ -68,7 +68,7 @@ public class ImageListener {
 
         // 保存按钮事件
         imageForm.getSaveButton().addActionListener(e -> {
-            quickSave();
+            saveImage();
         });
         imageForm.getImagePanel().registerKeyboardAction(e -> quickSave(), KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
@@ -261,9 +261,9 @@ public class ImageListener {
     }
 
     /**
-     * save for quick key and item change
+     * save for manual
      */
-    private static void quickSave() {
+    private static void saveImage() {
         if (StringUtils.isEmpty(selectedName)) {
             selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
         }
@@ -277,6 +277,22 @@ public class ImageListener {
                 JOptionPane.showMessageDialog(App.mainFrame, "保存失败！\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
                 log.error(ExceptionUtils.getStackTrace(ex));
             }
+        }
+    }
+
+    /**
+     * save for quick key and item change
+     */
+    private static void quickSave() {
+        if (StringUtils.isEmpty(selectedName)) {
+            selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+        }
+        try {
+            selectedName = selectedName.replace(".png", "");
+            File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
+            ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
+        } catch (Exception ex) {
+            log.error(ExceptionUtils.getStackTrace(ex));
         }
     }
 }
