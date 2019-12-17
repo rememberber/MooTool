@@ -41,6 +41,8 @@ public class ImageListener {
 
     public static final String IMAGE_PATH_PRE_FIX = SystemUtil.configHome + File.separator + "images" + File.separator;
 
+    public static final Image DEFAULT_IMAGE = Toolkit.getDefaultToolkit().getImage(ImageListener.class.getResource("/icon/image_128.png"));
+
     public static void addListeners() {
         ImageForm imageForm = ImageForm.getInstance();
 
@@ -87,12 +89,15 @@ public class ImageListener {
             @Override
             public void mousePressed(MouseEvent e) {
 //                quickSave(false);
-                int selectedRow = imageForm.getListTable().getSelectedRow();
-                String name = imageForm.getListTable().getValueAt(selectedRow, 1).toString();
-                selectedName = name.replace(".png", "");
-                imageForm.getShowImageLabel().setIcon(new ImageIcon(ImageListener.IMAGE_PATH_PRE_FIX + name));
-                imageForm.getShowImagePanel().updateUI();
                 try {
+                    imageForm.getShowImageLabel().setIcon(new ImageIcon(DEFAULT_IMAGE));
+
+                    int selectedRow = imageForm.getListTable().getSelectedRow();
+                    String name = imageForm.getListTable().getValueAt(selectedRow, 1).toString();
+                    selectedName = name.replace(".png", "");
+                    imageForm.getShowImageLabel().setIcon(new ImageIcon(ImageListener.IMAGE_PATH_PRE_FIX + name));
+                    imageForm.getShowImagePanel().updateUI();
+
                     ImageListener.selectedImage = ImageIO.read(FileUtil.newFile(ImageListener.IMAGE_PATH_PRE_FIX + name));
                 } catch (IOException ex) {
                     JOptionPane.showMessageDialog(App.mainFrame, ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
@@ -235,6 +240,13 @@ public class ImageListener {
             copyToClipboard();
         });
         imageForm.getImagePanel().registerKeyboardAction(e -> copyToClipboard(), KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+
+        // 新建
+        imageForm.getNewButton().addActionListener(e -> {
+            imageForm.getShowImageLabel().setIcon(new ImageIcon(DEFAULT_IMAGE));
+            selectedName = null;
+            selectedImage = null;
+        });
 
     }
 
