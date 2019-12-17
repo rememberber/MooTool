@@ -254,6 +254,12 @@ public class ImageListener {
         imageForm.getShowImageLabel().setIcon(new ImageIcon(DEFAULT_IMAGE));
         selectedName = null;
         selectedImage = null;
+
+        Image image = ClipboardUtil.getImage();
+        ImageListener.selectedImage = image;
+        if (image != null) {
+            imageForm.getShowImageLabel().setIcon(new ImageIcon(image));
+        }
     }
 
     private static void copyToClipboard() {
