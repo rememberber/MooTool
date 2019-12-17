@@ -1,6 +1,8 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.net.NetUtil;
+import cn.hutool.core.thread.ThreadUtil;
+import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.core.util.RuntimeUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
@@ -9,6 +11,11 @@ import com.luoboduner.moo.tool.util.SystemUtil;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.util.LinkedHashSet;
 
 /**
@@ -108,6 +115,43 @@ public class NetListener {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
                 JOptionPane.showMessageDialog(netForm.getNetPanel(), ex.getMessage(), "获取失败！", JOptionPane.ERROR_MESSAGE);
+            }
+        });
+
+        // PING
+        netForm.getPingButton().addActionListener(e -> {
+            try {
+                String pingIp = netForm.getPingTextField().getText().trim();
+                netForm.getIpConfigTextArea().setText("");
+//                if (SystemUtil.isWindowsOs()) {
+                Process process = RuntimeUtil.exec("ping " + pingIp);
+                InputStream inputStream = process.getInputStream();
+                ThreadUtil.execute(() -> {
+                    InputStreamReader inputStreamReader = null;
+                    try {
+                        inputStreamReader = new InputStreamReader(inputStream, CharsetUtil.GBK);
+                    } catch (UnsupportedEncodingException ex) {
+                        ex.printStackTrace();
+                    }
+                    BufferedReader bufferedReader = new BufferedReader(inputStreamReader);
+                    String line = null;
+                    while (true) {
+                        try {
+                            if ((line = bufferedReader.readLine()) == null) {
+                                break;
+                            }
+                        } catch (IOException ex) {
+                            ex.printStackTrace();
+                        }
+                        netForm.getIpConfigTextArea().append(line + "\n");
+                    }
+                });
+//                } else {
+//                }
+                netForm.getIpConfigTextArea().setCaretPosition(0);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(netForm.getNetPanel(), ex.getMessage(), "失败！", JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
     }
