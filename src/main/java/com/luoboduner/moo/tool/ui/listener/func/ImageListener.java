@@ -343,7 +343,7 @@ public class ImageListener {
                 if (StringUtils.isNotBlank(name)) {
                     name = name.replace(".png", "");
                     if (selectedImage != null) {
-                        File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
+                        File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + name + ".png"));
                         ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
                         ImageForm.initListTable();
                         selectedName = name;
