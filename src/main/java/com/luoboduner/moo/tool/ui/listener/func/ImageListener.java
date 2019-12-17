@@ -68,27 +68,15 @@ public class ImageListener {
 
         // 保存按钮事件
         imageForm.getSaveButton().addActionListener(e -> {
-            if (StringUtils.isEmpty(selectedName)) {
-                selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-            }
-            String name = JOptionPane.showInputDialog("名称", selectedName);
-            if (StringUtils.isNotBlank(name)) {
-                try {
-                    File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + name + ".png"));
-                    ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
-                    ImageForm.initListTable();
-                } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(App.mainFrame, "保存失败！\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
-                    log.error(ExceptionUtils.getStackTrace(ex));
-                }
-            }
+            quickSave();
         });
+        imageForm.getImagePanel().registerKeyboardAction(e -> quickSave(), KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
         // 点击左侧表格事件
         imageForm.getListTable().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-//                quickSave(false);
+                quickSave();
                 try {
                     imageForm.getShowImageLabel().setIcon(new ImageIcon(DEFAULT_IMAGE));
 
@@ -269,6 +257,26 @@ public class ImageListener {
         } catch (Exception e1) {
             JOptionPane.showMessageDialog(App.mainFrame, "复制失败！\n\n" + e1.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
             log.error(ExceptionUtils.getStackTrace(e1));
+        }
+    }
+
+    /**
+     * save for quick key and item change
+     */
+    private static void quickSave() {
+        if (StringUtils.isEmpty(selectedName)) {
+            selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+        }
+        String name = JOptionPane.showInputDialog("名称", selectedName);
+        if (StringUtils.isNotBlank(name)) {
+            try {
+                File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + name + ".png"));
+                ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
+                ImageForm.initListTable();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "保存失败！\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(ex));
+            }
         }
     }
 }
