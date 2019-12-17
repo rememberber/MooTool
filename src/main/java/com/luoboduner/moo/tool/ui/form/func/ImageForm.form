@@ -141,6 +141,7 @@
                     </constraints>
                     <properties>
                       <text value="复制到剪贴板"/>
+                      <toolTipText value="Ctrl+C"/>
                     </properties>
                   </component>
                   <component id="9242b" class="javax.swing.JButton" binding="saveButton">

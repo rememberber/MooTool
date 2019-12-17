@@ -4,7 +4,6 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.swing.clipboard.ClipboardUtil;
 import com.bulenkov.iconloader.util.ImageUtil;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.ImageForm;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -48,15 +47,12 @@ public class ImageListener {
         // 从剪贴板获取
         imageForm.getSaveFromClipboardButton().addActionListener(e -> imageForm.getImageFromClipboard());
         imageForm.getImagePanel().registerKeyboardAction(e -> imageForm.getImageFromClipboard(), KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
-        imageForm.getMenuPanel().registerKeyboardAction(e -> imageForm.getImageFromClipboard(), KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
-        imageForm.getShowImagePanel().registerKeyboardAction(e -> imageForm.getImageFromClipboard(), KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
-        imageForm.getShowImageLabel().registerKeyboardAction(e -> imageForm.getImageFromClipboard(), KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
-        MainWindow.getInstance().getTabbedPane().registerKeyboardAction(e -> {
-            int index = MainWindow.getInstance().getTabbedPane().getSelectedIndex();
-            if (index == 11) {
-                imageForm.getImageFromClipboard();
-            }
-        }, KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+//        MainWindow.getInstance().getTabbedPane().registerKeyboardAction(e -> {
+//            int index = MainWindow.getInstance().getTabbedPane().getSelectedIndex();
+//            if (index == 11) {
+//                imageForm.getImageFromClipboard();
+//            }
+//        }, KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
         // 列表显示切换按钮事件
         imageForm.getListItemButton().addActionListener(e -> {
@@ -236,13 +232,19 @@ public class ImageListener {
 
         // 复制到剪贴板
         imageForm.getCopyToClipboardButton().addActionListener(e -> {
-            try {
-                ClipboardUtil.setImage(selectedImage);
-                JOptionPane.showMessageDialog(App.mainFrame, "已复制图片到剪贴板！");
-            } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "复制失败！\n\n" + e1.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
-                log.error(ExceptionUtils.getStackTrace(e1));
-            }
+            copyToClipboard();
         });
+        imageForm.getImagePanel().registerKeyboardAction(e -> copyToClipboard(), KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+
+    }
+
+    private static void copyToClipboard() {
+        try {
+            ClipboardUtil.setImage(selectedImage);
+            JOptionPane.showMessageDialog(App.mainFrame, "已复制图片到剪贴板！");
+        } catch (Exception e1) {
+            JOptionPane.showMessageDialog(App.mainFrame, "复制失败！\n\n" + e1.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+            log.error(ExceptionUtils.getStackTrace(e1));
+        }
     }
 }
