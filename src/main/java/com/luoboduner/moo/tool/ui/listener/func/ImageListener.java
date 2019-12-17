@@ -243,11 +243,17 @@ public class ImageListener {
 
         // 新建
         imageForm.getNewButton().addActionListener(e -> {
-            imageForm.getShowImageLabel().setIcon(new ImageIcon(DEFAULT_IMAGE));
-            selectedName = null;
-            selectedImage = null;
+            newImage();
         });
+        imageForm.getImagePanel().registerKeyboardAction(e -> newImage(), KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
+    }
+
+    private static void newImage() {
+        ImageForm imageForm = ImageForm.getInstance();
+        imageForm.getShowImageLabel().setIcon(new ImageIcon(DEFAULT_IMAGE));
+        selectedName = null;
+        selectedImage = null;
     }
 
     private static void copyToClipboard() {
