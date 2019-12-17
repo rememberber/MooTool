@@ -330,14 +330,25 @@ public class ImageListener {
      * save for quick key and item change
      */
     private static void quickSave() {
-        if (StringUtils.isEmpty(selectedName)) {
-            selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-        }
         try {
-            selectedName = selectedName.replace(".png", "");
-            if (selectedImage != null) {
-                File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
-                ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
+            if (selectedName != null) {
+                selectedName = selectedName.replace(".png", "");
+                if (selectedImage != null) {
+                    File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
+                    ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
+                }
+            } else {
+                String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                String name = JOptionPane.showInputDialog("名称", tempName);
+                if (StringUtils.isNotBlank(name)) {
+                    name = name.replace(".png", "");
+                    if (selectedImage != null) {
+                        File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
+                        ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
+                        ImageForm.initListTable();
+                        selectedName = name;
+                    }
+                }
             }
         } catch (Exception ex) {
             log.error(ExceptionUtils.getStackTrace(ex));
