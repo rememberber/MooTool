@@ -235,6 +235,49 @@ public class ImageListener {
         });
         imageForm.getImagePanel().registerKeyboardAction(e -> newImage(), KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
+        // 导出
+        imageForm.getExportButton().addActionListener(e -> {
+            int[] selectedRows = imageForm.getListTable().getSelectedRows();
+
+            try {
+                if (selectedRows.length > 0) {
+                    JFileChooser fileChooser = new JFileChooser(App.config.getImageExportPath());
+                    fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    int approve = fileChooser.showOpenDialog(imageForm.getImagePanel());
+                    String exportPath;
+                    if (approve == JFileChooser.APPROVE_OPTION) {
+                        exportPath = fileChooser.getSelectedFile().getAbsolutePath();
+                        App.config.setImageExportPath(exportPath);
+                        App.config.save();
+                    } else {
+                        return;
+                    }
+
+                    for (int row : selectedRows) {
+                        String fileName = (String) imageForm.getListTable().getValueAt(row, 0);
+                        File exportFile = FileUtil.touch(exportPath + File.separator + fileName);
+                        FileUtil.copy(FileUtil.file(IMAGE_PATH_PRE_FIX + fileName), exportFile, true);
+                    }
+                    JOptionPane.showMessageDialog(imageForm.getImagePanel(), "导出成功！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    try {
+                        Desktop desktop = Desktop.getDesktop();
+                        desktop.open(new File(exportPath));
+                    } catch (Exception e2) {
+                        log.error(ExceptionUtils.getStackTrace(e2));
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(imageForm.getImagePanel(), "请至少选择一个！", "提示",
+                            JOptionPane.INFORMATION_MESSAGE);
+                }
+
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(imageForm.getImagePanel(), "导出失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
+            }
+
+        });
+
     }
 
     private static void newImage() {
