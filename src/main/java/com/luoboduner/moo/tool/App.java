@@ -54,7 +54,9 @@ public class App {
         mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         Init.initGlobalFont();
         mainFrame.setContentPane(MainWindow.getInstance().getMainPanel());
-        MainWindow.getInstance().getTabbedPane().setSelectedIndex(App.config.getRecentTabIndex());
+        if (App.config.getRecentTabIndex() != 3) {
+            MainWindow.getInstance().getTabbedPane().setSelectedIndex(App.config.getRecentTabIndex());
+        }
         MainWindow.getInstance().init();
         Init.initAllTab();
         Init.initOthers();
