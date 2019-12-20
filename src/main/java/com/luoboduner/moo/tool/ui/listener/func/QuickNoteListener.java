@@ -499,5 +499,8 @@ public class QuickNoteListener {
         content = ReUtil.replaceAll(content, regex, replacement);
 
         quickNoteForm.getTextArea().setText(content);
+        quickNoteForm.getTextArea().setCaretPosition(0);
+        quickNoteForm.getScrollPane().getVerticalScrollBar().setValue(0);
+        quickNoteForm.getScrollPane().getHorizontalScrollBar().setValue(0);
     }
 }

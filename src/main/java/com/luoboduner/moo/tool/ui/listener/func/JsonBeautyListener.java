@@ -529,5 +529,8 @@ public class JsonBeautyListener {
         content = ReUtil.replaceAll(content, regex, replacement);
 
         jsonBeautyForm.getTextArea().setText(content);
+        jsonBeautyForm.getTextArea().setCaretPosition(0);
+        jsonBeautyForm.getScrollPane().getVerticalScrollBar().setValue(0);
+        jsonBeautyForm.getScrollPane().getHorizontalScrollBar().setValue(0);
     }
 }
