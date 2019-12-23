@@ -61,21 +61,6 @@ public class ImageForm {
         UndoUtil.register(this);
     }
 
-    public void getImageFromClipboard() {
-        try {
-            Image image = ClipboardUtil.getImage();
-            ImageListener.selectedImage = image;
-            if (image != null) {
-                getInstance().getShowImageLabel().setIcon(new ImageIcon(image));
-            } else {
-                JOptionPane.showMessageDialog(App.mainFrame, "还没有复制图片到剪贴板吧？\n\n", "失败", JOptionPane.WARNING_MESSAGE);
-            }
-        } catch (HeadlessException ex) {
-            ex.printStackTrace();
-            logger.error(ExceptionUtils.getStackTrace(ex));
-        }
-    }
-
     public static ImageForm getInstance() {
         if (imageForm == null) {
             imageForm = new ImageForm();

@@ -47,8 +47,8 @@ public class ImageListener {
         ImageForm imageForm = ImageForm.getInstance();
 
         // 从剪贴板获取
-        imageForm.getSaveFromClipboardButton().addActionListener(e -> imageForm.getImageFromClipboard());
-        imageForm.getImagePanel().registerKeyboardAction(e -> imageForm.getImageFromClipboard(), KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        imageForm.getSaveFromClipboardButton().addActionListener(e -> getImageFromClipboard());
+        imageForm.getImagePanel().registerKeyboardAction(e -> getImageFromClipboard(), KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
 //        MainWindow.getInstance().getTabbedPane().registerKeyboardAction(e -> {
 //            int index = MainWindow.getInstance().getTabbedPane().getSelectedIndex();
 //            if (index == 11) {
@@ -225,15 +225,11 @@ public class ImageListener {
         });
 
         // 复制到剪贴板
-        imageForm.getCopyToClipboardButton().addActionListener(e -> {
-            copyToClipboard();
-        });
+        imageForm.getCopyToClipboardButton().addActionListener(e -> copyToClipboard());
         imageForm.getImagePanel().registerKeyboardAction(e -> copyToClipboard(), KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
         // 新建
-        imageForm.getNewButton().addActionListener(e -> {
-            newImage();
-        });
+        imageForm.getNewButton().addActionListener(e -> newImage());
         imageForm.getImagePanel().registerKeyboardAction(e -> newImage(), KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
         // 导出
@@ -294,6 +290,23 @@ public class ImageListener {
         }
     }
 
+    public static void getImageFromClipboard() {
+        try {
+            ImageForm imageForm = ImageForm.getInstance();
+            Image image = ClipboardUtil.getImage();
+            ImageListener.selectedImage = image;
+            if (image != null) {
+                selectedName = null;
+                imageForm.getShowImageLabel().setIcon(new ImageIcon(image));
+            } else {
+                JOptionPane.showMessageDialog(App.mainFrame, "还没有复制图片到剪贴板吧？\n\n", "失败", JOptionPane.WARNING_MESSAGE);
+            }
+        } catch (HeadlessException ex) {
+            ex.printStackTrace();
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
     private static void copyToClipboard() {
         try {
             ClipboardUtil.setImage(selectedImage);
@@ -331,18 +344,19 @@ public class ImageListener {
      */
     private static void quickSave() {
         try {
-            if (selectedName != null) {
-                selectedName = selectedName.replace(".png", "");
-                if (selectedImage != null) {
-                    File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
-                    ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
-                }
-            } else {
-                String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-                String name = JOptionPane.showInputDialog("名称", tempName);
-                if (StringUtils.isNotBlank(name)) {
-                    name = name.replace(".png", "");
+            if (selectedImage != null) {
+                if (selectedName != null) {
+                    selectedName = selectedName.replace(".png", "");
                     if (selectedImage != null) {
+                        File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
+                        ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
+                    }
+                } else {
+                    String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                    String name = JOptionPane.showInputDialog("名称", tempName);
+                    if (StringUtils.isNotBlank(name)) {
+                        name = name.replace(".png", "");
+
                         File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + name + ".png"));
                         ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
                         ImageForm.initListTable();
