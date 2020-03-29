@@ -8,6 +8,7 @@ import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
+import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
@@ -48,6 +49,15 @@ public class TabListener {
                         } catch (Exception ex) {
                             ex.printStackTrace();
                             log.error(ExceptionUtils.getStackTrace(ex));
+                        }
+                        break;
+                    case 12:
+                    case 13:
+                    case 14:
+                        if (warnFlag) {
+                            JOptionPane.showMessageDialog(MainWindow.getInstance().getSettingPanel(), "\n该功能尚未实现，目前仅供UI预览\n" +
+                                            "\n", "预览提示",
+                                    JOptionPane.INFORMATION_MESSAGE);
                         }
                         break;
                     default:

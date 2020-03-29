@@ -9,8 +9,8 @@
         <result column="modified_time" jdbcType="VARCHAR" property="modifiedTime"/>
     </resultMap>
     <sql id="Base_Column_List">
-    id, name, content, create_time, modified_time
-  </sql>
+        id, name, content, create_time, modified_time
+    </sql>
     <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List"/>
@@ -18,15 +18,16 @@
         where id = #{id,jdbcType=INTEGER}
     </select>
     <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
-    delete from t_json_beauty
-    where id = #{id,jdbcType=INTEGER}
-  </delete>
+        delete
+        from t_json_beauty
+        where id = #{id,jdbcType=INTEGER}
+    </delete>
     <insert id="insert" parameterType="com.luoboduner.moo.tool.domain.TJsonBeauty">
-    insert into t_json_beauty (id, name, content, 
-      create_time, modified_time)
-    values (#{id,jdbcType=INTEGER}, #{name,jdbcType=VARCHAR}, #{content,jdbcType=VARCHAR}, 
-      #{createTime,jdbcType=VARCHAR}, #{modifiedTime,jdbcType=VARCHAR})
-  </insert>
+        insert into t_json_beauty (id, name, content,
+                                   create_time, modified_time)
+        values (#{id,jdbcType=INTEGER}, #{name,jdbcType=VARCHAR}, #{content,jdbcType=VARCHAR},
+                #{createTime,jdbcType=VARCHAR}, #{modifiedTime,jdbcType=VARCHAR})
+    </insert>
     <insert id="insertSelective" parameterType="com.luoboduner.moo.tool.domain.TJsonBeauty">
         insert into t_json_beauty
         <trim prefix="(" suffix=")" suffixOverrides=",">
@@ -83,13 +84,13 @@
         where id = #{id,jdbcType=INTEGER}
     </update>
     <update id="updateByPrimaryKey" parameterType="com.luoboduner.moo.tool.domain.TJsonBeauty">
-    update t_json_beauty
-    set name = #{name,jdbcType=VARCHAR},
-      content = #{content,jdbcType=VARCHAR},
-      create_time = #{createTime,jdbcType=VARCHAR},
-      modified_time = #{modifiedTime,jdbcType=VARCHAR}
-    where id = #{id,jdbcType=INTEGER}
-  </update>
+        update t_json_beauty
+        set name          = #{name,jdbcType=VARCHAR},
+            content       = #{content,jdbcType=VARCHAR},
+            create_time   = #{createTime,jdbcType=VARCHAR},
+            modified_time = #{modifiedTime,jdbcType=VARCHAR}
+        where id = #{id,jdbcType=INTEGER}
+    </update>
     <select id="selectAll" resultMap="BaseResultMap">
         select
         <include refid="Base_Column_List"/>
@@ -104,8 +105,14 @@
     </select>
     <update id="updateByName" parameterType="com.luoboduner.moo.tool.domain.TJsonBeauty">
         update t_json_beauty
-        set content       = #{content,jdbcType=VARCHAR},
-            modified_time = #{modifiedTime,jdbcType=VARCHAR}
+        <set>
+            <if test="content != null">
+                content = #{content,jdbcType=VARCHAR},
+            </if>
+            <if test="modifiedTime != null">
+                modified_time = #{modifiedTime,jdbcType=VARCHAR},
+            </if>
+        </set>
         where name = #{name,jdbcType=INTEGER}
     </update>
 </mapper>
