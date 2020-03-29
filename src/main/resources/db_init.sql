@@ -70,7 +70,7 @@ create table if not exists t_qr_code
     modified_time datetime
 );
 
-create table t_favorite_color_list
+create table if not exists t_favorite_color_list
 (
     id            integer
         constraint t_favorite_color_list_pk
@@ -81,10 +81,10 @@ create table t_favorite_color_list
     modified_time datetime
 );
 
-create unique index t_favorite_color_list_uindex
+create unique index if not exists t_favorite_color_list_uindex
     on t_favorite_color_list (title);
 
-create table t_favorite_color_item
+create table if not exists t_favorite_color_item
 (
     id            integer
         constraint t_favorite_color_item_pk
@@ -98,5 +98,5 @@ create table t_favorite_color_item
     modified_time datetime
 );
 
-create unique index t_favorite_color_item_uindex
-    on t_favorite_color_item (list_id,name);
+create unique index if not exists t_favorite_color_item_uindex
+    on t_favorite_color_item (list_id, name);

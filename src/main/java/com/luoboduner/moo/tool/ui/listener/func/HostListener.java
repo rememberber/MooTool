@@ -56,9 +56,8 @@ public class HostListener {
         hostForm.getNoteListTable().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                ThreadUtil.execute(() -> {
-                    refreshHostContentInTextArea();
-                });
+                quickSave(false);
+                refreshHostContentInTextArea();
                 super.mousePressed(e);
             }
         });
@@ -72,29 +71,7 @@ public class HostListener {
             @Override
             public void keyPressed(KeyEvent evt) {
                 if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
-                    String now = SqliteUtil.nowDateForSqlite();
-                    if (selectedNameHost != null) {
-                        THost tHost = new THost();
-                        tHost.setName(selectedNameHost);
-                        tHost.setContent(hostForm.getTextArea().getText());
-                        tHost.setModifiedTime(now);
-
-                        hostMapper.updateByName(tHost);
-                    } else {
-                        String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-                        String name = JOptionPane.showInputDialog("名称", tempName);
-                        if (StringUtils.isNotBlank(name)) {
-                            THost tHost = new THost();
-                            tHost.setName(name);
-                            tHost.setContent(hostForm.getTextArea().getText());
-                            tHost.setCreateTime(now);
-                            tHost.setModifiedTime(now);
-
-                            hostMapper.insert(tHost);
-                            HostForm.initListTable();
-                            selectedNameHost = name;
-                        }
-                    }
+                    quickSave(true);
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
                     newHost();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
@@ -108,7 +85,7 @@ public class HostListener {
         });
 
         // 删除按钮事件
-        hostForm.getDeleteButton().addActionListener(e -> ThreadUtil.execute(() -> {
+        hostForm.getDeleteButton().addActionListener(e -> {
             try {
                 int[] selectedRows = hostForm.getNoteListTable().getSelectedRows();
 
@@ -125,6 +102,7 @@ public class HostListener {
                             hostMapper.deleteByPrimaryKey(id);
 
                             tableModel.removeRow(selectedRow);
+                            hostForm.getNoteListTable().updateUI();
                         }
                         selectedNameHost = null;
                         HostForm.initListTable();
@@ -135,7 +113,7 @@ public class HostListener {
                         JOptionPane.ERROR_MESSAGE);
                 log.error(e1.toString());
             }
-        }));
+        });
 
         // 添加按钮事件
         hostForm.getAddButton().addActionListener(e -> {
@@ -284,6 +262,43 @@ public class HostListener {
 
     }
 
+    /**
+     * save for quick key and item change
+     *
+     * @param refreshModifiedTime
+     */
+    private static void quickSave(boolean refreshModifiedTime) {
+        HostForm hostForm = HostForm.getInstance();
+        String now = SqliteUtil.nowDateForSqlite();
+        if (selectedNameHost != null) {
+            THost tHost = new THost();
+            tHost.setName(selectedNameHost);
+            tHost.setContent(hostForm.getTextArea().getText());
+            if (refreshModifiedTime) {
+                tHost.setModifiedTime(now);
+            }
+
+            hostMapper.updateByName(tHost);
+        } else {
+            if (refreshModifiedTime) {
+                // 通过refreshModifiedTime可以判断是否主动按快捷键保存，只有主动触发时才保存，避免初次点击列表误提示问题
+                String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                String name = JOptionPane.showInputDialog("名称", tempName);
+                if (StringUtils.isNotBlank(name)) {
+                    THost tHost = new THost();
+                    tHost.setName(name);
+                    tHost.setContent(hostForm.getTextArea().getText());
+                    tHost.setCreateTime(now);
+                    tHost.setModifiedTime(now);
+
+                    hostMapper.insert(tHost);
+                    HostForm.initListTable();
+                    selectedNameHost = name;
+                }
+            }
+        }
+    }
+
     private static void newHost() {
         HostForm hostForm = HostForm.getInstance();
         hostForm.getTextArea().setText("");
@@ -314,6 +329,10 @@ public class HostListener {
             hostForm.getSwitchButton().setVisible(true);
         }
         hostForm.getTextArea().setText(content);
+        hostForm.getTextArea().setCaretPosition(0);
+        hostForm.getScrollPane().getVerticalScrollBar().setValue(0);
+        hostForm.getScrollPane().getHorizontalScrollBar().setValue(0);
+        hostForm.getTextArea().updateUI();
     }
 
     private static void save(boolean needRename) {

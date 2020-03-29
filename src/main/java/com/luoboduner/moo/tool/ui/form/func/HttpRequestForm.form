@@ -5,7 +5,10 @@
     <constraints>
       <xy x="20" y="20" width="945" height="376"/>
     </constraints>
-    <properties/>
+    <properties>
+      <minimumSize width="400" height="300"/>
+      <preferredSize width="400" height="300"/>
+    </properties>
     <border type="none"/>
     <children>
       <splitpane id="c682a" binding="splitPane">
