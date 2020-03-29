@@ -9,6 +9,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.listener.func.ImageListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
@@ -19,6 +20,8 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.List;
 
@@ -59,6 +62,16 @@ public class ImageForm {
 
     private ImageForm() {
         UndoUtil.register(this);
+        截图Button.addActionListener(e -> previewHint());
+        ocrButton.addActionListener(e -> previewHint());
+        scaleImageButton.addActionListener(e -> previewHint());
+        pressImageButton.addActionListener(e -> previewHint());
+    }
+
+    private void previewHint() {
+        JOptionPane.showMessageDialog(MainWindow.getInstance().getSettingPanel(), "\n该功能尚未实现，目前仅供UI预览\n" +
+                        "\n", "预览提示",
+                JOptionPane.INFORMATION_MESSAGE);
     }
 
     public static ImageForm getInstance() {
