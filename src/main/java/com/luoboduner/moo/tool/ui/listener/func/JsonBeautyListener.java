@@ -1,7 +1,6 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.json.JSONUtil;
 import com.luoboduner.moo.tool.App;
@@ -86,13 +85,16 @@ public class JsonBeautyListener {
         jsonBeautyForm.getNoteListTable().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                ThreadUtil.execute(() -> {
-                    int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
-                    String name = jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
-                    selectedNameJson = name;
-                    TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByName(name);
-                    jsonBeautyForm.getTextArea().setText(tJsonBeauty.getContent());
-                });
+                quickSave(false);
+                int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
+                String name = jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
+                selectedNameJson = name;
+                TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByName(name);
+                jsonBeautyForm.getTextArea().setText(tJsonBeauty.getContent());
+                jsonBeautyForm.getTextArea().setCaretPosition(0);
+                jsonBeautyForm.getScrollPane().getVerticalScrollBar().setValue(0);
+                jsonBeautyForm.getScrollPane().getHorizontalScrollBar().setValue(0);
+                jsonBeautyForm.getTextArea().updateUI();
                 super.mousePressed(e);
             }
         });
@@ -106,29 +108,7 @@ public class JsonBeautyListener {
             @Override
             public void keyPressed(KeyEvent evt) {
                 if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
-                    String now = SqliteUtil.nowDateForSqlite();
-                    if (selectedNameJson != null) {
-                        TJsonBeauty tJsonBeauty = new TJsonBeauty();
-                        tJsonBeauty.setName(selectedNameJson);
-                        tJsonBeauty.setContent(jsonBeautyForm.getTextArea().getText());
-                        tJsonBeauty.setModifiedTime(now);
-
-                        jsonBeautyMapper.updateByName(tJsonBeauty);
-                    } else {
-                        String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-                        String name = JOptionPane.showInputDialog("名称", tempName);
-                        if (StringUtils.isNotBlank(name)) {
-                            TJsonBeauty tJsonBeauty = new TJsonBeauty();
-                            tJsonBeauty.setName(name);
-                            tJsonBeauty.setContent(jsonBeautyForm.getTextArea().getText());
-                            tJsonBeauty.setCreateTime(now);
-                            tJsonBeauty.setModifiedTime(now);
-
-                            jsonBeautyMapper.insert(tJsonBeauty);
-                            JsonBeautyForm.initListTable();
-                            selectedNameJson = name;
-                        }
-                    }
+                    quickSave(true);
                 } else if (evt.isControlDown() && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
                     String jsonText = jsonBeautyForm.getTextArea().getText();
                     jsonBeautyForm.getTextArea().setText(formatJson(jsonText));
@@ -136,9 +116,11 @@ public class JsonBeautyListener {
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
                     jsonBeautyForm.getFindReplacePanel().setVisible(true);
                     jsonBeautyForm.getFindTextField().grabFocus();
+                    jsonBeautyForm.getFindTextField().selectAll();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_R) {
                     jsonBeautyForm.getFindReplacePanel().setVisible(true);
                     jsonBeautyForm.getReplaceTextField().grabFocus();
+                    jsonBeautyForm.getReplaceTextField().selectAll();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
                     newJson();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
@@ -152,7 +134,7 @@ public class JsonBeautyListener {
         });
 
         // 删除按钮事件
-        jsonBeautyForm.getDeleteButton().addActionListener(e -> ThreadUtil.execute(() -> {
+        jsonBeautyForm.getDeleteButton().addActionListener(e -> {
             try {
                 int[] selectedRows = jsonBeautyForm.getNoteListTable().getSelectedRows();
 
@@ -169,6 +151,7 @@ public class JsonBeautyListener {
                             jsonBeautyMapper.deleteByPrimaryKey(id);
 
                             tableModel.removeRow(selectedRow);
+                            jsonBeautyForm.getNoteListTable().updateUI();
                         }
                         selectedNameJson = null;
                         JsonBeautyForm.initListTable();
@@ -179,7 +162,7 @@ public class JsonBeautyListener {
                         JOptionPane.ERROR_MESSAGE);
                 log.error(e1.toString());
             }
-        }));
+        });
 
         // 字体名称下拉框事件
         jsonBeautyForm.getFontNameComboBox().addItemListener(e -> {
@@ -312,6 +295,7 @@ public class JsonBeautyListener {
         jsonBeautyForm.getFindButton().addActionListener(e -> {
             jsonBeautyForm.getFindReplacePanel().setVisible(true);
             jsonBeautyForm.getFindTextField().grabFocus();
+            jsonBeautyForm.getFindTextField().selectAll();
         });
 
         jsonBeautyForm.getFindTextField().addKeyListener(new KeyListener() {
@@ -434,6 +418,39 @@ public class JsonBeautyListener {
 
     }
 
+    /**
+     * save for quick key and item change
+     *
+     * @param refreshModifiedTime
+     */
+    private static void quickSave(boolean refreshModifiedTime) {
+        JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
+        String now = SqliteUtil.nowDateForSqlite();
+        if (selectedNameJson != null) {
+            TJsonBeauty tJsonBeauty = new TJsonBeauty();
+            tJsonBeauty.setName(selectedNameJson);
+            tJsonBeauty.setContent(jsonBeautyForm.getTextArea().getText());
+            if (refreshModifiedTime) {
+                tJsonBeauty.setModifiedTime(now);
+            }
+            jsonBeautyMapper.updateByName(tJsonBeauty);
+        } else {
+            String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+            String name = JOptionPane.showInputDialog("名称", tempName);
+            if (StringUtils.isNotBlank(name)) {
+                TJsonBeauty tJsonBeauty = new TJsonBeauty();
+                tJsonBeauty.setName(name);
+                tJsonBeauty.setContent(jsonBeautyForm.getTextArea().getText());
+                tJsonBeauty.setCreateTime(now);
+                tJsonBeauty.setModifiedTime(now);
+
+                jsonBeautyMapper.insert(tJsonBeauty);
+                JsonBeautyForm.initListTable();
+                selectedNameJson = name;
+            }
+        }
+    }
+
     private static void newJson() {
         JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
         jsonBeautyForm.getTextArea().setText("");
@@ -512,5 +529,8 @@ public class JsonBeautyListener {
         content = ReUtil.replaceAll(content, regex, replacement);
 
         jsonBeautyForm.getTextArea().setText(content);
+        jsonBeautyForm.getTextArea().setCaretPosition(0);
+        jsonBeautyForm.getScrollPane().getVerticalScrollBar().setValue(0);
+        jsonBeautyForm.getScrollPane().getHorizontalScrollBar().setValue(0);
     }
 }

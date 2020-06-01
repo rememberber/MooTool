@@ -13,6 +13,7 @@ import com.luoboduner.moo.tool.ui.listener.func.CryptoListener;
 import com.luoboduner.moo.tool.ui.listener.func.EnCodeListener;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
 import com.luoboduner.moo.tool.ui.listener.func.HttpRequestListener;
+import com.luoboduner.moo.tool.ui.listener.func.ImageListener;
 import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
 import com.luoboduner.moo.tool.ui.listener.func.NetListener;
 import com.luoboduner.moo.tool.ui.listener.func.QrCodeListener;
@@ -55,6 +56,7 @@ public class MainFrame extends JFrame {
      */
     public void addListeners() {
         ThreadUtil.execute(FrameListener::addListeners);
+        ThreadUtil.execute(TabListener::addListeners);
         ThreadUtil.execute(AboutListener::addListeners);
         ThreadUtil.execute(QuickNoteListener::addListeners);
         ThreadUtil.execute(TimeConvertListener::addListeners);
@@ -67,7 +69,7 @@ public class MainFrame extends JFrame {
         ThreadUtil.execute(CalculatorListener::addListeners);
         ThreadUtil.execute(NetListener::addListeners);
         ThreadUtil.execute(ColorBoardListener::addListeners);
+        ThreadUtil.execute(ImageListener::addListeners);
         ThreadUtil.execute(SettingListener::addListeners);
-        ThreadUtil.execute(TabListener::addListeners);
     }
 }

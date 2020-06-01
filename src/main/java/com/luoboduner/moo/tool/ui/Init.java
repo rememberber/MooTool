@@ -9,15 +9,19 @@ import com.luoboduner.moo.tool.ui.form.AboutForm;
 import com.luoboduner.moo.tool.ui.form.SettingForm;
 import com.luoboduner.moo.tool.ui.form.func.CalculatorForm;
 import com.luoboduner.moo.tool.ui.form.func.ColorBoardForm;
+import com.luoboduner.moo.tool.ui.form.func.CronForm;
 import com.luoboduner.moo.tool.ui.form.func.CryptoForm;
 import com.luoboduner.moo.tool.ui.form.func.EnCodeForm;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
 import com.luoboduner.moo.tool.ui.form.func.HttpRequestForm;
+import com.luoboduner.moo.tool.ui.form.func.ImageForm;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
 import com.luoboduner.moo.tool.ui.form.func.NetForm;
 import com.luoboduner.moo.tool.ui.form.func.QrCodeForm;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
+import com.luoboduner.moo.tool.ui.form.func.RegexForm;
 import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
+import com.luoboduner.moo.tool.ui.form.func.TranslationForm;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -138,6 +142,10 @@ public class Init {
         ThreadUtil.execute(CalculatorForm::init);
         ThreadUtil.execute(ColorBoardForm::init);
         ThreadUtil.execute(NetForm::init);
+        ThreadUtil.execute(TranslationForm::init);
+        ThreadUtil.execute(CronForm::init);
+        ThreadUtil.execute(RegexForm::init);
+        ThreadUtil.execute(ImageForm::init);
 
         // 检查新版版
         if (App.config.isAutoCheckUpdate()) {

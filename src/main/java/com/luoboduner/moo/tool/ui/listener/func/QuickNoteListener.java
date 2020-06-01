@@ -1,7 +1,6 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.ReUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
@@ -77,13 +76,16 @@ public class QuickNoteListener {
         quickNoteForm.getNoteListTable().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                ThreadUtil.execute(() -> {
-                    int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
-                    String name = quickNoteForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
-                    selectedName = name;
-                    TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
-                    quickNoteForm.getTextArea().setText(tQuickNote.getContent());
-                });
+                quickSave(false);
+                int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
+                String name = quickNoteForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
+                selectedName = name;
+                TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
+                quickNoteForm.getTextArea().setText(tQuickNote.getContent());
+                quickNoteForm.getTextArea().setCaretPosition(0);
+                quickNoteForm.getScrollPane().getVerticalScrollBar().setValue(0);
+                quickNoteForm.getScrollPane().getHorizontalScrollBar().setValue(0);
+                quickNoteForm.getTextArea().updateUI();
                 super.mousePressed(e);
             }
         });
@@ -97,35 +99,15 @@ public class QuickNoteListener {
             @Override
             public void keyPressed(KeyEvent evt) {
                 if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
-                    String now = SqliteUtil.nowDateForSqlite();
-                    if (selectedName != null) {
-                        TQuickNote tQuickNote = new TQuickNote();
-                        tQuickNote.setName(selectedName);
-                        tQuickNote.setContent(quickNoteForm.getTextArea().getText());
-                        tQuickNote.setModifiedTime(now);
-
-                        quickNoteMapper.updateByName(tQuickNote);
-                    } else {
-                        String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-                        String name = JOptionPane.showInputDialog("名称", tempName);
-                        if (StringUtils.isNotBlank(name)) {
-                            TQuickNote tQuickNote = new TQuickNote();
-                            tQuickNote.setName(name);
-                            tQuickNote.setContent(quickNoteForm.getTextArea().getText());
-                            tQuickNote.setCreateTime(now);
-                            tQuickNote.setModifiedTime(now);
-
-                            quickNoteMapper.insert(tQuickNote);
-                            QuickNoteForm.initNoteListTable();
-                            selectedName = name;
-                        }
-                    }
+                    quickSave(true);
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
                     quickNoteForm.getFindReplacePanel().setVisible(true);
                     quickNoteForm.getFindTextField().grabFocus();
+                    quickNoteForm.getFindTextField().selectAll();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_R) {
                     quickNoteForm.getFindReplacePanel().setVisible(true);
                     quickNoteForm.getReplaceTextField().grabFocus();
+                    quickNoteForm.getReplaceTextField().selectAll();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
                     newNote();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
@@ -139,7 +121,7 @@ public class QuickNoteListener {
         });
 
         // 删除按钮事件
-        quickNoteForm.getDeleteButton().addActionListener(e -> ThreadUtil.execute(() -> {
+        quickNoteForm.getDeleteButton().addActionListener(e -> {
             try {
                 int[] selectedRows = quickNoteForm.getNoteListTable().getSelectedRows();
 
@@ -156,6 +138,7 @@ public class QuickNoteListener {
                             quickNoteMapper.deleteByPrimaryKey(id);
 
                             tableModel.removeRow(selectedRow);
+                            quickNoteForm.getNoteListTable().updateUI();
                         }
                         selectedName = null;
                         QuickNoteForm.initNoteListTable();
@@ -166,7 +149,7 @@ public class QuickNoteListener {
                         JOptionPane.ERROR_MESSAGE);
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
-        }));
+        });
 
         // 字体名称下拉框事件
         quickNoteForm.getFontNameComboBox().addItemListener(e -> {
@@ -300,6 +283,7 @@ public class QuickNoteListener {
         quickNoteForm.getFindButton().addActionListener(e -> {
             quickNoteForm.getFindReplacePanel().setVisible(true);
             quickNoteForm.getFindTextField().grabFocus();
+            quickNoteForm.getFindTextField().selectAll();
         });
 
         quickNoteForm.getFindTextField().addKeyListener(new KeyListener() {
@@ -421,6 +405,40 @@ public class QuickNoteListener {
         });
     }
 
+    /**
+     * save for quick key and item change
+     *
+     * @param refreshModifiedTime
+     */
+    private static void quickSave(boolean refreshModifiedTime) {
+        QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
+        String now = SqliteUtil.nowDateForSqlite();
+        if (selectedName != null) {
+            TQuickNote tQuickNote = new TQuickNote();
+            tQuickNote.setName(selectedName);
+            tQuickNote.setContent(quickNoteForm.getTextArea().getText());
+            if (refreshModifiedTime) {
+                tQuickNote.setModifiedTime(now);
+            }
+
+            quickNoteMapper.updateByName(tQuickNote);
+        } else {
+            String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+            String name = JOptionPane.showInputDialog("名称", tempName);
+            if (StringUtils.isNotBlank(name)) {
+                TQuickNote tQuickNote = new TQuickNote();
+                tQuickNote.setName(name);
+                tQuickNote.setContent(quickNoteForm.getTextArea().getText());
+                tQuickNote.setCreateTime(now);
+                tQuickNote.setModifiedTime(now);
+
+                quickNoteMapper.insert(tQuickNote);
+                QuickNoteForm.initNoteListTable();
+                selectedName = name;
+            }
+        }
+    }
+
     private static void newNote() {
         QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
         quickNoteForm.getTextArea().setText("");
@@ -481,5 +499,8 @@ public class QuickNoteListener {
         content = ReUtil.replaceAll(content, regex, replacement);
 
         quickNoteForm.getTextArea().setText(content);
+        quickNoteForm.getTextArea().setCaretPosition(0);
+        quickNoteForm.getScrollPane().getVerticalScrollBar().setValue(0);
+        quickNoteForm.getScrollPane().getHorizontalScrollBar().setValue(0);
     }
 }

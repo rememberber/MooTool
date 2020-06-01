@@ -468,6 +468,8 @@ public class HttpRequestForm {
     private void $$$setupUI$$$() {
         httpRequestPanel = new JPanel();
         httpRequestPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        httpRequestPanel.setMinimumSize(new Dimension(400, 300));
+        httpRequestPanel.setPreferredSize(new Dimension(400, 300));
         splitPane = new JSplitPane();
         splitPane.setContinuousLayout(true);
         splitPane.setDividerLocation(0);

@@ -88,6 +88,8 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     private String jsonBeautyExportPath;
 
+    private String imageExportPath;
+
     private String hostExportPath;
 
     private String lastSelectedColor;
@@ -358,6 +360,14 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setJsonBeautyExportPath(String jsonBeautyExportPath) {
         setting.put("func.jsonBeauty", "jsonBeautyExportPath", jsonBeautyExportPath);
+    }
+
+    public String getImageExportPath() {
+        return setting.getStr("imageExportPath", "func.image", "");
+    }
+
+    public void setImageExportPath(String imageExportPath) {
+        setting.put("func.image", "imageExportPath", imageExportPath);
     }
 
     public String getHostExportPath() {
