@@ -5,6 +5,7 @@ import cn.hutool.core.thread.ThreadUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.THostMapper;
 import com.luoboduner.moo.tool.domain.THost;
+import com.luoboduner.moo.tool.ui.dialog.CurrentHostDialog;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
@@ -118,6 +119,23 @@ public class HostListener {
         // 添加按钮事件
         hostForm.getAddButton().addActionListener(e -> {
             newHost();
+        });
+
+        // 查看系统当前host按钮事件
+        hostForm.getCurrentHostButton().addActionListener(e -> {
+
+            String content;
+            if (SystemUtil.isWindowsOs()) {
+                content = FileUtil.readUtf8String(HostForm.WIN_HOST_FILE_PATH);
+            } else if (SystemUtil.isMacOs()) {
+                content = FileUtil.readUtf8String(HostForm.MAC_HOST_FILE_PATH);
+            } else {
+                content = HostForm.NOT_SUPPORTED_TIPS;
+            }
+            CurrentHostDialog currentHostDialog = new CurrentHostDialog();
+            currentHostDialog.setPlaneText(content);
+            currentHostDialog.setVisible(true);
+
         });
 
         // 左侧列表鼠标点击事件（显示下方删除按钮）
@@ -304,17 +322,6 @@ public class HostListener {
         HostForm hostForm = HostForm.getInstance();
         int selectedRow = hostForm.getNoteListTable().getSelectedRow();
         String name = hostForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
-//        if (HostForm.SYS_CURRENT_HOST_NAME.equals(name)) {
-//            if (SystemUtil.isWindowsOs()) {
-//                content = FileUtil.readUtf8String(HostForm.WIN_HOST_FILE_PATH);
-//            } else if (SystemUtil.isMacOs()) {
-//                content = FileUtil.readUtf8String(HostForm.MAC_HOST_FILE_PATH);
-//            } else {
-//                content = HostForm.NOT_SUPPORTED_TIPS;
-//            }
-//            hostForm.getTextArea().setEditable(false);
-//            hostForm.getSwitchButton().setVisible(false);
-//        } else {
         selectedNameHost = name;
         THost tHost = hostMapper.selectByName(name);
         hostForm.getTextArea().setEditable(true);
