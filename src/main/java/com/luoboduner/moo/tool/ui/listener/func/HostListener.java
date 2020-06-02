@@ -124,13 +124,7 @@ public class HostListener {
         hostForm.getNoteListTable().addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                int selectedRow = hostForm.getNoteListTable().getSelectedRow();
-                String name = hostForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
-                if (HostForm.SYS_CURRENT_HOST_NAME.equals(name)) {
-                    hostForm.getDeletePanel().setVisible(false);
-                } else {
-                    hostForm.getDeletePanel().setVisible(true);
-                }
+                hostForm.getDeletePanel().setVisible(true);
             }
 
             @Override
@@ -310,25 +304,22 @@ public class HostListener {
         HostForm hostForm = HostForm.getInstance();
         int selectedRow = hostForm.getNoteListTable().getSelectedRow();
         String name = hostForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
-        String content;
-        if (HostForm.SYS_CURRENT_HOST_NAME.equals(name)) {
-            if (SystemUtil.isWindowsOs()) {
-                content = FileUtil.readUtf8String(HostForm.WIN_HOST_FILE_PATH);
-            } else if (SystemUtil.isMacOs()) {
-                content = FileUtil.readUtf8String(HostForm.MAC_HOST_FILE_PATH);
-            } else {
-                content = HostForm.NOT_SUPPORTED_TIPS;
-            }
-            hostForm.getTextArea().setEditable(false);
-            hostForm.getSwitchButton().setVisible(false);
-        } else {
-            selectedNameHost = name;
-            THost tHost = hostMapper.selectByName(name);
-            content = tHost.getContent();
-            hostForm.getTextArea().setEditable(true);
-            hostForm.getSwitchButton().setVisible(true);
-        }
-        hostForm.getTextArea().setText(content);
+//        if (HostForm.SYS_CURRENT_HOST_NAME.equals(name)) {
+//            if (SystemUtil.isWindowsOs()) {
+//                content = FileUtil.readUtf8String(HostForm.WIN_HOST_FILE_PATH);
+//            } else if (SystemUtil.isMacOs()) {
+//                content = FileUtil.readUtf8String(HostForm.MAC_HOST_FILE_PATH);
+//            } else {
+//                content = HostForm.NOT_SUPPORTED_TIPS;
+//            }
+//            hostForm.getTextArea().setEditable(false);
+//            hostForm.getSwitchButton().setVisible(false);
+//        } else {
+        selectedNameHost = name;
+        THost tHost = hostMapper.selectByName(name);
+        hostForm.getTextArea().setEditable(true);
+        hostForm.getSwitchButton().setVisible(true);
+        hostForm.getTextArea().setText(tHost.getContent());
         hostForm.getTextArea().setCaretPosition(0);
         hostForm.getScrollPane().getVerticalScrollBar().setValue(0);
         hostForm.getScrollPane().getHorizontalScrollBar().setValue(0);

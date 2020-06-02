@@ -58,8 +58,6 @@ public class HostForm {
 
     public static final String NOT_SUPPORTED_TIPS = "暂不支持该操作系统！";
 
-    public static final String SYS_CURRENT_HOST_NAME = ">_系统当前Host";
-
     private HostForm() {
         UndoUtil.register(this);
     }
@@ -142,13 +140,6 @@ public class HostForm {
         // 隐藏id列
         JTableUtil.hideColumn(hostForm.getNoteListTable(), 0);
 
-        Object[] data;
-
-        data = new Object[2];
-        data[0] = -1;
-        data[1] = SYS_CURRENT_HOST_NAME;
-        model.addRow(data);
-
         if (!SystemUtil.isLinuxOs()) {
             App.popupMenu.removeAll();
             MenuItem openItem = new MenuItem("MooTool");
@@ -177,6 +168,7 @@ public class HostForm {
 
             List<THost> hostList = hostMapper.selectAll();
             MenuItem menuItem;
+            Object[] data;
             for (THost tHost : hostList) {
                 data = new Object[2];
                 data[0] = tHost.getId();
