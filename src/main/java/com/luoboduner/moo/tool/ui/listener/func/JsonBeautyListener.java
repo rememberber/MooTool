@@ -135,33 +135,7 @@ public class JsonBeautyListener {
 
         // 删除按钮事件
         jsonBeautyForm.getDeleteButton().addActionListener(e -> {
-            try {
-                int[] selectedRows = jsonBeautyForm.getNoteListTable().getSelectedRows();
-
-                if (selectedRows.length == 0) {
-                    JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
-                    if (isDelete == JOptionPane.YES_OPTION) {
-                        DefaultTableModel tableModel = (DefaultTableModel) jsonBeautyForm.getNoteListTable().getModel();
-
-                        for (int i = selectedRows.length; i > 0; i--) {
-                            int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
-                            Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
-                            jsonBeautyMapper.deleteByPrimaryKey(id);
-
-                            tableModel.removeRow(selectedRow);
-                            jsonBeautyForm.getNoteListTable().updateUI();
-                        }
-                        selectedNameJson = null;
-                        JsonBeautyForm.initListTable();
-                    }
-                }
-            } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
-                log.error(e1.toString());
-            }
+            deleteFiles(jsonBeautyForm);
         });
 
         // 字体名称下拉框事件
@@ -288,6 +262,8 @@ public class JsonBeautyListener {
                             log.error(e.toString());
                         }
                     }
+                } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
+                    deleteFiles(jsonBeautyForm);
                 }
             }
         });
@@ -416,6 +392,36 @@ public class JsonBeautyListener {
             }
         });
 
+    }
+
+    private static void deleteFiles(JsonBeautyForm jsonBeautyForm) {
+        try {
+            int[] selectedRows = jsonBeautyForm.getNoteListTable().getSelectedRows();
+
+            if (selectedRows.length == 0) {
+                JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                if (isDelete == JOptionPane.YES_OPTION) {
+                    DefaultTableModel tableModel = (DefaultTableModel) jsonBeautyForm.getNoteListTable().getModel();
+
+                    for (int i = selectedRows.length; i > 0; i--) {
+                        int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
+                        Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
+                        jsonBeautyMapper.deleteByPrimaryKey(id);
+
+                        tableModel.removeRow(selectedRow);
+                        jsonBeautyForm.getNoteListTable().updateUI();
+                    }
+                    selectedNameJson = null;
+                    JsonBeautyForm.initListTable();
+                }
+            }
+        } catch (Exception e1) {
+            JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
+                    JOptionPane.ERROR_MESSAGE);
+            log.error(e1.toString());
+        }
     }
 
     /**
