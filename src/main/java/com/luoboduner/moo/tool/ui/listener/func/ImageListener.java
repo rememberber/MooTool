@@ -345,13 +345,7 @@ public class ImageListener {
     private static void quickSave() {
         try {
             if (selectedImage != null) {
-                if (selectedName != null) {
-                    selectedName = selectedName.replace(".png", "");
-                    if (selectedImage != null) {
-                        File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
-                        ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
-                    }
-                } else {
+                if (selectedName == null) {
                     String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
                     String name = JOptionPane.showInputDialog("名称", tempName);
                     if (StringUtils.isNotBlank(name)) {
