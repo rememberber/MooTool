@@ -5,6 +5,7 @@ import cn.hutool.core.thread.ThreadUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.THostMapper;
 import com.luoboduner.moo.tool.domain.THost;
+import com.luoboduner.moo.tool.ui.dialog.CurrentHostDialog;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
@@ -86,33 +87,7 @@ public class HostListener {
 
         // 删除按钮事件
         hostForm.getDeleteButton().addActionListener(e -> {
-            try {
-                int[] selectedRows = hostForm.getNoteListTable().getSelectedRows();
-
-                if (selectedRows.length == 0) {
-                    JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
-                    if (isDelete == JOptionPane.YES_OPTION) {
-                        DefaultTableModel tableModel = (DefaultTableModel) hostForm.getNoteListTable().getModel();
-
-                        for (int i = selectedRows.length; i > 0; i--) {
-                            int selectedRow = hostForm.getNoteListTable().getSelectedRow();
-                            Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
-                            hostMapper.deleteByPrimaryKey(id);
-
-                            tableModel.removeRow(selectedRow);
-                            hostForm.getNoteListTable().updateUI();
-                        }
-                        selectedNameHost = null;
-                        HostForm.initListTable();
-                    }
-                }
-            } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
-                log.error(e1.toString());
-            }
+            deleteFiles(hostForm);
         });
 
         // 添加按钮事件
@@ -120,17 +95,28 @@ public class HostListener {
             newHost();
         });
 
+        // 查看系统当前host按钮事件
+        hostForm.getCurrentHostButton().addActionListener(e -> {
+
+            String content;
+            if (SystemUtil.isWindowsOs()) {
+                content = FileUtil.readUtf8String(HostForm.WIN_HOST_FILE_PATH);
+            } else if (SystemUtil.isMacOs()) {
+                content = FileUtil.readUtf8String(HostForm.MAC_HOST_FILE_PATH);
+            } else {
+                content = HostForm.NOT_SUPPORTED_TIPS;
+            }
+            CurrentHostDialog currentHostDialog = new CurrentHostDialog();
+            currentHostDialog.setPlaneText(content);
+            currentHostDialog.setVisible(true);
+
+        });
+
         // 左侧列表鼠标点击事件（显示下方删除按钮）
         hostForm.getNoteListTable().addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                int selectedRow = hostForm.getNoteListTable().getSelectedRow();
-                String name = hostForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
-                if (HostForm.SYS_CURRENT_HOST_NAME.equals(name)) {
-                    hostForm.getDeletePanel().setVisible(false);
-                } else {
-                    hostForm.getDeletePanel().setVisible(true);
-                }
+                hostForm.getDeletePanel().setVisible(true);
             }
 
             @Override
@@ -212,6 +198,8 @@ public class HostListener {
                             log.error(e.toString());
                         }
                     }
+                } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
+                    deleteFiles(hostForm);
                 }
             }
         });
@@ -262,6 +250,36 @@ public class HostListener {
 
     }
 
+    private static void deleteFiles(HostForm hostForm) {
+        try {
+            int[] selectedRows = hostForm.getNoteListTable().getSelectedRows();
+
+            if (selectedRows.length == 0) {
+                JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                if (isDelete == JOptionPane.YES_OPTION) {
+                    DefaultTableModel tableModel = (DefaultTableModel) hostForm.getNoteListTable().getModel();
+
+                    for (int i = selectedRows.length; i > 0; i--) {
+                        int selectedRow = hostForm.getNoteListTable().getSelectedRow();
+                        Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
+                        hostMapper.deleteByPrimaryKey(id);
+
+                        tableModel.removeRow(selectedRow);
+                        hostForm.getNoteListTable().updateUI();
+                    }
+                    selectedNameHost = null;
+                    HostForm.initListTable();
+                }
+            }
+        } catch (Exception e1) {
+            JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
+                    JOptionPane.ERROR_MESSAGE);
+            log.error(e1.toString());
+        }
+    }
+
     /**
      * save for quick key and item change
      *
@@ -310,25 +328,11 @@ public class HostListener {
         HostForm hostForm = HostForm.getInstance();
         int selectedRow = hostForm.getNoteListTable().getSelectedRow();
         String name = hostForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
-        String content;
-        if (HostForm.SYS_CURRENT_HOST_NAME.equals(name)) {
-            if (SystemUtil.isWindowsOs()) {
-                content = FileUtil.readUtf8String(HostForm.WIN_HOST_FILE_PATH);
-            } else if (SystemUtil.isMacOs()) {
-                content = FileUtil.readUtf8String(HostForm.MAC_HOST_FILE_PATH);
-            } else {
-                content = HostForm.NOT_SUPPORTED_TIPS;
-            }
-            hostForm.getTextArea().setEditable(false);
-            hostForm.getSwitchButton().setVisible(false);
-        } else {
-            selectedNameHost = name;
-            THost tHost = hostMapper.selectByName(name);
-            content = tHost.getContent();
-            hostForm.getTextArea().setEditable(true);
-            hostForm.getSwitchButton().setVisible(true);
-        }
-        hostForm.getTextArea().setText(content);
+        selectedNameHost = name;
+        THost tHost = hostMapper.selectByName(name);
+        hostForm.getTextArea().setEditable(true);
+        hostForm.getSwitchButton().setVisible(true);
+        hostForm.getTextArea().setText(tHost.getContent());
         hostForm.getTextArea().setCaretPosition(0);
         hostForm.getScrollPane().getVerticalScrollBar().setValue(0);
         hostForm.getScrollPane().getHorizontalScrollBar().setValue(0);

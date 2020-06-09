@@ -163,31 +163,7 @@ public class ImageListener {
 
         // 删除按钮事件
         imageForm.getDeleteButton().addActionListener(e -> {
-            try {
-                int[] selectedRows = imageForm.getListTable().getSelectedRows();
-
-                if (selectedRows.length == 0) {
-                    JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
-                    if (isDelete == JOptionPane.YES_OPTION) {
-                        DefaultTableModel tableModel = (DefaultTableModel) imageForm.getListTable().getModel();
-
-                        for (int i = selectedRows.length; i > 0; i--) {
-                            int selectedRow = imageForm.getListTable().getSelectedRow();
-                            String fileName = (String) tableModel.getValueAt(selectedRow, 0);
-                            FileUtil.del(IMAGE_PATH_PRE_FIX + fileName);
-                            tableModel.removeRow(selectedRow);
-                            imageForm.getListTable().updateUI();
-                        }
-                        selectedName = null;
-                        ImageForm.initListTable();
-                    }
-                }
-            } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
-                log.error(ExceptionUtils.getStackTrace(e1));
-            }
+            deleteFiles(imageForm);
         });
 
         // 左侧列表按键事件（重命名）
@@ -220,6 +196,8 @@ public class ImageListener {
                             log.error(ExceptionUtils.getStackTrace(e));
                         }
                     }
+                } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
+                    deleteFiles(imageForm);
                 }
             }
         });
@@ -275,6 +253,34 @@ public class ImageListener {
 
         });
 
+    }
+
+    private static void deleteFiles(ImageForm imageForm) {
+        try {
+            int[] selectedRows = imageForm.getListTable().getSelectedRows();
+
+            if (selectedRows.length == 0) {
+                JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                if (isDelete == JOptionPane.YES_OPTION) {
+                    DefaultTableModel tableModel = (DefaultTableModel) imageForm.getListTable().getModel();
+
+                    for (int i = selectedRows.length; i > 0; i--) {
+                        int selectedRow = imageForm.getListTable().getSelectedRow();
+                        String fileName = (String) tableModel.getValueAt(selectedRow, 0);
+                        FileUtil.del(IMAGE_PATH_PRE_FIX + fileName);
+                        tableModel.removeRow(selectedRow);
+                        imageForm.getListTable().updateUI();
+                    }
+                    selectedName = null;
+                    ImageForm.initListTable();
+                }
+            }
+        } catch (Exception e1) {
+            JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+            log.error(ExceptionUtils.getStackTrace(e1));
+        }
     }
 
     private static void newImage() {
@@ -344,24 +350,16 @@ public class ImageListener {
      */
     private static void quickSave() {
         try {
-            if (selectedImage != null) {
-                if (selectedName != null) {
-                    selectedName = selectedName.replace(".png", "");
-                    if (selectedImage != null) {
-                        File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
-                        ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
-                    }
-                } else {
-                    String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-                    String name = JOptionPane.showInputDialog("名称", tempName);
-                    if (StringUtils.isNotBlank(name)) {
-                        name = name.replace(".png", "");
+            if (selectedImage != null && selectedName == null) {
+                String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                String name = JOptionPane.showInputDialog("名称", tempName);
+                if (StringUtils.isNotBlank(name)) {
+                    name = name.replace(".png", "");
 
-                        File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + name + ".png"));
-                        ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
-                        ImageForm.initListTable();
-                        selectedName = name;
-                    }
+                    File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + name + ".png"));
+                    ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
+                    ImageForm.initListTable();
+                    selectedName = name;
                 }
             }
         } catch (Exception ex) {

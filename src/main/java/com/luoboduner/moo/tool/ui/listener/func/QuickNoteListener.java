@@ -122,33 +122,7 @@ public class QuickNoteListener {
 
         // 删除按钮事件
         quickNoteForm.getDeleteButton().addActionListener(e -> {
-            try {
-                int[] selectedRows = quickNoteForm.getNoteListTable().getSelectedRows();
-
-                if (selectedRows.length == 0) {
-                    JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
-                    if (isDelete == JOptionPane.YES_OPTION) {
-                        DefaultTableModel tableModel = (DefaultTableModel) quickNoteForm.getNoteListTable().getModel();
-
-                        for (int i = selectedRows.length; i > 0; i--) {
-                            int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
-                            Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
-                            quickNoteMapper.deleteByPrimaryKey(id);
-
-                            tableModel.removeRow(selectedRow);
-                            quickNoteForm.getNoteListTable().updateUI();
-                        }
-                        selectedName = null;
-                        QuickNoteForm.initNoteListTable();
-                    }
-                }
-            } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
-                log.error(ExceptionUtils.getStackTrace(e1));
-            }
+            deleteFiles(quickNoteForm);
         });
 
         // 字体名称下拉框事件
@@ -276,6 +250,8 @@ public class QuickNoteListener {
                             log.error(ExceptionUtils.getStackTrace(e));
                         }
                     }
+                } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
+                    deleteFiles(quickNoteForm);
                 }
             }
         });
@@ -403,6 +379,36 @@ public class QuickNoteListener {
                 quickNoteForm.getFindWordsCheckBox().setEnabled(true);
             }
         });
+    }
+
+    private static void deleteFiles(QuickNoteForm quickNoteForm) {
+        try {
+            int[] selectedRows = quickNoteForm.getNoteListTable().getSelectedRows();
+
+            if (selectedRows.length == 0) {
+                JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                if (isDelete == JOptionPane.YES_OPTION) {
+                    DefaultTableModel tableModel = (DefaultTableModel) quickNoteForm.getNoteListTable().getModel();
+
+                    for (int i = selectedRows.length; i > 0; i--) {
+                        int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
+                        Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
+                        quickNoteMapper.deleteByPrimaryKey(id);
+
+                        tableModel.removeRow(selectedRow);
+                        quickNoteForm.getNoteListTable().updateUI();
+                    }
+                    selectedName = null;
+                    QuickNoteForm.initNoteListTable();
+                }
+            }
+        } catch (Exception e1) {
+            JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
+                    JOptionPane.ERROR_MESSAGE);
+            log.error(ExceptionUtils.getStackTrace(e1));
+        }
     }
 
     /**
