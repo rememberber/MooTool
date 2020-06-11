@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta http-equiv="X-UA-Compatible" content="ie=edge">
 <title>递归解析Json，实现生成可视化Tree+快速获取JsonPath - 萝卜墩儿</title>
-<link rel="shortcut icon" href="http://localhost:4000/favicon.ico">
+<link rel="shortcut icon" href="https://rememberber.github.io//favicon.ico">
 <link href="https://cdn.jsdelivr.net/npm/remixicon@2.2.0/fonts/remixicon.css" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.7.2/animate.min.css">
-<link rel="stylesheet" href="http://localhost:4000/media/css/tailwind.css">
-<link rel="stylesheet" href="http://localhost:4000/styles/main.css">
-<link rel="alternate" type="application/atom+xml" title="递归解析Json，实现生成可视化Tree+快速获取JsonPath - 萝卜墩儿 - Atom Feed" href="http://localhost:4000/atom.xml">
+<link rel="stylesheet" href="https://rememberber.github.io//media/css/tailwind.css">
+<link rel="stylesheet" href="https://rememberber.github.io//styles/main.css">
+<link rel="alternate" type="application/atom+xml" title="递归解析Json，实现生成可视化Tree+快速获取JsonPath - 萝卜墩儿 - Atom Feed" href="https://rememberber.github.io//atom.xml">
 
     
 
@@ -26,8 +26,8 @@
 2.递归层次遍历JsonObjec，保存结点信息
 3.利用zTre..." />
   <meta property="og:type" content="articles">
-  <meta property="og:url" content="http://localhost:4000/post/di-gui-jie-xi-jsonshi-xian-sheng-cheng-ke-shi-hua-treekuai-su-huo-qu-jsonpath/" />
-  <meta property="og:image" content="http://localhost:4000/images/avatar.png">
+  <meta property="og:url" content="https://rememberber.github.io/post/di-gui-jie-xi-jsonshi-xian-sheng-cheng-ke-shi-hua-treekuai-su-huo-qu-jsonpath/" />
+  <meta property="og:image" content="https://rememberber.github.io//images/avatar.png">
   <meta property="og:image:height" content="630">
   <meta property="og:image:width" content="1200">
   <meta name="twitter:title" content="递归解析Json，实现生成可视化Tree+快速获取JsonPath - 萝卜墩儿">
@@ -37,13 +37,13 @@
 2.递归层次遍历JsonObjec，保存结点信息
 3.利用zTre...">
   <meta name="twitter:card" content="summary_large_image">
-  <link rel="canonical" href="http://localhost:4000/post/di-gui-jie-xi-jsonshi-xian-sheng-cheng-ke-shi-hua-treekuai-su-huo-qu-jsonpath/">
+  <link rel="canonical" href="https://rememberber.github.io/post/di-gui-jie-xi-jsonshi-xian-sheng-cheng-ke-shi-hua-treekuai-su-huo-qu-jsonpath/">
 
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css">
  
   
-    <link rel="stylesheet" href="http://localhost:4000/media/css/prism-atom-dark.css">
+    <link rel="stylesheet" href="https://rememberber.github.io//media/css/prism-atom-dark.css">
   
 
   
@@ -51,7 +51,7 @@
 
 <body>
   <div class="antialiased flex flex-col min-h-screen" id="app">
-    <a href="http://localhost:4000" class="fixed top-0 left-0 mt-4 bg-black text-white dark:text-gray-700 dark:bg-yellow-50 dark:hover:bg-black dark:hover:text-white inline-flex p-2 pl-8 hover:text-gray-700 hover:bg-yellow-50 font-bold z-10 transition-fast animated fadeInLeft">
+    <a href="https://rememberber.github.io/" class="fixed top-0 left-0 mt-4 bg-black text-white dark:text-gray-700 dark:bg-yellow-50 dark:hover:bg-black dark:hover:text-white inline-flex p-2 pl-8 hover:text-gray-700 hover:bg-yellow-50 font-bold z-10 transition-fast animated fadeInLeft">
       萝卜墩儿
     </a>
     <div class="max-w-4xl w-full mx-auto">
@@ -208,7 +208,7 @@ traverseTree(rootJson, zTreeNode, zTreeNodes);
     }
 </code></pre>
 <h3 id="3利用ztree展示结点为可视化树点击对应树的结点即可获取对应结点的jsonpath">3.利用zTree展示结点为可视化树，点击对应树的结点即可获取对应结点的JsonPath</h3>
-<figure data-type="image" tabindex="1"><img src="http://localhost:4000/post-images/1591794506788.png" alt="" loading="lazy"></figure>
+<figure data-type="image" tabindex="1"><img src="https://rememberber.github.io//post-images/1591794506788.png" alt="" loading="lazy"></figure>
 <p>前端代码：</p>
 <pre><code class="language-javascript">let zTreeObj;
 // zTree 的参数配置，深入使用请参考 API 文档（setting 配置详解）
@@ -227,7 +227,7 @@ zTreeObj.expandAll(true);
 </code></pre>
 <h3 id="4扩展将结点信息反向解析">4.扩展：将结点信息反向解析</h3>
 <p>递归解析zNodes+利用nestable插件可视化展示，效果如下：<br>
-<img src="http://localhost:4000/post-images/1591837961148.png" alt="" loading="lazy"><br>
+<img src="https://rememberber.github.io//post-images/1591837961148.png" alt="" loading="lazy"><br>
 前端代码：</p>
 <pre><code class="language-javascript">        let detailResult = JSON.parse(zNodes);
         let nestableContent = $('&lt;ol class=&quot;dd-list&quot;&gt;&lt;/ol&gt;');
@@ -377,11 +377,11 @@ zTreeObj.expandAll(true);
 </div>
 
   <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
-  <script src="http://localhost:4000/media/scripts/main.js"></script>
+  <script src="https://rememberber.github.io//media/scripts/main.js"></script>
   
   <!-- Code Highlight -->
   
-    <script src="http://localhost:4000/media/prism.js"></script>
+    <script src="https://rememberber.github.io//media/prism.js"></script>
     <script>
       Prism.highlightAll()
     </script>
