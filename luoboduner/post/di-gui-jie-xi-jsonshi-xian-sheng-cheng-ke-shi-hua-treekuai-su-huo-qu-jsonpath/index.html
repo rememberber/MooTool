@@ -1,0 +1,478 @@
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta http-equiv="X-UA-Compatible" content="ie=edge">
+<title>递归解析Json，实现生成可视化Tree+快速获取JsonPath - 萝卜墩儿</title>
+<link rel="shortcut icon" href="http://localhost:4000/favicon.ico">
+<link href="https://cdn.jsdelivr.net/npm/remixicon@2.2.0/fonts/remixicon.css" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/animate.css@3.7.2/animate.min.css">
+<link rel="stylesheet" href="http://localhost:4000/media/css/tailwind.css">
+<link rel="stylesheet" href="http://localhost:4000/styles/main.css">
+<link rel="alternate" type="application/atom+xml" title="递归解析Json，实现生成可视化Tree+快速获取JsonPath - 萝卜墩儿 - Atom Feed" href="http://localhost:4000/atom.xml">
+
+    
+
+  <meta name="description" content="最近做的一个小功能点，分享给大家：递归解析Json，可以实现生成可视化Tree+快速获取JsonPath。
+步骤：
+1.利用JsonPath读取根，获取JsonObject
+2.递归层次遍历JsonObjec，保存结点信息
+3.利用zTre..." />
+  <meta property="og:title" content="递归解析Json，实现生成可视化Tree+快速获取JsonPath - 萝卜墩儿">
+  <meta property="og:description" content="最近做的一个小功能点，分享给大家：递归解析Json，可以实现生成可视化Tree+快速获取JsonPath。
+步骤：
+1.利用JsonPath读取根，获取JsonObject
+2.递归层次遍历JsonObjec，保存结点信息
+3.利用zTre..." />
+  <meta property="og:type" content="articles">
+  <meta property="og:url" content="http://localhost:4000/post/di-gui-jie-xi-jsonshi-xian-sheng-cheng-ke-shi-hua-treekuai-su-huo-qu-jsonpath/" />
+  <meta property="og:image" content="http://localhost:4000/images/avatar.png">
+  <meta property="og:image:height" content="630">
+  <meta property="og:image:width" content="1200">
+  <meta name="twitter:title" content="递归解析Json，实现生成可视化Tree+快速获取JsonPath - 萝卜墩儿">
+  <meta name="twitter:description" content="最近做的一个小功能点，分享给大家：递归解析Json，可以实现生成可视化Tree+快速获取JsonPath。
+步骤：
+1.利用JsonPath读取根，获取JsonObject
+2.递归层次遍历JsonObjec，保存结点信息
+3.利用zTre...">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="canonical" href="http://localhost:4000/post/di-gui-jie-xi-jsonshi-xian-sheng-cheng-ke-shi-hua-treekuai-su-huo-qu-jsonpath/">
+
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/default-skin/default-skin.css">
+ 
+  
+    <link rel="stylesheet" href="http://localhost:4000/media/css/prism-atom-dark.css">
+  
+
+  
+</head>
+
+<body>
+  <div class="antialiased flex flex-col min-h-screen" id="app">
+    <a href="http://localhost:4000" class="fixed top-0 left-0 mt-4 bg-black text-white dark:text-gray-700 dark:bg-yellow-50 dark:hover:bg-black dark:hover:text-white inline-flex p-2 pl-8 hover:text-gray-700 hover:bg-yellow-50 font-bold z-10 transition-fast animated fadeInLeft">
+      萝卜墩儿
+    </a>
+    <div class="max-w-4xl w-full mx-auto">
+      <div class="shadow-box bg-white dark:bg-gray-600 rounded-lg pt-32 md:pt-64 px-4 md:px-8 pb-8 animated fadeIn mb-8">
+        <h1 class="text-5xl font-semibold leading-normal pb-8 mb-8 border-b-8 border-gray-700">
+          递归解析Json，实现生成可视化Tree+快速获取JsonPath
+        </h1>
+        
+        <div class="mb-8 flex flex-wrap">
+          <div class="text-gray-400 text-sm mr-4">2020-06-10 · 6 min read</div>
+          
+        </div>
+        <div class="markdown mb-8" v-pre>
+          <p>最近做的一个小功能点，分享给大家：递归解析Json，可以实现生成可视化Tree+快速获取JsonPath。<br>
+<strong>步骤：</strong><br>
+1.利用JsonPath读取根，获取JsonObject<br>
+2.递归层次遍历JsonObjec，保存结点信息<br>
+3.利用zTree展示结点为可视化树，点击对应树的结点即可获取对应结点的JsonPath</p>
+<h3 id="1利用jsonpath读取根获取jsonobject">1.利用JsonPath读取根，获取JsonObject</h3>
+<p>示例Json：</p>
+<pre><code class="language-json">{
+  &quot;errorMessage&quot;: null,
+  &quot;errorCode&quot;: null,
+  &quot;dates&quot;: {
+    &quot;tradeAmt&quot;: null,
+    &quot;riskLevel&quot;: &quot;LEVEL30&quot;,
+    &quot;optSelected&quot;: {
+      &quot;77&quot;: [
+        {
+          &quot;optionContent&quot;: &quot;20-50万元&quot;,
+          &quot;productCode&quot;: null,
+          &quot;created&quot;: null,
+          &quot;optionOrder&quot;: null,
+          &quot;modified&quot;: null,
+          &quot;id&quot;: 361,
+          &quot;optionScore&quot;: 8,
+          &quot;isInvalid&quot;: 1
+        }
+      ],
+      &quot;78&quot;: [
+        {
+          &quot;optionContent&quot;: &quot;资产50-500万元，无债务或债务较轻&quot;,
+          &quot;productCode&quot;: null,
+          &quot;created&quot;: null,
+          &quot;optionOrder&quot;: null,
+          &quot;modified&quot;: null,
+          &quot;id&quot;: 365,
+          &quot;optionScore&quot;: 6,
+          &quot;isInvalid&quot;: 1
+        }
+      ]
+    },
+    &quot;riskInfoResult&quot;: {
+      &quot;optLetter&quot;: &quot;A&quot;,
+      &quot;mqOrder&quot;: &quot;1&quot;,
+      &quot;residenceCountryCode&quot;: null,
+      &quot;taxReason&quot;: null,
+      &quot;residenceCountryName&quot;: null,
+      &quot;residenceCountryNameEn&quot;: null,
+      &quot;countryNameEn&quot;: null,
+      &quot;taxInfoCode&quot;: null,
+      &quot;taxInfoIsCompleted&quot;: true,
+      &quot;taxInfoIsRight&quot;: true,
+      &quot;countryCode&quot;: null,
+      &quot;taxId&quot;: null,
+      &quot;countryName&quot;: null,
+      &quot;taxReasonInt&quot;: null
+    },
+    &quot;created&quot;: 1565654328000,
+    &quot;questions&quot;: [
+      {
+        &quot;questionContent&quot;: &quot;您的职业？&quot;,
+        &quot;productCode&quot;: null,
+        &quot;created&quot;: 1498630051000,
+        &quot;options&quot;: null,
+        &quot;questionSource&quot;: &quot;BUSINESS&quot;,
+        &quot;modified&quot;: 1498630051000,
+        &quot;id&quot;: 75,
+        &quot;isInvalid&quot;: 1,
+        &quot;questionType&quot;: 1,
+        &quot;order&quot;: 1
+      },
+      {
+        &quot;questionContent&quot;: &quot;您的主要收入来源是？&quot;,
+        &quot;productCode&quot;: null,
+        &quot;created&quot;: 1498630051000,
+        &quot;options&quot;: null,
+        &quot;questionSource&quot;: &quot;BUSINESS&quot;,
+        &quot;modified&quot;: 1498630051000,
+        &quot;id&quot;: 76,
+        &quot;isInvalid&quot;: 1,
+        &quot;questionType&quot;: 1,
+        &quot;order&quot;: 2
+      }
+    ],
+    &quot;serialCode&quot;: &quot;123&quot;,
+    &quot;isInvalid&quot;: 1,
+    &quot;expireTime&quot;: 1628783999000,
+    &quot;productCode&quot;: null,
+    &quot;modified&quot;: 1565654328000,
+    &quot;examScore&quot;: 56,
+    &quot;id&quot;: 4564568,
+    &quot;results&quot;: {
+      &quot;77&quot;: &quot;361&quot;,
+      &quot;78&quot;: &quot;365&quot;
+    },
+    &quot;account&quot;: &quot;test&quot;
+  },
+  &quot;status&quot;: &quot;SUCCESS&quot;
+}
+</code></pre>
+<p>Java代码：</p>
+<pre><code class="language-java">String jsonStr = &quot;&quot;;
+Object rootJson = JsonPath.read(jsonStr, &quot;$&quot;);
+</code></pre>
+<h3 id="2递归层次遍历jsonobjec保存结点信息">2.递归层次遍历JsonObjec，保存结点信息</h3>
+<p>Java代码</p>
+<pre><code class="language-java">ZTreeNode zTreeNode = new ZTreeNode();
+zTreeNode.setId(&quot;$&quot;);
+zTreeNode.setpId(&quot;root&quot;);
+zTreeNode.setName(&quot;root&quot;);
+zTreeNode.setDepth(0);
+zTreeNode.setPath(&quot;$&quot;);
+traverseTree(rootJson, zTreeNode, zTreeNodes);
+</code></pre>
+<pre><code class="language-java">    public static void traverseTree(Object rootJson, ZTreeNode zTreeNode, List&lt;ZTreeNode&gt; zTreeNodes) {
+        if (rootJson instanceof Map) {
+            for (Map.Entry&lt;String, Object&gt; stringObjectEntry : ((Map&lt;String, Object&gt;) rootJson).entrySet()) {
+                ZTreeNode zTreeNodeTemp = new ZTreeNode();
+                zTreeNodeTemp.setDepth(zTreeNode.getDepth() + 1);
+                zTreeNodeTemp.setPath(zTreeNode.getPath() + &quot;.&quot; + stringObjectEntry.getKey());
+                zTreeNodeTemp.setId(zTreeNodeTemp.getPath());
+                zTreeNodeTemp.setName(stringObjectEntry.getKey());
+                zTreeNodeTemp.setpId(zTreeNode.getPath());
+                zTreeNodes.add(zTreeNodeTemp);
+                traverseTree(stringObjectEntry.getValue(), zTreeNodeTemp, zTreeNodes);
+            }
+        } else if (rootJson instanceof List) {
+            List json = (List) rootJson;
+            for (int i = 0; i &lt; json.size(); i++) {
+                Object obj = json.get(i);
+                ZTreeNode zTreeNodeTemp = new ZTreeNode();
+                zTreeNodeTemp.setDepth(zTreeNode.getDepth() + 1);
+                zTreeNodeTemp.setPath(zTreeNode.getPath() + &quot;[&quot; + i + &quot;]&quot;);
+                zTreeNodeTemp.setId(zTreeNodeTemp.getPath());
+                zTreeNodeTemp.setName(zTreeNode.getName() + &quot;[&quot; + i + &quot;]&quot;);
+                zTreeNodeTemp.setpId(zTreeNode.getPath());
+                zTreeNodes.add(zTreeNodeTemp);
+                traverseTree(obj, zTreeNodeTemp, zTreeNodes);
+            }
+        } else {
+            // do nothing
+        }
+    }
+</code></pre>
+<h3 id="3利用ztree展示结点为可视化树点击对应树的结点即可获取对应结点的jsonpath">3.利用zTree展示结点为可视化树，点击对应树的结点即可获取对应结点的JsonPath</h3>
+<figure data-type="image" tabindex="1"><img src="http://localhost:4000/post-images/1591794506788.png" alt="" loading="lazy"></figure>
+<p>前端代码：</p>
+<pre><code class="language-javascript">let zTreeObj;
+// zTree 的参数配置，深入使用请参考 API 文档（setting 配置详解）
+let setting = {
+    data: {
+        simpleData: {
+            enable: true
+        }
+    },
+    callback: {
+        onClick: zTreeOnClick
+    }
+};
+zTreeObj = $.fn.zTree.init($(&quot;#using_json&quot;), setting, zNodes);
+zTreeObj.expandAll(true);
+</code></pre>
+<h3 id="4扩展将结点信息反向解析">4.扩展：将结点信息反向解析</h3>
+<p>递归解析zNodes+利用nestable插件可视化展示，效果如下：<br>
+<img src="http://localhost:4000/post-images/1591837961148.png" alt="" loading="lazy"><br>
+前端代码：</p>
+<pre><code class="language-javascript">        let detailResult = JSON.parse(zNodes);
+        let nestableContent = $('&lt;ol class=&quot;dd-list&quot;&gt;&lt;/ol&gt;');
+        let dataId = 0;
+    // 遍历解析Json
+    function parseJson(jsonObj, nestableContent, dataId) {
+        for (let key in jsonObj) {
+
+            let element = jsonObj[key];
+            if (element === null) {
+                element = &quot;null&quot;;
+            }
+            if (element.length &gt; 0 &amp;&amp; typeof (element) == &quot;object&quot; || typeof (element) == &quot;object&quot;) {
+                //如果对象类型为object类型且数组长度大于0 或者 是对象 ，继续递归解析
+                var li = $('&lt;li class=&quot;dd-item&quot; data-id=&quot;' + dataId + '&quot;&gt;&lt;/li&gt;');
+                $(li).append('                   &lt;div class=&quot;dd-handle&quot;&gt;' +
+                    '                       &lt;span class=&quot;bg-muted p-xs b-r-sm&quot;&gt;' + key + '&lt;/span&gt;' +
+                    '                   &lt;/div&gt;').append('&lt;ol class=&quot;dd-list&quot;&gt;&lt;/ol&gt;').appendTo(nestableContent);
+                parseJson(element, $(li).children().eq(1), dataId);
+            } else {
+                dataId++;
+                $('&lt;li class=&quot;dd-item&quot; data-id=&quot;' + dataId + '&quot;&gt;&lt;/li&gt;').append('                   &lt;div class=&quot;dd-handle&quot;&gt;' +
+                    '                       &lt;span class=&quot;bg-muted p-xs b-r-sm&quot;&gt;' + key + '&lt;/span&gt;' + element +
+                    '                   &lt;/div&gt;').appendTo(nestableContent);
+            }
+
+        }
+    }
+</code></pre>
+
+        </div>
+        <!-- Share to Twitter, Weibo, Telegram -->
+        <div class="flex items-center">
+          <div class="mr-4 flex items-center">
+            <i class="ri-share-forward-line text-gray-500"></i>
+          </div>
+          <div class="px-4 cursor-pointer text-blue-500 hover:bg-blue-100 dark:hover:bg-gray-600 inline-flex" @click="shareToTwitter">
+            <i class="ri-twitter-line"></i>
+          </div>
+          <div class="px-4 cursor-pointer text-red-500 hover:bg-red-100 dark:hover:bg-gray-600 inline-flex" @click="shareToWeibo">
+            <i class="ri-weibo-line"></i>
+          </div>
+          <div class="px-4 cursor-pointer text-indigo-500 hover:bg-indigo-100 dark:hover:bg-gray-600 inline-flex" @click="shareToTelegram">
+            <i class="ri-telegram-line"></i>
+          </div>
+        </div>
+      </div>
+
+      
+
+      
+
+      <footer class="py-12 text-center px-4 md:px-0" v-pre>
+  Powered by <a href="https://github.com/getgridea/gridea" target="_blank">Gridea</a>
+</footer>
+    </div>
+
+    <!-- TOC Container -->
+    <div class="fixed right-0 bottom-0 mb-16 mr-4 shadow w-8 h-8 rounded-full flex justify-center items-center z-10 cursor-pointer bg-white dark:bg-gray-500 dark:text-gray-200 hover:shadow-lg transition-all animated fadeInRight" @click="showToc = true">
+      <i class="ri-file-list-line"></i>
+    </div>
+
+    <div class="fixed right-0 top-0 bottom-0 overflow-y-auto w-64 bg-white dark:bg-gray-800 p-4 border-l border-gray-100 dark:border-gray-600 z-10 transition-fast" :class="{ '-mr-64': !showToc }">
+      <div class="flex mb-4 justify-end">
+        <div class="w-8 h-8 inline-flex justify-center items-center rounded-full cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-fast" @click="showToc = false">
+          <i class="ri-close-line text-lg"></i>
+        </div>
+      </div>
+      <div class="post-toc-container">
+        <ul class="markdownIt-TOC">
+<li>
+<ul>
+<li>
+<ul>
+<li><a href="#1%E5%88%A9%E7%94%A8jsonpath%E8%AF%BB%E5%8F%96%E6%A0%B9%E8%8E%B7%E5%8F%96jsonobject">1.利用JsonPath读取根，获取JsonObject</a></li>
+<li><a href="#2%E9%80%92%E5%BD%92%E5%B1%82%E6%AC%A1%E9%81%8D%E5%8E%86jsonobjec%E4%BF%9D%E5%AD%98%E7%BB%93%E7%82%B9%E4%BF%A1%E6%81%AF">2.递归层次遍历JsonObjec，保存结点信息</a></li>
+<li><a href="#3%E5%88%A9%E7%94%A8ztree%E5%B1%95%E7%A4%BA%E7%BB%93%E7%82%B9%E4%B8%BA%E5%8F%AF%E8%A7%86%E5%8C%96%E6%A0%91%E7%82%B9%E5%87%BB%E5%AF%B9%E5%BA%94%E6%A0%91%E7%9A%84%E7%BB%93%E7%82%B9%E5%8D%B3%E5%8F%AF%E8%8E%B7%E5%8F%96%E5%AF%B9%E5%BA%94%E7%BB%93%E7%82%B9%E7%9A%84jsonpath">3.利用zTree展示结点为可视化树，点击对应树的结点即可获取对应结点的JsonPath</a></li>
+<li><a href="#4%E6%89%A9%E5%B1%95%E5%B0%86%E7%BB%93%E7%82%B9%E4%BF%A1%E6%81%AF%E5%8F%8D%E5%90%91%E8%A7%A3%E6%9E%90">4.扩展：将结点信息反向解析</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+      </div>
+    </div>
+
+    <!-- Back to top -->
+    <div class="fixed right-0 bottom-0 mb-4 mr-4 shadow w-8 h-8 rounded-full flex justify-center items-center z-10 cursor-pointer bg-white hover:shadow-lg transition-all dark:bg-gray-500 dark:text-gray-200" @click="backToUp" v-show="scrolled">
+      <i class="ri-arrow-up-line"></i>
+    </div>
+  </div>
+
+  <!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+  <!-- Background of PhotoSwipe. 
+        It's a separate element as animating opacity is faster than rgba(). -->
+  <div class="pswp__bg">
+  </div>
+  <!-- Slides wrapper with overflow:hidden. -->
+  <div class="pswp__scroll-wrap">
+    <!-- Container that holds slides. 
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+    <div class="pswp__container">
+      <div class="pswp__item">
+      </div>
+      <div class="pswp__item">
+      </div>
+      <div class="pswp__item">
+      </div>
+    </div>
+    <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+    <div class="pswp__ui pswp__ui--hidden">
+      <div class="pswp__top-bar">
+        <!--  Controls are self-explanatory. Order can be changed. -->
+        <div class="pswp__counter">
+        </div>
+        <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+        <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+        <button class="pswp__button pswp__button--zoom" title="Zoom in/out"></button>
+        <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+        <!-- element will get class pswp__preloader--active when preloader is running -->
+        <div class="pswp__preloader">
+          <div class="pswp__preloader__icn">
+            <div class="pswp__preloader__cut">
+              <div class="pswp__preloader__donut">
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+        <div class="pswp__share-tooltip">
+        </div>
+      </div>
+      <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+      </button>
+      <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+      </button>
+      <div class="pswp__caption">
+        <div class="pswp__caption__center">
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+  <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  <script src="http://localhost:4000/media/scripts/main.js"></script>
+  
+  <!-- Code Highlight -->
+  
+    <script src="http://localhost:4000/media/prism.js"></script>
+    <script>
+      Prism.highlightAll()
+    </script>
+  
+
+  <script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/photoswipe@4.1.3/dist/photoswipe-ui-default.min.js"></script>
+  <script>
+    //拿到预览框架，也就是上面的html代码
+    var pswpElement = document.querySelectorAll('.pswp')[0];
+    //定义图片数组变量
+    var imgitems;
+    /**
+    * 用于显示预览界面
+    * @param index 图片数组下标
+    */
+    function viewImg(index) {
+      //其它选项这里不做过多阐述，详情见官网
+      var pswpoptions = {
+        index: parseInt(index, 10), // 开始幻灯片索引。0是第一张幻灯片。必须是整数，而不是字符串。
+        bgOpacity: 0.7, // 背景透明度，0-1
+        maxSpreadZoom: 3, // 缩放级别，不要太大
+      };
+      //初始化并打开PhotoSwipe，pswpElement对应上面预览框架，PhotoSwipeUI_Default为皮肤，imgitems为图片数组，pswpoptions为选项
+      var gallery = new PhotoSwipe(pswpElement, PhotoSwipeUI_Default, imgitems, pswpoptions);
+      gallery.init()
+    }
+    /**
+    * 用于添加图片点击事件
+    * @param img 图片元素
+    * @param index 所属下标（在imgitems中的位置）
+    */
+    function addImgClick(img, index) {
+      img.onclick = function() {
+        viewImg(index)
+      }
+    }
+    /**
+    * 轮询所有图片，获取src、width、height等数据，加入imgitems，并给图片元素添加事件
+    * 最好在onload中执行该方法，本站因放在最底部，所以直接初始化
+    * 异步加载图片可在图片元素创建完成后调用此方法
+    */
+    function initImg() {
+      //重置图片数组
+      imgitems = [];
+      //查找class:markdown 下的所有img元素并遍历
+      var imgs = document.querySelectorAll('.markdown img');
+      for (var i = 0; i < imgs.length; i++) {
+        var img = imgs[i];
+        //本站相册初始为loading图片，真实图片放在data-src
+        var ds = img.getAttribute("data-src");
+        //创建image对象，用于获取图片宽高
+        var imgtemp = new Image();
+        //判断是否存在data-src
+        if (ds != null && ds.length > 0) {
+          imgtemp.src = ds
+        } else {
+          imgtemp.src = img.src
+        }
+        //判断是否存在缓存
+        if (imgtemp.complete) {
+          var imgobj = {
+            "src": imgtemp.src,
+            "w": imgtemp.width,
+            "h": imgtemp.height,
+          };
+          imgitems[i] = imgobj;
+          addImgClick(img, i);
+        } else {
+          console.log('进来了2')
+          imgtemp.index = i;
+          imgtemp.img = img;
+          imgtemp.onload = function() {
+            var imgobj = {
+              "src": this.src,
+              "w": this.width,
+              "h": this.height,
+            };
+            //不要使用push，因为onload前后顺序会不同
+            imgitems[this.index] = imgobj
+            //添加点击事件
+            addImgClick(this.img, this.index);
+          }
+        }
+      }
+    }
+    //初始化
+    initImg();
+  </script>
+  
+  
+</body>
+
+</html>
