@@ -2,7 +2,7 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
     <id>https://rememberber.github.io/</id>
     <title>萝卜墩儿</title>
-    <updated>2020-06-11T02:21:52.157Z</updated>
+    <updated>2020-06-22T04:00:56.982Z</updated>
     <generator>https://github.com/jpmonette/feed</generator>
     <link rel="alternate" href="https://rememberber.github.io/"/>
     <link rel="self" href="https://rememberber.github.io/atom.xml"/>
@@ -10,6 +10,38 @@
     <logo>https://rememberber.github.io/images/avatar.png</logo>
     <icon>https://rememberber.github.io/favicon.ico</icon>
     <rights>All rights reserved 2020, 萝卜墩儿</rights>
+    <entry>
+        <title type="html"><![CDATA[【后台体验】运营后台订单详情设计分享]]></title>
+        <id>https://rememberber.github.io/post/ti-yan-sheng-ji-yun-ying-hou-tai-ding-dan-xiang-qing-she-ji/</id>
+        <link href="https://rememberber.github.io/post/ti-yan-sheng-ji-yun-ying-hou-tai-ding-dan-xiang-qing-she-ji/">
+        </link>
+        <updated>2020-06-19T06:58:25.000Z</updated>
+        <summary type="html"><![CDATA[<blockquote>
+<p>目前大部分运营后台的设计和开发都是由后端同学来做，产品经理对界面标准要求并不高，大多数都是能用就行。<br>
+其实，只要花些心思，运营后台也可以做的很美，提升运营同学的日常使用体验。<br>
+下面跟大家分享两个我做的运营后台中的订单详情设计</p>
+</blockquote>
+]]></summary>
+        <content type="html"><![CDATA[<blockquote>
+<p>目前大部分运营后台的设计和开发都是由后端同学来做，产品经理对界面标准要求并不高，大多数都是能用就行。<br>
+其实，只要花些心思，运营后台也可以做的很美，提升运营同学的日常使用体验。<br>
+下面跟大家分享两个我做的运营后台中的订单详情设计</p>
+</blockquote>
+<!-- more -->
+<h3 id="共享图书平台运营后台订单详情">共享图书平台运营后台订单详情</h3>
+<figure data-type="image" tabindex="1"><img src="https://rememberber.github.io//post-images/1592797190998.png" alt="" loading="lazy"></figure>
+<p><strong>设计心路历程</strong>：<br>
+产品经理并没有要求如何展示，仅提供想要看的内容，所以自由发挥如图😁</p>
+<p>该后台面向对象主要是仓库运营和图书运营人员，核心关注改订单包含哪些书籍以及数量，</p>
+<p>送书信息和取书以不同颜色分开展示，方便运营人员快速查看对应信息，同时送书颜色和还书颜色与配送面单以及对应的配送区保持一致，可以提供效率，减少配送错误率发生</p>
+<h3 id="亲子活动平台运营后台订单详情">亲子活动平台运营后台订单详情</h3>
+<figure data-type="image" tabindex="2"><img src="https://rememberber.github.io//post-images/1592797277265.png" alt="" loading="lazy"></figure>
+<p><strong>设计心路历程</strong><br>
+产品经理并没有要求如何展示，仅提供想要看的内容，所以自由发挥如图😁</p>
+<p>该订单详情主要包括“用户信息”、“商品信息”、“订单信息”、“商家信息”几部分，</p>
+<p>根据各维度信息的重要程度设计如图，适当位置的空行和表格可以区分信息的层次，清晰直观。</p>
+]]></content>
+    </entry>
     <entry>
         <title type="html"><![CDATA[递归解析Json，实现生成可视化Tree+快速获取JsonPath]]></title>
         <id>https://rememberber.github.io/post/di-gui-jie-xi-jsonshi-xian-sheng-cheng-ke-shi-hua-treekuai-su-huo-qu-jsonpath/</id>
