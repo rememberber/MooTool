@@ -129,6 +129,15 @@ public class ImageListener {
             @Override
             public void mouseClicked(MouseEvent e) {
                 imageForm.getDeletePanel().setVisible(false);
+                // 双击打开图片
+                int clickTimes = e.getClickCount();
+                if (clickTimes == 2) {
+                    try {
+                        Desktop.getDesktop().open(FileUtil.file(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
+                    } catch (IOException ex) {
+                        log.error(ExceptionUtils.getStackTrace(ex));
+                    }
+                }
             }
 
             @Override
