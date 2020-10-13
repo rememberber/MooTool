@@ -28,7 +28,7 @@
         <lombok.version>1.18.8</lombok.version>
         <mybatis.version>3.5.3</mybatis.version>
         <sqlite-jdbc.version>3.31.1</sqlite-jdbc.version>
-        <junit.version>4.12</junit.version>
+        <junit.version>4.13.1</junit.version>
         <commons-lang3.version>3.9</commons-lang3.version>
         <guava.version>28.0-jre</guava.version>
         <okhttp.version>4.0.1</okhttp.version>
