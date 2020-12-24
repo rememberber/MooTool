@@ -3,8 +3,8 @@
 </a>
   
 # MooTool 
-A handy desktop toolset for developers.   
-开发者常备桌面小工具  
+A handy tool set for developers.   
+开发者常备小工具  
 
 [![码云Gitee](https://gitee.com/zhoubochina/MooTool/badge/star.svg?theme=blue)](https://gitee.com/zhoubochina/MooTool)
 [![GitHub stars](https://img.shields.io/github/stars/rememberber/MooTool.svg)](https://github.com/rememberber/MooTool)
