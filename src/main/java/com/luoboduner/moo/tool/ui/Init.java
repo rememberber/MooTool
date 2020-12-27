@@ -37,6 +37,8 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.Enumeration;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 import static java.awt.GraphicsDevice.WindowTranslucency.TRANSLUCENT;
 
@@ -149,7 +151,8 @@ public class Init {
 
         // 检查新版版
         if (App.config.isAutoCheckUpdate()) {
-            ThreadUtil.execute(() -> UpgradeUtil.checkUpdate(true));
+            ScheduledThreadPoolExecutor threadPoolExecutor = new ScheduledThreadPoolExecutor(1);
+            threadPoolExecutor.scheduleAtFixedRate(() -> UpgradeUtil.checkUpdate(true), 0, 24, TimeUnit.HOURS);
         }
     }
 
