@@ -1,0 +1,444 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+    <id>https://rememberber.github.io/</id>
+    <title>萝卜墩儿</title>
+    <updated>2020-06-22T04:00:56.982Z</updated>
+    <generator>https://github.com/jpmonette/feed</generator>
+    <link rel="alternate" href="https://rememberber.github.io/"/>
+    <link rel="self" href="https://rememberber.github.io/atom.xml"/>
+    <subtitle>萝卜蹲，萝卜蹲，萝卜蹲完谁来蹲</subtitle>
+    <logo>https://rememberber.github.io/images/avatar.png</logo>
+    <icon>https://rememberber.github.io/favicon.ico</icon>
+    <rights>All rights reserved 2020, 萝卜墩儿</rights>
+    <entry>
+        <title type="html"><![CDATA[【后台体验】运营后台订单详情设计分享]]></title>
+        <id>https://rememberber.github.io/post/ti-yan-sheng-ji-yun-ying-hou-tai-ding-dan-xiang-qing-she-ji/</id>
+        <link href="https://rememberber.github.io/post/ti-yan-sheng-ji-yun-ying-hou-tai-ding-dan-xiang-qing-she-ji/">
+        </link>
+        <updated>2020-06-19T06:58:25.000Z</updated>
+        <summary type="html"><![CDATA[<blockquote>
+<p>目前大部分运营后台的设计和开发都是由后端同学来做，产品经理对界面标准要求并不高，大多数都是能用就行。<br>
+其实，只要花些心思，运营后台也可以做的很美，提升运营同学的日常使用体验。<br>
+下面跟大家分享两个我做的运营后台中的订单详情设计</p>
+</blockquote>
+]]></summary>
+        <content type="html"><![CDATA[<blockquote>
+<p>目前大部分运营后台的设计和开发都是由后端同学来做，产品经理对界面标准要求并不高，大多数都是能用就行。<br>
+其实，只要花些心思，运营后台也可以做的很美，提升运营同学的日常使用体验。<br>
+下面跟大家分享两个我做的运营后台中的订单详情设计</p>
+</blockquote>
+<!-- more -->
+<h3 id="共享图书平台运营后台订单详情">共享图书平台运营后台订单详情</h3>
+<figure data-type="image" tabindex="1"><img src="https://rememberber.github.io//post-images/1592797190998.png" alt="" loading="lazy"></figure>
+<p><strong>设计心路历程</strong>：<br>
+产品经理并没有要求如何展示，仅提供想要看的内容，所以自由发挥如图😁</p>
+<p>该后台面向对象主要是仓库运营和图书运营人员，核心关注改订单包含哪些书籍以及数量，</p>
+<p>送书信息和取书以不同颜色分开展示，方便运营人员快速查看对应信息，同时送书颜色和还书颜色与配送面单以及对应的配送区保持一致，可以提供效率，减少配送错误率发生</p>
+<h3 id="亲子活动平台运营后台订单详情">亲子活动平台运营后台订单详情</h3>
+<figure data-type="image" tabindex="2"><img src="https://rememberber.github.io//post-images/1592797277265.png" alt="" loading="lazy"></figure>
+<p><strong>设计心路历程</strong><br>
+产品经理并没有要求如何展示，仅提供想要看的内容，所以自由发挥如图😁</p>
+<p>该订单详情主要包括“用户信息”、“商品信息”、“订单信息”、“商家信息”几部分，</p>
+<p>根据各维度信息的重要程度设计如图，适当位置的空行和表格可以区分信息的层次，清晰直观。</p>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[递归解析Json，实现生成可视化Tree+快速获取JsonPath]]></title>
+        <id>https://rememberber.github.io/post/di-gui-jie-xi-jsonshi-xian-sheng-cheng-ke-shi-hua-treekuai-su-huo-qu-jsonpath/</id>
+        <link href="https://rememberber.github.io/post/di-gui-jie-xi-jsonshi-xian-sheng-cheng-ke-shi-hua-treekuai-su-huo-qu-jsonpath/">
+        </link>
+        <updated>2020-06-10T12:46:48.000Z</updated>
+        <content type="html"><![CDATA[<p>最近做的一个小功能点，分享给大家：递归解析Json，可以实现生成可视化Tree+快速获取JsonPath。<br>
+<strong>步骤：</strong><br>
+1.利用JsonPath读取根，获取JsonObject<br>
+2.递归层次遍历JsonObjec，保存结点信息<br>
+3.利用zTree展示结点为可视化树，点击对应树的结点即可获取对应结点的JsonPath</p>
+<h3 id="1利用jsonpath读取根获取jsonobject">1.利用JsonPath读取根，获取JsonObject</h3>
+<p>示例Json：</p>
+<pre><code class="language-json">{
+  &quot;errorMessage&quot;: null,
+  &quot;errorCode&quot;: null,
+  &quot;dates&quot;: {
+    &quot;tradeAmt&quot;: null,
+    &quot;riskLevel&quot;: &quot;LEVEL30&quot;,
+    &quot;optSelected&quot;: {
+      &quot;77&quot;: [
+        {
+          &quot;optionContent&quot;: &quot;20-50万元&quot;,
+          &quot;productCode&quot;: null,
+          &quot;created&quot;: null,
+          &quot;optionOrder&quot;: null,
+          &quot;modified&quot;: null,
+          &quot;id&quot;: 361,
+          &quot;optionScore&quot;: 8,
+          &quot;isInvalid&quot;: 1
+        }
+      ],
+      &quot;78&quot;: [
+        {
+          &quot;optionContent&quot;: &quot;资产50-500万元，无债务或债务较轻&quot;,
+          &quot;productCode&quot;: null,
+          &quot;created&quot;: null,
+          &quot;optionOrder&quot;: null,
+          &quot;modified&quot;: null,
+          &quot;id&quot;: 365,
+          &quot;optionScore&quot;: 6,
+          &quot;isInvalid&quot;: 1
+        }
+      ]
+    },
+    &quot;riskInfoResult&quot;: {
+      &quot;optLetter&quot;: &quot;A&quot;,
+      &quot;mqOrder&quot;: &quot;1&quot;,
+      &quot;residenceCountryCode&quot;: null,
+      &quot;taxReason&quot;: null,
+      &quot;residenceCountryName&quot;: null,
+      &quot;residenceCountryNameEn&quot;: null,
+      &quot;countryNameEn&quot;: null,
+      &quot;taxInfoCode&quot;: null,
+      &quot;taxInfoIsCompleted&quot;: true,
+      &quot;taxInfoIsRight&quot;: true,
+      &quot;countryCode&quot;: null,
+      &quot;taxId&quot;: null,
+      &quot;countryName&quot;: null,
+      &quot;taxReasonInt&quot;: null
+    },
+    &quot;created&quot;: 1565654328000,
+    &quot;questions&quot;: [
+      {
+        &quot;questionContent&quot;: &quot;您的职业？&quot;,
+        &quot;productCode&quot;: null,
+        &quot;created&quot;: 1498630051000,
+        &quot;options&quot;: null,
+        &quot;questionSource&quot;: &quot;BUSINESS&quot;,
+        &quot;modified&quot;: 1498630051000,
+        &quot;id&quot;: 75,
+        &quot;isInvalid&quot;: 1,
+        &quot;questionType&quot;: 1,
+        &quot;order&quot;: 1
+      },
+      {
+        &quot;questionContent&quot;: &quot;您的主要收入来源是？&quot;,
+        &quot;productCode&quot;: null,
+        &quot;created&quot;: 1498630051000,
+        &quot;options&quot;: null,
+        &quot;questionSource&quot;: &quot;BUSINESS&quot;,
+        &quot;modified&quot;: 1498630051000,
+        &quot;id&quot;: 76,
+        &quot;isInvalid&quot;: 1,
+        &quot;questionType&quot;: 1,
+        &quot;order&quot;: 2
+      }
+    ],
+    &quot;serialCode&quot;: &quot;123&quot;,
+    &quot;isInvalid&quot;: 1,
+    &quot;expireTime&quot;: 1628783999000,
+    &quot;productCode&quot;: null,
+    &quot;modified&quot;: 1565654328000,
+    &quot;examScore&quot;: 56,
+    &quot;id&quot;: 4564568,
+    &quot;results&quot;: {
+      &quot;77&quot;: &quot;361&quot;,
+      &quot;78&quot;: &quot;365&quot;
+    },
+    &quot;account&quot;: &quot;test&quot;
+  },
+  &quot;status&quot;: &quot;SUCCESS&quot;
+}
+</code></pre>
+<p>Java代码：</p>
+<pre><code class="language-java">String jsonStr = &quot;&quot;;
+Object rootJson = JsonPath.read(jsonStr, &quot;$&quot;);
+</code></pre>
+<h3 id="2递归层次遍历jsonobjec保存结点信息">2.递归层次遍历JsonObjec，保存结点信息</h3>
+<p>Java代码</p>
+<pre><code class="language-java">ZTreeNode zTreeNode = new ZTreeNode();
+zTreeNode.setId(&quot;$&quot;);
+zTreeNode.setpId(&quot;root&quot;);
+zTreeNode.setName(&quot;root&quot;);
+zTreeNode.setDepth(0);
+zTreeNode.setPath(&quot;$&quot;);
+traverseTree(rootJson, zTreeNode, zTreeNodes);
+</code></pre>
+<pre><code class="language-java">    public static void traverseTree(Object rootJson, ZTreeNode zTreeNode, List&lt;ZTreeNode&gt; zTreeNodes) {
+        if (rootJson instanceof Map) {
+            for (Map.Entry&lt;String, Object&gt; stringObjectEntry : ((Map&lt;String, Object&gt;) rootJson).entrySet()) {
+                ZTreeNode zTreeNodeTemp = new ZTreeNode();
+                zTreeNodeTemp.setDepth(zTreeNode.getDepth() + 1);
+                zTreeNodeTemp.setPath(zTreeNode.getPath() + &quot;.&quot; + stringObjectEntry.getKey());
+                zTreeNodeTemp.setId(zTreeNodeTemp.getPath());
+                zTreeNodeTemp.setName(stringObjectEntry.getKey());
+                zTreeNodeTemp.setpId(zTreeNode.getPath());
+                zTreeNodes.add(zTreeNodeTemp);
+                traverseTree(stringObjectEntry.getValue(), zTreeNodeTemp, zTreeNodes);
+            }
+        } else if (rootJson instanceof List) {
+            List json = (List) rootJson;
+            for (int i = 0; i &lt; json.size(); i++) {
+                Object obj = json.get(i);
+                ZTreeNode zTreeNodeTemp = new ZTreeNode();
+                zTreeNodeTemp.setDepth(zTreeNode.getDepth() + 1);
+                zTreeNodeTemp.setPath(zTreeNode.getPath() + &quot;[&quot; + i + &quot;]&quot;);
+                zTreeNodeTemp.setId(zTreeNodeTemp.getPath());
+                zTreeNodeTemp.setName(zTreeNode.getName() + &quot;[&quot; + i + &quot;]&quot;);
+                zTreeNodeTemp.setpId(zTreeNode.getPath());
+                zTreeNodes.add(zTreeNodeTemp);
+                traverseTree(obj, zTreeNodeTemp, zTreeNodes);
+            }
+        } else {
+            // do nothing
+        }
+    }
+</code></pre>
+<h3 id="3利用ztree展示结点为可视化树点击对应树的结点即可获取对应结点的jsonpath">3.利用zTree展示结点为可视化树，点击对应树的结点即可获取对应结点的JsonPath</h3>
+<figure data-type="image" tabindex="1"><img src="https://rememberber.github.io//post-images/1591794506788.png" alt="" loading="lazy"></figure>
+<p>前端代码：</p>
+<pre><code class="language-javascript">let zTreeObj;
+// zTree 的参数配置，深入使用请参考 API 文档（setting 配置详解）
+let setting = {
+    data: {
+        simpleData: {
+            enable: true
+        }
+    },
+    callback: {
+        onClick: zTreeOnClick
+    }
+};
+zTreeObj = $.fn.zTree.init($(&quot;#using_json&quot;), setting, zNodes);
+zTreeObj.expandAll(true);
+</code></pre>
+<h3 id="4扩展将结点信息反向解析">4.扩展：将结点信息反向解析</h3>
+<p>递归解析zNodes+利用nestable插件可视化展示，效果如下：<br>
+<img src="https://rememberber.github.io//post-images/1591837961148.png" alt="" loading="lazy"><br>
+前端代码：</p>
+<pre><code class="language-javascript">        let detailResult = JSON.parse(zNodes);
+        let nestableContent = $('&lt;ol class=&quot;dd-list&quot;&gt;&lt;/ol&gt;');
+        let dataId = 0;
+    // 遍历解析Json
+    function parseJson(jsonObj, nestableContent, dataId) {
+        for (let key in jsonObj) {
+
+            let element = jsonObj[key];
+            if (element === null) {
+                element = &quot;null&quot;;
+            }
+            if (element.length &gt; 0 &amp;&amp; typeof (element) == &quot;object&quot; || typeof (element) == &quot;object&quot;) {
+                //如果对象类型为object类型且数组长度大于0 或者 是对象 ，继续递归解析
+                var li = $('&lt;li class=&quot;dd-item&quot; data-id=&quot;' + dataId + '&quot;&gt;&lt;/li&gt;');
+                $(li).append('                   &lt;div class=&quot;dd-handle&quot;&gt;' +
+                    '                       &lt;span class=&quot;bg-muted p-xs b-r-sm&quot;&gt;' + key + '&lt;/span&gt;' +
+                    '                   &lt;/div&gt;').append('&lt;ol class=&quot;dd-list&quot;&gt;&lt;/ol&gt;').appendTo(nestableContent);
+                parseJson(element, $(li).children().eq(1), dataId);
+            } else {
+                dataId++;
+                $('&lt;li class=&quot;dd-item&quot; data-id=&quot;' + dataId + '&quot;&gt;&lt;/li&gt;').append('                   &lt;div class=&quot;dd-handle&quot;&gt;' +
+                    '                       &lt;span class=&quot;bg-muted p-xs b-r-sm&quot;&gt;' + key + '&lt;/span&gt;' + element +
+                    '                   &lt;/div&gt;').appendTo(nestableContent);
+            }
+
+        }
+    }
+</code></pre>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[桌面应用开发漫谈]]></title>
+        <id>https://rememberber.github.io/post/zhuo-mian-ying-yong-kai-fa-man-tan/</id>
+        <link href="https://rememberber.github.io/post/zhuo-mian-ying-yong-kai-fa-man-tan/">
+        </link>
+        <updated>2020-06-10T01:36:09.000Z</updated>
+        <summary type="html"><![CDATA[<blockquote>
+<p>不得不承认，当今已经是web时代，移动互联网时代，PC的桌面应用开发大部分也只能局限在行业/领域应用软件了。<br>
+不过，生产力、效率提升、工具类的桌面应用依然是我们日常最得力的助手。<br>
+作为一个业余Geek，有自己动手开发桌面工具情结，我倒是在桌面应用开发上“浪费”过一些精力，现将自己的经验做些总结，希望对也想入坑的小伙伴提供点参考。</p>
+</blockquote>
+]]></summary>
+        <content type="html"><![CDATA[<blockquote>
+<p>不得不承认，当今已经是web时代，移动互联网时代，PC的桌面应用开发大部分也只能局限在行业/领域应用软件了。<br>
+不过，生产力、效率提升、工具类的桌面应用依然是我们日常最得力的助手。<br>
+作为一个业余Geek，有自己动手开发桌面工具情结，我倒是在桌面应用开发上“浪费”过一些精力，现将自己的经验做些总结，希望对也想入坑的小伙伴提供点参考。</p>
+</blockquote>
+<!-- more -->
+<h2 id="web盛行的今天桌面应用开发还有什么意义">web盛行的今天，桌面应用开发还有什么意义</h2>
+<h3 id="都0202年了还谈桌面应用">都0202年了还谈桌面应用？</h3>
+<p>说实话意义确实不大，以下是几种可能的意义</p>
+<ul>
+<li>找回最初的编程动机，毕竟在学编程之前，很多人对编程的理解都是开发个“软件”</li>
+<li>将常用小脚本界面化，写插件</li>
+<li>服务于web开发，让web开发更爽</li>
+<li>在业余精力不多的情况下获得成就感</li>
+<li>接地气</li>
+</ul>
+<h3 id="web开发者鄙视桌面应用开发者">Web开发者鄙视桌面应用开发者？</h3>
+<p>不一定，桌面开发所需要具备的技术能力和难度不一定比web开发差，换句话说让web开发者开发桌面应用未必you can up</p>
+<h3 id="桌面开发效率低">桌面开发效率低？</h3>
+<p>不尽然，不过受web生态发展迅速的影响，会有一些组件和框架的差距</p>
+<h3 id="有没有学习成本不高上手较快的快速实践办法">有没有学习成本不高，上手较快的快速实践办法？</h3>
+<p>熟悉前端的可以考虑electron，<br>
+习惯Java的可以用一些GUI辅助工具，比如IntelliJ自带的GUI Designer实现拖动组件快速构建界面</p>
+<h3 id="尽量和现有web开发习惯相似">尽量和现有Web开发习惯相似？</h3>
+<p>electron<br>
+<a href="https://www.electronjs.org/">Electron | 使用 JavaScript,HTML 和 CSS 构建跨平台的桌面应用</a></p>
+<h3 id="桌面开发应该是前端的工作吗">桌面开发应该是前端的工作吗？</h3>
+<p>按理说是应该这样，不过现在除了使用前端语言的包壳做法以外，其他的UI组件和逻辑代码还是没有很好的解耦</p>
+<h2 id="常见桌面应用分析">常见桌面应用分析</h2>
+<p>IM(微信/咚咚)<br>
+Mail(outlook等)<br>
+IDE（IntelliJ/WebStorm/VSCode/PyCharm……）<br>
+浏览器（chrome/Firefox/opera……）<br>
+办公套装（MSOffice/WPS/Adobe系列/PDF查看批注……）<br>
+本地工具（ Navicat/SwitchHost/Typora/Postman ）<br>
+笔记思绪（ OneNote/Xmind/各种TodoList…… ）<br>
+媒体播放（ 网易云音乐/qq音乐…… ）<br>
+生产/工业控制（CAD，各种车间操作台…… ）<br>
+PC游戏（绝地求生、孤岛危机、极品飞车……）</p>
+<h2 id="桌面应用开发常见技术框架gui库">桌面应用开发常见技术/框架/GUI库</h2>
+<figure data-type="image" tabindex="1"><img src="https://rememberber.github.io//post-images/1591755069988.png" alt="" loading="lazy"></figure>
+<table>
+<thead>
+<tr>
+<th>框架/类库</th>
+<th>语言/开发环境</th>
+<th>适用平台</th>
+<th>案例</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Qt（C++图形用户界面应用程序开发框架）</td>
+<td>C/C++</td>
+<td>跨平台</td>
+<td>WPS/极品飞车/AutoDesk/VLC……</td>
+</tr>
+<tr>
+<td>WPF（微软用户界面框架）</td>
+<td>.NET/C#/VB等</td>
+<td>Windows</td>
+<td>前后台分离（XAML、矢量图）应用广泛</td>
+</tr>
+<tr>
+<td>WinForm</td>
+<td>.NET/C#</td>
+<td>Windows</td>
+<td>早期QQ</td>
+</tr>
+<tr>
+<td>MFC（微软类库）</td>
+<td>C/C++</td>
+<td>Windows</td>
+<td>绘图/工业控制等</td>
+</tr>
+<tr>
+<td>Swing/JavaFx/SWT</td>
+<td>Java</td>
+<td>跨平台</td>
+<td>IntelliJ IDEA/eclipse</td>
+</tr>
+<tr>
+<td>NW.js（node-webkit）</td>
+<td>HTML/CSS/JS</td>
+<td>跨平台</td>
+<td>微信桌面版</td>
+</tr>
+<tr>
+<td>Electron</td>
+<td>HTML/CSS/JS</td>
+<td>跨平台</td>
+<td>VSCode/Typro/Postman/Skype/WhatsApp/Slack……</td>
+</tr>
+</tbody>
+</table>
+<h2 id="桌面应用常见需求">桌面应用常见需求</h2>
+<ul>
+<li>工具属性</li>
+<li>本地计算/本地数据</li>
+<li>本地软硬件接口/打印机扫描仪</li>
+<li>快速响应/无网络运行</li>
+<li>WebView</li>
+</ul>
+<h2 id="java桌面应用开发">Java桌面应用开发</h2>
+<p>--我们最容易上手，语言最熟悉<br>
+<strong>优点：</strong></p>
+<ul>
+<li>Java语言易上手</li>
+<li>丰富的后端maven库</li>
+<li>跨平台</li>
+</ul>
+<p><strong>缺点：</strong></p>
+<ul>
+<li>启动稍慢</li>
+<li>UI相关基础建设差，矢量图形支持差</li>
+<li>不支持webview</li>
+</ul>
+<p><strong>实例：</strong><br>
+<a href="https://github.com/JetBrains/intellij-community">intellij-community</a><br>
+<a href="https://github.com/itsonglin/wechat_desktop">wechat_desktop</a><br>
+<a href="https://github.com/rememberber/MooTool">MooTool</a></p>
+<p>--后面我会单独写一篇详细介绍如何不想投入太多学习成本，<strong>基于IntelliJ快速实现Swing界面</strong><br>
+以及LookAndFeel、和spring结合、JavaFX、SWT、JNI等</p>
+<h2 id="electron桌面应用开发">Electron桌面应用开发</h2>
+<p>--当下最流行，UI表现力最强，优点最多<br>
+<strong>优点：</strong></p>
+<ul>
+<li>开源</li>
+<li>Web前端开发语言</li>
+<li>丰富完善的UI基础建设，海量视觉，可胜任复杂交互和组件</li>
+<li>Chrome内核，WebView无压力</li>
+<li>跨平台</li>
+</ul>
+<p><strong>缺点：</strong></p>
+<ul>
+<li>启动稍慢</li>
+<li>内存占用大</li>
+<li>对于后端同学需要充值前端能力</li>
+</ul>
+<p><strong>实例：</strong><br>
+<a href="https://electronjs.org/apps/wewe-chat">wewe-chat</a><br>
+<a href="https://electronjs.org/apps">https://electronjs.org/apps</a></p>
+<h2 id="相比于web桌面应用开发需要额外考虑的">相比于Web，桌面应用开发需要额外考虑的</h2>
+<ul>
+<li>用户本地数据存储</li>
+<li>应用本地配置</li>
+<li>系统文件权限</li>
+<li>系统托盘</li>
+<li>剪贴板操作</li>
+<li>系统软（环境变量）硬件（处理器内存显卡显示器分辨率等）环境</li>
+<li>注册表、可执行文件、安装包制作</li>
+<li>卸载清理处理，桌面应用道德规范</li>
+<li>版本迭代，强制更新考虑</li>
+<li>平滑升级</li>
+<li>基础建设（撤销/重做，滚动条等）</li>
+<li>布局，icon，lancher，圆角等等</li>
+</ul>
+]]></content>
+    </entry>
+    <entry>
+        <title type="html"><![CDATA[Hello Gridea，Hello luoboduner]]></title>
+        <id>https://rememberber.github.io/post/hello-gridea/</id>
+        <link href="https://rememberber.github.io/post/hello-gridea/">
+        </link>
+        <updated>2020-06-09T09:34:53.000Z</updated>
+        <summary type="html"><![CDATA[<p>👏  正如 <strong>Gridea</strong> 所说，“那个写博客的劲儿又回来了！”<br>
+那就重新开始✍️吧。</p>
+]]></summary>
+        <content type="html"><![CDATA[<p>👏  正如 <strong>Gridea</strong> 所说，“那个写博客的劲儿又回来了！”<br>
+那就重新开始✍️吧。</p>
+<!-- more -->
+<h2 id="写博客这件小事">写博客这件小事👇</h2>
+<p>第一次写博客还是在高中的时候，那个时候是用的搜狐博客，域名还是blog.sohu开头。</p>
+<p>那时候主要写一些原创的“小诗”，那种现在读了就能被青涩出一身鸡皮疙瘩的小诗。</p>
+<p>后来，互联网发展到一个船新的时代，web2.0吧，逐渐弃掉了，转移到了微博。</p>
+<p>再后来，毕业了，工作了，IT了，程序员了，作为资深技术大佬一般都会有个人博客的，用来展示自己的原创技术文章之类的，当然之前也有过类似的想法，有时间的时候自己买云服务器，自己徒手用Java web搭建，后来没有精力维护，服务器也没有续费，直接荒废了。</p>
+<h2 id="为什么开始">为什么开始📋</h2>
+<p>最近难得工作上有些喘息的机会，开始整理了下自己的笔记和TODO之类的，发现公司禁用了OneNote，导致无法同步OneNote的内容。</p>
+<p>生性爱折腾，我准备自己做一个不会被禁用，而且也不用过于担心存储空间容量，还可以同步和版本管理的笔记，使用Markdown+Git+云盘私有空间同步。</p>
+<p>然后网上找了找有类似的开源，但是还是不太满意，准备改造之时，顺便想起了之前收藏过的Gridea，看到作者还在维护，点赞支持！👍发现比Hexo和JellyII简单易用</p>
+<p>刚好最近续费了域名，那就用Gridea继续开启个人博客之旅吧</p>
+<h2 id="可能写些什么内容">可能写些什么内容💻</h2>
+<p>深知在大厂工作码字的时间很难得，更新频率肯定不高，保证质量吧。</p>
+<p>毕竟是<strong>体面的开发者</strong>，做技术，主要写一些技术类的吧</p>
+<p>😘 Hello Gridea，Hello luoboduner~</p>
+]]></content>
+    </entry>
+</feed>

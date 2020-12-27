@@ -76,32 +76,7 @@ public class HttpRequestListener {
 
         // 删除按钮事件
         httpRequestForm.getDeleteButton().addActionListener(e -> ThreadUtil.execute(() -> {
-            try {
-                int[] selectedRows = httpRequestForm.getNoteListTable().getSelectedRows();
-
-                if (selectedRows.length == 0) {
-                    JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
-                    if (isDelete == JOptionPane.YES_OPTION) {
-                        DefaultTableModel tableModel = (DefaultTableModel) httpRequestForm.getNoteListTable().getModel();
-
-                        for (int i = selectedRows.length; i > 0; i--) {
-                            int selectedRow = httpRequestForm.getNoteListTable().getSelectedRow();
-                            Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
-                            msgHttpMapper.deleteByPrimaryKey(id);
-
-                            tableModel.removeRow(selectedRow);
-                        }
-                        selectedName = null;
-                        HttpRequestForm.initListTable();
-                    }
-                }
-            } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
-                log.error(e1.toString());
-            }
+            deleteFiles(httpRequestForm);
         }));
 
         // 添加按钮事件
@@ -163,6 +138,8 @@ public class HttpRequestListener {
                         HttpRequestForm.initListTable();
                         log.error(e.toString());
                     }
+                } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
+                    deleteFiles(httpRequestForm);
                 }
             }
         });
@@ -293,5 +270,34 @@ public class HttpRequestListener {
             }
         });
 
+    }
+
+    private static void deleteFiles(HttpRequestForm httpRequestForm) {
+        try {
+            int[] selectedRows = httpRequestForm.getNoteListTable().getSelectedRows();
+
+            if (selectedRows.length == 0) {
+                JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                if (isDelete == JOptionPane.YES_OPTION) {
+                    DefaultTableModel tableModel = (DefaultTableModel) httpRequestForm.getNoteListTable().getModel();
+
+                    for (int i = selectedRows.length; i > 0; i--) {
+                        int selectedRow = httpRequestForm.getNoteListTable().getSelectedRow();
+                        Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
+                        msgHttpMapper.deleteByPrimaryKey(id);
+
+                        tableModel.removeRow(selectedRow);
+                    }
+                    selectedName = null;
+                    HttpRequestForm.initListTable();
+                }
+            }
+        } catch (Exception e1) {
+            JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
+                    JOptionPane.ERROR_MESSAGE);
+            log.error(e1.toString());
+        }
     }
 }

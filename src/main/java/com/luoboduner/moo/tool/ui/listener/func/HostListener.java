@@ -87,33 +87,7 @@ public class HostListener {
 
         // 删除按钮事件
         hostForm.getDeleteButton().addActionListener(e -> {
-            try {
-                int[] selectedRows = hostForm.getNoteListTable().getSelectedRows();
-
-                if (selectedRows.length == 0) {
-                    JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
-                    if (isDelete == JOptionPane.YES_OPTION) {
-                        DefaultTableModel tableModel = (DefaultTableModel) hostForm.getNoteListTable().getModel();
-
-                        for (int i = selectedRows.length; i > 0; i--) {
-                            int selectedRow = hostForm.getNoteListTable().getSelectedRow();
-                            Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
-                            hostMapper.deleteByPrimaryKey(id);
-
-                            tableModel.removeRow(selectedRow);
-                            hostForm.getNoteListTable().updateUI();
-                        }
-                        selectedNameHost = null;
-                        HostForm.initListTable();
-                    }
-                }
-            } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
-                log.error(e1.toString());
-            }
+            deleteFiles(hostForm);
         });
 
         // 添加按钮事件
@@ -224,6 +198,8 @@ public class HostListener {
                             log.error(e.toString());
                         }
                     }
+                } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
+                    deleteFiles(hostForm);
                 }
             }
         });
@@ -272,6 +248,36 @@ public class HostListener {
 
         });
 
+    }
+
+    private static void deleteFiles(HostForm hostForm) {
+        try {
+            int[] selectedRows = hostForm.getNoteListTable().getSelectedRows();
+
+            if (selectedRows.length == 0) {
+                JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                if (isDelete == JOptionPane.YES_OPTION) {
+                    DefaultTableModel tableModel = (DefaultTableModel) hostForm.getNoteListTable().getModel();
+
+                    for (int i = selectedRows.length; i > 0; i--) {
+                        int selectedRow = hostForm.getNoteListTable().getSelectedRow();
+                        Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
+                        hostMapper.deleteByPrimaryKey(id);
+
+                        tableModel.removeRow(selectedRow);
+                        hostForm.getNoteListTable().updateUI();
+                    }
+                    selectedNameHost = null;
+                    HostForm.initListTable();
+                }
+            }
+        } catch (Exception e1) {
+            JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
+                    JOptionPane.ERROR_MESSAGE);
+            log.error(e1.toString());
+        }
     }
 
     /**

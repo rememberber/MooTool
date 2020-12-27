@@ -2,20 +2,15 @@ package com.luoboduner.moo.tool.ui.dialog;
 
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.ComponentUtil;
 import lombok.Getter;
 
 import javax.swing.*;
-import javax.swing.event.HyperlinkEvent;
-import javax.swing.text.html.HTMLEditorKit;
-import javax.swing.text.html.StyleSheet;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.net.URL;
 
 /**
  * <pre>
@@ -66,6 +61,7 @@ public class CurrentHostDialog extends JDialog {
 
     public void setPlaneText(String planeText) {
         textArea.setText(planeText);
+        textArea.setCaretPosition(0);
     }
 
     {
