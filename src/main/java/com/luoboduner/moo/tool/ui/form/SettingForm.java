@@ -186,6 +186,13 @@ public class SettingForm {
         defaultComboBoxModel2.addElement("Darcula(推荐)");
         defaultComboBoxModel2.addElement("BeautyEye");
         defaultComboBoxModel2.addElement("系统默认");
+        defaultComboBoxModel2.addElement("Flat Light");
+        defaultComboBoxModel2.addElement("Flat IntelliJ");
+        defaultComboBoxModel2.addElement("Flat Dark");
+        defaultComboBoxModel2.addElement("Flat Darcula");
+        defaultComboBoxModel2.addElement("Dark purple");
+        defaultComboBoxModel2.addElement("IntelliJ Cyan");
+        defaultComboBoxModel2.addElement("IntelliJ Light");
         settingThemeComboBox.setModel(defaultComboBoxModel2);
         panel5.add(settingThemeComboBox, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, new Dimension(300, -1), new Dimension(300, -1), null, 0, false));
         final JLabel label3 = new JLabel();

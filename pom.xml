@@ -33,6 +33,7 @@
         <guava.version>29.0-jre</guava.version>
         <okhttp.version>4.9.0</okhttp.version>
         <google.zxing.core.version>3.4.1</google.zxing.core.version>
+        <flatlaf.version>1.0-rc1</flatlaf.version>
     </properties>
 
     <dependencies>
@@ -133,6 +134,12 @@
             <groupId>com.google.zxing</groupId>
             <artifactId>core</artifactId>
             <version>${google.zxing.core.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf</artifactId>
+            <version>${flatlaf.version}</version>
         </dependency>
 
     </dependencies>

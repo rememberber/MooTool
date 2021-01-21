@@ -44,8 +44,10 @@ public class MainFrame extends JFrame {
         if (SystemUtil.isMacOs()) {
             Application application = Application.getApplication();
             application.setDockIconImage(UiConsts.IMAGE_LOGO_512);
-            application.setEnabledAboutMenu(false);
-            application.setEnabledPreferencesMenu(false);
+            if (!SystemUtil.isMacM1()) {
+                application.setEnabledAboutMenu(false);
+                application.setEnabledPreferencesMenu(false);
+            }
         }
 
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.8, 0.88);
