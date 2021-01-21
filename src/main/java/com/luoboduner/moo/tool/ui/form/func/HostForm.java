@@ -14,6 +14,7 @@ import com.luoboduner.moo.tool.ui.listener.func.HostListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
+import com.luoboduner.moo.tool.util.UIUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 
@@ -123,7 +124,7 @@ public class HostForm {
 
         hostForm.getDeletePanel().setVisible(false);
         hostForm.getTextArea().grabFocus();
-        if ("Darcula(推荐)".equals(App.config.getTheme())) {
+        if (UIUtil.isDarkLaf()) {
             Color bgColor = new Color(30, 30, 30);
             hostForm.getTextArea().setBackground(bgColor);
             Color foreColor = new Color(187, 187, 187);
