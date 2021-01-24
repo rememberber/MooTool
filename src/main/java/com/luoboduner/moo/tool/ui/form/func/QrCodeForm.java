@@ -16,6 +16,7 @@ import com.luoboduner.moo.tool.domain.TQrCode;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
+import com.luoboduner.moo.tool.util.UIUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -185,7 +186,7 @@ public class QrCodeForm {
             qrCodeForm.getGeneratePanel().add(qrCodeForm.getGenerateMainPanel(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         }
 
-        if ("Darcula(推荐)".equals(App.config.getTheme())) {
+        if (UIUtil.isDarkLaf()) {
             Color bgColor = new Color(30, 30, 30);
             Color foreColor = new Color(187, 187, 187);
             qrCodeForm.getRecognitionContentTextArea().setBackground(bgColor);

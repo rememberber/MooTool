@@ -4,6 +4,7 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.frame.HttpResultFrame;
+import com.luoboduner.moo.tool.util.UIUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 
@@ -34,7 +35,7 @@ public class HttpResultForm {
         this.getHttpResultScrollPane().getVerticalScrollBar().setUnitIncrement(15);
         this.getHttpResultScrollPane().getVerticalScrollBar().setDoubleBuffered(true);
 
-        if ("Darcula(推荐)".equals(App.config.getTheme())) {
+        if (UIUtil.isDarkLaf()) {
             Color bgColor = new Color(43, 43, 43);
             bodyTextArea.setBackground(bgColor);
             headersTextArea.setBackground(bgColor);

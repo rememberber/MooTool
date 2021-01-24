@@ -5,6 +5,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
+import com.luoboduner.moo.tool.util.UIUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 
@@ -38,7 +39,7 @@ public class FindResultForm {
         this.getScrollPane().getVerticalScrollBar().setUnitIncrement(15);
         this.getScrollPane().getVerticalScrollBar().setDoubleBuffered(true);
 
-        if ("Darcula(推荐)".equals(App.config.getTheme())) {
+        if (UIUtil.isDarkLaf()) {
             Color bgColor = new Color(43, 43, 43);
             editorPane.setBackground(bgColor);
             Color foreColor = new Color(187, 187, 187);
