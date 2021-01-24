@@ -3,6 +3,8 @@ package com.luoboduner.moo.tool.ui;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.FlatLightLaf;
+import com.formdev.flatlaf.IntelliJTheme;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
 import com.luoboduner.moo.tool.ui.form.AboutForm;
@@ -103,6 +105,20 @@ public class Init {
      * 初始化look and feel
      */
     public static void initTheme() {
+        if (SystemUtil.isMacM1() || SystemUtil.isLinuxOs()) {
+            try {
+                UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarculaLaf");
+                logger.warn("FlatDarculaLaf theme set.");
+            } catch (Exception e) {
+                try {
+                    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                } catch (Exception e2) {
+                    logger.error(ExceptionUtils.getStackTrace(e2));
+                }
+                logger.error(ExceptionUtils.getStackTrace(e));
+            }
+            return;
+        }
 
         try {
             switch (App.config.getTheme()) {
@@ -115,12 +131,35 @@ public class Init {
                     break;
                 case "weblaf":
                 case "Darcula(推荐)":
+                    UIManager.setLookAndFeel("com.bulenkov.darcula.DarculaLaf");
+                    break;
+                case "Flat Light":
+                    FlatLightLaf.install();
+                    break;
+                case "Flat IntelliJ":
+                    UIManager.setLookAndFeel("com.formdev.flatlaf.FlatIntelliJLaf");
+                    break;
+                case "Flat Dark":
+                    UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarkLaf");
+                    break;
+                case "Flat Darcula":
+                    UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarculaLaf");
+                    break;
+                case "Dark purple":
+                    IntelliJTheme.install(App.class.getResourceAsStream(
+                            "/theme/DarkPurple.theme.json"));
+                    break;
+                case "IntelliJ Cyan":
+                    IntelliJTheme.install(App.class.getResourceAsStream(
+                            "/theme/Cyan.theme.json"));
+                    break;
+                case "IntelliJ Light":
+                    IntelliJTheme.install(App.class.getResourceAsStream(
+                            "/theme/Light.theme.json"));
+                    break;
+
                 default:
-                    if (SystemUtil.isLinuxOs()) {
-                        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-                    } else {
-                        UIManager.setLookAndFeel("com.bulenkov.darcula.DarculaLaf");
-                    }
+                    UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarculaLaf");
             }
         } catch (Exception e) {
             logger.error(e);

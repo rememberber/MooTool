@@ -7,6 +7,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.util.UIUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 
@@ -64,7 +65,7 @@ public class TranslationForm {
         translationForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
         translationForm.getListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
 
-        if ("Darcula(推荐)".equals(App.config.getTheme())) {
+        if (UIUtil.isDarkLaf()) {
             Color bgColor = new Color(30, 30, 30);
             translationForm.getTextArea1().setBackground(bgColor);
             translationForm.getTextArea2().setBackground(bgColor);

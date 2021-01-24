@@ -126,7 +126,7 @@ public class ConfigUtil extends ConfigBaseUtil {
         if (SystemUtil.isLinuxOs()) {
             return setting.getStr("theme", "setting.appearance", "系统默认");
         } else {
-            return setting.getStr("theme", "setting.appearance", "Darcula(推荐)");
+            return setting.getStr("theme", "setting.appearance", "Flat Darcula");
         }
     }
 

@@ -10,6 +10,7 @@ import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
+import com.luoboduner.moo.tool.util.UIUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -119,7 +120,7 @@ public class JsonBeautyForm {
 
         jsonBeautyForm.getDeletePanel().setVisible(false);
         jsonBeautyForm.getTextArea().grabFocus();
-        if ("Darcula(推荐)".equals(App.config.getTheme())) {
+        if (UIUtil.isDarkLaf()) {
             Color bgColor = new Color(30, 30, 30);
             jsonBeautyForm.getTextArea().setBackground(bgColor);
             Color foreColor = new Color(187, 187, 187);
