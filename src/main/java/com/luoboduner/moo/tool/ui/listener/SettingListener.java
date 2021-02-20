@@ -114,7 +114,7 @@ public class SettingListener {
                     return;
                 }
                 if (StringUtils.isBlank(dbFilePathBefore)) {
-                    dbFilePathBefore = SystemUtil.configHome;
+                    dbFilePathBefore = SystemUtil.CONFIG_HOME;
                 }
                 if (StringUtils.isNotBlank(dbFilePath)) {
                     FileUtil.copy(dbFilePathBefore + File.separator + "MooTool.db", dbFilePath, false);

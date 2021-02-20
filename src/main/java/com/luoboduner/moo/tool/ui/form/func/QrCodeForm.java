@@ -164,7 +164,7 @@ public class QrCodeForm {
         initUi();
 
         if (SystemUtil.isLinuxOs()) {
-            tempDir = new File(SystemUtil.configHome + File.separator + "temp");
+            tempDir = new File(SystemUtil.CONFIG_HOME + File.separator + "temp");
         } else {
             tempDir = new File(FileUtil.getTmpDirPath() + "MooTool");
         }

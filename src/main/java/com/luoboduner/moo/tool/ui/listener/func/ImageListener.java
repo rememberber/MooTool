@@ -39,7 +39,7 @@ public class ImageListener {
 
     public static Image selectedImage;
 
-    public static final String IMAGE_PATH_PRE_FIX = SystemUtil.configHome + File.separator + "images" + File.separator;
+    public static final String IMAGE_PATH_PRE_FIX = SystemUtil.CONFIG_HOME + File.separator + "images" + File.separator;
 
     public static final Image DEFAULT_IMAGE = Toolkit.getDefaultToolkit().getImage(ImageListener.class.getResource("/icon/image_128.png"));
 
