@@ -130,19 +130,33 @@ public class Init {
                     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
                     break;
                 case "weblaf":
-                case "Darcula(推荐)":
+                case "Darcula":
+                    JFrame.setDefaultLookAndFeelDecorated(false);
+                    JDialog.setDefaultLookAndFeelDecorated(false);
                     UIManager.setLookAndFeel("com.bulenkov.darcula.DarculaLaf");
                     break;
                 case "Flat Light":
+                    if (SystemUtil.isJBR()) {
+                        JFrame.setDefaultLookAndFeelDecorated(true);
+                        JDialog.setDefaultLookAndFeelDecorated(true);
+                    }
                     FlatLightLaf.install();
                     break;
                 case "Flat IntelliJ":
+                    if (SystemUtil.isJBR()) {
+                        JFrame.setDefaultLookAndFeelDecorated(true);
+                        JDialog.setDefaultLookAndFeelDecorated(true);
+                    }
                     UIManager.setLookAndFeel("com.formdev.flatlaf.FlatIntelliJLaf");
                     break;
                 case "Flat Dark":
+                    if (SystemUtil.isJBR()) {
+                        JFrame.setDefaultLookAndFeelDecorated(true);
+                        JDialog.setDefaultLookAndFeelDecorated(true);
+                    }
                     UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarkLaf");
                     break;
-                case "Flat Darcula":
+                case "Flat Darcula(推荐)":
                     if (SystemUtil.isJBR()) {
                         JFrame.setDefaultLookAndFeelDecorated(true);
                         JDialog.setDefaultLookAndFeelDecorated(true);
@@ -150,19 +164,35 @@ public class Init {
                     UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarculaLaf");
                     break;
                 case "Dark purple":
+                    if (SystemUtil.isJBR()) {
+                        JFrame.setDefaultLookAndFeelDecorated(true);
+                        JDialog.setDefaultLookAndFeelDecorated(true);
+                    }
                     IntelliJTheme.install(App.class.getResourceAsStream(
                             "/theme/DarkPurple.theme.json"));
                     break;
                 case "IntelliJ Cyan":
+                    if (SystemUtil.isJBR()) {
+                        JFrame.setDefaultLookAndFeelDecorated(true);
+                        JDialog.setDefaultLookAndFeelDecorated(true);
+                    }
                     IntelliJTheme.install(App.class.getResourceAsStream(
                             "/theme/Cyan.theme.json"));
                     break;
                 case "IntelliJ Light":
+                    if (SystemUtil.isJBR()) {
+                        JFrame.setDefaultLookAndFeelDecorated(true);
+                        JDialog.setDefaultLookAndFeelDecorated(true);
+                    }
                     IntelliJTheme.install(App.class.getResourceAsStream(
                             "/theme/Light.theme.json"));
                     break;
 
                 default:
+                    if (SystemUtil.isJBR()) {
+                        JFrame.setDefaultLookAndFeelDecorated(true);
+                        JDialog.setDefaultLookAndFeelDecorated(true);
+                    }
                     UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarculaLaf");
             }
         } catch (Exception e) {
