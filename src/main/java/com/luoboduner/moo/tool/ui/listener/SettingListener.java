@@ -45,6 +45,12 @@ public class SettingListener {
             App.config.save();
         });
 
+        // 设置-常规-默认最大化窗口
+        settingForm.getDefaultMaxWindowCheckBox().addActionListener(e -> {
+            App.config.setDefaultMaxWindow(settingForm.getDefaultMaxWindowCheckBox().isSelected());
+            App.config.save();
+        });
+
         settingForm.getHttpSaveButton().addActionListener(e -> {
             try {
                 App.config.setHttpUseProxy(settingForm.getHttpUseProxyCheckBox().isSelected());
