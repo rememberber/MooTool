@@ -326,13 +326,17 @@ public class HostListener {
 
     public static void refreshHostContentInTextArea() {
         HostForm hostForm = HostForm.getInstance();
-        int selectedRow = hostForm.getNoteListTable().getSelectedRow();
-        String name = hostForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
-        selectedNameHost = name;
-        THost tHost = hostMapper.selectByName(name);
+
         hostForm.getTextArea().setEditable(true);
         hostForm.getSwitchButton().setVisible(true);
-        hostForm.getTextArea().setText(tHost.getContent());
+        int selectedRow = hostForm.getNoteListTable().getSelectedRow();
+        if (selectedRow >= 0) {
+            String name = hostForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
+            selectedNameHost = name;
+            THost tHost = hostMapper.selectByName(name);
+
+            hostForm.getTextArea().setText(tHost.getContent());
+        }
         hostForm.getTextArea().setCaretPosition(0);
         hostForm.getScrollPane().getVerticalScrollBar().setValue(0);
         hostForm.getScrollPane().getHorizontalScrollBar().setValue(0);

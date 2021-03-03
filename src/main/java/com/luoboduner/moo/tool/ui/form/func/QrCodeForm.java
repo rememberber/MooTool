@@ -102,7 +102,11 @@ public class QrCodeForm {
             QrConfig config = new QrConfig(size, size);
             String logoPath = qrCodeForm.getLogoPathTextField().getText();
             if (StringUtils.isNotBlank(logoPath)) {
-                config.setImg(logoPath);
+                try {
+                    config.setImg(logoPath);
+                } catch (Exception e) {
+                    logger.error("生成二维码设置log异常{}", ExceptionUtils.getStackTrace(e));
+                }
             }
             String errorCorrectionLevel = (String) qrCodeForm.getErrorCorrectionLevelComboBox().getSelectedItem();
             if ("低".equals(errorCorrectionLevel)) {
@@ -122,7 +126,6 @@ public class QrCodeForm {
 
             saveConfig();
         } catch (Exception ex) {
-            ex.printStackTrace();
             JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
                     JOptionPane.ERROR_MESSAGE);
             logger.error(ExceptionUtils.getStackTrace(ex));

@@ -116,6 +116,9 @@ public class ImageForm {
 
         Object[] data;
 
+        if (!FileUtil.exist(ImageListener.IMAGE_PATH_PRE_FIX)) {
+            FileUtil.mkdir(ImageListener.IMAGE_PATH_PRE_FIX);
+        }
         List<String> fileNames = FileUtil.listFileNames(ImageListener.IMAGE_PATH_PRE_FIX);
         for (String fileName : fileNames) {
             data = new Object[2];

@@ -199,7 +199,10 @@ public class HostForm {
         hostForm.getTextArea().setEditable(false);
         hostForm.getSwitchButton().setVisible(false);
         hostForm.getTextArea().setText(content);
-        hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
+
+        if (hostForm.getNoteListTable().getRowCount() > 0) {
+            hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
+        }
     }
 
     private static void highlightHostMenu(String hostName) {
