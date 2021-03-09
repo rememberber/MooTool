@@ -6,6 +6,7 @@ import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.service.HttpMsgSender;
 import com.luoboduner.moo.tool.ui.Init;
+import com.luoboduner.moo.tool.ui.dialog.SystemEnvResultDialog;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.SettingForm;
 import com.luoboduner.moo.tool.ui.form.func.CryptoForm;
@@ -20,9 +21,12 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.io.File;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 
 /**
  * <pre>
@@ -108,7 +112,7 @@ public class SettingListener {
             }
         });
 
-        // 高级数据文件路径设置
+        // 高级 数据文件路径设置
         settingForm.getDbFilePathSaveButton().addActionListener(e -> {
             try {
                 String dbFilePath = settingForm.getDbFilePathTextField().getText();
@@ -137,6 +141,40 @@ public class SettingListener {
             } catch (Exception e1) {
                 JOptionPane.showMessageDialog(settingPanel, "保存失败！\n\n" + e1.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
                 logger.error(ExceptionUtils.getStackTrace(e1));
+            }
+        });
+
+        // 调试-查看日志
+        settingForm.getShowLogButton().addActionListener(e -> {
+            try {
+                Desktop desktop = Desktop.getDesktop();
+                desktop.open(new File(SystemUtil.LOG_DIR));
+            } catch (Exception e2) {
+                logger.error("查看日志打开失败", e2);
+            }
+        });
+
+        // 调试-系统环境变量
+        settingForm.getSystemEnvButton().addActionListener(e -> {
+            try {
+                SystemEnvResultDialog dialog = new SystemEnvResultDialog();
+
+                dialog.appendTextArea("------------System.getenv---------------");
+                Map<String, String> map = System.getenv();
+                for (Map.Entry<String, String> envEntry : map.entrySet()) {
+                    dialog.appendTextArea(envEntry.getKey() + "=" + envEntry.getValue());
+                }
+
+                dialog.appendTextArea("------------System.getProperties---------------");
+                Properties properties = System.getProperties();
+                for (Map.Entry<Object, Object> objectObjectEntry : properties.entrySet()) {
+                    dialog.appendTextArea(objectObjectEntry.getKey() + "=" + objectObjectEntry.getValue());
+                }
+
+                dialog.pack();
+                dialog.setVisible(true);
+            } catch (Exception e2) {
+                logger.error("查看系统环境变量失败", e2);
             }
         });
 
