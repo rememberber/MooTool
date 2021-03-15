@@ -27,7 +27,7 @@
         <AppleJavaExtensions.version>1.4</AppleJavaExtensions.version>
         <lombok.version>1.18.14</lombok.version>
         <mybatis.version>3.5.6</mybatis.version>
-        <sqlite-jdbc.version>3.32.3.2</sqlite-jdbc.version>
+        <sqlite-jdbc.version>3.34.0</sqlite-jdbc.version>
         <junit.version>4.13.1</junit.version>
         <commons-lang3.version>3.11</commons-lang3.version>
         <guava.version>29.0-jre</guava.version>
