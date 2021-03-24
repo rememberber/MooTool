@@ -33,7 +33,7 @@
         <guava.version>29.0-jre</guava.version>
         <okhttp.version>4.9.0</okhttp.version>
         <google.zxing.core.version>3.4.1</google.zxing.core.version>
-        <flatlaf.version>1.0</flatlaf.version>
+        <flatlaf.version>1.1</flatlaf.version>
     </properties>
 
     <dependencies>
