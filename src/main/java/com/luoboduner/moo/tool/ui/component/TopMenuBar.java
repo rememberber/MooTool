@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.component;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.ui.Init;
+import com.luoboduner.moo.tool.ui.dialog.AboutDialog;
 import com.luoboduner.moo.tool.ui.dialog.SystemEnvResultDialog;
 import com.luoboduner.moo.tool.util.SystemUtil;
 
@@ -156,7 +157,7 @@ public class TopMenuBar extends JMenuBar {
         aboutMenu.addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                settingActionPerformed();
+                aboutActionPerformed();
             }
 
             @Override
@@ -180,6 +181,17 @@ public class TopMenuBar extends JMenuBar {
             }
         });
         topMenuBar.add(aboutMenu);
+    }
+
+    private void aboutActionPerformed() {
+        try {
+            AboutDialog dialog = new AboutDialog();
+
+            dialog.pack();
+            dialog.setVisible(true);
+        } catch (Exception e2) {
+            logger.error(e2);
+        }
     }
 
     private void sysEnvActionPerformed() {

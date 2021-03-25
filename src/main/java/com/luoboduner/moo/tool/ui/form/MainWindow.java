@@ -34,7 +34,6 @@ import java.awt.*;
 public class MainWindow {
     private JTabbedPane tabbedPane;
     private JPanel mainPanel;
-    private JPanel aboutPanel;
     private JPanel settingPanel;
     private JPanel quickNotePanel;
     private JPanel jsonBeautyPanel;
@@ -69,7 +68,6 @@ public class MainWindow {
     public void init() {
         mainWindow = getInstance();
         mainWindow.getMainPanel().updateUI();
-        mainWindow.getAboutPanel().add(AboutForm.getInstance().getAboutPanel(), gridConstraints);
         mainWindow.getSettingPanel().add(SettingForm.getInstance().getSettingPanel(), gridConstraints);
         mainWindow.getQuickNotePanel().add(QuickNoteForm.getInstance().getQuickNotePanel(), gridConstraints);
         mainWindow.getJsonBeautyPanel().add(JsonBeautyForm.getInstance().getJsonBeautyPanel(), gridConstraints);
@@ -157,9 +155,6 @@ public class MainWindow {
         settingPanel = new JPanel();
         settingPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("设置", new ImageIcon(getClass().getResource("/icon/gear.png")), settingPanel);
-        aboutPanel = new JPanel();
-        aboutPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("关于", new ImageIcon(getClass().getResource("/icon/logo-16.png")), aboutPanel);
     }
 
     /**
