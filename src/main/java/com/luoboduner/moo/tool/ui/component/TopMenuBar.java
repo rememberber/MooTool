@@ -4,6 +4,7 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.dialog.AboutDialog;
+import com.luoboduner.moo.tool.ui.dialog.KeyMapDialog;
 import com.luoboduner.moo.tool.ui.dialog.SystemEnvResultDialog;
 import com.luoboduner.moo.tool.util.SystemUtil;
 
@@ -110,7 +111,7 @@ public class TopMenuBar extends JMenuBar {
         keyMapMenu.addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                settingActionPerformed();
+                keyMapActionPerformed();
             }
 
             @Override
@@ -181,6 +182,17 @@ public class TopMenuBar extends JMenuBar {
             }
         });
         topMenuBar.add(aboutMenu);
+    }
+
+    private void keyMapActionPerformed() {
+        try {
+            KeyMapDialog dialog = new KeyMapDialog();
+
+            dialog.pack();
+            dialog.setVisible(true);
+        } catch (Exception e2) {
+            logger.error(e2);
+        }
     }
 
     private void aboutActionPerformed() {
