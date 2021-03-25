@@ -69,7 +69,7 @@ public class ImageForm {
     }
 
     private void previewHint() {
-        JOptionPane.showMessageDialog(MainWindow.getInstance().getSettingPanel(), "\n该功能尚未实现，目前仅供UI预览\n" +
+        JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "\n该功能尚未实现，目前仅供UI预览\n" +
                         "\n", "预览提示",
                 JOptionPane.INFORMATION_MESSAGE);
     }

@@ -5,6 +5,7 @@ import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.dialog.AboutDialog;
 import com.luoboduner.moo.tool.ui.dialog.KeyMapDialog;
+import com.luoboduner.moo.tool.ui.dialog.SettingDialog;
 import com.luoboduner.moo.tool.ui.dialog.SystemEnvResultDialog;
 import com.luoboduner.moo.tool.util.SystemUtil;
 
@@ -244,24 +245,12 @@ public class TopMenuBar extends JMenuBar {
 
     private void settingActionPerformed() {
         try {
-            SystemEnvResultDialog dialog = new SystemEnvResultDialog();
-
-            dialog.appendTextArea("------------System.getenv---------------");
-            Map<String, String> map = System.getenv();
-            for (Map.Entry<String, String> envEntry : map.entrySet()) {
-                dialog.appendTextArea(envEntry.getKey() + "=" + envEntry.getValue());
-            }
-
-            dialog.appendTextArea("------------System.getProperties---------------");
-            Properties properties = System.getProperties();
-            for (Map.Entry<Object, Object> objectObjectEntry : properties.entrySet()) {
-                dialog.appendTextArea(objectObjectEntry.getKey() + "=" + objectObjectEntry.getValue());
-            }
+            SettingDialog dialog = new SettingDialog();
 
             dialog.pack();
             dialog.setVisible(true);
         } catch (Exception e2) {
-            logger.error("查看系统环境变量失败", e2);
+            logger.error(e2);
         }
     }
 }

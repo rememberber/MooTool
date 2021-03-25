@@ -34,7 +34,6 @@ import java.awt.*;
 public class MainWindow {
     private JTabbedPane tabbedPane;
     private JPanel mainPanel;
-    private JPanel settingPanel;
     private JPanel quickNotePanel;
     private JPanel jsonBeautyPanel;
     private JPanel timeConvertPanel;
@@ -68,7 +67,6 @@ public class MainWindow {
     public void init() {
         mainWindow = getInstance();
         mainWindow.getMainPanel().updateUI();
-        mainWindow.getSettingPanel().add(SettingForm.getInstance().getSettingPanel(), gridConstraints);
         mainWindow.getQuickNotePanel().add(QuickNoteForm.getInstance().getQuickNotePanel(), gridConstraints);
         mainWindow.getJsonBeautyPanel().add(JsonBeautyForm.getInstance().getJsonBeautyPanel(), gridConstraints);
         mainWindow.getTimeConvertPanel().add(TimeConvertForm.getInstance().getTimeConvertPanel(), gridConstraints);
@@ -152,9 +150,6 @@ public class MainWindow {
         regexPanel = new JPanel();
         regexPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("正则表达式", new ImageIcon(getClass().getResource("/icon/reg.png")), regexPanel);
-        settingPanel = new JPanel();
-        settingPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("设置", new ImageIcon(getClass().getResource("/icon/gear.png")), settingPanel);
     }
 
     /**
