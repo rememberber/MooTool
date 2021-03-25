@@ -55,6 +55,14 @@ public class SettingListener {
             App.config.save();
         });
 
+        // 设置-常规-窗口颜色沉浸式
+        settingForm.getUnifiedBackgroundCheckBox().addActionListener(e -> {
+            App.config.setUnifiedBackground(settingForm.getUnifiedBackgroundCheckBox().isSelected());
+            App.config.save();
+            JOptionPane.showMessageDialog(settingPanel, "下次启动生效！", "提示",
+                    JOptionPane.INFORMATION_MESSAGE);
+        });
+
         settingForm.getHttpSaveButton().addActionListener(e -> {
             try {
                 App.config.setHttpUseProxy(settingForm.getHttpUseProxyCheckBox().isSelected());

@@ -162,7 +162,9 @@ public class Init {
                         JDialog.setDefaultLookAndFeelDecorated(true);
                     }
                     UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarculaLaf");
-//                    UIManager.put( "TitlePane.unifiedBackground", true );
+                    if (App.config.isUnifiedBackground()) {
+                        UIManager.put("TitlePane.unifiedBackground", true);
+                    }
 /**
  If you don't like/want it, you can disable it with:
  UIManager.put( "TitlePane.useWindowDecorations", false );
