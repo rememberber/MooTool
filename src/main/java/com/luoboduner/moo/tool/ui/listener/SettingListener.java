@@ -4,6 +4,7 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.formdev.flatlaf.FlatLaf;
+import com.formdev.flatlaf.extras.FlatAnimatedLafChange;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.service.HttpMsgSender;
 import com.luoboduner.moo.tool.ui.Init;
@@ -92,10 +93,16 @@ public class SettingListener {
                 App.config.setFontSize(Integer.parseInt(Objects.requireNonNull(settingForm.getSettingFontSizeComboBox().getSelectedItem()).toString()));
                 App.config.save();
 
+                FlatAnimatedLafChange.showSnapshot();
+
                 Init.initTheme();
                 Init.initGlobalFont();
                 SwingUtilities.updateComponentTreeUI(App.mainFrame);
                 SwingUtilities.updateComponentTreeUI(MainWindow.getInstance().getTabbedPane());
+
+//                FlatLaf.updateUI();
+
+                FlatAnimatedLafChange.hideSnapshotWithAnimation();
 
                 JOptionPane.showMessageDialog(settingPanel, "保存成功！\n\n重启应用生效！\n\n", "成功",
                         JOptionPane.INFORMATION_MESSAGE);

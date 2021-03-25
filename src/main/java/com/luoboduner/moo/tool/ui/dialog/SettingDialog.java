@@ -5,6 +5,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.form.AboutForm;
 import com.luoboduner.moo.tool.ui.form.SettingForm;
+import com.luoboduner.moo.tool.ui.listener.SettingListener;
 import com.luoboduner.moo.tool.util.ComponentUtil;
 
 import javax.swing.*;
@@ -26,6 +27,7 @@ public class SettingDialog extends JDialog {
         setModal(true);
 
         contentPane.add(SettingForm.getInstance().getSettingPanel(), gridConstraints);
+        SettingListener.addListeners();
 
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {

@@ -2,6 +2,9 @@ package com.luoboduner.moo.tool.ui.component;
 
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.FlatLaf;
+import com.formdev.flatlaf.extras.FlatAnimatedLafChange;
+import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.dialog.AboutDialog;
 import com.luoboduner.moo.tool.ui.dialog.KeyMapDialog;
@@ -10,10 +13,13 @@ import com.luoboduner.moo.tool.ui.dialog.SystemEnvResultDialog;
 import com.luoboduner.moo.tool.util.SystemUtil;
 
 import javax.swing.*;
+import javax.swing.text.StyleContext;
 import java.awt.*;
+import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
+import java.util.Arrays;
 import java.util.Map;
 import java.util.Properties;
 
@@ -24,6 +30,20 @@ public class TopMenuBar extends JMenuBar {
     private static final Log logger = LogFactory.get();
 
     private static TopMenuBar menuBar;
+
+    private static JMenu themeMenu;
+
+    private static String[] themeNames = {
+            "Darcula",
+            "BeautyEye",
+            "系统默认",
+            "Flat Light",
+            "Flat IntelliJ",
+            "Flat Dark",
+            "Flat Darcula(推荐)",
+            "Dark purple",
+            "IntelliJ Cyan",
+            "IntelliJ Light"};
 
     private TopMenuBar() {
     }
@@ -79,32 +99,24 @@ public class TopMenuBar extends JMenuBar {
         // ---------外观
         JMenu appearanceMenu = new JMenu();
         appearanceMenu.setText("外观");
-        appearanceMenu.addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                settingActionPerformed();
-            }
 
-            @Override
-            public void mousePressed(MouseEvent e) {
+        themeMenu = new JMenu();
+        themeMenu.setText("主题风格");
 
-            }
+        initThemesMenu();
 
-            @Override
-            public void mouseReleased(MouseEvent e) {
+        appearanceMenu.add(themeMenu);
 
-            }
+        JMenu fontFamilyMenu = new JMenu();
+        fontFamilyMenu.setText("字体");
 
-            @Override
-            public void mouseEntered(MouseEvent e) {
+        appearanceMenu.add(fontFamilyMenu);
 
-            }
+        JMenu fontSizeMenu = new JMenu();
+        fontSizeMenu.setText("字号");
 
-            @Override
-            public void mouseExited(MouseEvent e) {
+        appearanceMenu.add(fontSizeMenu);
 
-            }
-        });
         topMenuBar.add(appearanceMenu);
         // ---------快捷键
         JMenu keyMapMenu = new JMenu();
@@ -183,6 +195,36 @@ public class TopMenuBar extends JMenuBar {
             }
         });
         topMenuBar.add(aboutMenu);
+    }
+
+    private void initThemesMenu() {
+        int itemCount = -1;
+        if (itemCount < 0)
+            itemCount = themeMenu.getItemCount();
+        else {
+            // remove old font items
+            for (int i = themeMenu.getItemCount() - 1; i >= itemCount; i--)
+                themeMenu.remove(i);
+        }
+        for (String themeName : themeNames) {
+            JCheckBoxMenuItem item = new JCheckBoxMenuItem(themeName);
+            item.setSelected(themeName.equals(App.config.getTheme()));
+            item.addActionListener(this::themeChanged);
+            themeMenu.add(item);
+        }
+    }
+
+    private void themeChanged(ActionEvent actionEvent) {
+        String selectedThemeName = actionEvent.getActionCommand();
+
+        FlatAnimatedLafChange.showSnapshot();
+
+        App.config.setTheme(selectedThemeName);
+        App.config.save();
+
+        FlatAnimatedLafChange.hideSnapshotWithAnimation();
+
+        initThemesMenu();
     }
 
     private void keyMapActionPerformed() {

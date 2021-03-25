@@ -75,6 +75,5 @@ public class MainFrame extends JFrame {
         ThreadUtil.execute(NetListener::addListeners);
         ThreadUtil.execute(ColorBoardListener::addListeners);
         ThreadUtil.execute(ImageListener::addListeners);
-        ThreadUtil.execute(SettingListener::addListeners);
     }
 }
