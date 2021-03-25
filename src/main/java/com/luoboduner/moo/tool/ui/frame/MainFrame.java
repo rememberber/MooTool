@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.frame;
 import cn.hutool.core.thread.ThreadUtil;
 import com.apple.eawt.Application;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.TopMenuBar;
 import com.luoboduner.moo.tool.ui.listener.AboutListener;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
 import com.luoboduner.moo.tool.ui.listener.SettingListener;
@@ -49,7 +50,9 @@ public class MainFrame extends JFrame {
                 application.setEnabledPreferencesMenu(false);
             }
         }
-
+        TopMenuBar topMenuBar = TopMenuBar.getInstance();
+        topMenuBar.init();
+        setJMenuBar(topMenuBar);
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.8, 0.88);
     }
 

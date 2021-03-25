@@ -58,7 +58,7 @@ public class FrameListener {
             public void windowClosing(WindowEvent e) {
                 saveBeforeExit();
                 if (SystemUtil.isWindowsOs()) {
-                    App.mainFrame.dispose();
+                    App.mainFrame.setVisible(false);
                 } else {
                     App.mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 }
