@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.listener;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.FlatLaf;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.service.HttpMsgSender;
 import com.luoboduner.moo.tool.ui.Init;
@@ -59,8 +60,8 @@ public class SettingListener {
         settingForm.getUnifiedBackgroundCheckBox().addActionListener(e -> {
             App.config.setUnifiedBackground(settingForm.getUnifiedBackgroundCheckBox().isSelected());
             App.config.save();
-            JOptionPane.showMessageDialog(settingPanel, "下次启动生效！", "提示",
-                    JOptionPane.INFORMATION_MESSAGE);
+            UIManager.put("TitlePane.unifiedBackground", settingForm.getUnifiedBackgroundCheckBox().isSelected());
+            FlatLaf.updateUI();
         });
 
         settingForm.getHttpSaveButton().addActionListener(e -> {
