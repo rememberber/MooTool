@@ -58,9 +58,10 @@ public class SettingListener {
 
         // 设置-常规-窗口颜色沉浸式
         settingForm.getUnifiedBackgroundCheckBox().addActionListener(e -> {
-            App.config.setUnifiedBackground(settingForm.getUnifiedBackgroundCheckBox().isSelected());
+            boolean selected = settingForm.getUnifiedBackgroundCheckBox().isSelected();
+            App.config.setUnifiedBackground(selected);
             App.config.save();
-            UIManager.put("TitlePane.unifiedBackground", settingForm.getUnifiedBackgroundCheckBox().isSelected());
+            UIManager.put("TitlePane.unifiedBackground", selected);
             FlatLaf.updateUI();
         });
 
