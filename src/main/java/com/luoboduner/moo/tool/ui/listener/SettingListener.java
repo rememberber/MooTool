@@ -57,15 +57,6 @@ public class SettingListener {
             App.config.save();
         });
 
-        // 设置-常规-窗口颜色沉浸式
-        settingForm.getUnifiedBackgroundCheckBox().addActionListener(e -> {
-            boolean selected = settingForm.getUnifiedBackgroundCheckBox().isSelected();
-            App.config.setUnifiedBackground(selected);
-            App.config.save();
-            UIManager.put("TitlePane.unifiedBackground", selected);
-            FlatLaf.updateUI();
-        });
-
         settingForm.getHttpSaveButton().addActionListener(e -> {
             try {
                 App.config.setHttpUseProxy(settingForm.getHttpUseProxyCheckBox().isSelected());

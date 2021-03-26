@@ -120,6 +120,10 @@ public class Init {
             return;
         }
 
+        if (App.config.isUnifiedBackground()) {
+            UIManager.put("TitlePane.unifiedBackground", true);
+        }
+
         try {
             switch (App.config.getTheme()) {
                 case "BeautyEye":
@@ -162,9 +166,7 @@ public class Init {
                         JDialog.setDefaultLookAndFeelDecorated(true);
                     }
                     UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarculaLaf");
-                    if (App.config.isUnifiedBackground()) {
-                        UIManager.put("TitlePane.unifiedBackground", true);
-                    }
+
 /**
  If you don't like/want it, you can disable it with:
  UIManager.put( "TitlePane.useWindowDecorations", false );

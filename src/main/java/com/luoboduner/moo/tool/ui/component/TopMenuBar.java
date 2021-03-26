@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.ui.component;
 
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatAnimatedLafChange;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Init;
@@ -137,6 +138,17 @@ public class TopMenuBar extends JMenuBar {
         // ---------外观
         JMenu appearanceMenu = new JMenu();
         appearanceMenu.setText("外观");
+
+        JCheckBoxMenuItem unifiedBackgrounditem = new JCheckBoxMenuItem("窗口颜色沉浸式");
+        unifiedBackgrounditem.setSelected(App.config.isUnifiedBackground());
+        unifiedBackgrounditem.addActionListener(e -> {
+            boolean selected = unifiedBackgrounditem.isSelected();
+            App.config.setUnifiedBackground(selected);
+            App.config.save();
+            UIManager.put("TitlePane.unifiedBackground", selected);
+            FlatLaf.updateUI();
+        });
+        appearanceMenu.add(unifiedBackgrounditem);
 
         themeMenu = new JMenu();
         themeMenu.setText("主题风格");
