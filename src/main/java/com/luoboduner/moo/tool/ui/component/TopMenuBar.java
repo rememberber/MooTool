@@ -143,6 +143,11 @@ public class TopMenuBar extends JMenuBar {
         defaultMaxWindowitem.setSelected(App.config.isDefaultMaxWindow());
         defaultMaxWindowitem.addActionListener(e -> {
             boolean selected = defaultMaxWindowitem.isSelected();
+            if (selected) {
+                App.mainFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+            } else {
+                App.mainFrame.setExtendedState(JFrame.NORMAL);
+            }
             App.config.setDefaultMaxWindow(selected);
             App.config.save();
         });
