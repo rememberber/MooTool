@@ -139,6 +139,15 @@ public class TopMenuBar extends JMenuBar {
         JMenu appearanceMenu = new JMenu();
         appearanceMenu.setText("外观");
 
+        JCheckBoxMenuItem defaultMaxWindowitem = new JCheckBoxMenuItem("默认最大化窗口");
+        defaultMaxWindowitem.setSelected(App.config.isDefaultMaxWindow());
+        defaultMaxWindowitem.addActionListener(e -> {
+            boolean selected = defaultMaxWindowitem.isSelected();
+            App.config.setDefaultMaxWindow(selected);
+            App.config.save();
+        });
+        appearanceMenu.add(defaultMaxWindowitem);
+
         JCheckBoxMenuItem unifiedBackgrounditem = new JCheckBoxMenuItem("窗口颜色沉浸式");
         unifiedBackgrounditem.setSelected(App.config.isUnifiedBackground());
         unifiedBackgrounditem.addActionListener(e -> {

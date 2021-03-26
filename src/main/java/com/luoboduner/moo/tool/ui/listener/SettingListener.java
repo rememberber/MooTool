@@ -3,32 +3,18 @@ package com.luoboduner.moo.tool.ui.listener;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
-import com.formdev.flatlaf.FlatLaf;
-import com.formdev.flatlaf.extras.FlatAnimatedLafChange;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.service.HttpMsgSender;
-import com.luoboduner.moo.tool.ui.Init;
-import com.luoboduner.moo.tool.ui.dialog.SystemEnvResultDialog;
-import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.SettingForm;
-import com.luoboduner.moo.tool.ui.form.func.CryptoForm;
-import com.luoboduner.moo.tool.ui.form.func.HostForm;
-import com.luoboduner.moo.tool.ui.form.func.HttpRequestForm;
-import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
-import com.luoboduner.moo.tool.ui.form.func.QrCodeForm;
-import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
+import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
-import java.awt.*;
 import java.awt.event.ItemEvent;
 import java.io.File;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Properties;
 
 /**
  * <pre>
@@ -48,12 +34,6 @@ public class SettingListener {
         // 设置-常规-启动时自动检查更新
         settingForm.getAutoCheckUpdateCheckBox().addActionListener(e -> {
             App.config.setAutoCheckUpdate(settingForm.getAutoCheckUpdateCheckBox().isSelected());
-            App.config.save();
-        });
-
-        // 设置-常规-默认最大化窗口
-        settingForm.getDefaultMaxWindowCheckBox().addActionListener(e -> {
-            App.config.setDefaultMaxWindow(settingForm.getDefaultMaxWindowCheckBox().isSelected());
             App.config.save();
         });
 
