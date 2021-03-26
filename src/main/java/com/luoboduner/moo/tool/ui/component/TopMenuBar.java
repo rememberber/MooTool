@@ -2,7 +2,6 @@ package com.luoboduner.moo.tool.ui.component;
 
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
-import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatAnimatedLafChange;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Init;
@@ -10,17 +9,17 @@ import com.luoboduner.moo.tool.ui.dialog.AboutDialog;
 import com.luoboduner.moo.tool.ui.dialog.KeyMapDialog;
 import com.luoboduner.moo.tool.ui.dialog.SettingDialog;
 import com.luoboduner.moo.tool.ui.dialog.SystemEnvResultDialog;
+import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.util.SystemUtil;
 
 import javax.swing.*;
-import javax.swing.text.StyleContext;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
-import java.util.Arrays;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -32,6 +31,8 @@ public class TopMenuBar extends JMenuBar {
     private static TopMenuBar menuBar;
 
     private static JMenu themeMenu;
+
+    private static int themeItemCount = -1;
 
     private static String[] themeNames = {
             "Darcula",
@@ -198,12 +199,12 @@ public class TopMenuBar extends JMenuBar {
     }
 
     private void initThemesMenu() {
-        int itemCount = -1;
-        if (itemCount < 0)
-            itemCount = themeMenu.getItemCount();
+
+        if (themeItemCount < 0)
+            themeItemCount = themeMenu.getItemCount();
         else {
-            // remove old font items
-            for (int i = themeMenu.getItemCount() - 1; i >= itemCount; i--)
+            // remove old items
+            for (int i = themeMenu.getItemCount() - 1; i >= themeItemCount; i--)
                 themeMenu.remove(i);
         }
         for (String themeName : themeNames) {
@@ -215,16 +216,32 @@ public class TopMenuBar extends JMenuBar {
     }
 
     private void themeChanged(ActionEvent actionEvent) {
-        String selectedThemeName = actionEvent.getActionCommand();
+        try {
+            String selectedThemeName = actionEvent.getActionCommand();
 
-        FlatAnimatedLafChange.showSnapshot();
+            FlatAnimatedLafChange.showSnapshot();
 
-        App.config.setTheme(selectedThemeName);
-        App.config.save();
+            App.config.setTheme(selectedThemeName);
+            App.config.save();
 
-        FlatAnimatedLafChange.hideSnapshotWithAnimation();
+            Init.initTheme();
+            SwingUtilities.updateComponentTreeUI(App.mainFrame);
+            SwingUtilities.updateComponentTreeUI(MainWindow.getInstance().getTabbedPane());
 
-        initThemesMenu();
+//                FlatLaf.updateUI();
+
+            FlatAnimatedLafChange.hideSnapshotWithAnimation();
+
+            JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "部分细节重启应用后生效！\n\n", "成功",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+            initThemesMenu();
+
+        } catch (Exception e1) {
+            JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "保存失败！\n\n" + e1.getMessage(), "失败",
+                    JOptionPane.ERROR_MESSAGE);
+            logger.error(e1);
+        }
     }
 
     private void keyMapActionPerformed() {
