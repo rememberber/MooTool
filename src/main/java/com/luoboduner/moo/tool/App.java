@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool;
 
+import com.formdev.flatlaf.util.SystemInfo;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.form.LoadingForm;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
@@ -37,6 +38,11 @@ public class App {
     public static PopupMenu popupMenu;
 
     public static void main(String[] args) {
+
+        if (SystemInfo.isMacOS) {
+            System.setProperty("apple.laf.useScreenMenuBar", "true");
+        }
+
         Init.initTheme();
         mainFrame = new MainFrame();
         mainFrame.init();
