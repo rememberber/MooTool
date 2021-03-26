@@ -19,7 +19,6 @@ import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.File;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Properties;
 
 /**
@@ -32,7 +31,15 @@ public class TopMenuBar extends JMenuBar {
 
     private static JMenu themeMenu;
 
-    private static int themeItemCount = -1;
+    private static JMenu fontFamilyMenu;
+
+    private static JMenu fontSizeMenu;
+
+    private static int initialThemeItemCount = -1;
+
+    private static int initialFontFamilyItemCount = -1;
+
+    private static int initialFontSizeItemCount = -1;
 
     private static String[] themeNames = {
             "Darcula",
@@ -45,6 +52,36 @@ public class TopMenuBar extends JMenuBar {
             "Dark purple",
             "IntelliJ Cyan",
             "IntelliJ Light"};
+
+    private static String[] fontNames = {
+            "Microsoft YaHei",
+            "Microsoft YaHei Light",
+            "Microsoft YaHei UI",
+            "Microsoft YaHei UI Light"};
+
+    private static String[] fontSizes = {
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+            "11",
+            "12",
+            "13",
+            "14",
+            "15",
+            "16",
+            "17",
+            "18",
+            "19",
+            "20",
+            "21",
+            "22",
+            "23",
+            "24",
+            "25",
+            "26"};
 
     private TopMenuBar() {
     }
@@ -108,13 +145,15 @@ public class TopMenuBar extends JMenuBar {
 
         appearanceMenu.add(themeMenu);
 
-        JMenu fontFamilyMenu = new JMenu();
+        fontFamilyMenu = new JMenu();
         fontFamilyMenu.setText("字体");
+        initFontFamilyMenu();
 
         appearanceMenu.add(fontFamilyMenu);
 
-        JMenu fontSizeMenu = new JMenu();
+        fontSizeMenu = new JMenu();
         fontSizeMenu.setText("字号");
+        initFontSizeMenu();
 
         appearanceMenu.add(fontSizeMenu);
 
@@ -198,13 +237,48 @@ public class TopMenuBar extends JMenuBar {
         topMenuBar.add(aboutMenu);
     }
 
-    private void initThemesMenu() {
+    private void initFontSizeMenu() {
 
-        if (themeItemCount < 0)
-            themeItemCount = themeMenu.getItemCount();
+        if (initialFontSizeItemCount < 0)
+            initialFontSizeItemCount = fontSizeMenu.getItemCount();
         else {
             // remove old items
-            for (int i = themeMenu.getItemCount() - 1; i >= themeItemCount; i--)
+            for (int i = fontSizeMenu.getItemCount() - 1; i >= initialFontSizeItemCount; i--)
+                fontSizeMenu.remove(i);
+        }
+        for (String fontSize : fontSizes) {
+            JCheckBoxMenuItem item = new JCheckBoxMenuItem(fontSize);
+            item.setSelected(fontSize.equals(String.valueOf(App.config.getFontSize())));
+            item.addActionListener(this::fontSizeChanged);
+            fontSizeMenu.add(item);
+        }
+    }
+
+
+    private void initFontFamilyMenu() {
+
+        if (initialFontFamilyItemCount < 0)
+            initialFontFamilyItemCount = fontFamilyMenu.getItemCount();
+        else {
+            // remove old items
+            for (int i = fontFamilyMenu.getItemCount() - 1; i >= initialFontFamilyItemCount; i--)
+                fontFamilyMenu.remove(i);
+        }
+        for (String font : fontNames) {
+            JCheckBoxMenuItem item = new JCheckBoxMenuItem(font);
+            item.setSelected(font.equals(App.config.getFont()));
+            item.addActionListener(this::fontFamilyChanged);
+            fontFamilyMenu.add(item);
+        }
+    }
+
+    private void initThemesMenu() {
+
+        if (initialThemeItemCount < 0)
+            initialThemeItemCount = themeMenu.getItemCount();
+        else {
+            // remove old items
+            for (int i = themeMenu.getItemCount() - 1; i >= initialThemeItemCount; i--)
                 themeMenu.remove(i);
         }
         for (String themeName : themeNames) {
@@ -212,6 +286,65 @@ public class TopMenuBar extends JMenuBar {
             item.setSelected(themeName.equals(App.config.getTheme()));
             item.addActionListener(this::themeChanged);
             themeMenu.add(item);
+        }
+    }
+
+    private void fontSizeChanged(ActionEvent actionEvent) {
+        try {
+            String selectedFontSize = actionEvent.getActionCommand();
+
+            FlatAnimatedLafChange.showSnapshot();
+
+            App.config.setFontSize(Integer.parseInt(selectedFontSize));
+            App.config.save();
+
+            Init.initGlobalFont();
+            SwingUtilities.updateComponentTreeUI(App.mainFrame);
+            SwingUtilities.updateComponentTreeUI(MainWindow.getInstance().getTabbedPane());
+
+//                FlatLaf.updateUI();
+
+            FlatAnimatedLafChange.hideSnapshotWithAnimation();
+
+            JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "部分细节重启应用后生效！\n\n", "成功",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+            initFontSizeMenu();
+
+        } catch (Exception e1) {
+            JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "保存失败！\n\n" + e1.getMessage(), "失败",
+                    JOptionPane.ERROR_MESSAGE);
+            logger.error(e1);
+        }
+    }
+
+
+    private void fontFamilyChanged(ActionEvent actionEvent) {
+        try {
+            String selectedFamily = actionEvent.getActionCommand();
+
+            FlatAnimatedLafChange.showSnapshot();
+
+            App.config.setFont(selectedFamily);
+            App.config.save();
+
+            Init.initGlobalFont();
+            SwingUtilities.updateComponentTreeUI(App.mainFrame);
+            SwingUtilities.updateComponentTreeUI(MainWindow.getInstance().getTabbedPane());
+
+//                FlatLaf.updateUI();
+
+            FlatAnimatedLafChange.hideSnapshotWithAnimation();
+
+            JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "部分细节重启应用后生效！\n\n", "成功",
+                    JOptionPane.INFORMATION_MESSAGE);
+
+            initFontFamilyMenu();
+
+        } catch (Exception e1) {
+            JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "保存失败！\n\n" + e1.getMessage(), "失败",
+                    JOptionPane.ERROR_MESSAGE);
+            logger.error(e1);
         }
     }
 

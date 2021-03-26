@@ -85,34 +85,6 @@ public class SettingListener {
             }
         });
 
-        // 外观-保存
-        settingForm.getSettingAppearanceSaveButton().addActionListener(e -> {
-            try {
-                App.config.setTheme(Objects.requireNonNull(settingForm.getSettingThemeComboBox().getSelectedItem()).toString());
-                App.config.setFont(Objects.requireNonNull(settingForm.getSettingFontNameComboBox().getSelectedItem()).toString());
-                App.config.setFontSize(Integer.parseInt(Objects.requireNonNull(settingForm.getSettingFontSizeComboBox().getSelectedItem()).toString()));
-                App.config.save();
-
-                FlatAnimatedLafChange.showSnapshot();
-
-                Init.initTheme();
-                Init.initGlobalFont();
-                SwingUtilities.updateComponentTreeUI(App.mainFrame);
-                SwingUtilities.updateComponentTreeUI(MainWindow.getInstance().getTabbedPane());
-
-//                FlatLaf.updateUI();
-
-                FlatAnimatedLafChange.hideSnapshotWithAnimation();
-
-                JOptionPane.showMessageDialog(settingPanel, "保存成功！\n\n重启应用生效！\n\n", "成功",
-                        JOptionPane.INFORMATION_MESSAGE);
-            } catch (Exception e1) {
-                JOptionPane.showMessageDialog(settingPanel, "保存失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
-                logger.error(e1);
-            }
-        });
-
         settingForm.getHttpUseProxyCheckBox().addChangeListener(e -> SettingForm.toggleHttpProxyPanel());
 
         // 使用习惯-菜单栏位置
