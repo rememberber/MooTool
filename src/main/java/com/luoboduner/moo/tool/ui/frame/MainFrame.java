@@ -4,9 +4,7 @@ import cn.hutool.core.thread.ThreadUtil;
 import com.apple.eawt.Application;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.TopMenuBar;
-import com.luoboduner.moo.tool.ui.listener.AboutListener;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
-import com.luoboduner.moo.tool.ui.listener.SettingListener;
 import com.luoboduner.moo.tool.ui.listener.TabListener;
 import com.luoboduner.moo.tool.ui.listener.func.CalculatorListener;
 import com.luoboduner.moo.tool.ui.listener.func.ColorBoardListener;
@@ -62,7 +60,6 @@ public class MainFrame extends JFrame {
     public void addListeners() {
         ThreadUtil.execute(FrameListener::addListeners);
         ThreadUtil.execute(TabListener::addListeners);
-        ThreadUtil.execute(AboutListener::addListeners);
         ThreadUtil.execute(QuickNoteListener::addListeners);
         ThreadUtil.execute(TimeConvertListener::addListeners);
         ThreadUtil.execute(JsonBeautyListener::addListeners);

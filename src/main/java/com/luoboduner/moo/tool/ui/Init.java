@@ -7,7 +7,6 @@ import com.formdev.flatlaf.FlatLightLaf;
 import com.formdev.flatlaf.IntelliJTheme;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
-import com.luoboduner.moo.tool.ui.form.AboutForm;
 import com.luoboduner.moo.tool.ui.form.SettingForm;
 import com.luoboduner.moo.tool.ui.form.func.CalculatorForm;
 import com.luoboduner.moo.tool.ui.form.func.ColorBoardForm;
@@ -231,7 +230,6 @@ public class Init {
         ThreadUtil.execute(TimeConvertForm::init);
         ThreadUtil.execute(HostForm::init);
         ThreadUtil.execute(HttpRequestForm::init);
-        ThreadUtil.execute(AboutForm::init);
         ThreadUtil.execute(EnCodeForm::init);
         ThreadUtil.execute(QrCodeForm::init);
         ThreadUtil.execute(CryptoForm::init);

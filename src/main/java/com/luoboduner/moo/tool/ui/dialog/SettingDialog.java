@@ -3,7 +3,6 @@ package com.luoboduner.moo.tool.ui.dialog;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.ui.form.AboutForm;
 import com.luoboduner.moo.tool.ui.form.SettingForm;
 import com.luoboduner.moo.tool.ui.listener.SettingListener;
 import com.luoboduner.moo.tool.util.ComponentUtil;

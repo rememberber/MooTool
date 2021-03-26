@@ -3,10 +3,307 @@
   <grid id="cbd77" binding="contentPane" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="48" y="54" width="436" height="297"/>
+      <xy x="48" y="54" width="911" height="776"/>
     </constraints>
     <properties/>
     <border type="none"/>
-    <children/>
+    <children>
+      <scrollpane id="1513c" binding="scrollPane">
+        <constraints>
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+        </constraints>
+        <properties/>
+        <border type="none"/>
+        <children>
+          <grid id="3215c" layout-manager="GridLayoutManager" row-count="9" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="40" left="80" bottom="0" right="0"/>
+            <constraints/>
+            <properties/>
+            <border type="empty"/>
+            <children>
+              <component id="5b95d" class="javax.swing.JLabel">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <icon value="icon/logo-128.png"/>
+                  <text value=""/>
+                </properties>
+              </component>
+              <hspacer id="f39fa">
+                <constraints>
+                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </hspacer>
+              <vspacer id="12e0c">
+                <constraints>
+                  <grid row="8" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </vspacer>
+              <grid id="f7150" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="5" left="3" bottom="20" right="0"/>
+                <constraints>
+                  <grid row="1" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="empty" title="MooTool">
+                  <font size="20" style="1"/>
+                  <title-color color="-7883"/>
+                </border>
+                <children>
+                  <component id="67aea" class="javax.swing.JLabel">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text value="A handy desktop toolset for developers"/>
+                    </properties>
+                  </component>
+                  <component id="2b99b" class="javax.swing.JLabel">
+                    <constraints>
+                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text value="Proudly by RememBerBer 周波"/>
+                    </properties>
+                  </component>
+                  <component id="2e035" class="javax.swing.JLabel" binding="versionLabel">
+                    <constraints>
+                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <font style="1"/>
+                      <text value="v0.0.0"/>
+                      <toolTipText value="Check for updates"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <grid id="a0430" layout-manager="GridLayoutManager" row-count="5" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="5" left="3" bottom="20" right="0"/>
+                <constraints>
+                  <grid row="2" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="empty" title="About">
+                  <font style="1"/>
+                </border>
+                <children>
+                  <component id="28418" class="javax.swing.JLabel">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text value="Hi. Thanks to use MooTool. &quot;Moo&quot; named from my daughter."/>
+                    </properties>
+                  </component>
+                  <component id="dc03b" class="javax.swing.JLabel">
+                    <constraints>
+                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text value="Less Java developer use Swing building projects, but I still love to develop by it."/>
+                    </properties>
+                  </component>
+                  <component id="4c1a1" class="javax.swing.JLabel">
+                    <constraints>
+                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text value="So every little free time, I had went towards the development."/>
+                    </properties>
+                  </component>
+                  <component id="7b3dd" class="javax.swing.JLabel">
+                    <constraints>
+                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text value="I did some works finaly, although there are so many same on web page."/>
+                    </properties>
+                  </component>
+                  <component id="6a8c4" class="javax.swing.JLabel">
+                    <constraints>
+                      <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text value="Hope you enjoy using it as much as I did building it."/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <grid id="27e0c" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="5" left="3" bottom="20" right="0"/>
+                <constraints>
+                  <grid row="3" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="empty" title="CODE">
+                  <font style="1"/>
+                </border>
+                <children>
+                  <component id="4ff6b" class="javax.swing.JLabel" binding="codeGitHubLabel">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text value="&lt;html&gt;GitHub：&lt;a href=&quot;https://github.com/rememberber/MooTool&quot;&gt;https://github.com/rememberber/MooTool&lt;/a&gt;&lt;/html&gt;"/>
+                    </properties>
+                  </component>
+                  <component id="16411" class="javax.swing.JLabel" binding="codeGiteeLabel">
+                    <constraints>
+                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text value="&lt;html&gt;Gitee：&lt;a href=&quot;https://gitee.com/zhoubochina/MooTool&quot;&gt;https://gitee.com/zhoubochina/MooTool&lt;/a&gt;&lt;/html&gt;"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <grid id="e98b9" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="5" left="3" bottom="20" right="0"/>
+                <constraints>
+                  <grid row="4" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="empty" title="HELP TO DO BETTER">
+                  <font style="1"/>
+                </border>
+                <children>
+                  <component id="ac403" class="javax.swing.JLabel" binding="issueLabel">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text value="&lt;html&gt;&lt;a href=&quot;https://github.com/rememberber/MooTool/issues&quot;&gt;https://github.com/rememberber/MooTool/issues&lt;/a&gt;&lt;/html&gt;"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <grid id="c28d7" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="5" left="3" bottom="20" right="0"/>
+                <constraints>
+                  <grid row="5" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="empty" title="THANKS TO">
+                  <font style="1"/>
+                </border>
+                <children>
+                  <component id="982aa" class="javax.swing.JLabel" binding="daculaLabel">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text value="&lt;html&gt;&lt;a href=&quot;https://github.com/bulenkov/Darcula&quot;&gt;Darcula&lt;/a&gt;&lt;/html&gt;"/>
+                    </properties>
+                  </component>
+                  <component id="c5d28" class="javax.swing.JLabel" binding="beautyEyeLabel">
+                    <constraints>
+                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text value="&lt;html&gt;&lt;a href=&quot;https://gitee.com/jackjiang/beautyeye&quot;&gt;BeautyEye&lt;/a&gt;&lt;/html&gt;"/>
+                    </properties>
+                  </component>
+                  <component id="c3231" class="javax.swing.JLabel" binding="hutoolLabel">
+                    <constraints>
+                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text value="&lt;html&gt;&lt;a href=&quot;https://hutool.cn/&quot;&gt;Hutool&lt;/a&gt;&lt;/html&gt;"/>
+                    </properties>
+                  </component>
+                  <component id="6b692" class="javax.swing.JLabel" binding="vsCodeIconsLabel">
+                    <constraints>
+                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text value="&lt;html&gt;&lt;a href=&quot;https://github.com/microsoft/vscode-icons&quot;&gt;vscode-icons&lt;/a&gt;&lt;/html&gt;"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <grid id="7e499" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="5" left="3" bottom="20" right="0"/>
+                <constraints>
+                  <grid row="6" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="empty" title="SPONSOR">
+                  <font style="1"/>
+                </border>
+                <children>
+                  <component id="a7175" class="javax.swing.JLabel">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <icon value="icon/wx-zanshang.jpg"/>
+                      <text value=""/>
+                      <toolTipText value="感谢您的鼓励和支持"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <grid id="74457" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="5" left="3" bottom="20" right="0"/>
+                <constraints>
+                  <grid row="7" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="empty" title="OTHER WORKS">
+                  <font style="1"/>
+                </border>
+                <children>
+                  <grid id="1f14f" binding="wePushPanel" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                    <margin top="0" left="0" bottom="0" right="0"/>
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none"/>
+                    <children>
+                      <component id="18ba1" class="javax.swing.JLabel" binding="wePushLinkLabel">
+                        <constraints>
+                          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="&lt;html&gt;&lt;a href=&quot;https://github.com/rememberber/WePush&quot;&gt;https://github.com/rememberber/WePush&lt;/a&gt;&lt;/html&gt;"/>
+                        </properties>
+                      </component>
+                      <component id="8306e" class="javax.swing.JLabel">
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <icon value="icon/WePush-logo-64.png"/>
+                          <text value=""/>
+                        </properties>
+                      </component>
+                      <component id="f6ad2" class="javax.swing.JLabel">
+                        <constraints>
+                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="WePush"/>
+                        </properties>
+                      </component>
+                      <component id="a62e9" class="javax.swing.JLabel">
+                        <constraints>
+                          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="专注批量推送的小而美的工具"/>
+                        </properties>
+                      </component>
+                    </children>
+                  </grid>
+                </children>
+              </grid>
+            </children>
+          </grid>
+        </children>
+      </scrollpane>
+    </children>
   </grid>
 </form>
