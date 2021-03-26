@@ -1,12 +1,9 @@
 package com.luoboduner.moo.tool.ui.dialog;
 
-import cn.hutool.core.thread.ThreadUtil;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.ui.form.MainWindow;
-import com.luoboduner.moo.tool.ui.form.SettingForm;
 import com.luoboduner.moo.tool.util.ComponentUtil;
 
 import javax.swing.*;

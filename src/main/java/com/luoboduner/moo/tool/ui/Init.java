@@ -7,7 +7,6 @@ import com.formdev.flatlaf.FlatLightLaf;
 import com.formdev.flatlaf.IntelliJTheme;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
-import com.luoboduner.moo.tool.ui.form.SettingForm;
 import com.luoboduner.moo.tool.ui.form.func.CalculatorForm;
 import com.luoboduner.moo.tool.ui.form.func.ColorBoardForm;
 import com.luoboduner.moo.tool.ui.form.func.CronForm;
@@ -224,7 +223,6 @@ public class Init {
      * 初始化所有tab
      */
     public static void initAllTab() {
-        ThreadUtil.execute(SettingForm::init);
         ThreadUtil.execute(QuickNoteForm::init);
         ThreadUtil.execute(JsonBeautyForm::init);
         ThreadUtil.execute(TimeConvertForm::init);
