@@ -40,7 +40,11 @@ public class App {
     public static void main(String[] args) {
 
         if (SystemInfo.isMacOS) {
+//            java -Xdock:name="MooTool" -Xdock:icon=MooTool.jpg ... (whatever else you normally specify here)
+//            java -Xms64m -Xmx256m -Dapple.awt.application.name="MooTool" -Dcom.apple.mrj.application.apple.menu.about.name="MooTool" -cp "./lib/*" com.luoboduner.moo.tool.App
             System.setProperty("apple.laf.useScreenMenuBar", "true");
+            System.setProperty("apple.awt.application.name", "MooTool");
+            System.setProperty("com.apple.mrj.application.apple.menu.about.name", "MooTool");
         }
 
         Init.initTheme();
