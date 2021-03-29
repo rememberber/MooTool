@@ -16,8 +16,6 @@ import com.luoboduner.moo.tool.util.SystemUtil;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.ActionEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.io.File;
 import java.util.Map;
 import java.util.Properties;
@@ -99,42 +97,23 @@ public class TopMenuBar extends JMenuBar {
         // ---------应用
         JMenu appMenu = new JMenu();
         appMenu.setText("应用");
+        // 设置
+        JMenuItem settingMenuItem = new JMenuItem();
+        settingMenuItem.setText("设置");
+        settingMenuItem.addActionListener(e -> settingActionPerformed());
+        appMenu.add(settingMenuItem);
+        // 快捷键
+        JMenuItem keyMapMenuItem = new JMenuItem();
+        keyMapMenuItem.setText("快捷键");
+        keyMapMenuItem.addActionListener(e -> keyMapActionPerformed());
+        appMenu.add(keyMapMenuItem);
         // 退出
         JMenuItem exitMenuItem = new JMenuItem();
         exitMenuItem.setText("退出");
         exitMenuItem.addActionListener(e -> exitActionPerformed());
         appMenu.add(exitMenuItem);
         topMenuBar.add(appMenu);
-        // ---------设置
-        JMenu settingMenu = new JMenu();
-        settingMenu.setText("设置");
-        settingMenu.addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                settingActionPerformed();
-            }
 
-            @Override
-            public void mousePressed(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-
-            }
-        });
-        topMenuBar.add(settingMenu);
         // ---------外观
         JMenu appearanceMenu = new JMenu();
         appearanceMenu.setText("外观");
@@ -184,36 +163,6 @@ public class TopMenuBar extends JMenuBar {
         appearanceMenu.add(fontSizeMenu);
 
         topMenuBar.add(appearanceMenu);
-        // ---------快捷键
-        JMenu keyMapMenu = new JMenu();
-        keyMapMenu.setText("快捷键");
-        keyMapMenu.addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                keyMapActionPerformed();
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-
-            }
-        });
-        topMenuBar.add(keyMapMenu);
         // ---------调试
         JMenu debugMenu = new JMenu();
         debugMenu.setText("调试");
@@ -234,32 +183,13 @@ public class TopMenuBar extends JMenuBar {
         // ---------关于
         JMenu aboutMenu = new JMenu();
         aboutMenu.setText("关于");
-        aboutMenu.addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                aboutActionPerformed();
-            }
 
-            @Override
-            public void mousePressed(MouseEvent e) {
+        // 关于
+        JMenuItem aboutMenuItem = new JMenuItem();
+        aboutMenuItem.setText("关于");
+        aboutMenuItem.addActionListener(e -> aboutActionPerformed());
+        aboutMenu.add(aboutMenuItem);
 
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-
-            }
-        });
         topMenuBar.add(aboutMenu);
     }
 
