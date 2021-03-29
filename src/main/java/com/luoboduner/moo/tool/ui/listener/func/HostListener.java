@@ -6,6 +6,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.THostMapper;
 import com.luoboduner.moo.tool.domain.THost;
 import com.luoboduner.moo.tool.ui.dialog.CurrentHostDialog;
+import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
@@ -19,11 +20,7 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.io.File;
 import java.util.Date;
 
@@ -301,7 +298,7 @@ public class HostListener {
             if (refreshModifiedTime) {
                 // 通过refreshModifiedTime可以判断是否主动按快捷键保存，只有主动触发时才保存，避免初次点击列表误提示问题
                 String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-                String name = JOptionPane.showInputDialog("名称", tempName);
+                String name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", tempName);
                 if (StringUtils.isNotBlank(name)) {
                     THost tHost = new THost();
                     tHost.setName(name);
@@ -349,7 +346,7 @@ public class HostListener {
         }
         String name = selectedNameHost;
         if (needRename) {
-            name = JOptionPane.showInputDialog("名称", selectedNameHost);
+            name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", selectedNameHost);
         }
         if (StringUtils.isNotBlank(name)) {
             THost tHost = hostMapper.selectByName(name);

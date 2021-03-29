@@ -5,6 +5,7 @@ import cn.hutool.core.util.ReUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
+import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.FindResultForm;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
@@ -50,7 +51,7 @@ public class QuickNoteListener {
             if (StringUtils.isEmpty(selectedName)) {
                 selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
             }
-            String name = JOptionPane.showInputDialog("名称", selectedName);
+            String name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", selectedName);
             if (StringUtils.isNotBlank(name)) {
                 TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
                 if (tQuickNote == null) {
@@ -430,7 +431,7 @@ public class QuickNoteListener {
             quickNoteMapper.updateByName(tQuickNote);
         } else {
             String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-            String name = JOptionPane.showInputDialog("名称", tempName);
+            String name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", tempName);
             if (StringUtils.isNotBlank(name)) {
                 TQuickNote tQuickNote = new TQuickNote();
                 tQuickNote.setName(name);

@@ -9,6 +9,7 @@ import com.luoboduner.moo.tool.domain.TMsgHttp;
 import com.luoboduner.moo.tool.service.HttpMsgMaker;
 import com.luoboduner.moo.tool.service.HttpMsgSender;
 import com.luoboduner.moo.tool.service.HttpSendResult;
+import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.HttpRequestForm;
 import com.luoboduner.moo.tool.ui.form.func.HttpResultForm;
 import com.luoboduner.moo.tool.ui.frame.HttpResultFrame;
@@ -20,12 +21,7 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import java.awt.event.ItemEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.util.Date;
 import java.util.HashSet;
 import java.util.Set;
@@ -54,7 +50,7 @@ public class HttpRequestListener {
             if (StringUtils.isBlank(selectedName)) {
                 selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
             }
-            String name = JOptionPane.showInputDialog("名称", selectedName);
+            String name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", selectedName);
             if (StringUtils.isNotBlank(name)) {
                 HttpRequestForm.save(name);
             }

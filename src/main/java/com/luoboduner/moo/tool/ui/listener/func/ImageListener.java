@@ -4,6 +4,7 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.swing.clipboard.ClipboardUtil;
 import com.bulenkov.iconloader.util.ImageUtil;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.ImageForm;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -15,12 +16,7 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
@@ -339,7 +335,7 @@ public class ImageListener {
         if (StringUtils.isEmpty(selectedName)) {
             selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
         }
-        String name = JOptionPane.showInputDialog("名称", selectedName);
+        String name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", selectedName);
         if (StringUtils.isNotBlank(name)) {
             try {
                 if (selectedImage != null) {
@@ -361,7 +357,7 @@ public class ImageListener {
         try {
             if (selectedImage != null && selectedName == null) {
                 String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-                String name = JOptionPane.showInputDialog("名称", tempName);
+                String name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", tempName);
                 if (StringUtils.isNotBlank(name)) {
                     name = name.replace(".png", "");
 
