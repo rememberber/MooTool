@@ -7,6 +7,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.PlainTextViewerManager;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
@@ -64,6 +65,8 @@ public class QuickNoteForm {
     private static QuickNoteForm quickNoteForm;
     private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
 
+    public static PlainTextViewerManager plainTextViewerManager;
+
     private QuickNoteForm() {
         UndoUtil.register(this);
     }
@@ -71,6 +74,7 @@ public class QuickNoteForm {
     public static QuickNoteForm getInstance() {
         if (quickNoteForm == null) {
             quickNoteForm = new QuickNoteForm();
+            plainTextViewerManager = new PlainTextViewerManager();
         }
         return quickNoteForm;
     }
