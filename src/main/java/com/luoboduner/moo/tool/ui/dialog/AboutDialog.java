@@ -40,7 +40,7 @@ public class AboutDialog extends JDialog {
     public AboutDialog() {
 
         super(App.mainFrame, "关于");
-        ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.56, 0.82);
+        ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.4, 0.64);
         setContentPane(contentPane);
         setModal(true);
 

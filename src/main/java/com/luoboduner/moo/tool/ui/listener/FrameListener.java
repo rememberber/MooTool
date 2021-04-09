@@ -83,14 +83,15 @@ public class FrameListener {
 
     public static void saveBeforeExit() {
         QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
-        if (StringUtils.isNotBlank(quickNoteForm.getTextArea().getText())) {
+        JTextArea view = (JTextArea) quickNoteForm.getScrollPane().getViewport().getView();
+        if (StringUtils.isNotBlank(view.getText())) {
             String quickNoteName = QuickNoteListener.selectedName;
             String now = SqliteUtil.nowDateForSqlite();
             if (StringUtils.isEmpty(quickNoteName)) {
                 quickNoteName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
                 TQuickNote tQuickNote = new TQuickNote();
                 tQuickNote.setName(quickNoteName);
-                tQuickNote.setContent(quickNoteForm.getTextArea().getText());
+                tQuickNote.setContent(view.getText());
                 tQuickNote.setCreateTime(now);
                 tQuickNote.setModifiedTime(now);
 
@@ -100,7 +101,7 @@ public class FrameListener {
             } else {
                 TQuickNote tQuickNote = new TQuickNote();
                 tQuickNote.setName(quickNoteName);
-                tQuickNote.setContent(quickNoteForm.getTextArea().getText());
+                tQuickNote.setContent(view.getText());
 
                 quickNoteMapper.updateByName(tQuickNote);
             }

@@ -165,6 +165,8 @@ public class Init {
                     }
                     UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarculaLaf");
 
+                    UIManager.put("PopupMenu.background", UIManager.getColor("Panel.background"));
+
 /**
  If you don't like/want it, you can disable it with:
  UIManager.put( "TitlePane.useWindowDecorations", false );

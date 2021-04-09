@@ -7,11 +7,11 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.UiConsts;
-import com.luoboduner.moo.tool.ui.component.PlainTextViewerManager;
+import com.luoboduner.moo.tool.ui.component.QuickNotePlainTextViewer;
+import com.luoboduner.moo.tool.ui.component.QuickNotePlainTextViewerManager;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
-import com.luoboduner.moo.tool.util.UIUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -34,7 +34,6 @@ public class QuickNoteForm {
     private JPanel quickNotePanel;
     private JTable noteListTable;
     private JButton deleteButton;
-    private JTextArea textArea;
     private JButton saveButton;
     private JSplitPane splitPane;
     private JButton addButton;
@@ -65,7 +64,7 @@ public class QuickNoteForm {
     private static QuickNoteForm quickNoteForm;
     private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
 
-    public static PlainTextViewerManager plainTextViewerManager;
+    public static QuickNotePlainTextViewerManager quickNotePlainTextViewerManager;
 
     private QuickNoteForm() {
         UndoUtil.register(this);
@@ -74,13 +73,18 @@ public class QuickNoteForm {
     public static QuickNoteForm getInstance() {
         if (quickNoteForm == null) {
             quickNoteForm = new QuickNoteForm();
-            plainTextViewerManager = new PlainTextViewerManager();
         }
         return quickNoteForm;
     }
 
+    public static void resetInstance() {
+        quickNoteForm = null;
+    }
+
     public static void init() {
         quickNoteForm = getInstance();
+
+        quickNotePlainTextViewerManager = new QuickNotePlainTextViewerManager();
 
         initUi();
 
@@ -123,24 +127,18 @@ public class QuickNoteForm {
         quickNoteForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
 
         quickNoteForm.getDeletePanel().setVisible(false);
-        quickNoteForm.getTextArea().grabFocus();
-        if (UIUtil.isDarkLaf()) {
-            Color bgColor = new Color(30, 30, 30);
-            quickNoteForm.getTextArea().setBackground(bgColor);
-            Color foreColor = new Color(187, 187, 187);
-            quickNoteForm.getTextArea().setForeground(foreColor);
-        }
         quickNoteForm.getQuickNotePanel().updateUI();
     }
 
     public static void initNoteListTable() {
         String[] headerNames = {"id", "名称"};
         DefaultTableModel model = new DefaultTableModel(null, headerNames);
-        quickNoteForm.getNoteListTable().setModel(model);
+        JTable noteListTable = quickNoteForm.getNoteListTable();
+        noteListTable.setModel(model);
         // 隐藏表头
-        JTableUtil.hideTableHeader(quickNoteForm.getNoteListTable());
+        JTableUtil.hideTableHeader(noteListTable);
         // 隐藏id列
-        JTableUtil.hideColumn(quickNoteForm.getNoteListTable(), 0);
+        JTableUtil.hideColumn(noteListTable, 0);
 
         Object[] data;
 
@@ -152,8 +150,11 @@ public class QuickNoteForm {
             model.addRow(data);
         }
         if (quickNoteList.size() > 0) {
-            quickNoteForm.getTextArea().setText(quickNoteList.get(0).getContent());
-            quickNoteForm.getNoteListTable().setRowSelectionInterval(0, 0);
+            QuickNotePlainTextViewer plainTextViewer = quickNotePlainTextViewerManager.newPlainTextViewer(quickNoteList.get(0).getName());
+            plainTextViewer.setText(quickNoteList.get(0).getContent());
+            getInstance().getScrollPane().setViewportView(plainTextViewer);
+            noteListTable.setRowSelectionInterval(0, 0);
+            plainTextViewer.grabFocus();
             QuickNoteListener.selectedName = quickNoteList.get(0).getName();
         }
     }
@@ -162,16 +163,13 @@ public class QuickNoteForm {
         String fontName = App.config.getQuickNoteFontName();
         int fontSize = App.config.getQuickNoteFontSize();
         if (fontSize == 0) {
-            fontSize = quickNoteForm.getTextArea().getFont().getSize() + 2;
+            fontSize = quickNoteForm.getFindTextField().getFont().getSize() + 2;
         }
 
         getSysFontList();
 
         quickNoteForm.getFontNameComboBox().setSelectedItem(fontName);
         quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(fontSize));
-
-        Font font = new Font(fontName, Font.PLAIN, fontSize);
-        quickNoteForm.getTextArea().setFont(font);
     }
 
     /**
@@ -346,9 +344,6 @@ public class QuickNoteForm {
         findMenuSeparatorPanel.add(findMenuSeparator, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         scrollPane = new JScrollPane();
         rightPanel.add(scrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        textArea = new JTextArea();
-        textArea.setMargin(new Insets(10, 10, 10, 10));
-        scrollPane.setViewportView(textArea);
     }
 
     /**
