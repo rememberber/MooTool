@@ -41,8 +41,6 @@ public class TopMenuBar extends JMenuBar {
     private static int initialFontSizeItemCount = -1;
 
     private static String[] themeNames = {
-            "Darcula",
-            "BeautyEye",
             "系统默认",
             "Flat Light",
             "Flat IntelliJ",

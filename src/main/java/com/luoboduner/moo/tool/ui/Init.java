@@ -7,21 +7,7 @@ import com.formdev.flatlaf.FlatLightLaf;
 import com.formdev.flatlaf.IntelliJTheme;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
-import com.luoboduner.moo.tool.ui.form.func.CalculatorForm;
-import com.luoboduner.moo.tool.ui.form.func.ColorBoardForm;
-import com.luoboduner.moo.tool.ui.form.func.CronForm;
-import com.luoboduner.moo.tool.ui.form.func.CryptoForm;
-import com.luoboduner.moo.tool.ui.form.func.EnCodeForm;
-import com.luoboduner.moo.tool.ui.form.func.HostForm;
-import com.luoboduner.moo.tool.ui.form.func.HttpRequestForm;
-import com.luoboduner.moo.tool.ui.form.func.ImageForm;
-import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
-import com.luoboduner.moo.tool.ui.form.func.NetForm;
-import com.luoboduner.moo.tool.ui.form.func.QrCodeForm;
-import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
-import com.luoboduner.moo.tool.ui.form.func.RegexForm;
-import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
-import com.luoboduner.moo.tool.ui.form.func.TranslationForm;
+import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -29,7 +15,6 @@ import com.luoboduner.moo.tool.util.UIUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.jb2011.lnf.beautyeye.BeautyEyeLNFHelper;
 
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
@@ -124,18 +109,8 @@ public class Init {
 
         try {
             switch (App.config.getTheme()) {
-                case "BeautyEye":
-                    BeautyEyeLNFHelper.launchBeautyEyeLNF();
-                    UIManager.put("RootPane.setupButtonVisible", false);
-                    break;
                 case "系统默认":
                     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-                    break;
-                case "weblaf":
-                case "Darcula":
-                    JFrame.setDefaultLookAndFeelDecorated(false);
-                    JDialog.setDefaultLookAndFeelDecorated(false);
-                    UIManager.setLookAndFeel("com.bulenkov.darcula.DarculaLaf");
                     break;
                 case "Flat Light":
                     if (SystemUtil.isJBR()) {
@@ -158,6 +133,10 @@ public class Init {
                     }
                     UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarkLaf");
                     break;
+                case "BeautyEye":
+                case "Darcula":
+                case "Darcula(推荐)":
+                case "weblaf":
                 case "Flat Darcula(推荐)":
                     if (SystemUtil.isJBR()) {
                         JFrame.setDefaultLookAndFeelDecorated(true);

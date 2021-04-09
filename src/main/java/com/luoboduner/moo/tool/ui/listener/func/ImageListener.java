@@ -2,7 +2,6 @@ package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.swing.clipboard.ClipboardUtil;
-import com.bulenkov.iconloader.util.ImageUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.ImageForm;
@@ -17,6 +16,8 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.ImageObserver;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
@@ -340,7 +341,7 @@ public class ImageListener {
             try {
                 if (selectedImage != null) {
                     File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + name + ".png"));
-                    ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
+                    ImageIO.write(toBufferedImage(selectedImage), "png", imageFile);
                     ImageForm.initListTable();
                 }
             } catch (Exception ex) {
@@ -362,13 +363,25 @@ public class ImageListener {
                     name = name.replace(".png", "");
 
                     File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + name + ".png"));
-                    ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
+                    ImageIO.write(toBufferedImage(selectedImage), "png", imageFile);
                     ImageForm.initListTable();
                     selectedName = name;
                 }
             }
         } catch (Exception ex) {
             log.error(ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
+    public static BufferedImage toBufferedImage(Image image) {
+        if (image instanceof BufferedImage) {
+            return (BufferedImage) image;
+        } else {
+            BufferedImage bufferedImage = new BufferedImage(image.getWidth((ImageObserver) null), image.getHeight((ImageObserver) null), 2);
+            Graphics2D g = bufferedImage.createGraphics();
+            g.drawImage(image, 0, 0, (ImageObserver) null);
+            g.dispose();
+            return bufferedImage;
         }
     }
 }
