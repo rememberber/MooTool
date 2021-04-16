@@ -334,13 +334,10 @@ public class QuickNoteListener {
                 if (isDelete == JOptionPane.YES_OPTION) {
                     DefaultTableModel tableModel = (DefaultTableModel) quickNoteForm.getNoteListTable().getModel();
 
-                    for (int i = selectedRows.length; i > 0; i--) {
-                        int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
+                    for (int i = 0; i < selectedRows.length; i++) {
+                        int selectedRow = selectedRows[i];
                         Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
                         quickNoteMapper.deleteByPrimaryKey(id);
-
-                        tableModel.removeRow(selectedRow);
-                        quickNoteForm.getNoteListTable().updateUI();
                     }
                     QuickNoteForm.initNoteListTable();
                 }
