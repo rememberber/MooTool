@@ -272,12 +272,10 @@ public class ImageListener {
                 if (isDelete == JOptionPane.YES_OPTION) {
                     DefaultTableModel tableModel = (DefaultTableModel) imageForm.getListTable().getModel();
 
-                    for (int i = selectedRows.length; i > 0; i--) {
-                        int selectedRow = imageForm.getListTable().getSelectedRow();
+                    for (int i = 0; i < selectedRows.length; i++) {
+                        int selectedRow = selectedRows[i];
                         String fileName = (String) tableModel.getValueAt(selectedRow, 0);
                         FileUtil.del(IMAGE_PATH_PRE_FIX + fileName);
-                        tableModel.removeRow(selectedRow);
-                        imageForm.getListTable().updateUI();
                     }
                     selectedName = null;
                     ImageForm.initListTable();

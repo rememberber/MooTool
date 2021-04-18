@@ -401,13 +401,10 @@ public class JsonBeautyListener {
                 if (isDelete == JOptionPane.YES_OPTION) {
                     DefaultTableModel tableModel = (DefaultTableModel) jsonBeautyForm.getNoteListTable().getModel();
 
-                    for (int i = selectedRows.length; i > 0; i--) {
-                        int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
+                    for (int i = 0; i < selectedRows.length; i++) {
+                        int selectedRow = selectedRows[i];
                         Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
                         jsonBeautyMapper.deleteByPrimaryKey(id);
-
-                        tableModel.removeRow(selectedRow);
-                        jsonBeautyForm.getNoteListTable().updateUI();
                     }
                     selectedNameJson = null;
                     JsonBeautyForm.initListTable();
