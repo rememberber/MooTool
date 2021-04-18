@@ -76,7 +76,10 @@ public class HttpRequestListener {
         }));
 
         // 添加按钮事件
-        httpRequestForm.getAddButton().addActionListener(e -> HttpRequestForm.clearAllField());
+        httpRequestForm.getAddButton().addActionListener(e -> {
+            HttpRequestForm.clearAllField();
+            selectedName = null;
+        });
 
         // 左侧列表鼠标点击事件（显示下方删除按钮）
         httpRequestForm.getNoteListTable().addMouseListener(new MouseListener() {
