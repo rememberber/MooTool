@@ -38,6 +38,7 @@ public class QuickNotePlainTextViewer extends PlainTextViewer {
                     JTextArea view = (JTextArea) quickNoteForm.getScrollPane().getViewport().getView();
                     TextAreaUtil.deleteSelectedLine(view);
                 }
+                QuickNoteListener.quickSave(true);
             }
 
             @Override
