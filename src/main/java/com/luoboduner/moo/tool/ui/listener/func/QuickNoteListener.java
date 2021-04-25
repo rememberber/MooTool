@@ -74,6 +74,7 @@ public class QuickNoteListener {
                 quickSave(false);
                 int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
                 String name = quickNoteForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
+                selectedName = name;
                 TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
                 QuickNotePlainTextViewer plainTextViewer = QuickNoteForm.quickNotePlainTextViewerManager.getPlainTextViewer(name);
                 plainTextViewer.setText(tQuickNote.getContent());
@@ -339,6 +340,7 @@ public class QuickNoteListener {
                         Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
                         quickNoteMapper.deleteByPrimaryKey(id);
                     }
+                    selectedName = null;
                     QuickNoteForm.initNoteListTable();
                 }
             }
