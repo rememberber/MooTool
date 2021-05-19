@@ -34,7 +34,7 @@
         <okhttp.version>4.9.0</okhttp.version>
         <google.zxing.core.version>3.4.1</google.zxing.core.version>
         <flatlaf.version>1.1.2</flatlaf.version>
-        <flatlaf-extras.version>1.1.2</flatlaf-extras.version>
+        <flatlaf-extras.version>1.2</flatlaf-extras.version>
     </properties>
 
     <dependencies>
