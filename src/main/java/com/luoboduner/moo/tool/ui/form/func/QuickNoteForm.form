@@ -20,7 +20,7 @@
         <properties>
           <continuousLayout value="true"/>
           <dividerLocation value="7"/>
-          <dividerSize value="2"/>
+          <dividerSize value="10"/>
         </properties>
         <border type="none"/>
         <children>
