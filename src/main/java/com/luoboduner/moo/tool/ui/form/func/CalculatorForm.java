@@ -67,7 +67,7 @@ public class CalculatorForm {
 
     public static void calculate() {
         try {
-            String inputExpress = calculatorForm.getInputExpressTextField().getText();
+            String inputExpress = calculatorForm.getInputExpressTextField().getText().replace("（", "(").replace("）", ")");
             Calculator calc = new Calculator();
             Double str = calc.prepareParam(inputExpress + "=");
             String resultStr = CalculatorUtil.formatResult(String.format("%." + CalculatorUtil.RESULT_DECIMAL_MAX_LENGTH + "f", str));
