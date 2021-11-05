@@ -227,7 +227,16 @@
 <!--                            </additionalResources>-->
 <!--                            <linuxConfig>...</linuxConfig>-->
 <!--                            <macConfig>...</macConfig>-->
-<!--                            <winConfig>...</winConfig>-->
+                            <winConfig>
+
+                                <!-- general properties -->
+                                <generateSetup>true</generateSetup>
+                                <generateMsi>true</generateMsi>
+
+                                <!-- setup generation properties -->
+                                <setupMode>installForAllUsers</setupMode>
+                                <createDesktopIconTask>true</createDesktopIconTask>
+                            </winConfig>
                         </configuration>
                     </execution>
                 </executions>
