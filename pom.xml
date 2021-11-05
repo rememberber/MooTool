@@ -200,6 +200,38 @@
                     <overwrite>true</overwrite>
                 </configuration>
             </plugin>
+            <plugin>
+                <groupId>io.github.fvarrui</groupId>
+                <artifactId>javapackager</artifactId>
+                <version>1.6.2</version>
+                <executions>
+                    <execution>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>package</goal>
+                        </goals>
+                        <configuration>
+                            <!-- mandatory -->
+                            <mainClass>com.luoboduner.moo.tool.App</mainClass>
+                            <!-- optional -->
+                            <bundleJre>true</bundleJre>
+                            <generateInstaller>true</generateInstaller>
+                            <administratorRequired>true</administratorRequired>
+                            <createTarball>true</createTarball>
+                            <createZipball>true</createZipball>
+                            <platform>auto</platform>
+<!--                            <additionalResources>-->
+<!--                                <additionalResource>file path</additionalResource>-->
+<!--                                <additionalResource>folder path</additionalResource>-->
+<!--                                <additionalResource>...</additionalResource>-->
+<!--                            </additionalResources>-->
+<!--                            <linuxConfig>...</linuxConfig>-->
+<!--                            <macConfig>...</macConfig>-->
+<!--                            <winConfig>...</winConfig>-->
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
         </plugins>
     </build>
 </project>
