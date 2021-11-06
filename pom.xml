@@ -177,11 +177,13 @@
                                 <!-- general properties -->
                                 <generateSetup>true</generateSetup>
                                 <generateMsi>true</generateMsi>
+                                <generateMsm>true</generateMsm>
 
                                 <!-- setup generation properties -->
                                 <setupMode>installForAllUsers</setupMode>
-                                <createDesktopIconTask>true</createDesktopIconTask>
+                                <!--                                <createDesktopIconTask>true</createDesktopIconTask>-->
                                 <disableDirPage>false</disableDirPage>
+                                <disableFinishedPage>false</disableFinishedPage>
                                 <setupLanguages>
                                     <english>compiler:Default.isl</english>
                                     <!--                                    <spanish>compiler:Languages\Chinese.isl</spanish>-->
@@ -189,30 +191,30 @@
                             </winConfig>
                         </configuration>
                     </execution>
-                    <execution>
-                        <id>bundling-for-linux</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>package</goal>
-                        </goals>
-                        <configuration>
-                            <platform>linux</platform>
-                            <createTarball>true</createTarball>
-                            <jdkPath>X:\\path\to\linux\jdk</jdkPath>
-                        </configuration>
-                    </execution>
-                    <execution>
-                        <id>bundling-for-mac</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>package</goal>
-                        </goals>
-                        <configuration>
-                            <platform>mac</platform>
-                            <createTarball>true</createTarball>
-                            <jdkPath>X:\\path\to\mac\jdk</jdkPath>
-                        </configuration>
-                    </execution>
+                    <!--                    <execution>-->
+                    <!--                        <id>bundling-for-linux</id>-->
+                    <!--                        <phase>package</phase>-->
+                    <!--                        <goals>-->
+                    <!--                            <goal>package</goal>-->
+                    <!--                        </goals>-->
+                    <!--                        <configuration>-->
+                    <!--                            <platform>linux</platform>-->
+                    <!--                            <createTarball>true</createTarball>-->
+                    <!--                            <jdkPath>X:\\path\to\linux\jdk</jdkPath>-->
+                    <!--                        </configuration>-->
+                    <!--                    </execution>-->
+                    <!--                    <execution>-->
+                    <!--                        <id>bundling-for-mac</id>-->
+                    <!--                        <phase>package</phase>-->
+                    <!--                        <goals>-->
+                    <!--                            <goal>package</goal>-->
+                    <!--                        </goals>-->
+                    <!--                        <configuration>-->
+                    <!--                            <platform>mac</platform>-->
+                    <!--                            <createTarball>true</createTarball>-->
+                    <!--                            <jdkPath>X:\\path\to\mac\jdk</jdkPath>-->
+                    <!--                        </configuration>-->
+                    <!--                    </execution>-->
                 </executions>
             </plugin>
         </plugins>
