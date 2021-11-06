@@ -34,8 +34,6 @@ import java.awt.*;
 public class MainWindow {
     private JTabbedPane tabbedPane;
     private JPanel mainPanel;
-    private JPanel aboutPanel;
-    private JPanel settingPanel;
     private JPanel quickNotePanel;
     private JPanel jsonBeautyPanel;
     private JPanel timeConvertPanel;
@@ -69,8 +67,6 @@ public class MainWindow {
     public void init() {
         mainWindow = getInstance();
         mainWindow.getMainPanel().updateUI();
-        mainWindow.getAboutPanel().add(AboutForm.getInstance().getAboutPanel(), gridConstraints);
-        mainWindow.getSettingPanel().add(SettingForm.getInstance().getSettingPanel(), gridConstraints);
         mainWindow.getQuickNotePanel().add(QuickNoteForm.getInstance().getQuickNotePanel(), gridConstraints);
         mainWindow.getJsonBeautyPanel().add(JsonBeautyForm.getInstance().getJsonBeautyPanel(), gridConstraints);
         mainWindow.getTimeConvertPanel().add(TimeConvertForm.getInstance().getTimeConvertPanel(), gridConstraints);
@@ -129,7 +125,7 @@ public class MainWindow {
         tabbedPane.addTab("编码转换", new ImageIcon(getClass().getResource("/icon/exchange.png")), encodePanel);
         qrCodePanel = new JPanel();
         qrCodePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("二维码生成", new ImageIcon(getClass().getResource("/icon/QR_code.png")), qrCodePanel);
+        tabbedPane.addTab("二维码", new ImageIcon(getClass().getResource("/icon/QR_code.png")), qrCodePanel);
         cryptoPanel = new JPanel();
         cryptoPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("加解密/随机", new ImageIcon(getClass().getResource("/icon/method.png")), cryptoPanel);
@@ -154,12 +150,6 @@ public class MainWindow {
         regexPanel = new JPanel();
         regexPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("正则表达式", new ImageIcon(getClass().getResource("/icon/reg.png")), regexPanel);
-        settingPanel = new JPanel();
-        settingPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("设置", new ImageIcon(getClass().getResource("/icon/gear.png")), settingPanel);
-        aboutPanel = new JPanel();
-        aboutPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("关于", new ImageIcon(getClass().getResource("/icon/logo-16.png")), aboutPanel);
     }
 
     /**

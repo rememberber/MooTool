@@ -1,24 +1,11 @@
 package com.luoboduner.moo.tool.ui.frame;
 
 import cn.hutool.core.thread.ThreadUtil;
-import com.apple.eawt.Application;
 import com.luoboduner.moo.tool.ui.UiConsts;
-import com.luoboduner.moo.tool.ui.listener.AboutListener;
+import com.luoboduner.moo.tool.ui.component.TopMenuBar;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
-import com.luoboduner.moo.tool.ui.listener.SettingListener;
 import com.luoboduner.moo.tool.ui.listener.TabListener;
-import com.luoboduner.moo.tool.ui.listener.func.CalculatorListener;
-import com.luoboduner.moo.tool.ui.listener.func.ColorBoardListener;
-import com.luoboduner.moo.tool.ui.listener.func.CryptoListener;
-import com.luoboduner.moo.tool.ui.listener.func.EnCodeListener;
-import com.luoboduner.moo.tool.ui.listener.func.HostListener;
-import com.luoboduner.moo.tool.ui.listener.func.HttpRequestListener;
-import com.luoboduner.moo.tool.ui.listener.func.ImageListener;
-import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
-import com.luoboduner.moo.tool.ui.listener.func.NetListener;
-import com.luoboduner.moo.tool.ui.listener.func.QrCodeListener;
-import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
-import com.luoboduner.moo.tool.ui.listener.func.TimeConvertListener;
+import com.luoboduner.moo.tool.ui.listener.func.*;
 import com.luoboduner.moo.tool.util.ComponentUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 
@@ -42,14 +29,16 @@ public class MainFrame extends JFrame {
         FrameUtil.setFrameIcon(this);
         // Mac系统Dock图标
         if (SystemUtil.isMacOs()) {
-            Application application = Application.getApplication();
-            application.setDockIconImage(UiConsts.IMAGE_LOGO_512);
-            if (!SystemUtil.isMacM1()) {
-                application.setEnabledAboutMenu(false);
-                application.setEnabledPreferencesMenu(false);
-            }
+//            Application application = Application.getApplication();
+//            application.setDockIconImage(UiConsts.IMAGE_LOGO_512);
+//            if (!SystemUtil.isMacM1()) {
+//                application.setEnabledAboutMenu(false);
+//                application.setEnabledPreferencesMenu(false);
+//            }
         }
-
+        TopMenuBar topMenuBar = TopMenuBar.getInstance();
+        topMenuBar.init();
+        setJMenuBar(topMenuBar);
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.8, 0.88);
     }
 
@@ -59,7 +48,6 @@ public class MainFrame extends JFrame {
     public void addListeners() {
         ThreadUtil.execute(FrameListener::addListeners);
         ThreadUtil.execute(TabListener::addListeners);
-        ThreadUtil.execute(AboutListener::addListeners);
         ThreadUtil.execute(QuickNoteListener::addListeners);
         ThreadUtil.execute(TimeConvertListener::addListeners);
         ThreadUtil.execute(JsonBeautyListener::addListeners);
@@ -72,6 +60,5 @@ public class MainFrame extends JFrame {
         ThreadUtil.execute(NetListener::addListeners);
         ThreadUtil.execute(ColorBoardListener::addListeners);
         ThreadUtil.execute(ImageListener::addListeners);
-        ThreadUtil.execute(SettingListener::addListeners);
     }
 }

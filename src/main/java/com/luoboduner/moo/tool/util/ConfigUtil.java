@@ -22,6 +22,10 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     private boolean autoCheckUpdate;
 
+    private boolean defaultMaxWindow;
+
+    private boolean unifiedBackground;
+
     private String beforeVersion;
 
     private String theme;
@@ -104,6 +108,22 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setAutoCheckUpdate(boolean autoCheckUpdate) {
         setting.put("setting.common", "autoCheckUpdate", String.valueOf(autoCheckUpdate));
+    }
+
+    public boolean isDefaultMaxWindow() {
+        return setting.getBool("defaultMaxWindow", "setting.normal", true);
+    }
+
+    public void setDefaultMaxWindow(boolean defaultMaxWindow) {
+        setting.put("setting.normal", "defaultMaxWindow", String.valueOf(defaultMaxWindow));
+    }
+
+    public boolean isUnifiedBackground() {
+        return setting.getBool("unifiedBackground", "setting.normal", true);
+    }
+
+    public void setUnifiedBackground(boolean unifiedBackground) {
+        setting.put("setting.normal", "unifiedBackground", String.valueOf(unifiedBackground));
     }
 
     public int getRecentTabIndex() {

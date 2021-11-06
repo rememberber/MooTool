@@ -56,6 +56,7 @@ public class QrCodeForm {
     private JPanel controlPanel;
     private JScrollPane generateScrollPane;
     private JPanel generateMainPanel;
+    private JSplitPane splitPane;
 
     private static final Log logger = LogFactory.get();
 
@@ -102,7 +103,11 @@ public class QrCodeForm {
             QrConfig config = new QrConfig(size, size);
             String logoPath = qrCodeForm.getLogoPathTextField().getText();
             if (StringUtils.isNotBlank(logoPath)) {
-                config.setImg(logoPath);
+                try {
+                    config.setImg(logoPath);
+                } catch (Exception e) {
+                    logger.error("生成二维码设置log异常{}", ExceptionUtils.getStackTrace(e));
+                }
             }
             String errorCorrectionLevel = (String) qrCodeForm.getErrorCorrectionLevelComboBox().getSelectedItem();
             if ("低".equals(errorCorrectionLevel)) {
@@ -122,7 +127,6 @@ public class QrCodeForm {
 
             saveConfig();
         } catch (Exception ex) {
-            ex.printStackTrace();
             JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
                     JOptionPane.ERROR_MESSAGE);
             logger.error(ExceptionUtils.getStackTrace(ex));
@@ -164,7 +168,7 @@ public class QrCodeForm {
         initUi();
 
         if (SystemUtil.isLinuxOs()) {
-            tempDir = new File(SystemUtil.configHome + File.separator + "temp");
+            tempDir = new File(SystemUtil.CONFIG_HOME + File.separator + "temp");
         } else {
             tempDir = new File(FileUtil.getTmpDirPath() + "MooTool");
         }
@@ -180,11 +184,13 @@ public class QrCodeForm {
         qrCodeForm.getGeneratePanel().removeAll();
         if ("上方".equals(App.config.getMenuBarPosition())) {
             qrCodeForm.getGeneratePanel().add(qrCodeForm.getControlPanel(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-            qrCodeForm.getGeneratePanel().add(qrCodeForm.getGenerateMainPanel(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+            qrCodeForm.getGeneratePanel().add(qrCodeForm.getSplitPane(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         } else if ("下方".equals(App.config.getMenuBarPosition())) {
             qrCodeForm.getGeneratePanel().add(qrCodeForm.getControlPanel(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-            qrCodeForm.getGeneratePanel().add(qrCodeForm.getGenerateMainPanel(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+            qrCodeForm.getGeneratePanel().add(qrCodeForm.getSplitPane(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         }
+
+        qrCodeForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 2));
 
         if (UIUtil.isDarkLaf()) {
             Color bgColor = new Color(30, 30, 30);
@@ -238,11 +244,11 @@ public class QrCodeForm {
         tabbedPane1 = new JTabbedPane();
         qrCodePanel.add(tabbedPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         generatePanel = new JPanel();
-        generatePanel.setLayout(new GridLayoutManager(2, 3, new Insets(0, 0, 0, 0), -1, -1));
+        generatePanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane1.addTab("生成", generatePanel);
         controlPanel = new JPanel();
         controlPanel.setLayout(new GridLayoutManager(1, 10, new Insets(5, 5, 5, 5), -1, -1));
-        generatePanel.add(controlPanel, new GridConstraints(1, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        generatePanel.add(controlPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         generateButton = new JButton();
         generateButton.setText("生成");
         controlPanel.add(generateButton, new GridConstraints(0, 8, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -276,11 +282,21 @@ public class QrCodeForm {
         saveAsButton = new JButton();
         saveAsButton.setText("保存为");
         controlPanel.add(saveAsButton, new GridConstraints(0, 9, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        splitPane = new JSplitPane();
+        splitPane.setContinuousLayout(true);
+        splitPane.setDividerLocation(500);
+        splitPane.setLastDividerLocation(200);
+        generatePanel.add(splitPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(200, 200), null, 0, false));
+        final JScrollPane scrollPane1 = new JScrollPane();
+        splitPane.setLeftComponent(scrollPane1);
+        toGenerateContentTextArea = new JTextArea();
+        toGenerateContentTextArea.setMargin(new Insets(8, 8, 8, 8));
+        scrollPane1.setViewportView(toGenerateContentTextArea);
         generateMainPanel = new JPanel();
-        generateMainPanel.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        generatePanel.add(generateMainPanel, new GridConstraints(0, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        generateMainPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        splitPane.setRightComponent(generateMainPanel);
         generateScrollPane = new JScrollPane();
-        generateMainPanel.add(generateScrollPane, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        generateMainPanel.add(generateScrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         generateScrollPane.setViewportView(panel1);
@@ -289,11 +305,6 @@ public class QrCodeForm {
         qrCodeImageLabel.setHorizontalTextPosition(0);
         qrCodeImageLabel.setText("");
         panel1.add(qrCodeImageLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        final JScrollPane scrollPane1 = new JScrollPane();
-        generateMainPanel.add(scrollPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        toGenerateContentTextArea = new JTextArea();
-        toGenerateContentTextArea.setMargin(new Insets(8, 8, 8, 8));
-        scrollPane1.setViewportView(toGenerateContentTextArea);
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane1.addTab("识别", panel2);
