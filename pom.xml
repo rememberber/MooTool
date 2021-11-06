@@ -6,7 +6,7 @@
 
     <groupId>com.luoboduner.moo.tool</groupId>
     <artifactId>MooTool</artifactId>
-    <version>1.0</version>
+    <version>1.3.5</version>
     <packaging>jar</packaging>
 
     <name>MooTool</name>
@@ -236,6 +236,11 @@
                                 <!-- setup generation properties -->
                                 <setupMode>installForAllUsers</setupMode>
                                 <createDesktopIconTask>true</createDesktopIconTask>
+                                <disableDirPage>false</disableDirPage>
+                                <setupLanguages>
+                                    <english>compiler:Default.isl</english>
+<!--                                    <spanish>compiler:Languages\Chinese.isl</spanish>-->
+                                </setupLanguages>
                             </winConfig>
                         </configuration>
                     </execution>
