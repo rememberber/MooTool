@@ -2,8 +2,8 @@ package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.swing.clipboard.ClipboardUtil;
-import com.bulenkov.iconloader.util.ImageUtil;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.ImageForm;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -15,12 +15,9 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.InputEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
+import java.awt.image.BufferedImage;
+import java.awt.image.ImageObserver;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
@@ -39,7 +36,7 @@ public class ImageListener {
 
     public static Image selectedImage;
 
-    public static final String IMAGE_PATH_PRE_FIX = SystemUtil.configHome + File.separator + "images" + File.separator;
+    public static final String IMAGE_PATH_PRE_FIX = SystemUtil.CONFIG_HOME + File.separator + "images" + File.separator;
 
     public static final Image DEFAULT_IMAGE = Toolkit.getDefaultToolkit().getImage(ImageListener.class.getResource("/icon/image_128.png"));
 
@@ -275,12 +272,10 @@ public class ImageListener {
                 if (isDelete == JOptionPane.YES_OPTION) {
                     DefaultTableModel tableModel = (DefaultTableModel) imageForm.getListTable().getModel();
 
-                    for (int i = selectedRows.length; i > 0; i--) {
-                        int selectedRow = imageForm.getListTable().getSelectedRow();
+                    for (int i = 0; i < selectedRows.length; i++) {
+                        int selectedRow = selectedRows[i];
                         String fileName = (String) tableModel.getValueAt(selectedRow, 0);
                         FileUtil.del(IMAGE_PATH_PRE_FIX + fileName);
-                        tableModel.removeRow(selectedRow);
-                        imageForm.getListTable().updateUI();
                     }
                     selectedName = null;
                     ImageForm.initListTable();
@@ -339,12 +334,12 @@ public class ImageListener {
         if (StringUtils.isEmpty(selectedName)) {
             selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
         }
-        String name = JOptionPane.showInputDialog("名称", selectedName);
+        String name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", selectedName);
         if (StringUtils.isNotBlank(name)) {
             try {
                 if (selectedImage != null) {
                     File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + name + ".png"));
-                    ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
+                    ImageIO.write(toBufferedImage(selectedImage), "png", imageFile);
                     ImageForm.initListTable();
                 }
             } catch (Exception ex) {
@@ -361,18 +356,30 @@ public class ImageListener {
         try {
             if (selectedImage != null && selectedName == null) {
                 String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-                String name = JOptionPane.showInputDialog("名称", tempName);
+                String name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", tempName);
                 if (StringUtils.isNotBlank(name)) {
                     name = name.replace(".png", "");
 
                     File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + name + ".png"));
-                    ImageIO.write(ImageUtil.toBufferedImage(selectedImage), "png", imageFile);
+                    ImageIO.write(toBufferedImage(selectedImage), "png", imageFile);
                     ImageForm.initListTable();
                     selectedName = name;
                 }
             }
         } catch (Exception ex) {
             log.error(ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
+    public static BufferedImage toBufferedImage(Image image) {
+        if (image instanceof BufferedImage) {
+            return (BufferedImage) image;
+        } else {
+            BufferedImage bufferedImage = new BufferedImage(image.getWidth((ImageObserver) null), image.getHeight((ImageObserver) null), 2);
+            Graphics2D g = bufferedImage.createGraphics();
+            g.drawImage(image, 0, 0, (ImageObserver) null);
+            g.dispose();
+            return bufferedImage;
         }
     }
 }

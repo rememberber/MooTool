@@ -15,6 +15,7 @@ import com.luoboduner.moo.tool.domain.TFavoriteColorItem;
 import com.luoboduner.moo.tool.domain.TFavoriteColorList;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.TableInCellColorBlockRenderer;
+import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.frame.FavoriteColorFrame;
 import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
 import com.luoboduner.moo.tool.util.JTableUtil;
@@ -152,7 +153,7 @@ public class FavoriteColorForm {
             }
         });
         newListButton.addActionListener(e -> {
-            String title = JOptionPane.showInputDialog("收藏夹名称", "");
+            String title = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "收藏夹名称", "");
             if (StringUtils.isNotBlank(title)) {
                 try {
                     TFavoriteColorList tFavoriteColorList = new TFavoriteColorList();
@@ -174,7 +175,7 @@ public class FavoriteColorForm {
         });
 
         // 列表删除按钮事件
-        deleteListButton.addActionListener(e -> ThreadUtil.execute(() -> {
+        deleteListButton.addActionListener(e -> {
             try {
                 int[] selectedRows = favoriteColorForm.getListTable().getSelectedRows();
 
@@ -185,12 +186,10 @@ public class FavoriteColorForm {
                     if (isDelete == JOptionPane.YES_OPTION) {
                         DefaultTableModel tableModel = (DefaultTableModel) favoriteColorForm.getListTable().getModel();
 
-                        for (int i = selectedRows.length; i > 0; i--) {
-                            int selectedRow = favoriteColorForm.getListTable().getSelectedRow();
+                        for (int i = 0; i < selectedRows.length; i++) {
+                            int selectedRow = selectedRows[i];
                             Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
                             favoriteColorListMapper.deleteByPrimaryKey(id);
-
-                            tableModel.removeRow(selectedRow);
                         }
                         initListTable();
                     }
@@ -200,10 +199,10 @@ public class FavoriteColorForm {
                         JOptionPane.ERROR_MESSAGE);
                 logger.error(ExceptionUtils.getStackTrace(e1));
             }
-        }));
+        });
 
         // Item删除按钮事件
-        deleteItemButton.addActionListener(e -> ThreadUtil.execute(() -> {
+        deleteItemButton.addActionListener(e -> {
             try {
                 int[] selectedRows = favoriteColorForm.getItemTable().getSelectedRows();
 
@@ -227,7 +226,7 @@ public class FavoriteColorForm {
                         JOptionPane.ERROR_MESSAGE);
                 logger.error(ExceptionUtils.getStackTrace(e1));
             }
-        }));
+        });
         moveUpButton.addActionListener(e -> {
             try {
                 int[] selectedRows = favoriteColorForm.getItemTable().getSelectedRows();

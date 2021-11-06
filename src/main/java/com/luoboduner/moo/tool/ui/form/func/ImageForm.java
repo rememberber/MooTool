@@ -69,7 +69,7 @@ public class ImageForm {
     }
 
     private void previewHint() {
-        JOptionPane.showMessageDialog(MainWindow.getInstance().getSettingPanel(), "\n该功能尚未实现，目前仅供UI预览\n" +
+        JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "\n该功能尚未实现，目前仅供UI预览\n" +
                         "\n", "预览提示",
                 JOptionPane.INFORMATION_MESSAGE);
     }
@@ -116,6 +116,9 @@ public class ImageForm {
 
         Object[] data;
 
+        if (!FileUtil.exist(ImageListener.IMAGE_PATH_PRE_FIX)) {
+            FileUtil.mkdir(ImageListener.IMAGE_PATH_PRE_FIX);
+        }
         List<String> fileNames = FileUtil.listFileNames(ImageListener.IMAGE_PATH_PRE_FIX);
         for (String fileName : fileNames) {
             data = new Object[2];
@@ -156,7 +159,7 @@ public class ImageForm {
         splitPane = new JSplitPane();
         splitPane.setContinuousLayout(true);
         splitPane.setDividerLocation(204);
-        splitPane.setDividerSize(2);
+        splitPane.setDividerSize(10);
         imagePanel.add(splitPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));

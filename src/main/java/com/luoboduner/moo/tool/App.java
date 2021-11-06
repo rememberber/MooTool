@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool;
 
+import com.formdev.flatlaf.util.SystemInfo;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.form.LoadingForm;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
@@ -37,24 +38,35 @@ public class App {
     public static PopupMenu popupMenu;
 
     public static void main(String[] args) {
+
+        if (SystemInfo.isMacOS) {
+//            java -Xdock:name="MooTool" -Xdock:icon=MooTool.jpg ... (whatever else you normally specify here)
+//            java -Xms64m -Xmx256m -Dapple.awt.application.name="MooTool" -Dcom.apple.mrj.application.apple.menu.about.name="MooTool" -cp "./lib/*" com.luoboduner.moo.tool.App
+            System.setProperty("apple.laf.useScreenMenuBar", "true");
+            System.setProperty("apple.awt.application.name", "MooTool");
+            System.setProperty("com.apple.mrj.application.apple.menu.about.name", "MooTool");
+        }
+
         Init.initTheme();
         mainFrame = new MainFrame();
         mainFrame.init();
         JPanel loadingPanel = new LoadingForm().getLoadingPanel();
         mainFrame.add(loadingPanel);
+        mainFrame.pack();
+        mainFrame.setVisible(true);
+
         Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        if (screenSize.getWidth() <= 1366) {
+        if (config.isDefaultMaxWindow() || screenSize.getWidth() <= 1366) {
             // 低分辨率下自动最大化窗口
             mainFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
         }
-        mainFrame.pack();
-        mainFrame.setVisible(true);
+
         UpgradeUtil.smoothUpgrade();
 
         mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         Init.initGlobalFont();
         mainFrame.setContentPane(MainWindow.getInstance().getMainPanel());
-        if (App.config.getRecentTabIndex() != 3) {
+        if (App.config.getRecentTabIndex() != 3 && MainWindow.getInstance().getTabbedPane().getTabCount() > App.config.getRecentTabIndex()) {
             MainWindow.getInstance().getTabbedPane().setSelectedIndex(App.config.getRecentTabIndex());
         }
         MainWindow.getInstance().init();
@@ -62,6 +74,6 @@ public class App {
         Init.initOthers();
         mainFrame.addListeners();
         mainFrame.remove(loadingPanel);
-        Init.initFontSize();
+        Init.fontSizeGuide();
     }
 }

@@ -64,6 +64,21 @@ public class NetListener {
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
+        netForm.getFlushDnsButton().addActionListener(e -> {
+            try {
+                String flushDnsStr;
+                if (SystemUtil.isWindowsOs()) {
+                    flushDnsStr = RuntimeUtil.execForStr("ipconfig /flushdns");
+                } else {
+                    flushDnsStr = RuntimeUtil.execForStr("killall -HUP mDNSResponder");
+                }
+                netForm.getIpConfigTextArea().setText(flushDnsStr);
+                netForm.getIpConfigTextArea().setCaretPosition(0);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
         netForm.getIpv4ToLongButton().addActionListener(e -> {
             try {
                 String ipv4 = netForm.getIpv4TextField().getText().trim();

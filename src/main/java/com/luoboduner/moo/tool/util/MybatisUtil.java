@@ -35,7 +35,7 @@ public class MybatisUtil {
      */
     private static boolean needInit = false;
 
-    private static File dbFile = new File(SystemUtil.configHome + File.separator + "MooTool.db");
+    private static File dbFile = new File(SystemUtil.CONFIG_HOME + File.separator + "MooTool.db");
 
     private MybatisUtil() {
 
@@ -74,7 +74,7 @@ public class MybatisUtil {
      * 初始化数据库文件
      */
     public static void initDbFile() throws SQLException {
-        File configHomeDir = new File(SystemUtil.configHome);
+        File configHomeDir = new File(SystemUtil.CONFIG_HOME);
         if (!configHomeDir.exists()) {
             configHomeDir.mkdirs();
         }

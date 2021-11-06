@@ -11,6 +11,7 @@ import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
+import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -142,6 +143,8 @@ public class HostForm {
         // 隐藏id列
         JTableUtil.hideColumn(hostForm.getNoteListTable(), 0);
 
+        List<THost> hostList = hostMapper.selectAll();
+
         if (!SystemUtil.isLinuxOs()) {
             App.popupMenu.removeAll();
             MenuItem openItem = new MenuItem("MooTool");
@@ -168,7 +171,6 @@ public class HostForm {
             App.popupMenu.add(colorPickerItem);
             App.popupMenu.addSeparator();
 
-            List<THost> hostList = hostMapper.selectAll();
             MenuItem menuItem;
             Object[] data;
             for (THost tHost : hostList) {
@@ -188,18 +190,15 @@ public class HostForm {
             App.popupMenu.add(exitItem);
         }
 
-        String content;
-        if (SystemUtil.isWindowsOs()) {
-            content = FileUtil.readUtf8String(HostForm.WIN_HOST_FILE_PATH);
-        } else if (SystemUtil.isMacOs()) {
-            content = FileUtil.readUtf8String(HostForm.MAC_HOST_FILE_PATH);
-        } else {
-            content = HostForm.NOT_SUPPORTED_TIPS;
+        if (hostList.size() > 0) {
+            hostForm.getTextArea().setText(hostList.get(0).getContent());
+            hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
+            JsonBeautyListener.selectedNameJson = hostList.get(0).getName();
         }
-        hostForm.getTextArea().setEditable(false);
-        hostForm.getSwitchButton().setVisible(false);
-        hostForm.getTextArea().setText(content);
-        hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
+
+        if (hostForm.getNoteListTable().getRowCount() > 0) {
+            hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
+        }
     }
 
     private static void highlightHostMenu(String hostName) {
@@ -240,7 +239,7 @@ public class HostForm {
         splitPane = new JSplitPane();
         splitPane.setContinuousLayout(true);
         splitPane.setDividerLocation(200);
-        splitPane.setDividerSize(2);
+        splitPane.setDividerSize(10);
         hostPanel.add(splitPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));

@@ -7,23 +7,7 @@ import com.formdev.flatlaf.FlatLightLaf;
 import com.formdev.flatlaf.IntelliJTheme;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
-import com.luoboduner.moo.tool.ui.form.AboutForm;
-import com.luoboduner.moo.tool.ui.form.SettingForm;
-import com.luoboduner.moo.tool.ui.form.func.CalculatorForm;
-import com.luoboduner.moo.tool.ui.form.func.ColorBoardForm;
-import com.luoboduner.moo.tool.ui.form.func.CronForm;
-import com.luoboduner.moo.tool.ui.form.func.CryptoForm;
-import com.luoboduner.moo.tool.ui.form.func.EnCodeForm;
-import com.luoboduner.moo.tool.ui.form.func.HostForm;
-import com.luoboduner.moo.tool.ui.form.func.HttpRequestForm;
-import com.luoboduner.moo.tool.ui.form.func.ImageForm;
-import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
-import com.luoboduner.moo.tool.ui.form.func.NetForm;
-import com.luoboduner.moo.tool.ui.form.func.QrCodeForm;
-import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
-import com.luoboduner.moo.tool.ui.form.func.RegexForm;
-import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
-import com.luoboduner.moo.tool.ui.form.func.TranslationForm;
+import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -31,7 +15,6 @@ import com.luoboduner.moo.tool.util.UIUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.jb2011.lnf.beautyeye.BeautyEyeLNFHelper;
 
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
@@ -120,45 +103,96 @@ public class Init {
             return;
         }
 
+        if (App.config.isUnifiedBackground()) {
+            UIManager.put("TitlePane.unifiedBackground", true);
+        }
+
         try {
             switch (App.config.getTheme()) {
-                case "BeautyEye":
-                    BeautyEyeLNFHelper.launchBeautyEyeLNF();
-                    UIManager.put("RootPane.setupButtonVisible", false);
-                    break;
                 case "系统默认":
                     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
                     break;
-                case "weblaf":
-                case "Darcula(推荐)":
-                    UIManager.setLookAndFeel("com.bulenkov.darcula.DarculaLaf");
-                    break;
                 case "Flat Light":
+                    if (SystemUtil.isJBR()) {
+                        JFrame.setDefaultLookAndFeelDecorated(true);
+                        JDialog.setDefaultLookAndFeelDecorated(true);
+                    }
                     FlatLightLaf.install();
                     break;
                 case "Flat IntelliJ":
+                    if (SystemUtil.isJBR()) {
+                        JFrame.setDefaultLookAndFeelDecorated(true);
+                        JDialog.setDefaultLookAndFeelDecorated(true);
+                    }
                     UIManager.setLookAndFeel("com.formdev.flatlaf.FlatIntelliJLaf");
                     break;
                 case "Flat Dark":
+                    if (SystemUtil.isJBR()) {
+                        JFrame.setDefaultLookAndFeelDecorated(true);
+                        JDialog.setDefaultLookAndFeelDecorated(true);
+                    }
                     UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarkLaf");
                     break;
-                case "Flat Darcula":
+                case "BeautyEye":
+                case "Darcula":
+                case "Darcula(推荐)":
+                case "weblaf":
+                case "Flat Darcula(推荐)":
+                    if (SystemUtil.isJBR()) {
+                        JFrame.setDefaultLookAndFeelDecorated(true);
+                        JDialog.setDefaultLookAndFeelDecorated(true);
+                    }
                     UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarculaLaf");
+
+                    UIManager.put("PopupMenu.background", UIManager.getColor("Panel.background"));
+
+/**
+ If you don't like/want it, you can disable it with:
+ UIManager.put( "TitlePane.useWindowDecorations", false );
+
+ It is also possible to disable only the embedded menu bar (and keep the dark title pane) with:
+ UIManager.put( "TitlePane.menuBarEmbedded", false );
+
+ It is also possible to disable this on command line with following VM options:
+ -Dflatlaf.useWindowDecorations=false
+ -Dflatlaf.menuBarEmbedded=false
+
+ If you have following code in your app, you can remove it (no longer necessary):
+ // enable window decorations
+ JFrame.setDefaultLookAndFeelDecorated( true );
+ JDialog.setDefaultLookAndFeelDecorated( true );
+ **/
                     break;
                 case "Dark purple":
+                    if (SystemUtil.isJBR()) {
+                        JFrame.setDefaultLookAndFeelDecorated(true);
+                        JDialog.setDefaultLookAndFeelDecorated(true);
+                    }
                     IntelliJTheme.install(App.class.getResourceAsStream(
                             "/theme/DarkPurple.theme.json"));
                     break;
                 case "IntelliJ Cyan":
+                    if (SystemUtil.isJBR()) {
+                        JFrame.setDefaultLookAndFeelDecorated(true);
+                        JDialog.setDefaultLookAndFeelDecorated(true);
+                    }
                     IntelliJTheme.install(App.class.getResourceAsStream(
                             "/theme/Cyan.theme.json"));
                     break;
                 case "IntelliJ Light":
+                    if (SystemUtil.isJBR()) {
+                        JFrame.setDefaultLookAndFeelDecorated(true);
+                        JDialog.setDefaultLookAndFeelDecorated(true);
+                    }
                     IntelliJTheme.install(App.class.getResourceAsStream(
                             "/theme/Light.theme.json"));
                     break;
 
                 default:
+                    if (SystemUtil.isJBR()) {
+                        JFrame.setDefaultLookAndFeelDecorated(true);
+                        JDialog.setDefaultLookAndFeelDecorated(true);
+                    }
                     UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarculaLaf");
             }
         } catch (Exception e) {
@@ -170,13 +204,11 @@ public class Init {
      * 初始化所有tab
      */
     public static void initAllTab() {
-        ThreadUtil.execute(SettingForm::init);
         ThreadUtil.execute(QuickNoteForm::init);
         ThreadUtil.execute(JsonBeautyForm::init);
         ThreadUtil.execute(TimeConvertForm::init);
         ThreadUtil.execute(HostForm::init);
         ThreadUtil.execute(HttpRequestForm::init);
-        ThreadUtil.execute(AboutForm::init);
         ThreadUtil.execute(EnCodeForm::init);
         ThreadUtil.execute(QrCodeForm::init);
         ThreadUtil.execute(CryptoForm::init);
@@ -198,7 +230,7 @@ public class Init {
     /**
      * 引导用户调整字号
      */
-    public static void initFontSize() {
+    public static void fontSizeGuide() {
         if (StringUtils.isEmpty(App.config.getProps(FONT_SIZE_INIT_PROP))) {
             FontSizeAdjustDialog fontSizeAdjustDialog = new FontSizeAdjustDialog();
             fontSizeAdjustDialog.pack();

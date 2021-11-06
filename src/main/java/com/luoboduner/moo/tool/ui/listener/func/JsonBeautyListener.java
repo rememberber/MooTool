@@ -6,6 +6,7 @@ import cn.hutool.json.JSONUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
+import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.FindResultForm;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
 import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
@@ -20,12 +21,7 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ItemEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.io.File;
 import java.util.Date;
 
@@ -59,7 +55,7 @@ public class JsonBeautyListener {
             if (StringUtils.isEmpty(selectedNameJson)) {
                 selectedNameJson = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
             }
-            String name = JOptionPane.showInputDialog("名称", selectedNameJson);
+            String name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", selectedNameJson);
             if (StringUtils.isNotBlank(name)) {
                 TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByName(name);
                 if (tJsonBeauty == null) {
@@ -405,13 +401,10 @@ public class JsonBeautyListener {
                 if (isDelete == JOptionPane.YES_OPTION) {
                     DefaultTableModel tableModel = (DefaultTableModel) jsonBeautyForm.getNoteListTable().getModel();
 
-                    for (int i = selectedRows.length; i > 0; i--) {
-                        int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
+                    for (int i = 0; i < selectedRows.length; i++) {
+                        int selectedRow = selectedRows[i];
                         Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
                         jsonBeautyMapper.deleteByPrimaryKey(id);
-
-                        tableModel.removeRow(selectedRow);
-                        jsonBeautyForm.getNoteListTable().updateUI();
                     }
                     selectedNameJson = null;
                     JsonBeautyForm.initListTable();
@@ -442,7 +435,7 @@ public class JsonBeautyListener {
             jsonBeautyMapper.updateByName(tJsonBeauty);
         } else {
             String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-            String name = JOptionPane.showInputDialog("名称", tempName);
+            String name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", tempName);
             if (StringUtils.isNotBlank(name)) {
                 TJsonBeauty tJsonBeauty = new TJsonBeauty();
                 tJsonBeauty.setName(name);
