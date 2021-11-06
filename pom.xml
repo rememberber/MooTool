@@ -204,29 +204,22 @@
                 <groupId>io.github.fvarrui</groupId>
                 <artifactId>javapackager</artifactId>
                 <version>1.6.2</version>
+                <configuration>
+                    <bundleJre>true</bundleJre>
+                    <mainClass>com.luoboduner.moo.tool.App</mainClass>
+                    <generateInstaller>true</generateInstaller>
+                </configuration>
                 <executions>
                     <execution>
+                        <id>bundling-for-windows</id>
                         <phase>package</phase>
                         <goals>
                             <goal>package</goal>
                         </goals>
                         <configuration>
-                            <!-- mandatory -->
-                            <mainClass>com.luoboduner.moo.tool.App</mainClass>
-                            <!-- optional -->
-                            <bundleJre>true</bundleJre>
-                            <generateInstaller>true</generateInstaller>
-                            <administratorRequired>true</administratorRequired>
-                            <createTarball>true</createTarball>
+                            <platform>windows</platform>
                             <createZipball>true</createZipball>
-                            <platform>auto</platform>
-<!--                            <additionalResources>-->
-<!--                                <additionalResource>file path</additionalResource>-->
-<!--                                <additionalResource>folder path</additionalResource>-->
-<!--                                <additionalResource>...</additionalResource>-->
-<!--                            </additionalResources>-->
-<!--                            <linuxConfig>...</linuxConfig>-->
-<!--                            <macConfig>...</macConfig>-->
+                            <administratorRequired>true</administratorRequired>
                             <winConfig>
 
                                 <!-- general properties -->
@@ -239,9 +232,33 @@
                                 <disableDirPage>false</disableDirPage>
                                 <setupLanguages>
                                     <english>compiler:Default.isl</english>
-<!--                                    <spanish>compiler:Languages\Chinese.isl</spanish>-->
+                                    <!--                                    <spanish>compiler:Languages\Chinese.isl</spanish>-->
                                 </setupLanguages>
                             </winConfig>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>bundling-for-linux</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>package</goal>
+                        </goals>
+                        <configuration>
+                            <platform>linux</platform>
+                            <createTarball>true</createTarball>
+                            <jdkPath>X:\\path\to\linux\jdk</jdkPath>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>bundling-for-mac</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>package</goal>
+                        </goals>
+                        <configuration>
+                            <platform>mac</platform>
+                            <createTarball>true</createTarball>
+                            <jdkPath>X:\\path\to\mac\jdk</jdkPath>
                         </configuration>
                     </execution>
                 </executions>
