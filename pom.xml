@@ -181,7 +181,7 @@
 
                                 <!-- setup generation properties -->
                                 <setupMode>installForAllUsers</setupMode>
-                                <!--                                <createDesktopIconTask>true</createDesktopIconTask>-->
+                                <createDesktopIconTask>true</createDesktopIconTask>
                                 <disableDirPage>false</disableDirPage>
                                 <disableFinishedPage>false</disableFinishedPage>
                                 <setupLanguages>
@@ -203,18 +203,18 @@
                     <!--                            <jdkPath>X:\\path\to\linux\jdk</jdkPath>-->
                     <!--                        </configuration>-->
                     <!--                    </execution>-->
-<!--                                        <execution>-->
-<!--                                            <id>bundling-for-mac</id>-->
-<!--                                            <phase>package</phase>-->
-<!--                                            <goals>-->
-<!--                                                <goal>package</goal>-->
-<!--                                            </goals>-->
-<!--                                            <configuration>-->
-<!--                                                <platform>mac</platform>-->
-<!--                                                <createTarball>true</createTarball>-->
-<!--&lt;!&ndash;                                                <jdkPath>X:\\path\to\mac\jdk</jdkPath>&ndash;&gt;-->
-<!--                                            </configuration>-->
-<!--                                        </execution>-->
+                    <!--                                        <execution>-->
+                    <!--                                            <id>bundling-for-mac</id>-->
+                    <!--                                            <phase>package</phase>-->
+                    <!--                                            <goals>-->
+                    <!--                                                <goal>package</goal>-->
+                    <!--                                            </goals>-->
+                    <!--                                            <configuration>-->
+                    <!--                                                <platform>mac</platform>-->
+                    <!--                                                <createTarball>true</createTarball>-->
+                    <!--&lt;!&ndash;                                                <jdkPath>X:\\path\to\mac\jdk</jdkPath>&ndash;&gt;-->
+                    <!--                                            </configuration>-->
+                    <!--                                        </execution>-->
                 </executions>
             </plugin>
         </plugins>
