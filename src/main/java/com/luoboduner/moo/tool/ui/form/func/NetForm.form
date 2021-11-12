@@ -39,6 +39,7 @@
                   <component id="c0428" class="javax.swing.JTextArea" binding="ipConfigTextArea">
                     <constraints/>
                     <properties>
+                      <editable value="false"/>
                       <margin top="5" left="5" bottom="5" right="5"/>
                     </properties>
                   </component>
