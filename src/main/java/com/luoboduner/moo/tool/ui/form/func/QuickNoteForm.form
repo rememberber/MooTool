@@ -19,8 +19,8 @@
         </constraints>
         <properties>
           <continuousLayout value="true"/>
-          <dividerLocation value="7"/>
-          <dividerSize value="10"/>
+          <dividerLocation value="300"/>
+          <dividerSize value="6"/>
         </properties>
         <border type="none"/>
         <children>
@@ -84,7 +84,7 @@
               </scrollpane>
             </children>
           </grid>
-          <grid id="d9840" binding="rightPanel" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="d9840" binding="rightPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
               <splitpane position="right"/>
@@ -92,10 +92,10 @@
             <properties/>
             <border type="none"/>
             <children>
-              <grid id="e85ff" binding="controlPanel" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+              <grid id="e85ff" binding="controlPanel" layout-manager="GridLayoutManager" row-count="3" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="5" left="5" bottom="5" right="5"/>
                 <constraints>
-                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties/>
                 <border type="none"/>
@@ -314,7 +314,7 @@
                         <children>
                           <component id="f151c" class="javax.swing.JSeparator" binding="findMenuSeparator">
                             <constraints>
-                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="6" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                             </constraints>
                             <properties/>
                           </component>
@@ -322,16 +322,16 @@
                       </grid>
                     </children>
                   </grid>
+                  <scrollpane id="4d18c" binding="scrollPane">
+                    <constraints>
+                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none"/>
+                    <children/>
+                  </scrollpane>
                 </children>
               </grid>
-              <scrollpane id="4d18c" binding="scrollPane">
-                <constraints>
-                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties/>
-                <border type="none"/>
-                <children/>
-              </scrollpane>
             </children>
           </grid>
         </children>
