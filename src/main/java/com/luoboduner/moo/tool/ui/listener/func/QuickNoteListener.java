@@ -205,6 +205,10 @@ public class QuickNoteListener {
             quickNoteForm.getFindTextField().selectAll();
         });
 
+        quickNoteForm.getQuickReplaceButton().addActionListener(e -> {
+            quickNoteForm.getQuickReplaceScrollPane().setVisible(true);
+        });
+
         quickNoteForm.getFindTextField().addKeyListener(new KeyListener() {
             @Override
             public void keyReleased(KeyEvent arg0) {
@@ -281,6 +285,24 @@ public class QuickNoteListener {
             @Override
             public void mouseClicked(MouseEvent e) {
                 quickNoteForm.getFindReplacePanel().setVisible(false);
+                super.mouseClicked(e);
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                super.mousePressed(e);
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                super.mouseEntered(e);
+            }
+        });
+
+        quickNoteForm.getQuickReplaceCloseLabel().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                quickNoteForm.getQuickReplaceScrollPane().setVisible(false);
                 super.mouseClicked(e);
             }
 
