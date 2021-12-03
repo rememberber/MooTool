@@ -3,7 +3,7 @@
   <grid id="27dc6" binding="quickNotePanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="0" left="0" bottom="0" right="0"/>
     <constraints>
-      <xy x="20" y="20" width="1038" height="651"/>
+      <xy x="20" y="20" width="1097" height="651"/>
     </constraints>
     <properties>
       <minimumSize width="400" height="300"/>
@@ -19,8 +19,8 @@
         </constraints>
         <properties>
           <continuousLayout value="true"/>
-          <dividerLocation value="300"/>
-          <dividerSize value="6"/>
+          <dividerLocation value="281"/>
+          <dividerSize value="10"/>
         </properties>
         <border type="none"/>
         <children>
@@ -330,7 +330,7 @@
                       </grid>
                     </children>
                   </grid>
-                  <grid id="267a" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                  <grid id="267a" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
                       <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="true"/>
@@ -338,175 +338,196 @@
                     <properties/>
                     <border type="none"/>
                     <children>
-                      <scrollpane id="4d18c" binding="scrollPane">
+                      <splitpane id="372a0" binding="contentSplitPane">
                         <constraints>
-                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false">
+                            <preferred-size width="200" height="200"/>
+                          </grid>
                         </constraints>
-                        <properties/>
-                        <border type="none"/>
-                        <children/>
-                      </scrollpane>
-                      <scrollpane id="4745d" binding="quickReplaceScrollPane">
-                        <constraints>
-                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="7" hsize-policy="1" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties/>
+                        <properties>
+                          <continuousLayout value="true"/>
+                          <dividerLocation value="200"/>
+                          <doubleBuffered value="true"/>
+                        </properties>
                         <border type="none"/>
                         <children>
-                          <grid id="c2eeb" layout-manager="GridLayoutManager" row-count="17" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                            <margin top="10" left="10" bottom="10" right="10"/>
-                            <constraints/>
+                          <scrollpane id="4d18c" binding="scrollPane">
+                            <constraints>
+                              <splitpane position="left"/>
+                            </constraints>
+                            <properties>
+                              <maximumSize width="-1" height="-1"/>
+                              <minimumSize width="-1" height="-1"/>
+                            </properties>
+                            <border type="none"/>
+                            <children/>
+                          </scrollpane>
+                          <scrollpane id="4745d" binding="quickReplaceScrollPane">
+                            <constraints>
+                              <splitpane position="right"/>
+                            </constraints>
                             <properties>
                               <maximumSize width="-1" height="-1"/>
                               <minimumSize width="-1" height="-1"/>
                             </properties>
                             <border type="none"/>
                             <children>
-                              <component id="8124c" class="javax.swing.JCheckBox" binding="去掉空格CheckBox" default-binding="true">
-                                <constraints>
-                                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                                </constraints>
+                              <grid id="c2eeb" layout-manager="GridLayoutManager" row-count="17" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                                <margin top="10" left="10" bottom="10" right="10"/>
+                                <constraints/>
                                 <properties>
-                                  <text value="去掉空格"/>
+                                  <maximumSize width="-1" height="-1"/>
+                                  <minimumSize width="-1" height="-1"/>
                                 </properties>
-                              </component>
-                              <vspacer id="c9ff8">
-                                <constraints>
-                                  <grid row="16" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
-                                </constraints>
-                              </vspacer>
-                              <component id="ed115" class="javax.swing.JCheckBox" binding="去掉TabTCheckBox" default-binding="true">
-                                <constraints>
-                                  <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                                </constraints>
-                                <properties>
-                                  <text value="去掉Tab(\t)"/>
-                                </properties>
-                              </component>
-                              <component id="1c7c6" class="javax.swing.JCheckBox" binding="科学计数法普通数字CheckBox" default-binding="true">
-                                <constraints>
-                                  <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                                </constraints>
-                                <properties>
-                                  <text value="科学计数法 -&gt; 普通数字"/>
-                                </properties>
-                              </component>
-                              <component id="60e91" class="javax.swing.JCheckBox" binding="普通数字千分位CheckBox" default-binding="true">
-                                <constraints>
-                                  <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                                </constraints>
-                                <properties>
-                                  <text value="普通数字 -&gt; 千分位"/>
-                                </properties>
-                              </component>
-                              <component id="c6efe" class="javax.swing.JCheckBox" binding="换行NCheckBox" default-binding="true">
-                                <constraints>
-                                  <grid row="8" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                                </constraints>
-                                <properties>
-                                  <text value="换行(\n) -&gt; ,"/>
-                                </properties>
-                              </component>
-                              <component id="633bd" class="javax.swing.JCheckBox" binding="换行NCheckBox1" default-binding="true">
-                                <constraints>
-                                  <grid row="9" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                                </constraints>
-                                <properties>
-                                  <text value="换行(\n) -&gt; ','"/>
-                                </properties>
-                              </component>
-                              <component id="f5edd" class="javax.swing.JCheckBox" binding="换行NCheckBox2" default-binding="true">
-                                <constraints>
-                                  <grid row="10" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                                </constraints>
-                                <properties>
-                                  <text value="换行(\n) -&gt; &quot;,&quot;"/>
-                                </properties>
-                              </component>
-                              <component id="a1696" class="javax.swing.JCheckBox" binding="换行CheckBox" default-binding="true">
-                                <constraints>
-                                  <grid row="12" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                                </constraints>
-                                <properties>
-                                  <text value=", -&gt; 换行"/>
-                                </properties>
-                              </component>
-                              <component id="83344" class="javax.swing.JCheckBox" binding="tabT换行CheckBox" default-binding="true">
-                                <constraints>
-                                  <grid row="13" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                                </constraints>
-                                <properties>
-                                  <text value="Tab(\t) -&gt; 换行"/>
-                                </properties>
-                              </component>
-                              <component id="5c20" class="javax.swing.JButton" binding="开始Button" default-binding="true">
-                                <constraints>
-                                  <grid row="15" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="1" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                                </constraints>
-                                <properties>
-                                  <text value="开始"/>
-                                </properties>
-                              </component>
-                              <component id="b017b" class="javax.swing.JSeparator">
-                                <constraints>
-                                  <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="1" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                                </constraints>
-                                <properties/>
-                              </component>
-                              <component id="41647" class="javax.swing.JSeparator">
-                                <constraints>
-                                  <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="1" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                                </constraints>
-                                <properties/>
-                              </component>
-                              <component id="40bb2" class="javax.swing.JSeparator">
-                                <constraints>
-                                  <grid row="11" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="1" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                                </constraints>
-                                <properties/>
-                              </component>
-                              <component id="89985" class="javax.swing.JCheckBox" binding="去掉换行CheckBox" default-binding="true">
-                                <constraints>
-                                  <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                                </constraints>
-                                <properties>
-                                  <text value="去掉换行"/>
-                                </properties>
-                              </component>
-                              <grid id="c6ae" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                                <margin top="0" left="0" bottom="0" right="0"/>
-                                <constraints>
-                                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="1" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                                </constraints>
-                                <properties/>
                                 <border type="none"/>
                                 <children>
-                                  <component id="5363d" class="javax.swing.JLabel" binding="quickReplaceCloseLabel">
+                                  <component id="8124c" class="javax.swing.JCheckBox" binding="去掉空格CheckBox" default-binding="true">
                                     <constraints>
-                                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                                     </constraints>
                                     <properties>
-                                      <icon value="icon/remove_dark.png"/>
-                                      <text value=""/>
+                                      <text value="去掉空格"/>
                                     </properties>
                                   </component>
-                                  <hspacer id="1393">
+                                  <vspacer id="c9ff8">
                                     <constraints>
-                                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                      <grid row="16" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
                                     </constraints>
-                                  </hspacer>
+                                  </vspacer>
+                                  <component id="ed115" class="javax.swing.JCheckBox" binding="去掉TabTCheckBox" default-binding="true">
+                                    <constraints>
+                                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                    <properties>
+                                      <text value="去掉Tab(\t)"/>
+                                    </properties>
+                                  </component>
+                                  <component id="1c7c6" class="javax.swing.JCheckBox" binding="科学计数法普通数字CheckBox" default-binding="true">
+                                    <constraints>
+                                      <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                    <properties>
+                                      <text value="科学计数法 -&gt; 普通数字"/>
+                                    </properties>
+                                  </component>
+                                  <component id="60e91" class="javax.swing.JCheckBox" binding="普通数字千分位CheckBox" default-binding="true">
+                                    <constraints>
+                                      <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                    <properties>
+                                      <text value="普通数字 -&gt; 千分位"/>
+                                    </properties>
+                                  </component>
+                                  <component id="c6efe" class="javax.swing.JCheckBox" binding="换行NCheckBox" default-binding="true">
+                                    <constraints>
+                                      <grid row="8" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                    <properties>
+                                      <text value="换行(\n) -&gt; ,"/>
+                                    </properties>
+                                  </component>
+                                  <component id="633bd" class="javax.swing.JCheckBox" binding="换行NCheckBox1" default-binding="true">
+                                    <constraints>
+                                      <grid row="9" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                    <properties>
+                                      <text value="换行(\n) -&gt; ','"/>
+                                    </properties>
+                                  </component>
+                                  <component id="f5edd" class="javax.swing.JCheckBox" binding="换行NCheckBox2" default-binding="true">
+                                    <constraints>
+                                      <grid row="10" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                    <properties>
+                                      <text value="换行(\n) -&gt; &quot;,&quot;"/>
+                                    </properties>
+                                  </component>
+                                  <component id="a1696" class="javax.swing.JCheckBox" binding="换行CheckBox" default-binding="true">
+                                    <constraints>
+                                      <grid row="12" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                    <properties>
+                                      <text value=", -&gt; 换行"/>
+                                    </properties>
+                                  </component>
+                                  <component id="83344" class="javax.swing.JCheckBox" binding="tabT换行CheckBox" default-binding="true">
+                                    <constraints>
+                                      <grid row="13" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                    <properties>
+                                      <text value="Tab(\t) -&gt; 换行"/>
+                                    </properties>
+                                  </component>
+                                  <component id="5c20" class="javax.swing.JButton" binding="开始Button" default-binding="true">
+                                    <constraints>
+                                      <grid row="15" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="1" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                    <properties>
+                                      <text value="开始"/>
+                                    </properties>
+                                  </component>
+                                  <component id="b017b" class="javax.swing.JSeparator">
+                                    <constraints>
+                                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="1" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                    <properties/>
+                                  </component>
+                                  <component id="41647" class="javax.swing.JSeparator">
+                                    <constraints>
+                                      <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="1" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                    <properties/>
+                                  </component>
+                                  <component id="40bb2" class="javax.swing.JSeparator">
+                                    <constraints>
+                                      <grid row="11" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="1" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                    <properties/>
+                                  </component>
+                                  <component id="89985" class="javax.swing.JCheckBox" binding="去掉换行CheckBox" default-binding="true">
+                                    <constraints>
+                                      <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                    <properties>
+                                      <text value="去掉换行"/>
+                                    </properties>
+                                  </component>
+                                  <grid id="c6ae" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                                    <margin top="0" left="0" bottom="0" right="0"/>
+                                    <constraints>
+                                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="1" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                    <properties/>
+                                    <border type="none"/>
+                                    <children>
+                                      <component id="5363d" class="javax.swing.JLabel" binding="quickReplaceCloseLabel">
+                                        <constraints>
+                                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                        </constraints>
+                                        <properties>
+                                          <icon value="icon/remove_dark.png"/>
+                                          <text value=""/>
+                                        </properties>
+                                      </component>
+                                      <hspacer id="1393">
+                                        <constraints>
+                                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                        </constraints>
+                                      </hspacer>
+                                    </children>
+                                  </grid>
+                                  <component id="205c4" class="javax.swing.JSeparator">
+                                    <constraints>
+                                      <grid row="14" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="1" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                    <properties/>
+                                  </component>
                                 </children>
                               </grid>
-                              <component id="205c4" class="javax.swing.JSeparator">
-                                <constraints>
-                                  <grid row="14" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="1" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                                </constraints>
-                                <properties/>
-                              </component>
                             </children>
-                          </grid>
+                          </scrollpane>
                         </children>
-                      </scrollpane>
+                      </splitpane>
                     </children>
                   </grid>
                 </children>

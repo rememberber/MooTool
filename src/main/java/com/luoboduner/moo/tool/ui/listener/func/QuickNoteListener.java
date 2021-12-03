@@ -207,6 +207,7 @@ public class QuickNoteListener {
 
         quickNoteForm.getQuickReplaceButton().addActionListener(e -> {
             quickNoteForm.getQuickReplaceScrollPane().setVisible(true);
+            quickNoteForm.getContentSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() * 0.5));
         });
 
         quickNoteForm.getFindTextField().addKeyListener(new KeyListener() {

@@ -74,6 +74,7 @@ public class QuickNoteForm {
     private JScrollPane quickReplaceScrollPane;
     private JButton quickReplaceButton;
     private JLabel quickReplaceCloseLabel;
+    private JSplitPane contentSplitPane;
 
     private static QuickNoteForm quickNoteForm;
     private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
@@ -222,8 +223,8 @@ public class QuickNoteForm {
         quickNotePanel.setPreferredSize(new Dimension(400, 300));
         splitPane = new JSplitPane();
         splitPane.setContinuousLayout(true);
-        splitPane.setDividerLocation(300);
-        splitPane.setDividerSize(6);
+        splitPane.setDividerLocation(281);
+        splitPane.setDividerSize(10);
         quickNotePanel.add(splitPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
@@ -361,12 +362,21 @@ public class QuickNoteForm {
         findMenuSeparator = new JSeparator();
         findMenuSeparatorPanel.add(findMenuSeparator, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JPanel panel2 = new JPanel();
-        panel2.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        panel2.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         controlPanel.add(panel2, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, true));
+        contentSplitPane = new JSplitPane();
+        contentSplitPane.setContinuousLayout(true);
+        contentSplitPane.setDividerLocation(200);
+        contentSplitPane.setDoubleBuffered(true);
+        panel2.add(contentSplitPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(200, 200), null, 0, false));
         scrollPane = new JScrollPane();
-        panel2.add(scrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        scrollPane.setMaximumSize(new Dimension(-1, -1));
+        scrollPane.setMinimumSize(new Dimension(-1, -1));
+        contentSplitPane.setLeftComponent(scrollPane);
         quickReplaceScrollPane = new JScrollPane();
-        panel2.add(quickReplaceScrollPane, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, 1, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        quickReplaceScrollPane.setMaximumSize(new Dimension(-1, -1));
+        quickReplaceScrollPane.setMinimumSize(new Dimension(-1, -1));
+        contentSplitPane.setRightComponent(quickReplaceScrollPane);
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new GridLayoutManager(17, 1, new Insets(10, 10, 10, 10), -1, -1));
         panel3.setMaximumSize(new Dimension(-1, -1));
