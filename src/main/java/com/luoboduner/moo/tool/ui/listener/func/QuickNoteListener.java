@@ -25,6 +25,7 @@ import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
 import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
 
@@ -370,6 +371,9 @@ public class QuickNoteListener {
                     split = bigDecimal.toString();
                 }
 
+                if (quickNoteForm.getToThousandthCheckBox().isSelected()) {
+                    split = toThousandth(split);
+                }
 
                 target.add(split);
             }
@@ -523,6 +527,32 @@ public class QuickNoteListener {
         view.setCaretPosition(0);
         quickNoteForm.getScrollPane().getVerticalScrollBar().setValue(0);
         quickNoteForm.getScrollPane().getHorizontalScrollBar().setValue(0);
+    }
+
+
+    /**
+     * 将字符串数字转成千分位显示。
+     */
+    public static String toThousandth(String value) {
+        DecimalFormat decimalFormat;
+        if (value.indexOf(".") > 0) {
+            int afterPointLength = value.length() - value.indexOf(".") - 1;
+
+            StringBuilder formatBuilder = new StringBuilder("###,##0.");
+            for (int i = 0; i < afterPointLength; i++) {
+                formatBuilder.append("0");
+            }
+            decimalFormat = new DecimalFormat(formatBuilder.toString());
+        } else {
+            decimalFormat = new DecimalFormat("###,##0");
+        }
+        double number;
+        try {
+            number = Double.parseDouble(value);
+        } catch (Exception e) {
+            number = 0.0;
+        }
+        return decimalFormat.format(number);
     }
 
 }

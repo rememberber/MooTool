@@ -65,7 +65,7 @@ public class QuickNoteForm {
     private JCheckBox 去掉TabTCheckBox;
     private JCheckBox 去掉换行CheckBox;
     private JCheckBox scientificToNormalCheckBox;
-    private JCheckBox 普通数字千分位CheckBox;
+    private JCheckBox toThousandthCheckBox;
     private JCheckBox 换行NCheckBox;
     private JCheckBox 换行NCheckBox2;
     private JCheckBox 换行CheckBox;
@@ -259,7 +259,7 @@ public class QuickNoteForm {
         controlPanel.setLayout(new GridLayoutManager(3, 1, new Insets(5, 5, 5, 5), -1, -1));
         rightPanel.add(controlPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         menuPanel = new JPanel();
-        menuPanel.setLayout(new GridLayoutManager(1, 9, new Insets(0, 0, 0, 0), -1, -1));
+        menuPanel.setLayout(new GridLayoutManager(1, 9, new Insets(0, 0, 0, 10), -1, -1));
         controlPanel.add(menuPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         saveButton = new JButton();
         saveButton.setIcon(new ImageIcon(getClass().getResource("/icon/menu-saveall_dark.png")));
@@ -396,9 +396,9 @@ public class QuickNoteForm {
         scientificToNormalCheckBox = new JCheckBox();
         scientificToNormalCheckBox.setText("科学计数法 -> 普通数字");
         panel3.add(scientificToNormalCheckBox, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        普通数字千分位CheckBox = new JCheckBox();
-        普通数字千分位CheckBox.setText("普通数字 -> 千分位");
-        panel3.add(普通数字千分位CheckBox, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        toThousandthCheckBox = new JCheckBox();
+        toThousandthCheckBox.setText("普通数字 -> 千分位");
+        panel3.add(toThousandthCheckBox, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         换行NCheckBox = new JCheckBox();
         换行NCheckBox.setText("换行(\\n) -> ,");
         panel3.add(换行NCheckBox, new GridConstraints(8, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
