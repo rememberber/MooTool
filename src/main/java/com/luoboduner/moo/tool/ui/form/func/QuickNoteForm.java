@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -63,12 +64,12 @@ public class QuickNoteForm {
     private JCheckBox 去掉空格CheckBox;
     private JCheckBox 去掉TabTCheckBox;
     private JCheckBox 去掉换行CheckBox;
-    private JCheckBox 科学计数法普通数字CheckBox;
+    private JCheckBox scientificToNormalCheckBox;
     private JCheckBox 普通数字千分位CheckBox;
     private JCheckBox 换行NCheckBox;
     private JCheckBox 换行NCheckBox2;
     private JCheckBox 换行CheckBox;
-    private JButton 开始Button;
+    private JButton startQuickReplaceButton;
     private JCheckBox tabT换行CheckBox;
     private JCheckBox 换行NCheckBox1;
     private JScrollPane quickReplaceScrollPane;
@@ -144,6 +145,8 @@ public class QuickNoteForm {
 
         quickNoteForm.getDeletePanel().setVisible(false);
         quickNoteForm.getQuickNotePanel().updateUI();
+
+        quickNoteForm.getQuickReplaceButton().setIcon(new FlatSVGIcon("icon/replace.svg", 16, 16));
     }
 
     public static void initNoteListTable() {
@@ -320,7 +323,7 @@ public class QuickNoteForm {
         addButton.setToolTipText("新建(Ctrl+N)");
         menuPanel.add(addButton, new GridConstraints(0, 5, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         quickReplaceButton = new JButton();
-        quickReplaceButton.setText("Button");
+        quickReplaceButton.setText("");
         menuPanel.add(quickReplaceButton, new GridConstraints(0, 8, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         findReplacePanel = new JPanel();
         findReplacePanel.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
@@ -390,9 +393,9 @@ public class QuickNoteForm {
         去掉TabTCheckBox = new JCheckBox();
         去掉TabTCheckBox.setText("去掉Tab(\\t)");
         panel3.add(去掉TabTCheckBox, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        科学计数法普通数字CheckBox = new JCheckBox();
-        科学计数法普通数字CheckBox.setText("科学计数法 -> 普通数字");
-        panel3.add(科学计数法普通数字CheckBox, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        scientificToNormalCheckBox = new JCheckBox();
+        scientificToNormalCheckBox.setText("科学计数法 -> 普通数字");
+        panel3.add(scientificToNormalCheckBox, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         普通数字千分位CheckBox = new JCheckBox();
         普通数字千分位CheckBox.setText("普通数字 -> 千分位");
         panel3.add(普通数字千分位CheckBox, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -411,9 +414,9 @@ public class QuickNoteForm {
         tabT换行CheckBox = new JCheckBox();
         tabT换行CheckBox.setText("Tab(\\t) -> 换行");
         panel3.add(tabT换行CheckBox, new GridConstraints(13, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        开始Button = new JButton();
-        开始Button.setText("开始");
-        panel3.add(开始Button, new GridConstraints(15, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, 1, 1, null, null, null, 0, false));
+        startQuickReplaceButton = new JButton();
+        startQuickReplaceButton.setText("开始");
+        panel3.add(startQuickReplaceButton, new GridConstraints(15, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, 1, 1, null, null, null, 0, false));
         final JSeparator separator1 = new JSeparator();
         panel3.add(separator1, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, 1, 1, null, null, null, 0, false));
         final JSeparator separator2 = new JSeparator();

@@ -1,7 +1,9 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ReUtil;
+import com.google.common.collect.Lists;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
@@ -22,7 +24,9 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
+import java.math.BigDecimal;
 import java.util.Date;
+import java.util.List;
 
 /**
  * <pre>
@@ -282,6 +286,8 @@ public class QuickNoteListener {
 
         quickNoteForm.getDoFindButton().addActionListener(e -> find());
 
+        quickNoteForm.getStartQuickReplaceButton().addActionListener(e -> quickReplace());
+
         quickNoteForm.getFindReplaceCloseLabel().addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -345,6 +351,36 @@ public class QuickNoteListener {
                 quickNoteForm.getFindWordsCheckBox().setEnabled(true);
             }
         });
+    }
+
+    private static void quickReplace() {
+        try {
+            QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
+            JTextArea view = (JTextArea) quickNoteForm.getScrollPane().getViewport().getView();
+
+            String content = view.getText();
+
+            String[] splits = content.split("\n");
+
+            List<String> target = Lists.newArrayList();
+            for (String split : splits) {
+
+                if (quickNoteForm.getScientificToNormalCheckBox().isSelected()) {
+                    BigDecimal bigDecimal = NumberUtil.toBigDecimal(split);
+                    split = bigDecimal.toString();
+                }
+
+
+                target.add(split);
+            }
+
+            view.setText(StringUtils.join(target, "\n"));
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e.getMessage(), "失败",
+                    JOptionPane.ERROR_MESSAGE);
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+
     }
 
     private static void deleteFiles(QuickNoteForm quickNoteForm) {
@@ -488,4 +524,5 @@ public class QuickNoteListener {
         quickNoteForm.getScrollPane().getVerticalScrollBar().setValue(0);
         quickNoteForm.getScrollPane().getHorizontalScrollBar().setValue(0);
     }
+
 }
