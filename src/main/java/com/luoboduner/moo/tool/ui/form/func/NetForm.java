@@ -117,6 +117,7 @@ public class NetForm {
         final JScrollPane scrollPane1 = new JScrollPane();
         panel1.add(scrollPane1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         ipConfigTextArea = new JTextArea();
+        ipConfigTextArea.setEditable(false);
         ipConfigTextArea.setMargin(new Insets(5, 5, 5, 5));
         scrollPane1.setViewportView(ipConfigTextArea);
         final JPanel panel2 = new JPanel();

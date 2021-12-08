@@ -1,7 +1,9 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ReUtil;
+import com.google.common.collect.Lists;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
@@ -22,7 +24,10 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
+import java.math.BigDecimal;
+import java.text.DecimalFormat;
 import java.util.Date;
+import java.util.List;
 
 /**
  * <pre>
@@ -205,6 +210,11 @@ public class QuickNoteListener {
             quickNoteForm.getFindTextField().selectAll();
         });
 
+        quickNoteForm.getQuickReplaceButton().addActionListener(e -> {
+            quickNoteForm.getQuickReplaceScrollPane().setVisible(true);
+            quickNoteForm.getContentSplitPane().setDividerLocation((int) (quickNoteForm.getContentSplitPane().getWidth() * 0.62));
+        });
+
         quickNoteForm.getFindTextField().addKeyListener(new KeyListener() {
             @Override
             public void keyReleased(KeyEvent arg0) {
@@ -277,10 +287,31 @@ public class QuickNoteListener {
 
         quickNoteForm.getDoFindButton().addActionListener(e -> find());
 
+        quickNoteForm.getStartQuickReplaceButton().addActionListener(e -> quickReplace());
+
         quickNoteForm.getFindReplaceCloseLabel().addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 quickNoteForm.getFindReplacePanel().setVisible(false);
+                super.mouseClicked(e);
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                super.mousePressed(e);
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                super.mouseEntered(e);
+            }
+        });
+
+        quickNoteForm.getQuickReplaceCloseLabel().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                quickNoteForm.getContentSplitPane().setDividerLocation(quickNoteForm.getContentSplitPane().getWidth());
+                quickNoteForm.getQuickReplaceScrollPane().setVisible(false);
                 super.mouseClicked(e);
             }
 
@@ -322,6 +353,51 @@ public class QuickNoteListener {
                 quickNoteForm.getFindWordsCheckBox().setEnabled(true);
             }
         });
+    }
+
+    private static void quickReplace() {
+        try {
+            QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
+            JTextArea view = (JTextArea) quickNoteForm.getScrollPane().getViewport().getView();
+
+            String content = view.getText();
+
+            String[] splits = content.split("\n");
+
+            List<String> target = Lists.newArrayList();
+            for (String split : splits) {
+
+                if (quickNoteForm.getTrimBlankCheckBox().isSelected()) {
+                    split = split.replace(" ", "");
+                }
+
+                if (quickNoteForm.getClearTabTCheckBox().isSelected()) {
+                    split = split.replace("\t", "");
+                }
+
+                // ------------
+
+                if (quickNoteForm.getScientificToNormalCheckBox().isSelected()) {
+                    BigDecimal bigDecimal = NumberUtil.toBigDecimal(split);
+                    split = bigDecimal.toString();
+                }
+
+                if (quickNoteForm.getToThousandthCheckBox().isSelected()) {
+                    split = toThousandth(split);
+                }
+
+                // ------------
+
+                target.add(split);
+            }
+
+            view.setText(StringUtils.join(target, "\n"));
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e.getMessage(), "失败",
+                    JOptionPane.ERROR_MESSAGE);
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+
     }
 
     private static void deleteFiles(QuickNoteForm quickNoteForm) {
@@ -465,4 +541,31 @@ public class QuickNoteListener {
         quickNoteForm.getScrollPane().getVerticalScrollBar().setValue(0);
         quickNoteForm.getScrollPane().getHorizontalScrollBar().setValue(0);
     }
+
+
+    /**
+     * 将字符串数字转成千分位显示。
+     */
+    public static String toThousandth(String value) {
+        DecimalFormat decimalFormat;
+        if (value.indexOf(".") > 0) {
+            int afterPointLength = value.length() - value.indexOf(".") - 1;
+
+            StringBuilder formatBuilder = new StringBuilder("###,##0.");
+            for (int i = 0; i < afterPointLength; i++) {
+                formatBuilder.append("0");
+            }
+            decimalFormat = new DecimalFormat(formatBuilder.toString());
+        } else {
+            decimalFormat = new DecimalFormat("###,##0");
+        }
+        double number;
+        try {
+            number = Double.parseDouble(value);
+        } catch (Exception e) {
+            number = 0.0;
+        }
+        return decimalFormat.format(number);
+    }
+
 }
