@@ -212,7 +212,7 @@ public class QuickNoteListener {
 
         quickNoteForm.getQuickReplaceButton().addActionListener(e -> {
             quickNoteForm.getQuickReplaceScrollPane().setVisible(true);
-            quickNoteForm.getContentSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() * 0.5));
+            quickNoteForm.getContentSplitPane().setDividerLocation((int) (quickNoteForm.getContentSplitPane().getWidth() * 0.62));
         });
 
         quickNoteForm.getFindTextField().addKeyListener(new KeyListener() {
@@ -310,6 +310,7 @@ public class QuickNoteListener {
         quickNoteForm.getQuickReplaceCloseLabel().addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
+                quickNoteForm.getContentSplitPane().setDividerLocation(quickNoteForm.getContentSplitPane().getWidth());
                 quickNoteForm.getQuickReplaceScrollPane().setVisible(false);
                 super.mouseClicked(e);
             }
@@ -366,6 +367,16 @@ public class QuickNoteListener {
             List<String> target = Lists.newArrayList();
             for (String split : splits) {
 
+                if (quickNoteForm.getTrimBlankCheckBox().isSelected()) {
+                    split = split.replace(" ", "");
+                }
+
+                if (quickNoteForm.getClearTabTCheckBox().isSelected()) {
+                    split = split.replace("\t", "");
+                }
+
+                // ------------
+
                 if (quickNoteForm.getScientificToNormalCheckBox().isSelected()) {
                     BigDecimal bigDecimal = NumberUtil.toBigDecimal(split);
                     split = bigDecimal.toString();
@@ -374,6 +385,8 @@ public class QuickNoteListener {
                 if (quickNoteForm.getToThousandthCheckBox().isSelected()) {
                     split = toThousandth(split);
                 }
+
+                // ------------
 
                 target.add(split);
             }
