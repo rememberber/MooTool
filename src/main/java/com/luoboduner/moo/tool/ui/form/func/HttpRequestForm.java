@@ -468,7 +468,7 @@ public class HttpRequestForm {
      */
     private void $$$setupUI$$$() {
         httpRequestPanel = new JPanel();
-        httpRequestPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        httpRequestPanel.setLayout(new GridLayoutManager(1, 1, new Insets(12, 12, 12, 12), -1, -1));
         httpRequestPanel.setMinimumSize(new Dimension(400, 300));
         httpRequestPanel.setPreferredSize(new Dimension(400, 300));
         splitPane = new JSplitPane();
@@ -481,7 +481,7 @@ public class HttpRequestForm {
         panel1.setMinimumSize(new Dimension(0, 64));
         splitPane.setLeftComponent(panel1);
         deletePanel = new JPanel();
-        deletePanel.setLayout(new GridLayoutManager(1, 2, new Insets(0, 5, 5, 0), -1, -1));
+        deletePanel.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
         panel1.add(deletePanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         deleteButton = new JButton();
         deleteButton.setIcon(new ImageIcon(getClass().getResource("/icon/remove.png")));
@@ -498,7 +498,7 @@ public class HttpRequestForm {
         rightPanel.setLayout(new GridLayoutManager(2, 1, new Insets(10, 0, 0, 0), -1, -1));
         splitPane.setRightComponent(rightPanel);
         controlPanel = new JPanel();
-        controlPanel.setLayout(new GridLayoutManager(1, 4, new Insets(5, 5, 5, 5), -1, -1));
+        controlPanel.setLayout(new GridLayoutManager(1, 4, new Insets(0, 0, 0, 0), -1, -1));
         rightPanel.add(controlPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         saveButton = new JButton();
         saveButton.setIcon(new ImageIcon(getClass().getResource("/icon/menu-saveall_dark.png")));
@@ -518,7 +518,7 @@ public class HttpRequestForm {
         sendButton.setToolTipText("发送请求");
         controlPanel.add(sendButton, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         contentPanel = new JPanel();
-        contentPanel.setLayout(new GridLayoutManager(2, 1, new Insets(8, 10, 10, 10), -1, -1));
+        contentPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         rightPanel.add(contentPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(1, 3, new Insets(2, 8, 10, 0), -1, -1));
@@ -542,7 +542,7 @@ public class HttpRequestForm {
         tabbedPane1 = new JTabbedPane();
         contentPanel.add(tabbedPane1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(200, 200), null, 0, false));
         final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(1, 1, new Insets(10, 10, 10, 10), -1, -1));
+        panel3.setLayout(new GridLayoutManager(1, 1, new Insets(10, 5, 0, 0), -1, -1));
         tabbedPane1.addTab("Params", panel3);
         final JPanel panel4 = new JPanel();
         panel4.setLayout(new GridLayoutManager(3, 3, new Insets(5, 5, 0, 0), -1, -1));
