@@ -418,7 +418,7 @@
                                       <text value="普通数字 -&gt; 千分位"/>
                                     </properties>
                                   </component>
-                                  <component id="c6efe" class="javax.swing.JCheckBox" binding="换行NCheckBox" default-binding="true">
+                                  <component id="c6efe" class="javax.swing.JCheckBox" binding="enterToCommaCheckBox">
                                     <constraints>
                                       <grid row="8" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                                     </constraints>
@@ -426,7 +426,7 @@
                                       <text value="换行(\n) -&gt; ,"/>
                                     </properties>
                                   </component>
-                                  <component id="633bd" class="javax.swing.JCheckBox" binding="换行NCheckBox1" default-binding="true">
+                                  <component id="633bd" class="javax.swing.JCheckBox" binding="enterToCommaSingleQuotesCheckBox">
                                     <constraints>
                                       <grid row="9" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                                     </constraints>
@@ -434,7 +434,7 @@
                                       <text value="换行(\n) -&gt; ','"/>
                                     </properties>
                                   </component>
-                                  <component id="f5edd" class="javax.swing.JCheckBox" binding="换行NCheckBox2" default-binding="true">
+                                  <component id="f5edd" class="javax.swing.JCheckBox" binding="enterToCommaDoubleQuotesCheckBox">
                                     <constraints>
                                       <grid row="10" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                                     </constraints>
@@ -442,7 +442,7 @@
                                       <text value="换行(\n) -&gt; &quot;,&quot;"/>
                                     </properties>
                                   </component>
-                                  <component id="a1696" class="javax.swing.JCheckBox" binding="换行CheckBox" default-binding="true">
+                                  <component id="a1696" class="javax.swing.JCheckBox" binding="commaToEnterCheckBox">
                                     <constraints>
                                       <grid row="12" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                                     </constraints>
@@ -450,7 +450,7 @@
                                       <text value=", -&gt; 换行"/>
                                     </properties>
                                   </component>
-                                  <component id="83344" class="javax.swing.JCheckBox" binding="tabT换行CheckBox" default-binding="true">
+                                  <component id="83344" class="javax.swing.JCheckBox" binding="tabToEnterCheckBox">
                                     <constraints>
                                       <grid row="13" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                                     </constraints>

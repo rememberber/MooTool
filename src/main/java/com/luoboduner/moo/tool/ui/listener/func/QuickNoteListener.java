@@ -387,11 +387,28 @@ public class QuickNoteListener {
                 }
 
                 // ------------
+                if (quickNoteForm.getCommaToEnterCheckBox().isSelected()) {
+                    split = split.replace(",", "\n");
+                }
+                if (quickNoteForm.getTabToEnterCheckBox().isSelected()) {
+                    split = split.replace("\t", "\n");
+                }
 
                 target.add(split);
             }
 
-            view.setText(StringUtils.join(target, "\n"));
+            if (quickNoteForm.getClearEnterCheckBox().isSelected()) {
+                view.setText(StringUtils.join(target, ""));
+            } else if (quickNoteForm.getEnterToCommaCheckBox().isSelected()) {
+                view.setText(StringUtils.join(target, ","));
+            } else if (quickNoteForm.getEnterToCommaSingleQuotesCheckBox().isSelected()) {
+                view.setText(StringUtils.join(target, "','"));
+            } else if (quickNoteForm.getEnterToCommaDoubleQuotesCheckBox().isSelected()) {
+                view.setText(StringUtils.join(target, "\",\""));
+            } else {
+                view.setText(StringUtils.join(target, "\n"));
+            }
+
         } catch (Exception e) {
             JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e.getMessage(), "失败",
                     JOptionPane.ERROR_MESSAGE);
