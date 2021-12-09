@@ -200,7 +200,7 @@ public class JsonBeautyForm {
      */
     private void $$$setupUI$$$() {
         jsonBeautyPanel = new JPanel();
-        jsonBeautyPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        jsonBeautyPanel.setLayout(new GridLayoutManager(1, 1, new Insets(12, 12, 12, 12), -1, -1));
         jsonBeautyPanel.setMinimumSize(new Dimension(400, 300));
         jsonBeautyPanel.setPreferredSize(new Dimension(400, 300));
         splitPane = new JSplitPane();
@@ -213,7 +213,7 @@ public class JsonBeautyForm {
         panel1.setMinimumSize(new Dimension(0, 64));
         splitPane.setLeftComponent(panel1);
         deletePanel = new JPanel();
-        deletePanel.setLayout(new GridLayoutManager(1, 3, new Insets(0, 5, 5, 0), -1, -1));
+        deletePanel.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
         panel1.add(deletePanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         deleteButton = new JButton();
         deleteButton.setIcon(new ImageIcon(getClass().getResource("/icon/remove.png")));
@@ -235,7 +235,7 @@ public class JsonBeautyForm {
         rightPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane.setRightComponent(rightPanel);
         controlPanel = new JPanel();
-        controlPanel.setLayout(new GridLayoutManager(2, 1, new Insets(5, 5, 5, 5), -1, -1));
+        controlPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         rightPanel.add(controlPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         menuPanel = new JPanel();
         menuPanel.setLayout(new GridLayoutManager(1, 9, new Insets(0, 0, 0, 0), -1, -1));
