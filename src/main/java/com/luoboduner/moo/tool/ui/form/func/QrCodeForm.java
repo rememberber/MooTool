@@ -244,10 +244,10 @@ public class QrCodeForm {
         tabbedPane1 = new JTabbedPane();
         qrCodePanel.add(tabbedPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         generatePanel = new JPanel();
-        generatePanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        generatePanel.setLayout(new GridLayoutManager(2, 1, new Insets(12, 12, 12, 12), -1, -1));
         tabbedPane1.addTab("生成", generatePanel);
         controlPanel = new JPanel();
-        controlPanel.setLayout(new GridLayoutManager(1, 10, new Insets(5, 5, 5, 5), -1, -1));
+        controlPanel.setLayout(new GridLayoutManager(1, 10, new Insets(0, 0, 0, 0), -1, -1));
         generatePanel.add(controlPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         generateButton = new JButton();
         generateButton.setText("生成");
@@ -306,10 +306,10 @@ public class QrCodeForm {
         qrCodeImageLabel.setText("");
         panel1.add(qrCodeImageLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JPanel panel2 = new JPanel();
-        panel2.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel2.setLayout(new GridLayoutManager(2, 1, new Insets(12, 12, 12, 12), -1, -1));
         tabbedPane1.addTab("识别", panel2);
         final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(1, 4, new Insets(5, 5, 5, 5), -1, -1));
+        panel3.setLayout(new GridLayoutManager(1, 4, new Insets(0, 0, 0, 0), -1, -1));
         panel2.add(panel3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JLabel label5 = new JLabel();
         label5.setText("二维码图片路径");
