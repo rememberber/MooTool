@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.form;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.ui.form.func.CalculatorForm;
@@ -67,6 +68,23 @@ public class MainWindow {
     public void init() {
         mainWindow = getInstance();
         mainWindow.getMainPanel().updateUI();
+        mainWindow.getTabbedPane().setIconAt(0, new FlatSVGIcon("icon/edit.svg"));
+        mainWindow.getTabbedPane().setIconAt(1, new FlatSVGIcon("icon/time.svg"));
+        mainWindow.getTabbedPane().setIconAt(2, new FlatSVGIcon("icon/json.svg"));
+        mainWindow.getTabbedPane().setIconAt(3, new FlatSVGIcon("icon/check.svg"));
+        mainWindow.getTabbedPane().setIconAt(4, new FlatSVGIcon("icon/global.svg"));
+        mainWindow.getTabbedPane().setIconAt(5, new FlatSVGIcon("icon/exchange.svg"));
+        mainWindow.getTabbedPane().setIconAt(6, new FlatSVGIcon("icon/QRcode.svg", 18, 18));
+        mainWindow.getTabbedPane().setIconAt(7, new FlatSVGIcon("icon/method.svg"));
+        mainWindow.getTabbedPane().setIconAt(8, new FlatSVGIcon("icon/calculate.svg", 15, 15));
+        mainWindow.getTabbedPane().setIconAt(9, new FlatSVGIcon("icon/network.svg"));
+        mainWindow.getTabbedPane().setIconAt(10, new FlatSVGIcon("icon/color.svg"));
+        mainWindow.getTabbedPane().setIconAt(11, new FlatSVGIcon("icon/image.svg"));
+        mainWindow.getTabbedPane().setIconAt(12, new FlatSVGIcon("icon/translate.svg"));
+        mainWindow.getTabbedPane().setIconAt(13, new FlatSVGIcon("icon/schedule.svg", 15, 15));
+        mainWindow.getTabbedPane().setIconAt(14, new FlatSVGIcon("icon/reg.svg"));
+
+
         mainWindow.getQuickNotePanel().add(QuickNoteForm.getInstance().getQuickNotePanel(), gridConstraints);
         mainWindow.getJsonBeautyPanel().add(JsonBeautyForm.getInstance().getJsonBeautyPanel(), gridConstraints);
         mainWindow.getTimeConvertPanel().add(TimeConvertForm.getInstance().getTimeConvertPanel(), gridConstraints);
