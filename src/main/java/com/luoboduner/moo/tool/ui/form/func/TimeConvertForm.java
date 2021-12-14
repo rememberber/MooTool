@@ -7,6 +7,7 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -41,8 +42,8 @@ public class TimeConvertForm {
     private JButton copyCurrentGmtButton;
     private JButton copyCurrentTimestampButton;
     private JPanel leftPanel;
-    private JTextArea textArea1;
-    private JTextField yyyyMMDdHHTextField;
+    private JTextArea timeHisTextArea;
+    private JTextField timeFormatTextField;
 
     private static final Log logger = LogFactory.get();
 
@@ -78,6 +79,17 @@ public class TimeConvertForm {
         if ("".equals(timeConvertForm.getGmtTextField().getText())) {
             timeConvertForm.getGmtTextField().setText(DateFormatUtils.format(new Date(), TIME_FORMAT));
         }
+
+        Style.emphaticIndicatorFont(timeConvertForm.getCurrentGmtLabel());
+        Style.emphaticIndicatorFont(timeConvertForm.getCurrentTimestampLabel());
+        Style.emphaticIndicatorFont(timeConvertForm.getTimestampTextField());
+        Style.emphaticIndicatorFont(timeConvertForm.getGmtTextField());
+        Style.emphaticIndicatorFont(timeConvertForm.getGmtTextField());
+        Style.emphaticIndicatorFont(timeConvertForm.getTimeFormatTextField());
+        timeConvertForm.getCurrentGmtLabel().setForeground(Style.yellow());
+        timeConvertForm.getCurrentTimestampLabel().setForeground(Style.yellow());
+
+        Style.blackTextArea(timeConvertForm.getTimeHisTextArea());
 
         timeConvertForm.getToTimestampButton().setIcon(new FlatSVGIcon("icon/up.svg"));
         timeConvertForm.getToLocalTimeButton().setIcon(new FlatSVGIcon("icon/down.svg"));
@@ -204,17 +216,17 @@ public class TimeConvertForm {
         final JPanel panel7 = new JPanel();
         panel7.setLayout(new GridLayoutManager(1, 1, new Insets(12, 12, 12, 12), -1, -1));
         panel1.add(panel7, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        yyyyMMDdHHTextField = new JTextField();
-        yyyyMMDdHHTextField.setEditable(false);
-        yyyyMMDdHHTextField.setText("yyyy-MM-dd HH:mm:ss");
-        panel7.add(yyyyMMDdHHTextField, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        timeFormatTextField = new JTextField();
+        timeFormatTextField.setEditable(false);
+        timeFormatTextField.setText("yyyy-MM-dd HH:mm:ss");
+        panel7.add(timeFormatTextField, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         final JPanel panel8 = new JPanel();
         panel8.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane1.setRightComponent(panel8);
         final JScrollPane scrollPane2 = new JScrollPane();
         panel8.add(scrollPane2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        textArea1 = new JTextArea();
-        scrollPane2.setViewportView(textArea1);
+        timeHisTextArea = new JTextArea();
+        scrollPane2.setViewportView(timeHisTextArea);
     }
 
     /**
