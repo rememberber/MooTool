@@ -136,6 +136,14 @@ public class QuickNoteForm {
 //            quickNoteForm.getFindReplacePanel().add(quickNoteForm.getFindOptionPanel(), new GridConstraints(0, 0, 2, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
 //            quickNoteForm.getFindReplacePanel().add(quickNoteForm.getFindMenuSeparatorPanel(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
 //        }
+        quickNoteForm.getAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
+        quickNoteForm.getSaveButton().setIcon(new FlatSVGIcon("icon/save.svg"));
+        quickNoteForm.getFindButton().setIcon(new FlatSVGIcon("icon/find.svg"));
+        quickNoteForm.getQuickReplaceButton().setIcon(new FlatSVGIcon("icon/replace.svg"));
+        quickNoteForm.getDeleteButton().setIcon(new FlatSVGIcon("icon/remove.svg"));
+        quickNoteForm.getExportButton().setIcon(new FlatSVGIcon("icon/export.svg"));
+        quickNoteForm.getListItemButton().setIcon(new FlatSVGIcon("icon/list.svg"));
+        quickNoteForm.getWrapButton().setIcon(new FlatSVGIcon("icon/wrap.svg"));
 
         quickNoteForm.getFindReplacePanel().setVisible(false);
         quickNoteForm.getQuickReplaceScrollPane().setVisible(false);
@@ -146,7 +154,6 @@ public class QuickNoteForm {
         quickNoteForm.getDeletePanel().setVisible(false);
         quickNoteForm.getQuickNotePanel().updateUI();
 
-        quickNoteForm.getQuickReplaceButton().setIcon(new FlatSVGIcon("icon/replace.svg", 16, 16));
     }
 
     public static void initNoteListTable() {

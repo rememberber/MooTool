@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -105,6 +106,12 @@ public class CalculatorForm {
             calculatorForm.getOutputTextArea().setBackground(bgColor);
             calculatorForm.getOutputTextArea().setForeground(foreColor);
         }
+
+        calculatorForm.getHexToDecButton().setIcon(new FlatSVGIcon("icon/down.svg"));
+        calculatorForm.getDecToHexButton().setIcon(new FlatSVGIcon("icon/up.svg"));
+        calculatorForm.getDecToBinaryButton().setIcon(new FlatSVGIcon("icon/down.svg"));
+        calculatorForm.getBinaryToDecButton().setIcon(new FlatSVGIcon("icon/up.svg"));
+
         // 设置滚动条速度
         calculatorForm.getLeftScrollPane().getVerticalScrollBar().setUnitIncrement(16);
         calculatorForm.getLeftScrollPane().getVerticalScrollBar().setDoubleBuffered(true);

@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -84,6 +85,11 @@ public class ColorBoardForm {
         colorBoardForm.getShowColorPanel().setBackground(ColorUtil.fromHex(App.config.getLastSelectedColor()));
         colorBoardForm.getCodeTypeComboBox().setSelectedItem(App.config.getColorCodeType());
         colorBoardForm.getThemeComboBox().setSelectedItem(App.config.getColorTheme());
+
+        colorBoardForm.getFavoriteBookButton().setIcon(new FlatSVGIcon("icon/favorite-filling.svg"));
+        colorBoardForm.getFavoriteButton().setIcon(new FlatSVGIcon("icon/favorite.svg"));
+        colorBoardForm.getPickerButton().setIcon(new FlatSVGIcon("icon/color_picker.svg"));
+        colorBoardForm.getCopyButton().setIcon(new FlatSVGIcon("icon/copy.svg"));
 
         fillColorBlocks();
     }

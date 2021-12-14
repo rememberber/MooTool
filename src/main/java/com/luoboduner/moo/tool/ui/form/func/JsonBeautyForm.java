@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -112,6 +113,15 @@ public class JsonBeautyForm {
             jsonBeautyForm.getFindReplacePanel().add(jsonBeautyForm.getFindOptionPanel(), new GridConstraints(0, 0, 2, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
             jsonBeautyForm.getFindReplacePanel().add(jsonBeautyForm.getFindMenuSeparatorPanel(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         }
+
+        jsonBeautyForm.getAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
+        jsonBeautyForm.getFindButton().setIcon(new FlatSVGIcon("icon/find.svg"));
+        jsonBeautyForm.getSaveButton().setIcon(new FlatSVGIcon("icon/save.svg"));
+        jsonBeautyForm.getBeautifyButton().setIcon(new FlatSVGIcon("icon/json.svg"));
+        jsonBeautyForm.getDeleteButton().setIcon(new FlatSVGIcon("icon/remove.svg"));
+        jsonBeautyForm.getExportButton().setIcon(new FlatSVGIcon("icon/export.svg"));
+        jsonBeautyForm.getListItemButton().setIcon(new FlatSVGIcon("icon/list.svg"));
+        jsonBeautyForm.getWrapButton().setIcon(new FlatSVGIcon("icon/wrap.svg"));
 
         jsonBeautyForm.getFindReplacePanel().setVisible(false);
 

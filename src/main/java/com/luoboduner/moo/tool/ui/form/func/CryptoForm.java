@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -141,6 +142,18 @@ public class CryptoForm {
             cryptoForm.getBase64RightTextArea().setBackground(bgColor);
             cryptoForm.getBase64RightTextArea().setForeground(foreColor);
         }
+
+        cryptoForm.getSymEncryptButton().setIcon(new FlatSVGIcon("icon/right_arrow.svg"));
+        cryptoForm.getSymDecryptButton().setIcon(new FlatSVGIcon("icon/left_arrow.svg"));
+        cryptoForm.getAsymEncryptWithPubKeyButton().setIcon(new FlatSVGIcon("icon/right_arrow.svg"));
+        cryptoForm.getAsymDecryptWithPubKeyButton().setIcon(new FlatSVGIcon("icon/left_arrow.svg"));
+        cryptoForm.getAsymEncryptWithPrivateKeyButton().setIcon(new FlatSVGIcon("icon/right_arrow.svg"));
+        cryptoForm.getAsymDecryptWithPrivateKeyButton().setIcon(new FlatSVGIcon("icon/left_arrow.svg"));
+        cryptoForm.getDigestFileButton().setIcon(new FlatSVGIcon("icon/right_arrow.svg"));
+        cryptoForm.getDigestTextButton().setIcon(new FlatSVGIcon("icon/right_arrow.svg"));
+        cryptoForm.getBase64EncodeButton().setIcon(new FlatSVGIcon("icon/right_arrow.svg"));
+        cryptoForm.getBase64DecodeButton().setIcon(new FlatSVGIcon("icon/left_arrow.svg"));
+
         cryptoForm.getCryptoPanel().updateUI();
         cryptoForm.getDigestFilePathTextField().setText(App.config.getDigestFilePath());
         cryptoForm.getRandomNumDigitTextField().setText(String.valueOf(App.config.getRandomNumDigit()));

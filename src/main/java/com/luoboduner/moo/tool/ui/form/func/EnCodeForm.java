@@ -1,15 +1,14 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
-import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.UIUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 
 import javax.swing.*;
-import javax.swing.border.TitledBorder;
 import java.awt.*;
 
 /**
@@ -77,6 +76,9 @@ public class EnCodeForm {
 
             enCodeForm.getHexTextArea().setBackground(bgColor);
             enCodeForm.getHexTextArea().setForeground(foreColor);
+
+            enCodeForm.getUrlEncodeButton().setIcon(new FlatSVGIcon("icon/right_arrow.svg"));
+            enCodeForm.getUrlDecodeButton().setIcon(new FlatSVGIcon("icon/left_arrow.svg"));
         }
         enCodeForm.getEnCodePanel().updateUI();
     }

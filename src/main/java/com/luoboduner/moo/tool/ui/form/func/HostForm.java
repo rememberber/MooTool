@@ -1,6 +1,7 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.core.io.FileUtil;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -122,6 +123,13 @@ public class HostForm {
 
         hostForm.getSplitPane().setDividerLocation(App.mainFrame.getWidth() / 5);
         hostForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
+
+        hostForm.getAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
+        hostForm.getSaveButton().setIcon(new FlatSVGIcon("icon/save.svg"));
+        hostForm.getCurrentHostButton().setIcon(new FlatSVGIcon("icon/host.svg"));
+        hostForm.getSwitchButton().setIcon(new FlatSVGIcon("icon/check.svg"));
+        hostForm.getDeleteButton().setIcon(new FlatSVGIcon("icon/remove.svg"));
+        hostForm.getExportButton().setIcon(new FlatSVGIcon("icon/export.svg"));
 
         hostForm.getDeletePanel().setVisible(false);
         hostForm.getTextArea().grabFocus();

@@ -1,9 +1,9 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.swing.clipboard.ClipboardUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -20,8 +20,6 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.List;
 
@@ -93,6 +91,10 @@ public class ImageForm {
         imageForm.getListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
 
         imageForm.getDeletePanel().setVisible(false);
+
+        imageForm.getListItemButton().setIcon(new FlatSVGIcon("icon/list.svg"));
+        imageForm.getDeleteButton().setIcon(new FlatSVGIcon("icon/remove.svg"));
+        imageForm.getExportButton().setIcon(new FlatSVGIcon("icon/export.svg"));
 
         // 设置滚动条速度
         imageForm.getScrollPane().getVerticalScrollBar().setUnitIncrement(16);

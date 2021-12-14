@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.form.func;
 import cn.hutool.json.JSONUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -103,6 +104,12 @@ public class HttpRequestForm {
             httpRequestForm.getRightPanel().add(httpRequestForm.getControlPanel(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
             httpRequestForm.getRightPanel().add(httpRequestForm.getContentPanel(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         }
+
+        httpRequestForm.getAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
+        httpRequestForm.getSaveButton().setIcon(new FlatSVGIcon("icon/save.svg"));
+        httpRequestForm.getSendButton().setIcon(new FlatSVGIcon("icon/send.svg"));
+        httpRequestForm.getParamAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
+        httpRequestForm.getDeleteButton().setIcon(new FlatSVGIcon("icon/remove.svg"));
 
         httpRequestForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
         httpRequestForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);

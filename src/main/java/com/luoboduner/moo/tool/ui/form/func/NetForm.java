@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -82,6 +83,10 @@ public class NetForm {
             netForm.getIpConfigTextArea().setBackground(bgColor);
             netForm.getIpConfigTextArea().setForeground(foreColor);
         }
+
+        netForm.getIpv4ToLongButton().setIcon(new FlatSVGIcon("icon/down.svg"));
+        netForm.getLongToIpv4Button().setIcon(new FlatSVGIcon("icon/up.svg"));
+
         // 设置滚动条速度
         netForm.getRightScrollPane().getVerticalScrollBar().setUnitIncrement(16);
         netForm.getRightScrollPane().getVerticalScrollBar().setDoubleBuffered(true);
