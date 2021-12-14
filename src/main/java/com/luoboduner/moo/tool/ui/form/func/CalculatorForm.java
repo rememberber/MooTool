@@ -7,9 +7,9 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.util.Calculator;
 import com.luoboduner.moo.tool.util.CalculatorUtil;
-import com.luoboduner.moo.tool.util.UIUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -100,12 +100,8 @@ public class CalculatorForm {
 
     private static void initUi() {
         calculatorForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 2));
-        if (UIUtil.isDarkLaf()) {
-            Color bgColor = new Color(30, 30, 30);
-            Color foreColor = new Color(187, 187, 187);
-            calculatorForm.getOutputTextArea().setBackground(bgColor);
-            calculatorForm.getOutputTextArea().setForeground(foreColor);
-        }
+
+        Style.blackTextArea(calculatorForm.getOutputTextArea());
 
         calculatorForm.getHexToDecButton().setIcon(new FlatSVGIcon("icon/down.svg"));
         calculatorForm.getDecToHexButton().setIcon(new FlatSVGIcon("icon/up.svg"));

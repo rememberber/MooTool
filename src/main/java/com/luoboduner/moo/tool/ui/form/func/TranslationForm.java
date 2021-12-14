@@ -6,8 +6,8 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.UiConsts;
-import com.luoboduner.moo.tool.util.UIUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 
@@ -65,16 +65,9 @@ public class TranslationForm {
         translationForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
         translationForm.getListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
 
-        if (UIUtil.isDarkLaf()) {
-            Color bgColor = new Color(30, 30, 30);
-            translationForm.getTextArea1().setBackground(bgColor);
-            translationForm.getTextArea2().setBackground(bgColor);
-            translationForm.getTextPane1().setBackground(bgColor);
-            Color foreColor = new Color(187, 187, 187);
-            translationForm.getTextArea1().setForeground(foreColor);
-            translationForm.getTextArea2().setForeground(foreColor);
-            translationForm.getTextPane1().setForeground(foreColor);
-        }
+        Style.blackTextArea(translationForm.getTextArea1());
+        Style.blackTextArea(translationForm.getTextArea2());
+        Style.blackTextArea(translationForm.getTextPane1());
 
         translationForm.getTranslationPanel().updateUI();
     }

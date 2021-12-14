@@ -6,7 +6,7 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.util.UIUtil;
+import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 
@@ -61,12 +61,9 @@ public class CronForm {
     private static void initUi() {
         cronForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 2));
         cronForm.getTextArea1().setText("最近10次运行时间：");
-        if (UIUtil.isDarkLaf()) {
-            Color bgColor = new Color(30, 30, 30);
-            cronForm.getTextArea1().setBackground(bgColor);
-            Color foreColor = new Color(187, 187, 187);
-            cronForm.getTextArea1().setForeground(foreColor);
-        }
+
+        Style.blackTextArea(cronForm.getTextArea1());
+
         cronForm.getCronPanel().updateUI();
     }
 

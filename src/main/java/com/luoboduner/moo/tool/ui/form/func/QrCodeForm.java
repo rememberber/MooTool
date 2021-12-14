@@ -13,10 +13,10 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQrCodeMapper;
 import com.luoboduner.moo.tool.domain.TQrCode;
+import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
-import com.luoboduner.moo.tool.util.UIUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -192,15 +192,8 @@ public class QrCodeForm {
 
         qrCodeForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 2));
 
-        if (UIUtil.isDarkLaf()) {
-            Color bgColor = new Color(30, 30, 30);
-            Color foreColor = new Color(187, 187, 187);
-            qrCodeForm.getRecognitionContentTextArea().setBackground(bgColor);
-            qrCodeForm.getRecognitionContentTextArea().setForeground(foreColor);
-
-            qrCodeForm.getToGenerateContentTextArea().setBackground(bgColor);
-            qrCodeForm.getToGenerateContentTextArea().setForeground(foreColor);
-        }
+        Style.blackTextArea(qrCodeForm.getRecognitionContentTextArea());
+        Style.blackTextArea(qrCodeForm.getToGenerateContentTextArea());
 
         qrCodeForm.getSizeTextField().setText(String.valueOf(App.config.getQrCodeSize()));
         qrCodeForm.getErrorCorrectionLevelComboBox().setSelectedItem(App.config.getQrCodeErrorCorrectionLevel());

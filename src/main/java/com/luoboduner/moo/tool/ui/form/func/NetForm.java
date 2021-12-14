@@ -7,8 +7,8 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.util.SystemUtil;
-import com.luoboduner.moo.tool.util.UIUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 
@@ -77,12 +77,8 @@ public class NetForm {
             netForm.getIpConfigAllButton().setText("netstat -nat");
         }
         netForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 2));
-        if (UIUtil.isDarkLaf()) {
-            Color bgColor = new Color(30, 30, 30);
-            Color foreColor = new Color(187, 187, 187);
-            netForm.getIpConfigTextArea().setBackground(bgColor);
-            netForm.getIpConfigTextArea().setForeground(foreColor);
-        }
+
+        Style.blackTextArea(netForm.getIpConfigTextArea());
 
         netForm.getIpv4ToLongButton().setIcon(new FlatSVGIcon("icon/down.svg"));
         netForm.getLongToIpv4Button().setIcon(new FlatSVGIcon("icon/up.svg"));

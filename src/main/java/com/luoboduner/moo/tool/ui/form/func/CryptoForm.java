@@ -7,7 +7,7 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.util.UIUtil;
+import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 
@@ -109,39 +109,16 @@ public class CryptoForm {
             cryptoForm.getDigestLeftPanel().add(cryptoForm.getDigestLeftScrollPane(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         }
 
-        if (UIUtil.isDarkLaf()) {
-            Color bgColor = new Color(30, 30, 30);
-            Color foreColor = new Color(187, 187, 187);
-            cryptoForm.getSymTextAreaLeft().setBackground(bgColor);
-            cryptoForm.getSymTextAreaLeft().setForeground(foreColor);
-
-            cryptoForm.getSymTextAreaRight().setBackground(bgColor);
-            cryptoForm.getSymTextAreaRight().setForeground(foreColor);
-
-            cryptoForm.getAsymPubKeyTextArea().setBackground(bgColor);
-            cryptoForm.getAsymPubKeyTextArea().setForeground(foreColor);
-
-            cryptoForm.getAsymPrivateKeyTextArea().setBackground(bgColor);
-            cryptoForm.getAsymPrivateKeyTextArea().setForeground(foreColor);
-
-            cryptoForm.getAsymLeftTextArea().setBackground(bgColor);
-            cryptoForm.getAsymLeftTextArea().setForeground(foreColor);
-
-            cryptoForm.getAsymRightTextArea().setBackground(bgColor);
-            cryptoForm.getAsymRightTextArea().setForeground(foreColor);
-
-            cryptoForm.getDigestContentTextArea().setBackground(bgColor);
-            cryptoForm.getDigestContentTextArea().setForeground(foreColor);
-
-            cryptoForm.getDigestResultTextArea().setBackground(bgColor);
-            cryptoForm.getDigestResultTextArea().setForeground(foreColor);
-
-            cryptoForm.getBase64LeftTextArea().setBackground(bgColor);
-            cryptoForm.getBase64LeftTextArea().setForeground(foreColor);
-
-            cryptoForm.getBase64RightTextArea().setBackground(bgColor);
-            cryptoForm.getBase64RightTextArea().setForeground(foreColor);
-        }
+        Style.blackTextArea(cryptoForm.getSymTextAreaLeft());
+        Style.blackTextArea(cryptoForm.getSymTextAreaRight());
+        Style.blackTextArea(cryptoForm.getAsymPubKeyTextArea());
+        Style.blackTextArea(cryptoForm.getAsymPrivateKeyTextArea());
+        Style.blackTextArea(cryptoForm.getAsymLeftTextArea());
+        Style.blackTextArea(cryptoForm.getAsymRightTextArea());
+        Style.blackTextArea(cryptoForm.getDigestContentTextArea());
+        Style.blackTextArea(cryptoForm.getDigestResultTextArea());
+        Style.blackTextArea(cryptoForm.getBase64LeftTextArea());
+        Style.blackTextArea(cryptoForm.getBase64RightTextArea());
 
         cryptoForm.getSymEncryptButton().setIcon(new FlatSVGIcon("icon/right_arrow.svg"));
         cryptoForm.getSymDecryptButton().setIcon(new FlatSVGIcon("icon/left_arrow.svg"));

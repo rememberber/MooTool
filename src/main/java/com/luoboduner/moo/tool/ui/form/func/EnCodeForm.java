@@ -4,7 +4,7 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
-import com.luoboduner.moo.tool.util.UIUtil;
+import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 
@@ -56,30 +56,16 @@ public class EnCodeForm {
     }
 
     private static void initUi() {
-        if (UIUtil.isDarkLaf()) {
-            Color bgColor = new Color(30, 30, 30);
-            Color foreColor = new Color(187, 187, 187);
-            enCodeForm.getNativeTextArea().setBackground(bgColor);
-            enCodeForm.getNativeTextArea().setForeground(foreColor);
+        Style.blackTextArea(enCodeForm.getNativeTextArea());
+        Style.blackTextArea(enCodeForm.getUnicodeTextArea());
+        Style.blackTextArea(enCodeForm.getUrlTextArea());
+        Style.blackTextArea(enCodeForm.getUrlEncodeTextArea());
+        Style.blackTextArea(enCodeForm.getNativeForHexTextArea());
+        Style.blackTextArea(enCodeForm.getHexTextArea());
+        Style.blackTextArea(enCodeForm.getHexTextArea());
 
-            enCodeForm.getUnicodeTextArea().setBackground(bgColor);
-            enCodeForm.getUnicodeTextArea().setForeground(foreColor);
-
-            enCodeForm.getUrlTextArea().setBackground(bgColor);
-            enCodeForm.getUrlTextArea().setForeground(foreColor);
-
-            enCodeForm.getUrlEncodeTextArea().setBackground(bgColor);
-            enCodeForm.getUrlEncodeTextArea().setForeground(foreColor);
-
-            enCodeForm.getNativeForHexTextArea().setBackground(bgColor);
-            enCodeForm.getNativeForHexTextArea().setForeground(foreColor);
-
-            enCodeForm.getHexTextArea().setBackground(bgColor);
-            enCodeForm.getHexTextArea().setForeground(foreColor);
-
-            enCodeForm.getUrlEncodeButton().setIcon(new FlatSVGIcon("icon/right_arrow.svg"));
-            enCodeForm.getUrlDecodeButton().setIcon(new FlatSVGIcon("icon/left_arrow.svg"));
-        }
+        enCodeForm.getUrlEncodeButton().setIcon(new FlatSVGIcon("icon/right_arrow.svg"));
+        enCodeForm.getUrlDecodeButton().setIcon(new FlatSVGIcon("icon/left_arrow.svg"));
         enCodeForm.getEnCodePanel().updateUI();
     }
 
