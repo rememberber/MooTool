@@ -265,7 +265,7 @@
                             </constraints>
                             <properties>
                               <editable value="false"/>
-                              <text value="yyyy-MM-dd HH:mm:ss"/>
+                              <text value="yyyy-MM-dd HH:mm:ss.SSS"/>
                             </properties>
                           </component>
                         </children>

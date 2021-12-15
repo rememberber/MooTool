@@ -97,7 +97,7 @@ public class TimeConvertForm {
         timeConvertForm.getToTimestampButton().setIcon(new FlatSVGIcon("icon/up.svg"));
         timeConvertForm.getToLocalTimeButton().setIcon(new FlatSVGIcon("icon/down.svg"));
 
-        timeConvertForm.getSplitPane().setDividerLocation((int) (timeConvertForm.getSplitPane().getWidth() * 0.5));
+        timeConvertForm.getSplitPane().setDividerLocation((int) (timeConvertForm.getSplitPane().getWidth() * 0.62));
 
         ScrollUtil.smoothPane(timeConvertForm.getLeftScrollPane());
 
@@ -225,7 +225,7 @@ public class TimeConvertForm {
         panel1.add(panel7, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         timeFormatTextField = new JTextField();
         timeFormatTextField.setEditable(false);
-        timeFormatTextField.setText("yyyy-MM-dd HH:mm:ss");
+        timeFormatTextField.setText("yyyy-MM-dd HH:mm:ss.SSS");
         panel7.add(timeFormatTextField, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         final JPanel panel8 = new JPanel();
         panel8.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
