@@ -15,6 +15,8 @@ import java.awt.*;
  */
 public class Style {
 
+    public static final Color YELLOW = new Color(255, 198, 109);
+
     /**
      * emphatic font for title
      *
@@ -54,7 +56,4 @@ public class Style {
         }
     }
 
-    public static Color yellow() {
-        return new Color(255, 198, 109);
-    }
 }
