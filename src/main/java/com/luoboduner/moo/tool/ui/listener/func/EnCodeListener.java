@@ -34,7 +34,7 @@ public class EnCodeListener {
         enCodeForm.getUrlEncodeButton().addActionListener(e -> {
             String url = enCodeForm.getUrlTextArea().getText();
             String urlEncodeCharset = (String) enCodeForm.getUrlEncodeCharsetComboBox().getSelectedItem();
-            String urlEncode = URLUtil.encode(url, urlEncodeCharset);
+            String urlEncode = URLUtil.encode(url, CharsetUtil.charset(urlEncodeCharset));
             enCodeForm.getUrlEncodeTextArea().setText(urlEncode);
             enCodeForm.getUrlEncodeTextArea().setCaretPosition(0);
             enCodeForm.getUrlEncodeTextArea().grabFocus();
