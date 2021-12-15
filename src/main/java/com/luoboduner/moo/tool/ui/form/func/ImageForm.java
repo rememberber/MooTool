@@ -12,6 +12,7 @@ import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.listener.func.ImageListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
+import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -97,10 +98,7 @@ public class ImageForm {
         imageForm.getExportButton().setIcon(new FlatSVGIcon("icon/export.svg"));
 
         // 设置滚动条速度
-        imageForm.getScrollPane().getVerticalScrollBar().setUnitIncrement(16);
-        imageForm.getScrollPane().getVerticalScrollBar().setDoubleBuffered(true);
-        imageForm.getScrollPane().getHorizontalScrollBar().setUnitIncrement(16);
-        imageForm.getScrollPane().getHorizontalScrollBar().setDoubleBuffered(true);
+        ScrollUtil.smoothPane(imageForm.getScrollPane());
 
         imageForm.getSaveFromClipboardButton().grabFocus();
 

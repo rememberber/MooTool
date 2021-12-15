@@ -5,6 +5,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
+import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 
@@ -35,8 +36,7 @@ public class FindResultForm {
     private static FindResultForm findResultForm;
 
     private FindResultForm() {
-        this.getScrollPane().getVerticalScrollBar().setUnitIncrement(15);
-        this.getScrollPane().getVerticalScrollBar().setDoubleBuffered(true);
+        ScrollUtil.smoothPane(this.getScrollPane());
 
         Style.blackTextArea(editorPane);
 

@@ -14,10 +14,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQrCodeMapper;
 import com.luoboduner.moo.tool.domain.TQrCode;
 import com.luoboduner.moo.tool.ui.Style;
-import com.luoboduner.moo.tool.util.MybatisUtil;
-import com.luoboduner.moo.tool.util.SqliteUtil;
-import com.luoboduner.moo.tool.util.SystemUtil;
-import com.luoboduner.moo.tool.util.UndoUtil;
+import com.luoboduner.moo.tool.util.*;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -207,10 +204,7 @@ public class QrCodeForm {
         }
 
         // 设置滚动条速度
-        qrCodeForm.getGenerateScrollPane().getVerticalScrollBar().setUnitIncrement(16);
-        qrCodeForm.getGenerateScrollPane().getVerticalScrollBar().setDoubleBuffered(true);
-        qrCodeForm.getGenerateScrollPane().getHorizontalScrollBar().setUnitIncrement(16);
-        qrCodeForm.getGenerateScrollPane().getHorizontalScrollBar().setDoubleBuffered(true);
+        ScrollUtil.smoothPane(qrCodeForm.getGenerateScrollPane());
 
         qrCodeForm.getQrCodePanel().updateUI();
     }

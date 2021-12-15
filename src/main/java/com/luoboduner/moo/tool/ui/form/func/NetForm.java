@@ -8,6 +8,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Style;
+import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
@@ -84,8 +85,7 @@ public class NetForm {
         netForm.getLongToIpv4Button().setIcon(new FlatSVGIcon("icon/up.svg"));
 
         // 设置滚动条速度
-        netForm.getRightScrollPane().getVerticalScrollBar().setUnitIncrement(16);
-        netForm.getRightScrollPane().getVerticalScrollBar().setDoubleBuffered(true);
+        ScrollUtil.smoothPane(netForm.getRightScrollPane());
 
         netForm.getNetPanel().updateUI();
     }

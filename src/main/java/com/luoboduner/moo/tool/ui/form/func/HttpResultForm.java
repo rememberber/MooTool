@@ -4,6 +4,7 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.frame.HttpResultFrame;
+import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 
@@ -31,8 +32,7 @@ public class HttpResultForm {
     private static HttpResultForm httpResultForm;
 
     private HttpResultForm() {
-        this.getHttpResultScrollPane().getVerticalScrollBar().setUnitIncrement(15);
-        this.getHttpResultScrollPane().getVerticalScrollBar().setDoubleBuffered(true);
+        ScrollUtil.smoothPane(this.getHttpResultScrollPane());
 
         Style.blackTextArea(bodyTextArea);
         Style.blackTextArea(headersTextArea);

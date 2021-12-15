@@ -10,6 +10,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.util.Calculator;
 import com.luoboduner.moo.tool.util.CalculatorUtil;
+import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -109,8 +110,7 @@ public class CalculatorForm {
         calculatorForm.getBinaryToDecButton().setIcon(new FlatSVGIcon("icon/up.svg"));
 
         // 设置滚动条速度
-        calculatorForm.getLeftScrollPane().getVerticalScrollBar().setUnitIncrement(16);
-        calculatorForm.getLeftScrollPane().getVerticalScrollBar().setDoubleBuffered(true);
+        ScrollUtil.smoothPane(calculatorForm.getLeftScrollPane());
         calculatorForm.getCalculatorPanel().updateUI();
     }
 
