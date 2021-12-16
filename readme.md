@@ -59,7 +59,9 @@ A handy tool set for developers.
   <a href="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-favoriteColor.png">
    <img alt="MooTool" src="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-favoriteColor.png">
   </a>
-</p>  
+</p>
+
+![Overview](screen_shoot/theme.png)
 
 ### 下载
 
