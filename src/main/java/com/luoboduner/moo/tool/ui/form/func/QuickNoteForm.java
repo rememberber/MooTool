@@ -66,12 +66,12 @@ public class QuickNoteForm {
     private JCheckBox clearEnterCheckBox;
     private JCheckBox scientificToNormalCheckBox;
     private JCheckBox toThousandthCheckBox;
-    private JCheckBox 换行NCheckBox;
-    private JCheckBox 换行NCheckBox2;
-    private JCheckBox 换行CheckBox;
+    private JCheckBox enterToCommaCheckBox;
+    private JCheckBox enterToCommaDoubleQuotesCheckBox;
+    private JCheckBox commaToEnterCheckBox;
     private JButton startQuickReplaceButton;
-    private JCheckBox tabT换行CheckBox;
-    private JCheckBox 换行NCheckBox1;
+    private JCheckBox tabToEnterCheckBox;
+    private JCheckBox enterToCommaSingleQuotesCheckBox;
     private JScrollPane quickReplaceScrollPane;
     private JButton quickReplaceButton;
     private JLabel quickReplaceCloseLabel;
@@ -136,6 +136,14 @@ public class QuickNoteForm {
 //            quickNoteForm.getFindReplacePanel().add(quickNoteForm.getFindOptionPanel(), new GridConstraints(0, 0, 2, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
 //            quickNoteForm.getFindReplacePanel().add(quickNoteForm.getFindMenuSeparatorPanel(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
 //        }
+        quickNoteForm.getAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
+        quickNoteForm.getSaveButton().setIcon(new FlatSVGIcon("icon/save.svg"));
+        quickNoteForm.getFindButton().setIcon(new FlatSVGIcon("icon/find.svg"));
+        quickNoteForm.getQuickReplaceButton().setIcon(new FlatSVGIcon("icon/replace.svg"));
+        quickNoteForm.getDeleteButton().setIcon(new FlatSVGIcon("icon/remove.svg"));
+        quickNoteForm.getExportButton().setIcon(new FlatSVGIcon("icon/export.svg"));
+        quickNoteForm.getListItemButton().setIcon(new FlatSVGIcon("icon/list.svg"));
+        quickNoteForm.getWrapButton().setIcon(new FlatSVGIcon("icon/wrap.svg"));
 
         quickNoteForm.getFindReplacePanel().setVisible(false);
         quickNoteForm.getQuickReplaceScrollPane().setVisible(false);
@@ -146,7 +154,6 @@ public class QuickNoteForm {
         quickNoteForm.getDeletePanel().setVisible(false);
         quickNoteForm.getQuickNotePanel().updateUI();
 
-        quickNoteForm.getQuickReplaceButton().setIcon(new FlatSVGIcon("icon/replace.svg", 16, 16));
     }
 
     public static void initNoteListTable() {
@@ -221,7 +228,7 @@ public class QuickNoteForm {
      */
     private void $$$setupUI$$$() {
         quickNotePanel = new JPanel();
-        quickNotePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        quickNotePanel.setLayout(new GridLayoutManager(1, 1, new Insets(12, 12, 12, 12), -1, -1));
         quickNotePanel.setMinimumSize(new Dimension(400, 300));
         quickNotePanel.setPreferredSize(new Dimension(400, 300));
         splitPane = new JSplitPane();
@@ -234,7 +241,7 @@ public class QuickNoteForm {
         panel1.setMinimumSize(new Dimension(0, 64));
         splitPane.setLeftComponent(panel1);
         deletePanel = new JPanel();
-        deletePanel.setLayout(new GridLayoutManager(1, 3, new Insets(0, 5, 5, 0), -1, -1));
+        deletePanel.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
         panel1.add(deletePanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         deleteButton = new JButton();
         deleteButton.setIcon(new ImageIcon(getClass().getResource("/icon/remove.png")));
@@ -256,7 +263,7 @@ public class QuickNoteForm {
         rightPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane.setRightComponent(rightPanel);
         controlPanel = new JPanel();
-        controlPanel.setLayout(new GridLayoutManager(3, 1, new Insets(5, 5, 5, 5), -1, -1));
+        controlPanel.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
         rightPanel.add(controlPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         menuPanel = new JPanel();
         menuPanel.setLayout(new GridLayoutManager(1, 9, new Insets(0, 0, 0, 10), -1, -1));
@@ -399,21 +406,21 @@ public class QuickNoteForm {
         toThousandthCheckBox = new JCheckBox();
         toThousandthCheckBox.setText("普通数字 -> 千分位");
         panel3.add(toThousandthCheckBox, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        换行NCheckBox = new JCheckBox();
-        换行NCheckBox.setText("换行(\\n) -> ,");
-        panel3.add(换行NCheckBox, new GridConstraints(8, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        换行NCheckBox1 = new JCheckBox();
-        换行NCheckBox1.setText("换行(\\n) -> ','");
-        panel3.add(换行NCheckBox1, new GridConstraints(9, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        换行NCheckBox2 = new JCheckBox();
-        换行NCheckBox2.setText("换行(\\n) -> \",\"");
-        panel3.add(换行NCheckBox2, new GridConstraints(10, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        换行CheckBox = new JCheckBox();
-        换行CheckBox.setText(", -> 换行");
-        panel3.add(换行CheckBox, new GridConstraints(12, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        tabT换行CheckBox = new JCheckBox();
-        tabT换行CheckBox.setText("Tab(\\t) -> 换行");
-        panel3.add(tabT换行CheckBox, new GridConstraints(13, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        enterToCommaCheckBox = new JCheckBox();
+        enterToCommaCheckBox.setText("换行(\\n) -> ,");
+        panel3.add(enterToCommaCheckBox, new GridConstraints(8, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        enterToCommaSingleQuotesCheckBox = new JCheckBox();
+        enterToCommaSingleQuotesCheckBox.setText("换行(\\n) -> ','");
+        panel3.add(enterToCommaSingleQuotesCheckBox, new GridConstraints(9, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        enterToCommaDoubleQuotesCheckBox = new JCheckBox();
+        enterToCommaDoubleQuotesCheckBox.setText("换行(\\n) -> \",\"");
+        panel3.add(enterToCommaDoubleQuotesCheckBox, new GridConstraints(10, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        commaToEnterCheckBox = new JCheckBox();
+        commaToEnterCheckBox.setText(", -> 换行");
+        panel3.add(commaToEnterCheckBox, new GridConstraints(12, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        tabToEnterCheckBox = new JCheckBox();
+        tabToEnterCheckBox.setText("Tab(\\t) -> 换行");
+        panel3.add(tabToEnterCheckBox, new GridConstraints(13, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         startQuickReplaceButton = new JButton();
         startQuickReplaceButton.setText("开始");
         panel3.add(startQuickReplaceButton, new GridConstraints(15, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, 1, 1, null, null, null, 0, false));

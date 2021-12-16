@@ -5,6 +5,7 @@ import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
+import com.luoboduner.moo.tool.util.ConsoleUtil;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -127,6 +128,8 @@ public class TimeConvertListener {
             }
             timeConvertForm.getTimestampTextField().setText(String.valueOf(timeStamp));
             timeConvertForm.getTimestampTextField().grabFocus();
+
+            ConsoleUtil.consoleOnly(timeConvertForm.getTimeHisTextArea(), "本地时间: " + localTime + " --> 时间戳: " + timeStamp);
         } catch (Exception ex) {
             ex.printStackTrace();
             logger.error(ExceptionUtils.getStackTrace(ex));
@@ -150,6 +153,8 @@ public class TimeConvertListener {
             String localTime = DateFormatUtils.format(new Date(timeStamp), TimeConvertForm.TIME_FORMAT);
             timeConvertForm.getGmtTextField().setText(localTime);
             timeConvertForm.getGmtTextField().grabFocus();
+
+            ConsoleUtil.consoleOnly(timeConvertForm.getTimeHisTextArea(), "时间戳: " + timeStamp + " --> 本地时间: " + localTime);
         } catch (Exception ex) {
             ex.printStackTrace();
             logger.error(ExceptionUtils.getStackTrace(ex));

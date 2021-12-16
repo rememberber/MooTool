@@ -1,9 +1,9 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.swing.clipboard.ClipboardUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -12,6 +12,7 @@ import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.listener.func.ImageListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
+import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -20,8 +21,6 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.util.List;
 
@@ -94,11 +93,12 @@ public class ImageForm {
 
         imageForm.getDeletePanel().setVisible(false);
 
+        imageForm.getListItemButton().setIcon(new FlatSVGIcon("icon/list.svg"));
+        imageForm.getDeleteButton().setIcon(new FlatSVGIcon("icon/remove.svg"));
+        imageForm.getExportButton().setIcon(new FlatSVGIcon("icon/export.svg"));
+
         // 设置滚动条速度
-        imageForm.getScrollPane().getVerticalScrollBar().setUnitIncrement(16);
-        imageForm.getScrollPane().getVerticalScrollBar().setDoubleBuffered(true);
-        imageForm.getScrollPane().getHorizontalScrollBar().setUnitIncrement(16);
-        imageForm.getScrollPane().getHorizontalScrollBar().setDoubleBuffered(true);
+        ScrollUtil.smoothPane(imageForm.getScrollPane());
 
         imageForm.getSaveFromClipboardButton().grabFocus();
 
@@ -155,7 +155,7 @@ public class ImageForm {
      */
     private void $$$setupUI$$$() {
         imagePanel = new JPanel();
-        imagePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        imagePanel.setLayout(new GridLayoutManager(1, 1, new Insets(12, 12, 12, 12), -1, -1));
         splitPane = new JSplitPane();
         splitPane.setContinuousLayout(true);
         splitPane.setDividerLocation(204);
@@ -165,7 +165,7 @@ public class ImageForm {
         panel1.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane.setLeftComponent(panel1);
         deletePanel = new JPanel();
-        deletePanel.setLayout(new GridLayoutManager(1, 3, new Insets(0, 5, 5, 5), -1, -1));
+        deletePanel.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
         panel1.add(deletePanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, 1, null, null, null, 0, false));
         deleteButton = new JButton();
         deleteButton.setIcon(new ImageIcon(getClass().getResource("/icon/remove.png")));
@@ -190,7 +190,7 @@ public class ImageForm {
         panel3.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane.setRightComponent(panel3);
         menuPanel = new JPanel();
-        menuPanel.setLayout(new GridLayoutManager(1, 11, new Insets(5, 5, 5, 5), -1, -1));
+        menuPanel.setLayout(new GridLayoutManager(1, 11, new Insets(0, 0, 0, 0), -1, -1));
         panel3.add(menuPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, 1, null, null, null, 0, false));
         截图Button = new JButton();
         截图Button.setText("截图");

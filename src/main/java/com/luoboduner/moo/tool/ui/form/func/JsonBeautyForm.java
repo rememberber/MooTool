@@ -1,16 +1,17 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
+import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
-import com.luoboduner.moo.tool.util.UIUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -113,6 +114,15 @@ public class JsonBeautyForm {
             jsonBeautyForm.getFindReplacePanel().add(jsonBeautyForm.getFindMenuSeparatorPanel(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         }
 
+        jsonBeautyForm.getAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
+        jsonBeautyForm.getFindButton().setIcon(new FlatSVGIcon("icon/find.svg"));
+        jsonBeautyForm.getSaveButton().setIcon(new FlatSVGIcon("icon/save.svg"));
+        jsonBeautyForm.getBeautifyButton().setIcon(new FlatSVGIcon("icon/json.svg"));
+        jsonBeautyForm.getDeleteButton().setIcon(new FlatSVGIcon("icon/remove.svg"));
+        jsonBeautyForm.getExportButton().setIcon(new FlatSVGIcon("icon/export.svg"));
+        jsonBeautyForm.getListItemButton().setIcon(new FlatSVGIcon("icon/list.svg"));
+        jsonBeautyForm.getWrapButton().setIcon(new FlatSVGIcon("icon/wrap.svg"));
+
         jsonBeautyForm.getFindReplacePanel().setVisible(false);
 
         jsonBeautyForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
@@ -120,12 +130,9 @@ public class JsonBeautyForm {
 
         jsonBeautyForm.getDeletePanel().setVisible(false);
         jsonBeautyForm.getTextArea().grabFocus();
-        if (UIUtil.isDarkLaf()) {
-            Color bgColor = new Color(30, 30, 30);
-            jsonBeautyForm.getTextArea().setBackground(bgColor);
-            Color foreColor = new Color(187, 187, 187);
-            jsonBeautyForm.getTextArea().setForeground(foreColor);
-        }
+
+        Style.blackTextArea(jsonBeautyForm.getTextArea());
+
         jsonBeautyForm.getJsonBeautyPanel().updateUI();
     }
 
@@ -200,7 +207,7 @@ public class JsonBeautyForm {
      */
     private void $$$setupUI$$$() {
         jsonBeautyPanel = new JPanel();
-        jsonBeautyPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        jsonBeautyPanel.setLayout(new GridLayoutManager(1, 1, new Insets(12, 12, 12, 12), -1, -1));
         jsonBeautyPanel.setMinimumSize(new Dimension(400, 300));
         jsonBeautyPanel.setPreferredSize(new Dimension(400, 300));
         splitPane = new JSplitPane();
@@ -213,7 +220,7 @@ public class JsonBeautyForm {
         panel1.setMinimumSize(new Dimension(0, 64));
         splitPane.setLeftComponent(panel1);
         deletePanel = new JPanel();
-        deletePanel.setLayout(new GridLayoutManager(1, 3, new Insets(0, 5, 5, 0), -1, -1));
+        deletePanel.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
         panel1.add(deletePanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         deleteButton = new JButton();
         deleteButton.setIcon(new ImageIcon(getClass().getResource("/icon/remove.png")));
@@ -235,7 +242,7 @@ public class JsonBeautyForm {
         rightPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane.setRightComponent(rightPanel);
         controlPanel = new JPanel();
-        controlPanel.setLayout(new GridLayoutManager(2, 1, new Insets(5, 5, 5, 5), -1, -1));
+        controlPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         rightPanel.add(controlPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         menuPanel = new JPanel();
         menuPanel.setLayout(new GridLayoutManager(1, 9, new Insets(0, 0, 0, 0), -1, -1));

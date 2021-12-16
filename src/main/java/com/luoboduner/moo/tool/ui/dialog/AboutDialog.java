@@ -7,6 +7,7 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
 
 import javax.swing.*;
@@ -57,8 +58,7 @@ public class AboutDialog extends JDialog {
 
         versionLabel.setText(UiConsts.APP_VERSION);
 
-        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        scrollPane.getVerticalScrollBar().setDoubleBuffered(true);
+        ScrollUtil.smoothPane(scrollPane);
         contentPane.updateUI();
 
         logoLabel.addMouseListener(new MouseAdapter() {

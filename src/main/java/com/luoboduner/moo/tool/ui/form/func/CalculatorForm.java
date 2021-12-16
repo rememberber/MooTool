@@ -2,13 +2,15 @@ package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.util.Calculator;
 import com.luoboduner.moo.tool.util.CalculatorUtil;
-import com.luoboduner.moo.tool.util.UIUtil;
+import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -99,15 +101,16 @@ public class CalculatorForm {
 
     private static void initUi() {
         calculatorForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 2));
-        if (UIUtil.isDarkLaf()) {
-            Color bgColor = new Color(30, 30, 30);
-            Color foreColor = new Color(187, 187, 187);
-            calculatorForm.getOutputTextArea().setBackground(bgColor);
-            calculatorForm.getOutputTextArea().setForeground(foreColor);
-        }
+
+        Style.blackTextArea(calculatorForm.getOutputTextArea());
+
+        calculatorForm.getHexToDecButton().setIcon(new FlatSVGIcon("icon/down.svg"));
+        calculatorForm.getDecToHexButton().setIcon(new FlatSVGIcon("icon/up.svg"));
+        calculatorForm.getDecToBinaryButton().setIcon(new FlatSVGIcon("icon/down.svg"));
+        calculatorForm.getBinaryToDecButton().setIcon(new FlatSVGIcon("icon/up.svg"));
+
         // 设置滚动条速度
-        calculatorForm.getLeftScrollPane().getVerticalScrollBar().setUnitIncrement(16);
-        calculatorForm.getLeftScrollPane().getVerticalScrollBar().setDoubleBuffered(true);
+        ScrollUtil.smoothPane(calculatorForm.getLeftScrollPane());
         calculatorForm.getCalculatorPanel().updateUI();
     }
 
@@ -134,7 +137,7 @@ public class CalculatorForm {
         splitPane.setDividerSize(10);
         calculatorPanel.add(splitPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.setLayout(new GridLayoutManager(2, 1, new Insets(12, 0, 12, 12), -1, -1));
         splitPane.setRightComponent(panel1);
         final JScrollPane scrollPane1 = new JScrollPane();
         panel1.add(scrollPane1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
@@ -143,7 +146,7 @@ public class CalculatorForm {
         outputTextArea.setMargin(new Insets(5, 5, 5, 5));
         scrollPane1.setViewportView(outputTextArea);
         final JPanel panel2 = new JPanel();
-        panel2.setLayout(new GridLayoutManager(1, 1, new Insets(5, 0, 0, 0), -1, -1));
+        panel2.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel1.add(panel2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         resultTextField = new JTextField();
         resultTextField.setEditable(false);

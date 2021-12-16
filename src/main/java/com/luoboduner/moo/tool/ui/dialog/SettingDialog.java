@@ -11,6 +11,7 @@ import com.luoboduner.moo.tool.service.HttpMsgSender;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.util.ComponentUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
+import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -66,8 +67,7 @@ public class SettingDialog extends JDialog {
         contentPane.registerKeyboardAction(e -> onOK(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 
         // 设置滚动条速度
-        settingScrollPane.getVerticalScrollBar().setUnitIncrement(16);
-        settingScrollPane.getVerticalScrollBar().setDoubleBuffered(true);
+        ScrollUtil.smoothPane(settingScrollPane);
 
         // 常规
         autoCheckUpdateCheckBox.setSelected(App.config.isAutoCheckUpdate());

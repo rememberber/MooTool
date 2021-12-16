@@ -3,8 +3,8 @@ package com.luoboduner.moo.tool.ui.dialog;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.util.ComponentUtil;
-import com.luoboduner.moo.tool.util.UIUtil;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -34,12 +34,8 @@ public class CurrentHostDialog extends JDialog {
         setFocusable(true);
         setResizable(true);
         setLocationByPlatform(true);
-        if (UIUtil.isDarkLaf()) {
-            Color bgColor = new Color(30, 30, 30);
-            textArea.setBackground(bgColor);
-            Color foreColor = new Color(187, 187, 187);
-            textArea.setForeground(foreColor);
-        }
+
+        Style.blackTextArea(textArea);
 
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.6, 0.8);
 

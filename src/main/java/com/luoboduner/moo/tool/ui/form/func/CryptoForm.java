@@ -2,11 +2,12 @@ package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.util.UIUtil;
+import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 
@@ -108,39 +109,28 @@ public class CryptoForm {
             cryptoForm.getDigestLeftPanel().add(cryptoForm.getDigestLeftScrollPane(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         }
 
-        if (UIUtil.isDarkLaf()) {
-            Color bgColor = new Color(30, 30, 30);
-            Color foreColor = new Color(187, 187, 187);
-            cryptoForm.getSymTextAreaLeft().setBackground(bgColor);
-            cryptoForm.getSymTextAreaLeft().setForeground(foreColor);
+        Style.blackTextArea(cryptoForm.getSymTextAreaLeft());
+        Style.blackTextArea(cryptoForm.getSymTextAreaRight());
+        Style.blackTextArea(cryptoForm.getAsymPubKeyTextArea());
+        Style.blackTextArea(cryptoForm.getAsymPrivateKeyTextArea());
+        Style.blackTextArea(cryptoForm.getAsymLeftTextArea());
+        Style.blackTextArea(cryptoForm.getAsymRightTextArea());
+        Style.blackTextArea(cryptoForm.getDigestContentTextArea());
+        Style.blackTextArea(cryptoForm.getDigestResultTextArea());
+        Style.blackTextArea(cryptoForm.getBase64LeftTextArea());
+        Style.blackTextArea(cryptoForm.getBase64RightTextArea());
 
-            cryptoForm.getSymTextAreaRight().setBackground(bgColor);
-            cryptoForm.getSymTextAreaRight().setForeground(foreColor);
+        cryptoForm.getSymEncryptButton().setIcon(new FlatSVGIcon("icon/right_arrow.svg"));
+        cryptoForm.getSymDecryptButton().setIcon(new FlatSVGIcon("icon/left_arrow.svg"));
+        cryptoForm.getAsymEncryptWithPubKeyButton().setIcon(new FlatSVGIcon("icon/right_arrow.svg"));
+        cryptoForm.getAsymDecryptWithPubKeyButton().setIcon(new FlatSVGIcon("icon/left_arrow.svg"));
+        cryptoForm.getAsymEncryptWithPrivateKeyButton().setIcon(new FlatSVGIcon("icon/right_arrow.svg"));
+        cryptoForm.getAsymDecryptWithPrivateKeyButton().setIcon(new FlatSVGIcon("icon/left_arrow.svg"));
+        cryptoForm.getDigestFileButton().setIcon(new FlatSVGIcon("icon/right_arrow.svg"));
+        cryptoForm.getDigestTextButton().setIcon(new FlatSVGIcon("icon/right_arrow.svg"));
+        cryptoForm.getBase64EncodeButton().setIcon(new FlatSVGIcon("icon/right_arrow.svg"));
+        cryptoForm.getBase64DecodeButton().setIcon(new FlatSVGIcon("icon/left_arrow.svg"));
 
-            cryptoForm.getAsymPubKeyTextArea().setBackground(bgColor);
-            cryptoForm.getAsymPubKeyTextArea().setForeground(foreColor);
-
-            cryptoForm.getAsymPrivateKeyTextArea().setBackground(bgColor);
-            cryptoForm.getAsymPrivateKeyTextArea().setForeground(foreColor);
-
-            cryptoForm.getAsymLeftTextArea().setBackground(bgColor);
-            cryptoForm.getAsymLeftTextArea().setForeground(foreColor);
-
-            cryptoForm.getAsymRightTextArea().setBackground(bgColor);
-            cryptoForm.getAsymRightTextArea().setForeground(foreColor);
-
-            cryptoForm.getDigestContentTextArea().setBackground(bgColor);
-            cryptoForm.getDigestContentTextArea().setForeground(foreColor);
-
-            cryptoForm.getDigestResultTextArea().setBackground(bgColor);
-            cryptoForm.getDigestResultTextArea().setForeground(foreColor);
-
-            cryptoForm.getBase64LeftTextArea().setBackground(bgColor);
-            cryptoForm.getBase64LeftTextArea().setForeground(foreColor);
-
-            cryptoForm.getBase64RightTextArea().setBackground(bgColor);
-            cryptoForm.getBase64RightTextArea().setForeground(foreColor);
-        }
         cryptoForm.getCryptoPanel().updateUI();
         cryptoForm.getDigestFilePathTextField().setText(App.config.getDigestFilePath());
         cryptoForm.getRandomNumDigitTextField().setText(String.valueOf(App.config.getRandomNumDigit()));
@@ -170,7 +160,7 @@ public class CryptoForm {
         tabbedPane1 = new JTabbedPane();
         cryptoPanel.add(tabbedPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.setLayout(new GridLayoutManager(1, 3, new Insets(12, 12, 12, 12), -1, -1));
         tabbedPane1.addTab("对称加密（symmetric）", panel1);
         final JScrollPane scrollPane1 = new JScrollPane();
         panel1.add(scrollPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
@@ -208,7 +198,7 @@ public class CryptoForm {
         label1.setText("密钥");
         panel2.add(label1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
+        panel3.setLayout(new GridLayoutManager(1, 3, new Insets(12, 12, 12, 12), -1, -1));
         tabbedPane1.addTab("非对称加密（asymmetric）", panel3);
         asyPanelLeft = new JPanel();
         asyPanelLeft.setLayout(new GridLayoutManager(4, 1, new Insets(0, 0, 0, 0), -1, -1));
@@ -282,13 +272,13 @@ public class CryptoForm {
         asymDecryptWithPubKeyButton.setText("使用公钥解密");
         panel5.add(asymDecryptWithPubKeyButton, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel6 = new JPanel();
-        panel6.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
+        panel6.setLayout(new GridLayoutManager(1, 3, new Insets(12, 12, 12, 12), -1, -1));
         tabbedPane1.addTab("摘要加密（digest）", panel6);
         digestLeftPanel = new JPanel();
         digestLeftPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel6.add(digestLeftPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         digestControlPanel = new JPanel();
-        digestControlPanel.setLayout(new GridLayoutManager(1, 3, new Insets(5, 5, 5, 0), -1, -1));
+        digestControlPanel.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
         digestLeftPanel.add(digestControlPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JLabel label6 = new JLabel();
         label6.setText("文件");
@@ -334,7 +324,7 @@ public class CryptoForm {
         digestTypeComboBox.setModel(defaultComboBoxModel3);
         panel8.add(digestTypeComboBox, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel9 = new JPanel();
-        panel9.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
+        panel9.setLayout(new GridLayoutManager(1, 3, new Insets(12, 12, 12, 12), -1, -1));
         tabbedPane1.addTab("Base64", panel9);
         final JPanel panel10 = new JPanel();
         panel10.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
@@ -372,7 +362,7 @@ public class CryptoForm {
         base64ComboBox.setModel(defaultComboBoxModel4);
         panel12.add(base64ComboBox, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel13 = new JPanel();
-        panel13.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel13.setLayout(new GridLayoutManager(2, 1, new Insets(12, 12, 12, 12), -1, -1));
         tabbedPane1.addTab("随机", panel13);
         final Spacer spacer9 = new Spacer();
         panel13.add(spacer9, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));

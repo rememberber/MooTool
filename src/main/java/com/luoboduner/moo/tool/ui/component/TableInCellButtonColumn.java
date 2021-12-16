@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.component;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.luoboduner.moo.tool.App;
 
 import javax.swing.*;
@@ -53,7 +54,7 @@ public class TableInCellButtonColumn extends AbstractCellEditor implements
         }
 
         renderButton.setText("");
-        renderButton.setIcon(new ImageIcon(getClass().getResource("/icon/remove.png")));
+        renderButton.setIcon(new FlatSVGIcon("icon/remove.svg"));
         return renderButton;
     }
 
@@ -61,7 +62,7 @@ public class TableInCellButtonColumn extends AbstractCellEditor implements
     public Component getTableCellEditorComponent(JTable table, Object value,
                                                  boolean isSelected, int row, int column) {
         editButton.setText("");
-        editButton.setIcon(new ImageIcon(getClass().getResource("/icon/remove.png")));
+        editButton.setIcon(new FlatSVGIcon("icon/remove.svg"));
         return editButton;
     }
 
