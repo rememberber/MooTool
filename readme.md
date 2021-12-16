@@ -1,10 +1,9 @@
-<a href="https://gitee.com/zhoubochina/MooTool">
- <img alt="MooTool-Logo" src="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/logo-128.png">
-</a>
-  
-# MooTool 
+![logo](assets/logo/logo-128.png)
+
+# MooTool
+
 A handy tool set for developers.   
-开发者常备小工具  
+开发者常备小工具
 
 [![码云Gitee](https://gitee.com/zhoubochina/MooTool/badge/star.svg?theme=blue)](https://gitee.com/zhoubochina/MooTool)
 [![GitHub stars](https://img.shields.io/github/stars/rememberber/MooTool.svg)](https://github.com/rememberber/MooTool)
@@ -12,97 +11,49 @@ A handy tool set for developers.
 [![GitHub release](https://img.shields.io/github/v/release/rememberber/MooTool)](https://github.com/rememberber/MooTool/releases)
 [![GitHub license](https://img.shields.io/github/license/rememberber/MooTool)](https://github.com/rememberber/MooTool/blob/master/LICENSE.txt)
 
-### 支持的功能
-+ **Host切换**（支持系统托盘快速切换）  
-+ **时间转换**（时间戳和高可读性本地时间的相互转换，对网上常见的转换页重新设计，支持快速复制，简单高效）  
-+ **Json格式化**  
-+ **发送HTTP请求**（支持GET、POST、PUT、DELETE等常用请求方式，支持参数、header、cookie、body等）  
-+ **编码转换**  
-+ **二维码生成/二维码识别**（支持自定义尺寸、纠错级别、logo图片）  
-+ **加解密/随机**  
-+ **随手记**（可以用来快速记录一些：代码片段、常用的SQL、常用的接口、常用的数据、暂存一些临时log等）  
+## 支持的功能
+
++ **Host切换**（支持系统托盘快速切换）
++ **时间转换**（时间戳和高可读性本地时间的相互转换，对网上常见的转换页重新设计，支持快速复制，简单高效）
++ **Json格式化**
++ **发送HTTP请求**（支持GET、POST、PUT、DELETE等常用请求方式，支持参数、header、cookie、body等）
++ **编码转换**
++ **二维码生成/二维码识别**（支持自定义尺寸、纠错级别、logo图片）
++ **加解密/随机**
++ **随手记**（可以用来快速记录一些：代码片段、常用的SQL、常用的接口、常用的数据、暂存一些临时log等）
 + **计算**（四则运算/进制转换/最大公约数/最小公倍数/排列组合数）
 + **网络/IP**（ip地址转换/本机ip信息/根据域名获取ip）
 + **调色板**（取色器/颜色管理）
 
-### 计划中支持的功能
-+ 正则表达式  
-+ Cron表达式  
-+ 图片压缩  
+## 计划中支持的功能
 
-### 截图速览
++ 正则表达式
++ Cron表达式
++ 图片压缩
 
-<p align="center">
-  <a href="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-quickNote.png">
-   <img alt="MooTool" src="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-quickNote.png">
-  </a>
-</p>  
+## 截图速览
 
-<p align="center">
-  <a href="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-timeConvert.png">
-   <img alt="MooTool" src="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-timeConvert.png">
-  </a>
-</p>  
+![Overview](screen_shoot/quick_note_mac.png)
 
-<p align="center">
-  <a href="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-jsonBeauty.png">
-   <img alt="MooTool" src="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-jsonBeauty.png">
-  </a>
-</p>  
+![Overview](screen_shoot/time_mac.png)
 
-<p align="center">
-  <a href="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-switchHost.png">
-   <img alt="MooTool" src="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-switchHost.png">
-  </a>
-</p>  
+![Overview](screen_shoot/json_mac.png)
 
-<p align="center">
-  <a href="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-httpRequest.png">
-   <img alt="MooTool" src="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-httpRequest.png">
-  </a>
-</p>  
+![Overview](screen_shoot/host_mac.png)
 
-<p align="center">
-  <a href="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-encode.png">
-   <img alt="MooTool" src="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-encode.png">
-  </a>
-</p>  
+![Overview](screen_shoot/http_mac.png)
 
-<p align="center">
-  <a href="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-qrcode.png">
-   <img alt="MooTool" src="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-qrcode.png">
-  </a>
-</p>  
+![Overview](screen_shoot/encode_mac.png)
 
-<p align="center">
-  <a href="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-crypto.png">
-   <img alt="MooTool" src="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-crypto.png">
-  </a>
-</p>  
+![Overview](screen_shoot/qr_code_mac.png)
 
-<p align="center">
-  <a href="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-setting.png">
-   <img alt="MooTool" src="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-setting.png">
-  </a>
-</p>  
+![Overview](screen_shoot/crypto_mac.png)
 
-<p align="center">
-  <a href="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-calculator.png">
-   <img alt="MooTool" src="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-calculator.png">
-  </a>
-</p>  
+![Overview](screen_shoot/calculator_mac.png)
 
-<p align="center">
-  <a href="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-net.png">
-   <img alt="MooTool" src="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-net.png">
-  </a>
-</p>  
+![Overview](screen_shoot/net_mac.png)
 
-<p align="center">
-  <a href="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-colorBoard.png">
-   <img alt="MooTool" src="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-colorBoard.png">
-  </a>
-</p>  
+![Overview](screen_shoot/color_board_mac.png)
 
 <p align="center">
   <a href="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-favoriteColor.png">
@@ -110,49 +61,28 @@ A handy tool set for developers.
   </a>
 </p>  
 
-<p align="center">
-  <a href="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-about.png">
-   <img alt="MooTool" src="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-about.png">
-  </a>
-</p>  
+### 下载
 
-### 安装文件下载
-
-[MooTool下载地址](https://github.com/rememberber/MooTool/wiki/download)  
-
-安装之前请确认已经安装了jre1.8或者以上版本   
-[jre下载地址](http://www.oracle.com/technetwork/java/javase/downloads/jre8-downloads-2133155.html)  
-
-### 环境依赖
-+ Java 8
-+ lombok
+[https://github.com/rememberber/MooTool/releases](https://github.com/rememberber/MooTool/releases)  
+[https://gitee.com/zhoubochina/MooTool/releases](https://gitee.com/zhoubochina/MooTool/releases)
 
 ### 特别感谢
+
 [Hutool](http://hutool.cn/)  
 [Darcula](https://github.com/bulenkov/Darcula)  
 [BeautyEye](https://gitee.com/jackjiang/beautyeye)  
 [vscode-icons](https://github.com/microsoft/vscode-icons)  
+[iconfont](https://www.iconfont.cn/)
 
-### 特别说明
-MooTool所使用的图标来源于https://github.com/JetBrains/intellij-community项目  
-以及https://github.com/microsoft/vscode-icons项目  
-版权、专利和许可都归其所有，
-如有冒犯，请及时通知我删除  
-Icons in MooTool are from Project:https://github.com/JetBrains/intellij-community  
-and https://github.com/microsoft/vscode-icons
-Copy right,patent and license are belong to them,
-If there is any offence, please inform me to delete them in time.  
+### 开发温馨提示
 
-### 开发&构建
+在你开始开发之前, **请按下图设置IntelliJ IDEA**, 然后 **maven clean**:
+![considerations](assets/material/gui_build.png)
 
-https://gitee.com/zhoubochina/MooTool/wikis/build
+### 鼓励&赞赏
 
-### 鼓励&赞赏  
-**如果MooTool对您有所帮助或便利，  
+**如果MooTool项目对您有所帮助或带来便利，  
 欢迎对我每天下班和周末时光的努力进行肯定，  
 您的赞赏将会给我带来更多动力**
-<p align="left">
-  <a href="https://gitee.com/zhoubochina/MooTool">
-   <img alt="MooTool" src="http://download.zhoubochina.com/file/wx-zanshang.jpg">
-  </a>
-</p>
+
+![zanshang](assets/material/wx-zanshang.jpg)
