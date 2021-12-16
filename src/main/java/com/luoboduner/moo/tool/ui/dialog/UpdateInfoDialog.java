@@ -5,7 +5,6 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.ComponentUtil;
-import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -67,19 +66,19 @@ public class UpdateInfoDialog extends JDialog {
     }
 
     private void onOK() {
-        if (SystemUtil.isMacOs()) {
+//        if (SystemUtil.isMacOs()) {
             Desktop desktop = Desktop.getDesktop();
             try {
-                desktop.browse(new URI("https://github.com/rememberber/MooTool/releases"));
+                desktop.browse(new URI("https://gitee.com/zhoubochina/MooTool/releases"));
             } catch (IOException | URISyntaxException ex) {
                 ex.printStackTrace();
             }
-        } else {
-            UpdateDialog dialog = new UpdateDialog();
-            dialog.pack();
-            dialog.downLoad(newVersion);
-            dialog.setVisible(true);
-        }
+//        } else {
+//            UpdateDialog dialog = new UpdateDialog();
+//            dialog.pack();
+//            dialog.downLoad(newVersion);
+//            dialog.setVisible(true);
+//        }
         dispose();
     }
 
