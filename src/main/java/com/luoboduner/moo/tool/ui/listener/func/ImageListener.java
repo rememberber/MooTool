@@ -204,6 +204,23 @@ public class ImageListener {
                     }
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteFiles(imageForm);
+                } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
+                    quickSave();
+                    try {
+                        imageForm.getShowImageLabel().setIcon(new ImageIcon(DEFAULT_IMAGE));
+                        imageForm.getShowImagePanel().updateUI();
+
+                        int selectedRow = imageForm.getListTable().getSelectedRow();
+                        String name = imageForm.getListTable().getValueAt(selectedRow, 1).toString();
+                        selectedName = name.replace(".png", "");
+                        imageForm.getShowImageLabel().setIcon(new ImageIcon(ImageListener.IMAGE_PATH_PRE_FIX + name));
+                        imageForm.getShowImagePanel().updateUI();
+
+                        ImageListener.selectedImage = ImageIO.read(FileUtil.newFile(ImageListener.IMAGE_PATH_PRE_FIX + name));
+                    } catch (IOException ex) {
+                        JOptionPane.showMessageDialog(App.mainFrame, ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
+                        log.error(ExceptionUtils.getStackTrace(ex));
+                    }
                 }
             }
         });

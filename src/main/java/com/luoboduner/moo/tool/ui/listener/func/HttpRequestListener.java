@@ -60,12 +60,10 @@ public class HttpRequestListener {
         httpRequestForm.getNoteListTable().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                ThreadUtil.execute(() -> {
-                    int selectedRow = httpRequestForm.getNoteListTable().getSelectedRow();
-                    String name = httpRequestForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
-                    selectedName = name;
-                    HttpRequestForm.initMsg(name);
-                });
+                int selectedRow = httpRequestForm.getNoteListTable().getSelectedRow();
+                String name = httpRequestForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
+                selectedName = name;
+                HttpRequestForm.initMsg(name);
                 super.mousePressed(e);
             }
         });
@@ -139,6 +137,11 @@ public class HttpRequestListener {
                     }
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteFiles(httpRequestForm);
+                } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
+                    int selectedRow = httpRequestForm.getNoteListTable().getSelectedRow();
+                    String name = httpRequestForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
+                    selectedName = name;
+                    HttpRequestForm.initMsg(name);
                 }
             }
         });

@@ -200,6 +200,19 @@ public class QuickNoteListener {
                     }
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteFiles(quickNoteForm);
+                } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
+                    quickSave(false);
+                    int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
+                    String name = quickNoteForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
+                    selectedName = name;
+                    TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
+                    QuickNotePlainTextViewer plainTextViewer = QuickNoteForm.quickNotePlainTextViewerManager.getPlainTextViewer(name);
+                    plainTextViewer.setText(tQuickNote.getContent());
+                    plainTextViewer.setCaretPosition(0);
+                    quickNoteForm.getScrollPane().setViewportView(plainTextViewer);
+                    quickNoteForm.getScrollPane().getVerticalScrollBar().setValue(0);
+                    quickNoteForm.getScrollPane().getHorizontalScrollBar().setValue(0);
+                    plainTextViewer.updateUI();
                 }
             }
         });

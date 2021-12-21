@@ -197,6 +197,9 @@ public class HostListener {
                     }
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteFiles(hostForm);
+                } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
+                    quickSave(false);
+                    refreshHostContentInTextArea();
                 }
             }
         });
