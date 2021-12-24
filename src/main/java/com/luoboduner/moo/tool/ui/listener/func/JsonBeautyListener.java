@@ -111,10 +111,12 @@ public class JsonBeautyListener {
                     jsonBeautyForm.getTextArea().setCaretPosition(0);
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
                     jsonBeautyForm.getFindReplacePanel().setVisible(true);
+                    jsonBeautyForm.getFindTextField().setText(jsonBeautyForm.getTextArea().getSelectedText());
                     jsonBeautyForm.getFindTextField().grabFocus();
                     jsonBeautyForm.getFindTextField().selectAll();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_R) {
                     jsonBeautyForm.getFindReplacePanel().setVisible(true);
+                    jsonBeautyForm.getFindTextField().setText(jsonBeautyForm.getTextArea().getSelectedText());
                     jsonBeautyForm.getReplaceTextField().grabFocus();
                     jsonBeautyForm.getReplaceTextField().selectAll();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {

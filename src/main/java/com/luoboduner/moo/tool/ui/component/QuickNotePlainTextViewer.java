@@ -25,11 +25,15 @@ public class QuickNotePlainTextViewer extends PlainTextViewer {
                 if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
                     QuickNoteListener.quickSave(true);
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                    JTextArea view = (JTextArea) quickNoteForm.getScrollPane().getViewport().getView();
                     quickNoteForm.getFindReplacePanel().setVisible(true);
+                    quickNoteForm.getFindTextField().setText(view.getSelectedText());
                     quickNoteForm.getFindTextField().grabFocus();
                     quickNoteForm.getFindTextField().selectAll();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_R) {
+                    JTextArea view = (JTextArea) quickNoteForm.getScrollPane().getViewport().getView();
                     quickNoteForm.getFindReplacePanel().setVisible(true);
+                    quickNoteForm.getFindTextField().setText(view.getSelectedText());
                     quickNoteForm.getReplaceTextField().grabFocus();
                     quickNoteForm.getReplaceTextField().selectAll();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
