@@ -7,8 +7,13 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.luoboduner.moo.tool.dao.TFuncContentMapper;
+import com.luoboduner.moo.tool.domain.TFuncContent;
+import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.Style;
+import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
+import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -53,6 +58,8 @@ public class TimeConvertForm {
     private static TimeConvertForm timeConvertForm;
 
     public static final String TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
+    private static TFuncContentMapper funcContentMapper = MybatisUtil.getSqlSession().getMapper(TFuncContentMapper.class);
 
     private TimeConvertForm() {
         UndoUtil.register(this);
@@ -101,7 +108,32 @@ public class TimeConvertForm {
 
         ScrollUtil.smoothPane(timeConvertForm.getLeftScrollPane());
 
+        TFuncContent tFuncContent = funcContentMapper.selectByFunc(FuncConsts.TIME_CONVERT);
+        if (tFuncContent != null) {
+            timeConvertForm.getTimeHisTextArea().setText(tFuncContent.getContent());
+        }
         timeConvertForm.getTimeConvertPanel().updateUI();
+    }
+
+    public static int saveContent() {
+        timeConvertForm = getInstance();
+        String timeHisText = timeConvertForm.getTimeHisTextArea().getText();
+        String now = SqliteUtil.nowDateForSqlite();
+
+        TFuncContent tFuncContent = funcContentMapper.selectByFunc(FuncConsts.TIME_CONVERT);
+        if (tFuncContent == null) {
+            tFuncContent = new TFuncContent();
+            tFuncContent.setFunc(FuncConsts.TIME_CONVERT);
+            tFuncContent.setContent(timeHisText);
+            tFuncContent.setCreateTime(now);
+            tFuncContent.setModifiedTime(now);
+
+            return funcContentMapper.insert(tFuncContent);
+        } else {
+            tFuncContent.setContent(timeHisText);
+            tFuncContent.setModifiedTime(now);
+            return funcContentMapper.updateByPrimaryKeySelective(tFuncContent);
+        }
     }
 
     {

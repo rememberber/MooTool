@@ -4,7 +4,11 @@ import cn.hutool.core.math.MathUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.form.func.CalculatorForm;
+import com.luoboduner.moo.tool.util.Calculator;
+import com.luoboduner.moo.tool.util.CalculatorUtil;
+import com.luoboduner.moo.tool.util.ConsoleUtil;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
@@ -27,7 +31,7 @@ public class CalculatorListener {
 
         CalculatorForm calculatorForm = CalculatorForm.getInstance();
 
-        calculatorForm.getCalculateButton().addActionListener(e -> CalculatorForm.calculate());
+        calculatorForm.getCalculateButton().addActionListener(e -> calculate());
 
         calculatorForm.getInputExpressTextField().addKeyListener(new KeyListener() {
             @Override
@@ -38,7 +42,7 @@ public class CalculatorListener {
             @Override
             public void keyPressed(KeyEvent evt) {
                 if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-                    CalculatorForm.calculate();
+                    calculate();
                 }
             }
 
@@ -52,7 +56,7 @@ public class CalculatorListener {
                 String hex = calculatorForm.getHexTextField().getText().trim();
                 long dec = Long.parseLong(hex, 16);
                 calculatorForm.getDecTextField().setText(String.valueOf(dec));
-                calculatorForm.getOutputTextArea().append("DEC(" + hex + ") = " + dec + "\n\n");
+                output("DEC(" + hex + ") = " + dec + "\n\n");
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
@@ -64,7 +68,7 @@ public class CalculatorListener {
                 long dec = Long.parseLong(calculatorForm.getDecTextField().getText().trim());
                 String strHex = Long.toHexString(dec);
                 calculatorForm.getHexTextField().setText(strHex);
-                calculatorForm.getOutputTextArea().append("HEX(" + dec + ") = " + strHex + "\n\n");
+                output("HEX(" + dec + ") = " + strHex + "\n\n");
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
@@ -76,7 +80,7 @@ public class CalculatorListener {
                 long dec = Long.parseLong(calculatorForm.getDecTextField().getText().trim());
                 String binaryString = Long.toBinaryString(dec);
                 calculatorForm.getBinaryTextField().setText(binaryString);
-                calculatorForm.getOutputTextArea().append("BIN(" + dec + ") = " + binaryString + "\n\n");
+                output("BIN(" + dec + ") = " + binaryString + "\n\n");
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
@@ -88,7 +92,7 @@ public class CalculatorListener {
                 String binaryStr = calculatorForm.getBinaryTextField().getText().trim();
                 long dec = NumberUtil.binaryToLong(binaryStr);
                 calculatorForm.getDecTextField().setText(String.valueOf(dec));
-                calculatorForm.getOutputTextArea().append("DEC(" + binaryStr + ") = " + dec + "\n\n");
+                output("DEC(" + binaryStr + ") = " + dec + "\n\n");
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
@@ -101,7 +105,7 @@ public class CalculatorListener {
                 String num2 = calculatorForm.getDivisorNum2TextField().getText().trim();
                 int divisor = NumberUtil.divisor(Integer.parseInt(num1), Integer.parseInt(num2));
                 calculatorForm.getResultTextField().setText(String.valueOf(divisor));
-                calculatorForm.getOutputTextArea().append(num1 + "和" + num2 + "的最大公约数" + " = " + divisor + "\n\n");
+                output(num1 + "和" + num2 + "的最大公约数" + " = " + divisor + "\n\n");
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
@@ -114,7 +118,7 @@ public class CalculatorListener {
                 String num2 = calculatorForm.getMultipleNum2TextField().getText().trim();
                 int multiple = NumberUtil.multiple(Integer.parseInt(num1), Integer.parseInt(num2));
                 calculatorForm.getResultTextField().setText(String.valueOf(multiple));
-                calculatorForm.getOutputTextArea().append(num1 + "和" + num2 + "的最小公倍数" + " = " + multiple + "\n\n");
+                output(num1 + "和" + num2 + "的最小公倍数" + " = " + multiple + "\n\n");
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
@@ -127,7 +131,7 @@ public class CalculatorListener {
                 String m = calculatorForm.getArrangementCountMTextField().getText().trim();
                 long arrangementCount = MathUtil.arrangementCount(Integer.parseInt(n), Integer.parseInt(m));
                 calculatorForm.getResultTextField().setText(String.valueOf(arrangementCount));
-                calculatorForm.getOutputTextArea().append("A(" + n + "," + m + ")" + " = " + arrangementCount + "\n\n");
+                output("A(" + n + "," + m + ")" + " = " + arrangementCount + "\n\n");
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
@@ -140,12 +144,55 @@ public class CalculatorListener {
                 String m = calculatorForm.getCombinationCountMTextField().getText().trim();
                 long combinationCount = MathUtil.combinationCount(Integer.parseInt(n), Integer.parseInt(m));
                 calculatorForm.getResultTextField().setText(String.valueOf(combinationCount));
-                calculatorForm.getOutputTextArea().append("C(" + n + "," + m + ")" + " = " + combinationCount + "\n\n");
+                output("C(" + n + "," + m + ")" + " = " + combinationCount + "\n\n");
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
                 JOptionPane.showMessageDialog(calculatorForm.getCalculatorPanel(), ex.getMessage(), "计算失败！", JOptionPane.ERROR_MESSAGE);
             }
         });
+
+        // 文本域按键事件
+        calculatorForm.getOutputTextArea().addKeyListener(new KeyListener() {
+            @Override
+            public void keyReleased(KeyEvent arg0) {
+                CalculatorForm.saveContent();
+            }
+
+            @Override
+            public void keyPressed(KeyEvent evt) {
+                if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
+                    CalculatorForm.saveContent();
+                }
+            }
+
+            @Override
+            public void keyTyped(KeyEvent arg0) {
+            }
+        });
+    }
+
+    public static void calculate() {
+        CalculatorForm calculatorForm = CalculatorForm.getInstance();
+        try {
+            String inputExpress = calculatorForm.getInputExpressTextField().getText().replace("（", "(").replace("）", ")");
+            Calculator calc = new Calculator();
+            Double str = calc.prepareParam(inputExpress + "=");
+            String resultStr = CalculatorUtil.formatResult(String.format("%." + CalculatorUtil.RESULT_DECIMAL_MAX_LENGTH + "f", str));
+            calculatorForm.getResultTextField().setText(resultStr);
+            output(inputExpress + " = " + resultStr + "\n\n");
+            App.config.setCalculatorInputExpress(inputExpress);
+            App.config.save();
+        } catch (Exception ex) {
+            ex.printStackTrace();
+            logger.error(ExceptionUtils.getStackTrace(ex));
+            JOptionPane.showMessageDialog(calculatorForm.getCalculatorPanel(), ex.getMessage(), "计算失败！", JOptionPane.ERROR_MESSAGE);
+        }
+    }
+
+    public static void output(String text) {
+        CalculatorForm calculatorForm = CalculatorForm.getInstance();
+        ConsoleUtil.consoleOnly(calculatorForm.getOutputTextArea(), text);
+        CalculatorForm.saveContent();
     }
 }

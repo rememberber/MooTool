@@ -14,4 +14,6 @@ public interface TFuncContentMapper {
     int updateByPrimaryKeySelective(TFuncContent record);
 
     int updateByPrimaryKey(TFuncContent record);
+
+    TFuncContent selectByFunc(String func);
 }
