@@ -56,7 +56,7 @@ public class CalculatorListener {
                 String hex = calculatorForm.getHexTextField().getText().trim();
                 long dec = Long.parseLong(hex, 16);
                 calculatorForm.getDecTextField().setText(String.valueOf(dec));
-                output("DEC(" + hex + ") = " + dec + "\n\n");
+                output("DEC(" + hex + ") = " + dec);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
@@ -68,7 +68,7 @@ public class CalculatorListener {
                 long dec = Long.parseLong(calculatorForm.getDecTextField().getText().trim());
                 String strHex = Long.toHexString(dec);
                 calculatorForm.getHexTextField().setText(strHex);
-                output("HEX(" + dec + ") = " + strHex + "\n\n");
+                output("HEX(" + dec + ") = " + strHex);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
@@ -80,7 +80,7 @@ public class CalculatorListener {
                 long dec = Long.parseLong(calculatorForm.getDecTextField().getText().trim());
                 String binaryString = Long.toBinaryString(dec);
                 calculatorForm.getBinaryTextField().setText(binaryString);
-                output("BIN(" + dec + ") = " + binaryString + "\n\n");
+                output("BIN(" + dec + ") = " + binaryString);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
@@ -92,7 +92,7 @@ public class CalculatorListener {
                 String binaryStr = calculatorForm.getBinaryTextField().getText().trim();
                 long dec = NumberUtil.binaryToLong(binaryStr);
                 calculatorForm.getDecTextField().setText(String.valueOf(dec));
-                output("DEC(" + binaryStr + ") = " + dec + "\n\n");
+                output("DEC(" + binaryStr + ") = " + dec);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
@@ -105,7 +105,7 @@ public class CalculatorListener {
                 String num2 = calculatorForm.getDivisorNum2TextField().getText().trim();
                 int divisor = NumberUtil.divisor(Integer.parseInt(num1), Integer.parseInt(num2));
                 calculatorForm.getResultTextField().setText(String.valueOf(divisor));
-                output(num1 + "和" + num2 + "的最大公约数" + " = " + divisor + "\n\n");
+                output(num1 + "和" + num2 + "的最大公约数" + " = " + divisor);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
@@ -118,7 +118,7 @@ public class CalculatorListener {
                 String num2 = calculatorForm.getMultipleNum2TextField().getText().trim();
                 int multiple = NumberUtil.multiple(Integer.parseInt(num1), Integer.parseInt(num2));
                 calculatorForm.getResultTextField().setText(String.valueOf(multiple));
-                output(num1 + "和" + num2 + "的最小公倍数" + " = " + multiple + "\n\n");
+                output(num1 + "和" + num2 + "的最小公倍数" + " = " + multiple);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
@@ -131,7 +131,7 @@ public class CalculatorListener {
                 String m = calculatorForm.getArrangementCountMTextField().getText().trim();
                 long arrangementCount = MathUtil.arrangementCount(Integer.parseInt(n), Integer.parseInt(m));
                 calculatorForm.getResultTextField().setText(String.valueOf(arrangementCount));
-                output("A(" + n + "," + m + ")" + " = " + arrangementCount + "\n\n");
+                output("A(" + n + "," + m + ")" + " = " + arrangementCount);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
@@ -144,7 +144,7 @@ public class CalculatorListener {
                 String m = calculatorForm.getCombinationCountMTextField().getText().trim();
                 long combinationCount = MathUtil.combinationCount(Integer.parseInt(n), Integer.parseInt(m));
                 calculatorForm.getResultTextField().setText(String.valueOf(combinationCount));
-                output("C(" + n + "," + m + ")" + " = " + combinationCount + "\n\n");
+                output("C(" + n + "," + m + ")" + " = " + combinationCount);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
@@ -180,7 +180,7 @@ public class CalculatorListener {
             Double str = calc.prepareParam(inputExpress + "=");
             String resultStr = CalculatorUtil.formatResult(String.format("%." + CalculatorUtil.RESULT_DECIMAL_MAX_LENGTH + "f", str));
             calculatorForm.getResultTextField().setText(resultStr);
-            output(inputExpress + " = " + resultStr + "\n\n");
+            output(inputExpress + " = " + resultStr);
             App.config.setCalculatorInputExpress(inputExpress);
             App.config.save();
         } catch (Exception ex) {

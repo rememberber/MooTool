@@ -40,7 +40,8 @@ public class ConsoleUtil {
      */
     public static void consoleOnly(JTextArea textArea, String log) {
         textArea.append(DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss.SSS") + " ");
-        textArea.append(log + "\n");
+        textArea.append("\n");
+        textArea.append(log + "\n\n");
         textArea.setCaretPosition(textArea.getText().length());
     }
 
