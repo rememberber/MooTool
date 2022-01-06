@@ -8,8 +8,8 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.UiConsts;
-import com.luoboduner.moo.tool.ui.component.QuickNotePlainTextViewer;
-import com.luoboduner.moo.tool.ui.component.QuickNotePlainTextViewerManager;
+import com.luoboduner.moo.tool.ui.component.QuickNoteSyntaxTextViewer;
+import com.luoboduner.moo.tool.ui.component.QuickNoteSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
@@ -80,7 +80,7 @@ public class QuickNoteForm {
     private static QuickNoteForm quickNoteForm;
     private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
 
-    public static QuickNotePlainTextViewerManager quickNotePlainTextViewerManager;
+    public static QuickNoteSyntaxTextViewerManager quickNoteSyntaxTextViewerManager;
 
     private QuickNoteForm() {
         UndoUtil.register(this);
@@ -100,13 +100,14 @@ public class QuickNoteForm {
     public static void init() {
         quickNoteForm = getInstance();
 
-        quickNotePlainTextViewerManager = new QuickNotePlainTextViewerManager();
+        quickNoteSyntaxTextViewerManager = new QuickNoteSyntaxTextViewerManager();
 
         initUi();
 
+        initTextAreaFont();
+
         initNoteListTable();
 
-        initTextAreaFont();
     }
 
     private static void initUi() {
@@ -176,11 +177,11 @@ public class QuickNoteForm {
             model.addRow(data);
         }
         if (quickNoteList.size() > 0) {
-            QuickNotePlainTextViewer plainTextViewer = quickNotePlainTextViewerManager.newPlainTextViewer(quickNoteList.get(0).getName());
-            plainTextViewer.setText(quickNoteList.get(0).getContent());
-            getInstance().getScrollPane().setViewportView(plainTextViewer);
+            QuickNoteSyntaxTextViewer syntaxTextViewer = quickNoteSyntaxTextViewerManager.newPlainTextViewer(quickNoteList.get(0).getName());
+            syntaxTextViewer.setText(quickNoteList.get(0).getContent());
+            getInstance().getScrollPane().setViewportView(syntaxTextViewer);
             noteListTable.setRowSelectionInterval(0, 0);
-            plainTextViewer.grabFocus();
+            syntaxTextViewer.grabFocus();
             QuickNoteListener.selectedName = quickNoteList.get(0).getName();
         }
     }

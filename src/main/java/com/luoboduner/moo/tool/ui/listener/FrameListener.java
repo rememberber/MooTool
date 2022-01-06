@@ -12,6 +12,7 @@ import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 
 import javax.swing.*;
 import java.awt.event.KeyEvent;
@@ -83,7 +84,7 @@ public class FrameListener {
 
     public static void saveBeforeExit() {
         QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
-        JTextArea view = (JTextArea) quickNoteForm.getScrollPane().getViewport().getView();
+        RSyntaxTextArea view = (RSyntaxTextArea) quickNoteForm.getScrollPane().getViewport().getView();
         if (StringUtils.isNotBlank(view.getText())) {
             String quickNoteName = QuickNoteListener.selectedName;
             String now = SqliteUtil.nowDateForSqlite();

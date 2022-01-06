@@ -7,7 +7,7 @@ import com.google.common.collect.Lists;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
-import com.luoboduner.moo.tool.ui.component.QuickNotePlainTextViewer;
+import com.luoboduner.moo.tool.ui.component.QuickNoteSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.FindResultForm;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
@@ -18,6 +18,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -59,7 +60,7 @@ public class QuickNoteListener {
                 }
                 String now = SqliteUtil.nowDateForSqlite();
                 tQuickNote.setName(name);
-                JTextArea view = (JTextArea) quickNoteForm.getScrollPane().getViewport().getView();
+                RSyntaxTextArea view = (RSyntaxTextArea) quickNoteForm.getScrollPane().getViewport().getView();
                 tQuickNote.setContent(view.getText());
                 tQuickNote.setCreateTime(now);
                 tQuickNote.setModifiedTime(now);
@@ -81,13 +82,13 @@ public class QuickNoteListener {
                 String name = quickNoteForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
                 selectedName = name;
                 TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
-                QuickNotePlainTextViewer plainTextViewer = QuickNoteForm.quickNotePlainTextViewerManager.getPlainTextViewer(name);
-                plainTextViewer.setText(tQuickNote.getContent());
-                plainTextViewer.setCaretPosition(0);
-                quickNoteForm.getScrollPane().setViewportView(plainTextViewer);
+                QuickNoteSyntaxTextViewer syntaxTextViewer = QuickNoteForm.quickNoteSyntaxTextViewerManager.getSyntaxTextViewer(name);
+                syntaxTextViewer.setText(tQuickNote.getContent());
+                syntaxTextViewer.setCaretPosition(0);
+
+                quickNoteForm.getScrollPane().setViewportView(syntaxTextViewer);
                 quickNoteForm.getScrollPane().getVerticalScrollBar().setValue(0);
                 quickNoteForm.getScrollPane().getHorizontalScrollBar().setValue(0);
-                plainTextViewer.updateUI();
                 super.mousePressed(e);
             }
         });
@@ -104,8 +105,10 @@ public class QuickNoteListener {
                 String fontName = e.getItem().toString();
                 int fontSize = Integer.parseInt(quickNoteForm.getFontSizeComboBox().getSelectedItem().toString());
                 Font font = new Font(fontName, Font.PLAIN, fontSize);
-                JTextArea view = (JTextArea) quickNoteForm.getScrollPane().getViewport().getView();
-                view.setFont(font);
+                RSyntaxTextArea view = (RSyntaxTextArea) quickNoteForm.getScrollPane().getViewport().getView();
+                if (view != null) {
+                    view.setFont(font);
+                }
 
                 App.config.setQuickNoteFontName(fontName);
                 App.config.setQuickNoteFontSize(fontSize);
@@ -119,8 +122,10 @@ public class QuickNoteListener {
                 int fontSize = Integer.parseInt(e.getItem().toString());
                 String fontName = quickNoteForm.getFontNameComboBox().getSelectedItem().toString();
                 Font font = new Font(fontName, Font.PLAIN, fontSize);
-                JTextArea view = (JTextArea) quickNoteForm.getScrollPane().getViewport().getView();
-                view.setFont(font);
+                RSyntaxTextArea view = (RSyntaxTextArea) quickNoteForm.getScrollPane().getViewport().getView();
+                if (view != null) {
+                    view.setFont(font);
+                }
 
                 App.config.setQuickNoteFontName(fontName);
                 App.config.setQuickNoteFontSize(fontSize);
@@ -130,7 +135,7 @@ public class QuickNoteListener {
 
         // 自动换行按钮事件
         quickNoteForm.getWrapButton().addActionListener(e -> {
-            JTextArea view = (JTextArea) quickNoteForm.getScrollPane().getViewport().getView();
+            RSyntaxTextArea view = (RSyntaxTextArea) quickNoteForm.getScrollPane().getViewport().getView();
             view.setLineWrap(!view.getLineWrap());
         });
 
@@ -206,13 +211,13 @@ public class QuickNoteListener {
                     String name = quickNoteForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
                     selectedName = name;
                     TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
-                    QuickNotePlainTextViewer plainTextViewer = QuickNoteForm.quickNotePlainTextViewerManager.getPlainTextViewer(name);
-                    plainTextViewer.setText(tQuickNote.getContent());
-                    plainTextViewer.setCaretPosition(0);
-                    quickNoteForm.getScrollPane().setViewportView(plainTextViewer);
+                    QuickNoteSyntaxTextViewer syntaxTextViewer = QuickNoteForm.quickNoteSyntaxTextViewerManager.getSyntaxTextViewer(name);
+                    syntaxTextViewer.setText(tQuickNote.getContent());
+                    syntaxTextViewer.setCaretPosition(0);
+                    quickNoteForm.getScrollPane().setViewportView(syntaxTextViewer);
                     quickNoteForm.getScrollPane().getVerticalScrollBar().setValue(0);
                     quickNoteForm.getScrollPane().getHorizontalScrollBar().setValue(0);
-                    plainTextViewer.updateUI();
+                    syntaxTextViewer.updateUI();
                 }
             }
         });
@@ -371,7 +376,7 @@ public class QuickNoteListener {
     private static void quickReplace() {
         try {
             QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
-            JTextArea view = (JTextArea) quickNoteForm.getScrollPane().getViewport().getView();
+            RSyntaxTextArea view = (RSyntaxTextArea) quickNoteForm.getScrollPane().getViewport().getView();
 
             String content = view.getText();
 
@@ -468,7 +473,7 @@ public class QuickNoteListener {
         if (selectedName != null) {
             TQuickNote tQuickNote = new TQuickNote();
             tQuickNote.setName(selectedName);
-            tQuickNote.setContent(QuickNoteForm.quickNotePlainTextViewerManager.getPlainTextViewer(selectedName).getText());
+            tQuickNote.setContent(QuickNoteForm.quickNoteSyntaxTextViewerManager.getSyntaxTextViewer(selectedName).getText());
             if (refreshModifiedTime) {
                 tQuickNote.setModifiedTime(now);
             }
@@ -480,7 +485,7 @@ public class QuickNoteListener {
             if (StringUtils.isNotBlank(name)) {
                 TQuickNote tQuickNote = new TQuickNote();
                 tQuickNote.setName(name);
-                JTextArea view = (JTextArea) quickNoteForm.getScrollPane().getViewport().getView();
+                RSyntaxTextArea view = (RSyntaxTextArea) quickNoteForm.getScrollPane().getViewport().getView();
                 tQuickNote.setContent(view.getText());
                 tQuickNote.setCreateTime(now);
                 tQuickNote.setModifiedTime(now);
@@ -513,7 +518,7 @@ public class QuickNoteListener {
 
     private static void find() {
         QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
-        JTextArea view = (JTextArea) quickNoteForm.getScrollPane().getViewport().getView();
+        RSyntaxTextArea view = (RSyntaxTextArea) quickNoteForm.getScrollPane().getViewport().getView();
 
         String content = view.getText();
         String findKeyWord = quickNoteForm.getFindTextField().getText();
@@ -544,7 +549,7 @@ public class QuickNoteListener {
 
     private static void replace() {
         QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
-        JTextArea view = (JTextArea) quickNoteForm.getScrollPane().getViewport().getView();
+        RSyntaxTextArea view = (RSyntaxTextArea) quickNoteForm.getScrollPane().getViewport().getView();
         String target = quickNoteForm.getFindTextField().getText();
         String replacement = quickNoteForm.getReplaceTextField().getText();
         String content = view.getText();

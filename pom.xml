@@ -35,6 +35,7 @@
         <google.zxing.core.version>3.4.1</google.zxing.core.version>
         <flatlaf.version>2.0-rc1</flatlaf.version>
         <flatlaf-extras.version>2.0-rc1</flatlaf-extras.version>
+        <rsyntaxtextarea.version>3.1.5</rsyntaxtextarea.version>
     </properties>
 
     <dependencies>
@@ -136,6 +137,14 @@
             <artifactId>flatlaf-extras</artifactId>
             <version>${flatlaf-extras.version}</version>
         </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.fifesoft/rsyntaxtextarea -->
+        <dependency>
+            <groupId>com.fifesoft</groupId>
+            <artifactId>rsyntaxtextarea</artifactId>
+            <version>${rsyntaxtextarea.version}</version>
+        </dependency>
+
 
 
     </dependencies>
