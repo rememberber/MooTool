@@ -27,8 +27,10 @@ public class ConsoleUtil {
      * @param log
      */
     public static void consoleWithLog(JTextArea textArea, String log) {
+        textArea.append("\n\n");
         textArea.append(DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss.SSS") + " ");
-        textArea.append(log + "\n");
+        textArea.append("\n");
+        textArea.append(log);
         textArea.setCaretPosition(textArea.getText().length());
         logger.warn(log);
     }
@@ -39,9 +41,10 @@ public class ConsoleUtil {
      * @param log
      */
     public static void consoleOnly(JTextArea textArea, String log) {
+        textArea.append("\n\n");
         textArea.append(DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss.SSS") + " ");
         textArea.append("\n");
-        textArea.append(log + "\n\n");
+        textArea.append(log);
         textArea.setCaretPosition(textArea.getText().length());
     }
 
