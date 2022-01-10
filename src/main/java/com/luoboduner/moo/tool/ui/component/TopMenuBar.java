@@ -12,6 +12,7 @@ import com.luoboduner.moo.tool.ui.dialog.SettingDialog;
 import com.luoboduner.moo.tool.ui.dialog.SystemEnvResultDialog;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.util.SystemUtil;
+import com.luoboduner.moo.tool.util.UpgradeUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -105,6 +106,16 @@ public class TopMenuBar extends JMenuBar {
         keyMapMenuItem.setText("快捷键");
         keyMapMenuItem.addActionListener(e -> keyMapActionPerformed());
         appMenu.add(keyMapMenuItem);
+        // 查看日志
+        JMenuItem logMenuItem = new JMenuItem();
+        logMenuItem.setText("查看日志");
+        logMenuItem.addActionListener(e -> logActionPerformed());
+        appMenu.add(logMenuItem);
+        // 系统环境变量
+        JMenuItem sysEnvMenuItem = new JMenuItem();
+        sysEnvMenuItem.setText("系统环境变量");
+        sysEnvMenuItem.addActionListener(e -> sysEnvActionPerformed());
+        appMenu.add(sysEnvMenuItem);
         // 退出
         JMenuItem exitMenuItem = new JMenuItem();
         exitMenuItem.setText("退出");
@@ -161,26 +172,16 @@ public class TopMenuBar extends JMenuBar {
         appearanceMenu.add(fontSizeMenu);
 
         topMenuBar.add(appearanceMenu);
-        // ---------调试
-        JMenu debugMenu = new JMenu();
-        debugMenu.setText("调试");
-        // 查看日志
-        JMenuItem logMenuItem = new JMenuItem();
-        logMenuItem.setText("查看日志");
-        logMenuItem.addActionListener(e -> logActionPerformed());
 
-        debugMenu.add(logMenuItem);
-        // 系统环境变量
-        JMenuItem sysEnvMenuItem = new JMenuItem();
-        sysEnvMenuItem.setText("系统环境变量");
-        sysEnvMenuItem.addActionListener(e -> sysEnvActionPerformed());
-
-        debugMenu.add(sysEnvMenuItem);
-
-        topMenuBar.add(debugMenu);
         // ---------关于
         JMenu aboutMenu = new JMenu();
         aboutMenu.setText("关于");
+
+        // 检查更新
+        JMenuItem checkUpdateMenuItem = new JMenuItem();
+        checkUpdateMenuItem.setText("检查更新");
+        checkUpdateMenuItem.addActionListener(e -> checkUpdateActionPerformed());
+        aboutMenu.add(checkUpdateMenuItem);
 
         // 关于
         JMenuItem aboutMenuItem = new JMenuItem();
@@ -189,6 +190,10 @@ public class TopMenuBar extends JMenuBar {
         aboutMenu.add(aboutMenuItem);
 
         topMenuBar.add(aboutMenu);
+    }
+
+    private void checkUpdateActionPerformed() {
+        UpgradeUtil.checkUpdate(false);
     }
 
     private void initFontSizeMenu() {
