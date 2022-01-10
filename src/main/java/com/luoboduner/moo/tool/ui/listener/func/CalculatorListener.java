@@ -176,6 +176,8 @@ public class CalculatorListener {
         CalculatorForm calculatorForm = CalculatorForm.getInstance();
         try {
             String inputExpress = calculatorForm.getInputExpressTextField().getText().replace("（", "(").replace("）", ")");
+            inputExpress = inputExpress.replace(",", "");
+            inputExpress = inputExpress.replace("\t", "");
             Calculator calc = new Calculator();
             Double str = calc.prepareParam(inputExpress + "=");
             String resultStr = CalculatorUtil.formatResult(String.format("%." + CalculatorUtil.RESULT_DECIMAL_MAX_LENGTH + "f", str));
