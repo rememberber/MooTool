@@ -9,6 +9,7 @@ import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
 import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.JsonSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
@@ -34,7 +35,6 @@ public class JsonBeautyForm {
     private JPanel jsonBeautyPanel;
     private JTable noteListTable;
     private JButton deleteButton;
-    private JTextArea textArea;
     private JButton saveButton;
     private JSplitPane splitPane;
     private JButton addButton;
@@ -65,7 +65,10 @@ public class JsonBeautyForm {
     private static JsonBeautyForm jsonBeautyForm;
     private static TJsonBeautyMapper jsonBeautyMapper = MybatisUtil.getSqlSession().getMapper(TJsonBeautyMapper.class);
 
+    private JsonSyntaxTextViewer textArea;
+
     private JsonBeautyForm() {
+        textArea = new JsonSyntaxTextViewer();
         UndoUtil.register(this);
     }
 
@@ -87,6 +90,9 @@ public class JsonBeautyForm {
     }
 
     private static void initUi() {
+
+        jsonBeautyForm.getScrollPane().setViewportView(jsonBeautyForm.getTextArea());
+
         jsonBeautyForm.getRightPanel().removeAll();
         if ("上方".equals(App.config.getMenuBarPosition())) {
             jsonBeautyForm.getRightPanel().add(jsonBeautyForm.getControlPanel(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
@@ -354,9 +360,6 @@ public class JsonBeautyForm {
         findMenuSeparatorPanel.add(separator1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         scrollPane = new JScrollPane();
         rightPanel.add(scrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        textArea = new JTextArea();
-        textArea.setMargin(new Insets(10, 10, 10, 10));
-        scrollPane.setViewportView(textArea);
     }
 
     /**
