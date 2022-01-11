@@ -1,5 +1,7 @@
 package com.luoboduner.moo.tool.ui.component;
 
+import com.luoboduner.moo.tool.App;
+import org.fife.ui.rtextarea.Gutter;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import java.awt.*;
@@ -23,6 +25,12 @@ public class QuickNoteSyntaxTextViewerManager {
         RTextScrollPane rTextScrollPane = new RTextScrollPane(plainTextViewer);
         rTextScrollPane.setMaximumSize(new Dimension(-1, -1));
         rTextScrollPane.setMinimumSize(new Dimension(-1, -1));
+
+        Gutter gutter = rTextScrollPane.getGutter();
+        gutter.setBorderColor(App.mainFrame.getBackground());
+        Font font = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
+        gutter.setLineNumberFont(font);
+
         viewMap.put(name, rTextScrollPane);
         return rTextScrollPane;
     }
@@ -39,6 +47,13 @@ public class QuickNoteSyntaxTextViewerManager {
             rTextScrollPane = new RTextScrollPane(plainTextViewer);
             rTextScrollPane.setMaximumSize(new Dimension(-1, -1));
             rTextScrollPane.setMinimumSize(new Dimension(-1, -1));
+
+            Gutter gutter = rTextScrollPane.getGutter();
+            gutter.setBorderColor(App.mainFrame.getBackground());
+            Font font = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
+            gutter.setLineNumberFont(font);
+            viewMap.put(name, rTextScrollPane);
+
             viewMap.put(name, rTextScrollPane);
         }
         return rTextScrollPane;
