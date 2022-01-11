@@ -7,6 +7,7 @@ import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.TextAreaUtil;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
+import org.fife.ui.rsyntaxtextarea.Theme;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import java.awt.*;
@@ -14,15 +15,24 @@ import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.io.IOException;
 
 public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
     public QuickNoteSyntaxTextViewer() {
 
+        try {
+            Theme theme = Theme.load(QuickNoteListener.class.getResourceAsStream(
+                    "/org/fife/ui/rsyntaxtextarea/themes/monokai.xml"));
+            theme.apply(this);
+        } catch (IOException ioe) { // Never happens
+            ioe.printStackTrace();
+        }
+
         setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
         setCodeFoldingEnabled(true);
-        setCurrentLineHighlightColor(new Color(52, 52, 52));
-        setUseSelectedTextColor(true);
-        setSelectedTextColor(new Color(50, 50, 50));
+//        setCurrentLineHighlightColor(new Color(52, 52, 52));
+//        setUseSelectedTextColor(true);
+//        setSelectedTextColor(new Color(50, 50, 50));
 
         // 初始化背景色
         Style.blackTextArea(this);
@@ -52,13 +62,13 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
                 if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
                     QuickNoteListener.quickSave(true);
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
-                    RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane)quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
+                    RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane) quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
                     quickNoteForm.getFindReplacePanel().setVisible(true);
                     quickNoteForm.getFindTextField().setText(view.getSelectedText());
                     quickNoteForm.getFindTextField().grabFocus();
                     quickNoteForm.getFindTextField().selectAll();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_R) {
-                    RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane)quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
+                    RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane) quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
                     quickNoteForm.getFindReplacePanel().setVisible(true);
                     quickNoteForm.getFindTextField().setText(view.getSelectedText());
                     quickNoteForm.getReplaceTextField().grabFocus();
@@ -66,7 +76,7 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
                     QuickNoteListener.newNote();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
-                    RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane)quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
+                    RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane) quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
                     TextAreaUtil.deleteSelectedLine(view);
                 }
                 QuickNoteListener.quickSave(true);

@@ -16,6 +16,7 @@ import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.*;
@@ -76,6 +77,7 @@ public class QuickNoteForm {
     private JButton quickReplaceButton;
     private JLabel quickReplaceCloseLabel;
     private JSplitPane contentSplitPane;
+    private JComboBox syntaxComboBox;
 
     private static QuickNoteForm quickNoteForm;
     private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
@@ -152,9 +154,66 @@ public class QuickNoteForm {
         quickNoteForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
         quickNoteForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
 
+        initSyntaxComboBox();
+
         quickNoteForm.getDeletePanel().setVisible(false);
         quickNoteForm.getQuickNotePanel().updateUI();
 
+    }
+
+    private static void initSyntaxComboBox() {
+        quickNoteForm.getSyntaxComboBox().removeAllItems();
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_NONE);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_MARKDOWN);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_JAVA);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_C);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_CPLUSPLUS);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_CSHARP);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_PYTHON);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_GO);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_KOTLIN);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_SCALA);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_GROOVY);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_RUBY);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_HTML);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_SQL);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_JSON);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_JSON_WITH_COMMENTS);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_XML);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_YAML);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_JSP);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_TYPESCRIPT);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_CSS);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_LESS);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_PHP);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_PROPERTIES_FILE);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_ASSEMBLER_X86);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_ASSEMBLER_6502);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_BBCODE);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_CLOJURE);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_CSV);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_D);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_DOCKERFILE);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_DART);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_DELPHI);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_DTD);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_FORTRAN);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_HOSTS);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_HTACCESS);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_INI);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_LATEX);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_LISP);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_LUA);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_MAKEFILE);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_MXML);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_NSIS);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_PERL);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_SAS);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_TCL);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_UNIX_SHELL);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_VISUAL_BASIC);
+        quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_WINDOWS_BATCH);
     }
 
     public static void initNoteListTable() {
@@ -268,18 +327,18 @@ public class QuickNoteForm {
         controlPanel.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
         rightPanel.add(controlPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         menuPanel = new JPanel();
-        menuPanel.setLayout(new GridLayoutManager(1, 9, new Insets(0, 0, 0, 10), -1, -1));
+        menuPanel.setLayout(new GridLayoutManager(1, 10, new Insets(0, 0, 0, 10), -1, -1));
         controlPanel.add(menuPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         saveButton = new JButton();
         saveButton.setIcon(new ImageIcon(getClass().getResource("/icon/menu-saveall_dark.png")));
         saveButton.setText("");
         saveButton.setToolTipText("保存(Ctrl+S)");
-        menuPanel.add(saveButton, new GridConstraints(0, 7, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        menuPanel.add(saveButton, new GridConstraints(0, 8, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
-        menuPanel.add(spacer2, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        menuPanel.add(spacer2, new GridConstraints(0, 5, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         fontNameComboBox = new JComboBox();
         fontNameComboBox.setToolTipText("设置字体");
-        menuPanel.add(fontNameComboBox, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        menuPanel.add(fontNameComboBox, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         fontSizeComboBox = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
         defaultComboBoxModel1.addElement("5");
@@ -310,17 +369,17 @@ public class QuickNoteForm {
         defaultComboBoxModel1.addElement("30");
         fontSizeComboBox.setModel(defaultComboBoxModel1);
         fontSizeComboBox.setToolTipText("字号");
-        menuPanel.add(fontSizeComboBox, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        menuPanel.add(fontSizeComboBox, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         findButton = new JButton();
         findButton.setIcon(new ImageIcon(getClass().getResource("/icon/find_dark.png")));
         findButton.setText("");
         findButton.setToolTipText("查找(Ctrl+F)");
-        menuPanel.add(findButton, new GridConstraints(0, 6, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        menuPanel.add(findButton, new GridConstraints(0, 7, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         wrapButton = new JButton();
         wrapButton.setIcon(new ImageIcon(getClass().getResource("/icon/toggleSoftWrap_dark.png")));
         wrapButton.setText("");
         wrapButton.setToolTipText("自动换行");
-        menuPanel.add(wrapButton, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        menuPanel.add(wrapButton, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         listItemButton = new JButton();
         listItemButton.setIcon(new ImageIcon(getClass().getResource("/icon/listFiles_dark.png")));
         listItemButton.setText("");
@@ -330,10 +389,12 @@ public class QuickNoteForm {
         addButton.setIcon(new ImageIcon(getClass().getResource("/icon/add.png")));
         addButton.setText("");
         addButton.setToolTipText("新建(Ctrl+N)");
-        menuPanel.add(addButton, new GridConstraints(0, 5, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        menuPanel.add(addButton, new GridConstraints(0, 6, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         quickReplaceButton = new JButton();
         quickReplaceButton.setText("");
-        menuPanel.add(quickReplaceButton, new GridConstraints(0, 8, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        menuPanel.add(quickReplaceButton, new GridConstraints(0, 9, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        syntaxComboBox = new JComboBox();
+        menuPanel.add(syntaxComboBox, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         findReplacePanel = new JPanel();
         findReplacePanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         findReplacePanel.setVisible(true);

@@ -99,6 +99,19 @@ public class QuickNoteListener {
             deleteFiles(quickNoteForm);
         });
 
+        // 语法高亮下拉框事件
+        quickNoteForm.getSyntaxComboBox().addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                String syntaxName = e.getItem().toString();
+                if (quickNoteForm.getContentSplitPane().getLeftComponent() instanceof JScrollPane) {
+                    RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane) quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
+                    if (view != null) {
+                        view.setSyntaxEditingStyle(syntaxName);
+                    }
+                }
+            }
+        });
+
         // 字体名称下拉框事件
         quickNoteForm.getFontNameComboBox().addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
