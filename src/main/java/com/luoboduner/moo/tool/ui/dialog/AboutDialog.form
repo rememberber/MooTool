@@ -253,7 +253,7 @@
                   </component>
                 </children>
               </grid>
-              <grid id="74457" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+              <grid id="74457" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="5" left="3" bottom="20" right="0"/>
                 <constraints>
                   <grid row="7" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -264,7 +264,7 @@
                 </border>
                 <children>
                   <grid id="1f14f" binding="wePushPanel" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                    <margin top="0" left="0" bottom="0" right="0"/>
+                    <margin top="0" left="0" bottom="10" right="0"/>
                     <constraints>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                     </constraints>
@@ -302,6 +302,49 @@
                         </constraints>
                         <properties>
                           <text value="专注批量推送的小而美的工具"/>
+                        </properties>
+                      </component>
+                    </children>
+                  </grid>
+                  <grid id="f347f" binding="mooInfoPanel" layout-manager="GridLayoutManager" row-count="4" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                    <margin top="0" left="0" bottom="0" right="0"/>
+                    <constraints>
+                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties/>
+                    <border type="none"/>
+                    <children>
+                      <component id="f2af5" class="javax.swing.JLabel" binding="mooInfoLinkLabel">
+                        <constraints>
+                          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="&lt;html&gt;&lt;a href=&quot;https://github.com/rememberber/MooInfo&quot;&gt;https://github.com/rememberber/MooInfo&lt;/a&gt;&lt;/html&gt;"/>
+                        </properties>
+                      </component>
+                      <component id="9a209" class="javax.swing.JLabel" binding="mooInfoIconLabel">
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <icon value="icon/WePush-logo-64.png"/>
+                          <text value=""/>
+                        </properties>
+                      </component>
+                      <component id="a54c6" class="javax.swing.JLabel">
+                        <constraints>
+                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="MooInfo"/>
+                        </properties>
+                      </component>
+                      <component id="329cd" class="javax.swing.JLabel">
+                        <constraints>
+                          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="A visual implementation of OSHI, to view information about the system and hardware"/>
                         </properties>
                       </component>
                     </children>
