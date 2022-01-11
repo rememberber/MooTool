@@ -52,7 +52,6 @@ public class QuickNoteSyntaxTextViewerManager {
             gutter.setBorderColor(App.mainFrame.getBackground());
             Font font = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
             gutter.setLineNumberFont(font);
-            viewMap.put(name, rTextScrollPane);
 
             viewMap.put(name, rTextScrollPane);
         }
