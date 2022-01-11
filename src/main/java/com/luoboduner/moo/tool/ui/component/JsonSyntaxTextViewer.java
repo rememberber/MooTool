@@ -2,7 +2,6 @@ package com.luoboduner.moo.tool.ui.component;
 
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Style;
-import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
@@ -17,7 +16,7 @@ public class JsonSyntaxTextViewer extends RSyntaxTextArea {
     public JsonSyntaxTextViewer() {
 
         try {
-            Theme theme = Theme.load(QuickNoteListener.class.getResourceAsStream(
+            Theme theme = Theme.load(JsonSyntaxTextViewer.class.getResourceAsStream(
                     "/org/fife/ui/rsyntaxtextarea/themes/monokai.xml"));
             theme.apply(this);
         } catch (IOException ioe) { // Never happens
@@ -36,8 +35,8 @@ public class JsonSyntaxTextViewer extends RSyntaxTextArea {
         setMargin(new Insets(10, 10, 10, 10));
 
         // 初始化字体
-        String fontName = App.config.getQuickNoteFontName();
-        int fontSize = App.config.getQuickNoteFontSize();
+        String fontName = App.config.getJsonBeautyFontName();
+        int fontSize = App.config.getJsonBeautyFontSize();
         if (fontSize == 0) {
             fontSize = getFont().getSize() + 2;
         }

@@ -16,6 +16,8 @@ import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
+import org.fife.ui.rtextarea.Gutter;
+import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -42,7 +44,6 @@ public class JsonBeautyForm {
     private JComboBox fontSizeComboBox;
     private JButton findButton;
     private JPanel deletePanel;
-    private JScrollPane scrollPane;
     private JButton wrapButton;
     private JButton beautifyButton;
     private JButton listItemButton;
@@ -66,9 +67,25 @@ public class JsonBeautyForm {
     private static TJsonBeautyMapper jsonBeautyMapper = MybatisUtil.getSqlSession().getMapper(TJsonBeautyMapper.class);
 
     private JsonSyntaxTextViewer textArea;
+    private RTextScrollPane scrollPane;
 
     private JsonBeautyForm() {
         textArea = new JsonSyntaxTextViewer();
+        scrollPane = new RTextScrollPane(textArea);
+
+        scrollPane.setMaximumSize(new Dimension(-1, -1));
+        scrollPane.setMinimumSize(new Dimension(-1, -1));
+
+        Color defaultBackground = App.mainFrame.getBackground();
+        Color defaultForeground = QuickNoteForm.getInstance().getFindTextField().getForeground();
+
+        Gutter gutter = scrollPane.getGutter();
+        gutter.setBorderColor(defaultBackground);
+        Font font = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
+        gutter.setLineNumberFont(font);
+//            gutter.setLineNumberColor(defaultBackground);
+        gutter.setFoldBackground(defaultBackground);
+        gutter.setArmedFoldBackground(defaultBackground);
         UndoUtil.register(this);
     }
 
@@ -94,6 +111,8 @@ public class JsonBeautyForm {
         jsonBeautyForm.getScrollPane().setViewportView(jsonBeautyForm.getTextArea());
 
         jsonBeautyForm.getRightPanel().removeAll();
+        jsonBeautyForm.getRightPanel().setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+
         if ("上方".equals(App.config.getMenuBarPosition())) {
             jsonBeautyForm.getRightPanel().add(jsonBeautyForm.getControlPanel(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
             jsonBeautyForm.getRightPanel().add(jsonBeautyForm.getScrollPane(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
@@ -245,11 +264,11 @@ public class JsonBeautyForm {
         noteListTable = new JTable();
         scrollPane1.setViewportView(noteListTable);
         rightPanel = new JPanel();
-        rightPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        rightPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane.setRightComponent(rightPanel);
         controlPanel = new JPanel();
         controlPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
-        rightPanel.add(controlPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        rightPanel.add(controlPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         menuPanel = new JPanel();
         menuPanel.setLayout(new GridLayoutManager(1, 9, new Insets(0, 0, 0, 0), -1, -1));
         controlPanel.add(menuPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
@@ -358,8 +377,6 @@ public class JsonBeautyForm {
         findReplacePanel.add(findMenuSeparatorPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JSeparator separator1 = new JSeparator();
         findMenuSeparatorPanel.add(separator1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        scrollPane = new JScrollPane();
-        rightPanel.add(scrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
     }
 
     /**

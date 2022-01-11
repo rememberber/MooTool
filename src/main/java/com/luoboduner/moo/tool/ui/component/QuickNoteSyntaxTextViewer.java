@@ -24,7 +24,7 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
     public QuickNoteSyntaxTextViewer() {
 
         try {
-            Theme theme = Theme.load(QuickNoteListener.class.getResourceAsStream(
+            Theme theme = Theme.load(QuickNoteSyntaxTextViewer.class.getResourceAsStream(
                     "/org/fife/ui/rsyntaxtextarea/themes/monokai.xml"));
             theme.apply(this);
         } catch (IOException ioe) { // Never happens
