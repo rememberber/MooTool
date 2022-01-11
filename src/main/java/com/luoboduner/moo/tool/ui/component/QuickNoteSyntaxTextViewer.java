@@ -10,12 +10,15 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
+import javax.swing.event.HyperlinkEvent;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
     public QuickNoteSyntaxTextViewer() {
@@ -47,6 +50,18 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
         }
         Font font = new Font(fontName, Font.PLAIN, fontSize);
         setFont(font);
+
+        setHyperlinksEnabled(true);
+        addHyperlinkListener(e -> {
+            if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
+                Desktop desktop = Desktop.getDesktop();
+                try {
+                    desktop.browse(new URI(e.getURL().toString()));
+                } catch (IOException | URISyntaxException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        });
 
         setDoubleBuffered(true);
 
