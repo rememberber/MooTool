@@ -60,6 +60,7 @@ A handy tool set for developers.
 
 ## 计划中支持的功能
 
++ 词典、翻译
 + 正则表达式
 + Cron表达式
 + 图片压缩
@@ -72,6 +73,7 @@ A handy tool set for developers.
 ## 特别感谢
 
 [Hutool](http://hutool.cn/)  
+[FlatLaf](https://github.com/JFormDesigner/FlatLaf)  
 [Darcula](https://github.com/bulenkov/Darcula)  
 [BeautyEye](https://gitee.com/jackjiang/beautyeye)  
 [vscode-icons](https://github.com/microsoft/vscode-icons)  
