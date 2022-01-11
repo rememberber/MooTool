@@ -7,6 +7,7 @@ import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.TextAreaUtil;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
+import org.fife.ui.rtextarea.RTextScrollPane;
 
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -51,13 +52,13 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
                 if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
                     QuickNoteListener.quickSave(true);
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
-                    RSyntaxTextArea view = (RSyntaxTextArea) quickNoteForm.getScrollPane().getViewport().getView();
+                    RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane)quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
                     quickNoteForm.getFindReplacePanel().setVisible(true);
                     quickNoteForm.getFindTextField().setText(view.getSelectedText());
                     quickNoteForm.getFindTextField().grabFocus();
                     quickNoteForm.getFindTextField().selectAll();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_R) {
-                    RSyntaxTextArea view = (RSyntaxTextArea) quickNoteForm.getScrollPane().getViewport().getView();
+                    RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane)quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
                     quickNoteForm.getFindReplacePanel().setVisible(true);
                     quickNoteForm.getFindTextField().setText(view.getSelectedText());
                     quickNoteForm.getReplaceTextField().grabFocus();
@@ -65,7 +66,7 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
                     QuickNoteListener.newNote();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
-                    RSyntaxTextArea view = (RSyntaxTextArea) quickNoteForm.getScrollPane().getViewport().getView();
+                    RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane)quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
                     TextAreaUtil.deleteSelectedLine(view);
                 }
                 QuickNoteListener.quickSave(true);

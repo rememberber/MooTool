@@ -1,5 +1,8 @@
 package com.luoboduner.moo.tool.ui.component;
 
+import org.fife.ui.rtextarea.RTextScrollPane;
+
+import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -8,26 +11,20 @@ import java.util.Map;
  */
 public class QuickNoteSyntaxTextViewerManager {
 
-    private Map<String, QuickNoteSyntaxTextViewer> viewMap = new HashMap<>();
-
-    /**
-     * 创建一个新实例
-     *
-     * @return
-     */
-    public QuickNoteSyntaxTextViewer newPlainTextViewer() {
-        return new QuickNoteSyntaxTextViewer();
-    }
+    private Map<String, RTextScrollPane> viewMap = new HashMap<>();
 
     /**
      * 创建一个新实例，按名称放入map
      *
      * @return
      */
-    public QuickNoteSyntaxTextViewer newPlainTextViewer(String name) {
+    public RTextScrollPane newPlainTextViewer(String name) {
         QuickNoteSyntaxTextViewer plainTextViewer = new QuickNoteSyntaxTextViewer();
-        viewMap.put(name, plainTextViewer);
-        return plainTextViewer;
+        RTextScrollPane rTextScrollPane = new RTextScrollPane(plainTextViewer);
+        rTextScrollPane.setMaximumSize(new Dimension(-1, -1));
+        rTextScrollPane.setMinimumSize(new Dimension(-1, -1));
+        viewMap.put(name, rTextScrollPane);
+        return rTextScrollPane;
     }
 
     /**
@@ -35,13 +32,16 @@ public class QuickNoteSyntaxTextViewerManager {
      *
      * @return
      */
-    public QuickNoteSyntaxTextViewer getSyntaxTextViewer(String name) {
-        QuickNoteSyntaxTextViewer plainTextViewer = viewMap.get(name);
-        if (plainTextViewer == null) {
-            plainTextViewer = new QuickNoteSyntaxTextViewer();
-            viewMap.put(name, plainTextViewer);
+    public RTextScrollPane getSyntaxTextViewer(String name) {
+        RTextScrollPane rTextScrollPane = viewMap.get(name);
+        if (rTextScrollPane == null) {
+            QuickNoteSyntaxTextViewer plainTextViewer = new QuickNoteSyntaxTextViewer();
+            rTextScrollPane = new RTextScrollPane(plainTextViewer);
+            rTextScrollPane.setMaximumSize(new Dimension(-1, -1));
+            rTextScrollPane.setMinimumSize(new Dimension(-1, -1));
+            viewMap.put(name, rTextScrollPane);
         }
-        return plainTextViewer;
+        return rTextScrollPane;
     }
 
 }

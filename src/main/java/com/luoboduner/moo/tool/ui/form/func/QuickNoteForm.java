@@ -16,6 +16,7 @@ import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
+import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -42,7 +43,6 @@ public class QuickNoteForm {
     private JComboBox fontSizeComboBox;
     private JButton findButton;
     private JPanel deletePanel;
-    private JScrollPane scrollPane;
     private JButton wrapButton;
     private JButton listItemButton;
     private JPanel rightPanel;
@@ -177,9 +177,10 @@ public class QuickNoteForm {
             model.addRow(data);
         }
         if (quickNoteList.size() > 0) {
-            QuickNoteSyntaxTextViewer syntaxTextViewer = quickNoteSyntaxTextViewerManager.newPlainTextViewer(quickNoteList.get(0).getName());
-            syntaxTextViewer.setText(quickNoteList.get(0).getContent());
-            getInstance().getScrollPane().setViewportView(syntaxTextViewer);
+            RTextScrollPane syntaxTextViewer = QuickNoteForm.quickNoteSyntaxTextViewerManager.getSyntaxTextViewer(quickNoteList.get(0).getName());
+            QuickNoteSyntaxTextViewer view = (QuickNoteSyntaxTextViewer) syntaxTextViewer.getViewport().getView();
+            view.setText(quickNoteList.get(0).getContent());
+            getInstance().getContentSplitPane().setLeftComponent(syntaxTextViewer);
             noteListTable.setRowSelectionInterval(0, 0);
             syntaxTextViewer.grabFocus();
             QuickNoteListener.selectedName = quickNoteList.get(0).getName();
@@ -380,10 +381,6 @@ public class QuickNoteForm {
         contentSplitPane.setDividerLocation(200);
         contentSplitPane.setDoubleBuffered(true);
         panel2.add(contentSplitPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(200, 200), null, 0, false));
-        scrollPane = new JScrollPane();
-        scrollPane.setMaximumSize(new Dimension(-1, -1));
-        scrollPane.setMinimumSize(new Dimension(-1, -1));
-        contentSplitPane.setLeftComponent(scrollPane);
         quickReplaceScrollPane = new JScrollPane();
         quickReplaceScrollPane.setMaximumSize(new Dimension(-1, -1));
         quickReplaceScrollPane.setMinimumSize(new Dimension(-1, -1));

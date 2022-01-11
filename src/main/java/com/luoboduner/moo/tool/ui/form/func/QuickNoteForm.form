@@ -351,17 +351,6 @@
                         </properties>
                         <border type="none"/>
                         <children>
-                          <scrollpane id="4d18c" binding="scrollPane">
-                            <constraints>
-                              <splitpane position="left"/>
-                            </constraints>
-                            <properties>
-                              <maximumSize width="-1" height="-1"/>
-                              <minimumSize width="-1" height="-1"/>
-                            </properties>
-                            <border type="none"/>
-                            <children/>
-                          </scrollpane>
                           <scrollpane id="4745d" binding="quickReplaceScrollPane">
                             <constraints>
                               <splitpane position="right"/>
