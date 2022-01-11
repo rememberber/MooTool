@@ -1,6 +1,7 @@
 package com.luoboduner.moo.tool.ui.component;
 
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import org.fife.ui.rtextarea.Gutter;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
@@ -26,10 +27,16 @@ public class QuickNoteSyntaxTextViewerManager {
         rTextScrollPane.setMaximumSize(new Dimension(-1, -1));
         rTextScrollPane.setMinimumSize(new Dimension(-1, -1));
 
+        Color defaultBackground = App.mainFrame.getBackground();
+        Color defaultForeground = QuickNoteForm.getInstance().getFindTextField().getForeground();
+
         Gutter gutter = rTextScrollPane.getGutter();
-        gutter.setBorderColor(App.mainFrame.getBackground());
+        gutter.setBorderColor(defaultBackground);
         Font font = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
         gutter.setLineNumberFont(font);
+//            gutter.setLineNumberColor(defaultBackground);
+        gutter.setFoldBackground(defaultBackground);
+        gutter.setArmedFoldBackground(defaultBackground);
 
         viewMap.put(name, rTextScrollPane);
         return rTextScrollPane;
@@ -48,10 +55,16 @@ public class QuickNoteSyntaxTextViewerManager {
             rTextScrollPane.setMaximumSize(new Dimension(-1, -1));
             rTextScrollPane.setMinimumSize(new Dimension(-1, -1));
 
+            Color defaultBackground = App.mainFrame.getBackground();
+            Color defaultForeground = QuickNoteForm.getInstance().getFindTextField().getForeground();
+
             Gutter gutter = rTextScrollPane.getGutter();
-            gutter.setBorderColor(App.mainFrame.getBackground());
+            gutter.setBorderColor(defaultBackground);
             Font font = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
             gutter.setLineNumberFont(font);
+//            gutter.setLineNumberColor(defaultBackground);
+            gutter.setFoldBackground(defaultBackground);
+            gutter.setArmedFoldBackground(defaultBackground);
 
             viewMap.put(name, rTextScrollPane);
         }
