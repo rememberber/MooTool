@@ -6,7 +6,7 @@
 
     <groupId>com.luoboduner.moo.tool</groupId>
     <artifactId>MooTool</artifactId>
-    <version>1.3.6</version>
+    <version>1.4.0</version>
     <packaging>jar</packaging>
 
     <name>MooTool</name>
@@ -33,8 +33,9 @@
         <guava.version>31.0.1-jre</guava.version>
         <okhttp.version>4.9.3</okhttp.version>
         <google.zxing.core.version>3.4.1</google.zxing.core.version>
-        <flatlaf.version>1.6.5</flatlaf.version>
-        <flatlaf-extras.version>1.6.5</flatlaf-extras.version>
+        <flatlaf.version>2.0</flatlaf.version>
+        <flatlaf-extras.version>2.0</flatlaf-extras.version>
+        <rsyntaxtextarea.version>3.1.5</rsyntaxtextarea.version>
     </properties>
 
     <dependencies>
@@ -136,6 +137,14 @@
             <artifactId>flatlaf-extras</artifactId>
             <version>${flatlaf-extras.version}</version>
         </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.fifesoft/rsyntaxtextarea -->
+        <dependency>
+            <groupId>com.fifesoft</groupId>
+            <artifactId>rsyntaxtextarea</artifactId>
+            <version>${rsyntaxtextarea.version}</version>
+        </dependency>
+
 
 
     </dependencies>

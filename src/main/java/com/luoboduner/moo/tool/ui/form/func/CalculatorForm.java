@@ -7,13 +7,15 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.dao.TFuncContentMapper;
+import com.luoboduner.moo.tool.domain.TFuncContent;
+import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.Style;
-import com.luoboduner.moo.tool.util.Calculator;
-import com.luoboduner.moo.tool.util.CalculatorUtil;
+import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
+import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -61,27 +63,12 @@ public class CalculatorForm {
 
     private static CalculatorForm calculatorForm;
 
+    private static TFuncContentMapper funcContentMapper = MybatisUtil.getSqlSession().getMapper(TFuncContentMapper.class);
+
     private static final Log logger = LogFactory.get();
 
     private CalculatorForm() {
         UndoUtil.register(this);
-    }
-
-    public static void calculate() {
-        try {
-            String inputExpress = calculatorForm.getInputExpressTextField().getText().replace("（", "(").replace("）", ")");
-            Calculator calc = new Calculator();
-            Double str = calc.prepareParam(inputExpress + "=");
-            String resultStr = CalculatorUtil.formatResult(String.format("%." + CalculatorUtil.RESULT_DECIMAL_MAX_LENGTH + "f", str));
-            calculatorForm.getResultTextField().setText(resultStr);
-            calculatorForm.getOutputTextArea().append(inputExpress + " = " + resultStr + "\n\n");
-            App.config.setCalculatorInputExpress(inputExpress);
-            App.config.save();
-        } catch (Exception ex) {
-            ex.printStackTrace();
-            logger.error(ExceptionUtils.getStackTrace(ex));
-            JOptionPane.showMessageDialog(calculatorForm.getCalculatorPanel(), ex.getMessage(), "计算失败！", JOptionPane.ERROR_MESSAGE);
-        }
     }
 
     public static CalculatorForm getInstance() {
@@ -97,6 +84,11 @@ public class CalculatorForm {
         initUi();
 
         calculatorForm.getInputExpressTextField().setText(App.config.getCalculatorInputExpress());
+
+        TFuncContent tFuncContent = funcContentMapper.selectByFunc(FuncConsts.CALCULATOR);
+        if (tFuncContent != null) {
+            calculatorForm.getOutputTextArea().setText(tFuncContent.getContent());
+        }
     }
 
     private static void initUi() {
@@ -112,6 +104,27 @@ public class CalculatorForm {
         // 设置滚动条速度
         ScrollUtil.smoothPane(calculatorForm.getLeftScrollPane());
         calculatorForm.getCalculatorPanel().updateUI();
+    }
+
+    public static int saveContent() {
+        calculatorForm = getInstance();
+        String text = calculatorForm.getOutputTextArea().getText();
+        String now = SqliteUtil.nowDateForSqlite();
+
+        TFuncContent tFuncContent = funcContentMapper.selectByFunc(FuncConsts.CALCULATOR);
+        if (tFuncContent == null) {
+            tFuncContent = new TFuncContent();
+            tFuncContent.setFunc(FuncConsts.CALCULATOR);
+            tFuncContent.setContent(text);
+            tFuncContent.setCreateTime(now);
+            tFuncContent.setModifiedTime(now);
+
+            return funcContentMapper.insert(tFuncContent);
+        } else {
+            tFuncContent.setContent(text);
+            tFuncContent.setModifiedTime(now);
+            return funcContentMapper.updateByPrimaryKeySelective(tFuncContent);
+        }
     }
 
     {

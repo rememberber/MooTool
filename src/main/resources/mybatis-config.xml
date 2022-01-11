@@ -20,5 +20,6 @@
         <mapper resource="mapper/TQrCodeMapper.xml"/>
         <mapper resource="mapper/TFavoriteColorListMapper.xml"/>
         <mapper resource="mapper/TFavoriteColorItemMapper.xml"/>
+        <mapper resource="mapper/TFuncContentMapper.xml"/>
     </mappers>
 </configuration>

@@ -111,10 +111,12 @@ public class JsonBeautyListener {
                     jsonBeautyForm.getTextArea().setCaretPosition(0);
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
                     jsonBeautyForm.getFindReplacePanel().setVisible(true);
+                    jsonBeautyForm.getFindTextField().setText(jsonBeautyForm.getTextArea().getSelectedText());
                     jsonBeautyForm.getFindTextField().grabFocus();
                     jsonBeautyForm.getFindTextField().selectAll();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_R) {
                     jsonBeautyForm.getFindReplacePanel().setVisible(true);
+                    jsonBeautyForm.getFindTextField().setText(jsonBeautyForm.getTextArea().getSelectedText());
                     jsonBeautyForm.getReplaceTextField().grabFocus();
                     jsonBeautyForm.getReplaceTextField().selectAll();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
@@ -260,6 +262,17 @@ public class JsonBeautyListener {
                     }
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteFiles(jsonBeautyForm);
+                } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
+                    quickSave(false);
+                    int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
+                    String name = jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
+                    selectedNameJson = name;
+                    TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByName(name);
+                    jsonBeautyForm.getTextArea().setText(tJsonBeauty.getContent());
+                    jsonBeautyForm.getTextArea().setCaretPosition(0);
+                    jsonBeautyForm.getScrollPane().getVerticalScrollBar().setValue(0);
+                    jsonBeautyForm.getScrollPane().getHorizontalScrollBar().setValue(0);
+                    jsonBeautyForm.getTextArea().updateUI();
                 }
             }
         });
