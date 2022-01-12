@@ -211,11 +211,17 @@ public class QuickNoteForm {
             model.addRow(data);
         }
         if (quickNoteList.size() > 0) {
-            RTextScrollPane syntaxTextViewer = QuickNoteForm.quickNoteSyntaxTextViewerManager.getSyntaxTextViewer(quickNoteList.get(0).getName());
+            String name = quickNoteList.get(0).getName();
+            RTextScrollPane syntaxTextViewer = QuickNoteForm.quickNoteSyntaxTextViewerManager.getSyntaxTextViewer(name);
             getInstance().getContentSplitPane().setLeftComponent(syntaxTextViewer);
             noteListTable.setRowSelectionInterval(0, 0);
             syntaxTextViewer.grabFocus();
-            QuickNoteListener.selectedName = quickNoteList.get(0).getName();
+            QuickNoteListener.selectedName = name;
+
+            TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
+            quickNoteForm.getSyntaxComboBox().setSelectedItem(tQuickNote.getSyntax());
+            quickNoteForm.getFontNameComboBox().setSelectedItem(tQuickNote.getFontName());
+            quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(tQuickNote.getFontSize()));
         }
     }
 

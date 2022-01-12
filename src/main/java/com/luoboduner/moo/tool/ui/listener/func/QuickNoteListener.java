@@ -18,6 +18,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.*;
@@ -85,6 +86,11 @@ public class QuickNoteListener {
                 RTextScrollPane syntaxTextViewer = QuickNoteForm.quickNoteSyntaxTextViewerManager.getSyntaxTextViewer(name);
 
                 quickNoteForm.getContentSplitPane().setLeftComponent(syntaxTextViewer);
+
+                TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
+                quickNoteForm.getSyntaxComboBox().setSelectedItem(tQuickNote.getSyntax());
+                quickNoteForm.getFontNameComboBox().setSelectedItem(tQuickNote.getFontName());
+                quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(tQuickNote.getFontSize()));
                 super.mousePressed(e);
             }
         });
@@ -103,6 +109,18 @@ public class QuickNoteListener {
                     RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane) quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
                     if (view != null) {
                         view.setSyntaxEditingStyle(syntaxName);
+
+                        if (selectedName != null) {
+                            TQuickNote tQuickNote = new TQuickNote();
+                            tQuickNote.setName(selectedName);
+                            tQuickNote.setSyntax(syntaxName);
+                            String now = SqliteUtil.nowDateForSqlite();
+                            tQuickNote.setModifiedTime(now);
+
+                            quickNoteMapper.updateByName(tQuickNote);
+                        }
+
+                        view.updateUI();
                     }
                 }
             }
@@ -118,6 +136,18 @@ public class QuickNoteListener {
                     RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane) quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
                     if (view != null) {
                         view.setFont(font);
+                        if (selectedName != null) {
+                            TQuickNote tQuickNote = new TQuickNote();
+                            tQuickNote.setName(selectedName);
+                            tQuickNote.setFontSize(String.valueOf(fontSize));
+                            tQuickNote.setFontName(fontName);
+                            String now = SqliteUtil.nowDateForSqlite();
+                            tQuickNote.setModifiedTime(now);
+
+                            quickNoteMapper.updateByName(tQuickNote);
+                        }
+
+                        view.updateUI();
                     }
                 }
 
@@ -137,6 +167,18 @@ public class QuickNoteListener {
                     RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane) quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
                     if (view != null) {
                         view.setFont(font);
+                        if (selectedName != null) {
+                            TQuickNote tQuickNote = new TQuickNote();
+                            tQuickNote.setName(selectedName);
+                            tQuickNote.setFontSize(String.valueOf(fontSize));
+                            tQuickNote.setFontName(fontName);
+                            String now = SqliteUtil.nowDateForSqlite();
+                            tQuickNote.setModifiedTime(now);
+
+                            quickNoteMapper.updateByName(tQuickNote);
+                        }
+
+                        view.updateUI();
                     }
                 }
 
@@ -226,6 +268,12 @@ public class QuickNoteListener {
                     RTextScrollPane syntaxTextViewer = QuickNoteForm.quickNoteSyntaxTextViewerManager.getSyntaxTextViewer(name);
 
                     quickNoteForm.getContentSplitPane().setLeftComponent(syntaxTextViewer);
+
+                    TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
+                    quickNoteForm.getSyntaxComboBox().setSelectedItem(tQuickNote.getSyntax());
+                    quickNoteForm.getFontNameComboBox().setSelectedItem(tQuickNote.getFontName());
+                    quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(tQuickNote.getFontSize()));
+
                     syntaxTextViewer.updateUI();
                 }
             }
@@ -520,6 +568,9 @@ public class QuickNoteListener {
             tQuickNote.setName(name);
             tQuickNote.setCreateTime(now);
             tQuickNote.setModifiedTime(now);
+            tQuickNote.setSyntax(SyntaxConstants.SYNTAX_STYLE_NONE);
+            tQuickNote.setFontName(App.config.getQuickNoteFontName());
+            tQuickNote.setFontSize(String.valueOf(App.config.getFontSize()));
             quickNoteMapper.insert(tQuickNote);
             QuickNoteForm.initNoteListTable();
         }

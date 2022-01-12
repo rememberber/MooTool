@@ -5,6 +5,7 @@ import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.util.MybatisUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.fife.ui.rtextarea.Gutter;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
@@ -32,6 +33,14 @@ public class QuickNoteSyntaxTextViewerManager {
             QuickNoteSyntaxTextViewer plainTextViewer = new QuickNoteSyntaxTextViewer();
             TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
             plainTextViewer.setText(tQuickNote.getContent());
+            if (StringUtils.isNotEmpty(tQuickNote.getSyntax())) {
+                plainTextViewer.setSyntaxEditingStyle(tQuickNote.getSyntax());
+            }
+            if (StringUtils.isNotEmpty(tQuickNote.getFontName()) && StringUtils.isNotEmpty(tQuickNote.getFontSize())) {
+                Font font = new Font(tQuickNote.getFontName(), Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
+                plainTextViewer.setFont(font);
+            }
+
             plainTextViewer.setCaretPosition(0);
 
             rTextScrollPane = new RTextScrollPane(plainTextViewer);
