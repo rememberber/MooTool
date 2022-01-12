@@ -230,23 +230,24 @@ public class QuickNoteListener {
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
                     int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
                     viewByRowNum(selectedRow);
-
-
                 }
             }
         });
 
+        // 查找按钮
         quickNoteForm.getFindButton().addActionListener(e -> {
             quickNoteForm.getFindReplacePanel().setVisible(true);
             quickNoteForm.getFindTextField().grabFocus();
             quickNoteForm.getFindTextField().selectAll();
         });
 
+        // 快捷替换按钮
         quickNoteForm.getQuickReplaceButton().addActionListener(e -> {
             quickNoteForm.getQuickReplaceScrollPane().setVisible(true);
             quickNoteForm.getContentSplitPane().setDividerLocation((int) (quickNoteForm.getContentSplitPane().getWidth() * 0.62));
         });
 
+        // 查找输入框
         quickNoteForm.getFindTextField().addKeyListener(new KeyListener() {
             @Override
             public void keyReleased(KeyEvent arg0) {
@@ -264,6 +265,7 @@ public class QuickNoteListener {
             }
         });
 
+        // 列表按钮
         quickNoteForm.getListItemButton().addActionListener(e -> {
             int currentDividerLocation = quickNoteForm.getContentSplitPane().getDividerLocation();
             if (currentDividerLocation < 5) {
@@ -273,6 +275,7 @@ public class QuickNoteListener {
             }
         });
 
+        // 导出按钮
         quickNoteForm.getExportButton().addActionListener(e -> {
             int[] selectedRows = quickNoteForm.getNoteListTable().getSelectedRows();
 
@@ -317,10 +320,13 @@ public class QuickNoteListener {
 
         });
 
+        // 执行查找
         quickNoteForm.getDoFindButton().addActionListener(e -> find());
 
+        // 执行快捷替换
         quickNoteForm.getStartQuickReplaceButton().addActionListener(e -> quickReplace());
 
+        // 关闭查找面板按钮
         quickNoteForm.getFindReplaceCloseLabel().addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -339,6 +345,7 @@ public class QuickNoteListener {
             }
         });
 
+        // 关闭快捷查找面板按钮
         quickNoteForm.getQuickReplaceCloseLabel().addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -358,7 +365,10 @@ public class QuickNoteListener {
             }
         });
 
+        // 执行替换按钮
         quickNoteForm.getDoReplaceButton().addActionListener(e -> replace());
+
+        // 替换文本框
         quickNoteForm.getReplaceTextField().addKeyListener(new KeyListener() {
             @Override
             public void keyReleased(KeyEvent arg0) {
@@ -376,6 +386,7 @@ public class QuickNoteListener {
             }
         });
 
+        // 查找-正则匹配CheckBox
         quickNoteForm.getFindUseRegexCheckBox().addActionListener(e -> {
             boolean selected = quickNoteForm.getFindUseRegexCheckBox().isSelected();
             if (selected) {
@@ -422,6 +433,9 @@ public class QuickNoteListener {
         return "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
     }
 
+    /**
+     * 快捷替换
+     */
     private static void quickReplace() {
         try {
             QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
@@ -484,6 +498,11 @@ public class QuickNoteListener {
 
     }
 
+    /**
+     * 删除文件
+     *
+     * @param quickNoteForm
+     */
     private static void deleteFiles(QuickNoteForm quickNoteForm) {
         try {
             int[] selectedRows = quickNoteForm.getNoteListTable().getSelectedRows();
