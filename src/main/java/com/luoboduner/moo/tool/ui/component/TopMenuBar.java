@@ -6,10 +6,7 @@ import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatAnimatedLafChange;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Init;
-import com.luoboduner.moo.tool.ui.dialog.AboutDialog;
-import com.luoboduner.moo.tool.ui.dialog.KeyMapDialog;
-import com.luoboduner.moo.tool.ui.dialog.SettingDialog;
-import com.luoboduner.moo.tool.ui.dialog.SystemEnvResultDialog;
+import com.luoboduner.moo.tool.ui.dialog.*;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
@@ -101,6 +98,11 @@ public class TopMenuBar extends JMenuBar {
         settingMenuItem.setText("设置");
         settingMenuItem.addActionListener(e -> settingActionPerformed());
         appMenu.add(settingMenuItem);
+        // 同步和备份
+        JMenuItem syncAndBackupMenuItem = new JMenuItem();
+        syncAndBackupMenuItem.setText("同步和备份");
+        syncAndBackupMenuItem.addActionListener(e -> syncAndBackupActionPerformed());
+        appMenu.add(syncAndBackupMenuItem);
         // 快捷键
         JMenuItem keyMapMenuItem = new JMenuItem();
         keyMapMenuItem.setText("快捷键");
@@ -192,6 +194,17 @@ public class TopMenuBar extends JMenuBar {
         topMenuBar.add(aboutMenu);
     }
 
+    private void syncAndBackupActionPerformed() {
+        try {
+            SyncAndBackupDialog dialog = new SyncAndBackupDialog();
+
+            dialog.pack();
+            dialog.setVisible(true);
+        } catch (Exception e2) {
+            logger.error(e2);
+        }
+    }
+
     private void checkUpdateActionPerformed() {
         UpgradeUtil.checkUpdate(false);
     }
@@ -212,7 +225,6 @@ public class TopMenuBar extends JMenuBar {
             fontSizeMenu.add(item);
         }
     }
-
 
     private void initFontFamilyMenu() {
 
