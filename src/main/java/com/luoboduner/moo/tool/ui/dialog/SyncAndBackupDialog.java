@@ -19,13 +19,13 @@ import java.awt.event.*;
  */
 public class SyncAndBackupDialog extends JDialog {
     private JPanel contentPane;
-    private JTextField textField1;
-    private JButton 保存Button;
-    private JButton 从远程覆盖本地Button;
-    private JButton 从本地覆盖远程Button;
-    private JTextField textField2;
-    private JButton 导出Button;
-    private JCheckBox 自动同步CheckBox;
+    private JTextField gitRepoTextField;
+    private JButton saveButton;
+    private JButton fromRemoteButton;
+    private JButton toLocalButton;
+    private JTextField localDataPathTextField;
+    private JButton exportButton;
+    private JCheckBox autoSyncCheckBox;
 
     public SyncAndBackupDialog() {
         super(App.mainFrame, "同步和备份");
@@ -91,26 +91,31 @@ public class SyncAndBackupDialog extends JDialog {
         final JLabel label1 = new JLabel();
         label1.setText("用于同步MooTool数据的Git仓库地址：");
         panel3.add(label1, new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        textField1 = new JTextField();
-        panel3.add(textField1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-        保存Button = new JButton();
-        保存Button.setText("保存");
-        panel3.add(保存Button, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        gitRepoTextField = new JTextField();
+        gitRepoTextField.setEnabled(false);
+        gitRepoTextField.setText("功能尚未实现……");
+        panel3.add(gitRepoTextField, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        saveButton = new JButton();
+        saveButton.setEnabled(false);
+        saveButton.setText("保存");
+        panel3.add(saveButton, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel4 = new JPanel();
         panel4.setLayout(new GridLayoutManager(1, 4, new Insets(0, 0, 0, 0), -1, -1));
         panel2.add(panel4, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        从远程覆盖本地Button = new JButton();
-        从远程覆盖本地Button.setText("从远程覆盖本地");
-        panel4.add(从远程覆盖本地Button, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        fromRemoteButton = new JButton();
+        fromRemoteButton.setEnabled(false);
+        fromRemoteButton.setText("从远程覆盖本地");
+        panel4.add(fromRemoteButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
         panel4.add(spacer2, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        从本地覆盖远程Button = new JButton();
-        从本地覆盖远程Button.setText("从本地覆盖远程");
-        panel4.add(从本地覆盖远程Button, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        自动同步CheckBox = new JCheckBox();
-        自动同步CheckBox.setEnabled(false);
-        自动同步CheckBox.setText("自动同步");
-        panel4.add(自动同步CheckBox, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        toLocalButton = new JButton();
+        toLocalButton.setEnabled(false);
+        toLocalButton.setText("从本地覆盖远程");
+        panel4.add(toLocalButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        autoSyncCheckBox = new JCheckBox();
+        autoSyncCheckBox.setEnabled(false);
+        autoSyncCheckBox.setText("自动同步");
+        panel4.add(autoSyncCheckBox, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel5 = new JPanel();
         panel5.setLayout(new GridLayoutManager(1, 1, new Insets(10, 10, 10, 10), -1, -1));
         panel1.add(panel5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
@@ -121,11 +126,12 @@ public class SyncAndBackupDialog extends JDialog {
         final JLabel label2 = new JLabel();
         label2.setText("本地数据路径：");
         panel6.add(label2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        textField2 = new JTextField();
-        panel6.add(textField2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-        导出Button = new JButton();
-        导出Button.setText("导出");
-        panel6.add(导出Button, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        localDataPathTextField = new JTextField();
+        localDataPathTextField.setEditable(false);
+        panel6.add(localDataPathTextField, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        exportButton = new JButton();
+        exportButton.setText("导出");
+        panel6.add(exportButton, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     /**

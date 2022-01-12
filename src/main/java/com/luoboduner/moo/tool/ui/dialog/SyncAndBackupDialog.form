@@ -45,19 +45,23 @@
                       <text value="用于同步MooTool数据的Git仓库地址："/>
                     </properties>
                   </component>
-                  <component id="7c453" class="javax.swing.JTextField" binding="textField1" default-binding="true">
+                  <component id="7c453" class="javax.swing.JTextField" binding="gitRepoTextField">
                     <constraints>
                       <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                         <preferred-size width="150" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties/>
+                    <properties>
+                      <enabled value="false"/>
+                      <text value="功能尚未实现……"/>
+                    </properties>
                   </component>
-                  <component id="26253" class="javax.swing.JButton" binding="保存Button" default-binding="true">
+                  <component id="26253" class="javax.swing.JButton" binding="saveButton">
                     <constraints>
                       <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
+                      <enabled value="false"/>
                       <text value="保存"/>
                     </properties>
                   </component>
@@ -71,11 +75,12 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="721e3" class="javax.swing.JButton" binding="从远程覆盖本地Button" default-binding="true">
+                  <component id="721e3" class="javax.swing.JButton" binding="fromRemoteButton">
                     <constraints>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
+                      <enabled value="false"/>
                       <text value="从远程覆盖本地"/>
                     </properties>
                   </component>
@@ -84,15 +89,16 @@
                       <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
                   </hspacer>
-                  <component id="39714" class="javax.swing.JButton" binding="从本地覆盖远程Button" default-binding="true">
+                  <component id="39714" class="javax.swing.JButton" binding="toLocalButton">
                     <constraints>
                       <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
+                      <enabled value="false"/>
                       <text value="从本地覆盖远程"/>
                     </properties>
                   </component>
-                  <component id="39d36" class="javax.swing.JCheckBox" binding="自动同步CheckBox" default-binding="true">
+                  <component id="39d36" class="javax.swing.JCheckBox" binding="autoSyncCheckBox">
                     <constraints>
                       <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
@@ -129,15 +135,17 @@
                       <text value="本地数据路径："/>
                     </properties>
                   </component>
-                  <component id="bcb1d" class="javax.swing.JTextField" binding="textField2" default-binding="true">
+                  <component id="bcb1d" class="javax.swing.JTextField" binding="localDataPathTextField">
                     <constraints>
                       <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                         <preferred-size width="150" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties/>
+                    <properties>
+                      <editable value="false"/>
+                    </properties>
                   </component>
-                  <component id="2f9e0" class="javax.swing.JButton" binding="导出Button" default-binding="true">
+                  <component id="2f9e0" class="javax.swing.JButton" binding="exportButton">
                     <constraints>
                       <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
