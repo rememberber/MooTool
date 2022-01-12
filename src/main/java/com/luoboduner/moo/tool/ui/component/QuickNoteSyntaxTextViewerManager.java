@@ -6,6 +6,7 @@ import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rtextarea.Gutter;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
@@ -22,12 +23,14 @@ public class QuickNoteSyntaxTextViewerManager {
 
     private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
 
+    private RTextScrollPane currentRTextScrollPane;
+
     /**
      * 按名称获取一个实例，若不存在则新建
      *
      * @return
      */
-    public RTextScrollPane getSyntaxTextViewer(String name) {
+    public RTextScrollPane getRTextScrollPane(String name) {
         RTextScrollPane rTextScrollPane = viewMap.get(name);
         if (rTextScrollPane == null) {
             QuickNoteSyntaxTextViewer plainTextViewer = new QuickNoteSyntaxTextViewer();
@@ -59,8 +62,21 @@ public class QuickNoteSyntaxTextViewerManager {
             gutter.setArmedFoldBackground(defaultBackground);
 
             viewMap.put(name, rTextScrollPane);
+            currentRTextScrollPane = rTextScrollPane;
         }
         return rTextScrollPane;
+    }
+
+    public RTextScrollPane getCurrentRTextScrollPane() {
+        return currentRTextScrollPane;
+    }
+
+    public RSyntaxTextArea getCurrentRSyntaxTextArea() {
+        return (RSyntaxTextArea) currentRTextScrollPane.getViewport().getView();
+    }
+
+    public String getCurrentText() {
+        return currentRTextScrollPane.getTextArea().getText();
     }
 
 }

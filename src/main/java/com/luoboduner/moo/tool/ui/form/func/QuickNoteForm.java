@@ -212,7 +212,7 @@ public class QuickNoteForm {
         }
         if (quickNoteList.size() > 0) {
             String name = quickNoteList.get(0).getName();
-            RTextScrollPane syntaxTextViewer = QuickNoteForm.quickNoteSyntaxTextViewerManager.getSyntaxTextViewer(name);
+            RTextScrollPane syntaxTextViewer = QuickNoteForm.quickNoteSyntaxTextViewerManager.getRTextScrollPane(name);
             getInstance().getContentSplitPane().setLeftComponent(syntaxTextViewer);
             noteListTable.setRowSelectionInterval(0, 0);
             syntaxTextViewer.grabFocus();
