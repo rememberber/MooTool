@@ -78,15 +78,12 @@ public class QuickNoteListener {
         quickNoteForm.getNoteListTable().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                quickSave(false);
+//                quickSave(false);
                 int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
                 String name = quickNoteForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
                 selectedName = name;
-                TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
+
                 RTextScrollPane syntaxTextViewer = QuickNoteForm.quickNoteSyntaxTextViewerManager.getSyntaxTextViewer(name);
-                QuickNoteSyntaxTextViewer view = (QuickNoteSyntaxTextViewer) syntaxTextViewer.getViewport().getView();
-                view.setText(tQuickNote.getContent());
-                view.setCaretPosition(0);
 
                 quickNoteForm.getContentSplitPane().setLeftComponent(syntaxTextViewer);
                 super.mousePressed(e);
@@ -223,7 +220,7 @@ public class QuickNoteListener {
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteFiles(quickNoteForm);
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
-                    quickSave(false);
+//                    quickSave(false);
                     int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
                     String name = quickNoteForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
                     selectedName = name;
