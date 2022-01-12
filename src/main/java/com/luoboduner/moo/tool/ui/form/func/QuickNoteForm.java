@@ -8,7 +8,6 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.UiConsts;
-import com.luoboduner.moo.tool.ui.component.QuickNoteSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.QuickNoteSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
@@ -115,32 +114,6 @@ public class QuickNoteForm {
     }
 
     private static void initUi() {
-//        quickNoteForm.getRightPanel().removeAll();
-//        if ("上方".equals(App.config.getMenuBarPosition())) {
-//            quickNoteForm.getRightPanel().add(quickNoteForm.getControlPanel(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-//            quickNoteForm.getRightPanel().add(quickNoteForm.getScrollPane(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-//        } else if ("下方".equals(App.config.getMenuBarPosition())) {
-//            quickNoteForm.getRightPanel().add(quickNoteForm.getControlPanel(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-//            quickNoteForm.getRightPanel().add(quickNoteForm.getScrollPane(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-//        }
-//
-//        quickNoteForm.getControlPanel().removeAll();
-//        if ("上方".equals(App.config.getMenuBarPosition())) {
-//            quickNoteForm.getControlPanel().add(quickNoteForm.getMenuPanel(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-//            quickNoteForm.getControlPanel().add(quickNoteForm.getFindReplacePanel(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-//        } else if ("下方".equals(App.config.getMenuBarPosition())) {
-//            quickNoteForm.getControlPanel().add(quickNoteForm.getMenuPanel(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-//            quickNoteForm.getControlPanel().add(quickNoteForm.getFindReplacePanel(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-//        }
-//
-//        quickNoteForm.getFindReplacePanel().removeAll();
-//        if ("上方".equals(App.config.getMenuBarPosition())) {
-//            quickNoteForm.getFindReplacePanel().add(quickNoteForm.getFindMenuSeparatorPanel(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-//            quickNoteForm.getFindReplacePanel().add(quickNoteForm.getFindOptionPanel(), new GridConstraints(1, 0, 2, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-//        } else if ("下方".equals(App.config.getMenuBarPosition())) {
-//            quickNoteForm.getFindReplacePanel().add(quickNoteForm.getFindOptionPanel(), new GridConstraints(0, 0, 2, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-//            quickNoteForm.getFindReplacePanel().add(quickNoteForm.getFindMenuSeparatorPanel(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-//        }
         quickNoteForm.getAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
         quickNoteForm.getSaveButton().setIcon(new FlatSVGIcon("icon/save.svg"));
         quickNoteForm.getFindButton().setIcon(new FlatSVGIcon("icon/find.svg"));
@@ -239,8 +212,6 @@ public class QuickNoteForm {
         }
         if (quickNoteList.size() > 0) {
             RTextScrollPane syntaxTextViewer = QuickNoteForm.quickNoteSyntaxTextViewerManager.getSyntaxTextViewer(quickNoteList.get(0).getName());
-            QuickNoteSyntaxTextViewer view = (QuickNoteSyntaxTextViewer) syntaxTextViewer.getViewport().getView();
-            view.setText(quickNoteList.get(0).getContent());
             getInstance().getContentSplitPane().setLeftComponent(syntaxTextViewer);
             noteListTable.setRowSelectionInterval(0, 0);
             syntaxTextViewer.grabFocus();

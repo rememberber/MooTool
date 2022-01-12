@@ -7,7 +7,6 @@ import com.google.common.collect.Lists;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
-import com.luoboduner.moo.tool.ui.component.QuickNoteSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.FindResultForm;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
@@ -220,16 +219,11 @@ public class QuickNoteListener {
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteFiles(quickNoteForm);
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
-//                    quickSave(false);
                     int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
                     String name = quickNoteForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
                     selectedName = name;
-                    TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
 
                     RTextScrollPane syntaxTextViewer = QuickNoteForm.quickNoteSyntaxTextViewerManager.getSyntaxTextViewer(name);
-                    QuickNoteSyntaxTextViewer view = (QuickNoteSyntaxTextViewer) syntaxTextViewer.getViewport().getView();
-                    view.setText(tQuickNote.getContent());
-                    view.setCaretPosition(0);
 
                     quickNoteForm.getContentSplitPane().setLeftComponent(syntaxTextViewer);
                     syntaxTextViewer.updateUI();
