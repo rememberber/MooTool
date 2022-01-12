@@ -77,7 +77,7 @@ public class JsonBeautyForm {
         scrollPane.setMinimumSize(new Dimension(-1, -1));
 
         Color defaultBackground = App.mainFrame.getBackground();
-        Color defaultForeground = QuickNoteForm.getInstance().getFindTextField().getForeground();
+        Color defaultForeground = findTextField.getForeground();
 
         Gutter gutter = scrollPane.getGutter();
         gutter.setBorderColor(defaultBackground);
