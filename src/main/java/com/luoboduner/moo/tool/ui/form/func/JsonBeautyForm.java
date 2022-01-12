@@ -104,6 +104,8 @@ public class JsonBeautyForm {
         initListTable();
 
         initTextAreaFont();
+
+        JsonBeautyListener.addListeners();
     }
 
     private static void initUi() {

@@ -100,7 +100,6 @@ public class App {
         MainWindow.getInstance().init();
         Init.initAllTab();
         Init.initOthers();
-        mainFrame.addListeners();
         mainFrame.remove(loadingPanel);
         Init.fontSizeGuide();
     }

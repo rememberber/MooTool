@@ -7,6 +7,7 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.listener.func.ColorBoardListener;
 import com.luoboduner.moo.tool.util.ColorUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
@@ -92,6 +93,8 @@ public class ColorBoardForm {
         colorBoardForm.getCopyButton().setIcon(new FlatSVGIcon("icon/copy.svg"));
 
         fillColorBlocks();
+
+        ColorBoardListener.addListeners();
     }
 
     public static void fillColorBlocks() {

@@ -110,6 +110,8 @@ public class QuickNoteForm {
 
         initNoteListTable();
 
+        QuickNoteListener.addListeners();
+
     }
 
     private static void initUi() {

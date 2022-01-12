@@ -143,6 +143,8 @@ public class HostForm {
         initUi();
         initListTable();
         highlightHostMenu(App.config.getCurrentHostName());
+
+        HostListener.addListeners();
     }
 
     private static void initUi() {
