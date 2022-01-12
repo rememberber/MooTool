@@ -541,19 +541,23 @@ public class QuickNoteListener {
         if (selectedName != null) {
             TQuickNote tQuickNote = new TQuickNote();
             tQuickNote.setName(selectedName);
-            tQuickNote.setContent(((RSyntaxTextArea) QuickNoteForm.quickNoteSyntaxTextViewerManager.getRTextScrollPane(selectedName).getViewport().getView()).getText());
+
+            String text = QuickNoteForm.quickNoteSyntaxTextViewerManager.getTextByName(selectedName);
+            tQuickNote.setContent(text);
             if (refreshModifiedTime) {
                 tQuickNote.setModifiedTime(now);
             }
 
             quickNoteMapper.updateByName(tQuickNote);
         } else {
-            String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+            String tempName = getDefaultFileName();
             String name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", tempName);
             if (StringUtils.isNotBlank(name)) {
                 TQuickNote tQuickNote = new TQuickNote();
                 tQuickNote.setName(name);
-                RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane) quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
+
+                RTextScrollPane rTextScrollPane = QuickNoteForm.quickNoteSyntaxTextViewerManager.getRTextScrollPane(name);
+                RSyntaxTextArea view = (RSyntaxTextArea) rTextScrollPane.getViewport().getView();
                 tQuickNote.setContent(view.getText());
                 tQuickNote.setCreateTime(now);
                 tQuickNote.setModifiedTime(now);
@@ -564,8 +568,11 @@ public class QuickNoteListener {
         }
     }
 
+    /**
+     * create new Note
+     */
     public static void newNote() {
-        String name = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+        String name = getDefaultFileName();
         name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", name);
         if (StringUtils.isNotBlank(name)) {
             TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
@@ -589,10 +596,8 @@ public class QuickNoteListener {
 
     private static void find() {
         QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
-        RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane) quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
-        ;
 
-        String content = view.getText();
+        String content = QuickNoteForm.quickNoteSyntaxTextViewerManager.getCurrentText();
         String findKeyWord = quickNoteForm.getFindTextField().getText();
         boolean isMatchCase = quickNoteForm.getFindMatchCaseCheckBox().isSelected();
         boolean isWords = quickNoteForm.getFindWordsCheckBox().isSelected();
@@ -621,8 +626,7 @@ public class QuickNoteListener {
 
     private static void replace() {
         QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
-        RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane) quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
-        ;
+        RSyntaxTextArea view = QuickNoteForm.quickNoteSyntaxTextViewerManager.getCurrentRSyntaxTextArea();
         String target = quickNoteForm.getFindTextField().getText();
         String replacement = quickNoteForm.getReplaceTextField().getText();
         String content = view.getText();
@@ -646,10 +650,9 @@ public class QuickNoteListener {
 
         view.setText(content);
         view.setCaretPosition(0);
-        ((RTextScrollPane) quickNoteForm.getContentSplitPane().getLeftComponent()).getVerticalScrollBar().setValue(0);
-        ((RTextScrollPane) quickNoteForm.getContentSplitPane().getLeftComponent()).getHorizontalScrollBar().setValue(0);
+        QuickNoteForm.quickNoteSyntaxTextViewerManager.getCurrentRTextScrollPane().getVerticalScrollBar().setValue(0);
+        QuickNoteForm.quickNoteSyntaxTextViewerManager.getCurrentRTextScrollPane().getHorizontalScrollBar().setValue(0);
     }
-
 
     /**
      * 将字符串数字转成千分位显示。
