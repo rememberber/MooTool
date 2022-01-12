@@ -7,9 +7,15 @@
         <result column="content" jdbcType="VARCHAR" property="content"/>
         <result column="create_time" jdbcType="VARCHAR" property="createTime"/>
         <result column="modified_time" jdbcType="VARCHAR" property="modifiedTime"/>
+        <result column="color" jdbcType="VARCHAR" property="color"/>
+        <result column="style" jdbcType="VARCHAR" property="style"/>
+        <result column="font_name" jdbcType="VARCHAR" property="fontName"/>
+        <result column="font_size" jdbcType="VARCHAR" property="fontSize"/>
+        <result column="syntax" jdbcType="VARCHAR" property="syntax"/>
     </resultMap>
     <sql id="Base_Column_List">
-        id, name, content, create_time, modified_time
+        id, name, content, create_time, modified_time, color, style, font_name, font_size,
+    syntax
     </sql>
     <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
         select
@@ -24,9 +30,13 @@
     </delete>
     <insert id="insert" parameterType="com.luoboduner.moo.tool.domain.TQuickNote">
         insert into t_quick_note (id, name, content,
-                                  create_time, modified_time)
+                                  create_time, modified_time, color,
+                                  style, font_name, font_size,
+                                  syntax)
         values (#{id,jdbcType=INTEGER}, #{name,jdbcType=VARCHAR}, #{content,jdbcType=VARCHAR},
-                #{createTime,jdbcType=VARCHAR}, #{modifiedTime,jdbcType=VARCHAR})
+                #{createTime,jdbcType=VARCHAR}, #{modifiedTime,jdbcType=VARCHAR}, #{color,jdbcType=VARCHAR},
+                #{style,jdbcType=VARCHAR}, #{fontName,jdbcType=VARCHAR}, #{fontSize,jdbcType=VARCHAR},
+                #{syntax,jdbcType=VARCHAR})
     </insert>
     <insert id="insertSelective" parameterType="com.luoboduner.moo.tool.domain.TQuickNote">
         insert into t_quick_note
@@ -46,6 +56,21 @@
             <if test="modifiedTime != null">
                 modified_time,
             </if>
+            <if test="color != null">
+                color,
+            </if>
+            <if test="style != null">
+                style,
+            </if>
+            <if test="fontName != null">
+                font_name,
+            </if>
+            <if test="fontSize != null">
+                font_size,
+            </if>
+            <if test="syntax != null">
+                syntax,
+            </if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="id != null">
@@ -62,6 +87,21 @@
             </if>
             <if test="modifiedTime != null">
                 #{modifiedTime,jdbcType=VARCHAR},
+            </if>
+            <if test="color != null">
+                #{color,jdbcType=VARCHAR},
+            </if>
+            <if test="style != null">
+                #{style,jdbcType=VARCHAR},
+            </if>
+            <if test="fontName != null">
+                #{fontName,jdbcType=VARCHAR},
+            </if>
+            <if test="fontSize != null">
+                #{fontSize,jdbcType=VARCHAR},
+            </if>
+            <if test="syntax != null">
+                #{syntax,jdbcType=VARCHAR},
             </if>
         </trim>
     </insert>
@@ -80,6 +120,21 @@
             <if test="modifiedTime != null">
                 modified_time = #{modifiedTime,jdbcType=VARCHAR},
             </if>
+            <if test="color != null">
+                color = #{color,jdbcType=VARCHAR},
+            </if>
+            <if test="style != null">
+                style = #{style,jdbcType=VARCHAR},
+            </if>
+            <if test="fontName != null">
+                font_name = #{fontName,jdbcType=VARCHAR},
+            </if>
+            <if test="fontSize != null">
+                font_size = #{fontSize,jdbcType=VARCHAR},
+            </if>
+            <if test="syntax != null">
+                syntax = #{syntax,jdbcType=VARCHAR},
+            </if>
         </set>
         where id = #{id,jdbcType=INTEGER}
     </update>
@@ -87,7 +142,13 @@
         update t_quick_note
         set name          = #{name,jdbcType=VARCHAR},
             content       = #{content,jdbcType=VARCHAR},
-            modified_time = #{modifiedTime,jdbcType=VARCHAR}
+            create_time   = #{createTime,jdbcType=VARCHAR},
+            modified_time = #{modifiedTime,jdbcType=VARCHAR},
+            color         = #{color,jdbcType=VARCHAR},
+            style         = #{style,jdbcType=VARCHAR},
+            font_name     = #{fontName,jdbcType=VARCHAR},
+            font_size     = #{fontSize,jdbcType=VARCHAR},
+            syntax        = #{syntax,jdbcType=VARCHAR}
         where id = #{id,jdbcType=INTEGER}
     </update>
     <select id="selectAll" resultMap="BaseResultMap">
@@ -110,6 +171,21 @@
             </if>
             <if test="modifiedTime != null">
                 modified_time = #{modifiedTime,jdbcType=VARCHAR},
+            </if>
+            <if test="color != null">
+                color = #{color,jdbcType=VARCHAR},
+            </if>
+            <if test="style != null">
+                style = #{style,jdbcType=VARCHAR},
+            </if>
+            <if test="fontName != null">
+                font_name = #{fontName,jdbcType=VARCHAR},
+            </if>
+            <if test="fontSize != null">
+                font_size = #{fontSize,jdbcType=VARCHAR},
+            </if>
+            <if test="syntax != null">
+                syntax = #{syntax,jdbcType=VARCHAR},
             </if>
         </set>
         where name = #{name,jdbcType=INTEGER}
