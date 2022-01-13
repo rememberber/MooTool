@@ -243,8 +243,16 @@ public class QuickNoteListener {
 
         // 快捷替换按钮
         quickNoteForm.getQuickReplaceButton().addActionListener(e -> {
-            quickNoteForm.getQuickReplaceScrollPane().setVisible(true);
-            quickNoteForm.getContentSplitPane().setDividerLocation((int) (quickNoteForm.getContentSplitPane().getWidth() * 0.62));
+            int totalWidth = quickNoteForm.getContentSplitPane().getWidth();
+            int currentDividerLocation = quickNoteForm.getContentSplitPane().getDividerLocation();
+
+            if (totalWidth - currentDividerLocation < 10) {
+                quickNoteForm.getQuickReplaceScrollPane().setVisible(true);
+                quickNoteForm.getContentSplitPane().setDividerLocation((int) (totalWidth * 0.62));
+            } else {
+                quickNoteForm.getContentSplitPane().setDividerLocation(totalWidth);
+                quickNoteForm.getQuickReplaceScrollPane().setVisible(false);
+            }
         });
 
         // 查找输入框
@@ -272,7 +280,6 @@ public class QuickNoteListener {
                 quickNoteForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
             } else {
                 quickNoteForm.getSplitPane().setDividerLocation(0);
-                quickNoteForm.getSplitPane().setLastDividerLocation(0);
             }
         });
 
