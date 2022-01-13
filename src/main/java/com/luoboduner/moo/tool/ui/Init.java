@@ -5,6 +5,7 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.formdev.flatlaf.FlatLightLaf;
 import com.formdev.flatlaf.IntelliJTheme;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
 import com.luoboduner.moo.tool.ui.form.func.*;
@@ -125,6 +126,7 @@ public class Init {
                         JDialog.setDefaultLookAndFeelDecorated(true);
                     }
                     UIManager.setLookAndFeel("com.formdev.flatlaf.FlatIntelliJLaf");
+
                     break;
                 case "Flat Dark":
                     if (SystemUtil.isJBR()) {
@@ -195,6 +197,13 @@ public class Init {
                     }
                     UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarculaLaf");
             }
+
+            if (UIUtil.isDarkLaf()) {
+//                FlatSVGIcon.ColorFilter.getInstance().setMapper(color -> color.brighter().brighter());
+            } else {
+                FlatSVGIcon.ColorFilter.getInstance().setMapper(color -> color.darker().darker());
+            }
+//                    SwingUtilities.windowForComponent(App.mainFrame).repaint();
         } catch (Exception e) {
             logger.error(e);
         }
