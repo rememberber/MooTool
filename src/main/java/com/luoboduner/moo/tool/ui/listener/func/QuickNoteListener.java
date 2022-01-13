@@ -104,10 +104,8 @@ public class QuickNoteListener {
         quickNoteForm.getSyntaxComboBox().addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 String syntaxName = e.getItem().toString();
-                RSyntaxTextArea view = quickNoteSyntaxTextViewerManager.getCurrentRSyntaxTextArea();
 
-                if (StringUtils.isNotEmpty(syntaxName) && view != null) {
-                    view.setSyntaxEditingStyle(syntaxName);
+                if (StringUtils.isNotEmpty(syntaxName)) {
                     if (selectedName != null) {
                         TQuickNote tQuickNote = new TQuickNote();
                         tQuickNote.setName(selectedName);
@@ -117,7 +115,13 @@ public class QuickNoteListener {
 
                         quickNoteMapper.updateByName(tQuickNote);
                     }
-                    view.updateUI();
+
+                    quickSave(false);
+
+                    quickNoteSyntaxTextViewerManager.removeRTextScrollPane(selectedName);
+                    RTextScrollPane syntaxTextViewer = quickNoteSyntaxTextViewerManager.getRTextScrollPane(selectedName);
+                    quickNoteForm.getContentSplitPane().setLeftComponent(syntaxTextViewer);
+                    syntaxTextViewer.updateUI();
                 }
             }
         });
