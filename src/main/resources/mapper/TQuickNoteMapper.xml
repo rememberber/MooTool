@@ -190,4 +190,28 @@
         </set>
         where name = #{name,jdbcType=INTEGER}
     </update>
+    <update id="updateAll" parameterType="com.luoboduner.moo.tool.domain.TQuickNote">
+        update t_quick_note
+        <set>
+            <if test="modifiedTime != null">
+                modified_time = #{modifiedTime,jdbcType=VARCHAR},
+            </if>
+            <if test="color != null">
+                color = #{color,jdbcType=VARCHAR},
+            </if>
+            <if test="style != null">
+                style = #{style,jdbcType=VARCHAR},
+            </if>
+            <if test="fontName != null">
+                font_name = #{fontName,jdbcType=VARCHAR},
+            </if>
+            <if test="fontSize != null">
+                font_size = #{fontSize,jdbcType=VARCHAR},
+            </if>
+            <if test="syntax != null">
+                syntax = #{syntax,jdbcType=VARCHAR},
+            </if>
+        </set>
+        where 1 = 1
+    </update>
 </mapper>
