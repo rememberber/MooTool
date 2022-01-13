@@ -267,11 +267,12 @@ public class QuickNoteListener {
 
         // 列表按钮
         quickNoteForm.getListItemButton().addActionListener(e -> {
-            int currentDividerLocation = quickNoteForm.getContentSplitPane().getDividerLocation();
+            int currentDividerLocation = quickNoteForm.getSplitPane().getDividerLocation();
             if (currentDividerLocation < 5) {
-                quickNoteForm.getContentSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
+                quickNoteForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
             } else {
-                quickNoteForm.getContentSplitPane().setDividerLocation(0);
+                quickNoteForm.getSplitPane().setDividerLocation(0);
+                quickNoteForm.getSplitPane().setLastDividerLocation(0);
             }
         });
 
