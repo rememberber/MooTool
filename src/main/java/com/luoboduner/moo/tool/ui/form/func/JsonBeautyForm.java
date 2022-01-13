@@ -7,7 +7,6 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
-import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.JsonSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
@@ -110,8 +109,6 @@ public class JsonBeautyForm {
 
     private static void initUi() {
 
-        jsonBeautyForm.getScrollPane().setViewportView(jsonBeautyForm.getTextArea());
-
         jsonBeautyForm.getRightPanel().removeAll();
         jsonBeautyForm.getRightPanel().setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
 
@@ -157,8 +154,6 @@ public class JsonBeautyForm {
 
         jsonBeautyForm.getDeletePanel().setVisible(false);
         jsonBeautyForm.getTextArea().grabFocus();
-
-        Style.blackTextArea(jsonBeautyForm.getTextArea());
 
         jsonBeautyForm.getJsonBeautyPanel().updateUI();
     }

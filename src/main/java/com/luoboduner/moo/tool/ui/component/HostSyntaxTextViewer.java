@@ -44,6 +44,9 @@ public class HostSyntaxTextViewer extends RSyntaxTextArea {
         setFont(font);
 
         setHyperlinksEnabled(true);
+
+        Style.blackTextArea(this);
+
         addHyperlinkListener(e -> {
             if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
                 Desktop desktop = Desktop.getDesktop();

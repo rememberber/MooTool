@@ -9,12 +9,10 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.THostMapper;
 import com.luoboduner.moo.tool.domain.THost;
 import com.luoboduner.moo.tool.ui.Init;
-import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.HostSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
-import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -186,8 +184,6 @@ public class HostForm {
         hostForm.getDeletePanel().setVisible(false);
         hostForm.getTextArea().grabFocus();
 
-        Style.blackTextArea(hostForm.getTextArea());
-
         hostForm.getHostPanel().updateUI();
     }
 
@@ -250,7 +246,7 @@ public class HostForm {
         if (hostList.size() > 0) {
             hostForm.getTextArea().setText(hostList.get(0).getContent());
             hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
-            JsonBeautyListener.selectedNameJson = hostList.get(0).getName();
+            HostListener.selectedNameHost = hostList.get(0).getName();
         }
 
         if (hostForm.getNoteListTable().getRowCount() > 0) {
