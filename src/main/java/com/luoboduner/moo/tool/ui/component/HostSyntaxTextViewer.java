@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.ui.component;
 
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Style;
+import com.luoboduner.moo.tool.util.UIUtil;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
@@ -16,8 +17,14 @@ public class HostSyntaxTextViewer extends RSyntaxTextArea {
     public HostSyntaxTextViewer() {
 
         try {
-            Theme theme = Theme.load(HostSyntaxTextViewer.class.getResourceAsStream(
-                    "/org/fife/ui/rsyntaxtextarea/themes/monokai.xml"));
+            Theme theme;
+            if (UIUtil.isDarkLaf()) {
+                theme = Theme.load(JsonSyntaxTextViewer.class.getResourceAsStream(
+                        "/org/fife/ui/rsyntaxtextarea/themes/monokai.xml"));
+            } else {
+                theme = Theme.load(JsonSyntaxTextViewer.class.getResourceAsStream(
+                        "/org/fife/ui/rsyntaxtextarea/themes/idea.xml"));
+            }
             theme.apply(this);
         } catch (IOException ioe) { // Never happens
             ioe.printStackTrace();
