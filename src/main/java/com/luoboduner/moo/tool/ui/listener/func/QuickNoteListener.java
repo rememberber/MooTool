@@ -130,25 +130,28 @@ public class QuickNoteListener {
                 Font font = new Font(fontName, Font.PLAIN, fontSize);
                 RSyntaxTextArea view = quickNoteSyntaxTextViewerManager.getCurrentRSyntaxTextArea();
 
-                if (view != null) {
-                    view.setFont(font);
-                    if (selectedName != null) {
-                        TQuickNote tQuickNote = new TQuickNote();
-                        tQuickNote.setName(selectedName);
-                        tQuickNote.setFontSize(String.valueOf(fontSize));
-                        tQuickNote.setFontName(fontName);
-                        String now = SqliteUtil.nowDateForSqlite();
-                        tQuickNote.setModifiedTime(now);
+                view.setFont(font);
+                if (selectedName != null) {
+                    TQuickNote tQuickNote = new TQuickNote();
+                    tQuickNote.setName(selectedName);
+                    tQuickNote.setFontSize(String.valueOf(fontSize));
+                    tQuickNote.setFontName(fontName);
+                    String now = SqliteUtil.nowDateForSqlite();
+                    tQuickNote.setModifiedTime(now);
 
-                        quickNoteMapper.updateByName(tQuickNote);
-                    }
-
-                    view.updateUI();
+                    quickNoteMapper.updateByName(tQuickNote);
                 }
+
+                quickSave(false);
 
                 App.config.setQuickNoteFontName(fontName);
                 App.config.setQuickNoteFontSize(fontSize);
                 App.config.save();
+
+                quickNoteSyntaxTextViewerManager.removeRTextScrollPane(selectedName);
+                RTextScrollPane syntaxTextViewer = quickNoteSyntaxTextViewerManager.getRTextScrollPane(selectedName);
+                quickNoteForm.getContentSplitPane().setLeftComponent(syntaxTextViewer);
+                syntaxTextViewer.updateUI();
             }
         });
 
@@ -158,27 +161,28 @@ public class QuickNoteListener {
                 int fontSize = Integer.parseInt(e.getItem().toString());
                 String fontName = quickNoteForm.getFontNameComboBox().getSelectedItem().toString();
                 Font font = new Font(fontName, Font.PLAIN, fontSize);
-                RSyntaxTextArea view = quickNoteSyntaxTextViewerManager.getCurrentRSyntaxTextArea();
 
-                if (view != null) {
-                    view.setFont(font);
-                    if (selectedName != null) {
-                        TQuickNote tQuickNote = new TQuickNote();
-                        tQuickNote.setName(selectedName);
-                        tQuickNote.setFontSize(String.valueOf(fontSize));
-                        tQuickNote.setFontName(fontName);
-                        String now = SqliteUtil.nowDateForSqlite();
-                        tQuickNote.setModifiedTime(now);
+                if (selectedName != null) {
+                    TQuickNote tQuickNote = new TQuickNote();
+                    tQuickNote.setName(selectedName);
+                    tQuickNote.setFontSize(String.valueOf(fontSize));
+                    tQuickNote.setFontName(fontName);
+                    String now = SqliteUtil.nowDateForSqlite();
+                    tQuickNote.setModifiedTime(now);
 
-                        quickNoteMapper.updateByName(tQuickNote);
-                    }
-
-                    view.updateUI();
+                    quickNoteMapper.updateByName(tQuickNote);
                 }
+
+                quickSave(false);
 
                 App.config.setQuickNoteFontName(fontName);
                 App.config.setQuickNoteFontSize(fontSize);
                 App.config.save();
+
+                quickNoteSyntaxTextViewerManager.removeRTextScrollPane(selectedName);
+                RTextScrollPane syntaxTextViewer = quickNoteSyntaxTextViewerManager.getRTextScrollPane(selectedName);
+                quickNoteForm.getContentSplitPane().setLeftComponent(syntaxTextViewer);
+                syntaxTextViewer.updateUI();
             }
         });
 
