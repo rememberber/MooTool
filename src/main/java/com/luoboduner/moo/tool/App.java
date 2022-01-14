@@ -10,6 +10,7 @@ import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.frame.MainFrame;
 import com.luoboduner.moo.tool.util.ConfigUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
+import com.luoboduner.moo.tool.util.UIUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -49,7 +50,9 @@ public class App {
             System.setProperty("apple.laf.useScreenMenuBar", "true");
             System.setProperty("apple.awt.application.name", "MooTool");
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "MooTool");
-            System.setProperty("apple.awt.application.appearance", "system");
+            if (UIUtil.isDarkLaf()) {
+                System.setProperty("apple.awt.application.appearance", "system");
+            }
 
             FlatDesktop.setAboutHandler(() -> {
                 try {
