@@ -5,24 +5,34 @@ import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.TextAreaUtil;
+import com.luoboduner.moo.tool.util.UIUtil;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
+import javax.swing.event.HyperlinkEvent;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
     public QuickNoteSyntaxTextViewer() {
 
         try {
-            Theme theme = Theme.load(QuickNoteListener.class.getResourceAsStream(
-                    "/org/fife/ui/rsyntaxtextarea/themes/monokai.xml"));
+            Theme theme;
+            if (UIUtil.isDarkLaf()) {
+                theme = Theme.load(JsonSyntaxTextViewer.class.getResourceAsStream(
+                        "/org/fife/ui/rsyntaxtextarea/themes/monokai.xml"));
+            } else {
+                theme = Theme.load(JsonSyntaxTextViewer.class.getResourceAsStream(
+                        "/org/fife/ui/rsyntaxtextarea/themes/idea.xml"));
+            }
             theme.apply(this);
         } catch (IOException ioe) { // Never happens
             ioe.printStackTrace();
@@ -47,6 +57,18 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
         }
         Font font = new Font(fontName, Font.PLAIN, fontSize);
         setFont(font);
+
+        setHyperlinksEnabled(true);
+        addHyperlinkListener(e -> {
+            if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
+                Desktop desktop = Desktop.getDesktop();
+                try {
+                    desktop.browse(new URI(e.getURL().toString()));
+                } catch (IOException | URISyntaxException e1) {
+                    e1.printStackTrace();
+                }
+            }
+        });
 
         setDoubleBuffered(true);
 

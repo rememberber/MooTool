@@ -1,7 +1,12 @@
 package com.luoboduner.moo.tool.ui.component;
 
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
+import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
+import com.luoboduner.moo.tool.util.MybatisUtil;
+import org.apache.commons.lang3.StringUtils;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rtextarea.Gutter;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
@@ -16,41 +21,31 @@ public class QuickNoteSyntaxTextViewerManager {
 
     private Map<String, RTextScrollPane> viewMap = new HashMap<>();
 
-    /**
-     * 创建一个新实例，按名称放入map
-     *
-     * @return
-     */
-    public RTextScrollPane newPlainTextViewer(String name) {
-        QuickNoteSyntaxTextViewer plainTextViewer = new QuickNoteSyntaxTextViewer();
-        RTextScrollPane rTextScrollPane = new RTextScrollPane(plainTextViewer);
-        rTextScrollPane.setMaximumSize(new Dimension(-1, -1));
-        rTextScrollPane.setMinimumSize(new Dimension(-1, -1));
+    private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
 
-        Color defaultBackground = App.mainFrame.getBackground();
-        Color defaultForeground = QuickNoteForm.getInstance().getFindTextField().getForeground();
-
-        Gutter gutter = rTextScrollPane.getGutter();
-        gutter.setBorderColor(defaultBackground);
-        Font font = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
-        gutter.setLineNumberFont(font);
-//            gutter.setLineNumberColor(defaultBackground);
-        gutter.setFoldBackground(defaultBackground);
-        gutter.setArmedFoldBackground(defaultBackground);
-
-        viewMap.put(name, rTextScrollPane);
-        return rTextScrollPane;
-    }
+    private RTextScrollPane currentRTextScrollPane;
 
     /**
      * 按名称获取一个实例，若不存在则新建
      *
      * @return
      */
-    public RTextScrollPane getSyntaxTextViewer(String name) {
+    public RTextScrollPane getRTextScrollPane(String name) {
         RTextScrollPane rTextScrollPane = viewMap.get(name);
         if (rTextScrollPane == null) {
             QuickNoteSyntaxTextViewer plainTextViewer = new QuickNoteSyntaxTextViewer();
+            TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
+            plainTextViewer.setText(tQuickNote.getContent());
+            if (StringUtils.isNotEmpty(tQuickNote.getSyntax())) {
+                plainTextViewer.setSyntaxEditingStyle(tQuickNote.getSyntax());
+            }
+            if (StringUtils.isNotEmpty(tQuickNote.getFontName()) && StringUtils.isNotEmpty(tQuickNote.getFontSize())) {
+                Font font = new Font(tQuickNote.getFontName(), Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
+                plainTextViewer.setFont(font);
+            }
+
+            plainTextViewer.setCaretPosition(0);
+
             rTextScrollPane = new RTextScrollPane(plainTextViewer);
             rTextScrollPane.setMaximumSize(new Dimension(-1, -1));
             rTextScrollPane.setMinimumSize(new Dimension(-1, -1));
@@ -67,8 +62,29 @@ public class QuickNoteSyntaxTextViewerManager {
             gutter.setArmedFoldBackground(defaultBackground);
 
             viewMap.put(name, rTextScrollPane);
+            currentRTextScrollPane = rTextScrollPane;
         }
         return rTextScrollPane;
+    }
+
+    public RTextScrollPane getCurrentRTextScrollPane() {
+        return currentRTextScrollPane;
+    }
+
+    public RSyntaxTextArea getCurrentRSyntaxTextArea() {
+        return (RSyntaxTextArea) currentRTextScrollPane.getViewport().getView();
+    }
+
+    public String getCurrentText() {
+        return currentRTextScrollPane.getTextArea().getText();
+    }
+
+    public String getTextByName(String name) {
+        return viewMap.get(name).getTextArea().getText();
+    }
+
+    public void removeRTextScrollPane(String name) {
+        viewMap.remove(name);
     }
 
 }

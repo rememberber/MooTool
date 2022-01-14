@@ -83,14 +83,10 @@ public class JsonBeautyListener {
             public void mousePressed(MouseEvent e) {
                 quickSave(false);
                 int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
-                String name = jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
-                selectedNameJson = name;
-                TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByName(name);
-                jsonBeautyForm.getTextArea().setText(tJsonBeauty.getContent());
-                jsonBeautyForm.getTextArea().setCaretPosition(0);
-                jsonBeautyForm.getScrollPane().getVerticalScrollBar().setValue(0);
-                jsonBeautyForm.getScrollPane().getHorizontalScrollBar().setValue(0);
-                jsonBeautyForm.getTextArea().updateUI();
+                viewByRowNum(selectedRow);
+
+                // 显示下方删除按钮
+                jsonBeautyForm.getDeletePanel().setVisible(true);
                 super.mousePressed(e);
             }
         });
@@ -174,34 +170,6 @@ public class JsonBeautyListener {
             newJson();
         });
 
-        // 左侧列表鼠标点击事件（显示下方删除按钮）
-        jsonBeautyForm.getNoteListTable().addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                jsonBeautyForm.getDeletePanel().setVisible(true);
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-
-            }
-        });
-
         // 文本域鼠标点击事件，隐藏删除按钮
         jsonBeautyForm.getTextArea().addMouseListener(new MouseListener() {
             @Override
@@ -265,14 +233,7 @@ public class JsonBeautyListener {
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
                     quickSave(false);
                     int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
-                    String name = jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
-                    selectedNameJson = name;
-                    TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByName(name);
-                    jsonBeautyForm.getTextArea().setText(tJsonBeauty.getContent());
-                    jsonBeautyForm.getTextArea().setCaretPosition(0);
-                    jsonBeautyForm.getScrollPane().getVerticalScrollBar().setValue(0);
-                    jsonBeautyForm.getScrollPane().getHorizontalScrollBar().setValue(0);
-                    jsonBeautyForm.getTextArea().updateUI();
+                    viewByRowNum(selectedRow);
                 }
             }
         });
@@ -401,6 +362,23 @@ public class JsonBeautyListener {
             }
         });
 
+    }
+
+    private static void viewByRowNum(int selectedRow) {
+        JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
+        String name = jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
+        selectedNameJson = name;
+        setContentByName(name);
+    }
+
+    private static void setContentByName(String name) {
+        JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
+        TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByName(name);
+        jsonBeautyForm.getTextArea().setText(tJsonBeauty.getContent());
+        jsonBeautyForm.getTextArea().setCaretPosition(0);
+        jsonBeautyForm.getScrollPane().getVerticalScrollBar().setValue(0);
+        jsonBeautyForm.getScrollPane().getHorizontalScrollBar().setValue(0);
+        jsonBeautyForm.getTextArea().updateUI();
     }
 
     private static void deleteFiles(JsonBeautyForm jsonBeautyForm) {

@@ -9,16 +9,17 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.THostMapper;
 import com.luoboduner.moo.tool.domain.THost;
 import com.luoboduner.moo.tool.ui.Init;
-import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.HostSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
-import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
+import org.fife.ui.rtextarea.Gutter;
+import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -41,12 +42,10 @@ public class HostForm {
     private JPanel hostPanel;
     private JTable noteListTable;
     private JButton deleteButton;
-    private JTextArea textArea;
     private JButton saveButton;
     private JSplitPane splitPane;
     private JButton addButton;
     private JPanel deletePanel;
-    private JScrollPane scrollPane;
     private JButton switchButton;
     private JPanel rightPanel;
     private JPanel controlPanel;
@@ -74,7 +73,28 @@ public class HostForm {
 
     public static final String NOT_SUPPORTED_TIPS = "暂不支持该操作系统！";
 
+    private HostSyntaxTextViewer textArea;
+
+    private RTextScrollPane scrollPane;
+
     private HostForm() {
+        textArea = new HostSyntaxTextViewer();
+        scrollPane = new RTextScrollPane(textArea);
+
+        scrollPane.setMaximumSize(new Dimension(-1, -1));
+        scrollPane.setMinimumSize(new Dimension(-1, -1));
+
+        Color defaultBackground = App.mainFrame.getBackground();
+        Color defaultForeground = findTextField.getForeground();
+
+        Gutter gutter = scrollPane.getGutter();
+        gutter.setBorderColor(defaultBackground);
+        Font font = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
+        gutter.setLineNumberFont(font);
+//            gutter.setLineNumberColor(defaultBackground);
+        gutter.setFoldBackground(defaultBackground);
+        gutter.setArmedFoldBackground(defaultBackground);
+
         UndoUtil.register(this);
     }
 
@@ -121,10 +141,14 @@ public class HostForm {
         initUi();
         initListTable();
         highlightHostMenu(App.config.getCurrentHostName());
+
+        HostListener.addListeners();
     }
 
     private static void initUi() {
+
         hostForm.getRightPanel().removeAll();
+        hostForm.getRightPanel().setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
         if ("上方".equals(App.config.getMenuBarPosition())) {
             hostForm.getRightPanel().add(hostForm.getControlPanel(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
             hostForm.getRightPanel().add(hostForm.getFindReplacePanel(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
@@ -159,8 +183,6 @@ public class HostForm {
 
         hostForm.getDeletePanel().setVisible(false);
         hostForm.getTextArea().grabFocus();
-
-        Style.blackTextArea(hostForm.getTextArea());
 
         hostForm.getHostPanel().updateUI();
     }
@@ -224,7 +246,7 @@ public class HostForm {
         if (hostList.size() > 0) {
             hostForm.getTextArea().setText(hostList.get(0).getContent());
             hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
-            JsonBeautyListener.selectedNameJson = hostList.get(0).getName();
+            HostListener.selectedNameHost = hostList.get(0).getName();
         }
 
         if (hostForm.getNoteListTable().getRowCount() > 0) {
@@ -296,11 +318,11 @@ public class HostForm {
         noteListTable = new JTable();
         scrollPane1.setViewportView(noteListTable);
         rightPanel = new JPanel();
-        rightPanel.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
+        rightPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane.setRightComponent(rightPanel);
         controlPanel = new JPanel();
         controlPanel.setLayout(new GridLayoutManager(1, 6, new Insets(0, 0, 0, 0), -1, -1));
-        rightPanel.add(controlPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        rightPanel.add(controlPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         saveButton = new JButton();
         saveButton.setIcon(new ImageIcon(getClass().getResource("/icon/menu-saveall_dark.png")));
         saveButton.setText("");
@@ -328,15 +350,10 @@ public class HostForm {
         findButton.setText("");
         findButton.setToolTipText("新建(Ctrl+N)");
         controlPanel.add(findButton, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        scrollPane = new JScrollPane();
-        rightPanel.add(scrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        textArea = new JTextArea();
-        textArea.setMargin(new Insets(10, 10, 10, 10));
-        scrollPane.setViewportView(textArea);
         findReplacePanel = new JPanel();
         findReplacePanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         findReplacePanel.setVisible(true);
-        rightPanel.add(findReplacePanel, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        rightPanel.add(findReplacePanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         findOptionPanel = new JPanel();
         findOptionPanel.setLayout(new GridLayoutManager(2, 6, new Insets(0, 0, 0, 0), -1, -1));
         findReplacePanel.add(findOptionPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));

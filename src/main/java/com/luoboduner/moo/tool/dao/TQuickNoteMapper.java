@@ -22,4 +22,6 @@ public interface TQuickNoteMapper {
     TQuickNote selectByName(String name);
 
     int updateByName(TQuickNote tQuickNote);
+
+    int updateAll(TQuickNote tQuickNote);
 }

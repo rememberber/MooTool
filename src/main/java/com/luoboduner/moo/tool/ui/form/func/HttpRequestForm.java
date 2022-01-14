@@ -93,6 +93,8 @@ public class HttpRequestForm {
 
         initUi();
         initListTable();
+
+        HttpRequestListener.addListeners();
     }
 
     private static void initUi() {

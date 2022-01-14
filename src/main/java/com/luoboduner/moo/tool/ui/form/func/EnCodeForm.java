@@ -5,6 +5,7 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.ui.Style;
+import com.luoboduner.moo.tool.ui.listener.func.EnCodeListener;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 
@@ -53,6 +54,8 @@ public class EnCodeForm {
     public static void init() {
         enCodeForm = getInstance();
         initUi();
+
+        EnCodeListener.addListeners();
     }
 
     private static void initUi() {

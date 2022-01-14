@@ -87,6 +87,8 @@ public class ImageForm {
 
         initUi();
         initListTable();
+
+        ImageListener.addListeners();
     }
 
     private static void initUi() {

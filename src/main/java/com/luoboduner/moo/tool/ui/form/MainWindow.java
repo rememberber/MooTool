@@ -3,21 +3,8 @@ package com.luoboduner.moo.tool.ui.form;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.luoboduner.moo.tool.ui.form.func.CalculatorForm;
-import com.luoboduner.moo.tool.ui.form.func.ColorBoardForm;
-import com.luoboduner.moo.tool.ui.form.func.CronForm;
-import com.luoboduner.moo.tool.ui.form.func.CryptoForm;
-import com.luoboduner.moo.tool.ui.form.func.EnCodeForm;
-import com.luoboduner.moo.tool.ui.form.func.HostForm;
-import com.luoboduner.moo.tool.ui.form.func.HttpRequestForm;
-import com.luoboduner.moo.tool.ui.form.func.ImageForm;
-import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
-import com.luoboduner.moo.tool.ui.form.func.NetForm;
-import com.luoboduner.moo.tool.ui.form.func.QrCodeForm;
-import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
-import com.luoboduner.moo.tool.ui.form.func.RegexForm;
-import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
-import com.luoboduner.moo.tool.ui.form.func.TranslationForm;
+import com.luoboduner.moo.tool.ui.form.func.*;
+import com.luoboduner.moo.tool.ui.listener.TabListener;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -101,6 +88,8 @@ public class MainWindow {
         mainWindow.getRegexPanel().add(RegexForm.getInstance().getRegexPanel(), gridConstraints);
         mainWindow.getImagePanel().add(ImageForm.getInstance().getImagePanel(), gridConstraints);
         mainWindow.getMainPanel().updateUI();
+
+        TabListener.addListeners();
     }
 
     {

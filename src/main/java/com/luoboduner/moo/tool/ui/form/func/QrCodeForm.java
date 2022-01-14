@@ -14,6 +14,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQrCodeMapper;
 import com.luoboduner.moo.tool.domain.TQrCode;
 import com.luoboduner.moo.tool.ui.Style;
+import com.luoboduner.moo.tool.ui.listener.func.QrCodeListener;
 import com.luoboduner.moo.tool.util.*;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -175,6 +176,8 @@ public class QrCodeForm {
         FileUtil.clean(tempDir);
 
         generate();
+
+        QrCodeListener.addListeners();
     }
 
     private static void initUi() {

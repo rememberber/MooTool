@@ -11,6 +11,7 @@ import com.luoboduner.moo.tool.dao.TFuncContentMapper;
 import com.luoboduner.moo.tool.domain.TFuncContent;
 import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.Style;
+import com.luoboduner.moo.tool.ui.listener.func.TimeConvertListener;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
@@ -113,6 +114,8 @@ public class TimeConvertForm {
             timeConvertForm.getTimeHisTextArea().setText(tFuncContent.getContent());
         }
         timeConvertForm.getTimeConvertPanel().updateUI();
+
+        TimeConvertListener.addListeners();
     }
 
     public static int saveContent() {
