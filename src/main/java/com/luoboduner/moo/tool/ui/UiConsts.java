@@ -16,7 +16,7 @@ public class UiConsts {
      * 软件名称,版本
      */
     public static final String APP_NAME = "MooTool";
-    public static final String APP_VERSION = "v1.4.0";
+    public static final String APP_VERSION = "v1.4.1";
 
     public static final int TABLE_ROW_HEIGHT = 36;
 
