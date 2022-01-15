@@ -447,7 +447,7 @@ public class JsonBeautyListener {
         selectedNameJson = null;
     }
 
-    private static String formatJson(String jsonText) {
+     static String formatJson(String jsonText) {
         try {
             jsonText = JSONUtil.toJsonPrettyStr(jsonText);
         } catch (Exception e1) {

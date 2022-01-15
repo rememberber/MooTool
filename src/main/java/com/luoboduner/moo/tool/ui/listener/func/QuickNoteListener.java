@@ -3,7 +3,10 @@ package com.luoboduner.moo.tool.ui.listener.func;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ReUtil;
+import cn.hutool.json.JSONUtil;
+import com.github.vertical_blank.sqlformatter.SqlFormatter;
 import com.google.common.collect.Lists;
+import com.google.googlejavaformat.java.Formatter;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
@@ -335,6 +338,44 @@ public class QuickNoteListener {
             }
 
         });
+
+        // 菜单栏导出按钮
+        quickNoteForm.getExportButton2().addActionListener(e -> {
+
+            try {
+                JFileChooser fileChooser = new JFileChooser(App.config.getQuickNoteExportPath());
+                fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                int approve = fileChooser.showOpenDialog(quickNoteForm.getQuickNotePanel());
+                String exportPath;
+                if (approve == JFileChooser.APPROVE_OPTION) {
+                    exportPath = fileChooser.getSelectedFile().getAbsolutePath();
+                    App.config.setQuickNoteExportPath(exportPath);
+                    App.config.save();
+                } else {
+                    return;
+                }
+                TQuickNote tQuickNote = quickNoteMapper.selectByName(selectedName);
+                File exportFile = FileUtil.touch(exportPath + File.separator + tQuickNote.getName() + ".txt");
+                FileUtil.writeUtf8String(tQuickNote.getContent(), exportFile);
+                JOptionPane.showMessageDialog(quickNoteForm.getQuickNotePanel(), "导出成功！", "提示",
+                        JOptionPane.INFORMATION_MESSAGE);
+                try {
+                    Desktop desktop = Desktop.getDesktop();
+                    desktop.open(new File(exportPath));
+                } catch (Exception e2) {
+                    log.error(ExceptionUtils.getStackTrace(e2));
+                }
+
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(quickNoteForm.getQuickNotePanel(), "导出失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
+            }
+
+        });
+
+        // 格式化按钮
+        quickNoteForm.getFormatButton().addActionListener(e -> format());
 
         // 执行查找
         quickNoteForm.getDoFindButton().addActionListener(e -> find());
@@ -695,4 +736,48 @@ public class QuickNoteListener {
         return decimalFormat.format(number);
     }
 
+    public static void format() {
+        try {
+            QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
+            String text = QuickNoteForm.quickNoteSyntaxTextViewerManager.getTextByName(selectedName);
+
+            String format;
+            String selectedSyntax = (String) quickNoteForm.getSyntaxComboBox().getSelectedItem();
+            if (StringUtils.isBlank(text) || StringUtils.isEmpty(selectedSyntax)) {
+                return;
+            }
+
+            switch (selectedSyntax) {
+                case SyntaxConstants.SYNTAX_STYLE_SQL:
+                    format = SqlFormatter.format(text);
+                    break;
+                case SyntaxConstants.SYNTAX_STYLE_JSON:
+                case SyntaxConstants.SYNTAX_STYLE_JSON_WITH_COMMENTS:
+                    try {
+                        format = JSONUtil.toJsonPrettyStr(text);
+                    } catch (Exception e1) {
+                        log.error(ExceptionUtils.getStackTrace(e1));
+                        format = JSONUtil.formatJsonStr(text);
+                    }
+                    break;
+
+                case SyntaxConstants.SYNTAX_STYLE_JAVA:
+                    format = new Formatter().formatSource(text);
+                    break;
+
+                default:
+                    JOptionPane.showMessageDialog(App.mainFrame, "尚不支持对该语言格式化！\n", "不支持该语言",
+                            JOptionPane.INFORMATION_MESSAGE);
+                    return;
+            }
+
+            QuickNoteForm.quickNoteSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setText(format);
+            QuickNoteForm.quickNoteSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setCaretPosition(0);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(App.mainFrame, "格式化失败！\n\n" + e.getMessage(), "失败",
+                    JOptionPane.ERROR_MESSAGE);
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+
+    }
 }

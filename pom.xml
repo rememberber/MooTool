@@ -36,6 +36,8 @@
         <flatlaf.version>2.0</flatlaf.version>
         <flatlaf-extras.version>2.0</flatlaf-extras.version>
         <rsyntaxtextarea.version>3.1.5</rsyntaxtextarea.version>
+        <sql-formatter.version>2.0.3</sql-formatter.version>
+        <google-java-format.version>1.13.0</google-java-format.version>
     </properties>
 
     <dependencies>
@@ -145,7 +147,23 @@
             <version>${rsyntaxtextarea.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.github.vertical-blank</groupId>
+            <artifactId>sql-formatter</artifactId>
+            <version>${sql-formatter.version}</version>
+        </dependency>
 
+        <dependency>
+            <groupId>com.google.googlejavaformat</groupId>
+            <artifactId>google-java-format</artifactId>
+            <version>${google-java-format.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>guava</artifactId>
+                    <groupId>com.google.guava</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
 
     </dependencies>
 
@@ -169,60 +187,61 @@
                     <bundleJre>true</bundleJre>
                     <mainClass>com.luoboduner.moo.tool.App</mainClass>
                     <generateInstaller>true</generateInstaller>
+                    <vmArgs>"--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED","--add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED","--add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED","--add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED","--add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"</vmArgs>
                 </configuration>
                 <executions>
-                    <execution>
-                        <id>bundling-for-windows</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>package</goal>
-                        </goals>
-                        <configuration>
-                            <platform>windows</platform>
-                            <createZipball>true</createZipball>
-                            <administratorRequired>true</administratorRequired>
-                            <winConfig>
+<!--                    <execution>-->
+<!--                        <id>bundling-for-windows</id>-->
+<!--                        <phase>package</phase>-->
+<!--                        <goals>-->
+<!--                            <goal>package</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <platform>windows</platform>-->
+<!--                            <createZipball>true</createZipball>-->
+<!--                            <administratorRequired>true</administratorRequired>-->
+<!--                            <winConfig>-->
 
-                                <!-- general properties -->
-                                <generateSetup>true</generateSetup>
-                                <generateMsi>true</generateMsi>
-                                <generateMsm>true</generateMsm>
+<!--                                &lt;!&ndash; general properties &ndash;&gt;-->
+<!--                                <generateSetup>true</generateSetup>-->
+<!--                                <generateMsi>true</generateMsi>-->
+<!--                                <generateMsm>true</generateMsm>-->
 
-                                <!-- setup generation properties -->
-                                <setupMode>installForAllUsers</setupMode>
-                                <createDesktopIconTask>true</createDesktopIconTask>
-                                <disableDirPage>false</disableDirPage>
-                                <disableFinishedPage>false</disableFinishedPage>
-                                <setupLanguages>
-                                    <english>compiler:Default.isl</english>
-                                    <!--                                    <spanish>compiler:Languages\Chinese.isl</spanish>-->
-                                </setupLanguages>
-                            </winConfig>
-                        </configuration>
-                    </execution>
-<!--                                        <execution>-->
-<!--                                            <id>bundling-for-linux</id>-->
-<!--                                            <phase>package</phase>-->
-<!--                                            <goals>-->
-<!--                                                <goal>package</goal>-->
-<!--                                            </goals>-->
-<!--                                            <configuration>-->
-<!--                                                <platform>linux</platform>-->
-<!--                                                <createTarball>true</createTarball>-->
-<!--                                            </configuration>-->
-<!--                                        </execution>-->
+<!--                                &lt;!&ndash; setup generation properties &ndash;&gt;-->
+<!--                                <setupMode>installForAllUsers</setupMode>-->
+<!--                                <createDesktopIconTask>true</createDesktopIconTask>-->
+<!--                                <disableDirPage>false</disableDirPage>-->
+<!--                                <disableFinishedPage>false</disableFinishedPage>-->
+<!--                                <setupLanguages>-->
+<!--                                    <english>compiler:Default.isl</english>-->
+<!--                                    &lt;!&ndash;                                    <spanish>compiler:Languages\Chinese.isl</spanish>&ndash;&gt;-->
+<!--                                </setupLanguages>-->
+<!--                            </winConfig>-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
                     <!--                                        <execution>-->
-                    <!--                                            <id>bundling-for-mac</id>-->
+                    <!--                                            <id>bundling-for-linux</id>-->
                     <!--                                            <phase>package</phase>-->
                     <!--                                            <goals>-->
                     <!--                                                <goal>package</goal>-->
                     <!--                                            </goals>-->
                     <!--                                            <configuration>-->
-                    <!--                                                <platform>mac</platform>-->
+                    <!--                                                <platform>linux</platform>-->
                     <!--                                                <createTarball>true</createTarball>-->
-                    <!--&lt;!&ndash;                                                <jdkPath>X:\\path\to\mac\jdk</jdkPath>&ndash;&gt;-->
                     <!--                                            </configuration>-->
                     <!--                                        </execution>-->
+                                                            <execution>
+                                                                <id>bundling-for-mac</id>
+                                                                <phase>package</phase>
+                                                                <goals>
+                                                                    <goal>package</goal>
+                                                                </goals>
+                                                                <configuration>
+                                                                    <platform>mac</platform>
+                                                                    <createTarball>true</createTarball>
+                    <!--                                                <jdkPath>X:\\path\to\mac\jdk</jdkPath>-->
+                                                                </configuration>
+                                                            </execution>
                 </executions>
             </plugin>
         </plugins>

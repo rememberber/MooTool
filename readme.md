@@ -11,6 +11,9 @@ A handy tool set for developers.
 [![GitHub release](https://img.shields.io/github/v/release/rememberber/MooTool)](https://github.com/rememberber/MooTool/releases)
 [![GitHub license](https://img.shields.io/github/license/rememberber/MooTool)](https://github.com/rememberber/MooTool/blob/master/LICENSE.txt)
 
+## 支持的平台
+Windows • Linux • macOS
+
 ## 截图速览
 
 ![Overview](screen_shoot/quick_note_mac.png)
