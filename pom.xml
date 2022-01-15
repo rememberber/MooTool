@@ -36,6 +36,7 @@
         <flatlaf.version>2.0</flatlaf.version>
         <flatlaf-extras.version>2.0</flatlaf-extras.version>
         <rsyntaxtextarea.version>3.1.5</rsyntaxtextarea.version>
+        <sql-formatter.version>2.0.3</sql-formatter.version>
     </properties>
 
     <dependencies>
@@ -145,7 +146,11 @@
             <version>${rsyntaxtextarea.version}</version>
         </dependency>
 
-
+        <dependency>
+            <groupId>com.github.vertical-blank</groupId>
+            <artifactId>sql-formatter</artifactId>
+            <version>${sql-formatter.version}</version>
+        </dependency>
 
     </dependencies>
 
@@ -200,17 +205,17 @@
                             </winConfig>
                         </configuration>
                     </execution>
-<!--                                        <execution>-->
-<!--                                            <id>bundling-for-linux</id>-->
-<!--                                            <phase>package</phase>-->
-<!--                                            <goals>-->
-<!--                                                <goal>package</goal>-->
-<!--                                            </goals>-->
-<!--                                            <configuration>-->
-<!--                                                <platform>linux</platform>-->
-<!--                                                <createTarball>true</createTarball>-->
-<!--                                            </configuration>-->
-<!--                                        </execution>-->
+                    <!--                                        <execution>-->
+                    <!--                                            <id>bundling-for-linux</id>-->
+                    <!--                                            <phase>package</phase>-->
+                    <!--                                            <goals>-->
+                    <!--                                                <goal>package</goal>-->
+                    <!--                                            </goals>-->
+                    <!--                                            <configuration>-->
+                    <!--                                                <platform>linux</platform>-->
+                    <!--                                                <createTarball>true</createTarball>-->
+                    <!--                                            </configuration>-->
+                    <!--                                        </execution>-->
                     <!--                                        <execution>-->
                     <!--                                            <id>bundling-for-mac</id>-->
                     <!--                                            <phase>package</phase>-->

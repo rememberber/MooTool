@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.listener.func;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ReUtil;
+import com.github.vertical_blank.sqlformatter.SqlFormatter;
 import com.google.common.collect.Lists;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
@@ -695,4 +696,25 @@ public class QuickNoteListener {
         return decimalFormat.format(number);
     }
 
+    public static void format() {
+        QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
+        String text = QuickNoteForm.quickNoteSyntaxTextViewerManager.getTextByName(selectedName);
+
+        String format;
+        String selectedSyntax = (String) quickNoteForm.getSyntaxComboBox().getSelectedItem();
+        if (StringUtils.isBlank(text) || StringUtils.isEmpty(selectedSyntax)) {
+            return;
+        }
+
+        switch (selectedSyntax) {
+            case SyntaxConstants.SYNTAX_STYLE_SQL:
+                format = SqlFormatter.format(text);
+                break;
+            default:
+                return;
+        }
+
+        QuickNoteForm.quickNoteSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setText(format);
+        QuickNoteForm.quickNoteSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setCaretPosition(0);
+    }
 }

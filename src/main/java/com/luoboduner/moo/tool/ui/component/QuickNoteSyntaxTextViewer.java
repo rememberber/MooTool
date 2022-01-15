@@ -83,6 +83,8 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
                 QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
                 if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
                     QuickNoteListener.quickSave(true);
+                } else if (evt.isControlDown() && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                    QuickNoteListener.format();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
                     RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane) quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
                     quickNoteForm.getFindReplacePanel().setVisible(true);
