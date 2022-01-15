@@ -1,6 +1,7 @@
 package com.luoboduner.moo.tool.util;
 
 import lombok.extern.slf4j.Slf4j;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 
 import javax.swing.text.JTextComponent;
 import javax.swing.undo.UndoManager;
@@ -29,6 +30,9 @@ public class UndoUtil {
         Field[] declaredFields = strClass.getDeclaredFields();
         for (Field field : declaredFields) {
             if (JTextComponent.class.isAssignableFrom(field.getType())) {
+                if (RSyntaxTextArea.class.isAssignableFrom(field.getType())) {
+                    continue;
+                }
                 UndoManager undoManager = new UndoManager();
                 try {
                     field.setAccessible(true);
