@@ -6,6 +6,7 @@ import cn.hutool.core.util.ReUtil;
 import cn.hutool.json.JSONUtil;
 import com.github.vertical_blank.sqlformatter.SqlFormatter;
 import com.google.common.collect.Lists;
+import com.google.googlejavaformat.java.Formatter;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
@@ -720,6 +721,10 @@ public class QuickNoteListener {
                         log.error(ExceptionUtils.getStackTrace(e1));
                         format = JSONUtil.formatJsonStr(text);
                     }
+                    break;
+
+                case SyntaxConstants.SYNTAX_STYLE_JAVA:
+                    format = new Formatter().formatSource(text);
                     break;
 
                 default:
