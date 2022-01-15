@@ -60,6 +60,7 @@ public class UIUtil {
                 || "Darcula(推荐)".equals(App.config.getTheme())
                 || "Flat Dark".equals(App.config.getTheme())
                 || "Flat Darcula".equals(App.config.getTheme())
+                || "Dark purple".equals(App.config.getTheme())
                 || "Flat Darcula(推荐)".equals(App.config.getTheme());
     }
 }

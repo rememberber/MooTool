@@ -41,6 +41,8 @@ A handy tool set for developers.
   </a>
 </p>
 
+![Overview](screen_shoot/quick_note_light_mac.png)
+
 ![Overview](screen_shoot/theme.png)
 
 ## 支持的功能
