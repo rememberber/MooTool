@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.listener.func;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ReUtil;
+import cn.hutool.json.JSONUtil;
 import com.github.vertical_blank.sqlformatter.SqlFormatter;
 import com.google.common.collect.Lists;
 import com.luoboduner.moo.tool.App;
@@ -697,24 +698,43 @@ public class QuickNoteListener {
     }
 
     public static void format() {
-        QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
-        String text = QuickNoteForm.quickNoteSyntaxTextViewerManager.getTextByName(selectedName);
+        try {
+            QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
+            String text = QuickNoteForm.quickNoteSyntaxTextViewerManager.getTextByName(selectedName);
 
-        String format;
-        String selectedSyntax = (String) quickNoteForm.getSyntaxComboBox().getSelectedItem();
-        if (StringUtils.isBlank(text) || StringUtils.isEmpty(selectedSyntax)) {
-            return;
-        }
-
-        switch (selectedSyntax) {
-            case SyntaxConstants.SYNTAX_STYLE_SQL:
-                format = SqlFormatter.format(text);
-                break;
-            default:
+            String format;
+            String selectedSyntax = (String) quickNoteForm.getSyntaxComboBox().getSelectedItem();
+            if (StringUtils.isBlank(text) || StringUtils.isEmpty(selectedSyntax)) {
                 return;
+            }
+
+            switch (selectedSyntax) {
+                case SyntaxConstants.SYNTAX_STYLE_SQL:
+                    format = SqlFormatter.format(text);
+                    break;
+                case SyntaxConstants.SYNTAX_STYLE_JSON:
+                case SyntaxConstants.SYNTAX_STYLE_JSON_WITH_COMMENTS:
+                    try {
+                        format = JSONUtil.toJsonPrettyStr(text);
+                    } catch (Exception e1) {
+                        log.error(ExceptionUtils.getStackTrace(e1));
+                        format = JSONUtil.formatJsonStr(text);
+                    }
+                    break;
+
+                default:
+                    JOptionPane.showMessageDialog(App.mainFrame, "尚不支持对该语言格式化！\n", "不支持该语言",
+                            JOptionPane.INFORMATION_MESSAGE);
+                    return;
+            }
+
+            QuickNoteForm.quickNoteSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setText(format);
+            QuickNoteForm.quickNoteSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setCaretPosition(0);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(App.mainFrame, "格式化失败！\n\n" + e.getMessage(), "失败",
+                    JOptionPane.ERROR_MESSAGE);
+            log.error(ExceptionUtils.getStackTrace(e));
         }
 
-        QuickNoteForm.quickNoteSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setText(format);
-        QuickNoteForm.quickNoteSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setCaretPosition(0);
     }
 }
