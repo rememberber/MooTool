@@ -85,6 +85,9 @@ public class SettingDialog extends JDialog {
         // 使用习惯
         menuBarPositionComboBox.setSelectedItem(App.config.getMenuBarPosition());
 
+        // sql dialect
+        sqlDialectComboBox.setSelectedItem(App.config.getSqlDialect());
+
         // 高级
         dbFilePathTextField.setText(App.config.getDbFilePath());
 
@@ -128,6 +131,13 @@ public class SettingDialog extends JDialog {
                 HttpRequestForm.init();
                 QrCodeForm.init();
                 CryptoForm.init();
+            }
+        });
+
+        sqlDialectComboBox.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                App.config.setSqlDialect(e.getItem().toString());
+                App.config.save();
             }
         });
 

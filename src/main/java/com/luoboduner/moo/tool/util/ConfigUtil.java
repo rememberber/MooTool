@@ -50,6 +50,11 @@ public class ConfigUtil extends ConfigBaseUtil {
     private String menuBarPosition;
 
     /**
+     * sql dialect
+     */
+    private String sqlDialect;
+
+    /**
      * 上次关闭前所在的tab
      */
     private int recentTabIndex;
@@ -340,6 +345,14 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setMenuBarPosition(String menuBarPosition) {
         setting.putByGroup("menuBarPosition", "setting.custom", menuBarPosition);
+    }
+
+    public String getSqlDialect() {
+        return setting.getStr("sqlDialect", "setting.quickNote", "Standard SQL");
+    }
+
+    public void setSqlDialect(String sqlDialect) {
+        setting.putByGroup("sqlDialect", "setting.quickNote", sqlDialect);
     }
 
     public String getCalculatorInputExpress() {
