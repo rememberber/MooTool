@@ -20,6 +20,8 @@ public class MainFrame extends JFrame {
 
     private static final long serialVersionUID = -332963894416012132L;
 
+    public static TopMenuBar topMenuBar;
+
     public void init() {
         this.setName(UiConsts.APP_NAME);
         this.setTitle(UiConsts.APP_NAME);
@@ -33,7 +35,7 @@ public class MainFrame extends JFrame {
 //                application.setEnabledPreferencesMenu(false);
 //            }
         }
-        TopMenuBar topMenuBar = TopMenuBar.getInstance();
+        topMenuBar = TopMenuBar.getInstance();
         topMenuBar.init();
         setJMenuBar(topMenuBar);
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.8, 0.88);

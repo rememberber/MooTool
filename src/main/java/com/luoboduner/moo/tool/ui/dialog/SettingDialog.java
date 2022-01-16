@@ -8,7 +8,9 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.service.HttpMsgSender;
+import com.luoboduner.moo.tool.ui.component.TopMenuBar;
 import com.luoboduner.moo.tool.ui.form.func.*;
+import com.luoboduner.moo.tool.ui.frame.MainFrame;
 import com.luoboduner.moo.tool.util.ComponentUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
@@ -21,10 +23,7 @@ import javax.swing.border.TitledBorder;
 import javax.swing.plaf.FontUIResource;
 import javax.swing.text.StyleContext;
 import java.awt.*;
-import java.awt.event.ItemEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.WindowAdapter;
-import java.awt.event.WindowEvent;
+import java.awt.event.*;
 import java.io.File;
 import java.util.Locale;
 
@@ -48,6 +47,7 @@ public class SettingDialog extends JDialog {
     private JTextField httpProxyUserTextField;
     private JTextField httpProxyPasswordTextField;
     private JComboBox sqlDialectComboBox;
+    private JComboBox fontFamilyComboBox;
 
     public SettingDialog() {
 
@@ -87,6 +87,10 @@ public class SettingDialog extends JDialog {
 
         // sql dialect
         sqlDialectComboBox.setSelectedItem(App.config.getSqlDialect());
+
+        // 字体
+        initFontFamilyMenu();
+        fontFamilyComboBox.setSelectedItem(App.config.getFont());
 
         // 高级
         dbFilePathTextField.setText(App.config.getDbFilePath());
@@ -138,6 +142,14 @@ public class SettingDialog extends JDialog {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 App.config.setSqlDialect(e.getItem().toString());
                 App.config.save();
+            }
+        });
+
+        fontFamilyComboBox.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                App.config.setFont(e.getItem().toString());
+                App.config.save();
+                MainFrame.topMenuBar.fontFamilyChanged(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, e.getItem().toString()));
             }
         });
 
@@ -194,13 +206,21 @@ public class SettingDialog extends JDialog {
     /**
      * 切换HTTP代理设置面板显示/隐藏
      */
-    public void toggleHttpProxyPanel() {
+    private void toggleHttpProxyPanel() {
 
         boolean httpUseProxy = httpUseProxyCheckBox.isSelected();
         if (httpUseProxy) {
             httpProxyPanel.setVisible(true);
         } else {
             httpProxyPanel.setVisible(false);
+        }
+    }
+
+    private void initFontFamilyMenu() {
+
+        fontFamilyComboBox.removeAllItems();
+        for (String font : TopMenuBar.fontNames) {
+            fontFamilyComboBox.addItem(font);
         }
     }
 
@@ -233,7 +253,7 @@ public class SettingDialog extends JDialog {
         panel2.setLayout(new GridLayoutManager(5, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel1.add(panel2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(600, -1), null, 0, false));
         final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(2, 3, new Insets(15, 15, 25, 0), -1, -1));
+        panel3.setLayout(new GridLayoutManager(3, 3, new Insets(15, 15, 25, 0), -1, -1));
         panel2.add(panel3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         panel3.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "常规", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel3.getFont()), null));
         autoCheckUpdateCheckBox = new JCheckBox();
@@ -242,6 +262,9 @@ public class SettingDialog extends JDialog {
         final JLabel label1 = new JLabel();
         label1.setText("语言");
         panel3.add(label1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label2 = new JLabel();
+        label2.setText("字体");
+        panel3.add(label2, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         comboBox1 = new JComboBox();
         comboBox1.setEnabled(false);
         final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
@@ -249,29 +272,34 @@ public class SettingDialog extends JDialog {
         defaultComboBoxModel1.addElement("English");
         comboBox1.setModel(defaultComboBoxModel1);
         panel3.add(comboBox1, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        fontFamilyComboBox = new JComboBox();
+        fontFamilyComboBox.setEnabled(true);
+        final DefaultComboBoxModel defaultComboBoxModel2 = new DefaultComboBoxModel();
+        fontFamilyComboBox.setModel(defaultComboBoxModel2);
+        panel3.add(fontFamilyComboBox, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
         panel3.add(spacer2, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         final JPanel panel4 = new JPanel();
         panel4.setLayout(new GridLayoutManager(1, 3, new Insets(15, 15, 25, 0), -1, -1));
         panel2.add(panel4, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         panel4.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), " 随手记", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel4.getFont()), null));
-        final JLabel label2 = new JLabel();
-        label2.setText("SQL\"方言\"(dialect)");
-        panel4.add(label2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label3 = new JLabel();
+        label3.setText("SQL\"方言\"(dialect)");
+        panel4.add(label3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         sqlDialectComboBox = new JComboBox();
         sqlDialectComboBox.setEnabled(true);
-        final DefaultComboBoxModel defaultComboBoxModel2 = new DefaultComboBoxModel();
-        defaultComboBoxModel2.addElement("Standard SQL");
-        defaultComboBoxModel2.addElement("MariaDB");
-        defaultComboBoxModel2.addElement("MySQL");
-        defaultComboBoxModel2.addElement("PostgreSQL");
-        defaultComboBoxModel2.addElement("IBM DB2");
-        defaultComboBoxModel2.addElement("Oracle PL/SQL");
-        defaultComboBoxModel2.addElement("Couchbase N1QL");
-        defaultComboBoxModel2.addElement("Amazon Redshift");
-        defaultComboBoxModel2.addElement("Spark");
-        defaultComboBoxModel2.addElement("SQL Server Transact-SQL");
-        sqlDialectComboBox.setModel(defaultComboBoxModel2);
+        final DefaultComboBoxModel defaultComboBoxModel3 = new DefaultComboBoxModel();
+        defaultComboBoxModel3.addElement("Standard SQL");
+        defaultComboBoxModel3.addElement("MariaDB");
+        defaultComboBoxModel3.addElement("MySQL");
+        defaultComboBoxModel3.addElement("PostgreSQL");
+        defaultComboBoxModel3.addElement("IBM DB2");
+        defaultComboBoxModel3.addElement("Oracle PL/SQL");
+        defaultComboBoxModel3.addElement("Couchbase N1QL");
+        defaultComboBoxModel3.addElement("Amazon Redshift");
+        defaultComboBoxModel3.addElement("Spark");
+        defaultComboBoxModel3.addElement("SQL Server Transact-SQL");
+        sqlDialectComboBox.setModel(defaultComboBoxModel3);
         panel4.add(sqlDialectComboBox, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer3 = new Spacer();
         panel4.add(spacer3, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
@@ -279,24 +307,24 @@ public class SettingDialog extends JDialog {
         panel5.setLayout(new GridLayoutManager(1, 3, new Insets(15, 15, 25, 0), -1, -1));
         panel2.add(panel5, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         panel5.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "使用习惯", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel5.getFont()), null));
-        final JLabel label3 = new JLabel();
-        label3.setText("菜单栏(按钮操作区)位置");
-        panel5.add(label3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label4 = new JLabel();
+        label4.setText("菜单栏(按钮操作区)位置");
+        panel5.add(label4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer4 = new Spacer();
         panel5.add(spacer4, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         menuBarPositionComboBox = new JComboBox();
-        final DefaultComboBoxModel defaultComboBoxModel3 = new DefaultComboBoxModel();
-        defaultComboBoxModel3.addElement("上方");
-        defaultComboBoxModel3.addElement("下方");
-        menuBarPositionComboBox.setModel(defaultComboBoxModel3);
+        final DefaultComboBoxModel defaultComboBoxModel4 = new DefaultComboBoxModel();
+        defaultComboBoxModel4.addElement("上方");
+        defaultComboBoxModel4.addElement("下方");
+        menuBarPositionComboBox.setModel(defaultComboBoxModel4);
         panel5.add(menuBarPositionComboBox, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel6 = new JPanel();
         panel6.setLayout(new GridLayoutManager(2, 3, new Insets(15, 15, 25, 0), -1, -1));
         panel2.add(panel6, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         panel6.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "高级", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel6.getFont()), null));
-        final JLabel label4 = new JLabel();
-        label4.setText("数据存储位置");
-        panel6.add(label4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label5 = new JLabel();
+        label5.setText("数据存储位置");
+        panel6.add(label5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         dbFilePathTextField = new JTextField();
         panel6.add(dbFilePathTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         dbFilePathExploreButton = new JButton();
@@ -332,20 +360,20 @@ public class SettingDialog extends JDialog {
         httpProxyPanel = new JPanel();
         httpProxyPanel.setLayout(new GridLayoutManager(4, 2, new Insets(0, 26, 0, 0), -1, -1));
         panel8.add(httpProxyPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        final JLabel label5 = new JLabel();
-        label5.setText("Host");
-        httpProxyPanel.add(label5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label6 = new JLabel();
+        label6.setText("Host");
+        httpProxyPanel.add(label6, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         httpProxyHostTextField = new JTextField();
         httpProxyPanel.add(httpProxyHostTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-        final JLabel label6 = new JLabel();
-        label6.setText("端口");
-        httpProxyPanel.add(label6, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label7 = new JLabel();
-        label7.setText("用户名");
-        httpProxyPanel.add(label7, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        label7.setText("端口");
+        httpProxyPanel.add(label7, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label8 = new JLabel();
-        label8.setText("密码");
-        httpProxyPanel.add(label8, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        label8.setText("用户名");
+        httpProxyPanel.add(label8, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label9 = new JLabel();
+        label9.setText("密码");
+        httpProxyPanel.add(label9, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         httpProxyPortTextField = new JTextField();
         httpProxyPanel.add(httpProxyPortTextField, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         httpProxyUserTextField = new JTextField();

@@ -48,7 +48,7 @@ public class TopMenuBar extends JMenuBar {
             "IntelliJ Cyan",
             "IntelliJ Light"};
 
-    private static String[] fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+    public static String[] fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
 
     private static String[] fontSizes = {
             "5",
@@ -309,7 +309,7 @@ public class TopMenuBar extends JMenuBar {
     }
 
 
-    private void fontFamilyChanged(ActionEvent actionEvent) {
+    public void fontFamilyChanged(ActionEvent actionEvent) {
         try {
             String selectedFamily = actionEvent.getActionCommand();
 
