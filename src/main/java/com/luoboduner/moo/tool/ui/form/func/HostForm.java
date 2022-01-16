@@ -18,6 +18,8 @@ import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.fife.ui.rtextarea.Gutter;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
@@ -38,6 +40,7 @@ import static java.awt.GraphicsDevice.WindowTranslucency.TRANSLUCENT;
  * @since 2019/9/7.
  */
 @Getter
+@Slf4j
 public class HostForm {
     private JPanel hostPanel;
     private JTable noteListTable;
@@ -70,6 +73,12 @@ public class HostForm {
     public static final String WIN_HOST_FILE_PATH = "C:\\Windows\\System32\\drivers\\etc\\hosts";
 
     public static final String MAC_HOST_FILE_PATH = "/etc/hosts";
+
+    public static final String LINUX_HOST_FILE_PATH = "/etc/hosts";
+
+    public static final String MAC_HOST_DIR_PATH = "/etc/";
+
+    public static final String LINUX_HOST_DIR_PATH = "/etc/";
 
     public static final String NOT_SUPPORTED_TIPS = "暂不支持该操作系统！";
 
@@ -110,18 +119,47 @@ public class HostForm {
                     highlightHostMenu(hostName);
                 }
             } else if (SystemUtil.isMacOs()) {
-                File hostFile = FileUtil.file(MAC_HOST_FILE_PATH);
-                FileUtil.writeUtf8String(hostText, hostFile);
-                if (App.trayIcon != null) {
-                    App.trayIcon.displayMessage("MooTool", "Host已切换！\n" + hostName, TrayIcon.MessageType.INFO);
-                    highlightHostMenu(hostName);
+                try {
+                    File hostFile = FileUtil.file(MAC_HOST_FILE_PATH);
+                    FileUtil.writeUtf8String(hostText, hostFile);
+                    if (App.trayIcon != null) {
+                        App.trayIcon.displayMessage("MooTool", "Host已切换！\n" + hostName, TrayIcon.MessageType.INFO);
+                        highlightHostMenu(hostName);
+                    }
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(hostForm.getHostPanel(), "需要管理员或root权限运行！\n现在帮你打开hosts文件所在目录，请自行修改替换" + e.getMessage(), "切换失败！", JOptionPane.ERROR_MESSAGE);
+                    e.printStackTrace();
+                    try {
+                        Desktop desktop = Desktop.getDesktop();
+                        desktop.open(new File(MAC_HOST_DIR_PATH));
+                    } catch (Exception e2) {
+                        log.error(ExceptionUtils.getStackTrace(e2));
+                    }
+                }
+            } else if (SystemUtil.isLinuxOs()) {
+                try {
+                    File hostFile = FileUtil.file(LINUX_HOST_FILE_PATH);
+                    FileUtil.writeUtf8String(hostText, hostFile);
+                    if (App.trayIcon != null) {
+                        App.trayIcon.displayMessage("MooTool", "Host已切换！\n" + hostName, TrayIcon.MessageType.INFO);
+                        highlightHostMenu(hostName);
+                    }
+                } catch (Exception e) {
+                    JOptionPane.showMessageDialog(hostForm.getHostPanel(), "需要管理员或root权限运行！\n现在帮你打开hosts文件所在目录，请自行修改替换" + e.getMessage(), "切换失败！", JOptionPane.ERROR_MESSAGE);
+                    e.printStackTrace();
+                    try {
+                        Desktop desktop = Desktop.getDesktop();
+                        desktop.open(new File(LINUX_HOST_DIR_PATH));
+                    } catch (Exception e2) {
+                        log.error(ExceptionUtils.getStackTrace(e2));
+                    }
                 }
             } else {
                 JOptionPane.showMessageDialog(hostForm.getHostPanel(), NOT_SUPPORTED_TIPS, "抱歉！", JOptionPane.INFORMATION_MESSAGE);
             }
         } catch (Exception ex) {
             ex.printStackTrace();
-            JOptionPane.showMessageDialog(hostForm.getHostPanel(), "需要管理员或root权限运行！\n\n" + ex.getMessage(), "切换失败！", JOptionPane.ERROR_MESSAGE);
+            JOptionPane.showMessageDialog(hostForm.getHostPanel(), ex.getMessage(), "切换失败！", JOptionPane.ERROR_MESSAGE);
         } finally {
             hostForm.getSwitchButton().setEnabled(true);
         }
