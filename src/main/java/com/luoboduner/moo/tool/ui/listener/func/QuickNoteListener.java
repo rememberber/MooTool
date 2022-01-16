@@ -5,6 +5,7 @@ import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.json.JSONUtil;
 import com.github.vertical_blank.sqlformatter.SqlFormatter;
+import com.github.vertical_blank.sqlformatter.languages.Dialect;
 import com.google.common.collect.Lists;
 import com.google.googlejavaformat.java.Formatter;
 import com.luoboduner.moo.tool.App;
@@ -749,7 +750,7 @@ public class QuickNoteListener {
 
             switch (selectedSyntax) {
                 case SyntaxConstants.SYNTAX_STYLE_SQL:
-                    format = SqlFormatter.format(text);
+                    format = SqlFormatter.of(Dialect.StandardSql).format(text);
                     break;
                 case SyntaxConstants.SYNTAX_STYLE_JSON:
                 case SyntaxConstants.SYNTAX_STYLE_JSON_WITH_COMMENTS:
