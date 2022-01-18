@@ -396,7 +396,6 @@ public class HostListener {
         hostForm.getTextArea().setCaretPosition(0);
         hostForm.getScrollPane().getVerticalScrollBar().setValue(0);
         hostForm.getScrollPane().getHorizontalScrollBar().setValue(0);
-        hostForm.getTextArea().updateUI();
     }
 
     private static void save(boolean needRename) {

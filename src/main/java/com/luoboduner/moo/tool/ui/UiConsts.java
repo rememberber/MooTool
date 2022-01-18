@@ -16,7 +16,7 @@ public class UiConsts {
      * 软件名称,版本
      */
     public static final String APP_NAME = "MooTool";
-    public static final String APP_VERSION = "v1.4.1";
+    public static final String APP_VERSION = "v1.4.2";
 
     public static final int TABLE_ROW_HEIGHT = 36;
 
@@ -90,6 +90,11 @@ public class UiConsts {
      * 软件版本检查url
      */
     public static final String CHECK_VERSION_URL = "https://gitee.com/zhoubochina/MooTool/raw/master/src/main/resources/version_summary.json";
+
+    /**
+     * 软件下载链接信息url
+     */
+    public static final String DOWNLOAD_LINK_INFO_URL = "https://gitee.com/zhoubochina/MooTool/raw/develop/download_links.json";
 
     /**
      * 二维码url

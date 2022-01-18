@@ -48,7 +48,7 @@ public class TopMenuBar extends JMenuBar {
             "IntelliJ Cyan",
             "IntelliJ Light"};
 
-    private static String[] fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
+    public static String[] fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
 
     private static String[] fontSizes = {
             "5",
@@ -188,6 +188,29 @@ public class TopMenuBar extends JMenuBar {
         aboutMenu.add(aboutMenuItem);
 
         topMenuBar.add(aboutMenu);
+
+        // ---------鼓励和支持
+        JMenu supportMeMenu = new JMenu();
+        supportMeMenu.setText("鼓励和支持");
+
+        // 鼓励和支持
+        JMenuItem supportMeMenuItem = new JMenuItem();
+        supportMeMenuItem.setText("鼓励和支持");
+        supportMeMenuItem.addActionListener(e -> supportMeActionPerformed());
+        supportMeMenu.add(supportMeMenuItem);
+
+        topMenuBar.add(supportMeMenu);
+    }
+
+    private void supportMeActionPerformed() {
+        try {
+            SupportMeDialog dialog = new SupportMeDialog();
+
+            dialog.pack();
+            dialog.setVisible(true);
+        } catch (Exception e2) {
+            logger.error(e2);
+        }
     }
 
     private void syncAndBackupActionPerformed() {
@@ -286,7 +309,7 @@ public class TopMenuBar extends JMenuBar {
     }
 
 
-    private void fontFamilyChanged(ActionEvent actionEvent) {
+    public void fontFamilyChanged(ActionEvent actionEvent) {
         try {
             String selectedFamily = actionEvent.getActionCommand();
 

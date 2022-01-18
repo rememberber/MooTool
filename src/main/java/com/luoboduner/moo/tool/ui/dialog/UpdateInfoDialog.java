@@ -5,9 +5,11 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.Getter;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import javax.swing.text.html.HTMLEditorKit;
 import javax.swing.text.html.StyleSheet;
 import java.awt.*;
@@ -66,19 +68,19 @@ public class UpdateInfoDialog extends JDialog {
     }
 
     private void onOK() {
-//        if (SystemUtil.isMacOs()) {
+        if (SystemUtil.isMacOs()) {
             Desktop desktop = Desktop.getDesktop();
             try {
                 desktop.browse(new URI("https://gitee.com/zhoubochina/MooTool/releases"));
             } catch (IOException | URISyntaxException ex) {
                 ex.printStackTrace();
             }
-//        } else {
-//            UpdateDialog dialog = new UpdateDialog();
-//            dialog.pack();
-//            dialog.downLoad(newVersion);
-//            dialog.setVisible(true);
-//        }
+        } else {
+            UpdateDialog dialog = new UpdateDialog();
+            dialog.pack();
+            dialog.downLoad(newVersion);
+            dialog.setVisible(true);
+        }
         dispose();
     }
 
@@ -141,6 +143,7 @@ public class UpdateInfoDialog extends JDialog {
         contentPane.add(panel3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JScrollPane scrollPane1 = new JScrollPane();
         panel3.add(scrollPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        scrollPane1.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         textPane1 = new JTextPane();
         textPane1.setEditable(false);
         textPane1.setMargin(new Insets(80, 28, 3, 28));

@@ -5,6 +5,7 @@ import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.json.JSONUtil;
 import com.github.vertical_blank.sqlformatter.SqlFormatter;
+import com.github.vertical_blank.sqlformatter.languages.Dialect;
 import com.google.common.collect.Lists;
 import com.google.googlejavaformat.java.Formatter;
 import com.luoboduner.moo.tool.App;
@@ -16,6 +17,7 @@ import com.luoboduner.moo.tool.ui.form.func.FindResultForm;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
 import com.luoboduner.moo.tool.util.MybatisUtil;
+import com.luoboduner.moo.tool.util.QuickNoteIndicatorTools;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -623,6 +625,8 @@ public class QuickNoteListener {
                 QuickNoteForm.initNoteListTable();
             }
         }
+
+        QuickNoteIndicatorTools.showTips("已保存：" + selectedName, QuickNoteIndicatorTools.TipsLevel.SUCCESS);
     }
 
     /**
@@ -736,6 +740,9 @@ public class QuickNoteListener {
         return decimalFormat.format(number);
     }
 
+    /**
+     * 文本格式化
+     */
     public static void format() {
         try {
             QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
@@ -749,7 +756,37 @@ public class QuickNoteListener {
 
             switch (selectedSyntax) {
                 case SyntaxConstants.SYNTAX_STYLE_SQL:
-                    format = SqlFormatter.format(text);
+                    switch (App.config.getSqlDialect()) {
+                        case "MariaDB":
+                            format = SqlFormatter.of(Dialect.MariaDb).format(text);
+                            break;
+                        case "MySQL":
+                            format = SqlFormatter.of(Dialect.MySql).format(text);
+                            break;
+                        case "PostgreSQL":
+                            format = SqlFormatter.of(Dialect.PostgreSql).format(text);
+                            break;
+                        case "IBM DB2":
+                            format = SqlFormatter.of(Dialect.Db2).format(text);
+                            break;
+                        case "Oracle PL/SQL":
+                            format = SqlFormatter.of(Dialect.PlSql).format(text);
+                            break;
+                        case "Couchbase N1QL":
+                            format = SqlFormatter.of(Dialect.N1ql).format(text);
+                            break;
+                        case "Amazon Redshift":
+                            format = SqlFormatter.of(Dialect.Redshift).format(text);
+                            break;
+                        case "Spark":
+                            format = SqlFormatter.of(Dialect.SparkSql).format(text);
+                            break;
+                        case "SQL Server Transact-SQL":
+                            format = SqlFormatter.of(Dialect.TSql).format(text);
+                            break;
+                        default:
+                            format = SqlFormatter.of(Dialect.StandardSql).format(text);
+                    }
                     break;
                 case SyntaxConstants.SYNTAX_STYLE_JSON:
                 case SyntaxConstants.SYNTAX_STYLE_JSON_WITH_COMMENTS:
@@ -773,6 +810,8 @@ public class QuickNoteListener {
 
             QuickNoteForm.quickNoteSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setText(format);
             QuickNoteForm.quickNoteSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setCaretPosition(0);
+
+            QuickNoteIndicatorTools.showTips("已格式化：" + selectedName, QuickNoteIndicatorTools.TipsLevel.SUCCESS);
         } catch (Exception e) {
             JOptionPane.showMessageDialog(App.mainFrame, "格式化失败！\n\n" + e.getMessage(), "失败",
                     JOptionPane.ERROR_MESSAGE);
