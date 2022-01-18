@@ -7,8 +7,13 @@ import cn.hutool.http.HttpUtil;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.jayway.jsonpath.DocumentContext;
+import com.jayway.jsonpath.JsonPath;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.SystemUtil;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -77,7 +82,25 @@ public class UpdateDialog extends JDialog {
         buttonOK.setEnabled(false);
         ThreadUtil.execute(
                 () -> {
-                    String fileUrl = "http://download.zhoubochina.com/moo/exe/MooTool-" + newVersion + "-x64-Setup.exe";
+                    String fileUrl = "";
+                    // 从github获取最新版本相关信息
+                    String downloadLinkInfo = HttpUtil.get(UiConsts.DOWNLOAD_LINK_INFO_URL);
+                    if (StringUtils.isEmpty(downloadLinkInfo) || downloadLinkInfo.contains("404: Not Found")) {
+                        JOptionPane.showMessageDialog(App.mainFrame,
+                                "获取下载链接失败，请关注Gitee Release！", "网络错误",
+                                JOptionPane.INFORMATION_MESSAGE);
+                        return;
+                    } else {
+                        DocumentContext parse = JsonPath.parse(downloadLinkInfo);
+                        if (SystemUtil.isWindowsOs()) {
+                            fileUrl = parse.read("$.windows");
+                        } else if (SystemUtil.isMacOs()) {
+                            fileUrl = parse.read("$.mac");
+                        } else if (SystemUtil.isLinuxOs()) {
+                            fileUrl = parse.read("$.linux");
+                        }
+                    }
+
                     String fileName = FileUtil.getName(fileUrl);
                     URL url;
                     try {

@@ -92,6 +92,11 @@ public class UiConsts {
     public static final String CHECK_VERSION_URL = "https://gitee.com/zhoubochina/MooTool/raw/master/src/main/resources/version_summary.json";
 
     /**
+     * 软件下载链接信息url
+     */
+    public static final String DOWNLOAD_LINK_INFO_URL = "https://gitee.com/zhoubochina/MooTool/raw/develop/download_links.json";
+
+    /**
      * 二维码url
      */
     public static final String QR_CODE_URL = "http://download.zhoubochina.com/file/mootool_qrcode.json";
