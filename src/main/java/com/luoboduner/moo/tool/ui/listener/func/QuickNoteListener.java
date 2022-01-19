@@ -758,34 +758,34 @@ public class QuickNoteListener {
                 case SyntaxConstants.SYNTAX_STYLE_SQL:
                     switch (App.config.getSqlDialect()) {
                         case "MariaDB":
-                            format = SqlFormatter.of(Dialect.MariaDb).format(text);
+                            format = SqlFormatter.of(Dialect.MariaDb).format(text, "    ");
                             break;
                         case "MySQL":
-                            format = SqlFormatter.of(Dialect.MySql).format(text);
+                            format = SqlFormatter.of(Dialect.MySql).format(text, "    ");
                             break;
                         case "PostgreSQL":
-                            format = SqlFormatter.of(Dialect.PostgreSql).format(text);
+                            format = SqlFormatter.of(Dialect.PostgreSql).format(text, "    ");
                             break;
                         case "IBM DB2":
-                            format = SqlFormatter.of(Dialect.Db2).format(text);
+                            format = SqlFormatter.of(Dialect.Db2).format(text, "    ");
                             break;
                         case "Oracle PL/SQL":
-                            format = SqlFormatter.of(Dialect.PlSql).format(text);
+                            format = SqlFormatter.of(Dialect.PlSql).format(text, "    ");
                             break;
                         case "Couchbase N1QL":
-                            format = SqlFormatter.of(Dialect.N1ql).format(text);
+                            format = SqlFormatter.of(Dialect.N1ql).format(text, "    ");
                             break;
                         case "Amazon Redshift":
-                            format = SqlFormatter.of(Dialect.Redshift).format(text);
+                            format = SqlFormatter.of(Dialect.Redshift).format(text, "    ");
                             break;
                         case "Spark":
-                            format = SqlFormatter.of(Dialect.SparkSql).format(text);
+                            format = SqlFormatter.of(Dialect.SparkSql).format(text, "    ");
                             break;
                         case "SQL Server Transact-SQL":
-                            format = SqlFormatter.of(Dialect.TSql).format(text);
+                            format = SqlFormatter.of(Dialect.TSql).format(text, "    ");
                             break;
                         default:
-                            format = SqlFormatter.of(Dialect.StandardSql).format(text);
+                            format = SqlFormatter.of(Dialect.StandardSql).format(text, "    ");
                     }
                     break;
                 case SyntaxConstants.SYNTAX_STYLE_JSON:
