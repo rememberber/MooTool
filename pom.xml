@@ -35,6 +35,7 @@
         <google.zxing.core.version>3.4.1</google.zxing.core.version>
         <flatlaf.version>2.0</flatlaf.version>
         <flatlaf-extras.version>2.0</flatlaf-extras.version>
+        <flatlaf-intellij-themes.version>2.0</flatlaf-intellij-themes.version>
         <rsyntaxtextarea.version>3.1.5</rsyntaxtextarea.version>
         <sql-formatter.version>2.0.3</sql-formatter.version>
         <google-java-format.version>1.13.0</google-java-format.version>
@@ -140,6 +141,12 @@
             <version>${flatlaf-extras.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf-intellij-themes</artifactId>
+            <version>${flatlaf-intellij-themes.version}</version>
+        </dependency>
+
         <!-- https://mvnrepository.com/artifact/com.fifesoft/rsyntaxtextarea -->
         <dependency>
             <groupId>com.fifesoft</groupId>
@@ -193,7 +200,12 @@
                     <bundleJre>true</bundleJre>
                     <mainClass>com.luoboduner.moo.tool.App</mainClass>
                     <generateInstaller>true</generateInstaller>
-                    <vmArgs>--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</vmArgs>
+                    <vmArgs>--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports
+                        jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports
+                        jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports
+                        jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports
+                        jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
+                    </vmArgs>
                 </configuration>
                 <executions>
                     <execution>
@@ -236,18 +248,18 @@
                     <!--                                                <createTarball>true</createTarball>-->
                     <!--                                            </configuration>-->
                     <!--                                        </execution>-->
-<!--                                                            <execution>-->
-<!--                                                                <id>bundling-for-mac</id>-->
-<!--                                                                <phase>package</phase>-->
-<!--                                                                <goals>-->
-<!--                                                                    <goal>package</goal>-->
-<!--                                                                </goals>-->
-<!--                                                                <configuration>-->
-<!--                                                                    <platform>mac</platform>-->
-<!--                                                                    <createTarball>true</createTarball>-->
-<!--                    &lt;!&ndash;                                                <jdkPath>X:\\path\to\mac\jdk</jdkPath>&ndash;&gt;-->
-<!--                                                                </configuration>-->
-<!--                                                            </execution>-->
+                    <!--                                                            <execution>-->
+                    <!--                                                                <id>bundling-for-mac</id>-->
+                    <!--                                                                <phase>package</phase>-->
+                    <!--                                                                <goals>-->
+                    <!--                                                                    <goal>package</goal>-->
+                    <!--                                                                </goals>-->
+                    <!--                                                                <configuration>-->
+                    <!--                                                                    <platform>mac</platform>-->
+                    <!--                                                                    <createTarball>true</createTarball>-->
+                    <!--                    &lt;!&ndash;                                                <jdkPath>X:\\path\to\mac\jdk</jdkPath>&ndash;&gt;-->
+                    <!--                                                                </configuration>-->
+                    <!--                                                            </execution>-->
                 </executions>
             </plugin>
         </plugins>

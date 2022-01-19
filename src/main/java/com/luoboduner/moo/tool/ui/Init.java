@@ -4,7 +4,6 @@ import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.formdev.flatlaf.FlatLightLaf;
-import com.formdev.flatlaf.IntelliJTheme;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
@@ -118,7 +117,7 @@ public class Init {
                         JFrame.setDefaultLookAndFeelDecorated(true);
                         JDialog.setDefaultLookAndFeelDecorated(true);
                     }
-                    FlatLightLaf.install();
+                    FlatLightLaf.setup();
                     break;
                 case "Flat IntelliJ":
                     if (SystemUtil.isJBR()) {
@@ -170,24 +169,21 @@ public class Init {
                         JFrame.setDefaultLookAndFeelDecorated(true);
                         JDialog.setDefaultLookAndFeelDecorated(true);
                     }
-                    IntelliJTheme.install(App.class.getResourceAsStream(
-                            "/theme/DarkPurple.theme.json"));
+                    UIManager.setLookAndFeel("com.formdev.flatlaf.intellijthemes.FlatDarkPurpleIJTheme");
                     break;
                 case "IntelliJ Cyan":
                     if (SystemUtil.isJBR()) {
                         JFrame.setDefaultLookAndFeelDecorated(true);
                         JDialog.setDefaultLookAndFeelDecorated(true);
                     }
-                    IntelliJTheme.install(App.class.getResourceAsStream(
-                            "/theme/Cyan.theme.json"));
+                    UIManager.setLookAndFeel("com.formdev.flatlaf.intellijthemes.FlatCyanLightIJTheme");
                     break;
                 case "IntelliJ Light":
                     if (SystemUtil.isJBR()) {
                         JFrame.setDefaultLookAndFeelDecorated(true);
                         JDialog.setDefaultLookAndFeelDecorated(true);
                     }
-                    IntelliJTheme.install(App.class.getResourceAsStream(
-                            "/theme/Light.theme.json"));
+                    UIManager.setLookAndFeel("com.formdev.flatlaf.intellijthemes.FlatLightFlatIJTheme");
                     break;
 
                 default:
