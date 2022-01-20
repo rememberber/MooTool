@@ -88,20 +88,6 @@ public class Init {
      * 初始化look and feel
      */
     public static void initTheme() {
-        if (SystemUtil.isMacM1()) {
-            try {
-                UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarculaLaf");
-                logger.warn("FlatDarculaLaf theme set.");
-            } catch (Exception e) {
-                try {
-                    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-                } catch (Exception e2) {
-                    logger.error(ExceptionUtils.getStackTrace(e2));
-                }
-                logger.error(ExceptionUtils.getStackTrace(e));
-            }
-            return;
-        }
 
         if (App.config.isUnifiedBackground()) {
             UIManager.put("TitlePane.unifiedBackground", true);

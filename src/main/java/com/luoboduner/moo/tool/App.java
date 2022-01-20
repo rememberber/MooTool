@@ -1,6 +1,8 @@
 package com.luoboduner.moo.tool;
 
 import com.formdev.flatlaf.extras.FlatDesktop;
+import com.formdev.flatlaf.extras.FlatInspector;
+import com.formdev.flatlaf.extras.FlatUIDefaultsInspector;
 import com.formdev.flatlaf.util.SystemInfo;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.dialog.AboutDialog;
@@ -79,6 +81,11 @@ public class App {
         }
 
         Init.initTheme();
+
+        // install inspectors
+        FlatInspector.install( "ctrl shift alt X" );
+        FlatUIDefaultsInspector.install( "ctrl shift alt Y" );
+
         mainFrame = new MainFrame();
         mainFrame.init();
         JPanel loadingPanel = new LoadingForm().getLoadingPanel();
