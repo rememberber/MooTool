@@ -3,8 +3,14 @@ package com.luoboduner.moo.tool.ui;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.FlatDarculaLaf;
+import com.formdev.flatlaf.FlatDarkLaf;
+import com.formdev.flatlaf.FlatIntelliJLaf;
 import com.formdev.flatlaf.FlatLightLaf;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import com.formdev.flatlaf.intellijthemes.FlatCyanLightIJTheme;
+import com.formdev.flatlaf.intellijthemes.FlatDarkPurpleIJTheme;
+import com.formdev.flatlaf.intellijthemes.FlatLightFlatIJTheme;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
 import com.luoboduner.moo.tool.ui.form.func.*;
@@ -99,85 +105,26 @@ public class Init {
                     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
                     break;
                 case "Flat Light":
-                    if (SystemUtil.isJBR()) {
-                        JFrame.setDefaultLookAndFeelDecorated(true);
-                        JDialog.setDefaultLookAndFeelDecorated(true);
-                    }
                     FlatLightLaf.setup();
                     break;
                 case "Flat IntelliJ":
-                    if (SystemUtil.isJBR()) {
-                        JFrame.setDefaultLookAndFeelDecorated(true);
-                        JDialog.setDefaultLookAndFeelDecorated(true);
-                    }
-                    UIManager.setLookAndFeel("com.formdev.flatlaf.FlatIntelliJLaf");
-
+                    FlatIntelliJLaf.setup();
                     break;
                 case "Flat Dark":
-                    if (SystemUtil.isJBR()) {
-                        JFrame.setDefaultLookAndFeelDecorated(true);
-                        JDialog.setDefaultLookAndFeelDecorated(true);
-                    }
-                    UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarkLaf");
-                    break;
-                case "BeautyEye":
-                case "Darcula":
-                case "Darcula(推荐)":
-                case "weblaf":
-                case "Flat Darcula(推荐)":
-                    if (SystemUtil.isJBR()) {
-                        JFrame.setDefaultLookAndFeelDecorated(true);
-                        JDialog.setDefaultLookAndFeelDecorated(true);
-                    }
-                    UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarculaLaf");
-
-                    UIManager.put("PopupMenu.background", UIManager.getColor("Panel.background"));
-
-/**
- If you don't like/want it, you can disable it with:
- UIManager.put( "TitlePane.useWindowDecorations", false );
-
- It is also possible to disable only the embedded menu bar (and keep the dark title pane) with:
- UIManager.put( "TitlePane.menuBarEmbedded", false );
-
- It is also possible to disable this on command line with following VM options:
- -Dflatlaf.useWindowDecorations=false
- -Dflatlaf.menuBarEmbedded=false
-
- If you have following code in your app, you can remove it (no longer necessary):
- // enable window decorations
- JFrame.setDefaultLookAndFeelDecorated( true );
- JDialog.setDefaultLookAndFeelDecorated( true );
- **/
+                    FlatDarkLaf.setup();
                     break;
                 case "Dark purple":
-                    if (SystemUtil.isJBR()) {
-                        JFrame.setDefaultLookAndFeelDecorated(true);
-                        JDialog.setDefaultLookAndFeelDecorated(true);
-                    }
-                    UIManager.setLookAndFeel("com.formdev.flatlaf.intellijthemes.FlatDarkPurpleIJTheme");
+                    FlatDarkPurpleIJTheme.setup();
                     break;
                 case "IntelliJ Cyan":
-                    if (SystemUtil.isJBR()) {
-                        JFrame.setDefaultLookAndFeelDecorated(true);
-                        JDialog.setDefaultLookAndFeelDecorated(true);
-                    }
-                    UIManager.setLookAndFeel("com.formdev.flatlaf.intellijthemes.FlatCyanLightIJTheme");
+                    FlatCyanLightIJTheme.setup();
                     break;
                 case "IntelliJ Light":
-                    if (SystemUtil.isJBR()) {
-                        JFrame.setDefaultLookAndFeelDecorated(true);
-                        JDialog.setDefaultLookAndFeelDecorated(true);
-                    }
-                    UIManager.setLookAndFeel("com.formdev.flatlaf.intellijthemes.FlatLightFlatIJTheme");
+                    FlatLightFlatIJTheme.setup();
                     break;
 
                 default:
-                    if (SystemUtil.isJBR()) {
-                        JFrame.setDefaultLookAndFeelDecorated(true);
-                        JDialog.setDefaultLookAndFeelDecorated(true);
-                    }
-                    UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarculaLaf");
+                    FlatDarculaLaf.setup();
             }
 
             if (UIUtil.isDarkLaf()) {
