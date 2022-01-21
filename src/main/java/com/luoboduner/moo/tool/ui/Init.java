@@ -94,11 +94,6 @@ public class Init {
      * 初始化look and feel
      */
     public static void initTheme() {
-
-        if (App.config.isUnifiedBackground()) {
-            UIManager.put("TitlePane.unifiedBackground", true);
-        }
-
         try {
             switch (App.config.getTheme()) {
                 case "系统默认":
@@ -131,8 +126,18 @@ public class Init {
 //                FlatSVGIcon.ColorFilter.getInstance().setMapper(color -> color.brighter().brighter());
             } else {
                 FlatSVGIcon.ColorFilter.getInstance().setMapper(color -> color.darker().darker());
+//                SwingUtilities.windowForComponent(App.mainFrame).repaint();
             }
-//                    SwingUtilities.windowForComponent(App.mainFrame).repaint();
+
+            if (App.config.isUnifiedBackground()) {
+                UIManager.put("TitlePane.unifiedBackground", true);
+            }
+
+            // 菜单栏背景色
+            UIManager.put("PopupMenu.background", UIManager.getColor("Panel.background"));
+            // 箭头样式
+            UIManager.put("Component.arrowType", "chevron");
+
         } catch (Exception e) {
             logger.error(e);
         }
