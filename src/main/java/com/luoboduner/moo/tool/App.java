@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool;
 
+import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatDesktop;
 import com.formdev.flatlaf.extras.FlatInspector;
 import com.formdev.flatlaf.extras.FlatUIDefaultsInspector;
@@ -80,6 +81,7 @@ public class App {
 
         }
 
+        FlatLaf.registerCustomDefaultsSource( "themes" );
         Init.initTheme();
 
         // install inspectors

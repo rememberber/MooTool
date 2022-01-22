@@ -133,10 +133,6 @@ public class Init {
                 UIManager.put("TitlePane.unifiedBackground", true);
             }
 
-            // 菜单栏背景色
-            UIManager.put("PopupMenu.background", UIManager.getColor("Panel.background"));
-            // 箭头样式
-            UIManager.put("Component.arrowType", "chevron");
 
         } catch (Exception e) {
             logger.error(e);
