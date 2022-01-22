@@ -1,6 +1,5 @@
 package com.luoboduner.moo.tool.util;
 
-import com.luoboduner.moo.tool.App;
 import lombok.extern.slf4j.Slf4j;
 
 import java.awt.*;
@@ -50,17 +49,4 @@ public class UIUtil {
         return scale;
     }
 
-    /**
-     * 是否暗黑主题
-     *
-     * @return
-     */
-    public static boolean isDarkLaf() {
-        return "Darcula".equals(App.config.getTheme())
-                || "Darcula(推荐)".equals(App.config.getTheme())
-                || "Flat Dark".equals(App.config.getTheme())
-                || "Flat Darcula".equals(App.config.getTheme())
-                || "Dark purple".equals(App.config.getTheme())
-                || "Flat Darcula(推荐)".equals(App.config.getTheme());
-    }
 }

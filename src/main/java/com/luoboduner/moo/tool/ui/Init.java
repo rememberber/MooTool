@@ -3,10 +3,7 @@ package com.luoboduner.moo.tool.ui;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
-import com.formdev.flatlaf.FlatDarculaLaf;
-import com.formdev.flatlaf.FlatDarkLaf;
-import com.formdev.flatlaf.FlatIntelliJLaf;
-import com.formdev.flatlaf.FlatLightLaf;
+import com.formdev.flatlaf.*;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.intellijthemes.FlatCyanLightIJTheme;
 import com.formdev.flatlaf.intellijthemes.FlatDarkPurpleIJTheme;
@@ -122,7 +119,7 @@ public class Init {
                     FlatDarculaLaf.setup();
             }
 
-            if (UIUtil.isDarkLaf()) {
+            if (FlatLaf.isLafDark()) {
 //                FlatSVGIcon.ColorFilter.getInstance().setMapper(color -> color.brighter().brighter());
             } else {
                 FlatSVGIcon.ColorFilter.getInstance().setMapper(color -> color.darker().darker());

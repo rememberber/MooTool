@@ -1,11 +1,11 @@
 package com.luoboduner.moo.tool.ui.component;
 
+import com.formdev.flatlaf.FlatLaf;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.TextAreaUtil;
-import com.luoboduner.moo.tool.util.UIUtil;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
@@ -26,7 +26,7 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
 
         try {
             Theme theme;
-            if (UIUtil.isDarkLaf()) {
+            if (FlatLaf.isLafDark()) {
                 theme = Theme.load(JsonSyntaxTextViewer.class.getResourceAsStream(
                         "/org/fife/ui/rsyntaxtextarea/themes/monokai.xml"));
             } else {
