@@ -5,9 +5,9 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.formdev.flatlaf.*;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
-import com.formdev.flatlaf.intellijthemes.FlatCyanLightIJTheme;
-import com.formdev.flatlaf.intellijthemes.FlatDarkPurpleIJTheme;
-import com.formdev.flatlaf.intellijthemes.FlatLightFlatIJTheme;
+import com.formdev.flatlaf.intellijthemes.*;
+import com.formdev.flatlaf.intellijthemes.materialthemeuilite.FlatGitHubDarkIJTheme;
+import com.formdev.flatlaf.intellijthemes.materialthemeuilite.FlatMonokaiProIJTheme;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
 import com.luoboduner.moo.tool.ui.form.func.*;
@@ -114,7 +114,24 @@ public class Init {
                 case "IntelliJ Light":
                     FlatLightFlatIJTheme.setup();
                     break;
-
+                case "Monocai":
+                    FlatMonocaiIJTheme.setup();
+                    break;
+                case "Monokai Pro":
+                    FlatMonokaiProIJTheme.setup();
+                    break;
+                case "One Dark":
+                    FlatOneDarkIJTheme.setup();
+                    break;
+                case "Gray":
+                    FlatGrayIJTheme.setup();
+                    break;
+                case "High contrast":
+                    FlatHighContrastIJTheme.setup();
+                    break;
+                case "GitHub Dark":
+                    FlatGitHubDarkIJTheme.setup();
+                    break;
                 default:
                     FlatDarculaLaf.setup();
             }

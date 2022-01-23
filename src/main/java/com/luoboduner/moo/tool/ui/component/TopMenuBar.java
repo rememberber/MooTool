@@ -46,7 +46,13 @@ public class TopMenuBar extends JMenuBar {
             "Flat Darcula(推荐)",
             "Dark purple",
             "IntelliJ Cyan",
-            "IntelliJ Light"};
+            "IntelliJ Light",
+            "Monocai",
+            "Monokai Pro",
+            "One Dark",
+            "Gray",
+            "High contrast",
+            "GitHub Dark"};
 
     public static String[] fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
 
