@@ -455,6 +455,13 @@ public class QuickNoteListener {
                 quickNoteForm.getFindWordsCheckBox().setEnabled(true);
             }
         });
+
+        quickNoteForm.getColorButton().addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                System.err.println(quickNoteForm.getColorButton().isSelected());
+            }
+        });
     }
 
     /**

@@ -100,7 +100,7 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <grid id="3b7d3" binding="menuPanel" layout-manager="GridLayoutManager" row-count="1" column-count="12" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                  <grid id="3b7d3" binding="menuPanel" layout-manager="GridLayoutManager" row-count="1" column-count="9" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                     <margin top="0" left="0" bottom="0" right="10"/>
                     <constraints>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -110,7 +110,7 @@
                     <children>
                       <component id="88a82" class="javax.swing.JButton" binding="saveButton">
                         <constraints>
-                          <grid row="0" column="8" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                          <grid row="0" column="5" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
                           <icon value="icon/menu-saveall_dark.png"/>
@@ -120,56 +120,12 @@
                       </component>
                       <hspacer id="d3a69">
                         <constraints>
-                          <grid row="0" column="5" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
                       </hspacer>
-                      <component id="df702" class="javax.swing.JComboBox" binding="fontNameComboBox">
-                        <constraints>
-                          <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <toolTipText value="设置字体"/>
-                        </properties>
-                      </component>
-                      <component id="3a5b0" class="javax.swing.JComboBox" binding="fontSizeComboBox">
-                        <constraints>
-                          <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <model>
-                            <item value="5"/>
-                            <item value="6"/>
-                            <item value="7"/>
-                            <item value="8"/>
-                            <item value="9"/>
-                            <item value="10"/>
-                            <item value="11"/>
-                            <item value="12"/>
-                            <item value="13"/>
-                            <item value="14"/>
-                            <item value="15"/>
-                            <item value="16"/>
-                            <item value="17"/>
-                            <item value="18"/>
-                            <item value="19"/>
-                            <item value="20"/>
-                            <item value="21"/>
-                            <item value="22"/>
-                            <item value="23"/>
-                            <item value="24"/>
-                            <item value="25"/>
-                            <item value="26"/>
-                            <item value="27"/>
-                            <item value="28"/>
-                            <item value="29"/>
-                            <item value="30"/>
-                          </model>
-                          <toolTipText value="字号"/>
-                        </properties>
-                      </component>
                       <component id="57aca" class="javax.swing.JButton" binding="findButton">
                         <constraints>
-                          <grid row="0" column="7" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                          <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
                           <icon value="icon/find_dark.png"/>
@@ -177,29 +133,9 @@
                           <toolTipText value="查找(Ctrl+F)"/>
                         </properties>
                       </component>
-                      <component id="849d4" class="javax.swing.JButton" binding="wrapButton">
-                        <constraints>
-                          <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <icon value="icon/toggleSoftWrap_dark.png"/>
-                          <text value=""/>
-                          <toolTipText value="自动换行"/>
-                        </properties>
-                      </component>
-                      <component id="23d6f" class="javax.swing.JButton" binding="listItemButton">
-                        <constraints>
-                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <icon value="icon/listFiles_dark.png"/>
-                          <text value=""/>
-                          <toolTipText value="显示/隐藏列表"/>
-                        </properties>
-                      </component>
                       <component id="3c87c" class="javax.swing.JButton" binding="addButton">
                         <constraints>
-                          <grid row="0" column="6" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                          <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
                           <icon value="icon/add.png"/>
@@ -209,22 +145,16 @@
                       </component>
                       <component id="ceafd" class="javax.swing.JButton" binding="quickReplaceButton">
                         <constraints>
-                          <grid row="0" column="11" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                          <grid row="0" column="8" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
                           <text value=""/>
                           <toolTipText value="快捷替换"/>
                         </properties>
                       </component>
-                      <component id="f166a" class="javax.swing.JComboBox" binding="syntaxComboBox">
-                        <constraints>
-                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties/>
-                      </component>
                       <component id="6a30e" class="javax.swing.JButton" binding="exportButton2">
                         <constraints>
-                          <grid row="0" column="9" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                          <grid row="0" column="6" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
                           <icon value="icon/export_dark.png"/>
@@ -234,11 +164,84 @@
                       </component>
                       <component id="785b8" class="javax.swing.JButton" binding="formatButton">
                         <constraints>
-                          <grid row="0" column="10" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                          <grid row="0" column="7" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
                           <text value=""/>
                           <toolTipText value="格式化(Ctrl+Shift+F)"/>
+                        </properties>
+                      </component>
+                      <grid id="7cc81" binding="leftMenuPanel" layout-manager="FlowLayout" hgap="5" vgap="5" flow-align="0">
+                        <constraints>
+                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="8" fill="2" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <alignmentX value="0.0"/>
+                        </properties>
+                        <border type="none"/>
+                        <children>
+                          <component id="f166a" class="javax.swing.JComboBox" binding="syntaxComboBox">
+                            <constraints/>
+                            <properties/>
+                          </component>
+                          <component id="df702" class="javax.swing.JComboBox" binding="fontNameComboBox">
+                            <constraints/>
+                            <properties>
+                              <toolTipText value="设置字体"/>
+                            </properties>
+                          </component>
+                          <component id="3a5b0" class="javax.swing.JComboBox" binding="fontSizeComboBox">
+                            <constraints/>
+                            <properties>
+                              <model>
+                                <item value="5"/>
+                                <item value="6"/>
+                                <item value="7"/>
+                                <item value="8"/>
+                                <item value="9"/>
+                                <item value="10"/>
+                                <item value="11"/>
+                                <item value="12"/>
+                                <item value="13"/>
+                                <item value="14"/>
+                                <item value="15"/>
+                                <item value="16"/>
+                                <item value="17"/>
+                                <item value="18"/>
+                                <item value="19"/>
+                                <item value="20"/>
+                                <item value="21"/>
+                                <item value="22"/>
+                                <item value="23"/>
+                                <item value="24"/>
+                                <item value="25"/>
+                                <item value="26"/>
+                                <item value="27"/>
+                                <item value="28"/>
+                                <item value="29"/>
+                                <item value="30"/>
+                              </model>
+                              <toolTipText value="字号"/>
+                            </properties>
+                          </component>
+                          <component id="849d4" class="javax.swing.JButton" binding="wrapButton">
+                            <constraints/>
+                            <properties>
+                              <icon value="icon/toggleSoftWrap_dark.png"/>
+                              <text value=""/>
+                              <toolTipText value="自动换行"/>
+                            </properties>
+                          </component>
+                        </children>
+                      </grid>
+                      <component id="23d6f" class="javax.swing.JButton" binding="listItemButton">
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <icon value="icon/listFiles_dark.png"/>
+                          <text value=""/>
+                          <toolTipText value="显示/隐藏列表"/>
                         </properties>
                       </component>
                     </children>
