@@ -119,6 +119,7 @@ public class Init {
                     break;
                 case "Monokai Pro":
                     FlatMonokaiProIJTheme.setup();
+                    UIManager.put( "Button.arc", 5 );
                     break;
                 case "One Dark":
                     FlatOneDarkIJTheme.setup();
@@ -146,7 +147,6 @@ public class Init {
             if (App.config.isUnifiedBackground()) {
                 UIManager.put("TitlePane.unifiedBackground", true);
             }
-
 
         } catch (Exception e) {
             logger.error(e);
