@@ -13,7 +13,6 @@ import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.frame.MainFrame;
 import com.luoboduner.moo.tool.util.ConfigUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
-import com.luoboduner.moo.tool.util.UIUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -81,12 +80,12 @@ public class App {
 
         }
 
-        FlatLaf.registerCustomDefaultsSource( "themes" );
+        FlatLaf.registerCustomDefaultsSource("themes");
         Init.initTheme();
 
         // install inspectors
-        FlatInspector.install( "ctrl shift alt X" );
-        FlatUIDefaultsInspector.install( "ctrl shift alt Y" );
+        FlatInspector.install("ctrl shift alt X");
+        FlatUIDefaultsInspector.install("ctrl shift alt Y");
 
         mainFrame = new MainFrame();
         mainFrame.init();

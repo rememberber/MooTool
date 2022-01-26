@@ -231,7 +231,15 @@ public class QuickNoteListener {
                         tQuickNote.setId(noteId);
                         tQuickNote.setName(name);
                         try {
+                            TQuickNote tQuickNoteBefore = quickNoteMapper.selectByPrimaryKey(noteId);
+
                             quickNoteMapper.updateByPrimaryKeySelective(tQuickNote);
+
+                            selectedName = name;
+
+                            RTextScrollPane syntaxTextViewer = quickNoteSyntaxTextViewerManager.getRTextScrollPane(name);
+                            quickNoteForm.getContentSplitPane().setLeftComponent(syntaxTextViewer);
+                            quickNoteSyntaxTextViewerManager.removeRTextScrollPane(tQuickNoteBefore.getName());
                         } catch (Exception e) {
                             JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
                             QuickNoteForm.initNoteListTable();
@@ -583,7 +591,9 @@ public class QuickNoteListener {
                     for (int i = 0; i < selectedRows.length; i++) {
                         int selectedRow = selectedRows[i];
                         Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
+                        String name = (String) tableModel.getValueAt(selectedRow, 1);
                         quickNoteMapper.deleteByPrimaryKey(id);
+                        QuickNoteForm.quickNoteSyntaxTextViewerManager.removeRTextScrollPane(name);
                     }
                     selectedName = null;
                     QuickNoteForm.initNoteListTable();
