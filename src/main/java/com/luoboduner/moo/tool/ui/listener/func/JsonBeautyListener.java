@@ -120,7 +120,7 @@ public class JsonBeautyListener {
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
                     TextAreaUtil.deleteSelectedLine(jsonBeautyForm.getTextArea());
                 }
-                if (!evt.isControlDown()) {
+                if (!(evt.isControlDown() || evt.isShiftDown())) {
                     quickSave(true);
                 }
             }
@@ -450,7 +450,7 @@ public class JsonBeautyListener {
         selectedNameJson = null;
     }
 
-     static String formatJson(String jsonText) {
+    static String formatJson(String jsonText) {
         try {
             jsonText = JSONUtil.toJsonPrettyStr(jsonText);
         } catch (Exception e1) {

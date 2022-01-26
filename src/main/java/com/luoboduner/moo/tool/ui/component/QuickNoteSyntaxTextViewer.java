@@ -103,7 +103,7 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
                     RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane) quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
                     TextAreaUtil.deleteSelectedLine(view);
                 }
-                if (!evt.isControlDown()) {
+                if (!(evt.isControlDown() || evt.isShiftDown())) {
                     QuickNoteListener.quickSave(true);
                 }
             }
