@@ -91,6 +91,9 @@ public class HostListener {
                     hostForm.getReplaceTextField().grabFocus();
                     hostForm.getReplaceTextField().selectAll();
                 }
+                if (!evt.isControlDown()) {
+                    quickSave(true);
+                }
             }
 
             @Override

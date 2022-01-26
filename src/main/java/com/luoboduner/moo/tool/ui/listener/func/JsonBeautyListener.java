@@ -120,6 +120,9 @@ public class JsonBeautyListener {
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
                     TextAreaUtil.deleteSelectedLine(jsonBeautyForm.getTextArea());
                 }
+                if (!evt.isControlDown()) {
+                    quickSave(true);
+                }
             }
 
             @Override
