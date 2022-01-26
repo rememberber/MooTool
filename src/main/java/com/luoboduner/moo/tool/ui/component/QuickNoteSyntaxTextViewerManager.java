@@ -54,11 +54,12 @@ public class QuickNoteSyntaxTextViewerManager {
             Color defaultForeground = QuickNoteForm.getInstance().getFindTextField().getForeground();
 
             Gutter gutter = rTextScrollPane.getGutter();
-            gutter.setBorderColor(defaultBackground);
+            gutter.setBorderColor(gutter.getLineNumberColor().darker());
+            gutter.setBackground(defaultBackground);
             Font font = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
             gutter.setLineNumberFont(font);
 //            gutter.setLineNumberColor(defaultBackground);
-            gutter.setFoldBackground(defaultBackground);
+            gutter.setFoldBackground(defaultBackground.darker());
             gutter.setArmedFoldBackground(defaultBackground);
 
             viewMap.put(name, rTextScrollPane);
