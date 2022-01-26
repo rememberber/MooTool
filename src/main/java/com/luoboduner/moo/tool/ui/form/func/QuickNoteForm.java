@@ -1,6 +1,6 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
-import com.formdev.flatlaf.FlatLaf;
+import com.formdev.flatlaf.*;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.icons.FlatAbstractIcon;
 import com.formdev.flatlaf.util.ColorFunctions;
@@ -86,8 +86,19 @@ public class QuickNoteForm {
     private JLabel tipsLabel;
     private JPanel indicatorPanel;
     private JPanel leftMenuPanel;
+    private JPanel colorSettingPanel;
 
     private JToggleButton colorButton;
+
+    private JToolBar toolBar;
+    private static String[] colorKeys = {
+            "Moo.note.color.color1", "Moo.note.color.color2", "Moo.note.color.color3",
+            "Moo.note.color.color4", "Moo.note.color.color5", "Moo.note.color.color6",
+            "Moo.note.color.color7", "Moo.note.color.color8", "Moo.note.color.color9",
+            "Moo.note.color.color10", "Moo.note.color.color11", "Moo.note.color.color12",
+            "Moo.note.color.color13", "Moo.note.color.color14"
+    };
+    private final static JToggleButton[] colorButtons = new JToggleButton[colorKeys.length];
 
     private static QuickNoteForm quickNoteForm;
     private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
@@ -96,7 +107,9 @@ public class QuickNoteForm {
 
     private QuickNoteForm() {
         colorButton = new JToggleButton(new AccentColorIcon("Moo.accent.blue"));
-        colorButton.setToolTipText("blue");
+        colorButton.setEnabled(true);
+
+        toolBar = new JToolBar();
         UndoUtil.register(this);
     }
 
@@ -146,8 +159,6 @@ public class QuickNoteForm {
 
         initSyntaxComboBox();
 
-//        colorButton.addActionListener(this::accentColorChanged);
-
         quickNoteForm.getLeftMenuPanel().removeAll();
         quickNoteForm.getLeftMenuPanel().add(quickNoteForm.getColorButton());
         quickNoteForm.getLeftMenuPanel().add(quickNoteForm.getSyntaxComboBox());
@@ -155,10 +166,27 @@ public class QuickNoteForm {
         quickNoteForm.getLeftMenuPanel().add(quickNoteForm.getFontSizeComboBox());
         quickNoteForm.getLeftMenuPanel().add(quickNoteForm.getWrapButton());
 
+        quickNoteForm.getColorSettingPanel().setVisible(false);
+
+
+        ButtonGroup group = new ButtonGroup();
+        for (int i = 0; i < colorButtons.length; i++) {
+            colorButtons[i] = new JToggleButton(new ListColorIcon(colorKeys[i]));
+            colorButtons[i].setEnabled(true);
+//            accentColorButtons[i].addActionListener(this::accentColorChanged);
+            quickNoteForm.getToolBar().add(colorButtons[i]);
+            group.add(colorButtons[i]);
+        }
+
+        colorButtons[0].setSelected(true);
+
+        quickNoteForm.getColorSettingPanel().add(quickNoteForm.getToolBar());
+
         quickNoteForm.getDeletePanel().setVisible(false);
         quickNoteForm.getQuickNotePanel().updateUI();
 
     }
+
 
     private static class AccentColorIcon
             extends FlatAbstractIcon {
@@ -182,6 +210,31 @@ public class QuickNoteForm {
 
             g.setColor(color);
             g.fillRoundRect(0, 0, width - 0, height - 0, 0, 0);
+        }
+    }
+
+    private static class ListColorIcon
+            extends FlatAbstractIcon {
+        private final String colorKey;
+
+        ListColorIcon(String colorKey) {
+            super(32, 32, null);
+            this.colorKey = colorKey;
+        }
+
+        @Override
+        protected void paintIcon(Component c, Graphics2D g) {
+            Color color = UIManager.getColor(colorKey);
+            if (color == null)
+                color = Color.lightGray;
+            else if (!c.isEnabled()) {
+                color = FlatLaf.isLafDark()
+                        ? ColorFunctions.shade(color, 0.5f)
+                        : ColorFunctions.tint(color, 0.6f);
+            }
+
+            g.setColor(color);
+            g.fillRoundRect(1, 1, width - 2, height - 2, 5, 5);
         }
     }
 
@@ -355,7 +408,7 @@ public class QuickNoteForm {
         controlPanel.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
         rightPanel.add(controlPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         menuPanel = new JPanel();
-        menuPanel.setLayout(new GridLayoutManager(1, 9, new Insets(0, 0, 0, 10), -1, -1));
+        menuPanel.setLayout(new GridLayoutManager(2, 9, new Insets(0, 0, 0, 10), -1, -1));
         controlPanel.add(menuPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         saveButton = new JButton();
         saveButton.setIcon(new ImageIcon(getClass().getResource("/icon/menu-saveall_dark.png")));
@@ -437,6 +490,10 @@ public class QuickNoteForm {
         listItemButton.setText("");
         listItemButton.setToolTipText("显示/隐藏列表");
         menuPanel.add(listItemButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        colorSettingPanel = new JPanel();
+        colorSettingPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
+        colorSettingPanel.setAlignmentX(0.0f);
+        menuPanel.add(colorSettingPanel, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         findReplacePanel = new JPanel();
         findReplacePanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         findReplacePanel.setVisible(true);

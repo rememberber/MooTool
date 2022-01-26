@@ -459,7 +459,7 @@ public class QuickNoteListener {
         quickNoteForm.getColorButton().addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                System.err.println(quickNoteForm.getColorButton().isSelected());
+                quickNoteForm.getColorSettingPanel().setVisible(quickNoteForm.getColorButton().isSelected());
             }
         });
     }

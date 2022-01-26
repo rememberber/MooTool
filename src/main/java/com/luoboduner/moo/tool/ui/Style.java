@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.ui;
 
 
 import com.formdev.flatlaf.FlatLaf;
+import com.formdev.flatlaf.intellijthemes.materialthemeuilite.FlatMonokaiProIJTheme;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 
 import javax.swing.*;
@@ -48,7 +49,8 @@ public class Style {
     }
 
     public static void blackTextArea(JComponent component) {
-        if (FlatLaf.isLafDark()) {
+        Class<? extends LookAndFeel> lafClass = UIManager.getLookAndFeel().getClass();
+        if (FlatLaf.isLafDark() && FlatMonokaiProIJTheme.class != lafClass) {
             Color bgColor = new Color(43, 43, 43);
             component.setBackground(bgColor);
             Color foreColor = new Color(187, 187, 187);
