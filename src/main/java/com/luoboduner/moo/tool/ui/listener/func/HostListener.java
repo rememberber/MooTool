@@ -60,8 +60,6 @@ public class HostListener {
                 quickSave(false);
                 refreshHostContentInTextArea();
 
-                // 显示下方删除按钮
-                hostForm.getDeletePanel().setVisible(true);
                 super.mousePressed(e);
             }
         });
@@ -126,34 +124,6 @@ public class HostListener {
             currentHostDialog.setPlaneText(content);
             currentHostDialog.setVisible(true);
 
-        });
-
-        // 文本域鼠标点击事件，隐藏删除按钮
-        hostForm.getTextArea().addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                hostForm.getDeletePanel().setVisible(false);
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-
-            }
         });
 
         // 左侧列表按键事件（重命名）

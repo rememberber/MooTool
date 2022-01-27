@@ -85,8 +85,6 @@ public class JsonBeautyListener {
                 int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
                 viewByRowNum(selectedRow);
 
-                // 显示下方删除按钮
-                jsonBeautyForm.getDeletePanel().setVisible(true);
                 super.mousePressed(e);
             }
         });
@@ -171,34 +169,6 @@ public class JsonBeautyListener {
         // 添加按钮事件
         jsonBeautyForm.getAddButton().addActionListener(e -> {
             newJson();
-        });
-
-        // 文本域鼠标点击事件，隐藏删除按钮
-        jsonBeautyForm.getTextArea().addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                jsonBeautyForm.getDeletePanel().setVisible(false);
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-
-            }
         });
 
         // 左侧列表按键事件（重命名）
