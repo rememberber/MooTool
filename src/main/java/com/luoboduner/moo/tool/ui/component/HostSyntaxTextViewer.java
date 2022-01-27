@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.component;
 import com.formdev.flatlaf.FlatLaf;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Style;
+import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
@@ -38,6 +39,7 @@ public class HostSyntaxTextViewer extends RSyntaxTextArea {
 
         // 初始化背景色
 //        Style.blackTextArea(this);
+        setBackground(TimeConvertForm.getInstance().getTimeHisTextArea().getBackground());
         // 初始化边距
         setMargin(new Insets(10, 10, 10, 10));
 
