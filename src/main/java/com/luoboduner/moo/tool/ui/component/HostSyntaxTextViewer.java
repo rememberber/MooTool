@@ -37,7 +37,7 @@ public class HostSyntaxTextViewer extends RSyntaxTextArea {
 //        setSelectedTextColor(new Color(50, 50, 50));
 
         // 初始化背景色
-        Style.blackTextArea(this);
+//        Style.blackTextArea(this);
         // 初始化边距
         setMargin(new Insets(10, 10, 10, 10));
 

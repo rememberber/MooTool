@@ -2,7 +2,6 @@ package com.luoboduner.moo.tool.ui.component;
 
 import com.formdev.flatlaf.FlatLaf;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.ui.Style;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
@@ -37,7 +36,7 @@ public class JsonSyntaxTextViewer extends RSyntaxTextArea {
 //        setSelectedTextColor(new Color(50, 50, 50));
 
         // 初始化背景色
-        Style.blackTextArea(this);
+//        Style.blackTextArea(this);
         // 初始化边距
         setMargin(new Insets(10, 10, 10, 10));
 
@@ -51,8 +50,6 @@ public class JsonSyntaxTextViewer extends RSyntaxTextArea {
         setFont(font);
 
         setHyperlinksEnabled(true);
-
-        Style.blackTextArea(this);
 
         addHyperlinkListener(e -> {
             if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {

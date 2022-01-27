@@ -2,8 +2,8 @@ package com.luoboduner.moo.tool.ui.component;
 
 import com.formdev.flatlaf.FlatLaf;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
+import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.TextAreaUtil;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
@@ -43,7 +43,8 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
 //        setSelectedTextColor(new Color(50, 50, 50));
 
         // 初始化背景色
-        Style.blackTextArea(this);
+//        Style.blackTextArea(this);
+        setBackground(TimeConvertForm.getInstance().getTimeHisTextArea().getBackground());
         // 初始化边距
         setMargin(new Insets(10, 10, 10, 10));
 
