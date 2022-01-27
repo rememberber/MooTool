@@ -197,7 +197,7 @@ public class TopMenuBar extends JMenuBar {
 
         // ---------鼓励和支持
         JMenu supportMeMenu = new JMenu();
-        supportMeMenu.setText("鼓励和支持");
+        supportMeMenu.setText("支持一下");
 
         // 鼓励和支持
         JMenuItem supportMeMenuItem = new JMenuItem();

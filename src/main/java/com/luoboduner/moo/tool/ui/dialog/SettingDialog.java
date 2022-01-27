@@ -57,10 +57,10 @@ public class SettingDialog extends JDialog {
     private JToolBar toolBar;
     private static String[] accentColorKeys = {
             "Moo.accent.default", "Moo.accent.blue", "Moo.accent.purple", "Moo.accent.red",
-            "Moo.accent.orange", "Moo.accent.yellow", "Moo.accent.green",
+            "Moo.accent.orange", "Moo.accent.yellow", "Moo.accent.green", "Moo.accent.mooYellow"
     };
     private static String[] accentColorNames = {
-            "Default", "Blue", "Purple", "Red", "Orange", "Yellow", "Green",
+            "Default", "Blue", "Purple", "Red", "Orange", "Yellow", "Green", "MooYellow"
     };
     private final JToggleButton[] accentColorButtons = new JToggleButton[accentColorKeys.length];
 
