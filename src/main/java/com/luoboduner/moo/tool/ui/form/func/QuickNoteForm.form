@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.luoboduner.moo.tool.ui.form.func.QuickNoteForm">
-  <grid id="27dc6" binding="quickNotePanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-    <margin top="12" left="12" bottom="12" right="12"/>
+  <grid id="27dc6" binding="quickNotePanel" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+    <margin top="10" left="10" bottom="5" right="10"/>
     <constraints>
       <xy x="20" y="20" width="1231" height="651"/>
     </constraints>
@@ -13,18 +13,18 @@
     <children>
       <splitpane id="c682a" binding="splitPane">
         <constraints>
-          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
+          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false">
             <preferred-size width="200" height="200"/>
           </grid>
         </constraints>
         <properties>
           <continuousLayout value="true"/>
-          <dividerLocation value="227"/>
+          <dividerLocation value="94"/>
           <dividerSize value="10"/>
         </properties>
         <border type="none"/>
         <children>
-          <grid id="17a86" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="17a86" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
               <splitpane position="left"/>
@@ -34,41 +34,6 @@
             </properties>
             <border type="none"/>
             <children>
-              <grid id="3e7dd" binding="deletePanel" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                <margin top="0" left="0" bottom="0" right="0"/>
-                <constraints>
-                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties/>
-                <border type="none"/>
-                <children>
-                  <component id="43ac2" class="javax.swing.JButton" binding="deleteButton">
-                    <constraints>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties>
-                      <icon value="icon/remove.png"/>
-                      <text value=""/>
-                      <toolTipText value="删除"/>
-                    </properties>
-                  </component>
-                  <hspacer id="2a1a6">
-                    <constraints>
-                      <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                  </hspacer>
-                  <component id="17566" class="javax.swing.JButton" binding="exportButton">
-                    <constraints>
-                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties>
-                      <icon value="icon/export_dark.png"/>
-                      <text value=""/>
-                      <toolTipText value="导出"/>
-                    </properties>
-                  </component>
-                </children>
-              </grid>
               <scrollpane id="b59e0">
                 <constraints>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -100,7 +65,7 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <grid id="3b7d3" binding="menuPanel" layout-manager="GridLayoutManager" row-count="2" column-count="9" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                  <grid id="3b7d3" binding="menuPanel" layout-manager="GridLayoutManager" row-count="2" column-count="10" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                     <margin top="0" left="0" bottom="0" right="10"/>
                     <constraints>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -145,26 +110,16 @@
                       </component>
                       <component id="ceafd" class="javax.swing.JButton" binding="quickReplaceButton">
                         <constraints>
-                          <grid row="0" column="8" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                          <grid row="0" column="9" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
                           <text value=""/>
                           <toolTipText value="快捷替换"/>
                         </properties>
                       </component>
-                      <component id="6a30e" class="javax.swing.JButton" binding="exportButton2">
-                        <constraints>
-                          <grid row="0" column="6" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <icon value="icon/export_dark.png"/>
-                          <text value=""/>
-                          <toolTipText value="导出"/>
-                        </properties>
-                      </component>
                       <component id="785b8" class="javax.swing.JButton" binding="formatButton">
                         <constraints>
-                          <grid row="0" column="7" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                          <grid row="0" column="8" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
                           <text value=""/>
@@ -254,6 +209,26 @@
                         <border type="none"/>
                         <children/>
                       </grid>
+                      <component id="17566" class="javax.swing.JButton" binding="exportButton">
+                        <constraints>
+                          <grid row="0" column="7" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <icon value="icon/export_dark.png"/>
+                          <text value=""/>
+                          <toolTipText value="导出"/>
+                        </properties>
+                      </component>
+                      <component id="43ac2" class="javax.swing.JButton" binding="deleteButton">
+                        <constraints>
+                          <grid row="0" column="6" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <icon value="icon/remove.png"/>
+                          <text value=""/>
+                          <toolTipText value="删除"/>
+                        </properties>
+                      </component>
                     </children>
                   </grid>
                   <grid id="fa980" binding="findReplacePanel" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
@@ -556,37 +531,6 @@
                           </scrollpane>
                         </children>
                       </splitpane>
-                      <grid id="d9d7c" binding="indicatorPanel" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                        <margin top="0" left="0" bottom="0" right="0"/>
-                        <constraints>
-                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <alignmentX value="0.0"/>
-                          <alignmentY value="0.0"/>
-                          <focusable value="false"/>
-                          <requestFocusEnabled value="false"/>
-                          <visible value="false"/>
-                        </properties>
-                        <border type="empty"/>
-                        <children>
-                          <component id="c17b4" class="javax.swing.JLabel" binding="tipsLabel">
-                            <constraints>
-                              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                            </constraints>
-                            <properties>
-                              <focusable value="false"/>
-                              <requestFocusEnabled value="false"/>
-                              <text value=""/>
-                            </properties>
-                          </component>
-                          <hspacer id="7352f">
-                            <constraints>
-                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                            </constraints>
-                          </hspacer>
-                        </children>
-                      </grid>
                     </children>
                   </grid>
                 </children>
@@ -595,6 +539,37 @@
           </grid>
         </children>
       </splitpane>
+      <grid id="d9d7c" binding="indicatorPanel" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+        <margin top="0" left="0" bottom="0" right="0"/>
+        <constraints>
+          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="true"/>
+        </constraints>
+        <properties>
+          <alignmentX value="0.0"/>
+          <alignmentY value="0.0"/>
+          <focusable value="false"/>
+          <requestFocusEnabled value="false"/>
+          <visible value="true"/>
+        </properties>
+        <border type="empty"/>
+        <children>
+          <component id="c17b4" class="javax.swing.JLabel" binding="tipsLabel">
+            <constraints>
+              <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <focusable value="false"/>
+              <requestFocusEnabled value="false"/>
+              <text value=" "/>
+            </properties>
+          </component>
+          <hspacer id="7352f">
+            <constraints>
+              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+            </constraints>
+          </hspacer>
+        </children>
+      </grid>
     </children>
   </grid>
 </form>

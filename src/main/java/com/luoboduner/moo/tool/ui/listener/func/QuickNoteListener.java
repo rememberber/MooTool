@@ -92,9 +92,6 @@ public class QuickNoteListener {
                 int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
                 viewByRowNum(selectedRow);
 
-                // 显示下方删除按钮
-                quickNoteForm.getDeletePanel().setVisible(true);
-
                 super.mousePressed(e);
             }
         });
@@ -339,41 +336,6 @@ public class QuickNoteListener {
                 } else {
                     JOptionPane.showMessageDialog(quickNoteForm.getQuickNotePanel(), "请至少选择一个！", "提示",
                             JOptionPane.INFORMATION_MESSAGE);
-                }
-
-            } catch (Exception e1) {
-                JOptionPane.showMessageDialog(quickNoteForm.getQuickNotePanel(), "导出失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
-                log.error(ExceptionUtils.getStackTrace(e1));
-            }
-
-        });
-
-        // 菜单栏导出按钮
-        quickNoteForm.getExportButton2().addActionListener(e -> {
-
-            try {
-                JFileChooser fileChooser = new JFileChooser(App.config.getQuickNoteExportPath());
-                fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
-                int approve = fileChooser.showOpenDialog(quickNoteForm.getQuickNotePanel());
-                String exportPath;
-                if (approve == JFileChooser.APPROVE_OPTION) {
-                    exportPath = fileChooser.getSelectedFile().getAbsolutePath();
-                    App.config.setQuickNoteExportPath(exportPath);
-                    App.config.save();
-                } else {
-                    return;
-                }
-                TQuickNote tQuickNote = quickNoteMapper.selectByName(selectedName);
-                File exportFile = FileUtil.touch(exportPath + File.separator + tQuickNote.getName() + ".txt");
-                FileUtil.writeUtf8String(tQuickNote.getContent(), exportFile);
-                JOptionPane.showMessageDialog(quickNoteForm.getQuickNotePanel(), "导出成功！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
-                try {
-                    Desktop desktop = Desktop.getDesktop();
-                    desktop.open(new File(exportPath));
-                } catch (Exception e2) {
-                    log.error(ExceptionUtils.getStackTrace(e2));
                 }
 
             } catch (Exception e1) {

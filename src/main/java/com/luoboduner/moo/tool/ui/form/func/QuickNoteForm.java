@@ -46,7 +46,6 @@ public class QuickNoteForm {
     private JComboBox fontNameComboBox;
     private JComboBox fontSizeComboBox;
     private JButton findButton;
-    private JPanel deletePanel;
     private JButton wrapButton;
     private JButton listItemButton;
     private JPanel rightPanel;
@@ -82,7 +81,6 @@ public class QuickNoteForm {
     private JSplitPane contentSplitPane;
     private JComboBox syntaxComboBox;
     private JButton formatButton;
-    private JButton exportButton2;
     private JLabel tipsLabel;
     private JPanel indicatorPanel;
     private JPanel leftMenuPanel;
@@ -146,7 +144,6 @@ public class QuickNoteForm {
         quickNoteForm.getQuickReplaceButton().setIcon(new FlatSVGIcon("icon/replace.svg"));
         quickNoteForm.getDeleteButton().setIcon(new FlatSVGIcon("icon/remove.svg"));
         quickNoteForm.getExportButton().setIcon(new FlatSVGIcon("icon/export.svg"));
-        quickNoteForm.getExportButton2().setIcon(new FlatSVGIcon("icon/export.svg"));
         quickNoteForm.getListItemButton().setIcon(new FlatSVGIcon("icon/list.svg"));
         quickNoteForm.getWrapButton().setIcon(new FlatSVGIcon("icon/wrap.svg"));
         quickNoteForm.getFormatButton().setIcon(new FlatSVGIcon("icon/json.svg"));
@@ -182,7 +179,6 @@ public class QuickNoteForm {
 
         quickNoteForm.getColorSettingPanel().add(quickNoteForm.getToolBar());
 
-        quickNoteForm.getDeletePanel().setVisible(false);
         quickNoteForm.getQuickNotePanel().updateUI();
 
     }
@@ -370,33 +366,18 @@ public class QuickNoteForm {
      */
     private void $$$setupUI$$$() {
         quickNotePanel = new JPanel();
-        quickNotePanel.setLayout(new GridLayoutManager(1, 1, new Insets(12, 12, 12, 12), -1, -1));
+        quickNotePanel.setLayout(new GridLayoutManager(2, 1, new Insets(10, 10, 5, 10), -1, -1));
         quickNotePanel.setMinimumSize(new Dimension(400, 300));
         quickNotePanel.setPreferredSize(new Dimension(400, 300));
         splitPane = new JSplitPane();
         splitPane.setContinuousLayout(true);
-        splitPane.setDividerLocation(227);
+        splitPane.setDividerLocation(94);
         splitPane.setDividerSize(10);
-        quickNotePanel.add(splitPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
+        quickNotePanel.add(splitPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(200, 200), null, 0, false));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel1.setMinimumSize(new Dimension(0, 64));
         splitPane.setLeftComponent(panel1);
-        deletePanel = new JPanel();
-        deletePanel.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
-        panel1.add(deletePanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        deleteButton = new JButton();
-        deleteButton.setIcon(new ImageIcon(getClass().getResource("/icon/remove.png")));
-        deleteButton.setText("");
-        deleteButton.setToolTipText("删除");
-        deletePanel.add(deleteButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer1 = new Spacer();
-        deletePanel.add(spacer1, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        exportButton = new JButton();
-        exportButton.setIcon(new ImageIcon(getClass().getResource("/icon/export_dark.png")));
-        exportButton.setText("");
-        exportButton.setToolTipText("导出");
-        deletePanel.add(exportButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JScrollPane scrollPane1 = new JScrollPane();
         panel1.add(scrollPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         noteListTable = new JTable();
@@ -408,15 +389,15 @@ public class QuickNoteForm {
         controlPanel.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
         rightPanel.add(controlPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         menuPanel = new JPanel();
-        menuPanel.setLayout(new GridLayoutManager(2, 9, new Insets(0, 0, 0, 10), -1, -1));
+        menuPanel.setLayout(new GridLayoutManager(2, 10, new Insets(0, 0, 0, 10), -1, -1));
         controlPanel.add(menuPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         saveButton = new JButton();
         saveButton.setIcon(new ImageIcon(getClass().getResource("/icon/menu-saveall_dark.png")));
         saveButton.setText("");
         saveButton.setToolTipText("保存(Ctrl+S)");
         menuPanel.add(saveButton, new GridConstraints(0, 5, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer2 = new Spacer();
-        menuPanel.add(spacer2, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        final Spacer spacer1 = new Spacer();
+        menuPanel.add(spacer1, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         findButton = new JButton();
         findButton.setIcon(new ImageIcon(getClass().getResource("/icon/find_dark.png")));
         findButton.setText("");
@@ -430,16 +411,11 @@ public class QuickNoteForm {
         quickReplaceButton = new JButton();
         quickReplaceButton.setText("");
         quickReplaceButton.setToolTipText("快捷替换");
-        menuPanel.add(quickReplaceButton, new GridConstraints(0, 8, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        exportButton2 = new JButton();
-        exportButton2.setIcon(new ImageIcon(getClass().getResource("/icon/export_dark.png")));
-        exportButton2.setText("");
-        exportButton2.setToolTipText("导出");
-        menuPanel.add(exportButton2, new GridConstraints(0, 6, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        menuPanel.add(quickReplaceButton, new GridConstraints(0, 9, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         formatButton = new JButton();
         formatButton.setText("");
         formatButton.setToolTipText("格式化(Ctrl+Shift+F)");
-        menuPanel.add(formatButton, new GridConstraints(0, 7, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        menuPanel.add(formatButton, new GridConstraints(0, 8, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         leftMenuPanel = new JPanel();
         leftMenuPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
         leftMenuPanel.setAlignmentX(0.0f);
@@ -494,6 +470,16 @@ public class QuickNoteForm {
         colorSettingPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
         colorSettingPanel.setAlignmentX(0.0f);
         menuPanel.add(colorSettingPanel, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        exportButton = new JButton();
+        exportButton.setIcon(new ImageIcon(getClass().getResource("/icon/export_dark.png")));
+        exportButton.setText("");
+        exportButton.setToolTipText("导出");
+        menuPanel.add(exportButton, new GridConstraints(0, 7, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        deleteButton = new JButton();
+        deleteButton.setIcon(new ImageIcon(getClass().getResource("/icon/remove.png")));
+        deleteButton.setText("");
+        deleteButton.setToolTipText("删除");
+        menuPanel.add(deleteButton, new GridConstraints(0, 6, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         findReplacePanel = new JPanel();
         findReplacePanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         findReplacePanel.setVisible(true);
@@ -505,10 +491,10 @@ public class QuickNoteForm {
         findOptionPanel.add(findTextField, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         replaceTextField = new JTextField();
         findOptionPanel.add(replaceTextField, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        final Spacer spacer2 = new Spacer();
+        findOptionPanel.add(spacer2, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         final Spacer spacer3 = new Spacer();
-        findOptionPanel.add(spacer3, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        final Spacer spacer4 = new Spacer();
-        findOptionPanel.add(spacer4, new GridConstraints(1, 3, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        findOptionPanel.add(spacer3, new GridConstraints(1, 3, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         doFindButton = new JButton();
         doFindButton.setText("查找");
         findOptionPanel.add(doFindButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -553,8 +539,8 @@ public class QuickNoteForm {
         trimBlankCheckBox = new JCheckBox();
         trimBlankCheckBox.setText("去掉空格");
         panel3.add(trimBlankCheckBox, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer5 = new Spacer();
-        panel3.add(spacer5, new GridConstraints(16, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        final Spacer spacer4 = new Spacer();
+        panel3.add(spacer4, new GridConstraints(16, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         clearTabTCheckBox = new JCheckBox();
         clearTabTCheckBox.setText("去掉Tab(\\t)");
         panel3.add(clearTabTCheckBox, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -598,8 +584,8 @@ public class QuickNoteForm {
         quickReplaceCloseLabel.setIcon(new ImageIcon(getClass().getResource("/icon/remove_dark.png")));
         quickReplaceCloseLabel.setText("");
         panel4.add(quickReplaceCloseLabel, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer6 = new Spacer();
-        panel4.add(spacer6, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        final Spacer spacer5 = new Spacer();
+        panel4.add(spacer5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         final JSeparator separator4 = new JSeparator();
         panel3.add(separator4, new GridConstraints(14, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, 1, 1, null, null, null, 0, false));
         indicatorPanel = new JPanel();
@@ -608,16 +594,16 @@ public class QuickNoteForm {
         indicatorPanel.setAlignmentY(0.0f);
         indicatorPanel.setFocusable(false);
         indicatorPanel.setRequestFocusEnabled(false);
-        indicatorPanel.setVisible(false);
-        panel2.add(indicatorPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        indicatorPanel.setVisible(true);
+        quickNotePanel.add(indicatorPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, true));
         indicatorPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         tipsLabel = new JLabel();
         tipsLabel.setFocusable(false);
         tipsLabel.setRequestFocusEnabled(false);
-        tipsLabel.setText("");
+        tipsLabel.setText(" ");
         indicatorPanel.add(tipsLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer7 = new Spacer();
-        indicatorPanel.add(spacer7, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        final Spacer spacer6 = new Spacer();
+        indicatorPanel.add(spacer6, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
     }
 
     /**

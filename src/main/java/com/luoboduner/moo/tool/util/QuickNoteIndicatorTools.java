@@ -1,10 +1,11 @@
 package com.luoboduner.moo.tool.util;
 
-import cn.hutool.core.thread.ThreadUtil;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
+import org.apache.commons.lang3.time.DateFormatUtils;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Date;
 
 /**
  * 随手记相关指标工具类
@@ -15,22 +16,19 @@ import java.awt.*;
 public class QuickNoteIndicatorTools {
 
     public static void showTips(String tips, TipsLevel level) {
-        ThreadUtil.execute(() -> showTipsLockedMethod(tips, level));
+        showTipsLockedMethod(tips, level);
     }
 
-    private synchronized static void showTipsLockedMethod(String tips, TipsLevel level) {
+    private static void showTipsLockedMethod(String tips, TipsLevel level) {
         QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
-        JPanel indicatorPanel = quickNoteForm.getIndicatorPanel();
         JLabel tipsLabel = quickNoteForm.getTipsLabel();
         if (TipsLevel.SUCCESS.equals(level)) {
-            indicatorPanel.setVisible(true);
             tipsLabel.setForeground(TipsLevel.successColor());
-            tipsLabel.setText(tips);
         }
-
-        ThreadUtil.safeSleep(1000);
-        tipsLabel.setText("");
-        indicatorPanel.setVisible(false);
+        StringBuffer tipsBuffer = new StringBuffer();
+        tipsBuffer.append(tips);
+        tipsBuffer.append(" (").append(DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss.SSS")).append(")");
+        tipsLabel.setText(tipsBuffer.toString());
     }
 
     public static enum TipsLevel {

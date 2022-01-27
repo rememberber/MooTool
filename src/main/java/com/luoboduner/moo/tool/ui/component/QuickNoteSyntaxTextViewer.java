@@ -15,8 +15,6 @@ import javax.swing.event.HyperlinkEvent;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -110,36 +108,6 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
 
             @Override
             public void keyTyped(KeyEvent arg0) {
-            }
-        });
-
-        // 文本域鼠标点击事件，隐藏删除按钮
-        addMouseListener(new MouseListener() {
-            QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
-
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                quickNoteForm.getDeletePanel().setVisible(false);
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-
             }
         });
     }
