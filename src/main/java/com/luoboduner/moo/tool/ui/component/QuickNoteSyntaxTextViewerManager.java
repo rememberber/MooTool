@@ -73,7 +73,7 @@ public class QuickNoteSyntaxTextViewerManager {
     }
 
     public RSyntaxTextArea getCurrentRSyntaxTextArea() {
-        return (RSyntaxTextArea) currentRTextScrollPane.getViewport().getView();
+        return (RSyntaxTextArea) currentRTextScrollPane.getTextArea();
     }
 
     public String getCurrentText() {
