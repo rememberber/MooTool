@@ -13,6 +13,7 @@ import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.QuickNoteSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.component.TableInCellWithColorBackgroundRenderer;
+import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
@@ -166,7 +167,6 @@ public class QuickNoteForm {
 
         quickNoteForm.getColorSettingPanel().setVisible(false);
 
-
         ButtonGroup group = new ButtonGroup();
         for (int i = 0; i < COLOR_BUTTONS.length; i++) {
             COLOR_BUTTONS[i] = new JToggleButton(new ListColorIcon(COLOR_KEYS[i]));
@@ -174,8 +174,6 @@ public class QuickNoteForm {
             quickNoteForm.getToolBar().add(COLOR_BUTTONS[i]);
             group.add(COLOR_BUTTONS[i]);
         }
-
-        COLOR_BUTTONS[0].setSelected(true);
 
         quickNoteForm.getColorSettingPanel().add(quickNoteForm.getToolBar());
 
@@ -208,9 +206,14 @@ public class QuickNoteForm {
 
         @Override
         protected void paintIcon(Component c, Graphics2D g) {
-            Color color = UIManager.getColor(colorKey);
+            Color color;
+            if (colorKey == null) {
+                color = MainWindow.getInstance().getMainPanel().getForeground();
+            } else {
+                color = UIManager.getColor(colorKey);
+            }
             if (color == null)
-                color = Color.lightGray;
+                color = MainWindow.getInstance().getMainPanel().getForeground();
             else if (!c.isEnabled()) {
                 color = FlatLaf.isLafDark()
                         ? ColorFunctions.shade(color, 0.5f)
@@ -347,6 +350,7 @@ public class QuickNoteForm {
             QuickNoteListener.selectedName = name;
 
             TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
+            quickNoteForm.getColorButton().setIcon(new QuickNoteForm.AccentColorIcon(tQuickNote.getColor()));
             quickNoteForm.getSyntaxComboBox().setSelectedItem(tQuickNote.getSyntax());
             quickNoteForm.getFontNameComboBox().setSelectedItem(tQuickNote.getFontName());
             quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(tQuickNote.getFontSize()));

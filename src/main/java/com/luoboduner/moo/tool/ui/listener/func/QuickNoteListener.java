@@ -113,6 +113,7 @@ public class QuickNoteListener {
                         tQuickNote.setName(selectedName);
                         tQuickNote.setSyntax(syntaxName);
                         String now = SqliteUtil.nowDateForSqlite();
+                        tQuickNote.setModifiedTime(now);
 
                         quickNoteMapper.updateByName(tQuickNote);
 
@@ -137,6 +138,7 @@ public class QuickNoteListener {
                     tQuickNote.setName(selectedName);
                     tQuickNote.setFontName(fontName);
                     String now = SqliteUtil.nowDateForSqlite();
+                    tQuickNote.setModifiedTime(now);
 
                     quickNoteMapper.updateByName(tQuickNote);
                     App.config.setQuickNoteFontName(fontName);
@@ -160,6 +162,7 @@ public class QuickNoteListener {
                     tQuickNote.setName(selectedName);
                     tQuickNote.setFontSize(String.valueOf(fontSize));
                     String now = SqliteUtil.nowDateForSqlite();
+                    tQuickNote.setModifiedTime(now);
 
                     quickNoteMapper.updateByName(tQuickNote);
 
@@ -432,6 +435,7 @@ public class QuickNoteListener {
                         tQuickNote.setName(selectedName);
                         tQuickNote.setColor(colorKey);
                         String now = SqliteUtil.nowDateForSqlite();
+                        tQuickNote.setModifiedTime(now);
 
                         quickNoteMapper.updateByName(tQuickNote);
 
@@ -461,9 +465,7 @@ public class QuickNoteListener {
         quickNoteForm.getContentSplitPane().setLeftComponent(syntaxTextViewer);
 
         TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
-        if (StringUtils.isNotEmpty(tQuickNote.getColor())) {
-            quickNoteForm.getColorButton().setIcon(new QuickNoteForm.AccentColorIcon(tQuickNote.getColor()));
-        }
+        quickNoteForm.getColorButton().setIcon(new QuickNoteForm.AccentColorIcon(tQuickNote.getColor()));
         quickNoteForm.getSyntaxComboBox().setSelectedItem(tQuickNote.getSyntax());
         quickNoteForm.getFontNameComboBox().setSelectedItem(tQuickNote.getFontName());
         quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(tQuickNote.getFontSize()));
