@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.component;
 
+import com.formdev.flatlaf.FlatLaf;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
@@ -54,7 +55,11 @@ public class QuickNoteSyntaxTextViewerManager {
             Color defaultForeground = QuickNoteForm.getInstance().getFindTextField().getForeground();
 
             Gutter gutter = rTextScrollPane.getGutter();
-            gutter.setBorderColor(gutter.getLineNumberColor().darker());
+            if (FlatLaf.isLafDark()) {
+                gutter.setBorderColor(gutter.getLineNumberColor().darker());
+            } else {
+                gutter.setBorderColor(gutter.getLineNumberColor().brighter());
+            }
             gutter.setBackground(defaultBackground);
             Font font = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
             gutter.setLineNumberFont(font);

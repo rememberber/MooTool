@@ -12,7 +12,7 @@ import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.QuickNoteSyntaxTextViewerManager;
-import com.luoboduner.moo.tool.ui.component.TableInCellWithColorBackgroundRenderer;
+import com.luoboduner.moo.tool.ui.component.QuickNoteListTableInCellRenderer;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
@@ -92,7 +92,7 @@ public class QuickNoteForm {
 
     private JToolBar toolBar;
     public final static String[] COLOR_KEYS = {
-            "Moo.note.color.color1", "Moo.note.color.color2", "Moo.note.color.color3",
+            "default", "Moo.note.color.color1", "Moo.note.color.color2", "Moo.note.color.color3",
             "Moo.note.color.color4", "Moo.note.color.color5", "Moo.note.color.color6",
             "Moo.note.color.color7", "Moo.note.color.color8", "Moo.note.color.color9",
             "Moo.note.color.color10", "Moo.note.color.color11", "Moo.note.color.color12",
@@ -331,7 +331,7 @@ public class QuickNoteForm {
 
         Object[] data;
 
-        noteListTable.getColumn("名称").setCellRenderer(new TableInCellWithColorBackgroundRenderer());
+        noteListTable.getColumn("名称").setCellRenderer(new QuickNoteListTableInCellRenderer());
 
         List<TQuickNote> quickNoteList = quickNoteMapper.selectAll();
 

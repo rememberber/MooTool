@@ -18,7 +18,7 @@ import java.awt.*;
  * @author <a href="https://github.com/rememberber">Zhou Bo</a>
  * @since 2019/3/26.
  */
-public class TableInCellWithColorBackgroundRenderer extends DefaultTableCellRenderer {
+public class QuickNoteListTableInCellRenderer extends DefaultTableCellRenderer {
     private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
 
     @Override
