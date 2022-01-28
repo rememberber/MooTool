@@ -4,6 +4,7 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatAnimatedLafChange;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.dialog.*;
@@ -354,6 +355,11 @@ public class TopMenuBar extends JMenuBar {
             App.config.save();
 
             Init.initTheme();
+
+            if (FlatLaf.isLafDark()) {
+                FlatSVGIcon.ColorFilter.getInstance().setMapper(color -> color.brighter().brighter());
+            }
+
             SwingUtilities.updateComponentTreeUI(App.mainFrame);
             SwingUtilities.updateComponentTreeUI(MainWindow.getInstance().getTabbedPane());
 

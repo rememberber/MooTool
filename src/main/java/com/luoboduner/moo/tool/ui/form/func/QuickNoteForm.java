@@ -1,6 +1,6 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
-import com.formdev.flatlaf.*;
+import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.icons.FlatAbstractIcon;
 import com.formdev.flatlaf.util.ColorFunctions;
@@ -12,6 +12,7 @@ import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.QuickNoteSyntaxTextViewerManager;
+import com.luoboduner.moo.tool.ui.component.TableInCellWithColorBackgroundRenderer;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
@@ -89,14 +90,14 @@ public class QuickNoteForm {
     private JToggleButton colorButton;
 
     private JToolBar toolBar;
-    private static String[] colorKeys = {
+    public final static String[] COLOR_KEYS = {
             "Moo.note.color.color1", "Moo.note.color.color2", "Moo.note.color.color3",
             "Moo.note.color.color4", "Moo.note.color.color5", "Moo.note.color.color6",
             "Moo.note.color.color7", "Moo.note.color.color8", "Moo.note.color.color9",
             "Moo.note.color.color10", "Moo.note.color.color11", "Moo.note.color.color12",
             "Moo.note.color.color13", "Moo.note.color.color14"
     };
-    private final static JToggleButton[] colorButtons = new JToggleButton[colorKeys.length];
+    public final static JToggleButton[] COLOR_BUTTONS = new JToggleButton[COLOR_KEYS.length];
 
     private static QuickNoteForm quickNoteForm;
     private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
@@ -167,15 +168,14 @@ public class QuickNoteForm {
 
 
         ButtonGroup group = new ButtonGroup();
-        for (int i = 0; i < colorButtons.length; i++) {
-            colorButtons[i] = new JToggleButton(new ListColorIcon(colorKeys[i]));
-            colorButtons[i].setEnabled(true);
-//            accentColorButtons[i].addActionListener(this::accentColorChanged);
-            quickNoteForm.getToolBar().add(colorButtons[i]);
-            group.add(colorButtons[i]);
+        for (int i = 0; i < COLOR_BUTTONS.length; i++) {
+            COLOR_BUTTONS[i] = new JToggleButton(new ListColorIcon(COLOR_KEYS[i]));
+            COLOR_BUTTONS[i].setEnabled(true);
+            quickNoteForm.getToolBar().add(COLOR_BUTTONS[i]);
+            group.add(COLOR_BUTTONS[i]);
         }
 
-        colorButtons[0].setSelected(true);
+        COLOR_BUTTONS[0].setSelected(true);
 
         quickNoteForm.getColorSettingPanel().add(quickNoteForm.getToolBar());
 
@@ -183,12 +183,25 @@ public class QuickNoteForm {
 
     }
 
-
-    private static class AccentColorIcon
+    /**
+     * codes are copied from FlatLaf/flatlaf-demo/ (https://github.com/JFormDesigner/FlatLaf/tree/main/flatlaf-demo)
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     * <p>
+     * https://www.apache.org/licenses/LICENSE-2.0
+     * <p>
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     */
+    public static class AccentColorIcon
             extends FlatAbstractIcon {
         private final String colorKey;
 
-        AccentColorIcon(String colorKey) {
+        public AccentColorIcon(String colorKey) {
             super(16, 16, null);
             this.colorKey = colorKey;
         }
@@ -209,6 +222,20 @@ public class QuickNoteForm {
         }
     }
 
+    /**
+     * codes are copied from FlatLaf/flatlaf-demo/ with some change (https://github.com/JFormDesigner/FlatLaf/tree/main/flatlaf-demo)
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     * <p>
+     * https://www.apache.org/licenses/LICENSE-2.0
+     * <p>
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     */
     private static class ListColorIcon
             extends FlatAbstractIcon {
         private final String colorKey;
@@ -301,7 +328,10 @@ public class QuickNoteForm {
 
         Object[] data;
 
+        noteListTable.getColumn("名称").setCellRenderer(new TableInCellWithColorBackgroundRenderer());
+
         List<TQuickNote> quickNoteList = quickNoteMapper.selectAll();
+
         for (TQuickNote tQuickNote : quickNoteList) {
             data = new Object[2];
             data[0] = tQuickNote.getId();
@@ -321,6 +351,7 @@ public class QuickNoteForm {
             quickNoteForm.getFontNameComboBox().setSelectedItem(tQuickNote.getFontName());
             quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(tQuickNote.getFontSize()));
         }
+
     }
 
     private static void initTextAreaFont() {

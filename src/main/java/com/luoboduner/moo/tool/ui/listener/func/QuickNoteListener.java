@@ -113,7 +113,6 @@ public class QuickNoteListener {
                         tQuickNote.setName(selectedName);
                         tQuickNote.setSyntax(syntaxName);
                         String now = SqliteUtil.nowDateForSqlite();
-                        tQuickNote.setModifiedTime(now);
 
                         quickNoteMapper.updateByName(tQuickNote);
 
@@ -138,7 +137,6 @@ public class QuickNoteListener {
                     tQuickNote.setName(selectedName);
                     tQuickNote.setFontName(fontName);
                     String now = SqliteUtil.nowDateForSqlite();
-                    tQuickNote.setModifiedTime(now);
 
                     quickNoteMapper.updateByName(tQuickNote);
                     App.config.setQuickNoteFontName(fontName);
@@ -162,7 +160,6 @@ public class QuickNoteListener {
                     tQuickNote.setName(selectedName);
                     tQuickNote.setFontSize(String.valueOf(fontSize));
                     String now = SqliteUtil.nowDateForSqlite();
-                    tQuickNote.setModifiedTime(now);
 
                     quickNoteMapper.updateByName(tQuickNote);
 
@@ -415,6 +412,34 @@ public class QuickNoteListener {
                 quickNoteForm.getColorSettingPanel().setVisible(quickNoteForm.getColorButton().isSelected());
             }
         });
+
+        // 颜色按钮事件
+        String[] colorKeys = QuickNoteForm.COLOR_KEYS;
+        JToggleButton[] colorButtons = QuickNoteForm.COLOR_BUTTONS;
+        for (int i = 0; i < colorButtons.length; i++) {
+            colorButtons[i].addActionListener(e -> {
+                String colorKey = colorKeys[0];
+                for (int i1 = 0; i1 < colorButtons.length; i1++) {
+                    if (colorButtons[i1].isSelected()) {
+                        colorKey = colorKeys[i1];
+                        break;
+                    }
+                }
+//                Color color = UIManager.getColor(colorKey);
+                if (StringUtils.isNotEmpty(colorKey)) {
+                    if (selectedName != null) {
+                        TQuickNote tQuickNote = new TQuickNote();
+                        tQuickNote.setName(selectedName);
+                        tQuickNote.setColor(colorKey);
+                        String now = SqliteUtil.nowDateForSqlite();
+
+                        quickNoteMapper.updateByName(tQuickNote);
+
+                        QuickNoteForm.initNoteListTable();
+                    }
+                }
+            });
+        }
     }
 
     /**
@@ -436,6 +461,9 @@ public class QuickNoteListener {
         quickNoteForm.getContentSplitPane().setLeftComponent(syntaxTextViewer);
 
         TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
+        if (StringUtils.isNotEmpty(tQuickNote.getColor())) {
+            quickNoteForm.getColorButton().setIcon(new QuickNoteForm.AccentColorIcon(tQuickNote.getColor()));
+        }
         quickNoteForm.getSyntaxComboBox().setSelectedItem(tQuickNote.getSyntax());
         quickNoteForm.getFontNameComboBox().setSelectedItem(tQuickNote.getFontName());
         quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(tQuickNote.getFontSize()));
