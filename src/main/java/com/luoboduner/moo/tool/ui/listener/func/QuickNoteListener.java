@@ -131,13 +131,11 @@ public class QuickNoteListener {
         quickNoteForm.getFontNameComboBox().addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 String fontName = e.getItem().toString();
-                int fontSize = Integer.parseInt(quickNoteForm.getFontSizeComboBox().getSelectedItem().toString());
 
                 if (selectedName != null) {
 
                     TQuickNote tQuickNote = new TQuickNote();
                     tQuickNote.setName(selectedName);
-                    tQuickNote.setFontSize(String.valueOf(fontSize));
                     tQuickNote.setFontName(fontName);
                     String now = SqliteUtil.nowDateForSqlite();
                     tQuickNote.setModifiedTime(now);
@@ -152,7 +150,6 @@ public class QuickNoteListener {
                 }
 
                 App.config.setQuickNoteFontName(fontName);
-                App.config.setQuickNoteFontSize(fontSize);
                 App.config.save();
             }
         });
@@ -161,13 +158,11 @@ public class QuickNoteListener {
         quickNoteForm.getFontSizeComboBox().addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 int fontSize = Integer.parseInt(e.getItem().toString());
-                String fontName = quickNoteForm.getFontNameComboBox().getSelectedItem().toString();
 
                 if (selectedName != null) {
                     TQuickNote tQuickNote = new TQuickNote();
                     tQuickNote.setName(selectedName);
                     tQuickNote.setFontSize(String.valueOf(fontSize));
-                    tQuickNote.setFontName(fontName);
                     String now = SqliteUtil.nowDateForSqlite();
                     tQuickNote.setModifiedTime(now);
 
@@ -179,7 +174,6 @@ public class QuickNoteListener {
                     syntaxTextViewer.updateUI();
                 }
 
-                App.config.setQuickNoteFontName(fontName);
                 App.config.setQuickNoteFontSize(fontSize);
                 App.config.save();
 
@@ -439,6 +433,7 @@ public class QuickNoteListener {
         String name = quickNoteForm.getNoteListTable().getValueAt(rowNum, 1).toString();
         selectedName = name;
 
+        quickNoteSyntaxTextViewerManager.removeRTextScrollPane(name);
         RTextScrollPane syntaxTextViewer = quickNoteSyntaxTextViewerManager.getRTextScrollPane(name);
 
         quickNoteForm.getContentSplitPane().setLeftComponent(syntaxTextViewer);
@@ -566,7 +561,6 @@ public class QuickNoteListener {
      * @param refreshModifiedTime
      */
     public static void quickSave(boolean refreshModifiedTime) {
-        QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
         String now = SqliteUtil.nowDateForSqlite();
         if (selectedName != null) {
             TQuickNote tQuickNote = new TQuickNote();
@@ -579,22 +573,6 @@ public class QuickNoteListener {
             }
 
             quickNoteMapper.updateByName(tQuickNote);
-        } else {
-            String tempName = getDefaultFileName();
-            String name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", tempName);
-            if (StringUtils.isNotBlank(name)) {
-                TQuickNote tQuickNote = new TQuickNote();
-                tQuickNote.setName(name);
-
-                RTextScrollPane rTextScrollPane = QuickNoteForm.quickNoteSyntaxTextViewerManager.getRTextScrollPane(name);
-                RSyntaxTextArea view = (RSyntaxTextArea) rTextScrollPane.getViewport().getView();
-                tQuickNote.setContent(view.getText());
-                tQuickNote.setCreateTime(now);
-                tQuickNote.setModifiedTime(now);
-
-                quickNoteMapper.insert(tQuickNote);
-                QuickNoteForm.initNoteListTable();
-            }
         }
 
         QuickNoteIndicatorTools.showTips("已保存：" + selectedName, QuickNoteIndicatorTools.TipsLevel.SUCCESS);
