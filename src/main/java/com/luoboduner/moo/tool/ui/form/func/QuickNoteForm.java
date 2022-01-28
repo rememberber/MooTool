@@ -504,7 +504,7 @@ public class QuickNoteForm {
         colorSettingPanel = new JPanel();
         colorSettingPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
         colorSettingPanel.setAlignmentX(0.0f);
-        menuPanel.add(colorSettingPanel, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        menuPanel.add(colorSettingPanel, new GridConstraints(1, 1, 1, 9, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         exportButton = new JButton();
         exportButton.setIcon(new ImageIcon(getClass().getResource("/icon/export_dark.png")));
         exportButton.setText("");
