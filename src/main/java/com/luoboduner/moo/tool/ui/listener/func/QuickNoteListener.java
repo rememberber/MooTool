@@ -1,6 +1,7 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.core.util.ReUtil;
 import cn.hutool.json.JSONUtil;
@@ -460,10 +461,20 @@ public class QuickNoteListener {
         quickNoteForm.getContentSplitPane().setLeftComponent(syntaxTextViewer);
 
         TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
-        quickNoteForm.getColorButton().setIcon(new QuickNoteForm.AccentColorIcon(tQuickNote.getColor()));
+        String color = tQuickNote.getColor();
+        if (StringUtils.isEmpty(color)) {
+            color = QuickNoteForm.COLOR_KEYS[0];
+        }
+
+        quickNoteForm.getColorButton().setIcon(new QuickNoteForm.AccentColorIcon(color));
         quickNoteForm.getSyntaxComboBox().setSelectedItem(tQuickNote.getSyntax());
         quickNoteForm.getFontNameComboBox().setSelectedItem(tQuickNote.getFontName());
         quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(tQuickNote.getFontSize()));
+
+        int colorIndex = ArrayUtil.indexOf(QuickNoteForm.COLOR_KEYS, color);
+        if (colorIndex >= 0 && colorIndex < QuickNoteForm.COLOR_BUTTONS.length) {
+            QuickNoteForm.COLOR_BUTTONS[colorIndex].setSelected(true);
+        }
 
         syntaxTextViewer.updateUI();
     }

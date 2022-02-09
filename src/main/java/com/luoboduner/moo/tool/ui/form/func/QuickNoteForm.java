@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
+import cn.hutool.core.util.ArrayUtil;
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.icons.FlatAbstractIcon;
@@ -250,9 +251,14 @@ public class QuickNoteForm {
 
         @Override
         protected void paintIcon(Component c, Graphics2D g) {
-            Color color = UIManager.getColor(colorKey);
+            Color color;
+            if (colorKey == null) {
+                color = MainWindow.getInstance().getMainPanel().getForeground();
+            } else {
+                color = UIManager.getColor(colorKey);
+            }
             if (color == null)
-                color = Color.lightGray;
+                color = MainWindow.getInstance().getMainPanel().getForeground();
             else if (!c.isEnabled()) {
                 color = FlatLaf.isLafDark()
                         ? ColorFunctions.shade(color, 0.5f)
@@ -350,10 +356,19 @@ public class QuickNoteForm {
             QuickNoteListener.selectedName = name;
 
             TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
-            quickNoteForm.getColorButton().setIcon(new QuickNoteForm.AccentColorIcon(tQuickNote.getColor()));
+            String color = tQuickNote.getColor();
+            if (StringUtils.isEmpty(color)) {
+                color = COLOR_KEYS[0];
+            }
+            quickNoteForm.getColorButton().setIcon(new QuickNoteForm.AccentColorIcon(color));
             quickNoteForm.getSyntaxComboBox().setSelectedItem(tQuickNote.getSyntax());
             quickNoteForm.getFontNameComboBox().setSelectedItem(tQuickNote.getFontName());
             quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(tQuickNote.getFontSize()));
+
+            int colorIndex = ArrayUtil.indexOf(QuickNoteForm.COLOR_KEYS, color);
+            if (colorIndex >= 0 && colorIndex < QuickNoteForm.COLOR_BUTTONS.length) {
+                QuickNoteForm.COLOR_BUTTONS[colorIndex].setSelected(true);
+            }
         }
 
     }

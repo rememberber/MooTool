@@ -98,7 +98,7 @@ public class SupportMeDialog extends JDialog {
         panel3.setLayout(new GridLayoutManager(4, 3, new Insets(0, 0, 0, 0), -1, -1));
         scrollPane1.setViewportView(panel3);
         final JLabel label1 = new JLabel();
-        label1.setText("如果MooTool项目对您有所帮助,欢迎给予支持");
+        label1.setText("如果MooTool项目对您有所帮助或带来一些便利,欢迎给予支持");
         panel3.add(label1, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label2 = new JLabel();
         label2.setText("您的赞赏将会给我带来更多动力");
