@@ -85,7 +85,7 @@ Windows • Linux • macOS
 [iconfont](https://www.iconfont.cn/)
 
 ## 开发温馨提示
-
+最低JDK版本要求：**17**  
 在你开始开发之前, **请按下图设置IntelliJ IDEA**, 然后 **maven clean**:
 ![considerations](assets/material/gui_build.png)
 
