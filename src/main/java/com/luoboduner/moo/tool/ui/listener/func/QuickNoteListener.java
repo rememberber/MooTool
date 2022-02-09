@@ -238,9 +238,10 @@ public class QuickNoteListener {
 
         // 查找按钮
         quickNoteForm.getFindButton().addActionListener(e -> {
-            quickNoteForm.getFindReplacePanel().setVisible(true);
-            quickNoteForm.getFindTextField().grabFocus();
-            quickNoteForm.getFindTextField().selectAll();
+            quickNoteForm.getFindAndReplacePanel().setVisible(true);
+//            quickNoteForm.getFindReplacePanel().setVisible(true);
+//            quickNoteForm.getFindTextField().grabFocus();
+//            quickNoteForm.getFindTextField().selectAll();
         });
 
         // 快捷替换按钮

@@ -12,6 +12,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
 import com.luoboduner.moo.tool.ui.component.QuickNoteSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.component.QuickNoteListTableInCellRenderer;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
@@ -88,6 +89,7 @@ public class QuickNoteForm {
     private JPanel indicatorPanel;
     private JPanel leftMenuPanel;
     private JPanel colorSettingPanel;
+    private JPanel findAndReplacePanel;
 
     private JToggleButton colorButton;
 
@@ -151,7 +153,11 @@ public class QuickNoteForm {
         quickNoteForm.getWrapButton().setIcon(new FlatSVGIcon("icon/wrap.svg"));
         quickNoteForm.getFormatButton().setIcon(new FlatSVGIcon("icon/json.svg"));
 
-        quickNoteForm.getFindReplacePanel().setVisible(false);
+        quickNoteForm.getFindAndReplacePanel().setVisible(false);
+        quickNoteForm.getFindAndReplacePanel().removeAll();
+        FindReplaceBar findReplaceBar = new FindReplaceBar();
+        quickNoteForm.getFindAndReplacePanel().add(findReplaceBar.getFindOptionPanel());
+
         quickNoteForm.getQuickReplaceScrollPane().setVisible(false);
 
         quickNoteForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
@@ -534,9 +540,17 @@ public class QuickNoteForm {
         findReplacePanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         findReplacePanel.setVisible(true);
         controlPanel.add(findReplacePanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        findMenuSeparatorPanel = new JPanel();
+        findMenuSeparatorPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        findReplacePanel.add(findMenuSeparatorPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        findMenuSeparator = new JSeparator();
+        findMenuSeparatorPanel.add(findMenuSeparator, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        findAndReplacePanel = new JPanel();
+        findAndReplacePanel.setLayout(new BorderLayout(0, 0));
+        findReplacePanel.add(findAndReplacePanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         findOptionPanel = new JPanel();
         findOptionPanel.setLayout(new GridLayoutManager(2, 6, new Insets(0, 0, 0, 0), -1, -1));
-        findReplacePanel.add(findOptionPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        findAndReplacePanel.add(findOptionPanel, BorderLayout.CENTER);
         findTextField = new JTextField();
         findOptionPanel.add(findTextField, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         replaceTextField = new JTextField();
@@ -564,11 +578,6 @@ public class QuickNoteForm {
         findUseRegexCheckBox = new JCheckBox();
         findUseRegexCheckBox.setText("使用正则");
         findOptionPanel.add(findUseRegexCheckBox, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        findMenuSeparatorPanel = new JPanel();
-        findMenuSeparatorPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        findReplacePanel.add(findMenuSeparatorPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        findMenuSeparator = new JSeparator();
-        findMenuSeparatorPanel.add(findMenuSeparator, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         controlPanel.add(panel2, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, true));
