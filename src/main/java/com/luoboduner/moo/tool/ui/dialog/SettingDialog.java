@@ -29,6 +29,7 @@ import javax.swing.text.StyleContext;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
 import java.util.Collections;
 import java.util.Locale;
 
@@ -55,7 +56,7 @@ public class SettingDialog extends JDialog {
     private JComboBox fontFamilyComboBox;
     private JPanel accentColorPanel;
     private JToolBar toolBar;
-    private static String[] accentColorKeys = {
+    public static String[] accentColorKeys = {
             "Moo.accent.default", "Moo.accent.blue", "Moo.accent.purple", "Moo.accent.red",
             "Moo.accent.orange", "Moo.accent.yellow", "Moo.accent.green", "Moo.accent.mooYellow"
     };
@@ -247,15 +248,20 @@ public class SettingDialog extends JDialog {
         toolBar.add(Box.createHorizontalGlue());
 
         ButtonGroup group = new ButtonGroup();
+        int selectedIndex = 0;
         for (int i = 0; i < accentColorButtons.length; i++) {
-            accentColorButtons[i] = new JToggleButton(new AccentColorIcon(accentColorKeys[i]));
-            accentColorButtons[i].setToolTipText(accentColorNames[i]);
+            String accentColorKey = accentColorKeys[i];
+            accentColorButtons[i] = new JToggleButton(new AccentColorIcon(accentColorKey));
+            accentColorButtons[i].setToolTipText("仅FlatLight、FlatDark、FlatIntelliJ、FlatDarcula主题支持设置强调色");
             accentColorButtons[i].addActionListener(this::accentColorChanged);
+            if (accentColorKey.equals(App.config.getAccentColor())) {
+                selectedIndex = i;
+            }
             toolBar.add(accentColorButtons[i]);
             group.add(accentColorButtons[i]);
         }
 
-        accentColorButtons[0].setSelected(true);
+        accentColorButtons[selectedIndex].setSelected(true);
 
         UIManager.addPropertyChangeListener(e -> {
             if ("lookAndFeel".equals(e.getPropertyName()))
@@ -282,9 +288,12 @@ public class SettingDialog extends JDialog {
      */
     private void accentColorChanged(ActionEvent e) {
         String accentColor = accentColorKeys[0];
+
         for (int i = 0; i < accentColorButtons.length; i++) {
             if (accentColorButtons[i].isSelected()) {
                 accentColor = accentColorKeys[i];
+                App.config.setAccentColor(accentColor);
+                App.config.save();
                 break;
             }
         }
@@ -295,10 +304,12 @@ public class SettingDialog extends JDialog {
 
         Class<? extends LookAndFeel> lafClass = UIManager.getLookAndFeel().getClass();
         try {
-            FlatLaf.setup(lafClass.newInstance());
+            FlatLaf.setup(lafClass.getDeclaredConstructor().newInstance());
             FlatLaf.updateUI();
         } catch (InstantiationException | IllegalAccessException ex) {
             LoggingFacade.INSTANCE.logSevere(null, ex);
+        } catch (InvocationTargetException | NoSuchMethodException ex) {
+            ex.printStackTrace();
         }
     }
 

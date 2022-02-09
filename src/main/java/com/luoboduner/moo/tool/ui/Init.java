@@ -10,6 +10,7 @@ import com.formdev.flatlaf.intellijthemes.materialthemeuilite.FlatGitHubDarkIJTh
 import com.formdev.flatlaf.intellijthemes.materialthemeuilite.FlatMonokaiProIJTheme;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
+import com.luoboduner.moo.tool.ui.dialog.SettingDialog;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
@@ -24,6 +25,7 @@ import javax.swing.plaf.FontUIResource;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -92,17 +94,22 @@ public class Init {
      */
     public static void initTheme() {
         try {
+
+
             switch (App.config.getTheme()) {
                 case "系统默认":
                     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
                     break;
                 case "Flat Light":
+                    setAccentColor();
                     FlatLightLaf.setup();
                     break;
                 case "Flat IntelliJ":
+                    setAccentColor();
                     FlatIntelliJLaf.setup();
                     break;
                 case "Flat Dark":
+                    setAccentColor();
                     FlatDarkLaf.setup();
                     break;
                 case "Dark purple":
@@ -119,7 +126,7 @@ public class Init {
                     break;
                 case "Monokai Pro":
                     FlatMonokaiProIJTheme.setup();
-                    UIManager.put( "Button.arc", 5 );
+                    UIManager.put("Button.arc", 5);
                     break;
                 case "One Dark":
                     FlatOneDarkIJTheme.setup();
@@ -134,6 +141,7 @@ public class Init {
                     FlatGitHubDarkIJTheme.setup();
                     break;
                 default:
+                    setAccentColor();
                     FlatDarculaLaf.setup();
             }
 
@@ -151,6 +159,13 @@ public class Init {
         } catch (Exception e) {
             logger.error(e);
         }
+    }
+
+    private static void setAccentColor() {
+        String accentColor = App.config.getAccentColor();
+        FlatLaf.setGlobalExtraDefaults((accentColor != SettingDialog.accentColorKeys[0])
+                ? Collections.singletonMap("@accentColor", "$" + accentColor)
+                : null);
     }
 
     /**
