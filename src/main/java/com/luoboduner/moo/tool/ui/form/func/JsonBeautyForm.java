@@ -59,6 +59,15 @@ public class JsonBeautyForm {
 
     private JsonBeautyForm() {
         textArea = new JsonSyntaxTextViewer();
+        JTextArea timeHisTextArea = TimeConvertForm.getInstance().getTimeHisTextArea();
+        textArea.setSelectionColor(timeHisTextArea.getSelectionColor());
+//        textArea.setCurrentLineHighlightColor();
+        textArea.setMarkAllHighlightColor(timeHisTextArea.getSelectionColor());
+//        textArea.setMarkOccurrencesColor(  );
+//        textArea.setMatchedBracketBGColor( );
+//        textArea.setMatchedBracketBorderColor(  );
+        textArea.setPaintMatchedBracketPair(true);
+
         scrollPane = new RTextScrollPane(textArea);
 
         scrollPane.setMaximumSize(new Dimension(-1, -1));
