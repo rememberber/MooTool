@@ -160,9 +160,6 @@ public class JsonBeautyForm {
             jsonBeautyForm.getTextArea().setText(jsonBeautyList.get(0).getContent());
             jsonBeautyForm.getNoteListTable().setRowSelectionInterval(0, 0);
             JsonBeautyListener.selectedNameJson = jsonBeautyList.get(0).getName();
-
-            jsonBeautyForm.getFindReplacePanel().removeAll();
-            jsonBeautyForm.getFindReplacePanel().setVisible(false);
         }
     }
 

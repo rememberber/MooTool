@@ -2,15 +2,13 @@ package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.thread.ThreadUtil;
-import cn.hutool.core.util.ReUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.THostMapper;
 import com.luoboduner.moo.tool.domain.THost;
+import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
 import com.luoboduner.moo.tool.ui.dialog.CurrentHostDialog;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
-import com.luoboduner.moo.tool.ui.form.func.FindResultForm;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
-import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -23,7 +21,10 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.Date;
 
@@ -79,15 +80,9 @@ public class HostListener {
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
                     TextAreaUtil.deleteSelectedLine(hostForm.getTextArea());
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
-                    hostForm.getFindReplacePanel().setVisible(true);
-                    hostForm.getFindTextField().setText(hostForm.getTextArea().getSelectedText());
-                    hostForm.getFindTextField().grabFocus();
-                    hostForm.getFindTextField().selectAll();
+                    showFindPanel();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_R) {
-                    hostForm.getFindReplacePanel().setVisible(true);
-                    hostForm.getFindTextField().setText(hostForm.getTextArea().getSelectedText());
-                    hostForm.getReplaceTextField().grabFocus();
-                    hostForm.getReplaceTextField().selectAll();
+                    showFindPanel();
                 }
                 if (!(evt.isControlDown() || evt.isShiftDown())) {
                     quickSave(true);
@@ -166,26 +161,7 @@ public class HostListener {
         });
 
         hostForm.getFindButton().addActionListener(e -> {
-            hostForm.getFindReplacePanel().setVisible(true);
-            hostForm.getFindTextField().grabFocus();
-            hostForm.getFindTextField().selectAll();
-        });
-
-        hostForm.getFindTextField().addKeyListener(new KeyListener() {
-            @Override
-            public void keyReleased(KeyEvent arg0) {
-            }
-
-            @Override
-            public void keyPressed(KeyEvent evt) {
-                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-                    find();
-                }
-            }
-
-            @Override
-            public void keyTyped(KeyEvent arg0) {
-            }
+            showFindPanel();
         });
 
         hostForm.getExportButton().addActionListener(e -> {
@@ -230,54 +206,6 @@ public class HostListener {
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
 
-        });
-
-        hostForm.getDoFindButton().addActionListener(e -> find());
-
-        hostForm.getFindReplaceCloseLabel().addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                hostForm.getFindReplacePanel().setVisible(false);
-                super.mouseClicked(e);
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                super.mousePressed(e);
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                super.mouseEntered(e);
-            }
-        });
-
-        hostForm.getDoReplaceButton().addActionListener(e -> replace());
-        hostForm.getReplaceTextField().addKeyListener(new KeyListener() {
-            @Override
-            public void keyReleased(KeyEvent arg0) {
-            }
-
-            @Override
-            public void keyPressed(KeyEvent evt) {
-                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-                    replace();
-                }
-            }
-
-            @Override
-            public void keyTyped(KeyEvent arg0) {
-            }
-        });
-
-        hostForm.getFindUseRegexCheckBox().addActionListener(e -> {
-            boolean selected = hostForm.getFindUseRegexCheckBox().isSelected();
-            if (selected) {
-                hostForm.getFindWordsCheckBox().setSelected(false);
-                hostForm.getFindWordsCheckBox().setEnabled(false);
-            } else {
-                hostForm.getFindWordsCheckBox().setEnabled(true);
-            }
         });
 
     }
@@ -399,62 +327,16 @@ public class HostListener {
         }
     }
 
-    private static void find() {
+    public static void showFindPanel() {
         HostForm hostForm = HostForm.getInstance();
-
-        String content = hostForm.getTextArea().getText();
-        String findKeyWord = hostForm.getFindTextField().getText();
-        boolean isMatchCase = hostForm.getFindMatchCaseCheckBox().isSelected();
-        boolean isWords = hostForm.getFindWordsCheckBox().isSelected();
-        boolean useRegex = hostForm.getFindUseRegexCheckBox().isSelected();
-
-        int count;
-        String regex = findKeyWord;
-
-        if (!useRegex) {
-            regex = ReUtil.escape(regex);
-        }
-        if (isWords) {
-            regex = "\\b" + regex + "\\b";
-        }
-        if (!isMatchCase) {
-            regex = "(?i)" + regex;
-        }
-
-        count = ReUtil.findAll(regex, content, 0).size();
-        content = ReUtil.replaceAll(content, regex, "<span>$0</span>");
-
-        FindResultForm.getInstance().getFindResultCount().setText(String.valueOf(count));
-        FindResultForm.getInstance().setHtmlText(content);
-        FindResultFrame.showResultWindow();
-    }
-
-    private static void replace() {
-        HostForm hostForm = HostForm.getInstance();
-        String target = hostForm.getFindTextField().getText();
-        String replacement = hostForm.getReplaceTextField().getText();
-        String content = hostForm.getTextArea().getText();
-        boolean isMatchCase = hostForm.getFindMatchCaseCheckBox().isSelected();
-        boolean isWords = hostForm.getFindWordsCheckBox().isSelected();
-        boolean useRegex = hostForm.getFindUseRegexCheckBox().isSelected();
-
-        String regex = target;
-
-        if (!useRegex) {
-            regex = ReUtil.escape(regex);
-        }
-        if (isWords) {
-            regex = "\\b" + regex + "\\b";
-        }
-        if (!isMatchCase) {
-            regex = "(?i)" + regex;
-        }
-
-        content = ReUtil.replaceAll(content, regex, replacement);
-
-        hostForm.getTextArea().setText(content);
-        hostForm.getTextArea().setCaretPosition(0);
-        hostForm.getScrollPane().getVerticalScrollBar().setValue(0);
-        hostForm.getScrollPane().getHorizontalScrollBar().setValue(0);
+        hostForm.getFindReplacePanel().removeAll();
+        hostForm.getFindReplacePanel().setDoubleBuffered(true);
+        FindReplaceBar findReplaceBar = new FindReplaceBar(hostForm.getTextArea());
+        hostForm.getFindReplacePanel().add(findReplaceBar.getFindOptionPanel());
+        hostForm.getFindReplacePanel().setVisible(true);
+        hostForm.getFindReplacePanel().updateUI();
+        findReplaceBar.getFindField().setText(hostForm.getTextArea().getSelectedText());
+        findReplaceBar.getFindField().grabFocus();
+        findReplaceBar.getFindField().selectAll();
     }
 }

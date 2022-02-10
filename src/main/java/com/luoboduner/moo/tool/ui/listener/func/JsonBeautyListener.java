@@ -265,9 +265,6 @@ public class JsonBeautyListener {
     private static void viewByRowNum(int selectedRow) {
         JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
 
-        jsonBeautyForm.getFindReplacePanel().removeAll();
-        jsonBeautyForm.getFindReplacePanel().setVisible(false);
-
         String name = jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
         selectedNameJson = name;
         setContentByName(name);
