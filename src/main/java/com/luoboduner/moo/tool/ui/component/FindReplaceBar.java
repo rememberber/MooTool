@@ -221,6 +221,7 @@ public class FindReplaceBar {
     private void initComponents() {
         findField.addActionListener(e -> find());
 
+        doFindButton.addActionListener(e -> find());
 
         //---- findPreviousButton ----
         findPreviousButton.setToolTipText("Previous Occurrence");
