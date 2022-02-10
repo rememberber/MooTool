@@ -4,7 +4,6 @@ import com.formdev.flatlaf.FlatLaf;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
-import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
@@ -52,7 +51,6 @@ public class QuickNoteSyntaxTextViewerManager {
             rTextScrollPane.setMinimumSize(new Dimension(-1, -1));
 
             Color defaultBackground = App.mainFrame.getBackground();
-            Color defaultForeground = QuickNoteForm.getInstance().getFindTextField().getForeground();
 
             Gutter gutter = rTextScrollPane.getGutter();
             if (FlatLaf.isLafDark()) {

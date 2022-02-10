@@ -3,7 +3,6 @@ package com.luoboduner.moo.tool.ui.listener.func;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.NumberUtil;
-import cn.hutool.core.util.ReUtil;
 import cn.hutool.json.JSONUtil;
 import com.github.vertical_blank.sqlformatter.SqlFormatter;
 import com.github.vertical_blank.sqlformatter.languages.Dialect;
@@ -15,9 +14,7 @@ import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
 import com.luoboduner.moo.tool.ui.component.QuickNoteSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
-import com.luoboduner.moo.tool.ui.form.func.FindResultForm;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
-import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.QuickNoteIndicatorTools;
 import com.luoboduner.moo.tool.util.SqliteUtil;
@@ -239,16 +236,8 @@ public class QuickNoteListener {
 
         // 查找按钮
         quickNoteForm.getFindButton().addActionListener(e -> {
-            quickNoteForm.getFindAndReplacePanel().removeAll();
-            quickNoteForm.getFindAndReplacePanel().setDoubleBuffered(true);
-            FindReplaceBar findReplaceBar = new FindReplaceBar(quickNoteSyntaxTextViewerManager.getCurrentRSyntaxTextArea());
-            quickNoteForm.getFindAndReplacePanel().add(findReplaceBar.getFindOptionPanel());
-            quickNoteForm.getFindAndReplacePanel().setVisible(true);
-            quickNoteForm.getFindAndReplacePanel().updateUI();
+            showFindPanel();
 
-//            quickNoteForm.getFindReplacePanel().setVisible(true);
-//            quickNoteForm.getFindField().grabFocus();
-//            quickNoteForm.getFindField().selectAll();
         });
 
         // 快捷替换按钮
@@ -262,24 +251,6 @@ public class QuickNoteListener {
             } else {
                 quickNoteForm.getContentSplitPane().setDividerLocation(totalWidth);
                 quickNoteForm.getQuickReplaceScrollPane().setVisible(false);
-            }
-        });
-
-        // 查找输入框
-        quickNoteForm.getFindTextField().addKeyListener(new KeyListener() {
-            @Override
-            public void keyReleased(KeyEvent arg0) {
-            }
-
-            @Override
-            public void keyPressed(KeyEvent evt) {
-                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-                    find();
-                }
-            }
-
-            @Override
-            public void keyTyped(KeyEvent arg0) {
             }
         });
 
@@ -341,30 +312,8 @@ public class QuickNoteListener {
         // 格式化按钮
         quickNoteForm.getFormatButton().addActionListener(e -> format());
 
-        // 执行查找
-        quickNoteForm.getDoFindButton().addActionListener(e -> find());
-
         // 执行快捷替换
         quickNoteForm.getStartQuickReplaceButton().addActionListener(e -> quickReplace());
-
-        // 关闭查找面板按钮
-        quickNoteForm.getFindReplaceCloseLabel().addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                quickNoteForm.getFindReplacePanel().setVisible(false);
-                super.mouseClicked(e);
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                super.mousePressed(e);
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                super.mouseEntered(e);
-            }
-        });
 
         // 关闭快捷查找面板按钮
         quickNoteForm.getQuickReplaceCloseLabel().addMouseListener(new MouseAdapter() {
@@ -383,38 +332,6 @@ public class QuickNoteListener {
             @Override
             public void mouseEntered(MouseEvent e) {
                 super.mouseEntered(e);
-            }
-        });
-
-        // 执行替换按钮
-        quickNoteForm.getDoReplaceButton().addActionListener(e -> replace());
-
-        // 替换文本框
-        quickNoteForm.getReplaceTextField().addKeyListener(new KeyListener() {
-            @Override
-            public void keyReleased(KeyEvent arg0) {
-            }
-
-            @Override
-            public void keyPressed(KeyEvent evt) {
-                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-                    replace();
-                }
-            }
-
-            @Override
-            public void keyTyped(KeyEvent arg0) {
-            }
-        });
-
-        // 查找-正则匹配CheckBox
-        quickNoteForm.getFindUseRegexCheckBox().addActionListener(e -> {
-            boolean selected = quickNoteForm.getFindUseRegexCheckBox().isSelected();
-            if (selected) {
-                quickNoteForm.getFindWordsCheckBox().setSelected(false);
-                quickNoteForm.getFindWordsCheckBox().setEnabled(false);
-            } else {
-                quickNoteForm.getFindWordsCheckBox().setEnabled(true);
             }
         });
 
@@ -448,6 +365,21 @@ public class QuickNoteListener {
                 }
             });
         }
+    }
+
+    public static void showFindPanel() {
+        QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
+        QuickNoteSyntaxTextViewerManager quickNoteSyntaxTextViewerManager = QuickNoteForm.quickNoteSyntaxTextViewerManager;
+        quickNoteForm.getFindReplacePanel().removeAll();
+        quickNoteForm.getFindReplacePanel().setDoubleBuffered(true);
+        RSyntaxTextArea view = quickNoteSyntaxTextViewerManager.getCurrentRSyntaxTextArea();
+        FindReplaceBar findReplaceBar = new FindReplaceBar(view);
+        quickNoteForm.getFindReplacePanel().add(findReplaceBar.getFindOptionPanel());
+        quickNoteForm.getFindReplacePanel().setVisible(true);
+        quickNoteForm.getFindReplacePanel().updateUI();
+        findReplaceBar.getFindField().setText(view.getSelectedText());
+        findReplaceBar.getFindField().grabFocus();
+        findReplaceBar.getFindField().selectAll();
     }
 
     /**
@@ -643,66 +575,6 @@ public class QuickNoteListener {
             quickNoteMapper.insert(tQuickNote);
             QuickNoteForm.initNoteListTable();
         }
-    }
-
-    private static void find() {
-        QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
-
-        String content = QuickNoteForm.quickNoteSyntaxTextViewerManager.getCurrentText();
-        String findKeyWord = quickNoteForm.getFindTextField().getText();
-        boolean isMatchCase = quickNoteForm.getFindMatchCaseCheckBox().isSelected();
-        boolean isWords = quickNoteForm.getFindWordsCheckBox().isSelected();
-        boolean useRegex = quickNoteForm.getFindUseRegexCheckBox().isSelected();
-
-        int count;
-        String regex = findKeyWord;
-
-        if (!useRegex) {
-            regex = ReUtil.escape(regex);
-        }
-        if (isWords) {
-            regex = "\\b" + regex + "\\b";
-        }
-        if (!isMatchCase) {
-            regex = "(?i)" + regex;
-        }
-
-        count = ReUtil.findAll(regex, content, 0).size();
-        content = ReUtil.replaceAll(content, regex, "<span>$0</span>");
-
-        FindResultForm.getInstance().getFindResultCount().setText(String.valueOf(count));
-        FindResultForm.getInstance().setHtmlText(content);
-        FindResultFrame.showResultWindow();
-    }
-
-    private static void replace() {
-        QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
-        RSyntaxTextArea view = QuickNoteForm.quickNoteSyntaxTextViewerManager.getCurrentRSyntaxTextArea();
-        String target = quickNoteForm.getFindTextField().getText();
-        String replacement = quickNoteForm.getReplaceTextField().getText();
-        String content = view.getText();
-        boolean isMatchCase = quickNoteForm.getFindMatchCaseCheckBox().isSelected();
-        boolean isWords = quickNoteForm.getFindWordsCheckBox().isSelected();
-        boolean useRegex = quickNoteForm.getFindUseRegexCheckBox().isSelected();
-
-        String regex = target;
-
-        if (!useRegex) {
-            regex = ReUtil.escape(regex);
-        }
-        if (isWords) {
-            regex = "\\b" + regex + "\\b";
-        }
-        if (!isMatchCase) {
-            regex = "(?i)" + regex;
-        }
-
-        content = ReUtil.replaceAll(content, regex, replacement);
-
-        view.setText(content);
-        view.setCaretPosition(0);
-        QuickNoteForm.quickNoteSyntaxTextViewerManager.getCurrentRTextScrollPane().getVerticalScrollBar().setValue(0);
-        QuickNoteForm.quickNoteSyntaxTextViewerManager.getCurrentRTextScrollPane().getHorizontalScrollBar().setValue(0);
     }
 
     /**

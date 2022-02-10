@@ -85,17 +85,9 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
                 } else if (evt.isControlDown() && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
                     QuickNoteListener.format();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
-                    RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane) quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
-                    quickNoteForm.getFindReplacePanel().setVisible(true);
-                    quickNoteForm.getFindTextField().setText(view.getSelectedText());
-                    quickNoteForm.getFindTextField().grabFocus();
-                    quickNoteForm.getFindTextField().selectAll();
+                    QuickNoteListener.showFindPanel();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_R) {
-                    RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane) quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
-                    quickNoteForm.getFindReplacePanel().setVisible(true);
-                    quickNoteForm.getFindTextField().setText(view.getSelectedText());
-                    quickNoteForm.getReplaceTextField().grabFocus();
-                    quickNoteForm.getReplaceTextField().selectAll();
+                    QuickNoteListener.showFindPanel();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
                     QuickNoteListener.newNote();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
