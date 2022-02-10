@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -146,7 +147,7 @@ public class HostListener {
                         try {
                             hostMapper.updateByPrimaryKeySelective(tHost);
                         } catch (Exception e) {
-                            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
+                            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
                             HostForm.initListTable();
                             log.error(e.toString());
                         }
@@ -275,10 +276,23 @@ public class HostListener {
     }
 
     private static void newHost() {
-        HostForm hostForm = HostForm.getInstance();
-        hostForm.getTextArea().setText("");
-        hostForm.getTextArea().setEditable(true);
-        selectedNameHost = null;
+        String name = getDefaultFileName();
+        name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", name);
+        if (StringUtils.isNotBlank(name)) {
+            THost tHost = hostMapper.selectByName(name);
+            if (tHost == null) {
+                tHost = new THost();
+            } else {
+                JOptionPane.showMessageDialog(App.mainFrame, "存在同名文件，请重新命名！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            String now = SqliteUtil.nowDateForSqlite();
+            tHost.setName(name);
+            tHost.setCreateTime(now);
+            tHost.setModifiedTime(now);
+            hostMapper.insert(tHost);
+            HostForm.initListTable();
+        }
     }
 
     public static void refreshHostContentInTextArea() {
@@ -338,5 +352,15 @@ public class HostListener {
         findReplaceBar.getFindField().setText(hostForm.getTextArea().getSelectedText());
         findReplaceBar.getFindField().grabFocus();
         findReplaceBar.getFindField().selectAll();
+    }
+
+    /**
+     * Default File Name
+     *
+     * @return
+     */
+    @NotNull
+    private static String getDefaultFileName() {
+        return "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
     }
 }
