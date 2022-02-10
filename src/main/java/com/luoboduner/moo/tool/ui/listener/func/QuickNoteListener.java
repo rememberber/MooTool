@@ -12,6 +12,7 @@ import com.google.googlejavaformat.java.Formatter;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
+import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
 import com.luoboduner.moo.tool.ui.component.QuickNoteSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.FindResultForm;
@@ -238,10 +239,16 @@ public class QuickNoteListener {
 
         // 查找按钮
         quickNoteForm.getFindButton().addActionListener(e -> {
+            quickNoteForm.getFindAndReplacePanel().removeAll();
+            quickNoteForm.getFindAndReplacePanel().setDoubleBuffered(true);
+            FindReplaceBar findReplaceBar = new FindReplaceBar(quickNoteSyntaxTextViewerManager.getCurrentRSyntaxTextArea());
+            quickNoteForm.getFindAndReplacePanel().add(findReplaceBar.getFindOptionPanel());
             quickNoteForm.getFindAndReplacePanel().setVisible(true);
+            quickNoteForm.getFindAndReplacePanel().updateUI();
+
 //            quickNoteForm.getFindReplacePanel().setVisible(true);
-//            quickNoteForm.getFindTextField().grabFocus();
-//            quickNoteForm.getFindTextField().selectAll();
+//            quickNoteForm.getFindField().grabFocus();
+//            quickNoteForm.getFindField().selectAll();
         });
 
         // 快捷替换按钮

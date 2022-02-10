@@ -12,9 +12,8 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.UiConsts;
-import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
-import com.luoboduner.moo.tool.ui.component.QuickNoteSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.component.QuickNoteListTableInCellRenderer;
+import com.luoboduner.moo.tool.ui.component.QuickNoteSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
@@ -155,8 +154,6 @@ public class QuickNoteForm {
 
         quickNoteForm.getFindAndReplacePanel().setVisible(false);
         quickNoteForm.getFindAndReplacePanel().removeAll();
-        FindReplaceBar findReplaceBar = new FindReplaceBar();
-        quickNoteForm.getFindAndReplacePanel().add(findReplaceBar.getFindOptionPanel());
 
         quickNoteForm.getQuickReplaceScrollPane().setVisible(false);
 

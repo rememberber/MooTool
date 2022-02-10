@@ -8,7 +8,7 @@
     <properties/>
     <border type="none"/>
     <children>
-      <grid id="61f13" binding="findOptionPanel" layout-manager="GridLayoutManager" row-count="2" column-count="10" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+      <grid id="61f13" binding="findOptionPanel" custom-create="true" layout-manager="GridLayoutManager" row-count="2" column-count="12" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
         <margin top="0" left="0" bottom="0" right="0"/>
         <constraints>
           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -16,7 +16,7 @@
         <properties/>
         <border type="none"/>
         <children>
-          <component id="e9b72" class="javax.swing.JTextField" binding="findTextField">
+          <component id="e9b72" class="javax.swing.JTextField" binding="findField">
             <constraints>
               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                 <preferred-size width="150" height="-1"/>
@@ -24,7 +24,7 @@
             </constraints>
             <properties/>
           </component>
-          <component id="2e2d6" class="javax.swing.JTextField" binding="replaceTextField">
+          <component id="2e2d6" class="javax.swing.JTextField" binding="replaceField">
             <constraints>
               <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                 <preferred-size width="150" height="-1"/>
@@ -34,12 +34,12 @@
           </component>
           <hspacer id="76357">
             <constraints>
-              <grid row="0" column="8" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="10" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
           </hspacer>
           <hspacer id="35884">
             <constraints>
-              <grid row="1" column="3" row-span="1" col-span="7" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+              <grid row="1" column="5" row-span="1" col-span="7" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
           </hspacer>
           <component id="30586" class="javax.swing.JButton" binding="doFindButton">
@@ -50,7 +50,7 @@
               <text value="查找"/>
             </properties>
           </component>
-          <component id="46402" class="javax.swing.JButton" binding="doReplaceButton">
+          <component id="46402" class="javax.swing.JButton" binding="replaceButton">
             <constraints>
               <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
@@ -58,16 +58,16 @@
               <text value="替换"/>
             </properties>
           </component>
-          <component id="6d7e" class="javax.swing.JLabel" binding="findReplaceCloseLabel">
+          <component id="6d7e" class="javax.swing.JLabel" binding="closeButton">
             <constraints>
-              <grid row="0" column="9" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="11" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <icon value="icon/remove_dark.png"/>
               <text value=""/>
             </properties>
           </component>
-          <component id="751ac" class="javax.swing.JButton" binding="替换全部Button" default-binding="true">
+          <component id="751ac" class="javax.swing.JButton" binding="replaceAllButton">
             <constraints>
               <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
             </constraints>
@@ -75,9 +75,9 @@
               <text value="替换全部"/>
             </properties>
           </component>
-          <component id="8d730" class="javax.swing.JCheckBox" binding="findUseRegexCheckBox">
+          <component id="8d730" class="javax.swing.JCheckBox" binding="regexToggleButton">
             <constraints>
-              <grid row="0" column="7" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="9" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value="使用正则"/>
@@ -86,7 +86,7 @@
           <grid id="5bfa0" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="6" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties/>
             <border type="none"/>
@@ -99,7 +99,7 @@
                   <text value="共找到："/>
                 </properties>
               </component>
-              <component id="8227d" class="javax.swing.JLabel">
+              <component id="8227d" class="javax.swing.JLabel" binding="matchesLabel">
                 <constraints>
                   <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
@@ -109,17 +109,17 @@
               </component>
             </children>
           </grid>
-          <component id="f969b" class="javax.swing.JCheckBox" binding="findMatchCaseCheckBox">
+          <component id="f969b" class="javax.swing.JCheckBox" binding="matchCaseToggleButton">
             <constraints>
-              <grid row="0" column="5" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="7" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value="区分大小写"/>
             </properties>
           </component>
-          <component id="7495b" class="javax.swing.JCheckBox" binding="findWordsCheckBox">
+          <component id="7495b" class="javax.swing.JCheckBox" binding="matchWholeWordToggleButton">
             <constraints>
-              <grid row="0" column="6" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="8" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
               <text value="全词匹配"/>
@@ -128,12 +128,12 @@
           <grid id="cf175" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <grid row="0" column="2" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+              <grid row="0" column="2" row-span="1" col-span="4" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties/>
             <border type="none"/>
             <children>
-              <component id="45422" class="javax.swing.JButton" binding="button1" default-binding="true">
+              <component id="45422" class="javax.swing.JButton" binding="findPreviousButton">
                 <constraints>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
@@ -142,7 +142,7 @@
                   <text value=""/>
                 </properties>
               </component>
-              <component id="8e4c3" class="javax.swing.JButton" binding="button2" default-binding="true">
+              <component id="8e4c3" class="javax.swing.JButton" binding="findNextButton">
                 <constraints>
                   <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
@@ -153,6 +153,22 @@
               </component>
             </children>
           </grid>
+          <component id="b553a" class="javax.swing.JLabel">
+            <constraints>
+              <grid row="1" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="已替换；"/>
+            </properties>
+          </component>
+          <component id="d0f5b" class="javax.swing.JLabel" binding="replaceMatchesLabel">
+            <constraints>
+              <grid row="1" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+            </constraints>
+            <properties>
+              <text value="0"/>
+            </properties>
+          </component>
         </children>
       </grid>
     </children>
