@@ -5,7 +5,6 @@ import com.formdev.flatlaf.util.StringUtils;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
-import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import lombok.Getter;
 import org.fife.ui.rsyntaxtextarea.DocumentRange;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
@@ -216,7 +215,7 @@ public class FindReplaceBar {
     }
 
     private void close() {
-        QuickNoteForm.getInstance().getFindReplacePanel().setVisible(false);
+        findOptionPanel.getParent().setVisible(false);
     }
 
     private void initComponents() {
