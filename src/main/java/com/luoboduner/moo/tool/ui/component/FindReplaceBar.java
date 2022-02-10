@@ -230,6 +230,8 @@ public class FindReplaceBar {
 
     private void close() {
         findOptionPanel.getParent().setVisible(false);
+        context.setSearchFor(null);
+        SearchEngine.markAll(textArea, context);
     }
 
     private void initComponents() {
