@@ -298,7 +298,7 @@ public class SettingDialog extends JDialog {
             }
         }
 
-        FlatLaf.setGlobalExtraDefaults((accentColor != accentColorKeys[0])
+        FlatLaf.setGlobalExtraDefaults((!accentColor.equals(accentColorKeys[0]))
                 ? Collections.singletonMap("@accentColor", "$" + accentColor)
                 : null);
 

@@ -163,7 +163,7 @@ public class Init {
 
     private static void setAccentColor() {
         String accentColor = App.config.getAccentColor();
-        FlatLaf.setGlobalExtraDefaults((accentColor != SettingDialog.accentColorKeys[0])
+        FlatLaf.setGlobalExtraDefaults((!accentColor.equals(SettingDialog.accentColorKeys[0]))
                 ? Collections.singletonMap("@accentColor", "$" + accentColor)
                 : null);
     }
