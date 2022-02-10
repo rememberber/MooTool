@@ -49,16 +49,6 @@ public class JsonBeautyForm {
     private JPanel controlPanel;
     private JButton exportButton;
     private JPanel findReplacePanel;
-    private JTextField findTextField;
-    private JTextField replaceTextField;
-    private JButton doFindButton;
-    private JButton doReplaceButton;
-    private JLabel findReplaceCloseLabel;
-    private JCheckBox findMatchCaseCheckBox;
-    private JCheckBox findWordsCheckBox;
-    private JCheckBox findUseRegexCheckBox;
-    private JPanel findOptionPanel;
-    private JPanel findMenuSeparatorPanel;
     private JPanel menuPanel;
 
     private static JsonBeautyForm jsonBeautyForm;
@@ -75,7 +65,6 @@ public class JsonBeautyForm {
         scrollPane.setMinimumSize(new Dimension(-1, -1));
 
         Color defaultBackground = App.mainFrame.getBackground();
-        Color defaultForeground = findTextField.getForeground();
 
         Gutter gutter = scrollPane.getGutter();
         gutter.setBorderColor(gutter.getLineNumberColor().darker());
@@ -130,15 +119,6 @@ public class JsonBeautyForm {
             jsonBeautyForm.getControlPanel().add(jsonBeautyForm.getFindReplacePanel(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         }
 
-        jsonBeautyForm.getFindReplacePanel().removeAll();
-        if ("上方".equals(App.config.getMenuBarPosition())) {
-            jsonBeautyForm.getFindReplacePanel().add(jsonBeautyForm.getFindMenuSeparatorPanel(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-            jsonBeautyForm.getFindReplacePanel().add(jsonBeautyForm.getFindOptionPanel(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        } else if ("下方".equals(App.config.getMenuBarPosition())) {
-            jsonBeautyForm.getFindReplacePanel().add(jsonBeautyForm.getFindOptionPanel(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-            jsonBeautyForm.getFindReplacePanel().add(jsonBeautyForm.getFindMenuSeparatorPanel(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        }
-
         jsonBeautyForm.getAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
         jsonBeautyForm.getFindButton().setIcon(new FlatSVGIcon("icon/find.svg"));
         jsonBeautyForm.getSaveButton().setIcon(new FlatSVGIcon("icon/save.svg"));
@@ -180,6 +160,9 @@ public class JsonBeautyForm {
             jsonBeautyForm.getTextArea().setText(jsonBeautyList.get(0).getContent());
             jsonBeautyForm.getNoteListTable().setRowSelectionInterval(0, 0);
             JsonBeautyListener.selectedNameJson = jsonBeautyList.get(0).getName();
+
+            jsonBeautyForm.getFindReplacePanel().removeAll();
+            jsonBeautyForm.getFindReplacePanel().setVisible(false);
         }
     }
 
@@ -331,44 +314,9 @@ public class JsonBeautyForm {
         deleteButton.setToolTipText("删除");
         menuPanel.add(deleteButton, new GridConstraints(0, 8, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         findReplacePanel = new JPanel();
-        findReplacePanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        findReplacePanel.setLayout(new BorderLayout(0, 0));
         findReplacePanel.setVisible(true);
         controlPanel.add(findReplacePanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        findOptionPanel = new JPanel();
-        findOptionPanel.setLayout(new GridLayoutManager(2, 6, new Insets(0, 0, 0, 0), -1, -1));
-        findReplacePanel.add(findOptionPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        findTextField = new JTextField();
-        findOptionPanel.add(findTextField, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-        replaceTextField = new JTextField();
-        findOptionPanel.add(replaceTextField, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-        final Spacer spacer2 = new Spacer();
-        findOptionPanel.add(spacer2, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        final Spacer spacer3 = new Spacer();
-        findOptionPanel.add(spacer3, new GridConstraints(1, 3, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        doFindButton = new JButton();
-        doFindButton.setText("查找");
-        findOptionPanel.add(doFindButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        doReplaceButton = new JButton();
-        doReplaceButton.setText("替换");
-        findOptionPanel.add(doReplaceButton, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        findReplaceCloseLabel = new JLabel();
-        findReplaceCloseLabel.setIcon(new ImageIcon(getClass().getResource("/icon/remove_dark.png")));
-        findReplaceCloseLabel.setText("");
-        findOptionPanel.add(findReplaceCloseLabel, new GridConstraints(0, 5, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        findMatchCaseCheckBox = new JCheckBox();
-        findMatchCaseCheckBox.setText("区分大小写");
-        findOptionPanel.add(findMatchCaseCheckBox, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        findWordsCheckBox = new JCheckBox();
-        findWordsCheckBox.setText("全词匹配");
-        findOptionPanel.add(findWordsCheckBox, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        findUseRegexCheckBox = new JCheckBox();
-        findUseRegexCheckBox.setText("使用正则");
-        findOptionPanel.add(findUseRegexCheckBox, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        findMenuSeparatorPanel = new JPanel();
-        findMenuSeparatorPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        findReplacePanel.add(findMenuSeparatorPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        final JSeparator separator1 = new JSeparator();
-        findMenuSeparatorPanel.add(separator1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
     }
 
     /**
