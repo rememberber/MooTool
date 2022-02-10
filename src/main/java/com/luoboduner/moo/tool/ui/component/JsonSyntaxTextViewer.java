@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.ui.component;
 
 import com.formdev.flatlaf.FlatLaf;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
@@ -52,6 +53,8 @@ public class JsonSyntaxTextViewer extends RSyntaxTextArea {
         setFont(font);
 
         setHyperlinksEnabled(true);
+
+        Style.blackTextArea(this);
 
         addHyperlinkListener(e -> {
             if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
