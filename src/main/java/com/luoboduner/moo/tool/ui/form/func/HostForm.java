@@ -79,11 +79,12 @@ public class HostForm {
         textArea = new HostSyntaxTextViewer();
         JTextArea timeHisTextArea = TimeConvertForm.getInstance().getTimeHisTextArea();
         textArea.setSelectionColor(timeHisTextArea.getSelectionColor());
-//        textArea.setCurrentLineHighlightColor();
-        textArea.setMarkAllHighlightColor(timeHisTextArea.getSelectionColor());
-//        textArea.setMarkOccurrencesColor(  );
-//        textArea.setMatchedBracketBGColor( );
-//        textArea.setMatchedBracketBorderColor(  );
+        textArea.setCaretColor(UIManager.getColor("Editor.caretColor"));
+        textArea.setCurrentLineHighlightColor(UIManager.getColor("Editor.currentLineHighlight"));
+        textArea.setMarkAllHighlightColor(UIManager.getColor("Editor.markAllHighlightColor"));
+        textArea.setMarkOccurrencesColor(UIManager.getColor("Editor.markOccurrencesColor"));
+        textArea.setMatchedBracketBGColor(UIManager.getColor("Editor.matchedBracketBackground"));
+        textArea.setMatchedBracketBorderColor(UIManager.getColor("Editor.matchedBracketBorderColor"));
         textArea.setPaintMatchedBracketPair(true);
 
         scrollPane = new RTextScrollPane(textArea);

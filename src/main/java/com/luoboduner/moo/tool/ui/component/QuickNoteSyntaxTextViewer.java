@@ -44,11 +44,13 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
 
         JTextArea timeHisTextArea = TimeConvertForm.getInstance().getTimeHisTextArea();
         setSelectionColor(timeHisTextArea.getSelectionColor());
-//        setCurrentLineHighlightColor();
-        setMarkAllHighlightColor(timeHisTextArea.getSelectionColor());
-//        setMarkOccurrencesColor(  );
-//        setMatchedBracketBGColor( );
-//        setMatchedBracketBorderColor(  );
+        setCaretColor(UIManager.getColor("Editor.caretColor"));
+        setCurrentLineHighlightColor(UIManager.getColor("Editor.currentLineHighlight"));
+        setMarkAllHighlightColor(UIManager.getColor("Editor.markAllHighlightColor"));
+        setMarkOccurrencesColor(UIManager.getColor("Editor.markOccurrencesColor"));
+        setMatchedBracketBGColor(UIManager.getColor("Editor.matchedBracketBackground"));
+        setMatchedBracketBorderColor(UIManager.getColor("Editor.matchedBracketBorderColor"));
+
         setPaintMatchedBracketPair(true);
 
         // 初始化背景色
