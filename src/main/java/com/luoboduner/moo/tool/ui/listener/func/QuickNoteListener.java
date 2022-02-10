@@ -392,6 +392,9 @@ public class QuickNoteListener {
         QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
         QuickNoteSyntaxTextViewerManager quickNoteSyntaxTextViewerManager = QuickNoteForm.quickNoteSyntaxTextViewerManager;
 
+        quickNoteForm.getFindReplacePanel().removeAll();
+        quickNoteForm.getFindReplacePanel().setVisible(false);
+
         String name = quickNoteForm.getNoteListTable().getValueAt(rowNum, 1).toString();
         selectedName = name;
 

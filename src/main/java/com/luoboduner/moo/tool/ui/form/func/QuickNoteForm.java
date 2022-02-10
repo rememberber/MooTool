@@ -355,6 +355,9 @@ public class QuickNoteForm {
             quickNoteForm.getFontNameComboBox().setSelectedItem(tQuickNote.getFontName());
             quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(tQuickNote.getFontSize()));
 
+            quickNoteForm.getFindReplacePanel().removeAll();
+            quickNoteForm.getFindReplacePanel().setVisible(false);
+
             int colorIndex = ArrayUtil.indexOf(QuickNoteForm.COLOR_KEYS, color);
             if (colorIndex >= 0 && colorIndex < QuickNoteForm.COLOR_BUTTONS.length) {
                 QuickNoteForm.COLOR_BUTTONS[colorIndex].setSelected(true);
