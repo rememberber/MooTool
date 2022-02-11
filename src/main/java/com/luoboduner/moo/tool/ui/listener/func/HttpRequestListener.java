@@ -79,34 +79,6 @@ public class HttpRequestListener {
             selectedName = null;
         });
 
-        // 左侧列表鼠标点击事件（显示下方删除按钮）
-        httpRequestForm.getNoteListTable().addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                httpRequestForm.getDeletePanel().setVisible(true);
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-
-            }
-        });
-
         // 左侧列表按键事件（重命名）
         httpRequestForm.getNoteListTable().addKeyListener(new KeyListener() {
             @Override

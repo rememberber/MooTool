@@ -2,28 +2,31 @@ package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.thread.ThreadUtil;
-import cn.hutool.core.util.ReUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.THostMapper;
 import com.luoboduner.moo.tool.domain.THost;
+import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
 import com.luoboduner.moo.tool.ui.dialog.CurrentHostDialog;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
-import com.luoboduner.moo.tool.ui.form.func.FindResultForm;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
-import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
-import com.luoboduner.moo.tool.util.TextAreaUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.io.File;
 import java.util.Date;
 
@@ -42,6 +45,8 @@ public class HostListener {
 
     public static String selectedNameHost;
 
+    public static boolean ignoreQuickSave;
+
     public static void addListeners() {
         HostForm hostForm = HostForm.getInstance();
 
@@ -57,11 +62,15 @@ public class HostListener {
         hostForm.getNoteListTable().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                quickSave(false);
-                refreshHostContentInTextArea();
+                ignoreQuickSave = true;
+                try {
+                    refreshHostContentInTextArea();
+                } catch (Exception e1) {
+                    log.error(e1.getMessage());
+                } finally {
+                    ignoreQuickSave = false;
+                }
 
-                // 显示下方删除按钮
-                hostForm.getDeletePanel().setVisible(true);
                 super.mousePressed(e);
             }
         });
@@ -78,23 +87,41 @@ public class HostListener {
                     quickSave(true);
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
                     newHost();
-                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
-                    TextAreaUtil.deleteSelectedLine(hostForm.getTextArea());
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
-                    hostForm.getFindReplacePanel().setVisible(true);
-                    hostForm.getFindTextField().setText(hostForm.getTextArea().getSelectedText());
-                    hostForm.getFindTextField().grabFocus();
-                    hostForm.getFindTextField().selectAll();
+                    showFindPanel();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_R) {
-                    hostForm.getFindReplacePanel().setVisible(true);
-                    hostForm.getFindTextField().setText(hostForm.getTextArea().getSelectedText());
-                    hostForm.getReplaceTextField().grabFocus();
-                    hostForm.getReplaceTextField().selectAll();
+                    showFindPanel();
                 }
             }
 
             @Override
             public void keyTyped(KeyEvent arg0) {
+            }
+        });
+
+        hostForm.getTextArea().getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                if (ignoreQuickSave) {
+                    return;
+                }
+                quickSave(true);
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                if (ignoreQuickSave) {
+                    return;
+                }
+                quickSave(true);
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                if (ignoreQuickSave) {
+                    return;
+                }
+                quickSave(true);
             }
         });
 
@@ -125,34 +152,6 @@ public class HostListener {
 
         });
 
-        // 文本域鼠标点击事件，隐藏删除按钮
-        hostForm.getTextArea().addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                hostForm.getDeletePanel().setVisible(false);
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-
-            }
-        });
-
         // 左侧列表按键事件（重命名）
         hostForm.getNoteListTable().addKeyListener(new KeyListener() {
             @Override
@@ -178,7 +177,7 @@ public class HostListener {
                         try {
                             hostMapper.updateByPrimaryKeySelective(tHost);
                         } catch (Exception e) {
-                            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
+                            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
                             HostForm.initListTable();
                             log.error(e.toString());
                         }
@@ -186,33 +185,20 @@ public class HostListener {
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteFiles(hostForm);
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
-                    quickSave(false);
-                    refreshHostContentInTextArea();
+                    ignoreQuickSave = true;
+                    try {
+                        refreshHostContentInTextArea();
+                    } catch (Exception e) {
+                        log.error(e.getMessage());
+                    } finally {
+                        ignoreQuickSave = false;
+                    }
                 }
             }
         });
 
         hostForm.getFindButton().addActionListener(e -> {
-            hostForm.getFindReplacePanel().setVisible(true);
-            hostForm.getFindTextField().grabFocus();
-            hostForm.getFindTextField().selectAll();
-        });
-
-        hostForm.getFindTextField().addKeyListener(new KeyListener() {
-            @Override
-            public void keyReleased(KeyEvent arg0) {
-            }
-
-            @Override
-            public void keyPressed(KeyEvent evt) {
-                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-                    find();
-                }
-            }
-
-            @Override
-            public void keyTyped(KeyEvent arg0) {
-            }
+            showFindPanel();
         });
 
         hostForm.getExportButton().addActionListener(e -> {
@@ -257,54 +243,6 @@ public class HostListener {
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
 
-        });
-
-        hostForm.getDoFindButton().addActionListener(e -> find());
-
-        hostForm.getFindReplaceCloseLabel().addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                hostForm.getFindReplacePanel().setVisible(false);
-                super.mouseClicked(e);
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                super.mousePressed(e);
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                super.mouseEntered(e);
-            }
-        });
-
-        hostForm.getDoReplaceButton().addActionListener(e -> replace());
-        hostForm.getReplaceTextField().addKeyListener(new KeyListener() {
-            @Override
-            public void keyReleased(KeyEvent arg0) {
-            }
-
-            @Override
-            public void keyPressed(KeyEvent evt) {
-                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-                    replace();
-                }
-            }
-
-            @Override
-            public void keyTyped(KeyEvent arg0) {
-            }
-        });
-
-        hostForm.getFindUseRegexCheckBox().addActionListener(e -> {
-            boolean selected = hostForm.getFindUseRegexCheckBox().isSelected();
-            if (selected) {
-                hostForm.getFindWordsCheckBox().setSelected(false);
-                hostForm.getFindWordsCheckBox().setEnabled(false);
-            } else {
-                hostForm.getFindWordsCheckBox().setEnabled(true);
-            }
         });
 
     }
@@ -374,10 +312,23 @@ public class HostListener {
     }
 
     private static void newHost() {
-        HostForm hostForm = HostForm.getInstance();
-        hostForm.getTextArea().setText("");
-        hostForm.getTextArea().setEditable(true);
-        selectedNameHost = null;
+        String name = getDefaultFileName();
+        name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", name);
+        if (StringUtils.isNotBlank(name)) {
+            THost tHost = hostMapper.selectByName(name);
+            if (tHost == null) {
+                tHost = new THost();
+            } else {
+                JOptionPane.showMessageDialog(App.mainFrame, "存在同名文件，请重新命名！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            String now = SqliteUtil.nowDateForSqlite();
+            tHost.setName(name);
+            tHost.setCreateTime(now);
+            tHost.setModifiedTime(now);
+            hostMapper.insert(tHost);
+            HostForm.initListTable();
+        }
     }
 
     public static void refreshHostContentInTextArea() {
@@ -426,62 +377,26 @@ public class HostListener {
         }
     }
 
-    private static void find() {
+    public static void showFindPanel() {
         HostForm hostForm = HostForm.getInstance();
-
-        String content = hostForm.getTextArea().getText();
-        String findKeyWord = hostForm.getFindTextField().getText();
-        boolean isMatchCase = hostForm.getFindMatchCaseCheckBox().isSelected();
-        boolean isWords = hostForm.getFindWordsCheckBox().isSelected();
-        boolean useRegex = hostForm.getFindUseRegexCheckBox().isSelected();
-
-        int count;
-        String regex = findKeyWord;
-
-        if (!useRegex) {
-            regex = ReUtil.escape(regex);
-        }
-        if (isWords) {
-            regex = "\\b" + regex + "\\b";
-        }
-        if (!isMatchCase) {
-            regex = "(?i)" + regex;
-        }
-
-        count = ReUtil.findAll(regex, content, 0).size();
-        content = ReUtil.replaceAll(content, regex, "<span>$0</span>");
-
-        FindResultForm.getInstance().getFindResultCount().setText(String.valueOf(count));
-        FindResultForm.getInstance().setHtmlText(content);
-        FindResultFrame.showResultWindow();
+        hostForm.getFindReplacePanel().removeAll();
+        hostForm.getFindReplacePanel().setDoubleBuffered(true);
+        FindReplaceBar findReplaceBar = new FindReplaceBar(hostForm.getTextArea());
+        hostForm.getFindReplacePanel().add(findReplaceBar.getFindOptionPanel());
+        hostForm.getFindReplacePanel().setVisible(true);
+        hostForm.getFindReplacePanel().updateUI();
+        findReplaceBar.getFindField().setText(hostForm.getTextArea().getSelectedText());
+        findReplaceBar.getFindField().grabFocus();
+        findReplaceBar.getFindField().selectAll();
     }
 
-    private static void replace() {
-        HostForm hostForm = HostForm.getInstance();
-        String target = hostForm.getFindTextField().getText();
-        String replacement = hostForm.getReplaceTextField().getText();
-        String content = hostForm.getTextArea().getText();
-        boolean isMatchCase = hostForm.getFindMatchCaseCheckBox().isSelected();
-        boolean isWords = hostForm.getFindWordsCheckBox().isSelected();
-        boolean useRegex = hostForm.getFindUseRegexCheckBox().isSelected();
-
-        String regex = target;
-
-        if (!useRegex) {
-            regex = ReUtil.escape(regex);
-        }
-        if (isWords) {
-            regex = "\\b" + regex + "\\b";
-        }
-        if (!isMatchCase) {
-            regex = "(?i)" + regex;
-        }
-
-        content = ReUtil.replaceAll(content, regex, replacement);
-
-        hostForm.getTextArea().setText(content);
-        hostForm.getTextArea().setCaretPosition(0);
-        hostForm.getScrollPane().getVerticalScrollBar().setValue(0);
-        hostForm.getScrollPane().getHorizontalScrollBar().setValue(0);
+    /**
+     * Default File Name
+     *
+     * @return
+     */
+    @NotNull
+    private static String getDefaultFileName() {
+        return "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
     }
 }

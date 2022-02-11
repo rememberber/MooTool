@@ -3,7 +3,7 @@
   <grid id="27dc6" binding="httpRequestPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="12" left="12" bottom="12" right="12"/>
     <constraints>
-      <xy x="20" y="20" width="945" height="376"/>
+      <xy x="20" y="20" width="1188" height="551"/>
     </constraints>
     <properties>
       <minimumSize width="400" height="300"/>
@@ -19,12 +19,12 @@
         </constraints>
         <properties>
           <continuousLayout value="true"/>
-          <dividerLocation value="0"/>
+          <dividerLocation value="149"/>
           <dividerSize value="10"/>
         </properties>
         <border type="none"/>
         <children>
-          <grid id="17a86" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="17a86" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
               <splitpane position="left"/>
@@ -34,31 +34,6 @@
             </properties>
             <border type="none"/>
             <children>
-              <grid id="3e7dd" binding="deletePanel" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                <margin top="0" left="0" bottom="0" right="0"/>
-                <constraints>
-                  <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
-                </constraints>
-                <properties/>
-                <border type="none"/>
-                <children>
-                  <component id="43ac2" class="javax.swing.JButton" binding="deleteButton">
-                    <constraints>
-                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                    <properties>
-                      <icon value="icon/remove.png"/>
-                      <text value=""/>
-                      <toolTipText value="删除"/>
-                    </properties>
-                  </component>
-                  <hspacer id="2a1a6">
-                    <constraints>
-                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                    </constraints>
-                  </hspacer>
-                </children>
-              </grid>
               <scrollpane id="b59e0">
                 <constraints>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -82,7 +57,7 @@
             <properties/>
             <border type="none"/>
             <children>
-              <grid id="e85ff" binding="controlPanel" layout-manager="GridLayoutManager" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+              <grid id="e85ff" binding="controlPanel" layout-manager="GridLayoutManager" row-count="1" column-count="5" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
                   <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -117,12 +92,22 @@
                   </component>
                   <component id="da735" class="javax.swing.JButton" binding="sendButton">
                     <constraints>
-                      <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                      <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
                       <icon value="icon/send.png"/>
                       <text value=""/>
                       <toolTipText value="发送请求"/>
+                    </properties>
+                  </component>
+                  <component id="43ac2" class="javax.swing.JButton" binding="deleteButton">
+                    <constraints>
+                      <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <icon value="icon/remove.png"/>
+                      <text value=""/>
+                      <toolTipText value="删除"/>
                     </properties>
                   </component>
                 </children>

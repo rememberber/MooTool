@@ -3,6 +3,10 @@ package com.luoboduner.moo.tool.ui.dialog;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.*;
+import com.formdev.flatlaf.icons.FlatAbstractIcon;
+import com.formdev.flatlaf.util.ColorFunctions;
+import com.formdev.flatlaf.util.LoggingFacade;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -25,6 +29,8 @@ import javax.swing.text.StyleContext;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Collections;
 import java.util.Locale;
 
 public class SettingDialog extends JDialog {
@@ -48,6 +54,16 @@ public class SettingDialog extends JDialog {
     private JTextField httpProxyPasswordTextField;
     private JComboBox sqlDialectComboBox;
     private JComboBox fontFamilyComboBox;
+    private JPanel accentColorPanel;
+    private JToolBar toolBar;
+    public static String[] accentColorKeys = {
+            "Moo.accent.default", "Moo.accent.blue", "Moo.accent.purple", "Moo.accent.red",
+            "Moo.accent.orange", "Moo.accent.yellow", "Moo.accent.green", "Moo.accent.mooYellow"
+    };
+    private static String[] accentColorNames = {
+            "Default", "Blue", "Purple", "Red", "Orange", "Yellow", "Green", "MooYellow"
+    };
+    private final JToggleButton[] accentColorButtons = new JToggleButton[accentColorKeys.length];
 
     public SettingDialog() {
 
@@ -69,6 +85,8 @@ public class SettingDialog extends JDialog {
 
         // 设置滚动条速度
         ScrollUtil.smoothPane(settingScrollPane);
+
+        initAccentColors();
 
         // 常规
         autoCheckUpdateCheckBox.setSelected(App.config.isAutoCheckUpdate());
@@ -224,6 +242,142 @@ public class SettingDialog extends JDialog {
         }
     }
 
+    private void initAccentColors() {
+        toolBar = new JToolBar();
+
+        toolBar.add(Box.createHorizontalGlue());
+
+        ButtonGroup group = new ButtonGroup();
+        int selectedIndex = 0;
+        for (int i = 0; i < accentColorButtons.length; i++) {
+            String accentColorKey = accentColorKeys[i];
+            accentColorButtons[i] = new JToggleButton(new AccentColorIcon(accentColorKey));
+            accentColorButtons[i].setToolTipText("仅FlatLight、FlatDark、FlatIntelliJ、FlatDarcula主题支持设置强调色");
+            accentColorButtons[i].addActionListener(this::accentColorChanged);
+            if (accentColorKey.equals(App.config.getAccentColor())) {
+                selectedIndex = i;
+            }
+            toolBar.add(accentColorButtons[i]);
+            group.add(accentColorButtons[i]);
+        }
+
+        accentColorButtons[selectedIndex].setSelected(true);
+
+        UIManager.addPropertyChangeListener(e -> {
+            if ("lookAndFeel".equals(e.getPropertyName()))
+                updateAccentColorButtons();
+        });
+        updateAccentColorButtons();
+
+        accentColorPanel.add(toolBar);
+    }
+
+    /**
+     * codes are copied from FlatLaf/flatlaf-demo/ (https://github.com/JFormDesigner/FlatLaf/tree/main/flatlaf-demo)
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     * <p>
+     * https://www.apache.org/licenses/LICENSE-2.0
+     * <p>
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     */
+    private void accentColorChanged(ActionEvent e) {
+        String accentColor = accentColorKeys[0];
+
+        for (int i = 0; i < accentColorButtons.length; i++) {
+            if (accentColorButtons[i].isSelected()) {
+                accentColor = accentColorKeys[i];
+                App.config.setAccentColor(accentColor);
+                App.config.save();
+                break;
+            }
+        }
+
+        FlatLaf.setGlobalExtraDefaults((!accentColor.equals(accentColorKeys[0]))
+                ? Collections.singletonMap("@accentColor", "$" + accentColor)
+                : null);
+
+        Class<? extends LookAndFeel> lafClass = UIManager.getLookAndFeel().getClass();
+        try {
+            FlatLaf.setup(lafClass.getDeclaredConstructor().newInstance());
+            FlatLaf.updateUI();
+        } catch (InstantiationException | IllegalAccessException ex) {
+            LoggingFacade.INSTANCE.logSevere(null, ex);
+        } catch (InvocationTargetException | NoSuchMethodException ex) {
+            ex.printStackTrace();
+        }
+    }
+
+    /**
+     * codes are copied from FlatLaf/flatlaf-demo/ (https://github.com/JFormDesigner/FlatLaf/tree/main/flatlaf-demo)
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     * <p>
+     * https://www.apache.org/licenses/LICENSE-2.0
+     * <p>
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     */
+    private void updateAccentColorButtons() {
+        Class<? extends LookAndFeel> lafClass = UIManager.getLookAndFeel().getClass();
+        boolean isAccentColorSupported =
+                lafClass == FlatLightLaf.class ||
+                        lafClass == FlatDarkLaf.class ||
+                        lafClass == FlatIntelliJLaf.class ||
+                        lafClass == FlatDarculaLaf.class;
+
+        for (int i = 0; i < accentColorButtons.length; i++)
+            accentColorButtons[i].setEnabled(isAccentColorSupported);
+    }
+
+    /**
+     * codes are copied from FlatLaf/flatlaf-demo/ (https://github.com/JFormDesigner/FlatLaf/tree/main/flatlaf-demo)
+     * Licensed under the Apache License, Version 2.0 (the "License");
+     * you may not use this file except in compliance with the License.
+     * You may obtain a copy of the License at
+     * <p>
+     * https://www.apache.org/licenses/LICENSE-2.0
+     * <p>
+     * Unless required by applicable law or agreed to in writing, software
+     * distributed under the License is distributed on an "AS IS" BASIS,
+     * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+     * See the License for the specific language governing permissions and
+     * limitations under the License.
+     */
+    private static class AccentColorIcon
+            extends FlatAbstractIcon {
+        private final String colorKey;
+
+        AccentColorIcon(String colorKey) {
+            super(16, 16, null);
+            this.colorKey = colorKey;
+        }
+
+        @Override
+        protected void paintIcon(Component c, Graphics2D g) {
+            Color color = UIManager.getColor(colorKey);
+            if (color == null)
+                color = Color.lightGray;
+            else if (!c.isEnabled()) {
+                color = FlatLaf.isLafDark()
+                        ? ColorFunctions.shade(color, 0.5f)
+                        : ColorFunctions.tint(color, 0.6f);
+            }
+
+            g.setColor(color);
+            g.fillRoundRect(1, 1, width - 2, height - 2, 5, 5);
+        }
+    }
+
     {
 // GUI initializer generated by IntelliJ IDEA GUI Designer
 // >>> IMPORTANT!! <<<
@@ -253,7 +407,7 @@ public class SettingDialog extends JDialog {
         panel2.setLayout(new GridLayoutManager(5, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel1.add(panel2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(600, -1), null, 0, false));
         final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(3, 3, new Insets(15, 15, 25, 0), -1, -1));
+        panel3.setLayout(new GridLayoutManager(4, 3, new Insets(15, 15, 25, 0), -1, -1));
         panel2.add(panel3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         panel3.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "常规", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel3.getFont()), null));
         autoCheckUpdateCheckBox = new JCheckBox();
@@ -279,13 +433,19 @@ public class SettingDialog extends JDialog {
         panel3.add(fontFamilyComboBox, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
         panel3.add(spacer2, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        accentColorPanel = new JPanel();
+        accentColorPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
+        panel3.add(accentColorPanel, new GridConstraints(3, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        final JLabel label3 = new JLabel();
+        label3.setText("强调色");
+        panel3.add(label3, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel4 = new JPanel();
         panel4.setLayout(new GridLayoutManager(1, 3, new Insets(15, 15, 25, 0), -1, -1));
         panel2.add(panel4, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         panel4.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), " 随手记", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel4.getFont()), null));
-        final JLabel label3 = new JLabel();
-        label3.setText("SQL\"方言\"(dialect)");
-        panel4.add(label3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label4 = new JLabel();
+        label4.setText("SQL\"方言\"(dialect)");
+        panel4.add(label4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         sqlDialectComboBox = new JComboBox();
         sqlDialectComboBox.setEnabled(true);
         final DefaultComboBoxModel defaultComboBoxModel3 = new DefaultComboBoxModel();
@@ -307,9 +467,9 @@ public class SettingDialog extends JDialog {
         panel5.setLayout(new GridLayoutManager(1, 3, new Insets(15, 15, 25, 0), -1, -1));
         panel2.add(panel5, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         panel5.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "使用习惯", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel5.getFont()), null));
-        final JLabel label4 = new JLabel();
-        label4.setText("菜单栏(按钮操作区)位置");
-        panel5.add(label4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label5 = new JLabel();
+        label5.setText("菜单栏(按钮操作区)位置");
+        panel5.add(label5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer4 = new Spacer();
         panel5.add(spacer4, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         menuBarPositionComboBox = new JComboBox();
@@ -322,9 +482,9 @@ public class SettingDialog extends JDialog {
         panel6.setLayout(new GridLayoutManager(2, 3, new Insets(15, 15, 25, 0), -1, -1));
         panel2.add(panel6, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         panel6.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "高级", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel6.getFont()), null));
-        final JLabel label5 = new JLabel();
-        label5.setText("数据存储位置");
-        panel6.add(label5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label6 = new JLabel();
+        label6.setText("数据存储位置");
+        panel6.add(label6, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         dbFilePathTextField = new JTextField();
         panel6.add(dbFilePathTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         dbFilePathExploreButton = new JButton();
@@ -360,20 +520,20 @@ public class SettingDialog extends JDialog {
         httpProxyPanel = new JPanel();
         httpProxyPanel.setLayout(new GridLayoutManager(4, 2, new Insets(0, 26, 0, 0), -1, -1));
         panel8.add(httpProxyPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        final JLabel label6 = new JLabel();
-        label6.setText("Host");
-        httpProxyPanel.add(label6, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label7 = new JLabel();
+        label7.setText("Host");
+        httpProxyPanel.add(label7, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         httpProxyHostTextField = new JTextField();
         httpProxyPanel.add(httpProxyHostTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-        final JLabel label7 = new JLabel();
-        label7.setText("端口");
-        httpProxyPanel.add(label7, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label8 = new JLabel();
-        label8.setText("用户名");
-        httpProxyPanel.add(label8, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        label8.setText("端口");
+        httpProxyPanel.add(label8, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label9 = new JLabel();
-        label9.setText("密码");
-        httpProxyPanel.add(label9, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        label9.setText("用户名");
+        httpProxyPanel.add(label9, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label10 = new JLabel();
+        label10.setText("密码");
+        httpProxyPanel.add(label10, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         httpProxyPortTextField = new JTextField();
         httpProxyPanel.add(httpProxyPortTextField, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         httpProxyUserTextField = new JTextField();

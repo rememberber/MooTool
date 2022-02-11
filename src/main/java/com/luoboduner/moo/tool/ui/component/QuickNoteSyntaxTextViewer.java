@@ -1,32 +1,32 @@
 package com.luoboduner.moo.tool.ui.component;
 
+import com.formdev.flatlaf.FlatLaf;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.ui.Style;
-import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
+import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
-import com.luoboduner.moo.tool.util.TextAreaUtil;
-import com.luoboduner.moo.tool.util.UIUtil;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
-import org.fife.ui.rtextarea.RTextScrollPane;
 
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.event.HyperlinkEvent;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
 public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
+    public static boolean ignoreQuickSave;
+
     public QuickNoteSyntaxTextViewer() {
 
         try {
             Theme theme;
-            if (UIUtil.isDarkLaf()) {
+            if (FlatLaf.isLafDark()) {
                 theme = Theme.load(JsonSyntaxTextViewer.class.getResourceAsStream(
                         "/org/fife/ui/rsyntaxtextarea/themes/monokai.xml"));
             } else {
@@ -40,12 +40,22 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
 
         setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
         setCodeFoldingEnabled(true);
-//        setCurrentLineHighlightColor(new Color(52, 52, 52));
 //        setUseSelectedTextColor(true);
 //        setSelectedTextColor(new Color(50, 50, 50));
 
+        JTextArea timeHisTextArea = TimeConvertForm.getInstance().getTimeHisTextArea();
+        setSelectionColor(timeHisTextArea.getSelectionColor());
+        setCaretColor(UIManager.getColor("Editor.caretColor"));
+        setMarkAllHighlightColor(UIManager.getColor("Editor.markAllHighlightColor"));
+        setMarkOccurrencesColor(UIManager.getColor("Editor.markOccurrencesColor"));
+        setMatchedBracketBGColor(UIManager.getColor("Editor.matchedBracketBackground"));
+        setMatchedBracketBorderColor(UIManager.getColor("Editor.matchedBracketBorderColor"));
+
+        setPaintMatchedBracketPair(true);
+
         // 初始化背景色
-        Style.blackTextArea(this);
+//        Style.blackTextArea(this);
+        setBackground(TimeConvertForm.getInstance().getTimeHisTextArea().getBackground());
         // 初始化边距
         setMargin(new Insets(10, 10, 10, 10));
 
@@ -80,30 +90,17 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
 
             @Override
             public void keyPressed(KeyEvent evt) {
-                QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
                 if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
                     QuickNoteListener.quickSave(true);
                 } else if (evt.isControlDown() && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
                     QuickNoteListener.format();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
-                    RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane) quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
-                    quickNoteForm.getFindReplacePanel().setVisible(true);
-                    quickNoteForm.getFindTextField().setText(view.getSelectedText());
-                    quickNoteForm.getFindTextField().grabFocus();
-                    quickNoteForm.getFindTextField().selectAll();
+                    QuickNoteListener.showFindPanel();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_R) {
-                    RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane) quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
-                    quickNoteForm.getFindReplacePanel().setVisible(true);
-                    quickNoteForm.getFindTextField().setText(view.getSelectedText());
-                    quickNoteForm.getReplaceTextField().grabFocus();
-                    quickNoteForm.getReplaceTextField().selectAll();
+                    QuickNoteListener.showFindPanel();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
                     QuickNoteListener.newNote();
-                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
-                    RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane) quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
-                    TextAreaUtil.deleteSelectedLine(view);
                 }
-                QuickNoteListener.quickSave(true);
             }
 
             @Override
@@ -111,33 +108,29 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
             }
         });
 
-        // 文本域鼠标点击事件，隐藏删除按钮
-        addMouseListener(new MouseListener() {
-            QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
-
+        getDocument().addDocumentListener(new DocumentListener() {
             @Override
-            public void mouseClicked(MouseEvent e) {
-                quickNoteForm.getDeletePanel().setVisible(false);
+            public void insertUpdate(DocumentEvent e) {
+                if (ignoreQuickSave) {
+                    return;
+                }
+                QuickNoteListener.quickSave(true);
             }
 
             @Override
-            public void mousePressed(MouseEvent e) {
-
+            public void removeUpdate(DocumentEvent e) {
+                if (ignoreQuickSave) {
+                    return;
+                }
+                QuickNoteListener.quickSave(true);
             }
 
             @Override
-            public void mouseReleased(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-
+            public void changedUpdate(DocumentEvent e) {
+                if (ignoreQuickSave) {
+                    return;
+                }
+                QuickNoteListener.quickSave(true);
             }
         });
     }

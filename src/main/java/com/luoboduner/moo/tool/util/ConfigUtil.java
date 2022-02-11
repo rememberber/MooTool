@@ -54,6 +54,8 @@ public class ConfigUtil extends ConfigBaseUtil {
      */
     private String sqlDialect;
 
+    private String accentColor;
+
     /**
      * 上次关闭前所在的tab
      */
@@ -353,6 +355,14 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setSqlDialect(String sqlDialect) {
         setting.putByGroup("sqlDialect", "setting.quickNote", sqlDialect);
+    }
+
+    public String getAccentColor() {
+        return setting.getStr("accentColor", "setting.quickNote", "");
+    }
+
+    public void setAccentColor(String accentColor) {
+        setting.putByGroup("accentColor", "setting.quickNote", accentColor);
     }
 
     public String getCalculatorInputExpress() {

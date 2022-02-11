@@ -1,9 +1,9 @@
 package com.luoboduner.moo.tool.ui.component;
 
+import com.formdev.flatlaf.FlatLaf;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
-import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
@@ -51,14 +51,18 @@ public class QuickNoteSyntaxTextViewerManager {
             rTextScrollPane.setMinimumSize(new Dimension(-1, -1));
 
             Color defaultBackground = App.mainFrame.getBackground();
-            Color defaultForeground = QuickNoteForm.getInstance().getFindTextField().getForeground();
 
             Gutter gutter = rTextScrollPane.getGutter();
-            gutter.setBorderColor(defaultBackground);
+            if (FlatLaf.isLafDark()) {
+                gutter.setBorderColor(gutter.getLineNumberColor().darker());
+            } else {
+                gutter.setBorderColor(gutter.getLineNumberColor().brighter());
+            }
+            gutter.setBackground(defaultBackground);
             Font font = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
             gutter.setLineNumberFont(font);
 //            gutter.setLineNumberColor(defaultBackground);
-            gutter.setFoldBackground(defaultBackground);
+            gutter.setFoldBackground(defaultBackground.darker());
             gutter.setArmedFoldBackground(defaultBackground);
 
             viewMap.put(name, rTextScrollPane);
@@ -72,7 +76,7 @@ public class QuickNoteSyntaxTextViewerManager {
     }
 
     public RSyntaxTextArea getCurrentRSyntaxTextArea() {
-        return (RSyntaxTextArea) currentRTextScrollPane.getViewport().getView();
+        return (RSyntaxTextArea) currentRTextScrollPane.getTextArea();
     }
 
     public String getCurrentText() {
@@ -80,7 +84,10 @@ public class QuickNoteSyntaxTextViewerManager {
     }
 
     public String getTextByName(String name) {
-        return viewMap.get(name).getTextArea().getText();
+        if (viewMap.get(name) != null) {
+            return viewMap.get(name).getTextArea().getText();
+        }
+        return null;
     }
 
     public void removeRTextScrollPane(String name) {

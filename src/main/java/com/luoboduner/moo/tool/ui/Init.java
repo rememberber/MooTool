@@ -3,11 +3,14 @@ package com.luoboduner.moo.tool.ui;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
-import com.formdev.flatlaf.FlatLightLaf;
-import com.formdev.flatlaf.IntelliJTheme;
+import com.formdev.flatlaf.*;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import com.formdev.flatlaf.intellijthemes.*;
+import com.formdev.flatlaf.intellijthemes.materialthemeuilite.FlatGitHubDarkIJTheme;
+import com.formdev.flatlaf.intellijthemes.materialthemeuilite.FlatMonokaiProIJTheme;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
+import com.luoboduner.moo.tool.ui.dialog.SettingDialog;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
@@ -22,6 +25,7 @@ import javax.swing.plaf.FontUIResource;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.util.Collections;
 import java.util.Enumeration;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -89,124 +93,79 @@ public class Init {
      * 初始化look and feel
      */
     public static void initTheme() {
-        if (SystemUtil.isMacM1()) {
-            try {
-                UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarculaLaf");
-                logger.warn("FlatDarculaLaf theme set.");
-            } catch (Exception e) {
-                try {
-                    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-                } catch (Exception e2) {
-                    logger.error(ExceptionUtils.getStackTrace(e2));
-                }
-                logger.error(ExceptionUtils.getStackTrace(e));
-            }
-            return;
-        }
-
-        if (App.config.isUnifiedBackground()) {
-            UIManager.put("TitlePane.unifiedBackground", true);
-        }
-
         try {
+
+
             switch (App.config.getTheme()) {
                 case "系统默认":
                     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
                     break;
                 case "Flat Light":
-                    if (SystemUtil.isJBR()) {
-                        JFrame.setDefaultLookAndFeelDecorated(true);
-                        JDialog.setDefaultLookAndFeelDecorated(true);
-                    }
-                    FlatLightLaf.install();
+                    setAccentColor();
+                    FlatLightLaf.setup();
                     break;
                 case "Flat IntelliJ":
-                    if (SystemUtil.isJBR()) {
-                        JFrame.setDefaultLookAndFeelDecorated(true);
-                        JDialog.setDefaultLookAndFeelDecorated(true);
-                    }
-                    UIManager.setLookAndFeel("com.formdev.flatlaf.FlatIntelliJLaf");
-
+                    setAccentColor();
+                    FlatIntelliJLaf.setup();
                     break;
                 case "Flat Dark":
-                    if (SystemUtil.isJBR()) {
-                        JFrame.setDefaultLookAndFeelDecorated(true);
-                        JDialog.setDefaultLookAndFeelDecorated(true);
-                    }
-                    UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarkLaf");
-                    break;
-                case "BeautyEye":
-                case "Darcula":
-                case "Darcula(推荐)":
-                case "weblaf":
-                case "Flat Darcula(推荐)":
-                    if (SystemUtil.isJBR()) {
-                        JFrame.setDefaultLookAndFeelDecorated(true);
-                        JDialog.setDefaultLookAndFeelDecorated(true);
-                    }
-                    UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarculaLaf");
-
-                    UIManager.put("PopupMenu.background", UIManager.getColor("Panel.background"));
-
-/**
- If you don't like/want it, you can disable it with:
- UIManager.put( "TitlePane.useWindowDecorations", false );
-
- It is also possible to disable only the embedded menu bar (and keep the dark title pane) with:
- UIManager.put( "TitlePane.menuBarEmbedded", false );
-
- It is also possible to disable this on command line with following VM options:
- -Dflatlaf.useWindowDecorations=false
- -Dflatlaf.menuBarEmbedded=false
-
- If you have following code in your app, you can remove it (no longer necessary):
- // enable window decorations
- JFrame.setDefaultLookAndFeelDecorated( true );
- JDialog.setDefaultLookAndFeelDecorated( true );
- **/
+                    setAccentColor();
+                    FlatDarkLaf.setup();
                     break;
                 case "Dark purple":
-                    if (SystemUtil.isJBR()) {
-                        JFrame.setDefaultLookAndFeelDecorated(true);
-                        JDialog.setDefaultLookAndFeelDecorated(true);
-                    }
-                    IntelliJTheme.install(App.class.getResourceAsStream(
-                            "/theme/DarkPurple.theme.json"));
+                    FlatDarkPurpleIJTheme.setup();
                     break;
                 case "IntelliJ Cyan":
-                    if (SystemUtil.isJBR()) {
-                        JFrame.setDefaultLookAndFeelDecorated(true);
-                        JDialog.setDefaultLookAndFeelDecorated(true);
-                    }
-                    IntelliJTheme.install(App.class.getResourceAsStream(
-                            "/theme/Cyan.theme.json"));
+                    FlatCyanLightIJTheme.setup();
                     break;
                 case "IntelliJ Light":
-                    if (SystemUtil.isJBR()) {
-                        JFrame.setDefaultLookAndFeelDecorated(true);
-                        JDialog.setDefaultLookAndFeelDecorated(true);
-                    }
-                    IntelliJTheme.install(App.class.getResourceAsStream(
-                            "/theme/Light.theme.json"));
+                    FlatLightFlatIJTheme.setup();
                     break;
-
+                case "Monocai":
+                    FlatMonocaiIJTheme.setup();
+                    break;
+                case "Monokai Pro":
+                    FlatMonokaiProIJTheme.setup();
+                    UIManager.put("Button.arc", 5);
+                    break;
+                case "One Dark":
+                    FlatOneDarkIJTheme.setup();
+                    break;
+                case "Gray":
+                    FlatGrayIJTheme.setup();
+                    break;
+                case "High contrast":
+                    FlatHighContrastIJTheme.setup();
+                    break;
+                case "GitHub Dark":
+                    FlatGitHubDarkIJTheme.setup();
+                    break;
                 default:
-                    if (SystemUtil.isJBR()) {
-                        JFrame.setDefaultLookAndFeelDecorated(true);
-                        JDialog.setDefaultLookAndFeelDecorated(true);
-                    }
-                    UIManager.setLookAndFeel("com.formdev.flatlaf.FlatDarculaLaf");
+                    setAccentColor();
+                    FlatDarculaLaf.setup();
             }
 
-            if (UIUtil.isDarkLaf()) {
+            if (FlatLaf.isLafDark()) {
 //                FlatSVGIcon.ColorFilter.getInstance().setMapper(color -> color.brighter().brighter());
             } else {
                 FlatSVGIcon.ColorFilter.getInstance().setMapper(color -> color.darker().darker());
+//                SwingUtilities.windowForComponent(App.mainFrame).repaint();
             }
-//                    SwingUtilities.windowForComponent(App.mainFrame).repaint();
+
+            if (App.config.isUnifiedBackground()) {
+                UIManager.put("TitlePane.unifiedBackground", true);
+            }
+
         } catch (Exception e) {
             logger.error(e);
         }
+    }
+
+    private static void setAccentColor() {
+        String accentColor = App.config.getAccentColor();
+        FlatLaf.setGlobalExtraDefaults((!accentColor.equals(SettingDialog.accentColorKeys[0]))
+                ? Collections.singletonMap("@accentColor", "$" + accentColor)
+                : null);
     }
 
     /**

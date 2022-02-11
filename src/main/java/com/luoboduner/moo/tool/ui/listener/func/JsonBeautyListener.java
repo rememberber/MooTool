@@ -1,24 +1,24 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.util.ReUtil;
 import cn.hutool.json.JSONUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
+import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
-import com.luoboduner.moo.tool.ui.form.func.FindResultForm;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
-import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
-import com.luoboduner.moo.tool.util.TextAreaUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
+import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
@@ -39,6 +39,8 @@ public class JsonBeautyListener {
     private static TJsonBeautyMapper jsonBeautyMapper = MybatisUtil.getSqlSession().getMapper(TJsonBeautyMapper.class);
 
     public static String selectedNameJson;
+
+    public static boolean ignoreQuickSave;
 
     public static void addListeners() {
         JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
@@ -81,12 +83,16 @@ public class JsonBeautyListener {
         jsonBeautyForm.getNoteListTable().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                quickSave(false);
                 int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
-                viewByRowNum(selectedRow);
+                ignoreQuickSave = true;
+                try {
+                    viewByRowNum(selectedRow);
+                } catch (Exception e2) {
+                    log.error(e2.getMessage());
+                } finally {
+                    ignoreQuickSave = false;
+                }
 
-                // 显示下方删除按钮
-                jsonBeautyForm.getDeletePanel().setVisible(true);
                 super.mousePressed(e);
             }
         });
@@ -106,24 +112,42 @@ public class JsonBeautyListener {
                     jsonBeautyForm.getTextArea().setText(formatJson(jsonText));
                     jsonBeautyForm.getTextArea().setCaretPosition(0);
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
-                    jsonBeautyForm.getFindReplacePanel().setVisible(true);
-                    jsonBeautyForm.getFindTextField().setText(jsonBeautyForm.getTextArea().getSelectedText());
-                    jsonBeautyForm.getFindTextField().grabFocus();
-                    jsonBeautyForm.getFindTextField().selectAll();
+                    showFindPanel();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_R) {
-                    jsonBeautyForm.getFindReplacePanel().setVisible(true);
-                    jsonBeautyForm.getFindTextField().setText(jsonBeautyForm.getTextArea().getSelectedText());
-                    jsonBeautyForm.getReplaceTextField().grabFocus();
-                    jsonBeautyForm.getReplaceTextField().selectAll();
+                    showFindPanel();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
                     newJson();
-                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
-                    TextAreaUtil.deleteSelectedLine(jsonBeautyForm.getTextArea());
                 }
             }
 
             @Override
             public void keyTyped(KeyEvent arg0) {
+            }
+        });
+
+        jsonBeautyForm.getTextArea().getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                if (ignoreQuickSave) {
+                    return;
+                }
+                quickSave(true);
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                if (ignoreQuickSave) {
+                    return;
+                }
+                quickSave(true);
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                if (ignoreQuickSave) {
+                    return;
+                }
+                quickSave(true);
             }
         });
 
@@ -170,34 +194,6 @@ public class JsonBeautyListener {
             newJson();
         });
 
-        // 文本域鼠标点击事件，隐藏删除按钮
-        jsonBeautyForm.getTextArea().addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                jsonBeautyForm.getDeletePanel().setVisible(false);
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-
-            }
-        });
-
         // 左侧列表按键事件（重命名）
         jsonBeautyForm.getNoteListTable().addKeyListener(new KeyListener() {
             @Override
@@ -223,7 +219,7 @@ public class JsonBeautyListener {
                         try {
                             jsonBeautyMapper.updateByPrimaryKeySelective(tJsonBeauty);
                         } catch (Exception e) {
-                            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
+                            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
                             JsonBeautyForm.initListTable();
                             log.error(e.toString());
                         }
@@ -231,34 +227,21 @@ public class JsonBeautyListener {
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteFiles(jsonBeautyForm);
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
-                    quickSave(false);
                     int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
-                    viewByRowNum(selectedRow);
+                    ignoreQuickSave = true;
+                    try {
+                        viewByRowNum(selectedRow);
+                    } catch (Exception e) {
+                        log.error(e.getMessage());
+                    } finally {
+                        ignoreQuickSave = false;
+                    }
                 }
             }
         });
 
         jsonBeautyForm.getFindButton().addActionListener(e -> {
-            jsonBeautyForm.getFindReplacePanel().setVisible(true);
-            jsonBeautyForm.getFindTextField().grabFocus();
-            jsonBeautyForm.getFindTextField().selectAll();
-        });
-
-        jsonBeautyForm.getFindTextField().addKeyListener(new KeyListener() {
-            @Override
-            public void keyReleased(KeyEvent arg0) {
-            }
-
-            @Override
-            public void keyPressed(KeyEvent evt) {
-                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-                    find();
-                }
-            }
-
-            @Override
-            public void keyTyped(KeyEvent arg0) {
-            }
+            showFindPanel();
         });
 
         jsonBeautyForm.getListItemButton().addActionListener(e -> {
@@ -314,58 +297,11 @@ public class JsonBeautyListener {
 
         });
 
-        jsonBeautyForm.getDoFindButton().addActionListener(e -> find());
-
-        jsonBeautyForm.getFindReplaceCloseLabel().addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                jsonBeautyForm.getFindReplacePanel().setVisible(false);
-                super.mouseClicked(e);
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                super.mousePressed(e);
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                super.mouseEntered(e);
-            }
-        });
-
-        jsonBeautyForm.getDoReplaceButton().addActionListener(e -> replace());
-        jsonBeautyForm.getReplaceTextField().addKeyListener(new KeyListener() {
-            @Override
-            public void keyReleased(KeyEvent arg0) {
-            }
-
-            @Override
-            public void keyPressed(KeyEvent evt) {
-                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-                    replace();
-                }
-            }
-
-            @Override
-            public void keyTyped(KeyEvent arg0) {
-            }
-        });
-
-        jsonBeautyForm.getFindUseRegexCheckBox().addActionListener(e -> {
-            boolean selected = jsonBeautyForm.getFindUseRegexCheckBox().isSelected();
-            if (selected) {
-                jsonBeautyForm.getFindWordsCheckBox().setSelected(false);
-                jsonBeautyForm.getFindWordsCheckBox().setEnabled(false);
-            } else {
-                jsonBeautyForm.getFindWordsCheckBox().setEnabled(true);
-            }
-        });
-
     }
 
     private static void viewByRowNum(int selectedRow) {
         JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
+
         String name = jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
         selectedNameJson = name;
         setContentByName(name);
@@ -442,12 +378,26 @@ public class JsonBeautyListener {
     }
 
     private static void newJson() {
-        JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
-        jsonBeautyForm.getTextArea().setText("");
-        selectedNameJson = null;
+        String name = getDefaultFileName();
+        name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", name);
+        if (StringUtils.isNotBlank(name)) {
+            TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByName(name);
+            if (tJsonBeauty == null) {
+                tJsonBeauty = new TJsonBeauty();
+            } else {
+                JOptionPane.showMessageDialog(App.mainFrame, "存在同名文件，请重新命名！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
+            String now = SqliteUtil.nowDateForSqlite();
+            tJsonBeauty.setName(name);
+            tJsonBeauty.setCreateTime(now);
+            tJsonBeauty.setModifiedTime(now);
+            jsonBeautyMapper.insert(tJsonBeauty);
+            JsonBeautyForm.initListTable();
+        }
     }
 
-     static String formatJson(String jsonText) {
+    static String formatJson(String jsonText) {
         try {
             jsonText = JSONUtil.toJsonPrettyStr(jsonText);
         } catch (Exception e1) {
@@ -465,62 +415,26 @@ public class JsonBeautyListener {
         return jsonText;
     }
 
-    private static void find() {
+    public static void showFindPanel() {
         JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
-
-        String content = jsonBeautyForm.getTextArea().getText();
-        String findKeyWord = jsonBeautyForm.getFindTextField().getText();
-        boolean isMatchCase = jsonBeautyForm.getFindMatchCaseCheckBox().isSelected();
-        boolean isWords = jsonBeautyForm.getFindWordsCheckBox().isSelected();
-        boolean useRegex = jsonBeautyForm.getFindUseRegexCheckBox().isSelected();
-
-        int count;
-        String regex = findKeyWord;
-
-        if (!useRegex) {
-            regex = ReUtil.escape(regex);
-        }
-        if (isWords) {
-            regex = "\\b" + regex + "\\b";
-        }
-        if (!isMatchCase) {
-            regex = "(?i)" + regex;
-        }
-
-        count = ReUtil.findAll(regex, content, 0).size();
-        content = ReUtil.replaceAll(content, regex, "<span>$0</span>");
-
-        FindResultForm.getInstance().getFindResultCount().setText(String.valueOf(count));
-        FindResultForm.getInstance().setHtmlText(content);
-        FindResultFrame.showResultWindow();
+        jsonBeautyForm.getFindReplacePanel().removeAll();
+        jsonBeautyForm.getFindReplacePanel().setDoubleBuffered(true);
+        FindReplaceBar findReplaceBar = new FindReplaceBar(jsonBeautyForm.getTextArea());
+        jsonBeautyForm.getFindReplacePanel().add(findReplaceBar.getFindOptionPanel());
+        jsonBeautyForm.getFindReplacePanel().setVisible(true);
+        jsonBeautyForm.getFindReplacePanel().updateUI();
+        findReplaceBar.getFindField().setText(jsonBeautyForm.getTextArea().getSelectedText());
+        findReplaceBar.getFindField().grabFocus();
+        findReplaceBar.getFindField().selectAll();
     }
 
-    private static void replace() {
-        JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
-        String target = jsonBeautyForm.getFindTextField().getText();
-        String replacement = jsonBeautyForm.getReplaceTextField().getText();
-        String content = jsonBeautyForm.getTextArea().getText();
-        boolean isMatchCase = jsonBeautyForm.getFindMatchCaseCheckBox().isSelected();
-        boolean isWords = jsonBeautyForm.getFindWordsCheckBox().isSelected();
-        boolean useRegex = jsonBeautyForm.getFindUseRegexCheckBox().isSelected();
-
-        String regex = target;
-
-        if (!useRegex) {
-            regex = ReUtil.escape(regex);
-        }
-        if (isWords) {
-            regex = "\\b" + regex + "\\b";
-        }
-        if (!isMatchCase) {
-            regex = "(?i)" + regex;
-        }
-
-        content = ReUtil.replaceAll(content, regex, replacement);
-
-        jsonBeautyForm.getTextArea().setText(content);
-        jsonBeautyForm.getTextArea().setCaretPosition(0);
-        jsonBeautyForm.getScrollPane().getVerticalScrollBar().setValue(0);
-        jsonBeautyForm.getScrollPane().getHorizontalScrollBar().setValue(0);
+    /**
+     * Default File Name
+     *
+     * @return
+     */
+    @NotNull
+    private static String getDefaultFileName() {
+        return "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
     }
 }

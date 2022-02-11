@@ -64,7 +64,7 @@
                   <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <text value="如果MooTool项目对您有所帮助"/>
+                  <text value="如果MooTool项目对您有所帮助或带来一些便利,欢迎给予支持"/>
                 </properties>
               </component>
               <component id="8f5dd" class="javax.swing.JLabel">
@@ -72,7 +72,7 @@
                   <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <text value="欢迎对我每天下班和周末时光的努力进行支持"/>
+                  <text value="您的赞赏将会给我带来更多动力"/>
                 </properties>
               </component>
               <component id="7c8ff" class="javax.swing.JLabel">
@@ -80,7 +80,7 @@
                   <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="0" fill="0" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties>
-                  <text value="您的赞赏将会给我带来更多动力"/>
+                  <text value=""/>
                 </properties>
               </component>
               <hspacer id="32ca4">

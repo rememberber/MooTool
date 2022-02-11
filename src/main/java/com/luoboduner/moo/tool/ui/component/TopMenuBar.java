@@ -4,6 +4,7 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatAnimatedLafChange;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.dialog.*;
@@ -46,7 +47,13 @@ public class TopMenuBar extends JMenuBar {
             "Flat Darcula(推荐)",
             "Dark purple",
             "IntelliJ Cyan",
-            "IntelliJ Light"};
+            "IntelliJ Light",
+            "Monocai",
+            "Monokai Pro",
+            "One Dark",
+            "Gray",
+            "High contrast",
+            "GitHub Dark"};
 
     public static String[] fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
 
@@ -191,7 +198,7 @@ public class TopMenuBar extends JMenuBar {
 
         // ---------鼓励和支持
         JMenu supportMeMenu = new JMenu();
-        supportMeMenu.setText("鼓励和支持");
+        supportMeMenu.setText("支持一下");
 
         // 鼓励和支持
         JMenuItem supportMeMenuItem = new JMenuItem();
@@ -348,6 +355,11 @@ public class TopMenuBar extends JMenuBar {
             App.config.save();
 
             Init.initTheme();
+
+            if (FlatLaf.isLafDark()) {
+                FlatSVGIcon.ColorFilter.getInstance().setMapper(color -> color.brighter().brighter());
+            }
+
             SwingUtilities.updateComponentTreeUI(App.mainFrame);
             SwingUtilities.updateComponentTreeUI(MainWindow.getInstance().getTabbedPane());
 

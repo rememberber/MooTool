@@ -1,6 +1,9 @@
 package com.luoboduner.moo.tool;
 
+import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatDesktop;
+import com.formdev.flatlaf.extras.FlatInspector;
+import com.formdev.flatlaf.extras.FlatUIDefaultsInspector;
 import com.formdev.flatlaf.util.SystemInfo;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.dialog.AboutDialog;
@@ -10,7 +13,6 @@ import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.frame.MainFrame;
 import com.luoboduner.moo.tool.util.ConfigUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
-import com.luoboduner.moo.tool.util.UIUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -50,7 +52,7 @@ public class App {
             System.setProperty("apple.laf.useScreenMenuBar", "true");
             System.setProperty("apple.awt.application.name", "MooTool");
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "MooTool");
-            if (UIUtil.isDarkLaf()) {
+            if (FlatLaf.isLafDark()) {
                 System.setProperty("apple.awt.application.appearance", "system");
             }
 
@@ -78,7 +80,13 @@ public class App {
 
         }
 
+        FlatLaf.registerCustomDefaultsSource("themes");
         Init.initTheme();
+
+        // install inspectors
+        FlatInspector.install("ctrl shift alt X");
+        FlatUIDefaultsInspector.install("ctrl shift alt Y");
+
         mainFrame = new MainFrame();
         mainFrame.init();
         JPanel loadingPanel = new LoadingForm().getLoadingPanel();
