@@ -5,11 +5,9 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
-import com.luoboduner.moo.tool.util.TextAreaUtil;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
-import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.*;
 import javax.swing.event.HyperlinkEvent;
@@ -101,9 +99,6 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
                     QuickNoteListener.showFindPanel();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
                     QuickNoteListener.newNote();
-                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_D) {
-                    RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane) quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
-                    TextAreaUtil.deleteSelectedLine(view);
                 }
                 if (!(evt.isControlDown() || evt.isShiftDown())) {
                     QuickNoteListener.quickSave(true);
