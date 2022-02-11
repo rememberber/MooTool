@@ -80,7 +80,6 @@ public class HostForm {
         JTextArea timeHisTextArea = TimeConvertForm.getInstance().getTimeHisTextArea();
         textArea.setSelectionColor(timeHisTextArea.getSelectionColor());
         textArea.setCaretColor(UIManager.getColor("Editor.caretColor"));
-        textArea.setCurrentLineHighlightColor(UIManager.getColor("Editor.currentLineHighlight"));
         textArea.setMarkAllHighlightColor(UIManager.getColor("Editor.markAllHighlightColor"));
         textArea.setMarkOccurrencesColor(UIManager.getColor("Editor.markOccurrencesColor"));
         textArea.setMatchedBracketBGColor(UIManager.getColor("Editor.matchedBracketBackground"));
