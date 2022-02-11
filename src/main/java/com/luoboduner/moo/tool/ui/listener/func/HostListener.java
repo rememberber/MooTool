@@ -45,6 +45,8 @@ public class HostListener {
 
     public static String selectedNameHost;
 
+    public static boolean ignoreQuickSave;
+
     public static void addListeners() {
         HostForm hostForm = HostForm.getInstance();
 
@@ -60,8 +62,14 @@ public class HostListener {
         hostForm.getNoteListTable().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                quickSave(false);
-                refreshHostContentInTextArea();
+                ignoreQuickSave = true;
+                try {
+                    refreshHostContentInTextArea();
+                } catch (Exception e1) {
+                    log.error(e1.getMessage());
+                } finally {
+                    ignoreQuickSave = false;
+                }
 
                 super.mousePressed(e);
             }
@@ -94,16 +102,25 @@ public class HostListener {
         hostForm.getTextArea().getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
+                if (ignoreQuickSave) {
+                    return;
+                }
                 quickSave(true);
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
+                if (ignoreQuickSave) {
+                    return;
+                }
                 quickSave(true);
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
+                if (ignoreQuickSave) {
+                    return;
+                }
                 quickSave(true);
             }
         });
@@ -168,8 +185,14 @@ public class HostListener {
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteFiles(hostForm);
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
-                    quickSave(false);
-                    refreshHostContentInTextArea();
+                    ignoreQuickSave = true;
+                    try {
+                        refreshHostContentInTextArea();
+                    } catch (Exception e) {
+                        log.error(e.getMessage());
+                    } finally {
+                        ignoreQuickSave = false;
+                    }
                 }
             }
         });

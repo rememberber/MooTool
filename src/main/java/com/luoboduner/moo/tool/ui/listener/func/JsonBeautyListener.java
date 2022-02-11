@@ -40,6 +40,8 @@ public class JsonBeautyListener {
 
     public static String selectedNameJson;
 
+    public static boolean ignoreQuickSave;
+
     public static void addListeners() {
         JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
 
@@ -81,9 +83,15 @@ public class JsonBeautyListener {
         jsonBeautyForm.getNoteListTable().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                quickSave(false);
                 int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
-                viewByRowNum(selectedRow);
+                ignoreQuickSave = true;
+                try {
+                    viewByRowNum(selectedRow);
+                } catch (Exception e2) {
+                    log.error(e2.getMessage());
+                } finally {
+                    ignoreQuickSave = false;
+                }
 
                 super.mousePressed(e);
             }
@@ -120,16 +128,25 @@ public class JsonBeautyListener {
         jsonBeautyForm.getTextArea().getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
+                if (ignoreQuickSave) {
+                    return;
+                }
                 quickSave(true);
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
+                if (ignoreQuickSave) {
+                    return;
+                }
                 quickSave(true);
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
+                if (ignoreQuickSave) {
+                    return;
+                }
                 quickSave(true);
             }
         });
@@ -210,9 +227,15 @@ public class JsonBeautyListener {
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteFiles(jsonBeautyForm);
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
-                    quickSave(false);
                     int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
-                    viewByRowNum(selectedRow);
+                    ignoreQuickSave = true;
+                    try {
+                        viewByRowNum(selectedRow);
+                    } catch (Exception e) {
+                        log.error(e.getMessage());
+                    } finally {
+                        ignoreQuickSave = false;
+                    }
                 }
             }
         });

@@ -12,6 +12,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
+import com.luoboduner.moo.tool.ui.component.QuickNoteSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.QuickNoteSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
@@ -89,7 +90,14 @@ public class QuickNoteListener {
             @Override
             public void mousePressed(MouseEvent e) {
                 int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
-                viewByRowNum(selectedRow);
+                QuickNoteSyntaxTextViewer.ignoreQuickSave = true;
+                try {
+                    viewByRowNum(selectedRow);
+                } catch (Exception e1) {
+                    log.error(e1.toString());
+                } finally {
+                    QuickNoteSyntaxTextViewer.ignoreQuickSave = false;
+                }
 
                 super.mousePressed(e);
             }
@@ -229,7 +237,14 @@ public class QuickNoteListener {
                     deleteFiles(quickNoteForm);
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
                     int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
-                    viewByRowNum(selectedRow);
+                    QuickNoteSyntaxTextViewer.ignoreQuickSave = true;
+                    try {
+                        viewByRowNum(selectedRow);
+                    } catch (Exception e1) {
+                        log.error(e1.toString());
+                    } finally {
+                        QuickNoteSyntaxTextViewer.ignoreQuickSave = false;
+                    }
                 }
             }
         });

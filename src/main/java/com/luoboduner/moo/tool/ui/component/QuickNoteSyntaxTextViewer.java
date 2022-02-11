@@ -20,6 +20,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 
 public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
+    public static boolean ignoreQuickSave;
+
     public QuickNoteSyntaxTextViewer() {
 
         try {
@@ -110,16 +112,25 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
         getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
+                if (ignoreQuickSave) {
+                    return;
+                }
                 QuickNoteListener.quickSave(true);
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
+                if (ignoreQuickSave) {
+                    return;
+                }
                 QuickNoteListener.quickSave(true);
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
+                if (ignoreQuickSave) {
+                    return;
+                }
                 QuickNoteListener.quickSave(true);
             }
         });
