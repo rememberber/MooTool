@@ -167,9 +167,9 @@ public class JsonBeautyForm {
             model.addRow(data);
         }
         if (jsonBeautyList.size() > 0) {
+            JsonBeautyListener.selectedNameJson = jsonBeautyList.get(0).getName();
             jsonBeautyForm.getTextArea().setText(jsonBeautyList.get(0).getContent());
             jsonBeautyForm.getNoteListTable().setRowSelectionInterval(0, 0);
-            JsonBeautyListener.selectedNameJson = jsonBeautyList.get(0).getName();
         }
     }
 

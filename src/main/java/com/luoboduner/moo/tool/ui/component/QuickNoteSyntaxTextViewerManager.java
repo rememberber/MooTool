@@ -84,7 +84,10 @@ public class QuickNoteSyntaxTextViewerManager {
     }
 
     public String getTextByName(String name) {
-        return viewMap.get(name).getTextArea().getText();
+        if (viewMap.get(name) != null) {
+            return viewMap.get(name).getTextArea().getText();
+        }
+        return null;
     }
 
     public void removeRTextScrollPane(String name) {

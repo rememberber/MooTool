@@ -19,6 +19,8 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -82,13 +84,27 @@ public class HostListener {
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_R) {
                     showFindPanel();
                 }
-                if (!(evt.isControlDown() || evt.isShiftDown())) {
-                    quickSave(true);
-                }
             }
 
             @Override
             public void keyTyped(KeyEvent arg0) {
+            }
+        });
+
+        hostForm.getTextArea().getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                quickSave(true);
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                quickSave(true);
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                quickSave(true);
             }
         });
 

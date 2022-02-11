@@ -2,7 +2,6 @@ package com.luoboduner.moo.tool.ui.component;
 
 import com.formdev.flatlaf.FlatLaf;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
@@ -10,6 +9,8 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.event.HyperlinkEvent;
 import java.awt.*;
 import java.awt.event.KeyEvent;
@@ -88,7 +89,6 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
 
             @Override
             public void keyPressed(KeyEvent evt) {
-                QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
                 if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
                     QuickNoteListener.quickSave(true);
                 } else if (evt.isControlDown() && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
@@ -100,13 +100,27 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
                     QuickNoteListener.newNote();
                 }
-                if (!(evt.isControlDown() || evt.isShiftDown())) {
-                    QuickNoteListener.quickSave(true);
-                }
             }
 
             @Override
             public void keyTyped(KeyEvent arg0) {
+            }
+        });
+
+        getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                QuickNoteListener.quickSave(true);
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                QuickNoteListener.quickSave(true);
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                QuickNoteListener.quickSave(true);
             }
         });
     }

@@ -272,9 +272,9 @@ public class HostForm {
         }
 
         if (hostList.size() > 0) {
+            HostListener.selectedNameHost = hostList.get(0).getName();
             hostForm.getTextArea().setText(hostList.get(0).getContent());
             hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
-            HostListener.selectedNameHost = hostList.get(0).getName();
         }
 
         if (hostForm.getNoteListTable().getRowCount() > 0) {
