@@ -52,9 +52,7 @@ public class App {
             System.setProperty("apple.laf.useScreenMenuBar", "true");
             System.setProperty("apple.awt.application.name", "MooTool");
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "MooTool");
-            if (FlatLaf.isLafDark()) {
-                System.setProperty("apple.awt.application.appearance", "system");
-            }
+            System.setProperty("apple.awt.application.appearance", "system");
 
             FlatDesktop.setAboutHandler(() -> {
                 try {
