@@ -139,7 +139,7 @@ public class QuickNoteForm {
         quickNoteForm.getListItemButton().setIcon(new FlatSVGIcon("icon/list.svg"));
         quickNoteForm.getWrapButton().setIcon(new FlatSVGIcon("icon/wrap.svg"));
         quickNoteForm.getFormatButton().setIcon(new FlatSVGIcon("icon/json.svg"));
-        quickNoteForm.getQuickReplaceCloseLabel().setIcon(new FlatSVGIcon("icon/close.svg"));
+        quickNoteForm.getQuickReplaceCloseLabel().setIcon(new FlatSVGIcon("icon/remove.svg"));
 
         quickNoteForm.getFindReplacePanel().setVisible(false);
 
