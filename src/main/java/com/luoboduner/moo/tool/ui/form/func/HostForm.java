@@ -272,9 +272,17 @@ public class HostForm {
         }
 
         if (hostList.size() > 0) {
-            HostListener.selectedNameHost = hostList.get(0).getName();
-            hostForm.getTextArea().setText(hostList.get(0).getContent());
-            hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
+            HostListener.ignoreQuickSave = true;
+            try {
+                HostListener.selectedNameHost = hostList.get(0).getName();
+                hostForm.getTextArea().setText(hostList.get(0).getContent());
+                hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
+            } catch (Exception e1) {
+                log.error(e1.getMessage());
+            } finally {
+                HostListener.ignoreQuickSave = false;
+            }
+
         }
 
         if (hostForm.getNoteListTable().getRowCount() > 0) {

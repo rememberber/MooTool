@@ -14,6 +14,7 @@ import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.fife.ui.rtextarea.Gutter;
 import org.fife.ui.rtextarea.RTextScrollPane;
@@ -32,6 +33,7 @@ import java.util.List;
  * @since 2019/9/6.
  */
 @Getter
+@Slf4j
 public class JsonBeautyForm {
     private JPanel jsonBeautyPanel;
     private JTable noteListTable;
@@ -167,9 +169,17 @@ public class JsonBeautyForm {
             model.addRow(data);
         }
         if (jsonBeautyList.size() > 0) {
-            JsonBeautyListener.selectedNameJson = jsonBeautyList.get(0).getName();
-            jsonBeautyForm.getTextArea().setText(jsonBeautyList.get(0).getContent());
-            jsonBeautyForm.getNoteListTable().setRowSelectionInterval(0, 0);
+            JsonBeautyListener.ignoreQuickSave = true;
+            try {
+                JsonBeautyListener.selectedNameJson = jsonBeautyList.get(0).getName();
+                jsonBeautyForm.getTextArea().setText(jsonBeautyList.get(0).getContent());
+                jsonBeautyForm.getNoteListTable().setRowSelectionInterval(0, 0);
+            } catch (Exception e2) {
+                log.error(e2.getMessage());
+            } finally {
+                JsonBeautyListener.ignoreQuickSave = false;
+            }
+
         }
     }
 

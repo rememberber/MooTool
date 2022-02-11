@@ -13,6 +13,7 @@ import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.QuickNoteListTableInCellRenderer;
+import com.luoboduner.moo.tool.ui.component.QuickNoteSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.QuickNoteSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
@@ -20,6 +21,7 @@ import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
@@ -39,6 +41,7 @@ import java.util.List;
  * @since 2019/8/15.
  */
 @Getter
+@Slf4j
 public class QuickNoteForm {
     private JPanel quickNotePanel;
     private JTable noteListTable;
@@ -339,30 +342,38 @@ public class QuickNoteForm {
             model.addRow(data);
         }
         if (quickNoteList.size() > 0) {
-            String name = quickNoteList.get(0).getName();
-            RTextScrollPane syntaxTextViewer = QuickNoteForm.quickNoteSyntaxTextViewerManager.getRTextScrollPane(name);
-            getInstance().getContentSplitPane().setLeftComponent(syntaxTextViewer);
-            noteListTable.setRowSelectionInterval(0, 0);
-            syntaxTextViewer.grabFocus();
-            QuickNoteListener.selectedName = name;
+            QuickNoteSyntaxTextViewer.ignoreQuickSave = true;
+            try {
+                String name = quickNoteList.get(0).getName();
+                RTextScrollPane syntaxTextViewer = QuickNoteForm.quickNoteSyntaxTextViewerManager.getRTextScrollPane(name);
+                getInstance().getContentSplitPane().setLeftComponent(syntaxTextViewer);
+                noteListTable.setRowSelectionInterval(0, 0);
+                syntaxTextViewer.grabFocus();
+                QuickNoteListener.selectedName = name;
 
-            TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
-            String color = tQuickNote.getColor();
-            if (StringUtils.isEmpty(color)) {
-                color = COLOR_KEYS[0];
+                TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
+                String color = tQuickNote.getColor();
+                if (StringUtils.isEmpty(color)) {
+                    color = COLOR_KEYS[0];
+                }
+                quickNoteForm.getColorButton().setIcon(new QuickNoteForm.AccentColorIcon(color));
+                quickNoteForm.getSyntaxComboBox().setSelectedItem(tQuickNote.getSyntax());
+                quickNoteForm.getFontNameComboBox().setSelectedItem(tQuickNote.getFontName());
+                quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(tQuickNote.getFontSize()));
+
+                quickNoteForm.getFindReplacePanel().removeAll();
+                quickNoteForm.getFindReplacePanel().setVisible(false);
+
+                int colorIndex = ArrayUtil.indexOf(QuickNoteForm.COLOR_KEYS, color);
+                if (colorIndex >= 0 && colorIndex < QuickNoteForm.COLOR_BUTTONS.length) {
+                    QuickNoteForm.COLOR_BUTTONS[colorIndex].setSelected(true);
+                }
+            } catch (Exception e1) {
+                log.error(e1.toString());
+            } finally {
+                QuickNoteSyntaxTextViewer.ignoreQuickSave = false;
             }
-            quickNoteForm.getColorButton().setIcon(new QuickNoteForm.AccentColorIcon(color));
-            quickNoteForm.getSyntaxComboBox().setSelectedItem(tQuickNote.getSyntax());
-            quickNoteForm.getFontNameComboBox().setSelectedItem(tQuickNote.getFontName());
-            quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(tQuickNote.getFontSize()));
 
-            quickNoteForm.getFindReplacePanel().removeAll();
-            quickNoteForm.getFindReplacePanel().setVisible(false);
-
-            int colorIndex = ArrayUtil.indexOf(QuickNoteForm.COLOR_KEYS, color);
-            if (colorIndex >= 0 && colorIndex < QuickNoteForm.COLOR_BUTTONS.length) {
-                QuickNoteForm.COLOR_BUTTONS[colorIndex].setSelected(true);
-            }
         }
 
     }
