@@ -150,11 +150,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public String getTheme() {
-        if (SystemUtil.isLinuxOs()) {
-            return setting.getStr("theme", "setting.appearance", "系统默认");
-        } else {
-            return setting.getStr("theme", "setting.appearance", "Flat Darcula");
-        }
+        return setting.getStr("theme", "setting.appearance", "Flat Darcula");
     }
 
     public void setTheme(String theme) {
