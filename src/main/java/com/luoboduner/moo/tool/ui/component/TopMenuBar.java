@@ -166,6 +166,7 @@ public class TopMenuBar extends JMenuBar {
 
         fontFamilyMenu = new JMenu();
         fontFamilyMenu.setText("字体");
+        fontFamilyMenu.setAutoscrolls(true);
         initFontFamilyMenu();
 
         appearanceMenu.add(fontFamilyMenu);

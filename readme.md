@@ -2,7 +2,7 @@
 
 # MooTool
 
-A handy tool set for developers.   
+Handy tool set for developers.   
 开发者常备小工具
 
 [![码云Gitee](https://gitee.com/zhoubochina/MooTool/badge/star.svg?theme=blue)](https://gitee.com/zhoubochina/MooTool)
