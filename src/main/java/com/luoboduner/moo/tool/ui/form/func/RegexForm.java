@@ -4,9 +4,12 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.luoboduner.moo.tool.ui.Style;
+import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.component.RegexSyntaxTextViewer;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
+import org.fife.ui.rtextarea.Gutter;
+import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.*;
 import java.awt.*;
@@ -25,15 +28,44 @@ public class RegexForm {
     private JPanel regexPanel;
     private JTextField textField1;
     private JButton 匹配测试Button;
-    private JTextArea textArea1;
     private JButton 收藏夹Button;
     private JButton button1;
+    private JPanel contentPanel;
+
+    private RegexSyntaxTextViewer textArea;
+    private RTextScrollPane scrollPane;
 
     private static RegexForm regexForm;
 
     private static final Log logger = LogFactory.get();
 
     private RegexForm() {
+        textArea = new RegexSyntaxTextViewer();
+        JTextArea timeHisTextArea = TimeConvertForm.getInstance().getTimeHisTextArea();
+        textArea.setSelectionColor(timeHisTextArea.getSelectionColor());
+        textArea.setCaretColor(UIManager.getColor("Editor.caretColor"));
+        textArea.setMarkAllHighlightColor(UIManager.getColor("Editor.markAllHighlightColor"));
+        textArea.setMarkOccurrencesColor(UIManager.getColor("Editor.markOccurrencesColor"));
+        textArea.setMatchedBracketBGColor(UIManager.getColor("Editor.matchedBracketBackground"));
+        textArea.setMatchedBracketBorderColor(UIManager.getColor("Editor.matchedBracketBorderColor"));
+        textArea.setPaintMatchedBracketPair(true);
+
+        scrollPane = new RTextScrollPane(textArea);
+
+        scrollPane.setMaximumSize(new Dimension(-1, -1));
+        scrollPane.setMinimumSize(new Dimension(-1, -1));
+
+        Color defaultBackground = App.mainFrame.getBackground();
+
+        Gutter gutter = scrollPane.getGutter();
+        gutter.setBorderColor(gutter.getLineNumberColor().darker());
+        gutter.setBackground(defaultBackground);
+
+        Font font = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
+        gutter.setLineNumberFont(font);
+//            gutter.setLineNumberColor(defaultBackground);
+        gutter.setFoldBackground(defaultBackground.darker());
+        gutter.setArmedFoldBackground(defaultBackground);
         UndoUtil.register(this);
     }
 
@@ -46,12 +78,12 @@ public class RegexForm {
 
     public static void init() {
         regexForm = getInstance();
+        regexForm.getContentPanel().add(regexForm.getScrollPane());
 
         initUi();
     }
 
     private static void initUi() {
-        Style.blackTextArea(regexForm.getTextArea1());
         regexForm.getRegexPanel().updateUI();
     }
 
@@ -101,19 +133,15 @@ public class RegexForm {
         button1.setIcon(new ImageIcon(getClass().getResource("/icon/favorite.png")));
         button1.setText("");
         panel3.add(button1, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        contentPanel = new JPanel();
+        contentPanel.setLayout(new BorderLayout(0, 0));
+        panel1.add(contentPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JPanel panel4 = new JPanel();
         panel4.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        panel1.add(panel4, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        final JScrollPane scrollPane1 = new JScrollPane();
-        panel4.add(scrollPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        textArea1 = new JTextArea();
-        scrollPane1.setViewportView(textArea1);
+        tabbedPane1.addTab("常用正则表达式", panel4);
         final JPanel panel5 = new JPanel();
         panel5.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("常用正则表达式", panel5);
-        final JPanel panel6 = new JPanel();
-        panel6.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("常识", panel6);
+        tabbedPane1.addTab("常识", panel5);
     }
 
     /**
