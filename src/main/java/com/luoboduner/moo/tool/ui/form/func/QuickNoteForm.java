@@ -144,6 +144,8 @@ public class QuickNoteForm {
         quickNoteForm.getFormatButton().setIcon(new FlatSVGIcon("icon/json.svg"));
         quickNoteForm.getQuickReplaceCloseLabel().setIcon(new FlatSVGIcon("icon/remove.svg"));
 
+        getInstance().getContentSplitPane().setLeftComponent(new JPanel());
+
         quickNoteForm.getFindReplacePanel().setVisible(false);
 
         quickNoteForm.getQuickReplaceScrollPane().setVisible(false);
