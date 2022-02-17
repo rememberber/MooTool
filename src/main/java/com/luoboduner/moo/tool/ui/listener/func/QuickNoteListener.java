@@ -452,6 +452,7 @@ public class QuickNoteListener {
      */
     private static void quickReplace() {
         try {
+            QuickNoteSyntaxTextViewer.ignoreQuickSave = true;
             QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
             RSyntaxTextArea view = QuickNoteForm.quickNoteSyntaxTextViewerManager.getCurrentRSyntaxTextArea();
 
@@ -508,6 +509,8 @@ public class QuickNoteListener {
             JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e.getMessage(), "失败",
                     JOptionPane.ERROR_MESSAGE);
             log.error(ExceptionUtils.getStackTrace(e));
+        } finally {
+            QuickNoteSyntaxTextViewer.ignoreQuickSave = false;
         }
 
     }
