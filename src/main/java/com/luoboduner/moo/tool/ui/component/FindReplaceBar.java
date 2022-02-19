@@ -5,7 +5,10 @@ import com.formdev.flatlaf.util.StringUtils;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.luoboduner.moo.tool.ui.listener.func.HostListener;
+import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.fife.ui.rsyntaxtextarea.DocumentRange;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.RSyntaxUtilities;
@@ -40,6 +43,7 @@ import java.util.function.Consumer;
  * limitations under the License.
  */
 @Getter
+@Slf4j
 public class FindReplaceBar {
     private JPanel findOptionPanel;
     private JTextField findField;
@@ -173,23 +177,35 @@ public class FindReplaceBar {
     }
 
     private void replaceAll() {
-        // update search context
-        context.setSearchFor(findField.getText());
-        context.setReplaceWith(replaceField.getText());
+        try {
+            QuickNoteSyntaxTextViewer.ignoreQuickSave = true;
+            JsonBeautyListener.ignoreQuickSave = true;
+            HostListener.ignoreQuickSave = true;
+            // update search context
+            context.setSearchFor(findField.getText());
+            context.setReplaceWith(replaceField.getText());
 
-        // make sure that search wrap is disabled because otherwise it is easy
-        // to have endeless loop when replacing e.g. "a" with "aa"
-        boolean oldSearchWrap = context.getSearchWrap();
-        context.setSearchWrap(false);
+            // make sure that search wrap is disabled because otherwise it is easy
+            // to have endeless loop when replacing e.g. "a" with "aa"
+            boolean oldSearchWrap = context.getSearchWrap();
+            context.setSearchWrap(false);
 
-        // replace all
-        SearchResult result = SearchEngine.replaceAll(textArea, context);
+            // replace all
+            SearchResult result = SearchEngine.replaceAll(textArea, context);
 
-        // restore search wrap
-        context.setSearchWrap(oldSearchWrap);
+            // restore search wrap
+            context.setSearchWrap(oldSearchWrap);
 
-        // update matches info labels
-        updateMatchesLabel(result, true);
+            // update matches info labels
+            updateMatchesLabel(result, true);
+        } catch (Exception e) {
+            log.error(e.toString());
+        } finally {
+            QuickNoteSyntaxTextViewer.ignoreQuickSave = false;
+            JsonBeautyListener.ignoreQuickSave = false;
+            HostListener.ignoreQuickSave = false;
+        }
+
     }
 
     private void selectMatchNearCaret() {

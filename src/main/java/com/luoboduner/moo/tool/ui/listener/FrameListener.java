@@ -3,23 +3,14 @@ package com.luoboduner.moo.tool.ui.listener;
 
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
-import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
-import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
-import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.MybatisUtil;
-import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.time.DateFormatUtils;
-import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
-import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
-import java.util.Date;
 
 /**
  * <pre>
@@ -84,30 +75,6 @@ public class FrameListener {
     }
 
     public static void saveBeforeExit() {
-        QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
-        RSyntaxTextArea view = (RSyntaxTextArea) ((RTextScrollPane)quickNoteForm.getContentSplitPane().getLeftComponent()).getViewport().getView();
-        if (StringUtils.isNotBlank(view.getText())) {
-            String quickNoteName = QuickNoteListener.selectedName;
-            String now = SqliteUtil.nowDateForSqlite();
-            if (StringUtils.isEmpty(quickNoteName)) {
-                quickNoteName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-                TQuickNote tQuickNote = new TQuickNote();
-                tQuickNote.setName(quickNoteName);
-                tQuickNote.setContent(view.getText());
-                tQuickNote.setCreateTime(now);
-                tQuickNote.setModifiedTime(now);
-
-                quickNoteMapper.insert(tQuickNote);
-                QuickNoteListener.selectedName = quickNoteName;
-                QuickNoteForm.initNoteListTable();
-            } else {
-                TQuickNote tQuickNote = new TQuickNote();
-                tQuickNote.setName(quickNoteName);
-                tQuickNote.setContent(view.getText());
-
-                quickNoteMapper.updateByName(tQuickNote);
-            }
-        }
         App.config.setRecentTabIndex(MainWindow.getInstance().getTabbedPane().getSelectedIndex());
         App.config.save();
     }
