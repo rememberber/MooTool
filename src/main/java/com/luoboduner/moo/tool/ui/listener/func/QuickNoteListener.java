@@ -115,7 +115,7 @@ public class QuickNoteListener {
                 String syntaxName = e.getItem().toString();
 
                 if (StringUtils.isNotEmpty(syntaxName)) {
-                    if (selectedName != null) {
+                    if (selectedName != null && !QuickNoteSyntaxTextViewer.ignoreQuickSave) {
                         TQuickNote tQuickNote = new TQuickNote();
                         tQuickNote.setName(selectedName);
                         tQuickNote.setSyntax(syntaxName);
@@ -139,7 +139,7 @@ public class QuickNoteListener {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 String fontName = e.getItem().toString();
 
-                if (selectedName != null) {
+                if (selectedName != null && !QuickNoteSyntaxTextViewer.ignoreQuickSave) {
 
                     TQuickNote tQuickNote = new TQuickNote();
                     tQuickNote.setName(selectedName);
@@ -164,7 +164,7 @@ public class QuickNoteListener {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 int fontSize = Integer.parseInt(e.getItem().toString());
 
-                if (selectedName != null) {
+                if (selectedName != null && !QuickNoteSyntaxTextViewer.ignoreQuickSave) {
                     TQuickNote tQuickNote = new TQuickNote();
                     tQuickNote.setName(selectedName);
                     tQuickNote.setFontSize(String.valueOf(fontSize));
@@ -366,7 +366,7 @@ public class QuickNoteListener {
                 }
 //                Color color = UIManager.getColor(colorKey);
                 if (StringUtils.isNotEmpty(colorKey)) {
-                    if (selectedName != null) {
+                    if (selectedName != null && !QuickNoteSyntaxTextViewer.ignoreQuickSave) {
                         TQuickNote tQuickNote = new TQuickNote();
                         tQuickNote.setName(selectedName);
                         tQuickNote.setColor(colorKey);
