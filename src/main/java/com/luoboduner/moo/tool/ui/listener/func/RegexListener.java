@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
+import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.form.func.RegexForm;
 import org.fife.ui.rsyntaxtextarea.DocumentRange;
 import org.fife.ui.rsyntaxtextarea.RSyntaxUtilities;
@@ -23,6 +24,7 @@ public class RegexListener {
         context.setRegularExpression(true);
 
         regexForm.getRegexTextField().getDocument().addDocumentListener(new MarkAllUpdater());
+        regexForm.getMatchTestButton().addActionListener(e -> markAll());
     }
 
 
@@ -45,13 +47,20 @@ public class RegexListener {
     }
 
     private static void markAll() {
-        findOrMarkAll(false);
+        RegexForm regexForm = RegexForm.getInstance();
+        findOrMarkAll(true);
+
+        App.config.setRegexText(regexForm.getRegexTextField().getText());
+        App.config.save();
+
+        RegexForm.saveContent();
     }
 
     private static void findOrMarkAll(boolean find) {
         RegexForm regexForm = RegexForm.getInstance();
         String searchFor = regexForm.getRegexTextField().getText();
         context.setSearchFor(searchFor);
+        context.setMarkAll(true);
 
         // find
         SearchResult result = find

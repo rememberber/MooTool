@@ -6,8 +6,13 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.dao.TFuncContentMapper;
+import com.luoboduner.moo.tool.domain.TFuncContent;
+import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.component.RegexSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.listener.func.RegexListener;
+import com.luoboduner.moo.tool.util.MybatisUtil;
+import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.fife.ui.rtextarea.Gutter;
@@ -44,6 +49,8 @@ public class RegexForm {
     private static RegexForm regexForm;
 
     private static final Log logger = LogFactory.get();
+
+    private static TFuncContentMapper funcContentMapper = MybatisUtil.getSqlSession().getMapper(TFuncContentMapper.class);
 
     private RegexForm() {
         textArea = new RegexSyntaxTextViewer();
@@ -88,11 +95,39 @@ public class RegexForm {
 
         initUi();
 
+        regexForm.getRegexTextField().setText(App.config.getRegexText());
+
+        TFuncContent tFuncContent = funcContentMapper.selectByFunc(FuncConsts.REGEX);
+        if (tFuncContent != null) {
+            regexForm.getTextArea().setText(tFuncContent.getContent());
+        }
+
         RegexListener.addListeners();
     }
 
     private static void initUi() {
         regexForm.getRegexPanel().updateUI();
+    }
+
+    public static int saveContent() {
+        regexForm = getInstance();
+        String text = regexForm.getTextArea().getText();
+        String now = SqliteUtil.nowDateForSqlite();
+
+        TFuncContent tFuncContent = funcContentMapper.selectByFunc(FuncConsts.REGEX);
+        if (tFuncContent == null) {
+            tFuncContent = new TFuncContent();
+            tFuncContent.setFunc(FuncConsts.REGEX);
+            tFuncContent.setContent(text);
+            tFuncContent.setCreateTime(now);
+            tFuncContent.setModifiedTime(now);
+
+            return funcContentMapper.insert(tFuncContent);
+        } else {
+            tFuncContent.setContent(text);
+            tFuncContent.setModifiedTime(now);
+            return funcContentMapper.updateByPrimaryKeySelective(tFuncContent);
+        }
     }
 
     {
