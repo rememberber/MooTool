@@ -35,7 +35,7 @@
         <flatlaf.version>2.0.2</flatlaf.version>
         <flatlaf-extras.version>2.0.2</flatlaf-extras.version>
         <flatlaf-intellij-themes.version>2.0.2</flatlaf-intellij-themes.version>
-        <rsyntaxtextarea.version>3.1.6</rsyntaxtextarea.version>
+        <rsyntaxtextarea.version>3.2.0</rsyntaxtextarea.version>
         <sql-formatter.version>2.0.3</sql-formatter.version>
         <google-java-format.version>1.15.0</google-java-format.version>
     </properties>

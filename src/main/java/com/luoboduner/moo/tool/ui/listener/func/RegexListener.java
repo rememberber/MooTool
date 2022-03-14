@@ -48,7 +48,7 @@ public class RegexListener {
 
     private static void markAll() {
         RegexForm regexForm = RegexForm.getInstance();
-        findOrMarkAll(true);
+        findOrMarkAll(false);
 
         App.config.setRegexText(regexForm.getRegexTextField().getText());
         App.config.save();
@@ -61,6 +61,7 @@ public class RegexListener {
         String searchFor = regexForm.getRegexTextField().getText();
         context.setSearchFor(searchFor);
         context.setMarkAll(true);
+        context.setMatchCase(true);
 
         // find
         SearchResult result = find
