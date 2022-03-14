@@ -4,6 +4,7 @@ import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.google.common.collect.Lists;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
@@ -353,6 +354,14 @@ public class FavoriteColorForm {
         favoriteColorForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
         favoriteColorForm.getListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
         favoriteColorForm.getItemTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
+
+        favoriteColorForm.getListItemButton().setIcon(new FlatSVGIcon("icon/list.svg"));
+        favoriteColorForm.getDeleteItemButton().setIcon(new FlatSVGIcon("icon/remove.svg"));
+        favoriteColorForm.getDeleteListButton().setIcon(new FlatSVGIcon("icon/remove.svg"));
+        favoriteColorForm.getNewListButton().setIcon(new FlatSVGIcon("icon/add.svg"));
+        favoriteColorForm.getMoveUpButton().setIcon(new FlatSVGIcon("icon/up.svg"));
+        favoriteColorForm.getMoveDownButton().setIcon(new FlatSVGIcon("icon/down.svg"));
+
         initListTable();
         favoriteColorForm.getFavoriteColorPanel().updateUI();
     }
