@@ -257,13 +257,13 @@ public class FavoriteRegexForm {
                     for (int[] selectedRowArray : selectedRowArrays) {
                         int preRow = selectedRowArray[0] - 1;
                         Integer preId = (Integer) tableModel.getValueAt(preRow, 0);
-                        Integer preSortNum = (Integer) tableModel.getValueAt(preRow, 4);
+                        Integer preSortNum = (Integer) tableModel.getValueAt(preRow, 3);
 
                         TFavoriteRegexItem tFavoriteRegexItem;
                         for (int selectedRow : selectedRowArray) {
                             listSelectionModel.addSelectionInterval(selectedRow - 1, selectedRow - 1);
 
-                            Integer currentSortNum = (Integer) tableModel.getValueAt(selectedRow, 4);
+                            Integer currentSortNum = (Integer) tableModel.getValueAt(selectedRow, 3);
                             Integer currentId = (Integer) tableModel.getValueAt(selectedRow, 0);
                             tFavoriteRegexItem = new TFavoriteRegexItem();
                             tFavoriteRegexItem.setId(currentId);
@@ -315,7 +315,7 @@ public class FavoriteRegexForm {
 
                     for (int[] selectedRowArray : selectedRowArrays) {
                         int firstRow = selectedRowArray[0];
-                        Integer firstSortNum = (Integer) tableModel.getValueAt(firstRow, 4);
+                        Integer firstSortNum = (Integer) tableModel.getValueAt(firstRow, 3);
 
                         TFavoriteRegexItem tFavoriteRegexItem;
                         for (int selectedRow : selectedRowArray) {
@@ -323,7 +323,7 @@ public class FavoriteRegexForm {
 
                             Integer currentId = (Integer) tableModel.getValueAt(selectedRow, 0);
                             int nextRow = selectedRow + 1;
-                            Integer nextSortNum = (Integer) tableModel.getValueAt(nextRow, 4);
+                            Integer nextSortNum = (Integer) tableModel.getValueAt(nextRow, 3);
                             tFavoriteRegexItem = new TFavoriteRegexItem();
                             tFavoriteRegexItem.setId(currentId);
                             tFavoriteRegexItem.setSortNum(nextSortNum);
