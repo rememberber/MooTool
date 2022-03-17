@@ -120,16 +120,16 @@ public class MainWindow {
         tabbedPane.addTab("时间转换", new ImageIcon(getClass().getResource("/icon/clock.png")), timeConvertPanel);
         jsonBeautyPanel = new JPanel();
         jsonBeautyPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("Json格式化", new ImageIcon(getClass().getResource("/icon/object_dark.png")), jsonBeautyPanel);
+        tabbedPane.addTab("JSON", new ImageIcon(getClass().getResource("/icon/object_dark.png")), jsonBeautyPanel);
         hostPanel = new JPanel();
         hostPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("Host切换", new ImageIcon(getClass().getResource("/icon/check.png")), hostPanel);
+        tabbedPane.addTab("Host", new ImageIcon(getClass().getResource("/icon/check.png")), hostPanel);
         httpRequestPanel = new JPanel();
         httpRequestPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("HTTP请求", new ImageIcon(getClass().getResource("/icon/global.png")), httpRequestPanel);
+        tabbedPane.addTab("HTTP", new ImageIcon(getClass().getResource("/icon/global.png")), httpRequestPanel);
         encodePanel = new JPanel();
         encodePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("编码转换", new ImageIcon(getClass().getResource("/icon/exchange.png")), encodePanel);
+        tabbedPane.addTab("编码", new ImageIcon(getClass().getResource("/icon/exchange.png")), encodePanel);
         qrCodePanel = new JPanel();
         qrCodePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("二维码", new ImageIcon(getClass().getResource("/icon/QR_code.png")), qrCodePanel);
@@ -153,10 +153,10 @@ public class MainWindow {
         tabbedPane.addTab("翻译", new ImageIcon(getClass().getResource("/icon/translate.png")), translationPanel);
         cronPanel = new JPanel();
         cronPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("Cron表达式", new ImageIcon(getClass().getResource("/icon/cron.png")), cronPanel);
+        tabbedPane.addTab("Cron", new ImageIcon(getClass().getResource("/icon/cron.png")), cronPanel);
         regexPanel = new JPanel();
         regexPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("正则表达式", new ImageIcon(getClass().getResource("/icon/reg.png")), regexPanel);
+        tabbedPane.addTab("正则", new ImageIcon(getClass().getResource("/icon/reg.png")), regexPanel);
     }
 
     /**

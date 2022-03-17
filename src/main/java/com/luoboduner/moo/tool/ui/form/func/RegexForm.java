@@ -38,7 +38,7 @@ public class RegexForm {
     private JPanel regexPanel;
     private JTextField regexTextField;
     private JButton matchTestButton;
-    private JButton favoriteButton;
+    private JButton favoriteBookButton;
     private JButton addToFavoriteButton;
     private JPanel contentPanel;
     private JLabel matchesLabel;
@@ -163,9 +163,9 @@ public class RegexForm {
         panel3.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         regexTextField = new JTextField();
         panel3.add(regexTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-        favoriteButton = new JButton();
-        favoriteButton.setText("收藏夹");
-        panel3.add(favoriteButton, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        favoriteBookButton = new JButton();
+        favoriteBookButton.setText("收藏夹");
+        panel3.add(favoriteBookButton, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         addToFavoriteButton = new JButton();
         addToFavoriteButton.setIcon(new ImageIcon(getClass().getResource("/icon/favorite.png")));
         addToFavoriteButton.setText("");
