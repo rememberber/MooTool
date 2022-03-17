@@ -1,8 +1,8 @@
 create table if not exists t_favorite_regex_list
 (
     id            integer
-    constraint t_favorite_regex_list_pk
-    primary key autoincrement,
+        constraint t_favorite_regex_list_pk
+            primary key autoincrement,
     title         text,
     remark        text,
     create_time   datetime,
@@ -15,8 +15,8 @@ create unique index if not exists t_favorite_regex_list_uindex
 create table if not exists t_favorite_regex_item
 (
     id            integer
-    constraint t_favorite_regex_item_pk
-    primary key autoincrement,
+        constraint t_favorite_regex_item_pk
+            primary key autoincrement,
     list_id       integer,
     name          text,
     value         text,
@@ -28,3 +28,6 @@ create table if not exists t_favorite_regex_item
 
 create unique index if not exists t_favorite_regex_item_uindex
     on t_favorite_regex_item (list_id, name);
+
+INSERT INTO t_favorite_regex_list (id, title, remark, create_time, modified_time)
+VALUES (1, '默认收藏夹', null, '1574434141000', '1574434144000');

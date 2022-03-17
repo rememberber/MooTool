@@ -406,8 +406,6 @@ public class FavoriteRegexForm {
         String[] headerNames = {"id", "regex", "名称", "排序号"};
         DefaultTableModel model = new DefaultTableModel(null, headerNames);
         favoriteRegexForm.getItemTable().setModel(model);
-        favoriteRegexForm.getItemTable().getColumn("regex").setPreferredWidth(100);
-        favoriteRegexForm.getItemTable().getColumn("regex").setMaxWidth(100);
         // 隐藏表头
         JTableUtil.hideTableHeader(favoriteRegexForm.getItemTable());
         // 隐藏id列和排序列

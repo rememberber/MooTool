@@ -1,6 +1,7 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.dialog.FavoriteRegexDialog;
 import com.luoboduner.moo.tool.ui.form.func.RegexForm;
 import com.luoboduner.moo.tool.ui.frame.FavoriteRegexFrame;
 import org.fife.ui.rsyntaxtextarea.DocumentRange;
@@ -28,6 +29,12 @@ public class RegexListener {
         regexForm.getMatchTestButton().addActionListener(e -> markAll());
 
         regexForm.getFavoriteBookButton().addActionListener(e -> FavoriteRegexFrame.showWindow());
+        regexForm.getAddToFavoriteButton().addActionListener(e -> {
+            FavoriteRegexDialog favoriteRegexDialog = new FavoriteRegexDialog();
+            favoriteRegexDialog.pack();
+            favoriteRegexDialog.init(regexForm.getRegexTextField().getText());
+            favoriteRegexDialog.setVisible(true);
+        });
     }
 
 

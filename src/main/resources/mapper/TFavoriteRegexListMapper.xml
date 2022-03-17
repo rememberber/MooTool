@@ -23,6 +23,12 @@
         from t_favorite_regex_list
         order by create_time desc
     </select>
+    <select id="selectByTitle" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from t_favorite_regex_list
+        where title = #{title,jdbcType=INTEGER}
+    </select>
     <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
         delete
         from t_favorite_regex_list

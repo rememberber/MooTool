@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -106,6 +107,7 @@ public class RegexForm {
     }
 
     private static void initUi() {
+        regexForm.getAddToFavoriteButton().setIcon(new FlatSVGIcon("icon/favorite.svg"));
         regexForm.getRegexPanel().updateUI();
     }
 

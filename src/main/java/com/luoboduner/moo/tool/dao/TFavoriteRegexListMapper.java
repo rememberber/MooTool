@@ -18,4 +18,6 @@ public interface TFavoriteRegexListMapper {
     int updateByPrimaryKey(TFavoriteRegexList record);
 
     List<TFavoriteRegexList> selectAll();
+
+    TFavoriteRegexList selectByTitle(String selectedItem);
 }
