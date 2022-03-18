@@ -69,29 +69,29 @@ public class FavoriteRegexForm {
 
     private FavoriteRegexForm() {
         UndoUtil.register(this);
-        this.getFavoriteRegexPanel().registerKeyboardAction(e -> FindResultFrame.getInstance().dispose(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        favoriteRegexPanel.registerKeyboardAction(e -> FindResultFrame.getInstance().dispose(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
         // 点击左侧表格事件
         listTable.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
                 ThreadUtil.execute(() -> {
-                    int selectedRow = favoriteRegexForm.getListTable().getSelectedRow();
-                    int listId = Integer.parseInt(favoriteRegexForm.getListTable().getValueAt(selectedRow, 0).toString());
+                    int selectedRow = listTable.getSelectedRow();
+                    int listId = Integer.parseInt(listTable.getValueAt(selectedRow, 0).toString());
                     initItemTable(listId);
                 });
                 super.mousePressed(e);
             }
         });
 
-        this.getFavoriteRegexPanel().registerKeyboardAction(e -> FavoriteRegexFrame.exit(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        favoriteRegexPanel.registerKeyboardAction(e -> FavoriteRegexFrame.exit(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
         // 左侧列表鼠标点击事件
         listTable.addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                favoriteRegexForm.getListControlPanel().setVisible(true);
-                favoriteRegexForm.getItemControlPanel().setVisible(false);
+                listControlPanel.setVisible(true);
+                itemControlPanel.setVisible(false);
             }
 
             @Override
@@ -119,8 +119,8 @@ public class FavoriteRegexForm {
         itemTable.addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                favoriteRegexForm.getListControlPanel().setVisible(false);
-                favoriteRegexForm.getItemControlPanel().setVisible(true);
+                listControlPanel.setVisible(false);
+                itemControlPanel.setVisible(true);
             }
 
             @Override
@@ -145,11 +145,11 @@ public class FavoriteRegexForm {
         });
 
         listItemButton.addActionListener(e -> {
-            int currentDividerLocation = favoriteRegexForm.getSplitPane().getDividerLocation();
+            int currentDividerLocation = splitPane.getDividerLocation();
             if (currentDividerLocation < 5) {
-                favoriteRegexForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
+                splitPane.setDividerLocation((int) (App.mainFrame.getWidth() / 5));
             } else {
-                favoriteRegexForm.getSplitPane().setDividerLocation(0);
+                splitPane.setDividerLocation(0);
             }
         });
         newListButton.addActionListener(e -> {
@@ -165,9 +165,9 @@ public class FavoriteRegexForm {
                     initListTable();
                 } catch (Exception ex) {
                     if (ex.getMessage().contains("constraint")) {
-                        JOptionPane.showMessageDialog(favoriteRegexForm.getFavoriteRegexPanel(), "存在相同的名称，请重新命名！", "失败", JOptionPane.WARNING_MESSAGE);
+                        JOptionPane.showMessageDialog(favoriteRegexPanel, "存在相同的名称，请重新命名！", "失败", JOptionPane.WARNING_MESSAGE);
                     } else {
-                        JOptionPane.showMessageDialog(favoriteRegexForm.getFavoriteRegexPanel(), "异常：" + ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
+                        JOptionPane.showMessageDialog(favoriteRegexPanel, "异常：" + ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
                     }
                     logger.error(ExceptionUtils.getStackTrace(ex));
                 }
@@ -177,14 +177,14 @@ public class FavoriteRegexForm {
         // 列表删除按钮事件
         deleteListButton.addActionListener(e -> {
             try {
-                int[] selectedRows = favoriteRegexForm.getListTable().getSelectedRows();
+                int[] selectedRows = listTable.getSelectedRows();
 
                 if (selectedRows.length == 0) {
-                    JOptionPane.showMessageDialog(favoriteRegexForm.getFavoriteRegexPanel(), "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(favoriteRegexPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
                 } else {
-                    int isDelete = JOptionPane.showConfirmDialog(favoriteRegexForm.getFavoriteRegexPanel(), "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                    int isDelete = JOptionPane.showConfirmDialog(favoriteRegexPanel, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
                     if (isDelete == JOptionPane.YES_OPTION) {
-                        DefaultTableModel tableModel = (DefaultTableModel) favoriteRegexForm.getListTable().getModel();
+                        DefaultTableModel tableModel = (DefaultTableModel) listTable.getModel();
 
                         for (int i = 0; i < selectedRows.length; i++) {
                             int selectedRow = selectedRows[i];
@@ -195,7 +195,7 @@ public class FavoriteRegexForm {
                     }
                 }
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(favoriteRegexForm.getFavoriteRegexPanel(), "删除失败！\n\n" + e1.getMessage(), "失败",
+                JOptionPane.showMessageDialog(favoriteRegexPanel, "删除失败！\n\n" + e1.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
                 logger.error(ExceptionUtils.getStackTrace(e1));
             }
@@ -204,17 +204,17 @@ public class FavoriteRegexForm {
         // Item删除按钮事件
         deleteItemButton.addActionListener(e -> {
             try {
-                int[] selectedRows = favoriteRegexForm.getItemTable().getSelectedRows();
+                int[] selectedRows = itemTable.getSelectedRows();
 
                 if (selectedRows.length == 0) {
-                    JOptionPane.showMessageDialog(favoriteRegexForm.getFavoriteRegexPanel(), "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(favoriteRegexPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
                 } else {
-                    int isDelete = JOptionPane.showConfirmDialog(favoriteRegexForm.getFavoriteRegexPanel(), "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                    int isDelete = JOptionPane.showConfirmDialog(favoriteRegexPanel, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
                     if (isDelete == JOptionPane.YES_OPTION) {
-                        DefaultTableModel tableModel = (DefaultTableModel) favoriteRegexForm.getItemTable().getModel();
+                        DefaultTableModel tableModel = (DefaultTableModel) itemTable.getModel();
 
                         for (int i = selectedRows.length; i > 0; i--) {
-                            int selectedRow = favoriteRegexForm.getItemTable().getSelectedRow();
+                            int selectedRow = itemTable.getSelectedRow();
                             Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
                             favoriteRegexItemMapper.deleteByPrimaryKey(id);
                             tableModel.removeRow(selectedRow);
@@ -222,22 +222,22 @@ public class FavoriteRegexForm {
                     }
                 }
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(favoriteRegexForm.getFavoriteRegexPanel(), "删除失败！\n\n" + e1.getMessage(), "失败",
+                JOptionPane.showMessageDialog(favoriteRegexPanel, "删除失败！\n\n" + e1.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
                 logger.error(ExceptionUtils.getStackTrace(e1));
             }
         });
         moveUpButton.addActionListener(e -> {
             try {
-                int[] selectedRows = favoriteRegexForm.getItemTable().getSelectedRows();
+                int[] selectedRows = itemTable.getSelectedRows();
 
                 if (selectedRows.length == 0) {
-                    JOptionPane.showMessageDialog(favoriteRegexForm.getFavoriteRegexPanel(), "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(favoriteRegexPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
                 } else if (selectedRows[0] == 0) {
-                    JOptionPane.showMessageDialog(favoriteRegexForm.getFavoriteRegexPanel(), "已到顶部！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(favoriteRegexPanel, "已到顶部！", "提示", JOptionPane.INFORMATION_MESSAGE);
                 } else {
                     ListSelectionModel listSelectionModel = new DefaultListSelectionModel();
-                    DefaultTableModel tableModel = (DefaultTableModel) favoriteRegexForm.getItemTable().getModel();
+                    DefaultTableModel tableModel = (DefaultTableModel) itemTable.getModel();
 
                     List<int[]> selectedRowArrays = Lists.newArrayList();
                     int startIndex = 0;
@@ -278,25 +278,25 @@ public class FavoriteRegexForm {
                     }
 
                     initItemTable(null);
-                    favoriteRegexForm.getItemTable().setSelectionModel(listSelectionModel);
+                    itemTable.setSelectionModel(listSelectionModel);
                 }
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(favoriteRegexForm.getFavoriteRegexPanel(), "操作失败！\n\n" + e1.getMessage(), "失败",
+                JOptionPane.showMessageDialog(favoriteRegexPanel, "操作失败！\n\n" + e1.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
                 logger.error(ExceptionUtils.getStackTrace(e1));
             }
         });
         moveDownButton.addActionListener(e -> {
             try {
-                int[] selectedRows = favoriteRegexForm.getItemTable().getSelectedRows();
+                int[] selectedRows = itemTable.getSelectedRows();
 
                 if (selectedRows.length == 0) {
-                    JOptionPane.showMessageDialog(favoriteRegexForm.getFavoriteRegexPanel(), "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
-                } else if (selectedRows[selectedRows.length - 1] == favoriteRegexForm.getItemTable().getRowCount() - 1) {
-                    JOptionPane.showMessageDialog(favoriteRegexForm.getFavoriteRegexPanel(), "已到底部！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(favoriteRegexPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                } else if (selectedRows[selectedRows.length - 1] == itemTable.getRowCount() - 1) {
+                    JOptionPane.showMessageDialog(favoriteRegexPanel, "已到底部！", "提示", JOptionPane.INFORMATION_MESSAGE);
                 } else {
                     ListSelectionModel listSelectionModel = new DefaultListSelectionModel();
-                    DefaultTableModel tableModel = (DefaultTableModel) favoriteRegexForm.getItemTable().getModel();
+                    DefaultTableModel tableModel = (DefaultTableModel) itemTable.getModel();
 
                     List<int[]> selectedRowArrays = Lists.newArrayList();
                     int startIndex = 0;
@@ -336,10 +336,10 @@ public class FavoriteRegexForm {
                     }
 
                     initItemTable(null);
-                    favoriteRegexForm.getItemTable().setSelectionModel(listSelectionModel);
+                    itemTable.setSelectionModel(listSelectionModel);
                 }
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(favoriteRegexForm.getFavoriteRegexPanel(), "操作失败！\n\n" + e1.getMessage(), "失败",
+                JOptionPane.showMessageDialog(favoriteRegexPanel, "操作失败！\n\n" + e1.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
                 logger.error(ExceptionUtils.getStackTrace(e1));
             }
