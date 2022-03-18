@@ -20,6 +20,7 @@ import org.fife.ui.rtextarea.Gutter;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import javax.swing.plaf.FontUIResource;
 import javax.swing.text.StyleContext;
 import java.awt.*;
@@ -43,6 +44,11 @@ public class RegexForm {
     private JButton addToFavoriteButton;
     private JPanel contentPanel;
     private JLabel matchesLabel;
+    private JTextField a139DTextField;
+    private JTextField magnetXtUrnBtihTextField1;
+    private JTextField idSSTextField;
+    private JTextField aFAF09TextField;
+    private JTextField httpS12TextField;
 
     private RegexSyntaxTextViewer textArea;
     private RTextScrollPane scrollPane;
@@ -194,9 +200,55 @@ public class RegexForm {
         final JPanel panel5 = new JPanel();
         panel5.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane1.addTab("常用正则表达式", panel5);
+        final JScrollPane scrollPane1 = new JScrollPane();
+        panel5.add(scrollPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        scrollPane1.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         final JPanel panel6 = new JPanel();
-        panel6.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("常识", panel6);
+        panel6.setLayout(new GridLayoutManager(6, 2, new Insets(20, 20, 20, 20), -1, -1));
+        panel6.setMaximumSize(new Dimension(-1, -1));
+        panel6.setMinimumSize(new Dimension(-1, -1));
+        panel6.setPreferredSize(new Dimension(-1, -1));
+        scrollPane1.setViewportView(panel6);
+        final Spacer spacer2 = new Spacer();
+        panel6.add(spacer2, new GridConstraints(5, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        final JLabel label3 = new JLabel();
+        label3.setText("电话号码");
+        panel6.add(label3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label4 = new JLabel();
+        label4.setText("HTML标签属性(id=\"***\")");
+        panel6.add(label4, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label5 = new JLabel();
+        label5.setText("颜色代码(#FFFFFF)");
+        panel6.add(label5, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label6 = new JLabel();
+        label6.setText("jpg图片");
+        panel6.add(label6, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JLabel label7 = new JLabel();
+        label7.setText("磁力链接");
+        panel6.add(label7, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        a139DTextField = new JTextField();
+        a139DTextField.setEditable(false);
+        a139DTextField.setText("1[3-9]\\d{9}");
+        panel6.add(a139DTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        idSSTextField = new JTextField();
+        idSSTextField.setEditable(false);
+        idSSTextField.setText("(?<=id=\\\")[\\s\\S]*?(?=\\\")");
+        panel6.add(idSSTextField, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        aFAF09TextField = new JTextField();
+        aFAF09TextField.setEditable(false);
+        aFAF09TextField.setText("#([a-fA-F0-9]{6})");
+        panel6.add(aFAF09TextField, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        httpS12TextField = new JTextField();
+        httpS12TextField.setEditable(false);
+        httpS12TextField.setText("http[s:]{1,2}//[^\\s'\"<>]*?.jpg");
+        panel6.add(httpS12TextField, new GridConstraints(3, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        magnetXtUrnBtihTextField1 = new JTextField();
+        magnetXtUrnBtihTextField1.setEditable(false);
+        magnetXtUrnBtihTextField1.setText("magnet:\\?xt=urn:btih:[0-9a-fA-F]{40,}");
+        panel6.add(magnetXtUrnBtihTextField1, new GridConstraints(4, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        final JPanel panel7 = new JPanel();
+        panel7.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPane1.addTab("常识", panel7);
     }
 
     /**

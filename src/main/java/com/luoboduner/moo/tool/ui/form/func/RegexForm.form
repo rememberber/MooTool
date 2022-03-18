@@ -135,7 +135,129 @@
             </constraints>
             <properties/>
             <border type="none"/>
-            <children/>
+            <children>
+              <scrollpane id="78442">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="empty"/>
+                <children>
+                  <grid id="24064" layout-manager="GridLayoutManager" row-count="6" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                    <margin top="20" left="20" bottom="20" right="20"/>
+                    <constraints/>
+                    <properties>
+                      <maximumSize width="-1" height="-1"/>
+                      <minimumSize width="-1" height="-1"/>
+                      <preferredSize width="-1" height="-1"/>
+                    </properties>
+                    <border type="none"/>
+                    <children>
+                      <vspacer id="70610">
+                        <constraints>
+                          <grid row="5" column="0" row-span="1" col-span="2" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                      </vspacer>
+                      <component id="1ccc1" class="javax.swing.JLabel">
+                        <constraints>
+                          <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="电话号码"/>
+                        </properties>
+                      </component>
+                      <component id="57ef4" class="javax.swing.JLabel">
+                        <constraints>
+                          <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="HTML标签属性(id=&quot;***&quot;)"/>
+                        </properties>
+                      </component>
+                      <component id="8f4a1" class="javax.swing.JLabel">
+                        <constraints>
+                          <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="颜色代码(#FFFFFF)"/>
+                        </properties>
+                      </component>
+                      <component id="e31d1" class="javax.swing.JLabel">
+                        <constraints>
+                          <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="jpg图片"/>
+                        </properties>
+                      </component>
+                      <component id="bd68b" class="javax.swing.JLabel">
+                        <constraints>
+                          <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value="磁力链接"/>
+                        </properties>
+                      </component>
+                      <component id="d3706" class="javax.swing.JTextField" binding="a139DTextField" default-binding="true">
+                        <constraints>
+                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                            <preferred-size width="150" height="-1"/>
+                          </grid>
+                        </constraints>
+                        <properties>
+                          <editable value="false"/>
+                          <text value="1[3-9]\d{9}"/>
+                        </properties>
+                      </component>
+                      <component id="dd40b" class="javax.swing.JTextField" binding="idSSTextField" default-binding="true">
+                        <constraints>
+                          <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                            <preferred-size width="150" height="-1"/>
+                          </grid>
+                        </constraints>
+                        <properties>
+                          <editable value="false"/>
+                          <text value="(?&lt;=id=\&quot;)[\s\S]*?(?=\&quot;)"/>
+                        </properties>
+                      </component>
+                      <component id="7905a" class="javax.swing.JTextField" binding="aFAF09TextField" default-binding="true">
+                        <constraints>
+                          <grid row="2" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                            <preferred-size width="150" height="-1"/>
+                          </grid>
+                        </constraints>
+                        <properties>
+                          <editable value="false"/>
+                          <text value="#([a-fA-F0-9]{6})"/>
+                        </properties>
+                      </component>
+                      <component id="e8222" class="javax.swing.JTextField" binding="httpS12TextField" default-binding="true">
+                        <constraints>
+                          <grid row="3" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                            <preferred-size width="150" height="-1"/>
+                          </grid>
+                        </constraints>
+                        <properties>
+                          <editable value="false"/>
+                          <text value="http[s:]{1,2}//[^\s'&quot;&lt;&gt;]*?.jpg"/>
+                        </properties>
+                      </component>
+                      <component id="7f88a" class="javax.swing.JTextField" binding="magnetXtUrnBtihTextField1" default-binding="true">
+                        <constraints>
+                          <grid row="4" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                            <preferred-size width="150" height="-1"/>
+                          </grid>
+                        </constraints>
+                        <properties>
+                          <editable value="false"/>
+                          <text value="magnet:\?xt=urn:btih:[0-9a-fA-F]{40,}"/>
+                        </properties>
+                      </component>
+                    </children>
+                  </grid>
+                </children>
+              </scrollpane>
+            </children>
           </grid>
           <grid id="5dc0f" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
