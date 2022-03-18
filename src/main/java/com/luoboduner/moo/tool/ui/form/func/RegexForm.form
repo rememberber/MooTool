@@ -140,21 +140,17 @@
             </properties>
             <border type="none"/>
             <children>
-              <scrollpane id="78442">
+              <scrollpane id="f69c3">
                 <constraints>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
                 </constraints>
                 <properties/>
                 <border type="empty"/>
                 <children>
-                  <grid id="24064" layout-manager="GridLayoutManager" row-count="10" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                  <grid id="17835" layout-manager="GridLayoutManager" row-count="10" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                     <margin top="20" left="20" bottom="20" right="20"/>
                     <constraints/>
-                    <properties>
-                      <maximumSize width="-1" height="-1"/>
-                      <minimumSize width="-1" height="-1"/>
-                      <preferredSize width="-1" height="-1"/>
-                    </properties>
+                    <properties/>
                     <border type="none"/>
                     <children>
                       <vspacer id="70610">

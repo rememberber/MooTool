@@ -212,9 +212,6 @@ public class RegexForm {
         scrollPane1.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         final JPanel panel6 = new JPanel();
         panel6.setLayout(new GridLayoutManager(10, 2, new Insets(20, 20, 20, 20), -1, -1));
-        panel6.setMaximumSize(new Dimension(-1, -1));
-        panel6.setMinimumSize(new Dimension(-1, -1));
-        panel6.setPreferredSize(new Dimension(-1, -1));
         scrollPane1.setViewportView(panel6);
         final Spacer spacer2 = new Spacer();
         panel6.add(spacer2, new GridConstraints(9, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
