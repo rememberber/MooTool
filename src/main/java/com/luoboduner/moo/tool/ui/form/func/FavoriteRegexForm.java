@@ -1,6 +1,5 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
-import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
@@ -23,16 +22,14 @@ import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.KeyEvent;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
+import java.awt.event.*;
 import java.util.List;
 
 /**
@@ -44,6 +41,7 @@ import java.util.List;
  * @since 2022/03/14.
  */
 @Getter
+@Slf4j
 public class FavoriteRegexForm {
     private JPanel favoriteRegexPanel;
     private JTable listTable;
@@ -75,45 +73,14 @@ public class FavoriteRegexForm {
         listTable.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                ThreadUtil.execute(() -> {
-                    int selectedRow = listTable.getSelectedRow();
-                    int listId = Integer.parseInt(listTable.getValueAt(selectedRow, 0).toString());
-                    initItemTable(listId);
-                });
+                viewListBySelected();
+                listControlPanel.setVisible(true);
+                itemControlPanel.setVisible(false);
                 super.mousePressed(e);
             }
         });
 
         favoriteRegexPanel.registerKeyboardAction(e -> FavoriteRegexFrame.exit(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
-
-        // 左侧列表鼠标点击事件
-        listTable.addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                listControlPanel.setVisible(true);
-                itemControlPanel.setVisible(false);
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-
-            }
-        });
 
         // 右侧列表鼠标点击事件
         itemTable.addMouseListener(new MouseListener() {
@@ -175,31 +142,7 @@ public class FavoriteRegexForm {
         });
 
         // 列表删除按钮事件
-        deleteListButton.addActionListener(e -> {
-            try {
-                int[] selectedRows = listTable.getSelectedRows();
-
-                if (selectedRows.length == 0) {
-                    JOptionPane.showMessageDialog(favoriteRegexPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    int isDelete = JOptionPane.showConfirmDialog(favoriteRegexPanel, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
-                    if (isDelete == JOptionPane.YES_OPTION) {
-                        DefaultTableModel tableModel = (DefaultTableModel) listTable.getModel();
-
-                        for (int i = 0; i < selectedRows.length; i++) {
-                            int selectedRow = selectedRows[i];
-                            Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
-                            favoriteRegexListMapper.deleteByPrimaryKey(id);
-                        }
-                        initListTable();
-                    }
-                }
-            } catch (Exception e1) {
-                JOptionPane.showMessageDialog(favoriteRegexPanel, "删除失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
-                logger.error(ExceptionUtils.getStackTrace(e1));
-            }
-        });
+        deleteListButton.addActionListener(e -> deleteList());
 
         // Item删除按钮事件
         deleteItemButton.addActionListener(e -> {
@@ -344,6 +287,77 @@ public class FavoriteRegexForm {
                 logger.error(ExceptionUtils.getStackTrace(e1));
             }
         });
+
+        // 左侧列表按键事件（重命名）
+        listTable.addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+
+            }
+
+            @Override
+            public void keyPressed(KeyEvent evt) {
+
+            }
+
+            @Override
+            public void keyReleased(KeyEvent evt) {
+                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+                    int selectedRow = listTable.getSelectedRow();
+                    int id = Integer.parseInt(String.valueOf(listTable.getValueAt(selectedRow, 0)));
+                    String title = String.valueOf(listTable.getValueAt(selectedRow, 1));
+                    if (StringUtils.isNotBlank(title)) {
+                        TFavoriteRegexList tFavoriteRegexList = new TFavoriteRegexList();
+                        tFavoriteRegexList.setId(id);
+                        tFavoriteRegexList.setTitle(title);
+                        try {
+                            favoriteRegexListMapper.updateByPrimaryKeySelective(tFavoriteRegexList);
+                        } catch (Exception e) {
+                            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
+                            JsonBeautyForm.initListTable();
+                            log.error(e.toString());
+                        }
+                    }
+                    viewListBySelected();
+                } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
+                    deleteList();
+                } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
+                    viewListBySelected();
+                }
+            }
+        });
+    }
+
+    private void deleteList() {
+        try {
+            int[] selectedRows = listTable.getSelectedRows();
+
+            if (selectedRows.length == 0) {
+                JOptionPane.showMessageDialog(favoriteRegexPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                int isDelete = JOptionPane.showConfirmDialog(favoriteRegexPanel, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                if (isDelete == JOptionPane.YES_OPTION) {
+                    DefaultTableModel tableModel = (DefaultTableModel) listTable.getModel();
+
+                    for (int i = 0; i < selectedRows.length; i++) {
+                        int selectedRow = selectedRows[i];
+                        Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
+                        favoriteRegexListMapper.deleteByPrimaryKey(id);
+                    }
+                    initListTable();
+                }
+            }
+        } catch (Exception e1) {
+            JOptionPane.showMessageDialog(favoriteRegexPanel, "删除失败！\n\n" + e1.getMessage(), "失败",
+                    JOptionPane.ERROR_MESSAGE);
+            logger.error(ExceptionUtils.getStackTrace(e1));
+        }
+    }
+
+    private void viewListBySelected() {
+        int selectedRow = listTable.getSelectedRow();
+        int listId = Integer.parseInt(listTable.getValueAt(selectedRow, 0).toString());
+        initItemTable(listId);
     }
 
     public void init() {
