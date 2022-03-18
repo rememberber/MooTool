@@ -146,29 +146,7 @@ public class FavoriteRegexForm {
 
         // Item删除按钮事件
         deleteItemButton.addActionListener(e -> {
-            try {
-                int[] selectedRows = itemTable.getSelectedRows();
-
-                if (selectedRows.length == 0) {
-                    JOptionPane.showMessageDialog(favoriteRegexPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
-                } else {
-                    int isDelete = JOptionPane.showConfirmDialog(favoriteRegexPanel, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
-                    if (isDelete == JOptionPane.YES_OPTION) {
-                        DefaultTableModel tableModel = (DefaultTableModel) itemTable.getModel();
-
-                        for (int i = selectedRows.length; i > 0; i--) {
-                            int selectedRow = itemTable.getSelectedRow();
-                            Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
-                            favoriteRegexItemMapper.deleteByPrimaryKey(id);
-                            tableModel.removeRow(selectedRow);
-                        }
-                    }
-                }
-            } catch (Exception e1) {
-                JOptionPane.showMessageDialog(favoriteRegexPanel, "删除失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
-                logger.error(ExceptionUtils.getStackTrace(e1));
-            }
+            deleteItem();
         });
         moveUpButton.addActionListener(e -> {
             try {
@@ -326,6 +304,70 @@ public class FavoriteRegexForm {
                 }
             }
         });
+
+        // 右侧项目列表按键事件（重命名）
+        itemTable.addKeyListener(new KeyListener() {
+            @Override
+            public void keyTyped(KeyEvent e) {
+
+            }
+
+            @Override
+            public void keyPressed(KeyEvent evt) {
+
+            }
+
+            @Override
+            public void keyReleased(KeyEvent evt) {
+                if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+                    int selectedRow = itemTable.getSelectedRow();
+                    int id = Integer.parseInt(String.valueOf(itemTable.getValueAt(selectedRow, 0)));
+                    String value = String.valueOf(itemTable.getValueAt(selectedRow, 1));
+                    String title = String.valueOf(itemTable.getValueAt(selectedRow, 2));
+                    if (StringUtils.isNotBlank(title)) {
+                        TFavoriteRegexItem tFavoriteRegexItem = new TFavoriteRegexItem();
+                        tFavoriteRegexItem.setId(id);
+                        tFavoriteRegexItem.setName(title);
+                        tFavoriteRegexItem.setValue(value);
+                        try {
+                            favoriteRegexItemMapper.updateByPrimaryKeySelective(tFavoriteRegexItem);
+                        } catch (Exception e) {
+                            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
+                            viewListBySelected();
+                            log.error(e.toString());
+                        }
+                    }
+                } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
+                    deleteItem();
+                }
+            }
+        });
+    }
+
+    private void deleteItem() {
+        try {
+            int[] selectedRows = itemTable.getSelectedRows();
+
+            if (selectedRows.length == 0) {
+                JOptionPane.showMessageDialog(favoriteRegexPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+            } else {
+                int isDelete = JOptionPane.showConfirmDialog(favoriteRegexPanel, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                if (isDelete == JOptionPane.YES_OPTION) {
+                    DefaultTableModel tableModel = (DefaultTableModel) itemTable.getModel();
+
+                    for (int i = selectedRows.length; i > 0; i--) {
+                        int selectedRow = itemTable.getSelectedRow();
+                        Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
+                        favoriteRegexItemMapper.deleteByPrimaryKey(id);
+                        tableModel.removeRow(selectedRow);
+                    }
+                }
+            }
+        } catch (Exception e1) {
+            JOptionPane.showMessageDialog(favoriteRegexPanel, "删除失败！\n\n" + e1.getMessage(), "失败",
+                    JOptionPane.ERROR_MESSAGE);
+            logger.error(ExceptionUtils.getStackTrace(e1));
+        }
     }
 
     private void deleteList() {
