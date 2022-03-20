@@ -13,6 +13,7 @@ import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.component.RegexSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.listener.func.RegexListener;
 import com.luoboduner.moo.tool.util.MybatisUtil;
+import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
@@ -65,6 +66,7 @@ public class RegexForm {
     private JTextField a19D$TextField3;
     private JTextField a19D0$TextField;
     private JTextField a19DDTextField;
+    private JScrollPane commonRegexScrollPane;
 
     private RegexSyntaxTextViewer textArea;
     private RTextScrollPane scrollPane;
@@ -131,6 +133,8 @@ public class RegexForm {
     private static void initUi() {
         regexForm.getAddToFavoriteButton().setIcon(new FlatSVGIcon("icon/favorite.svg"));
         regexForm.getRegexPanel().updateUI();
+
+        ScrollUtil.smoothPane(regexForm.getCommonRegexScrollPane());
     }
 
     public static int saveContent() {
@@ -219,12 +223,12 @@ public class RegexForm {
         panel5.setMinimumSize(new Dimension(-1, -1));
         panel5.setPreferredSize(new Dimension(-1, -1));
         tabbedPane1.addTab("常用正则表达式", panel5);
-        final JScrollPane scrollPane1 = new JScrollPane();
-        panel5.add(scrollPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        scrollPane1.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
+        commonRegexScrollPane = new JScrollPane();
+        panel5.add(commonRegexScrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        commonRegexScrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         final JPanel panel6 = new JPanel();
         panel6.setLayout(new GridLayoutManager(26, 2, new Insets(20, 20, 20, 20), -1, -1));
-        scrollPane1.setViewportView(panel6);
+        commonRegexScrollPane.setViewportView(panel6);
         final Spacer spacer2 = new Spacer();
         panel6.add(spacer2, new GridConstraints(25, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JLabel label3 = new JLabel();
