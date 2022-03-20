@@ -278,9 +278,6 @@ public class RegexForm {
         magnetXtUrnBtihTextField1.setEditable(false);
         magnetXtUrnBtihTextField1.setText("magnet:\\?xt=urn:btih:[0-9a-fA-F]{40,}");
         panel6.add(magnetXtUrnBtihTextField1, new GridConstraints(8, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-        final JPanel panel7 = new JPanel();
-        panel7.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1.addTab("常识", panel7);
     }
 
     /**
