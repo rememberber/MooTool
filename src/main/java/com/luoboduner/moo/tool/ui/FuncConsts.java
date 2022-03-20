@@ -16,4 +16,9 @@ public class FuncConsts {
      * 计算器
      */
     public static final String CALCULATOR = "Calculator";
+
+    /**
+     * 正则表达式
+     */
+    public static final String REGEX = "Regex";
 }

@@ -47,13 +47,13 @@ public class ImageListener {
 
         // 从剪贴板获取
         imageForm.getSaveFromClipboardButton().addActionListener(e -> getImageFromClipboard());
-        imageForm.getImagePanel().registerKeyboardAction(e -> getImageFromClipboard(), KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        imageForm.getImagePanel().registerKeyboardAction(e -> getImageFromClipboard(), KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
 //        MainWindow.getInstance().getTabbedPane().registerKeyboardAction(e -> {
 //            int index = MainWindow.getInstance().getTabbedPane().getSelectedIndex();
 //            if (index == 11) {
 //                imageForm.getImageFromClipboard();
 //            }
-//        }, KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+//        }, KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
         // 列表显示切换按钮事件
         imageForm.getListItemButton().addActionListener(e -> {
@@ -69,7 +69,7 @@ public class ImageListener {
         imageForm.getSaveButton().addActionListener(e -> {
             saveImage();
         });
-        imageForm.getImagePanel().registerKeyboardAction(e -> quickSave(), KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        imageForm.getImagePanel().registerKeyboardAction(e -> quickSave(), KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
         // 点击左侧表格事件
         imageForm.getListTable().addMouseListener(new MouseAdapter() {
@@ -229,11 +229,11 @@ public class ImageListener {
 
         // 复制到剪贴板
         imageForm.getCopyToClipboardButton().addActionListener(e -> copyToClipboard());
-        imageForm.getImagePanel().registerKeyboardAction(e -> copyToClipboard(), KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        imageForm.getImagePanel().registerKeyboardAction(e -> copyToClipboard(), KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
         // 新建
         imageForm.getNewButton().addActionListener(e -> newImage());
-        imageForm.getImagePanel().registerKeyboardAction(e -> newImage(), KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        imageForm.getImagePanel().registerKeyboardAction(e -> newImage(), KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.CTRL_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
         // 导出
         imageForm.getExportButton().addActionListener(e -> {

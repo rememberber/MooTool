@@ -40,7 +40,7 @@
           <grid id="b7046" binding="jsonBeautyPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <tabbedpane title="Json格式化" icon="icon/object_dark.png"/>
+              <tabbedpane title="JSON" icon="icon/object_dark.png"/>
             </constraints>
             <properties/>
             <border type="none"/>
@@ -49,7 +49,7 @@
           <grid id="a65f6" binding="hostPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <tabbedpane title="Host切换" icon="icon/check.png"/>
+              <tabbedpane title="Host" icon="icon/check.png"/>
             </constraints>
             <properties/>
             <border type="none"/>
@@ -58,7 +58,7 @@
           <grid id="a2fbf" binding="httpRequestPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <tabbedpane title="HTTP请求" icon="icon/global.png"/>
+              <tabbedpane title="HTTP" icon="icon/global.png"/>
             </constraints>
             <properties/>
             <border type="none"/>
@@ -67,7 +67,7 @@
           <grid id="5961e" binding="encodePanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <tabbedpane title="编码转换" icon="icon/exchange.png"/>
+              <tabbedpane title="编码" icon="icon/exchange.png"/>
             </constraints>
             <properties/>
             <border type="none"/>
@@ -139,7 +139,7 @@
           <grid id="2a551" binding="cronPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <tabbedpane title="Cron表达式" icon="icon/cron.png"/>
+              <tabbedpane title="Cron" icon="icon/cron.png"/>
             </constraints>
             <properties/>
             <border type="none"/>
@@ -148,7 +148,7 @@
           <grid id="15f4f" binding="regexPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <tabbedpane title="正则表达式" icon="icon/reg.png"/>
+              <tabbedpane title="正则" icon="icon/reg.png"/>
             </constraints>
             <properties/>
             <border type="none"/>

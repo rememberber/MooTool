@@ -127,26 +127,38 @@ public class FindReplaceBar {
     }
 
     private void findOrMarkAll(boolean find) {
-        // update search context
-        String searchFor = findField.getText();
-        context.setSearchFor(searchFor);
+        try {
+            QuickNoteSyntaxTextViewer.ignoreQuickSave = true;
+            JsonBeautyListener.ignoreQuickSave = true;
+            HostListener.ignoreQuickSave = true;
+            // update search context
+            String searchFor = findField.getText();
+            context.setSearchFor(searchFor);
 
-        // find
-        SearchResult result = find
-                ? SearchEngine.find(textArea, context)
-                : SearchEngine.markAll(textArea, context);
+            // find
+            SearchResult result = find
+                    ? SearchEngine.find(textArea, context)
+                    : SearchEngine.markAll(textArea, context);
 
-        // select (and scroll to) match near caret
-        if (!find && result.getMarkedCount() > 0)
-            selectMatchNearCaret();
+            // select (and scroll to) match near caret
+            if (!find && result.getMarkedCount() > 0)
+                selectMatchNearCaret();
 
-        // update matches info label
-        updateMatchesLabel(result, false);
+            // update matches info label
+            updateMatchesLabel(result, false);
 
-        // enabled/disable
-        boolean findEnabled = !StringUtils.isEmpty(searchFor);
-        findPreviousButton.setEnabled(findEnabled);
-        findNextButton.setEnabled(findEnabled);
+            // enabled/disable
+            boolean findEnabled = !StringUtils.isEmpty(searchFor);
+            findPreviousButton.setEnabled(findEnabled);
+            findNextButton.setEnabled(findEnabled);
+        } catch (Exception e) {
+            log.error(e.toString());
+        } finally {
+            QuickNoteSyntaxTextViewer.ignoreQuickSave = false;
+            JsonBeautyListener.ignoreQuickSave = false;
+            HostListener.ignoreQuickSave = false;
+        }
+
     }
 
     private void matchCaseChanged() {

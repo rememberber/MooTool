@@ -109,6 +109,8 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     private String colorCodeType;
 
+    private String regexText;
+
     public boolean isAutoCheckUpdate() {
         return setting.getBool("autoCheckUpdate", "setting.common", true);
     }
@@ -439,5 +441,13 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setColorCodeType(String colorCodeType) {
         setting.putByGroup("colorCodeType", "func.colorBoard", colorCodeType);
+    }
+
+    public String getRegexText() {
+        return setting.getStr("regexText", "func.regex", "");
+    }
+
+    public void setRegexText(String regexText) {
+        setting.putByGroup("regexText", "func.regex", regexText);
     }
 }
