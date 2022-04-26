@@ -53,7 +53,10 @@ public class TopMenuBar extends JMenuBar {
             "One Dark",
             "Gray",
             "High contrast",
-            "GitHub Dark"};
+            "GitHub Dark",
+            "Xcode-Dark",
+            "Vuesion"
+    };
 
     public static String[] fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
 
