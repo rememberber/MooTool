@@ -140,6 +140,12 @@ public class Init {
                 case "GitHub Dark":
                     FlatGitHubDarkIJTheme.setup();
                     break;
+                case "Xcode-Dark":
+                    FlatXcodeDarkIJTheme.setup();
+                    break;
+                case "Vuesion":
+                    FlatVuesionIJTheme.setup();
+                    break;
                 default:
                     setAccentColor();
                     FlatDarculaLaf.setup();
