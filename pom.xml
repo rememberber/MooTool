@@ -32,10 +32,10 @@
         <guava.version>31.0.1-jre</guava.version>
         <okhttp.version>4.9.3</okhttp.version>
         <google.zxing.core.version>3.4.1</google.zxing.core.version>
-        <flatlaf.version>2.3</flatlaf.version>
-        <flatlaf-extras.version>2.3</flatlaf-extras.version>
-        <flatlaf-intellij-themes.version>2.3</flatlaf-intellij-themes.version>
-        <rsyntaxtextarea.version>3.2.0</rsyntaxtextarea.version>
+        <flatlaf.version>2.5</flatlaf.version>
+        <flatlaf-extras.version>2.5</flatlaf-extras.version>
+        <flatlaf-intellij-themes.version>2.5</flatlaf-intellij-themes.version>
+        <rsyntaxtextarea.version>3.3.0</rsyntaxtextarea.version>
         <sql-formatter.version>2.0.3</sql-formatter.version>
         <google-java-format.version>1.15.0</google-java-format.version>
     </properties>
