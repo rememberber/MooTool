@@ -32,10 +32,11 @@
         <guava.version>31.0.1-jre</guava.version>
         <okhttp.version>4.9.3</okhttp.version>
         <google.zxing.core.version>3.4.1</google.zxing.core.version>
-        <flatlaf.version>2.6</flatlaf.version>
-        <flatlaf-extras.version>2.6</flatlaf-extras.version>
-        <flatlaf-intellij-themes.version>2.6</flatlaf-intellij-themes.version>
-        <rsyntaxtextarea.version>3.3.0</rsyntaxtextarea.version>
+        <flatlaf.version>3.0</flatlaf.version>
+        <flatlaf-extras.version>3.0</flatlaf-extras.version>
+        <flatlaf-intellij-themes.version>3.0</flatlaf-intellij-themes.version>
+        <flatlaf-fonts-jetbrains-mono.version>2.242</flatlaf-fonts-jetbrains-mono.version>
+        <rsyntaxtextarea.version>3.3.1</rsyntaxtextarea.version>
         <sql-formatter.version>2.0.3</sql-formatter.version>
         <google-java-format.version>1.15.0</google-java-format.version>
     </properties>
@@ -138,6 +139,12 @@
             <groupId>com.formdev</groupId>
             <artifactId>flatlaf-intellij-themes</artifactId>
             <version>${flatlaf-intellij-themes.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf-fonts-jetbrains-mono</artifactId>
+            <version>${flatlaf-fonts-jetbrains-mono.version}</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/com.fifesoft/rsyntaxtextarea -->
