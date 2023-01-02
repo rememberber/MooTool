@@ -314,7 +314,7 @@ public class JsonBeautyListener {
         jsonBeautyForm.getTextArea().setCaretPosition(0);
         jsonBeautyForm.getScrollPane().getVerticalScrollBar().setValue(0);
         jsonBeautyForm.getScrollPane().getHorizontalScrollBar().setValue(0);
-        jsonBeautyForm.getTextArea().updateUI();
+//        jsonBeautyForm.getTextArea().updateUI();
     }
 
     private static void deleteFiles(JsonBeautyForm jsonBeautyForm) {
