@@ -87,7 +87,7 @@ public class FindReplaceBar {
 
         findPreviousButton.setIcon(new FlatSVGIcon("icon/up.svg"));
         findNextButton.setIcon(new FlatSVGIcon("icon/down.svg"));
-        closeButton.setIcon(new FlatSVGIcon("icon/remove.svg"));
+        closeButton.setIcon(new FlatSVGIcon("icon/remove2.svg"));
 
         SearchContext context = new SearchContext();
         context.setSearchWrap(true);
