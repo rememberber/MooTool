@@ -19,19 +19,19 @@
         <maven.compiler.target>17</maven.compiler.target>
 
         <java.version>17</java.version>
-        <logback.version>1.2.10</logback.version>
+        <logback.version>1.4.5</logback.version>
         <emoji-java.version>5.1.1</emoji-java.version>
-        <hutool-all.version>5.7.21</hutool-all.version>
+        <hutool-all.version>5.8.11</hutool-all.version>
         <forms_rt.version>7.0.3</forms_rt.version>
-        <fastjson.version>1.2.79</fastjson.version>
-        <lombok.version>1.18.22</lombok.version>
-        <mybatis.version>3.5.9</mybatis.version>
-        <sqlite-jdbc.version>3.36.0.3</sqlite-jdbc.version>
+        <fastjson.version>2.0.22</fastjson.version>
+        <lombok.version>1.18.24</lombok.version>
+        <mybatis.version>3.5.11</mybatis.version>
+        <sqlite-jdbc.version>3.40.0.0</sqlite-jdbc.version>
         <junit.version>4.13.2</junit.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
-        <guava.version>31.0.1-jre</guava.version>
-        <okhttp.version>4.9.3</okhttp.version>
-        <google.zxing.core.version>3.4.1</google.zxing.core.version>
+        <guava.version>31.1-jre</guava.version>
+        <okhttp.version>4.10.0</okhttp.version>
+        <google.zxing.core.version>3.5.1</google.zxing.core.version>
         <flatlaf.version>3.0</flatlaf.version>
         <flatlaf-extras.version>3.0</flatlaf-extras.version>
         <flatlaf-intellij-themes.version>3.0</flatlaf-intellij-themes.version>

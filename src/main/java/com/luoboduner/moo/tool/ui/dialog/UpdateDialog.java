@@ -127,7 +127,7 @@ public class UpdateDialog extends JDialog {
                         }
 
                         @Override
-                        public void progress(long progressSize) {
+                        public void progress(long progressSize, long totalSize) {
                             progressBarDownload.setValue((int) progressSize);
                             statusLabel.setText("已下载：" + FileUtil.readableFileSize(progressSize));
                         }
