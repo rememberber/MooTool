@@ -482,6 +482,14 @@ public class QuickNoteListener {
                     split = toThousandth(split);
                 }
 
+                if (quickNoteForm.getUnderlineToHumpCheckBox().isSelected()) {
+                    split = underlineToHump(split);
+                }
+
+                if (quickNoteForm.getHumpToUnderlineCheckBox().isSelected()) {
+                    split = humpToUnderline(split);
+                }
+
                 // ------------
                 if (quickNoteForm.getCommaToEnterCheckBox().isSelected()) {
                     split = split.replace(",", "\n");
@@ -621,6 +629,60 @@ public class QuickNoteListener {
             number = 0.0;
         }
         return decimalFormat.format(number);
+    }
+
+
+    /**
+     * 下划线转驼峰
+     *
+     * @param split
+     * @return
+     */
+    private static String underlineToHump(String split) {
+        StringBuilder result = new StringBuilder();
+        String[] strings = split.split("_");
+        for (String str : strings) {
+            if (result.length() == 0) {
+                result.append(str.toLowerCase());
+            } else {
+                result.append(str.substring(0, 1).toUpperCase());
+                result.append(str.substring(1).toLowerCase());
+            }
+        }
+        return result.toString();
+    }
+
+    /**
+     * 驼峰转下划线
+     * 来源于网络，地址找不到了，如有侵权，请联系作者删除。
+     *
+     * @param split
+     * @return
+     */
+    private static String humpToUnderline(String split) {
+        StringBuilder underLineBuilder = new StringBuilder();
+        // 连续大写字母单词开关
+        boolean switchTag = true;
+        for (int i = 0; i < split.length(); i++) {
+            // 转为ASCII
+            int asciiNum = split.charAt(i);
+            if (asciiNum > 64 && asciiNum < 91) {
+                // 首字母不加下划线
+                boolean temp1 = i != 0;
+                // 下一位为小写字母时
+                boolean temp2 = i < split.length() - 1 && split.charAt(i + 1) > 95 && split.charAt(i + 1) < 123;
+                // 添加下划线
+                if (temp1 && (switchTag || temp2))
+                    underLineBuilder.append("_");
+                // 大写字母转为小写
+                asciiNum += 32;
+                switchTag = false;
+            } else {
+                switchTag = true;
+            }
+            underLineBuilder.append((char) (asciiNum));
+        }
+        return underLineBuilder.toString();
     }
 
     /**
