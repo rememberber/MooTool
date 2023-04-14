@@ -562,13 +562,16 @@ public class QuickNoteListener {
      *
      * @param refreshModifiedTime
      */
-    public static void quickSave(boolean refreshModifiedTime) {
+    public static void quickSave(boolean refreshModifiedTime, boolean writeLog) {
         String now = SqliteUtil.nowDateForSqlite();
         if (selectedName != null) {
             TQuickNote tQuickNote = new TQuickNote();
             tQuickNote.setName(selectedName);
 
             String text = QuickNoteForm.quickNoteSyntaxTextViewerManager.getTextByName(selectedName);
+            if (writeLog) {
+                log.info("save note: " + selectedName + ", content: " + text);
+            }
             tQuickNote.setContent(text);
             if (refreshModifiedTime) {
                 tQuickNote.setModifiedTime(now);
