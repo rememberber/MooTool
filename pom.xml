@@ -201,7 +201,12 @@
                     <mainClass>com.luoboduner.moo.tool.App</mainClass>
                     <generateInstaller>true</generateInstaller>
                     <!-- 这行不能被格式化为多行，否则会出错-->
-                    <vmArgs>--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</vmArgs>
+                    <vmArgs>--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports
+                        jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports
+                        jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports
+                        jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports
+                        jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
+                    </vmArgs>
                 </configuration>
                 <executions>
                     <execution>
@@ -213,6 +218,7 @@
                         <configuration>
                             <platform>windows</platform>
                             <createZipball>true</createZipball>
+                            <additionalModules>jdk.crypto.ec</additionalModules>
                             <administratorRequired>true</administratorRequired>
                             <winConfig>
 
@@ -243,20 +249,22 @@
                     <!--                                            <configuration>-->
                     <!--                                                <platform>linux</platform>-->
                     <!--                                                <createTarball>true</createTarball>-->
+                    <!--                    <additionalModules>jdk.crypto.ec</additionalModules>-->
                     <!--                                            </configuration>-->
                     <!--                                        </execution>-->
-<!--                                                                                <execution>-->
-<!--                                                                                    <id>bundling-for-mac</id>-->
-<!--                                                                                    <phase>package</phase>-->
-<!--                                                                                    <goals>-->
-<!--                                                                                        <goal>package</goal>-->
-<!--                                                                                    </goals>-->
-<!--                                                                                    <configuration>-->
-<!--                                                                                        <platform>mac</platform>-->
-<!--                                                                                        <createTarball>true</createTarball>-->
-<!--                                        &lt;!&ndash;                                                <jdkPath>X:\\path\to\mac\jdk</jdkPath>&ndash;&gt;-->
-<!--                                                                                    </configuration>-->
-<!--                                                                                </execution>-->
+                    <!--                                                                                <execution>-->
+                    <!--                                                                                    <id>bundling-for-mac</id>-->
+                    <!--                                                                                    <phase>package</phase>-->
+                    <!--                                                                                    <goals>-->
+                    <!--                                                                                        <goal>package</goal>-->
+                    <!--                                                                                    </goals>-->
+                    <!--                                                                                    <configuration>-->
+                    <!--                                                                                        <platform>mac</platform>-->
+                    <!--                                                                                        <createTarball>true</createTarball>-->
+                    <!--                    <additionalModules>jdk.crypto.ec</additionalModules>-->
+                    <!--                                        &lt;!&ndash;                                                <jdkPath>X:\\path\to\mac\jdk</jdkPath>&ndash;&gt;-->
+                    <!--                                                                                    </configuration>-->
+                    <!--                                                                                </execution>-->
                 </executions>
             </plugin>
         </plugins>
