@@ -8,6 +8,8 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.intellijthemes.*;
 import com.formdev.flatlaf.intellijthemes.materialthemeuilite.FlatGitHubDarkIJTheme;
 import com.formdev.flatlaf.intellijthemes.materialthemeuilite.FlatMonokaiProIJTheme;
+import com.formdev.flatlaf.themes.FlatMacDarkLaf;
+import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
 import com.luoboduner.moo.tool.ui.dialog.SettingDialog;
@@ -145,6 +147,12 @@ public class Init {
                     break;
                 case "Vuesion":
                     FlatVuesionIJTheme.setup();
+                    break;
+                case "Flat macOS Light":
+                    FlatMacLightLaf.setup();
+                    break;
+                case "Flat macOS Dark":
+                    FlatMacDarkLaf.setup();
                     break;
                 default:
                     setAccentColor();
