@@ -26,7 +26,6 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
-import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -442,7 +441,6 @@ public class QuickNoteListener {
      *
      * @return
      */
-    @NotNull
     private static String getDefaultFileName() {
         return "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
     }
