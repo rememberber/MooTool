@@ -29,7 +29,7 @@
         <sqlite-jdbc.version>3.36.0.3</sqlite-jdbc.version>
         <junit.version>4.13.2</junit.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
-        <guava.version>31.0.1-jre</guava.version>
+        <guava.version>32.0.0-jre</guava.version>
         <okhttp.version>4.9.3</okhttp.version>
         <google.zxing.core.version>3.4.1</google.zxing.core.version>
         <flatlaf.version>2.3</flatlaf.version>
