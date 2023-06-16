@@ -488,12 +488,39 @@ public class QuickNoteListener {
                     split = StringUtils.join(tmp, " ");
                 }
 
+                if (quickNoteForm.getNormalToScientificCheckBox().isSelected()) {
+                    String[] strs = split.split(" ");
+                    List<String> tmp = Lists.newArrayList();
+                    for (String str : strs) {
+                        if (NumberUtil.isNumber(str)) {
+                            BigDecimal bigDecimal = NumberUtil.toBigDecimal(str);
+                            DecimalFormat decimalFormat = new DecimalFormat("0." + StringUtils.repeat("#", str.split("\\.")[0].length() - 1) + "E0");
+                            str = decimalFormat.format(bigDecimal);
+                        }
+                        tmp.add(str);
+                    }
+                    split = StringUtils.join(tmp, " ");
+                }
+
                 if (quickNoteForm.getToThousandthCheckBox().isSelected()) {
                     String[] strs = split.split(" ");
                     List<String> tmp = Lists.newArrayList();
                     for (String str : strs) {
                         if (NumberUtil.isNumber(str)) {
                             str = toThousandth(str);
+                        }
+                        tmp.add(str);
+                    }
+                    split = StringUtils.join(tmp, " ");
+                }
+
+                if (quickNoteForm.getToNormalNumCheckBox().isSelected()) {
+                    String[] strs = split.split(" ");
+                    List<String> tmp = Lists.newArrayList();
+                    for (String str : strs) {
+                        // 如果str只包含数字和小数点和逗号，就去掉逗号
+                        if (str.matches("^[0-9,\\.]+$")) {
+                            str = str.replace(",", "");
                         }
                         tmp.add(str);
                     }
