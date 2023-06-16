@@ -465,6 +465,10 @@ public class QuickNoteListener {
                     split = split.replace(" ", "");
                 }
 
+                if (quickNoteForm.getTrimBlankRowCheckBox().isSelected() && StringUtils.isBlank(split)) {
+                    continue;
+                }
+
                 if (quickNoteForm.getClearTabTCheckBox().isSelected()) {
                     split = split.replace("\t", "");
                 }
@@ -486,6 +490,14 @@ public class QuickNoteListener {
 
                 if (quickNoteForm.getHumpToUnderlineCheckBox().isSelected()) {
                     split = humpToUnderline(split);
+                }
+
+                if (quickNoteForm.getUperToLowerCheckBox().isSelected()) {
+                    split = split.toLowerCase();
+                }
+
+                if (quickNoteForm.getLowerToUperCheckBox().isSelected()) {
+                    split = split.toUpperCase();
                 }
 
                 // ------------
