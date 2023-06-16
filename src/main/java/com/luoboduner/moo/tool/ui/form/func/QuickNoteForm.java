@@ -595,13 +595,13 @@ public class QuickNoteForm {
         humpToUnderlineCheckBox.setText("驼峰规则 -> 下划线规则");
         panel3.add(humpToUnderlineCheckBox, new GridConstraints(11, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         enterToCommaCheckBox = new JCheckBox();
-        enterToCommaCheckBox.setText("换行(\\n) -> ,");
+        enterToCommaCheckBox.setText("换行 -> ,");
         panel3.add(enterToCommaCheckBox, new GridConstraints(16, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         enterToCommaSingleQuotesCheckBox = new JCheckBox();
-        enterToCommaSingleQuotesCheckBox.setText("换行(\\n) -> ','");
+        enterToCommaSingleQuotesCheckBox.setText("换行 -> ','");
         panel3.add(enterToCommaSingleQuotesCheckBox, new GridConstraints(17, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         enterToCommaDoubleQuotesCheckBox = new JCheckBox();
-        enterToCommaDoubleQuotesCheckBox.setText("换行(\\n) -> \",\"");
+        enterToCommaDoubleQuotesCheckBox.setText("换行 -> \",\"");
         panel3.add(enterToCommaDoubleQuotesCheckBox, new GridConstraints(18, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         commaToEnterCheckBox = new JCheckBox();
         commaToEnterCheckBox.setText(", -> 换行");
