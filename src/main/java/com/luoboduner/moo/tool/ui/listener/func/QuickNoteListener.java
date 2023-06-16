@@ -476,12 +476,28 @@ public class QuickNoteListener {
                 // ------------
 
                 if (quickNoteForm.getScientificToNormalCheckBox().isSelected()) {
-                    BigDecimal bigDecimal = NumberUtil.toBigDecimal(split);
-                    split = bigDecimal.toString();
+                    String[] strs = split.split(" ");
+                    List<String> tmp = Lists.newArrayList();
+                    for (String str : strs) {
+                        if (NumberUtil.isNumber(str)) {
+                            BigDecimal bigDecimal = NumberUtil.toBigDecimal(str.replace("e", "E"));
+                            str = bigDecimal.toString();
+                        }
+                        tmp.add(str);
+                    }
+                    split = StringUtils.join(tmp, " ");
                 }
 
                 if (quickNoteForm.getToThousandthCheckBox().isSelected()) {
-                    split = toThousandth(split);
+                    String[] strs = split.split(" ");
+                    List<String> tmp = Lists.newArrayList();
+                    for (String str : strs) {
+                        if (NumberUtil.isNumber(str)) {
+                            str = toThousandth(str);
+                        }
+                        tmp.add(str);
+                    }
+                    split = StringUtils.join(tmp, " ");
                 }
 
                 if (quickNoteForm.getUnderlineToHumpCheckBox().isSelected()) {
