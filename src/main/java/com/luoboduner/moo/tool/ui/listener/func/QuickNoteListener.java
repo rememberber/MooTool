@@ -516,9 +516,9 @@ public class QuickNoteListener {
             } else if (quickNoteForm.getEnterToCommaCheckBox().isSelected()) {
                 view.setText(StringUtils.join(target, ","));
             } else if (quickNoteForm.getEnterToCommaSingleQuotesCheckBox().isSelected()) {
-                view.setText(StringUtils.join(target, "','"));
+                view.setText("'" + StringUtils.join(target, "','") + "'");
             } else if (quickNoteForm.getEnterToCommaDoubleQuotesCheckBox().isSelected()) {
-                view.setText(StringUtils.join(target, "\",\""));
+                view.setText("\"" + StringUtils.join(target, "\",\"") + "\"");
             } else {
                 view.setText(StringUtils.join(target, "\n"));
             }
