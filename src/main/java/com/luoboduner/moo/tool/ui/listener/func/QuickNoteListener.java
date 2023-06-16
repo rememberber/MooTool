@@ -261,7 +261,7 @@ public class QuickNoteListener {
 
             if (totalWidth - currentDividerLocation < 10) {
                 quickNoteForm.getQuickReplaceScrollPane().setVisible(true);
-                quickNoteForm.getContentSplitPane().setDividerLocation((int) (totalWidth * 0.62));
+                quickNoteForm.getContentSplitPane().setDividerLocation((int) (totalWidth * 0.72));
             } else {
                 quickNoteForm.getContentSplitPane().setDividerLocation(totalWidth);
                 quickNoteForm.getQuickReplaceScrollPane().setVisible(false);
