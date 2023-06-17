@@ -19,6 +19,7 @@ import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
+import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -180,6 +181,8 @@ public class QuickNoteForm {
         }
 
         quickNoteForm.getColorSettingPanel().add(quickNoteForm.getToolBar());
+
+        ScrollUtil.smoothPane(quickNoteForm.getQuickReplaceScrollPane());
 
         quickNoteForm.getQuickNotePanel().updateUI();
 
