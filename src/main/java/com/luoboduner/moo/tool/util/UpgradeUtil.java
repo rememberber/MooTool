@@ -6,10 +6,13 @@ import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson.JSON;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.bean.VersionSummary;
+import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
+import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.dialog.UpdateInfoDialog;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 
 import javax.swing.*;
 import java.net.URL;
@@ -27,6 +30,7 @@ import java.util.Map;
  */
 @Slf4j
 public class UpgradeUtil {
+    private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
 
     public static void checkUpdate(boolean initCheck) {
         // 当前版本
@@ -152,6 +156,13 @@ public class UpgradeUtil {
     private static void upgrade(int versionIndex) {
         log.info("执行升级脚本开始，版本索引：{}", versionIndex);
         switch (versionIndex) {
+            case 12:
+                // 初始化随手记表中的字体和语法数据
+                TQuickNote tQuickNote = new TQuickNote();
+                tQuickNote.setSyntax(SyntaxConstants.SYNTAX_STYLE_NONE);
+                tQuickNote.setFontName(App.config.getQuickNoteFontName());
+                tQuickNote.setFontSize(String.valueOf(App.config.getFontSize()));
+                quickNoteMapper.updateAll(tQuickNote);
             case 21:
                 break;
             default:

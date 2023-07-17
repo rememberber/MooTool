@@ -100,3 +100,15 @@ create table if not exists t_favorite_color_item
 
 create unique index if not exists t_favorite_color_item_uindex
     on t_favorite_color_item (list_id, name);
+
+create table if not exists t_func_content
+(
+    id            integer
+        constraint t_func_content_pk
+            primary key autoincrement,
+    func          text,
+    content       text,
+    remark        text,
+    create_time   datetime,
+    modified_time datetime
+);

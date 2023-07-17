@@ -13,11 +13,9 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQrCodeMapper;
 import com.luoboduner.moo.tool.domain.TQrCode;
-import com.luoboduner.moo.tool.util.MybatisUtil;
-import com.luoboduner.moo.tool.util.SqliteUtil;
-import com.luoboduner.moo.tool.util.SystemUtil;
-import com.luoboduner.moo.tool.util.UIUtil;
-import com.luoboduner.moo.tool.util.UndoUtil;
+import com.luoboduner.moo.tool.ui.Style;
+import com.luoboduner.moo.tool.ui.listener.func.QrCodeListener;
+import com.luoboduner.moo.tool.util.*;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -178,6 +176,8 @@ public class QrCodeForm {
         FileUtil.clean(tempDir);
 
         generate();
+
+        QrCodeListener.addListeners();
     }
 
     private static void initUi() {
@@ -192,15 +192,8 @@ public class QrCodeForm {
 
         qrCodeForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 2));
 
-        if (UIUtil.isDarkLaf()) {
-            Color bgColor = new Color(30, 30, 30);
-            Color foreColor = new Color(187, 187, 187);
-            qrCodeForm.getRecognitionContentTextArea().setBackground(bgColor);
-            qrCodeForm.getRecognitionContentTextArea().setForeground(foreColor);
-
-            qrCodeForm.getToGenerateContentTextArea().setBackground(bgColor);
-            qrCodeForm.getToGenerateContentTextArea().setForeground(foreColor);
-        }
+        Style.blackTextArea(qrCodeForm.getRecognitionContentTextArea());
+        Style.blackTextArea(qrCodeForm.getToGenerateContentTextArea());
 
         qrCodeForm.getSizeTextField().setText(String.valueOf(App.config.getQrCodeSize()));
         qrCodeForm.getErrorCorrectionLevelComboBox().setSelectedItem(App.config.getQrCodeErrorCorrectionLevel());
@@ -214,10 +207,7 @@ public class QrCodeForm {
         }
 
         // 设置滚动条速度
-        qrCodeForm.getGenerateScrollPane().getVerticalScrollBar().setUnitIncrement(16);
-        qrCodeForm.getGenerateScrollPane().getVerticalScrollBar().setDoubleBuffered(true);
-        qrCodeForm.getGenerateScrollPane().getHorizontalScrollBar().setUnitIncrement(16);
-        qrCodeForm.getGenerateScrollPane().getHorizontalScrollBar().setDoubleBuffered(true);
+        ScrollUtil.smoothPane(qrCodeForm.getGenerateScrollPane());
 
         qrCodeForm.getQrCodePanel().updateUI();
     }
@@ -244,10 +234,10 @@ public class QrCodeForm {
         tabbedPane1 = new JTabbedPane();
         qrCodePanel.add(tabbedPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         generatePanel = new JPanel();
-        generatePanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        generatePanel.setLayout(new GridLayoutManager(2, 1, new Insets(12, 12, 12, 12), -1, -1));
         tabbedPane1.addTab("生成", generatePanel);
         controlPanel = new JPanel();
-        controlPanel.setLayout(new GridLayoutManager(1, 10, new Insets(5, 5, 5, 5), -1, -1));
+        controlPanel.setLayout(new GridLayoutManager(1, 10, new Insets(0, 0, 0, 0), -1, -1));
         generatePanel.add(controlPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         generateButton = new JButton();
         generateButton.setText("生成");
@@ -306,10 +296,10 @@ public class QrCodeForm {
         qrCodeImageLabel.setText("");
         panel1.add(qrCodeImageLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JPanel panel2 = new JPanel();
-        panel2.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel2.setLayout(new GridLayoutManager(2, 1, new Insets(12, 12, 12, 12), -1, -1));
         tabbedPane1.addTab("识别", panel2);
         final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(1, 4, new Insets(5, 5, 5, 5), -1, -1));
+        panel3.setLayout(new GridLayoutManager(1, 4, new Insets(0, 0, 0, 0), -1, -1));
         panel2.add(panel3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JLabel label5 = new JLabel();
         label5.setText("二维码图片路径");

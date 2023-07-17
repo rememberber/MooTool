@@ -1,8 +1,10 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
+import cn.hutool.core.codec.Base64;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.swing.clipboard.ClipboardUtil;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.dialog.Base64Dialog;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.ImageForm;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -45,13 +47,13 @@ public class ImageListener {
 
         // 从剪贴板获取
         imageForm.getSaveFromClipboardButton().addActionListener(e -> getImageFromClipboard());
-        imageForm.getImagePanel().registerKeyboardAction(e -> getImageFromClipboard(), KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        imageForm.getImagePanel().registerKeyboardAction(e -> getImageFromClipboard(), KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
 //        MainWindow.getInstance().getTabbedPane().registerKeyboardAction(e -> {
 //            int index = MainWindow.getInstance().getTabbedPane().getSelectedIndex();
 //            if (index == 11) {
 //                imageForm.getImageFromClipboard();
 //            }
-//        }, KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+//        }, KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
         // 列表显示切换按钮事件
         imageForm.getListItemButton().addActionListener(e -> {
@@ -67,7 +69,7 @@ public class ImageListener {
         imageForm.getSaveButton().addActionListener(e -> {
             saveImage();
         });
-        imageForm.getImagePanel().registerKeyboardAction(e -> quickSave(), KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        imageForm.getImagePanel().registerKeyboardAction(e -> quickSave(), KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
         // 点击左侧表格事件
         imageForm.getListTable().addMouseListener(new MouseAdapter() {
@@ -204,17 +206,34 @@ public class ImageListener {
                     }
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteFiles(imageForm);
+                } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
+                    quickSave();
+                    try {
+                        imageForm.getShowImageLabel().setIcon(new ImageIcon(DEFAULT_IMAGE));
+                        imageForm.getShowImagePanel().updateUI();
+
+                        int selectedRow = imageForm.getListTable().getSelectedRow();
+                        String name = imageForm.getListTable().getValueAt(selectedRow, 1).toString();
+                        selectedName = name.replace(".png", "");
+                        imageForm.getShowImageLabel().setIcon(new ImageIcon(ImageListener.IMAGE_PATH_PRE_FIX + name));
+                        imageForm.getShowImagePanel().updateUI();
+
+                        ImageListener.selectedImage = ImageIO.read(FileUtil.newFile(ImageListener.IMAGE_PATH_PRE_FIX + name));
+                    } catch (IOException ex) {
+                        JOptionPane.showMessageDialog(App.mainFrame, ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
+                        log.error(ExceptionUtils.getStackTrace(ex));
+                    }
                 }
             }
         });
 
         // 复制到剪贴板
         imageForm.getCopyToClipboardButton().addActionListener(e -> copyToClipboard());
-        imageForm.getImagePanel().registerKeyboardAction(e -> copyToClipboard(), KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        imageForm.getImagePanel().registerKeyboardAction(e -> copyToClipboard(), KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
         // 新建
         imageForm.getNewButton().addActionListener(e -> newImage());
-        imageForm.getImagePanel().registerKeyboardAction(e -> newImage(), KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.CTRL_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        imageForm.getImagePanel().registerKeyboardAction(e -> newImage(), KeyStroke.getKeyStroke(KeyEvent.VK_N, InputEvent.CTRL_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
         // 导出
         imageForm.getExportButton().addActionListener(e -> {
@@ -255,6 +274,43 @@ public class ImageListener {
                 JOptionPane.showMessageDialog(imageForm.getImagePanel(), "导出失败！\n\n" + e1.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
                 log.error(ExceptionUtils.getStackTrace(e1));
+            }
+
+        });
+
+        // 导出为Base64
+        imageForm.getToBase64Button().addActionListener(e -> {
+            Base64Dialog dialog = new Base64Dialog();
+
+            dialog.setToTextArea(Base64.encode(FileUtil.file(IMAGE_PATH_PRE_FIX + selectedName + ".png")));
+
+            dialog.pack();
+            dialog.setVisible(true);
+        });
+
+        // 从Base64获取
+        imageForm.getFromBase64Button().addActionListener(e -> {
+            try {
+                Base64Dialog.textInputValue = null;
+                Base64Dialog.ok = false;
+                Base64Dialog dialog = new Base64Dialog();
+                dialog.pack();
+                dialog.setVisible(true);
+
+                if (Base64Dialog.ok && StringUtils.isNotBlank(Base64Dialog.textInputValue)) {
+                    ImageIcon imageIcon = new ImageIcon(Base64.decode(Base64Dialog.textInputValue.getBytes()));
+                    Image image = imageIcon.getImage();
+                    ImageListener.selectedImage = image;
+                    if (image != null) {
+                        selectedName = null;
+                        imageForm.getShowImageLabel().setIcon(imageIcon);
+                    } else {
+                        JOptionPane.showMessageDialog(App.mainFrame, "可能不是正确的图片Base64？\n\n", "失败", JOptionPane.WARNING_MESSAGE);
+                    }
+                }
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(App.mainFrame, "从Base64获取异常\n\n" + e1.getMessage(), "失败", JOptionPane.WARNING_MESSAGE);
+                log.error("从Base64获取异常,{}", ExceptionUtils.getStackTrace(e1));
             }
 
         });

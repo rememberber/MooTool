@@ -60,12 +60,10 @@ public class HttpRequestListener {
         httpRequestForm.getNoteListTable().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                ThreadUtil.execute(() -> {
-                    int selectedRow = httpRequestForm.getNoteListTable().getSelectedRow();
-                    String name = httpRequestForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
-                    selectedName = name;
-                    HttpRequestForm.initMsg(name);
-                });
+                int selectedRow = httpRequestForm.getNoteListTable().getSelectedRow();
+                String name = httpRequestForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
+                selectedName = name;
+                HttpRequestForm.initMsg(name);
                 super.mousePressed(e);
             }
         });
@@ -79,34 +77,6 @@ public class HttpRequestListener {
         httpRequestForm.getAddButton().addActionListener(e -> {
             HttpRequestForm.clearAllField();
             selectedName = null;
-        });
-
-        // 左侧列表鼠标点击事件（显示下方删除按钮）
-        httpRequestForm.getNoteListTable().addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                httpRequestForm.getDeletePanel().setVisible(true);
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-
-            }
         });
 
         // 左侧列表按键事件（重命名）
@@ -139,6 +109,11 @@ public class HttpRequestListener {
                     }
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteFiles(httpRequestForm);
+                } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
+                    int selectedRow = httpRequestForm.getNoteListTable().getSelectedRow();
+                    String name = httpRequestForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
+                    selectedName = name;
+                    HttpRequestForm.initMsg(name);
                 }
             }
         });

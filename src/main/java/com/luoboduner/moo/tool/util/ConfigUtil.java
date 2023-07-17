@@ -50,6 +50,13 @@ public class ConfigUtil extends ConfigBaseUtil {
     private String menuBarPosition;
 
     /**
+     * sql dialect
+     */
+    private String sqlDialect;
+
+    private String accentColor;
+
+    /**
      * 上次关闭前所在的tab
      */
     private int recentTabIndex;
@@ -102,12 +109,14 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     private String colorCodeType;
 
+    private String regexText;
+
     public boolean isAutoCheckUpdate() {
         return setting.getBool("autoCheckUpdate", "setting.common", true);
     }
 
     public void setAutoCheckUpdate(boolean autoCheckUpdate) {
-        setting.put("setting.common", "autoCheckUpdate", String.valueOf(autoCheckUpdate));
+        setting.putByGroup("autoCheckUpdate", "setting.common", String.valueOf(autoCheckUpdate));
     }
 
     public boolean isDefaultMaxWindow() {
@@ -115,7 +124,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setDefaultMaxWindow(boolean defaultMaxWindow) {
-        setting.put("setting.normal", "defaultMaxWindow", String.valueOf(defaultMaxWindow));
+        setting.putByGroup("defaultMaxWindow", "setting.normal", String.valueOf(defaultMaxWindow));
     }
 
     public boolean isUnifiedBackground() {
@@ -123,7 +132,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setUnifiedBackground(boolean unifiedBackground) {
-        setting.put("setting.normal", "unifiedBackground", String.valueOf(unifiedBackground));
+        setting.putByGroup("unifiedBackground", "setting.normal", String.valueOf(unifiedBackground));
     }
 
     public int getRecentTabIndex() {
@@ -131,7 +140,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setRecentTabIndex(int recentTabIndex) {
-        setting.put("setting.common", "recentTabIndex", String.valueOf(recentTabIndex));
+        setting.putByGroup("recentTabIndex", "setting.common", String.valueOf(recentTabIndex));
     }
 
     public String getBeforeVersion() {
@@ -139,19 +148,15 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setBeforeVersion(String beforeVersion) {
-        setting.put("setting.common", "beforeVersion", beforeVersion);
+        setting.putByGroup("beforeVersion", "setting.common", beforeVersion);
     }
 
     public String getTheme() {
-        if (SystemUtil.isLinuxOs()) {
-            return setting.getStr("theme", "setting.appearance", "系统默认");
-        } else {
-            return setting.getStr("theme", "setting.appearance", "Flat Darcula");
-        }
+        return setting.getStr("theme", "setting.appearance", "Flat Darcula");
     }
 
     public void setTheme(String theme) {
-        setting.put("setting.appearance", "theme", theme);
+        setting.putByGroup("theme", "setting.appearance", theme);
     }
 
     public String getFont() {
@@ -163,7 +168,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setFont(String font) {
-        setting.put("setting.appearance", "font", font);
+        setting.putByGroup("font", "setting.appearance", font);
     }
 
     public int getFontSize() {
@@ -171,7 +176,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setFontSize(int fontSize) {
-        setting.put("setting.appearance", "fontSize", String.valueOf(fontSize));
+        setting.putByGroup("fontSize", "setting.appearance", String.valueOf(fontSize));
     }
 
     public boolean isHttpUseProxy() {
@@ -179,7 +184,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setHttpUseProxy(boolean httpUseProxy) {
-        setting.put("setting.http", "httpUseProxy", String.valueOf(httpUseProxy));
+        setting.putByGroup("httpUseProxy", "setting.http", String.valueOf(httpUseProxy));
     }
 
     public String getHttpProxyHost() {
@@ -187,7 +192,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setHttpProxyHost(String httpProxyHost) {
-        setting.put("setting.http", "httpProxyHost", httpProxyHost);
+        setting.putByGroup("httpProxyHost", "setting.http", httpProxyHost);
     }
 
     public String getHttpProxyPort() {
@@ -195,7 +200,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setHttpProxyPort(String httpProxyPort) {
-        setting.put("setting.http", "httpProxyPort", httpProxyPort);
+        setting.putByGroup("httpProxyPort", "setting.http", httpProxyPort);
     }
 
     public String getHttpProxyUserName() {
@@ -203,7 +208,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setHttpProxyUserName(String httpProxyUserName) {
-        setting.put("setting.http", "httpProxyUserName", httpProxyUserName);
+        setting.putByGroup("httpProxyUserName", "setting.http", httpProxyUserName);
     }
 
     public String getHttpProxyPassword() {
@@ -211,7 +216,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setHttpProxyPassword(String httpProxyPassword) {
-        setting.put("setting.http", "httpProxyPassword", httpProxyPassword);
+        setting.putByGroup("httpProxyPassword", "setting.http", httpProxyPassword);
     }
 
     public String getQuickNoteFontName() {
@@ -223,7 +228,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setQuickNoteFontName(String quickNoteFontName) {
-        setting.put("func.quickNote", "quickNoteFontName", quickNoteFontName);
+        setting.putByGroup("quickNoteFontName", "func.quickNote", quickNoteFontName);
     }
 
     public int getQuickNoteFontSize() {
@@ -231,7 +236,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setQuickNoteFontSize(int quickNoteFontSize) {
-        setting.put("func.quickNote", "quickNoteFontSize", String.valueOf(quickNoteFontSize));
+        setting.putByGroup("quickNoteFontSize", "func.quickNote", String.valueOf(quickNoteFontSize));
     }
 
     public String getJsonBeautyFontName() {
@@ -243,7 +248,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setJsonBeautyFontName(String jsonBeautyFontName) {
-        setting.put("func.jsonBeauty", "jsonBeautyFontName", jsonBeautyFontName);
+        setting.putByGroup("jsonBeautyFontName", "func.jsonBeauty", jsonBeautyFontName);
     }
 
     public int getJsonBeautyFontSize() {
@@ -251,7 +256,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setJsonBeautyFontSize(int jsonBeautyFontSize) {
-        setting.put("func.jsonBeauty", "jsonBeautyFontSize", String.valueOf(jsonBeautyFontSize));
+        setting.putByGroup("jsonBeautyFontSize", "func.jsonBeauty", String.valueOf(jsonBeautyFontSize));
     }
 
     public int getQrCodeSize() {
@@ -259,7 +264,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setQrCodeSize(int qrCodeSize) {
-        setting.put("func.qrCode", "qrCodeSize", String.valueOf(qrCodeSize));
+        setting.putByGroup("qrCodeSize", "func.qrCode", String.valueOf(qrCodeSize));
     }
 
     public String getQrCodeErrorCorrectionLevel() {
@@ -267,7 +272,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setQrCodeErrorCorrectionLevel(String qrCodeErrorCorrectionLevel) {
-        setting.put("func.qrCode", "qrCodeErrorCorrectionLevel", qrCodeErrorCorrectionLevel);
+        setting.putByGroup("qrCodeErrorCorrectionLevel", "func.qrCode", qrCodeErrorCorrectionLevel);
     }
 
     public String getQrCodeLogoPath() {
@@ -275,7 +280,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setQrCodeLogoPath(String qrCodeLogoPath) {
-        setting.put("func.qrCode", "qrCodeLogoPath", qrCodeLogoPath);
+        setting.putByGroup("qrCodeLogoPath", "func.qrCode", qrCodeLogoPath);
     }
 
     public String getQrCodeSaveAsPath() {
@@ -283,7 +288,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setQrCodeSaveAsPath(String qrCodeSaveAsPath) {
-        setting.put("func.qrCode", "qrCodeSaveAsPath", qrCodeSaveAsPath);
+        setting.putByGroup("qrCodeSaveAsPath", "func.qrCode", qrCodeSaveAsPath);
     }
 
     public String getQrCodeRecognitionImagePath() {
@@ -291,7 +296,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setQrCodeRecognitionImagePath(String qrCodeRecognitionImagePath) {
-        setting.put("func.qrCode", "qrCodeRecognitionImagePath", qrCodeRecognitionImagePath);
+        setting.putByGroup("qrCodeRecognitionImagePath", "func.qrCode", qrCodeRecognitionImagePath);
     }
 
     public String getCurrentHostName() {
@@ -299,7 +304,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setCurrentHostName(String currentHostName) {
-        setting.put("func.host", "currentHostName", currentHostName);
+        setting.putByGroup("currentHostName", "func.host", currentHostName);
     }
 
     public String getDigestFilePath() {
@@ -307,7 +312,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setDigestFilePath(String digestFilePath) {
-        setting.put("func.crypto", "digestFilePath", digestFilePath);
+        setting.putByGroup("digestFilePath", "func.crypto", digestFilePath);
     }
 
     public int getRandomNumDigit() {
@@ -315,7 +320,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setRandomNumDigit(int randomNumDigit) {
-        setting.put("func.crypto", "randomNumDigit", String.valueOf(randomNumDigit));
+        setting.putByGroup("randomNumDigit", "func.crypto", String.valueOf(randomNumDigit));
     }
 
     public int getRandomStringDigit() {
@@ -323,7 +328,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setRandomStringDigit(int randomStringDigit) {
-        setting.put("func.crypto", "randomStringDigit", String.valueOf(randomStringDigit));
+        setting.putByGroup("randomStringDigit", "func.crypto", String.valueOf(randomStringDigit));
     }
 
     public int getRandomPasswordDigit() {
@@ -331,7 +336,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setRandomPasswordDigit(int randomPasswordDigit) {
-        setting.put("func.crypto", "randomPasswordDigit", String.valueOf(randomPasswordDigit));
+        setting.putByGroup("randomPasswordDigit", "func.crypto", String.valueOf(randomPasswordDigit));
     }
 
     public String getMenuBarPosition() {
@@ -339,7 +344,23 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setMenuBarPosition(String menuBarPosition) {
-        setting.put("setting.custom", "menuBarPosition", menuBarPosition);
+        setting.putByGroup("menuBarPosition", "setting.custom", menuBarPosition);
+    }
+
+    public String getSqlDialect() {
+        return setting.getStr("sqlDialect", "setting.quickNote", "Standard SQL");
+    }
+
+    public void setSqlDialect(String sqlDialect) {
+        setting.putByGroup("sqlDialect", "setting.quickNote", sqlDialect);
+    }
+
+    public String getAccentColor() {
+        return setting.getStr("accentColor", "setting.quickNote", "");
+    }
+
+    public void setAccentColor(String accentColor) {
+        setting.putByGroup("accentColor", "setting.quickNote", accentColor);
     }
 
     public String getCalculatorInputExpress() {
@@ -347,7 +368,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setCalculatorInputExpress(String calculatorInputExpress) {
-        setting.put("func.calculator", "calculatorInputExpress", calculatorInputExpress);
+        setting.putByGroup("calculatorInputExpress", "func.calculator", calculatorInputExpress);
     }
 
     public String getDbFilePath() {
@@ -355,7 +376,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setDbFilePath(String dbFilePath) {
-        setting.put("func.advanced", "dbFilePath", dbFilePath);
+        setting.putByGroup("dbFilePath", "func.advanced", dbFilePath);
     }
 
     public String getDbFilePathBefore() {
@@ -363,7 +384,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setDbFilePathBefore(String dbFilePathBefore) {
-        setting.put("func.advanced", "dbFilePathBefore", dbFilePathBefore);
+        setting.putByGroup("dbFilePathBefore", "func.advanced", dbFilePathBefore);
     }
 
     public String getQuickNoteExportPath() {
@@ -371,7 +392,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setQuickNoteExportPath(String quickNoteExportPath) {
-        setting.put("func.quickNote", "quickNoteExportPath", quickNoteExportPath);
+        setting.putByGroup("quickNoteExportPath", "func.quickNote", quickNoteExportPath);
     }
 
     public String getJsonBeautyExportPath() {
@@ -379,7 +400,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setJsonBeautyExportPath(String jsonBeautyExportPath) {
-        setting.put("func.jsonBeauty", "jsonBeautyExportPath", jsonBeautyExportPath);
+        setting.putByGroup("jsonBeautyExportPath", "func.jsonBeauty", jsonBeautyExportPath);
     }
 
     public String getImageExportPath() {
@@ -387,7 +408,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setImageExportPath(String imageExportPath) {
-        setting.put("func.image", "imageExportPath", imageExportPath);
+        setting.putByGroup("imageExportPath", "func.image", imageExportPath);
     }
 
     public String getHostExportPath() {
@@ -395,7 +416,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setHostExportPath(String hostExportPath) {
-        setting.put("func.host", "hostExportPath", hostExportPath);
+        setting.putByGroup("hostExportPath", "func.host", hostExportPath);
     }
 
     public String getLastSelectedColor() {
@@ -403,7 +424,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setLastSelectedColor(String lastSelectedColor) {
-        setting.put("func.colorBoard", "lastSelectedColor", lastSelectedColor);
+        setting.putByGroup("lastSelectedColor", "func.colorBoard", lastSelectedColor);
     }
 
     public String getColorTheme() {
@@ -411,7 +432,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setColorTheme(String colorTheme) {
-        setting.put("func.colorBoard", "colorTheme", colorTheme);
+        setting.putByGroup("colorTheme", "func.colorBoard", colorTheme);
     }
 
     public String getColorCodeType() {
@@ -419,6 +440,14 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public void setColorCodeType(String colorCodeType) {
-        setting.put("func.colorBoard", "colorCodeType", colorCodeType);
+        setting.putByGroup("colorCodeType", "func.colorBoard", colorCodeType);
+    }
+
+    public String getRegexText() {
+        return setting.getStr("regexText", "func.regex", "");
+    }
+
+    public void setRegexText(String regexText) {
+        setting.putByGroup("regexText", "func.regex", regexText);
     }
 }

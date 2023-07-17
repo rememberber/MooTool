@@ -1,11 +1,8 @@
 package com.luoboduner.moo.tool.ui.frame;
 
-import cn.hutool.core.thread.ThreadUtil;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.TopMenuBar;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
-import com.luoboduner.moo.tool.ui.listener.TabListener;
-import com.luoboduner.moo.tool.ui.listener.func.*;
 import com.luoboduner.moo.tool.util.ComponentUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 
@@ -23,6 +20,8 @@ public class MainFrame extends JFrame {
 
     private static final long serialVersionUID = -332963894416012132L;
 
+    public static TopMenuBar topMenuBar;
+
     public void init() {
         this.setName(UiConsts.APP_NAME);
         this.setTitle(UiConsts.APP_NAME);
@@ -36,29 +35,11 @@ public class MainFrame extends JFrame {
 //                application.setEnabledPreferencesMenu(false);
 //            }
         }
-        TopMenuBar topMenuBar = TopMenuBar.getInstance();
+        topMenuBar = TopMenuBar.getInstance();
         topMenuBar.init();
         setJMenuBar(topMenuBar);
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.8, 0.88);
+        FrameListener.addListeners();
     }
 
-    /**
-     * 添加事件监听
-     */
-    public void addListeners() {
-        ThreadUtil.execute(FrameListener::addListeners);
-        ThreadUtil.execute(TabListener::addListeners);
-        ThreadUtil.execute(QuickNoteListener::addListeners);
-        ThreadUtil.execute(TimeConvertListener::addListeners);
-        ThreadUtil.execute(JsonBeautyListener::addListeners);
-        ThreadUtil.execute(HostListener::addListeners);
-        ThreadUtil.execute(HttpRequestListener::addListeners);
-        ThreadUtil.execute(QrCodeListener::addListeners);
-        ThreadUtil.execute(EnCodeListener::addListeners);
-        ThreadUtil.execute(CryptoListener::addListeners);
-        ThreadUtil.execute(CalculatorListener::addListeners);
-        ThreadUtil.execute(NetListener::addListeners);
-        ThreadUtil.execute(ColorBoardListener::addListeners);
-        ThreadUtil.execute(ImageListener::addListeners);
-    }
 }

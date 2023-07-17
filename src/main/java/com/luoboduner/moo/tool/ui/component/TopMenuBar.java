@@ -4,14 +4,13 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatAnimatedLafChange;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Init;
-import com.luoboduner.moo.tool.ui.dialog.AboutDialog;
-import com.luoboduner.moo.tool.ui.dialog.KeyMapDialog;
-import com.luoboduner.moo.tool.ui.dialog.SettingDialog;
-import com.luoboduner.moo.tool.ui.dialog.SystemEnvResultDialog;
+import com.luoboduner.moo.tool.ui.dialog.*;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.util.SystemUtil;
+import com.luoboduner.moo.tool.util.UpgradeUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -46,15 +45,22 @@ public class TopMenuBar extends JMenuBar {
             "Flat IntelliJ",
             "Flat Dark",
             "Flat Darcula(推荐)",
+            "Flat macOS Light",
+            "Flat macOS Dark",
             "Dark purple",
             "IntelliJ Cyan",
-            "IntelliJ Light"};
+            "IntelliJ Light",
+            "Monocai",
+            "Monokai Pro",
+            "One Dark",
+            "Gray",
+            "High contrast",
+            "GitHub Dark",
+            "Xcode-Dark",
+            "Vuesion"
+    };
 
-    private static String[] fontNames = {
-            "Microsoft YaHei",
-            "Microsoft YaHei Light",
-            "Microsoft YaHei UI",
-            "Microsoft YaHei UI Light"};
+    public static String[] fontNames = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
 
     private static String[] fontSizes = {
             "5",
@@ -100,11 +106,26 @@ public class TopMenuBar extends JMenuBar {
         settingMenuItem.setText("设置");
         settingMenuItem.addActionListener(e -> settingActionPerformed());
         appMenu.add(settingMenuItem);
+        // 同步和备份
+        JMenuItem syncAndBackupMenuItem = new JMenuItem();
+        syncAndBackupMenuItem.setText("同步和备份");
+        syncAndBackupMenuItem.addActionListener(e -> syncAndBackupActionPerformed());
+        appMenu.add(syncAndBackupMenuItem);
         // 快捷键
         JMenuItem keyMapMenuItem = new JMenuItem();
         keyMapMenuItem.setText("快捷键");
         keyMapMenuItem.addActionListener(e -> keyMapActionPerformed());
         appMenu.add(keyMapMenuItem);
+        // 查看日志
+        JMenuItem logMenuItem = new JMenuItem();
+        logMenuItem.setText("查看日志");
+        logMenuItem.addActionListener(e -> logActionPerformed());
+        appMenu.add(logMenuItem);
+        // 系统环境变量
+        JMenuItem sysEnvMenuItem = new JMenuItem();
+        sysEnvMenuItem.setText("系统环境变量");
+        sysEnvMenuItem.addActionListener(e -> sysEnvActionPerformed());
+        appMenu.add(sysEnvMenuItem);
         // 退出
         JMenuItem exitMenuItem = new JMenuItem();
         exitMenuItem.setText("退出");
@@ -150,6 +171,7 @@ public class TopMenuBar extends JMenuBar {
 
         fontFamilyMenu = new JMenu();
         fontFamilyMenu.setText("字体");
+        fontFamilyMenu.setAutoscrolls(true);
         initFontFamilyMenu();
 
         appearanceMenu.add(fontFamilyMenu);
@@ -161,26 +183,16 @@ public class TopMenuBar extends JMenuBar {
         appearanceMenu.add(fontSizeMenu);
 
         topMenuBar.add(appearanceMenu);
-        // ---------调试
-        JMenu debugMenu = new JMenu();
-        debugMenu.setText("调试");
-        // 查看日志
-        JMenuItem logMenuItem = new JMenuItem();
-        logMenuItem.setText("查看日志");
-        logMenuItem.addActionListener(e -> logActionPerformed());
 
-        debugMenu.add(logMenuItem);
-        // 系统环境变量
-        JMenuItem sysEnvMenuItem = new JMenuItem();
-        sysEnvMenuItem.setText("系统环境变量");
-        sysEnvMenuItem.addActionListener(e -> sysEnvActionPerformed());
-
-        debugMenu.add(sysEnvMenuItem);
-
-        topMenuBar.add(debugMenu);
         // ---------关于
         JMenu aboutMenu = new JMenu();
         aboutMenu.setText("关于");
+
+        // 检查更新
+        JMenuItem checkUpdateMenuItem = new JMenuItem();
+        checkUpdateMenuItem.setText("检查更新");
+        checkUpdateMenuItem.addActionListener(e -> checkUpdateActionPerformed());
+        aboutMenu.add(checkUpdateMenuItem);
 
         // 关于
         JMenuItem aboutMenuItem = new JMenuItem();
@@ -189,6 +201,44 @@ public class TopMenuBar extends JMenuBar {
         aboutMenu.add(aboutMenuItem);
 
         topMenuBar.add(aboutMenu);
+
+        // ---------鼓励和支持
+        JMenu supportMeMenu = new JMenu();
+        supportMeMenu.setText("支持一下");
+
+        // 鼓励和支持
+        JMenuItem supportMeMenuItem = new JMenuItem();
+        supportMeMenuItem.setText("鼓励和支持");
+        supportMeMenuItem.addActionListener(e -> supportMeActionPerformed());
+        supportMeMenu.add(supportMeMenuItem);
+
+        topMenuBar.add(supportMeMenu);
+    }
+
+    private void supportMeActionPerformed() {
+        try {
+            SupportMeDialog dialog = new SupportMeDialog();
+
+            dialog.pack();
+            dialog.setVisible(true);
+        } catch (Exception e2) {
+            logger.error(e2);
+        }
+    }
+
+    private void syncAndBackupActionPerformed() {
+        try {
+            SyncAndBackupDialog dialog = new SyncAndBackupDialog();
+
+            dialog.pack();
+            dialog.setVisible(true);
+        } catch (Exception e2) {
+            logger.error(e2);
+        }
+    }
+
+    private void checkUpdateActionPerformed() {
+        UpgradeUtil.checkUpdate(false);
     }
 
     private void initFontSizeMenu() {
@@ -207,7 +257,6 @@ public class TopMenuBar extends JMenuBar {
             fontSizeMenu.add(item);
         }
     }
-
 
     private void initFontFamilyMenu() {
 
@@ -273,7 +322,7 @@ public class TopMenuBar extends JMenuBar {
     }
 
 
-    private void fontFamilyChanged(ActionEvent actionEvent) {
+    public void fontFamilyChanged(ActionEvent actionEvent) {
         try {
             String selectedFamily = actionEvent.getActionCommand();
 
@@ -312,6 +361,11 @@ public class TopMenuBar extends JMenuBar {
             App.config.save();
 
             Init.initTheme();
+
+            if (FlatLaf.isLafDark()) {
+                FlatSVGIcon.ColorFilter.getInstance().setMapper(color -> color.brighter().brighter());
+            }
+
             SwingUtilities.updateComponentTreeUI(App.mainFrame);
             SwingUtilities.updateComponentTreeUI(MainWindow.getInstance().getTabbedPane());
 

@@ -5,6 +5,7 @@ import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
+import com.luoboduner.moo.tool.util.ConsoleUtil;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.apache.commons.lang3.time.DateUtils;
@@ -113,6 +114,25 @@ public class TimeConvertListener {
                 timeConvertForm.getCopyGeneratedLocalTimeButton().setEnabled(true);
             }
         }));
+
+        // 文本域按键事件
+        timeConvertForm.getTimeHisTextArea().addKeyListener(new KeyListener() {
+            @Override
+            public void keyReleased(KeyEvent arg0) {
+                TimeConvertForm.saveContent();
+            }
+
+            @Override
+            public void keyPressed(KeyEvent evt) {
+                if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
+                    TimeConvertForm.saveContent();
+                }
+            }
+
+            @Override
+            public void keyTyped(KeyEvent arg0) {
+            }
+        });
     }
 
     private static void toTimestamp() {
@@ -127,6 +147,8 @@ public class TimeConvertListener {
             }
             timeConvertForm.getTimestampTextField().setText(String.valueOf(timeStamp));
             timeConvertForm.getTimestampTextField().grabFocus();
+
+            output("本地时间: " + localTime + " --> 时间戳: " + timeStamp);
         } catch (Exception ex) {
             ex.printStackTrace();
             logger.error(ExceptionUtils.getStackTrace(ex));
@@ -150,10 +172,18 @@ public class TimeConvertListener {
             String localTime = DateFormatUtils.format(new Date(timeStamp), TimeConvertForm.TIME_FORMAT);
             timeConvertForm.getGmtTextField().setText(localTime);
             timeConvertForm.getGmtTextField().grabFocus();
+
+            output("时间戳: " + timeStamp + " --> 本地时间: " + localTime);
         } catch (Exception ex) {
             ex.printStackTrace();
             logger.error(ExceptionUtils.getStackTrace(ex));
             JOptionPane.showMessageDialog(timeConvertForm.getTimeConvertPanel(), ex.getMessage(), "转换失败！", JOptionPane.ERROR_MESSAGE);
         }
+    }
+
+    public static void output(String text) {
+        TimeConvertForm timeConvertForm = TimeConvertForm.getInstance();
+        ConsoleUtil.consoleOnly(timeConvertForm.getTimeHisTextArea(), text);
+        TimeConvertForm.saveContent();
     }
 }

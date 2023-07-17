@@ -4,7 +4,7 @@
         "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
 
 <generatorConfiguration>
-    <classPathEntry location="D:\maven_repository\org\xerial\sqlite-jdbc\3.25.2\sqlite-jdbc-3.25.2.jar"/>
+    <classPathEntry location="D:\repo\org\xerial\sqlite-jdbc\3.36.0.3\sqlite-jdbc-3.36.0.3.jar"/>
 
     <context id="SQLiteTables" targetRuntime="MyBatis3">
         <!-- JavaBean 实现 序列化 接口 -->
@@ -17,7 +17,7 @@
         </commentGenerator>
 
         <jdbcConnection driverClass="org.sqlite.JDBC"
-                        connectionURL="jdbc:sqlite:C:/Users/zhouy/.MooTool/MooTool.db">
+                        connectionURL="jdbc:sqlite:C:\Users\bob\.MooTool\MooTool.db">
         </jdbcConnection>
 
         <javaTypeResolver>
@@ -45,7 +45,7 @@
 
         <table schema="main" enableCountByExample="false" enableUpdateByExample="false" enableDeleteByExample="false"
                enableSelectByExample="false" selectByExampleQueryId="false"
-               tableName="t_favorite_color_item" domainObjectName="TFavoriteColorItem">
+               tableName="t_favorite_regex_item" domainObjectName="TFavoriteRegexItem">
             <property name="useActualColumnNames" value="false"/>
             <!--<generatedKey column="ID" sqlStatement="DB2" identity="true"/>-->
         </table>

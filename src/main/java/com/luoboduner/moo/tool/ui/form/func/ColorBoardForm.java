@@ -2,10 +2,12 @@ package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.listener.func.ColorBoardListener;
 import com.luoboduner.moo.tool.util.ColorUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
@@ -85,7 +87,14 @@ public class ColorBoardForm {
         colorBoardForm.getCodeTypeComboBox().setSelectedItem(App.config.getColorCodeType());
         colorBoardForm.getThemeComboBox().setSelectedItem(App.config.getColorTheme());
 
+        colorBoardForm.getFavoriteBookButton().setIcon(new FlatSVGIcon("icon/favorite-filling.svg"));
+        colorBoardForm.getFavoriteButton().setIcon(new FlatSVGIcon("icon/favorite.svg"));
+        colorBoardForm.getPickerButton().setIcon(new FlatSVGIcon("icon/color_picker.svg"));
+        colorBoardForm.getCopyButton().setIcon(new FlatSVGIcon("icon/copy.svg"));
+
         fillColorBlocks();
+
+        ColorBoardListener.addListeners();
     }
 
     public static void fillColorBlocks() {
@@ -210,7 +219,7 @@ public class ColorBoardForm {
         colorBoardPanel.setMinimumSize(new Dimension(400, 300));
         colorBoardPanel.setPreferredSize(new Dimension(400, 300));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(1, 2, new Insets(0, 10, 10, 10), -1, -1));
+        panel1.setLayout(new GridLayoutManager(1, 2, new Insets(12, 12, 12, 12), -1, -1));
         colorBoardPanel.add(panel1, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));

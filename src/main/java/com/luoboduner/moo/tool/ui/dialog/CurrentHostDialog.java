@@ -3,11 +3,12 @@ package com.luoboduner.moo.tool.ui.dialog;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.util.ComponentUtil;
-import com.luoboduner.moo.tool.util.UIUtil;
 import lombok.Getter;
 
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
@@ -34,12 +35,8 @@ public class CurrentHostDialog extends JDialog {
         setFocusable(true);
         setResizable(true);
         setLocationByPlatform(true);
-        if (UIUtil.isDarkLaf()) {
-            Color bgColor = new Color(30, 30, 30);
-            textArea.setBackground(bgColor);
-            Color foreColor = new Color(187, 187, 187);
-            textArea.setForeground(foreColor);
-        }
+
+        Style.blackTextArea(textArea);
 
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.6, 0.8);
 
@@ -87,6 +84,7 @@ public class CurrentHostDialog extends JDialog {
         contentPane.add(panel1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JScrollPane scrollPane1 = new JScrollPane();
         panel1.add(scrollPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        scrollPane1.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         textArea = new JTextArea();
         textArea.setEditable(false);
         scrollPane1.setViewportView(textArea);

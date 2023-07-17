@@ -1,10 +1,11 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
-import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.util.UIUtil;
+import com.luoboduner.moo.tool.ui.Style;
+import com.luoboduner.moo.tool.ui.listener.func.EnCodeListener;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 
@@ -53,30 +54,21 @@ public class EnCodeForm {
     public static void init() {
         enCodeForm = getInstance();
         initUi();
+
+        EnCodeListener.addListeners();
     }
 
     private static void initUi() {
-        if (UIUtil.isDarkLaf()) {
-            Color bgColor = new Color(30, 30, 30);
-            Color foreColor = new Color(187, 187, 187);
-            enCodeForm.getNativeTextArea().setBackground(bgColor);
-            enCodeForm.getNativeTextArea().setForeground(foreColor);
+        Style.blackTextArea(enCodeForm.getNativeTextArea());
+        Style.blackTextArea(enCodeForm.getUnicodeTextArea());
+        Style.blackTextArea(enCodeForm.getUrlTextArea());
+        Style.blackTextArea(enCodeForm.getUrlEncodeTextArea());
+        Style.blackTextArea(enCodeForm.getNativeForHexTextArea());
+        Style.blackTextArea(enCodeForm.getHexTextArea());
+        Style.blackTextArea(enCodeForm.getHexTextArea());
 
-            enCodeForm.getUnicodeTextArea().setBackground(bgColor);
-            enCodeForm.getUnicodeTextArea().setForeground(foreColor);
-
-            enCodeForm.getUrlTextArea().setBackground(bgColor);
-            enCodeForm.getUrlTextArea().setForeground(foreColor);
-
-            enCodeForm.getUrlEncodeTextArea().setBackground(bgColor);
-            enCodeForm.getUrlEncodeTextArea().setForeground(foreColor);
-
-            enCodeForm.getNativeForHexTextArea().setBackground(bgColor);
-            enCodeForm.getNativeForHexTextArea().setForeground(foreColor);
-
-            enCodeForm.getHexTextArea().setBackground(bgColor);
-            enCodeForm.getHexTextArea().setForeground(foreColor);
-        }
+        enCodeForm.getUrlEncodeButton().setIcon(new FlatSVGIcon("icon/right_arrow.svg"));
+        enCodeForm.getUrlDecodeButton().setIcon(new FlatSVGIcon("icon/left_arrow.svg"));
         enCodeForm.getEnCodePanel().updateUI();
     }
 
@@ -103,7 +95,7 @@ public class EnCodeForm {
         tabbedPane1 = new JTabbedPane();
         enCodePanel.add(tabbedPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.setLayout(new GridLayoutManager(1, 3, new Insets(12, 12, 12, 12), -1, -1));
         tabbedPane1.addTab("Native/Unicode", panel1);
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(4, 1, new Insets(0, 0, 0, 0), -1, -1));
@@ -139,12 +131,8 @@ public class EnCodeForm {
         unicodeTextArea.setWrapStyleWord(true);
         scrollPane2.setViewportView(unicodeTextArea);
         final JPanel panel5 = new JPanel();
-        panel5.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
+        panel5.setLayout(new GridLayoutManager(1, 3, new Insets(12, 12, 12, 12), -1, -1));
         tabbedPane1.addTab("URL转码", panel5);
-        urlTextArea = new JTextArea();
-        panel5.add(urlTextArea, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(150, 50), null, 0, false));
-        urlEncodeTextArea = new JTextArea();
-        panel5.add(urlEncodeTextArea, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(150, 50), null, 0, false));
         final JPanel panel6 = new JPanel();
         panel6.setLayout(new GridLayoutManager(5, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel5.add(panel6, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
@@ -166,23 +154,31 @@ public class EnCodeForm {
         defaultComboBoxModel1.addElement("gb2312");
         urlEncodeCharsetComboBox.setModel(defaultComboBoxModel1);
         panel6.add(urlEncodeCharsetComboBox, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JScrollPane scrollPane3 = new JScrollPane();
+        panel5.add(scrollPane3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        urlTextArea = new JTextArea();
+        scrollPane3.setViewportView(urlTextArea);
+        final JScrollPane scrollPane4 = new JScrollPane();
+        panel5.add(scrollPane4, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        urlEncodeTextArea = new JTextArea();
+        scrollPane4.setViewportView(urlEncodeTextArea);
         final JPanel panel7 = new JPanel();
-        panel7.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
+        panel7.setLayout(new GridLayoutManager(1, 3, new Insets(12, 12, 12, 12), -1, -1));
         tabbedPane1.addTab("Native/16进制", panel7);
         final JPanel panel8 = new JPanel();
         panel8.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel7.add(panel8, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        final JScrollPane scrollPane3 = new JScrollPane();
-        panel8.add(scrollPane3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        final JScrollPane scrollPane5 = new JScrollPane();
+        panel8.add(scrollPane5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         nativeForHexTextArea = new JTextArea();
-        scrollPane3.setViewportView(nativeForHexTextArea);
+        scrollPane5.setViewportView(nativeForHexTextArea);
         final JPanel panel9 = new JPanel();
         panel9.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel7.add(panel9, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        final JScrollPane scrollPane4 = new JScrollPane();
-        panel9.add(scrollPane4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        final JScrollPane scrollPane6 = new JScrollPane();
+        panel9.add(scrollPane6, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         hexTextArea = new JTextArea();
-        scrollPane4.setViewportView(hexTextArea);
+        scrollPane6.setViewportView(hexTextArea);
         final JPanel panel10 = new JPanel();
         panel10.setLayout(new GridLayoutManager(4, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel7.add(panel10, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));

@@ -6,7 +6,7 @@
 
     <groupId>com.luoboduner.moo.tool</groupId>
     <artifactId>MooTool</artifactId>
-    <version>1.3.5</version>
+    <version>1.4.6</version>
     <packaging>jar</packaging>
 
     <name>MooTool</name>
@@ -15,26 +15,30 @@
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <maven.compiler.source>1.8</maven.compiler.source>
-        <maven.compiler.target>1.8</maven.compiler.target>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
 
-        <java.version>1.8</java.version>
-        <logback.version>1.2.3</logback.version>
-        <emoji-java.version>4.0.0</emoji-java.version>
-        <hutool-all.version>5.6.3</hutool-all.version>
+        <java.version>17</java.version>
+        <logback.version>1.4.6</logback.version>
+        <emoji-java.version>5.1.1</emoji-java.version>
+        <hutool-all.version>5.8.17</hutool-all.version>
         <forms_rt.version>7.0.3</forms_rt.version>
-        <fastjson.version>1.2.74</fastjson.version>
-        <AppleJavaExtensions.version>1.4</AppleJavaExtensions.version>
-        <lombok.version>1.18.20</lombok.version>
-        <mybatis.version>3.5.7</mybatis.version>
-        <sqlite-jdbc.version>3.34.0</sqlite-jdbc.version>
-        <junit.version>4.13.1</junit.version>
-        <commons-lang3.version>3.11</commons-lang3.version>
-        <guava.version>29.0-jre</guava.version>
-        <okhttp.version>4.9.0</okhttp.version>
-        <google.zxing.core.version>3.4.1</google.zxing.core.version>
-        <flatlaf.version>1.6.1</flatlaf.version>
-        <flatlaf-extras.version>1.6.1</flatlaf-extras.version>
+        <fastjson.version>2.0.27</fastjson.version>
+        <lombok.version>1.18.26</lombok.version>
+        <mybatis.version>3.5.13</mybatis.version>
+        <sqlite-jdbc.version>3.41.2.1</sqlite-jdbc.version>
+        <junit.version>4.13.2</junit.version>
+        <commons-lang3.version>3.12.0</commons-lang3.version>
+        <guava.version>31.1-jre</guava.version>
+        <okhttp.version>4.10.0</okhttp.version>
+        <google.zxing.core.version>3.5.1</google.zxing.core.version>
+        <flatlaf.version>3.1.1</flatlaf.version>
+        <flatlaf-extras.version>3.1.1</flatlaf-extras.version>
+        <flatlaf-intellij-themes.version>3.1.1</flatlaf-intellij-themes.version>
+        <flatlaf-fonts-jetbrains-mono.version>2.242</flatlaf-fonts-jetbrains-mono.version>
+        <rsyntaxtextarea.version>3.3.3</rsyntaxtextarea.version>
+        <sql-formatter.version>2.0.3</sql-formatter.version>
+        <google-java-format.version>1.16.0</google-java-format.version>
     </properties>
 
     <dependencies>
@@ -61,6 +65,12 @@
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
             <version>${hutool-all.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>junit-vintage-engine</artifactId>
+                    <groupId>org.junit.vintage</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!--GUI Designer -> binary class files-->
@@ -74,12 +84,6 @@
             <groupId>com.alibaba</groupId>
             <artifactId>fastjson</artifactId>
             <version>${fastjson.version}</version>
-        </dependency>
-
-        <dependency>
-            <groupId>com.apple</groupId>
-            <artifactId>AppleJavaExtensions</artifactId>
-            <version>${AppleJavaExtensions.version}</version>
         </dependency>
 
         <dependency>
@@ -117,6 +121,12 @@
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
             <version>${okhttp.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>kotlin-stdlib-common</artifactId>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -137,6 +147,60 @@
             <version>${flatlaf-extras.version}</version>
         </dependency>
 
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf-intellij-themes</artifactId>
+            <version>${flatlaf-intellij-themes.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf-fonts-jetbrains-mono</artifactId>
+            <version>${flatlaf-fonts-jetbrains-mono.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>flatlaf</artifactId>
+                    <groupId>com.formdev</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.fifesoft/rsyntaxtextarea -->
+        <dependency>
+            <groupId>com.fifesoft</groupId>
+            <artifactId>rsyntaxtextarea</artifactId>
+            <version>${rsyntaxtextarea.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.vertical-blank</groupId>
+            <artifactId>sql-formatter</artifactId>
+            <version>${sql-formatter.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.google.googlejavaformat</groupId>
+            <artifactId>google-java-format</artifactId>
+            <version>${google-java-format.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>guava</artifactId>
+                    <groupId>com.google.guava</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.jayway.jsonpath</groupId>
+            <artifactId>json-path</artifactId>
+            <version>2.6.0</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>slf4j-api</artifactId>
+                    <groupId>org.slf4j</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
 
     </dependencies>
 
@@ -155,66 +219,71 @@
             <plugin>
                 <groupId>io.github.fvarrui</groupId>
                 <artifactId>javapackager</artifactId>
-                <version>1.6.2</version>
+                <version>1.7.0</version>
                 <configuration>
                     <bundleJre>true</bundleJre>
                     <mainClass>com.luoboduner.moo.tool.App</mainClass>
                     <generateInstaller>true</generateInstaller>
+                    <!-- 这行不能被格式化为多行，否则会出错-->
+                    <vmArgs>--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</vmArgs>
                 </configuration>
                 <executions>
-<!--                    <execution>-->
-<!--                        <id>bundling-for-windows</id>-->
-<!--                        <phase>package</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>package</goal>-->
-<!--                        </goals>-->
-<!--                        <configuration>-->
-<!--                            <platform>windows</platform>-->
-<!--                            <createZipball>true</createZipball>-->
-<!--                            <administratorRequired>true</administratorRequired>-->
-<!--                            <winConfig>-->
+                    <execution>
+                        <id>bundling-for-windows</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>package</goal>
+                        </goals>
+                        <configuration>
+                            <platform>windows</platform>
+                            <createZipball>true</createZipball>
+                            <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>
+                            <administratorRequired>true</administratorRequired>
+                            <winConfig>
 
-<!--                                &lt;!&ndash; general properties &ndash;&gt;-->
-<!--                                <generateSetup>true</generateSetup>-->
-<!--                                <generateMsi>true</generateMsi>-->
-<!--                                <generateMsm>true</generateMsm>-->
+                                <!-- general properties -->
+                                <generateSetup>true</generateSetup>
+                                <generateMsi>true</generateMsi>
+                                <generateMsm>true</generateMsm>
 
-<!--                                &lt;!&ndash; setup generation properties &ndash;&gt;-->
-<!--                                <setupMode>installForAllUsers</setupMode>-->
-<!--                                &lt;!&ndash;                                <createDesktopIconTask>true</createDesktopIconTask>&ndash;&gt;-->
-<!--                                <disableDirPage>false</disableDirPage>-->
-<!--                                <disableFinishedPage>false</disableFinishedPage>-->
-<!--                                <setupLanguages>-->
-<!--                                    <english>compiler:Default.isl</english>-->
-<!--                                    &lt;!&ndash;                                    <spanish>compiler:Languages\Chinese.isl</spanish>&ndash;&gt;-->
-<!--                                </setupLanguages>-->
-<!--                            </winConfig>-->
-<!--                        </configuration>-->
-<!--                    </execution>-->
-                    <!--                    <execution>-->
-                    <!--                        <id>bundling-for-linux</id>-->
-                    <!--                        <phase>package</phase>-->
-                    <!--                        <goals>-->
-                    <!--                            <goal>package</goal>-->
-                    <!--                        </goals>-->
-                    <!--                        <configuration>-->
-                    <!--                            <platform>linux</platform>-->
-                    <!--                            <createTarball>true</createTarball>-->
-                    <!--                            <jdkPath>X:\\path\to\linux\jdk</jdkPath>-->
-                    <!--                        </configuration>-->
-                    <!--                    </execution>-->
-                                        <execution>
-                                            <id>bundling-for-mac</id>
-                                            <phase>package</phase>
-                                            <goals>
-                                                <goal>package</goal>
-                                            </goals>
-                                            <configuration>
-                                                <platform>mac</platform>
-                                                <createTarball>true</createTarball>
-<!--                                                <jdkPath>X:\\path\to\mac\jdk</jdkPath>-->
-                                            </configuration>
-                                        </execution>
+                                <!-- setup generation properties -->
+                                <setupMode>installForAllUsers</setupMode>
+                                <createDesktopIconTask>true</createDesktopIconTask>
+                                <disableDirPage>false</disableDirPage>
+                                <disableFinishedPage>false</disableFinishedPage>
+                                <removeOldLibs>true</removeOldLibs>
+                                <setupLanguages>
+                                    <english>compiler:Default.isl</english>
+                                    <!--                                    <spanish>compiler:Languages\Chinese.isl</spanish>-->
+                                </setupLanguages>
+                            </winConfig>
+                        </configuration>
+                    </execution>
+                    <!--                                        <execution>-->
+                    <!--                                            <id>bundling-for-linux</id>-->
+                    <!--                                            <phase>package</phase>-->
+                    <!--                                            <goals>-->
+                    <!--                                                <goal>package</goal>-->
+                    <!--                                            </goals>-->
+                    <!--                                            <configuration>-->
+                    <!--                                                <platform>linux</platform>-->
+                    <!--                                                <createTarball>true</createTarball>-->
+                    <!--                    <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
+                    <!--                                            </configuration>-->
+                    <!--                                        </execution>-->
+                    <!--                                                                                <execution>-->
+                    <!--                                                                                    <id>bundling-for-mac</id>-->
+                    <!--                                                                                    <phase>package</phase>-->
+                    <!--                                                                                    <goals>-->
+                    <!--                                                                                        <goal>package</goal>-->
+                    <!--                                                                                    </goals>-->
+                    <!--                                                                                    <configuration>-->
+                    <!--                                                                                        <platform>mac</platform>-->
+                    <!--                                                                                        <createTarball>true</createTarball>-->
+                    <!--                    <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
+                    <!--                                        &lt;!&ndash;                                                <jdkPath>X:\\path\to\mac\jdk</jdkPath>&ndash;&gt;-->
+                    <!--                                                                                    </configuration>-->
+                    <!--                                                                                </execution>-->
                 </executions>
             </plugin>
         </plugins>

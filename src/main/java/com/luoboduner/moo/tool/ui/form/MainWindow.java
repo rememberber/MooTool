@@ -1,22 +1,10 @@
 package com.luoboduner.moo.tool.ui.form;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
-import com.luoboduner.moo.tool.ui.form.func.CalculatorForm;
-import com.luoboduner.moo.tool.ui.form.func.ColorBoardForm;
-import com.luoboduner.moo.tool.ui.form.func.CronForm;
-import com.luoboduner.moo.tool.ui.form.func.CryptoForm;
-import com.luoboduner.moo.tool.ui.form.func.EnCodeForm;
-import com.luoboduner.moo.tool.ui.form.func.HostForm;
-import com.luoboduner.moo.tool.ui.form.func.HttpRequestForm;
-import com.luoboduner.moo.tool.ui.form.func.ImageForm;
-import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
-import com.luoboduner.moo.tool.ui.form.func.NetForm;
-import com.luoboduner.moo.tool.ui.form.func.QrCodeForm;
-import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
-import com.luoboduner.moo.tool.ui.form.func.RegexForm;
-import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
-import com.luoboduner.moo.tool.ui.form.func.TranslationForm;
+import com.luoboduner.moo.tool.ui.form.func.*;
+import com.luoboduner.moo.tool.ui.listener.TabListener;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -67,6 +55,23 @@ public class MainWindow {
     public void init() {
         mainWindow = getInstance();
         mainWindow.getMainPanel().updateUI();
+        mainWindow.getTabbedPane().setIconAt(0, new FlatSVGIcon("icon/edit.svg"));
+        mainWindow.getTabbedPane().setIconAt(1, new FlatSVGIcon("icon/time.svg"));
+        mainWindow.getTabbedPane().setIconAt(2, new FlatSVGIcon("icon/json.svg"));
+        mainWindow.getTabbedPane().setIconAt(3, new FlatSVGIcon("icon/check.svg"));
+        mainWindow.getTabbedPane().setIconAt(4, new FlatSVGIcon("icon/global.svg"));
+        mainWindow.getTabbedPane().setIconAt(5, new FlatSVGIcon("icon/exchange.svg"));
+        mainWindow.getTabbedPane().setIconAt(6, new FlatSVGIcon("icon/QRcode.svg", 18, 18));
+        mainWindow.getTabbedPane().setIconAt(7, new FlatSVGIcon("icon/method.svg"));
+        mainWindow.getTabbedPane().setIconAt(8, new FlatSVGIcon("icon/calculate.svg", 15, 15));
+        mainWindow.getTabbedPane().setIconAt(9, new FlatSVGIcon("icon/network.svg"));
+        mainWindow.getTabbedPane().setIconAt(10, new FlatSVGIcon("icon/color.svg"));
+        mainWindow.getTabbedPane().setIconAt(11, new FlatSVGIcon("icon/image.svg"));
+        mainWindow.getTabbedPane().setIconAt(12, new FlatSVGIcon("icon/translate.svg"));
+        mainWindow.getTabbedPane().setIconAt(13, new FlatSVGIcon("icon/schedule.svg", 15, 15));
+        mainWindow.getTabbedPane().setIconAt(14, new FlatSVGIcon("icon/reg.svg"));
+
+
         mainWindow.getQuickNotePanel().add(QuickNoteForm.getInstance().getQuickNotePanel(), gridConstraints);
         mainWindow.getJsonBeautyPanel().add(JsonBeautyForm.getInstance().getJsonBeautyPanel(), gridConstraints);
         mainWindow.getTimeConvertPanel().add(TimeConvertForm.getInstance().getTimeConvertPanel(), gridConstraints);
@@ -83,6 +88,8 @@ public class MainWindow {
         mainWindow.getRegexPanel().add(RegexForm.getInstance().getRegexPanel(), gridConstraints);
         mainWindow.getImagePanel().add(ImageForm.getInstance().getImagePanel(), gridConstraints);
         mainWindow.getMainPanel().updateUI();
+
+        TabListener.addListeners();
     }
 
     {
@@ -113,16 +120,16 @@ public class MainWindow {
         tabbedPane.addTab("时间转换", new ImageIcon(getClass().getResource("/icon/clock.png")), timeConvertPanel);
         jsonBeautyPanel = new JPanel();
         jsonBeautyPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("Json格式化", new ImageIcon(getClass().getResource("/icon/object_dark.png")), jsonBeautyPanel);
+        tabbedPane.addTab("JSON", new ImageIcon(getClass().getResource("/icon/object_dark.png")), jsonBeautyPanel);
         hostPanel = new JPanel();
         hostPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("Host切换", new ImageIcon(getClass().getResource("/icon/check.png")), hostPanel);
+        tabbedPane.addTab("Host", new ImageIcon(getClass().getResource("/icon/check.png")), hostPanel);
         httpRequestPanel = new JPanel();
         httpRequestPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("HTTP请求", new ImageIcon(getClass().getResource("/icon/global.png")), httpRequestPanel);
+        tabbedPane.addTab("HTTP", new ImageIcon(getClass().getResource("/icon/global.png")), httpRequestPanel);
         encodePanel = new JPanel();
         encodePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("编码转换", new ImageIcon(getClass().getResource("/icon/exchange.png")), encodePanel);
+        tabbedPane.addTab("编码", new ImageIcon(getClass().getResource("/icon/exchange.png")), encodePanel);
         qrCodePanel = new JPanel();
         qrCodePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("二维码", new ImageIcon(getClass().getResource("/icon/QR_code.png")), qrCodePanel);
@@ -146,10 +153,10 @@ public class MainWindow {
         tabbedPane.addTab("翻译", new ImageIcon(getClass().getResource("/icon/translate.png")), translationPanel);
         cronPanel = new JPanel();
         cronPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("Cron表达式", new ImageIcon(getClass().getResource("/icon/cron.png")), cronPanel);
+        tabbedPane.addTab("Cron", new ImageIcon(getClass().getResource("/icon/cron.png")), cronPanel);
         regexPanel = new JPanel();
         regexPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("正则表达式", new ImageIcon(getClass().getResource("/icon/reg.png")), regexPanel);
+        tabbedPane.addTab("正则", new ImageIcon(getClass().getResource("/icon/reg.png")), regexPanel);
     }
 
     /**
