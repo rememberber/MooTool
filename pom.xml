@@ -237,7 +237,7 @@
                         <configuration>
                             <platform>windows</platform>
                             <createZipball>true</createZipball>
-                            <additionalModules>jdk.crypto.ec</additionalModules>
+                            <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>
                             <administratorRequired>true</administratorRequired>
                             <winConfig>
 
@@ -268,7 +268,7 @@
                     <!--                                            <configuration>-->
                     <!--                                                <platform>linux</platform>-->
                     <!--                                                <createTarball>true</createTarball>-->
-                    <!--                    <additionalModules>jdk.crypto.ec</additionalModules>-->
+                    <!--                    <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
                     <!--                                            </configuration>-->
                     <!--                                        </execution>-->
                     <!--                                                                                <execution>-->
@@ -280,7 +280,7 @@
                     <!--                                                                                    <configuration>-->
                     <!--                                                                                        <platform>mac</platform>-->
                     <!--                                                                                        <createTarball>true</createTarball>-->
-                    <!--                    <additionalModules>jdk.crypto.ec</additionalModules>-->
+                    <!--                    <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
                     <!--                                        &lt;!&ndash;                                                <jdkPath>X:\\path\to\mac\jdk</jdkPath>&ndash;&gt;-->
                     <!--                                                                                    </configuration>-->
                     <!--                                                                                </execution>-->
