@@ -26,7 +26,6 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
-import org.jetbrains.annotations.NotNull;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -262,7 +261,7 @@ public class QuickNoteListener {
 
             if (totalWidth - currentDividerLocation < 10) {
                 quickNoteForm.getQuickReplaceScrollPane().setVisible(true);
-                quickNoteForm.getContentSplitPane().setDividerLocation((int) (totalWidth * 0.62));
+                quickNoteForm.getContentSplitPane().setDividerLocation((int) (totalWidth * 0.72));
             } else {
                 quickNoteForm.getContentSplitPane().setDividerLocation(totalWidth);
                 quickNoteForm.getQuickReplaceScrollPane().setVisible(false);
@@ -442,7 +441,6 @@ public class QuickNoteListener {
      *
      * @return
      */
-    @NotNull
     private static String getDefaultFileName() {
         return "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
     }
@@ -467,6 +465,10 @@ public class QuickNoteListener {
                     split = split.replace(" ", "");
                 }
 
+                if (quickNoteForm.getTrimBlankRowCheckBox().isSelected() && StringUtils.isBlank(split)) {
+                    continue;
+                }
+
                 if (quickNoteForm.getClearTabTCheckBox().isSelected()) {
                     split = split.replace("\t", "");
                 }
@@ -474,12 +476,55 @@ public class QuickNoteListener {
                 // ------------
 
                 if (quickNoteForm.getScientificToNormalCheckBox().isSelected()) {
-                    BigDecimal bigDecimal = NumberUtil.toBigDecimal(split);
-                    split = bigDecimal.toString();
+                    String[] strs = split.split(" ");
+                    List<String> tmp = Lists.newArrayList();
+                    for (String str : strs) {
+                        if (NumberUtil.isNumber(str)) {
+                            BigDecimal bigDecimal = NumberUtil.toBigDecimal(str.replace("e", "E"));
+                            str = bigDecimal.toString();
+                        }
+                        tmp.add(str);
+                    }
+                    split = StringUtils.join(tmp, " ");
+                }
+
+                if (quickNoteForm.getNormalToScientificCheckBox().isSelected()) {
+                    String[] strs = split.split(" ");
+                    List<String> tmp = Lists.newArrayList();
+                    for (String str : strs) {
+                        if (NumberUtil.isNumber(str)) {
+                            BigDecimal bigDecimal = NumberUtil.toBigDecimal(str);
+                            DecimalFormat decimalFormat = new DecimalFormat("0." + StringUtils.repeat("#", str.split("\\.")[0].length() - 1) + "E0");
+                            str = decimalFormat.format(bigDecimal);
+                        }
+                        tmp.add(str);
+                    }
+                    split = StringUtils.join(tmp, " ");
                 }
 
                 if (quickNoteForm.getToThousandthCheckBox().isSelected()) {
-                    split = toThousandth(split);
+                    String[] strs = split.split(" ");
+                    List<String> tmp = Lists.newArrayList();
+                    for (String str : strs) {
+                        if (NumberUtil.isNumber(str)) {
+                            str = toThousandth(str);
+                        }
+                        tmp.add(str);
+                    }
+                    split = StringUtils.join(tmp, " ");
+                }
+
+                if (quickNoteForm.getToNormalNumCheckBox().isSelected()) {
+                    String[] strs = split.split(" ");
+                    List<String> tmp = Lists.newArrayList();
+                    for (String str : strs) {
+                        // 如果str只包含数字和小数点和逗号，就去掉逗号
+                        if (str.matches("^[0-9,\\.]+$")) {
+                            str = str.replace(",", "");
+                        }
+                        tmp.add(str);
+                    }
+                    split = StringUtils.join(tmp, " ");
                 }
 
                 if (quickNoteForm.getUnderlineToHumpCheckBox().isSelected()) {
@@ -488,6 +533,14 @@ public class QuickNoteListener {
 
                 if (quickNoteForm.getHumpToUnderlineCheckBox().isSelected()) {
                     split = humpToUnderline(split);
+                }
+
+                if (quickNoteForm.getUperToLowerCheckBox().isSelected()) {
+                    split = split.toLowerCase();
+                }
+
+                if (quickNoteForm.getLowerToUperCheckBox().isSelected()) {
+                    split = split.toUpperCase();
                 }
 
                 // ------------
@@ -506,9 +559,9 @@ public class QuickNoteListener {
             } else if (quickNoteForm.getEnterToCommaCheckBox().isSelected()) {
                 view.setText(StringUtils.join(target, ","));
             } else if (quickNoteForm.getEnterToCommaSingleQuotesCheckBox().isSelected()) {
-                view.setText(StringUtils.join(target, "','"));
+                view.setText("'" + StringUtils.join(target, "','") + "'");
             } else if (quickNoteForm.getEnterToCommaDoubleQuotesCheckBox().isSelected()) {
-                view.setText(StringUtils.join(target, "\",\""));
+                view.setText("\"" + StringUtils.join(target, "\",\"") + "\"");
             } else {
                 view.setText(StringUtils.join(target, "\n"));
             }
@@ -562,13 +615,16 @@ public class QuickNoteListener {
      *
      * @param refreshModifiedTime
      */
-    public static void quickSave(boolean refreshModifiedTime) {
+    public static void quickSave(boolean refreshModifiedTime, boolean writeLog) {
         String now = SqliteUtil.nowDateForSqlite();
         if (selectedName != null) {
             TQuickNote tQuickNote = new TQuickNote();
             tQuickNote.setName(selectedName);
 
             String text = QuickNoteForm.quickNoteSyntaxTextViewerManager.getTextByName(selectedName);
+            if (writeLog) {
+                log.info("save note: " + selectedName + ", content: " + text);
+            }
             tQuickNote.setContent(text);
             if (refreshModifiedTime) {
                 tQuickNote.setModifiedTime(now);

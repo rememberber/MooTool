@@ -91,7 +91,7 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
             @Override
             public void keyPressed(KeyEvent evt) {
                 if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
-                    QuickNoteListener.quickSave(true);
+                    QuickNoteListener.quickSave(true, true);
                 } else if (evt.isControlDown() && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
                     QuickNoteListener.format();
                 } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
@@ -114,7 +114,7 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
                 if (ignoreQuickSave) {
                     return;
                 }
-                QuickNoteListener.quickSave(true);
+                QuickNoteListener.quickSave(true, false);
             }
 
             @Override
@@ -122,7 +122,7 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
                 if (ignoreQuickSave) {
                     return;
                 }
-                QuickNoteListener.quickSave(true);
+                QuickNoteListener.quickSave(true, false);
             }
 
             @Override
@@ -130,7 +130,7 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
                 if (ignoreQuickSave) {
                     return;
                 }
-                QuickNoteListener.quickSave(true);
+                QuickNoteListener.quickSave(true, false);
             }
         });
     }

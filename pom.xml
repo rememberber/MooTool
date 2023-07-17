@@ -6,7 +6,7 @@
 
     <groupId>com.luoboduner.moo.tool</groupId>
     <artifactId>MooTool</artifactId>
-    <version>1.4.5</version>
+    <version>1.4.6</version>
     <packaging>jar</packaging>
 
     <name>MooTool</name>
@@ -19,25 +19,26 @@
         <maven.compiler.target>17</maven.compiler.target>
 
         <java.version>17</java.version>
-        <logback.version>1.2.10</logback.version>
+        <logback.version>1.4.6</logback.version>
         <emoji-java.version>5.1.1</emoji-java.version>
-        <hutool-all.version>5.7.21</hutool-all.version>
+        <hutool-all.version>5.8.17</hutool-all.version>
         <forms_rt.version>7.0.3</forms_rt.version>
-        <fastjson.version>1.2.79</fastjson.version>
-        <lombok.version>1.18.22</lombok.version>
-        <mybatis.version>3.5.9</mybatis.version>
-        <sqlite-jdbc.version>3.36.0.3</sqlite-jdbc.version>
+        <fastjson.version>2.0.27</fastjson.version>
+        <lombok.version>1.18.26</lombok.version>
+        <mybatis.version>3.5.13</mybatis.version>
+        <sqlite-jdbc.version>3.41.2.1</sqlite-jdbc.version>
         <junit.version>4.13.2</junit.version>
         <commons-lang3.version>3.12.0</commons-lang3.version>
-        <guava.version>31.0.1-jre</guava.version>
-        <okhttp.version>4.9.3</okhttp.version>
-        <google.zxing.core.version>3.4.1</google.zxing.core.version>
-        <flatlaf.version>2.3</flatlaf.version>
-        <flatlaf-extras.version>2.3</flatlaf-extras.version>
-        <flatlaf-intellij-themes.version>2.3</flatlaf-intellij-themes.version>
-        <rsyntaxtextarea.version>3.2.0</rsyntaxtextarea.version>
+        <guava.version>31.1-jre</guava.version>
+        <okhttp.version>4.10.0</okhttp.version>
+        <google.zxing.core.version>3.5.1</google.zxing.core.version>
+        <flatlaf.version>3.1.1</flatlaf.version>
+        <flatlaf-extras.version>3.1.1</flatlaf-extras.version>
+        <flatlaf-intellij-themes.version>3.1.1</flatlaf-intellij-themes.version>
+        <flatlaf-fonts-jetbrains-mono.version>2.242</flatlaf-fonts-jetbrains-mono.version>
+        <rsyntaxtextarea.version>3.3.3</rsyntaxtextarea.version>
         <sql-formatter.version>2.0.3</sql-formatter.version>
-        <google-java-format.version>1.15.0</google-java-format.version>
+        <google-java-format.version>1.16.0</google-java-format.version>
     </properties>
 
     <dependencies>
@@ -64,6 +65,12 @@
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
             <version>${hutool-all.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>junit-vintage-engine</artifactId>
+                    <groupId>org.junit.vintage</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!--GUI Designer -> binary class files-->
@@ -114,6 +121,12 @@
             <groupId>com.squareup.okhttp3</groupId>
             <artifactId>okhttp</artifactId>
             <version>${okhttp.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>kotlin-stdlib-common</artifactId>
+                    <groupId>org.jetbrains.kotlin</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -138,6 +151,18 @@
             <groupId>com.formdev</groupId>
             <artifactId>flatlaf-intellij-themes</artifactId>
             <version>${flatlaf-intellij-themes.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf-fonts-jetbrains-mono</artifactId>
+            <version>${flatlaf-fonts-jetbrains-mono.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>flatlaf</artifactId>
+                    <groupId>com.formdev</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/com.fifesoft/rsyntaxtextarea -->
@@ -169,6 +194,12 @@
             <groupId>com.jayway.jsonpath</groupId>
             <artifactId>json-path</artifactId>
             <version>2.6.0</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>slf4j-api</artifactId>
+                    <groupId>org.slf4j</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
     </dependencies>
@@ -188,7 +219,7 @@
             <plugin>
                 <groupId>io.github.fvarrui</groupId>
                 <artifactId>javapackager</artifactId>
-                <version>1.6.3</version>
+                <version>1.7.0</version>
                 <configuration>
                     <bundleJre>true</bundleJre>
                     <mainClass>com.luoboduner.moo.tool.App</mainClass>
@@ -206,6 +237,7 @@
                         <configuration>
                             <platform>windows</platform>
                             <createZipball>true</createZipball>
+                            <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>
                             <administratorRequired>true</administratorRequired>
                             <winConfig>
 
@@ -236,20 +268,22 @@
                     <!--                                            <configuration>-->
                     <!--                                                <platform>linux</platform>-->
                     <!--                                                <createTarball>true</createTarball>-->
+                    <!--                    <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
                     <!--                                            </configuration>-->
                     <!--                                        </execution>-->
-<!--                                                                                <execution>-->
-<!--                                                                                    <id>bundling-for-mac</id>-->
-<!--                                                                                    <phase>package</phase>-->
-<!--                                                                                    <goals>-->
-<!--                                                                                        <goal>package</goal>-->
-<!--                                                                                    </goals>-->
-<!--                                                                                    <configuration>-->
-<!--                                                                                        <platform>mac</platform>-->
-<!--                                                                                        <createTarball>true</createTarball>-->
-<!--                                        &lt;!&ndash;                                                <jdkPath>X:\\path\to\mac\jdk</jdkPath>&ndash;&gt;-->
-<!--                                                                                    </configuration>-->
-<!--                                                                                </execution>-->
+                    <!--                                                                                <execution>-->
+                    <!--                                                                                    <id>bundling-for-mac</id>-->
+                    <!--                                                                                    <phase>package</phase>-->
+                    <!--                                                                                    <goals>-->
+                    <!--                                                                                        <goal>package</goal>-->
+                    <!--                                                                                    </goals>-->
+                    <!--                                                                                    <configuration>-->
+                    <!--                                                                                        <platform>mac</platform>-->
+                    <!--                                                                                        <createTarball>true</createTarball>-->
+                    <!--                    <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
+                    <!--                                        &lt;!&ndash;                                                <jdkPath>X:\\path\to\mac\jdk</jdkPath>&ndash;&gt;-->
+                    <!--                                                                                    </configuration>-->
+                    <!--                                                                                </execution>-->
                 </executions>
             </plugin>
         </plugins>
