@@ -161,7 +161,7 @@ public class CalculatorListener {
 
             @Override
             public void keyPressed(KeyEvent evt) {
-                if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
+                if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_S) {
                     CalculatorForm.saveContent();
                 }
             }
