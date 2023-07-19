@@ -104,17 +104,17 @@ public class JsonBeautyListener {
 
             @Override
             public void keyPressed(KeyEvent evt) {
-                if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
+                if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_S) {
                     quickSave(true);
-                } else if (evt.isControlDown() && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                } else if ((evt.isControlDown() || evt.isMetaDown()) && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
                     String jsonText = jsonBeautyForm.getTextArea().getText();
                     jsonBeautyForm.getTextArea().setText(formatJson(jsonText));
                     jsonBeautyForm.getTextArea().setCaretPosition(0);
-                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                } else if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_F) {
                     showFindPanel();
-                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_R) {
+                } else if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_R) {
                     showFindPanel();
-                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
+                } else if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_N) {
                     newJson();
                 }
             }

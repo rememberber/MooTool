@@ -44,12 +44,12 @@ public class UndoUtil {
 
                         @Override
                         public void keyPressed(KeyEvent evt) {
-                            if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_Z) {
+                            if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_Z) {
                                 if (undoManager.canUndo()) {
                                     undoManager.undo();
                                 }
                             }
-                            if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_Y) {
+                            if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_Y) {
                                 if (undoManager.canRedo()) {
                                     undoManager.redo();
                                 }
