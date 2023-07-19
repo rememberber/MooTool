@@ -90,15 +90,15 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
 
             @Override
             public void keyPressed(KeyEvent evt) {
-                if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
+                if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_S) {
                     QuickNoteListener.quickSave(true, true);
-                } else if (evt.isControlDown() && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                } else if ((evt.isControlDown() || evt.isMetaDown()) && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
                     QuickNoteListener.format();
-                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                } else if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_F) {
                     QuickNoteListener.showFindPanel();
-                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_R) {
+                } else if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_R) {
                     QuickNoteListener.showFindPanel();
-                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
+                } else if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_N) {
                     QuickNoteListener.newNote();
                 }
             }

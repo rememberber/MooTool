@@ -152,7 +152,11 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public String getTheme() {
-        return setting.getStr("theme", "setting.appearance", "Flat Darcula");
+        if (SystemUtil.isMacOs()) {
+            return setting.getStr("theme", "setting.appearance", "Flat macOS Dark");
+        } else {
+            return setting.getStr("theme", "setting.appearance", "Flat Darcula");
+        }
     }
 
     public void setTheme(String theme) {

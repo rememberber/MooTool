@@ -82,13 +82,13 @@ public class HostListener {
 
             @Override
             public void keyPressed(KeyEvent evt) {
-                if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_S) {
+                if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_S) {
                     quickSave(true);
-                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_N) {
+                } else if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_N) {
                     newHost();
-                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                } else if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_F) {
                     showFindPanel();
-                } else if (evt.isControlDown() && evt.getKeyCode() == KeyEvent.VK_R) {
+                } else if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_R) {
                     showFindPanel();
                 }
             }
