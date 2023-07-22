@@ -4,6 +4,7 @@ import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import com.formdev.flatlaf.util.SystemInfo;
 import com.google.common.collect.Lists;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
@@ -18,10 +19,7 @@ import com.luoboduner.moo.tool.ui.component.TableInCellColorBlockRenderer;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.frame.FavoriteColorFrame;
 import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
-import com.luoboduner.moo.tool.util.JTableUtil;
-import com.luoboduner.moo.tool.util.MybatisUtil;
-import com.luoboduner.moo.tool.util.SqliteUtil;
-import com.luoboduner.moo.tool.util.UndoUtil;
+import com.luoboduner.moo.tool.util.*;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -30,7 +28,10 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.List;
 
 /**
@@ -399,6 +400,15 @@ public class FavoriteColorForm {
         favoriteColorForm.getNewListButton().setIcon(new FlatSVGIcon("icon/add.svg"));
         favoriteColorForm.getMoveUpButton().setIcon(new FlatSVGIcon("icon/up.svg"));
         favoriteColorForm.getMoveDownButton().setIcon(new FlatSVGIcon("icon/down.svg"));
+
+        if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
+            this.getSplitPane().getRootPane().putClientProperty("apple.awt.fullWindowContent", true);
+            this.getSplitPane().getRootPane().putClientProperty("apple.awt.transparentTitleBar", true);
+            this.getSplitPane().getRootPane().putClientProperty("apple.awt.fullscreenable", true);
+            this.getSplitPane().getRootPane().putClientProperty("apple.awt.windowTitleVisible", false);
+            GridLayoutManager gridLayoutManager = (GridLayoutManager) favoriteColorForm.getFavoriteColorPanel().getLayout();
+            gridLayoutManager.setMargin(new Insets(28, 0, 0, 0));
+        }
 
         initListTable();
         favoriteColorForm.getFavoriteColorPanel().updateUI();

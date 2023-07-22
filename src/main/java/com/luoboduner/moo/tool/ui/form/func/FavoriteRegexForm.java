@@ -4,6 +4,7 @@ import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import com.formdev.flatlaf.util.SystemInfo;
 import com.google.common.collect.Lists;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
@@ -17,10 +18,7 @@ import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.frame.FavoriteRegexFrame;
 import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
-import com.luoboduner.moo.tool.util.JTableUtil;
-import com.luoboduner.moo.tool.util.MybatisUtil;
-import com.luoboduner.moo.tool.util.SqliteUtil;
-import com.luoboduner.moo.tool.util.UndoUtil;
+import com.luoboduner.moo.tool.util.*;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -416,6 +414,15 @@ public class FavoriteRegexForm {
         favoriteRegexForm.getNewListButton().setIcon(new FlatSVGIcon("icon/add.svg"));
         favoriteRegexForm.getMoveUpButton().setIcon(new FlatSVGIcon("icon/up.svg"));
         favoriteRegexForm.getMoveDownButton().setIcon(new FlatSVGIcon("icon/down.svg"));
+
+        if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
+            this.getSplitPane().getRootPane().putClientProperty("apple.awt.fullWindowContent", true);
+            this.getSplitPane().getRootPane().putClientProperty("apple.awt.transparentTitleBar", true);
+            this.getSplitPane().getRootPane().putClientProperty("apple.awt.fullscreenable", true);
+            this.getSplitPane().getRootPane().putClientProperty("apple.awt.windowTitleVisible", false);
+            GridLayoutManager gridLayoutManager = (GridLayoutManager) favoriteRegexForm.getFavoriteRegexPanel().getLayout();
+            gridLayoutManager.setMargin(new Insets(28, 0, 0, 0));
+        }
 
         initListTable();
         favoriteRegexForm.getFavoriteRegexPanel().updateUI();
