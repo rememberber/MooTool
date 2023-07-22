@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.ui.dialog;
 
 import cn.hutool.core.thread.ThreadUtil;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import com.formdev.flatlaf.util.SystemInfo;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -9,6 +10,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.util.ComponentUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
+import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
 
 import javax.swing.*;
@@ -48,6 +50,15 @@ public class AboutDialog extends JDialog {
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.5, 0.68);
         setContentPane(contentPane);
         setModal(true);
+
+        if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
+            this.getRootPane().putClientProperty("apple.awt.fullWindowContent", true);
+            this.getRootPane().putClientProperty("apple.awt.transparentTitleBar", true);
+            this.getRootPane().putClientProperty("apple.awt.fullscreenable", true);
+            this.getRootPane().putClientProperty("apple.awt.windowTitleVisible", false);
+            GridLayoutManager gridLayoutManager = (GridLayoutManager) contentPane.getLayout();
+            gridLayoutManager.setMargin(new Insets(28, 0, 0, 0));
+        }
 
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {

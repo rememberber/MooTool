@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.dialog;
 
+import com.formdev.flatlaf.util.SystemInfo;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -13,6 +14,7 @@ import com.luoboduner.moo.tool.ui.form.func.FavoriteRegexForm;
 import com.luoboduner.moo.tool.util.ComponentUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
+import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -47,6 +49,15 @@ public class FavoriteRegexDialog extends JDialog {
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
+
+        if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
+            this.getRootPane().putClientProperty("apple.awt.fullWindowContent", true);
+            this.getRootPane().putClientProperty("apple.awt.transparentTitleBar", true);
+            this.getRootPane().putClientProperty("apple.awt.fullscreenable", true);
+            this.getRootPane().putClientProperty("apple.awt.windowTitleVisible", false);
+            GridLayoutManager gridLayoutManager = (GridLayoutManager) contentPane.getLayout();
+            gridLayoutManager.setMargin(new Insets(28, 0, 0, 0));
+        }
 
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 600, 320);
 
