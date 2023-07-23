@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.frame;
 
+import com.formdev.flatlaf.util.SystemInfo;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.TopMenuBar;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
@@ -26,20 +27,20 @@ public class MainFrame extends JFrame {
         this.setName(UiConsts.APP_NAME);
         this.setTitle(UiConsts.APP_NAME);
         FrameUtil.setFrameIcon(this);
-        // Mac系统Dock图标
-        if (SystemUtil.isMacOs()) {
-//            Application application = Application.getApplication();
-//            application.setDockIconImage(UiConsts.IMAGE_LOGO_512);
-//            if (!SystemUtil.isMacM1()) {
-//                application.setEnabledAboutMenu(false);
-//                application.setEnabledPreferencesMenu(false);
-//            }
+
+        if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
+            this.getRootPane().putClientProperty("apple.awt.fullWindowContent", true);
+            this.getRootPane().putClientProperty("apple.awt.transparentTitleBar", true);
+            this.getRootPane().putClientProperty("apple.awt.fullscreenable", true);
+            this.getRootPane().putClientProperty("apple.awt.windowTitleVisible", false);
         }
+
         topMenuBar = TopMenuBar.getInstance();
         topMenuBar.init();
         setJMenuBar(topMenuBar);
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.8, 0.88);
         FrameListener.addListeners();
+
     }
 
 }

@@ -4,6 +4,7 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import com.google.common.collect.Lists;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -21,6 +22,7 @@ import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.io.File;
 import java.io.IOException;
 import java.util.List;
 
@@ -123,7 +125,20 @@ public class ImageForm {
         if (!FileUtil.exist(ImageListener.IMAGE_PATH_PRE_FIX)) {
             FileUtil.mkdir(ImageListener.IMAGE_PATH_PRE_FIX);
         }
-        List<String> fileNames = FileUtil.listFileNames(ImageListener.IMAGE_PATH_PRE_FIX);
+        List<String> fileNames = Lists.newArrayList();
+        List<File> files = FileUtil.loopFiles(ImageListener.IMAGE_PATH_PRE_FIX);
+        // 按照修改时间倒序排序汇总文件名到fileNames
+        files.stream().sorted((f1, f2) -> {
+            long diff = f2.lastModified() - f1.lastModified();
+            if (diff > 0) {
+                return 1;
+            } else if (diff == 0) {
+                return 0;
+            } else {
+                return -1;
+            }
+        }).forEach(file -> fileNames.add(file.getName()));
+
         for (String fileName : fileNames) {
             data = new Object[2];
             data[0] = fileName;
