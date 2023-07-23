@@ -1,10 +1,12 @@
 package com.luoboduner.moo.tool.ui.form;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import com.formdev.flatlaf.util.SystemInfo;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.listener.TabListener;
+import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -55,6 +57,10 @@ public class MainWindow {
     public void init() {
         mainWindow = getInstance();
         mainWindow.getMainPanel().updateUI();
+        if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
+            GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
+            gridLayoutManager.setMargin(new Insets(20, 0, 0, 0));
+        }
         mainWindow.getTabbedPane().setIconAt(0, new FlatSVGIcon("icon/edit.svg"));
         mainWindow.getTabbedPane().setIconAt(1, new FlatSVGIcon("icon/time.svg"));
         mainWindow.getTabbedPane().setIconAt(2, new FlatSVGIcon("icon/json.svg"));
