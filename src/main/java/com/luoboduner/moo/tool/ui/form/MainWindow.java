@@ -59,7 +59,7 @@ public class MainWindow {
         mainWindow.getMainPanel().updateUI();
         if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
             GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
-            gridLayoutManager.setMargin(new Insets(20, 0, 0, 0));
+            gridLayoutManager.setMargin(new Insets(25, 0, 0, 0));
         }
         mainWindow.getTabbedPane().setIconAt(0, new FlatSVGIcon("icon/edit.svg"));
         mainWindow.getTabbedPane().setIconAt(1, new FlatSVGIcon("icon/time.svg"));
