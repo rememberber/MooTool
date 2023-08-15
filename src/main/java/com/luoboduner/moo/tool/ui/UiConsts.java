@@ -18,7 +18,7 @@ public class UiConsts {
     public static final String APP_NAME = "MooTool";
     public static final String APP_VERSION = "v1.4.7";
 
-    public static final int TABLE_ROW_HEIGHT = 36;
+    public static final int TABLE_ROW_HEIGHT = 30;
 
     /**
      * Logo-1024*1024
