@@ -8,6 +8,7 @@ import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
@@ -64,14 +65,15 @@ public class FrameListener {
 
             @Override
             public void windowActivated(WindowEvent e) {
-
+                if (App.config.isDefaultMaxWindow()) {
+                    // 低分辨率下自动最大化窗口
+                    App.mainFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+                }
             }
         });
 
-        MainWindow.getInstance().getMainPanel().registerKeyboardAction(e -> {
-            App.mainFrame.setVisible(false);
-            saveBeforeExit();
-        }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        MainWindow.getInstance().getMainPanel().registerKeyboardAction(e -> App.mainFrame.setExtendedState(Frame.ICONIFIED), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
+
     }
 
     public static void saveBeforeExit() {
