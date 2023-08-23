@@ -195,6 +195,7 @@ public class ColorBoardForm {
     public static void setSelectedColor(Color color) {
         String hex = ColorUtil.toHex(color);
         colorBoardForm.getShowColorPanel().setBackground(color);
+        colorBoardForm.getShowColorPanel().updateUI();
         setColorCode(hex);
         colorBoardForm.getColorCodeTextField().grabFocus();
         App.config.setLastSelectedColor(hex);
