@@ -130,5 +130,12 @@ public class ColorBoardListener {
                 super.mouseExited(e);
             }
         });
+
+        colorBoardForm.getChooseColorButton().addActionListener(e -> {
+            Color color = JColorChooser.showDialog(colorBoardForm.getColorBoardPanel(), "选择颜色", colorBoardForm.getShowColorPanel().getBackground());
+            if (color != null) {
+                ColorBoardForm.setSelectedColor(color);
+            }
+        });
     }
 }
