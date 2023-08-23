@@ -26,6 +26,11 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     private boolean unifiedBackground;
 
+    /**
+     * 主题颜色跟随系统
+     */
+    private boolean themeColorFollowSystem;
+
     private String beforeVersion;
 
     private String theme;
@@ -133,6 +138,14 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setUnifiedBackground(boolean unifiedBackground) {
         setting.putByGroup("unifiedBackground", "setting.normal", String.valueOf(unifiedBackground));
+    }
+
+    public boolean isThemeColorFollowSystem() {
+        return setting.getBool("themeColorFollowSystem", "setting.normal", true);
+    }
+
+    public void setThemeColorFollowSystem(boolean themeColorFollowSystem) {
+        setting.putByGroup("themeColorFollowSystem", "setting.normal", String.valueOf(themeColorFollowSystem));
     }
 
     public int getRecentTabIndex() {

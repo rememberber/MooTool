@@ -39,7 +39,19 @@
         <rsyntaxtextarea.version>3.3.4</rsyntaxtextarea.version>
         <sql-formatter.version>2.0.3</sql-formatter.version>
         <google-java-format.version>1.16.0</google-java-format.version>
+        <jSystemThemeDetector.version>3.8</jSystemThemeDetector.version>
     </properties>
+
+    <repositories>
+        <repository>
+            <id>mvnrepository.com</id>
+            <url>https://mvnrepository.com</url>
+        </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
 
     <dependencies>
         <dependency>
@@ -202,6 +214,12 @@
             </exclusions>
         </dependency>
 
+        <dependency>
+            <groupId>com.github.Dansoftowner</groupId>
+            <artifactId>jSystemThemeDetector</artifactId>
+            <version>${jSystemThemeDetector.version}</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -225,7 +243,12 @@
                     <mainClass>com.luoboduner.moo.tool.App</mainClass>
                     <generateInstaller>true</generateInstaller>
                     <!-- 这行不能被格式化为多行，否则会出错-->
-                    <vmArgs>--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</vmArgs>
+                    <vmArgs>--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports
+                        jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports
+                        jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports
+                        jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports
+                        jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED
+                    </vmArgs>
                 </configuration>
                 <executions>
                     <execution>
@@ -271,18 +294,18 @@
                     <!--                    <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
                     <!--                                            </configuration>-->
                     <!--                                        </execution>-->
-<!--                                                                                                    <execution>-->
-<!--                                                                                                        <id>bundling-for-mac</id>-->
-<!--                                                                                                        <phase>package</phase>-->
-<!--                                                                                                        <goals>-->
-<!--                                                                                                            <goal>package</goal>-->
-<!--                                                                                                        </goals>-->
-<!--                                                                                                        <configuration>-->
-<!--                                                                                                            <platform>mac</platform>-->
-<!--                                                                                                            <createTarball>true</createTarball>-->
-<!--                                                                                                            <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
-<!--                                                                                                        </configuration>-->
-<!--                                                                                                    </execution>-->
+                    <!--                                                                                                    <execution>-->
+                    <!--                                                                                                        <id>bundling-for-mac</id>-->
+                    <!--                                                                                                        <phase>package</phase>-->
+                    <!--                                                                                                        <goals>-->
+                    <!--                                                                                                            <goal>package</goal>-->
+                    <!--                                                                                                        </goals>-->
+                    <!--                                                                                                        <configuration>-->
+                    <!--                                                                                                            <platform>mac</platform>-->
+                    <!--                                                                                                            <createTarball>true</createTarball>-->
+                    <!--                                                                                                            <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
+                    <!--                                                                                                        </configuration>-->
+                    <!--                                                                                                    </execution>-->
                 </executions>
             </plugin>
         </plugins>
