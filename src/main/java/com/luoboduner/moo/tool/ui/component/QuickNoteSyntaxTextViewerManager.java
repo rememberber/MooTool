@@ -10,6 +10,7 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rtextarea.Gutter;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
+import javax.swing.*;
 import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -50,25 +51,29 @@ public class QuickNoteSyntaxTextViewerManager {
             rTextScrollPane.setMaximumSize(new Dimension(-1, -1));
             rTextScrollPane.setMinimumSize(new Dimension(-1, -1));
 
-            Color defaultBackground = App.mainFrame.getBackground();
-
-            Gutter gutter = rTextScrollPane.getGutter();
-            if (FlatLaf.isLafDark()) {
-                gutter.setBorderColor(gutter.getLineNumberColor().darker());
-            } else {
-                gutter.setBorderColor(gutter.getLineNumberColor().brighter());
-            }
-            gutter.setBackground(defaultBackground);
-            Font font = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
-            gutter.setLineNumberFont(font);
-//            gutter.setLineNumberColor(defaultBackground);
-            gutter.setFoldBackground(defaultBackground.darker());
-            gutter.setArmedFoldBackground(defaultBackground);
+            updateGutter(rTextScrollPane);
 
             viewMap.put(name, rTextScrollPane);
             currentRTextScrollPane = rTextScrollPane;
         }
         return rTextScrollPane;
+    }
+
+    public static void updateGutter(RTextScrollPane rTextScrollPane) {
+        Color defaultBackground = App.mainFrame.getBackground();
+
+        Gutter gutter = rTextScrollPane.getGutter();
+        if (FlatLaf.isLafDark()) {
+            gutter.setBorderColor(gutter.getLineNumberColor().darker());
+        } else {
+            gutter.setBorderColor(gutter.getLineNumberColor().brighter());
+        }
+        gutter.setBackground(defaultBackground);
+        Font font = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
+        gutter.setLineNumberFont(font);
+        gutter.setBackground(UIManager.getColor("Editor.gutter.background"));
+        gutter.setBorderColor(UIManager.getColor("Editor.gutter.borderColor"));
+        gutter.setLineNumberColor(UIManager.getColor("Editor.gutter.lineNumberColor"));
     }
 
     public RTextScrollPane getCurrentRTextScrollPane() {

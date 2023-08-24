@@ -10,8 +10,11 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.dialog.*;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
+import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
+import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
+import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.*;
 import java.awt.*;
@@ -417,6 +420,14 @@ public class TopMenuBar extends JMenuBar {
         FlatAnimatedLafChange.hideSnapshotWithAnimation();
 
         initThemesMenu();
+
+        QuickNoteSyntaxTextViewerManager quickNoteSyntaxTextViewerManager = QuickNoteForm.quickNoteSyntaxTextViewerManager;
+        RTextScrollPane syntaxTextViewer = quickNoteSyntaxTextViewerManager.getRTextScrollPane(QuickNoteListener.selectedName);
+        if (syntaxTextViewer != null) {
+            ((QuickNoteSyntaxTextViewer) syntaxTextViewer.getTextArea()).updateTheme();
+            QuickNoteSyntaxTextViewerManager.updateGutter(syntaxTextViewer);
+            syntaxTextViewer.updateUI();
+        }
     }
 
     private void keyMapActionPerformed() {
