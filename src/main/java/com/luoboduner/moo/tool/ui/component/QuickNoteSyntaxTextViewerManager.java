@@ -20,7 +20,7 @@ import java.util.Map;
  */
 public class QuickNoteSyntaxTextViewerManager {
 
-    private Map<String, RTextScrollPane> viewMap = new HashMap<>();
+    public static Map<String, RTextScrollPane> viewMap = new HashMap<>();
 
     private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
 
