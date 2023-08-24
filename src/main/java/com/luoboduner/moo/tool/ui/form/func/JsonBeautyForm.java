@@ -245,7 +245,7 @@ public class JsonBeautyForm {
         jsonBeautyForm.getFontSizeComboBox().setSelectedItem(String.valueOf(fontSize));
 
         Font font = new Font(fontName, Font.PLAIN, fontSize);
-        jsonBeautyForm.getTextArea().setFont(font);
+//        jsonBeautyForm.getTextArea().setFont(font);
     }
 
     /**

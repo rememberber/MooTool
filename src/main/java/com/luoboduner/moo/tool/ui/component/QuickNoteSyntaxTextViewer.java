@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.component;
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
 import com.formdev.flatlaf.util.FontUtils;
+import com.formdev.flatlaf.util.StringUtils;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
@@ -123,7 +124,9 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
             ioe.printStackTrace();
         }
 
-        setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
+        if (StringUtils.isEmpty(getSyntaxEditingStyle())) {
+            setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
+        }
         setCodeFoldingEnabled(true);
 
         setBackground(UIManager.getColor("Editor.background"));
