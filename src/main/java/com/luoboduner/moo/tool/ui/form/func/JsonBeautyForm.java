@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
+import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
@@ -16,12 +17,15 @@ import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
+import org.fife.ui.rsyntaxtextarea.Theme;
 import org.fife.ui.rtextarea.Gutter;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -61,16 +65,43 @@ public class JsonBeautyForm {
 
     private JsonBeautyForm() {
         textArea = new JsonSyntaxTextViewer();
-        JTextArea timeHisTextArea = TimeConvertForm.getInstance().getTimeHisTextArea();
-        textArea.setSelectionColor(timeHisTextArea.getSelectionColor());
+        scrollPane = new RTextScrollPane(textArea);
+
+        updateTheme();
+
+        UndoUtil.register(this);
+    }
+
+    public void updateTheme() {
+        try {
+            Theme theme;
+            if (FlatLaf.isLafDark()) {
+                theme = Theme.load(JsonSyntaxTextViewer.class.getResourceAsStream(
+                        "/org/fife/ui/rsyntaxtextarea/themes/monokai.xml"));
+            } else {
+                theme = Theme.load(JsonSyntaxTextViewer.class.getResourceAsStream(
+                        "/org/fife/ui/rsyntaxtextarea/themes/idea.xml"));
+            }
+            theme.apply(textArea);
+        } catch (IOException ioe) { // Never happens
+            ioe.printStackTrace();
+        }
+
+        textArea.setHyperlinksEnabled(true);
+
+        textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JSON);
+        textArea.setCodeFoldingEnabled(true);
+
+        textArea.setBackground(UIManager.getColor("Editor.background"));
         textArea.setCaretColor(UIManager.getColor("Editor.caretColor"));
+        textArea.setSelectionColor(UIManager.getColor("Editor.selectionBackground"));
+        textArea.setCurrentLineHighlightColor(UIManager.getColor("Editor.currentLineHighlight"));
         textArea.setMarkAllHighlightColor(UIManager.getColor("Editor.markAllHighlightColor"));
         textArea.setMarkOccurrencesColor(UIManager.getColor("Editor.markOccurrencesColor"));
         textArea.setMatchedBracketBGColor(UIManager.getColor("Editor.matchedBracketBackground"));
         textArea.setMatchedBracketBorderColor(UIManager.getColor("Editor.matchedBracketBorderColor"));
         textArea.setPaintMatchedBracketPair(true);
-
-        scrollPane = new RTextScrollPane(textArea);
+        textArea.setAnimateBracketMatching(false);
 
         scrollPane.setMaximumSize(new Dimension(-1, -1));
         scrollPane.setMinimumSize(new Dimension(-1, -1));
@@ -78,15 +109,17 @@ public class JsonBeautyForm {
         Color defaultBackground = App.mainFrame.getBackground();
 
         Gutter gutter = scrollPane.getGutter();
-        gutter.setBorderColor(gutter.getLineNumberColor().darker());
+        if (FlatLaf.isLafDark()) {
+            gutter.setBorderColor(gutter.getLineNumberColor().darker());
+        } else {
+            gutter.setBorderColor(gutter.getLineNumberColor().brighter());
+        }
         gutter.setBackground(defaultBackground);
-
         Font font = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
         gutter.setLineNumberFont(font);
-//            gutter.setLineNumberColor(defaultBackground);
-        gutter.setFoldBackground(defaultBackground.darker());
-        gutter.setArmedFoldBackground(defaultBackground);
-        UndoUtil.register(this);
+        gutter.setBackground(UIManager.getColor("Editor.gutter.background"));
+        gutter.setBorderColor(UIManager.getColor("Editor.gutter.borderColor"));
+        gutter.setLineNumberColor(UIManager.getColor("Editor.gutter.lineNumberColor"));
     }
 
     public static JsonBeautyForm getInstance() {
@@ -182,7 +215,7 @@ public class JsonBeautyForm {
         }
     }
 
-    private static void initTextAreaFont() {
+    public static void initTextAreaFont() {
         String fontName = App.config.getJsonBeautyFontName();
         int fontSize = App.config.getJsonBeautyFontSize();
         if (fontSize == 0) {

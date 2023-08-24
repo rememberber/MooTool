@@ -10,6 +10,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.dialog.*;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
+import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -428,6 +429,12 @@ public class TopMenuBar extends JMenuBar {
             QuickNoteSyntaxTextViewerManager.updateGutter(syntaxTextViewer);
             syntaxTextViewer.updateUI();
         }
+
+        JsonBeautyForm.getInstance().updateTheme();
+        JsonBeautyForm.initTextAreaFont();
+        JsonBeautyForm.getInstance().getScrollPane().updateUI();
+
+
     }
 
     private void keyMapActionPerformed() {
