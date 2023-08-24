@@ -10,6 +10,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.dialog.*;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
+import com.luoboduner.moo.tool.ui.form.func.HostForm;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
@@ -434,7 +435,8 @@ public class TopMenuBar extends JMenuBar {
         JsonBeautyForm.initTextAreaFont();
         JsonBeautyForm.getInstance().getScrollPane().updateUI();
 
-
+        HostForm.getInstance().updateTheme();
+        HostForm.getInstance().getScrollPane().updateUI();
     }
 
     private void keyMapActionPerformed() {
