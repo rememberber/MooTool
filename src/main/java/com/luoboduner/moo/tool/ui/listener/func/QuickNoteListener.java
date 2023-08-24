@@ -436,7 +436,7 @@ public class QuickNoteListener {
             QuickNoteForm.COLOR_BUTTONS[colorIndex].setSelected(true);
         }
 
-        syntaxTextViewer.updateUI();
+//        syntaxTextViewer.updateUI();
     }
 
     /**
