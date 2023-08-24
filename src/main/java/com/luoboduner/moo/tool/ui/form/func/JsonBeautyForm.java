@@ -87,7 +87,24 @@ public class JsonBeautyForm {
             ioe.printStackTrace();
         }
 
-        textArea.setHyperlinksEnabled(true);
+        //        setCurrentLineHighlightColor(new Color(52, 52, 52));
+//        setUseSelectedTextColor(true);
+//        setSelectedTextColor(new Color(50, 50, 50));
+
+        // 初始化背景色
+//        Style.blackTextArea(this);
+        textArea.setBackground(TimeConvertForm.getInstance().getTimeHisTextArea().getBackground());
+        // 初始化边距
+        textArea.setMargin(new Insets(10, 10, 10, 10));
+
+        // 初始化字体
+        String fontName = App.config.getJsonBeautyFontName();
+        int fontSize = App.config.getJsonBeautyFontSize();
+        if (fontSize == 0) {
+            fontSize = textArea.getFont().getSize() + 2;
+        }
+        Font font = new Font(fontName, Font.PLAIN, fontSize);
+        textArea.setFont(font);
 
         textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JSON);
         textArea.setCodeFoldingEnabled(true);
@@ -115,8 +132,8 @@ public class JsonBeautyForm {
             gutter.setBorderColor(gutter.getLineNumberColor().brighter());
         }
         gutter.setBackground(defaultBackground);
-        Font font = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
-        gutter.setLineNumberFont(font);
+        Font font2 = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
+        gutter.setLineNumberFont(font2);
         gutter.setBackground(UIManager.getColor("Editor.gutter.background"));
         gutter.setBorderColor(UIManager.getColor("Editor.gutter.borderColor"));
         gutter.setLineNumberColor(UIManager.getColor("Editor.gutter.lineNumberColor"));

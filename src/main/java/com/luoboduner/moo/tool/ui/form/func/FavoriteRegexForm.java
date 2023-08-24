@@ -71,7 +71,12 @@ public class FavoriteRegexForm {
         listTable.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                viewListBySelected();
+                int focusedRowIndex = listTable.rowAtPoint(e.getPoint());
+                if (focusedRowIndex == -1) {
+                    return;
+                }
+
+                viewListBySelected(focusedRowIndex);
                 listControlPanel.setVisible(true);
                 itemControlPanel.setVisible(false);
                 super.mousePressed(e);
@@ -294,11 +299,12 @@ public class FavoriteRegexForm {
                             log.error(e.toString());
                         }
                     }
-                    viewListBySelected();
+                    viewListBySelected(selectedRow);
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteList();
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
-                    viewListBySelected();
+                    int selectedRow = listTable.getSelectedRow();
+                    viewListBySelected(selectedRow);
                 }
             }
         });
@@ -331,7 +337,7 @@ public class FavoriteRegexForm {
                             favoriteRegexItemMapper.updateByPrimaryKeySelective(tFavoriteRegexItem);
                         } catch (Exception e) {
                             JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
-                            viewListBySelected();
+                            viewListBySelected(selectedRow);
                             log.error(e.toString());
                         }
                     }
@@ -394,8 +400,7 @@ public class FavoriteRegexForm {
         }
     }
 
-    private void viewListBySelected() {
-        int selectedRow = listTable.getSelectedRow();
+    private void viewListBySelected(int selectedRow) {
         int listId = Integer.parseInt(listTable.getValueAt(selectedRow, 0).toString());
         initItemTable(listId);
     }

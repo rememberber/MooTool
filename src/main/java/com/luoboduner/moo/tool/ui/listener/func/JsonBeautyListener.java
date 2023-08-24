@@ -82,17 +82,21 @@ public class JsonBeautyListener {
         jsonBeautyForm.getNoteListTable().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
+                super.mousePressed(e);
+
+                int focusedRowIndex = jsonBeautyForm.getNoteListTable().rowAtPoint(e.getPoint());
+                if (focusedRowIndex == -1) {
+                    return;
+                }
+
                 ignoreQuickSave = true;
                 try {
-                    viewByRowNum(selectedRow);
+                    viewByRowNum(focusedRowIndex);
                 } catch (Exception e2) {
                     log.error(e2.getMessage());
                 } finally {
                     ignoreQuickSave = false;
                 }
-
-                super.mousePressed(e);
             }
         });
 
@@ -313,6 +317,7 @@ public class JsonBeautyListener {
         jsonBeautyForm.getTextArea().setCaretPosition(0);
         jsonBeautyForm.getScrollPane().getVerticalScrollBar().setValue(0);
         jsonBeautyForm.getScrollPane().getHorizontalScrollBar().setValue(0);
+        JsonBeautyForm.initTextAreaFont();
 //        jsonBeautyForm.getTextArea().updateUI();
     }
 

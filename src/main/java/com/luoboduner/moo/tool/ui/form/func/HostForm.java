@@ -351,7 +351,7 @@ public class HostForm {
             }
             App.config.setCurrentHostName(hostName);
             App.config.save();
-            HostListener.refreshHostContentInTextArea();
+//            HostListener.refreshHostContentInTextArea();
         }
     }
 

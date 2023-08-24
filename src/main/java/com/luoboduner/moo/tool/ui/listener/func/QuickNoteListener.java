@@ -88,10 +88,13 @@ public class QuickNoteListener {
         quickNoteForm.getNoteListTable().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
+                int focusedRowIndex = quickNoteForm.getNoteListTable().rowAtPoint(e.getPoint());
+                if (focusedRowIndex == -1) {
+                    return;
+                }
                 QuickNoteSyntaxTextViewer.ignoreQuickSave = true;
                 try {
-                    viewByRowNum(selectedRow);
+                    viewByRowNum(focusedRowIndex);
                 } catch (Exception e1) {
                     log.error(e1.toString());
                 } finally {
