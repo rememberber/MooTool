@@ -17,6 +17,8 @@ Windows • Linux • macOS
 
 ![Overview](screen_shoot/quick_note_mac.png)
 
+![Overview](screen_shoot/quick_replace_mac.png)
+
 ![Overview](screen_shoot/time_mac.png)
 
 ![Overview](screen_shoot/json_mac.png)
