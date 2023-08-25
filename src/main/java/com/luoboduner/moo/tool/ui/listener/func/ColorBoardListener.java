@@ -121,7 +121,6 @@ public class ColorBoardListener {
                 tipsBuilder.append("<h1>关于调色板</h1>");
                 tipsBuilder.append("<p>调色板和取色器的设计借鉴了PicPick，其中的颜色主题更是完全照搬了过来。</p>");
                 tipsBuilder.append("<p>PicPick是一款非常优秀的集取色、截图、标尺、放大镜、图片编辑等于一身的桌面应用，我非常喜欢它，感谢作者的付出！</p>");
-                tipsBuilder.append("<p><b>注：MooTool的取色器实时预览的色值存在微小误差，请以鼠标点击取色后的色值为准</b></p>");
 
                 dialog.setHtmlText(tipsBuilder.toString());
                 dialog.pack();
@@ -134,14 +133,14 @@ public class ColorBoardListener {
             public void mouseEntered(MouseEvent e) {
                 JLabel label = (JLabel) e.getComponent();
                 label.setCursor(new Cursor(Cursor.HAND_CURSOR));
-                label.setIcon(new ImageIcon(UiConsts.HELP_FOCUSED_ICON));
+                label.setIcon(UiConsts.HELP_FOCUSED_ICON);
                 super.mouseEntered(e);
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
                 JLabel label = (JLabel) e.getComponent();
-                label.setIcon(new ImageIcon(UiConsts.HELP_ICON));
+                label.setIcon(UiConsts.HELP_ICON);
                 super.mouseExited(e);
             }
         });

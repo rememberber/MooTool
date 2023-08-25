@@ -93,6 +93,7 @@ public class ColorBoardForm {
         colorBoardForm.getPickerButton().setIcon(new FlatSVGIcon("icon/color_picker.svg"));
         colorBoardForm.getCopyButton().setIcon(new FlatSVGIcon("icon/copy.svg"));
         colorBoardForm.getChooseColorButton().setIcon(new FlatSVGIcon("icon/color.svg"));
+        colorBoardForm.getAboutLabel().setIcon(new FlatSVGIcon("icon/help.svg"));
 
         fillColorBlocks();
 
