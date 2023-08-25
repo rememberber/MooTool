@@ -5,10 +5,14 @@ import cn.hutool.log.LogFactory;
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatAnimatedLafChange;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import com.jthemedetecor.OsThemeDetector;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.dialog.*;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
+import com.luoboduner.moo.tool.ui.form.func.HostForm;
+import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
+import com.luoboduner.moo.tool.ui.form.func.RegexForm;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
 
@@ -162,6 +166,24 @@ public class TopMenuBar extends JMenuBar {
         });
         appearanceMenu.add(unifiedBackgrounditem);
 
+        JCheckBoxMenuItem systemColorItem = new JCheckBoxMenuItem("主题颜色跟随系统");
+        systemColorItem.setSelected(App.config.isThemeColorFollowSystem());
+        systemColorItem.addActionListener(e -> {
+            boolean selected = systemColorItem.isSelected();
+            App.config.setThemeColorFollowSystem(selected);
+            App.config.save();
+            if (selected) {
+                final OsThemeDetector detector = OsThemeDetector.getDetector();
+                final boolean isDarkThemeUsed = detector.isDark();
+                if (isDarkThemeUsed) {
+                    changeTheme("Flat macOS Dark");
+                } else {
+                    changeTheme("Flat macOS Light");
+                }
+            }
+        });
+        appearanceMenu.add(systemColorItem);
+
         themeMenu = new JMenu();
         themeMenu.setText("主题风格");
 
@@ -213,6 +235,17 @@ public class TopMenuBar extends JMenuBar {
         supportMeMenu.add(supportMeMenuItem);
 
         topMenuBar.add(supportMeMenu);
+
+        final OsThemeDetector detector = OsThemeDetector.getDetector();
+        detector.registerListener(isDark -> SwingUtilities.invokeLater(() -> {
+            if (App.config.isThemeColorFollowSystem()) {
+                if (isDark) {
+                    changeTheme("Flat macOS Dark");
+                } else {
+                    changeTheme("Flat macOS Light");
+                }
+            }
+        }));
     }
 
     private void supportMeActionPerformed() {
@@ -355,34 +388,54 @@ public class TopMenuBar extends JMenuBar {
         try {
             String selectedThemeName = actionEvent.getActionCommand();
 
-            FlatAnimatedLafChange.showSnapshot();
-
-            App.config.setTheme(selectedThemeName);
-            App.config.save();
-
-            Init.initTheme();
-
-            if (FlatLaf.isLafDark()) {
-                FlatSVGIcon.ColorFilter.getInstance().setMapper(color -> color.brighter().brighter());
-            }
-
-            SwingUtilities.updateComponentTreeUI(App.mainFrame);
-            SwingUtilities.updateComponentTreeUI(MainWindow.getInstance().getTabbedPane());
-
-//                FlatLaf.updateUI();
-
-            FlatAnimatedLafChange.hideSnapshotWithAnimation();
+            changeTheme(selectedThemeName);
 
             JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "部分细节重启应用后生效！\n\n", "成功",
                     JOptionPane.INFORMATION_MESSAGE);
-
-            initThemesMenu();
 
         } catch (Exception e1) {
             JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "保存失败！\n\n" + e1.getMessage(), "失败",
                     JOptionPane.ERROR_MESSAGE);
             logger.error(e1);
         }
+    }
+
+    private void changeTheme(String selectedThemeName) {
+        FlatAnimatedLafChange.showSnapshot();
+
+        App.config.setTheme(selectedThemeName);
+        App.config.save();
+
+        Init.initTheme();
+
+        if (FlatLaf.isLafDark()) {
+            FlatSVGIcon.ColorFilter.getInstance().setMapper(color -> color.brighter().brighter());
+        }
+
+        SwingUtilities.updateComponentTreeUI(App.mainFrame);
+        SwingUtilities.updateComponentTreeUI(MainWindow.getInstance().getTabbedPane());
+
+//                FlatLaf.updateUI();
+
+        FlatAnimatedLafChange.hideSnapshotWithAnimation();
+
+        initThemesMenu();
+
+        QuickNoteSyntaxTextViewerManager.viewMap.forEach((name, rTextScrollPane) -> {
+            ((QuickNoteSyntaxTextViewer) rTextScrollPane.getTextArea()).updateTheme();
+            QuickNoteSyntaxTextViewerManager.updateGutter(rTextScrollPane);
+            rTextScrollPane.updateUI();
+        });
+
+        JsonBeautyForm.getInstance().updateTheme();
+        JsonBeautyForm.initTextAreaFont();
+        JsonBeautyForm.getInstance().getScrollPane().updateUI();
+
+        HostForm.getInstance().updateTheme();
+        HostForm.getInstance().getScrollPane().updateUI();
+
+        RegexForm.getInstance().updateTheme();
+        RegexForm.getInstance().getScrollPane().updateUI();
     }
 
     private void keyMapActionPerformed() {

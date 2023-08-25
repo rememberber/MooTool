@@ -2,6 +2,8 @@ package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.json.JSONUtil;
+import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
+import com.formdev.flatlaf.util.FontUtils;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
@@ -82,17 +84,21 @@ public class JsonBeautyListener {
         jsonBeautyForm.getNoteListTable().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
+                super.mousePressed(e);
+
+                int focusedRowIndex = jsonBeautyForm.getNoteListTable().rowAtPoint(e.getPoint());
+                if (focusedRowIndex == -1) {
+                    return;
+                }
+
                 ignoreQuickSave = true;
                 try {
-                    viewByRowNum(selectedRow);
+                    viewByRowNum(focusedRowIndex);
                 } catch (Exception e2) {
                     log.error(e2.getMessage());
                 } finally {
                     ignoreQuickSave = false;
                 }
-
-                super.mousePressed(e);
             }
         });
 
@@ -160,7 +166,12 @@ public class JsonBeautyListener {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 String fontName = e.getItem().toString();
                 int fontSize = Integer.parseInt(jsonBeautyForm.getFontSizeComboBox().getSelectedItem().toString());
-                Font font = new Font(fontName, Font.PLAIN, fontSize);
+                Font font;
+                if (FlatJetBrainsMonoFont.FAMILY.equals(fontName)) {
+                    font = FontUtils.getCompositeFont(FlatJetBrainsMonoFont.FAMILY, Font.PLAIN, fontSize);
+                } else {
+                    font = new Font(fontName, Font.PLAIN, fontSize);
+                }
                 jsonBeautyForm.getTextArea().setFont(font);
 
                 App.config.setJsonBeautyFontName(fontName);
@@ -174,7 +185,12 @@ public class JsonBeautyListener {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 int fontSize = Integer.parseInt(e.getItem().toString());
                 String fontName = jsonBeautyForm.getFontNameComboBox().getSelectedItem().toString();
-                Font font = new Font(fontName, Font.PLAIN, fontSize);
+                Font font;
+                if (FlatJetBrainsMonoFont.FAMILY.equals(fontName)) {
+                    font = FontUtils.getCompositeFont(FlatJetBrainsMonoFont.FAMILY, Font.PLAIN, fontSize);
+                } else {
+                    font = new Font(fontName, Font.PLAIN, fontSize);
+                }
                 jsonBeautyForm.getTextArea().setFont(font);
 
                 App.config.setJsonBeautyFontName(fontName);
@@ -313,6 +329,7 @@ public class JsonBeautyListener {
         jsonBeautyForm.getTextArea().setCaretPosition(0);
         jsonBeautyForm.getScrollPane().getVerticalScrollBar().setValue(0);
         jsonBeautyForm.getScrollPane().getHorizontalScrollBar().setValue(0);
+        JsonBeautyForm.initTextAreaFont();
 //        jsonBeautyForm.getTextArea().updateUI();
     }
 

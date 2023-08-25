@@ -10,6 +10,7 @@ import com.formdev.flatlaf.intellijthemes.materialthemeuilite.FlatGitHubDarkIJTh
 import com.formdev.flatlaf.intellijthemes.materialthemeuilite.FlatMonokaiProIJTheme;
 import com.formdev.flatlaf.themes.FlatMacDarkLaf;
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
+import com.jthemedetecor.OsThemeDetector;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
 import com.luoboduner.moo.tool.ui.dialog.SettingDialog;
@@ -97,66 +98,75 @@ public class Init {
     public static void initTheme() {
         try {
 
-
-            switch (App.config.getTheme()) {
-                case "系统默认":
-                    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
-                    break;
-                case "Flat Light":
-                    setAccentColor();
-                    FlatLightLaf.setup();
-                    break;
-                case "Flat IntelliJ":
-                    setAccentColor();
-                    FlatIntelliJLaf.setup();
-                    break;
-                case "Flat Dark":
-                    setAccentColor();
-                    FlatDarkLaf.setup();
-                    break;
-                case "Dark purple":
-                    FlatDarkPurpleIJTheme.setup();
-                    break;
-                case "IntelliJ Cyan":
-                    FlatCyanLightIJTheme.setup();
-                    break;
-                case "IntelliJ Light":
-                    FlatLightFlatIJTheme.setup();
-                    break;
-                case "Monocai":
-                    FlatMonocaiIJTheme.setup();
-                    break;
-                case "Monokai Pro":
-                    FlatMonokaiProIJTheme.setup();
-                    UIManager.put("Button.arc", 5);
-                    break;
-                case "One Dark":
-                    FlatOneDarkIJTheme.setup();
-                    break;
-                case "Gray":
-                    FlatGrayIJTheme.setup();
-                    break;
-                case "High contrast":
-                    FlatHighContrastIJTheme.setup();
-                    break;
-                case "GitHub Dark":
-                    FlatGitHubDarkIJTheme.setup();
-                    break;
-                case "Xcode-Dark":
-                    FlatXcodeDarkIJTheme.setup();
-                    break;
-                case "Vuesion":
-                    FlatVuesionIJTheme.setup();
-                    break;
-                case "Flat macOS Light":
-                    FlatMacLightLaf.setup();
-                    break;
-                case "Flat macOS Dark":
+            if (App.config.isThemeColorFollowSystem()) {
+                final OsThemeDetector detector = OsThemeDetector.getDetector();
+                final boolean isDarkThemeUsed = detector.isDark();
+                if (isDarkThemeUsed) {
                     FlatMacDarkLaf.setup();
-                    break;
-                default:
-                    setAccentColor();
-                    FlatDarculaLaf.setup();
+                } else {
+                    FlatMacLightLaf.setup();
+                }
+            } else {
+                switch (App.config.getTheme()) {
+                    case "系统默认":
+                        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+                        break;
+                    case "Flat Light":
+                        setAccentColor();
+                        FlatLightLaf.setup();
+                        break;
+                    case "Flat IntelliJ":
+                        setAccentColor();
+                        FlatIntelliJLaf.setup();
+                        break;
+                    case "Flat Dark":
+                        setAccentColor();
+                        FlatDarkLaf.setup();
+                        break;
+                    case "Dark purple":
+                        FlatDarkPurpleIJTheme.setup();
+                        break;
+                    case "IntelliJ Cyan":
+                        FlatCyanLightIJTheme.setup();
+                        break;
+                    case "IntelliJ Light":
+                        FlatLightFlatIJTheme.setup();
+                        break;
+                    case "Monocai":
+                        FlatMonocaiIJTheme.setup();
+                        break;
+                    case "Monokai Pro":
+                        FlatMonokaiProIJTheme.setup();
+                        UIManager.put("Button.arc", 5);
+                        break;
+                    case "One Dark":
+                        FlatOneDarkIJTheme.setup();
+                        break;
+                    case "Gray":
+                        FlatGrayIJTheme.setup();
+                        break;
+                    case "High contrast":
+                        FlatHighContrastIJTheme.setup();
+                        break;
+                    case "GitHub Dark":
+                        FlatGitHubDarkIJTheme.setup();
+                        break;
+                    case "Xcode-Dark":
+                        FlatXcodeDarkIJTheme.setup();
+                        break;
+                    case "Vuesion":
+                        FlatVuesionIJTheme.setup();
+                        break;
+                    case "Flat macOS Light":
+                        FlatMacLightLaf.setup();
+                        break;
+                    case "Flat macOS Dark":
+                        FlatMacDarkLaf.setup();
+                        break;
+                    default:
+                        setAccentColor();
+                        FlatDarculaLaf.setup();
+                }
             }
 
             if (FlatLaf.isLafDark()) {

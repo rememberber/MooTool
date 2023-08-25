@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.form.func;
 import cn.hutool.core.util.ArrayUtil;
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
 import com.formdev.flatlaf.icons.FlatAbstractIcon;
 import com.formdev.flatlaf.util.ColorFunctions;
 import com.intellij.uiDesigner.core.GridConstraints;
@@ -410,6 +411,7 @@ public class QuickNoteForm {
         quickNoteForm.getFontNameComboBox().removeAllItems();
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         String[] fonts = ge.getAvailableFontFamilyNames();
+        quickNoteForm.getFontNameComboBox().addItem(FlatJetBrainsMonoFont.FAMILY);
         for (String font : fonts) {
             if (StringUtils.isNotBlank(font)) {
                 quickNoteForm.getFontNameComboBox().addItem(font);

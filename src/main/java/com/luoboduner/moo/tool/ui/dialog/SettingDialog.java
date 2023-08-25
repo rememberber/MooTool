@@ -4,6 +4,7 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.formdev.flatlaf.*;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.icons.FlatAbstractIcon;
 import com.formdev.flatlaf.util.ColorFunctions;
 import com.formdev.flatlaf.util.LoggingFacade;
@@ -95,6 +96,9 @@ public class SettingDialog extends JDialog {
 
         // 设置滚动条速度
         ScrollUtil.smoothPane(settingScrollPane);
+
+        dbFilePathSaveButton.setIcon(new FlatSVGIcon("icon/save.svg"));
+        httpSaveButton.setIcon(new FlatSVGIcon("icon/save.svg"));
 
         initAccentColors();
 

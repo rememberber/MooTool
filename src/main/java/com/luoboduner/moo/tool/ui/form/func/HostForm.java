@@ -1,6 +1,7 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.core.io.FileUtil;
+import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
@@ -11,6 +12,7 @@ import com.luoboduner.moo.tool.domain.THost;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.HostSyntaxTextViewer;
+import com.luoboduner.moo.tool.ui.component.JsonSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
@@ -20,6 +22,8 @@ import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
+import org.fife.ui.rsyntaxtextarea.Theme;
 import org.fife.ui.rtextarea.Gutter;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
@@ -27,6 +31,7 @@ import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 
 import static java.awt.GraphicsDevice.WindowTranslucency.TRANSLUCENT;
@@ -77,16 +82,58 @@ public class HostForm {
 
     private HostForm() {
         textArea = new HostSyntaxTextViewer();
-        JTextArea timeHisTextArea = TimeConvertForm.getInstance().getTimeHisTextArea();
-        textArea.setSelectionColor(timeHisTextArea.getSelectionColor());
+        scrollPane = new RTextScrollPane(textArea);
+
+        updateTheme();
+
+        UndoUtil.register(this);
+    }
+
+    public void updateTheme() {
+        try {
+            Theme theme;
+            if (FlatLaf.isLafDark()) {
+                theme = Theme.load(JsonSyntaxTextViewer.class.getResourceAsStream(
+                        "/org/fife/ui/rsyntaxtextarea/themes/monokai.xml"));
+            } else {
+                theme = Theme.load(JsonSyntaxTextViewer.class.getResourceAsStream(
+                        "/org/fife/ui/rsyntaxtextarea/themes/idea.xml"));
+            }
+            theme.apply(textArea);
+        } catch (IOException ioe) { // Never happens
+            ioe.printStackTrace();
+        }
+
+        textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_HOSTS);
+        textArea.setCodeFoldingEnabled(true);
+//        setCurrentLineHighlightColor(new Color(52, 52, 52));
+//        setUseSelectedTextColor(true);
+//        setSelectedTextColor(new Color(50, 50, 50));
+
+        // 初始化背景色
+//        Style.blackTextArea(this);
+
+        // 初始化字体
+        String fontName = App.config.getJsonBeautyFontName();
+        int fontSize = App.config.getJsonBeautyFontSize();
+        if (fontSize == 0) {
+            fontSize = textArea.getFont().getSize() + 2;
+        }
+        Font font = new Font(fontName, Font.PLAIN, fontSize);
+        textArea.setFont(font);
+
+        textArea.setHyperlinksEnabled(true);
+
+        textArea.setBackground(UIManager.getColor("Editor.background"));
         textArea.setCaretColor(UIManager.getColor("Editor.caretColor"));
+        textArea.setSelectionColor(UIManager.getColor("Editor.selectionBackground"));
+        textArea.setCurrentLineHighlightColor(UIManager.getColor("Editor.currentLineHighlight"));
         textArea.setMarkAllHighlightColor(UIManager.getColor("Editor.markAllHighlightColor"));
         textArea.setMarkOccurrencesColor(UIManager.getColor("Editor.markOccurrencesColor"));
         textArea.setMatchedBracketBGColor(UIManager.getColor("Editor.matchedBracketBackground"));
         textArea.setMatchedBracketBorderColor(UIManager.getColor("Editor.matchedBracketBorderColor"));
         textArea.setPaintMatchedBracketPair(true);
-
-        scrollPane = new RTextScrollPane(textArea);
+        textArea.setAnimateBracketMatching(false);
 
         scrollPane.setMaximumSize(new Dimension(-1, -1));
         scrollPane.setMinimumSize(new Dimension(-1, -1));
@@ -94,16 +141,17 @@ public class HostForm {
         Color defaultBackground = App.mainFrame.getBackground();
 
         Gutter gutter = scrollPane.getGutter();
-        gutter.setBorderColor(gutter.getLineNumberColor().darker());
+        if (FlatLaf.isLafDark()) {
+            gutter.setBorderColor(gutter.getLineNumberColor().darker());
+        } else {
+            gutter.setBorderColor(gutter.getLineNumberColor().brighter());
+        }
         gutter.setBackground(defaultBackground);
-
-        Font font = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
-        gutter.setLineNumberFont(font);
-//            gutter.setLineNumberColor(defaultBackground);
-        gutter.setFoldBackground(defaultBackground.darker());
-        gutter.setArmedFoldBackground(defaultBackground);
-
-        UndoUtil.register(this);
+        Font font2 = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
+        gutter.setLineNumberFont(font2);
+        gutter.setBackground(UIManager.getColor("Editor.gutter.background"));
+        gutter.setBorderColor(UIManager.getColor("Editor.gutter.borderColor"));
+        gutter.setLineNumberColor(UIManager.getColor("Editor.gutter.lineNumberColor"));
     }
 
     public static void setHost(String hostName, String hostText) {
@@ -303,7 +351,7 @@ public class HostForm {
             }
             App.config.setCurrentHostName(hostName);
             App.config.save();
-            HostListener.refreshHostContentInTextArea();
+//            HostListener.refreshHostContentInTextArea();
         }
     }
 

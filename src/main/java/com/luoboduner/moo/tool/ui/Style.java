@@ -1,7 +1,6 @@
 package com.luoboduner.moo.tool.ui;
 
 
-import com.formdev.flatlaf.FlatLaf;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 
 import javax.swing.*;
@@ -48,9 +47,9 @@ public class Style {
     }
 
     public static void blackTextArea(JComponent component) {
-        if (FlatLaf.isLafDark()) {
-            component.setBackground(component.getBackground().darker());
-        }
+//        if (FlatLaf.isLafDark()) {
+//            component.setBackground(component.getBackground().darker());
+//        }
     }
 
 }

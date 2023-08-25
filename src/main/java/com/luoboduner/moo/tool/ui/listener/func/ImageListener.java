@@ -86,8 +86,11 @@ public class ImageListener {
                     imageForm.getShowImageLabel().setIcon(new ImageIcon(DEFAULT_IMAGE));
                     imageForm.getShowImagePanel().updateUI();
 
-                    int selectedRow = imageForm.getListTable().getSelectedRow();
-                    String name = imageForm.getListTable().getValueAt(selectedRow, 1).toString();
+                    int focusedRowIndex = imageForm.getListTable().rowAtPoint(e.getPoint());
+                    if (focusedRowIndex == -1) {
+                        return;
+                    }
+                    String name = imageForm.getListTable().getValueAt(focusedRowIndex, 1).toString();
                     selectedName = name.replace(".png", "");
                     imageForm.getShowImageLabel().setIcon(new ImageIcon(ImageListener.IMAGE_PATH_PRE_FIX + name));
                     imageForm.getShowImagePanel().updateUI();

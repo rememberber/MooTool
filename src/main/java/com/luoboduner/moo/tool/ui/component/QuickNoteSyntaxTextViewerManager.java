@@ -1,6 +1,8 @@
 package com.luoboduner.moo.tool.ui.component;
 
 import com.formdev.flatlaf.FlatLaf;
+import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
+import com.formdev.flatlaf.util.FontUtils;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
@@ -10,6 +12,7 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rtextarea.Gutter;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
+import javax.swing.*;
 import java.awt.*;
 import java.util.HashMap;
 import java.util.Map;
@@ -19,7 +22,7 @@ import java.util.Map;
  */
 public class QuickNoteSyntaxTextViewerManager {
 
-    private Map<String, RTextScrollPane> viewMap = new HashMap<>();
+    public static Map<String, RTextScrollPane> viewMap = new HashMap<>();
 
     private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
 
@@ -40,7 +43,12 @@ public class QuickNoteSyntaxTextViewerManager {
                 plainTextViewer.setSyntaxEditingStyle(tQuickNote.getSyntax());
             }
             if (StringUtils.isNotEmpty(tQuickNote.getFontName()) && StringUtils.isNotEmpty(tQuickNote.getFontSize())) {
-                Font font = new Font(tQuickNote.getFontName(), Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
+                Font font;
+                if (FlatJetBrainsMonoFont.FAMILY.equals(tQuickNote.getFontName())) {
+                    font = FontUtils.getCompositeFont(FlatJetBrainsMonoFont.FAMILY, Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
+                } else {
+                    font = new Font(tQuickNote.getFontName(), Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
+                }
                 plainTextViewer.setFont(font);
             }
 
@@ -50,25 +58,29 @@ public class QuickNoteSyntaxTextViewerManager {
             rTextScrollPane.setMaximumSize(new Dimension(-1, -1));
             rTextScrollPane.setMinimumSize(new Dimension(-1, -1));
 
-            Color defaultBackground = App.mainFrame.getBackground();
-
-            Gutter gutter = rTextScrollPane.getGutter();
-            if (FlatLaf.isLafDark()) {
-                gutter.setBorderColor(gutter.getLineNumberColor().darker());
-            } else {
-                gutter.setBorderColor(gutter.getLineNumberColor().brighter());
-            }
-            gutter.setBackground(defaultBackground);
-            Font font = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
-            gutter.setLineNumberFont(font);
-//            gutter.setLineNumberColor(defaultBackground);
-            gutter.setFoldBackground(defaultBackground.darker());
-            gutter.setArmedFoldBackground(defaultBackground);
+            updateGutter(rTextScrollPane);
 
             viewMap.put(name, rTextScrollPane);
             currentRTextScrollPane = rTextScrollPane;
         }
         return rTextScrollPane;
+    }
+
+    public static void updateGutter(RTextScrollPane rTextScrollPane) {
+        Color defaultBackground = App.mainFrame.getBackground();
+
+        Gutter gutter = rTextScrollPane.getGutter();
+        if (FlatLaf.isLafDark()) {
+            gutter.setBorderColor(gutter.getLineNumberColor().darker());
+        } else {
+            gutter.setBorderColor(gutter.getLineNumberColor().brighter());
+        }
+        gutter.setBackground(defaultBackground);
+        Font font = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
+        gutter.setLineNumberFont(font);
+        gutter.setBackground(UIManager.getColor("Editor.gutter.background"));
+        gutter.setBorderColor(UIManager.getColor("Editor.gutter.borderColor"));
+        gutter.setLineNumberColor(UIManager.getColor("Editor.gutter.lineNumberColor"));
     }
 
     public RTextScrollPane getCurrentRTextScrollPane() {

@@ -6,7 +6,7 @@
 
     <groupId>com.luoboduner.moo.tool</groupId>
     <artifactId>MooTool</artifactId>
-    <version>1.4.8</version>
+    <version>1.5.0</version>
     <packaging>jar</packaging>
 
     <name>MooTool</name>
@@ -39,7 +39,19 @@
         <rsyntaxtextarea.version>3.3.4</rsyntaxtextarea.version>
         <sql-formatter.version>2.0.3</sql-formatter.version>
         <google-java-format.version>1.16.0</google-java-format.version>
+        <jSystemThemeDetector.version>3.8</jSystemThemeDetector.version>
     </properties>
+
+    <repositories>
+        <repository>
+            <id>mvnrepository.com</id>
+            <url>https://mvnrepository.com</url>
+        </repository>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
 
     <dependencies>
         <dependency>
@@ -202,6 +214,18 @@
             </exclusions>
         </dependency>
 
+        <dependency>
+            <groupId>com.github.Dansoftowner</groupId>
+            <artifactId>jSystemThemeDetector</artifactId>
+            <version>${jSystemThemeDetector.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.sun.jna</groupId>
+            <artifactId>jna</artifactId>
+            <version>3.0.9</version>
+        </dependency>
+
     </dependencies>
 
     <build>
@@ -237,7 +261,8 @@
                         <configuration>
                             <platform>windows</platform>
                             <createZipball>true</createZipball>
-                            <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>
+                            <customizedJre>false</customizedJre>
+                            <additionalModules>jdk.crypto.ec,jdk.charsets,com.jthemedetector</additionalModules>
                             <administratorRequired>true</administratorRequired>
                             <winConfig>
 
@@ -268,21 +293,23 @@
                     <!--                                            <configuration>-->
                     <!--                                                <platform>linux</platform>-->
                     <!--                                                <createTarball>true</createTarball>-->
+<!--                    <customizedJre>false</customizedJre>-->
                     <!--                    <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
                     <!--                                            </configuration>-->
                     <!--                                        </execution>-->
-<!--                                                                                                    <execution>-->
-<!--                                                                                                        <id>bundling-for-mac</id>-->
-<!--                                                                                                        <phase>package</phase>-->
-<!--                                                                                                        <goals>-->
-<!--                                                                                                            <goal>package</goal>-->
-<!--                                                                                                        </goals>-->
-<!--                                                                                                        <configuration>-->
-<!--                                                                                                            <platform>mac</platform>-->
-<!--                                                                                                            <createTarball>true</createTarball>-->
-<!--                                                                                                            <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
-<!--                                                                                                        </configuration>-->
-<!--                                                                                                    </execution>-->
+<!--                                                                                                                        <execution>-->
+<!--                                                                                                                            <id>bundling-for-mac</id>-->
+<!--                                                                                                                            <phase>package</phase>-->
+<!--                                                                                                                            <goals>-->
+<!--                                                                                                                                <goal>package</goal>-->
+<!--                                                                                                                            </goals>-->
+<!--                                                                                                                            <configuration>-->
+<!--                                                                                                                                <platform>mac</platform>-->
+<!--                    <customizedJre>false</customizedJre>-->
+<!--                                                                                                                                <createTarball>true</createTarball>-->
+<!--                                                                                                                                <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
+<!--                                                                                                                            </configuration>-->
+<!--                                                                                                                        </execution>-->
                 </executions>
             </plugin>
         </plugins>
