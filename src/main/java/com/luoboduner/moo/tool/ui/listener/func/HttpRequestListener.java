@@ -60,8 +60,11 @@ public class HttpRequestListener {
         httpRequestForm.getNoteListTable().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                int selectedRow = httpRequestForm.getNoteListTable().getSelectedRow();
-                String name = httpRequestForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
+                int focusedRowIndex = httpRequestForm.getNoteListTable().rowAtPoint(e.getPoint());
+                if (focusedRowIndex == -1) {
+                    return;
+                }
+                String name = httpRequestForm.getNoteListTable().getValueAt(focusedRowIndex, 1).toString();
                 selectedName = name;
                 HttpRequestForm.initMsg(name);
                 super.mousePressed(e);

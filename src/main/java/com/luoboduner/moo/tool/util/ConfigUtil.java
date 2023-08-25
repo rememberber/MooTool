@@ -1,5 +1,7 @@
 package com.luoboduner.moo.tool.util;
 
+import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
+
 /**
  * <pre>
  * 配置管理
@@ -25,6 +27,11 @@ public class ConfigUtil extends ConfigBaseUtil {
     private boolean defaultMaxWindow;
 
     private boolean unifiedBackground;
+
+    /**
+     * 主题颜色跟随系统
+     */
+    private boolean themeColorFollowSystem;
 
     private String beforeVersion;
 
@@ -135,6 +142,14 @@ public class ConfigUtil extends ConfigBaseUtil {
         setting.putByGroup("unifiedBackground", "setting.normal", String.valueOf(unifiedBackground));
     }
 
+    public boolean isThemeColorFollowSystem() {
+        return setting.getBool("themeColorFollowSystem", "setting.normal", true);
+    }
+
+    public void setThemeColorFollowSystem(boolean themeColorFollowSystem) {
+        setting.putByGroup("themeColorFollowSystem", "setting.normal", String.valueOf(themeColorFollowSystem));
+    }
+
     public int getRecentTabIndex() {
         return setting.getInt("recentTabIndex", "setting.common", 0);
     }
@@ -229,7 +244,7 @@ public class ConfigUtil extends ConfigBaseUtil {
         if (SystemUtil.isLinuxOs()) {
             return setting.getStr("font", "setting.appearance", "Noto Sans CJK HK");
         } else {
-            return setting.getStr("quickNoteFontName", "func.quickNote", "等线");
+            return setting.getStr("quickNoteFontName", "func.quickNote", FlatJetBrainsMonoFont.FAMILY);
         }
     }
 
@@ -249,7 +264,7 @@ public class ConfigUtil extends ConfigBaseUtil {
         if (SystemUtil.isLinuxOs()) {
             return setting.getStr("font", "setting.appearance", "Noto Sans CJK HK");
         } else {
-            return setting.getStr("jsonBeautyFontName", "func.jsonBeauty", "等线");
+            return setting.getStr("jsonBeautyFontName", "func.jsonBeauty", FlatJetBrainsMonoFont.FAMILY);
         }
     }
 

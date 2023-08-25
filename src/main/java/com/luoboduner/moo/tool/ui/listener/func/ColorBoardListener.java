@@ -5,22 +5,16 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.FlatColorPipette;
 import com.luoboduner.moo.tool.ui.dialog.CommonTipsDialog;
 import com.luoboduner.moo.tool.ui.dialog.FavoriteColorDialog;
 import com.luoboduner.moo.tool.ui.form.func.ColorBoardForm;
-import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.frame.FavoriteColorFrame;
 import com.luoboduner.moo.tool.util.ColorUtil;
 
 import javax.swing.*;
 import java.awt.*;
-import java.awt.event.ItemEvent;
-import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
-
-import static java.awt.GraphicsDevice.WindowTranslucency.TRANSLUCENT;
+import java.awt.event.*;
 
 /**
  * <pre>
@@ -37,14 +31,35 @@ public class ColorBoardListener {
     public static void addListeners() {
         ColorBoardForm colorBoardForm = ColorBoardForm.getInstance();
         colorBoardForm.getPickerButton().addActionListener(e -> {
-            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-            GraphicsDevice gd = ge.getDefaultScreenDevice();
-            if (!gd.isWindowTranslucencySupported(TRANSLUCENT)) {
+//            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+//            GraphicsDevice gd = ge.getDefaultScreenDevice();
+//            if (!gd.isWindowTranslucencySupported(TRANSLUCENT)) {
+//                JOptionPane.showMessageDialog(colorBoardForm.getColorBoardPanel(), "当前系统环境不支持！", "系统环境", JOptionPane.INFORMATION_MESSAGE);
+//                return;
+//            }
+//            App.mainFrame.setVisible(false);
+//            ColorPickerFrame.showPicker();
+
+            // show pipette color picker
+            Window window = SwingUtilities.windowForComponent((JComponent) e.getSource());
+            try {
+                App.mainFrame.setExtendedState(Frame.ICONIFIED);
+                FlatColorPipette.pick(window, true,
+                        color -> {
+//                            if (color != null) {
+//                                ColorBoardForm.setSelectedColor(color);
+//                            }
+                        },
+                        color -> {
+                            if (color != null) {
+                                ColorBoardForm.setSelectedColor(color);
+                            }
+                            App.mainFrame.setExtendedState(Frame.NORMAL);
+                        });
+            } catch (AWTException | UnsupportedOperationException ex) {
+                logger.error(ex);
                 JOptionPane.showMessageDialog(colorBoardForm.getColorBoardPanel(), "当前系统环境不支持！", "系统环境", JOptionPane.INFORMATION_MESSAGE);
-                return;
             }
-            App.mainFrame.setVisible(false);
-            ColorPickerFrame.showPicker();
         });
         colorBoardForm.getCopyButton().addActionListener(e -> {
             try {
@@ -106,7 +121,6 @@ public class ColorBoardListener {
                 tipsBuilder.append("<h1>关于调色板</h1>");
                 tipsBuilder.append("<p>调色板和取色器的设计借鉴了PicPick，其中的颜色主题更是完全照搬了过来。</p>");
                 tipsBuilder.append("<p>PicPick是一款非常优秀的集取色、截图、标尺、放大镜、图片编辑等于一身的桌面应用，我非常喜欢它，感谢作者的付出！</p>");
-                tipsBuilder.append("<p><b>注：MooTool的取色器实时预览的色值存在微小误差，请以鼠标点击取色后的色值为准</b></p>");
 
                 dialog.setHtmlText(tipsBuilder.toString());
                 dialog.pack();
@@ -119,15 +133,22 @@ public class ColorBoardListener {
             public void mouseEntered(MouseEvent e) {
                 JLabel label = (JLabel) e.getComponent();
                 label.setCursor(new Cursor(Cursor.HAND_CURSOR));
-                label.setIcon(new ImageIcon(UiConsts.HELP_FOCUSED_ICON));
+                label.setIcon(UiConsts.HELP_FOCUSED_ICON);
                 super.mouseEntered(e);
             }
 
             @Override
             public void mouseExited(MouseEvent e) {
                 JLabel label = (JLabel) e.getComponent();
-                label.setIcon(new ImageIcon(UiConsts.HELP_ICON));
+                label.setIcon(UiConsts.HELP_ICON);
                 super.mouseExited(e);
+            }
+        });
+
+        colorBoardForm.getChooseColorButton().addActionListener(e -> {
+            Color color = JColorChooser.showDialog(colorBoardForm.getColorBoardPanel(), "选择颜色", colorBoardForm.getShowColorPanel().getBackground());
+            if (color != null) {
+                ColorBoardForm.setSelectedColor(color);
             }
         });
     }

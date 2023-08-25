@@ -63,7 +63,11 @@ public class HostListener {
             public void mousePressed(MouseEvent e) {
                 ignoreQuickSave = true;
                 try {
-                    refreshHostContentInTextArea();
+                    int focusedRowIndex = hostForm.getNoteListTable().rowAtPoint(e.getPoint());
+                    if (focusedRowIndex == -1) {
+                        return;
+                    }
+                    refreshHostContentInTextArea(focusedRowIndex);
                 } catch (Exception e1) {
                     log.error(e1.getMessage());
                 } finally {
@@ -186,7 +190,8 @@ public class HostListener {
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
                     ignoreQuickSave = true;
                     try {
-                        refreshHostContentInTextArea();
+                        int selectedRow = hostForm.getNoteListTable().getSelectedRow();
+                        refreshHostContentInTextArea(selectedRow);
                     } catch (Exception e) {
                         log.error(e.getMessage());
                     } finally {
@@ -330,14 +335,13 @@ public class HostListener {
         }
     }
 
-    public static void refreshHostContentInTextArea() {
+    public static void refreshHostContentInTextArea(int focusedRowIndex) {
         HostForm hostForm = HostForm.getInstance();
 
         hostForm.getTextArea().setEditable(true);
         hostForm.getSwitchButton().setVisible(true);
-        int selectedRow = hostForm.getNoteListTable().getSelectedRow();
-        if (selectedRow >= 0) {
-            String name = hostForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
+        if (focusedRowIndex >= 0) {
+            String name = hostForm.getNoteListTable().getValueAt(focusedRowIndex, 1).toString();
             selectedNameHost = name;
             THost tHost = hostMapper.selectByName(name);
 

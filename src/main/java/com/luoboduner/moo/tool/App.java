@@ -4,6 +4,7 @@ import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatDesktop;
 import com.formdev.flatlaf.extras.FlatInspector;
 import com.formdev.flatlaf.extras.FlatUIDefaultsInspector;
+import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
 import com.formdev.flatlaf.util.SystemInfo;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.dialog.AboutDialog;
@@ -79,6 +80,8 @@ public class App {
         }
 
         FlatLaf.registerCustomDefaultsSource("themes");
+        SwingUtilities.invokeLater(FlatJetBrainsMonoFont::install);
+
         Init.initTheme();
 
         // install inspectors

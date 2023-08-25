@@ -75,7 +75,11 @@ public class FavoriteColorForm {
         listTable.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                viewListBySelected();
+                int focusedRowIndex = listTable.rowAtPoint(e.getPoint());
+                if (focusedRowIndex == -1) {
+                    return;
+                }
+                viewListBySelected(focusedRowIndex);
                 listControlPanel.setVisible(true);
                 itemControlPanel.setVisible(false);
                 super.mousePressed(e);
@@ -286,11 +290,12 @@ public class FavoriteColorForm {
                             log.error(e.toString());
                         }
                     }
-                    viewListBySelected();
+                    viewListBySelected(selectedRow);
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteList();
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
-                    viewListBySelected();
+                    int selectedRow = listTable.getSelectedRow();
+                    viewListBySelected(selectedRow);
                 }
             }
         });
@@ -323,7 +328,7 @@ public class FavoriteColorForm {
                             favoriteColorItemMapper.updateByPrimaryKeySelective(tFavoriteColorItem);
                         } catch (Exception e) {
                             JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
-                            viewListBySelected();
+                            viewListBySelected(selectedRow);
                             log.error(e.toString());
                         }
                     }
@@ -360,9 +365,8 @@ public class FavoriteColorForm {
         }
     }
 
-    private void viewListBySelected() {
-        int selectedRow = listTable.getSelectedRow();
-        int listId = Integer.parseInt(listTable.getValueAt(selectedRow, 0).toString());
+    private void viewListBySelected(int focusedRowIndex) {
+        int listId = Integer.parseInt(listTable.getValueAt(focusedRowIndex, 0).toString());
         initItemTable(listId);
     }
 
@@ -494,14 +498,14 @@ public class FavoriteColorForm {
      */
     private void $$$setupUI$$$() {
         favoriteColorPanel = new JPanel();
-        favoriteColorPanel.setLayout(new GridLayoutManager(1, 1, new Insets(12, 12, 12, 12), -1, -1));
+        favoriteColorPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane = new JSplitPane();
         splitPane.setContinuousLayout(true);
-        splitPane.setDividerLocation(204);
+        splitPane.setDividerLocation(214);
         splitPane.setDividerSize(10);
         favoriteColorPanel.add(splitPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.setLayout(new GridLayoutManager(2, 1, new Insets(0, 10, 10, 0), -1, -1));
         splitPane.setLeftComponent(panel1);
         listControlPanel = new JPanel();
         listControlPanel.setLayout(new GridLayoutManager(1, 3, new Insets(5, 5, 5, 5), -1, -1));
@@ -521,7 +525,7 @@ public class FavoriteColorForm {
         listTable = new JTable();
         scrollPane1.setViewportView(listTable);
         final JPanel panel2 = new JPanel();
-        panel2.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel2.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 10, 10), -1, -1));
         splitPane.setRightComponent(panel2);
         final JScrollPane scrollPane2 = new JScrollPane();
         panel2.add(scrollPane2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
