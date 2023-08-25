@@ -38,6 +38,8 @@ Windows • Linux • macOS
 
 ![Overview](screen_shoot/color_board_mac.png)
 
+![Overview](screen_shoot/regex_mac.png)
+
 <p align="center">
   <a href="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-favoriteColor.png">
    <img alt="MooTool" src="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-favoriteColor.png">
