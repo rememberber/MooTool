@@ -7,7 +7,6 @@ Handy tool set for developers.
 
 [![码云Gitee](https://gitee.com/zhoubochina/MooTool/badge/star.svg?theme=blue)](https://gitee.com/zhoubochina/MooTool)
 [![GitHub stars](https://img.shields.io/github/stars/rememberber/MooTool.svg)](https://github.com/rememberber/MooTool)
-[![Build Status](https://travis-ci.org/rememberber/MooTool.svg?branch=master)](https://travis-ci.org/rememberber/MooTool)
 [![GitHub release](https://img.shields.io/github/v/release/rememberber/MooTool)](https://github.com/rememberber/MooTool/releases)
 [![GitHub license](https://img.shields.io/github/license/rememberber/MooTool)](https://github.com/rememberber/MooTool/blob/master/LICENSE.txt)
 
@@ -17,6 +16,8 @@ Windows • Linux • macOS
 ## 截图速览
 
 ![Overview](screen_shoot/quick_note_mac.png)
+
+![Overview](screen_shoot/quick_replace_mac.png)
 
 ![Overview](screen_shoot/time_mac.png)
 
@@ -37,6 +38,8 @@ Windows • Linux • macOS
 ![Overview](screen_shoot/net_mac.png)
 
 ![Overview](screen_shoot/color_board_mac.png)
+
+![Overview](screen_shoot/regex_mac.png)
 
 <p align="center">
   <a href="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-favoriteColor.png">
@@ -79,8 +82,6 @@ Windows • Linux • macOS
 
 [Hutool](http://hutool.cn/)  
 [FlatLaf](https://github.com/JFormDesigner/FlatLaf)  
-[Darcula](https://github.com/bulenkov/Darcula)  
-[BeautyEye](https://gitee.com/jackjiang/beautyeye)  
 [vscode-icons](https://github.com/microsoft/vscode-icons)  
 [iconfont](https://www.iconfont.cn/)
 
