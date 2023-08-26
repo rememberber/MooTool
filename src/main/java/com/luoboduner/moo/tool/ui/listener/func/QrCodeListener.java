@@ -12,6 +12,8 @@ import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
 import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.io.File;
 
 /**
@@ -27,7 +29,13 @@ public class QrCodeListener {
 
     public static void addListeners() {
         QrCodeForm qrCodeForm = QrCodeForm.getInstance();
-        qrCodeForm.getGenerateButton().addActionListener(e -> ThreadUtil.execute(QrCodeForm::generate));
+        qrCodeForm.getGenerateButton().addActionListener(e -> ThreadUtil.execute(() -> {
+            try {
+                QrCodeForm.generate(true);
+            } catch (Exception e1) {
+                logger.error(e1);
+            }
+        }));
         qrCodeForm.getExploreButton().addActionListener(e -> {
             File beforeFile = new File(qrCodeForm.getLogoPathTextField().getText());
             JFileChooser fileChooser;
@@ -100,6 +108,25 @@ public class QrCodeListener {
 
         qrCodeForm.getFromClipBoardButton().addActionListener(e -> {
             QrCodeForm.recognitionFromClipBoard();
+        });
+
+        // 文本域按键事件
+        qrCodeForm.getHistoryTextArea().addKeyListener(new KeyListener() {
+            @Override
+            public void keyReleased(KeyEvent arg0) {
+//                QrCodeForm.saveContent();
+            }
+
+            @Override
+            public void keyPressed(KeyEvent evt) {
+                if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_S) {
+                    QrCodeForm.saveContent();
+                }
+            }
+
+            @Override
+            public void keyTyped(KeyEvent arg0) {
+            }
         });
     }
 

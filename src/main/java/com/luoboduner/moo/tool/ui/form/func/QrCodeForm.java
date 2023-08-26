@@ -117,7 +117,7 @@ public class QrCodeForm {
         }
     }
 
-    public static void generate() {
+    public static void generate(Boolean save) {
         try {
             qrCodeForm = getInstance();
             String nowTime = DateUtil.now().replace(":", "-").replace(" ", "-");
@@ -149,8 +149,10 @@ public class QrCodeForm {
             qrCodeForm.getQrCodeImageLabel().setIcon(imageIcon);
             qrCodeForm.getQrCodePanel().updateUI();
 
-            saveConfig();
-            QrCodeListener.output("生成:\n" + qrCodeForm.getToGenerateContentTextArea().getText());
+            if (save) {
+                saveConfig();
+                QrCodeListener.output("生成:\n" + qrCodeForm.getToGenerateContentTextArea().getText());
+            }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
                     JOptionPane.ERROR_MESSAGE);
@@ -230,7 +232,7 @@ public class QrCodeForm {
             qrCodeForm.getHistoryTextArea().setCaretPosition(qrCodeForm.getHistoryTextArea().getText().length());
         }
 
-        generate();
+        generate(false);
 
         QrCodeListener.addListeners();
 
