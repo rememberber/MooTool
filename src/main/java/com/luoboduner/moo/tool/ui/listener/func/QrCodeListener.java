@@ -6,6 +6,7 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.form.func.QrCodeForm;
+import com.luoboduner.moo.tool.util.ConsoleUtil;
 
 import javax.swing.*;
 import javax.swing.filechooser.FileFilter;
@@ -100,5 +101,11 @@ public class QrCodeListener {
         qrCodeForm.getFromClipBoardButton().addActionListener(e -> {
             QrCodeForm.recognitionFromClipBoard();
         });
+    }
+
+    public static void output(String text) {
+        QrCodeForm qrCodeForm = QrCodeForm.getInstance();
+        ConsoleUtil.consoleOnly(qrCodeForm.getHistoryTextArea(), text);
+        QrCodeForm.saveContent();
     }
 }

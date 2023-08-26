@@ -21,4 +21,9 @@ public class FuncConsts {
      * 正则表达式
      */
     public static final String REGEX = "Regex";
+
+    /**
+     * 二维码
+     */
+    public static final String QR_CODE = "QrCode";
 }
