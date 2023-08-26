@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.swing.clipboard.ClipboardUtil;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.extra.qrcode.QrCodeUtil;
 import cn.hutool.extra.qrcode.QrConfig;
@@ -55,6 +56,7 @@ public class QrCodeForm {
     private JScrollPane generateScrollPane;
     private JPanel generateMainPanel;
     private JSplitPane splitPane;
+    private JButton fromClipBoardButton;
 
     private static final Log logger = LogFactory.get();
 
@@ -89,6 +91,19 @@ public class QrCodeForm {
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
+    }
+
+    public static void recognitionFromClipBoard() {
+        qrCodeForm = getInstance();
+        Image image = ClipboardUtil.getImage();
+        if (image != null) {
+            String recognitionContent = QrCodeUtil.decode(image);
+            qrCodeForm.getRecognitionContentTextArea().setText(recognitionContent);
+            qrCodeForm.getQrCodePanel().updateUI();
+        } else {
+            JOptionPane.showMessageDialog(App.mainFrame, "剪贴板中没有图片！", "提示",
+                    JOptionPane.INFORMATION_MESSAGE);
+        }
     }
 
     public static void generate() {
@@ -299,7 +314,7 @@ public class QrCodeForm {
         panel2.setLayout(new GridLayoutManager(2, 1, new Insets(12, 12, 12, 12), -1, -1));
         tabbedPane1.addTab("识别", panel2);
         final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(1, 4, new Insets(0, 0, 0, 0), -1, -1));
+        panel3.setLayout(new GridLayoutManager(1, 6, new Insets(0, 0, 0, 0), -1, -1));
         panel2.add(panel3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JLabel label5 = new JLabel();
         label5.setText("二维码图片路径");
@@ -312,6 +327,12 @@ public class QrCodeForm {
         recognitionButton = new JButton();
         recognitionButton.setText("识别");
         panel3.add(recognitionButton, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JSeparator separator1 = new JSeparator();
+        separator1.setOrientation(1);
+        panel3.add(separator1, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        fromClipBoardButton = new JButton();
+        fromClipBoardButton.setText("从剪贴板");
+        panel3.add(fromClipBoardButton, new GridConstraints(0, 5, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JScrollPane scrollPane2 = new JScrollPane();
         panel2.add(scrollPane2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         recognitionContentTextArea = new JTextArea();

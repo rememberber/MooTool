@@ -96,5 +96,9 @@ public class QrCodeListener {
             }
         });
         qrCodeForm.getRecognitionButton().addActionListener(e -> QrCodeForm.recognition());
+
+        qrCodeForm.getFromClipBoardButton().addActionListener(e -> {
+            QrCodeForm.recognitionFromClipBoard();
+        });
     }
 }
