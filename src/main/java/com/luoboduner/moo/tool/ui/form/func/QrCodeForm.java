@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.swing.clipboard.ClipboardUtil;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.extra.qrcode.QrCodeUtil;
 import cn.hutool.extra.qrcode.QrConfig;
@@ -11,8 +12,11 @@ import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.dao.TFuncContentMapper;
 import com.luoboduner.moo.tool.dao.TQrCodeMapper;
+import com.luoboduner.moo.tool.domain.TFuncContent;
 import com.luoboduner.moo.tool.domain.TQrCode;
+import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.listener.func.QrCodeListener;
 import com.luoboduner.moo.tool.util.*;
@@ -55,12 +59,17 @@ public class QrCodeForm {
     private JScrollPane generateScrollPane;
     private JPanel generateMainPanel;
     private JSplitPane splitPane;
+    private JButton fromClipBoardButton;
+    private JTextArea historyTextArea;
+    private JScrollPane historyScrollPane;
 
     private static final Log logger = LogFactory.get();
 
     private static QrCodeForm qrCodeForm;
 
     private static TQrCodeMapper qrCodeMapper = MybatisUtil.getSqlSession().getMapper(TQrCodeMapper.class);
+
+    private static TFuncContentMapper funcContentMapper = MybatisUtil.getSqlSession().getMapper(TFuncContentMapper.class);
 
     private static final int DEFAULT_PRIMARY_KEY = 1;
 
@@ -82,6 +91,8 @@ public class QrCodeForm {
                 App.config.setQrCodeRecognitionImagePath(recognitionImagePath);
                 App.config.save();
                 qrCodeForm.getQrCodePanel().updateUI();
+
+                QrCodeListener.output("从文件识别:\n" + decode);
             } catch (Exception ex) {
                 ex.printStackTrace();
                 JOptionPane.showMessageDialog(App.mainFrame, "识别失败！\n\n" + ex.getMessage(), "失败",
@@ -91,7 +102,22 @@ public class QrCodeForm {
         });
     }
 
-    public static void generate() {
+    public static void recognitionFromClipBoard() {
+        qrCodeForm = getInstance();
+        Image image = ClipboardUtil.getImage();
+        if (image != null) {
+            String recognitionContent = QrCodeUtil.decode(image);
+            qrCodeForm.getRecognitionContentTextArea().setText(recognitionContent);
+            qrCodeForm.getQrCodePanel().updateUI();
+
+            QrCodeListener.output("从剪贴板识别:\n" + recognitionContent);
+        } else {
+            JOptionPane.showMessageDialog(App.mainFrame, "剪贴板中没有图片！", "提示",
+                    JOptionPane.INFORMATION_MESSAGE);
+        }
+    }
+
+    public static void generate(Boolean save) {
         try {
             qrCodeForm = getInstance();
             String nowTime = DateUtil.now().replace(":", "-").replace(" ", "-");
@@ -123,7 +149,10 @@ public class QrCodeForm {
             qrCodeForm.getQrCodeImageLabel().setIcon(imageIcon);
             qrCodeForm.getQrCodePanel().updateUI();
 
-            saveConfig();
+            if (save) {
+                saveConfig();
+                QrCodeListener.output("生成:\n" + qrCodeForm.getToGenerateContentTextArea().getText());
+            }
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
                     JOptionPane.ERROR_MESSAGE);
@@ -153,6 +182,27 @@ public class QrCodeForm {
         }
     }
 
+    public static int saveContent() {
+        qrCodeForm = getInstance();
+        String text = qrCodeForm.getHistoryTextArea().getText();
+        String now = SqliteUtil.nowDateForSqlite();
+
+        TFuncContent tFuncContent = funcContentMapper.selectByFunc(FuncConsts.QR_CODE);
+        if (tFuncContent == null) {
+            tFuncContent = new TFuncContent();
+            tFuncContent.setFunc(FuncConsts.QR_CODE);
+            tFuncContent.setContent(text);
+            tFuncContent.setCreateTime(now);
+            tFuncContent.setModifiedTime(now);
+
+            return funcContentMapper.insert(tFuncContent);
+        } else {
+            tFuncContent.setContent(text);
+            tFuncContent.setModifiedTime(now);
+            return funcContentMapper.updateByPrimaryKeySelective(tFuncContent);
+        }
+    }
+
     public static QrCodeForm getInstance() {
         if (qrCodeForm == null) {
             qrCodeForm = new QrCodeForm();
@@ -175,9 +225,18 @@ public class QrCodeForm {
         }
         FileUtil.clean(tempDir);
 
-        generate();
+        TFuncContent tFuncContent = funcContentMapper.selectByFunc(FuncConsts.QR_CODE);
+        if (tFuncContent != null) {
+            qrCodeForm.getHistoryTextArea().setText(tFuncContent.getContent());
+            // 滚动到最后一行
+            qrCodeForm.getHistoryTextArea().setCaretPosition(qrCodeForm.getHistoryTextArea().getText().length());
+        }
+
+        generate(false);
 
         QrCodeListener.addListeners();
+
+        ScrollUtil.smoothPane(qrCodeForm.getHistoryScrollPane());
     }
 
     private static void initUi() {
@@ -299,7 +358,7 @@ public class QrCodeForm {
         panel2.setLayout(new GridLayoutManager(2, 1, new Insets(12, 12, 12, 12), -1, -1));
         tabbedPane1.addTab("识别", panel2);
         final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(1, 4, new Insets(0, 0, 0, 0), -1, -1));
+        panel3.setLayout(new GridLayoutManager(1, 6, new Insets(0, 0, 0, 0), -1, -1));
         panel2.add(panel3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JLabel label5 = new JLabel();
         label5.setText("二维码图片路径");
@@ -312,11 +371,24 @@ public class QrCodeForm {
         recognitionButton = new JButton();
         recognitionButton.setText("识别");
         panel3.add(recognitionButton, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JSeparator separator1 = new JSeparator();
+        separator1.setOrientation(1);
+        panel3.add(separator1, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        fromClipBoardButton = new JButton();
+        fromClipBoardButton.setText("从剪贴板");
+        panel3.add(fromClipBoardButton, new GridConstraints(0, 5, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JScrollPane scrollPane2 = new JScrollPane();
         panel2.add(scrollPane2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         recognitionContentTextArea = new JTextArea();
         recognitionContentTextArea.setMargin(new Insets(8, 8, 8, 8));
         scrollPane2.setViewportView(recognitionContentTextArea);
+        final JPanel panel4 = new JPanel();
+        panel4.setLayout(new GridLayoutManager(1, 1, new Insets(10, 10, 10, 10), -1, -1));
+        tabbedPane1.addTab("历史记录", panel4);
+        historyScrollPane = new JScrollPane();
+        panel4.add(historyScrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        historyTextArea = new JTextArea();
+        historyScrollPane.setViewportView(historyTextArea);
     }
 
     /**

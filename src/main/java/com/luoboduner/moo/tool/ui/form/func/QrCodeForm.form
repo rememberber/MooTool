@@ -200,7 +200,7 @@
             <properties/>
             <border type="none"/>
             <children>
-              <grid id="1779f" layout-manager="GridLayoutManager" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+              <grid id="1779f" layout-manager="GridLayoutManager" row-count="1" column-count="6" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="0" left="0" bottom="0" right="0"/>
                 <constraints>
                   <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -240,6 +240,22 @@
                       <text value="识别"/>
                     </properties>
                   </component>
+                  <component id="a6ffc" class="javax.swing.JSeparator">
+                    <constraints>
+                      <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <orientation value="1"/>
+                    </properties>
+                  </component>
+                  <component id="462c4" class="javax.swing.JButton" binding="fromClipBoardButton">
+                    <constraints>
+                      <grid row="0" column="5" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text value="从剪贴板"/>
+                    </properties>
+                  </component>
                 </children>
               </grid>
               <scrollpane id="dfd95">
@@ -254,6 +270,29 @@
                     <properties>
                       <margin top="8" left="8" bottom="8" right="8"/>
                     </properties>
+                  </component>
+                </children>
+              </scrollpane>
+            </children>
+          </grid>
+          <grid id="e68a4" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+            <margin top="10" left="10" bottom="10" right="10"/>
+            <constraints>
+              <tabbedpane title="历史记录"/>
+            </constraints>
+            <properties/>
+            <border type="none"/>
+            <children>
+              <scrollpane id="5c96f" binding="historyScrollPane">
+                <constraints>
+                  <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="7" hsize-policy="7" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="75373" class="javax.swing.JTextArea" binding="historyTextArea">
+                    <constraints/>
+                    <properties/>
                   </component>
                 </children>
               </scrollpane>

@@ -153,10 +153,7 @@ public class QuickNoteListener {
                     App.config.setQuickNoteFontName(fontName);
                     App.config.save();
 
-                    quickNoteSyntaxTextViewerManager.removeRTextScrollPane(selectedName);
-                    RTextScrollPane syntaxTextViewer = quickNoteSyntaxTextViewerManager.getRTextScrollPane(selectedName);
-                    quickNoteForm.getContentSplitPane().setLeftComponent(syntaxTextViewer);
-                    syntaxTextViewer.updateUI();
+                    quickNoteSyntaxTextViewerManager.updateFont(selectedName);
                 }
             }
         });
@@ -178,10 +175,7 @@ public class QuickNoteListener {
                     App.config.setQuickNoteFontSize(fontSize);
                     App.config.save();
 
-                    quickNoteSyntaxTextViewerManager.removeRTextScrollPane(selectedName);
-                    RTextScrollPane syntaxTextViewer = quickNoteSyntaxTextViewerManager.getRTextScrollPane(selectedName);
-                    quickNoteForm.getContentSplitPane().setLeftComponent(syntaxTextViewer);
-                    syntaxTextViewer.updateUI();
+                    quickNoteSyntaxTextViewerManager.updateFont(selectedName);
                 }
             }
         });

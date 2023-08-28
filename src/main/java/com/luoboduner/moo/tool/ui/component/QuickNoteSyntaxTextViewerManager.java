@@ -66,6 +66,23 @@ public class QuickNoteSyntaxTextViewerManager {
         return rTextScrollPane;
     }
 
+    public void updateFont(String name){
+        RTextScrollPane rTextScrollPane = viewMap.get(name);
+        if (rTextScrollPane != null) {
+            QuickNoteSyntaxTextViewer plainTextViewer = (QuickNoteSyntaxTextViewer) rTextScrollPane.getTextArea();
+            TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
+            if (StringUtils.isNotEmpty(tQuickNote.getFontName()) && StringUtils.isNotEmpty(tQuickNote.getFontSize())) {
+                Font font;
+                if (FlatJetBrainsMonoFont.FAMILY.equals(tQuickNote.getFontName())) {
+                    font = FontUtils.getCompositeFont(FlatJetBrainsMonoFont.FAMILY, Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
+                } else {
+                    font = new Font(tQuickNote.getFontName(), Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
+                }
+                plainTextViewer.setFont(font);
+            }
+        }
+    }
+
     public static void updateGutter(RTextScrollPane rTextScrollPane) {
         Color defaultBackground = App.mainFrame.getBackground();
 
