@@ -1,7 +1,5 @@
 package com.luoboduner.moo.tool.util;
 
-import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
-
 /**
  * <pre>
  * 配置管理
@@ -244,7 +242,7 @@ public class ConfigUtil extends ConfigBaseUtil {
         if (SystemUtil.isLinuxOs()) {
             return setting.getStr("font", "setting.appearance", "Noto Sans CJK HK");
         } else {
-            return setting.getStr("quickNoteFontName", "func.quickNote", FlatJetBrainsMonoFont.FAMILY);
+            return setting.getStr("quickNoteFontName", "func.quickNote", "等线");
         }
     }
 
@@ -264,7 +262,7 @@ public class ConfigUtil extends ConfigBaseUtil {
         if (SystemUtil.isLinuxOs()) {
             return setting.getStr("font", "setting.appearance", "Noto Sans CJK HK");
         } else {
-            return setting.getStr("jsonBeautyFontName", "func.jsonBeauty", FlatJetBrainsMonoFont.FAMILY);
+            return setting.getStr("jsonBeautyFontName", "func.jsonBeauty", "等线");
         }
     }
 
