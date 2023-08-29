@@ -152,7 +152,12 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
         if (fontSize == 0) {
             fontSize = getFont().getSize() + 2;
         }
-        Font font = new Font(fontName, Font.PLAIN, fontSize);
+        Font font;
+        if (FlatJetBrainsMonoFont.FAMILY.equals(fontName)) {
+            font = FontUtils.getCompositeFont(FlatJetBrainsMonoFont.FAMILY, Font.PLAIN, fontSize);
+        } else {
+            font = new Font(fontName, Font.PLAIN, fontSize);
+        }
         setFont(font);
     }
 

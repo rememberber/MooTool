@@ -1,5 +1,5 @@
 {
-  "currentVersion": "v1.5.1",
+  "currentVersion": "v1.5.2",
   "versionIndex": {
     "v0.0.0": "0",
     "v1.0.0": "1",
@@ -22,7 +22,8 @@
     "v1.4.7": "18",
     "v1.4.8": "19",
     "v1.5.0": "20",
-    "v1.5.1": "21"
+    "v1.5.1": "21",
+    "v1.5.2": "22"
   },
   "versionDetailList": [
     {
@@ -134,6 +135,11 @@
       "version": "v1.5.1",
       "title": "二维码：支持从剪贴板识别",
       "log": "● 二维码：支持从剪贴板识别\n● 二维码：增加历史记录\n● 应用：修复下载更新文件时进度条错误的问题\n\n"
+    },
+    {
+      "version": "v1.5.2",
+      "title": "JetBrains Mono font字体问题优化",
+      "log": "● 修复：由于使用的FlatLaf的JetBrains Mono font字体在MacOS上存在兼容性问题，将其从默认调整为可选\n\n"
     }
   ]
 }
