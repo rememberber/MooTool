@@ -10,6 +10,7 @@ import com.luoboduner.moo.tool.ui.dialog.CommonTipsDialog;
 import com.luoboduner.moo.tool.ui.dialog.FavoriteColorDialog;
 import com.luoboduner.moo.tool.ui.form.func.ColorBoardForm;
 import com.luoboduner.moo.tool.ui.frame.FavoriteColorFrame;
+import com.luoboduner.moo.tool.util.AlertUtil;
 import com.luoboduner.moo.tool.util.ColorUtil;
 
 import javax.swing.*;
@@ -63,13 +64,10 @@ public class ColorBoardListener {
         });
         colorBoardForm.getCopyButton().addActionListener(e -> {
             try {
-                colorBoardForm.getCopyButton().setEnabled(false);
                 ClipboardUtil.setStr(colorBoardForm.getColorCodeTextField().getText());
-                JOptionPane.showMessageDialog(colorBoardForm.getColorBoardPanel(), "已复制！", "成功", JOptionPane.INFORMATION_MESSAGE);
+                AlertUtil.buttonInfo(colorBoardForm.getCopyButton(), "复制", "已复制", 2000);
             } catch (Exception e1) {
                 logger.error(e1);
-            } finally {
-                colorBoardForm.getCopyButton().setEnabled(true);
             }
         });
         colorBoardForm.getCodeTypeComboBox().addItemListener(e -> {
