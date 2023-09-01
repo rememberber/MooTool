@@ -114,7 +114,7 @@
                     <properties>
                       <icon value="icon/find_dark.png"/>
                       <text value=""/>
-                      <toolTipText value="新建(Ctrl+N)"/>
+                      <toolTipText value="查找(Ctrl+F)"/>
                     </properties>
                   </component>
                   <component id="1901b" class="javax.swing.JButton" binding="exportButton">
