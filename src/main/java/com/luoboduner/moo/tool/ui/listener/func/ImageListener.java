@@ -7,6 +7,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.Base64Dialog;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.ImageForm;
+import com.luoboduner.moo.tool.util.AlertUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -392,7 +393,9 @@ public class ImageListener {
     private static void copyToClipboard() {
         try {
             ClipboardUtil.setImage(selectedImage);
-            JOptionPane.showMessageDialog(App.mainFrame, "已复制图片到剪贴板！");
+            ImageForm imageForm = ImageForm.getInstance();
+            AlertUtil.buttonInfo(imageForm.getCopyToClipboardButton(), "复制到剪贴板", "已复制", 2000);
+
         } catch (Exception e1) {
             JOptionPane.showMessageDialog(App.mainFrame, "复制失败！\n\n" + e1.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
             log.error(ExceptionUtils.getStackTrace(e1));
