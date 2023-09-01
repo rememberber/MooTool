@@ -73,50 +73,38 @@ public class TimeConvertListener {
         });
         timeConvertForm.getCopyCurrentGmtButton().addActionListener(e -> ThreadUtil.execute(() -> {
             try {
-                timeConvertForm.getCopyCurrentGmtButton().setEnabled(false);
                 ClipboardUtil.setStr(timeConvertForm.getCurrentGmtLabel().getText());
                 AlertUtil.buttonInfo(timeConvertForm.getCopyCurrentGmtButton(), "复制", "已复制", 2000);
 
             } catch (Exception e1) {
                 logger.error(e1);
-            } finally {
-                timeConvertForm.getCopyCurrentGmtButton().setEnabled(true);
             }
         }));
         timeConvertForm.getCopyCurrentTimestampButton().addActionListener(e -> ThreadUtil.execute(() -> {
             try {
-                timeConvertForm.getCopyCurrentTimestampButton().setEnabled(false);
                 ClipboardUtil.setStr(timeConvertForm.getCurrentTimestampLabel().getText());
                 AlertUtil.buttonInfo(timeConvertForm.getCopyCurrentTimestampButton(), "复制", "已复制", 2000);
 
             } catch (Exception e1) {
                 logger.error(e1);
-            } finally {
-                timeConvertForm.getCopyCurrentTimestampButton().setEnabled(true);
             }
         }));
         timeConvertForm.getCopyGeneratedTimestampButton().addActionListener(e -> ThreadUtil.execute(() -> {
             try {
-                timeConvertForm.getCopyGeneratedTimestampButton().setEnabled(false);
                 ClipboardUtil.setStr(timeConvertForm.getTimestampTextField().getText());
                 AlertUtil.buttonInfo(timeConvertForm.getCopyGeneratedTimestampButton(), "复制", "已复制", 2000);
 
             } catch (Exception e1) {
                 logger.error(e1);
-            } finally {
-                timeConvertForm.getCopyGeneratedTimestampButton().setEnabled(true);
             }
         }));
         timeConvertForm.getCopyGeneratedLocalTimeButton().addActionListener(e -> ThreadUtil.execute(() -> {
             try {
-                timeConvertForm.getCopyGeneratedLocalTimeButton().setEnabled(false);
                 ClipboardUtil.setStr(timeConvertForm.getGmtTextField().getText());
                 AlertUtil.buttonInfo(timeConvertForm.getCopyGeneratedLocalTimeButton(), "复制", "已复制", 2000);
 
             } catch (Exception e1) {
                 logger.error(e1);
-            } finally {
-                timeConvertForm.getCopyGeneratedLocalTimeButton().setEnabled(true);
             }
         }));
 
