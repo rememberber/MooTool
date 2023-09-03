@@ -17,10 +17,7 @@ import com.luoboduner.moo.tool.service.HttpMsgSender;
 import com.luoboduner.moo.tool.ui.component.TopMenuBar;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.frame.MainFrame;
-import com.luoboduner.moo.tool.util.ComponentUtil;
-import com.luoboduner.moo.tool.util.MybatisUtil;
-import com.luoboduner.moo.tool.util.ScrollUtil;
-import com.luoboduner.moo.tool.util.SystemUtil;
+import com.luoboduner.moo.tool.util.*;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -145,8 +142,7 @@ public class SettingDialog extends JDialog {
                 App.config.save();
 
                 HttpMsgSender.proxy = null;
-                JOptionPane.showMessageDialog(contentPane, "保存成功！", "成功",
-                        JOptionPane.INFORMATION_MESSAGE);
+                AlertUtil.buttonInfo(httpSaveButton, "保存", "保存成功", 2000);
             } catch (Exception e1) {
                 JOptionPane.showMessageDialog(contentPane, "保存失败！\n\n" + e1.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);

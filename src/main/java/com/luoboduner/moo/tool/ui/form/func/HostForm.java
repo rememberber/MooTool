@@ -416,7 +416,7 @@ public class HostForm {
         findButton = new JButton();
         findButton.setIcon(new ImageIcon(getClass().getResource("/icon/find_dark.png")));
         findButton.setText("");
-        findButton.setToolTipText("新建(Ctrl+N)");
+        findButton.setToolTipText("查找(Ctrl+F)");
         controlPanel.add(findButton, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         exportButton = new JButton();
         exportButton.setIcon(new ImageIcon(getClass().getResource("/icon/export_dark.png")));
