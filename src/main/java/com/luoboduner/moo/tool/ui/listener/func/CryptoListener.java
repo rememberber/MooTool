@@ -21,6 +21,7 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.form.func.CryptoForm;
+import com.luoboduner.moo.tool.util.AlertUtil;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
@@ -242,7 +243,7 @@ public class CryptoListener {
         cryptoForm.getCopyUuidButton().addActionListener(e -> {
             try {
                 ClipboardUtil.setStr(cryptoForm.getUuidTextField().getText());
-                JOptionPane.showMessageDialog(cryptoForm.getCryptoPanel(), "内容已经复制到剪贴板！", "复制成功", JOptionPane.INFORMATION_MESSAGE);
+                AlertUtil.buttonInfo(cryptoForm.getCopyUuidButton(), "复制", "已复制", 2000);
             } catch (Exception e1) {
                 logger.error(e1);
             }
@@ -251,7 +252,7 @@ public class CryptoListener {
         cryptoForm.getCopyRandomNumButton().addActionListener(e -> {
             try {
                 ClipboardUtil.setStr(cryptoForm.getRandomNumTextField().getText());
-                JOptionPane.showMessageDialog(cryptoForm.getCryptoPanel(), "内容已经复制到剪贴板！", "复制成功", JOptionPane.INFORMATION_MESSAGE);
+                AlertUtil.buttonInfo(cryptoForm.getCopyRandomNumButton(), "复制", "已复制", 2000);
             } catch (Exception e1) {
                 logger.error(e1);
             }
@@ -260,7 +261,7 @@ public class CryptoListener {
         cryptoForm.getCopyRadomStringButton().addActionListener(e -> {
             try {
                 ClipboardUtil.setStr(cryptoForm.getRandomStringTextField().getText());
-                JOptionPane.showMessageDialog(cryptoForm.getCryptoPanel(), "内容已经复制到剪贴板！", "复制成功", JOptionPane.INFORMATION_MESSAGE);
+                AlertUtil.buttonInfo(cryptoForm.getCopyRadomStringButton(), "复制", "已复制", 2000);
             } catch (Exception e1) {
                 logger.error(e1);
             }
@@ -269,7 +270,7 @@ public class CryptoListener {
         cryptoForm.getCopyRandomPasswordButton().addActionListener(e -> {
             try {
                 ClipboardUtil.setStr(cryptoForm.getRandomPasswordTextField().getText());
-                JOptionPane.showMessageDialog(cryptoForm.getCryptoPanel(), "内容已经复制到剪贴板！", "复制成功", JOptionPane.INFORMATION_MESSAGE);
+                AlertUtil.buttonInfo(cryptoForm.getCopyRandomPasswordButton(), "复制", "已复制", 2000);
             } catch (Exception e1) {
                 logger.error(e1);
             }

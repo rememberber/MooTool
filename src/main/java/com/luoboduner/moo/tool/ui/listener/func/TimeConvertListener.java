@@ -5,6 +5,7 @@ import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
+import com.luoboduner.moo.tool.util.AlertUtil;
 import com.luoboduner.moo.tool.util.ConsoleUtil;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -72,46 +73,38 @@ public class TimeConvertListener {
         });
         timeConvertForm.getCopyCurrentGmtButton().addActionListener(e -> ThreadUtil.execute(() -> {
             try {
-                timeConvertForm.getCopyCurrentGmtButton().setEnabled(false);
                 ClipboardUtil.setStr(timeConvertForm.getCurrentGmtLabel().getText());
-                JOptionPane.showMessageDialog(timeConvertForm.getTimeConvertPanel(), "已复制！", "成功", JOptionPane.INFORMATION_MESSAGE);
+                AlertUtil.buttonInfo(timeConvertForm.getCopyCurrentGmtButton(), "复制", "已复制", 2000);
+
             } catch (Exception e1) {
                 logger.error(e1);
-            } finally {
-                timeConvertForm.getCopyCurrentGmtButton().setEnabled(true);
             }
         }));
         timeConvertForm.getCopyCurrentTimestampButton().addActionListener(e -> ThreadUtil.execute(() -> {
             try {
-                timeConvertForm.getCopyCurrentTimestampButton().setEnabled(false);
                 ClipboardUtil.setStr(timeConvertForm.getCurrentTimestampLabel().getText());
-                JOptionPane.showMessageDialog(timeConvertForm.getTimeConvertPanel(), "已复制！", "成功", JOptionPane.INFORMATION_MESSAGE);
+                AlertUtil.buttonInfo(timeConvertForm.getCopyCurrentTimestampButton(), "复制", "已复制", 2000);
+
             } catch (Exception e1) {
                 logger.error(e1);
-            } finally {
-                timeConvertForm.getCopyCurrentTimestampButton().setEnabled(true);
             }
         }));
         timeConvertForm.getCopyGeneratedTimestampButton().addActionListener(e -> ThreadUtil.execute(() -> {
             try {
-                timeConvertForm.getCopyGeneratedTimestampButton().setEnabled(false);
                 ClipboardUtil.setStr(timeConvertForm.getTimestampTextField().getText());
-                JOptionPane.showMessageDialog(timeConvertForm.getTimeConvertPanel(), "已复制！", "成功", JOptionPane.INFORMATION_MESSAGE);
+                AlertUtil.buttonInfo(timeConvertForm.getCopyGeneratedTimestampButton(), "复制", "已复制", 2000);
+
             } catch (Exception e1) {
                 logger.error(e1);
-            } finally {
-                timeConvertForm.getCopyGeneratedTimestampButton().setEnabled(true);
             }
         }));
         timeConvertForm.getCopyGeneratedLocalTimeButton().addActionListener(e -> ThreadUtil.execute(() -> {
             try {
-                timeConvertForm.getCopyGeneratedLocalTimeButton().setEnabled(false);
                 ClipboardUtil.setStr(timeConvertForm.getGmtTextField().getText());
-                JOptionPane.showMessageDialog(timeConvertForm.getTimeConvertPanel(), "已复制！", "成功", JOptionPane.INFORMATION_MESSAGE);
+                AlertUtil.buttonInfo(timeConvertForm.getCopyGeneratedLocalTimeButton(), "复制", "已复制", 2000);
+
             } catch (Exception e1) {
                 logger.error(e1);
-            } finally {
-                timeConvertForm.getCopyGeneratedLocalTimeButton().setEnabled(true);
             }
         }));
 
