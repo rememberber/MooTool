@@ -34,7 +34,7 @@ public class CronForm {
     private JButton 反解析到UIButton;
     private JTextField textField3;
     private JSplitPane splitPane;
-    private JButton 常用CronButton;
+    private JButton commonCronButton;
     private JButton 收藏夹Button;
     private JButton button3;
     private JComboBox localComboBox;
@@ -164,9 +164,9 @@ public class CronForm {
         panel13.add(label2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         cronExpressionTextField = new JTextField();
         panel13.add(cronExpressionTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-        常用CronButton = new JButton();
-        常用CronButton.setText("常用Cron");
-        panel13.add(常用CronButton, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        commonCronButton = new JButton();
+        commonCronButton.setText("常用Cron");
+        panel13.add(commonCronButton, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         收藏夹Button = new JButton();
         收藏夹Button.setText("收藏夹");
         panel13.add(收藏夹Button, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));

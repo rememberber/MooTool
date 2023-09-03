@@ -8,6 +8,7 @@ import com.cronutils.model.definition.CronDefinition;
 import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.parser.CronParser;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.dialog.CommonCronDialog;
 import com.luoboduner.moo.tool.ui.form.func.CronForm;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -53,6 +54,12 @@ public class CronListener {
                         JOptionPane.ERROR_MESSAGE);
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
+        });
+
+        cronForm.getCommonCronButton().addActionListener(e -> {
+            CommonCronDialog commonCronDialog = new CommonCronDialog();
+            commonCronDialog.pack();
+            commonCronDialog.setVisible(true);
         });
 
     }
