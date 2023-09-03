@@ -3,7 +3,7 @@
   <grid id="cbd77" binding="contentPane" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="48" y="54" width="741" height="840"/>
+      <xy x="48" y="54" width="741" height="1307"/>
     </constraints>
     <properties/>
     <border type="none"/>
@@ -15,7 +15,7 @@
         <properties/>
         <border type="empty"/>
         <children>
-          <grid id="e3588" layout-manager="GridLayoutManager" row-count="24" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+          <grid id="e3588" layout-manager="GridLayoutManager" row-count="33" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="10" left="10" bottom="10" right="10"/>
             <constraints/>
             <properties/>
@@ -197,11 +197,6 @@
                   <text value="每月的第三个星期五上午10:15"/>
                 </properties>
               </component>
-              <vspacer id="f6bd7">
-                <constraints>
-                  <grid row="23" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
-                </constraints>
-              </vspacer>
               <component id="13e50" class="javax.swing.JTextField" binding="a0021TextField" default-binding="true">
                 <constraints>
                   <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
@@ -469,6 +464,188 @@
                   </component>
                 </children>
               </grid>
+              <component id="cec80" class="javax.swing.JLabel">
+                <constraints>
+                  <grid row="23" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text value="每天10点15分"/>
+                </properties>
+              </component>
+              <component id="3f132" class="javax.swing.JLabel">
+                <constraints>
+                  <grid row="24" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text value="2017年每天10点15分"/>
+                </properties>
+              </component>
+              <component id="62a43" class="javax.swing.JLabel">
+                <constraints>
+                  <grid row="25" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text value="每天下午的 2点到2点59分每分"/>
+                </properties>
+              </component>
+              <component id="71451" class="javax.swing.JLabel">
+                <constraints>
+                  <grid row="26" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text value="每天下午的 2点到2点59分(整点开始，每隔5分)"/>
+                </properties>
+              </component>
+              <component id="ccace" class="javax.swing.JLabel">
+                <constraints>
+                  <grid row="27" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text value="每天下午的 2点到2点59分、18点到18点59分(整点开始，每隔5分)"/>
+                </properties>
+              </component>
+              <component id="3e66f" class="javax.swing.JLabel">
+                <constraints>
+                  <grid row="28" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text value="每天下午的 2点到2点05分每分"/>
+                </properties>
+              </component>
+              <component id="729b5" class="javax.swing.JLabel">
+                <constraints>
+                  <grid row="29" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text value="每月最后一周的星期五的10点15分"/>
+                </properties>
+              </component>
+              <component id="7dad0" class="javax.swing.JLabel">
+                <constraints>
+                  <grid row="30" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties>
+                  <text value="每月的第三周的星期五开始"/>
+                </properties>
+              </component>
+              <component id="cf304" class="javax.swing.JTextField" binding="a01510TextField1" default-binding="true">
+                <constraints>
+                  <grid row="23" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                    <preferred-size width="150" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <editable value="false"/>
+                  <text value="0 15 10 * * ? *"/>
+                </properties>
+              </component>
+              <component id="fe5e0" class="javax.swing.JTextField" binding="a015102017TextField" default-binding="true">
+                <constraints>
+                  <grid row="24" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                    <preferred-size width="150" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <editable value="false"/>
+                  <text value="0 15 10 * * ? 2017"/>
+                </properties>
+              </component>
+              <component id="87dcc" class="javax.swing.JTextField" binding="a014TextField1" default-binding="true">
+                <constraints>
+                  <grid row="25" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                    <preferred-size width="150" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <editable value="false"/>
+                  <text value="0 * 14 * * ?"/>
+                </properties>
+              </component>
+              <component id="af639" class="javax.swing.JTextField" binding="a00514TextField1" default-binding="true">
+                <constraints>
+                  <grid row="26" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                    <preferred-size width="150" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <editable value="false"/>
+                  <text value="0 0/5 14 * * ?"/>
+                </properties>
+              </component>
+              <component id="25647" class="javax.swing.JTextField" binding="a00514TextField5" default-binding="true">
+                <constraints>
+                  <grid row="27" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                    <preferred-size width="150" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <editable value="false"/>
+                  <text value="0 0/5 14,18 * * ?"/>
+                </properties>
+              </component>
+              <component id="efd5f" class="javax.swing.JTextField" binding="a00514TextField6" default-binding="true">
+                <constraints>
+                  <grid row="28" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                    <preferred-size width="150" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <editable value="false"/>
+                  <text value="0 0-5 14 * * ?"/>
+                </properties>
+              </component>
+              <component id="803da" class="javax.swing.JTextField" binding="a015106LTextField2" default-binding="true">
+                <constraints>
+                  <grid row="29" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                    <preferred-size width="150" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <editable value="false"/>
+                  <text value="0 15 10 ? * 6L"/>
+                </properties>
+              </component>
+              <component id="e3e7f" class="javax.swing.JTextField" binding="a015106TextField1" default-binding="true">
+                <constraints>
+                  <grid row="30" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
+                    <preferred-size width="150" height="-1"/>
+                  </grid>
+                </constraints>
+                <properties>
+                  <editable value="false"/>
+                  <text value="0 15 10 ? * 6#3"/>
+                </properties>
+              </component>
+              <grid id="9509e" layout-manager="GridLayoutManager" row-count="1" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                <margin top="0" left="0" bottom="0" right="0"/>
+                <constraints>
+                  <grid row="31" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                </constraints>
+                <properties/>
+                <border type="none"/>
+                <children>
+                  <component id="f78f8" class="javax.swing.JSeparator">
+                    <constraints>
+                      <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="6" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties/>
+                  </component>
+                  <component id="852ff" class="javax.swing.JLabel">
+                    <constraints>
+                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <font style="1"/>
+                      <text value="以上来自https://www.pppet.net/changyong.html"/>
+                    </properties>
+                  </component>
+                </children>
+              </grid>
+              <vspacer id="fc207">
+                <constraints>
+                  <grid row="32" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                </constraints>
+              </vspacer>
             </children>
           </grid>
         </children>
