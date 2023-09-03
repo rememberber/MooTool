@@ -52,7 +52,6 @@ public class TabListener {
                         }
                         break;
                     case 12:
-                    case 13:
                         if (warnFlag) {
                             JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "\n该功能尚未实现，目前仅供UI预览\n" +
                                             "\n", "预览提示",
