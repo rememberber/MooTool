@@ -406,12 +406,14 @@ public class FavoriteColorForm {
         favoriteColorForm.getMoveDownButton().setIcon(new FlatSVGIcon("icon/down.svg"));
 
         if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
-            this.getSplitPane().getRootPane().putClientProperty("apple.awt.fullWindowContent", true);
-            this.getSplitPane().getRootPane().putClientProperty("apple.awt.transparentTitleBar", true);
-            this.getSplitPane().getRootPane().putClientProperty("apple.awt.fullscreenable", true);
-            this.getSplitPane().getRootPane().putClientProperty("apple.awt.windowTitleVisible", false);
-            GridLayoutManager gridLayoutManager = (GridLayoutManager) favoriteColorForm.getFavoriteColorPanel().getLayout();
-            gridLayoutManager.setMargin(new Insets(28, 0, 0, 0));
+            if (this.getFavoriteColorPanel().getRootPane() != null) {
+                this.getFavoriteColorPanel().getRootPane().putClientProperty("apple.awt.fullWindowContent", true);
+                this.getFavoriteColorPanel().getRootPane().putClientProperty("apple.awt.transparentTitleBar", true);
+                this.getFavoriteColorPanel().getRootPane().putClientProperty("apple.awt.fullscreenable", true);
+                this.getFavoriteColorPanel().getRootPane().putClientProperty("apple.awt.windowTitleVisible", false);
+                GridLayoutManager gridLayoutManager = (GridLayoutManager) favoriteColorForm.getFavoriteColorPanel().getLayout();
+                gridLayoutManager.setMargin(new Insets(28, 0, 0, 0));
+            }
         }
 
         initListTable();
