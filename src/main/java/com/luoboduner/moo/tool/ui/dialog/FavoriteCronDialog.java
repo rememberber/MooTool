@@ -1,5 +1,10 @@
 package com.luoboduner.moo.tool.ui.dialog;
 
+import com.cronutils.descriptor.CronDescriptor;
+import com.cronutils.model.CronType;
+import com.cronutils.model.definition.CronDefinition;
+import com.cronutils.model.definition.CronDefinitionBuilder;
+import com.cronutils.parser.CronParser;
 import com.formdev.flatlaf.util.SystemInfo;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
@@ -10,6 +15,7 @@ import com.luoboduner.moo.tool.dao.TFavoriteCronListMapper;
 import com.luoboduner.moo.tool.domain.TFavoriteCronItem;
 import com.luoboduner.moo.tool.domain.TFavoriteCronList;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
+import com.luoboduner.moo.tool.ui.form.func.CronForm;
 import com.luoboduner.moo.tool.ui.form.func.FavoriteCronForm;
 import com.luoboduner.moo.tool.util.ComponentUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
@@ -18,15 +24,14 @@ import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.commons.lang3.time.DateFormatUtils;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * Cron表达式收藏Dialog
@@ -139,7 +144,30 @@ public class FavoriteCronDialog extends JDialog {
             cron = cron.substring(0, 40) + "...";
         }
         cronValueLabel.setText(cron);
-        nameTextField.setText("未命名Cron表达式-" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss"));
+
+        try {
+            CronForm cronForm = CronForm.getInstance();
+            String selectedLocaleStr = cronForm.getLocalComboBox().getSelectedItem().toString();
+
+            Locale selectedLocale = Locale.getDefault();
+            switch (selectedLocaleStr) {
+                case "中文" -> selectedLocale = Locale.CHINESE;
+                case "英文" -> selectedLocale = Locale.ENGLISH;
+                case "日文" -> selectedLocale = Locale.JAPANESE;
+                default -> {
+                }
+            }
+            CronDescriptor descriptor = CronDescriptor.instance(selectedLocale);
+            CronDefinition cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ);
+            CronParser parser = new CronParser(cronDefinition);
+            String description = descriptor.describe(parser.parse(cron));
+
+            nameTextField.setText(description);
+        } catch (Exception e) {
+            log.error(ExceptionUtils.getStackTrace(e));
+            nameTextField.setText(cron);
+        }
+
         nameTextField.grabFocus();
         nameTextField.selectAll();
         fillFavoriteListComboBox();

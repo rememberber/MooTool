@@ -11,6 +11,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.CommonCronDialog;
 import com.luoboduner.moo.tool.ui.dialog.FavoriteCronDialog;
 import com.luoboduner.moo.tool.ui.form.func.CronForm;
+import com.luoboduner.moo.tool.ui.frame.FavoriteCronFrame;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
@@ -63,6 +64,7 @@ public class CronListener {
             commonCronDialog.setVisible(true);
         });
 
+        cronForm.getFavoriteBookButton().addActionListener(e -> FavoriteCronFrame.showWindow());
         cronForm.getAddToFavoriteButton().addActionListener(e -> {
             FavoriteCronDialog favoriteCronDialog = new FavoriteCronDialog();
             favoriteCronDialog.pack();
