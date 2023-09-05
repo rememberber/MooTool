@@ -230,7 +230,7 @@
                           <text value="常用Cron"/>
                         </properties>
                       </component>
-                      <component id="68ab5" class="javax.swing.JButton" binding="收藏夹Button" default-binding="true">
+                      <component id="68ab5" class="javax.swing.JButton" binding="favoriteBookButton">
                         <constraints>
                           <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
@@ -238,7 +238,7 @@
                           <text value="收藏夹"/>
                         </properties>
                       </component>
-                      <component id="6f6a4" class="javax.swing.JButton" binding="button3" default-binding="true">
+                      <component id="6f6a4" class="javax.swing.JButton" binding="addToFavoriteButton">
                         <constraints>
                           <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>

@@ -9,6 +9,7 @@ import com.cronutils.model.definition.CronDefinitionBuilder;
 import com.cronutils.parser.CronParser;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.CommonCronDialog;
+import com.luoboduner.moo.tool.ui.dialog.FavoriteCronDialog;
 import com.luoboduner.moo.tool.ui.form.func.CronForm;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -60,6 +61,13 @@ public class CronListener {
             CommonCronDialog commonCronDialog = new CommonCronDialog();
             commonCronDialog.pack();
             commonCronDialog.setVisible(true);
+        });
+
+        cronForm.getAddToFavoriteButton().addActionListener(e -> {
+            FavoriteCronDialog favoriteCronDialog = new FavoriteCronDialog();
+            favoriteCronDialog.pack();
+            favoriteCronDialog.init(cronForm.getCronExpressionTextField().getText());
+            favoriteCronDialog.setVisible(true);
         });
 
     }

@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -35,8 +36,8 @@ public class CronForm {
     private JTextField textField3;
     private JSplitPane splitPane;
     private JButton commonCronButton;
-    private JButton 收藏夹Button;
-    private JButton button3;
+    private JButton favoriteBookButton;
+    private JButton addToFavoriteButton;
     private JComboBox localComboBox;
 
     private static CronForm cronForm;
@@ -63,6 +64,8 @@ public class CronForm {
     }
 
     private static void initUi() {
+        cronForm.getAddToFavoriteButton().setIcon(new FlatSVGIcon("icon/favorite.svg"));
+
         cronForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 2));
         cronForm.getTextArea1().setText("最近10次运行时间：");
 
@@ -167,13 +170,13 @@ public class CronForm {
         commonCronButton = new JButton();
         commonCronButton.setText("常用Cron");
         panel13.add(commonCronButton, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        收藏夹Button = new JButton();
-        收藏夹Button.setText("收藏夹");
-        panel13.add(收藏夹Button, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        button3 = new JButton();
-        button3.setIcon(new ImageIcon(getClass().getResource("/icon/favorite.png")));
-        button3.setText("");
-        panel13.add(button3, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        favoriteBookButton = new JButton();
+        favoriteBookButton.setText("收藏夹");
+        panel13.add(favoriteBookButton, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        addToFavoriteButton = new JButton();
+        addToFavoriteButton.setIcon(new ImageIcon(getClass().getResource("/icon/favorite.png")));
+        addToFavoriteButton.setText("");
+        panel13.add(addToFavoriteButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel14 = new JPanel();
         panel14.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel9.add(panel14, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
