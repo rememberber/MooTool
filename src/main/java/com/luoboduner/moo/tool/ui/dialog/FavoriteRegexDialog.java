@@ -134,6 +134,10 @@ public class FavoriteRegexDialog extends JDialog {
     }
 
     public void init(String regex) {
+        // 字符串超长时，截取部分显示，末尾显示省略号
+        if (regex.length() > 40) {
+            regex = regex.substring(0, 40) + "...";
+        }
         regexValueLabel.setText(regex);
         nameTextField.setText("未命名正则表达式-" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss"));
         nameTextField.grabFocus();
