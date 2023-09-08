@@ -1662,12 +1662,6 @@
                               <grid row="0" column="5" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
                           </hspacer>
-                          <component id="6fe8" class="javax.swing.JSpinner" binding="spinner20" default-binding="true">
-                            <constraints>
-                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                            </constraints>
-                            <properties/>
-                          </component>
                           <component id="d1013" class="javax.swing.JLabel">
                             <constraints>
                               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
@@ -1676,18 +1670,54 @@
                               <text value="月开始，每"/>
                             </properties>
                           </component>
-                          <component id="650ba" class="javax.swing.JSpinner" binding="spinner21" default-binding="true">
-                            <constraints>
-                              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                            </constraints>
-                            <properties/>
-                          </component>
                           <component id="d07a4" class="javax.swing.JLabel">
                             <constraints>
                               <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
                             <properties>
                               <text value="个月"/>
+                            </properties>
+                          </component>
+                          <component id="d807" class="javax.swing.JComboBox" binding="comboBox6" default-binding="true">
+                            <constraints>
+                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <model>
+                                <item value="1"/>
+                                <item value="2"/>
+                                <item value="3"/>
+                                <item value="4"/>
+                                <item value="5"/>
+                                <item value="6"/>
+                                <item value="7"/>
+                                <item value="8"/>
+                                <item value="9"/>
+                                <item value="10"/>
+                                <item value="11"/>
+                                <item value="12"/>
+                              </model>
+                            </properties>
+                          </component>
+                          <component id="6b83f" class="javax.swing.JComboBox" binding="comboBox7" default-binding="true">
+                            <constraints>
+                              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <model>
+                                <item value="1"/>
+                                <item value="2"/>
+                                <item value="3"/>
+                                <item value="4"/>
+                                <item value="5"/>
+                                <item value="6"/>
+                                <item value="7"/>
+                                <item value="8"/>
+                                <item value="9"/>
+                                <item value="10"/>
+                                <item value="11"/>
+                                <item value="12"/>
+                              </model>
                             </properties>
                           </component>
                         </children>
@@ -1713,12 +1743,6 @@
                               <grid row="0" column="5" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
                           </hspacer>
-                          <component id="21c62" class="javax.swing.JSpinner" binding="spinner22" default-binding="true">
-                            <constraints>
-                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                            </constraints>
-                            <properties/>
-                          </component>
                           <component id="18fee" class="javax.swing.JLabel">
                             <constraints>
                               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
@@ -1727,18 +1751,54 @@
                               <text value="-"/>
                             </properties>
                           </component>
-                          <component id="1c1f3" class="javax.swing.JSpinner" binding="spinner23" default-binding="true">
-                            <constraints>
-                              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
-                            </constraints>
-                            <properties/>
-                          </component>
                           <component id="7e8a3" class="javax.swing.JLabel">
                             <constraints>
                               <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
                             <properties>
                               <text value="月"/>
+                            </properties>
+                          </component>
+                          <component id="f5650" class="javax.swing.JComboBox" binding="comboBox8" default-binding="true">
+                            <constraints>
+                              <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <model>
+                                <item value="1"/>
+                                <item value="2"/>
+                                <item value="3"/>
+                                <item value="4"/>
+                                <item value="5"/>
+                                <item value="6"/>
+                                <item value="7"/>
+                                <item value="8"/>
+                                <item value="9"/>
+                                <item value="10"/>
+                                <item value="11"/>
+                                <item value="12"/>
+                              </model>
+                            </properties>
+                          </component>
+                          <component id="f0e6" class="javax.swing.JComboBox" binding="comboBox9" default-binding="true">
+                            <constraints>
+                              <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                            </constraints>
+                            <properties>
+                              <model>
+                                <item value="1"/>
+                                <item value="2"/>
+                                <item value="3"/>
+                                <item value="4"/>
+                                <item value="5"/>
+                                <item value="6"/>
+                                <item value="7"/>
+                                <item value="8"/>
+                                <item value="9"/>
+                                <item value="10"/>
+                                <item value="11"/>
+                                <item value="12"/>
+                              </model>
                             </properties>
                           </component>
                         </children>
