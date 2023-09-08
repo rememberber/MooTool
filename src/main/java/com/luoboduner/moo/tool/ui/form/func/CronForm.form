@@ -3226,7 +3226,9 @@
                         <preferred-size width="50" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties/>
+                    <properties>
+                      <editable value="false"/>
+                    </properties>
                   </component>
                   <component id="c71ab" class="javax.swing.JTextField" default-binding="true">
                     <constraints>
@@ -3234,7 +3236,9 @@
                         <preferred-size width="50" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties/>
+                    <properties>
+                      <editable value="false"/>
+                    </properties>
                   </component>
                   <component id="28819" class="javax.swing.JTextField" default-binding="true">
                     <constraints>
@@ -3242,7 +3246,9 @@
                         <preferred-size width="50" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties/>
+                    <properties>
+                      <editable value="false"/>
+                    </properties>
                   </component>
                   <component id="384bd" class="javax.swing.JTextField" default-binding="true">
                     <constraints>
@@ -3250,7 +3256,9 @@
                         <preferred-size width="50" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties/>
+                    <properties>
+                      <editable value="false"/>
+                    </properties>
                   </component>
                   <component id="2326e" class="javax.swing.JTextField" binding="textField3" default-binding="true">
                     <constraints>
@@ -3258,7 +3266,9 @@
                         <preferred-size width="50" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties/>
+                    <properties>
+                      <editable value="false"/>
+                    </properties>
                   </component>
                   <component id="5f27e" class="javax.swing.JTextField" default-binding="true">
                     <constraints>
@@ -3266,7 +3276,9 @@
                         <preferred-size width="50" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties/>
+                    <properties>
+                      <editable value="false"/>
+                    </properties>
                   </component>
                   <component id="b9960" class="javax.swing.JTextField" default-binding="true">
                     <constraints>
@@ -3274,7 +3286,9 @@
                         <preferred-size width="50" height="-1"/>
                       </grid>
                     </constraints>
-                    <properties/>
+                    <properties>
+                      <editable value="false"/>
+                    </properties>
                   </component>
                 </children>
               </grid>
