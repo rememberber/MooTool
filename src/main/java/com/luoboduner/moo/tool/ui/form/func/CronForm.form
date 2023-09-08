@@ -3146,7 +3146,7 @@
                     <properties/>
                     <border type="none"/>
                     <children>
-                      <component id="21e3a" class="javax.swing.JTextArea" binding="textArea1" default-binding="true">
+                      <component id="21e3a" class="javax.swing.JTextArea" binding="nextExecutionTimeTextArea">
                         <constraints/>
                         <properties>
                           <text value=""/>
