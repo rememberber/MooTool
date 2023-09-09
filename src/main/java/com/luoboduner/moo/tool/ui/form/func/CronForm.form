@@ -2229,7 +2229,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="174b8" class="javax.swing.JRadioButton" binding="每月RadioButton" default-binding="true">
+                          <component id="174b8" class="javax.swing.JRadioButton" binding="monthPerRadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2257,7 +2257,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="e519c" class="javax.swing.JRadioButton" binding="指定RadioButton4" default-binding="true">
+                          <component id="e519c" class="javax.swing.JRadioButton" binding="monthAssignRadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2386,7 +2386,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="d0243" class="javax.swing.JRadioButton" binding="不指定RadioButton3" default-binding="true">
+                          <component id="d0243" class="javax.swing.JRadioButton" binding="monthNotAssignRadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2409,7 +2409,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="13fc1" class="javax.swing.JRadioButton" binding="周期从RadioButton10" default-binding="true">
+                          <component id="13fc1" class="javax.swing.JRadioButton" binding="monthCycle1RadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2438,7 +2438,7 @@
                               <text value="个月"/>
                             </properties>
                           </component>
-                          <component id="d807" class="javax.swing.JComboBox" binding="comboBox6" default-binding="true">
+                          <component id="d807" class="javax.swing.JComboBox" binding="monthCycle1ComboBox1">
                             <constraints>
                               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2459,7 +2459,7 @@
                               </model>
                             </properties>
                           </component>
-                          <component id="6b83f" class="javax.swing.JComboBox" binding="comboBox7" default-binding="true">
+                          <component id="6b83f" class="javax.swing.JComboBox" binding="monthCycle1ComboBox2">
                             <constraints>
                               <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2490,7 +2490,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="893a5" class="javax.swing.JRadioButton" binding="周期从RadioButton9" default-binding="true">
+                          <component id="893a5" class="javax.swing.JRadioButton" binding="monthCycle2RadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2519,7 +2519,7 @@
                               <text value="月"/>
                             </properties>
                           </component>
-                          <component id="f5650" class="javax.swing.JComboBox" binding="comboBox8" default-binding="true">
+                          <component id="f5650" class="javax.swing.JComboBox" binding="monthCycle2ComboBox1">
                             <constraints>
                               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2540,7 +2540,7 @@
                               </model>
                             </properties>
                           </component>
-                          <component id="f0e6" class="javax.swing.JComboBox" binding="comboBox9" default-binding="true">
+                          <component id="f0e6" class="javax.swing.JComboBox" binding="monthCycle2ComboBox2">
                             <constraints>
                               <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2581,7 +2581,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="4e681" class="javax.swing.JRadioButton" binding="不指定RadioButton" default-binding="true">
+                          <component id="4e681" class="javax.swing.JRadioButton" binding="weekNotAssignRadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2609,7 +2609,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="c6f9a" class="javax.swing.JRadioButton" binding="指定RadioButton5" default-binding="true">
+                          <component id="c6f9a" class="javax.swing.JRadioButton" binding="weekAssignRadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2698,7 +2698,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="c213d" class="javax.swing.JRadioButton" binding="每周RadioButton" default-binding="true">
+                          <component id="c213d" class="javax.swing.JRadioButton" binding="weekPerRadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2721,7 +2721,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="af82b" class="javax.swing.JRadioButton" binding="周期从RadioButton8" default-binding="true">
+                          <component id="af82b" class="javax.swing.JRadioButton" binding="weekCycle1RadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2734,7 +2734,7 @@
                               <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
                           </hspacer>
-                          <component id="52dcf" class="javax.swing.JComboBox" binding="comboBox1" default-binding="true">
+                          <component id="52dcf" class="javax.swing.JComboBox" binding="weekCycle1ComboBox1">
                             <constraints>
                               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2758,7 +2758,7 @@
                               <text value="-"/>
                             </properties>
                           </component>
-                          <component id="e59c4" class="javax.swing.JComboBox" binding="comboBox2" default-binding="true">
+                          <component id="e59c4" class="javax.swing.JComboBox" binding="weekCycle1ComboBox2">
                             <constraints>
                               <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2784,7 +2784,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="7c4b3" class="javax.swing.JRadioButton" binding="当月第RadioButton" default-binding="true">
+                          <component id="7c4b3" class="javax.swing.JRadioButton" binding="weekInMonthRadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2797,7 +2797,7 @@
                               <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
                           </hspacer>
-                          <component id="c9dad" class="javax.swing.JComboBox" binding="comboBox3" default-binding="true">
+                          <component id="c9dad" class="javax.swing.JComboBox" binding="weekInMonthComboBox1">
                             <constraints>
                               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2818,7 +2818,7 @@
                               <text value="周的"/>
                             </properties>
                           </component>
-                          <component id="2787e" class="javax.swing.JComboBox" binding="comboBox4" default-binding="true">
+                          <component id="2787e" class="javax.swing.JComboBox" binding="weekInMonthComboBox2">
                             <constraints>
                               <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2844,7 +2844,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="c9410" class="javax.swing.JRadioButton" binding="当月最后一个RadioButton" default-binding="true">
+                          <component id="c9410" class="javax.swing.JRadioButton" binding="weekLastMonthRadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2857,7 +2857,7 @@
                               <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
                           </hspacer>
-                          <component id="d74c9" class="javax.swing.JComboBox" binding="comboBox5" default-binding="true">
+                          <component id="d74c9" class="javax.swing.JComboBox" binding="weekLastMonthComboBox1">
                             <constraints>
                               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2893,7 +2893,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="c0752" class="javax.swing.JRadioButton" binding="不指定RadioButton1" default-binding="true">
+                          <component id="c0752" class="javax.swing.JRadioButton" binding="yearNotAssignRadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2921,7 +2921,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="103d9" class="javax.swing.JRadioButton" binding="每年RadioButton" default-binding="true">
+                          <component id="103d9" class="javax.swing.JRadioButton" binding="yearPerRadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2944,7 +2944,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="5413a" class="javax.swing.JRadioButton" binding="周期RadioButton" default-binding="true">
+                          <component id="5413a" class="javax.swing.JRadioButton" binding="yearCycleRadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2957,7 +2957,7 @@
                               <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
                           </hspacer>
-                          <component id="6a6f2" class="javax.swing.JSpinner" binding="spinner5" default-binding="true">
+                          <component id="6a6f2" class="javax.swing.JSpinner" binding="yearCycleSpinner1">
                             <constraints>
                               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2971,7 +2971,7 @@
                               <text value="-"/>
                             </properties>
                           </component>
-                          <component id="a41e" class="javax.swing.JSpinner" binding="spinner6" default-binding="true">
+                          <component id="a41e" class="javax.swing.JSpinner" binding="yearCycleSpinner2">
                             <constraints>
                               <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
