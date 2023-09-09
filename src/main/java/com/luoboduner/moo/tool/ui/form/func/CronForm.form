@@ -59,7 +59,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="cc7d4" class="javax.swing.JRadioButton" binding="secCycle1RadioButton1">
+                          <component id="cc7d4" class="javax.swing.JRadioButton" binding="secCycle1RadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -646,7 +646,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="8be78" class="javax.swing.JRadioButton" binding="secCycle2RadioButton2">
+                          <component id="8be78" class="javax.swing.JRadioButton" binding="secCycle2RadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
