@@ -59,7 +59,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="cc7d4" class="javax.swing.JRadioButton" binding="周期从RadioButton1" default-binding="true">
+                          <component id="cc7d4" class="javax.swing.JRadioButton" binding="secCycle1RadioButton1">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -72,7 +72,7 @@
                               <grid row="0" column="5" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
                           </hspacer>
-                          <component id="55a2e" class="javax.swing.JSpinner" binding="spinner1" default-binding="true">
+                          <component id="55a2e" class="javax.swing.JSpinner" binding="secCycle1Spinner1">
                             <constraints>
                               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -86,7 +86,7 @@
                               <text value="开始，每"/>
                             </properties>
                           </component>
-                          <component id="bc947" class="javax.swing.JSpinner" binding="spinner2" default-binding="true">
+                          <component id="bc947" class="javax.swing.JSpinner" binding="secCycle1Spinner2">
                             <constraints>
                               <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -110,7 +110,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="7e9a8" class="javax.swing.JRadioButton" binding="每秒RadioButton" default-binding="true">
+                          <component id="7e9a8" class="javax.swing.JRadioButton" binding="secPerRadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -133,7 +133,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="12196" class="javax.swing.JRadioButton" binding="指定RadioButton" default-binding="true">
+                          <component id="12196" class="javax.swing.JRadioButton" binding="secAssignRadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -646,7 +646,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="8be78" class="javax.swing.JRadioButton" binding="周期从RadioButton2" default-binding="true">
+                          <component id="8be78" class="javax.swing.JRadioButton" binding="secCycle2RadioButton2">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -659,7 +659,7 @@
                               <grid row="0" column="5" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
                           </hspacer>
-                          <component id="be29d" class="javax.swing.JSpinner" binding="spinner7" default-binding="true">
+                          <component id="be29d" class="javax.swing.JSpinner" binding="secCycle2Spinner1">
                             <constraints>
                               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -673,7 +673,7 @@
                               <text value="-"/>
                             </properties>
                           </component>
-                          <component id="85532" class="javax.swing.JSpinner" binding="spinner8" default-binding="true">
+                          <component id="85532" class="javax.swing.JSpinner" binding="secCycle2Spinner2">
                             <constraints>
                               <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -712,7 +712,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="b806d" class="javax.swing.JRadioButton" binding="每分钟RadioButton" default-binding="true">
+                          <component id="b806d" class="javax.swing.JRadioButton" binding="minuPerRadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -735,7 +735,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="3ba84" class="javax.swing.JRadioButton" binding="周期从RadioButton" default-binding="true">
+                          <component id="3ba84" class="javax.swing.JRadioButton" binding="minuCycle1RadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -743,7 +743,7 @@
                               <text value="周期：从"/>
                             </properties>
                           </component>
-                          <component id="5f746" class="javax.swing.JSpinner" binding="spinner3" default-binding="true">
+                          <component id="5f746" class="javax.swing.JSpinner" binding="minuCycle1Spinner1">
                             <constraints>
                               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -762,7 +762,7 @@
                               <text value="开始，每"/>
                             </properties>
                           </component>
-                          <component id="83037" class="javax.swing.JSpinner" binding="spinner4" default-binding="true">
+                          <component id="83037" class="javax.swing.JSpinner" binding="minuCycle1Spinner2">
                             <constraints>
                               <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -786,7 +786,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="1b73d" class="javax.swing.JRadioButton" binding="指定RadioButton2" default-binding="true">
+                          <component id="1b73d" class="javax.swing.JRadioButton" binding="minuAssignRadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -1299,7 +1299,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="cf6d0" class="javax.swing.JRadioButton" binding="周期从RadioButton3" default-binding="true">
+                          <component id="cf6d0" class="javax.swing.JRadioButton" binding="minuCycle2RadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -1312,7 +1312,7 @@
                               <grid row="0" column="5" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
                           </hspacer>
-                          <component id="1184f" class="javax.swing.JSpinner" binding="spinner9" default-binding="true">
+                          <component id="1184f" class="javax.swing.JSpinner" binding="minuCycle2Spinner1">
                             <constraints>
                               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -1326,7 +1326,7 @@
                               <text value="-"/>
                             </properties>
                           </component>
-                          <component id="f4828" class="javax.swing.JSpinner" binding="spinner10" default-binding="true">
+                          <component id="f4828" class="javax.swing.JSpinner" binding="minuCycle2Spinner2">
                             <constraints>
                               <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -1365,7 +1365,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="1a499" class="javax.swing.JRadioButton" binding="每小时RadioButton" default-binding="true">
+                          <component id="1a499" class="javax.swing.JRadioButton" binding="hourPerRadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -1388,7 +1388,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="7eb85" class="javax.swing.JRadioButton" binding="指定RadioButton1" default-binding="true">
+                          <component id="7eb85" class="javax.swing.JRadioButton" binding="hourAssignRadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -1613,7 +1613,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="be398" class="javax.swing.JRadioButton" binding="周期从RadioButton4" default-binding="true">
+                          <component id="be398" class="javax.swing.JRadioButton" binding="hourCycle1RadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -1626,7 +1626,7 @@
                               <grid row="0" column="5" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
                           </hspacer>
-                          <component id="10078" class="javax.swing.JSpinner" binding="spinner11" default-binding="true">
+                          <component id="10078" class="javax.swing.JSpinner" binding="hourCycle1Spinner1">
                             <constraints>
                               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -1640,7 +1640,7 @@
                               <text value="开始，每"/>
                             </properties>
                           </component>
-                          <component id="929b5" class="javax.swing.JSpinner" binding="spinner12" default-binding="true">
+                          <component id="929b5" class="javax.swing.JSpinner" binding="hourCycle1Spinner2">
                             <constraints>
                               <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -1664,7 +1664,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="1cd64" class="javax.swing.JRadioButton" binding="周期从RadioButton5" default-binding="true">
+                          <component id="1cd64" class="javax.swing.JRadioButton" binding="hourCycle2RadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -1677,7 +1677,7 @@
                               <grid row="0" column="5" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
                           </hspacer>
-                          <component id="a488" class="javax.swing.JSpinner" binding="spinner13" default-binding="true">
+                          <component id="a488" class="javax.swing.JSpinner" binding="hourCycle2Spinner1">
                             <constraints>
                               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -1691,7 +1691,7 @@
                               <text value="-"/>
                             </properties>
                           </component>
-                          <component id="70392" class="javax.swing.JSpinner" binding="spinner14" default-binding="true">
+                          <component id="70392" class="javax.swing.JSpinner" binding="hourCycle2Spinner2">
                             <constraints>
                               <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -1725,7 +1725,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="40d3d" class="javax.swing.JRadioButton" binding="每天RadioButton" default-binding="true">
+                          <component id="40d3d" class="javax.swing.JRadioButton" binding="dayPerRadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -1753,7 +1753,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="21594" class="javax.swing.JRadioButton" binding="指定RadioButton3" default-binding="true">
+                          <component id="21594" class="javax.swing.JRadioButton" binding="dayAssignRadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2034,7 +2034,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="dc2ab" class="javax.swing.JRadioButton" binding="周期从RadioButton6" default-binding="true">
+                          <component id="dc2ab" class="javax.swing.JRadioButton" binding="dayCycle1RadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2047,7 +2047,7 @@
                               <grid row="0" column="5" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
                           </hspacer>
-                          <component id="4aa3b" class="javax.swing.JSpinner" binding="spinner15" default-binding="true">
+                          <component id="4aa3b" class="javax.swing.JSpinner" binding="dayCycle1Spinner1">
                             <constraints>
                               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2061,7 +2061,7 @@
                               <text value="开始，每"/>
                             </properties>
                           </component>
-                          <component id="217bd" class="javax.swing.JSpinner" binding="spinner16" default-binding="true">
+                          <component id="217bd" class="javax.swing.JSpinner" binding="dayCycle1Spinner2">
                             <constraints>
                               <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2085,7 +2085,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="cfda2" class="javax.swing.JRadioButton" binding="周期从RadioButton7" default-binding="true">
+                          <component id="cfda2" class="javax.swing.JRadioButton" binding="dayCycle2RadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2098,7 +2098,7 @@
                               <grid row="0" column="5" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
                           </hspacer>
-                          <component id="ca423" class="javax.swing.JSpinner" binding="spinner17" default-binding="true">
+                          <component id="ca423" class="javax.swing.JSpinner" binding="dayCycle2Spinner1">
                             <constraints>
                               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2112,7 +2112,7 @@
                               <text value="-"/>
                             </properties>
                           </component>
-                          <component id="58d05" class="javax.swing.JSpinner" binding="spinner18" default-binding="true">
+                          <component id="58d05" class="javax.swing.JSpinner" binding="dayCycle2Spinner2">
                             <constraints>
                               <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2136,7 +2136,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="423b6" class="javax.swing.JRadioButton" binding="不指定RadioButton2" default-binding="true">
+                          <component id="423b6" class="javax.swing.JRadioButton" binding="dayNotAssignRadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2159,7 +2159,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="c26f2" class="javax.swing.JRadioButton" binding="每月RadioButton1" default-binding="true">
+                          <component id="c26f2" class="javax.swing.JRadioButton" binding="dayPerMonthRadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2172,7 +2172,7 @@
                               <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                             </constraints>
                           </hspacer>
-                          <component id="8796d" class="javax.swing.JSpinner" binding="spinner19" default-binding="true">
+                          <component id="8796d" class="javax.swing.JSpinner" binding="dayPerMonthSpinner">
                             <constraints>
                               <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
@@ -2196,7 +2196,7 @@
                         <properties/>
                         <border type="none"/>
                         <children>
-                          <component id="c9ade" class="javax.swing.JRadioButton" binding="每月最后一天RadioButton" default-binding="true">
+                          <component id="c9ade" class="javax.swing.JRadioButton" binding="dayMonthLastRadioButton">
                             <constraints>
                               <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                             </constraints>
