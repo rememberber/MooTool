@@ -1,16 +1,22 @@
 package com.luoboduner.moo.tool.ui.dialog;
 
+import com.cronutils.descriptor.CronDescriptor;
+import com.cronutils.model.CronType;
+import com.cronutils.model.definition.CronDefinition;
+import com.cronutils.model.definition.CronDefinitionBuilder;
+import com.cronutils.parser.CronParser;
 import com.formdev.flatlaf.util.SystemInfo;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.dao.TFavoriteRegexItemMapper;
-import com.luoboduner.moo.tool.dao.TFavoriteRegexListMapper;
-import com.luoboduner.moo.tool.domain.TFavoriteRegexItem;
-import com.luoboduner.moo.tool.domain.TFavoriteRegexList;
+import com.luoboduner.moo.tool.dao.TFavoriteCronItemMapper;
+import com.luoboduner.moo.tool.dao.TFavoriteCronListMapper;
+import com.luoboduner.moo.tool.domain.TFavoriteCronItem;
+import com.luoboduner.moo.tool.domain.TFavoriteCronList;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
-import com.luoboduner.moo.tool.ui.form.func.FavoriteRegexForm;
+import com.luoboduner.moo.tool.ui.form.func.CronForm;
+import com.luoboduner.moo.tool.ui.form.func.FavoriteCronForm;
 import com.luoboduner.moo.tool.util.ComponentUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
@@ -18,34 +24,33 @@ import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.commons.lang3.time.DateFormatUtils;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 
 /**
- * 正则表达式收藏Dialog
+ * Cron表达式收藏Dialog
  */
 @Slf4j
-public class FavoriteRegexDialog extends JDialog {
+public class FavoriteCronDialog extends JDialog {
     private JPanel contentPane;
     private JButton buttonOK;
     private JButton buttonCancel;
     private JComboBox favoriteBookListComboBox;
     private JButton newFavoriteBookListButton;
     private JTextField nameTextField;
-    private JLabel regexValueLabel;
+    private JLabel cronValueLabel;
 
-    private static TFavoriteRegexListMapper favoriteRegexListMapper = MybatisUtil.getSqlSession().getMapper(TFavoriteRegexListMapper.class);
-    private static TFavoriteRegexItemMapper favoriteRegexItemMapper = MybatisUtil.getSqlSession().getMapper(TFavoriteRegexItemMapper.class);
+    private static TFavoriteCronListMapper favoriteCronListMapper = MybatisUtil.getSqlSession().getMapper(TFavoriteCronListMapper.class);
+    private static TFavoriteCronItemMapper favoriteCronItemMapper = MybatisUtil.getSqlSession().getMapper(TFavoriteCronItemMapper.class);
 
-    public FavoriteRegexDialog() {
-        super(App.mainFrame, "正则表达式收藏");
+    public FavoriteCronDialog() {
+        super(App.mainFrame, "Cron表达式收藏");
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
@@ -80,12 +85,12 @@ public class FavoriteRegexDialog extends JDialog {
             String title = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "收藏夹名称", "");
             if (StringUtils.isNotBlank(title)) {
                 try {
-                    TFavoriteRegexList tFavoriteRegexList = new TFavoriteRegexList();
-                    tFavoriteRegexList.setTitle(title);
+                    TFavoriteCronList tFavoriteCronList = new TFavoriteCronList();
+                    tFavoriteCronList.setTitle(title);
                     String now = SqliteUtil.nowDateForSqlite();
-                    tFavoriteRegexList.setCreateTime(now);
-                    tFavoriteRegexList.setModifiedTime(now);
-                    favoriteRegexListMapper.insert(tFavoriteRegexList);
+                    tFavoriteCronList.setCreateTime(now);
+                    tFavoriteCronList.setModifiedTime(now);
+                    favoriteCronListMapper.insert(tFavoriteCronList);
                     fillFavoriteListComboBox();
                 } catch (Exception ex) {
                     if (ex.getMessage().contains("constraint")) {
@@ -105,18 +110,18 @@ public class FavoriteRegexDialog extends JDialog {
                 favoriteBookListComboBox.grabFocus();
                 return;
             }
-            TFavoriteRegexList tFavoriteRegexList = favoriteRegexListMapper.selectByTitle((String) favoriteBookListComboBox.getSelectedItem());
-            TFavoriteRegexItem tFavoriteRegexItem = new TFavoriteRegexItem();
-            tFavoriteRegexItem.setListId(tFavoriteRegexList.getId());
-            tFavoriteRegexItem.setName(nameTextField.getText());
-            tFavoriteRegexItem.setValue(regexValueLabel.getText());
-            tFavoriteRegexItem.setSortNum((int) (System.currentTimeMillis() / 100000));
+            TFavoriteCronList tFavoriteCronList = favoriteCronListMapper.selectByTitle((String) favoriteBookListComboBox.getSelectedItem());
+            TFavoriteCronItem tFavoriteCronItem = new TFavoriteCronItem();
+            tFavoriteCronItem.setListId(tFavoriteCronList.getId());
+            tFavoriteCronItem.setName(nameTextField.getText());
+            tFavoriteCronItem.setValue(cronValueLabel.getText());
+            tFavoriteCronItem.setSortNum((int) (System.currentTimeMillis() / 100000));
             String now = SqliteUtil.nowDateForSqlite();
-            tFavoriteRegexItem.setCreateTime(now);
-            tFavoriteRegexItem.setModifiedTime(now);
-            favoriteRegexItemMapper.insert(tFavoriteRegexItem);
+            tFavoriteCronItem.setCreateTime(now);
+            tFavoriteCronItem.setModifiedTime(now);
+            favoriteCronItemMapper.insert(tFavoriteCronItem);
             dispose();
-            FavoriteRegexForm.getInstance().init();
+            FavoriteCronForm.getInstance().init();
         } catch (Exception e) {
             if (e.getMessage().contains("constraint")) {
                 JOptionPane.showMessageDialog(this, "存在相同的名称，请重新命名！", "失败", JOptionPane.WARNING_MESSAGE);
@@ -133,22 +138,45 @@ public class FavoriteRegexDialog extends JDialog {
         dispose();
     }
 
-    public void init(String regex) {
+    public void init(String cron) {
         // 字符串超长时，截取部分显示，末尾显示省略号
-        if (regex.length() > 40) {
-            regex = regex.substring(0, 40) + "...";
+        if (cron.length() > 40) {
+            cron = cron.substring(0, 40) + "...";
         }
-        regexValueLabel.setText(regex);
-        nameTextField.setText("未命名正则表达式-" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss"));
+        cronValueLabel.setText(cron);
+
+        try {
+            CronForm cronForm = CronForm.getInstance();
+            String selectedLocaleStr = cronForm.getLocalComboBox().getSelectedItem().toString();
+
+            Locale selectedLocale = Locale.getDefault();
+            switch (selectedLocaleStr) {
+                case "中文" -> selectedLocale = Locale.CHINESE;
+                case "英文" -> selectedLocale = Locale.ENGLISH;
+                case "日文" -> selectedLocale = Locale.JAPANESE;
+                default -> {
+                }
+            }
+            CronDescriptor descriptor = CronDescriptor.instance(selectedLocale);
+            CronDefinition cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ);
+            CronParser parser = new CronParser(cronDefinition);
+            String description = descriptor.describe(parser.parse(cron));
+
+            nameTextField.setText(description);
+        } catch (Exception e) {
+            log.error(ExceptionUtils.getStackTrace(e));
+            nameTextField.setText(cron);
+        }
+
         nameTextField.grabFocus();
         nameTextField.selectAll();
         fillFavoriteListComboBox();
     }
 
     private void fillFavoriteListComboBox() {
-        List<TFavoriteRegexList> favoriteRegexListList = favoriteRegexListMapper.selectAll();
+        List<TFavoriteCronList> favoriteCronListList = favoriteCronListMapper.selectAll();
         favoriteBookListComboBox.removeAllItems();
-        for (TFavoriteRegexList item : favoriteRegexListList) {
+        for (TFavoriteCronList item : favoriteCronListList) {
             favoriteBookListComboBox.addItem(item.getTitle());
         }
     }
@@ -194,9 +222,9 @@ public class FavoriteRegexDialog extends JDialog {
         final JPanel panel4 = new JPanel();
         panel4.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 25, 0), -1, -1));
         panel3.add(panel4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        regexValueLabel = new JLabel();
-        regexValueLabel.setText("");
-        panel4.add(regexValueLabel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        cronValueLabel = new JLabel();
+        cronValueLabel.setText("");
+        panel4.add(cronValueLabel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final Spacer spacer3 = new Spacer();
         panel4.add(spacer3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JSeparator separator1 = new JSeparator();
