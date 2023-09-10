@@ -1,5 +1,5 @@
 {
-  "currentVersion": "v1.5.3",
+  "currentVersion": "v1.5.4",
   "versionIndex": {
     "v0.0.0": "0",
     "v1.0.0": "1",
@@ -24,7 +24,8 @@
     "v1.5.0": "20",
     "v1.5.1": "21",
     "v1.5.2": "22",
-    "v1.5.3": "23"
+    "v1.5.3": "23",
+    "v1.5.4": "24"
   },
   "versionDetailList": [
     {
@@ -146,6 +147,11 @@
       "version": "v1.5.3",
       "title": "优化复制成功等操作的提示行为",
       "log": "● 全局：优化复制成功等操作的提示行为，减少鼠标点击次数\n● Host：Host功能查找按钮的提示文本错误修正 by wangshun\n● Cron：增加cron表达式转自然语言功能\n● Cron：增加常用cron表达式\n\n"
+    },
+    {
+      "version": "v1.5.4",
+      "title": "Cron部分功能实现",
+      "log": "● 全局：窗口支持鼠标双击最大化/还原\n● 正则：优化正则表达式超过一定长度，组件会发生偏移的问题 issue by smallclover\n● Cron：增加收藏功能\n● Cron:最近10次运行时间计算\n\n"
     }
   ]
 }

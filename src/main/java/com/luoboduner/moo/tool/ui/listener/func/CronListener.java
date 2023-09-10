@@ -1,19 +1,29 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
+import cn.hutool.core.date.DateUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.cronutils.descriptor.CronDescriptor;
 import com.cronutils.model.CronType;
 import com.cronutils.model.definition.CronDefinition;
 import com.cronutils.model.definition.CronDefinitionBuilder;
+import com.cronutils.model.time.ExecutionTime;
 import com.cronutils.parser.CronParser;
+import com.google.common.collect.Lists;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.CommonCronDialog;
+import com.luoboduner.moo.tool.ui.dialog.FavoriteCronDialog;
 import com.luoboduner.moo.tool.ui.form.func.CronForm;
+import com.luoboduner.moo.tool.ui.frame.FavoriteCronFrame;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Locale;
+import java.util.Optional;
 
 /**
  * <pre>
@@ -60,6 +70,59 @@ public class CronListener {
             CommonCronDialog commonCronDialog = new CommonCronDialog();
             commonCronDialog.pack();
             commonCronDialog.setVisible(true);
+        });
+
+        cronForm.getFavoriteBookButton().addActionListener(e -> FavoriteCronFrame.showWindow());
+        cronForm.getAddToFavoriteButton().addActionListener(e -> {
+            FavoriteCronDialog favoriteCronDialog = new FavoriteCronDialog();
+            favoriteCronDialog.pack();
+            favoriteCronDialog.init(cronForm.getCronExpressionTextField().getText());
+            favoriteCronDialog.setVisible(true);
+        });
+
+        // cronExpressionTextField变更事件
+        cronForm.getCronExpressionTextField().getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                updateCronExpression();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                updateCronExpression();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                updateCronExpression();
+            }
+
+            private void updateCronExpression() {
+                try {
+                    String cronExpression = cronForm.getCronExpressionTextField().getText();
+
+                    CronDefinition cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ);
+                    CronParser parser = new CronParser(cronDefinition);
+
+                    // 获取未来10次运行时间：
+                    List<String> nextExecutionTimes = Lists.newArrayList();
+                    ExecutionTime executionTime = ExecutionTime.forCron(parser.parse(cronExpression));
+                    ZonedDateTime now = ZonedDateTime.now();
+                    Optional<ZonedDateTime> nextExecution = executionTime.nextExecution(now);
+                    for (int i = 0; i < 10; i++) {
+                        if (nextExecution.isPresent()) {
+                            // yyyy-MM-dd HH:mm:ss
+                            LocalDateTime localDateTime = nextExecution.get().toLocalDateTime();
+                            String format = DateUtil.format(localDateTime, "yyyy-MM-dd HH:mm:ss");
+                            nextExecutionTimes.add(format);
+                            nextExecution = executionTime.nextExecution(nextExecution.get());
+                        }
+                    }
+                    cronForm.getNextExecutionTimeTextArea().setText("最近10次运行时间：\n" + String.join("\n", nextExecutionTimes));
+                } catch (Exception ex) {
+                    cronForm.getNextExecutionTimeTextArea().setText("最近10次运行时间：\n" + ex.getMessage());
+                }
+            }
         });
 
     }
