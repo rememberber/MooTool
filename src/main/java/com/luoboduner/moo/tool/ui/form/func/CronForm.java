@@ -861,7 +861,7 @@ public class CronForm {
     /**
      * 将cron表达式解析到UI
      */
-    public static void resolveToUI(){
+    public static void resolveToUI() {
         String cronExpression = cronForm.getCronExpressionTextField().getText();
 
         if (StringUtils.isBlank(cronExpression)) {
@@ -919,7 +919,120 @@ public class CronForm {
 
         // 时
         String cronHourExpression = cronExpressionArray[2];
+        if ("*".equals(cronHourExpression)) {
+            cronForm.getHourPerRadioButton().setSelected(true);
+        } else if (cronHourExpression.contains("/")) {
+            cronForm.getHourCycle1RadioButton().setSelected(true);
+            String[] cronHourExpressionArray = cronHourExpression.split("/");
+            cronForm.getHourCycle1Spinner1().setValue(Integer.parseInt(cronHourExpressionArray[0]));
+            cronForm.getHourCycle1Spinner2().setValue(Integer.parseInt(cronHourExpressionArray[1]));
+        } else if (cronHourExpression.contains("-")) {
+            cronForm.getHourCycle2RadioButton().setSelected(true);
+            String[] cronHourExpressionArray = cronHourExpression.split("-");
+            cronForm.getHourCycle2Spinner1().setValue(Integer.parseInt(cronHourExpressionArray[0]));
+            cronForm.getHourCycle2Spinner2().setValue(Integer.parseInt(cronHourExpressionArray[1]));
+        } else {
+            cronForm.getHourAssignRadioButton().setSelected(true);
+            String[] cronHourExpressionArray = cronHourExpression.split(",");
+            for (String hour : cronHourExpressionArray) {
+                HOUR_CHECK_BOX_MAP.get(Integer.parseInt(hour)).setSelected(true);
+            }
+        }
 
+        // 日
+        String cronDayExpression = cronExpressionArray[3];
+        if ("*".equals(cronDayExpression)) {
+            cronForm.getDayPerRadioButton().setSelected(true);
+        } else if ("?".equals(cronDayExpression)) {
+            cronForm.getDayNotAssignRadioButton().setSelected(true);
+        } else if (cronDayExpression.contains("/")) {
+            cronForm.getDayCycle1RadioButton().setSelected(true);
+            String[] cronDayExpressionArray = cronDayExpression.split("/");
+            cronForm.getDayCycle1Spinner1().setValue(Integer.parseInt(cronDayExpressionArray[0]));
+            cronForm.getDayCycle1Spinner2().setValue(Integer.parseInt(cronDayExpressionArray[1]));
+        } else if (cronDayExpression.contains("-")) {
+            cronForm.getDayCycle2RadioButton().setSelected(true);
+            String[] cronDayExpressionArray = cronDayExpression.split("-");
+            cronForm.getDayCycle2Spinner1().setValue(Integer.parseInt(cronDayExpressionArray[0]));
+            cronForm.getDayCycle2Spinner2().setValue(Integer.parseInt(cronDayExpressionArray[1]));
+        } else if (cronDayExpression.contains("W")) {
+            cronForm.getDayPerMonthRadioButton().setSelected(true);
+            String[] cronDayExpressionArray = cronDayExpression.split("W");
+            cronForm.getDayPerMonthSpinner().setValue(Integer.parseInt(cronDayExpressionArray[0]));
+        } else if ("L".equals(cronDayExpression)) {
+            cronForm.getDayMonthLastRadioButton().setSelected(true);
+        } else {
+            cronForm.getDayAssignRadioButton().setSelected(true);
+            String[] cronDayExpressionArray = cronDayExpression.split(",");
+            for (String day : cronDayExpressionArray) {
+                DAY_CHECK_BOX_MAP.get(Integer.parseInt(day)).setSelected(true);
+            }
+        }
+
+        // 月
+        String cronMonthExpression = cronExpressionArray[4];
+        if ("*".equals(cronMonthExpression)) {
+            cronForm.getMonthPerRadioButton().setSelected(true);
+        } else if ("?".equals(cronMonthExpression)) {
+            cronForm.getMonthNotAssignRadioButton().setSelected(true);
+        } else if (cronMonthExpression.contains("/")) {
+            cronForm.getMonthCycle1RadioButton().setSelected(true);
+            String[] cronMonthExpressionArray = cronMonthExpression.split("/");
+            cronForm.getMonthCycle1ComboBox1().setSelectedIndex(Integer.parseInt(cronMonthExpressionArray[0]) - 1);
+            cronForm.getMonthCycle1ComboBox2().setSelectedIndex(Integer.parseInt(cronMonthExpressionArray[1]) - 1);
+        } else if (cronMonthExpression.contains("-")) {
+            cronForm.getMonthCycle2RadioButton().setSelected(true);
+            String[] cronMonthExpressionArray = cronMonthExpression.split("-");
+            cronForm.getMonthCycle2ComboBox1().setSelectedIndex(Integer.parseInt(cronMonthExpressionArray[0]) - 1);
+            cronForm.getMonthCycle2ComboBox2().setSelectedIndex(Integer.parseInt(cronMonthExpressionArray[1]) - 1);
+        } else {
+            cronForm.getMonthAssignRadioButton().setSelected(true);
+            String[] cronMonthExpressionArray = cronMonthExpression.split(",");
+            for (String month : cronMonthExpressionArray) {
+                MONTH_CHECK_BOX_MAP.get(Integer.parseInt(month)).setSelected(true);
+            }
+        }
+
+        // 周
+        String cronWeekExpression = cronExpressionArray[5];
+        if ("?".equals(cronWeekExpression)) {
+            cronForm.getWeekNotAssignRadioButton().setSelected(true);
+        } else if ("*".equals(cronWeekExpression)) {
+            cronForm.getWeekPerRadioButton().setSelected(true);
+        } else if (cronWeekExpression.contains("-")) {
+            cronForm.getWeekCycle1RadioButton().setSelected(true);
+            String[] cronWeekExpressionArray = cronWeekExpression.split("-");
+            cronForm.getWeekCycle1ComboBox1().setSelectedIndex(Integer.parseInt(cronWeekExpressionArray[0]) - 1);
+            cronForm.getWeekCycle1ComboBox2().setSelectedIndex(Integer.parseInt(cronWeekExpressionArray[1]) - 1);
+        } else if (cronWeekExpression.contains("#")) {
+            cronForm.getWeekInMonthRadioButton().setSelected(true);
+            String[] cronWeekExpressionArray = cronWeekExpression.split("#");
+            cronForm.getWeekInMonthComboBox1().setSelectedIndex(Integer.parseInt(cronWeekExpressionArray[0]) - 1);
+            cronForm.getWeekInMonthComboBox2().setSelectedIndex(Integer.parseInt(cronWeekExpressionArray[1]) - 1);
+        } else if (cronWeekExpression.contains("L")) {
+            cronForm.getWeekLastMonthRadioButton().setSelected(true);
+            String[] cronWeekExpressionArray = cronWeekExpression.split("L");
+            cronForm.getWeekLastMonthComboBox1().setSelectedIndex(Integer.parseInt(cronWeekExpressionArray[0]) - 1);
+        } else {
+            cronForm.getWeekAssignRadioButton().setSelected(true);
+            String[] cronWeekExpressionArray = cronWeekExpression.split(",");
+            for (String week : cronWeekExpressionArray) {
+                WEEK_CHECK_BOX_MAP.get(Integer.parseInt(week)).setSelected(true);
+            }
+        }
+
+        // 年
+        String cronYearExpression = cronExpressionArray[6];
+        if (StringUtils.isNotBlank(cronYearExpression)) {
+            if ("*".equals(cronYearExpression)) {
+                cronForm.getYearPerRadioButton().setSelected(true);
+            } else if (cronYearExpression.contains("-")) {
+                cronForm.getYearCycleRadioButton().setSelected(true);
+                String[] cronYearExpressionArray = cronYearExpression.split("-");
+                cronForm.getYearCycleSpinner1().setValue(Integer.parseInt(cronYearExpressionArray[0]));
+                cronForm.getYearCycleSpinner2().setValue(Integer.parseInt(cronYearExpressionArray[1]));
+            }
+        }
     }
 
     {

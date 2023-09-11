@@ -378,5 +378,15 @@ public class CronListener {
         cronForm.getYearCycleSpinner1().addChangeListener(e -> CronForm.generateCronExpression());
         cronForm.getYearCycleSpinner2().addChangeListener(e -> CronForm.generateCronExpression());
 
+        // 将cron表达式解析到UI
+        cronForm.getResolveToUIButton().addActionListener(e -> {
+            try {
+                CronForm.resolveToUI();
+            } catch (Exception ex) {
+                cronForm.getNextExecutionTimeTextArea().setText("解析失败：\n" + ex.getMessage());
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
+
     }
 }
