@@ -19,6 +19,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
+import java.awt.event.ActionListener;
 import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.List;
@@ -125,12 +126,37 @@ public class CronListener {
             }
         });
 
+        // 秒
         cronForm.getSecPerRadioButton().addActionListener(e -> {
             CronForm.clearSecRadioButtons();
             cronForm.getSecPerRadioButton().setSelected(true);
 
             CronForm.generateCronExpression();
         });
+        cronForm.getSecCycle1RadioButton().addActionListener(e -> {
+            CronForm.clearSecRadioButtons();
+            cronForm.getSecCycle1RadioButton().setSelected(true);
+
+            CronForm.generateCronExpression();
+        });
+        cronForm.getSecCycle2RadioButton().addActionListener(e -> {
+            CronForm.clearSecRadioButtons();
+            cronForm.getSecCycle2RadioButton().setSelected(true);
+
+            CronForm.generateCronExpression();
+        });
+        cronForm.getSecAssignRadioButton().addActionListener(e -> {
+            CronForm.clearSecRadioButtons();
+            cronForm.getSecAssignRadioButton().setSelected(true);
+
+            CronForm.generateCronExpression();
+        });
+        cronForm.getSecCycle1Spinner1().addChangeListener(e -> CronForm.generateCronExpression());
+        cronForm.getSecCycle1Spinner2().addChangeListener(e -> CronForm.generateCronExpression());
+        cronForm.getSecCycle2Spinner1().addChangeListener(e -> CronForm.generateCronExpression());
+        cronForm.getSecCycle2Spinner2().addChangeListener(e -> CronForm.generateCronExpression());
+        ActionListener secCheckBoxActionListener = e -> CronForm.generateCronExpression();
+        CronForm.SEC_CHECK_BOX_MAP.forEach((key, value) -> value.addActionListener(secCheckBoxActionListener));
 
     }
 }

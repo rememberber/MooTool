@@ -309,12 +309,12 @@ public class CronForm {
 
     private static final Log logger = LogFactory.get();
 
-    private static final Map<Integer, JCheckBox> SEC_CHECK_BOX_MAP = new TreeMap<>();
-    private static final Map<Integer, JCheckBox> MINU_CHECK_BOX_MAP = new TreeMap<>();
-    private static final Map<Integer, JCheckBox> HOUR_CHECK_BOX_MAP = new TreeMap<>();
-    private static final Map<Integer, JCheckBox> DAY_CHECK_BOX_MAP = new TreeMap<>();
-    private static final Map<Integer, JCheckBox> MONTH_CHECK_BOX_MAP = new TreeMap<>();
-    private static final Map<Integer, JCheckBox> WEEK_CHECK_BOX_MAP = new TreeMap<>();
+    public static final Map<Integer, JCheckBox> SEC_CHECK_BOX_MAP = new TreeMap<>();
+    public static final Map<Integer, JCheckBox> MINU_CHECK_BOX_MAP = new TreeMap<>();
+    public static final Map<Integer, JCheckBox> HOUR_CHECK_BOX_MAP = new TreeMap<>();
+    public static final Map<Integer, JCheckBox> DAY_CHECK_BOX_MAP = new TreeMap<>();
+    public static final Map<Integer, JCheckBox> MONTH_CHECK_BOX_MAP = new TreeMap<>();
+    public static final Map<Integer, JCheckBox> WEEK_CHECK_BOX_MAP = new TreeMap<>();
 
     private CronForm() {
         UndoUtil.register(this);
