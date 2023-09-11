@@ -788,6 +788,7 @@ public class CronForm {
             }
             cronDayExpression = tempDayExpression;
         }
+        cronForm.getCronDayExpressionTextField().setText(cronDayExpression);
 
         // 月
         String cronMonthExpression = "";
@@ -811,6 +812,7 @@ public class CronForm {
             }
             cronMonthExpression = tempMonthExpression;
         }
+        cronForm.getCronMonthExpressionTextField().setText(cronMonthExpression);
 
         // 周
         String cronWeekExpression = "";
@@ -836,16 +838,18 @@ public class CronForm {
             }
             cronWeekExpression = tempWeekExpression;
         }
+        cronForm.getCronWeekExpressionTextField().setText(cronWeekExpression);
 
         // 年
         String cronYearExpression = "";
         if (cronForm.getYearNotAssignRadioButton().isSelected()) {
-            cronYearExpression = "?";
+            cronYearExpression = "";
         } else if (cronForm.getYearPerRadioButton().isSelected()) {
             cronYearExpression = "*";
         } else if (cronForm.getYearCycleRadioButton().isSelected()) {
             cronYearExpression = cronForm.getYearCycleSpinner1().getValue() + "/" + cronForm.getYearCycleSpinner2().getValue();
         }
+        cronForm.getCronYearExpressionTextField().setText(cronYearExpression);
 
         cronExpression = cronSecExpression + " " + cronMinuExpression + " " + cronHourExpression + " " + cronDayExpression + " " + cronMonthExpression + " " + cronWeekExpression + " " + cronYearExpression;
         cronForm.getCronExpressionTextField().setText(cronExpression);
