@@ -824,7 +824,7 @@ public class CronForm {
         } else if (cronForm.getWeekCycle1RadioButton().isSelected()) {
             cronWeekExpression = (cronForm.getWeekCycle1ComboBox1().getSelectedIndex() + 1) + "-" + (cronForm.getWeekCycle1ComboBox2().getSelectedIndex() + 1);
         } else if (cronForm.getWeekInMonthRadioButton().isSelected()) {
-            cronWeekExpression = (cronForm.getWeekInMonthComboBox1().getSelectedIndex() + 1) + "#" + (cronForm.getWeekInMonthComboBox2().getSelectedIndex() + 1);
+            cronWeekExpression = (cronForm.getWeekInMonthComboBox2().getSelectedIndex() + 1) + "#" + (cronForm.getWeekInMonthComboBox1().getSelectedIndex() + 1);
         } else if (cronForm.getWeekLastMonthRadioButton().isSelected()) {
             cronWeekExpression = (cronForm.getWeekLastMonthComboBox1().getSelectedIndex() + 1) + "L";
         } else if (cronForm.getWeekAssignRadioButton().isSelected()) {
@@ -868,12 +868,22 @@ public class CronForm {
             return;
         }
 
+        // 替换MON，WED，THU，FRI，SAT，SUN等
+        cronExpression = cronExpression.replace("SUN", "1");
+        cronExpression = cronExpression.replace("MON", "2");
+        cronExpression = cronExpression.replace("TUE", "3");
+        cronExpression = cronExpression.replace("WED", "4");
+        cronExpression = cronExpression.replace("THU", "5");
+        cronExpression = cronExpression.replace("FRI", "6");
+        cronExpression = cronExpression.replace("SAT", "7");
+
         String[] cronExpressionArray = cronExpression.split(" ");
         if (cronExpressionArray.length < 6) {
             return;
         }
 
         // 秒
+        clearSecRadioButtons();
         String cronSecExpression = cronExpressionArray[0];
         if ("*".equals(cronSecExpression)) {
             cronForm.getSecPerRadioButton().setSelected(true);
@@ -896,6 +906,7 @@ public class CronForm {
         }
 
         // 分
+        clearMinuRadioButtons();
         String cronMinuExpression = cronExpressionArray[1];
         if ("*".equals(cronMinuExpression)) {
             cronForm.getMinuPerRadioButton().setSelected(true);
@@ -918,6 +929,7 @@ public class CronForm {
         }
 
         // 时
+        clearHourRadioButtons();
         String cronHourExpression = cronExpressionArray[2];
         if ("*".equals(cronHourExpression)) {
             cronForm.getHourPerRadioButton().setSelected(true);
@@ -940,6 +952,7 @@ public class CronForm {
         }
 
         // 日
+        clearDayRadioButtons();
         String cronDayExpression = cronExpressionArray[3];
         if ("*".equals(cronDayExpression)) {
             cronForm.getDayPerRadioButton().setSelected(true);
@@ -970,6 +983,7 @@ public class CronForm {
         }
 
         // 月
+        clearMonthRadioButtons();
         String cronMonthExpression = cronExpressionArray[4];
         if ("*".equals(cronMonthExpression)) {
             cronForm.getMonthPerRadioButton().setSelected(true);
@@ -994,6 +1008,7 @@ public class CronForm {
         }
 
         // 周
+        clearWeekRadioButtons();
         String cronWeekExpression = cronExpressionArray[5];
         if ("?".equals(cronWeekExpression)) {
             cronForm.getWeekNotAssignRadioButton().setSelected(true);
@@ -1007,8 +1022,8 @@ public class CronForm {
         } else if (cronWeekExpression.contains("#")) {
             cronForm.getWeekInMonthRadioButton().setSelected(true);
             String[] cronWeekExpressionArray = cronWeekExpression.split("#");
-            cronForm.getWeekInMonthComboBox1().setSelectedIndex(Integer.parseInt(cronWeekExpressionArray[0]) - 1);
-            cronForm.getWeekInMonthComboBox2().setSelectedIndex(Integer.parseInt(cronWeekExpressionArray[1]) - 1);
+            cronForm.getWeekInMonthComboBox1().setSelectedIndex(Integer.parseInt(cronWeekExpressionArray[1]) - 1);
+            cronForm.getWeekInMonthComboBox2().setSelectedIndex(Integer.parseInt(cronWeekExpressionArray[0]) - 1);
         } else if (cronWeekExpression.contains("L")) {
             cronForm.getWeekLastMonthRadioButton().setSelected(true);
             String[] cronWeekExpressionArray = cronWeekExpression.split("L");
@@ -1022,6 +1037,10 @@ public class CronForm {
         }
 
         // 年
+        clearYearRadioButtons();
+        if (cronExpressionArray.length < 7) {
+            return;
+        }
         String cronYearExpression = cronExpressionArray[6];
         if (StringUtils.isNotBlank(cronYearExpression)) {
             if ("*".equals(cronYearExpression)) {
