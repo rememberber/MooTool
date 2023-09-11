@@ -847,7 +847,7 @@ public class CronForm {
         } else if (cronForm.getYearPerRadioButton().isSelected()) {
             cronYearExpression = "*";
         } else if (cronForm.getYearCycleRadioButton().isSelected()) {
-            cronYearExpression = cronForm.getYearCycleSpinner1().getValue() + "/" + cronForm.getYearCycleSpinner2().getValue();
+            cronYearExpression = cronForm.getYearCycleSpinner1().getValue() + "-" + cronForm.getYearCycleSpinner2().getValue();
         }
         cronForm.getCronYearExpressionTextField().setText(cronYearExpression);
 
