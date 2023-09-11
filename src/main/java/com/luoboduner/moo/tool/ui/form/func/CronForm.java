@@ -12,6 +12,7 @@ import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.listener.func.CronListener;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -36,7 +37,7 @@ public class CronForm {
     private JButton cronToHumanReadableButton;
     private JButton button2;
     private JTabbedPane tabbedPane1;
-    private JButton 反解析到UIButton;
+    private JButton resolveToUIButton;
     private JTextField cronSecExpressionTextField;
     private JSplitPane splitPane;
     private JButton commonCronButton;
@@ -855,6 +856,70 @@ public class CronForm {
         cronForm.getCronExpressionTextField().setText(cronExpression);
 
         return cronExpression;
+    }
+
+    /**
+     * 将cron表达式解析到UI
+     */
+    public static void resolveToUI(){
+        String cronExpression = cronForm.getCronExpressionTextField().getText();
+
+        if (StringUtils.isBlank(cronExpression)) {
+            return;
+        }
+
+        String[] cronExpressionArray = cronExpression.split(" ");
+        if (cronExpressionArray.length < 6) {
+            return;
+        }
+
+        // 秒
+        String cronSecExpression = cronExpressionArray[0];
+        if ("*".equals(cronSecExpression)) {
+            cronForm.getSecPerRadioButton().setSelected(true);
+        } else if (cronSecExpression.contains("/")) {
+            cronForm.getSecCycle1RadioButton().setSelected(true);
+            String[] cronSecExpressionArray = cronSecExpression.split("/");
+            cronForm.getSecCycle1Spinner1().setValue(Integer.parseInt(cronSecExpressionArray[0]));
+            cronForm.getSecCycle1Spinner2().setValue(Integer.parseInt(cronSecExpressionArray[1]));
+        } else if (cronSecExpression.contains("-")) {
+            cronForm.getSecCycle2RadioButton().setSelected(true);
+            String[] cronSecExpressionArray = cronSecExpression.split("-");
+            cronForm.getSecCycle2Spinner1().setValue(Integer.parseInt(cronSecExpressionArray[0]));
+            cronForm.getSecCycle2Spinner2().setValue(Integer.parseInt(cronSecExpressionArray[1]));
+        } else {
+            cronForm.getSecAssignRadioButton().setSelected(true);
+            String[] cronSecExpressionArray = cronSecExpression.split(",");
+            for (String sec : cronSecExpressionArray) {
+                SEC_CHECK_BOX_MAP.get(Integer.parseInt(sec)).setSelected(true);
+            }
+        }
+
+        // 分
+        String cronMinuExpression = cronExpressionArray[1];
+        if ("*".equals(cronMinuExpression)) {
+            cronForm.getMinuPerRadioButton().setSelected(true);
+        } else if (cronMinuExpression.contains("/")) {
+            cronForm.getMinuCycle1RadioButton().setSelected(true);
+            String[] cronMinuExpressionArray = cronMinuExpression.split("/");
+            cronForm.getMinuCycle1Spinner1().setValue(Integer.parseInt(cronMinuExpressionArray[0]));
+            cronForm.getMinuCycle1Spinner2().setValue(Integer.parseInt(cronMinuExpressionArray[1]));
+        } else if (cronMinuExpression.contains("-")) {
+            cronForm.getMinuCycle2RadioButton().setSelected(true);
+            String[] cronMinuExpressionArray = cronMinuExpression.split("-");
+            cronForm.getMinuCycle2Spinner1().setValue(Integer.parseInt(cronMinuExpressionArray[0]));
+            cronForm.getMinuCycle2Spinner2().setValue(Integer.parseInt(cronMinuExpressionArray[1]));
+        } else {
+            cronForm.getMinuAssignRadioButton().setSelected(true);
+            String[] cronMinuExpressionArray = cronMinuExpression.split(",");
+            for (String minu : cronMinuExpressionArray) {
+                MINU_CHECK_BOX_MAP.get(Integer.parseInt(minu)).setSelected(true);
+            }
+        }
+
+        // 时
+        String cronHourExpression = cronExpressionArray[2];
+
     }
 
     {
@@ -2123,9 +2188,9 @@ public class CronForm {
         cronYearExpressionTextField = new JTextField();
         cronYearExpressionTextField.setEditable(false);
         panel54.add(cronYearExpressionTextField, new GridConstraints(1, 6, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
-        反解析到UIButton = new JButton();
-        反解析到UIButton.setText("反解析到UI");
-        panel48.add(反解析到UIButton, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        resolveToUIButton = new JButton();
+        resolveToUIButton.setText("反解析到UI");
+        panel48.add(resolveToUIButton, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     /**
