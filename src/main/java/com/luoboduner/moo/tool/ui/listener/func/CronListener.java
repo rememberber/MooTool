@@ -125,5 +125,12 @@ public class CronListener {
             }
         });
 
+        cronForm.getSecPerRadioButton().addActionListener(e -> {
+            CronForm.clearSecRadioButtons();
+            cronForm.getSecPerRadioButton().setSelected(true);
+
+            CronForm.generateCronExpression();
+        });
+
     }
 }
