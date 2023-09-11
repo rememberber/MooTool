@@ -2740,13 +2740,13 @@
                             </constraints>
                             <properties>
                               <model>
+                                <item value="星期日"/>
                                 <item value="星期一"/>
                                 <item value="星期二"/>
                                 <item value="星期三"/>
                                 <item value="星期四"/>
                                 <item value="星期五"/>
                                 <item value="星期六"/>
-                                <item value="星期日"/>
                               </model>
                             </properties>
                           </component>
@@ -2764,13 +2764,13 @@
                             </constraints>
                             <properties>
                               <model>
+                                <item value="星期日"/>
                                 <item value="星期一"/>
                                 <item value="星期二"/>
                                 <item value="星期三"/>
                                 <item value="星期四"/>
                                 <item value="星期五"/>
                                 <item value="星期六"/>
-                                <item value="星期日"/>
                               </model>
                             </properties>
                           </component>
@@ -2824,13 +2824,13 @@
                             </constraints>
                             <properties>
                               <model>
+                                <item value="星期日"/>
                                 <item value="星期一"/>
                                 <item value="星期二"/>
                                 <item value="星期三"/>
                                 <item value="星期四"/>
                                 <item value="星期五"/>
                                 <item value="星期六"/>
-                                <item value="星期日"/>
                               </model>
                             </properties>
                           </component>
@@ -2863,13 +2863,13 @@
                             </constraints>
                             <properties>
                               <model>
+                                <item value="星期日"/>
                                 <item value="星期一"/>
                                 <item value="星期二"/>
                                 <item value="星期三"/>
                                 <item value="星期四"/>
                                 <item value="星期五"/>
                                 <item value="星期六"/>
-                                <item value="星期日"/>
                               </model>
                             </properties>
                           </component>

@@ -821,11 +821,11 @@ public class CronForm {
         } else if (cronForm.getWeekPerRadioButton().isSelected()) {
             cronWeekExpression = "*";
         } else if (cronForm.getWeekCycle1RadioButton().isSelected()) {
-            cronWeekExpression = cronForm.getWeekCycle1ComboBox1().getSelectedItem() + "/" + cronForm.getWeekCycle1ComboBox2().getSelectedItem();
+            cronWeekExpression = (cronForm.getWeekCycle1ComboBox1().getSelectedIndex() + 1) + "-" + (cronForm.getWeekCycle1ComboBox2().getSelectedIndex() + 1);
         } else if (cronForm.getWeekInMonthRadioButton().isSelected()) {
-            cronWeekExpression = cronForm.getWeekInMonthComboBox1().getSelectedItem() + "#" + cronForm.getWeekInMonthComboBox2().getSelectedItem();
+            cronWeekExpression = (cronForm.getWeekInMonthComboBox1().getSelectedIndex() + 1) + "#" + (cronForm.getWeekInMonthComboBox2().getSelectedIndex() + 1);
         } else if (cronForm.getWeekLastMonthRadioButton().isSelected()) {
-            cronWeekExpression = cronForm.getWeekLastMonthComboBox1().getSelectedItem() + "L";
+            cronWeekExpression = (cronForm.getWeekLastMonthComboBox1().getSelectedIndex() + 1) + "L";
         } else if (cronForm.getWeekAssignRadioButton().isSelected()) {
             String tempWeekExpression = "";
             for (Map.Entry<Integer, JCheckBox> entry : WEEK_CHECK_BOX_MAP.entrySet()) {
@@ -1907,13 +1907,13 @@ public class CronForm {
         panel41.add(spacer34, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         weekCycle1ComboBox1 = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel5 = new DefaultComboBoxModel();
+        defaultComboBoxModel5.addElement("星期日");
         defaultComboBoxModel5.addElement("星期一");
         defaultComboBoxModel5.addElement("星期二");
         defaultComboBoxModel5.addElement("星期三");
         defaultComboBoxModel5.addElement("星期四");
         defaultComboBoxModel5.addElement("星期五");
         defaultComboBoxModel5.addElement("星期六");
-        defaultComboBoxModel5.addElement("星期日");
         weekCycle1ComboBox1.setModel(defaultComboBoxModel5);
         panel41.add(weekCycle1ComboBox1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label22 = new JLabel();
@@ -1921,13 +1921,13 @@ public class CronForm {
         panel41.add(label22, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         weekCycle1ComboBox2 = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel6 = new DefaultComboBoxModel();
+        defaultComboBoxModel6.addElement("星期日");
         defaultComboBoxModel6.addElement("星期一");
         defaultComboBoxModel6.addElement("星期二");
         defaultComboBoxModel6.addElement("星期三");
         defaultComboBoxModel6.addElement("星期四");
         defaultComboBoxModel6.addElement("星期五");
         defaultComboBoxModel6.addElement("星期六");
-        defaultComboBoxModel6.addElement("星期日");
         weekCycle1ComboBox2.setModel(defaultComboBoxModel6);
         panel41.add(weekCycle1ComboBox2, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel42 = new JPanel();
@@ -1951,13 +1951,13 @@ public class CronForm {
         panel42.add(label23, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         weekInMonthComboBox2 = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel8 = new DefaultComboBoxModel();
+        defaultComboBoxModel8.addElement("星期日");
         defaultComboBoxModel8.addElement("星期一");
         defaultComboBoxModel8.addElement("星期二");
         defaultComboBoxModel8.addElement("星期三");
         defaultComboBoxModel8.addElement("星期四");
         defaultComboBoxModel8.addElement("星期五");
         defaultComboBoxModel8.addElement("星期六");
-        defaultComboBoxModel8.addElement("星期日");
         weekInMonthComboBox2.setModel(defaultComboBoxModel8);
         panel42.add(weekInMonthComboBox2, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel43 = new JPanel();
@@ -1970,13 +1970,13 @@ public class CronForm {
         panel43.add(spacer36, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         weekLastMonthComboBox1 = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel9 = new DefaultComboBoxModel();
+        defaultComboBoxModel9.addElement("星期日");
         defaultComboBoxModel9.addElement("星期一");
         defaultComboBoxModel9.addElement("星期二");
         defaultComboBoxModel9.addElement("星期三");
         defaultComboBoxModel9.addElement("星期四");
         defaultComboBoxModel9.addElement("星期五");
         defaultComboBoxModel9.addElement("星期六");
-        defaultComboBoxModel9.addElement("星期日");
         weekLastMonthComboBox1.setModel(defaultComboBoxModel9);
         panel43.add(weekLastMonthComboBox1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel44 = new JPanel();
