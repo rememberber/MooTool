@@ -2740,13 +2740,13 @@
                             </constraints>
                             <properties>
                               <model>
+                                <item value="星期日"/>
                                 <item value="星期一"/>
                                 <item value="星期二"/>
                                 <item value="星期三"/>
                                 <item value="星期四"/>
                                 <item value="星期五"/>
                                 <item value="星期六"/>
-                                <item value="星期日"/>
                               </model>
                             </properties>
                           </component>
@@ -2764,13 +2764,13 @@
                             </constraints>
                             <properties>
                               <model>
+                                <item value="星期日"/>
                                 <item value="星期一"/>
                                 <item value="星期二"/>
                                 <item value="星期三"/>
                                 <item value="星期四"/>
                                 <item value="星期五"/>
                                 <item value="星期六"/>
-                                <item value="星期日"/>
                               </model>
                             </properties>
                           </component>
@@ -2824,13 +2824,13 @@
                             </constraints>
                             <properties>
                               <model>
+                                <item value="星期日"/>
                                 <item value="星期一"/>
                                 <item value="星期二"/>
                                 <item value="星期三"/>
                                 <item value="星期四"/>
                                 <item value="星期五"/>
                                 <item value="星期六"/>
-                                <item value="星期日"/>
                               </model>
                             </properties>
                           </component>
@@ -2863,13 +2863,13 @@
                             </constraints>
                             <properties>
                               <model>
+                                <item value="星期日"/>
                                 <item value="星期一"/>
                                 <item value="星期二"/>
                                 <item value="星期三"/>
                                 <item value="星期四"/>
                                 <item value="星期五"/>
                                 <item value="星期六"/>
-                                <item value="星期日"/>
                               </model>
                             </properties>
                           </component>
@@ -3219,7 +3219,7 @@
                       <text value="年"/>
                     </properties>
                   </component>
-                  <component id="75b79" class="javax.swing.JTextField" default-binding="true">
+                  <component id="75b79" class="javax.swing.JTextField" binding="cronMinuExpressionTextField">
                     <constraints>
                       <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                         <preferred-size width="50" height="-1"/>
@@ -3229,7 +3229,7 @@
                       <editable value="false"/>
                     </properties>
                   </component>
-                  <component id="c71ab" class="javax.swing.JTextField" default-binding="true">
+                  <component id="c71ab" class="javax.swing.JTextField" binding="cronHourExpressionTextField">
                     <constraints>
                       <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                         <preferred-size width="50" height="-1"/>
@@ -3239,7 +3239,7 @@
                       <editable value="false"/>
                     </properties>
                   </component>
-                  <component id="28819" class="javax.swing.JTextField" default-binding="true">
+                  <component id="28819" class="javax.swing.JTextField" binding="cronDayExpressionTextField">
                     <constraints>
                       <grid row="1" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                         <preferred-size width="50" height="-1"/>
@@ -3249,7 +3249,7 @@
                       <editable value="false"/>
                     </properties>
                   </component>
-                  <component id="384bd" class="javax.swing.JTextField" default-binding="true">
+                  <component id="384bd" class="javax.swing.JTextField" binding="cronMonthExpressionTextField">
                     <constraints>
                       <grid row="1" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                         <preferred-size width="50" height="-1"/>
@@ -3259,7 +3259,7 @@
                       <editable value="false"/>
                     </properties>
                   </component>
-                  <component id="2326e" class="javax.swing.JTextField" binding="textField3" default-binding="true">
+                  <component id="2326e" class="javax.swing.JTextField" binding="cronSecExpressionTextField">
                     <constraints>
                       <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                         <preferred-size width="50" height="-1"/>
@@ -3269,7 +3269,7 @@
                       <editable value="false"/>
                     </properties>
                   </component>
-                  <component id="5f27e" class="javax.swing.JTextField" default-binding="true">
+                  <component id="5f27e" class="javax.swing.JTextField" binding="cronWeekExpressionTextField">
                     <constraints>
                       <grid row="1" column="5" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                         <preferred-size width="50" height="-1"/>
@@ -3279,7 +3279,7 @@
                       <editable value="false"/>
                     </properties>
                   </component>
-                  <component id="b9960" class="javax.swing.JTextField" default-binding="true">
+                  <component id="b9960" class="javax.swing.JTextField" binding="cronYearExpressionTextField">
                     <constraints>
                       <grid row="1" column="6" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
                         <preferred-size width="50" height="-1"/>
@@ -3291,7 +3291,7 @@
                   </component>
                 </children>
               </grid>
-              <component id="cd2da" class="javax.swing.JButton" binding="反解析到UIButton" default-binding="true">
+              <component id="cd2da" class="javax.swing.JButton" binding="resolveToUIButton">
                 <constraints>
                   <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                 </constraints>
