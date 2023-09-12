@@ -7,6 +7,7 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.component.CustomizeIcon;
 import com.luoboduner.moo.tool.ui.listener.func.ColorBoardListener;
 import com.luoboduner.moo.tool.util.ColorUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
@@ -88,8 +89,8 @@ public class ColorBoardForm {
         colorBoardForm.getCodeTypeComboBox().setSelectedItem(App.config.getColorCodeType());
         colorBoardForm.getThemeComboBox().setSelectedItem(App.config.getColorTheme());
 
-        colorBoardForm.getFavoriteBookButton().setIcon(new FlatSVGIcon("icon/favorite-filling.svg"));
-        colorBoardForm.getFavoriteButton().setIcon(new FlatSVGIcon("icon/favorite.svg"));
+        colorBoardForm.getFavoriteBookButton().setIcon(CustomizeIcon.favoriteBookBtnIcon);
+        colorBoardForm.getFavoriteButton().setIcon(CustomizeIcon.favoriteBtnIcon);
         colorBoardForm.getPickerButton().setIcon(new FlatSVGIcon("icon/color_picker.svg"));
         colorBoardForm.getCopyButton().setIcon(new FlatSVGIcon("icon/copy.svg"));
         colorBoardForm.getChooseColorButton().setIcon(new FlatSVGIcon("icon/color.svg"));
