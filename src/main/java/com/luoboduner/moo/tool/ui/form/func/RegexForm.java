@@ -11,6 +11,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TFuncContentMapper;
 import com.luoboduner.moo.tool.domain.TFuncContent;
 import com.luoboduner.moo.tool.ui.FuncConsts;
+import com.luoboduner.moo.tool.ui.component.CustomizeIcon;
 import com.luoboduner.moo.tool.ui.component.RegexSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.listener.func.RegexListener;
 import com.luoboduner.moo.tool.util.MybatisUtil;
@@ -183,7 +184,8 @@ public class RegexForm {
     }
 
     private static void initUi() {
-        regexForm.getAddToFavoriteButton().setIcon(new FlatSVGIcon("icon/favorite.svg"));
+        regexForm.getAddToFavoriteButton().setIcon(CustomizeIcon.favoriteBtnIcon);
+        regexForm.getFavoriteBookButton().setIcon(CustomizeIcon.favoriteBookBtnIcon);
         regexForm.getRegexPanel().updateUI();
 
         ScrollUtil.smoothPane(regexForm.getCommonRegexScrollPane());
@@ -247,8 +249,7 @@ public class RegexForm {
         favoriteBookButton.setText("收藏夹");
         panel3.add(favoriteBookButton, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         addToFavoriteButton = new JButton();
-        addToFavoriteButton.setIcon(new ImageIcon(getClass().getResource("/icon/favorite.png")));
-        addToFavoriteButton.setText("");
+        addToFavoriteButton.setText("收藏");
         panel3.add(addToFavoriteButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         matchTestButton = new JButton();
         matchTestButton.setText("匹配测试");
