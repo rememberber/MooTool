@@ -9,13 +9,17 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Style;
+import com.luoboduner.moo.tool.ui.component.CustomizeIcon;
 import com.luoboduner.moo.tool.ui.listener.func.CronListener;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * <pre>
@@ -34,8 +38,8 @@ public class CronForm {
     private JButton cronToHumanReadableButton;
     private JButton button2;
     private JTabbedPane tabbedPane1;
-    private JButton 反解析到UIButton;
-    private JTextField textField3;
+    private JButton resolveToUIButton;
+    private JTextField cronSecExpressionTextField;
     private JSplitPane splitPane;
     private JButton commonCronButton;
     private JButton favoriteBookButton;
@@ -296,10 +300,23 @@ public class CronForm {
     private JCheckBox monthCheckBox10;
     private JCheckBox monthCheckBox11;
     private JCheckBox monthCheckBox12;
+    private JTextField cronMinuExpressionTextField;
+    private JTextField cronHourExpressionTextField;
+    private JTextField cronDayExpressionTextField;
+    private JTextField cronMonthExpressionTextField;
+    private JTextField cronWeekExpressionTextField;
+    private JTextField cronYearExpressionTextField;
 
     private static CronForm cronForm;
 
     private static final Log logger = LogFactory.get();
+
+    public static final Map<Integer, JCheckBox> SEC_CHECK_BOX_MAP = new TreeMap<>();
+    public static final Map<Integer, JCheckBox> MINU_CHECK_BOX_MAP = new TreeMap<>();
+    public static final Map<Integer, JCheckBox> HOUR_CHECK_BOX_MAP = new TreeMap<>();
+    public static final Map<Integer, JCheckBox> DAY_CHECK_BOX_MAP = new TreeMap<>();
+    public static final Map<Integer, JCheckBox> MONTH_CHECK_BOX_MAP = new TreeMap<>();
+    public static final Map<Integer, JCheckBox> WEEK_CHECK_BOX_MAP = new TreeMap<>();
 
     private CronForm() {
         UndoUtil.register(this);
@@ -308,6 +325,212 @@ public class CronForm {
     public static CronForm getInstance() {
         if (cronForm == null) {
             cronForm = new CronForm();
+
+            // 秒
+            SEC_CHECK_BOX_MAP.put(0, cronForm.getSecCheckBox0());
+            SEC_CHECK_BOX_MAP.put(1, cronForm.getSecCheckBox1());
+            SEC_CHECK_BOX_MAP.put(2, cronForm.getSecCheckBox2());
+            SEC_CHECK_BOX_MAP.put(3, cronForm.getSecCheckBox3());
+            SEC_CHECK_BOX_MAP.put(4, cronForm.getSecCheckBox4());
+            SEC_CHECK_BOX_MAP.put(5, cronForm.getSecCheckBox5());
+            SEC_CHECK_BOX_MAP.put(6, cronForm.getSecCheckBox6());
+            SEC_CHECK_BOX_MAP.put(7, cronForm.getSecCheckBox7());
+            SEC_CHECK_BOX_MAP.put(8, cronForm.getSecCheckBox8());
+            SEC_CHECK_BOX_MAP.put(9, cronForm.getSecCheckBox9());
+            SEC_CHECK_BOX_MAP.put(10, cronForm.getSecCheckBox10());
+            SEC_CHECK_BOX_MAP.put(11, cronForm.getSecCheckBox11());
+            SEC_CHECK_BOX_MAP.put(12, cronForm.getSecCheckBox12());
+            SEC_CHECK_BOX_MAP.put(13, cronForm.getSecCheckBox13());
+            SEC_CHECK_BOX_MAP.put(14, cronForm.getSecCheckBox14());
+            SEC_CHECK_BOX_MAP.put(15, cronForm.getSecCheckBox15());
+            SEC_CHECK_BOX_MAP.put(16, cronForm.getSecCheckBox16());
+            SEC_CHECK_BOX_MAP.put(17, cronForm.getSecCheckBox17());
+            SEC_CHECK_BOX_MAP.put(18, cronForm.getSecCheckBox18());
+            SEC_CHECK_BOX_MAP.put(19, cronForm.getSecCheckBox19());
+            SEC_CHECK_BOX_MAP.put(20, cronForm.getSecCheckBox20());
+            SEC_CHECK_BOX_MAP.put(21, cronForm.getSecCheckBox21());
+            SEC_CHECK_BOX_MAP.put(22, cronForm.getSecCheckBox22());
+            SEC_CHECK_BOX_MAP.put(23, cronForm.getSecCheckBox23());
+            SEC_CHECK_BOX_MAP.put(24, cronForm.getSecCheckBox24());
+            SEC_CHECK_BOX_MAP.put(25, cronForm.getSecCheckBox25());
+            SEC_CHECK_BOX_MAP.put(26, cronForm.getSecCheckBox26());
+            SEC_CHECK_BOX_MAP.put(27, cronForm.getSecCheckBox27());
+            SEC_CHECK_BOX_MAP.put(28, cronForm.getSecCheckBox28());
+            SEC_CHECK_BOX_MAP.put(29, cronForm.getSecCheckBox29());
+            SEC_CHECK_BOX_MAP.put(30, cronForm.getSecCheckBox30());
+            SEC_CHECK_BOX_MAP.put(31, cronForm.getSecCheckBox31());
+            SEC_CHECK_BOX_MAP.put(32, cronForm.getSecCheckBox32());
+            SEC_CHECK_BOX_MAP.put(33, cronForm.getSecCheckBox33());
+            SEC_CHECK_BOX_MAP.put(34, cronForm.getSecCheckBox34());
+            SEC_CHECK_BOX_MAP.put(35, cronForm.getSecCheckBox35());
+            SEC_CHECK_BOX_MAP.put(36, cronForm.getSecCheckBox36());
+            SEC_CHECK_BOX_MAP.put(37, cronForm.getSecCheckBox37());
+            SEC_CHECK_BOX_MAP.put(38, cronForm.getSecCheckBox38());
+            SEC_CHECK_BOX_MAP.put(39, cronForm.getSecCheckBox39());
+            SEC_CHECK_BOX_MAP.put(40, cronForm.getSecCheckBox40());
+            SEC_CHECK_BOX_MAP.put(41, cronForm.getSecCheckBox41());
+            SEC_CHECK_BOX_MAP.put(42, cronForm.getSecCheckBox42());
+            SEC_CHECK_BOX_MAP.put(43, cronForm.getSecCheckBox43());
+            SEC_CHECK_BOX_MAP.put(44, cronForm.getSecCheckBox44());
+            SEC_CHECK_BOX_MAP.put(45, cronForm.getSecCheckBox45());
+            SEC_CHECK_BOX_MAP.put(46, cronForm.getSecCheckBox46());
+            SEC_CHECK_BOX_MAP.put(47, cronForm.getSecCheckBox47());
+            SEC_CHECK_BOX_MAP.put(48, cronForm.getSecCheckBox48());
+            SEC_CHECK_BOX_MAP.put(49, cronForm.getSecCheckBox49());
+            SEC_CHECK_BOX_MAP.put(50, cronForm.getSecCheckBox50());
+            SEC_CHECK_BOX_MAP.put(51, cronForm.getSecCheckBox51());
+            SEC_CHECK_BOX_MAP.put(52, cronForm.getSecCheckBox52());
+            SEC_CHECK_BOX_MAP.put(53, cronForm.getSecCheckBox53());
+            SEC_CHECK_BOX_MAP.put(54, cronForm.getSecCheckBox54());
+            SEC_CHECK_BOX_MAP.put(55, cronForm.getSecCheckBox55());
+            SEC_CHECK_BOX_MAP.put(56, cronForm.getSecCheckBox56());
+            SEC_CHECK_BOX_MAP.put(57, cronForm.getSecCheckBox57());
+            SEC_CHECK_BOX_MAP.put(58, cronForm.getSecCheckBox58());
+            SEC_CHECK_BOX_MAP.put(59, cronForm.getSecCheckBox59());
+
+            // 分
+            MINU_CHECK_BOX_MAP.put(0, cronForm.getMinuCheckBox0());
+            MINU_CHECK_BOX_MAP.put(1, cronForm.getMinuCheckBox1());
+            MINU_CHECK_BOX_MAP.put(2, cronForm.getMinuCheckBox2());
+            MINU_CHECK_BOX_MAP.put(3, cronForm.getMinuCheckBox3());
+            MINU_CHECK_BOX_MAP.put(4, cronForm.getMinuCheckBox4());
+            MINU_CHECK_BOX_MAP.put(5, cronForm.getMinuCheckBox5());
+            MINU_CHECK_BOX_MAP.put(6, cronForm.getMinuCheckBox6());
+            MINU_CHECK_BOX_MAP.put(7, cronForm.getMinuCheckBox7());
+            MINU_CHECK_BOX_MAP.put(8, cronForm.getMinuCheckBox8());
+            MINU_CHECK_BOX_MAP.put(9, cronForm.getMinuCheckBox9());
+            MINU_CHECK_BOX_MAP.put(10, cronForm.getMinuCheckBox10());
+            MINU_CHECK_BOX_MAP.put(11, cronForm.getMinuCheckBox11());
+            MINU_CHECK_BOX_MAP.put(12, cronForm.getMinuCheckBox12());
+            MINU_CHECK_BOX_MAP.put(13, cronForm.getMinuCheckBox13());
+            MINU_CHECK_BOX_MAP.put(14, cronForm.getMinuCheckBox14());
+            MINU_CHECK_BOX_MAP.put(15, cronForm.getMinuCheckBox15());
+            MINU_CHECK_BOX_MAP.put(16, cronForm.getMinuCheckBox16());
+            MINU_CHECK_BOX_MAP.put(17, cronForm.getMinuCheckBox17());
+            MINU_CHECK_BOX_MAP.put(18, cronForm.getMinuCheckBox18());
+            MINU_CHECK_BOX_MAP.put(19, cronForm.getMinuCheckBox19());
+            MINU_CHECK_BOX_MAP.put(20, cronForm.getMinuCheckBox20());
+            MINU_CHECK_BOX_MAP.put(21, cronForm.getMinuCheckBox21());
+            MINU_CHECK_BOX_MAP.put(22, cronForm.getMinuCheckBox22());
+            MINU_CHECK_BOX_MAP.put(23, cronForm.getMinuCheckBox23());
+            MINU_CHECK_BOX_MAP.put(24, cronForm.getMinuCheckBox24());
+            MINU_CHECK_BOX_MAP.put(25, cronForm.getMinuCheckBox25());
+            MINU_CHECK_BOX_MAP.put(26, cronForm.getMinuCheckBox26());
+            MINU_CHECK_BOX_MAP.put(27, cronForm.getMinuCheckBox27());
+            MINU_CHECK_BOX_MAP.put(28, cronForm.getMinuCheckBox28());
+            MINU_CHECK_BOX_MAP.put(29, cronForm.getMinuCheckBox29());
+            MINU_CHECK_BOX_MAP.put(30, cronForm.getMinuCheckBox30());
+            MINU_CHECK_BOX_MAP.put(31, cronForm.getMinuCheckBox31());
+            MINU_CHECK_BOX_MAP.put(32, cronForm.getMinuCheckBox32());
+            MINU_CHECK_BOX_MAP.put(33, cronForm.getMinuCheckBox33());
+            MINU_CHECK_BOX_MAP.put(34, cronForm.getMinuCheckBox34());
+            MINU_CHECK_BOX_MAP.put(35, cronForm.getMinuCheckBox35());
+            MINU_CHECK_BOX_MAP.put(36, cronForm.getMinuCheckBox36());
+            MINU_CHECK_BOX_MAP.put(37, cronForm.getMinuCheckBox37());
+            MINU_CHECK_BOX_MAP.put(38, cronForm.getMinuCheckBox38());
+            MINU_CHECK_BOX_MAP.put(39, cronForm.getMinuCheckBox39());
+            MINU_CHECK_BOX_MAP.put(40, cronForm.getMinuCheckBox40());
+            MINU_CHECK_BOX_MAP.put(41, cronForm.getMinuCheckBox41());
+            MINU_CHECK_BOX_MAP.put(42, cronForm.getMinuCheckBox42());
+            MINU_CHECK_BOX_MAP.put(43, cronForm.getMinuCheckBox43());
+            MINU_CHECK_BOX_MAP.put(44, cronForm.getMinuCheckBox44());
+            MINU_CHECK_BOX_MAP.put(45, cronForm.getMinuCheckBox45());
+            MINU_CHECK_BOX_MAP.put(46, cronForm.getMinuCheckBox46());
+            MINU_CHECK_BOX_MAP.put(47, cronForm.getMinuCheckBox47());
+            MINU_CHECK_BOX_MAP.put(48, cronForm.getMinuCheckBox48());
+            MINU_CHECK_BOX_MAP.put(49, cronForm.getMinuCheckBox49());
+            MINU_CHECK_BOX_MAP.put(50, cronForm.getMinuCheckBox50());
+            MINU_CHECK_BOX_MAP.put(51, cronForm.getMinuCheckBox51());
+            MINU_CHECK_BOX_MAP.put(52, cronForm.getMinuCheckBox52());
+            MINU_CHECK_BOX_MAP.put(53, cronForm.getMinuCheckBox53());
+            MINU_CHECK_BOX_MAP.put(54, cronForm.getMinuCheckBox54());
+            MINU_CHECK_BOX_MAP.put(55, cronForm.getMinuCheckBox55());
+            MINU_CHECK_BOX_MAP.put(56, cronForm.getMinuCheckBox56());
+            MINU_CHECK_BOX_MAP.put(57, cronForm.getMinuCheckBox57());
+            MINU_CHECK_BOX_MAP.put(58, cronForm.getMinuCheckBox58());
+            MINU_CHECK_BOX_MAP.put(59, cronForm.getMinuCheckBox59());
+
+            // 时
+            HOUR_CHECK_BOX_MAP.put(0, cronForm.getHourCheckBox0());
+            HOUR_CHECK_BOX_MAP.put(1, cronForm.getHourCheckBox1());
+            HOUR_CHECK_BOX_MAP.put(2, cronForm.getHourCheckBox2());
+            HOUR_CHECK_BOX_MAP.put(3, cronForm.getHourCheckBox3());
+            HOUR_CHECK_BOX_MAP.put(4, cronForm.getHourCheckBox4());
+            HOUR_CHECK_BOX_MAP.put(5, cronForm.getHourCheckBox5());
+            HOUR_CHECK_BOX_MAP.put(6, cronForm.getHourCheckBox6());
+            HOUR_CHECK_BOX_MAP.put(7, cronForm.getHourCheckBox7());
+            HOUR_CHECK_BOX_MAP.put(8, cronForm.getHourCheckBox8());
+            HOUR_CHECK_BOX_MAP.put(9, cronForm.getHourCheckBox9());
+            HOUR_CHECK_BOX_MAP.put(10, cronForm.getHourCheckBox10());
+            HOUR_CHECK_BOX_MAP.put(11, cronForm.getHourCheckBox11());
+            HOUR_CHECK_BOX_MAP.put(12, cronForm.getHourCheckBox12());
+            HOUR_CHECK_BOX_MAP.put(13, cronForm.getHourCheckBox13());
+            HOUR_CHECK_BOX_MAP.put(14, cronForm.getHourCheckBox14());
+            HOUR_CHECK_BOX_MAP.put(15, cronForm.getHourCheckBox15());
+            HOUR_CHECK_BOX_MAP.put(16, cronForm.getHourCheckBox16());
+            HOUR_CHECK_BOX_MAP.put(17, cronForm.getHourCheckBox17());
+            HOUR_CHECK_BOX_MAP.put(18, cronForm.getHourCheckBox18());
+            HOUR_CHECK_BOX_MAP.put(19, cronForm.getHourCheckBox19());
+            HOUR_CHECK_BOX_MAP.put(20, cronForm.getHourCheckBox20());
+            HOUR_CHECK_BOX_MAP.put(21, cronForm.getHourCheckBox21());
+            HOUR_CHECK_BOX_MAP.put(22, cronForm.getHourCheckBox22());
+            HOUR_CHECK_BOX_MAP.put(23, cronForm.getHourCheckBox23());
+
+            // 日
+            DAY_CHECK_BOX_MAP.put(1, cronForm.getDayCheckBox1());
+            DAY_CHECK_BOX_MAP.put(2, cronForm.getDayCheckBox2());
+            DAY_CHECK_BOX_MAP.put(3, cronForm.getDayCheckBox3());
+            DAY_CHECK_BOX_MAP.put(4, cronForm.getDayCheckBox4());
+            DAY_CHECK_BOX_MAP.put(5, cronForm.getDayCheckBox5());
+            DAY_CHECK_BOX_MAP.put(6, cronForm.getDayCheckBox6());
+            DAY_CHECK_BOX_MAP.put(7, cronForm.getDayCheckBox7());
+            DAY_CHECK_BOX_MAP.put(8, cronForm.getDayCheckBox8());
+            DAY_CHECK_BOX_MAP.put(9, cronForm.getDayCheckBox9());
+            DAY_CHECK_BOX_MAP.put(10, cronForm.getDayCheckBox10());
+            DAY_CHECK_BOX_MAP.put(11, cronForm.getDayCheckBox11());
+            DAY_CHECK_BOX_MAP.put(12, cronForm.getDayCheckBox12());
+            DAY_CHECK_BOX_MAP.put(13, cronForm.getDayCheckBox13());
+            DAY_CHECK_BOX_MAP.put(14, cronForm.getDayCheckBox14());
+            DAY_CHECK_BOX_MAP.put(15, cronForm.getDayCheckBox15());
+            DAY_CHECK_BOX_MAP.put(16, cronForm.getDayCheckBox16());
+            DAY_CHECK_BOX_MAP.put(17, cronForm.getDayCheckBox17());
+            DAY_CHECK_BOX_MAP.put(18, cronForm.getDayCheckBox18());
+            DAY_CHECK_BOX_MAP.put(19, cronForm.getDayCheckBox19());
+            DAY_CHECK_BOX_MAP.put(20, cronForm.getDayCheckBox20());
+            DAY_CHECK_BOX_MAP.put(21, cronForm.getDayCheckBox21());
+            DAY_CHECK_BOX_MAP.put(22, cronForm.getDayCheckBox22());
+            DAY_CHECK_BOX_MAP.put(23, cronForm.getDayCheckBox23());
+            DAY_CHECK_BOX_MAP.put(24, cronForm.getDayCheckBox24());
+            DAY_CHECK_BOX_MAP.put(25, cronForm.getDayCheckBox25());
+            DAY_CHECK_BOX_MAP.put(26, cronForm.getDayCheckBox26());
+            DAY_CHECK_BOX_MAP.put(27, cronForm.getDayCheckBox27());
+            DAY_CHECK_BOX_MAP.put(28, cronForm.getDayCheckBox28());
+            DAY_CHECK_BOX_MAP.put(29, cronForm.getDayCheckBox29());
+            DAY_CHECK_BOX_MAP.put(30, cronForm.getDayCheckBox30());
+            DAY_CHECK_BOX_MAP.put(31, cronForm.getDayCheckBox31());
+
+            // 月
+            MONTH_CHECK_BOX_MAP.put(1, cronForm.getMonthCheckBox1());
+            MONTH_CHECK_BOX_MAP.put(2, cronForm.getMonthCheckBox2());
+            MONTH_CHECK_BOX_MAP.put(3, cronForm.getMonthCheckBox3());
+            MONTH_CHECK_BOX_MAP.put(4, cronForm.getMonthCheckBox4());
+            MONTH_CHECK_BOX_MAP.put(5, cronForm.getMonthCheckBox5());
+            MONTH_CHECK_BOX_MAP.put(6, cronForm.getMonthCheckBox6());
+            MONTH_CHECK_BOX_MAP.put(7, cronForm.getMonthCheckBox7());
+            MONTH_CHECK_BOX_MAP.put(8, cronForm.getMonthCheckBox8());
+            MONTH_CHECK_BOX_MAP.put(9, cronForm.getMonthCheckBox9());
+            MONTH_CHECK_BOX_MAP.put(10, cronForm.getMonthCheckBox10());
+            MONTH_CHECK_BOX_MAP.put(11, cronForm.getMonthCheckBox11());
+            MONTH_CHECK_BOX_MAP.put(12, cronForm.getMonthCheckBox12());
+
+            // 周
+            WEEK_CHECK_BOX_MAP.put(1, cronForm.getWeekCheckBox1());
+            WEEK_CHECK_BOX_MAP.put(2, cronForm.getWeekCheckBox2());
+            WEEK_CHECK_BOX_MAP.put(3, cronForm.getWeekCheckBox3());
+            WEEK_CHECK_BOX_MAP.put(4, cronForm.getWeekCheckBox4());
+            WEEK_CHECK_BOX_MAP.put(5, cronForm.getWeekCheckBox5());
+            WEEK_CHECK_BOX_MAP.put(6, cronForm.getWeekCheckBox6());
+            WEEK_CHECK_BOX_MAP.put(7, cronForm.getWeekCheckBox7());
         }
         return cronForm;
     }
@@ -321,8 +544,8 @@ public class CronForm {
     }
 
     private static void initUi() {
-        cronForm.getAddToFavoriteButton().setIcon(new FlatSVGIcon("icon/favorite.svg"));
-
+        cronForm.getAddToFavoriteButton().setIcon(CustomizeIcon.favoriteBtnIcon);
+        cronForm.getFavoriteBookButton().setIcon(CustomizeIcon.favoriteBookBtnIcon);
         cronForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 2));
         cronForm.getNextExecutionTimeTextArea().setText("最近10次运行时间：");
 
@@ -343,66 +566,7 @@ public class CronForm {
         cronForm.getSecCycle2Spinner1().setValue(0);
         cronForm.getSecCycle2Spinner2().setValue(1);
         cronForm.getSecAssignRadioButton().setSelected(false);
-        cronForm.getSecCheckBox0().setSelected(false);
-        cronForm.getSecCheckBox1().setSelected(false);
-        cronForm.getSecCheckBox2().setSelected(false);
-        cronForm.getSecCheckBox3().setSelected(false);
-        cronForm.getSecCheckBox4().setSelected(false);
-        cronForm.getSecCheckBox5().setSelected(false);
-        cronForm.getSecCheckBox6().setSelected(false);
-        cronForm.getSecCheckBox7().setSelected(false);
-        cronForm.getSecCheckBox8().setSelected(false);
-        cronForm.getSecCheckBox9().setSelected(false);
-        cronForm.getSecCheckBox10().setSelected(false);
-        cronForm.getSecCheckBox11().setSelected(false);
-        cronForm.getSecCheckBox12().setSelected(false);
-        cronForm.getSecCheckBox13().setSelected(false);
-        cronForm.getSecCheckBox14().setSelected(false);
-        cronForm.getSecCheckBox15().setSelected(false);
-        cronForm.getSecCheckBox16().setSelected(false);
-        cronForm.getSecCheckBox17().setSelected(false);
-        cronForm.getSecCheckBox18().setSelected(false);
-        cronForm.getSecCheckBox19().setSelected(false);
-        cronForm.getSecCheckBox20().setSelected(false);
-        cronForm.getSecCheckBox21().setSelected(false);
-        cronForm.getSecCheckBox22().setSelected(false);
-        cronForm.getSecCheckBox23().setSelected(false);
-        cronForm.getSecCheckBox24().setSelected(false);
-        cronForm.getSecCheckBox25().setSelected(false);
-        cronForm.getSecCheckBox26().setSelected(false);
-        cronForm.getSecCheckBox27().setSelected(false);
-        cronForm.getSecCheckBox28().setSelected(false);
-        cronForm.getSecCheckBox29().setSelected(false);
-        cronForm.getSecCheckBox30().setSelected(false);
-        cronForm.getSecCheckBox31().setSelected(false);
-        cronForm.getSecCheckBox32().setSelected(false);
-        cronForm.getSecCheckBox33().setSelected(false);
-        cronForm.getSecCheckBox34().setSelected(false);
-        cronForm.getSecCheckBox35().setSelected(false);
-        cronForm.getSecCheckBox36().setSelected(false);
-        cronForm.getSecCheckBox37().setSelected(false);
-        cronForm.getSecCheckBox38().setSelected(false);
-        cronForm.getSecCheckBox39().setSelected(false);
-        cronForm.getSecCheckBox40().setSelected(false);
-        cronForm.getSecCheckBox41().setSelected(false);
-        cronForm.getSecCheckBox42().setSelected(false);
-        cronForm.getSecCheckBox43().setSelected(false);
-        cronForm.getSecCheckBox44().setSelected(false);
-        cronForm.getSecCheckBox45().setSelected(false);
-        cronForm.getSecCheckBox46().setSelected(false);
-        cronForm.getSecCheckBox47().setSelected(false);
-        cronForm.getSecCheckBox48().setSelected(false);
-        cronForm.getSecCheckBox49().setSelected(false);
-        cronForm.getSecCheckBox50().setSelected(false);
-        cronForm.getSecCheckBox51().setSelected(false);
-        cronForm.getSecCheckBox52().setSelected(false);
-        cronForm.getSecCheckBox53().setSelected(false);
-        cronForm.getSecCheckBox54().setSelected(false);
-        cronForm.getSecCheckBox55().setSelected(false);
-        cronForm.getSecCheckBox56().setSelected(false);
-        cronForm.getSecCheckBox57().setSelected(false);
-        cronForm.getSecCheckBox58().setSelected(false);
-        cronForm.getSecCheckBox59().setSelected(false);
+        SEC_CHECK_BOX_MAP.forEach((k, v) -> v.setSelected(false));
 
         // 分
         cronForm.getMinuPerRadioButton().setSelected(true);
@@ -413,66 +577,7 @@ public class CronForm {
         cronForm.getMinuCycle2Spinner1().setValue(0);
         cronForm.getMinuCycle2Spinner2().setValue(1);
         cronForm.getMinuAssignRadioButton().setSelected(false);
-        cronForm.getMinuCheckBox0().setSelected(false);
-        cronForm.getMinuCheckBox1().setSelected(false);
-        cronForm.getMinuCheckBox2().setSelected(false);
-        cronForm.getMinuCheckBox3().setSelected(false);
-        cronForm.getMinuCheckBox4().setSelected(false);
-        cronForm.getMinuCheckBox5().setSelected(false);
-        cronForm.getMinuCheckBox6().setSelected(false);
-        cronForm.getMinuCheckBox7().setSelected(false);
-        cronForm.getMinuCheckBox8().setSelected(false);
-        cronForm.getMinuCheckBox9().setSelected(false);
-        cronForm.getMinuCheckBox10().setSelected(false);
-        cronForm.getMinuCheckBox11().setSelected(false);
-        cronForm.getMinuCheckBox12().setSelected(false);
-        cronForm.getMinuCheckBox13().setSelected(false);
-        cronForm.getMinuCheckBox14().setSelected(false);
-        cronForm.getMinuCheckBox15().setSelected(false);
-        cronForm.getMinuCheckBox16().setSelected(false);
-        cronForm.getMinuCheckBox17().setSelected(false);
-        cronForm.getMinuCheckBox18().setSelected(false);
-        cronForm.getMinuCheckBox19().setSelected(false);
-        cronForm.getMinuCheckBox20().setSelected(false);
-        cronForm.getMinuCheckBox21().setSelected(false);
-        cronForm.getMinuCheckBox22().setSelected(false);
-        cronForm.getMinuCheckBox23().setSelected(false);
-        cronForm.getMinuCheckBox24().setSelected(false);
-        cronForm.getMinuCheckBox25().setSelected(false);
-        cronForm.getMinuCheckBox26().setSelected(false);
-        cronForm.getMinuCheckBox27().setSelected(false);
-        cronForm.getMinuCheckBox28().setSelected(false);
-        cronForm.getMinuCheckBox29().setSelected(false);
-        cronForm.getMinuCheckBox30().setSelected(false);
-        cronForm.getMinuCheckBox31().setSelected(false);
-        cronForm.getMinuCheckBox32().setSelected(false);
-        cronForm.getMinuCheckBox33().setSelected(false);
-        cronForm.getMinuCheckBox34().setSelected(false);
-        cronForm.getMinuCheckBox35().setSelected(false);
-        cronForm.getMinuCheckBox36().setSelected(false);
-        cronForm.getMinuCheckBox37().setSelected(false);
-        cronForm.getMinuCheckBox38().setSelected(false);
-        cronForm.getMinuCheckBox39().setSelected(false);
-        cronForm.getMinuCheckBox40().setSelected(false);
-        cronForm.getMinuCheckBox41().setSelected(false);
-        cronForm.getMinuCheckBox42().setSelected(false);
-        cronForm.getMinuCheckBox43().setSelected(false);
-        cronForm.getMinuCheckBox44().setSelected(false);
-        cronForm.getMinuCheckBox45().setSelected(false);
-        cronForm.getMinuCheckBox46().setSelected(false);
-        cronForm.getMinuCheckBox47().setSelected(false);
-        cronForm.getMinuCheckBox48().setSelected(false);
-        cronForm.getMinuCheckBox49().setSelected(false);
-        cronForm.getMinuCheckBox50().setSelected(false);
-        cronForm.getMinuCheckBox51().setSelected(false);
-        cronForm.getMinuCheckBox52().setSelected(false);
-        cronForm.getMinuCheckBox53().setSelected(false);
-        cronForm.getMinuCheckBox54().setSelected(false);
-        cronForm.getMinuCheckBox55().setSelected(false);
-        cronForm.getMinuCheckBox56().setSelected(false);
-        cronForm.getMinuCheckBox57().setSelected(false);
-        cronForm.getMinuCheckBox58().setSelected(false);
-        cronForm.getMinuCheckBox59().setSelected(false);
+        MINU_CHECK_BOX_MAP.forEach((k, v) -> v.setSelected(false));
 
         // 时
         cronForm.getHourPerRadioButton().setSelected(true);
@@ -483,30 +588,7 @@ public class CronForm {
         cronForm.getHourCycle2Spinner1().setValue(0);
         cronForm.getHourCycle2Spinner2().setValue(1);
         cronForm.getHourAssignRadioButton().setSelected(false);
-        cronForm.getHourCheckBox0().setSelected(false);
-        cronForm.getHourCheckBox1().setSelected(false);
-        cronForm.getHourCheckBox2().setSelected(false);
-        cronForm.getHourCheckBox3().setSelected(false);
-        cronForm.getHourCheckBox4().setSelected(false);
-        cronForm.getHourCheckBox5().setSelected(false);
-        cronForm.getHourCheckBox6().setSelected(false);
-        cronForm.getHourCheckBox7().setSelected(false);
-        cronForm.getHourCheckBox8().setSelected(false);
-        cronForm.getHourCheckBox9().setSelected(false);
-        cronForm.getHourCheckBox10().setSelected(false);
-        cronForm.getHourCheckBox11().setSelected(false);
-        cronForm.getHourCheckBox12().setSelected(false);
-        cronForm.getHourCheckBox13().setSelected(false);
-        cronForm.getHourCheckBox14().setSelected(false);
-        cronForm.getHourCheckBox15().setSelected(false);
-        cronForm.getHourCheckBox16().setSelected(false);
-        cronForm.getHourCheckBox17().setSelected(false);
-        cronForm.getHourCheckBox18().setSelected(false);
-        cronForm.getHourCheckBox19().setSelected(false);
-        cronForm.getHourCheckBox20().setSelected(false);
-        cronForm.getHourCheckBox21().setSelected(false);
-        cronForm.getHourCheckBox22().setSelected(false);
-        cronForm.getHourCheckBox23().setSelected(false);
+        HOUR_CHECK_BOX_MAP.forEach((k, v) -> v.setSelected(false));
 
         // 日
         cronForm.getDayPerRadioButton().setSelected(true);
@@ -521,37 +603,7 @@ public class CronForm {
         cronForm.getDayPerMonthSpinner().setValue(1);
         cronForm.getDayMonthLastRadioButton().setSelected(false);
         cronForm.getDayAssignRadioButton().setSelected(false);
-        cronForm.getDayCheckBox1().setSelected(false);
-        cronForm.getDayCheckBox2().setSelected(false);
-        cronForm.getDayCheckBox3().setSelected(false);
-        cronForm.getDayCheckBox4().setSelected(false);
-        cronForm.getDayCheckBox5().setSelected(false);
-        cronForm.getDayCheckBox6().setSelected(false);
-        cronForm.getDayCheckBox7().setSelected(false);
-        cronForm.getDayCheckBox8().setSelected(false);
-        cronForm.getDayCheckBox9().setSelected(false);
-        cronForm.getDayCheckBox10().setSelected(false);
-        cronForm.getDayCheckBox11().setSelected(false);
-        cronForm.getDayCheckBox12().setSelected(false);
-        cronForm.getDayCheckBox13().setSelected(false);
-        cronForm.getDayCheckBox14().setSelected(false);
-        cronForm.getDayCheckBox15().setSelected(false);
-        cronForm.getDayCheckBox16().setSelected(false);
-        cronForm.getDayCheckBox17().setSelected(false);
-        cronForm.getDayCheckBox18().setSelected(false);
-        cronForm.getDayCheckBox19().setSelected(false);
-        cronForm.getDayCheckBox20().setSelected(false);
-        cronForm.getDayCheckBox21().setSelected(false);
-        cronForm.getDayCheckBox22().setSelected(false);
-        cronForm.getDayCheckBox23().setSelected(false);
-        cronForm.getDayCheckBox24().setSelected(false);
-        cronForm.getDayCheckBox25().setSelected(false);
-        cronForm.getDayCheckBox26().setSelected(false);
-        cronForm.getDayCheckBox27().setSelected(false);
-        cronForm.getDayCheckBox28().setSelected(false);
-        cronForm.getDayCheckBox29().setSelected(false);
-        cronForm.getDayCheckBox30().setSelected(false);
-        cronForm.getDayCheckBox31().setSelected(false);
+        DAY_CHECK_BOX_MAP.forEach((k, v) -> v.setSelected(false));
 
         // 月
         cronForm.getMonthPerRadioButton().setSelected(true);
@@ -563,18 +615,7 @@ public class CronForm {
         cronForm.getMonthCycle2ComboBox1().setSelectedIndex(0);
         cronForm.getMonthCycle2ComboBox2().setSelectedIndex(0);
         cronForm.getMonthAssignRadioButton().setSelected(false);
-        cronForm.getMonthCheckBox1().setSelected(false);
-        cronForm.getMonthCheckBox2().setSelected(false);
-        cronForm.getMonthCheckBox3().setSelected(false);
-        cronForm.getMonthCheckBox4().setSelected(false);
-        cronForm.getMonthCheckBox5().setSelected(false);
-        cronForm.getMonthCheckBox6().setSelected(false);
-        cronForm.getMonthCheckBox7().setSelected(false);
-        cronForm.getMonthCheckBox8().setSelected(false);
-        cronForm.getMonthCheckBox9().setSelected(false);
-        cronForm.getMonthCheckBox10().setSelected(false);
-        cronForm.getMonthCheckBox11().setSelected(false);
-        cronForm.getMonthCheckBox12().setSelected(false);
+        MONTH_CHECK_BOX_MAP.forEach((k, v) -> v.setSelected(false));
 
         // 周
         cronForm.getWeekNotAssignRadioButton().setSelected(true);
@@ -588,13 +629,7 @@ public class CronForm {
         cronForm.getWeekLastMonthRadioButton().setSelected(false);
         cronForm.getWeekLastMonthComboBox1().setSelectedIndex(0);
         cronForm.getWeekAssignRadioButton().setSelected(false);
-        cronForm.getWeekCheckBox1().setSelected(false);
-        cronForm.getWeekCheckBox2().setSelected(false);
-        cronForm.getWeekCheckBox3().setSelected(false);
-        cronForm.getWeekCheckBox4().setSelected(false);
-        cronForm.getWeekCheckBox5().setSelected(false);
-        cronForm.getWeekCheckBox6().setSelected(false);
-        cronForm.getWeekCheckBox7().setSelected(false);
+        WEEK_CHECK_BOX_MAP.forEach((k, v) -> v.setSelected(false));
 
         // 年
         cronForm.getYearNotAssignRadioButton().setSelected(true);
@@ -604,6 +639,420 @@ public class CronForm {
         cronForm.getYearCycleSpinner1().setValue(DateUtil.thisYear());
         cronForm.getYearCycleSpinner2().setValue(DateUtil.thisYear() + 1);
 
+    }
+
+    public static void clearSecRadioButtons() {
+        cronForm.getSecPerRadioButton().setSelected(false);
+        cronForm.getSecCycle1RadioButton().setSelected(false);
+        cronForm.getSecCycle2RadioButton().setSelected(false);
+        cronForm.getSecAssignRadioButton().setSelected(false);
+    }
+
+    public static void clearMinuRadioButtons() {
+        cronForm.getMinuPerRadioButton().setSelected(false);
+        cronForm.getMinuCycle1RadioButton().setSelected(false);
+        cronForm.getMinuCycle2RadioButton().setSelected(false);
+        cronForm.getMinuAssignRadioButton().setSelected(false);
+    }
+
+    public static void clearHourRadioButtons() {
+        cronForm.getHourPerRadioButton().setSelected(false);
+        cronForm.getHourCycle1RadioButton().setSelected(false);
+        cronForm.getHourCycle2RadioButton().setSelected(false);
+        cronForm.getHourAssignRadioButton().setSelected(false);
+    }
+
+    public static void clearDayRadioButtons() {
+        cronForm.getDayPerRadioButton().setSelected(false);
+        cronForm.getDayNotAssignRadioButton().setSelected(false);
+        cronForm.getDayCycle1RadioButton().setSelected(false);
+        cronForm.getDayCycle2RadioButton().setSelected(false);
+        cronForm.getDayPerMonthRadioButton().setSelected(false);
+        cronForm.getDayMonthLastRadioButton().setSelected(false);
+        cronForm.getDayAssignRadioButton().setSelected(false);
+    }
+
+    public static void clearMonthRadioButtons() {
+        cronForm.getMonthPerRadioButton().setSelected(false);
+        cronForm.getMonthNotAssignRadioButton().setSelected(false);
+        cronForm.getMonthCycle1RadioButton().setSelected(false);
+        cronForm.getMonthCycle2RadioButton().setSelected(false);
+        cronForm.getMonthAssignRadioButton().setSelected(false);
+    }
+
+    public static void clearWeekRadioButtons() {
+        cronForm.getWeekNotAssignRadioButton().setSelected(false);
+        cronForm.getWeekPerRadioButton().setSelected(false);
+        cronForm.getWeekCycle1RadioButton().setSelected(false);
+        cronForm.getWeekInMonthRadioButton().setSelected(false);
+        cronForm.getWeekLastMonthRadioButton().setSelected(false);
+        cronForm.getWeekAssignRadioButton().setSelected(false);
+    }
+
+    public static void clearYearRadioButtons() {
+        cronForm.getYearNotAssignRadioButton().setSelected(false);
+        cronForm.getYearPerRadioButton().setSelected(false);
+        cronForm.getYearCycleRadioButton().setSelected(false);
+    }
+
+    public static String generateCronExpression() {
+        String cronExpression = "";
+
+        // 秒
+        String cronSecExpression = "";
+        if (cronForm.getSecPerRadioButton().isSelected()) {
+            cronSecExpression = "*";
+        } else if (cronForm.getSecCycle1RadioButton().isSelected()) {
+            cronSecExpression = cronForm.getSecCycle1Spinner1().getValue() + "/" + cronForm.getSecCycle1Spinner2().getValue();
+        } else if (cronForm.getSecCycle2RadioButton().isSelected()) {
+            cronSecExpression = cronForm.getSecCycle2Spinner1().getValue() + "-" + cronForm.getSecCycle2Spinner2().getValue();
+        } else if (cronForm.getSecAssignRadioButton().isSelected()) {
+            String tempSecExpression = "";
+            for (Map.Entry<Integer, JCheckBox> entry : SEC_CHECK_BOX_MAP.entrySet()) {
+                if (entry.getValue().isSelected()) {
+                    tempSecExpression += entry.getKey() + ",";
+                }
+            }
+            if (tempSecExpression.endsWith(",")) {
+                tempSecExpression = tempSecExpression.substring(0, tempSecExpression.length() - 1);
+            }
+            cronSecExpression = tempSecExpression;
+        }
+        cronForm.getCronSecExpressionTextField().setText(cronSecExpression);
+
+        // 分
+        String cronMinuExpression = "";
+        if (cronForm.getMinuPerRadioButton().isSelected()) {
+            cronMinuExpression = "*";
+        } else if (cronForm.getMinuCycle1RadioButton().isSelected()) {
+            cronMinuExpression = cronForm.getMinuCycle1Spinner1().getValue() + "/" + cronForm.getMinuCycle1Spinner2().getValue();
+        } else if (cronForm.getMinuCycle2RadioButton().isSelected()) {
+            cronMinuExpression = cronForm.getMinuCycle2Spinner1().getValue() + "-" + cronForm.getMinuCycle2Spinner2().getValue();
+        } else if (cronForm.getMinuAssignRadioButton().isSelected()) {
+            String tempMinuExpression = "";
+            for (Map.Entry<Integer, JCheckBox> entry : MINU_CHECK_BOX_MAP.entrySet()) {
+                if (entry.getValue().isSelected()) {
+                    tempMinuExpression += entry.getKey() + ",";
+                }
+            }
+            if (tempMinuExpression.endsWith(",")) {
+                tempMinuExpression = tempMinuExpression.substring(0, tempMinuExpression.length() - 1);
+            }
+            cronMinuExpression = tempMinuExpression;
+        }
+        cronForm.getCronMinuExpressionTextField().setText(cronMinuExpression);
+
+        // 时
+        String cronHourExpression = "";
+        if (cronForm.getHourPerRadioButton().isSelected()) {
+            cronHourExpression = "*";
+        } else if (cronForm.getHourCycle1RadioButton().isSelected()) {
+            cronHourExpression = cronForm.getHourCycle1Spinner1().getValue() + "/" + cronForm.getHourCycle1Spinner2().getValue();
+        } else if (cronForm.getHourCycle2RadioButton().isSelected()) {
+            cronHourExpression = cronForm.getHourCycle2Spinner1().getValue() + "-" + cronForm.getHourCycle2Spinner2().getValue();
+        } else if (cronForm.getHourAssignRadioButton().isSelected()) {
+            String tempHourExpression = "";
+            for (Map.Entry<Integer, JCheckBox> entry : HOUR_CHECK_BOX_MAP.entrySet()) {
+                if (entry.getValue().isSelected()) {
+                    tempHourExpression += entry.getKey() + ",";
+                }
+            }
+            if (tempHourExpression.endsWith(",")) {
+                tempHourExpression = tempHourExpression.substring(0, tempHourExpression.length() - 1);
+            }
+            cronHourExpression = tempHourExpression;
+        }
+        cronForm.getCronHourExpressionTextField().setText(cronHourExpression);
+
+        // 日
+        String cronDayExpression = "";
+        if (cronForm.getDayPerRadioButton().isSelected()) {
+            cronDayExpression = "*";
+        } else if (cronForm.getDayNotAssignRadioButton().isSelected()) {
+            cronDayExpression = "?";
+        } else if (cronForm.getDayCycle1RadioButton().isSelected()) {
+            cronDayExpression = cronForm.getDayCycle1Spinner1().getValue() + "/" + cronForm.getDayCycle1Spinner2().getValue();
+        } else if (cronForm.getDayCycle2RadioButton().isSelected()) {
+            cronDayExpression = cronForm.getDayCycle2Spinner1().getValue() + "-" + cronForm.getDayCycle2Spinner2().getValue();
+        } else if (cronForm.getDayPerMonthRadioButton().isSelected()) {
+            cronDayExpression = cronForm.getDayPerMonthSpinner().getValue() + "W";
+        } else if (cronForm.getDayMonthLastRadioButton().isSelected()) {
+            cronDayExpression = "L";
+        } else if (cronForm.getDayAssignRadioButton().isSelected()) {
+            String tempDayExpression = "";
+            for (Map.Entry<Integer, JCheckBox> entry : DAY_CHECK_BOX_MAP.entrySet()) {
+                if (entry.getValue().isSelected()) {
+                    tempDayExpression += entry.getKey() + ",";
+                }
+            }
+            if (tempDayExpression.endsWith(",")) {
+                tempDayExpression = tempDayExpression.substring(0, tempDayExpression.length() - 1);
+            }
+            cronDayExpression = tempDayExpression;
+        }
+        cronForm.getCronDayExpressionTextField().setText(cronDayExpression);
+
+        // 月
+        String cronMonthExpression = "";
+        if (cronForm.getMonthPerRadioButton().isSelected()) {
+            cronMonthExpression = "*";
+        } else if (cronForm.getMonthNotAssignRadioButton().isSelected()) {
+            cronMonthExpression = "?";
+        } else if (cronForm.getMonthCycle1RadioButton().isSelected()) {
+            cronMonthExpression = cronForm.getMonthCycle1ComboBox1().getSelectedItem() + "/" + cronForm.getMonthCycle1ComboBox2().getSelectedItem();
+        } else if (cronForm.getMonthCycle2RadioButton().isSelected()) {
+            cronMonthExpression = cronForm.getMonthCycle2ComboBox1().getSelectedItem() + "-" + cronForm.getMonthCycle2ComboBox2().getSelectedItem();
+        } else if (cronForm.getMonthAssignRadioButton().isSelected()) {
+            String tempMonthExpression = "";
+            for (Map.Entry<Integer, JCheckBox> entry : MONTH_CHECK_BOX_MAP.entrySet()) {
+                if (entry.getValue().isSelected()) {
+                    tempMonthExpression += entry.getKey() + ",";
+                }
+            }
+            if (tempMonthExpression.endsWith(",")) {
+                tempMonthExpression = tempMonthExpression.substring(0, tempMonthExpression.length() - 1);
+            }
+            cronMonthExpression = tempMonthExpression;
+        }
+        cronForm.getCronMonthExpressionTextField().setText(cronMonthExpression);
+
+        // 周
+        String cronWeekExpression = "";
+        if (cronForm.getWeekNotAssignRadioButton().isSelected()) {
+            cronWeekExpression = "?";
+        } else if (cronForm.getWeekPerRadioButton().isSelected()) {
+            cronWeekExpression = "*";
+        } else if (cronForm.getWeekCycle1RadioButton().isSelected()) {
+            cronWeekExpression = (cronForm.getWeekCycle1ComboBox1().getSelectedIndex() + 1) + "-" + (cronForm.getWeekCycle1ComboBox2().getSelectedIndex() + 1);
+        } else if (cronForm.getWeekInMonthRadioButton().isSelected()) {
+            cronWeekExpression = (cronForm.getWeekInMonthComboBox2().getSelectedIndex() + 1) + "#" + (cronForm.getWeekInMonthComboBox1().getSelectedIndex() + 1);
+        } else if (cronForm.getWeekLastMonthRadioButton().isSelected()) {
+            cronWeekExpression = (cronForm.getWeekLastMonthComboBox1().getSelectedIndex() + 1) + "L";
+        } else if (cronForm.getWeekAssignRadioButton().isSelected()) {
+            String tempWeekExpression = "";
+            for (Map.Entry<Integer, JCheckBox> entry : WEEK_CHECK_BOX_MAP.entrySet()) {
+                if (entry.getValue().isSelected()) {
+                    tempWeekExpression += entry.getKey() + ",";
+                }
+            }
+            if (tempWeekExpression.endsWith(",")) {
+                tempWeekExpression = tempWeekExpression.substring(0, tempWeekExpression.length() - 1);
+            }
+            cronWeekExpression = tempWeekExpression;
+        }
+        cronForm.getCronWeekExpressionTextField().setText(cronWeekExpression);
+
+        // 年
+        String cronYearExpression = "";
+        if (cronForm.getYearNotAssignRadioButton().isSelected()) {
+            cronYearExpression = "";
+        } else if (cronForm.getYearPerRadioButton().isSelected()) {
+            cronYearExpression = "*";
+        } else if (cronForm.getYearCycleRadioButton().isSelected()) {
+            cronYearExpression = cronForm.getYearCycleSpinner1().getValue() + "-" + cronForm.getYearCycleSpinner2().getValue();
+        }
+        cronForm.getCronYearExpressionTextField().setText(cronYearExpression);
+
+        cronExpression = cronSecExpression + " " + cronMinuExpression + " " + cronHourExpression + " " + cronDayExpression + " " + cronMonthExpression + " " + cronWeekExpression + " " + cronYearExpression;
+        cronForm.getCronExpressionTextField().setText(cronExpression);
+
+        return cronExpression;
+    }
+
+    /**
+     * 将cron表达式解析到UI
+     */
+    public static void resolveToUI() {
+        String cronExpression = cronForm.getCronExpressionTextField().getText();
+
+        if (StringUtils.isBlank(cronExpression)) {
+            return;
+        }
+
+        // 替换MON，WED，THU，FRI，SAT，SUN等
+        cronExpression = cronExpression.replace("SUN", "1");
+        cronExpression = cronExpression.replace("MON", "2");
+        cronExpression = cronExpression.replace("TUE", "3");
+        cronExpression = cronExpression.replace("WED", "4");
+        cronExpression = cronExpression.replace("THU", "5");
+        cronExpression = cronExpression.replace("FRI", "6");
+        cronExpression = cronExpression.replace("SAT", "7");
+
+        String[] cronExpressionArray = cronExpression.split(" ");
+        if (cronExpressionArray.length < 6) {
+            return;
+        }
+
+        // 秒
+        clearSecRadioButtons();
+        String cronSecExpression = cronExpressionArray[0];
+        if ("*".equals(cronSecExpression)) {
+            cronForm.getSecPerRadioButton().setSelected(true);
+        } else if (cronSecExpression.contains("/")) {
+            cronForm.getSecCycle1RadioButton().setSelected(true);
+            String[] cronSecExpressionArray = cronSecExpression.split("/");
+            cronForm.getSecCycle1Spinner1().setValue(Integer.parseInt(cronSecExpressionArray[0]));
+            cronForm.getSecCycle1Spinner2().setValue(Integer.parseInt(cronSecExpressionArray[1]));
+        } else if (cronSecExpression.contains("-")) {
+            cronForm.getSecCycle2RadioButton().setSelected(true);
+            String[] cronSecExpressionArray = cronSecExpression.split("-");
+            cronForm.getSecCycle2Spinner1().setValue(Integer.parseInt(cronSecExpressionArray[0]));
+            cronForm.getSecCycle2Spinner2().setValue(Integer.parseInt(cronSecExpressionArray[1]));
+        } else {
+            cronForm.getSecAssignRadioButton().setSelected(true);
+            String[] cronSecExpressionArray = cronSecExpression.split(",");
+            for (String sec : cronSecExpressionArray) {
+                SEC_CHECK_BOX_MAP.get(Integer.parseInt(sec)).setSelected(true);
+            }
+        }
+
+        // 分
+        clearMinuRadioButtons();
+        String cronMinuExpression = cronExpressionArray[1];
+        if ("*".equals(cronMinuExpression)) {
+            cronForm.getMinuPerRadioButton().setSelected(true);
+        } else if (cronMinuExpression.contains("/")) {
+            cronForm.getMinuCycle1RadioButton().setSelected(true);
+            String[] cronMinuExpressionArray = cronMinuExpression.split("/");
+            cronForm.getMinuCycle1Spinner1().setValue(Integer.parseInt(cronMinuExpressionArray[0]));
+            cronForm.getMinuCycle1Spinner2().setValue(Integer.parseInt(cronMinuExpressionArray[1]));
+        } else if (cronMinuExpression.contains("-")) {
+            cronForm.getMinuCycle2RadioButton().setSelected(true);
+            String[] cronMinuExpressionArray = cronMinuExpression.split("-");
+            cronForm.getMinuCycle2Spinner1().setValue(Integer.parseInt(cronMinuExpressionArray[0]));
+            cronForm.getMinuCycle2Spinner2().setValue(Integer.parseInt(cronMinuExpressionArray[1]));
+        } else {
+            cronForm.getMinuAssignRadioButton().setSelected(true);
+            String[] cronMinuExpressionArray = cronMinuExpression.split(",");
+            for (String minu : cronMinuExpressionArray) {
+                MINU_CHECK_BOX_MAP.get(Integer.parseInt(minu)).setSelected(true);
+            }
+        }
+
+        // 时
+        clearHourRadioButtons();
+        String cronHourExpression = cronExpressionArray[2];
+        if ("*".equals(cronHourExpression)) {
+            cronForm.getHourPerRadioButton().setSelected(true);
+        } else if (cronHourExpression.contains("/")) {
+            cronForm.getHourCycle1RadioButton().setSelected(true);
+            String[] cronHourExpressionArray = cronHourExpression.split("/");
+            cronForm.getHourCycle1Spinner1().setValue(Integer.parseInt(cronHourExpressionArray[0]));
+            cronForm.getHourCycle1Spinner2().setValue(Integer.parseInt(cronHourExpressionArray[1]));
+        } else if (cronHourExpression.contains("-")) {
+            cronForm.getHourCycle2RadioButton().setSelected(true);
+            String[] cronHourExpressionArray = cronHourExpression.split("-");
+            cronForm.getHourCycle2Spinner1().setValue(Integer.parseInt(cronHourExpressionArray[0]));
+            cronForm.getHourCycle2Spinner2().setValue(Integer.parseInt(cronHourExpressionArray[1]));
+        } else {
+            cronForm.getHourAssignRadioButton().setSelected(true);
+            String[] cronHourExpressionArray = cronHourExpression.split(",");
+            for (String hour : cronHourExpressionArray) {
+                HOUR_CHECK_BOX_MAP.get(Integer.parseInt(hour)).setSelected(true);
+            }
+        }
+
+        // 日
+        clearDayRadioButtons();
+        String cronDayExpression = cronExpressionArray[3];
+        if ("*".equals(cronDayExpression)) {
+            cronForm.getDayPerRadioButton().setSelected(true);
+        } else if ("?".equals(cronDayExpression)) {
+            cronForm.getDayNotAssignRadioButton().setSelected(true);
+        } else if (cronDayExpression.contains("/")) {
+            cronForm.getDayCycle1RadioButton().setSelected(true);
+            String[] cronDayExpressionArray = cronDayExpression.split("/");
+            cronForm.getDayCycle1Spinner1().setValue(Integer.parseInt(cronDayExpressionArray[0]));
+            cronForm.getDayCycle1Spinner2().setValue(Integer.parseInt(cronDayExpressionArray[1]));
+        } else if (cronDayExpression.contains("-")) {
+            cronForm.getDayCycle2RadioButton().setSelected(true);
+            String[] cronDayExpressionArray = cronDayExpression.split("-");
+            cronForm.getDayCycle2Spinner1().setValue(Integer.parseInt(cronDayExpressionArray[0]));
+            cronForm.getDayCycle2Spinner2().setValue(Integer.parseInt(cronDayExpressionArray[1]));
+        } else if (cronDayExpression.contains("W")) {
+            cronForm.getDayPerMonthRadioButton().setSelected(true);
+            String[] cronDayExpressionArray = cronDayExpression.split("W");
+            cronForm.getDayPerMonthSpinner().setValue(Integer.parseInt(cronDayExpressionArray[0]));
+        } else if ("L".equals(cronDayExpression)) {
+            cronForm.getDayMonthLastRadioButton().setSelected(true);
+        } else {
+            cronForm.getDayAssignRadioButton().setSelected(true);
+            String[] cronDayExpressionArray = cronDayExpression.split(",");
+            for (String day : cronDayExpressionArray) {
+                DAY_CHECK_BOX_MAP.get(Integer.parseInt(day)).setSelected(true);
+            }
+        }
+
+        // 月
+        clearMonthRadioButtons();
+        String cronMonthExpression = cronExpressionArray[4];
+        if ("*".equals(cronMonthExpression)) {
+            cronForm.getMonthPerRadioButton().setSelected(true);
+        } else if ("?".equals(cronMonthExpression)) {
+            cronForm.getMonthNotAssignRadioButton().setSelected(true);
+        } else if (cronMonthExpression.contains("/")) {
+            cronForm.getMonthCycle1RadioButton().setSelected(true);
+            String[] cronMonthExpressionArray = cronMonthExpression.split("/");
+            cronForm.getMonthCycle1ComboBox1().setSelectedIndex(Integer.parseInt(cronMonthExpressionArray[0]) - 1);
+            cronForm.getMonthCycle1ComboBox2().setSelectedIndex(Integer.parseInt(cronMonthExpressionArray[1]) - 1);
+        } else if (cronMonthExpression.contains("-")) {
+            cronForm.getMonthCycle2RadioButton().setSelected(true);
+            String[] cronMonthExpressionArray = cronMonthExpression.split("-");
+            cronForm.getMonthCycle2ComboBox1().setSelectedIndex(Integer.parseInt(cronMonthExpressionArray[0]) - 1);
+            cronForm.getMonthCycle2ComboBox2().setSelectedIndex(Integer.parseInt(cronMonthExpressionArray[1]) - 1);
+        } else {
+            cronForm.getMonthAssignRadioButton().setSelected(true);
+            String[] cronMonthExpressionArray = cronMonthExpression.split(",");
+            for (String month : cronMonthExpressionArray) {
+                MONTH_CHECK_BOX_MAP.get(Integer.parseInt(month)).setSelected(true);
+            }
+        }
+
+        // 周
+        clearWeekRadioButtons();
+        String cronWeekExpression = cronExpressionArray[5];
+        if ("?".equals(cronWeekExpression)) {
+            cronForm.getWeekNotAssignRadioButton().setSelected(true);
+        } else if ("*".equals(cronWeekExpression)) {
+            cronForm.getWeekPerRadioButton().setSelected(true);
+        } else if (cronWeekExpression.contains("-")) {
+            cronForm.getWeekCycle1RadioButton().setSelected(true);
+            String[] cronWeekExpressionArray = cronWeekExpression.split("-");
+            cronForm.getWeekCycle1ComboBox1().setSelectedIndex(Integer.parseInt(cronWeekExpressionArray[0]) - 1);
+            cronForm.getWeekCycle1ComboBox2().setSelectedIndex(Integer.parseInt(cronWeekExpressionArray[1]) - 1);
+        } else if (cronWeekExpression.contains("#")) {
+            cronForm.getWeekInMonthRadioButton().setSelected(true);
+            String[] cronWeekExpressionArray = cronWeekExpression.split("#");
+            cronForm.getWeekInMonthComboBox1().setSelectedIndex(Integer.parseInt(cronWeekExpressionArray[1]) - 1);
+            cronForm.getWeekInMonthComboBox2().setSelectedIndex(Integer.parseInt(cronWeekExpressionArray[0]) - 1);
+        } else if (cronWeekExpression.contains("L")) {
+            cronForm.getWeekLastMonthRadioButton().setSelected(true);
+            String[] cronWeekExpressionArray = cronWeekExpression.split("L");
+            cronForm.getWeekLastMonthComboBox1().setSelectedIndex(Integer.parseInt(cronWeekExpressionArray[0]) - 1);
+        } else {
+            cronForm.getWeekAssignRadioButton().setSelected(true);
+            String[] cronWeekExpressionArray = cronWeekExpression.split(",");
+            for (String week : cronWeekExpressionArray) {
+                WEEK_CHECK_BOX_MAP.get(Integer.parseInt(week)).setSelected(true);
+            }
+        }
+
+        // 年
+        clearYearRadioButtons();
+        if (cronExpressionArray.length < 7) {
+            return;
+        }
+        String cronYearExpression = cronExpressionArray[6];
+        if (StringUtils.isNotBlank(cronYearExpression)) {
+            if ("*".equals(cronYearExpression)) {
+                cronForm.getYearPerRadioButton().setSelected(true);
+            } else if (cronYearExpression.contains("-")) {
+                cronForm.getYearCycleRadioButton().setSelected(true);
+                String[] cronYearExpressionArray = cronYearExpression.split("-");
+                cronForm.getYearCycleSpinner1().setValue(Integer.parseInt(cronYearExpressionArray[0]));
+                cronForm.getYearCycleSpinner2().setValue(Integer.parseInt(cronYearExpressionArray[1]));
+            }
+        }
     }
 
     {
@@ -1656,13 +2105,13 @@ public class CronForm {
         panel41.add(spacer34, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         weekCycle1ComboBox1 = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel5 = new DefaultComboBoxModel();
+        defaultComboBoxModel5.addElement("星期日");
         defaultComboBoxModel5.addElement("星期一");
         defaultComboBoxModel5.addElement("星期二");
         defaultComboBoxModel5.addElement("星期三");
         defaultComboBoxModel5.addElement("星期四");
         defaultComboBoxModel5.addElement("星期五");
         defaultComboBoxModel5.addElement("星期六");
-        defaultComboBoxModel5.addElement("星期日");
         weekCycle1ComboBox1.setModel(defaultComboBoxModel5);
         panel41.add(weekCycle1ComboBox1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label22 = new JLabel();
@@ -1670,13 +2119,13 @@ public class CronForm {
         panel41.add(label22, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         weekCycle1ComboBox2 = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel6 = new DefaultComboBoxModel();
+        defaultComboBoxModel6.addElement("星期日");
         defaultComboBoxModel6.addElement("星期一");
         defaultComboBoxModel6.addElement("星期二");
         defaultComboBoxModel6.addElement("星期三");
         defaultComboBoxModel6.addElement("星期四");
         defaultComboBoxModel6.addElement("星期五");
         defaultComboBoxModel6.addElement("星期六");
-        defaultComboBoxModel6.addElement("星期日");
         weekCycle1ComboBox2.setModel(defaultComboBoxModel6);
         panel41.add(weekCycle1ComboBox2, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel42 = new JPanel();
@@ -1700,13 +2149,13 @@ public class CronForm {
         panel42.add(label23, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         weekInMonthComboBox2 = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel8 = new DefaultComboBoxModel();
+        defaultComboBoxModel8.addElement("星期日");
         defaultComboBoxModel8.addElement("星期一");
         defaultComboBoxModel8.addElement("星期二");
         defaultComboBoxModel8.addElement("星期三");
         defaultComboBoxModel8.addElement("星期四");
         defaultComboBoxModel8.addElement("星期五");
         defaultComboBoxModel8.addElement("星期六");
-        defaultComboBoxModel8.addElement("星期日");
         weekInMonthComboBox2.setModel(defaultComboBoxModel8);
         panel42.add(weekInMonthComboBox2, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel43 = new JPanel();
@@ -1719,13 +2168,13 @@ public class CronForm {
         panel43.add(spacer36, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         weekLastMonthComboBox1 = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel9 = new DefaultComboBoxModel();
+        defaultComboBoxModel9.addElement("星期日");
         defaultComboBoxModel9.addElement("星期一");
         defaultComboBoxModel9.addElement("星期二");
         defaultComboBoxModel9.addElement("星期三");
         defaultComboBoxModel9.addElement("星期四");
         defaultComboBoxModel9.addElement("星期五");
         defaultComboBoxModel9.addElement("星期六");
-        defaultComboBoxModel9.addElement("星期日");
         weekLastMonthComboBox1.setModel(defaultComboBoxModel9);
         panel43.add(weekLastMonthComboBox1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel44 = new JPanel();
@@ -1816,8 +2265,7 @@ public class CronForm {
         favoriteBookButton.setText("收藏夹");
         panel52.add(favoriteBookButton, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         addToFavoriteButton = new JButton();
-        addToFavoriteButton.setIcon(new ImageIcon(getClass().getResource("/icon/favorite.png")));
-        addToFavoriteButton.setText("");
+        addToFavoriteButton.setText("收藏");
         panel52.add(addToFavoriteButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel53 = new JPanel();
         panel53.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
@@ -1851,30 +2299,30 @@ public class CronForm {
         final JLabel label33 = new JLabel();
         label33.setText("年");
         panel54.add(label33, new GridConstraints(0, 6, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JTextField textField1 = new JTextField();
-        textField1.setEditable(false);
-        panel54.add(textField1, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
-        final JTextField textField2 = new JTextField();
-        textField2.setEditable(false);
-        panel54.add(textField2, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
-        final JTextField textField4 = new JTextField();
-        textField4.setEditable(false);
-        panel54.add(textField4, new GridConstraints(1, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
-        final JTextField textField5 = new JTextField();
-        textField5.setEditable(false);
-        panel54.add(textField5, new GridConstraints(1, 4, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
-        textField3 = new JTextField();
-        textField3.setEditable(false);
-        panel54.add(textField3, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
-        final JTextField textField6 = new JTextField();
-        textField6.setEditable(false);
-        panel54.add(textField6, new GridConstraints(1, 5, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
-        final JTextField textField7 = new JTextField();
-        textField7.setEditable(false);
-        panel54.add(textField7, new GridConstraints(1, 6, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
-        反解析到UIButton = new JButton();
-        反解析到UIButton.setText("反解析到UI");
-        panel48.add(反解析到UIButton, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        cronMinuExpressionTextField = new JTextField();
+        cronMinuExpressionTextField.setEditable(false);
+        panel54.add(cronMinuExpressionTextField, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
+        cronHourExpressionTextField = new JTextField();
+        cronHourExpressionTextField.setEditable(false);
+        panel54.add(cronHourExpressionTextField, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
+        cronDayExpressionTextField = new JTextField();
+        cronDayExpressionTextField.setEditable(false);
+        panel54.add(cronDayExpressionTextField, new GridConstraints(1, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
+        cronMonthExpressionTextField = new JTextField();
+        cronMonthExpressionTextField.setEditable(false);
+        panel54.add(cronMonthExpressionTextField, new GridConstraints(1, 4, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
+        cronSecExpressionTextField = new JTextField();
+        cronSecExpressionTextField.setEditable(false);
+        panel54.add(cronSecExpressionTextField, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
+        cronWeekExpressionTextField = new JTextField();
+        cronWeekExpressionTextField.setEditable(false);
+        panel54.add(cronWeekExpressionTextField, new GridConstraints(1, 5, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
+        cronYearExpressionTextField = new JTextField();
+        cronYearExpressionTextField.setEditable(false);
+        panel54.add(cronYearExpressionTextField, new GridConstraints(1, 6, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, -1), null, 0, false));
+        resolveToUIButton = new JButton();
+        resolveToUIButton.setText("反解析到UI");
+        panel48.add(resolveToUIButton, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     /**
