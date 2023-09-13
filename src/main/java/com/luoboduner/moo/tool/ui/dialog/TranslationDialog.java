@@ -32,7 +32,7 @@ public class TranslationDialog extends JFrame {
 
         // 半透明
         setUndecorated(true);
-        setOpacity(0.9f);
+        setOpacity(0.95f);
 
         mainPanel.setLayout(new BorderLayout());
         // 设置四边距:10
