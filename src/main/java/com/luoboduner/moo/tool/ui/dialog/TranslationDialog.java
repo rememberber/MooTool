@@ -36,7 +36,7 @@ public class TranslationDialog extends JFrame {
 
         mainPanel.setLayout(new BorderLayout());
         // 设置四边距:10
-        mainPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        mainPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
         translationLayoutForm = new TranslationLayoutForm();
         mainPanel.add(translationLayoutForm.getMainLayoutPanel());
 
