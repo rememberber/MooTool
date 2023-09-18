@@ -1,5 +1,5 @@
 {
-  "currentVersion": "v1.5.4",
+  "currentVersion": "v1.5.5",
   "versionIndex": {
     "v0.0.0": "0",
     "v1.0.0": "1",
@@ -25,7 +25,8 @@
     "v1.5.1": "21",
     "v1.5.2": "22",
     "v1.5.3": "23",
-    "v1.5.4": "24"
+    "v1.5.4": "24",
+    "v1.5.5": "25"
   },
   "versionDetailList": [
     {
@@ -152,6 +153,11 @@
       "version": "v1.5.4",
       "title": "Cron部分功能实现",
       "log": "● 全局：窗口支持鼠标双击最大化/还原\n● 正则：优化正则表达式超过一定长度，组件会发生偏移的问题 issue by smallclover\n● Cron：增加收藏功能\n● Cron：最近10次运行时间计算\n\n"
+    },
+    {
+      "version": "v1.5.5",
+      "title": "新增Cron工具",
+      "log": "● Cron表达式：支持生成和反解析\n● 全局：统一收藏图标样式 by wangshun\n\n"
     }
   ]
 }
