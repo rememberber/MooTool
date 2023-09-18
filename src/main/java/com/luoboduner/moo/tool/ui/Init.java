@@ -14,6 +14,7 @@ import com.jthemedetecor.OsThemeDetector;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
 import com.luoboduner.moo.tool.ui.dialog.SettingDialog;
+import com.luoboduner.moo.tool.ui.dialog.TranslationDialog;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
@@ -247,6 +248,7 @@ public class Init {
 
                 MenuItem openItem = new MenuItem("MooTool");
                 MenuItem colorPickerItem = new MenuItem("取色器");
+                MenuItem translationItem = new MenuItem("翻译");
                 MenuItem exitItem = new MenuItem("Quit");
 
                 openItem.addActionListener(e -> {
@@ -260,6 +262,11 @@ public class Init {
                         ColorPickerFrame.showPicker();
                     }
                 });
+                translationItem.addActionListener(e -> {
+                    TranslationDialog translationDialog = new TranslationDialog();
+                    translationDialog.pack();
+                    translationDialog.setVisible(true);
+                });
                 exitItem.addActionListener(e -> {
                     shutdown();
                 });
@@ -267,6 +274,7 @@ public class Init {
                 App.popupMenu.add(openItem);
                 App.popupMenu.addSeparator();
                 App.popupMenu.add(colorPickerItem);
+                App.popupMenu.add(translationItem);
                 App.popupMenu.addSeparator();
                 App.popupMenu.add(exitItem);
 

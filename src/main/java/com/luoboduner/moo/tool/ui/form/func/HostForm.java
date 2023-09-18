@@ -13,6 +13,7 @@ import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.HostSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.JsonSyntaxTextViewer;
+import com.luoboduner.moo.tool.ui.dialog.TranslationDialog;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
@@ -277,6 +278,7 @@ public class HostForm {
             App.popupMenu.removeAll();
             MenuItem openItem = new MenuItem("MooTool");
             MenuItem colorPickerItem = new MenuItem("取色器");
+            MenuItem translateItem = new MenuItem("翻译");
             MenuItem exitItem = new MenuItem("Quit");
 
             openItem.addActionListener(e -> {
@@ -290,6 +292,11 @@ public class HostForm {
                     ColorPickerFrame.showPicker();
                 }
             });
+            translateItem.addActionListener(e -> {
+                TranslationDialog translationDialog = new TranslationDialog();
+                translationDialog.pack();
+                translationDialog.setVisible(true);
+            });
             exitItem.addActionListener(e -> {
                 Init.shutdown();
             });
@@ -297,6 +304,7 @@ public class HostForm {
             App.popupMenu.add(openItem);
             App.popupMenu.addSeparator();
             App.popupMenu.add(colorPickerItem);
+            App.popupMenu.add(translateItem);
             App.popupMenu.addSeparator();
 
             MenuItem menuItem;
