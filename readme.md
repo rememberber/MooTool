@@ -43,11 +43,7 @@ Windows • Linux • macOS
 
 ![Overview](screen_shoot/cron_mac.png)
 
-<p align="center">
-  <a href="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-favoriteColor.png">
-   <img alt="MooTool" src="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-favoriteColor.png">
-  </a>
-</p>
+![Overview](screen_shoot/mt-favoriteColor.png)
 
 ![Overview](screen_shoot/quick_note_light_mac.png)
 
