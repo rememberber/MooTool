@@ -259,38 +259,38 @@
                     <vmArgs>--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</vmArgs>
                 </configuration>
                 <executions>
-                                        <execution>
-                                            <id>bundling-for-windows</id>
-                                            <phase>package</phase>
-                                            <goals>
-                                                <goal>package</goal>
-                                            </goals>
-                                            <configuration>
-                                                <platform>windows</platform>
-                                                <createZipball>true</createZipball>
-                                                <customizedJre>false</customizedJre>
-                                                <additionalModules>jdk.crypto.ec,jdk.charsets,com.jthemedetector</additionalModules>
-                                                <administratorRequired>true</administratorRequired>
-                                                <winConfig>
+<!--                                        <execution>-->
+<!--                                            <id>bundling-for-windows</id>-->
+<!--                                            <phase>package</phase>-->
+<!--                                            <goals>-->
+<!--                                                <goal>package</goal>-->
+<!--                                            </goals>-->
+<!--                                            <configuration>-->
+<!--                                                <platform>windows</platform>-->
+<!--                                                <createZipball>true</createZipball>-->
+<!--                                                <customizedJre>false</customizedJre>-->
+<!--                                                <additionalModules>jdk.crypto.ec,jdk.charsets,com.jthemedetector</additionalModules>-->
+<!--                                                <administratorRequired>true</administratorRequired>-->
+<!--                                                <winConfig>-->
 
-                                                    <!-- general properties -->
-                                                    <generateSetup>true</generateSetup>
-                                                    <generateMsi>true</generateMsi>
-                                                    <generateMsm>true</generateMsm>
+<!--                                                    &lt;!&ndash; general properties &ndash;&gt;-->
+<!--                                                    <generateSetup>true</generateSetup>-->
+<!--                                                    <generateMsi>true</generateMsi>-->
+<!--                                                    <generateMsm>true</generateMsm>-->
 
-                                                    <!-- setup generation properties -->
-                                                    <setupMode>installForAllUsers</setupMode>
-                                                    <createDesktopIconTask>true</createDesktopIconTask>
-                                                    <disableDirPage>false</disableDirPage>
-                                                    <disableFinishedPage>false</disableFinishedPage>
-                                                    <removeOldLibs>true</removeOldLibs>
-                                                    <setupLanguages>
-                                                        <english>compiler:Default.isl</english>
-                                                        <!--                                    <spanish>compiler:Languages\Chinese.isl</spanish>-->
-                                                    </setupLanguages>
-                                                </winConfig>
-                                            </configuration>
-                                        </execution>
+<!--                                                    &lt;!&ndash; setup generation properties &ndash;&gt;-->
+<!--                                                    <setupMode>installForAllUsers</setupMode>-->
+<!--                                                    <createDesktopIconTask>true</createDesktopIconTask>-->
+<!--                                                    <disableDirPage>false</disableDirPage>-->
+<!--                                                    <disableFinishedPage>false</disableFinishedPage>-->
+<!--                                                    <removeOldLibs>true</removeOldLibs>-->
+<!--                                                    <setupLanguages>-->
+<!--                                                        <english>compiler:Default.isl</english>-->
+<!--                                                        &lt;!&ndash;                                    <spanish>compiler:Languages\Chinese.isl</spanish>&ndash;&gt;-->
+<!--                                                    </setupLanguages>-->
+<!--                                                </winConfig>-->
+<!--                                            </configuration>-->
+<!--                                        </execution>-->
                     <!--                                        <execution>-->
                     <!--                                            <id>bundling-for-linux</id>-->
                     <!--                                            <phase>package</phase>-->
@@ -304,19 +304,19 @@
                     <!--                    <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
                     <!--                                            </configuration>-->
                     <!--                                        </execution>-->
-<!--                    <execution>-->
-<!--                        <id>bundling-for-mac</id>-->
-<!--                        <phase>package</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>package</goal>-->
-<!--                        </goals>-->
-<!--                        <configuration>-->
-<!--                            <platform>mac</platform>-->
-<!--                            <customizedJre>false</customizedJre>-->
-<!--                            <createTarball>true</createTarball>-->
-<!--                            <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
-<!--                        </configuration>-->
-<!--                    </execution>-->
+                    <execution>
+                        <id>bundling-for-mac</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>package</goal>
+                        </goals>
+                        <configuration>
+                            <platform>mac</platform>
+                            <customizedJre>false</customizedJre>
+                            <createTarball>true</createTarball>
+                            <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>
