@@ -41,11 +41,9 @@ Windows • Linux • macOS
 
 ![Overview](screen_shoot/regex_mac.png)
 
-<p align="center">
-  <a href="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-favoriteColor.png">
-   <img alt="MooTool" src="https://gitee.com/zhoubochina/MooTool/raw/master/screen_shoot/mt-favoriteColor.png">
-  </a>
-</p>
+![Overview](screen_shoot/cron_mac.png)
+
+![Overview](screen_shoot/mt-favoriteColor.png)
 
 ![Overview](screen_shoot/quick_note_light_mac.png)
 
@@ -65,13 +63,14 @@ Windows • Linux • macOS
 + **网络/IP**（ip地址转换/本机ip信息/根据域名获取ip）
 + **调色板**（取色器/颜色管理）
 + **图片助手**（本地图床/剪贴板图片快速管理/Base64转图片/图片转Base64）
-+ **正则**（正则匹配测试、正则表达式收藏、常用正则表达式）
++ **正则**（正则匹配测试、收藏、常用正则表达式）
++ **Cron表达式**（Cron表达式生成、解析、转自然语言、最近运行时间、收藏、常用Cron表达式）
 
 ## 计划中支持的功能
 
 + 词典、翻译
-+ Cron表达式
 + 图片压缩
++ 国密加解密
 
 ## 下载
 
