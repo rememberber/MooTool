@@ -5,6 +5,7 @@ import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
+import com.luoboduner.moo.tool.ui.frame.ClockFrame;
 import com.luoboduner.moo.tool.util.AlertUtil;
 import com.luoboduner.moo.tool.util.ConsoleUtil;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -125,6 +126,11 @@ public class TimeConvertListener {
             @Override
             public void keyTyped(KeyEvent arg0) {
             }
+        });
+
+        timeConvertForm.getClockButton().addActionListener(e -> {
+            ClockFrame clockFrame = new ClockFrame();
+            clockFrame.setVisible(true);
         });
     }
 
