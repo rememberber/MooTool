@@ -32,8 +32,10 @@ public class ClockFrame extends JFrame {
         FrameUtil.setFrameIcon(this);
 
         // 大号字体
-        Font font1 = cloockForm.getDateLabel().getFont();
-        cloockForm.getDateLabel().setFont(font1.deriveFont(Font.BOLD, 60f));
+//        Font font1 = cloockForm.getDateLabel().getFont();
+//        cloockForm.getDateLabel().setFont(font1.deriveFont(Font.BOLD, 60f));
+        cloockForm.getDateLabel().setText("");
+        cloockForm.getSecondProgressBar().setMaximum(60);
 
         // 超大号字体
         Font font = cloockForm.getTimeLabel().getFont();
@@ -43,7 +45,8 @@ public class ClockFrame extends JFrame {
             while (true) {
                 Date now = new Date();
                 cloockForm.getTimeLabel().setText(DateFormatUtils.format(now, "HH:mm"));
-                cloockForm.getDateLabel().setText(DateFormatUtils.format(now, "yyyy-MM-dd"));
+//                cloockForm.getDateLabel().setText(DateFormatUtils.format(now, "yyyy-MM-dd"));
+                cloockForm.getSecondProgressBar().setValue(now.getSeconds());
                 ThreadUtil.safeSleep(1000);
             }
         });
