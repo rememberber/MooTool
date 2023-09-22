@@ -129,8 +129,10 @@ public class TimeConvertListener {
         });
 
         timeConvertForm.getClockButton().addActionListener(e -> {
-            ClockFrame clockFrame = new ClockFrame();
-            clockFrame.setVisible(true);
+            ThreadUtil.execute(() -> {
+                ClockFrame clockFrame = new ClockFrame();
+                clockFrame.setVisible(true);
+            });
         });
     }
 
