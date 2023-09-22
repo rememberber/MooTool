@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.ui.frame;
 
 import cn.hutool.core.thread.ThreadUtil;
 import com.luoboduner.moo.tool.ui.form.func.ClockForm;
+import com.luoboduner.moo.tool.util.ComponentUtil;
 import org.apache.commons.lang3.time.DateFormatUtils;
 
 import javax.swing.*;
@@ -23,6 +24,7 @@ public class ClockFrame extends JFrame {
     private ClockForm cloockForm;
 
     public ClockFrame() {
+        ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.6, 0.66);
         // 最大化窗口
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         cloockForm = new ClockForm();
