@@ -27,8 +27,8 @@ public class ClockFrame extends JFrame {
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         cloockForm = new ClockForm();
         setContentPane(cloockForm.getMainPanel());
-        this.setName("");
-        this.setTitle("");
+        this.setName("MooTool");
+        this.setTitle("MooTool");
         FrameUtil.setFrameIcon(this);
 
         // 大号字体
