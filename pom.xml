@@ -250,7 +250,7 @@
             <plugin>
                 <groupId>io.github.fvarrui</groupId>
                 <artifactId>javapackager</artifactId>
-                <version>1.7.2</version>
+                <version>1.7.4</version>
                 <configuration>
                     <bundleJre>true</bundleJre>
                     <mainClass>com.luoboduner.moo.tool.App</mainClass>
