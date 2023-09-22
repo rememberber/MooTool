@@ -23,7 +23,7 @@ public class ClockFrame extends JFrame {
     private ClockForm cloockForm;
 
     public ClockFrame() {
-        // 低分辨率下自动最大化窗口
+        // 最大化窗口
         setExtendedState(JFrame.MAXIMIZED_BOTH);
         cloockForm = new ClockForm();
         setContentPane(cloockForm.getMainPanel());
