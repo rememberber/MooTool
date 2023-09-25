@@ -270,6 +270,9 @@
                                                 <createZipball>true</createZipball>
                                                 <customizedJre>false</customizedJre>
                                                 <additionalModules>jdk.crypto.ec,jdk.charsets,com.jthemedetector</additionalModules>
+                                                <additionalResources>
+                                                    <additionalResource>${name}.l4j.ini</additionalResource>
+                                                </additionalResources>
                                                 <administratorRequired>true</administratorRequired>
                                                 <winConfig>
 
