@@ -303,8 +303,11 @@
                     <!--                                            <configuration>-->
                     <!--                                                <platform>linux</platform>-->
                     <!--                                                <createTarball>true</createTarball>-->
-                    <!--                    <customizedJre>false</customizedJre>-->
-                    <!--                    <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
+                    <!--                                            <customizedJre>false</customizedJre>-->
+                    <!--                                            <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
+                    <!--                                            <additionalResources>-->
+                    <!--                                                <additionalResource>${name}.l4j.ini</additionalResource>-->
+                    <!--                                            </additionalResources>-->
                     <!--                                            </configuration>-->
                     <!--                                        </execution>-->
 <!--                    <execution>-->
@@ -318,6 +321,9 @@
 <!--                            <customizedJre>false</customizedJre>-->
 <!--                            <createTarball>true</createTarball>-->
 <!--                            <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
+<!--                            <additionalResources>-->
+<!--                                <additionalResource>${name}.l4j.ini</additionalResource>-->
+<!--                            </additionalResources>-->
 <!--                        </configuration>-->
 <!--                    </execution>-->
                 </executions>
