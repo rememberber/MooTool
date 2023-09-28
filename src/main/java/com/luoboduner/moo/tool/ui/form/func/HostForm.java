@@ -276,10 +276,10 @@ public class HostForm {
 
         if (!SystemUtil.isLinuxOs()) {
             App.popupMenu.removeAll();
-            MenuItem openItem = new MenuItem("MooTool");
-            MenuItem colorPickerItem = new MenuItem("取色器");
-            MenuItem translateItem = new MenuItem("翻译");
-            MenuItem exitItem = new MenuItem("Quit");
+            JMenuItem openItem = new JMenuItem("MooTool");
+            JMenuItem colorPickerItem = new JMenuItem("取色器");
+            JMenuItem translateItem = new JMenuItem("翻译");
+            JMenuItem exitItem = new JMenuItem("Quit");
 
             openItem.addActionListener(e -> {
                 Init.showMainFrame();
@@ -307,14 +307,14 @@ public class HostForm {
             App.popupMenu.add(translateItem);
             App.popupMenu.addSeparator();
 
-            MenuItem menuItem;
+            JMenuItem menuItem;
             Object[] data;
             for (THost tHost : hostList) {
                 data = new Object[2];
                 data[0] = tHost.getId();
                 data[1] = tHost.getName();
                 model.addRow(data);
-                menuItem = new MenuItem(tHost.getName());
+                menuItem = new JMenuItem(tHost.getName());
                 menuItem.addActionListener(e -> {
                     THost tHost1 = hostMapper.selectByName(tHost.getName());
                     String hostName = tHost1.getName();
@@ -349,12 +349,16 @@ public class HostForm {
         if (!SystemUtil.isLinuxOs()) {
             Font fontBold = new Font(App.config.getFont(), Font.BOLD, App.config.getFontSize());
             Font fontPlain = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
-            for (int i = 2; i < App.popupMenu.getItemCount(); i++) {
-                MenuItem item = App.popupMenu.getItem(i);
-                if (hostName.equals(item.getLabel())) {
-                    item.setFont(fontBold);
-                } else {
-                    item.setFont(fontPlain);
+            for (int i = 2; i < App.popupMenu.getComponentCount(); i++) {
+                if (App.popupMenu.getComponent(i) instanceof JMenuItem) {
+                    JMenuItem item = (JMenuItem) App.popupMenu.getComponent(i);
+                    if (hostName.equals(item.getLabel())) {
+                        item.setFont(fontBold);
+                        item.setIcon(new FlatSVGIcon("icon/check.svg"));
+                    } else {
+                        item.setFont(fontPlain);
+                        item.setIcon(null);
+                    }
                 }
             }
             App.config.setCurrentHostName(hostName);
