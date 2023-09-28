@@ -28,8 +28,6 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -290,29 +288,6 @@ public class Init {
 
                 JPopupMenuMouseAdapter jPopupMenuMouseAdapter = new JPopupMenuMouseAdapter(App.popupMenu);
                 App.trayIcon.addMouseListener(jPopupMenuMouseAdapter);
-
-                App.trayIcon.addMouseListener(new MouseAdapter() {
-                    @Override
-                    public void mouseClicked(MouseEvent e) {
-                        switch (e.getButton()) {
-                            case MouseEvent.BUTTON1: {
-                                showMainFrame();
-                                break;
-                            }
-                            case MouseEvent.BUTTON2: {
-                                logger.debug("托盘图标中键事件");
-                                break;
-                            }
-                            case MouseEvent.BUTTON3: {
-                                logger.debug("托盘图标右键事件");
-                                break;
-                            }
-                            default: {
-                                break;
-                            }
-                        }
-                    }
-                });
 
                 try {
                     App.tray.add(App.trayIcon);
