@@ -342,8 +342,8 @@ public class TopMenuBar extends JMenuBar {
 
             FlatAnimatedLafChange.hideSnapshotWithAnimation();
 
-            JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "部分细节重启应用后生效！\n\n", "成功",
-                    JOptionPane.INFORMATION_MESSAGE);
+//            JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "部分细节重启应用后生效！\n\n", "成功",
+//                    JOptionPane.INFORMATION_MESSAGE);
 
             initFontSizeMenu();
 
@@ -372,8 +372,8 @@ public class TopMenuBar extends JMenuBar {
 
             FlatAnimatedLafChange.hideSnapshotWithAnimation();
 
-            JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "部分细节重启应用后生效！\n\n", "成功",
-                    JOptionPane.INFORMATION_MESSAGE);
+//            JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "部分细节重启应用后生效！\n\n", "成功",
+//                    JOptionPane.INFORMATION_MESSAGE);
 
             initFontFamilyMenu();
 
@@ -390,8 +390,8 @@ public class TopMenuBar extends JMenuBar {
 
             changeTheme(selectedThemeName);
 
-            JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "部分细节重启应用后生效！\n\n", "成功",
-                    JOptionPane.INFORMATION_MESSAGE);
+//            JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "部分细节重启应用后生效！\n\n", "成功",
+//                    JOptionPane.INFORMATION_MESSAGE);
 
         } catch (Exception e1) {
             JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "保存失败！\n\n" + e1.getMessage(), "失败",

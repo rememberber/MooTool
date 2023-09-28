@@ -43,7 +43,7 @@ public class App {
 
     public static TrayIcon trayIcon;
 
-    public static PopupMenu popupMenu;
+    public static JPopupMenu popupMenu;
 
     public static void main(String[] args) {
 
