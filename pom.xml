@@ -301,7 +301,6 @@
                                                     <additionalResource>${name}.l4j.ini</additionalResource>
                                                 </additionalResources>
                                                 <administratorRequired>true</administratorRequired>
-                                                <customizedJre>false</customizedJre>
                                                 <winConfig>
 
                                                     <!-- general properties -->
