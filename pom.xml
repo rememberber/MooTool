@@ -41,7 +41,7 @@
         <google-java-format.version>1.16.0</google-java-format.version>
 <!--        <jSystemThemeDetector.version>3.8</jSystemThemeDetector.version>-->
         <cron-utils.version>9.2.1</cron-utils.version>
-        <jna.version>3.0.9</jna.version>
+        <jna.version>5.13.0</jna.version>
         <oshi-core.version>6.4.6</oshi-core.version>
         <jfa.version>1.2.0</jfa.version>
         <versioncompare.version>1.5.0</versioncompare.version>
@@ -226,8 +226,14 @@
 <!--        </dependency>-->
 
         <dependency>
-            <groupId>com.sun.jna</groupId>
+            <groupId>net.java.dev.jna</groupId>
             <artifactId>jna</artifactId>
+            <version>${jna.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna-platform</artifactId>
             <version>${jna.version}</version>
         </dependency>
 
@@ -295,6 +301,7 @@
                                                     <additionalResource>${name}.l4j.ini</additionalResource>
                                                 </additionalResources>
                                                 <administratorRequired>true</administratorRequired>
+                                                <customizedJre>false</customizedJre>
                                                 <winConfig>
 
                                                     <!-- general properties -->
