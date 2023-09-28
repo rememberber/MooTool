@@ -346,7 +346,7 @@ public class HostForm {
     }
 
     private static void highlightHostMenu(String hostName) {
-        if (!SystemUtil.isLinuxOs()) {
+//        if (!SystemUtil.isLinuxOs()) {
             Font fontBold = new Font(App.config.getFont(), Font.BOLD, App.config.getFontSize());
             Font fontPlain = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
             for (int i = 2; i < App.popupMenu.getComponentCount(); i++) {
@@ -364,7 +364,7 @@ public class HostForm {
             App.config.setCurrentHostName(hostName);
             App.config.save();
 //            HostListener.refreshHostContentInTextArea();
-        }
+//        }
     }
 
     {
