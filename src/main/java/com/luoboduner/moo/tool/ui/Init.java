@@ -12,6 +12,7 @@ import com.formdev.flatlaf.themes.FlatMacDarkLaf;
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import com.jthemedetecor.OsThemeDetector;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.component.JPopupMenuMouseAdapter;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
 import com.luoboduner.moo.tool.ui.dialog.SettingDialog;
 import com.luoboduner.moo.tool.ui.dialog.TranslationDialog;
@@ -27,8 +28,6 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
 import java.awt.*;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
@@ -243,13 +242,13 @@ public class Init {
             if (SystemTray.isSupported() && App.tray == null) {
                 App.tray = SystemTray.getSystemTray();
 
-                App.popupMenu = new PopupMenu();
-                App.popupMenu.setFont(App.mainFrame.getContentPane().getFont());
+                App.popupMenu = new JPopupMenu();
+//                App.popupMenu.setFont(App.mainFrame.getContentPane().getFont());
 
-                MenuItem openItem = new MenuItem("MooTool");
-                MenuItem colorPickerItem = new MenuItem("取色器");
-                MenuItem translationItem = new MenuItem("翻译");
-                MenuItem exitItem = new MenuItem("Quit");
+                JMenuItem openItem = new JMenuItem("MooTool");
+                JMenuItem colorPickerItem = new JMenuItem("取色器");
+                JMenuItem translationItem = new JMenuItem("翻译");
+                JMenuItem exitItem = new JMenuItem("Quit");
 
                 openItem.addActionListener(e -> {
                     showMainFrame();
@@ -278,7 +277,7 @@ public class Init {
                 App.popupMenu.addSeparator();
                 App.popupMenu.add(exitItem);
 
-                App.trayIcon = new TrayIcon(UiConsts.IMAGE_LOGO_64, "MooTool", App.popupMenu);
+                App.trayIcon = new TrayIcon(UiConsts.IMAGE_LOGO_64, "MooTool");
                 App.trayIcon.setImageAutoSize(true);
 
                 App.trayIcon.addActionListener(e -> {
@@ -286,28 +285,9 @@ public class Init {
                     App.mainFrame.setExtendedState(JFrame.NORMAL);
                     App.mainFrame.requestFocus();
                 });
-                App.trayIcon.addMouseListener(new MouseAdapter() {
-                    @Override
-                    public void mouseClicked(MouseEvent e) {
-                        switch (e.getButton()) {
-                            case MouseEvent.BUTTON1: {
-                                showMainFrame();
-                                break;
-                            }
-                            case MouseEvent.BUTTON2: {
-                                logger.debug("托盘图标中键事件");
-                                break;
-                            }
-                            case MouseEvent.BUTTON3: {
-                                logger.debug("托盘图标右键事件");
-                                break;
-                            }
-                            default: {
-                                break;
-                            }
-                        }
-                    }
-                });
+
+                JPopupMenuMouseAdapter jPopupMenuMouseAdapter = new JPopupMenuMouseAdapter(App.popupMenu);
+                App.trayIcon.addMouseListener(jPopupMenuMouseAdapter);
 
                 try {
                     App.tray.add(App.trayIcon);
