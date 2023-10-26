@@ -45,6 +45,7 @@
         <oshi-core.version>6.4.6</oshi-core.version>
         <jfa.version>1.2.0</jfa.version>
         <versioncompare.version>1.5.0</versioncompare.version>
+		<groovy.version>4.0.15</groovy.version>
     </properties>
 
     <repositories>
@@ -259,6 +260,12 @@
             <groupId>io.github.g00fy2</groupId>
             <artifactId>versioncompare</artifactId>
             <version>${versioncompare.version}</version>
+        </dependency>
+		
+		<dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy</artifactId>
+            <version>${groovy.version}</version>
         </dependency>
 
     </dependencies>
