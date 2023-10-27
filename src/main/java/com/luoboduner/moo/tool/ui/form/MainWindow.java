@@ -77,7 +77,7 @@ public class MainWindow {
         mainWindow.getTabbedPane().setIconAt(12, new FlatSVGIcon("icon/translate.svg"));
         mainWindow.getTabbedPane().setIconAt(13, new FlatSVGIcon("icon/schedule.svg", 15, 15));
         mainWindow.getTabbedPane().setIconAt(14, new FlatSVGIcon("icon/reg.svg"));
-        mainWindow.getTabbedPane().setIconAt(15, new FlatSVGIcon("icon/java.svg", 15, 15));
+        mainWindow.getTabbedPane().setIconAt(15, new FlatSVGIcon("icon/java.svg"));
 
         mainWindow.getQuickNotePanel().add(QuickNoteForm.getInstance().getQuickNotePanel(), gridConstraints);
         mainWindow.getJsonBeautyPanel().add(JsonBeautyForm.getInstance().getJsonBeautyPanel(), gridConstraints);
@@ -167,7 +167,7 @@ public class MainWindow {
         tabbedPane.addTab("正则", new ImageIcon(getClass().getResource("/icon/reg.png")), regexPanel);
         javaConsolePanel = new JPanel();
         javaConsolePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("java", javaConsolePanel);
+        tabbedPane.addTab("Java", javaConsolePanel);
     }
 
     /**
