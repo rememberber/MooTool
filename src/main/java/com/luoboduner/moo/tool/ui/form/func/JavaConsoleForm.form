@@ -55,8 +55,8 @@
           </grid>
         </constraints>
         <properties>
-          <continuousLayout value="false"/>
-          <dividerLocation value="500"/>
+          <continuousLayout value="true"/>
+          <dividerLocation value="463"/>
           <dividerSize value="3"/>
         </properties>
         <border type="none"/>
@@ -71,7 +71,7 @@
               <component id="61044" class="javax.swing.JTextArea" binding="codeArea">
                 <constraints/>
                 <properties>
-                  <background color="-3608620"/>
+                  <background color="-13947600"/>
                   <font name="Consolas" size="16"/>
                   <text value=""/>
                 </properties>
@@ -88,7 +88,7 @@
               <component id="286fe" class="javax.swing.JTextArea" binding="resultArea">
                 <constraints/>
                 <properties>
-                  <background color="-820"/>
+                  <background color="-13947600"/>
                   <editable value="false"/>
                   <font name="Consolas" size="16"/>
                 </properties>
