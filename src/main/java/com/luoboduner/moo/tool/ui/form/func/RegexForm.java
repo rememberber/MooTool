@@ -11,7 +11,7 @@ import com.luoboduner.moo.tool.domain.TFuncContent;
 import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.component.CustomizeIcon;
 import com.luoboduner.moo.tool.ui.component.textviewer.RegexRTextScrollPane;
-import com.luoboduner.moo.tool.ui.component.textviewer.RegexSyntaxTextViewer;
+import com.luoboduner.moo.tool.ui.component.textviewer.RegexRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.listener.func.RegexListener;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
@@ -67,7 +67,7 @@ public class RegexForm {
     private JTextField a19DDTextField;
     private JScrollPane commonRegexScrollPane;
 
-    private RegexSyntaxTextViewer textArea;
+    private RegexRSyntaxTextViewer textArea;
     private RegexRTextScrollPane scrollPane;
 
     private static RegexForm regexForm;
@@ -77,7 +77,7 @@ public class RegexForm {
     private static TFuncContentMapper funcContentMapper = MybatisUtil.getSqlSession().getMapper(TFuncContentMapper.class);
 
     private RegexForm() {
-        textArea = new RegexSyntaxTextViewer();
+        textArea = new RegexRSyntaxTextViewer();
         scrollPane = new RegexRTextScrollPane(textArea);
 
         UndoUtil.register(this);

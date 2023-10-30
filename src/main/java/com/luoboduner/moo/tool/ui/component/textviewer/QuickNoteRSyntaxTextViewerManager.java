@@ -20,7 +20,7 @@ import java.util.Map;
 /**
  * 自定义普通纯文本视图管理器
  */
-public class QuickNoteSyntaxTextViewerManager {
+public class QuickNoteRSyntaxTextViewerManager {
 
     public static Map<String, RTextScrollPane> viewMap = new HashMap<>();
 
@@ -36,7 +36,7 @@ public class QuickNoteSyntaxTextViewerManager {
     public RTextScrollPane getRTextScrollPane(String name) {
         RTextScrollPane rTextScrollPane = viewMap.get(name);
         if (rTextScrollPane == null) {
-            QuickNoteSyntaxTextViewer plainTextViewer = new QuickNoteSyntaxTextViewer();
+            QuickNoteRSyntaxTextViewer plainTextViewer = new QuickNoteRSyntaxTextViewer();
             TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
             plainTextViewer.setText(tQuickNote.getContent());
             if (StringUtils.isNotEmpty(tQuickNote.getSyntax())) {
@@ -69,7 +69,7 @@ public class QuickNoteSyntaxTextViewerManager {
     public void updateFont(String name){
         RTextScrollPane rTextScrollPane = viewMap.get(name);
         if (rTextScrollPane != null) {
-            QuickNoteSyntaxTextViewer plainTextViewer = (QuickNoteSyntaxTextViewer) rTextScrollPane.getTextArea();
+            QuickNoteRSyntaxTextViewer plainTextViewer = (QuickNoteRSyntaxTextViewer) rTextScrollPane.getTextArea();
             TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
             if (StringUtils.isNotEmpty(tQuickNote.getFontName()) && StringUtils.isNotEmpty(tQuickNote.getFontSize())) {
                 Font font;

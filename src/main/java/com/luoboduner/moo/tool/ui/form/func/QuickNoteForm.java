@@ -14,8 +14,8 @@ import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.QuickNoteListTableInCellRenderer;
-import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteSyntaxTextViewer;
-import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteSyntaxTextViewerManager;
+import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewer;
+import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
@@ -105,7 +105,7 @@ public class QuickNoteForm {
     private static QuickNoteForm quickNoteForm;
     private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
 
-    public static QuickNoteSyntaxTextViewerManager quickNoteSyntaxTextViewerManager;
+    public static QuickNoteRSyntaxTextViewerManager quickNoteRSyntaxTextViewerManager;
 
     private QuickNoteForm() {
         colorButton = new JToggleButton(new AccentColorIcon("Moo.accent.blue"));
@@ -129,7 +129,7 @@ public class QuickNoteForm {
     public static void init() {
         quickNoteForm = getInstance();
 
-        quickNoteSyntaxTextViewerManager = new QuickNoteSyntaxTextViewerManager();
+        quickNoteRSyntaxTextViewerManager = new QuickNoteRSyntaxTextViewerManager();
 
         initUi();
 
@@ -355,10 +355,10 @@ public class QuickNoteForm {
             model.addRow(data);
         }
         if (quickNoteList.size() > 0) {
-            QuickNoteSyntaxTextViewer.ignoreQuickSave = true;
+            QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
             try {
                 String name = quickNoteList.get(0).getName();
-                RTextScrollPane syntaxTextViewer = QuickNoteForm.quickNoteSyntaxTextViewerManager.getRTextScrollPane(name);
+                RTextScrollPane syntaxTextViewer = QuickNoteForm.quickNoteRSyntaxTextViewerManager.getRTextScrollPane(name);
                 getInstance().getContentSplitPane().setLeftComponent(syntaxTextViewer);
                 noteListTable.setRowSelectionInterval(0, 0);
                 syntaxTextViewer.grabFocus();
@@ -384,7 +384,7 @@ public class QuickNoteForm {
             } catch (Exception e1) {
                 log.error(e1.toString());
             } finally {
-                QuickNoteSyntaxTextViewer.ignoreQuickSave = false;
+                QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
             }
 
         }

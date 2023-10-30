@@ -8,28 +8,14 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
 
 import javax.swing.*;
-import javax.swing.event.HyperlinkEvent;
 import java.awt.*;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 
-public class JsonSyntaxTextViewer extends RSyntaxTextArea {
-    public JsonSyntaxTextViewer() {
-
-        addHyperlinkListener(e -> {
-            if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
-                Desktop desktop = Desktop.getDesktop();
-                try {
-                    desktop.browse(new URI(e.getURL().toString()));
-                } catch (IOException | URISyntaxException e1) {
-                    e1.printStackTrace();
-                }
-            }
-        });
+public class CommonRSyntaxTextViewer extends RSyntaxTextArea {
+    public CommonRSyntaxTextViewer() {
 
         setDoubleBuffered(true);
-        
+
         updateTheme();
     }
 
@@ -48,7 +34,9 @@ public class JsonSyntaxTextViewer extends RSyntaxTextArea {
             ioe.printStackTrace();
         }
 
-        //        setCurrentLineHighlightColor(new Color(52, 52, 52));
+        setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
+        setCodeFoldingEnabled(true);
+//        setCurrentLineHighlightColor(new Color(52, 52, 52));
 //        setUseSelectedTextColor(true);
 //        setSelectedTextColor(new Color(50, 50, 50));
 
@@ -67,8 +55,8 @@ public class JsonSyntaxTextViewer extends RSyntaxTextArea {
         Font font = new Font(fontName, Font.PLAIN, fontSize);
         setFont(font);
 
-        setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JSON);
-        setCodeFoldingEnabled(true);
+        setHyperlinksEnabled(false);
+
 
         setBackground(UIManager.getColor("Editor.background"));
         setCaretColor(UIManager.getColor("Editor.caretColor"));

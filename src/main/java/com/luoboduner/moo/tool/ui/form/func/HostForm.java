@@ -11,7 +11,7 @@ import com.luoboduner.moo.tool.domain.THost;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.textviewer.HostRTextScrollPane;
-import com.luoboduner.moo.tool.ui.component.textviewer.HostSyntaxTextViewer;
+import com.luoboduner.moo.tool.ui.component.textviewer.HostRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.dialog.TranslationDialog;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
@@ -71,12 +71,12 @@ public class HostForm {
 
     public static final String NOT_SUPPORTED_TIPS = "暂不支持该操作系统！";
 
-    private HostSyntaxTextViewer textArea;
+    private HostRSyntaxTextViewer textArea;
 
     private HostRTextScrollPane scrollPane;
 
     private HostForm() {
-        textArea = new HostSyntaxTextViewer();
+        textArea = new HostRSyntaxTextViewer();
         scrollPane = new HostRTextScrollPane(textArea);
 
         UndoUtil.register(this);

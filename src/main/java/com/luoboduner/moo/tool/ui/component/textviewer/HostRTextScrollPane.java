@@ -10,7 +10,7 @@ import java.awt.*;
 
 public class HostRTextScrollPane extends RTextScrollPane {
     // constructor
-    public HostRTextScrollPane(HostSyntaxTextViewer textArea) {
+    public HostRTextScrollPane(HostRSyntaxTextViewer textArea) {
         super(textArea);
 
         updateTheme();

@@ -10,7 +10,7 @@ import java.awt.*;
 
 public class RegexRTextScrollPane extends RTextScrollPane {
     // constructor
-    public RegexRTextScrollPane(RegexSyntaxTextViewer textArea) {
+    public RegexRTextScrollPane(RegexRSyntaxTextViewer textArea) {
         super(textArea);
 
         updateTheme();

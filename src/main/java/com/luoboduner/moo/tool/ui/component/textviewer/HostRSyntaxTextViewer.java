@@ -13,8 +13,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-public class HostSyntaxTextViewer extends RSyntaxTextArea {
-    public HostSyntaxTextViewer() {
+public class HostRSyntaxTextViewer extends RSyntaxTextArea {
+    public HostRSyntaxTextViewer() {
 
         addHyperlinkListener(e -> {
             if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {

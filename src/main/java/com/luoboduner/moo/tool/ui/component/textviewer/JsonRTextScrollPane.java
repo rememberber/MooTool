@@ -10,7 +10,7 @@ import java.awt.*;
 
 public class JsonRTextScrollPane extends RTextScrollPane {
     // constructor
-    public JsonRTextScrollPane(JsonSyntaxTextViewer textArea) {
+    public JsonRTextScrollPane(JsonRSyntaxTextViewer textArea) {
         super(textArea);
 
         updateTheme();

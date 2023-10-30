@@ -10,7 +10,7 @@ import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.textviewer.JsonRTextScrollPane;
-import com.luoboduner.moo.tool.ui.component.textviewer.JsonSyntaxTextViewer;
+import com.luoboduner.moo.tool.ui.component.textviewer.JsonRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
@@ -56,11 +56,11 @@ public class JsonBeautyForm {
     private static JsonBeautyForm jsonBeautyForm;
     private static TJsonBeautyMapper jsonBeautyMapper = MybatisUtil.getSqlSession().getMapper(TJsonBeautyMapper.class);
 
-    private JsonSyntaxTextViewer textArea;
+    private JsonRSyntaxTextViewer textArea;
     private JsonRTextScrollPane scrollPane;
 
     private JsonBeautyForm() {
-        textArea = new JsonSyntaxTextViewer();
+        textArea = new JsonRSyntaxTextViewer();
         scrollPane = new JsonRTextScrollPane(textArea);
 
         UndoUtil.register(this);

@@ -22,10 +22,10 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
+public class QuickNoteRSyntaxTextViewer extends RSyntaxTextArea {
     public static boolean ignoreQuickSave;
 
-    public QuickNoteSyntaxTextViewer() {
+    public QuickNoteRSyntaxTextViewer() {
 
 //        setUseSelectedTextColor(true);
 //        setSelectedTextColor(new Color(50, 50, 50));

@@ -8,8 +8,8 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.jthemedetecor.OsThemeDetector;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Init;
-import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteSyntaxTextViewer;
-import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteSyntaxTextViewerManager;
+import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewer;
+import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.dialog.*;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
@@ -423,9 +423,9 @@ public class TopMenuBar extends JMenuBar {
 
         initThemesMenu();
 
-        QuickNoteSyntaxTextViewerManager.viewMap.forEach((name, rTextScrollPane) -> {
-            ((QuickNoteSyntaxTextViewer) rTextScrollPane.getTextArea()).updateTheme();
-            QuickNoteSyntaxTextViewerManager.updateGutter(rTextScrollPane);
+        QuickNoteRSyntaxTextViewerManager.viewMap.forEach((name, rTextScrollPane) -> {
+            ((QuickNoteRSyntaxTextViewer) rTextScrollPane.getTextArea()).updateTheme();
+            QuickNoteRSyntaxTextViewerManager.updateGutter(rTextScrollPane);
             rTextScrollPane.updateUI();
         });
 
