@@ -16,6 +16,10 @@ public class RegexSyntaxTextViewer extends RSyntaxTextArea {
 
         setDoubleBuffered(true);
 
+        updateTheme();
+    }
+
+    public void updateTheme() {
         try {
             Theme theme;
             if (FlatLaf.isLafDark()) {

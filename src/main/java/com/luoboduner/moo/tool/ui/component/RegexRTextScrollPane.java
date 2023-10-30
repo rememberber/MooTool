@@ -13,6 +13,10 @@ public class RegexRTextScrollPane extends RTextScrollPane {
     public RegexRTextScrollPane(RegexSyntaxTextViewer textArea) {
         super(textArea);
 
+        updateTheme();
+    }
+
+    public void updateTheme() {
         setMaximumSize(new Dimension(-1, -1));
         setMinimumSize(new Dimension(-1, -1));
 

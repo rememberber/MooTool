@@ -434,6 +434,8 @@ public class TopMenuBar extends JMenuBar {
         HostForm.getInstance().updateTheme();
         HostForm.getInstance().getScrollPane().updateUI();
 
+        RegexForm.getInstance().getTextArea().updateTheme();
+        RegexForm.getInstance().getScrollPane().updateTheme();
         RegexForm.getInstance().getScrollPane().updateUI();
     }
 
