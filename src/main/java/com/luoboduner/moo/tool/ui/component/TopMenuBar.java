@@ -13,6 +13,7 @@ import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewe
 import com.luoboduner.moo.tool.ui.dialog.*;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
+import com.luoboduner.moo.tool.ui.form.func.JavaConsoleForm;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
 import com.luoboduner.moo.tool.ui.form.func.RegexForm;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -441,6 +442,10 @@ public class TopMenuBar extends JMenuBar {
         RegexForm.getInstance().getTextArea().updateTheme();
         RegexForm.getInstance().getScrollPane().updateTheme();
         RegexForm.getInstance().getScrollPane().updateUI();
+
+        JavaConsoleForm.getInstance().getTextArea().updateTheme();
+        JavaConsoleForm.getInstance().getScrollPane().updateTheme();
+        JavaConsoleForm.getInstance().getScrollPane().updateUI();
     }
 
     private void keyMapActionPerformed() {
