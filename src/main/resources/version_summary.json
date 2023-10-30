@@ -1,5 +1,5 @@
 {
-  "currentVersion": "v1.5.6",
+  "currentVersion": "v1.5.7",
   "versionIndex": {
     "v0.0.0": "0",
     "v1.0.0": "1",
@@ -27,7 +27,8 @@
     "v1.5.3": "23",
     "v1.5.4": "24",
     "v1.5.5": "25",
-    "v1.5.6": "26"
+    "v1.5.6": "26",
+    "v1.5.7": "27"
   },
   "versionDetailList": [
     {
@@ -164,6 +165,11 @@
       "version": "v1.5.6",
       "title": "升级至Java21",
       "log": "● 升级至Java21\n● 增加JVM参数外部配置,默认开启分代ZGC\n● 增加时钟大屏\n● 优化系统托盘菜单 issue by smallclover\n\n"
+    },
+    {
+      "version": "v1.5.7",
+      "title": "新增Java、Groovy编译执行器",
+      "log": "● 新增Java、Groovy编译执行器，在MooTool中可执行简单Java或Groovy代码 by:felixnan168\n● 尝试优化随手记撤销大量批量替换时卡顿的问题\n● 升级依赖\n\n"
     }
   ]
 }
