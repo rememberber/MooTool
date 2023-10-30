@@ -36,6 +36,8 @@ import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.Date;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 /**
  * <pre>
@@ -51,6 +53,9 @@ public class QuickNoteListener {
     private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
 
     public static String selectedName;
+
+    // 创建一个单线程的ExecutorService
+    public static ExecutorService executorService = Executors.newSingleThreadExecutor();
 
     public static void addListeners() {
         QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
@@ -613,24 +618,28 @@ public class QuickNoteListener {
      * @param refreshModifiedTime
      */
     public static void quickSave(boolean refreshModifiedTime, boolean writeLog) {
-        String now = SqliteUtil.nowDateForSqlite();
-        if (selectedName != null) {
-            TQuickNote tQuickNote = new TQuickNote();
-            tQuickNote.setName(selectedName);
 
-            String text = QuickNoteForm.quickNoteSyntaxTextViewerManager.getTextByName(selectedName);
-            if (writeLog) {
-                log.info("save note: " + selectedName + ", content: " + text);
+        executorService.submit(() -> {
+            String now = SqliteUtil.nowDateForSqlite();
+            if (selectedName != null) {
+                TQuickNote tQuickNote = new TQuickNote();
+                tQuickNote.setName(selectedName);
+
+                String text = QuickNoteForm.quickNoteSyntaxTextViewerManager.getTextByName(selectedName);
+                if (writeLog) {
+                    log.info("save note: " + selectedName + ", content: " + text);
+                }
+                tQuickNote.setContent(text);
+                if (refreshModifiedTime) {
+                    tQuickNote.setModifiedTime(now);
+                }
+
+                quickNoteMapper.updateByName(tQuickNote);
             }
-            tQuickNote.setContent(text);
-            if (refreshModifiedTime) {
-                tQuickNote.setModifiedTime(now);
-            }
 
-            quickNoteMapper.updateByName(tQuickNote);
-        }
+            QuickNoteIndicatorTools.showTips("已保存：" + selectedName, QuickNoteIndicatorTools.TipsLevel.SUCCESS);
+        });
 
-        QuickNoteIndicatorTools.showTips("已保存：" + selectedName, QuickNoteIndicatorTools.TipsLevel.SUCCESS);
     }
 
     /**

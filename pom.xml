@@ -19,28 +19,33 @@
         <maven.compiler.target>21</maven.compiler.target>
 
         <java.version>21</java.version>
-        <logback.version>1.4.6</logback.version>
+        <logback.version>1.4.11</logback.version>
         <emoji-java.version>5.1.1</emoji-java.version>
-        <hutool-all.version>5.8.17</hutool-all.version>
+        <hutool-all.version>5.8.22</hutool-all.version>
         <forms_rt.version>7.0.3</forms_rt.version>
-        <fastjson.version>2.0.27</fastjson.version>
+        <fastjson.version>2.0.40</fastjson.version>
         <lombok.version>1.18.30</lombok.version>
         <mybatis.version>3.5.13</mybatis.version>
-        <sqlite-jdbc.version>3.42.0.1</sqlite-jdbc.version>
+        <sqlite-jdbc.version>3.43.0.0</sqlite-jdbc.version>
         <junit.version>4.13.2</junit.version>
-        <commons-lang3.version>3.12.0</commons-lang3.version>
-        <guava.version>31.1-jre</guava.version>
-        <okhttp.version>4.10.0</okhttp.version>
+        <commons-lang3.version>3.13.0</commons-lang3.version>
+        <guava.version>32.1.2-jre</guava.version>
+        <okhttp.version>4.11.0</okhttp.version>
         <google.zxing.core.version>3.5.1</google.zxing.core.version>
-        <flatlaf.version>3.2.1</flatlaf.version>
-        <flatlaf-extras.version>3.2.1</flatlaf-extras.version>
-        <flatlaf-intellij-themes.version>3.2.1</flatlaf-intellij-themes.version>
+        <flatlaf.version>3.2.5</flatlaf.version>
+        <flatlaf-extras.version>3.2.5</flatlaf-extras.version>
+        <flatlaf-intellij-themes.version>3.2.5</flatlaf-intellij-themes.version>
         <flatlaf-fonts-jetbrains-mono.version>2.242</flatlaf-fonts-jetbrains-mono.version>
         <rsyntaxtextarea.version>3.3.4</rsyntaxtextarea.version>
-        <sql-formatter.version>2.0.3</sql-formatter.version>
-        <google-java-format.version>1.16.0</google-java-format.version>
-        <jSystemThemeDetector.version>3.8</jSystemThemeDetector.version>
+        <sql-formatter.version>2.0.4</sql-formatter.version>
+        <google-java-format.version>1.18.1</google-java-format.version>
+<!--        <jSystemThemeDetector.version>3.8</jSystemThemeDetector.version>-->
         <cron-utils.version>9.2.1</cron-utils.version>
+        <jna.version>5.13.0</jna.version>
+        <oshi-core.version>6.4.6</oshi-core.version>
+        <jfa.version>1.2.0</jfa.version>
+        <versioncompare.version>1.5.0</versioncompare.version>
+		<groovy.version>4.0.15</groovy.version>
     </properties>
 
     <repositories>
@@ -215,22 +220,52 @@
             </exclusions>
         </dependency>
 
+<!--        <dependency>-->
+<!--            <groupId>com.github.Dansoftowner</groupId>-->
+<!--            <artifactId>jSystemThemeDetector</artifactId>-->
+<!--            <version>${jSystemThemeDetector.version}</version>-->
+<!--        </dependency>-->
+
         <dependency>
-            <groupId>com.github.Dansoftowner</groupId>
-            <artifactId>jSystemThemeDetector</artifactId>
-            <version>${jSystemThemeDetector.version}</version>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna</artifactId>
+            <version>${jna.version}</version>
         </dependency>
 
         <dependency>
-            <groupId>com.sun.jna</groupId>
-            <artifactId>jna</artifactId>
-            <version>3.0.9</version>
+            <groupId>net.java.dev.jna</groupId>
+            <artifactId>jna-platform</artifactId>
+            <version>${jna.version}</version>
         </dependency>
 
         <dependency>
             <groupId>com.cronutils</groupId>
             <artifactId>cron-utils</artifactId>
             <version>${cron-utils.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.oshi</groupId>
+            <artifactId>oshi-core</artifactId>
+            <version>${oshi-core.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>de.jangassen</groupId>
+            <artifactId>jfa</artifactId>
+            <version>${jfa.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>io.github.g00fy2</groupId>
+            <artifactId>versioncompare</artifactId>
+            <version>${versioncompare.version}</version>
+        </dependency>
+		
+		<dependency>
+            <groupId>org.apache.groovy</groupId>
+            <artifactId>groovy</artifactId>
+            <version>${groovy.version}</version>
         </dependency>
 
     </dependencies>
@@ -268,8 +303,7 @@
                                             <configuration>
                                                 <platform>windows</platform>
                                                 <createZipball>true</createZipball>
-                                                <customizedJre>false</customizedJre>
-                                                <additionalModules>jdk.crypto.ec,jdk.charsets,com.jthemedetector</additionalModules>
+                                                <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>
                                                 <additionalResources>
                                                     <additionalResource>${name}.l4j.ini</additionalResource>
                                                 </additionalResources>
@@ -303,7 +337,6 @@
                     <!--                                            <configuration>-->
                     <!--                                                <platform>linux</platform>-->
                     <!--                                                <createTarball>true</createTarball>-->
-                    <!--                                            <customizedJre>false</customizedJre>-->
                     <!--                                            <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
                     <!--                                            <additionalResources>-->
                     <!--                                                <additionalResource>${name}.l4j.ini</additionalResource>-->
@@ -318,7 +351,6 @@
 <!--                        </goals>-->
 <!--                        <configuration>-->
 <!--                            <platform>mac</platform>-->
-<!--                            <customizedJre>false</customizedJre>-->
 <!--                            <createTarball>true</createTarball>-->
 <!--                            <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
 <!--                            <additionalResources>-->
