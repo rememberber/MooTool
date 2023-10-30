@@ -1,6 +1,6 @@
-package com.luoboduner.moo.tool.ui.component;
+package com.luoboduner.moo.tool.ui.component.textviewer;
 
-import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 
 import javax.swing.event.HyperlinkEvent;
 import java.awt.*;
@@ -8,8 +8,8 @@ import java.io.IOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 
-public class HostSyntaxTextViewer extends RSyntaxTextArea {
-    public HostSyntaxTextViewer() {
+public class JsonRSyntaxTextViewer extends CommonRSyntaxTextViewer {
+    public JsonRSyntaxTextViewer() {
 
         addHyperlinkListener(e -> {
             if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
@@ -23,5 +23,14 @@ public class HostSyntaxTextViewer extends RSyntaxTextArea {
         });
 
         setDoubleBuffered(true);
+        
+        updateTheme();
+    }
+
+    public void updateTheme() {
+        super.updateTheme();
+
+        setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JSON);
+        setCodeFoldingEnabled(true);
     }
 }

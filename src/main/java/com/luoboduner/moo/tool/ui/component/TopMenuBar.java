@@ -8,9 +8,12 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.jthemedetecor.OsThemeDetector;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Init;
+import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewer;
+import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.dialog.*;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
+import com.luoboduner.moo.tool.ui.form.func.JavaConsoleForm;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
 import com.luoboduner.moo.tool.ui.form.func.RegexForm;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -421,20 +424,28 @@ public class TopMenuBar extends JMenuBar {
 
         initThemesMenu();
 
-        QuickNoteSyntaxTextViewerManager.viewMap.forEach((name, rTextScrollPane) -> {
-            ((QuickNoteSyntaxTextViewer) rTextScrollPane.getTextArea()).updateTheme();
-            QuickNoteSyntaxTextViewerManager.updateGutter(rTextScrollPane);
+        QuickNoteRSyntaxTextViewerManager.viewMap.forEach((name, rTextScrollPane) -> {
+            ((QuickNoteRSyntaxTextViewer) rTextScrollPane.getTextArea()).updateTheme();
+            QuickNoteRSyntaxTextViewerManager.updateGutter(rTextScrollPane);
             rTextScrollPane.updateUI();
         });
 
-        JsonBeautyForm.getInstance().updateTheme();
+        JsonBeautyForm.getInstance().getTextArea().updateTheme();
+        JsonBeautyForm.getInstance().getScrollPane().updateTheme();
         JsonBeautyForm.initTextAreaFont();
         JsonBeautyForm.getInstance().getScrollPane().updateUI();
 
-        HostForm.getInstance().updateTheme();
+        HostForm.getInstance().getTextArea().updateTheme();
+        HostForm.getInstance().getScrollPane().updateTheme();
         HostForm.getInstance().getScrollPane().updateUI();
 
+        RegexForm.getInstance().getTextArea().updateTheme();
+        RegexForm.getInstance().getScrollPane().updateTheme();
         RegexForm.getInstance().getScrollPane().updateUI();
+
+        JavaConsoleForm.getInstance().getTextArea().updateTheme();
+        JavaConsoleForm.getInstance().getScrollPane().updateTheme();
+        JavaConsoleForm.getInstance().getScrollPane().updateUI();
     }
 
     private void keyMapActionPerformed() {

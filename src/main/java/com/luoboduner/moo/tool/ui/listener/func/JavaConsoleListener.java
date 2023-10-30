@@ -60,7 +60,7 @@ public class JavaConsoleListener {
                 }
 
                 try {
-                    addStr("----- 当前执行时间：" + DateFormatUtils.format(new Date(), TimeConvertForm.TIME_FORMAT) + " -----");
+                    addStr("----- " + DateFormatUtils.format(new Date(), TimeConvertForm.TIME_FORMAT) + " -----");
                     Object res = compileAndExecute(code);
                     if (null != res) {
                         addStr(res.toString());

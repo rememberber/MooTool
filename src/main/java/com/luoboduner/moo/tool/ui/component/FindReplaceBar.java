@@ -5,6 +5,7 @@ import com.formdev.flatlaf.util.StringUtils;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
 import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
 import lombok.Getter;
@@ -128,7 +129,7 @@ public class FindReplaceBar {
 
     private void findOrMarkAll(boolean find) {
         try {
-            QuickNoteSyntaxTextViewer.ignoreQuickSave = true;
+            QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
             JsonBeautyListener.ignoreQuickSave = true;
             HostListener.ignoreQuickSave = true;
             // update search context
@@ -154,7 +155,7 @@ public class FindReplaceBar {
         } catch (Exception e) {
             log.error(e.toString());
         } finally {
-            QuickNoteSyntaxTextViewer.ignoreQuickSave = false;
+            QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
             JsonBeautyListener.ignoreQuickSave = false;
             HostListener.ignoreQuickSave = false;
         }
@@ -190,7 +191,7 @@ public class FindReplaceBar {
 
     private void replaceAll() {
         try {
-            QuickNoteSyntaxTextViewer.ignoreQuickSave = true;
+            QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
             JsonBeautyListener.ignoreQuickSave = true;
             HostListener.ignoreQuickSave = true;
             // update search context
@@ -213,7 +214,7 @@ public class FindReplaceBar {
         } catch (Exception e) {
             log.error(e.toString());
         } finally {
-            QuickNoteSyntaxTextViewer.ignoreQuickSave = false;
+            QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
             JsonBeautyListener.ignoreQuickSave = false;
             HostListener.ignoreQuickSave = false;
         }

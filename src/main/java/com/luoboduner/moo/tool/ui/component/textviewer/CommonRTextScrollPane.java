@@ -1,18 +1,23 @@
-package com.luoboduner.moo.tool.ui.component;
+package com.luoboduner.moo.tool.ui.component.textviewer;
 
 import com.formdev.flatlaf.FlatLaf;
 import com.luoboduner.moo.tool.App;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rtextarea.Gutter;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.*;
 import java.awt.*;
 
-public class RegexRTextScrollPane extends RTextScrollPane {
+public class CommonRTextScrollPane extends RTextScrollPane {
     // constructor
-    public RegexRTextScrollPane(RegexSyntaxTextViewer textArea) {
+    public CommonRTextScrollPane(RSyntaxTextArea textArea) {
         super(textArea);
 
+        updateTheme();
+    }
+
+    public void updateTheme() {
         setMaximumSize(new Dimension(-1, -1));
         setMinimumSize(new Dimension(-1, -1));
 
