@@ -7,8 +7,4 @@ public class RegexRSyntaxTextViewer extends CommonRSyntaxTextViewer {
 
         updateTheme();
     }
-
-    public void updateTheme() {
-        super.updateTheme();
-    }
 }
