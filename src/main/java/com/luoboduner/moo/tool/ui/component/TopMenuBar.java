@@ -431,7 +431,8 @@ public class TopMenuBar extends JMenuBar {
         JsonBeautyForm.initTextAreaFont();
         JsonBeautyForm.getInstance().getScrollPane().updateUI();
 
-        HostForm.getInstance().updateTheme();
+        HostForm.getInstance().getTextArea().updateTheme();
+        HostForm.getInstance().getScrollPane().updateTheme();
         HostForm.getInstance().getScrollPane().updateUI();
 
         RegexForm.getInstance().getTextArea().updateTheme();
