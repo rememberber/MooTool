@@ -9,8 +9,8 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
 import com.luoboduner.moo.tool.ui.UiConsts;
-import com.luoboduner.moo.tool.ui.component.JsonRTextScrollPane;
-import com.luoboduner.moo.tool.ui.component.JsonSyntaxTextViewer;
+import com.luoboduner.moo.tool.ui.component.textviewer.JsonRTextScrollPane;
+import com.luoboduner.moo.tool.ui.component.textviewer.JsonSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
@@ -18,7 +18,6 @@ import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;

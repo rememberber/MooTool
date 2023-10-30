@@ -1,4 +1,4 @@
-package com.luoboduner.moo.tool.ui.component;
+package com.luoboduner.moo.tool.ui.component.textviewer;
 
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;

@@ -8,6 +8,8 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.jthemedetecor.OsThemeDetector;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Init;
+import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteSyntaxTextViewer;
+import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.dialog.*;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;

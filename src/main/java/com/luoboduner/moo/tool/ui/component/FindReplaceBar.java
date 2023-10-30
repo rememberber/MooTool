@@ -5,6 +5,7 @@ import com.formdev.flatlaf.util.StringUtils;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
 import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
 import lombok.Getter;

@@ -1,4 +1,4 @@
-package com.luoboduner.moo.tool.ui.component;
+package com.luoboduner.moo.tool.ui.component.textviewer;
 
 import com.formdev.flatlaf.FlatLaf;
 import com.luoboduner.moo.tool.App;
@@ -23,10 +23,10 @@ public class RegexSyntaxTextViewer extends RSyntaxTextArea {
         try {
             Theme theme;
             if (FlatLaf.isLafDark()) {
-                theme = Theme.load(RegexSyntaxTextViewer.class.getResourceAsStream(
+                theme = Theme.load(App.class.getResourceAsStream(
                         "/org/fife/ui/rsyntaxtextarea/themes/monokai.xml"));
             } else {
-                theme = Theme.load(RegexSyntaxTextViewer.class.getResourceAsStream(
+                theme = Theme.load(App.class.getResourceAsStream(
                         "/org/fife/ui/rsyntaxtextarea/themes/idea.xml"));
             }
             theme.apply(this);

@@ -1,4 +1,4 @@
-package com.luoboduner.moo.tool.ui.component;
+package com.luoboduner.moo.tool.ui.component.textviewer;
 
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
@@ -113,10 +113,10 @@ public class QuickNoteSyntaxTextViewer extends RSyntaxTextArea {
         try {
             Theme theme;
             if (FlatLaf.isLafDark()) {
-                theme = Theme.load(JsonSyntaxTextViewer.class.getResourceAsStream(
+                theme = Theme.load(App.class.getResourceAsStream(
                         "/org/fife/ui/rsyntaxtextarea/themes/monokai.xml"));
             } else {
-                theme = Theme.load(JsonSyntaxTextViewer.class.getResourceAsStream(
+                theme = Theme.load(App.class.getResourceAsStream(
                         "/org/fife/ui/rsyntaxtextarea/themes/idea.xml"));
             }
             theme.apply(this);
