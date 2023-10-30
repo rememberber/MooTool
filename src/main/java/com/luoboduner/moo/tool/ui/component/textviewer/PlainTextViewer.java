@@ -1,4 +1,4 @@
-package com.luoboduner.moo.tool.ui.component;
+package com.luoboduner.moo.tool.ui.component.textviewer;
 
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Style;

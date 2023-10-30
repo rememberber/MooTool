@@ -4,6 +4,8 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.component.textviewer.JavaRSyntaxTextViewer;
+import com.luoboduner.moo.tool.ui.component.textviewer.JavaRTextScrollPane;
 import com.luoboduner.moo.tool.ui.listener.func.JavaConsoleListener;
 import lombok.Getter;
 
@@ -18,9 +20,13 @@ public class JavaConsoleForm {
     private JPanel javaConsolePanel;
     private JButton run;
     private JButton clean;
-    private JTextArea codeArea;
+    private JPanel leftPanel;
     private JTextArea resultArea;
+    private JSplitPane splitPane;
     private static JavaConsoleForm javaConsoleForm;
+
+    private JavaRSyntaxTextViewer textArea;
+    private JavaRTextScrollPane scrollPane;
 
     public JavaConsoleForm() {
         init();
@@ -34,7 +40,11 @@ public class JavaConsoleForm {
     }
 
     private void init() {
-        new JavaConsoleListener(getRun(), getClean(), getCodeArea(), getResultArea())
+        textArea = new JavaRSyntaxTextViewer();
+        scrollPane = new JavaRTextScrollPane(textArea);
+        leftPanel.add(scrollPane, BorderLayout.CENTER);
+        splitPane.setDividerLocation((int) (App.mainFrame.getWidth() / 2));
+        new JavaConsoleListener(getRun(), getClean(), getTextArea(), getResultArea())
                 .addListener();
     }
 
@@ -71,27 +81,23 @@ public class JavaConsoleForm {
         panel1.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer1 = new Spacer();
         panel1.add(spacer1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        final JSplitPane splitPane1 = new JSplitPane();
-        splitPane1.setContinuousLayout(true);
-        splitPane1.setDividerLocation(463);
-        splitPane1.setDividerSize(3);
-        javaConsolePanel.add(splitPane1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
+        final JPanel panel2 = new JPanel();
+        panel2.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        javaConsolePanel.add(panel2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        splitPane = new JSplitPane();
+        splitPane.setContinuousLayout(true);
+        splitPane.setDoubleBuffered(true);
+        panel2.add(splitPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
+        leftPanel = new JPanel();
+        leftPanel.setLayout(new BorderLayout(0, 0));
+        splitPane.setLeftComponent(leftPanel);
+        final JPanel panel3 = new JPanel();
+        panel3.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        splitPane.setRightComponent(panel3);
         final JScrollPane scrollPane1 = new JScrollPane();
-        splitPane1.setLeftComponent(scrollPane1);
-        codeArea = new JTextArea();
-        codeArea.setBackground(new Color(-13947600));
-        Font codeAreaFont = this.$$$getFont$$$("Consolas", -1, 16, codeArea.getFont());
-        if (codeAreaFont != null) codeArea.setFont(codeAreaFont);
-        codeArea.setText("");
-        scrollPane1.setViewportView(codeArea);
-        final JScrollPane scrollPane2 = new JScrollPane();
-        splitPane1.setRightComponent(scrollPane2);
+        panel3.add(scrollPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         resultArea = new JTextArea();
-        resultArea.setBackground(new Color(-13947600));
-        resultArea.setEditable(false);
-        Font resultAreaFont = this.$$$getFont$$$("Consolas", -1, 16, resultArea.getFont());
-        if (resultAreaFont != null) resultArea.setFont(resultAreaFont);
-        scrollPane2.setViewportView(resultArea);
+        scrollPane1.setViewportView(resultArea);
     }
 
     /**
