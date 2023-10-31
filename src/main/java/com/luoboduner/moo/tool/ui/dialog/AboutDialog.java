@@ -354,7 +354,7 @@ public class AboutDialog extends JDialog {
         scrollPane.setViewportView(panel1);
         panel1.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         logoLabel = new JLabel();
-        logoLabel.setIcon(new ImageIcon(getClass().getResource("/icon/logo-512.png")));
+        logoLabel.setIcon(new ImageIcon(getClass().getResource("/icon/logo-128.png")));
         logoLabel.setText("");
         panel1.add(logoLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer1 = new Spacer();
