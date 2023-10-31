@@ -31,14 +31,12 @@ public class AboutDialog extends JDialog {
     private JLabel codeGitHubLabel;
     private JLabel codeGiteeLabel;
     private JLabel issueLabel;
-    private JLabel beautyEyeLabel;
     private JLabel hutoolLabel;
     private JLabel vsCodeIconsLabel;
     private JLabel wePushLinkLabel;
     private JPanel wePushPanel;
     private JLabel authorLabel;
     private JLabel logoLabel;
-    private JLabel darculaLabel;
     private JLabel flatLafLabel;
     private JPanel mooInfoPanel;
     private JLabel mooInfoLinkLabel;
@@ -214,52 +212,6 @@ public class AboutDialog extends JDialog {
                 e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
             }
         });
-        darculaLabel.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                super.mouseClicked(e);
-                Desktop desktop = Desktop.getDesktop();
-                try {
-                    desktop.browse(new URI("https://github.com/bulenkov/Darcula"));
-                } catch (IOException | URISyntaxException e1) {
-                    e1.printStackTrace();
-                }
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                super.mousePressed(e);
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                super.mouseEntered(e);
-                e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
-            }
-        });
-        beautyEyeLabel.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                super.mouseClicked(e);
-                Desktop desktop = Desktop.getDesktop();
-                try {
-                    desktop.browse(new URI("https://gitee.com/jackjiang/beautyeye"));
-                } catch (IOException | URISyntaxException e1) {
-                    e1.printStackTrace();
-                }
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                super.mousePressed(e);
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                super.mouseEntered(e);
-                e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
-            }
-        });
         hutoolLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
@@ -402,7 +354,7 @@ public class AboutDialog extends JDialog {
         scrollPane.setViewportView(panel1);
         panel1.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         logoLabel = new JLabel();
-        logoLabel.setIcon(new ImageIcon(getClass().getResource("/icon/logo-128.png")));
+        logoLabel.setIcon(new ImageIcon(getClass().getResource("/icon/logo-512.png")));
         logoLabel.setText("");
         panel1.add(logoLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer1 = new Spacer();
@@ -428,7 +380,7 @@ public class AboutDialog extends JDialog {
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new GridLayoutManager(5, 1, new Insets(5, 3, 20, 0), -1, -1));
         panel1.add(panel3, new GridConstraints(2, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        panel3.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "About", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel3.getFont()), null));
+        panel3.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "ABOUT", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel3.getFont()), null));
         final JLabel label2 = new JLabel();
         label2.setText("Hi. Thanks to use MooTool. \"Moo\" named from my daughter.");
         panel3.add(label2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -462,24 +414,18 @@ public class AboutDialog extends JDialog {
         issueLabel.setText("<html><a href=\"https://github.com/rememberber/MooTool/issues\">https://github.com/rememberber/MooTool/issues</a></html>");
         panel5.add(issueLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel6 = new JPanel();
-        panel6.setLayout(new GridLayoutManager(5, 1, new Insets(5, 3, 20, 0), -1, -1));
+        panel6.setLayout(new GridLayoutManager(3, 1, new Insets(5, 3, 20, 0), -1, -1));
         panel1.add(panel6, new GridConstraints(5, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         panel6.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "THANKS TO", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel6.getFont()), null));
         flatLafLabel = new JLabel();
         flatLafLabel.setText("<html><a href=\"https://github.com/JFormDesigner/FlatLaf\">FlatLaf</a></html>");
         panel6.add(flatLafLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        darculaLabel = new JLabel();
-        darculaLabel.setText("<html><a href=\"https://github.com/bulenkov/Darcula\">Darcula</a></html>");
-        panel6.add(darculaLabel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        beautyEyeLabel = new JLabel();
-        beautyEyeLabel.setText("<html><a href=\"https://gitee.com/jackjiang/beautyeye\">BeautyEye</a></html>");
-        panel6.add(beautyEyeLabel, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         hutoolLabel = new JLabel();
         hutoolLabel.setText("<html><a href=\"https://hutool.cn/\">Hutool</a></html>");
-        panel6.add(hutoolLabel, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel6.add(hutoolLabel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         vsCodeIconsLabel = new JLabel();
         vsCodeIconsLabel.setText("<html><a href=\"https://github.com/microsoft/vscode-icons\">vscode-icons</a></html>");
-        panel6.add(vsCodeIconsLabel, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel6.add(vsCodeIconsLabel, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel7 = new JPanel();
         panel7.setLayout(new GridLayoutManager(1, 1, new Insets(5, 3, 20, 0), -1, -1));
         panel1.add(panel7, new GridConstraints(6, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
