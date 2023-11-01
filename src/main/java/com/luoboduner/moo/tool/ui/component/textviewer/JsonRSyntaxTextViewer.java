@@ -1,5 +1,7 @@
 package com.luoboduner.moo.tool.ui.component.textviewer;
 
+import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.form.MainWindow;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 
 import javax.swing.event.HyperlinkEvent;
@@ -32,5 +34,13 @@ public class JsonRSyntaxTextViewer extends CommonRSyntaxTextViewer {
 
         setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JSON);
         setCodeFoldingEnabled(true);
+
+        String fontName = App.config.getJsonBeautyFontName();
+        int fontSize = App.config.getJsonBeautyFontSize();
+        if (fontSize == 0) {
+            fontSize = MainWindow.getInstance().getMainPanel().getFont().getSize() + 2;
+        }
+        Font font = new Font(fontName, Font.PLAIN, fontSize);
+        setFont(font);
     }
 }
