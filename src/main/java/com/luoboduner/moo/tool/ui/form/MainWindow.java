@@ -4,6 +4,7 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.util.SystemInfo;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.listener.TabListener;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -64,6 +65,8 @@ public class MainWindow {
             GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
             gridLayoutManager.setMargin(new Insets(25, 0, 0, 0));
         }
+
+        initTabPlacement();
         mainWindow.getTabbedPane().setIconAt(0, new FlatSVGIcon("icon/edit.svg"));
         mainWindow.getTabbedPane().setIconAt(1, new FlatSVGIcon("icon/time.svg"));
         mainWindow.getTabbedPane().setIconAt(2, new FlatSVGIcon("icon/json.svg"));
@@ -104,6 +107,14 @@ public class MainWindow {
         mainWindow.getMainPanel().updateUI();
 
         TabListener.addListeners();
+    }
+
+    public void initTabPlacement() {
+        if ("左侧".equals(App.config.getFuncTabPosition())) {
+            tabbedPane.setTabPlacement(JTabbedPane.LEFT);
+        } else {
+            tabbedPane.setTabPlacement(JTabbedPane.TOP);
+        }
     }
 
     {

@@ -55,6 +55,11 @@ public class ConfigUtil extends ConfigBaseUtil {
     private String menuBarPosition;
 
     /**
+     * 功能Tab位置
+     */
+    private String funcTabPosition;
+
+    /**
      * sql dialect
      */
     private String sqlDialect;
@@ -364,6 +369,14 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setMenuBarPosition(String menuBarPosition) {
         setting.putByGroup("menuBarPosition", "setting.custom", menuBarPosition);
+    }
+
+    public String getFuncTabPosition() {
+        return setting.getStr("funcTabPosition", "setting.custom", "上方");
+    }
+
+    public void setFuncTabPosition(String funcTabPosition) {
+        setting.putByGroup("funcTabPosition", "setting.custom", funcTabPosition);
     }
 
     public String getSqlDialect() {
