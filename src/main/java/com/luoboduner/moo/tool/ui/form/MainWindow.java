@@ -40,6 +40,8 @@ public class MainWindow {
     private JPanel regexPanel;
     private JPanel imagePanel;
     private JPanel javaConsolePanel;
+    private JPanel reformattingPanel;
+    private JPanel pdfPanel;
 
     private static MainWindow mainWindow;
 
@@ -78,6 +80,8 @@ public class MainWindow {
         mainWindow.getTabbedPane().setIconAt(13, new FlatSVGIcon("icon/schedule.svg", 15, 15));
         mainWindow.getTabbedPane().setIconAt(14, new FlatSVGIcon("icon/reg.svg"));
         mainWindow.getTabbedPane().setIconAt(15, new FlatSVGIcon("icon/java.svg"));
+        mainWindow.getTabbedPane().setIconAt(16, new FlatSVGIcon("icon/gear.svg", 15, 15));
+        mainWindow.getTabbedPane().setIconAt(17, new FlatSVGIcon("icon/pdf.svg", 15, 15));
 
         mainWindow.getQuickNotePanel().add(QuickNoteForm.getInstance().getQuickNotePanel(), gridConstraints);
         mainWindow.getJsonBeautyPanel().add(JsonBeautyForm.getInstance().getJsonBeautyPanel(), gridConstraints);
@@ -95,6 +99,8 @@ public class MainWindow {
         mainWindow.getRegexPanel().add(RegexForm.getInstance().getRegexPanel(), gridConstraints);
         mainWindow.getImagePanel().add(ImageForm.getInstance().getImagePanel(), gridConstraints);
         mainWindow.getJavaConsolePanel().add(JavaConsoleForm.getInstance().getJavaConsolePanel(), gridConstraints);
+        mainWindow.getReformattingPanel().add(FileReformattingForm.getInstance().getReformattingPanel(), gridConstraints);
+        mainWindow.getPdfPanel().add(PdfForm.getInstance().getPdfPanel(), gridConstraints);
         mainWindow.getMainPanel().updateUI();
 
         TabListener.addListeners();
@@ -168,6 +174,13 @@ public class MainWindow {
         javaConsolePanel = new JPanel();
         javaConsolePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("Java", javaConsolePanel);
+        reformattingPanel = new JPanel();
+        reformattingPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        reformattingPanel.setToolTipText("格式化");
+        tabbedPane.addTab("格式化", reformattingPanel);
+        pdfPanel = new JPanel();
+        pdfPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPane.addTab("PDF", pdfPanel);
     }
 
     /**
