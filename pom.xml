@@ -46,6 +46,9 @@
         <jfa.version>1.2.0</jfa.version>
         <versioncompare.version>1.5.0</versioncompare.version>
 		<groovy.version>4.0.15</groovy.version>
+		<jsoup.version>1.16.2</jsoup.version>
+		<jalopy.version>1.5rc3</jalopy.version>
+        <itextpdf.version>5.5.1</itextpdf.version>
     </properties>
 
     <repositories>
@@ -266,6 +269,25 @@
             <groupId>org.apache.groovy</groupId>
             <artifactId>groovy</artifactId>
             <version>${groovy.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+            <version>${jsoup.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>jalopy</groupId>
+            <artifactId>jalopy</artifactId>
+            <version>${jalopy.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.itextpdf</groupId>
+            <artifactId>itextpdf</artifactId>
+            <version>${itextpdf.version}</version>
+            <type>jar</type>
         </dependency>
 
     </dependencies>
