@@ -6,6 +6,8 @@ import cn.hutool.log.LogFactory;
 import com.formdev.flatlaf.*;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.icons.FlatAbstractIcon;
+import com.formdev.flatlaf.themes.FlatMacDarkLaf;
+import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import com.formdev.flatlaf.util.ColorFunctions;
 import com.formdev.flatlaf.util.LoggingFacade;
 import com.formdev.flatlaf.util.SystemInfo;
@@ -62,8 +64,13 @@ public class SettingDialog extends JDialog {
     private JCheckBox tabCardCheckBox;
     private JToolBar toolBar;
     public static String[] accentColorKeys = {
-            "Moo.accent.default", "Moo.accent.blue", "Moo.accent.purple", "Moo.accent.red",
-            "Moo.accent.orange", "Moo.accent.yellow", "Moo.accent.green", "Moo.accent.mooYellow"
+            "Moo.accent.default",
+            "Moo.accent.blue",
+            "Moo.accent.purple",
+            "Moo.accent.red", "Moo.accent.mooRed",
+            "Moo.accent.orange",
+            "Moo.accent.yellow", "Moo.accent.mooYellow", "Moo.accent.mooYellow2",
+            "Moo.accent.mooGreen", "Moo.accent.green", "Moo.accent.weGreen"
     };
     private static String[] accentColorNames = {
             "Default", "Blue", "Purple", "Red", "Orange", "Yellow", "Green", "MooYellow"
@@ -306,7 +313,7 @@ public class SettingDialog extends JDialog {
         for (int i = 0; i < accentColorButtons.length; i++) {
             String accentColorKey = accentColorKeys[i];
             accentColorButtons[i] = new JToggleButton(new AccentColorIcon(accentColorKey));
-            accentColorButtons[i].setToolTipText("仅FlatLight、FlatDark、FlatIntelliJ、FlatDarcula主题支持设置强调色");
+            accentColorButtons[i].setToolTipText("仅FlatLight、FlatDark、FlatIntelliJ、FlatDarcula等主题支持设置强调色");
             accentColorButtons[i].addActionListener(this::accentColorChanged);
             if (accentColorKey.equals(App.config.getAccentColor())) {
                 selectedIndex = i;
@@ -387,7 +394,9 @@ public class SettingDialog extends JDialog {
                 lafClass == FlatLightLaf.class ||
                         lafClass == FlatDarkLaf.class ||
                         lafClass == FlatIntelliJLaf.class ||
-                        lafClass == FlatDarculaLaf.class;
+                        lafClass == FlatDarculaLaf.class ||
+                        lafClass == FlatMacLightLaf.class ||
+                        lafClass == FlatMacDarkLaf.class;
 
         for (int i = 0; i < accentColorButtons.length; i++)
             accentColorButtons[i].setEnabled(isAccentColorSupported);
