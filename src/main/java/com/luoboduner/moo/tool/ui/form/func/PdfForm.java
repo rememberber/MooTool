@@ -138,7 +138,8 @@ public class PdfForm {
         pdfPanel = new JPanel();
         pdfPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         final JTabbedPane tabbedPane1 = new JTabbedPane();
-        tabbedPane1.setTabPlacement(2);
+        tabbedPane1.setTabLayoutPolicy(1);
+        tabbedPane1.setTabPlacement(1);
         pdfPanel.add(tabbedPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         splitPane = new JPanel();
         splitPane.setLayout(new GridLayoutManager(2, 4, new Insets(15, 15, 15, 15), -1, -1));
@@ -151,7 +152,7 @@ public class PdfForm {
         taskPane = new JPanel();
         taskPane.setLayout(new BorderLayout(0, 0));
         splitPane.add(taskPane, new GridConstraints(1, 0, 1, 4, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        taskPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(-2500135)), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
+        taskPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         newTask = new JButton();
         newTask.setText("新增处理任务");
         splitPane.add(newTask, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, 30), null, 0, false));
@@ -175,7 +176,7 @@ public class PdfForm {
         filePane = new JPanel();
         filePane.setLayout(new BorderLayout(0, 0));
         mergePane.add(filePane, new GridConstraints(1, 0, 1, 4, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        filePane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createLineBorder(new Color(-2500135)), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
+        filePane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
     }
 
     /**

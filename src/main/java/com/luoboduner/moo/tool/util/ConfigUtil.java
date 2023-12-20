@@ -380,7 +380,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public String getFuncTabPosition() {
-        return setting.getStr("funcTabPosition", "setting.custom", "上方");
+        return setting.getStr("funcTabPosition", "setting.custom", "左侧");
     }
 
     public void setFuncTabPosition(String funcTabPosition) {
@@ -396,7 +396,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public boolean isTabHideTitle() {
-        return setting.getBool("tabHideTitle", "setting.custom", false);
+        return setting.getBool("tabHideTitle", "setting.custom", true);
     }
 
     public void setTabHideTitle(boolean tabHideTitle) {
