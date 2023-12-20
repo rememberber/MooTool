@@ -399,7 +399,7 @@ public class QuickNoteListener {
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-                QuickNoteForm.initNoteListTable();
+//                QuickNoteForm.initNoteListTable();
             }
         });
     }
