@@ -103,7 +103,9 @@ public class MainWindow {
 
         // 设置所有tab的tips和标题一致
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
-            tabbedPane.setToolTipTextAt(i, tabbedPane.getTitleAt(i));
+            if (!"".equals(tabbedPane.getTitleAt(i))) {
+                tabbedPane.setToolTipTextAt(i, tabbedPane.getTitleAt(i));
+            }
         }
 
         if ("左侧".equals(App.config.getFuncTabPosition())) {
@@ -117,7 +119,7 @@ public class MainWindow {
         if (App.config.isTabCompact()) {
             tabbedPane.putClientProperty(TABBED_PANE_TAB_WIDTH_MODE, TABBED_PANE_TAB_WIDTH_MODE_COMPACT);
         } else {
-            tabbedPane.putClientProperty(TABBED_PANE_TAB_WIDTH_MODE, TABBED_PANE_TAB_WIDTH_MODE_EQUAL);
+            tabbedPane.putClientProperty(TABBED_PANE_TAB_WIDTH_MODE, TABBED_PANE_TAB_WIDTH_MODE_PREFERRED);
         }
 
         // 隐藏所有 tab 的标题
