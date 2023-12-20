@@ -112,11 +112,24 @@ public class MainWindow {
     }
 
     public void initTabPlacement() {
+        // 设置所有tab的tips和标题一致
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            tabbedPane.setToolTipTextAt(i, tabbedPane.getTitleAt(i));
+        }
+
         if ("左侧".equals(App.config.getFuncTabPosition())) {
             tabbedPane.setTabPlacement(JTabbedPane.LEFT);
             tabbedPane.putClientProperty(TABBED_PANE_TAB_ALIGNMENT, TABBED_PANE_ALIGN_LEADING);
         } else {
             tabbedPane.setTabPlacement(JTabbedPane.TOP);
+        }
+
+        // 紧凑型tab标题
+        tabbedPane.putClientProperty(TABBED_PANE_TAB_WIDTH_MODE, TABBED_PANE_TAB_WIDTH_MODE_COMPACT);
+
+        // 隐藏所有 tab 的标题
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            tabbedPane.setTitleAt(i, "");
         }
     }
 
