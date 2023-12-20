@@ -28,6 +28,8 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
@@ -382,6 +384,24 @@ public class QuickNoteListener {
                 }
             });
         }
+
+        // 搜索框变更事件
+        quickNoteForm.getSearchTextField().getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                QuickNoteForm.initNoteListTable();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                QuickNoteForm.initNoteListTable();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+                QuickNoteForm.initNoteListTable();
+            }
+        });
     }
 
     public static void showFindPanel() {
