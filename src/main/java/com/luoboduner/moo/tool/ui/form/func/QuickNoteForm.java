@@ -101,7 +101,8 @@ public class QuickNoteForm {
             "Moo.note.color.color4", "Moo.note.color.color5", "Moo.note.color.color6",
             "Moo.note.color.color7", "Moo.note.color.color8", "Moo.note.color.color9",
             "Moo.note.color.color10", "Moo.note.color.color11", "Moo.note.color.color12",
-            "Moo.note.color.color13", "Moo.note.color.color14"
+            "Moo.note.color.color13", "Moo.note.color.color14", "Moo.note.color.color15",
+            "Moo.note.color.color16", "Moo.note.color.color17"
     };
     public final static JToggleButton[] COLOR_BUTTONS = new JToggleButton[COLOR_KEYS.length];
 
