@@ -48,6 +48,8 @@ public class MainWindow {
 
     private static MainWindow mainWindow;
 
+    private static final String[] ICON_PATH = {"icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/check.svg", "icon/global.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/translate.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/gear.svg", "icon/pdf.svg"};
+
     private MainWindow() {
     }
 
@@ -69,24 +71,6 @@ public class MainWindow {
         }
 
         initTabPlacement();
-        mainWindow.getTabbedPane().setIconAt(0, new FlatSVGIcon("icon/edit.svg"));
-        mainWindow.getTabbedPane().setIconAt(1, new FlatSVGIcon("icon/time.svg"));
-        mainWindow.getTabbedPane().setIconAt(2, new FlatSVGIcon("icon/json.svg"));
-        mainWindow.getTabbedPane().setIconAt(3, new FlatSVGIcon("icon/check.svg"));
-        mainWindow.getTabbedPane().setIconAt(4, new FlatSVGIcon("icon/global.svg"));
-        mainWindow.getTabbedPane().setIconAt(5, new FlatSVGIcon("icon/exchange.svg"));
-        mainWindow.getTabbedPane().setIconAt(6, new FlatSVGIcon("icon/QRcode.svg", 18, 18));
-        mainWindow.getTabbedPane().setIconAt(7, new FlatSVGIcon("icon/method.svg"));
-        mainWindow.getTabbedPane().setIconAt(8, new FlatSVGIcon("icon/calculate.svg", 15, 15));
-        mainWindow.getTabbedPane().setIconAt(9, new FlatSVGIcon("icon/network.svg"));
-        mainWindow.getTabbedPane().setIconAt(10, new FlatSVGIcon("icon/color.svg"));
-        mainWindow.getTabbedPane().setIconAt(11, new FlatSVGIcon("icon/image.svg"));
-        mainWindow.getTabbedPane().setIconAt(12, new FlatSVGIcon("icon/translate.svg"));
-        mainWindow.getTabbedPane().setIconAt(13, new FlatSVGIcon("icon/schedule.svg", 15, 15));
-        mainWindow.getTabbedPane().setIconAt(14, new FlatSVGIcon("icon/reg.svg"));
-        mainWindow.getTabbedPane().setIconAt(15, new FlatSVGIcon("icon/java.svg"));
-        mainWindow.getTabbedPane().setIconAt(16, new FlatSVGIcon("icon/gear.svg", 15, 15));
-        mainWindow.getTabbedPane().setIconAt(17, new FlatSVGIcon("icon/pdf.svg", 15, 15));
 
         mainWindow.getQuickNotePanel().add(QuickNoteForm.getInstance().getQuickNotePanel(), gridConstraints);
         mainWindow.getJsonBeautyPanel().add(JsonBeautyForm.getInstance().getJsonBeautyPanel(), gridConstraints);
@@ -112,6 +96,11 @@ public class MainWindow {
     }
 
     public void initTabPlacement() {
+        // 设置所有tab的图标
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i], 16, 16));
+        }
+
         // 设置所有tab的tips和标题一致
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
             tabbedPane.setToolTipTextAt(i, tabbedPane.getTitleAt(i));
@@ -130,6 +119,8 @@ public class MainWindow {
         // 隐藏所有 tab 的标题
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
             tabbedPane.setTitleAt(i, "");
+            // 设置所有tab的icon放大
+            tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i], 19, 19));
         }
     }
 
