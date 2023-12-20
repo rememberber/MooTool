@@ -456,6 +456,8 @@ public class QuickNoteListener {
             QuickNoteForm.COLOR_BUTTONS[colorIndex].setSelected(true);
         }
 
+        syntaxTextViewer.putClientProperty("JComponent.outline", UIManager.getColor(color));
+
 //        syntaxTextViewer.updateUI();
     }
 

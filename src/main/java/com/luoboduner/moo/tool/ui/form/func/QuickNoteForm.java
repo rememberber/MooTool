@@ -389,6 +389,7 @@ public class QuickNoteForm {
                 if (colorIndex >= 0 && colorIndex < QuickNoteForm.COLOR_BUTTONS.length) {
                     QuickNoteForm.COLOR_BUTTONS[colorIndex].setSelected(true);
                 }
+                syntaxTextViewer.putClientProperty("JComponent.outline", UIManager.getColor(color));
             } catch (Exception e1) {
                 log.error(e1.toString());
             } finally {
