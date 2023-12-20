@@ -114,18 +114,36 @@ public class MainWindow {
         }
 
         // 紧凑型tab标题
-        tabbedPane.putClientProperty(TABBED_PANE_TAB_WIDTH_MODE, TABBED_PANE_TAB_WIDTH_MODE_COMPACT);
-
-        // 隐藏所有 tab 的标题
-        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
-            tabbedPane.setTitleAt(i, "");
-            // 设置所有tab的icon放大
-            tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i], 19, 19));
+        if (App.config.isTabCompact()) {
+            tabbedPane.putClientProperty(TABBED_PANE_TAB_WIDTH_MODE, TABBED_PANE_TAB_WIDTH_MODE_COMPACT);
+        } else {
+            tabbedPane.putClientProperty(TABBED_PANE_TAB_WIDTH_MODE, TABBED_PANE_TAB_WIDTH_MODE_EQUAL);
         }
 
-        tabbedPane.putClientProperty(TABBED_PANE_TAB_TYPE, TABBED_PANE_TAB_TYPE_CARD);
+        // 隐藏所有 tab 的标题
+        if (App.config.isTabHideTitle()) {
+            for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+                tabbedPane.setTitleAt(i, "");
+                // 设置所有tab的icon放大
+                tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i], 19, 19));
+            }
+        } else {
+            for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+                tabbedPane.setTitleAt(i, tabbedPane.getToolTipTextAt(i));
+            }
+        }
 
-        tabbedPane.putClientProperty(TABBED_PANE_SHOW_TAB_SEPARATORS, true);
+        if (App.config.isTabCard()) {
+            tabbedPane.putClientProperty(TABBED_PANE_TAB_TYPE, TABBED_PANE_TAB_TYPE_CARD);
+        } else {
+            tabbedPane.putClientProperty(TABBED_PANE_TAB_TYPE, TABBED_PANE_TAB_TYPE_UNDERLINED);
+        }
+
+        if (App.config.isTabSeparator()) {
+            tabbedPane.putClientProperty(TABBED_PANE_SHOW_TAB_SEPARATORS, true);
+        } else {
+            tabbedPane.putClientProperty(TABBED_PANE_SHOW_TAB_SEPARATORS, false);
+        }
     }
 
     {
