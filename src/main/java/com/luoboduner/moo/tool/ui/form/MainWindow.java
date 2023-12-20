@@ -48,7 +48,7 @@ public class MainWindow {
 
     private static MainWindow mainWindow;
 
-    private static final String[] ICON_PATH = {"icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/check.svg", "icon/global.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/translate.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/gear.svg", "icon/pdf.svg"};
+    private static final String[] ICON_PATH = {"icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/check.svg", "icon/global.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/translate.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/nuclear.svg", "icon/pdf.svg"};
 
     private MainWindow() {
     }
