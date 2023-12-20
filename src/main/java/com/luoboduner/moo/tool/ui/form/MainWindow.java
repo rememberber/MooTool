@@ -122,6 +122,10 @@ public class MainWindow {
             // 设置所有tab的icon放大
             tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i], 19, 19));
         }
+
+        tabbedPane.putClientProperty(TABBED_PANE_TAB_TYPE, TABBED_PANE_TAB_TYPE_CARD);
+
+        tabbedPane.putClientProperty(TABBED_PANE_SHOW_TAB_SEPARATORS, true);
     }
 
     {
