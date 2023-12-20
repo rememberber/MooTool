@@ -44,7 +44,7 @@ public class FileReformatUtil {
 
             // 设置输出格式化属性，这里使用缩进和换行
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-            transformer.setOutputProperty(OutputKeys.ENCODING,"UTF-8");
+            transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
             transformer.setOutputProperty("{http://xml.apache.org/xslt}indent-amount", String.valueOf(spaceNum));
 
             // 创建DOMSource对象
@@ -79,7 +79,11 @@ public class FileReformatUtil {
         try (StringWriter stringWriter = new StringWriter()) {
             jalopy.setInput(file);
             jalopy.setOutput(stringWriter);
-            jalopy.format();
+            boolean result = jalopy.format();
+            if (!result) {
+                throw new Exception("格式化失败！");
+            }
+
             return stringWriter.toString();
         } catch (Exception e) {
             throw e;
