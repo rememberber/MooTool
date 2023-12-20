@@ -395,6 +395,8 @@ public class QuickNoteForm {
                 QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
             }
 
+        } else {
+            getInstance().getContentSplitPane().setLeftComponent(new JPanel());
         }
 
     }
