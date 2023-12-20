@@ -13,6 +13,8 @@ import lombok.Getter;
 import javax.swing.*;
 import java.awt.*;
 
+import static com.formdev.flatlaf.FlatClientProperties.*;
+
 /**
  * <pre>
  * 主界面
@@ -112,6 +114,7 @@ public class MainWindow {
     public void initTabPlacement() {
         if ("左侧".equals(App.config.getFuncTabPosition())) {
             tabbedPane.setTabPlacement(JTabbedPane.LEFT);
+            tabbedPane.putClientProperty(TABBED_PANE_TAB_ALIGNMENT, TABBED_PANE_ALIGN_LEADING);
         } else {
             tabbedPane.setTabPlacement(JTabbedPane.TOP);
         }
