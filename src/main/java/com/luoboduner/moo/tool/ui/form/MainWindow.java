@@ -171,7 +171,8 @@ public class MainWindow {
                 App.config.save();
             }
         });
-        tabbedPane.putClientProperty(TABBED_PANE_TRAILING_COMPONENT, trailing);
+        tabbedPane.putClientProperty(TABBED_PANE_LEADING_COMPONENT, trailing);
+//        tabbedPane.putClientProperty(TABBED_PANE_TRAILING_COMPONENT, trailing);
     }
 
     {
