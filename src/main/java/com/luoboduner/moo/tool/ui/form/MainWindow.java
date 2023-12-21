@@ -152,7 +152,25 @@ public class MainWindow {
         trailing.setBorder(null);
 //        trailing.add(Box.createHorizontalGlue());
         trailing.add(Box.createVerticalGlue());
-        trailing.add(new JButton(new FlatSVGIcon("icon/list.svg")));
+        JButton toggleTitleButton = new JButton(new FlatSVGIcon("icon/list.svg"));
+        trailing.add(toggleTitleButton);
+        toggleTitleButton.addActionListener(actionEvent -> {
+            if (App.config.isTabHideTitle()) {
+                for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+                    tabbedPane.setTitleAt(i, tabbedPane.getToolTipTextAt(i));
+                }
+                App.config.setTabHideTitle(false);
+                App.config.save();
+            } else {
+                for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+                    tabbedPane.setTitleAt(i, "");
+                    // 设置所有tab的icon放大
+                    tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i], 19, 19));
+                }
+                App.config.setTabHideTitle(true);
+                App.config.save();
+            }
+        });
         tabbedPane.putClientProperty(TABBED_PANE_TRAILING_COMPONENT, trailing);
     }
 
