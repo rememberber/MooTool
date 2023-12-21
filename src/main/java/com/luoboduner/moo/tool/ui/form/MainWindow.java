@@ -146,6 +146,14 @@ public class MainWindow {
         } else {
             tabbedPane.putClientProperty(TABBED_PANE_SHOW_TAB_SEPARATORS, false);
         }
+
+        JToolBar trailing = new JToolBar();
+        trailing.setFloatable(false);
+        trailing.setBorder(null);
+//        trailing.add(Box.createHorizontalGlue());
+        trailing.add(Box.createVerticalGlue());
+        trailing.add(new JButton(new FlatSVGIcon("icon/list.svg")));
+        tabbedPane.putClientProperty(TABBED_PANE_TRAILING_COMPONENT, trailing);
     }
 
     {
