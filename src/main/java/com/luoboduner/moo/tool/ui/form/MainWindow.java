@@ -147,13 +147,7 @@ public class MainWindow {
             tabbedPane.putClientProperty(TABBED_PANE_SHOW_TAB_SEPARATORS, false);
         }
 
-        JToolBar trailing = new JToolBar();
-        trailing.setFloatable(false);
-        trailing.setBorder(null);
-//        trailing.add(Box.createHorizontalGlue());
-        trailing.add(Box.createVerticalGlue());
         JButton toggleTitleButton = new JButton(new FlatSVGIcon("icon/list.svg"));
-        trailing.add(toggleTitleButton);
         toggleTitleButton.addActionListener(actionEvent -> {
             if (App.config.isTabHideTitle()) {
                 for (int i = 0; i < tabbedPane.getTabCount(); i++) {
@@ -171,8 +165,7 @@ public class MainWindow {
                 App.config.save();
             }
         });
-        tabbedPane.putClientProperty(TABBED_PANE_LEADING_COMPONENT, trailing);
-//        tabbedPane.putClientProperty(TABBED_PANE_TRAILING_COMPONENT, trailing);
+        tabbedPane.putClientProperty(TABBED_PANE_LEADING_COMPONENT, toggleTitleButton);
     }
 
     {
