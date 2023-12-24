@@ -1,5 +1,5 @@
 {
-  "currentVersion": "v1.5.7",
+  "currentVersion": "v1.5.8",
   "versionIndex": {
     "v0.0.0": "0",
     "v1.0.0": "1",
@@ -28,7 +28,8 @@
     "v1.5.4": "24",
     "v1.5.5": "25",
     "v1.5.6": "26",
-    "v1.5.7": "27"
+    "v1.5.7": "27",
+    "v1.5.8": "28"
   },
   "versionDetailList": [
     {
@@ -170,6 +171,11 @@
       "version": "v1.5.7",
       "title": "新增Java、Groovy编译执行器",
       "log": "● 新增Java、Groovy编译执行器，在MooTool中可执行简单Java或Groovy代码 by:felixnan168\n● 尝试优化随手记撤销大量批量替换时卡顿的问题\n● 升级依赖\n\n"
+    },
+    {
+      "version": "v1.5.8",
+      "title": "功能Tab位置支持设置",
+      "log": "● 新增文件格式化工具、PDF拆分/合并工具 by:felixnan168\n● 设置：新增使用习惯-功能面板位置设置\n● 主题：修复主题切换后，系统托盘样式不跟随更新的问题\n● 全局：更多强调色设置\n● 随手记：outline强调色跟随笔记设置\n● 随手记：增加搜索框\n● Java Console编辑器语法高亮\n\n"
     }
   ]
 }
