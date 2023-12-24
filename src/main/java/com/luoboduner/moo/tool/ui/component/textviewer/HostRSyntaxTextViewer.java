@@ -33,5 +33,8 @@ public class HostRSyntaxTextViewer extends CommonRSyntaxTextViewer {
         setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_HOSTS);
 
         setHyperlinksEnabled(true);
+
+        // 字体字号+1
+        setFont(getFont().deriveFont((float) getFont().getSize() + 1));
     }
 }

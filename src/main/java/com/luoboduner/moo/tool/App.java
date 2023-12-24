@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool;
 
+import cn.hutool.core.io.FileUtil;
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatDesktop;
 import com.formdev.flatlaf.extras.FlatInspector;
@@ -14,6 +15,7 @@ import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.frame.MainFrame;
 import com.luoboduner.moo.tool.util.ConfigUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
+import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -21,6 +23,7 @@ import org.apache.ibatis.session.SqlSession;
 
 import javax.swing.*;
 import java.awt.*;
+import java.io.File;
 
 /**
  * <pre>
@@ -44,6 +47,8 @@ public class App {
     public static TrayIcon trayIcon;
 
     public static JPopupMenu popupMenu;
+
+    public static File tempDir = null;
 
     public static void main(String[] args) {
 
@@ -106,6 +111,17 @@ public class App {
         mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         Init.initGlobalFont();
         mainFrame.setContentPane(MainWindow.getInstance().getMainPanel());
+
+        if (SystemUtil.isLinuxOs()) {
+            tempDir = new File(SystemUtil.CONFIG_HOME + File.separator + "temp");
+        } else {
+            tempDir = new File(FileUtil.getTmpDirPath() + "MooTool");
+        }
+        if (!tempDir.exists()) {
+            tempDir.mkdirs();
+        }
+        FileUtil.clean(tempDir);
+
         if (App.config.getRecentTabIndex() != 3 && MainWindow.getInstance().getTabbedPane().getTabCount() > App.config.getRecentTabIndex()) {
             MainWindow.getInstance().getTabbedPane().setSelectedIndex(App.config.getRecentTabIndex());
         }

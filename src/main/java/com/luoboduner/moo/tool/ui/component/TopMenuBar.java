@@ -446,6 +446,9 @@ public class TopMenuBar extends JMenuBar {
         JavaConsoleForm.getInstance().getTextArea().updateTheme();
         JavaConsoleForm.getInstance().getScrollPane().updateTheme();
         JavaConsoleForm.getInstance().getScrollPane().updateUI();
+
+        SwingUtilities.updateComponentTreeUI(App.popupMenu);
+        App.popupMenu.updateUI();
     }
 
     private void keyMapActionPerformed() {

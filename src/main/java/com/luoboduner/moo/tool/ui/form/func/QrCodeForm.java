@@ -73,8 +73,6 @@ public class QrCodeForm {
 
     private static final int DEFAULT_PRIMARY_KEY = 1;
 
-    private static File tempDir = null;
-
     public static File qrCodeImageTempFile = null;
 
     private QrCodeForm() {
@@ -121,7 +119,7 @@ public class QrCodeForm {
         try {
             qrCodeForm = getInstance();
             String nowTime = DateUtil.now().replace(":", "-").replace(" ", "-");
-            qrCodeImageTempFile = FileUtil.file(tempDir + File.separator + "qrCode-" + nowTime + ".jpg");
+            qrCodeImageTempFile = FileUtil.file(App.tempDir + File.separator + "qrCode-" + nowTime + ".jpg");
 
             int size = Integer.parseInt(qrCodeForm.getSizeTextField().getText());
             QrConfig config = new QrConfig(size, size);
@@ -214,16 +212,6 @@ public class QrCodeForm {
         qrCodeForm = getInstance();
 
         initUi();
-
-        if (SystemUtil.isLinuxOs()) {
-            tempDir = new File(SystemUtil.CONFIG_HOME + File.separator + "temp");
-        } else {
-            tempDir = new File(FileUtil.getTmpDirPath() + "MooTool");
-        }
-        if (!tempDir.exists()) {
-            tempDir.mkdirs();
-        }
-        FileUtil.clean(tempDir);
 
         TFuncContent tFuncContent = funcContentMapper.selectByFunc(FuncConsts.QR_CODE);
         if (tFuncContent != null) {

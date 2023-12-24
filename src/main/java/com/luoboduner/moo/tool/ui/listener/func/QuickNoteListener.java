@@ -7,7 +7,6 @@ import cn.hutool.json.JSONUtil;
 import com.github.vertical_blank.sqlformatter.SqlFormatter;
 import com.github.vertical_blank.sqlformatter.languages.Dialect;
 import com.google.common.collect.Lists;
-import com.google.googlejavaformat.java.Formatter;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
@@ -19,6 +18,7 @@ import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.QuickNoteIndicatorTools;
 import com.luoboduner.moo.tool.util.SqliteUtil;
+import de.hunsicker.jalopy.Jalopy;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -28,10 +28,13 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
+import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.Date;
@@ -381,6 +384,24 @@ public class QuickNoteListener {
                 }
             });
         }
+
+        // 搜索框变更事件
+        quickNoteForm.getSearchTextField().getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                QuickNoteForm.initNoteListTable();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                QuickNoteForm.initNoteListTable();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+//                QuickNoteForm.initNoteListTable();
+            }
+        });
     }
 
     public static void showFindPanel() {
@@ -434,6 +455,8 @@ public class QuickNoteListener {
         if (colorIndex >= 0 && colorIndex < QuickNoteForm.COLOR_BUTTONS.length) {
             QuickNoteForm.COLOR_BUTTONS[colorIndex].setSelected(true);
         }
+
+        syntaxTextViewer.putClientProperty("JComponent.outline", UIManager.getColor(color));
 
 //        syntaxTextViewer.updateUI();
     }
@@ -806,7 +829,20 @@ public class QuickNoteListener {
                     break;
 
                 case SyntaxConstants.SYNTAX_STYLE_JAVA:
-                    format = new Formatter().formatSource(text);
+//                    format = new Formatter().formatSource(text);
+                    Jalopy jalopy = new Jalopy();
+
+                    StringWriter stringWriter = new StringWriter();
+                    File tempFile = FileUtil.touch(App.tempDir + File.separator + "temp.java");
+                    FileUtil.writeUtf8String(text, tempFile);
+                    jalopy.setInput(tempFile);
+                    jalopy.setOutput(stringWriter);
+                    boolean result = jalopy.format();
+                    if (!result) {
+                        throw new Exception("格式化失败！");
+                    }
+
+                    format = stringWriter.toString();
                     break;
 
                 default:

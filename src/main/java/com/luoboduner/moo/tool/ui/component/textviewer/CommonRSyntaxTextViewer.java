@@ -49,7 +49,7 @@ public class CommonRSyntaxTextViewer extends RSyntaxTextArea {
             fontSize = getFont().getSize() + 2;
         }
         Font font = new Font(fontName, Font.PLAIN, fontSize);
-        setFont(font);
+//        setFont(font);
 
         setHyperlinksEnabled(false);
 

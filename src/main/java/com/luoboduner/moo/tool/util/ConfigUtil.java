@@ -55,6 +55,19 @@ public class ConfigUtil extends ConfigBaseUtil {
     private String menuBarPosition;
 
     /**
+     * 功能Tab位置
+     */
+    private String funcTabPosition;
+
+    private boolean tabCompact;
+
+    private boolean tabHideTitle;
+
+    private boolean tabSeparator;
+
+    private boolean tabCard;
+
+    /**
      * sql dialect
      */
     private String sqlDialect;
@@ -191,7 +204,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public int getFontSize() {
-        return setting.getInt("fontSize", "setting.appearance", 13);
+        return setting.getInt("fontSize", "setting.appearance", 12);
     }
 
     public void setFontSize(int fontSize) {
@@ -364,6 +377,46 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setMenuBarPosition(String menuBarPosition) {
         setting.putByGroup("menuBarPosition", "setting.custom", menuBarPosition);
+    }
+
+    public String getFuncTabPosition() {
+        return setting.getStr("funcTabPosition", "setting.custom", "左侧");
+    }
+
+    public void setFuncTabPosition(String funcTabPosition) {
+        setting.putByGroup("funcTabPosition", "setting.custom", funcTabPosition);
+    }
+
+    public boolean isTabCompact() {
+        return setting.getBool("tabCompact", "setting.custom", false);
+    }
+
+    public void setTabCompact(boolean tabCompact) {
+        setting.putByGroup("tabCompact", "setting.custom", String.valueOf(tabCompact));
+    }
+
+    public boolean isTabHideTitle() {
+        return setting.getBool("tabHideTitle", "setting.custom", true);
+    }
+
+    public void setTabHideTitle(boolean tabHideTitle) {
+        setting.putByGroup("tabHideTitle", "setting.custom", String.valueOf(tabHideTitle));
+    }
+
+    public boolean isTabSeparator() {
+        return setting.getBool("tabSeparator", "setting.custom", false);
+    }
+
+    public void setTabSeparator(boolean tabSeparator) {
+        setting.putByGroup("tabSeparator", "setting.custom", String.valueOf(tabSeparator));
+    }
+
+    public boolean isTabCard() {
+        return setting.getBool("tabCard", "setting.custom", false);
+    }
+
+    public void setTabCard(boolean tabCard) {
+        setting.putByGroup("tabCard", "setting.custom", String.valueOf(tabCard));
     }
 
     public String getSqlDialect() {

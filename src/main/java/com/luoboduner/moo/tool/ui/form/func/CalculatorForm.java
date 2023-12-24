@@ -107,6 +107,10 @@ public class CalculatorForm {
         // 设置滚动条速度
         ScrollUtil.smoothPane(calculatorForm.getLeftScrollPane());
         calculatorForm.getCalculatorPanel().updateUI();
+
+        calculatorForm.getInputExpressTextField().setFont(new Font(calculatorForm.getInputExpressTextField().getFont().getName(), Font.PLAIN, 26));
+        calculatorForm.getResultTextField().setFont(new Font(calculatorForm.getResultTextField().getFont().getName(), Font.PLAIN, 26));
+        calculatorForm.getCalculateButton().setFont(new Font(calculatorForm.getCalculateButton().getFont().getName(), Font.PLAIN, 24));
     }
 
     public static int saveContent() {
