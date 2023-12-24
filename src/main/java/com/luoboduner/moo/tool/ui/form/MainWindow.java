@@ -4,6 +4,7 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.util.SystemInfo;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.listener.TabListener;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -11,6 +12,8 @@ import lombok.Getter;
 
 import javax.swing.*;
 import java.awt.*;
+
+import static com.formdev.flatlaf.FlatClientProperties.*;
 
 /**
  * <pre>
@@ -40,8 +43,12 @@ public class MainWindow {
     private JPanel regexPanel;
     private JPanel imagePanel;
     private JPanel javaConsolePanel;
+    private JPanel reformattingPanel;
+    private JPanel pdfPanel;
 
     private static MainWindow mainWindow;
+
+    private static final String[] ICON_PATH = {"icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/check.svg", "icon/global.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/translate.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/nuclear.svg", "icon/pdf.svg"};
 
     private MainWindow() {
     }
@@ -62,22 +69,8 @@ public class MainWindow {
             GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
             gridLayoutManager.setMargin(new Insets(25, 0, 0, 0));
         }
-        mainWindow.getTabbedPane().setIconAt(0, new FlatSVGIcon("icon/edit.svg"));
-        mainWindow.getTabbedPane().setIconAt(1, new FlatSVGIcon("icon/time.svg"));
-        mainWindow.getTabbedPane().setIconAt(2, new FlatSVGIcon("icon/json.svg"));
-        mainWindow.getTabbedPane().setIconAt(3, new FlatSVGIcon("icon/check.svg"));
-        mainWindow.getTabbedPane().setIconAt(4, new FlatSVGIcon("icon/global.svg"));
-        mainWindow.getTabbedPane().setIconAt(5, new FlatSVGIcon("icon/exchange.svg"));
-        mainWindow.getTabbedPane().setIconAt(6, new FlatSVGIcon("icon/QRcode.svg", 18, 18));
-        mainWindow.getTabbedPane().setIconAt(7, new FlatSVGIcon("icon/method.svg"));
-        mainWindow.getTabbedPane().setIconAt(8, new FlatSVGIcon("icon/calculate.svg", 15, 15));
-        mainWindow.getTabbedPane().setIconAt(9, new FlatSVGIcon("icon/network.svg"));
-        mainWindow.getTabbedPane().setIconAt(10, new FlatSVGIcon("icon/color.svg"));
-        mainWindow.getTabbedPane().setIconAt(11, new FlatSVGIcon("icon/image.svg"));
-        mainWindow.getTabbedPane().setIconAt(12, new FlatSVGIcon("icon/translate.svg"));
-        mainWindow.getTabbedPane().setIconAt(13, new FlatSVGIcon("icon/schedule.svg", 15, 15));
-        mainWindow.getTabbedPane().setIconAt(14, new FlatSVGIcon("icon/reg.svg"));
-        mainWindow.getTabbedPane().setIconAt(15, new FlatSVGIcon("icon/java.svg"));
+
+        initTabPlacement();
 
         mainWindow.getQuickNotePanel().add(QuickNoteForm.getInstance().getQuickNotePanel(), gridConstraints);
         mainWindow.getJsonBeautyPanel().add(JsonBeautyForm.getInstance().getJsonBeautyPanel(), gridConstraints);
@@ -95,9 +88,84 @@ public class MainWindow {
         mainWindow.getRegexPanel().add(RegexForm.getInstance().getRegexPanel(), gridConstraints);
         mainWindow.getImagePanel().add(ImageForm.getInstance().getImagePanel(), gridConstraints);
         mainWindow.getJavaConsolePanel().add(JavaConsoleForm.getInstance().getJavaConsolePanel(), gridConstraints);
+        mainWindow.getReformattingPanel().add(FileReformattingForm.getInstance().getReformattingPanel(), gridConstraints);
+        mainWindow.getPdfPanel().add(PdfForm.getInstance().getPdfPanel(), gridConstraints);
         mainWindow.getMainPanel().updateUI();
 
         TabListener.addListeners();
+    }
+
+    public void initTabPlacement() {
+        // 设置所有tab的图标
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i], 16, 16));
+        }
+
+        // 设置所有tab的tips和标题一致
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            if (!"".equals(tabbedPane.getTitleAt(i))) {
+                tabbedPane.setToolTipTextAt(i, tabbedPane.getTitleAt(i));
+            }
+        }
+
+        if ("左侧".equals(App.config.getFuncTabPosition())) {
+            tabbedPane.setTabPlacement(JTabbedPane.LEFT);
+            tabbedPane.putClientProperty(TABBED_PANE_TAB_ALIGNMENT, TABBED_PANE_ALIGN_LEADING);
+        } else {
+            tabbedPane.setTabPlacement(JTabbedPane.TOP);
+        }
+
+        // 紧凑型tab标题
+        if (App.config.isTabCompact()) {
+            tabbedPane.putClientProperty(TABBED_PANE_TAB_WIDTH_MODE, TABBED_PANE_TAB_WIDTH_MODE_COMPACT);
+        } else {
+            tabbedPane.putClientProperty(TABBED_PANE_TAB_WIDTH_MODE, TABBED_PANE_TAB_WIDTH_MODE_PREFERRED);
+        }
+
+        // 隐藏所有 tab 的标题
+        if (App.config.isTabHideTitle()) {
+            for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+                tabbedPane.setTitleAt(i, "");
+                // 设置所有tab的icon放大
+                tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i], 19, 19));
+            }
+        } else {
+            for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+                tabbedPane.setTitleAt(i, tabbedPane.getToolTipTextAt(i));
+            }
+        }
+
+        if (App.config.isTabCard()) {
+            tabbedPane.putClientProperty(TABBED_PANE_TAB_TYPE, TABBED_PANE_TAB_TYPE_CARD);
+        } else {
+            tabbedPane.putClientProperty(TABBED_PANE_TAB_TYPE, TABBED_PANE_TAB_TYPE_UNDERLINED);
+        }
+
+        if (App.config.isTabSeparator()) {
+            tabbedPane.putClientProperty(TABBED_PANE_SHOW_TAB_SEPARATORS, true);
+        } else {
+            tabbedPane.putClientProperty(TABBED_PANE_SHOW_TAB_SEPARATORS, false);
+        }
+
+        JButton toggleTitleButton = new JButton(new FlatSVGIcon("icon/list.svg"));
+        toggleTitleButton.addActionListener(actionEvent -> {
+            if (App.config.isTabHideTitle()) {
+                for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+                    tabbedPane.setTitleAt(i, tabbedPane.getToolTipTextAt(i));
+                }
+                App.config.setTabHideTitle(false);
+                App.config.save();
+            } else {
+                for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+                    tabbedPane.setTitleAt(i, "");
+                    // 设置所有tab的icon放大
+                    tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i], 19, 19));
+                }
+                App.config.setTabHideTitle(true);
+                App.config.save();
+            }
+        });
+        tabbedPane.putClientProperty(TABBED_PANE_LEADING_COMPONENT, toggleTitleButton);
     }
 
     {
@@ -168,6 +236,13 @@ public class MainWindow {
         javaConsolePanel = new JPanel();
         javaConsolePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("Java", javaConsolePanel);
+        reformattingPanel = new JPanel();
+        reformattingPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        reformattingPanel.setToolTipText("格式化");
+        tabbedPane.addTab("格式化", reformattingPanel);
+        pdfPanel = new JPanel();
+        pdfPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPane.addTab("PDF", pdfPanel);
     }
 
     /**

@@ -1,10 +1,12 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.core.util.ArrayUtil;
+import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
 import com.formdev.flatlaf.icons.FlatAbstractIcon;
+import com.formdev.flatlaf.icons.FlatSearchIcon;
 import com.formdev.flatlaf.util.ColorFunctions;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
@@ -89,6 +91,7 @@ public class QuickNoteForm {
     private JCheckBox lowerToUperCheckBox;
     private JCheckBox toNormalNumCheckBox;
     private JCheckBox normalToScientificCheckBox;
+    private JTextField searchTextField;
 
     private JToggleButton colorButton;
 
@@ -98,7 +101,8 @@ public class QuickNoteForm {
             "Moo.note.color.color4", "Moo.note.color.color5", "Moo.note.color.color6",
             "Moo.note.color.color7", "Moo.note.color.color8", "Moo.note.color.color9",
             "Moo.note.color.color10", "Moo.note.color.color11", "Moo.note.color.color12",
-            "Moo.note.color.color13", "Moo.note.color.color14"
+            "Moo.note.color.color13", "Moo.note.color.color14", "Moo.note.color.color15",
+            "Moo.note.color.color16", "Moo.note.color.color17"
     };
     public final static JToggleButton[] COLOR_BUTTONS = new JToggleButton[COLOR_KEYS.length];
 
@@ -142,6 +146,9 @@ public class QuickNoteForm {
     }
 
     private static void initUi() {
+        quickNoteForm.getSearchTextField().putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "搜索");
+        quickNoteForm.getSearchTextField().putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON,
+                new FlatSearchIcon());
         quickNoteForm.getAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
         quickNoteForm.getSaveButton().setIcon(new FlatSVGIcon("icon/save.svg"));
         quickNoteForm.getFindButton().setIcon(new FlatSVGIcon("icon/find.svg"));
@@ -346,7 +353,9 @@ public class QuickNoteForm {
 
         noteListTable.getColumn("名称").setCellRenderer(new QuickNoteListTableInCellRenderer());
 
-        List<TQuickNote> quickNoteList = quickNoteMapper.selectAll();
+        String titleFilterKeyWord = quickNoteForm.getSearchTextField().getText();
+        titleFilterKeyWord = "%" + titleFilterKeyWord + "%";
+        List<TQuickNote> quickNoteList = quickNoteMapper.selectAllByFilter(titleFilterKeyWord);
 
         for (TQuickNote tQuickNote : quickNoteList) {
             data = new Object[2];
@@ -361,7 +370,7 @@ public class QuickNoteForm {
                 RTextScrollPane syntaxTextViewer = QuickNoteForm.quickNoteRSyntaxTextViewerManager.getRTextScrollPane(name);
                 getInstance().getContentSplitPane().setLeftComponent(syntaxTextViewer);
                 noteListTable.setRowSelectionInterval(0, 0);
-                syntaxTextViewer.grabFocus();
+//                syntaxTextViewer.grabFocus();
                 QuickNoteListener.selectedName = name;
 
                 TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
@@ -381,12 +390,15 @@ public class QuickNoteForm {
                 if (colorIndex >= 0 && colorIndex < QuickNoteForm.COLOR_BUTTONS.length) {
                     QuickNoteForm.COLOR_BUTTONS[colorIndex].setSelected(true);
                 }
+                syntaxTextViewer.putClientProperty("JComponent.outline", UIManager.getColor(color));
             } catch (Exception e1) {
                 log.error(e1.toString());
             } finally {
                 QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
             }
 
+        } else {
+            getInstance().getContentSplitPane().setLeftComponent(new JPanel());
         }
 
     }
@@ -444,13 +456,15 @@ public class QuickNoteForm {
         splitPane.setDividerSize(10);
         quickNotePanel.add(splitPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, new Dimension(200, 200), null, 0, false));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel1.setMinimumSize(new Dimension(0, 64));
         splitPane.setLeftComponent(panel1);
         final JScrollPane scrollPane1 = new JScrollPane();
-        panel1.add(scrollPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        panel1.add(scrollPane1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         noteListTable = new JTable();
         scrollPane1.setViewportView(noteListTable);
+        searchTextField = new JTextField();
+        panel1.add(searchTextField, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         rightPanel = new JPanel();
         rightPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane.setRightComponent(rightPanel);
