@@ -15,6 +15,8 @@ Windows • Linux • macOS
 
 ## 截图速览
 
+![Overview](screen_shoot/quick_note_2_mac.png)
+
 ![Overview](screen_shoot/quick_note_mac.png)
 
 ![Overview](screen_shoot/quick_replace_mac.png)
