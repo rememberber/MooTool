@@ -15,33 +15,35 @@ Windows • Linux • macOS
 
 ## 截图速览
 
-![Overview](screen_shoot/quick_note_mac.png)
+![Overview](screen_shoot/quick_note_2_mac.png)
 
 ![Overview](screen_shoot/quick_replace_mac.png)
 
-![Overview](screen_shoot/time_mac.png)
+![Overview](screen_shoot/time_mac_2.png)
 
-![Overview](screen_shoot/json_mac.png)
+![Overview](screen_shoot/json_mac_2.png)
 
-![Overview](screen_shoot/host_mac.png)
+![Overview](screen_shoot/host_mac_2.png)
 
-![Overview](screen_shoot/http_mac.png)
+![Overview](screen_shoot/http_mac_2.png)
 
-![Overview](screen_shoot/encode_mac.png)
+![Overview](screen_shoot/encode_mac_2.png)
 
-![Overview](screen_shoot/qr_code_mac.png)
+![Overview](screen_shoot/qr_code_mac_2.png)
 
-![Overview](screen_shoot/crypto_mac.png)
+![Overview](screen_shoot/crypto_mac_2.png)
 
-![Overview](screen_shoot/calculator_mac.png)
+![Overview](screen_shoot/calculator_mac_2.png)
 
-![Overview](screen_shoot/net_mac.png)
+![Overview](screen_shoot/net_mac_2.png)
 
-![Overview](screen_shoot/color_board_mac.png)
+![Overview](screen_shoot/color_board_mac_2.png)
 
-![Overview](screen_shoot/regex_mac.png)
+![Overview](screen_shoot/regex_mac_2.png)
 
-![Overview](screen_shoot/cron_mac.png)
+![Overview](screen_shoot/cron_mac_2.png)
+
+![Overview](screen_shoot/java_mac_2.png)
 
 ![Overview](screen_shoot/mt-favoriteColor.png)
 
