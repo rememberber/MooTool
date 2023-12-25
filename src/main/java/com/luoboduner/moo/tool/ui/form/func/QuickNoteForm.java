@@ -472,7 +472,7 @@ public class QuickNoteForm {
         controlPanel.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
         rightPanel.add(controlPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         menuPanel = new JPanel();
-        menuPanel.setLayout(new GridLayoutManager(2, 10, new Insets(0, 0, 0, 10), -1, -1));
+        menuPanel.setLayout(new GridLayoutManager(2, 10, new Insets(0, 0, 0, 0), -1, -1));
         controlPanel.add(menuPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         saveButton = new JButton();
         saveButton.setIcon(new ImageIcon(getClass().getResource("/icon/menu-saveall_dark.png")));
@@ -500,7 +500,7 @@ public class QuickNoteForm {
         formatButton.setToolTipText("格式化(Ctrl+Shift+F)");
         menuPanel.add(formatButton, new GridConstraints(0, 8, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         leftMenuPanel = new JPanel();
-        leftMenuPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
+        leftMenuPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 0));
         leftMenuPanel.setAlignmentX(0.0f);
         menuPanel.add(leftMenuPanel, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_VERTICAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         syntaxComboBox = new JComboBox();

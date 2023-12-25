@@ -136,13 +136,13 @@ public class PdfForm {
      */
     private void $$$setupUI$$$() {
         pdfPanel = new JPanel();
-        pdfPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        pdfPanel.setLayout(new GridLayoutManager(1, 1, new Insets(10, 0, 0, 0), -1, -1));
         final JTabbedPane tabbedPane1 = new JTabbedPane();
         tabbedPane1.setTabLayoutPolicy(1);
         tabbedPane1.setTabPlacement(1);
         pdfPanel.add(tabbedPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         splitPane = new JPanel();
-        splitPane.setLayout(new GridLayoutManager(2, 4, new Insets(15, 15, 15, 15), -1, -1));
+        splitPane.setLayout(new GridLayoutManager(2, 4, new Insets(10, 10, 10, 10), -1, -1));
         tabbedPane1.addTab("PDF拆分", splitPane);
         startTask = new JButton();
         startTask.setText("开始拆分");
@@ -160,7 +160,7 @@ public class PdfForm {
         helpBtn.setText("");
         splitPane.add(helpBtn, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         mergePane = new JPanel();
-        mergePane.setLayout(new GridLayoutManager(2, 4, new Insets(15, 15, 15, 15), -1, -1));
+        mergePane.setLayout(new GridLayoutManager(2, 4, new Insets(10, 10, 10, 10), -1, -1));
         tabbedPane1.addTab("PDF合并", mergePane);
         final Spacer spacer2 = new Spacer();
         mergePane.add(spacer2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
