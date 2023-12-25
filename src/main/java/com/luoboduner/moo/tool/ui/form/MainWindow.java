@@ -111,8 +111,24 @@ public class MainWindow {
         if ("左侧".equals(App.config.getFuncTabPosition())) {
             tabbedPane.setTabPlacement(JTabbedPane.LEFT);
             tabbedPane.putClientProperty(TABBED_PANE_TAB_ALIGNMENT, TABBED_PANE_ALIGN_LEADING);
+
+            if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
+                GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
+                gridLayoutManager.setMargin(new Insets(15, 0, 0, 0));
+            } else {
+                GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
+                gridLayoutManager.setMargin(new Insets(-10, 0, 0, 0));
+            }
         } else {
             tabbedPane.setTabPlacement(JTabbedPane.TOP);
+
+            if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
+                GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
+                gridLayoutManager.setMargin(new Insets(25, 0, 0, 0));
+            } else {
+                GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
+                gridLayoutManager.setMargin(new Insets(0, 0, 0, 0));
+            }
         }
 
         // 紧凑型tab标题
@@ -148,6 +164,13 @@ public class MainWindow {
         }
 
         JButton toggleTitleButton = new JButton(new FlatSVGIcon("icon/list.svg"));
+        JPanel panel = new JPanel();
+        if ("左侧".equals(App.config.getFuncTabPosition())) {
+            panel.setLayout(new GridLayoutManager(1, 1, new Insets(10, 0, 0, 0), -1, -1));
+        } else {
+            panel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 10, 0, 0), -1, -1));
+        }
+        panel.add(toggleTitleButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(-1, -1), null, 0, false));
         toggleTitleButton.addActionListener(actionEvent -> {
             if (App.config.isTabHideTitle()) {
                 for (int i = 0; i < tabbedPane.getTabCount(); i++) {
@@ -165,7 +188,7 @@ public class MainWindow {
                 App.config.save();
             }
         });
-        tabbedPane.putClientProperty(TABBED_PANE_LEADING_COMPONENT, toggleTitleButton);
+        tabbedPane.putClientProperty(TABBED_PANE_LEADING_COMPONENT, panel);
     }
 
     {
