@@ -206,7 +206,7 @@ public class JsonBeautyForm {
      */
     private void $$$setupUI$$$() {
         jsonBeautyPanel = new JPanel();
-        jsonBeautyPanel.setLayout(new GridLayoutManager(1, 1, new Insets(12, 12, 12, 12), -1, -1));
+        jsonBeautyPanel.setLayout(new GridLayoutManager(1, 1, new Insets(10, 10, 10, 10), -1, -1));
         jsonBeautyPanel.setMinimumSize(new Dimension(400, 300));
         jsonBeautyPanel.setPreferredSize(new Dimension(400, 300));
         splitPane = new JSplitPane();

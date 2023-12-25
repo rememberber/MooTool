@@ -471,7 +471,7 @@ public class HttpRequestForm {
      */
     private void $$$setupUI$$$() {
         httpRequestPanel = new JPanel();
-        httpRequestPanel.setLayout(new GridLayoutManager(1, 1, new Insets(12, 12, 12, 12), -1, -1));
+        httpRequestPanel.setLayout(new GridLayoutManager(1, 1, new Insets(10, 10, 10, 10), -1, -1));
         httpRequestPanel.setMinimumSize(new Dimension(400, 300));
         httpRequestPanel.setPreferredSize(new Dimension(400, 300));
         splitPane = new JSplitPane();
@@ -488,7 +488,7 @@ public class HttpRequestForm {
         noteListTable = new JTable();
         scrollPane1.setViewportView(noteListTable);
         rightPanel = new JPanel();
-        rightPanel.setLayout(new GridLayoutManager(2, 1, new Insets(10, 0, 0, 0), -1, -1));
+        rightPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane.setRightComponent(rightPanel);
         controlPanel = new JPanel();
         controlPanel.setLayout(new GridLayoutManager(1, 5, new Insets(0, 0, 0, 0), -1, -1));

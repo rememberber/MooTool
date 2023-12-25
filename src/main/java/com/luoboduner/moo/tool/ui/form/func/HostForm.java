@@ -274,22 +274,22 @@ public class HostForm {
 
     private static void highlightHostMenu(String hostName) {
 //        if (!SystemUtil.isLinuxOs()) {
-            Font fontBold = new Font(App.config.getFont(), Font.BOLD, App.config.getFontSize());
-            Font fontPlain = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
-            for (int i = 2; i < App.popupMenu.getComponentCount(); i++) {
-                if (App.popupMenu.getComponent(i) instanceof JMenuItem) {
-                    JMenuItem item = (JMenuItem) App.popupMenu.getComponent(i);
-                    if (hostName.equals(item.getLabel())) {
-                        item.setFont(fontBold);
-                        item.setIcon(new FlatSVGIcon("icon/check.svg"));
-                    } else {
-                        item.setFont(fontPlain);
-                        item.setIcon(null);
-                    }
+        Font fontBold = new Font(App.config.getFont(), Font.BOLD, App.config.getFontSize());
+        Font fontPlain = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
+        for (int i = 2; i < App.popupMenu.getComponentCount(); i++) {
+            if (App.popupMenu.getComponent(i) instanceof JMenuItem) {
+                JMenuItem item = (JMenuItem) App.popupMenu.getComponent(i);
+                if (hostName.equals(item.getLabel())) {
+                    item.setFont(fontBold);
+                    item.setIcon(new FlatSVGIcon("icon/check.svg"));
+                } else {
+                    item.setFont(fontPlain);
+                    item.setIcon(null);
                 }
             }
-            App.config.setCurrentHostName(hostName);
-            App.config.save();
+        }
+        App.config.setCurrentHostName(hostName);
+        App.config.save();
 //            HostListener.refreshHostContentInTextArea();
 //        }
     }
@@ -310,10 +310,10 @@ public class HostForm {
      */
     private void $$$setupUI$$$() {
         hostPanel = new JPanel();
-        hostPanel.setLayout(new GridLayoutManager(1, 1, new Insets(12, 12, 12, 12), -1, -1));
+        hostPanel.setLayout(new GridLayoutManager(1, 1, new Insets(10, 10, 10, 10), -1, -1));
         splitPane = new JSplitPane();
         splitPane.setContinuousLayout(true);
-        splitPane.setDividerLocation(200);
+        splitPane.setDividerLocation(175);
         splitPane.setDividerSize(10);
         hostPanel.add(splitPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         final JPanel panel1 = new JPanel();
