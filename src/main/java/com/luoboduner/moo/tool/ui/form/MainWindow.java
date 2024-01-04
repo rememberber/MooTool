@@ -148,6 +148,8 @@ public class MainWindow {
         } else {
             for (int i = 0; i < tabbedPane.getTabCount(); i++) {
                 tabbedPane.setTitleAt(i, tabbedPane.getToolTipTextAt(i));
+                // 还原所有tab的icon大小
+                tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i], 16, 16));
             }
         }
 
@@ -175,6 +177,8 @@ public class MainWindow {
             if (App.config.isTabHideTitle()) {
                 for (int i = 0; i < tabbedPane.getTabCount(); i++) {
                     tabbedPane.setTitleAt(i, tabbedPane.getToolTipTextAt(i));
+                    // 还原所有tab的icon大小
+                    tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i], 16, 16));
                 }
                 App.config.setTabHideTitle(false);
                 App.config.save();
