@@ -312,6 +312,24 @@ public class JsonBeautyListener {
 
         });
 
+        // 搜索框变更事件
+        jsonBeautyForm.getSearchTextField().getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                JsonBeautyForm.initListTable();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                JsonBeautyForm.initListTable();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+//                JsonBeautyForm.initListTable();
+            }
+        });
+
     }
 
     private static void viewByRowNum(int selectedRow) {

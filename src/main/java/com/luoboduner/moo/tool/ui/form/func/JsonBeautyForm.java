@@ -1,7 +1,9 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
+import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
+import com.formdev.flatlaf.icons.FlatSearchIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -52,6 +54,7 @@ public class JsonBeautyForm {
     private JButton exportButton;
     private JPanel findReplacePanel;
     private JPanel menuPanel;
+    private JTextField searchTextField;
 
     private static JsonBeautyForm jsonBeautyForm;
     private static TJsonBeautyMapper jsonBeautyMapper = MybatisUtil.getSqlSession().getMapper(TJsonBeautyMapper.class);
@@ -107,6 +110,10 @@ public class JsonBeautyForm {
             jsonBeautyForm.getControlPanel().add(jsonBeautyForm.getFindReplacePanel(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         }
 
+        jsonBeautyForm.getSearchTextField().putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "搜索");
+        jsonBeautyForm.getSearchTextField().putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON,
+                new FlatSearchIcon());
+
         jsonBeautyForm.getAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
         jsonBeautyForm.getFindButton().setIcon(new FlatSVGIcon("icon/find.svg"));
         jsonBeautyForm.getSaveButton().setIcon(new FlatSVGIcon("icon/save.svg"));
@@ -137,7 +144,10 @@ public class JsonBeautyForm {
 
         Object[] data;
 
-        List<TJsonBeauty> jsonBeautyList = jsonBeautyMapper.selectAll();
+        String titleFilterKeyWord = jsonBeautyForm.getSearchTextField().getText();
+        titleFilterKeyWord = "%" + titleFilterKeyWord + "%";
+
+        List<TJsonBeauty> jsonBeautyList = jsonBeautyMapper.selectByFilter(titleFilterKeyWord);
         for (TJsonBeauty tJsonBeauty : jsonBeautyList) {
             data = new Object[2];
             data[0] = tJsonBeauty.getId();
@@ -215,13 +225,15 @@ public class JsonBeautyForm {
         splitPane.setDividerSize(10);
         jsonBeautyPanel.add(splitPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel1.setMinimumSize(new Dimension(0, 64));
         splitPane.setLeftComponent(panel1);
         final JScrollPane scrollPane1 = new JScrollPane();
-        panel1.add(scrollPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        panel1.add(scrollPane1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         noteListTable = new JTable();
         scrollPane1.setViewportView(noteListTable);
+        searchTextField = new JTextField();
+        panel1.add(searchTextField, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         rightPanel = new JPanel();
         rightPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane.setRightComponent(rightPanel);
