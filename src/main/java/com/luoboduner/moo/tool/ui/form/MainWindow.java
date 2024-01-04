@@ -45,10 +45,11 @@ public class MainWindow {
     private JPanel javaConsolePanel;
     private JPanel reformattingPanel;
     private JPanel pdfPanel;
+    private JPanel variablesPanel;
 
     private static MainWindow mainWindow;
 
-    private static final String[] ICON_PATH = {"icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/check.svg", "icon/global.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/translate.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/nuclear.svg", "icon/pdf.svg"};
+    private static final String[] ICON_PATH = {"icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/check.svg", "icon/global.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/translate.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/nuclear.svg", "icon/pdf.svg", "icon/fx.svg"};
 
     private MainWindow() {
     }
@@ -90,6 +91,7 @@ public class MainWindow {
         mainWindow.getJavaConsolePanel().add(JavaConsoleForm.getInstance().getJavaConsolePanel(), gridConstraints);
         mainWindow.getReformattingPanel().add(FileReformattingForm.getInstance().getReformattingPanel(), gridConstraints);
         mainWindow.getPdfPanel().add(PdfForm.getInstance().getPdfPanel(), gridConstraints);
+        mainWindow.getVariablesPanel().add(VariablesForm.getInstance().getVariablesPanel(), gridConstraints);
         mainWindow.getMainPanel().updateUI();
 
         TabListener.addListeners();
@@ -270,6 +272,9 @@ public class MainWindow {
         pdfPanel = new JPanel();
         pdfPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("PDF", pdfPanel);
+        variablesPanel = new JPanel();
+        variablesPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPane.addTab("环境变量", variablesPanel);
     }
 
     /**

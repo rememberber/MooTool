@@ -211,6 +211,7 @@ public class Init {
         ThreadUtil.execute(CronForm::init);
         ThreadUtil.execute(RegexForm::init);
         ThreadUtil.execute(ImageForm::init);
+        ThreadUtil.execute(VariablesForm::init);
 
         // 检查新版版
         if (App.config.isAutoCheckUpdate()) {
