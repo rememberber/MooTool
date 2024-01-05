@@ -2,9 +2,11 @@ package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.dialog.SystemEnvResultDialog;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
@@ -16,6 +18,8 @@ import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.util.Map;
 import java.util.Properties;
+
+import static com.formdev.flatlaf.FlatClientProperties.TABBED_PANE_TRAILING_COMPONENT;
 
 @Getter
 public class VariablesForm {
@@ -58,6 +62,49 @@ public class VariablesForm {
         // 设置滚动条速度
         ScrollUtil.smoothPane(variablesForm.getScrollPane1());
         ScrollUtil.smoothPane(variablesForm.getScrollPane2());
+
+        JToolBar trailing = new JToolBar();
+        trailing.setFloatable(false);
+        trailing.setBorder(null);
+        trailing.add(Box.createHorizontalGlue());
+
+        JButton refreshButton = new JButton(new FlatSVGIcon("icon/refresh.svg"));
+        refreshButton.setToolTipText("刷新");
+        refreshButton.addActionListener(e -> {
+            initSysEnvVarTable();
+            initJavaPropsTable();
+        });
+
+        JButton exportButton = new JButton(new FlatSVGIcon("icon/export.svg"));
+        exportButton.setToolTipText("导出");
+        exportButton.addActionListener(e -> {
+            try {
+                SystemEnvResultDialog dialog = new SystemEnvResultDialog();
+
+                dialog.appendTextArea("------------System.getenv---------------");
+                Map<String, String> map = System.getenv();
+                for (Map.Entry<String, String> envEntry : map.entrySet()) {
+                    dialog.appendTextArea(envEntry.getKey() + "=" + envEntry.getValue());
+                }
+
+                dialog.appendTextArea("------------System.getProperties---------------");
+                Properties properties = System.getProperties();
+                for (Map.Entry<Object, Object> objectObjectEntry : properties.entrySet()) {
+                    dialog.appendTextArea(objectObjectEntry.getKey() + "=" + objectObjectEntry.getValue());
+                }
+
+                dialog.pack();
+                dialog.setVisible(true);
+            } catch (Exception e2) {
+                logger.error("查看系统环境变量失败", e2);
+            }
+        });
+
+        trailing.add(refreshButton);
+        trailing.add(exportButton);
+        trailing.add(new JLabel("  "));
+
+        getInstance().getTabbedPane1().putClientProperty(TABBED_PANE_TRAILING_COMPONENT, trailing);
 
     }
 

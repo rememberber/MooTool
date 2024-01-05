@@ -22,7 +22,7 @@ public class SystemEnvResultDialog extends JDialog {
 
     public SystemEnvResultDialog() {
 
-        super(App.mainFrame, "系统环境变量");
+        super(App.mainFrame, "环境变量");
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.4, 0.64);
         setContentPane(contentPane);
         setModal(true);
