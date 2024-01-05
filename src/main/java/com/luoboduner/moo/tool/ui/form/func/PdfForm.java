@@ -6,6 +6,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.ui.listener.func.PDFMergerListener;
 import com.luoboduner.moo.tool.ui.listener.func.PDFSplitterListener;
+import com.luoboduner.moo.tool.util.ScrollUtil;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -77,8 +78,13 @@ public class PdfForm {
         table.getColumnModel().getColumn(1).setMinWidth(250);
         table.getColumnModel().getColumn(5).setMaxWidth(200);
 
+        table.setShowGrid(true);
+
+        JScrollPane scrollPane = new JScrollPane(table);
+        ScrollUtil.smoothPane(scrollPane);
+
         getFilePane().add(jTableHeader, BorderLayout.NORTH);
-        getFilePane().add(table, BorderLayout.CENTER);
+        getFilePane().add(scrollPane, BorderLayout.CENTER);
 
         mergerListener = new PDFMergerListener(getFilePane(), fileTableModel);
         mergerListener.setComponents(fileTableModel.getComps());
@@ -114,8 +120,13 @@ public class PdfForm {
         table.getColumnModel().getColumn(4).setMaxWidth(150);
         table.getColumnModel().getColumn(7).setMaxWidth(150);
 
+        table.setShowGrid(true);
+
+        JScrollPane scrollPane = new JScrollPane(table);
+        ScrollUtil.smoothPane(scrollPane);
+
         getTaskPane().add(jTableHeader, BorderLayout.NORTH);
-        getTaskPane().add(table, BorderLayout.CENTER);
+        getTaskPane().add(scrollPane, BorderLayout.CENTER);
 
         listener = new PDFSplitterListener(taskPane, taskTableModel);
         listener.setNewTask(getNewTask());
@@ -152,7 +163,7 @@ public class PdfForm {
         taskPane = new JPanel();
         taskPane.setLayout(new BorderLayout(0, 0));
         splitPane.add(taskPane, new GridConstraints(1, 0, 1, 4, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        taskPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
+        taskPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         newTask = new JButton();
         newTask.setText("新增处理任务");
         splitPane.add(newTask, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(50, 30), null, 0, false));
@@ -176,7 +187,7 @@ public class PdfForm {
         filePane = new JPanel();
         filePane.setLayout(new BorderLayout(0, 0));
         mergePane.add(filePane, new GridConstraints(1, 0, 1, 4, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        filePane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
+        filePane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
     }
 
     /**
