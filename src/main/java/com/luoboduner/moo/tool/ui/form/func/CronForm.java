@@ -2216,7 +2216,7 @@ public class CronForm {
         yearCycleSpinner2 = new JSpinner();
         panel47.add(yearCycleSpinner2, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel48 = new JPanel();
-        panel48.setLayout(new GridLayoutManager(4, 1, new Insets(12, 0, 12, 12), -1, -1));
+        panel48.setLayout(new GridLayoutManager(4, 1, new Insets(10, 0, 10, 10), -1, -1));
         splitPane.setRightComponent(panel48);
         final JPanel panel49 = new JPanel();
         panel49.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));

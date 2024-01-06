@@ -22,4 +22,6 @@ public interface TJsonBeautyMapper {
     TJsonBeauty selectByName(String name);
 
     int updateByName(TJsonBeauty tJsonBeauty);
+
+    List<TJsonBeauty> selectByFilter(String titleFilterKeyWord);
 }

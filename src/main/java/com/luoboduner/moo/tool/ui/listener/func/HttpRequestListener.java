@@ -20,6 +20,8 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.*;
 import java.util.Date;
@@ -244,6 +246,24 @@ public class HttpRequestListener {
                 JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
                 logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
+
+        // 搜索框变更事件
+        httpRequestForm.getSearchTextField().getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                HttpRequestForm.initListTable();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                HttpRequestForm.initListTable();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+//                HttpRequestForm.initListTable();
             }
         });
 

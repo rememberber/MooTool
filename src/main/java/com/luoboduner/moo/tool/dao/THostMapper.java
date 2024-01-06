@@ -22,4 +22,6 @@ public interface THostMapper {
     THost selectByName(String name);
 
     int updateByName(THost tHost);
+
+    List<THost> selectByFilter(String titleFilterKeyWord);
 }

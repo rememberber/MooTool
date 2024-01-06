@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.luoboduner.moo.tool.ui.form.func.RegexForm">
   <grid id="27dc6" binding="regexPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-    <margin top="0" left="0" bottom="0" right="0"/>
+    <margin top="10" left="0" bottom="0" right="0"/>
     <constraints>
       <xy x="20" y="20" width="538" height="1003"/>
     </constraints>
@@ -18,7 +18,7 @@
         <border type="none"/>
         <children>
           <grid id="c01ca" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-            <margin top="12" left="12" bottom="12" right="12"/>
+            <margin top="10" left="10" bottom="10" right="10"/>
             <constraints>
               <tabbedpane title="匹配测试"/>
             </constraints>
@@ -128,7 +128,7 @@
             </children>
           </grid>
           <grid id="39ca5" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-            <margin top="0" left="0" bottom="0" right="0"/>
+            <margin top="10" left="10" bottom="10" right="10"/>
             <constraints>
               <tabbedpane title="常用正则表达式"/>
             </constraints>
@@ -147,7 +147,7 @@
                 <border type="empty"/>
                 <children>
                   <grid id="17835" layout-manager="GridLayoutManager" row-count="26" column-count="2" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-                    <margin top="20" left="20" bottom="20" right="20"/>
+                    <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints/>
                     <properties/>
                     <border type="none"/>

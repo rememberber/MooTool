@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <form xmlns="http://www.intellij.com/uidesigner/form/" version="1" bind-to-class="com.luoboduner.moo.tool.ui.form.func.CryptoForm">
   <grid id="27dc6" binding="cryptoPanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-    <margin top="0" left="0" bottom="0" right="0"/>
+    <margin top="10" left="0" bottom="0" right="0"/>
     <constraints>
       <xy x="20" y="20" width="736" height="459"/>
     </constraints>
@@ -21,7 +21,7 @@
         <border type="none"/>
         <children>
           <grid id="1ba46" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-            <margin top="12" left="12" bottom="12" right="12"/>
+            <margin top="10" left="10" bottom="10" right="10"/>
             <constraints>
               <tabbedpane title="对称加密（symmetric）"/>
             </constraints>
@@ -124,7 +124,7 @@
             </children>
           </grid>
           <grid id="cec15" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-            <margin top="12" left="12" bottom="12" right="12"/>
+            <margin top="10" left="10" bottom="10" right="10"/>
             <constraints>
               <tabbedpane title="非对称加密（asymmetric）"/>
             </constraints>
@@ -332,7 +332,7 @@
             </children>
           </grid>
           <grid id="78708" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-            <margin top="12" left="12" bottom="12" right="12"/>
+            <margin top="10" left="10" bottom="10" right="10"/>
             <constraints>
               <tabbedpane title="摘要加密（digest）"/>
             </constraints>
@@ -472,7 +472,7 @@
             </children>
           </grid>
           <grid id="95738" layout-manager="GridLayoutManager" row-count="1" column-count="3" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-            <margin top="12" left="12" bottom="12" right="12"/>
+            <margin top="10" left="10" bottom="10" right="10"/>
             <constraints>
               <tabbedpane title="Base64"/>
             </constraints>
@@ -577,7 +577,7 @@
             </children>
           </grid>
           <grid id="3b35a" layout-manager="GridLayoutManager" row-count="2" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
-            <margin top="12" left="12" bottom="12" right="12"/>
+            <margin top="10" left="10" bottom="10" right="10"/>
             <constraints>
               <tabbedpane title="随机"/>
             </constraints>

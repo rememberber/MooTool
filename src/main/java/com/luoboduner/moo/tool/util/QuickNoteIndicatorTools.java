@@ -28,7 +28,7 @@ public class QuickNoteIndicatorTools {
         StringBuffer tipsBuffer = new StringBuffer();
         tipsBuffer.append(tips);
         tipsBuffer.append(" (").append(DateFormatUtils.format(new Date(), "yyyy-MM-dd HH:mm:ss.SSS")).append(")");
-        tipsLabel.setText(tipsBuffer.toString());
+//        tipsLabel.setText(tipsBuffer.toString());
     }
 
     public static enum TipsLevel {

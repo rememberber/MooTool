@@ -24,9 +24,9 @@
     </delete>
     <insert id="insert" parameterType="com.luoboduner.moo.tool.domain.TJsonBeauty">
         insert into t_json_beauty (id, name, content,
-                                   create_time, modified_time)
+        create_time, modified_time)
         values (#{id,jdbcType=INTEGER}, #{name,jdbcType=VARCHAR}, #{content,jdbcType=VARCHAR},
-                #{createTime,jdbcType=VARCHAR}, #{modifiedTime,jdbcType=VARCHAR})
+        #{createTime,jdbcType=VARCHAR}, #{modifiedTime,jdbcType=VARCHAR})
     </insert>
     <insert id="insertSelective" parameterType="com.luoboduner.moo.tool.domain.TJsonBeauty">
         insert into t_json_beauty
@@ -85,10 +85,10 @@
     </update>
     <update id="updateByPrimaryKey" parameterType="com.luoboduner.moo.tool.domain.TJsonBeauty">
         update t_json_beauty
-        set name          = #{name,jdbcType=VARCHAR},
-            content       = #{content,jdbcType=VARCHAR},
-            create_time   = #{createTime,jdbcType=VARCHAR},
-            modified_time = #{modifiedTime,jdbcType=VARCHAR}
+        set name = #{name,jdbcType=VARCHAR},
+        content = #{content,jdbcType=VARCHAR},
+        create_time = #{createTime,jdbcType=VARCHAR},
+        modified_time = #{modifiedTime,jdbcType=VARCHAR}
         where id = #{id,jdbcType=INTEGER}
     </update>
     <select id="selectAll" resultMap="BaseResultMap">
@@ -102,6 +102,13 @@
         <include refid="Base_Column_List"/>
         from t_json_beauty
         where name = #{name,jdbcType=VARCHAR}
+    </select>
+    <select id="selectByFilter" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from t_json_beauty
+        where name like #{titleFilterKeyWord,jdbcType=VARCHAR}
+        order by modified_time desc
     </select>
     <update id="updateByName" parameterType="com.luoboduner.moo.tool.domain.TJsonBeauty">
         update t_json_beauty

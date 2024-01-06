@@ -249,6 +249,24 @@ public class HostListener {
 
         });
 
+        // 搜索框变更事件
+        hostForm.getSearchTextField().getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                HostForm.initListTable();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                HostForm.initListTable();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+//                HostForm.initListTable();
+            }
+        });
+
     }
 
     private static void deleteFiles(HostForm hostForm) {

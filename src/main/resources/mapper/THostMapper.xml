@@ -102,6 +102,13 @@
         from t_host
         where name = #{name,jdbcType=VARCHAR}
     </select>
+    <select id="selectByFilter" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from t_host
+        where name like #{titleFilterKeyWord,jdbcType=VARCHAR}
+        order by modified_time desc
+    </select>
     <update id="updateByName" parameterType="com.luoboduner.moo.tool.domain.THost">
         update t_host
         <set>

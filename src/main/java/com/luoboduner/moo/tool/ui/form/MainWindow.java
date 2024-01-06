@@ -45,10 +45,11 @@ public class MainWindow {
     private JPanel javaConsolePanel;
     private JPanel reformattingPanel;
     private JPanel pdfPanel;
+    private JPanel variablesPanel;
 
     private static MainWindow mainWindow;
 
-    private static final String[] ICON_PATH = {"icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/check.svg", "icon/global.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/translate.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/nuclear.svg", "icon/pdf.svg"};
+    private static final String[] ICON_PATH = {"icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/check.svg", "icon/global.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/translate.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/nuclear.svg", "icon/pdf.svg", "icon/fx.svg"};
 
     private MainWindow() {
     }
@@ -90,6 +91,7 @@ public class MainWindow {
         mainWindow.getJavaConsolePanel().add(JavaConsoleForm.getInstance().getJavaConsolePanel(), gridConstraints);
         mainWindow.getReformattingPanel().add(FileReformattingForm.getInstance().getReformattingPanel(), gridConstraints);
         mainWindow.getPdfPanel().add(PdfForm.getInstance().getPdfPanel(), gridConstraints);
+        mainWindow.getVariablesPanel().add(VariablesForm.getInstance().getVariablesPanel(), gridConstraints);
         mainWindow.getMainPanel().updateUI();
 
         TabListener.addListeners();
@@ -111,8 +113,24 @@ public class MainWindow {
         if ("左侧".equals(App.config.getFuncTabPosition())) {
             tabbedPane.setTabPlacement(JTabbedPane.LEFT);
             tabbedPane.putClientProperty(TABBED_PANE_TAB_ALIGNMENT, TABBED_PANE_ALIGN_LEADING);
+
+            if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
+                GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
+                gridLayoutManager.setMargin(new Insets(15, 0, 0, 0));
+            } else {
+                GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
+                gridLayoutManager.setMargin(new Insets(-10, 0, 0, 0));
+            }
         } else {
             tabbedPane.setTabPlacement(JTabbedPane.TOP);
+
+            if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
+                GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
+                gridLayoutManager.setMargin(new Insets(25, 0, 0, 0));
+            } else {
+                GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
+                gridLayoutManager.setMargin(new Insets(0, 0, 0, 0));
+            }
         }
 
         // 紧凑型tab标题
@@ -132,6 +150,8 @@ public class MainWindow {
         } else {
             for (int i = 0; i < tabbedPane.getTabCount(); i++) {
                 tabbedPane.setTitleAt(i, tabbedPane.getToolTipTextAt(i));
+                // 还原所有tab的icon大小
+                tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i], 16, 16));
             }
         }
 
@@ -148,10 +168,19 @@ public class MainWindow {
         }
 
         JButton toggleTitleButton = new JButton(new FlatSVGIcon("icon/list.svg"));
+        JPanel panel = new JPanel();
+        if ("左侧".equals(App.config.getFuncTabPosition())) {
+            panel.setLayout(new GridLayoutManager(1, 1, new Insets(10, 0, 0, 0), -1, -1));
+        } else {
+            panel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 10, 0, 0), -1, -1));
+        }
+        panel.add(toggleTitleButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(-1, -1), null, 0, false));
         toggleTitleButton.addActionListener(actionEvent -> {
             if (App.config.isTabHideTitle()) {
                 for (int i = 0; i < tabbedPane.getTabCount(); i++) {
                     tabbedPane.setTitleAt(i, tabbedPane.getToolTipTextAt(i));
+                    // 还原所有tab的icon大小
+                    tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i], 16, 16));
                 }
                 App.config.setTabHideTitle(false);
                 App.config.save();
@@ -165,7 +194,7 @@ public class MainWindow {
                 App.config.save();
             }
         });
-        tabbedPane.putClientProperty(TABBED_PANE_LEADING_COMPONENT, toggleTitleButton);
+        tabbedPane.putClientProperty(TABBED_PANE_LEADING_COMPONENT, panel);
     }
 
     {
@@ -243,6 +272,9 @@ public class MainWindow {
         pdfPanel = new JPanel();
         pdfPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("PDF", pdfPanel);
+        variablesPanel = new JPanel();
+        variablesPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPane.addTab("环境变量", variablesPanel);
     }
 
     /**

@@ -64,9 +64,9 @@ public class JavaConsoleForm {
      */
     private void $$$setupUI$$$() {
         javaConsolePanel = new JPanel();
-        javaConsolePanel.setLayout(new GridLayoutManager(2, 1, new Insets(12, 12, 12, 12), -1, -1));
+        javaConsolePanel.setLayout(new GridLayoutManager(2, 1, new Insets(10, 10, 10, 10), -1, -1));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(1, 4, new Insets(10, 0, 0, 0), -1, -1));
+        panel1.setLayout(new GridLayoutManager(1, 4, new Insets(0, 0, 0, 0), -1, -1));
         javaConsolePanel.add(panel1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, 1, 1, null, null, null, 0, false));
         clean = new JButton();
         clean.setText("清除");

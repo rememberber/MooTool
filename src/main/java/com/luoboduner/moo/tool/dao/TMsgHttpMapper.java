@@ -22,4 +22,6 @@ public interface TMsgHttpMapper {
     int updateByMsgName(TMsgHttp tMsgHttp);
 
     List<TMsgHttp> selectAll();
+
+    List<TMsgHttp> selectByFilter(String titleFilterKeyWord);
 }
