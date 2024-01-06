@@ -174,7 +174,7 @@ public class ImageForm {
      */
     private void $$$setupUI$$$() {
         imagePanel = new JPanel();
-        imagePanel.setLayout(new GridLayoutManager(1, 1, new Insets(12, 12, 12, 12), -1, -1));
+        imagePanel.setLayout(new GridLayoutManager(1, 1, new Insets(10, 10, 10, 10), -1, -1));
         splitPane = new JSplitPane();
         splitPane.setContinuousLayout(true);
         splitPane.setDividerLocation(204);

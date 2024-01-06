@@ -1,7 +1,9 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.core.io.FileUtil;
+import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import com.formdev.flatlaf.icons.FlatSearchIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -55,6 +57,7 @@ public class HostForm {
     private JButton currentHostButton;
     private JButton findButton;
     private JPanel findReplacePanel;
+    private JTextField searchTextField;
 
     private static HostForm hostForm;
     private static THostMapper hostMapper = MybatisUtil.getSqlSession().getMapper(THostMapper.class);
@@ -153,7 +156,6 @@ public class HostForm {
 
         initUi();
         initListTable();
-        highlightHostMenu(App.config.getCurrentHostName());
 
         HostListener.addListeners();
     }
@@ -171,6 +173,10 @@ public class HostForm {
             hostForm.getRightPanel().add(hostForm.getFindReplacePanel(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
             hostForm.getRightPanel().add(hostForm.getControlPanel(), new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         }
+
+        hostForm.getSearchTextField().putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "搜索");
+        hostForm.getSearchTextField().putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON,
+                new FlatSearchIcon());
 
         hostForm.getAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
         hostForm.getFindButton().setIcon(new FlatSVGIcon("icon/find.svg"));
@@ -199,9 +205,39 @@ public class HostForm {
         // 隐藏id列
         JTableUtil.hideColumn(hostForm.getNoteListTable(), 0);
 
-        List<THost> hostList = hostMapper.selectAll();
+        String titleFilterKeyWord = hostForm.getSearchTextField().getText();
+        titleFilterKeyWord = "%" + titleFilterKeyWord + "%";
+        List<THost> hostList = hostMapper.selectByFilter(titleFilterKeyWord);
 
+        Object[] data;
+        for (THost tHost : hostList) {
+            data = new Object[2];
+            data[0] = tHost.getId();
+            data[1] = tHost.getName();
+            model.addRow(data);
+        }
+
+        if (hostList.size() > 0) {
+            HostListener.ignoreQuickSave = true;
+            try {
+                HostListener.selectedNameHost = hostList.get(0).getName();
+                hostForm.getTextArea().setText(hostList.get(0).getContent());
+                hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
+            } catch (Exception e1) {
+                log.error(e1.getMessage());
+            } finally {
+                HostListener.ignoreQuickSave = false;
+            }
+
+        }
+
+        if (hostForm.getNoteListTable().getRowCount() > 0) {
+            hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
+        }
+
+        // 更新系统托盘
         if (!SystemUtil.isLinuxOs()) {
+            hostList = hostMapper.selectAll();
             App.popupMenu.removeAll();
             JMenuItem openItem = new JMenuItem("MooTool");
             JMenuItem colorPickerItem = new JMenuItem("取色器");
@@ -235,12 +271,7 @@ public class HostForm {
             App.popupMenu.addSeparator();
 
             JMenuItem menuItem;
-            Object[] data;
             for (THost tHost : hostList) {
-                data = new Object[2];
-                data[0] = tHost.getId();
-                data[1] = tHost.getName();
-                model.addRow(data);
                 menuItem = new JMenuItem(tHost.getName());
                 menuItem.addActionListener(e -> {
                     THost tHost1 = hostMapper.selectByName(tHost.getName());
@@ -251,45 +282,29 @@ public class HostForm {
             }
             App.popupMenu.addSeparator();
             App.popupMenu.add(exitItem);
-        }
 
-        if (hostList.size() > 0) {
-            HostListener.ignoreQuickSave = true;
-            try {
-                HostListener.selectedNameHost = hostList.get(0).getName();
-                hostForm.getTextArea().setText(hostList.get(0).getContent());
-                hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
-            } catch (Exception e1) {
-                log.error(e1.getMessage());
-            } finally {
-                HostListener.ignoreQuickSave = false;
-            }
-
-        }
-
-        if (hostForm.getNoteListTable().getRowCount() > 0) {
-            hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
+            highlightHostMenu(App.config.getCurrentHostName());
         }
     }
 
     private static void highlightHostMenu(String hostName) {
 //        if (!SystemUtil.isLinuxOs()) {
-            Font fontBold = new Font(App.config.getFont(), Font.BOLD, App.config.getFontSize());
-            Font fontPlain = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
-            for (int i = 2; i < App.popupMenu.getComponentCount(); i++) {
-                if (App.popupMenu.getComponent(i) instanceof JMenuItem) {
-                    JMenuItem item = (JMenuItem) App.popupMenu.getComponent(i);
-                    if (hostName.equals(item.getLabel())) {
-                        item.setFont(fontBold);
-                        item.setIcon(new FlatSVGIcon("icon/check.svg"));
-                    } else {
-                        item.setFont(fontPlain);
-                        item.setIcon(null);
-                    }
+        Font fontBold = new Font(App.config.getFont(), Font.BOLD, App.config.getFontSize());
+        Font fontPlain = new Font(App.config.getFont(), Font.PLAIN, App.config.getFontSize());
+        for (int i = 2; i < App.popupMenu.getComponentCount(); i++) {
+            if (App.popupMenu.getComponent(i) instanceof JMenuItem) {
+                JMenuItem item = (JMenuItem) App.popupMenu.getComponent(i);
+                if (hostName.equals(item.getLabel())) {
+                    item.setFont(fontBold);
+                    item.setIcon(new FlatSVGIcon("icon/check.svg"));
+                } else {
+                    item.setFont(fontPlain);
+                    item.setIcon(null);
                 }
             }
-            App.config.setCurrentHostName(hostName);
-            App.config.save();
+        }
+        App.config.setCurrentHostName(hostName);
+        App.config.save();
 //            HostListener.refreshHostContentInTextArea();
 //        }
     }
@@ -310,20 +325,22 @@ public class HostForm {
      */
     private void $$$setupUI$$$() {
         hostPanel = new JPanel();
-        hostPanel.setLayout(new GridLayoutManager(1, 1, new Insets(12, 12, 12, 12), -1, -1));
+        hostPanel.setLayout(new GridLayoutManager(1, 1, new Insets(10, 10, 10, 10), -1, -1));
         splitPane = new JSplitPane();
         splitPane.setContinuousLayout(true);
-        splitPane.setDividerLocation(200);
+        splitPane.setDividerLocation(175);
         splitPane.setDividerSize(10);
         hostPanel.add(splitPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel1.setMinimumSize(new Dimension(0, 64));
         splitPane.setLeftComponent(panel1);
         final JScrollPane scrollPane1 = new JScrollPane();
-        panel1.add(scrollPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        panel1.add(scrollPane1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         noteListTable = new JTable();
         scrollPane1.setViewportView(noteListTable);
+        searchTextField = new JTextField();
+        panel1.add(searchTextField, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         rightPanel = new JPanel();
         rightPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane.setRightComponent(rightPanel);

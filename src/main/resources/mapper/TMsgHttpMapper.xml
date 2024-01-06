@@ -186,4 +186,11 @@
         from t_msg_http
         order by modified_time desc
     </select>
+    <select id="selectByFilter" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from t_msg_http
+        where msg_name like #{titleFilterKeyWord,jdbcType=VARCHAR}
+        order by modified_time desc
+    </select>
 </mapper>
