@@ -73,7 +73,7 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <grid id="407da" binding="menuPanel" layout-manager="GridLayoutManager" row-count="1" column-count="11" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                  <grid id="407da" binding="menuPanel" layout-manager="GridLayoutManager" row-count="1" column-count="12" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -162,7 +162,7 @@
                       </component>
                       <component id="138ed" class="javax.swing.JButton" binding="beautifyButton">
                         <constraints>
-                          <grid row="0" column="10" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                          <grid row="0" column="11" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties>
                           <icon value="icon/object_dark.png"/>
@@ -208,6 +208,14 @@
                           <icon value="icon/remove.png"/>
                           <text value=""/>
                           <toolTipText value="删除"/>
+                        </properties>
+                      </component>
+                      <component id="891bc" class="javax.swing.JButton" binding="compressButton">
+                        <constraints>
+                          <grid row="0" column="10" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                        </constraints>
+                        <properties>
+                          <text value=""/>
                         </properties>
                       </component>
                     </children>
