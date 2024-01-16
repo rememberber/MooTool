@@ -332,7 +332,7 @@ public class JsonBeautyListener {
 
         jsonBeautyForm.getCompressButton().addActionListener(e -> {
             String jsonText = jsonBeautyForm.getTextArea().getText();
-            jsonBeautyForm.getTextArea().setText(JSONUtil.toJsonStr(JSONUtil.parseObj(jsonText), 0));
+            jsonBeautyForm.getTextArea().setText(JSONUtil.toJsonStr(JSONUtil.isTypeJSONArray(jsonText) ? JSONUtil.parseArray(jsonText) : JSONUtil.parseObj(jsonText), 0));
             jsonBeautyForm.getTextArea().setCaretPosition(0);
         });
 
