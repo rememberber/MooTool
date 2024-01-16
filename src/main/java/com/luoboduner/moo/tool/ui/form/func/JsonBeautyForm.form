@@ -216,6 +216,7 @@
                         </constraints>
                         <properties>
                           <text value=""/>
+                          <toolTipText value="压缩JSON"/>
                         </properties>
                       </component>
                     </children>
