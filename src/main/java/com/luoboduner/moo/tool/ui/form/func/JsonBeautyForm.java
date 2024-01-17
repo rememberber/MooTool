@@ -56,6 +56,7 @@ public class JsonBeautyForm {
     private JPanel menuPanel;
     private JTextField searchTextField;
     private JButton compressButton;
+    private JButton moreButton;
 
     private static JsonBeautyForm jsonBeautyForm;
     private static TJsonBeautyMapper jsonBeautyMapper = MybatisUtil.getSqlSession().getMapper(TJsonBeautyMapper.class);
@@ -120,6 +121,7 @@ public class JsonBeautyForm {
         jsonBeautyForm.getSaveButton().setIcon(new FlatSVGIcon("icon/save.svg"));
         jsonBeautyForm.getBeautifyButton().setIcon(new FlatSVGIcon("icon/json.svg"));
         jsonBeautyForm.getCompressButton().setIcon(new FlatSVGIcon("icon/compress_json.svg"));
+        jsonBeautyForm.getMoreButton().setIcon(new FlatSVGIcon("icon/more.svg"));
         jsonBeautyForm.getDeleteButton().setIcon(new FlatSVGIcon("icon/remove.svg"));
         jsonBeautyForm.getExportButton().setIcon(new FlatSVGIcon("icon/export.svg"));
         jsonBeautyForm.getListItemButton().setIcon(new FlatSVGIcon("icon/list.svg"));
@@ -223,7 +225,7 @@ public class JsonBeautyForm {
         jsonBeautyPanel.setPreferredSize(new Dimension(400, 300));
         splitPane = new JSplitPane();
         splitPane.setContinuousLayout(true);
-        splitPane.setDividerLocation(220);
+        splitPane.setDividerLocation(172);
         splitPane.setDividerSize(10);
         jsonBeautyPanel.add(splitPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         final JPanel panel1 = new JPanel();
@@ -243,7 +245,7 @@ public class JsonBeautyForm {
         controlPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         rightPanel.add(controlPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         menuPanel = new JPanel();
-        menuPanel.setLayout(new GridLayoutManager(1, 12, new Insets(0, 0, 0, 0), -1, -1));
+        menuPanel.setLayout(new GridLayoutManager(1, 13, new Insets(0, 0, 0, 0), -1, -1));
         controlPanel.add(menuPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         saveButton = new JButton();
         saveButton.setIcon(new ImageIcon(getClass().getResource("/icon/menu-saveall_dark.png")));
@@ -325,6 +327,9 @@ public class JsonBeautyForm {
         compressButton.setText("");
         compressButton.setToolTipText("压缩JSON");
         menuPanel.add(compressButton, new GridConstraints(0, 10, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        moreButton = new JButton();
+        moreButton.setText("");
+        menuPanel.add(moreButton, new GridConstraints(0, 12, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         findReplacePanel = new JPanel();
         findReplacePanel.setLayout(new BorderLayout(0, 0));
         findReplacePanel.setVisible(true);
