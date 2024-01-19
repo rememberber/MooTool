@@ -341,7 +341,7 @@ public class JsonBeautyForm {
         final Spacer spacer2 = new Spacer();
         panel3.add(spacer2, new GridConstraints(12, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         ignoreCaseCheckBox = new JCheckBox();
-        ignoreCaseCheckBox.setText("忽略键的大小写");
+        ignoreCaseCheckBox.setText("忽略key的大小写");
         panel3.add(ignoreCaseCheckBox, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         keySortCheckBox = new JCheckBox();
         keySortCheckBox.setText("Key按照字母顺序排序");
