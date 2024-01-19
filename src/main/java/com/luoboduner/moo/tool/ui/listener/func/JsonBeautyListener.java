@@ -1,6 +1,7 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.json.JSONConfig;
 import cn.hutool.json.JSONUtil;
 import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
 import com.formdev.flatlaf.util.FontUtils;
@@ -333,6 +334,24 @@ public class JsonBeautyListener {
         jsonBeautyForm.getCompressButton().addActionListener(e -> {
             String jsonText = jsonBeautyForm.getTextArea().getText();
             jsonBeautyForm.getTextArea().setText(JSONUtil.toJsonStr(JSONUtil.isTypeJSONArray(jsonText) ? JSONUtil.parseArray(jsonText) : JSONUtil.parseObj(jsonText), 0));
+            jsonBeautyForm.getTextArea().setCaretPosition(0);
+        });
+
+        jsonBeautyForm.getCustomFormatButton().addActionListener(e -> {
+            String jsonText = jsonBeautyForm.getTextArea().getText();
+            JSONConfig jsonConfig = new JSONConfig();
+            jsonConfig.setIgnoreCase(jsonBeautyForm.getIgnoreCaseCheckBox().isSelected());
+            jsonConfig.setCheckDuplicate(jsonBeautyForm.getCheckDuplicateCheckBox().isSelected());
+            if (jsonBeautyForm.getKeySortCheckBox().isSelected()) {
+                jsonConfig.setKeyComparator((o1, o2) -> {
+                    if (jsonBeautyForm.getIgnoreCaseCheckBox().isSelected()) {
+                        return o1.toString().toLowerCase().compareTo(o2.toString().toLowerCase());
+                    } else {
+                        return o1.toString().compareTo(o2.toString());
+                    }
+                });
+            }
+            jsonBeautyForm.getTextArea().setText(JSONUtil.toJsonPrettyStr(JSONUtil.parse(jsonText, jsonConfig)));
             jsonBeautyForm.getTextArea().setCaretPosition(0);
         });
 
