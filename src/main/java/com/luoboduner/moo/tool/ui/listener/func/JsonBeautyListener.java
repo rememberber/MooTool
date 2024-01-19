@@ -9,10 +9,12 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
 import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
+import com.luoboduner.moo.tool.ui.dialog.JsonResultDialog;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
+import com.luoboduner.moo.tool.util.XmlReformatUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -353,6 +355,16 @@ public class JsonBeautyListener {
             }
             jsonBeautyForm.getTextArea().setText(JSONUtil.toJsonPrettyStr(JSONUtil.parse(jsonText, jsonConfig)));
             jsonBeautyForm.getTextArea().setCaretPosition(0);
+        });
+
+        jsonBeautyForm.getJsonToXmlButton().addActionListener(e -> {
+            String jsonText = jsonBeautyForm.getTextArea().getText();
+            JsonResultDialog jsonResultDialog = new JsonResultDialog();
+            String xmlStr = JSONUtil.toXmlStr(JSONUtil.isTypeJSONArray(jsonText) ? JSONUtil.parseArray(jsonText) : JSONUtil.parseObj(jsonText));
+            xmlStr = "<root>" + xmlStr + "</root>";
+            jsonResultDialog.setToTextArea(XmlReformatUtil.format(xmlStr));
+            jsonResultDialog.setVisible(true);
+
         });
 
     }
