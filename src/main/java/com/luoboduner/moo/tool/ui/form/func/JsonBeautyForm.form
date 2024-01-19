@@ -277,7 +277,7 @@
                                   <grid row="12" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
                                 </constraints>
                               </vspacer>
-                              <component id="b5384" class="javax.swing.JCheckBox" binding="忽略键的大小写CheckBox" default-binding="true">
+                              <component id="b5384" class="javax.swing.JCheckBox" binding="ignoreCaseCheckBox">
                                 <constraints>
                                   <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                                 </constraints>
@@ -285,7 +285,7 @@
                                   <text value="忽略键的大小写"/>
                                 </properties>
                               </component>
-                              <component id="bddc6" class="javax.swing.JCheckBox" binding="key按照字母顺序排序CheckBox" default-binding="true">
+                              <component id="bddc6" class="javax.swing.JCheckBox" binding="keySortCheckBox">
                                 <constraints>
                                   <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                                 </constraints>
@@ -293,7 +293,7 @@
                                   <text value="Key按照字母顺序排序"/>
                                 </properties>
                               </component>
-                              <component id="3f44b" class="javax.swing.JCheckBox" binding="检查重复keyCheckBox" default-binding="true">
+                              <component id="3f44b" class="javax.swing.JCheckBox" binding="checkDuplicateCheckBox">
                                 <constraints>
                                   <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                                 </constraints>
@@ -330,7 +330,7 @@
                                   </component>
                                 </children>
                               </grid>
-                              <component id="883ad" class="javax.swing.JButton" binding="JSON转XMLButton" default-binding="true">
+                              <component id="883ad" class="javax.swing.JButton" binding="jsonToXmlButton">
                                 <constraints>
                                   <grid row="6" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                                 </constraints>
@@ -338,20 +338,12 @@
                                   <text value="JSON转XML"/>
                                 </properties>
                               </component>
-                              <component id="b7bc6" class="javax.swing.JButton" binding="XML转JSONButton" default-binding="true">
+                              <component id="b7bc6" class="javax.swing.JButton" binding="xmlToJsonButton">
                                 <constraints>
                                   <grid row="7" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                                 </constraints>
                                 <properties>
                                   <text value="XML转JSON"/>
-                                </properties>
-                              </component>
-                              <component id="53dc8" class="javax.swing.JButton" binding="格式化Button" default-binding="true">
-                                <constraints>
-                                  <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                                </constraints>
-                                <properties>
-                                  <text value="格式化"/>
                                 </properties>
                               </component>
                               <component id="d06ea" class="javax.swing.JSeparator">
@@ -370,7 +362,7 @@
                                   <text value="$."/>
                                 </properties>
                               </component>
-                              <component id="10896" class="javax.swing.JButton" binding="通过JSONPath取值Button" default-binding="true">
+                              <component id="10896" class="javax.swing.JButton" binding="getByJsonPathButton">
                                 <constraints>
                                   <grid row="10" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                                 </constraints>
@@ -378,12 +370,20 @@
                                   <text value="通过JSON Path取值"/>
                                 </properties>
                               </component>
-                              <component id="69d41" class="javax.swing.JButton" binding="可视化获取JSONPathButton" default-binding="true">
+                              <component id="69d41" class="javax.swing.JButton" binding="getJsonPathButton">
                                 <constraints>
                                   <grid row="11" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                                 </constraints>
                                 <properties>
                                   <text value="可视化获取JSON Path"/>
+                                </properties>
+                              </component>
+                              <component id="53dc8" class="javax.swing.JButton" binding="customFormatButton">
+                                <constraints>
+                                  <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                </constraints>
+                                <properties>
+                                  <text value="格式化"/>
                                 </properties>
                               </component>
                             </children>
