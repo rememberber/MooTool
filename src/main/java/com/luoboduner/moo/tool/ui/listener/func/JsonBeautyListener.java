@@ -359,7 +359,7 @@ public class JsonBeautyListener {
 
         jsonBeautyForm.getJsonToXmlButton().addActionListener(e -> {
             String jsonText = jsonBeautyForm.getTextArea().getText();
-            JsonResultDialog jsonResultDialog = new JsonResultDialog();
+            JsonResultDialog jsonResultDialog = new JsonResultDialog("XML");
             String xmlStr = JSONUtil.toXmlStr(JSONUtil.isTypeJSONArray(jsonText) ? JSONUtil.parseArray(jsonText) : JSONUtil.parseObj(jsonText));
             xmlStr = "<root>" + xmlStr + "</root>";
             jsonResultDialog.setToTextArea(XmlReformatUtil.format(xmlStr));

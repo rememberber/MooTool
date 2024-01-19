@@ -5,12 +5,15 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.component.textviewer.RegexRSyntaxTextViewer;
+import com.luoboduner.moo.tool.ui.component.textviewer.RegexRTextScrollPane;
 import com.luoboduner.moo.tool.util.ComponentUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
+import com.luoboduner.moo.tool.util.UndoUtil;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 
 import javax.swing.*;
-import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
@@ -19,13 +22,12 @@ import java.awt.event.WindowEvent;
 public class JsonResultDialog extends JDialog {
     private JPanel contentPane;
     private JButton buttonOK;
-    private JTextArea textArea1;
-    private JScrollPane scrollPane;
+    private JPanel mainPanel;
 
-    public static String textInputValue;
-    public static boolean ok;
+    private RegexRSyntaxTextViewer textArea;
+    private RegexRTextScrollPane rTextScrollPane;
 
-    public JsonResultDialog() {
+    public JsonResultDialog(String contentType) {
 
         super(App.mainFrame, "Result");
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.6, 0.8);
@@ -33,7 +35,18 @@ public class JsonResultDialog extends JDialog {
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
 
-        ScrollUtil.smoothPane(scrollPane);
+        textArea = new RegexRSyntaxTextViewer();
+        if ("XML".equals(contentType)) {
+            textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_XML);
+        } else if ("JSON".equals(contentType)) {
+            textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT);
+        }
+        rTextScrollPane = new RegexRTextScrollPane(textArea);
+
+        mainPanel.add(rTextScrollPane, BorderLayout.CENTER);
+
+        UndoUtil.register(textArea);
+        ScrollUtil.smoothPane(rTextScrollPane);
 
         if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
             this.getRootPane().putClientProperty("apple.awt.fullWindowContent", true);
@@ -45,8 +58,6 @@ public class JsonResultDialog extends JDialog {
         }
 
         buttonOK.addActionListener(e -> onOK());
-
-        textArea1.setLineWrap(true);
 
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
@@ -62,22 +73,11 @@ public class JsonResultDialog extends JDialog {
     }
 
     private void onOK() {
-        textInputValue = textArea1.getText();
-        ok = true;
         dispose();
     }
 
     public void setToTextArea(String str) {
-        textArea1.setText(str);
-    }
-
-    public String getFromTextArea() {
-        return textArea1.getText();
-    }
-
-    public void appendTextArea(String str) {
-        textArea1.append(str);
-        textArea1.append("\n");
+        textArea.setText(str);
     }
 
     {
@@ -108,14 +108,9 @@ public class JsonResultDialog extends JDialog {
         buttonOK = new JButton();
         buttonOK.setText("OK");
         panel2.add(buttonOK, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(1, 1, new Insets(10, 0, 0, 0), -1, -1));
-        contentPane.add(panel3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        scrollPane = new JScrollPane();
-        panel3.add(scrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        scrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
-        textArea1 = new JTextArea();
-        scrollPane.setViewportView(textArea1);
+        mainPanel = new JPanel();
+        mainPanel.setLayout(new BorderLayout(0, 0));
+        contentPane.add(mainPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
     }
 
     /**
