@@ -1,5 +1,5 @@
 {
-  "currentVersion": "v1.5.9",
+  "currentVersion": "v1.6.0",
   "versionIndex": {
     "v0.0.0": "0",
     "v1.0.0": "1",
@@ -30,7 +30,8 @@
     "v1.5.6": "26",
     "v1.5.7": "27",
     "v1.5.8": "28",
-    "v1.5.9": "29"
+    "v1.5.9": "29",
+    "v1.6.0": "30"
   },
   "versionDetailList": [
     {
@@ -182,6 +183,11 @@
       "version": "v1.5.9",
       "title": "新增环境变量查看功能",
       "log": "● 新增环境变量查看功能\n● 全局：统一边距\n● Json、Host、HTTP：增加搜索框\n● 细节优化\n\n"
+    },
+    {
+      "version": "v1.6.0",
+      "title": "JSON工具功能增强",
+      "log": "● JSON工具支持压缩，格式化支持按key字母排序、忽略key字母大小写、检查重复key，支持JSON和XML互转，支持通过JSON Path取值\n\n"
     }
   ]
 }
