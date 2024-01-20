@@ -367,6 +367,13 @@ public class JsonBeautyListener {
 
         });
 
+        jsonBeautyForm.getXmlToJsonButton().addActionListener(e -> {
+            String xmlText = jsonBeautyForm.getTextArea().getText();
+            JsonResultDialog jsonResultDialog = new JsonResultDialog("JSON");
+            jsonResultDialog.setToTextArea(JSONUtil.toJsonPrettyStr(JSONUtil.xmlToJson(xmlText)));
+            jsonResultDialog.setVisible(true);
+        });
+
     }
 
     private static void viewByRowNum(int selectedRow) {
