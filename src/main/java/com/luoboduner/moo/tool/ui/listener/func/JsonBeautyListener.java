@@ -410,6 +410,51 @@ public class JsonBeautyListener {
             }
         });
 
+        jsonBeautyForm.getGetJsonPathButton().addActionListener(e -> {
+            try {
+                // alert:施工中，敬请期待
+                JOptionPane.showMessageDialog(App.mainFrame, "施工中，敬请期待！", "提示",
+                        JOptionPane.INFORMATION_MESSAGE);
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(App.mainFrame, "获取失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
+            }
+        });
+
+        // 快捷替换按钮
+        jsonBeautyForm.getMoreButton().addActionListener(e -> {
+            int totalWidth = jsonBeautyForm.getContentSplitPane().getWidth();
+            int currentDividerLocation = jsonBeautyForm.getContentSplitPane().getDividerLocation();
+
+            if (totalWidth - currentDividerLocation < 10) {
+                jsonBeautyForm.getMoreScrollPane().setVisible(true);
+                jsonBeautyForm.getContentSplitPane().setDividerLocation((int) (totalWidth * 0.72));
+            } else {
+                jsonBeautyForm.getContentSplitPane().setDividerLocation(totalWidth);
+                jsonBeautyForm.getMoreScrollPane().setVisible(false);
+            }
+        });
+
+        jsonBeautyForm.getMoreCloseLabel().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                jsonBeautyForm.getContentSplitPane().setDividerLocation(jsonBeautyForm.getContentSplitPane().getWidth());
+                jsonBeautyForm.getMoreScrollPane().setVisible(false);
+                super.mouseClicked(e);
+            }
+
+            @Override
+            public void mousePressed(MouseEvent e) {
+                super.mousePressed(e);
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                super.mouseEntered(e);
+            }
+        });
+
     }
 
     private static void viewByRowNum(int selectedRow) {

@@ -259,7 +259,7 @@
                         <border type="none"/>
                         <children/>
                       </grid>
-                      <scrollpane id="8c48">
+                      <scrollpane id="8c48" binding="moreScrollPane">
                         <constraints>
                           <splitpane position="right"/>
                         </constraints>

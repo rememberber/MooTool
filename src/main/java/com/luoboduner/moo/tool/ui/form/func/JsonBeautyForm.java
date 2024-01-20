@@ -68,6 +68,7 @@ public class JsonBeautyForm {
     private JButton getByJsonPathButton;
     private JLabel moreCloseLabel;
     private JButton getJsonPathButton;
+    private JScrollPane moreScrollPane;
 
     private static JsonBeautyForm jsonBeautyForm;
     private static TJsonBeautyMapper jsonBeautyMapper = MybatisUtil.getSqlSession().getMapper(TJsonBeautyMapper.class);
@@ -121,6 +122,7 @@ public class JsonBeautyForm {
         jsonBeautyForm.getMoreCloseLabel().setIcon(new FlatSVGIcon("icon/remove2.svg"));
 
         jsonBeautyForm.getFindReplacePanel().setVisible(false);
+        jsonBeautyForm.getMoreScrollPane().setVisible(false);
 
         jsonBeautyForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
         jsonBeautyForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
@@ -333,11 +335,11 @@ public class JsonBeautyForm {
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         contentSplitPane.setLeftComponent(panel2);
-        final JScrollPane scrollPane2 = new JScrollPane();
-        contentSplitPane.setRightComponent(scrollPane2);
+        moreScrollPane = new JScrollPane();
+        contentSplitPane.setRightComponent(moreScrollPane);
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new GridLayoutManager(13, 1, new Insets(10, 10, 10, 10), -1, -1));
-        scrollPane2.setViewportView(panel3);
+        moreScrollPane.setViewportView(panel3);
         final Spacer spacer2 = new Spacer();
         panel3.add(spacer2, new GridConstraints(12, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         ignoreCaseCheckBox = new JCheckBox();
