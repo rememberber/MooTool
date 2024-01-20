@@ -64,7 +64,7 @@ public class JsonBeautyForm {
     private JButton jsonToXmlButton;
     private JButton xmlToJsonButton;
     private JButton customFormatButton;
-    private JTextField $TextField;
+    private JTextField jsonPathTextField;
     private JButton getByJsonPathButton;
     private JLabel moreCloseLabel;
     private JButton getJsonPathButton;
@@ -367,9 +367,9 @@ public class JsonBeautyForm {
         panel3.add(xmlToJsonButton, new GridConstraints(7, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JSeparator separator2 = new JSeparator();
         panel3.add(separator2, new GridConstraints(8, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        $TextField = new JTextField();
-        $TextField.setText("$.");
-        panel3.add($TextField, new GridConstraints(9, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        jsonPathTextField = new JTextField();
+        jsonPathTextField.setText("$.");
+        panel3.add(jsonPathTextField, new GridConstraints(9, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         getByJsonPathButton = new JButton();
         getByJsonPathButton.setText("通过JSON Path取值");
         panel3.add(getByJsonPathButton, new GridConstraints(10, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));

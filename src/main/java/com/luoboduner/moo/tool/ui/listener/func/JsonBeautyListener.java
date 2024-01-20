@@ -340,38 +340,74 @@ public class JsonBeautyListener {
         });
 
         jsonBeautyForm.getCustomFormatButton().addActionListener(e -> {
-            String jsonText = jsonBeautyForm.getTextArea().getText();
-            JSONConfig jsonConfig = new JSONConfig();
-            jsonConfig.setIgnoreCase(jsonBeautyForm.getIgnoreCaseCheckBox().isSelected());
-            jsonConfig.setCheckDuplicate(jsonBeautyForm.getCheckDuplicateCheckBox().isSelected());
-            if (jsonBeautyForm.getKeySortCheckBox().isSelected()) {
-                jsonConfig.setKeyComparator((o1, o2) -> {
-                    if (jsonBeautyForm.getIgnoreCaseCheckBox().isSelected()) {
-                        return o1.toString().toLowerCase().compareTo(o2.toString().toLowerCase());
-                    } else {
-                        return o1.toString().compareTo(o2.toString());
-                    }
-                });
+            try {
+                String jsonText = jsonBeautyForm.getTextArea().getText();
+                JSONConfig jsonConfig = new JSONConfig();
+                jsonConfig.setIgnoreCase(jsonBeautyForm.getIgnoreCaseCheckBox().isSelected());
+                jsonConfig.setCheckDuplicate(jsonBeautyForm.getCheckDuplicateCheckBox().isSelected());
+                if (jsonBeautyForm.getKeySortCheckBox().isSelected()) {
+                    jsonConfig.setKeyComparator((o1, o2) -> {
+                        if (jsonBeautyForm.getIgnoreCaseCheckBox().isSelected()) {
+                            return o1.toString().toLowerCase().compareTo(o2.toString().toLowerCase());
+                        } else {
+                            return o1.toString().compareTo(o2.toString());
+                        }
+                    });
+                }
+                jsonBeautyForm.getTextArea().setText(JSONUtil.toJsonPrettyStr(JSONUtil.parse(jsonText, jsonConfig)));
+                jsonBeautyForm.getTextArea().setCaretPosition(0);
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(App.mainFrame, "格式化失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
             }
-            jsonBeautyForm.getTextArea().setText(JSONUtil.toJsonPrettyStr(JSONUtil.parse(jsonText, jsonConfig)));
-            jsonBeautyForm.getTextArea().setCaretPosition(0);
+
         });
 
         jsonBeautyForm.getJsonToXmlButton().addActionListener(e -> {
-            String jsonText = jsonBeautyForm.getTextArea().getText();
-            JsonResultDialog jsonResultDialog = new JsonResultDialog("XML");
-            String xmlStr = JSONUtil.toXmlStr(JSONUtil.isTypeJSONArray(jsonText) ? JSONUtil.parseArray(jsonText) : JSONUtil.parseObj(jsonText));
-            xmlStr = "<root>" + xmlStr + "</root>";
-            jsonResultDialog.setToTextArea(XmlReformatUtil.format(xmlStr));
-            jsonResultDialog.setVisible(true);
+            try {
+                String jsonText = jsonBeautyForm.getTextArea().getText();
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("XML");
+                String xmlStr = JSONUtil.toXmlStr(JSONUtil.isTypeJSONArray(jsonText) ? JSONUtil.parseArray(jsonText) : JSONUtil.parseObj(jsonText));
+                xmlStr = "<root>" + xmlStr + "</root>";
+                jsonResultDialog.setToTextArea(XmlReformatUtil.format(xmlStr));
+                jsonResultDialog.setVisible(true);
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
+            }
 
         });
 
         jsonBeautyForm.getXmlToJsonButton().addActionListener(e -> {
-            String xmlText = jsonBeautyForm.getTextArea().getText();
-            JsonResultDialog jsonResultDialog = new JsonResultDialog("JSON");
-            jsonResultDialog.setToTextArea(JSONUtil.toJsonPrettyStr(JSONUtil.xmlToJson(xmlText)));
-            jsonResultDialog.setVisible(true);
+            try {
+                String xmlText = jsonBeautyForm.getTextArea().getText();
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("JSON");
+                jsonResultDialog.setToTextArea(JSONUtil.toJsonPrettyStr(JSONUtil.xmlToJson(xmlText)));
+                jsonResultDialog.setVisible(true);
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
+            }
+
+        });
+
+        jsonBeautyForm.getGetByJsonPathButton().addActionListener(e -> {
+            try {
+                String jsonText = jsonBeautyForm.getTextArea().getText();
+                String jsonPath = jsonBeautyForm.getJsonPathTextField().getText();
+                if (StringUtils.isNotBlank(jsonPath)) {
+                    JsonResultDialog jsonResultDialog = new JsonResultDialog("JSON");
+                    jsonResultDialog.setToTextArea(JSONUtil.toJsonPrettyStr(JSONUtil.getByPath(JSONUtil.parse(jsonText), jsonPath).toString()));
+                    jsonResultDialog.setVisible(true);
+                }
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(App.mainFrame, "获取失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
+            }
         });
 
     }
