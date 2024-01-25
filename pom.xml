@@ -35,7 +35,8 @@
         <flatlaf.version>3.4-SNAPSHOT</flatlaf.version>
         <flatlaf-extras.version>3.4-SNAPSHOT</flatlaf-extras.version>
         <flatlaf-intellij-themes.version>3.4-SNAPSHOT</flatlaf-intellij-themes.version>
-        <flatlaf-fonts-jetbrains-mono.version>2.242</flatlaf-fonts-jetbrains-mono.version>
+        <flatlaf-fonts-jetbrains-mono.version>2.304</flatlaf-fonts-jetbrains-mono.version>
+        <flatlaf-fonts-inter.version>4.0</flatlaf-fonts-inter.version>
         <rsyntaxtextarea.version>3.3.4</rsyntaxtextarea.version>
         <sql-formatter.version>2.0.4</sql-formatter.version>
         <google-java-format.version>1.18.1</google-java-format.version>
@@ -182,12 +183,12 @@
             <groupId>com.formdev</groupId>
             <artifactId>flatlaf-fonts-jetbrains-mono</artifactId>
             <version>${flatlaf-fonts-jetbrains-mono.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>flatlaf</artifactId>
-                    <groupId>com.formdev</groupId>
-                </exclusion>
-            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>com.formdev</groupId>
+            <artifactId>flatlaf-fonts-inter</artifactId>
+            <version>${flatlaf-fonts-inter.version}</version>
         </dependency>
 
         <!-- https://mvnrepository.com/artifact/com.fifesoft/rsyntaxtextarea -->

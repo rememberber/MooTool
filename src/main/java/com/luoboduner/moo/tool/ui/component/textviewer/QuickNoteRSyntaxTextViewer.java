@@ -1,6 +1,7 @@
 package com.luoboduner.moo.tool.ui.component.textviewer;
 
 import com.formdev.flatlaf.FlatLaf;
+import com.formdev.flatlaf.fonts.inter.FlatInterFont;
 import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
 import com.formdev.flatlaf.util.FontUtils;
 import com.formdev.flatlaf.util.StringUtils;
@@ -155,6 +156,8 @@ public class QuickNoteRSyntaxTextViewer extends RSyntaxTextArea {
         Font font;
         if (FlatJetBrainsMonoFont.FAMILY.equals(fontName)) {
             font = FontUtils.getCompositeFont(FlatJetBrainsMonoFont.FAMILY, Font.PLAIN, fontSize);
+        } else if (FlatInterFont.FAMILY.equals(fontName)) {
+            font = FontUtils.getCompositeFont(FlatInterFont.FAMILY, Font.PLAIN, fontSize);
         } else {
             font = new Font(fontName, Font.PLAIN, fontSize);
         }
