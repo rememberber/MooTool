@@ -8,13 +8,17 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.setting.yaml.YamlUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * Yaml 转 Properties 工具
@@ -82,7 +86,13 @@ public class YmlAndPropUtil {
     public static String convertProp2Yml(String propStr) {
         Map<String, Object> yamlData = parseProperties(propStr);
 
-        Yaml yaml = new Yaml();
+        DumperOptions options = new DumperOptions();
+        options.setPrettyFlow(false); // 使用漂亮的流样式
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK); // 设置默认流样式为块样式
+        options.setDefaultScalarStyle(DumperOptions.ScalarStyle.PLAIN);
+        options.setAllowUnicode(true); // 允许Unicode字符
+        options.setIndent(4); // 设置缩进宽度
+        Yaml yaml = new Yaml(options);
         return yaml.dumpAsMap(yamlData);
     }
 
