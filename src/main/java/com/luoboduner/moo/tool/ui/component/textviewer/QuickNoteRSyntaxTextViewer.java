@@ -67,7 +67,8 @@ public class QuickNoteRSyntaxTextViewer extends RSyntaxTextArea {
             public void keyPressed(KeyEvent evt) {
                 if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_S) {
                     QuickNoteListener.quickSave(true, true);
-                } else if ((evt.isControlDown() || evt.isMetaDown()) && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                } else if (((evt.isControlDown() || evt.isMetaDown()) && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F)
+                        || evt.isMetaDown() && evt.isAltDown() && evt.getKeyCode() == KeyEvent.VK_L) {
                     QuickNoteListener.format();
                 } else if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_F) {
                     QuickNoteListener.showFindPanel();
