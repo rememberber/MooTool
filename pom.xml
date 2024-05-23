@@ -50,6 +50,7 @@
 		<jsoup.version>1.16.2</jsoup.version>
 		<jalopy.version>1.5rc3</jalopy.version>
         <itextpdf.version>5.5.1</itextpdf.version>
+        <snakeyaml.version>1.23</snakeyaml.version>
     </properties>
 
     <repositories>
@@ -295,98 +296,112 @@
             <type>jar</type>
         </dependency>
 
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>${snakeyaml.version}</version>
+        </dependency>
+
+        <!--<dependency>
+            <groupId>com.google.inject</groupId>
+            <artifactId>guice</artifactId>
+            <version>5.1.0</version>
+        </dependency>-->
+
     </dependencies>
 
     <build>
-        <plugins>
-            <plugin>
-                <groupId>org.mybatis.generator</groupId>
-                <artifactId>mybatis-generator-maven-plugin</artifactId>
-                <version>1.3.6</version>
-                <configuration>
-                    <verbose>true</verbose>
-                    <overwrite>true</overwrite>
-                </configuration>
-            </plugin>
+        <pluginManagement>
+            <plugins>
+                <plugin>
+                    <groupId>org.mybatis.generator</groupId>
+                    <artifactId>mybatis-generator-maven-plugin</artifactId>
+                    <version>1.3.6</version>
+                    <configuration>
+                        <verbose>true</verbose>
+                        <overwrite>true</overwrite>
+                    </configuration>
+                </plugin>
 
-            <plugin>
-                <groupId>io.github.fvarrui</groupId>
-                <artifactId>javapackager</artifactId>
-                <version>1.7.5</version>
-                <configuration>
-                    <bundleJre>true</bundleJre>
-                    <mainClass>com.luoboduner.moo.tool.App</mainClass>
-                    <generateInstaller>true</generateInstaller>
-                    <!-- 这行不能被格式化为多行，否则会出错-->
-                    <vmArgs>--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</vmArgs>
-                </configuration>
-                <executions>
-                                        <execution>
-                                            <id>bundling-for-windows</id>
-                                            <phase>package</phase>
-                                            <goals>
-                                                <goal>package</goal>
-                                            </goals>
-                                            <configuration>
-                                                <platform>windows</platform>
-                                                <createZipball>true</createZipball>
-                                                <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>
-                                                <additionalResources>
-                                                    <additionalResource>${name}.l4j.ini</additionalResource>
-                                                </additionalResources>
-                                                <administratorRequired>true</administratorRequired>
-                                                <winConfig>
+                <plugin>
+                    <groupId>io.github.fvarrui</groupId>
+                    <artifactId>javapackager</artifactId>
+                    <version>1.7.5</version>
+                    <configuration>
+                        <bundleJre>true</bundleJre>
+                        <mainClass>com.luoboduner.moo.tool.App</mainClass>
+                        <generateInstaller>true</generateInstaller>
+                        <!-- 这行不能被格式化为多行，否则会出错-->
+                        <vmArgs>--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</vmArgs>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <id>bundling-for-windows</id>
+                            <phase>package</phase>
+                            <goals>
+                                <!--<goal>package</goal>-->
+                            </goals>
+                            <configuration>
+                                <platform>windows</platform>
+                                <createZipball>true</createZipball>
+                                <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>
+                                <additionalResources>
+                                    <additionalResource>${name}.l4j.ini</additionalResource>
+                                </additionalResources>
+                                <administratorRequired>true</administratorRequired>
+                                <winConfig>
 
-                                                    <!-- general properties -->
-                                                    <generateSetup>true</generateSetup>
-                                                    <generateMsi>true</generateMsi>
-                                                    <generateMsm>true</generateMsm>
+                                    <!-- general properties -->
+                                    <generateSetup>true</generateSetup>
+                                    <generateMsi>true</generateMsi>
+                                    <generateMsm>true</generateMsm>
 
-                                                    <!-- setup generation properties -->
-                                                    <setupMode>installForAllUsers</setupMode>
-                                                    <createDesktopIconTask>true</createDesktopIconTask>
-                                                    <disableDirPage>false</disableDirPage>
-                                                    <disableFinishedPage>false</disableFinishedPage>
-                                                    <removeOldLibs>true</removeOldLibs>
-                                                    <setupLanguages>
-                                                        <english>compiler:Default.isl</english>
-                                                        <!--                                    <spanish>compiler:Languages\Chinese.isl</spanish>-->
-                                                    </setupLanguages>
-                                                </winConfig>
-                                            </configuration>
-                                        </execution>
-                    <!--                                        <execution>-->
-                    <!--                                            <id>bundling-for-linux</id>-->
-                    <!--                                            <phase>package</phase>-->
-                    <!--                                            <goals>-->
-                    <!--                                                <goal>package</goal>-->
-                    <!--                                            </goals>-->
-                    <!--                                            <configuration>-->
-                    <!--                                                <platform>linux</platform>-->
-                    <!--                                                <createTarball>true</createTarball>-->
-                    <!--                                            <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
-                    <!--                                            <additionalResources>-->
-                    <!--                                                <additionalResource>${name}.l4j.ini</additionalResource>-->
-                    <!--                                            </additionalResources>-->
-                    <!--                                            </configuration>-->
-                    <!--                                        </execution>-->
-<!--                    <execution>-->
-<!--                        <id>bundling-for-mac</id>-->
-<!--                        <phase>package</phase>-->
-<!--                        <goals>-->
-<!--                            <goal>package</goal>-->
-<!--                        </goals>-->
-<!--                        <configuration>-->
-<!--                            <platform>mac</platform>-->
-<!--                            <createTarball>true</createTarball>-->
-<!--                            <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
-<!--                            <additionalResources>-->
-<!--                                <additionalResource>${name}.l4j.ini</additionalResource>-->
-<!--                            </additionalResources>-->
-<!--                        </configuration>-->
-<!--                    </execution>-->
-                </executions>
-            </plugin>
-        </plugins>
+                                    <!-- setup generation properties -->
+                                    <setupMode>installForAllUsers</setupMode>
+                                    <createDesktopIconTask>true</createDesktopIconTask>
+                                    <disableDirPage>false</disableDirPage>
+                                    <disableFinishedPage>false</disableFinishedPage>
+                                    <removeOldLibs>true</removeOldLibs>
+                                    <setupLanguages>
+                                        <english>compiler:Default.isl</english>
+                                        <!--                                    <spanish>compiler:Languages\Chinese.isl</spanish>-->
+                                    </setupLanguages>
+                                </winConfig>
+                            </configuration>
+                        </execution>
+                        <!--                                        <execution>-->
+                        <!--                                            <id>bundling-for-linux</id>-->
+                        <!--                                            <phase>package</phase>-->
+                        <!--                                            <goals>-->
+                        <!--                                                <goal>package</goal>-->
+                        <!--                                            </goals>-->
+                        <!--                                            <configuration>-->
+                        <!--                                                <platform>linux</platform>-->
+                        <!--                                                <createTarball>true</createTarball>-->
+                        <!--                                            <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
+                        <!--                                            <additionalResources>-->
+                        <!--                                                <additionalResource>${name}.l4j.ini</additionalResource>-->
+                        <!--                                            </additionalResources>-->
+                        <!--                                            </configuration>-->
+                        <!--                                        </execution>-->
+                        <!--                    <execution>-->
+                        <!--                        <id>bundling-for-mac</id>-->
+                        <!--                        <phase>package</phase>-->
+                        <!--                        <goals>-->
+                        <!--                            <goal>package</goal>-->
+                        <!--                        </goals>-->
+                        <!--                        <configuration>-->
+                        <!--                            <platform>mac</platform>-->
+                        <!--                            <createTarball>true</createTarball>-->
+                        <!--                            <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
+                        <!--                            <additionalResources>-->
+                        <!--                                <additionalResource>${name}.l4j.ini</additionalResource>-->
+                        <!--                            </additionalResources>-->
+                        <!--                        </configuration>-->
+                        <!--                    </execution>-->
+                    </executions>
+                </plugin>
+            </plugins>
+        </pluginManagement>
     </build>
 </project>
