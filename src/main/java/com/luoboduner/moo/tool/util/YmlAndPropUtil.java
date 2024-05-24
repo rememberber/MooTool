@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.util;
 
+import cn.hutool.core.collection.CollUtil;
 import cn.hutool.core.convert.Convert;
 import cn.hutool.core.exceptions.UtilException;
 import cn.hutool.core.lang.Assert;
@@ -7,13 +8,17 @@ import cn.hutool.core.util.ObjectUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.setting.yaml.YamlUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.yaml.snakeyaml.DumperOptions;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.StringWriter;
 import java.io.Writer;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 /**
  * Yaml 转 Properties 工具
@@ -37,6 +42,15 @@ public class YmlAndPropUtil {
                 system.user.offset= 200
                 system.user.sex=1
                 spring.launcher=appl.class
+                
+                tencent.0=1001
+                tencent.1=2001
+                tencent.2=3002
+                
+                baidu.list[0]=a001
+                baidu.list[1]=b001
+                baidu.list[2]=c001
+              
                 """;
 
 
@@ -72,7 +86,13 @@ public class YmlAndPropUtil {
     public static String convertProp2Yml(String propStr) {
         Map<String, Object> yamlData = parseProperties(propStr);
 
-        Yaml yaml = new Yaml();
+        DumperOptions options = new DumperOptions();
+        options.setPrettyFlow(false); // 使用漂亮的流样式
+        options.setDefaultFlowStyle(DumperOptions.FlowStyle.BLOCK); // 设置默认流样式为块样式
+        options.setDefaultScalarStyle(DumperOptions.ScalarStyle.PLAIN);
+        options.setAllowUnicode(true); // 允许Unicode字符
+        options.setIndent(4); // 设置缩进宽度
+        Yaml yaml = new Yaml(options);
         return yaml.dumpAsMap(yamlData);
     }
 
@@ -94,14 +114,25 @@ public class YmlAndPropUtil {
     private static void parseKey(Map<String, Object> data, String key, String value) {
         // 去除前后空格
         value = StrUtil.trim(value);
+        key = StrUtil.trim(key);
 
         String[] parts = key.split("\\.");
         Map<String, Object> current = data;
+        Map<String, Object> beforeCurrent = null;
         for (int i = 0; i < parts.length - 1; i++) {
+            if ((i == parts.length - 2 || parts.length <= 2)
+                    && StrUtil.isNumeric(parts[parts.length - 1])) {
+                // 如果最后一个key是数字 则将其转成列表
+                addObj2MapList(current, parts[i], value);
+                return;
+            }
+
             String part = parts[i];
             if (!current.containsKey(part)) {
                 current.put(part, new HashMap<>());
             }
+
+            // 指针下移
             current = (Map<String, Object>) current.get(part);
         }
         String lastPart = parts[parts.length - 1];
@@ -110,17 +141,22 @@ public class YmlAndPropUtil {
             String listKey = lastPart.substring(0, lastPart.indexOf('['));
 
             // 将list类型key转成map
-            List<Map<Integer, String>> list = (List<Map<Integer, String>>) current.get(listKey);
-            if (list == null) {
-                list = new ArrayList<>();
-                current.put(listKey, list);
-            }
-            Map<Integer, String> map = new HashMap<>();
-            map.put(Convert.toInt(lastPart.substring(lastPart.indexOf('[') + 1, lastPart.indexOf(']'))), value);
-            list.add(map);
+            addObj2MapList(current, listKey, value);
         } else {
             current.put(lastPart, value);
         }
+    }
+
+    private static void addObj2MapList(Map<String, Object> map, String key, Object value) {
+        map.compute(key, (k, v) -> {
+            if (v == null) {
+                return CollUtil.newArrayList(value);
+            } else {
+                List<Object> list = Convert.toList(Object.class, v);
+                list.add(value);
+                return list;
+            }
+        });
     }
 
     /**
