@@ -104,7 +104,11 @@ public class FrameListener {
             }
         });
 
-        MainWindow.getInstance().getMainPanel().registerKeyboardAction(e -> App.mainFrame.setExtendedState(Frame.ICONIFIED), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        if (SystemUtil.isMacOs()) {
+            MainWindow.getInstance().getMainPanel().registerKeyboardAction(e -> App.mainFrame.setExtendedState(Frame.NORMAL), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        } else {
+            MainWindow.getInstance().getMainPanel().registerKeyboardAction(e -> App.mainFrame.setExtendedState(Frame.ICONIFIED), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        }
 
     }
 

@@ -1,5 +1,5 @@
 {
-  "currentVersion": "v1.6.0",
+  "currentVersion": "v1.6.1",
   "versionIndex": {
     "v0.0.0": "0",
     "v1.0.0": "1",
@@ -31,7 +31,8 @@
     "v1.5.7": "27",
     "v1.5.8": "28",
     "v1.5.9": "29",
-    "v1.6.0": "30"
+    "v1.6.0": "30",
+    "v1.6.1": "31"
   },
   "versionDetailList": [
     {
@@ -188,6 +189,11 @@
       "version": "v1.6.0",
       "title": "JSON工具功能增强",
       "log": "● JSON工具支持压缩，格式化支持按key字母排序、忽略key字母大小写、检查重复key，支持JSON和XML互转，支持通过JSON Path取值\n\n"
+    },
+    {
+      "version": "v1.6.1",
+      "title": "增加yml和properties互转功能",
+      "log": "● 更新字体版本，随手记增加Inter字体\n● 增加yml和properties互转功能 by:放学后的茶会\n● 修复macOS下开启台前调度以后按esc之后会卡死的问题\n● 快捷键：格式化支持intellij mac的command+option+L\n\n"
     }
   ]
 }

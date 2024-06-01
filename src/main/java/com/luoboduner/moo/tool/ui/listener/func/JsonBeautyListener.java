@@ -115,7 +115,8 @@ public class JsonBeautyListener {
             public void keyPressed(KeyEvent evt) {
                 if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_S) {
                     quickSave(true);
-                } else if ((evt.isControlDown() || evt.isMetaDown()) && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                } else if (((evt.isControlDown() || evt.isMetaDown()) && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) ||
+                        evt.isMetaDown() && evt.isAltDown() && evt.getKeyCode() == KeyEvent.VK_L) {
                     String jsonText = jsonBeautyForm.getTextArea().getText();
                     jsonBeautyForm.getTextArea().setText(formatJson(jsonText));
                     jsonBeautyForm.getTextArea().setCaretPosition(0);
