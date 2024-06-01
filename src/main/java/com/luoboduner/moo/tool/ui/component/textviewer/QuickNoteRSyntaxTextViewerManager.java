@@ -1,6 +1,7 @@
 package com.luoboduner.moo.tool.ui.component.textviewer;
 
 import com.formdev.flatlaf.FlatLaf;
+import com.formdev.flatlaf.fonts.inter.FlatInterFont;
 import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
 import com.formdev.flatlaf.util.FontUtils;
 import com.luoboduner.moo.tool.App;
@@ -46,6 +47,8 @@ public class QuickNoteRSyntaxTextViewerManager {
                 Font font;
                 if (FlatJetBrainsMonoFont.FAMILY.equals(tQuickNote.getFontName())) {
                     font = FontUtils.getCompositeFont(FlatJetBrainsMonoFont.FAMILY, Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
+                } else if (FlatInterFont.FAMILY.equals(tQuickNote.getFontName())) {
+                    font = FontUtils.getCompositeFont(FlatInterFont.FAMILY, Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
                 } else {
                     font = new Font(tQuickNote.getFontName(), Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
                 }
@@ -66,7 +69,7 @@ public class QuickNoteRSyntaxTextViewerManager {
         return rTextScrollPane;
     }
 
-    public void updateFont(String name){
+    public void updateFont(String name) {
         RTextScrollPane rTextScrollPane = viewMap.get(name);
         if (rTextScrollPane != null) {
             QuickNoteRSyntaxTextViewer plainTextViewer = (QuickNoteRSyntaxTextViewer) rTextScrollPane.getTextArea();
@@ -75,6 +78,8 @@ public class QuickNoteRSyntaxTextViewerManager {
                 Font font;
                 if (FlatJetBrainsMonoFont.FAMILY.equals(tQuickNote.getFontName())) {
                     font = FontUtils.getCompositeFont(FlatJetBrainsMonoFont.FAMILY, Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
+                } else if (FlatInterFont.FAMILY.equals(tQuickNote.getFontName())) {
+                    font = FontUtils.getCompositeFont(FlatInterFont.FAMILY, Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
                 } else {
                     font = new Font(tQuickNote.getFontName(), Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
                 }

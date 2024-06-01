@@ -1,6 +1,7 @@
 package com.luoboduner.moo.tool.ui.component.textviewer;
 
 import com.formdev.flatlaf.FlatLaf;
+import com.formdev.flatlaf.fonts.inter.FlatInterFont;
 import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
 import com.formdev.flatlaf.util.FontUtils;
 import com.formdev.flatlaf.util.StringUtils;
@@ -66,7 +67,8 @@ public class QuickNoteRSyntaxTextViewer extends RSyntaxTextArea {
             public void keyPressed(KeyEvent evt) {
                 if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_S) {
                     QuickNoteListener.quickSave(true, true);
-                } else if ((evt.isControlDown() || evt.isMetaDown()) && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F) {
+                } else if (((evt.isControlDown() || evt.isMetaDown()) && evt.isShiftDown() && evt.getKeyCode() == KeyEvent.VK_F)
+                        || evt.isMetaDown() && evt.isAltDown() && evt.getKeyCode() == KeyEvent.VK_L) {
                     QuickNoteListener.format();
                 } else if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_F) {
                     QuickNoteListener.showFindPanel();
@@ -155,6 +157,8 @@ public class QuickNoteRSyntaxTextViewer extends RSyntaxTextArea {
         Font font;
         if (FlatJetBrainsMonoFont.FAMILY.equals(fontName)) {
             font = FontUtils.getCompositeFont(FlatJetBrainsMonoFont.FAMILY, Font.PLAIN, fontSize);
+        } else if (FlatInterFont.FAMILY.equals(fontName)) {
+            font = FontUtils.getCompositeFont(FlatInterFont.FAMILY, Font.PLAIN, fontSize);
         } else {
             font = new Font(fontName, Font.PLAIN, fontSize);
         }

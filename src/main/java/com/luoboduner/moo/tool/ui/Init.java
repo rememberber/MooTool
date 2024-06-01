@@ -212,6 +212,7 @@ public class Init {
         ThreadUtil.execute(RegexForm::init);
         ThreadUtil.execute(ImageForm::init);
         ThreadUtil.execute(VariablesForm::init);
+        ThreadUtil.execute(YmlPropertiesForm::init);
 
         // 检查新版版
         if (App.config.isAutoCheckUpdate()) {
