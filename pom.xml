@@ -37,7 +37,7 @@
         <flatlaf-intellij-themes.version>3.5</flatlaf-intellij-themes.version>
         <flatlaf-fonts-jetbrains-mono.version>2.304</flatlaf-fonts-jetbrains-mono.version>
         <flatlaf-fonts-inter.version>4.0</flatlaf-fonts-inter.version>
-        <rsyntaxtextarea.version>3.5.0</rsyntaxtextarea.version>
+        <rsyntaxtextarea.version>3.5.1</rsyntaxtextarea.version>
         <sql-formatter.version>2.0.4</sql-formatter.version>
         <google-java-format.version>1.18.1</google-java-format.version>
         <!--        <jSystemThemeDetector.version>3.8</jSystemThemeDetector.version>-->
