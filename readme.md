@@ -10,6 +10,8 @@ Handy tool set for developers.
 [![GitHub release](https://img.shields.io/github/v/release/rememberber/MooTool)](https://github.com/rememberber/MooTool/releases)
 [![GitHub license](https://img.shields.io/github/license/rememberber/MooTool)](https://github.com/rememberber/MooTool/blob/master/LICENSE.txt)
 
+<a href="https://hellogithub.com/repository/4e5f287079734f98890a69d56000b361" target="_blank"><img src="https://api.hellogithub.com/v1/widgets/recommend.svg?rid=4e5f287079734f98890a69d56000b361&claim_uid=0UhXFJvP9ndHtiB" alt="Featured｜HelloGitHub" style="width: 250px; height: 54px;" width="250" height="54" /></a>
+
 ## 支持的平台
 Windows • Linux • macOS
 
