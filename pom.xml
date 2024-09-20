@@ -392,6 +392,9 @@
                         <configuration>
                             <platform>mac</platform>
                             <createTarball>true</createTarball>
+                            <macConfig>
+                                <macStartup>UNIVERSAL</macStartup>
+                            </macConfig>
                             <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>
                             <additionalResources>
                                 <additionalResource>${name}.l4j.ini</additionalResource>
