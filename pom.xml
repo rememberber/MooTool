@@ -6,7 +6,7 @@
 
     <groupId>com.luoboduner.moo.tool</groupId>
     <artifactId>MooTool</artifactId>
-    <version>1.6.1</version>
+    <version>1.6.2</version>
     <packaging>jar</packaging>
 
     <name>MooTool</name>
@@ -331,7 +331,7 @@
                     <mainClass>com.luoboduner.moo.tool.App</mainClass>
                     <generateInstaller>true</generateInstaller>
                     <!-- 这行不能被格式化为多行，否则会出错-->
-                    <vmArgs>--add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</vmArgs>
+                    <vmArgs>-Dswing.aatext=true -XX:+UseZGC -XX:+ZGenerational -XX:-ZUncommit -Xms128m -Xmx512m --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</vmArgs>
                 </configuration>
                 <executions>
 <!--                                        <execution>-->
@@ -392,6 +392,9 @@
                         <configuration>
                             <platform>mac</platform>
                             <createTarball>true</createTarball>
+                            <macConfig>
+                                <macStartup>UNIVERSAL</macStartup>
+                            </macConfig>
                             <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>
                             <additionalResources>
                                 <additionalResource>${name}.l4j.ini</additionalResource>
