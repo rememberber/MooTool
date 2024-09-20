@@ -128,7 +128,7 @@ public class QuickNoteListener {
                     if (selectedName != null && !QuickNoteRSyntaxTextViewer.ignoreQuickSave) {
                         TQuickNote tQuickNote = new TQuickNote();
                         tQuickNote.setName(selectedName);
-                        tQuickNote.setSyntax(syntaxName);
+                        tQuickNote.setSyntax("text/" + syntaxName);
                         String now = SqliteUtil.nowDateForSqlite();
                         tQuickNote.setModifiedTime(now);
 
@@ -447,7 +447,7 @@ public class QuickNoteListener {
         }
 
         quickNoteForm.getColorButton().setIcon(new QuickNoteForm.AccentColorIcon(color));
-        quickNoteForm.getSyntaxComboBox().setSelectedItem(tQuickNote.getSyntax());
+        quickNoteForm.getSyntaxComboBox().setSelectedItem(tQuickNote.getSyntax().substring(5));
         quickNoteForm.getFontNameComboBox().setSelectedItem(tQuickNote.getFontName());
         quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(tQuickNote.getFontSize()));
 
@@ -784,7 +784,7 @@ public class QuickNoteListener {
                 return;
             }
 
-            switch (selectedSyntax) {
+            switch ("text/" + selectedSyntax) {
                 case SyntaxConstants.SYNTAX_STYLE_SQL:
                     switch (App.config.getSqlDialect()) {
                         case "MariaDB":
