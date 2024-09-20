@@ -1,5 +1,5 @@
 {
-  "currentVersion": "v1.6.1",
+  "currentVersion": "v1.6.2",
   "versionIndex": {
     "v0.0.0": "0",
     "v1.0.0": "1",
@@ -32,7 +32,8 @@
     "v1.5.8": "28",
     "v1.5.9": "29",
     "v1.6.0": "30",
-    "v1.6.1": "31"
+    "v1.6.1": "31",
+    "v1.6.2": "32"
   },
   "versionDetailList": [
     {
@@ -194,6 +195,11 @@
       "version": "v1.6.1",
       "title": "增加yml和properties互转功能",
       "log": "● 更新字体版本，随手记增加Inter字体\n● 增加yml和properties互转功能 by:放学后的茶会\n● 修复macOS下开启台前调度以后按esc之后会卡死的问题\n● 快捷键：格式化支持intellij mac的command+option+L\n\n"
+    },
+    {
+      "version": "v1.6.2",
+      "title": "修复macOS15下无法启动的问题",
+      "log": "● 修复macOS15下无法启动的问题\n● 优化随手记中语法高亮语言类型的展示\n● 优化JVM参数\n● 升级部分核心依赖\n\n"
     }
   ]
 }
