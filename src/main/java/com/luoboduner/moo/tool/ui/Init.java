@@ -66,9 +66,9 @@ public class Init {
 
             // Mac等高分辨率屏幕字号初始化
             if (SystemUtil.isMacOs()) {
-                fontSize = 15;
+                fontSize = 14;
             } else {
-                fontSize = (int) (UIUtil.getScreenScale() * fontSize);
+//                fontSize = (int) (UIUtil.getScreenScale() * fontSize);
             }
             App.config.setFontSize(fontSize);
         }
