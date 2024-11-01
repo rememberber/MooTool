@@ -138,7 +138,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public boolean isDefaultMaxWindow() {
-        return setting.getBool("defaultMaxWindow", "setting.normal", true);
+        return setting.getBool("defaultMaxWindow", "setting.normal", false);
     }
 
     public void setDefaultMaxWindow(boolean defaultMaxWindow) {
