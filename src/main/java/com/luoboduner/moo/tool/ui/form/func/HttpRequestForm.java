@@ -16,10 +16,7 @@ import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.TableInCellButtonColumn;
 import com.luoboduner.moo.tool.ui.listener.func.HttpRequestListener;
-import com.luoboduner.moo.tool.util.JTableUtil;
-import com.luoboduner.moo.tool.util.MybatisUtil;
-import com.luoboduner.moo.tool.util.SqliteUtil;
-import com.luoboduner.moo.tool.util.UndoUtil;
+import com.luoboduner.moo.tool.util.*;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -69,7 +66,7 @@ public class HttpRequestForm {
     private JTextField cookieExpiryTextField;
     private JTextArea bodyTextArea;
     private JComboBox bodyTypeComboBox;
-    private JButton sendButton;
+    private JButton sendToWindowButton;
     private JPanel rightPanel;
     private JPanel controlPanel;
     private JPanel contentPanel;
@@ -79,6 +76,8 @@ public class HttpRequestForm {
     private JTextArea responseBodyTextArea;
     private JTextArea headersTextArea;
     private JTextArea cookiesTextArea;
+    private JScrollPane requestScrollPane;
+    private JButton button1;
 
     private static final Log logger = LogFactory.get();
     private static HttpRequestForm httpRequestForm;
@@ -112,7 +111,7 @@ public class HttpRequestForm {
 
         httpRequestForm.getAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
         httpRequestForm.getSaveButton().setIcon(new FlatSVGIcon("icon/save.svg"));
-        httpRequestForm.getSendButton().setIcon(new FlatSVGIcon("icon/send.svg"));
+        httpRequestForm.getSendToWindowButton().setIcon(new FlatSVGIcon("icon/send.svg"));
         httpRequestForm.getParamAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
         httpRequestForm.getDeleteButton().setIcon(new FlatSVGIcon("icon/remove.svg"));
 
@@ -120,6 +119,8 @@ public class HttpRequestForm {
         httpRequestForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
 
         Style.blackTextArea(httpRequestForm.getBodyTextArea());
+
+        ScrollUtil.smoothPane(httpRequestForm.getRequestScrollPane());
 
         httpRequestForm.getHttpRequestPanel().updateUI();
     }
@@ -503,7 +504,7 @@ public class HttpRequestForm {
         contentPanel.setLayout(new GridLayoutManager(3, 2, new Insets(0, 0, 0, 0), -1, -1));
         rightPanel.add(contentPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JPanel panel2 = new JPanel();
-        panel2.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 10, 0), -1, -1));
+        panel2.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 10, 0), -1, -1));
         contentPanel.add(panel2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         methodComboBox = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
@@ -518,6 +519,9 @@ public class HttpRequestForm {
         panel2.add(methodComboBox, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         urlTextField = new JTextField();
         panel2.add(urlTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        button1 = new JButton();
+        button1.setText("Button");
+        panel2.add(button1, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         controlPanel = new JPanel();
         controlPanel.setLayout(new GridLayoutManager(1, 5, new Insets(0, 0, 0, 0), -1, -1));
         contentPanel.add(controlPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
@@ -533,11 +537,11 @@ public class HttpRequestForm {
         addButton.setText("");
         addButton.setToolTipText("新建");
         controlPanel.add(addButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        sendButton = new JButton();
-        sendButton.setIcon(new ImageIcon(getClass().getResource("/icon/send.png")));
-        sendButton.setText("");
-        sendButton.setToolTipText("发送请求");
-        controlPanel.add(sendButton, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        sendToWindowButton = new JButton();
+        sendToWindowButton.setIcon(new ImageIcon(getClass().getResource("/icon/send.png")));
+        sendToWindowButton.setText("");
+        sendToWindowButton.setToolTipText("发送请求");
+        controlPanel.add(sendToWindowButton, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         deleteButton = new JButton();
         deleteButton.setIcon(new ImageIcon(getClass().getResource("/icon/remove.png")));
         deleteButton.setText("");
@@ -555,11 +559,9 @@ public class HttpRequestForm {
         panel3.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane1.setRightComponent(panel3);
         panel3.setBorder(BorderFactory.createTitledBorder(null, "响应：", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
-        final JScrollPane scrollPane2 = new JScrollPane();
-        panel3.add(scrollPane2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JPanel panel4 = new JPanel();
         panel4.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        scrollPane2.setViewportView(panel4);
+        panel3.add(panel4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         tabbedPane2 = new JTabbedPane();
         panel4.add(tabbedPane2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         final JPanel panel5 = new JPanel();
@@ -572,26 +574,26 @@ public class HttpRequestForm {
         final JPanel panel6 = new JPanel();
         panel6.setLayout(new GridLayoutManager(1, 1, new Insets(12, 12, 12, 12), -1, -1));
         tabbedPane2.addTab("Headers", panel6);
-        final JScrollPane scrollPane3 = new JScrollPane();
-        panel6.add(scrollPane3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        final JScrollPane scrollPane2 = new JScrollPane();
+        panel6.add(scrollPane2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         headersTextArea = new JTextArea();
-        scrollPane3.setViewportView(headersTextArea);
+        scrollPane2.setViewportView(headersTextArea);
         final JPanel panel7 = new JPanel();
         panel7.setLayout(new GridLayoutManager(1, 1, new Insets(12, 12, 12, 12), -1, -1));
         tabbedPane2.addTab("Cookies", panel7);
-        final JScrollPane scrollPane4 = new JScrollPane();
-        panel7.add(scrollPane4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        final JScrollPane scrollPane3 = new JScrollPane();
+        panel7.add(scrollPane3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         cookiesTextArea = new JTextArea();
-        scrollPane4.setViewportView(cookiesTextArea);
+        scrollPane3.setViewportView(cookiesTextArea);
         final JPanel panel8 = new JPanel();
         panel8.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane1.setLeftComponent(panel8);
         panel8.setBorder(BorderFactory.createTitledBorder(null, "请求：", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
-        final JScrollPane scrollPane5 = new JScrollPane();
-        panel8.add(scrollPane5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        requestScrollPane = new JScrollPane();
+        panel8.add(requestScrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JPanel panel9 = new JPanel();
         panel9.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        scrollPane5.setViewportView(panel9);
+        requestScrollPane.setViewportView(panel9);
         tabbedPane1 = new JTabbedPane();
         panel9.add(tabbedPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JPanel panel10 = new JPanel();
@@ -614,11 +616,11 @@ public class HttpRequestForm {
         final JLabel label2 = new JLabel();
         label2.setText("Value");
         panel11.add(label2, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
-        final JScrollPane scrollPane6 = new JScrollPane();
-        panel11.add(scrollPane6, new GridConstraints(2, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        final JScrollPane scrollPane4 = new JScrollPane();
+        panel11.add(scrollPane4, new GridConstraints(2, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         paramTable = new JTable();
         paramTable.setRowHeight(36);
-        scrollPane6.setViewportView(paramTable);
+        scrollPane4.setViewportView(paramTable);
         final JPanel panel12 = new JPanel();
         panel12.setLayout(new GridLayoutManager(1, 1, new Insets(10, 0, 0, 0), -1, -1));
         tabbedPane1.addTab("Headers", panel12);
@@ -639,11 +641,11 @@ public class HttpRequestForm {
         final JLabel label4 = new JLabel();
         label4.setText("Value");
         panel13.add(label4, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 1, false));
-        final JScrollPane scrollPane7 = new JScrollPane();
-        panel13.add(scrollPane7, new GridConstraints(2, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        final JScrollPane scrollPane5 = new JScrollPane();
+        panel13.add(scrollPane5, new GridConstraints(2, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         headerTable = new JTable();
         headerTable.setRowHeight(36);
-        scrollPane7.setViewportView(headerTable);
+        scrollPane5.setViewportView(headerTable);
         final JPanel panel14 = new JPanel();
         panel14.setLayout(new GridLayoutManager(1, 1, new Insets(10, 0, 0, 0), -1, -1));
         tabbedPane1.addTab("Cookies", panel14);
@@ -679,11 +681,11 @@ public class HttpRequestForm {
         panel15.add(label9, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         cookieExpiryTextField = new JTextField();
         panel15.add(cookieExpiryTextField, new GridConstraints(1, 4, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-        final JScrollPane scrollPane8 = new JScrollPane();
-        panel15.add(scrollPane8, new GridConstraints(2, 0, 1, 6, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        final JScrollPane scrollPane6 = new JScrollPane();
+        panel15.add(scrollPane6, new GridConstraints(2, 0, 1, 6, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         cookieTable = new JTable();
         cookieTable.setRowHeight(36);
-        scrollPane8.setViewportView(cookieTable);
+        scrollPane6.setViewportView(cookieTable);
         final JPanel panel16 = new JPanel();
         panel16.setLayout(new GridLayoutManager(1, 1, new Insets(10, 0, 0, 0), -1, -1));
         tabbedPane1.addTab("Body", panel16);
@@ -702,10 +704,10 @@ public class HttpRequestForm {
         panel17.add(bodyTypeComboBox, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
         panel17.add(spacer2, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        final JScrollPane scrollPane9 = new JScrollPane();
-        panel17.add(scrollPane9, new GridConstraints(1, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        final JScrollPane scrollPane7 = new JScrollPane();
+        panel17.add(scrollPane7, new GridConstraints(1, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         bodyTextArea = new JTextArea();
-        scrollPane9.setViewportView(bodyTextArea);
+        scrollPane7.setViewportView(bodyTextArea);
         final Spacer spacer3 = new Spacer();
         contentPanel.add(spacer3, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
     }

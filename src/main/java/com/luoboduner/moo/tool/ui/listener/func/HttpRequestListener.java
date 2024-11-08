@@ -223,7 +223,7 @@ public class HttpRequestListener {
             }
         });
 
-        httpRequestForm.getSendButton().addActionListener(e -> {
+        httpRequestForm.getSendToWindowButton().addActionListener(e -> {
             try {
                 HttpMsgMaker.prepare();
                 HttpMsgSender httpMsgSender = new HttpMsgSender();
