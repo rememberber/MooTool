@@ -77,7 +77,7 @@ public class HttpRequestForm {
     private JTextArea headersTextArea;
     private JTextArea cookiesTextArea;
     private JScrollPane requestScrollPane;
-    private JButton button1;
+    private JButton sendButton;
 
     private static final Log logger = LogFactory.get();
     private static HttpRequestForm httpRequestForm;
@@ -114,6 +114,7 @@ public class HttpRequestForm {
         httpRequestForm.getSendToWindowButton().setIcon(new FlatSVGIcon("icon/send.svg"));
         httpRequestForm.getParamAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
         httpRequestForm.getDeleteButton().setIcon(new FlatSVGIcon("icon/remove.svg"));
+        httpRequestForm.getSendButton().setIcon(new FlatSVGIcon("icon/play.svg"));
 
         httpRequestForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
         httpRequestForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
@@ -519,9 +520,9 @@ public class HttpRequestForm {
         panel2.add(methodComboBox, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         urlTextField = new JTextField();
         panel2.add(urlTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-        button1 = new JButton();
-        button1.setText("Button");
-        panel2.add(button1, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        sendButton = new JButton();
+        sendButton.setText("");
+        panel2.add(sendButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         controlPanel = new JPanel();
         controlPanel.setLayout(new GridLayoutManager(1, 5, new Insets(0, 0, 0, 0), -1, -1));
         contentPanel.add(controlPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
