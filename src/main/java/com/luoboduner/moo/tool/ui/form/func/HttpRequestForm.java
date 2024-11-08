@@ -113,7 +113,7 @@ public class HttpRequestForm {
         httpRequestForm.getSendToWindowButton().setIcon(new FlatSVGIcon("icon/send.svg"));
         httpRequestForm.getParamAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
         httpRequestForm.getDeleteButton().setIcon(new FlatSVGIcon("icon/remove.svg"));
-        httpRequestForm.getSendButton().setIcon(new FlatSVGIcon("icon/play.svg"));
+        httpRequestForm.getSendButton().setIcon(new FlatSVGIcon("icon/run.svg"));
 
         httpRequestForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
         httpRequestForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
@@ -567,21 +567,21 @@ public class HttpRequestForm {
         tabbedPane2 = new JTabbedPane();
         panel4.add(tabbedPane2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         final JPanel panel5 = new JPanel();
-        panel5.setLayout(new GridLayoutManager(1, 1, new Insets(12, 12, 12, 12), -1, -1));
+        panel5.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane2.addTab("Body", panel5);
         httpResultScrollPane = new JScrollPane();
         panel5.add(httpResultScrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         responseBodyTextArea = new JTextArea();
         httpResultScrollPane.setViewportView(responseBodyTextArea);
         final JPanel panel6 = new JPanel();
-        panel6.setLayout(new GridLayoutManager(1, 1, new Insets(12, 12, 12, 12), -1, -1));
+        panel6.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane2.addTab("Headers", panel6);
         final JScrollPane scrollPane2 = new JScrollPane();
         panel6.add(scrollPane2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         headersTextArea = new JTextArea();
         scrollPane2.setViewportView(headersTextArea);
         final JPanel panel7 = new JPanel();
-        panel7.setLayout(new GridLayoutManager(1, 1, new Insets(12, 12, 12, 12), -1, -1));
+        panel7.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane2.addTab("Cookies", panel7);
         final JScrollPane scrollPane3 = new JScrollPane();
         panel7.add(scrollPane3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
