@@ -230,8 +230,8 @@ public class HttpRequestListener {
                 HttpSendResult httpSendResult = httpMsgSender.send();
 
                 if (httpSendResult.isSuccess()) {
-                    HttpResultForm.getInstance().getBodyTextArea().setText(httpSendResult.getBody());
-                    HttpResultForm.getInstance().getBodyTextArea().setCaretPosition(0);
+                    HttpResultForm.getInstance().getResponseBodyTextArea().setText(httpSendResult.getBody());
+                    HttpResultForm.getInstance().getResponseBodyTextArea().setCaretPosition(0);
                     HttpResultForm.getInstance().getHeadersTextArea().setText(httpSendResult.getHeaders());
                     HttpResultForm.getInstance().getHeadersTextArea().setCaretPosition(0);
                     HttpResultForm.getInstance().getCookiesTextArea().setText(httpSendResult.getCookies());
