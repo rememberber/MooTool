@@ -132,6 +132,10 @@ public class HttpRequestForm {
         getInstance().getBodyTypeComboBox().setSelectedItem(tMsgHttp.getBodyType());
         switchMethod(tMsgHttp.getMethod());
 
+        getInstance().getResponseBodyTextArea().setText("");
+        getInstance().getHeadersTextArea().setText("");
+        getInstance().getCookiesTextArea().setText("");
+
         // Params=====================================
         initParamTable();
         List<NameValueObject> params = JSONUtil.toList(JSONUtil.parseArray(tMsgHttp.getParams()), NameValueObject.class);

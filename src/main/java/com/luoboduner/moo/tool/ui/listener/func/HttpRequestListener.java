@@ -229,6 +229,11 @@ public class HttpRequestListener {
                 HttpMsgSender httpMsgSender = new HttpMsgSender();
                 HttpSendResult httpSendResult = httpMsgSender.send();
 
+                // clear all
+                HttpResultForm.getInstance().getResponseBodyTextArea().setText("");
+                HttpResultForm.getInstance().getHeadersTextArea().setText("");
+                HttpResultForm.getInstance().getCookiesTextArea().setText("");
+
                 if (httpSendResult.isSuccess()) {
                     HttpResultForm.getInstance().getResponseBodyTextArea().setText(httpSendResult.getBody());
                     HttpResultForm.getInstance().getResponseBodyTextArea().setCaretPosition(0);
@@ -254,6 +259,11 @@ public class HttpRequestListener {
                 HttpMsgMaker.prepare();
                 HttpMsgSender httpMsgSender = new HttpMsgSender();
                 HttpSendResult httpSendResult = httpMsgSender.send();
+
+                // clear all
+                httpRequestForm.getResponseBodyTextArea().setText("");
+                httpRequestForm.getHeadersTextArea().setText("");
+                httpRequestForm.getCookiesTextArea().setText("");
 
                 if (httpSendResult.isSuccess()) {
                     httpRequestForm.getResponseBodyTextArea().setText(httpSendResult.getBody());
