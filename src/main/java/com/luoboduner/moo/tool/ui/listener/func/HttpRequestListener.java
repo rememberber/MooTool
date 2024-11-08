@@ -249,6 +249,31 @@ public class HttpRequestListener {
             }
         });
 
+        httpRequestForm.getSendButton().addActionListener(e -> {
+            try {
+                HttpMsgMaker.prepare();
+                HttpMsgSender httpMsgSender = new HttpMsgSender();
+                HttpSendResult httpSendResult = httpMsgSender.send();
+
+                if (httpSendResult.isSuccess()) {
+                    httpRequestForm.getResponseBodyTextArea().setText(httpSendResult.getBody());
+                    httpRequestForm.getResponseBodyTextArea().setCaretPosition(0);
+                    httpRequestForm.getHeadersTextArea().setText(httpSendResult.getHeaders());
+                    httpRequestForm.getHeadersTextArea().setCaretPosition(0);
+                    httpRequestForm.getCookiesTextArea().setText(httpSendResult.getCookies());
+                    httpRequestForm.getCookiesTextArea().setCaretPosition(0);
+                } else {
+                    JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + httpSendResult.getInfo(), "失败",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
+
         // 搜索框变更事件
         httpRequestForm.getSearchTextField().getDocument().addDocumentListener(new DocumentListener() {
             @Override
