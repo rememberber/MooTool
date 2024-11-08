@@ -77,6 +77,7 @@ public class HttpRequestForm {
     private JTextArea headersTextArea;
     private JTextArea cookiesTextArea;
     private JButton sendButton;
+    private JButton historyButton;
 
     private static final Log logger = LogFactory.get();
     private static HttpRequestForm httpRequestForm;
@@ -114,6 +115,7 @@ public class HttpRequestForm {
         httpRequestForm.getParamAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
         httpRequestForm.getDeleteButton().setIcon(new FlatSVGIcon("icon/remove.svg"));
         httpRequestForm.getSendButton().setIcon(new FlatSVGIcon("icon/run.svg"));
+        httpRequestForm.getHistoryButton().setIcon(new FlatSVGIcon("icon/history.svg"));
 
         httpRequestForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
         httpRequestForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
@@ -523,9 +525,10 @@ public class HttpRequestForm {
         panel2.add(urlTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         sendButton = new JButton();
         sendButton.setText("");
+        sendButton.setToolTipText("发送请求");
         panel2.add(sendButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         controlPanel = new JPanel();
-        controlPanel.setLayout(new GridLayoutManager(1, 5, new Insets(0, 0, 0, 0), -1, -1));
+        controlPanel.setLayout(new GridLayoutManager(1, 6, new Insets(0, 0, 0, 0), -1, -1));
         contentPanel.add(controlPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         saveButton = new JButton();
         saveButton.setIcon(new ImageIcon(getClass().getResource("/icon/menu-saveall_dark.png")));
@@ -542,13 +545,17 @@ public class HttpRequestForm {
         sendToWindowButton = new JButton();
         sendToWindowButton.setIcon(new ImageIcon(getClass().getResource("/icon/send.png")));
         sendToWindowButton.setText("");
-        sendToWindowButton.setToolTipText("发送请求");
-        controlPanel.add(sendToWindowButton, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        sendToWindowButton.setToolTipText("发送至新窗口");
+        controlPanel.add(sendToWindowButton, new GridConstraints(0, 5, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         deleteButton = new JButton();
         deleteButton.setIcon(new ImageIcon(getClass().getResource("/icon/remove.png")));
         deleteButton.setText("");
         deleteButton.setToolTipText("删除");
         controlPanel.add(deleteButton, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        historyButton = new JButton();
+        historyButton.setText("");
+        historyButton.setToolTipText("历史记录");
+        controlPanel.add(historyButton, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JSplitPane splitPane1 = new JSplitPane();
         splitPane1.setAutoscrolls(false);
         splitPane1.setContinuousLayout(true);
