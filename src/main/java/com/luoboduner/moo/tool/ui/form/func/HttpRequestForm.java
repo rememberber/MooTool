@@ -76,7 +76,6 @@ public class HttpRequestForm {
     private JTextArea responseBodyTextArea;
     private JTextArea headersTextArea;
     private JTextArea cookiesTextArea;
-    private JScrollPane requestScrollPane;
     private JButton sendButton;
 
     private static final Log logger = LogFactory.get();
@@ -120,8 +119,6 @@ public class HttpRequestForm {
         httpRequestForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
 
         Style.blackTextArea(httpRequestForm.getBodyTextArea());
-
-        ScrollUtil.smoothPane(httpRequestForm.getRequestScrollPane());
 
         httpRequestForm.getHttpRequestPanel().updateUI();
     }
@@ -590,11 +587,9 @@ public class HttpRequestForm {
         panel8.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane1.setLeftComponent(panel8);
         panel8.setBorder(BorderFactory.createTitledBorder(null, "请求：", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
-        requestScrollPane = new JScrollPane();
-        panel8.add(requestScrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JPanel panel9 = new JPanel();
         panel9.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        requestScrollPane.setViewportView(panel9);
+        panel8.add(panel9, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         tabbedPane1 = new JTabbedPane();
         panel9.add(tabbedPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JPanel panel10 = new JPanel();
