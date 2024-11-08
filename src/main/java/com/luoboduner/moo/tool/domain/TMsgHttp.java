@@ -25,6 +25,12 @@ public class TMsgHttp implements Serializable {
 
     private String modifiedTime;
 
+    private String responseBody;
+
+    private String responseHeaders;
+
+    private String responseCookies;
+
     private static final long serialVersionUID = 1L;
 
     public Integer getId() {
@@ -114,4 +120,29 @@ public class TMsgHttp implements Serializable {
     public void setModifiedTime(String modifiedTime) {
         this.modifiedTime = modifiedTime == null ? null : modifiedTime.trim();
     }
+
+    public String getResponseBody() {
+        return responseBody;
+    }
+
+    public void setResponseBody(String responseBody) {
+        this.responseBody = responseBody;
+    }
+
+    public String getResponseHeaders() {
+        return responseHeaders;
+    }
+
+    public void setResponseHeaders(String responseHeaders) {
+        this.responseHeaders = responseHeaders;
+    }
+
+    public String getResponseCookies() {
+        return responseCookies;
+    }
+
+    public void setResponseCookies(String responseCookies) {
+        this.responseCookies = responseCookies;
+    }
+
 }

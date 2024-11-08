@@ -134,9 +134,9 @@ public class HttpRequestForm {
         getInstance().getBodyTypeComboBox().setSelectedItem(tMsgHttp.getBodyType());
         switchMethod(tMsgHttp.getMethod());
 
-        getInstance().getResponseBodyTextArea().setText("");
-        getInstance().getHeadersTextArea().setText("");
-        getInstance().getCookiesTextArea().setText("");
+        getInstance().getResponseBodyTextArea().setText(tMsgHttp.getResponseBody());
+        getInstance().getHeadersTextArea().setText(tMsgHttp.getResponseHeaders());
+        getInstance().getCookiesTextArea().setText(tMsgHttp.getResponseCookies());
 
         // Params=====================================
         initParamTable();
@@ -245,6 +245,9 @@ public class HttpRequestForm {
         String url = getInstance().getUrlTextField().getText();
         String body = getInstance().getBodyTextArea().getText();
         String bodyType = (String) getInstance().getBodyTypeComboBox().getSelectedItem();
+        String responseBody = getInstance().getResponseBodyTextArea().getText();
+        String responseHeaders = getInstance().getHeadersTextArea().getText();
+        String responseCookies = getInstance().getCookiesTextArea().getText();
         String now = SqliteUtil.nowDateForSqlite();
 
         TMsgHttp tMsgHttp = new TMsgHttp();
@@ -253,6 +256,9 @@ public class HttpRequestForm {
         tMsgHttp.setUrl(url);
         tMsgHttp.setBody(body);
         tMsgHttp.setBodyType(bodyType);
+        tMsgHttp.setResponseBody(responseBody);
+        tMsgHttp.setResponseHeaders(responseHeaders);
+        tMsgHttp.setResponseCookies(responseCookies);
         tMsgHttp.setCreateTime(now);
         tMsgHttp.setModifiedTime(now);
 
