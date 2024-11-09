@@ -351,6 +351,8 @@ public class HttpRequestForm {
             msgHttpMapper.updateByMsgName(tMsgHttp);
         } else {
             msgHttpMapper.insertSelective(tMsgHttp);
+            TMsgHttp tMsgHttpInserted = msgHttpMapper.selectByMsgName(msgName);
+            tMsgHttp.setId(tMsgHttpInserted.getId());
             initListTable();
         }
 
@@ -430,6 +432,17 @@ public class HttpRequestForm {
         initParamTable();
         initHeaderTable();
         initCookieTable();
+        initHistoryTable();
+    }
+
+    private static void initHistoryTable() {
+        String[] headerNames = {"id", "标题", "时间"};
+        DefaultTableModel model = new DefaultTableModel(null, headerNames);
+        httpRequestForm.getHistoryTable().setModel(model);
+        // 隐藏表头
+        JTableUtil.hideTableHeader(httpRequestForm.getHistoryTable());
+        // 隐藏id列
+        JTableUtil.hideColumn(httpRequestForm.getHistoryTable(), 0);
     }
 
     /**
