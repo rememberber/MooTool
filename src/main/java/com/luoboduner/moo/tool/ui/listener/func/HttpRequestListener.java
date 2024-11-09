@@ -119,6 +119,7 @@ public class HttpRequestListener {
                     String name = httpRequestForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
                     selectedName = name;
                     HttpRequestForm.initMsg(name);
+                    HttpRequestForm.initHistoryTable();
                 }
             }
         });
@@ -334,6 +335,20 @@ public class HttpRequestListener {
                 httpRequestForm.getHistorySplitPane().setDividerLocation(httpRequestForm.getHistorySplitPane().getWidth());
                 httpRequestForm.getHistoryPanel().setVisible(false);
                 super.mouseClicked(e);
+            }
+        });
+
+        // 点击历史记录表格事件
+        httpRequestForm.getHistoryTable().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                int focusedRowIndex = httpRequestForm.getHistoryTable().rowAtPoint(e.getPoint());
+                if (focusedRowIndex == -1) {
+                    return;
+                }
+                Integer historyId = (Integer) httpRequestForm.getHistoryTable().getValueAt(focusedRowIndex, 0);
+                HttpRequestForm.initMsg(historyId);
+                super.mousePressed(e);
             }
         });
 

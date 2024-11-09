@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
+import cn.hutool.core.bean.BeanUtil;
 import cn.hutool.json.JSONUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
@@ -143,8 +144,23 @@ public class HttpRequestForm {
     }
 
     public static void initMsg(String msgName) {
-        clearAllField();
         TMsgHttp tMsgHttp = msgHttpMapper.selectByMsgName(msgName);
+
+        initFormInfo(tMsgHttp);
+
+        initHistoryListTable(tMsgHttp.getId());
+    }
+
+    public static void initMsg(Integer historyId) {
+        THttpRequestHistory tHttpRequestHistory = httpRequestHistoryMapper.selectByPrimaryKey(historyId);
+        TMsgHttp tMsgHttp = new TMsgHttp();
+        BeanUtil.copyProperties(tHttpRequestHistory, tMsgHttp);
+        initFormInfo(tMsgHttp);
+    }
+
+    private static void initFormInfo(TMsgHttp tMsgHttp) {
+        clearAllField();
+
         getInstance().getMethodComboBox().setSelectedItem(tMsgHttp.getMethod());
         getInstance().getUrlTextField().setText(tMsgHttp.getUrl());
         getInstance().getBodyTextArea().setText(tMsgHttp.getBody());
@@ -220,8 +236,6 @@ public class HttpRequestForm {
         // 设置列宽
         cookieTableColumnModel.getColumn(5).setPreferredWidth(46);
         cookieTableColumnModel.getColumn(5).setMaxWidth(46);
-
-        initHistoryListTable(tMsgHttp.getId());
     }
 
     public static void initListTable() {
@@ -246,6 +260,7 @@ public class HttpRequestForm {
             model.addRow(data);
         }
         if (msgHttpList.size() > 0) {
+            initHistoryTable();
             initMsg(msgHttpList.get(0).getMsgName());
             httpRequestForm.getNoteListTable().setRowSelectionInterval(0, 0);
             HttpRequestListener.selectedName = msgHttpList.get(0).getMsgName();
@@ -429,13 +444,15 @@ public class HttpRequestForm {
         getInstance().getCookieExpiryTextField().setText("");
         getInstance().getBodyTextArea().setText("");
         getInstance().getBodyTypeComboBox().setSelectedIndex(0);
+        getInstance().getResponseBodyTextArea().setText("");
+        getInstance().getHeadersTextArea().setText("");
+        getInstance().getCookiesTextArea().setText("");
         initParamTable();
         initHeaderTable();
         initCookieTable();
-        initHistoryTable();
     }
 
-    private static void initHistoryTable() {
+    public static void initHistoryTable() {
         String[] headerNames = {"id", "标题", "时间"};
         DefaultTableModel model = new DefaultTableModel(null, headerNames);
         httpRequestForm.getHistoryTable().setModel(model);
