@@ -121,9 +121,7 @@
                               </component>
                               <component id="def35" class="javax.swing.JTextField" binding="urlTextField">
                                 <constraints>
-                                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                                    <preferred-size width="150" height="-1"/>
-                                  </grid>
+                                  <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                                 </constraints>
                                 <properties/>
                               </component>
@@ -295,17 +293,13 @@
                                                 <children>
                                                   <component id="8b084" class="javax.swing.JTextField" binding="paramNameTextField">
                                                     <constraints>
-                                                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                                                        <preferred-size width="150" height="-1"/>
-                                                      </grid>
+                                                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                                                     </constraints>
                                                     <properties/>
                                                   </component>
                                                   <component id="b9d8e" class="javax.swing.JTextField" binding="paramValueTextField">
                                                     <constraints>
-                                                      <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                                                        <preferred-size width="150" height="-1"/>
-                                                      </grid>
+                                                      <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                                                     </constraints>
                                                     <properties/>
                                                   </component>
@@ -371,17 +365,13 @@
                                                 <children>
                                                   <component id="4e19c" class="javax.swing.JTextField" binding="headerNameTextField">
                                                     <constraints>
-                                                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                                                        <preferred-size width="150" height="-1"/>
-                                                      </grid>
+                                                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                                                     </constraints>
                                                     <properties/>
                                                   </component>
                                                   <component id="a971" class="javax.swing.JTextField" binding="headerValueTextField5">
                                                     <constraints>
-                                                      <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                                                        <preferred-size width="150" height="-1"/>
-                                                      </grid>
+                                                      <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                                                     </constraints>
                                                     <properties/>
                                                   </component>
@@ -447,17 +437,13 @@
                                                 <children>
                                                   <component id="ed2a" class="javax.swing.JTextField" binding="cookieNameTextField">
                                                     <constraints>
-                                                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                                                        <preferred-size width="150" height="-1"/>
-                                                      </grid>
+                                                      <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                                                     </constraints>
                                                     <properties/>
                                                   </component>
                                                   <component id="fb46e" class="javax.swing.JTextField" binding="cookieValueTextField">
                                                     <constraints>
-                                                      <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                                                        <preferred-size width="150" height="-1"/>
-                                                      </grid>
+                                                      <grid row="1" column="1" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                                                     </constraints>
                                                     <properties/>
                                                   </component>
@@ -472,17 +458,13 @@
                                                   </component>
                                                   <component id="8a5c1" class="javax.swing.JTextField" binding="cookieDomainTextField">
                                                     <constraints>
-                                                      <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                                                        <preferred-size width="150" height="-1"/>
-                                                      </grid>
+                                                      <grid row="1" column="2" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                                                     </constraints>
                                                     <properties/>
                                                   </component>
                                                   <component id="c36e" class="javax.swing.JTextField" binding="cookiePathTextField">
                                                     <constraints>
-                                                      <grid row="1" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                                                        <preferred-size width="150" height="-1"/>
-                                                      </grid>
+                                                      <grid row="1" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                                                     </constraints>
                                                     <properties/>
                                                   </component>
@@ -528,9 +510,7 @@
                                                   </component>
                                                   <component id="3600b" class="javax.swing.JTextField" binding="cookieExpiryTextField">
                                                     <constraints>
-                                                      <grid row="1" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="6" anchor="8" fill="1" indent="0" use-parent-layout="false">
-                                                        <preferred-size width="150" height="-1"/>
-                                                      </grid>
+                                                      <grid row="1" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="7" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                                                     </constraints>
                                                     <properties/>
                                                   </component>
@@ -571,7 +551,7 @@
                                                 <children>
                                                   <component id="6c97c" class="javax.swing.JComboBox" binding="bodyTypeComboBox">
                                                     <constraints>
-                                                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="2" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
+                                                      <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="1" indent="0" use-parent-layout="false"/>
                                                     </constraints>
                                                     <properties>
                                                       <model>
