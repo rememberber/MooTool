@@ -302,6 +302,21 @@ public class HttpRequestListener {
             }
         });
 
+        // 历史记录按钮事件
+        httpRequestForm.getHistoryButton().addActionListener(e -> {
+            // toggle history panel visibility
+            int totalWidth = httpRequestForm.getHistorySplitPane().getWidth();
+            int currentDividerLocation = httpRequestForm.getHistorySplitPane().getDividerLocation();
+
+            if (totalWidth - currentDividerLocation < 10) {
+                httpRequestForm.getHistoryPanel().setVisible(true);
+                httpRequestForm.getHistorySplitPane().setDividerLocation((int) (totalWidth * 0.6));
+            } else {
+                httpRequestForm.getHistorySplitPane().setDividerLocation(totalWidth);
+                httpRequestForm.getHistoryPanel().setVisible(false);
+            }
+        });
+
     }
 
     private static void deleteFiles(HttpRequestForm httpRequestForm) {
