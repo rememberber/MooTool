@@ -35,6 +35,8 @@ public class THttpRequestHistory implements Serializable {
 
     private String modifiedTime;
 
+    private String title;
+
     private static final long serialVersionUID = 1L;
 
     public Integer getId() {
@@ -163,5 +165,13 @@ public class THttpRequestHistory implements Serializable {
 
     public void setModifiedTime(String modifiedTime) {
         this.modifiedTime = modifiedTime == null ? null : modifiedTime.trim();
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title == null ? null : title.trim();
     }
 }

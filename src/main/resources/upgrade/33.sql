@@ -11,6 +11,7 @@ create table if not exists t_http_request_history
         constraint t_http_request_history_pk
             primary key autoincrement,
     request_id    integer,
+    title         text,
     method        text,
     url           text,
     params        text,
