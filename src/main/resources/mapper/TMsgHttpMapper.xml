@@ -44,7 +44,7 @@
                 #{createTime,jdbcType=VARCHAR}, #{modifiedTime,jdbcType=VARCHAR}),
                 #{responseBody,jdbcType=VARCHAR}, #{responseHeaders,jdbcType=VARCHAR}, #{responseCookies,jdbcType=VARCHAR}
     </insert>
-    <insert id="insertSelective" parameterType="com.luoboduner.moo.tool.domain.TMsgHttp">
+    <insert id="insertSelective" parameterType="com.luoboduner.moo.tool.domain.TMsgHttp" useGeneratedKeys="true" keyProperty="id">
         insert into t_msg_http
         <trim prefix="(" suffix=")" suffixOverrides=",">
             <if test="id != null">

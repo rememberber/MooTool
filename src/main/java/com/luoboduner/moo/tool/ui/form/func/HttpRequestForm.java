@@ -10,7 +10,9 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.dao.THttpRequestHistoryMapper;
 import com.luoboduner.moo.tool.dao.TMsgHttpMapper;
+import com.luoboduner.moo.tool.domain.THttpRequestHistory;
 import com.luoboduner.moo.tool.domain.TMsgHttp;
 import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.UiConsts;
@@ -19,6 +21,7 @@ import com.luoboduner.moo.tool.ui.listener.func.HttpRequestListener;
 import com.luoboduner.moo.tool.util.*;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.lang3.time.DateFormatUtils;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -28,6 +31,7 @@ import javax.swing.table.TableColumnModel;
 import java.awt.*;
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.List;
 
 /**
@@ -88,6 +92,7 @@ public class HttpRequestForm {
     private static final Log logger = LogFactory.get();
     private static HttpRequestForm httpRequestForm;
     private static TMsgHttpMapper msgHttpMapper = MybatisUtil.getSqlSession().getMapper(TMsgHttpMapper.class);
+    private static THttpRequestHistoryMapper httpRequestHistoryMapper = MybatisUtil.getSqlSession().getMapper(THttpRequestHistoryMapper.class);
 
     private HttpRequestForm() {
         UndoUtil.register(this);
@@ -215,6 +220,8 @@ public class HttpRequestForm {
         // 设置列宽
         cookieTableColumnModel.getColumn(5).setPreferredWidth(46);
         cookieTableColumnModel.getColumn(5).setMaxWidth(46);
+
+        initHistoryListTable(tMsgHttp.getId());
     }
 
     public static void initListTable() {
@@ -263,6 +270,9 @@ public class HttpRequestForm {
         String now = SqliteUtil.nowDateForSqlite();
 
         TMsgHttp tMsgHttp = new TMsgHttp();
+        if (existSameMsg) {
+            tMsgHttp.setId(tMsgHttp1.getId());
+        }
         tMsgHttp.setMsgName(msgName);
         tMsgHttp.setMethod(method);
         tMsgHttp.setUrl(url);
@@ -343,8 +353,61 @@ public class HttpRequestForm {
             msgHttpMapper.insertSelective(tMsgHttp);
             initListTable();
         }
-        JOptionPane.showMessageDialog(App.mainFrame, "保存成功！", "成功",
-                JOptionPane.INFORMATION_MESSAGE);
+
+        saveHistory(tMsgHttp);
+    }
+
+    public static void saveHistory(TMsgHttp tMsgHttp) {
+        if (tMsgHttp == null) {
+            return;
+        }
+        THttpRequestHistory tHttpRequestHistory = new THttpRequestHistory();
+        tHttpRequestHistory.setRequestId(tMsgHttp.getId());
+        tHttpRequestHistory.setMethod(tMsgHttp.getMethod());
+        tHttpRequestHistory.setUrl(tMsgHttp.getUrl());
+        tHttpRequestHistory.setParams(tMsgHttp.getParams());
+        tHttpRequestHistory.setHeaders(tMsgHttp.getHeaders());
+        tHttpRequestHistory.setCookies(tMsgHttp.getCookies());
+        tHttpRequestHistory.setBody(tMsgHttp.getBody());
+        tHttpRequestHistory.setBodyType(tMsgHttp.getBodyType());
+        tHttpRequestHistory.setResponseBody(tMsgHttp.getResponseBody());
+        tHttpRequestHistory.setResponseHeaders(tMsgHttp.getResponseHeaders());
+        tHttpRequestHistory.setResponseCookies(tMsgHttp.getResponseCookies());
+//        tHttpRequestHistory.setStatus("200");
+//        tHttpRequestHistory.setCostTime();
+        String now = SqliteUtil.nowDateForSqlite();
+        tHttpRequestHistory.setCreateTime(now);
+        tHttpRequestHistory.setModifiedTime(now);
+        tHttpRequestHistory.setTitle(DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss"));
+
+        httpRequestHistoryMapper.insertSelective(tHttpRequestHistory);
+
+        initHistoryListTable(tMsgHttp.getId());
+
+    }
+
+    private static void initHistoryListTable(Integer requestId) {
+        String[] headerNames = {"id", "标题", "时间"};
+        DefaultTableModel model = new DefaultTableModel(null, headerNames);
+        httpRequestForm.getHistoryTable().setModel(model);
+        // 隐藏表头
+        JTableUtil.hideTableHeader(httpRequestForm.getHistoryTable());
+        // 隐藏id列
+        JTableUtil.hideColumn(httpRequestForm.getHistoryTable(), 0);
+
+        Object[] data;
+
+        List<THttpRequestHistory> httpRequestHistoryList = httpRequestHistoryMapper.selectByRequestId(requestId);
+        for (THttpRequestHistory tHttpRequestHistory : httpRequestHistoryList) {
+            data = new Object[3];
+            data[0] = tHttpRequestHistory.getId();
+            data[1] = tHttpRequestHistory.getTitle();
+            data[2] = tHttpRequestHistory.getCreateTime();
+            model.addRow(data);
+        }
+        if (httpRequestHistoryList.size() > 0) {
+            httpRequestForm.getHistoryTable().setRowSelectionInterval(0, 0);
+        }
     }
 
     /**

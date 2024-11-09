@@ -31,6 +31,15 @@
     from t_http_request_history
     where id = #{id,jdbcType=INTEGER}
   </select>
+    <select id="selectAll" resultMap="BaseResultMap">
+    select * from t_http_request_history
+      order by id desc
+    </select>
+  <select id="selectByRequestId" resultMap="BaseResultMap">
+    select * from t_http_request_history
+    where request_id = #{requestId}
+    order by id desc
+  </select>
   <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
     delete from t_http_request_history
     where id = #{id,jdbcType=INTEGER}
