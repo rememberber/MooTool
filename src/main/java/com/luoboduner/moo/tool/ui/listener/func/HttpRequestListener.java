@@ -242,6 +242,11 @@ public class HttpRequestListener {
                     HttpResultForm.getInstance().getCookiesTextArea().setText(httpSendResult.getCookies());
                     HttpResultForm.getInstance().getCookiesTextArea().setCaretPosition(0);
                     HttpResultFrame.showResultWindow();
+
+                    if (StringUtils.isBlank(selectedName)) {
+                        selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                    }
+                    HttpRequestForm.save(selectedName);
                 } else {
                     JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + httpSendResult.getInfo(), "失败",
                             JOptionPane.ERROR_MESSAGE);
@@ -272,6 +277,11 @@ public class HttpRequestListener {
                     httpRequestForm.getHeadersTextArea().setCaretPosition(0);
                     httpRequestForm.getCookiesTextArea().setText(httpSendResult.getCookies());
                     httpRequestForm.getCookiesTextArea().setCaretPosition(0);
+
+                    if (StringUtils.isBlank(selectedName)) {
+                        selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                    }
+                    HttpRequestForm.save(selectedName);
                 } else {
                     JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + httpSendResult.getInfo(), "失败",
                             JOptionPane.ERROR_MESSAGE);
