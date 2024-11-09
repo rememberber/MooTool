@@ -1,0 +1,223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.luoboduner.moo.tool.dao.THttpRequestHistoryMapper">
+  <resultMap id="BaseResultMap" type="com.luoboduner.moo.tool.domain.THttpRequestHistory">
+    <id column="id" jdbcType="INTEGER" property="id" />
+    <result column="request_id" jdbcType="INTEGER" property="requestId" />
+    <result column="method" jdbcType="VARCHAR" property="method" />
+    <result column="url" jdbcType="VARCHAR" property="url" />
+    <result column="params" jdbcType="VARCHAR" property="params" />
+    <result column="headers" jdbcType="VARCHAR" property="headers" />
+    <result column="cookies" jdbcType="VARCHAR" property="cookies" />
+    <result column="body" jdbcType="VARCHAR" property="body" />
+    <result column="body_type" jdbcType="VARCHAR" property="bodyType" />
+    <result column="response_body" jdbcType="VARCHAR" property="responseBody" />
+    <result column="response_headers" jdbcType="VARCHAR" property="responseHeaders" />
+    <result column="response_cookies" jdbcType="VARCHAR" property="responseCookies" />
+    <result column="status" jdbcType="VARCHAR" property="status" />
+    <result column="cost_time" jdbcType="INTEGER" property="costTime" />
+    <result column="create_time" jdbcType="VARCHAR" property="createTime" />
+    <result column="modified_time" jdbcType="VARCHAR" property="modifiedTime" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    id, request_id, method, url, params, headers, cookies, body, body_type, response_body, 
+    response_headers, response_cookies, status, cost_time, create_time, modified_time
+  </sql>
+  <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+    select 
+    <include refid="Base_Column_List" />
+    from t_http_request_history
+    where id = #{id,jdbcType=INTEGER}
+  </select>
+  <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+    delete from t_http_request_history
+    where id = #{id,jdbcType=INTEGER}
+  </delete>
+  <insert id="insert" parameterType="com.luoboduner.moo.tool.domain.THttpRequestHistory">
+    insert into t_http_request_history (id, request_id, method, 
+      url, params, headers, 
+      cookies, body, body_type, 
+      response_body, response_headers, response_cookies, 
+      status, cost_time, create_time, 
+      modified_time)
+    values (#{id,jdbcType=INTEGER}, #{requestId,jdbcType=INTEGER}, #{method,jdbcType=VARCHAR}, 
+      #{url,jdbcType=VARCHAR}, #{params,jdbcType=VARCHAR}, #{headers,jdbcType=VARCHAR}, 
+      #{cookies,jdbcType=VARCHAR}, #{body,jdbcType=VARCHAR}, #{bodyType,jdbcType=VARCHAR}, 
+      #{responseBody,jdbcType=VARCHAR}, #{responseHeaders,jdbcType=VARCHAR}, #{responseCookies,jdbcType=VARCHAR}, 
+      #{status,jdbcType=VARCHAR}, #{costTime,jdbcType=INTEGER}, #{createTime,jdbcType=VARCHAR}, 
+      #{modifiedTime,jdbcType=VARCHAR})
+  </insert>
+  <insert id="insertSelective" parameterType="com.luoboduner.moo.tool.domain.THttpRequestHistory">
+    insert into t_http_request_history
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        id,
+      </if>
+      <if test="requestId != null">
+        request_id,
+      </if>
+      <if test="method != null">
+        method,
+      </if>
+      <if test="url != null">
+        url,
+      </if>
+      <if test="params != null">
+        params,
+      </if>
+      <if test="headers != null">
+        headers,
+      </if>
+      <if test="cookies != null">
+        cookies,
+      </if>
+      <if test="body != null">
+        body,
+      </if>
+      <if test="bodyType != null">
+        body_type,
+      </if>
+      <if test="responseBody != null">
+        response_body,
+      </if>
+      <if test="responseHeaders != null">
+        response_headers,
+      </if>
+      <if test="responseCookies != null">
+        response_cookies,
+      </if>
+      <if test="status != null">
+        status,
+      </if>
+      <if test="costTime != null">
+        cost_time,
+      </if>
+      <if test="createTime != null">
+        create_time,
+      </if>
+      <if test="modifiedTime != null">
+        modified_time,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=INTEGER},
+      </if>
+      <if test="requestId != null">
+        #{requestId,jdbcType=INTEGER},
+      </if>
+      <if test="method != null">
+        #{method,jdbcType=VARCHAR},
+      </if>
+      <if test="url != null">
+        #{url,jdbcType=VARCHAR},
+      </if>
+      <if test="params != null">
+        #{params,jdbcType=VARCHAR},
+      </if>
+      <if test="headers != null">
+        #{headers,jdbcType=VARCHAR},
+      </if>
+      <if test="cookies != null">
+        #{cookies,jdbcType=VARCHAR},
+      </if>
+      <if test="body != null">
+        #{body,jdbcType=VARCHAR},
+      </if>
+      <if test="bodyType != null">
+        #{bodyType,jdbcType=VARCHAR},
+      </if>
+      <if test="responseBody != null">
+        #{responseBody,jdbcType=VARCHAR},
+      </if>
+      <if test="responseHeaders != null">
+        #{responseHeaders,jdbcType=VARCHAR},
+      </if>
+      <if test="responseCookies != null">
+        #{responseCookies,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null">
+        #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="costTime != null">
+        #{costTime,jdbcType=INTEGER},
+      </if>
+      <if test="createTime != null">
+        #{createTime,jdbcType=VARCHAR},
+      </if>
+      <if test="modifiedTime != null">
+        #{modifiedTime,jdbcType=VARCHAR},
+      </if>
+    </trim>
+  </insert>
+  <update id="updateByPrimaryKeySelective" parameterType="com.luoboduner.moo.tool.domain.THttpRequestHistory">
+    update t_http_request_history
+    <set>
+      <if test="requestId != null">
+        request_id = #{requestId,jdbcType=INTEGER},
+      </if>
+      <if test="method != null">
+        method = #{method,jdbcType=VARCHAR},
+      </if>
+      <if test="url != null">
+        url = #{url,jdbcType=VARCHAR},
+      </if>
+      <if test="params != null">
+        params = #{params,jdbcType=VARCHAR},
+      </if>
+      <if test="headers != null">
+        headers = #{headers,jdbcType=VARCHAR},
+      </if>
+      <if test="cookies != null">
+        cookies = #{cookies,jdbcType=VARCHAR},
+      </if>
+      <if test="body != null">
+        body = #{body,jdbcType=VARCHAR},
+      </if>
+      <if test="bodyType != null">
+        body_type = #{bodyType,jdbcType=VARCHAR},
+      </if>
+      <if test="responseBody != null">
+        response_body = #{responseBody,jdbcType=VARCHAR},
+      </if>
+      <if test="responseHeaders != null">
+        response_headers = #{responseHeaders,jdbcType=VARCHAR},
+      </if>
+      <if test="responseCookies != null">
+        response_cookies = #{responseCookies,jdbcType=VARCHAR},
+      </if>
+      <if test="status != null">
+        status = #{status,jdbcType=VARCHAR},
+      </if>
+      <if test="costTime != null">
+        cost_time = #{costTime,jdbcType=INTEGER},
+      </if>
+      <if test="createTime != null">
+        create_time = #{createTime,jdbcType=VARCHAR},
+      </if>
+      <if test="modifiedTime != null">
+        modified_time = #{modifiedTime,jdbcType=VARCHAR},
+      </if>
+    </set>
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+  <update id="updateByPrimaryKey" parameterType="com.luoboduner.moo.tool.domain.THttpRequestHistory">
+    update t_http_request_history
+    set request_id = #{requestId,jdbcType=INTEGER},
+      method = #{method,jdbcType=VARCHAR},
+      url = #{url,jdbcType=VARCHAR},
+      params = #{params,jdbcType=VARCHAR},
+      headers = #{headers,jdbcType=VARCHAR},
+      cookies = #{cookies,jdbcType=VARCHAR},
+      body = #{body,jdbcType=VARCHAR},
+      body_type = #{bodyType,jdbcType=VARCHAR},
+      response_body = #{responseBody,jdbcType=VARCHAR},
+      response_headers = #{responseHeaders,jdbcType=VARCHAR},
+      response_cookies = #{responseCookies,jdbcType=VARCHAR},
+      status = #{status,jdbcType=VARCHAR},
+      cost_time = #{costTime,jdbcType=INTEGER},
+      create_time = #{createTime,jdbcType=VARCHAR},
+      modified_time = #{modifiedTime,jdbcType=VARCHAR}
+    where id = #{id,jdbcType=INTEGER}
+  </update>
+</mapper>
