@@ -4,6 +4,7 @@ import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.dao.THttpRequestHistoryMapper;
 import com.luoboduner.moo.tool.dao.TMsgHttpMapper;
 import com.luoboduner.moo.tool.domain.TMsgHttp;
 import com.luoboduner.moo.tool.service.HttpMsgMaker;
@@ -42,6 +43,7 @@ public class HttpRequestListener {
     private static final Log logger = LogFactory.get();
 
     private static TMsgHttpMapper msgHttpMapper = MybatisUtil.getSqlSession().getMapper(TMsgHttpMapper.class);
+    private static THttpRequestHistoryMapper httpRequestHistoryMapper = MybatisUtil.getSqlSession().getMapper(THttpRequestHistoryMapper.class);
 
     public static String selectedName;
 
@@ -349,6 +351,36 @@ public class HttpRequestListener {
                 Integer historyId = (Integer) httpRequestForm.getHistoryTable().getValueAt(focusedRowIndex, 0);
                 HttpRequestForm.initMsg(historyId);
                 super.mousePressed(e);
+            }
+        });
+
+        httpRequestForm.getDeleteHistoryButton().addActionListener(e -> {
+            try {
+                int[] selectedRows = httpRequestForm.getHistoryTable().getSelectedRows();
+
+                if (selectedRows.length == 0) {
+                    JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                    if (isDelete == JOptionPane.YES_OPTION) {
+                        DefaultTableModel tableModel = (DefaultTableModel) httpRequestForm.getHistoryTable().getModel();
+
+                        for (int i = 0; i < selectedRows.length; i++) {
+                            int selectedRow = selectedRows[i];
+                            Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
+                            httpRequestHistoryMapper.deleteByPrimaryKey(id);
+                        }
+
+                        TMsgHttp tMsgHttp = msgHttpMapper.selectByMsgName(selectedName);
+                        if (tMsgHttp != null) {
+                            HttpRequestForm.initHistoryListTable(tMsgHttp.getId());
+                        }
+                    }
+                }
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(e1.toString());
             }
         });
 
