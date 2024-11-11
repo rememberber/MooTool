@@ -404,11 +404,12 @@ public class HttpRequestForm {
     }
 
     public static void initHistoryListTable(Integer requestId) {
-        String[] headerNames = {"id", "标题", "时间"};
+        String[] headerNames = {"id", "时间", "请求参数", "请求body", "响应body"};
         DefaultTableModel model = new DefaultTableModel(null, headerNames);
         httpRequestForm.getHistoryTable().setModel(model);
+        httpRequestForm.getHistoryTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
         // 隐藏表头
-        JTableUtil.hideTableHeader(httpRequestForm.getHistoryTable());
+//        JTableUtil.hideTableHeader(httpRequestForm.getHistoryTable());
         // 隐藏id列
         JTableUtil.hideColumn(httpRequestForm.getHistoryTable(), 0);
 
@@ -416,10 +417,12 @@ public class HttpRequestForm {
 
         List<THttpRequestHistory> httpRequestHistoryList = httpRequestHistoryMapper.selectByRequestId(requestId);
         for (THttpRequestHistory tHttpRequestHistory : httpRequestHistoryList) {
-            data = new Object[3];
+            data = new Object[5];
             data[0] = tHttpRequestHistory.getId();
-            data[1] = tHttpRequestHistory.getTitle();
-            data[2] = tHttpRequestHistory.getCreateTime();
+            data[1] = tHttpRequestHistory.getCreateTime();
+            data[2] = tHttpRequestHistory.getParams();
+            data[3] = tHttpRequestHistory.getBody();
+            data[4] = tHttpRequestHistory.getResponseBody();
             model.addRow(data);
         }
         if (httpRequestHistoryList.size() > 0) {
@@ -453,11 +456,12 @@ public class HttpRequestForm {
     }
 
     public static void initHistoryTable() {
-        String[] headerNames = {"id", "标题", "时间"};
+        String[] headerNames = {"id", "时间", "请求参数", "请求body", "响应body"};
         DefaultTableModel model = new DefaultTableModel(null, headerNames);
         httpRequestForm.getHistoryTable().setModel(model);
+        httpRequestForm.getHistoryTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
         // 隐藏表头
-        JTableUtil.hideTableHeader(httpRequestForm.getHistoryTable());
+//        JTableUtil.hideTableHeader(httpRequestForm.getHistoryTable());
         // 隐藏id列
         JTableUtil.hideColumn(httpRequestForm.getHistoryTable(), 0);
     }
