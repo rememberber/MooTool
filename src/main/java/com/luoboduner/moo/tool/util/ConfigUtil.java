@@ -396,7 +396,7 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public boolean isTabHideTitle() {
-        return setting.getBool("tabHideTitle", "setting.custom", true);
+        return setting.getBool("tabHideTitle", "setting.custom", false);
     }
 
     public void setTabHideTitle(boolean tabHideTitle) {
