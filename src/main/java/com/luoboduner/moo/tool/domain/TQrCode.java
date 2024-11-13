@@ -1,8 +1,6 @@
 package com.luoboduner.moo.tool.domain;
 
-import java.io.Serializable;
-
-public class TQrCode implements Serializable {
+public class TQrCode {
     private Integer id;
 
     private String content;
@@ -10,8 +8,6 @@ public class TQrCode implements Serializable {
     private String createTime;
 
     private String modifiedTime;
-
-    private static final long serialVersionUID = 1L;
 
     public Integer getId() {
         return id;

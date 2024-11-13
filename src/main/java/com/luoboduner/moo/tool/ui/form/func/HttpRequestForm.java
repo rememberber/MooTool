@@ -30,7 +30,6 @@ import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 import java.awt.*;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -557,8 +556,7 @@ public class HttpRequestForm {
 
     @Getter
     @Setter
-    public static class NameValueObject implements Serializable {
-        private static final long serialVersionUID = -3828939498243146605L;
+    public static class NameValueObject {
 
         private String name;
 
@@ -567,9 +565,7 @@ public class HttpRequestForm {
 
     @Getter
     @Setter
-    public static class CookieObject implements Serializable {
-
-        private static final long serialVersionUID = 810193087944524307L;
+    public static class CookieObject {
 
         private String name;
 

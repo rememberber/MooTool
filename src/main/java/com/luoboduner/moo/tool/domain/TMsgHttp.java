@@ -1,8 +1,6 @@
 package com.luoboduner.moo.tool.domain;
 
-import java.io.Serializable;
-
-public class TMsgHttp implements Serializable {
+public class TMsgHttp {
     private Integer id;
 
     private String msgName;
@@ -30,8 +28,6 @@ public class TMsgHttp implements Serializable {
     private String responseHeaders;
 
     private String responseCookies;
-
-    private static final long serialVersionUID = 1L;
 
     public Integer getId() {
         return id;

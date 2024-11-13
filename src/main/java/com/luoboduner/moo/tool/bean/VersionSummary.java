@@ -2,7 +2,6 @@ package com.luoboduner.moo.tool.bean;
 
 import lombok.Data;
 
-import java.io.Serializable;
 import java.util.List;
 
 /**
@@ -14,9 +13,7 @@ import java.util.List;
  * @since 2019/4/20.
  */
 @Data
-public class VersionSummary implements Serializable {
-
-    private static final long serialVersionUID = 4637273116136790267L;
+public class VersionSummary {
 
     /**
      * 当前版本
@@ -42,9 +39,7 @@ public class VersionSummary implements Serializable {
      * @since 2019/4/20.
      */
     @Data
-    public static class Version implements Serializable {
-
-        private static final long serialVersionUID = 4637273116136790268L;
+    public static class Version {
 
         private String version;
 

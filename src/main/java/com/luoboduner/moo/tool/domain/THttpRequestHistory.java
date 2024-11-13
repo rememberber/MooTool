@@ -1,8 +1,7 @@
 package com.luoboduner.moo.tool.domain;
 
-import java.io.Serializable;
+public class THttpRequestHistory {
 
-public class THttpRequestHistory implements Serializable {
     private Integer id;
 
     private Integer requestId;
@@ -36,8 +35,6 @@ public class THttpRequestHistory implements Serializable {
     private String modifiedTime;
 
     private String title;
-
-    private static final long serialVersionUID = 1L;
 
     public Integer getId() {
         return id;
