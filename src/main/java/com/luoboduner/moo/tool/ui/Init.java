@@ -16,11 +16,11 @@ import com.luoboduner.moo.tool.ui.component.JPopupMenuMouseAdapter;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
 import com.luoboduner.moo.tool.ui.dialog.SettingDialog;
 import com.luoboduner.moo.tool.ui.dialog.TranslationDialog;
+import com.luoboduner.moo.tool.ui.form.AboutForm;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
 import com.luoboduner.moo.tool.util.SystemUtil;
-import com.luoboduner.moo.tool.util.UIUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -196,6 +196,7 @@ public class Init {
      * 初始化所有tab
      */
     public static void initAllTab() {
+        ThreadUtil.execute(AboutForm::init);
         ThreadUtil.execute(QuickNoteForm::init);
         ThreadUtil.execute(JsonBeautyForm::init);
         ThreadUtil.execute(TimeConvertForm::init);
