@@ -97,4 +97,9 @@ public class UiConsts {
      */
     public static final String DOWNLOAD_LINK_INFO_URL = "https://gitee.com/zhoubochina/MooTool/raw/develop/download_links.json";
 
+    /**
+     * Grace信息url
+     */
+    public static final String GRACE_INFO_URL = "https://gitee.com/zhoubochina/MooTool/raw/develop/grace.json";
+
 }
