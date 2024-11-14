@@ -116,29 +116,6 @@ public class AboutListener {
                 e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
             }
         });
-        aboutForm.getBeautyEyeLabel().addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                super.mouseClicked(e);
-                Desktop desktop = Desktop.getDesktop();
-                try {
-                    desktop.browse(new URI("https://gitee.com/jackjiang/beautyeye"));
-                } catch (IOException | URISyntaxException e1) {
-                    e1.printStackTrace();
-                }
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                super.mousePressed(e);
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                super.mouseEntered(e);
-                e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
-            }
-        });
         aboutForm.getHutoolLabel().addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
