@@ -7,9 +7,6 @@
     <classPathEntry location="D:\MVN-Repository\org\xerial\sqlite-jdbc\3.36.0.3\sqlite-jdbc-3.36.0.3.jar"/>
 
     <context id="SQLiteTables" targetRuntime="MyBatis3">
-        <!-- JavaBean 实现 序列化 接口 -->
-        <plugin type="org.mybatis.generator.plugins.SerializablePlugin">
-        </plugin>
         <!-- 消除插件自动生成的注释 -->
         <commentGenerator>
             <property name="suppressAllComments" value="true"/>
