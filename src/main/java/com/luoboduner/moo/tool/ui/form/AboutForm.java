@@ -57,6 +57,7 @@ public class AboutForm {
     private JLabel mooInfoIconLabel;
     private JPanel gracePanel;
     private JLabel graceLabel;
+    private JLabel graceTitleLabel;
 
     private static AboutForm aboutForm;
 
@@ -118,6 +119,10 @@ public class AboutForm {
                     }
                     if (!Strings.isNullOrEmpty(grace.getTips())) {
                         aboutForm.getGraceLabel().setToolTipText(grace.getTips());
+                    }
+
+                    if (!Strings.isNullOrEmpty(grace.getTitle())) {
+                        aboutForm.getGraceTitleLabel().setText(grace.getTitle());
                     }
 
                     if (!Strings.isNullOrEmpty(grace.getUrl())) {
@@ -323,13 +328,18 @@ public class AboutForm {
         label15.setText("Give me a grace");
         panel8.add(label15, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         gracePanel = new JPanel();
-        gracePanel.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        gracePanel.setLayout(new GridLayoutManager(2, 2, new Insets(0, 5, 0, 0), -1, -1));
         panel1.add(gracePanel, new GridConstraints(2, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         graceLabel = new JLabel();
         graceLabel.setText("");
-        gracePanel.add(graceLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        gracePanel.add(graceLabel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer3 = new Spacer();
-        gracePanel.add(spacer3, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        gracePanel.add(spacer3, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        graceTitleLabel = new JLabel();
+        Font graceTitleLabelFont = this.$$$getFont$$$(null, Font.BOLD, -1, graceTitleLabel.getFont());
+        if (graceTitleLabelFont != null) graceTitleLabel.setFont(graceTitleLabelFont);
+        graceTitleLabel.setText("");
+        gracePanel.add(graceTitleLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     /**
