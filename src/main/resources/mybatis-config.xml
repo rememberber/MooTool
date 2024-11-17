@@ -25,5 +25,6 @@
         <mapper resource="mapper/TFavoriteCronListMapper.xml"/>
         <mapper resource="mapper/TFavoriteCronItemMapper.xml"/>
         <mapper resource="mapper/TFuncContentMapper.xml"/>
+        <mapper resource="mapper/THttpRequestHistoryMapper.xml"/>
     </mappers>
 </configuration>

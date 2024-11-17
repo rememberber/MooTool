@@ -1,8 +1,6 @@
 package com.luoboduner.moo.tool.domain;
 
-import java.io.Serializable;
-
-public class TFavoriteCronList implements Serializable {
+public class TFavoriteCronList {
     private Integer id;
 
     private String title;
@@ -12,8 +10,6 @@ public class TFavoriteCronList implements Serializable {
     private String createTime;
 
     private String modifiedTime;
-
-    private static final long serialVersionUID = 1L;
 
     public Integer getId() {
         return id;

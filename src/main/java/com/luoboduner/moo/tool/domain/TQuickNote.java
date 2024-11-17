@@ -1,8 +1,6 @@
 package com.luoboduner.moo.tool.domain;
 
-import java.io.Serializable;
-
-public class TQuickNote implements Serializable {
+public class TQuickNote {
     private Integer id;
 
     private String name;
@@ -22,8 +20,6 @@ public class TQuickNote implements Serializable {
     private String fontSize;
 
     private String syntax;
-
-    private static final long serialVersionUID = 1L;
 
     public Integer getId() {
         return id;

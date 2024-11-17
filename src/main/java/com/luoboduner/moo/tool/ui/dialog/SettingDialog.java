@@ -180,7 +180,6 @@ public class SettingDialog extends JDialog {
                 QuickNoteForm.init();
                 JsonBeautyForm.init();
                 HostForm.init();
-                HttpRequestForm.init();
                 QrCodeForm.init();
                 CryptoForm.init();
             }

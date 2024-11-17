@@ -26,7 +26,7 @@ public class SystemUtil {
         return OS_NAME.contains("Mac");
     }
 
-    public static boolean isMacM1() {
+    public static boolean isMacSilicon() {
         return OS_NAME.contains("Mac") && "aarch64".equals(OS_ARCH);
     }
 

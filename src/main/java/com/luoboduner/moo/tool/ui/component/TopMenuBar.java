@@ -51,7 +51,7 @@ public class TopMenuBar extends JMenuBar {
             "Flat Light",
             "Flat IntelliJ",
             "Flat Dark",
-            "Flat Darcula(推荐)",
+            "Flat Darcula",
             "Flat macOS Light",
             "Flat macOS Dark",
             "Dark purple",

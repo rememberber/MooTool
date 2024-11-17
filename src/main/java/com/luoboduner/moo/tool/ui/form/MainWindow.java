@@ -47,10 +47,11 @@ public class MainWindow {
     private JPanel pdfPanel;
     private JPanel variablesPanel;
     private JPanel ymlProperties;
+    private JPanel aboutPanel;
 
     private static MainWindow mainWindow;
 
-    private static final String[] ICON_PATH = {"icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/check.svg", "icon/global.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/translate.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/nuclear.svg", "icon/pdf.svg", "icon/fx.svg", "icon/suffix-yml.svg"};
+    private static final String[] ICON_PATH = {"icon/smile.svg", "icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/check.svg", "icon/global.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/translate.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/nuclear.svg", "icon/pdf.svg", "icon/fx.svg", "icon/suffix-yml.svg"};
 
     private MainWindow() {
     }
@@ -74,6 +75,7 @@ public class MainWindow {
 
         initTabPlacement();
 
+        mainWindow.getAboutPanel().add(AboutForm.getInstance().getAboutPanel(), gridConstraints);
         mainWindow.getQuickNotePanel().add(QuickNoteForm.getInstance().getQuickNotePanel(), gridConstraints);
         mainWindow.getJsonBeautyPanel().add(JsonBeautyForm.getInstance().getJsonBeautyPanel(), gridConstraints);
         mainWindow.getTimeConvertPanel().add(TimeConvertForm.getInstance().getTimeConvertPanel(), gridConstraints);
@@ -219,6 +221,9 @@ public class MainWindow {
         tabbedPane = new JTabbedPane();
         tabbedPane.setTabLayoutPolicy(1);
         mainPanel.add(tabbedPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
+        aboutPanel = new JPanel();
+        aboutPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPane.addTab("MooTool", aboutPanel);
         quickNotePanel = new JPanel();
         quickNotePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("随手记", new ImageIcon(getClass().getResource("/icon/edit.png")), quickNotePanel);

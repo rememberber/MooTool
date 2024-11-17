@@ -6,7 +6,7 @@
 
     <groupId>com.luoboduner.moo.tool</groupId>
     <artifactId>MooTool</artifactId>
-    <version>1.6.2</version>
+    <version>1.6.3</version>
     <packaging>jar</packaging>
 
     <name>MooTool</name>
@@ -31,13 +31,13 @@
         <commons-lang3.version>3.13.0</commons-lang3.version>
         <guava.version>32.1.2-jre</guava.version>
         <okhttp.version>4.11.0</okhttp.version>
-        <google.zxing.core.version>3.5.1</google.zxing.core.version>
-        <flatlaf.version>3.5.1</flatlaf.version>
-        <flatlaf-extras.version>3.5.1</flatlaf-extras.version>
-        <flatlaf-intellij-themes.version>3.5.1</flatlaf-intellij-themes.version>
+        <google.zxing.core.version>3.5.3</google.zxing.core.version>
+        <flatlaf.version>3.5.2</flatlaf.version>
+        <flatlaf-extras.version>3.5.2</flatlaf-extras.version>
+        <flatlaf-intellij-themes.version>3.5.2</flatlaf-intellij-themes.version>
         <flatlaf-fonts-jetbrains-mono.version>2.304</flatlaf-fonts-jetbrains-mono.version>
         <flatlaf-fonts-inter.version>4.0</flatlaf-fonts-inter.version>
-        <rsyntaxtextarea.version>3.5.1</rsyntaxtextarea.version>
+        <rsyntaxtextarea.version>3.5.2</rsyntaxtextarea.version>
         <sql-formatter.version>2.0.4</sql-formatter.version>
         <google-java-format.version>1.18.1</google-java-format.version>
         <!--        <jSystemThemeDetector.version>3.8</jSystemThemeDetector.version>-->
@@ -65,6 +65,10 @@
         <repository>
             <id>oss.sonatype.org</id>
             <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+        </repository>
+        <repository>
+            <id>alimaven</id>
+            <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
         </repository>
     </repositories>
 
@@ -394,6 +398,7 @@
                             <createTarball>true</createTarball>
                             <macConfig>
                                 <macStartup>UNIVERSAL</macStartup>
+                                <developerId>rememberber@163.com</developerId>
                             </macConfig>
                             <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>
                             <additionalResources>

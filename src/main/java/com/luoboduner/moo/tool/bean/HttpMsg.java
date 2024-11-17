@@ -4,7 +4,6 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 
-import java.io.Serializable;
 import java.net.HttpCookie;
 import java.util.List;
 import java.util.Map;
@@ -20,9 +19,7 @@ import java.util.Map;
 @Getter
 @Setter
 @ToString
-public class HttpMsg implements Serializable {
-
-    private static final long serialVersionUID = 114436270588113296L;
+public class HttpMsg {
 
     private String url;
 

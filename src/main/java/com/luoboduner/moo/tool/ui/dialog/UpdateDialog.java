@@ -106,6 +106,8 @@ public class UpdateDialog extends JDialog {
                             fileUrl = parse.read("$.windows");
                         } else if (SystemUtil.isMacOs()) {
                             fileUrl = parse.read("$.mac");
+                        } else if (SystemUtil.isMacSilicon()) {
+                            fileUrl = parse.read("$.macSilicon");
                         } else if (SystemUtil.isLinuxOs()) {
                             fileUrl = parse.read("$.linux");
                         }

@@ -59,6 +59,7 @@ public class App {
             System.setProperty("apple.awt.application.name", "MooTool");
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "MooTool");
             System.setProperty("apple.awt.application.appearance", "system");
+            System.setProperty("flatlaf.useRoundedPopupBorder", "true");
 
             FlatDesktop.setAboutHandler(() -> {
                 try {

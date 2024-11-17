@@ -1,8 +1,6 @@
 package com.luoboduner.moo.tool.domain;
 
-import java.io.Serializable;
-
-public class THost implements Serializable {
+public class THost {
     private Integer id;
 
     private String name;
@@ -12,8 +10,6 @@ public class THost implements Serializable {
     private String createTime;
 
     private String modifiedTime;
-
-    private static final long serialVersionUID = 1L;
 
     public Integer getId() {
         return id;
