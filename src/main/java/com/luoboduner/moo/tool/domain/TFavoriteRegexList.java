@@ -1,8 +1,6 @@
 package com.luoboduner.moo.tool.domain;
 
-import java.io.Serializable;
-
-public class TFavoriteRegexList implements Serializable {
+public class TFavoriteRegexList {
     private Integer id;
 
     private String title;
@@ -12,8 +10,6 @@ public class TFavoriteRegexList implements Serializable {
     private String createTime;
 
     private String modifiedTime;
-
-    private static final long serialVersionUID = 1L;
 
     public Integer getId() {
         return id;

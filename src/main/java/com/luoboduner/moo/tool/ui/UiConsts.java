@@ -19,7 +19,7 @@ public class UiConsts {
      * 软件名称,版本
      */
     public static final String APP_NAME = "MooTool";
-    public static final String APP_VERSION = "v1.6.2";
+    public static final String APP_VERSION = "v1.6.3";
 
     public static final int TABLE_ROW_HEIGHT = 30;
 
@@ -98,13 +98,8 @@ public class UiConsts {
     public static final String DOWNLOAD_LINK_INFO_URL = "https://gitee.com/zhoubochina/MooTool/raw/develop/download_links.json";
 
     /**
-     * 二维码url
+     * Grace信息url
      */
-    public static final String QR_CODE_URL = "http://download.zhoubochina.com/file/mootool_qrcode.json";
-
-    /**
-     * 介绍二维码URL
-     */
-    public static final String INTRODUCE_QRCODE_URL = "http://download.zhoubochina.com/qrcode/introduce-mootool-qrcode.png";
+    public static final String GRACE_INFO_URL = "https://gitee.com/zhoubochina/MooTool/raw/develop/grace.json";
 
 }

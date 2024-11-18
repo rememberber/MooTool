@@ -1,8 +1,6 @@
 package com.luoboduner.moo.tool.domain;
 
-import java.io.Serializable;
-
-public class TFuncContent implements Serializable {
+public class TFuncContent {
     private Integer id;
 
     private String func;
@@ -14,8 +12,6 @@ public class TFuncContent implements Serializable {
     private String createTime;
 
     private String modifiedTime;
-
-    private static final long serialVersionUID = 1L;
 
     public Integer getId() {
         return id;

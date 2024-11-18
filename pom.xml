@@ -6,7 +6,7 @@
 
     <groupId>com.luoboduner.moo.tool</groupId>
     <artifactId>MooTool</artifactId>
-    <version>1.6.2</version>
+    <version>1.6.3</version>
     <packaging>jar</packaging>
 
     <name>MooTool</name>
@@ -398,6 +398,7 @@
                             <createTarball>true</createTarball>
                             <macConfig>
                                 <macStartup>UNIVERSAL</macStartup>
+                                <developerId>rememberber@163.com</developerId>
                             </macConfig>
                             <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>
                             <additionalResources>

@@ -22,10 +22,10 @@ import java.awt.event.KeyEvent;
  */
 @Getter
 public class HttpResultForm {
-    private JTabbedPane tabbedPane1;
+    private JTabbedPane tabbedPane2;
     private JPanel httpResultPanel;
     private JScrollPane httpResultScrollPane;
-    private JTextArea bodyTextArea;
+    private JTextArea responseBodyTextArea;
     private JTextArea headersTextArea;
     private JTextArea cookiesTextArea;
 
@@ -34,7 +34,7 @@ public class HttpResultForm {
     private HttpResultForm() {
         ScrollUtil.smoothPane(this.getHttpResultScrollPane());
 
-        Style.blackTextArea(bodyTextArea);
+        Style.blackTextArea(responseBodyTextArea);
         Style.blackTextArea(headersTextArea);
         Style.blackTextArea(cookiesTextArea);
 
@@ -66,25 +66,25 @@ public class HttpResultForm {
     private void $$$setupUI$$$() {
         httpResultPanel = new JPanel();
         httpResultPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane1 = new JTabbedPane();
-        httpResultPanel.add(tabbedPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
+        tabbedPane2 = new JTabbedPane();
+        httpResultPanel.add(tabbedPane2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         final JPanel panel1 = new JPanel();
         panel1.setLayout(new GridLayoutManager(1, 1, new Insets(12, 12, 12, 12), -1, -1));
-        tabbedPane1.addTab("Body", panel1);
+        tabbedPane2.addTab("Body", panel1);
         httpResultScrollPane = new JScrollPane();
         panel1.add(httpResultScrollPane, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        bodyTextArea = new JTextArea();
-        httpResultScrollPane.setViewportView(bodyTextArea);
+        responseBodyTextArea = new JTextArea();
+        httpResultScrollPane.setViewportView(responseBodyTextArea);
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(1, 1, new Insets(12, 12, 12, 12), -1, -1));
-        tabbedPane1.addTab("Headers", panel2);
+        tabbedPane2.addTab("Headers", panel2);
         final JScrollPane scrollPane1 = new JScrollPane();
         panel2.add(scrollPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         headersTextArea = new JTextArea();
         scrollPane1.setViewportView(headersTextArea);
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new GridLayoutManager(1, 1, new Insets(12, 12, 12, 12), -1, -1));
-        tabbedPane1.addTab("Cookies", panel3);
+        tabbedPane2.addTab("Cookies", panel3);
         final JScrollPane scrollPane2 = new JScrollPane();
         panel3.add(scrollPane2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         cookiesTextArea = new JTextArea();

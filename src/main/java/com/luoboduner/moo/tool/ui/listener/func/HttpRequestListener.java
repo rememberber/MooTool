@@ -4,6 +4,7 @@ import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.dao.THttpRequestHistoryMapper;
 import com.luoboduner.moo.tool.dao.TMsgHttpMapper;
 import com.luoboduner.moo.tool.domain.TMsgHttp;
 import com.luoboduner.moo.tool.service.HttpMsgMaker;
@@ -42,6 +43,7 @@ public class HttpRequestListener {
     private static final Log logger = LogFactory.get();
 
     private static TMsgHttpMapper msgHttpMapper = MybatisUtil.getSqlSession().getMapper(TMsgHttpMapper.class);
+    private static THttpRequestHistoryMapper httpRequestHistoryMapper = MybatisUtil.getSqlSession().getMapper(THttpRequestHistoryMapper.class);
 
     public static String selectedName;
 
@@ -119,6 +121,7 @@ public class HttpRequestListener {
                     String name = httpRequestForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
                     selectedName = name;
                     HttpRequestForm.initMsg(name);
+                    HttpRequestForm.initHistoryTable();
                 }
             }
         });
@@ -223,20 +226,65 @@ public class HttpRequestListener {
             }
         });
 
+        httpRequestForm.getSendToWindowButton().addActionListener(e -> {
+            try {
+                HttpMsgMaker.prepare();
+                HttpMsgSender httpMsgSender = new HttpMsgSender();
+                HttpSendResult httpSendResult = httpMsgSender.send();
+
+                // clear all
+                HttpResultForm.getInstance().getResponseBodyTextArea().setText("");
+                HttpResultForm.getInstance().getHeadersTextArea().setText("");
+                HttpResultForm.getInstance().getCookiesTextArea().setText("");
+
+                if (httpSendResult.isSuccess()) {
+                    HttpResultForm.getInstance().getResponseBodyTextArea().setText(httpSendResult.getBody());
+                    HttpResultForm.getInstance().getResponseBodyTextArea().setCaretPosition(0);
+                    HttpResultForm.getInstance().getHeadersTextArea().setText(httpSendResult.getHeaders());
+                    HttpResultForm.getInstance().getHeadersTextArea().setCaretPosition(0);
+                    HttpResultForm.getInstance().getCookiesTextArea().setText(httpSendResult.getCookies());
+                    HttpResultForm.getInstance().getCookiesTextArea().setCaretPosition(0);
+                    HttpResultFrame.showResultWindow();
+
+                    if (StringUtils.isBlank(selectedName)) {
+                        selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                    }
+                    HttpRequestForm.save(selectedName);
+                } else {
+                    JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + httpSendResult.getInfo(), "失败",
+                            JOptionPane.ERROR_MESSAGE);
+                }
+
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
+
         httpRequestForm.getSendButton().addActionListener(e -> {
             try {
                 HttpMsgMaker.prepare();
                 HttpMsgSender httpMsgSender = new HttpMsgSender();
                 HttpSendResult httpSendResult = httpMsgSender.send();
 
+                // clear all
+                httpRequestForm.getResponseBodyTextArea().setText("");
+                httpRequestForm.getHeadersTextArea().setText("");
+                httpRequestForm.getCookiesTextArea().setText("");
+
                 if (httpSendResult.isSuccess()) {
-                    HttpResultForm.getInstance().getBodyTextArea().setText(httpSendResult.getBody());
-                    HttpResultForm.getInstance().getBodyTextArea().setCaretPosition(0);
-                    HttpResultForm.getInstance().getHeadersTextArea().setText(httpSendResult.getHeaders());
-                    HttpResultForm.getInstance().getHeadersTextArea().setCaretPosition(0);
-                    HttpResultForm.getInstance().getCookiesTextArea().setText(httpSendResult.getCookies());
-                    HttpResultForm.getInstance().getCookiesTextArea().setCaretPosition(0);
-                    HttpResultFrame.showResultWindow();
+                    httpRequestForm.getResponseBodyTextArea().setText(httpSendResult.getBody());
+                    httpRequestForm.getResponseBodyTextArea().setCaretPosition(0);
+                    httpRequestForm.getHeadersTextArea().setText(httpSendResult.getHeaders());
+                    httpRequestForm.getHeadersTextArea().setCaretPosition(0);
+                    httpRequestForm.getCookiesTextArea().setText(httpSendResult.getCookies());
+                    httpRequestForm.getCookiesTextArea().setCaretPosition(0);
+
+                    if (StringUtils.isBlank(selectedName)) {
+                        selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                    }
+                    HttpRequestForm.save(selectedName);
                 } else {
                     JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + httpSendResult.getInfo(), "失败",
                             JOptionPane.ERROR_MESSAGE);
@@ -264,6 +312,75 @@ public class HttpRequestListener {
             @Override
             public void changedUpdate(DocumentEvent e) {
 //                HttpRequestForm.initListTable();
+            }
+        });
+
+        // 历史记录按钮事件
+        httpRequestForm.getHistoryButton().addActionListener(e -> {
+            // toggle history panel visibility
+            int totalWidth = httpRequestForm.getHistorySplitPane().getWidth();
+            int currentDividerLocation = httpRequestForm.getHistorySplitPane().getDividerLocation();
+
+            if (totalWidth - currentDividerLocation < 10) {
+                httpRequestForm.getHistoryPanel().setVisible(true);
+                httpRequestForm.getHistorySplitPane().setDividerLocation((int) (totalWidth * 0.6));
+            } else {
+                httpRequestForm.getHistorySplitPane().setDividerLocation(totalWidth);
+                httpRequestForm.getHistoryPanel().setVisible(false);
+            }
+        });
+
+        // 历史记录关闭按钮事件
+        httpRequestForm.getCloseHistoryLabel().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                httpRequestForm.getHistorySplitPane().setDividerLocation(httpRequestForm.getHistorySplitPane().getWidth());
+                httpRequestForm.getHistoryPanel().setVisible(false);
+                super.mouseClicked(e);
+            }
+        });
+
+        // 点击历史记录表格事件
+        httpRequestForm.getHistoryTable().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mousePressed(MouseEvent e) {
+                int focusedRowIndex = httpRequestForm.getHistoryTable().rowAtPoint(e.getPoint());
+                if (focusedRowIndex == -1) {
+                    return;
+                }
+                Integer historyId = (Integer) httpRequestForm.getHistoryTable().getValueAt(focusedRowIndex, 0);
+                HttpRequestForm.initMsg(historyId);
+                super.mousePressed(e);
+            }
+        });
+
+        httpRequestForm.getDeleteHistoryButton().addActionListener(e -> {
+            try {
+                int[] selectedRows = httpRequestForm.getHistoryTable().getSelectedRows();
+
+                if (selectedRows.length == 0) {
+                    JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                } else {
+                    int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                    if (isDelete == JOptionPane.YES_OPTION) {
+                        DefaultTableModel tableModel = (DefaultTableModel) httpRequestForm.getHistoryTable().getModel();
+
+                        for (int i = 0; i < selectedRows.length; i++) {
+                            int selectedRow = selectedRows[i];
+                            Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
+                            httpRequestHistoryMapper.deleteByPrimaryKey(id);
+                        }
+
+                        TMsgHttp tMsgHttp = msgHttpMapper.selectByMsgName(selectedName);
+                        if (tMsgHttp != null) {
+                            HttpRequestForm.initHistoryListTable(tMsgHttp.getId());
+                        }
+                    }
+                }
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(e1.toString());
             }
         });
 

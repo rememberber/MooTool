@@ -1,9 +1,10 @@
 package com.luoboduner.moo.tool.domain;
 
-public class TMsgHttp {
+public class THttpRequestHistory {
+
     private Integer id;
 
-    private String msgName;
+    private Integer requestId;
 
     private String method;
 
@@ -19,15 +20,21 @@ public class TMsgHttp {
 
     private String bodyType;
 
-    private String createTime;
-
-    private String modifiedTime;
-
     private String responseBody;
 
     private String responseHeaders;
 
     private String responseCookies;
+
+    private String status;
+
+    private Integer costTime;
+
+    private String createTime;
+
+    private String modifiedTime;
+
+    private String title;
 
     public Integer getId() {
         return id;
@@ -37,12 +44,12 @@ public class TMsgHttp {
         this.id = id;
     }
 
-    public String getMsgName() {
-        return msgName;
+    public Integer getRequestId() {
+        return requestId;
     }
 
-    public void setMsgName(String msgName) {
-        this.msgName = msgName == null ? null : msgName.trim();
+    public void setRequestId(Integer requestId) {
+        this.requestId = requestId;
     }
 
     public String getMethod() {
@@ -101,6 +108,46 @@ public class TMsgHttp {
         this.bodyType = bodyType == null ? null : bodyType.trim();
     }
 
+    public String getResponseBody() {
+        return responseBody;
+    }
+
+    public void setResponseBody(String responseBody) {
+        this.responseBody = responseBody == null ? null : responseBody.trim();
+    }
+
+    public String getResponseHeaders() {
+        return responseHeaders;
+    }
+
+    public void setResponseHeaders(String responseHeaders) {
+        this.responseHeaders = responseHeaders == null ? null : responseHeaders.trim();
+    }
+
+    public String getResponseCookies() {
+        return responseCookies;
+    }
+
+    public void setResponseCookies(String responseCookies) {
+        this.responseCookies = responseCookies == null ? null : responseCookies.trim();
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status == null ? null : status.trim();
+    }
+
+    public Integer getCostTime() {
+        return costTime;
+    }
+
+    public void setCostTime(Integer costTime) {
+        this.costTime = costTime;
+    }
+
     public String getCreateTime() {
         return createTime;
     }
@@ -117,28 +164,11 @@ public class TMsgHttp {
         this.modifiedTime = modifiedTime == null ? null : modifiedTime.trim();
     }
 
-    public String getResponseBody() {
-        return responseBody;
+    public String getTitle() {
+        return title;
     }
 
-    public void setResponseBody(String responseBody) {
-        this.responseBody = responseBody;
+    public void setTitle(String title) {
+        this.title = title == null ? null : title.trim();
     }
-
-    public String getResponseHeaders() {
-        return responseHeaders;
-    }
-
-    public void setResponseHeaders(String responseHeaders) {
-        this.responseHeaders = responseHeaders;
-    }
-
-    public String getResponseCookies() {
-        return responseCookies;
-    }
-
-    public void setResponseCookies(String responseCookies) {
-        this.responseCookies = responseCookies;
-    }
-
 }

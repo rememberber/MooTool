@@ -13,10 +13,13 @@
         <result column="body_type" jdbcType="VARCHAR" property="bodyType"/>
         <result column="create_time" jdbcType="VARCHAR" property="createTime"/>
         <result column="modified_time" jdbcType="VARCHAR" property="modifiedTime"/>
+        <result column="response_body" jdbcType="VARCHAR" property="responseBody"/>
+        <result column="response_headers" jdbcType="VARCHAR" property="responseHeaders"/>
+        <result column="response_cookies" jdbcType="VARCHAR" property="responseCookies"/>
     </resultMap>
     <sql id="Base_Column_List">
         id, msg_name, method, url, params, headers, cookies, body, body_type, create_time,
-    modified_time
+    modified_time, response_body, response_headers, response_cookies
     </sql>
     <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
         select
@@ -33,11 +36,13 @@
         insert into t_msg_http (id, msg_name, method,
                                 url, params, headers,
                                 cookies, body, body_type,
-                                create_time, modified_time)
+                                create_time, modified_time,
+                                response_body, response_headers, response_cookies)
         values (#{id,jdbcType=INTEGER}, #{msgName,jdbcType=VARCHAR}, #{method,jdbcType=VARCHAR},
                 #{url,jdbcType=VARCHAR}, #{params,jdbcType=VARCHAR}, #{headers,jdbcType=VARCHAR},
                 #{cookies,jdbcType=VARCHAR}, #{body,jdbcType=VARCHAR}, #{bodyType,jdbcType=VARCHAR},
-                #{createTime,jdbcType=VARCHAR}, #{modifiedTime,jdbcType=VARCHAR})
+                #{createTime,jdbcType=VARCHAR}, #{modifiedTime,jdbcType=VARCHAR}),
+                #{responseBody,jdbcType=VARCHAR}, #{responseHeaders,jdbcType=VARCHAR}, #{responseCookies,jdbcType=VARCHAR}
     </insert>
     <insert id="insertSelective" parameterType="com.luoboduner.moo.tool.domain.TMsgHttp">
         insert into t_msg_http
@@ -75,6 +80,15 @@
             <if test="modifiedTime != null">
                 modified_time,
             </if>
+            <if test="responseBody != null">
+                response_body,
+            </if>
+            <if test="responseHeaders != null">
+                response_headers,
+            </if>
+            <if test="responseCookies != null">
+                response_cookies,
+            </if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="id != null">
@@ -109,6 +123,15 @@
             </if>
             <if test="modifiedTime != null">
                 #{modifiedTime,jdbcType=VARCHAR},
+            </if>
+            <if test="responseBody != null">
+                #{responseBody,jdbcType=VARCHAR},
+            </if>
+            <if test="responseHeaders != null">
+                #{responseHeaders,jdbcType=VARCHAR},
+            </if>
+            <if test="responseCookies != null">
+                #{responseCookies,jdbcType=VARCHAR},
             </if>
         </trim>
     </insert>
@@ -145,6 +168,15 @@
             <if test="modifiedTime != null">
                 modified_time = #{modifiedTime,jdbcType=VARCHAR},
             </if>
+            <if test="responseBody != null">
+                response_body = #{responseBody,jdbcType=VARCHAR},
+            </if>
+            <if test="responseHeaders != null">
+                response_headers = #{responseHeaders,jdbcType=VARCHAR},
+            </if>
+            <if test="responseCookies != null">
+                response_cookies = #{responseCookies,jdbcType=VARCHAR},
+            </if>
         </set>
         where id = #{id,jdbcType=INTEGER}
     </update>
@@ -159,7 +191,10 @@
             body          = #{body,jdbcType=VARCHAR},
             body_type     = #{bodyType,jdbcType=VARCHAR},
             create_time   = #{createTime,jdbcType=VARCHAR},
-            modified_time = #{modifiedTime,jdbcType=VARCHAR}
+            modified_time = #{modifiedTime,jdbcType=VARCHAR},
+            response_body = #{responseBody,jdbcType=VARCHAR},
+            response_headers = #{responseHeaders,jdbcType=VARCHAR},
+            response_cookies = #{responseCookies,jdbcType=VARCHAR}
         where id = #{id,jdbcType=INTEGER}
     </update>
     <select id="selectByMsgName" resultMap="BaseResultMap">
@@ -177,7 +212,10 @@
             cookies       = #{cookies,jdbcType=VARCHAR},
             body          = #{body,jdbcType=VARCHAR},
             body_type     = #{bodyType,jdbcType=VARCHAR},
-            modified_time = #{modifiedTime,jdbcType=VARCHAR}
+            modified_time = #{modifiedTime,jdbcType=VARCHAR},
+            response_body = #{responseBody,jdbcType=VARCHAR},
+            response_headers = #{responseHeaders,jdbcType=VARCHAR},
+            response_cookies = #{responseCookies,jdbcType=VARCHAR}
         where msg_name = #{msgName,jdbcType=VARCHAR}
     </update>
     <select id="selectAll" resultMap="BaseResultMap">
