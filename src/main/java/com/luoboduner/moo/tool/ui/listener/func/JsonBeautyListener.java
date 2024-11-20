@@ -16,6 +16,7 @@ import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.XmlReformatUtil;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -389,6 +390,45 @@ public class JsonBeautyListener {
                 jsonResultDialog.setVisible(true);
             } catch (Exception e1) {
                 JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
+            }
+
+        });
+
+        jsonBeautyForm.getEscapeJsonButton().addActionListener(e -> {
+            try {
+                String jsonText = jsonBeautyForm.getTextArea().getText();
+                jsonBeautyForm.getTextArea().setText(JSONUtil.escape(jsonText));
+                jsonBeautyForm.getTextArea().setCaretPosition(0);
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(App.mainFrame, "转义失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
+            }
+
+        });
+
+        jsonBeautyForm.getEscapeStringButton().addActionListener(e -> {
+            try {
+                String jsonText = jsonBeautyForm.getTextArea().getText();
+                jsonBeautyForm.getTextArea().setText(StringEscapeUtils.escapeJava(jsonText));
+                jsonBeautyForm.getTextArea().setCaretPosition(0);
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(App.mainFrame, "转义失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
+            }
+
+        });
+
+        jsonBeautyForm.getUnescapeButton().addActionListener(e -> {
+            try {
+                String jsonText = jsonBeautyForm.getTextArea().getText();
+                jsonBeautyForm.getTextArea().setText(StringEscapeUtils.unescapeJson(jsonText));
+                jsonBeautyForm.getTextArea().setCaretPosition(0);
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(App.mainFrame, "反转义失败！\n\n" + e1.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
