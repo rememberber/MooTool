@@ -3,7 +3,7 @@
   <grid id="27dc6" binding="quickNotePanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="20" y="20" width="1231" height="933"/>
+      <xy x="20" y="20" width="1231" height="1004"/>
     </constraints>
     <properties>
       <minimumSize width="400" height="300"/>
@@ -306,7 +306,7 @@
                             </properties>
                             <border type="none"/>
                             <children>
-                              <grid id="c2eeb" layout-manager="GridLayoutManager" row-count="27" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                              <grid id="c2eeb" layout-manager="GridLayoutManager" row-count="30" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                                 <margin top="10" left="10" bottom="10" right="10"/>
                                 <constraints/>
                                 <properties>
@@ -333,7 +333,7 @@
                                   </component>
                                   <vspacer id="c9ff8">
                                     <constraints>
-                                      <grid row="26" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                                      <grid row="29" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
                                     </constraints>
                                   </vspacer>
                                   <component id="ed115" class="javax.swing.JCheckBox" binding="clearTabTCheckBox">
@@ -434,7 +434,7 @@
                                   </component>
                                   <component id="5c20" class="javax.swing.JButton" binding="startQuickReplaceButton">
                                     <constraints>
-                                      <grid row="25" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="1" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                      <grid row="28" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="1" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                                     </constraints>
                                     <properties>
                                       <text value="开始"/>
@@ -532,6 +532,28 @@
                                     </constraints>
                                     <properties>
                                       <text value="按行去重并统计出现次数"/>
+                                    </properties>
+                                  </component>
+                                  <component id="96f95" class="javax.swing.JSeparator">
+                                    <constraints>
+                                      <grid row="25" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="1" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                    <properties/>
+                                  </component>
+                                  <component id="fc688" class="javax.swing.JCheckBox" binding="escapeCheckBox">
+                                    <constraints>
+                                      <grid row="26" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                    <properties>
+                                      <text value="转义"/>
+                                    </properties>
+                                  </component>
+                                  <component id="32f99" class="javax.swing.JCheckBox" binding="unescapeCheckBox">
+                                    <constraints>
+                                      <grid row="27" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                    <properties>
+                                      <text value="反转义"/>
                                     </properties>
                                   </component>
                                 </children>

@@ -21,6 +21,7 @@ import com.luoboduner.moo.tool.util.QuickNoteIndicatorTools;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import de.hunsicker.jalopy.Jalopy;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -606,6 +607,13 @@ public class QuickNoteListener {
                 view.setText("\"" + StringUtils.join(target, "\",\"") + "\"");
             } else {
                 view.setText(StringUtils.join(target, "\n"));
+            }
+
+            if (quickNoteForm.getEscapeCheckBox().isSelected()) {
+                view.setText(StringEscapeUtils.escapeJava(view.getText()));
+            }
+            if (quickNoteForm.getUnescapeCheckBox().isSelected()) {
+                view.setText(StringEscapeUtils.unescapeJava(view.getText()));
             }
 
         } catch (Exception e) {
