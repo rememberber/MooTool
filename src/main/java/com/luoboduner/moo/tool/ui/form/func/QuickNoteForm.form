@@ -3,7 +3,7 @@
   <grid id="27dc6" binding="quickNotePanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
     <margin top="10" left="10" bottom="10" right="10"/>
     <constraints>
-      <xy x="20" y="20" width="1231" height="810"/>
+      <xy x="20" y="20" width="1231" height="933"/>
     </constraints>
     <properties>
       <minimumSize width="400" height="300"/>
@@ -306,7 +306,7 @@
                             </properties>
                             <border type="none"/>
                             <children>
-                              <grid id="c2eeb" layout-manager="GridLayoutManager" row-count="25" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                              <grid id="c2eeb" layout-manager="GridLayoutManager" row-count="27" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                                 <margin top="10" left="10" bottom="10" right="10"/>
                                 <constraints/>
                                 <properties>
@@ -333,7 +333,7 @@
                                   </component>
                                   <vspacer id="c9ff8">
                                     <constraints>
-                                      <grid row="24" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
+                                      <grid row="26" column="0" row-span="1" col-span="1" vsize-policy="6" hsize-policy="1" anchor="0" fill="2" indent="0" use-parent-layout="false"/>
                                     </constraints>
                                   </vspacer>
                                   <component id="ed115" class="javax.swing.JCheckBox" binding="clearTabTCheckBox">
@@ -434,7 +434,7 @@
                                   </component>
                                   <component id="5c20" class="javax.swing.JButton" binding="startQuickReplaceButton">
                                     <constraints>
-                                      <grid row="23" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="1" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                                      <grid row="25" column="0" row-span="1" col-span="1" vsize-policy="1" hsize-policy="1" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                                     </constraints>
                                     <properties>
                                       <text value="开始"/>
@@ -516,6 +516,22 @@
                                     </constraints>
                                     <properties>
                                       <text value="小写 -&gt; 大写"/>
+                                    </properties>
+                                  </component>
+                                  <component id="2cc74" class="javax.swing.JCheckBox" binding="deduplicationByLineCheckBox">
+                                    <constraints>
+                                      <grid row="23" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                    <properties>
+                                      <text value="按行去重"/>
+                                    </properties>
+                                  </component>
+                                  <component id="32dde" class="javax.swing.JCheckBox" binding="deduplicationByLineCntCheckBox">
+                                    <constraints>
+                                      <grid row="24" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                                    </constraints>
+                                    <properties>
+                                      <text value="按行去重并统计出现次数"/>
                                     </properties>
                                   </component>
                                 </children>

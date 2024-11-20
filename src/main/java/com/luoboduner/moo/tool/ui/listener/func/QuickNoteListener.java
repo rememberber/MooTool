@@ -15,6 +15,7 @@ import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewe
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
+import com.luoboduner.moo.tool.util.ListUtils;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.QuickNoteIndicatorTools;
 import com.luoboduner.moo.tool.util.SqliteUtil;
@@ -37,6 +38,7 @@ import java.io.File;
 import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -577,6 +579,21 @@ public class QuickNoteListener {
                 }
 
                 target.add(split);
+            }
+
+            if (quickNoteForm.getDeduplicationByLineCheckBox().isSelected()) {
+                target = Lists.newArrayList(ArrayUtil.distinct(target.toArray(new String[0])));
+            }
+
+            if (quickNoteForm.getDeduplicationByLineCntCheckBox().isSelected()) {
+                // 按行去重并统计出现次数，结果示例："abc"出现了2次\n"def"出现了3次
+                target = Lists.newArrayList(ArrayUtil.distinct(target.toArray(new String[0])));
+                List<String> targetWithCnt = Lists.newArrayList();
+                for (String str : target) {
+                    long cnt = ListUtils.matchCount(Arrays.asList(splits), s -> s.equals(str));
+                    targetWithCnt.add("\"" + str + "\" 出现了 " + cnt + " 次");
+                }
+                target = targetWithCnt;
             }
 
             if (quickNoteForm.getClearEnterCheckBox().isSelected()) {
