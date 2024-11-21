@@ -169,6 +169,8 @@ public class QuickNoteForm {
 
         quickNoteForm.getFindReplacePanel().setVisible(false);
 
+        int totalWidth = quickNoteForm.getContentSplitPane().getWidth();
+        quickNoteForm.getContentSplitPane().setDividerLocation(totalWidth);
         quickNoteForm.getQuickReplaceScrollPane().setVisible(false);
 
         quickNoteForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
