@@ -575,6 +575,12 @@ public class QuickNoteListener {
                 if (quickNoteForm.getCommaToEnterCheckBox().isSelected()) {
                     split = split.replace(",", "\n");
                 }
+                if (quickNoteForm.getCommaSingleQuotesToEnterCheckBox().isSelected()) {
+                    split = split.replace("','", "\n").replace("'", "");
+                }
+                if (quickNoteForm.getCommaDoubleQuotesToEnterCheckBox().isSelected()) {
+                    split = split.replace("\",\"", "\n").replace("\"", "");
+                }
                 if (quickNoteForm.getTabToEnterCheckBox().isSelected()) {
                     split = split.replace("\t", "\n");
                 }
