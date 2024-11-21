@@ -40,6 +40,7 @@
         <rsyntaxtextarea.version>3.5.2</rsyntaxtextarea.version>
         <sql-formatter.version>2.0.4</sql-formatter.version>
         <google-java-format.version>1.18.1</google-java-format.version>
+        <javaparser-core.version>3.26.2</javaparser-core.version>
         <!--        <jSystemThemeDetector.version>3.8</jSystemThemeDetector.version>-->
         <cron-utils.version>9.2.1</cron-utils.version>
         <jna.version>5.13.0</jna.version>
@@ -311,6 +312,12 @@
             <artifactId>guice</artifactId>
             <version>5.1.0</version>
         </dependency>-->
+
+        <dependency>
+            <groupId>com.github.javaparser</groupId>
+            <artifactId>javaparser-core</artifactId>
+            <version>${javaparser-core.version}</version>
+        </dependency>
 
     </dependencies>
 
