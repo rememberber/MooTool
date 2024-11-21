@@ -195,6 +195,15 @@ public class QuickNoteListener {
         quickNoteForm.getWrapButton().addActionListener(e -> {
             RSyntaxTextArea view = quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea();
             view.setLineWrap(!view.getLineWrap());
+            if (selectedName != null && !QuickNoteRSyntaxTextViewer.ignoreQuickSave) {
+                TQuickNote tQuickNote = new TQuickNote();
+                tQuickNote.setName(selectedName);
+                tQuickNote.setLineWrap(view.getLineWrap() ? "1" : "0");
+                String now = SqliteUtil.nowDateForSqlite();
+                tQuickNote.setModifiedTime(now);
+
+                quickNoteMapper.updateByName(tQuickNote);
+            }
         });
 
         // 添加按钮事件
@@ -458,6 +467,8 @@ public class QuickNoteListener {
         if (colorIndex >= 0 && colorIndex < QuickNoteForm.COLOR_BUTTONS.length) {
             QuickNoteForm.COLOR_BUTTONS[colorIndex].setSelected(true);
         }
+
+        quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setLineWrap("1".equals(tQuickNote.getLineWrap()));
 
         syntaxTextViewer.putClientProperty("JComponent.outline", UIManager.getColor(color));
 
