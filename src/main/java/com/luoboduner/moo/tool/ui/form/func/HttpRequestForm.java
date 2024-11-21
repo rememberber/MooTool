@@ -140,6 +140,8 @@ public class HttpRequestForm {
 
         ScrollUtil.smoothPane(httpRequestForm.getHistoryTableScrollPane());
 
+        int totalWidth = httpRequestForm.getHistorySplitPane().getWidth();
+        httpRequestForm.getHistorySplitPane().setDividerLocation(totalWidth);
         httpRequestForm.getHistoryPanel().setVisible(false);
 
         httpRequestForm.getHttpRequestPanel().updateUI();

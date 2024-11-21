@@ -125,6 +125,8 @@ public class JsonBeautyForm {
         jsonBeautyForm.getMoreCloseLabel().setIcon(new FlatSVGIcon("icon/remove2.svg"));
 
         jsonBeautyForm.getFindReplacePanel().setVisible(false);
+        int totalWidth = jsonBeautyForm.getContentSplitPane().getWidth();
+        jsonBeautyForm.getContentSplitPane().setDividerLocation(totalWidth);
         jsonBeautyForm.getMoreScrollPane().setVisible(false);
 
         jsonBeautyForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
