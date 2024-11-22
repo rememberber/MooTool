@@ -1,13 +1,13 @@
-package com.luoboduner.moo.tool.util;
+package com.luoboduner.moo.tool.util.codeformatter;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Document.OutputSettings;
 import org.jsoup.nodes.Entities.EscapeMode;
 
-public class HtmlCodeFormatter {
+public class HtmlCodeFormatter implements CodeFormatter {
 
-    public static String format(String input) {
+    public String format(String input) {
         try {
             Document document = Jsoup.parse(input);
             document.outputSettings(new OutputSettings().prettyPrint(true).indentAmount(4).escapeMode(EscapeMode.xhtml));
@@ -17,9 +17,4 @@ public class HtmlCodeFormatter {
         }
     }
 
-    public static void main(String[] args) {
-        String input = "<html><body><h1>Hello, world!</h1></body></html>";
-        String output = format(input);
-        System.out.println(output);
-    }
 }

@@ -1,4 +1,4 @@
-package com.luoboduner.moo.tool.util;
+package com.luoboduner.moo.tool.util.codeformatter;
 
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
@@ -13,9 +13,9 @@ import javax.xml.transform.stream.StreamResult;
 import java.io.StringReader;
 import java.io.StringWriter;
 
-public class XmlFormatter {
+public class XmlFormatter implements CodeFormatter {
 
-    public static String format(String input) {
+    public String format(String input) {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
             factory.setNamespaceAware(true);
@@ -35,9 +35,4 @@ public class XmlFormatter {
         }
     }
 
-    public static void main(String[] args) {
-        String input = "<root><child><subchild>value</subchild></child></root>";
-        String output = format(input);
-        System.out.println(output);
-    }
 }
