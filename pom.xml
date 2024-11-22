@@ -39,7 +39,6 @@
         <flatlaf-fonts-inter.version>4.0</flatlaf-fonts-inter.version>
         <rsyntaxtextarea.version>3.5.2</rsyntaxtextarea.version>
         <sql-formatter.version>2.0.4</sql-formatter.version>
-        <google-java-format.version>1.18.1</google-java-format.version>
         <javaparser-core.version>3.26.2</javaparser-core.version>
         <!--        <jSystemThemeDetector.version>3.8</jSystemThemeDetector.version>-->
         <cron-utils.version>9.2.1</cron-utils.version>
@@ -209,18 +208,6 @@
             <artifactId>sql-formatter</artifactId>
             <version>${sql-formatter.version}</version>
         </dependency>
-
-        <!--        <dependency>-->
-        <!--            <groupId>com.google.googlejavaformat</groupId>-->
-        <!--            <artifactId>google-java-format</artifactId>-->
-        <!--            <version>${google-java-format.version}</version>-->
-        <!--            <exclusions>-->
-        <!--                <exclusion>-->
-        <!--                    <artifactId>guava</artifactId>-->
-        <!--                    <groupId>com.google.guava</groupId>-->
-        <!--                </exclusion>-->
-        <!--            </exclusions>-->
-        <!--        </dependency>-->
 
         <dependency>
             <groupId>com.jayway.jsonpath</groupId>

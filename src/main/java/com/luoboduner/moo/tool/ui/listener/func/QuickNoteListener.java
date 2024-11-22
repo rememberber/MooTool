@@ -19,7 +19,7 @@ import com.luoboduner.moo.tool.util.ListUtils;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.QuickNoteIndicatorTools;
 import com.luoboduner.moo.tool.util.SqliteUtil;
-import de.hunsicker.jalopy.Jalopy;
+import com.luoboduner.moo.tool.util.codeformatter.CodeFormatterFactory;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -36,7 +36,6 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
-import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.Arrays;
@@ -871,22 +870,8 @@ public class QuickNoteListener {
                     break;
 
                 case SyntaxConstants.SYNTAX_STYLE_JAVA:
-//                    format = new Formatter().formatSource(text);
-                    Jalopy jalopy = new Jalopy();
-
-                    StringWriter stringWriter = new StringWriter();
-                    File tempFile = FileUtil.touch(App.tempDir + File.separator + "temp.java");
-                    FileUtil.writeUtf8String(text, tempFile);
-                    jalopy.setInput(tempFile);
-                    jalopy.setOutput(stringWriter);
-                    boolean result = jalopy.format();
-                    if (!result) {
-                        throw new Exception("格式化失败！");
-                    }
-
-                    format = stringWriter.toString();
+                    format = CodeFormatterFactory.getFormatter(CodeFormatterFactory.FormatterType.JAVA).format(text);
                     break;
-
                 default:
                     JOptionPane.showMessageDialog(App.mainFrame, "尚不支持对该语言格式化！\n", "不支持该语言",
                             JOptionPane.INFORMATION_MESSAGE);
