@@ -548,7 +548,7 @@ public class CronForm {
         cronForm.getFavoriteBookButton().setIcon(CustomizeIcon.favoriteBookBtnIcon);
         cronForm.getButton2().setIcon(new FlatSVGIcon("icon/up.svg"));
         cronForm.getCronToHumanReadableButton().setIcon(new FlatSVGIcon("icon/down.svg"));
-        cronForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 2));
+        cronForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 2) - 100);
         cronForm.getNextExecutionTimeTextArea().setText("最近10次运行时间：");
 
         Style.blackTextArea(cronForm.getNextExecutionTimeTextArea());
