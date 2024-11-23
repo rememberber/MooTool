@@ -21,6 +21,8 @@ public class TQuickNote {
 
     private String syntax;
 
+    private String lineWrap;
+
     public Integer getId() {
         return id;
     }
@@ -99,5 +101,13 @@ public class TQuickNote {
 
     public void setSyntax(String syntax) {
         this.syntax = syntax == null ? null : syntax.trim();
+    }
+
+    public String getLineWrap() {
+        return lineWrap;
+    }
+
+    public void setLineWrap(String lineWrap) {
+        this.lineWrap = lineWrap == null ? null : lineWrap.trim();
     }
 }

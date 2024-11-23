@@ -15,11 +15,13 @@ import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewe
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
+import com.luoboduner.moo.tool.util.ListUtils;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.QuickNoteIndicatorTools;
 import com.luoboduner.moo.tool.util.SqliteUtil;
-import de.hunsicker.jalopy.Jalopy;
+import com.luoboduner.moo.tool.util.codeformatter.CodeFormatterFactory;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -34,9 +36,9 @@ import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
-import java.io.StringWriter;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -192,6 +194,15 @@ public class QuickNoteListener {
         quickNoteForm.getWrapButton().addActionListener(e -> {
             RSyntaxTextArea view = quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea();
             view.setLineWrap(!view.getLineWrap());
+            if (selectedName != null && !QuickNoteRSyntaxTextViewer.ignoreQuickSave) {
+                TQuickNote tQuickNote = new TQuickNote();
+                tQuickNote.setName(selectedName);
+                tQuickNote.setLineWrap(view.getLineWrap() ? "1" : "0");
+                String now = SqliteUtil.nowDateForSqlite();
+                tQuickNote.setModifiedTime(now);
+
+                quickNoteMapper.updateByName(tQuickNote);
+            }
         });
 
         // 添加按钮事件
@@ -456,6 +467,8 @@ public class QuickNoteListener {
             QuickNoteForm.COLOR_BUTTONS[colorIndex].setSelected(true);
         }
 
+        quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setLineWrap("1".equals(tQuickNote.getLineWrap()));
+
         syntaxTextViewer.putClientProperty("JComponent.outline", UIManager.getColor(color));
 
 //        syntaxTextViewer.updateUI();
@@ -572,11 +585,32 @@ public class QuickNoteListener {
                 if (quickNoteForm.getCommaToEnterCheckBox().isSelected()) {
                     split = split.replace(",", "\n");
                 }
+                if (quickNoteForm.getCommaSingleQuotesToEnterCheckBox().isSelected()) {
+                    split = split.replace("','", "\n").replace("'", "");
+                }
+                if (quickNoteForm.getCommaDoubleQuotesToEnterCheckBox().isSelected()) {
+                    split = split.replace("\",\"", "\n").replace("\"", "");
+                }
                 if (quickNoteForm.getTabToEnterCheckBox().isSelected()) {
                     split = split.replace("\t", "\n");
                 }
 
                 target.add(split);
+            }
+
+            if (quickNoteForm.getDeduplicationByLineCheckBox().isSelected()) {
+                target = Lists.newArrayList(ArrayUtil.distinct(target.toArray(new String[0])));
+            }
+
+            if (quickNoteForm.getDeduplicationByLineCntCheckBox().isSelected()) {
+                // 按行去重并统计出现次数，结果示例："abc"出现了2次\n"def"出现了3次
+                target = Lists.newArrayList(ArrayUtil.distinct(target.toArray(new String[0])));
+                List<String> targetWithCnt = Lists.newArrayList();
+                for (String str : target) {
+                    long cnt = ListUtils.matchCount(Arrays.asList(splits), s -> s.equals(str));
+                    targetWithCnt.add("\"" + str + "\" 出现了 " + cnt + " 次");
+                }
+                target = targetWithCnt;
             }
 
             if (quickNoteForm.getClearEnterCheckBox().isSelected()) {
@@ -589,6 +623,13 @@ public class QuickNoteListener {
                 view.setText("\"" + StringUtils.join(target, "\",\"") + "\"");
             } else {
                 view.setText(StringUtils.join(target, "\n"));
+            }
+
+            if (quickNoteForm.getEscapeCheckBox().isSelected()) {
+                view.setText(StringEscapeUtils.escapeJava(view.getText()));
+            }
+            if (quickNoteForm.getUnescapeCheckBox().isSelected()) {
+                view.setText(StringEscapeUtils.unescapeJava(view.getText()));
             }
 
         } catch (Exception e) {
@@ -829,22 +870,8 @@ public class QuickNoteListener {
                     break;
 
                 case SyntaxConstants.SYNTAX_STYLE_JAVA:
-//                    format = new Formatter().formatSource(text);
-                    Jalopy jalopy = new Jalopy();
-
-                    StringWriter stringWriter = new StringWriter();
-                    File tempFile = FileUtil.touch(App.tempDir + File.separator + "temp.java");
-                    FileUtil.writeUtf8String(text, tempFile);
-                    jalopy.setInput(tempFile);
-                    jalopy.setOutput(stringWriter);
-                    boolean result = jalopy.format();
-                    if (!result) {
-                        throw new Exception("格式化失败！");
-                    }
-
-                    format = stringWriter.toString();
+                    format = CodeFormatterFactory.getFormatter(CodeFormatterFactory.FormatterType.JAVA).format(text);
                     break;
-
                 default:
                     JOptionPane.showMessageDialog(App.mainFrame, "尚不支持对该语言格式化！\n", "不支持该语言",
                             JOptionPane.INFORMATION_MESSAGE);

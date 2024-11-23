@@ -12,10 +12,11 @@
         <result column="font_name" jdbcType="VARCHAR" property="fontName"/>
         <result column="font_size" jdbcType="VARCHAR" property="fontSize"/>
         <result column="syntax" jdbcType="VARCHAR" property="syntax"/>
+        <result column="line_wrap" jdbcType="VARCHAR" property="lineWrap"/>
     </resultMap>
     <sql id="Base_Column_List">
         id, name, content, create_time, modified_time, color, style, font_name, font_size,
-    syntax
+    syntax,line_wrap
     </sql>
     <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
         select
@@ -32,11 +33,11 @@
         insert into t_quick_note (id, name, content,
                                   create_time, modified_time, color,
                                   style, font_name, font_size,
-                                  syntax)
+                                  syntax,line_wrap)
         values (#{id,jdbcType=INTEGER}, #{name,jdbcType=VARCHAR}, #{content,jdbcType=VARCHAR},
                 #{createTime,jdbcType=VARCHAR}, #{modifiedTime,jdbcType=VARCHAR}, #{color,jdbcType=VARCHAR},
                 #{style,jdbcType=VARCHAR}, #{fontName,jdbcType=VARCHAR}, #{fontSize,jdbcType=VARCHAR},
-                #{syntax,jdbcType=VARCHAR})
+                #{syntax,jdbcType=VARCHAR}, #{lineWrap,jdbcType=VARCHAR})
     </insert>
     <insert id="insertSelective" parameterType="com.luoboduner.moo.tool.domain.TQuickNote">
         insert into t_quick_note
@@ -71,6 +72,9 @@
             <if test="syntax != null">
                 syntax,
             </if>
+            <if test="lineWrap != null">
+                line_wrap,
+            </if>
         </trim>
         <trim prefix="values (" suffix=")" suffixOverrides=",">
             <if test="id != null">
@@ -102,6 +106,9 @@
             </if>
             <if test="syntax != null">
                 #{syntax,jdbcType=VARCHAR},
+            </if>
+            <if test="lineWrap != null">
+                #{lineWrap,jdbcType=VARCHAR},
             </if>
         </trim>
     </insert>
@@ -135,6 +142,9 @@
             <if test="syntax != null">
                 syntax = #{syntax,jdbcType=VARCHAR},
             </if>
+            <if test="lineWrap != null">
+                line_wrap = #{lineWrap,jdbcType=VARCHAR},
+            </if>
         </set>
         where id = #{id,jdbcType=INTEGER}
     </update>
@@ -148,7 +158,8 @@
             style         = #{style,jdbcType=VARCHAR},
             font_name     = #{fontName,jdbcType=VARCHAR},
             font_size     = #{fontSize,jdbcType=VARCHAR},
-            syntax        = #{syntax,jdbcType=VARCHAR}
+            syntax        = #{syntax,jdbcType=VARCHAR},
+            line_wrap     = #{lineWrap,jdbcType=VARCHAR}
         where id = #{id,jdbcType=INTEGER}
     </update>
     <select id="selectAll" resultMap="BaseResultMap">
@@ -194,6 +205,9 @@
             <if test="syntax != null">
                 syntax = #{syntax,jdbcType=VARCHAR},
             </if>
+            <if test="lineWrap != null">
+                line_wrap = #{lineWrap,jdbcType=VARCHAR},
+            </if>
         </set>
         where name = #{name,jdbcType=INTEGER}
     </update>
@@ -217,6 +231,9 @@
             </if>
             <if test="syntax != null">
                 syntax = #{syntax,jdbcType=VARCHAR},
+            </if>
+            <if test="lineWrap != null">
+                line_wrap = #{lineWrap,jdbcType=VARCHAR},
             </if>
         </set>
         where 1 = 1
