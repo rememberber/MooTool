@@ -8,6 +8,7 @@ import com.luoboduner.moo.tool.ui.component.textviewer.RegexRTextScrollPane;
 import com.luoboduner.moo.tool.ui.listener.func.FileReformatListener;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
+import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 
 import javax.swing.*;
 import java.awt.*;
@@ -49,20 +50,37 @@ public class FileReformattingForm {
         stringTypeComboBox.addItem("HTML");
 
         UndoUtil.register(this);
-
-        init();
     }
 
-    private void init() {
-        contentPanel.add(scrollPane, BorderLayout.CENTER);
+    public static void init() {
+        fileReformattingForm = getInstance();
+        fileReformattingForm.getContentPanel().add(fileReformattingForm.getScrollPane());
+        changeStringType();
         FileReformatListener.ParameterBuilder.builder()
-                .buildFileType(this.fileType)
-                .buildSpaceNum(this.spaceNum)
-                .buildResultPanel(this.resultArea)
-                .buildUploadBtn(this.uploadFile)
-                .buildReformatBtn(this.reformat)
-                .buildSelectFileLabel(this.selectFileName)
+                .buildFileType(fileReformattingForm.getFileType())
+                .buildSpaceNum(fileReformattingForm.getSpaceNum())
+                .buildResultPanel(fileReformattingForm.getResultArea())
+                .buildUploadBtn(fileReformattingForm.getUploadFile())
+                .buildReformatBtn(fileReformattingForm.getReformat())
+                .buildSelectFileLabel(fileReformattingForm.getSelectFileName())
                 .start();
+
+        FileReformatListener.addListeners();
+    }
+
+    public static void changeStringType() {
+        fileReformattingForm = getInstance();
+
+        String selectedItem = (String) fileReformattingForm.getStringTypeComboBox().getSelectedItem();
+        if ("Nginx配置".equals(selectedItem)) {
+            fileReformattingForm.getTextArea().setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_INI);
+        } else if ("Java".equals(selectedItem)) {
+            fileReformattingForm.getTextArea().setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
+        } else if ("XML".equals(selectedItem)) {
+            fileReformattingForm.getTextArea().setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_XML);
+        } else if ("HTML".equals(selectedItem)) {
+            fileReformattingForm.getTextArea().setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_HTML);
+        }
     }
 
     {
