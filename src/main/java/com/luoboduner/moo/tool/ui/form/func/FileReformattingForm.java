@@ -89,8 +89,6 @@ public class FileReformattingForm {
         String text = fileReformattingForm.getTextArea().getText();
         String stringType = (String) fileReformattingForm.getStringTypeComboBox().getSelectedItem();
 
-//        CodeFormatterFactory.getFormatter(CodeFormatterFactory.FormatterType.JAVA).format(text);
-
         if ("Nginx配置".equals(stringType)) {
             text = CodeFormatterFactory.getFormatter(CodeFormatterFactory.FormatterType.NGINX).format(text);
         } else if ("Java".equals(stringType)) {
