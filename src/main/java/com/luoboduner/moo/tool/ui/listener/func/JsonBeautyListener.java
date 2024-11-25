@@ -496,6 +496,19 @@ public class JsonBeautyListener {
             }
         });
 
+        jsonBeautyForm.getBeanToJsonButton().addActionListener(e -> {
+            try {
+                String jsonText = jsonBeautyForm.getTextArea().getText();
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("JSON");
+                jsonResultDialog.setToTextArea(JSONUtil.toJsonPrettyStr(JSONUtil.parseObj(jsonText)));
+                jsonResultDialog.setVisible(true);
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
+            }
+        });
+
     }
 
     private static void viewByRowNum(int selectedRow) {
