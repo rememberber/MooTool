@@ -369,7 +369,7 @@ public class JsonBeautyListener {
         jsonBeautyForm.getJsonToXmlButton().addActionListener(e -> {
             try {
                 String jsonText = jsonBeautyForm.getTextArea().getText();
-                JsonResultDialog jsonResultDialog = new JsonResultDialog("XML");
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("XML", "JSON转XML", "Display");
                 String xmlStr = JSONUtil.toXmlStr(JSONUtil.isTypeJSONArray(jsonText) ? JSONUtil.parseArray(jsonText) : JSONUtil.parseObj(jsonText));
                 xmlStr = "<root>" + xmlStr + "</root>";
                 jsonResultDialog.setToTextArea(XmlReformatUtil.format(xmlStr));
@@ -385,7 +385,7 @@ public class JsonBeautyListener {
         jsonBeautyForm.getXmlToJsonButton().addActionListener(e -> {
             try {
                 String xmlText = jsonBeautyForm.getTextArea().getText();
-                JsonResultDialog jsonResultDialog = new JsonResultDialog("JSON");
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("XML", "请输入XML文本：", "Input");
                 jsonResultDialog.setToTextArea(JSONUtil.toJsonPrettyStr(JSONUtil.xmlToJson(xmlText)));
                 jsonResultDialog.setVisible(true);
             } catch (Exception e1) {
@@ -440,7 +440,7 @@ public class JsonBeautyListener {
                 String jsonText = jsonBeautyForm.getTextArea().getText();
                 String jsonPath = jsonBeautyForm.getJsonPathTextField().getText();
                 if (StringUtils.isNotBlank(jsonPath)) {
-                    JsonResultDialog jsonResultDialog = new JsonResultDialog("JSON");
+                    JsonResultDialog jsonResultDialog = new JsonResultDialog("JSON", "根据JSON Path，取值如下：", "Display");
                     jsonResultDialog.setToTextArea(JSONUtil.toJsonPrettyStr(JSONUtil.getByPath(JSONUtil.parse(jsonText), jsonPath).toString()));
                     jsonResultDialog.setVisible(true);
                 }
@@ -499,7 +499,7 @@ public class JsonBeautyListener {
         jsonBeautyForm.getBeanToJsonButton().addActionListener(e -> {
             try {
                 String jsonText = jsonBeautyForm.getTextArea().getText();
-                JsonResultDialog jsonResultDialog = new JsonResultDialog("JSON");
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("Java", "请输入JavaBean类代码：", "Input");
                 jsonResultDialog.setToTextArea(JSONUtil.toJsonPrettyStr(JSONUtil.parseObj(jsonText)));
                 jsonResultDialog.setVisible(true);
             } catch (Exception e1) {
