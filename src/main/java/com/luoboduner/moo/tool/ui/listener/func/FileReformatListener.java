@@ -33,6 +33,10 @@ public class FileReformatListener {
                 FileReformattingForm.changeStringType();
             }
         });
+
+        fileReformattingForm.getFormatButton().addActionListener(e -> {
+            FileReformattingForm.format();
+        });
     }
 
     public static class ParameterBuilder {
