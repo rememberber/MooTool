@@ -16,7 +16,7 @@ public class MockDataGenerator {
 
     private static final Faker faker = new Faker();
 
-    public static String generateMockJson(String classCode) {
+    public static String classCodeToJson(String classCode) {
         Map<String, Object> mockData = new HashMap<>();
         JavaParser parser = new JavaParser();
         CompilationUnit cu = parser.parse(classCode).getResult().orElseThrow(() -> new RuntimeException("Failed to parse class code"));
@@ -87,6 +87,49 @@ public class MockDataGenerator {
                     return list;
                 }
                 return null;
+        }
+    }
+
+    public static String jsonToClassCode(String json) {
+        Map<String, Object> mockData = JSONUtil.toBean(json, Map.class);
+        StringBuilder classCode = new StringBuilder();
+        classCode.append("public class MockData {\n\n");
+        mockData.forEach((key, value) -> {
+            classCode.append("    private ").append(getType(value)).append(" ").append(key).append(";\n");
+            classCode.append("\n");
+        });
+        mockData.forEach((key, value) -> {
+            classCode.append("    public ").append(getType(value)).append(" get").append(key.substring(0, 1).toUpperCase()).append(key.substring(1)).append("() {\n");
+            classCode.append("        return ").append(key).append(";\n");
+            classCode.append("    }\n");
+            classCode.append("\n");
+            classCode.append("    public void set").append(key.substring(0, 1).toUpperCase()).append(key.substring(1)).append("(").append(getType(value)).append(" ").append(key).append(") {\n");
+            classCode.append("        this.").append(key).append(" = ").append(key).append(";\n");
+            classCode.append("    }\n");
+            classCode.append("\n");
+        });
+        classCode.append("}");
+        return classCode.toString();
+    }
+
+    private static String getType(Object value) {
+        if (value instanceof String) {
+            return "String";
+        } else if (value instanceof Integer) {
+            return "Integer";
+        } else if (value instanceof Long) {
+            return "Long";
+        } else if (value instanceof Double) {
+            return "Double";
+        } else if (value instanceof Boolean) {
+            return "Boolean";
+        } else if (value instanceof List) {
+            return "List<" + getType(((List) value).get(0)) + ">";
+        } else if (value instanceof Map) {
+            Map map = (Map) value;
+            return "Map<" + getType(map.keySet().iterator().next()) + ", " + getType(map.values().iterator().next()) + ">";
+        } else {
+            return "Object";
         }
     }
 

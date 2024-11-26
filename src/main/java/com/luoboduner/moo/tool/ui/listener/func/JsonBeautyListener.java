@@ -503,7 +503,7 @@ public class JsonBeautyListener {
                 JsonResultDialog jsonResultDialog = new JsonResultDialog("Java", "请输入JavaBean类代码：", "Input");
                 jsonResultDialog.setVisible(true);
                 String inputValue = JsonResultDialog.textInputValue;
-                jsonBeautyForm.getTextArea().setText(MockDataGenerator.generateMockJson(inputValue));
+                jsonBeautyForm.getTextArea().setText(MockDataGenerator.classCodeToJson(inputValue));
                 jsonBeautyForm.getTextArea().setCaretPosition(0);
             } catch (Exception e1) {
                 JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e1.getMessage(), "失败",
@@ -517,8 +517,20 @@ public class JsonBeautyListener {
                 JsonResultDialog jsonResultDialog = new JsonResultDialog("Java", "请输入JavaBean类代码：", "Input");
                 jsonResultDialog.setVisible(true);
                 String inputValue = JsonResultDialog.textInputValue;
-                jsonBeautyForm.getTextArea().setText(MockDataGenerator.generateMockJson(inputValue));
+                jsonBeautyForm.getTextArea().setText(MockDataGenerator.classCodeToJson(inputValue));
                 jsonBeautyForm.getTextArea().setCaretPosition(0);
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
+            }
+        });
+
+        jsonBeautyForm.getJsonToJavaBeanButton().addActionListener(e -> {
+            try {
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("Java", "JSON转换JavaBean结果：", "Display");
+                jsonResultDialog.setToTextArea(MockDataGenerator.jsonToClassCode(jsonBeautyForm.getTextArea().getText()));
+                jsonResultDialog.setVisible(true);
             } catch (Exception e1) {
                 JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e1.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);

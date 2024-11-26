@@ -108,6 +108,7 @@ public class JsonResultDialog extends JDialog {
 
     public void setToTextArea(String str) {
         textArea.setText(str);
+        textArea.setCaretPosition(0);
     }
 
     {
