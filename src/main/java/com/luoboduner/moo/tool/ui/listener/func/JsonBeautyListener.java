@@ -12,6 +12,7 @@ import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
 import com.luoboduner.moo.tool.ui.dialog.JsonResultDialog;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
+import com.luoboduner.moo.tool.util.MockDataGenerator;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.XmlReformatUtil;
@@ -384,10 +385,11 @@ public class JsonBeautyListener {
 
         jsonBeautyForm.getXmlToJsonButton().addActionListener(e -> {
             try {
-                String xmlText = jsonBeautyForm.getTextArea().getText();
                 JsonResultDialog jsonResultDialog = new JsonResultDialog("XML", "请输入XML文本：", "Input");
-                jsonResultDialog.setToTextArea(JSONUtil.toJsonPrettyStr(JSONUtil.xmlToJson(xmlText)));
                 jsonResultDialog.setVisible(true);
+                String inputValue = JsonResultDialog.textInputValue;
+                jsonBeautyForm.getTextArea().setText(JSONUtil.toJsonPrettyStr(JSONUtil.xmlToJson(inputValue)));
+                jsonBeautyForm.getTextArea().setCaretPosition(0);
             } catch (Exception e1) {
                 JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e1.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
@@ -498,10 +500,25 @@ public class JsonBeautyListener {
 
         jsonBeautyForm.getBeanToJsonButton().addActionListener(e -> {
             try {
-                String jsonText = jsonBeautyForm.getTextArea().getText();
                 JsonResultDialog jsonResultDialog = new JsonResultDialog("Java", "请输入JavaBean类代码：", "Input");
-                jsonResultDialog.setToTextArea(JSONUtil.toJsonPrettyStr(JSONUtil.parseObj(jsonText)));
                 jsonResultDialog.setVisible(true);
+                String inputValue = JsonResultDialog.textInputValue;
+                jsonBeautyForm.getTextArea().setText(MockDataGenerator.generateMockJson(inputValue));
+                jsonBeautyForm.getTextArea().setCaretPosition(0);
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
+            }
+        });
+
+        jsonBeautyForm.getJavaBeanToJSONButton().addActionListener(e -> {
+            try {
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("Java", "请输入JavaBean类代码：", "Input");
+                jsonResultDialog.setVisible(true);
+                String inputValue = JsonResultDialog.textInputValue;
+                jsonBeautyForm.getTextArea().setText(MockDataGenerator.generateMockJson(inputValue));
+                jsonBeautyForm.getTextArea().setCaretPosition(0);
             } catch (Exception e1) {
                 JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e1.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);

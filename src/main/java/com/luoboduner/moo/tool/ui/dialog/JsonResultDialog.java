@@ -28,6 +28,8 @@ public class JsonResultDialog extends JDialog {
     private RegexRSyntaxTextViewer textArea;
     private RegexRTextScrollPane rTextScrollPane;
 
+    public static String textInputValue;
+
     public JsonResultDialog(String contentType, String tips, String displayOrInput) {
 
         super(App.mainFrame, "Result");
@@ -38,10 +40,15 @@ public class JsonResultDialog extends JDialog {
 
         tipsLabel.setText(tips);
         textArea = new RegexRSyntaxTextViewer();
-        if ("XML".equals(contentType)) {
-            textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_XML);
-        } else if ("JSON".equals(contentType)) {
-            textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT);
+        switch (contentType) {
+            case "XML" -> textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_XML);
+            case "JSON" -> textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JSON);
+            case "Java" -> textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
+            case "SQL" -> textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_SQL);
+            case "HTML" -> textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_HTML);
+            case "JavaScript" -> textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT);
+            case "CSS" -> textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_CSS);
+            case null, default -> textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
         }
         rTextScrollPane = new RegexRTextScrollPane(textArea);
 
@@ -59,22 +66,43 @@ public class JsonResultDialog extends JDialog {
             gridLayoutManager.setMargin(new Insets(28, 0, 0, 0));
         }
 
-        buttonOK.addActionListener(e -> onOK());
+        buttonOK.addActionListener(e -> {
+            if ("display".equals(displayOrInput)) {
+                onDisplayOK();
+            } else {
+                onInputOK();
+            }
+        });
 
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
             @Override
             public void windowClosing(WindowEvent e) {
-                onOK();
+                if ("display".equals(displayOrInput)) {
+                    onDisplayOK();
+                } else {
+                    onInputOK();
+                }
             }
         });
 
         // call onCancel() on ESCAPE
-        contentPane.registerKeyboardAction(e -> onOK(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+        contentPane.registerKeyboardAction(e -> {
+            if ("display".equals(displayOrInput)) {
+                onDisplayOK();
+            } else {
+                onInputOK();
+            }
+        }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 
     }
 
-    private void onOK() {
+    private void onDisplayOK() {
+        dispose();
+    }
+
+    private void onInputOK() {
+        textInputValue = textArea.getText();
         dispose();
     }
 
