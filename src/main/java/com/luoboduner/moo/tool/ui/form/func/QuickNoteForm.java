@@ -433,13 +433,13 @@ public class QuickNoteForm {
         quickNoteForm.getFontNameComboBox().removeAllItems();
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         String[] fonts = ge.getAvailableFontFamilyNames();
-        quickNoteForm.getFontNameComboBox().addItem(FlatJetBrainsMonoFont.FAMILY);
-        quickNoteForm.getFontNameComboBox().addItem(FlatInterFont.FAMILY);
         for (String font : fonts) {
             if (StringUtils.isNotBlank(font)) {
                 quickNoteForm.getFontNameComboBox().addItem(font);
             }
         }
+        quickNoteForm.getFontNameComboBox().addItem(FlatJetBrainsMonoFont.FAMILY);
+        quickNoteForm.getFontNameComboBox().addItem(FlatInterFont.FAMILY);
     }
 
     {

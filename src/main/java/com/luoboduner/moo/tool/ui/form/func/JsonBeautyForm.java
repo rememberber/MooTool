@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.ui.form.func;
 
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import com.formdev.flatlaf.fonts.inter.FlatInterFont;
 import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
 import com.formdev.flatlaf.icons.FlatSearchIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
@@ -200,12 +201,13 @@ public class JsonBeautyForm {
         jsonBeautyForm.getFontNameComboBox().removeAllItems();
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         String[] fonts = ge.getAvailableFontFamilyNames();
-        jsonBeautyForm.getFontNameComboBox().addItem(FlatJetBrainsMonoFont.FAMILY);
         for (String font : fonts) {
             if (StringUtils.isNotBlank(font)) {
                 jsonBeautyForm.getFontNameComboBox().addItem(font);
             }
         }
+        jsonBeautyForm.getFontNameComboBox().addItem(FlatJetBrainsMonoFont.FAMILY);
+        jsonBeautyForm.getFontNameComboBox().addItem(FlatInterFont.FAMILY);
     }
 
     {
