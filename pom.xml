@@ -52,6 +52,7 @@
         <itextpdf.version>5.5.1</itextpdf.version>
         <snakeyaml.version>1.23</snakeyaml.version>
         <javafaker.version>1.0.2</javafaker.version>
+        <bcprov-jdk15on.version>1.70</bcprov-jdk15on.version>
     </properties>
 
     <repositories>
@@ -311,6 +312,12 @@
             <groupId>com.github.javafaker</groupId>
             <artifactId>javafaker</artifactId>
             <version>${javafaker.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk15on</artifactId>
+            <version>${bcprov-jdk15on.version}</version>
         </dependency>
 
     </dependencies>
