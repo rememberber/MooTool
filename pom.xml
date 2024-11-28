@@ -53,6 +53,7 @@
         <snakeyaml.version>1.23</snakeyaml.version>
         <javafaker.version>1.0.2</javafaker.version>
         <bcprov-jdk15on.version>1.70</bcprov-jdk15on.version>
+        <tika.version>3.0.0</tika.version>
     </properties>
 
     <repositories>
@@ -318,6 +319,18 @@
             <groupId>org.bouncycastle</groupId>
             <artifactId>bcprov-jdk15on</artifactId>
             <version>${bcprov-jdk15on.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-core</artifactId>
+            <version>${tika.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.tika</groupId>
+            <artifactId>tika-langdetect-optimaize</artifactId>
+            <version>${tika.version}</version>
         </dependency>
 
     </dependencies>
