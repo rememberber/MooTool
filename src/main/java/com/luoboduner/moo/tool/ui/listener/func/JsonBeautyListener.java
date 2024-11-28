@@ -388,6 +388,9 @@ public class JsonBeautyListener {
                 JsonResultDialog jsonResultDialog = new JsonResultDialog("XML", "请输入XML文本：", "Input");
                 jsonResultDialog.setVisible(true);
                 String inputValue = JsonResultDialog.textInputValue;
+                if (StringUtils.isBlank(inputValue)) {
+                    return;
+                }
                 jsonBeautyForm.getTextArea().setText(JSONUtil.toJsonPrettyStr(JSONUtil.xmlToJson(inputValue)));
                 jsonBeautyForm.getTextArea().setCaretPosition(0);
             } catch (Exception e1) {
@@ -503,6 +506,9 @@ public class JsonBeautyListener {
                 JsonResultDialog jsonResultDialog = new JsonResultDialog("Java", "请输入JavaBean类代码：", "Input");
                 jsonResultDialog.setVisible(true);
                 String inputValue = JsonResultDialog.textInputValue;
+                if (StringUtils.isBlank(inputValue)) {
+                    return;
+                }
                 jsonBeautyForm.getTextArea().setText(MockDataGenerator.classCodeToJson(inputValue));
                 jsonBeautyForm.getTextArea().setCaretPosition(0);
             } catch (Exception e1) {
@@ -517,6 +523,9 @@ public class JsonBeautyListener {
                 JsonResultDialog jsonResultDialog = new JsonResultDialog("Java", "请输入JavaBean类代码：", "Input");
                 jsonResultDialog.setVisible(true);
                 String inputValue = JsonResultDialog.textInputValue;
+                if (StringUtils.isBlank(inputValue)) {
+                    return;
+                }
                 jsonBeautyForm.getTextArea().setText(MockDataGenerator.classCodeToJson(inputValue));
                 jsonBeautyForm.getTextArea().setCaretPosition(0);
             } catch (Exception e1) {
