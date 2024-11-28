@@ -110,6 +110,9 @@ public class FrameListener {
             MainWindow.getInstance().getMainPanel().registerKeyboardAction(e -> App.mainFrame.setExtendedState(Frame.ICONIFIED), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
         }
 
+        // Command + W 最小化窗口
+        MainWindow.getInstance().getMainPanel().registerKeyboardAction(e -> App.mainFrame.setExtendedState(Frame.ICONIFIED), KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.META_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+
     }
 
     public static void saveBeforeExit() {

@@ -1,15 +1,12 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
 import com.luoboduner.moo.tool.ui.form.MainWindow;
-import com.luoboduner.moo.tool.ui.frame.MainFrame;
+import com.luoboduner.moo.tool.ui.form.func.FileReformattingForm;
 import com.luoboduner.moo.tool.util.FileReformatUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
+import java.awt.event.*;
 import java.io.*;
 
 @Slf4j
@@ -26,6 +23,20 @@ public class FileReformatListener {
     private File selectFile;
 
     private FileReformatListener() {
+    }
+
+    public static void addListeners() {
+        FileReformattingForm fileReformattingForm = FileReformattingForm.getInstance();
+
+        fileReformattingForm.getStringTypeComboBox().addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                FileReformattingForm.changeStringType();
+            }
+        });
+
+        fileReformattingForm.getFormatButton().addActionListener(e -> {
+            FileReformattingForm.format();
+        });
     }
 
     public static class ParameterBuilder {
