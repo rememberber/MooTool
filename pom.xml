@@ -161,10 +161,10 @@
                     <artifactId>kotlin-stdlib-common</artifactId>
                     <groupId>org.jetbrains.kotlin</groupId>
                 </exclusion>
-                <exclusion>
-                    <artifactId>annotations</artifactId>
-                    <groupId>org.jetbrains</groupId>
-                </exclusion>
+<!--                <exclusion>-->
+<!--                    <artifactId>annotations</artifactId>-->
+<!--                    <groupId>org.jetbrains</groupId>-->
+<!--                </exclusion>-->
             </exclusions>
         </dependency>
 
@@ -204,17 +204,17 @@
             </exclusions>
         </dependency>
 
-        <dependency>
-            <groupId>com.formdev</groupId>
-            <artifactId>flatlaf-fonts-inter</artifactId>
-            <version>${flatlaf-fonts-inter.version}</version>
-            <exclusions>
-                <exclusion>
-                    <artifactId>flatlaf</artifactId>
-                    <groupId>com.formdev</groupId>
-                </exclusion>
-            </exclusions>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.formdev</groupId>-->
+<!--            <artifactId>flatlaf-fonts-inter</artifactId>-->
+<!--            <version>${flatlaf-fonts-inter.version}</version>-->
+<!--            <exclusions>-->
+<!--                <exclusion>-->
+<!--                    <artifactId>flatlaf</artifactId>-->
+<!--                    <groupId>com.formdev</groupId>-->
+<!--                </exclusion>-->
+<!--            </exclusions>-->
+<!--        </dependency>-->
 
         <!-- https://mvnrepository.com/artifact/com.fifesoft/rsyntaxtextarea -->
         <dependency>
@@ -344,11 +344,11 @@
             </exclusions>
         </dependency>
 
-        <dependency>
-            <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
-            <version>${bcprov-jdk15on.version}</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>org.bouncycastle</groupId>-->
+<!--            <artifactId>bcprov-jdk15on</artifactId>-->
+<!--            <version>${bcprov-jdk15on.version}</version>-->
+<!--        </dependency>-->
 
 <!--        <dependency>-->
 <!--            <groupId>org.apache.tika</groupId>-->
