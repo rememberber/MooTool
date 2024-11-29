@@ -29,59 +29,59 @@ public class YmlAndPropUtil {
     private static final String PROP_COMMA = ",";
     public static final String COMMENTS = " Automatically converts yml file to properties file.";
 
-    public static void main(String[] args) {
-        String propertiesData = """
-                ababa.list.mylist[0]=1
-                ababa.list.mylist[1]=2
-                ababa.list.mylist[2]=3
-                ababa.map.myMap.1=张三  
-                ababa.map.myMap.2=李四  
-                ababa.map.myMap.3=王五  
-                system.user.age=30
-                system.user.name=John Doe  
-                system.user.offset= 200
-                system.user.sex=1
-                spring.launcher=appl.class
-                
-                tencent.0=1001
-                tencent.1=2001
-                tencent.2=3002
-                
-                baidu.list[0]=a001
-                baidu.list[1]=b001
-                baidu.list[2]=c001
-              
-                """;
-
-
-        System.out.println(convertProp2Yml(propertiesData));
-
-        /*String readString = """
-                language: java
-                                
-                before_install:
-                  - mvn
-                  - install
-                  - closet
-                  - pillows
-                  - DartifactId
-                                
-                jdk:
-                  - openjdk8
-                script: "mvn clean package -Dmaven.test.skip=true"
-                                
-                notifications:
-                  name: George
-                  sex: 男
-                  age:\s
-                  email:
-                    - rememberber@163.com
-                    - adjf@qq.com
-                   \s
-                """;
-        String yml2Prop = YmlAndPropUtil.convertYml2Prop(readString);
-        log.info("prop is :{}", yml2Prop);*/
-    }
+//    public static void main(String[] args) {
+//        String propertiesData = """
+//                ababa.list.mylist[0]=1
+//                ababa.list.mylist[1]=2
+//                ababa.list.mylist[2]=3
+//                ababa.map.myMap.1=张三
+//                ababa.map.myMap.2=李四
+//                ababa.map.myMap.3=王五
+//                system.user.age=30
+//                system.user.name=John Doe
+//                system.user.offset= 200
+//                system.user.sex=1
+//                spring.launcher=appl.class
+//
+//                tencent.0=1001
+//                tencent.1=2001
+//                tencent.2=3002
+//
+//                baidu.list[0]=a001
+//                baidu.list[1]=b001
+//                baidu.list[2]=c001
+//
+//                """;
+//
+//
+//        System.out.println(convertProp2Yml(propertiesData));
+//
+//        /*String readString = """
+//                language: java
+//
+//                before_install:
+//                  - mvn
+//                  - install
+//                  - closet
+//                  - pillows
+//                  - DartifactId
+//
+//                jdk:
+//                  - openjdk8
+//                script: "mvn clean package -Dmaven.test.skip=true"
+//
+//                notifications:
+//                  name: George
+//                  sex: 男
+//                  age:\s
+//                  email:
+//                    - rememberber@163.com
+//                    - adjf@qq.com
+//                   \s
+//                """;
+//        String yml2Prop = YmlAndPropUtil.convertYml2Prop(readString);
+//        log.info("prop is :{}", yml2Prop);*/
+//    }
 
     public static String convertProp2Yml(String propStr) {
         Map<String, Object> yamlData = parseProperties(propStr);

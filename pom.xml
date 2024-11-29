@@ -6,7 +6,7 @@
 
     <groupId>com.luoboduner.moo.tool</groupId>
     <artifactId>MooTool</artifactId>
-    <version>1.6.3</version>
+    <version>1.6.5</version>
     <packaging>jar</packaging>
 
     <name>MooTool</name>
@@ -39,7 +39,7 @@
         <flatlaf-fonts-inter.version>4.0</flatlaf-fonts-inter.version>
         <rsyntaxtextarea.version>3.5.2</rsyntaxtextarea.version>
         <sql-formatter.version>2.0.4</sql-formatter.version>
-        <google-java-format.version>1.18.1</google-java-format.version>
+        <javaparser-core.version>3.26.2</javaparser-core.version>
         <!--        <jSystemThemeDetector.version>3.8</jSystemThemeDetector.version>-->
         <cron-utils.version>9.2.1</cron-utils.version>
         <jna.version>5.13.0</jna.version>
@@ -51,6 +51,10 @@
         <jalopy.version>1.5rc3</jalopy.version>
         <itextpdf.version>5.5.1</itextpdf.version>
         <snakeyaml.version>1.23</snakeyaml.version>
+        <javafaker.version>1.0.2</javafaker.version>
+        <bcprov-jdk15on.version>1.70</bcprov-jdk15on.version>
+        <tika.version>3.0.0</tika.version>
+        <jackson-databind.version>2.13.3</jackson-databind.version>
     </properties>
 
     <repositories>
@@ -157,6 +161,10 @@
                     <artifactId>kotlin-stdlib-common</artifactId>
                     <groupId>org.jetbrains.kotlin</groupId>
                 </exclusion>
+<!--                <exclusion>-->
+<!--                    <artifactId>annotations</artifactId>-->
+<!--                    <groupId>org.jetbrains</groupId>-->
+<!--                </exclusion>-->
             </exclusions>
         </dependency>
 
@@ -188,13 +196,25 @@
             <groupId>com.formdev</groupId>
             <artifactId>flatlaf-fonts-jetbrains-mono</artifactId>
             <version>${flatlaf-fonts-jetbrains-mono.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>flatlaf</artifactId>
+                    <groupId>com.formdev</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
-        <dependency>
-            <groupId>com.formdev</groupId>
-            <artifactId>flatlaf-fonts-inter</artifactId>
-            <version>${flatlaf-fonts-inter.version}</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>com.formdev</groupId>-->
+<!--            <artifactId>flatlaf-fonts-inter</artifactId>-->
+<!--            <version>${flatlaf-fonts-inter.version}</version>-->
+<!--            <exclusions>-->
+<!--                <exclusion>-->
+<!--                    <artifactId>flatlaf</artifactId>-->
+<!--                    <groupId>com.formdev</groupId>-->
+<!--                </exclusion>-->
+<!--            </exclusions>-->
+<!--        </dependency>-->
 
         <!-- https://mvnrepository.com/artifact/com.fifesoft/rsyntaxtextarea -->
         <dependency>
@@ -208,18 +228,6 @@
             <artifactId>sql-formatter</artifactId>
             <version>${sql-formatter.version}</version>
         </dependency>
-
-        <!--        <dependency>-->
-        <!--            <groupId>com.google.googlejavaformat</groupId>-->
-        <!--            <artifactId>google-java-format</artifactId>-->
-        <!--            <version>${google-java-format.version}</version>-->
-        <!--            <exclusions>-->
-        <!--                <exclusion>-->
-        <!--                    <artifactId>guava</artifactId>-->
-        <!--                    <groupId>com.google.guava</groupId>-->
-        <!--                </exclusion>-->
-        <!--            </exclusions>-->
-        <!--        </dependency>-->
 
         <dependency>
             <groupId>com.jayway.jsonpath</groupId>
@@ -261,6 +269,12 @@
             <groupId>com.github.oshi</groupId>
             <artifactId>oshi-core</artifactId>
             <version>${oshi-core.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>slf4j-api</artifactId>
+                    <groupId>org.slf4j</groupId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -311,6 +325,64 @@
             <artifactId>guice</artifactId>
             <version>5.1.0</version>
         </dependency>-->
+
+        <dependency>
+            <groupId>com.github.javaparser</groupId>
+            <artifactId>javaparser-core</artifactId>
+            <version>${javaparser-core.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.github.javafaker</groupId>
+            <artifactId>javafaker</artifactId>
+            <version>${javafaker.version}</version>
+            <exclusions>
+                <exclusion>
+                    <artifactId>commons-lang3</artifactId>
+                    <groupId>org.apache.commons</groupId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+<!--        <dependency>-->
+<!--            <groupId>org.bouncycastle</groupId>-->
+<!--            <artifactId>bcprov-jdk15on</artifactId>-->
+<!--            <version>${bcprov-jdk15on.version}</version>-->
+<!--        </dependency>-->
+
+<!--        <dependency>-->
+<!--            <groupId>org.apache.tika</groupId>-->
+<!--            <artifactId>tika-core</artifactId>-->
+<!--            <version>${tika.version}</version>-->
+<!--            <exclusions>-->
+<!--                <exclusion>-->
+<!--                    <artifactId>slf4j-api</artifactId>-->
+<!--                    <groupId>org.slf4j</groupId>-->
+<!--                </exclusion>-->
+<!--            </exclusions>-->
+<!--        </dependency>-->
+
+<!--        <dependency>-->
+<!--            <groupId>org.apache.tika</groupId>-->
+<!--            <artifactId>tika-langdetect-optimaize</artifactId>-->
+<!--            <version>${tika.version}</version>-->
+<!--            <exclusions>-->
+<!--                <exclusion>-->
+<!--                    <artifactId>guava</artifactId>-->
+<!--                    <groupId>com.google.guava</groupId>-->
+<!--                </exclusion>-->
+<!--                <exclusion>-->
+<!--                    <artifactId>slf4j-api</artifactId>-->
+<!--                    <groupId>org.slf4j</groupId>-->
+<!--                </exclusion>-->
+<!--            </exclusions>-->
+<!--        </dependency>-->
+
+<!--        <dependency>-->
+<!--            <groupId>com.fasterxml.jackson.core</groupId>-->
+<!--            <artifactId>jackson-databind</artifactId>-->
+<!--            <version>${jackson-databind.version}</version>-->
+<!--        </dependency>-->
 
     </dependencies>
 

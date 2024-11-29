@@ -3,8 +3,6 @@ package com.luoboduner.moo.tool;
 import cn.hutool.core.io.FileUtil;
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatDesktop;
-import com.formdev.flatlaf.extras.FlatInspector;
-import com.formdev.flatlaf.extras.FlatUIDefaultsInspector;
 import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
 import com.formdev.flatlaf.util.SystemInfo;
 import com.luoboduner.moo.tool.ui.Init;
@@ -91,8 +89,8 @@ public class App {
         Init.initTheme();
 
         // install inspectors
-        FlatInspector.install("ctrl shift alt X");
-        FlatUIDefaultsInspector.install("ctrl shift alt Y");
+//        FlatInspector.install("ctrl shift alt X");
+//        FlatUIDefaultsInspector.install("ctrl shift alt Y");
 
         mainFrame = new MainFrame();
         mainFrame.init();
