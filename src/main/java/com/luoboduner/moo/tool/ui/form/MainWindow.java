@@ -241,7 +241,7 @@ public class MainWindow {
         tabbedPane.addTab("HTTP", new ImageIcon(getClass().getResource("/icon/global.png")), httpRequestPanel);
         encodePanel = new JPanel();
         encodePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("编码", new ImageIcon(getClass().getResource("/icon/exchange.png")), encodePanel);
+        tabbedPane.addTab("编码转换", new ImageIcon(getClass().getResource("/icon/exchange.png")), encodePanel);
         qrCodePanel = new JPanel();
         qrCodePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("二维码", new ImageIcon(getClass().getResource("/icon/QR_code.png")), qrCodePanel);
