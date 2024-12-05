@@ -172,6 +172,9 @@ public class HttpMsgSender {
             if (httpMsg.getCookies() != null && !httpMsg.getCookies().isEmpty()) {
                 requestBuilder.addHeader(Header.COOKIE.toString(), cookieHeader(httpMsg.getCookies()));
             }
+            if(!httpMsg.getUrl().toLowerCase().startsWith("http")&&!httpMsg.getUrl().toLowerCase().startsWith("https")){
+                httpMsg.setUrl("http://" + httpMsg.getUrl());
+            }
             switch (HttpMsgMaker.method) {
                 case "GET":
                     HttpUrl.Builder urlBuilder = HttpUrl.parse(httpMsg.getUrl()).newBuilder();
