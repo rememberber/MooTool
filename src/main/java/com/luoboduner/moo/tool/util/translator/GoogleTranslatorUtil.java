@@ -1,4 +1,4 @@
-package com.luoboduner.moo.tool.util;
+package com.luoboduner.moo.tool.util.translator;
 
 import cn.hutool.json.JSONArray;
 import org.apache.commons.lang3.StringUtils;
@@ -13,22 +13,21 @@ import java.nio.charset.StandardCharsets;
 /**
  * 翻译工具类
  */
-public class GoogleTranslatorUtil {
+public class GoogleTranslatorUtil implements Translator {
 
     /**
-     *
      * @param word
      * @param sourceLanguage 源语言 默认auto 英文为 en
      * @param targetLanguage 目标语言 默认zh-CN
      * @return
      */
-    public static String translate(String word,String sourceLanguage,String targetLanguage){
+    public String translate(String word, String sourceLanguage, String targetLanguage) {
         try {
-            if(StringUtils.isEmpty(sourceLanguage)){
-                sourceLanguage="auto";
+            if (StringUtils.isEmpty(sourceLanguage)) {
+                sourceLanguage = "auto";
             }
-            if(StringUtils.isEmpty(targetLanguage)){
-                targetLanguage="zh-CN";
+            if (StringUtils.isEmpty(targetLanguage)) {
+                targetLanguage = "zh-CN";
             }
             String url = "https://translate.googleapis.com/translate_a/single?" +
                     "client=gtx&" +
@@ -50,12 +49,12 @@ public class GoogleTranslatorUtil {
             }
             in.close();
             return parseResult(response.toString());
-        }catch (Exception e){
-            return  word;
+        } catch (Exception e) {
+            return word;
         }
     }
 
-    private static String parseResult(String inputJson){
+    private static String parseResult(String inputJson) {
         JSONArray jsonArray2 = (JSONArray) new JSONArray(inputJson).get(0);
         StringBuilder result = new StringBuilder();
         for (Object o : jsonArray2) {
