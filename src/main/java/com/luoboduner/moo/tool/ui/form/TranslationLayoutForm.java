@@ -63,7 +63,6 @@ public class TranslationLayoutForm {
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-                translate();
             }
         });
     }
