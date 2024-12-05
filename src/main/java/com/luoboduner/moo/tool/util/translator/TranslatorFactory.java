@@ -6,11 +6,11 @@ public class TranslatorFactory {
         MICROSOFT
     }
 
-    public static Translator getTranslator(String type) {
+    public static Translator getTranslator(TranslatorType type) {
         switch (type) {
-            case "GOOGLE":
+            case GOOGLE:
                 return new GoogleTranslatorUtil();
-            case "MICROSOFT":
+            case MICROSOFT:
 //                return new MicrosoftTranslatorUtil();
             default:
                 throw new IllegalArgumentException("Unknown translator type: " + type);

@@ -1,18 +1,22 @@
 package com.luoboduner.moo.tool.util.translator;
 
 import cn.hutool.json.JSONArray;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.net.ssl.SSLHandshakeException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 
 /**
  * 翻译工具类
  */
+@Slf4j
 public class GoogleTranslatorUtil implements Translator {
 
     /**
@@ -37,6 +41,8 @@ public class GoogleTranslatorUtil implements Translator {
 
             URL obj = new URL(url);
             HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+            // 超时时间
+            con.setConnectTimeout(5000);
             con.setRequestProperty("User-Agent", "Mozilla/5.0");
 
             BufferedReader in = new BufferedReader(
@@ -49,8 +55,15 @@ public class GoogleTranslatorUtil implements Translator {
             }
             in.close();
             return parseResult(response.toString());
+        } catch (SSLHandshakeException e) {
+            log.error("SSLHandshakeException", e);
+            return "访问Google翻译接口网络异常：" + e.getMessage();
+        } catch (HttpTimeoutException e) {
+            log.error("HttpTimeoutException", e);
+            return "访问Google翻译接口超时：" + e.getMessage();
         } catch (Exception e) {
-            return word;
+            log.error("访问Google翻译异常", e);
+            return e.getMessage();
         }
     }
 
