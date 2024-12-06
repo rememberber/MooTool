@@ -195,7 +195,7 @@ public class AboutForm {
                         contributorLabel.setText(contributor.getName());
 
                         Image image = ImgUtil.read(new URL(contributor.getAvatarUrl()));
-                        Image scale = ImgUtil.scale(image, 64, 64);
+                        Image scale = image.getScaledInstance(64, 64, Image.SCALE_AREA_AVERAGING);
 
                         contributorLabel.setIcon(new ImageIcon(scale));
                         contributorLabel.addMouseListener(new MouseAdapter() {
