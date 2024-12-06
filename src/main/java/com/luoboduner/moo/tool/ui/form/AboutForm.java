@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.form;
 
+import cn.hutool.core.img.ImgUtil;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSON;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
@@ -192,7 +193,11 @@ public class AboutForm {
                         JLabel contributorLabel = new JLabel();
                         contributorLabel.setToolTipText(contributor.getName());
                         contributorLabel.setText(contributor.getName());
-                        contributorLabel.setIcon(new ImageIcon(new URL(contributor.getAvatarUrl())));
+
+                        Image image = ImgUtil.read(new URL(contributor.getAvatarUrl()));
+                        Image scale = ImgUtil.scale(image, 64, 64);
+
+                        contributorLabel.setIcon(new ImageIcon(scale));
                         contributorLabel.addMouseListener(new MouseAdapter() {
                             @Override
                             public void mouseClicked(MouseEvent e) {
@@ -385,7 +390,7 @@ public class AboutForm {
         graceTitleLabel.setText("");
         gracePanel.add(graceTitleLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         contributorPanel = new JPanel();
-        contributorPanel.setLayout(new FlowLayout(FlowLayout.CENTER, 5, 5));
+        contributorPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
         panel1.add(contributorPanel, new GridConstraints(5, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         contributorPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "Contributor", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, contributorPanel.getFont()), null));
     }
