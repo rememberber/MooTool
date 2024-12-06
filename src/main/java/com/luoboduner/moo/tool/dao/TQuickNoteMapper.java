@@ -26,4 +26,6 @@ public interface TQuickNoteMapper {
     int updateAll(TQuickNote tQuickNote);
 
     List<TQuickNote> selectAllByFilter(String titleFilterKeyWord);
+
+    List<TQuickNote> selectAllByFilterContainsContent(String titleFilterKeyWord);
 }

@@ -413,6 +413,11 @@ public class QuickNoteListener {
 //                QuickNoteForm.initNoteListTable();
             }
         });
+
+        // 搜索框包含内容checkbox变更事件
+        quickNoteForm.getSearchContentCheckBox().addActionListener(e -> {
+            QuickNoteForm.initNoteListTable();
+        });
     }
 
     public static void showFindPanel() {

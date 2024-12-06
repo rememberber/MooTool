@@ -181,6 +181,14 @@
         where name like #{titleFilterKeyWord,jdbcType=VARCHAR}
         order by modified_time desc
     </select>
+    <select id="selectAllByFilterContainsContent" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from t_quick_note
+        where name like #{titleFilterKeyWord,jdbcType=VARCHAR}
+        or content like #{contentFilterKeyWord,jdbcType=VARCHAR}
+        order by modified_time desc
+    </select>
     <update id="updateByName" parameterType="com.luoboduner.moo.tool.domain.TQuickNote">
         update t_quick_note
         <set>

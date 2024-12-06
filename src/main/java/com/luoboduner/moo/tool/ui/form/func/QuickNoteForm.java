@@ -100,6 +100,7 @@ public class QuickNoteForm {
     private JCheckBox commaDoubleQuotesToEnterCheckBox;
 
     private JToggleButton colorButton;
+    private JCheckBox searchContentCheckBox;
 
     private JToolBar toolBar;
     public final static String[] COLOR_KEYS = {
@@ -122,6 +123,7 @@ public class QuickNoteForm {
         colorButton.setEnabled(true);
 
         toolBar = new JToolBar();
+        searchContentCheckBox = new JCheckBox();
         UndoUtil.register(this);
     }
 
@@ -155,6 +157,9 @@ public class QuickNoteForm {
         quickNoteForm.getSearchTextField().putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "搜索");
         quickNoteForm.getSearchTextField().putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON,
                 new FlatSearchIcon());
+        quickNoteForm.getSearchContentCheckBox().setToolTipText("包含内容");
+        quickNoteForm.getSearchTextField().putClientProperty(FlatClientProperties.TEXT_FIELD_TRAILING_COMPONENT, quickNoteForm.getSearchContentCheckBox());
+
         quickNoteForm.getAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
         quickNoteForm.getSaveButton().setIcon(new FlatSVGIcon("icon/save.svg"));
         quickNoteForm.getFindButton().setIcon(new FlatSVGIcon("icon/find.svg"));
@@ -363,7 +368,14 @@ public class QuickNoteForm {
 
         String titleFilterKeyWord = quickNoteForm.getSearchTextField().getText();
         titleFilterKeyWord = "%" + titleFilterKeyWord + "%";
-        List<TQuickNote> quickNoteList = quickNoteMapper.selectAllByFilter(titleFilterKeyWord);
+        boolean searchContent = quickNoteForm.getSearchContentCheckBox().isSelected();
+
+        List<TQuickNote> quickNoteList;
+        if (searchContent && StringUtils.isNotBlank(titleFilterKeyWord)) {
+            quickNoteList = quickNoteMapper.selectAllByFilterContainsContent(titleFilterKeyWord);
+        } else {
+            quickNoteList = quickNoteMapper.selectAllByFilter(titleFilterKeyWord);
+        }
 
         for (TQuickNote tQuickNote : quickNoteList) {
             data = new Object[2];
