@@ -13,6 +13,7 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
 public class TranslationLayoutForm {
@@ -23,6 +24,8 @@ public class TranslationLayoutForm {
     private JTextArea textArea2;
     private JPanel mainLayoutPanel;
     private JSplitPane splitPane;
+
+    private static AtomicInteger changeCount = new AtomicInteger(0);
 
     public TranslationLayoutForm() {
         exchangeButton.setIcon(new FlatSVGIcon("icon/exchange.svg"));
@@ -53,18 +56,34 @@ public class TranslationLayoutForm {
         textArea1.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                translate();
+                translateControl();
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                translate();
+                translateControl();
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
             }
         });
+    }
+
+    public void translateControl() {
+        Thread thread = new Thread(() -> {
+            changeCount.incrementAndGet();
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            changeCount.decrementAndGet();
+            if (changeCount.get() == 0) {
+                translate();
+            }
+        });
+        thread.start();
     }
 
     private void translate() {
