@@ -1,34 +1,37 @@
-package com.luoboduner.moo.tool.util;
+package com.luoboduner.moo.tool.util.translator;
 
 import cn.hutool.json.JSONArray;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import javax.net.ssl.SSLHandshakeException;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLEncoder;
+import java.net.http.HttpTimeoutException;
 import java.nio.charset.StandardCharsets;
 
 /**
  * 翻译工具类
  */
-public class GoogleTranslatorUtil {
+@Slf4j
+public class GoogleTranslatorUtil implements Translator {
 
     /**
-     *
      * @param word
      * @param sourceLanguage 源语言 默认auto 英文为 en
      * @param targetLanguage 目标语言 默认zh-CN
      * @return
      */
-    public static String translate(String word,String sourceLanguage,String targetLanguage){
+    public String translate(String word, String sourceLanguage, String targetLanguage) {
         try {
-            if(StringUtils.isEmpty(sourceLanguage)){
-                sourceLanguage="auto";
+            if (StringUtils.isEmpty(sourceLanguage)) {
+                sourceLanguage = "auto";
             }
-            if(StringUtils.isEmpty(targetLanguage)){
-                targetLanguage="zh-CN";
+            if (StringUtils.isEmpty(targetLanguage)) {
+                targetLanguage = "zh-CN";
             }
             String url = "https://translate.googleapis.com/translate_a/single?" +
                     "client=gtx&" +
@@ -38,6 +41,8 @@ public class GoogleTranslatorUtil {
 
             URL obj = new URL(url);
             HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+            // 超时时间
+            con.setConnectTimeout(5000);
             con.setRequestProperty("User-Agent", "Mozilla/5.0");
 
             BufferedReader in = new BufferedReader(
@@ -50,12 +55,19 @@ public class GoogleTranslatorUtil {
             }
             in.close();
             return parseResult(response.toString());
-        }catch (Exception e){
-            return  word;
+        } catch (SSLHandshakeException e) {
+            log.error("SSLHandshakeException", e);
+            return "访问Google翻译接口网络异常：" + e.getMessage();
+        } catch (HttpTimeoutException e) {
+            log.error("HttpTimeoutException", e);
+            return "访问Google翻译接口超时：" + e.getMessage();
+        } catch (Exception e) {
+            log.error("访问Google翻译异常", e);
+            return e.getMessage();
         }
     }
 
-    private static String parseResult(String inputJson){
+    private static String parseResult(String inputJson) {
         JSONArray jsonArray2 = (JSONArray) new JSONArray(inputJson).get(0);
         StringBuilder result = new StringBuilder();
         for (Object o : jsonArray2) {
