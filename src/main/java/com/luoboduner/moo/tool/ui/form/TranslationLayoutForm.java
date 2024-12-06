@@ -33,6 +33,9 @@ public class TranslationLayoutForm {
 
         UndoUtil.register(this);
 
+        textArea1.setLineWrap(true);
+        textArea2.setLineWrap(true);
+
         addListeners();
     }
 
@@ -108,6 +111,7 @@ public class TranslationLayoutForm {
     public void translateControl() {
         Thread thread = new Thread(() -> {
             changeCount.incrementAndGet();
+            textArea2.setText("^_^……");
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
