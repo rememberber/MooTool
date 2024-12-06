@@ -13,6 +13,7 @@ import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.awt.event.ItemEvent;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
@@ -50,6 +51,40 @@ public class TranslationLayoutForm {
             } else {
                 comboBox1.setSelectedItem(to);
                 comboBox2.setSelectedItem(from);
+            }
+
+            translateControl();
+        });
+
+        comboBox1.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                String itemName = e.getItem().toString();
+                if ("自动检测".equals(itemName)) {
+                    comboBox2.setSelectedItem("中文（简体）");
+                } else {
+                    if ("中文（简体）".equals(itemName)) {
+                        comboBox2.setSelectedItem("英语");
+                    } else {
+                        comboBox2.setSelectedItem("中文（简体）");
+                    }
+                }
+                translateControl();
+            }
+        });
+
+        comboBox2.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                String itemName = e.getItem().toString();
+                if ("自动检测".equals(itemName)) {
+                    comboBox1.setSelectedItem("中文（简体）");
+                } else {
+                    if ("中文（简体）".equals(itemName)) {
+                        comboBox1.setSelectedItem("英语");
+                    } else {
+                        comboBox1.setSelectedItem("中文（简体）");
+                    }
+                }
+                translateControl();
             }
         });
 
