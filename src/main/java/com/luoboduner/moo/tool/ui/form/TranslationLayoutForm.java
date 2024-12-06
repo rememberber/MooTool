@@ -51,6 +51,8 @@ public class TranslationLayoutForm {
                 comboBox1.setSelectedItem(to);
                 comboBox2.setSelectedItem(from);
             }
+
+            translateControl();
         });
 
         textArea1.getDocument().addDocumentListener(new DocumentListener() {
