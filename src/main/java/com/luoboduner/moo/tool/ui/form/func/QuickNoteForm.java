@@ -4,7 +4,6 @@ import cn.hutool.core.util.ArrayUtil;
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
-import com.formdev.flatlaf.fonts.inter.FlatInterFont;
 import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
 import com.formdev.flatlaf.icons.FlatAbstractIcon;
 import com.formdev.flatlaf.icons.FlatSearchIcon;
@@ -439,7 +438,7 @@ public class QuickNoteForm {
             }
         }
         quickNoteForm.getFontNameComboBox().addItem(FlatJetBrainsMonoFont.FAMILY);
-        quickNoteForm.getFontNameComboBox().addItem(FlatInterFont.FAMILY);
+//        quickNoteForm.getFontNameComboBox().addItem(FlatInterFont.FAMILY);
     }
 
     {

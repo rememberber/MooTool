@@ -19,7 +19,7 @@ public class UiConsts {
      * 软件名称,版本
      */
     public static final String APP_NAME = "MooTool";
-    public static final String APP_VERSION = "v1.6.5";
+    public static final String APP_VERSION = "v1.6.6";
 
     public static final int TABLE_ROW_HEIGHT = 30;
 
@@ -102,4 +102,8 @@ public class UiConsts {
      */
     public static final String GRACE_INFO_URL = "https://gitee.com/zhoubochina/MooTool/raw/develop/grace.json";
 
+    /**
+     * 贡献者信息url
+     */
+    public static final String CONTRIBUTOR_URL = "https://gitee.com/zhoubochina/MooTool/raw/develop/contributor.json";
 }

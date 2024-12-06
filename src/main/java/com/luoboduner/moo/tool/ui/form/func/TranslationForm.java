@@ -63,7 +63,7 @@ public class TranslationForm {
         translationForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
         translationForm.getListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
 
-        translationForm.getTranslationLayoutForm().getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 2));
+        translationForm.getTranslationLayoutForm().getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 2) - 80);
 
         translationForm.getTranslationPanel().updateUI();
     }

@@ -4,10 +4,17 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.luoboduner.moo.tool.util.UndoUtil;
+import com.luoboduner.moo.tool.util.translator.Translator;
+import com.luoboduner.moo.tool.util.translator.TranslatorFactory;
 import lombok.Getter;
 
 import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
 import java.awt.*;
+import java.awt.event.ItemEvent;
+import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
 public class TranslationLayoutForm {
@@ -19,9 +26,114 @@ public class TranslationLayoutForm {
     private JPanel mainLayoutPanel;
     private JSplitPane splitPane;
 
+    private static AtomicInteger changeCount = new AtomicInteger(0);
+
     public TranslationLayoutForm() {
         exchangeButton.setIcon(new FlatSVGIcon("icon/exchange.svg"));
-        textArea1.setText("施工中，敬请期待...");
+
+        UndoUtil.register(this);
+
+        textArea1.setLineWrap(true);
+        textArea2.setLineWrap(true);
+
+        addListeners();
+    }
+
+    public void addListeners() {
+        exchangeButton.addActionListener(e -> {
+            String from = comboBox1.getSelectedItem().toString();
+            String to = comboBox2.getSelectedItem().toString();
+            if ("自动检测".equals(from)) {
+                if ("中文（简体）".equals(to)) {
+                    comboBox1.setSelectedItem("中文（简体）");
+                    comboBox2.setSelectedItem("英语");
+                } else {
+                    comboBox1.setSelectedItem("中文（简体）");
+                    comboBox2.setSelectedItem("英语");
+                }
+            } else {
+                comboBox1.setSelectedItem(to);
+                comboBox2.setSelectedItem(from);
+            }
+
+            translateControl();
+        });
+
+        comboBox1.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                String itemName = e.getItem().toString();
+                if ("自动检测".equals(itemName)) {
+                    comboBox2.setSelectedItem("中文（简体）");
+                } else {
+                    if ("中文（简体）".equals(itemName)) {
+                        comboBox2.setSelectedItem("英语");
+                    } else {
+                        comboBox2.setSelectedItem("中文（简体）");
+                    }
+                }
+                translateControl();
+            }
+        });
+
+        comboBox2.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                String itemName = e.getItem().toString();
+                if ("自动检测".equals(itemName)) {
+                    comboBox1.setSelectedItem("中文（简体）");
+                } else {
+                    if ("中文（简体）".equals(itemName)) {
+                        comboBox1.setSelectedItem("英语");
+                    } else {
+                        comboBox1.setSelectedItem("中文（简体）");
+                    }
+                }
+                translateControl();
+            }
+        });
+
+        textArea1.getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                translateControl();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                translateControl();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+            }
+        });
+    }
+
+    public void translateControl() {
+        Thread thread = new Thread(() -> {
+            changeCount.incrementAndGet();
+            textArea2.setText("^_^……");
+            try {
+                Thread.sleep(500);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            changeCount.decrementAndGet();
+            if (changeCount.get() == 0) {
+                translate();
+            }
+        });
+        thread.start();
+    }
+
+    private void translate() {
+        String sourceLanguage = comboBox1.getSelectedItem().toString();
+        String targetLanguage = comboBox2.getSelectedItem().toString();
+        String text = textArea1.getText();
+
+        TranslatorFactory translatorFactory = new TranslatorFactory();
+        String result = translatorFactory.getTranslator(TranslatorFactory.TranslatorType.GOOGLE).translate(text, Translator.languageNameToCodeMap.get(sourceLanguage), Translator.languageNameToCodeMap.get(targetLanguage));
+
+        textArea2.setText(result);
     }
 
     {

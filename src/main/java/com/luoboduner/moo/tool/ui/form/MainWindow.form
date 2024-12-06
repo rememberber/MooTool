@@ -76,7 +76,7 @@
           <grid id="5961e" binding="encodePanel" layout-manager="GridLayoutManager" row-count="1" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
             <margin top="0" left="0" bottom="0" right="0"/>
             <constraints>
-              <tabbedpane title="编码" icon="icon/exchange.png"/>
+              <tabbedpane title="编码转换" icon="icon/exchange.png"/>
             </constraints>
             <properties/>
             <border type="none"/>

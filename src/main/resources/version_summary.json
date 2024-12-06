@@ -1,5 +1,5 @@
 {
-  "currentVersion": "v1.6.5",
+  "currentVersion": "v1.6.6",
   "versionIndex": {
     "v0.0.0": "0",
     "v1.0.0": "1",
@@ -36,7 +36,8 @@
     "v1.6.2": "32",
     "v1.6.3": "33",
     "v1.6.4": "34",
-    "v1.6.5": "35"
+    "v1.6.5": "35",
+    "v1.6.6": "36"
   },
   "versionDetailList": [
     {
@@ -218,6 +219,11 @@
       "version": "v1.6.5",
       "title": "首次初始化时的细节优化和一些功能更新",
       "log": "● 首次初始化时的细节优化\n● 新增快捷键：Command + W 最小化窗口\n● JSON工具增加JavaBean和JSON互转功能\n● 格式化Tab支持文本格式化\n\n"
+    },
+    {
+      "version": "v1.6.6",
+      "title": "初步支持翻译功能",
+      "log": "● 初步支持翻译功能\n● HTTP请求无HTTP前缀时默认添加http://前缀 感谢：guozhipeng\n● 二维码保存按钮文案改为：保存\n● About页面增加贡献者列表\n\n"
     }
   ]
 }
