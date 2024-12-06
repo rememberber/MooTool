@@ -102,4 +102,8 @@ public class UiConsts {
      */
     public static final String GRACE_INFO_URL = "https://gitee.com/zhoubochina/MooTool/raw/develop/grace.json";
 
+    /**
+     * 贡献者信息url
+     */
+    public static final String CONTRIBUTOR_URL = "https://gitee.com/zhoubochina/MooTool/raw/develop/contributor.json";
 }
