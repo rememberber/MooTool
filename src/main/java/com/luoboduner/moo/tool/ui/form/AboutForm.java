@@ -195,7 +195,7 @@ public class AboutForm {
                         contributorLabel.setText(contributor.getName());
 
                         Image image = ImgUtil.read(new URL(contributor.getAvatarUrl()));
-                        Image scale = image.getScaledInstance(64, 64, Image.SCALE_AREA_AVERAGING);
+                        Image scale = image.getScaledInstance(40, 40, Image.SCALE_AREA_AVERAGING);
 
                         contributorLabel.setIcon(new ImageIcon(scale));
                         contributorLabel.addMouseListener(new MouseAdapter() {
@@ -392,7 +392,7 @@ public class AboutForm {
         contributorPanel = new JPanel();
         contributorPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
         panel1.add(contributorPanel, new GridConstraints(5, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        contributorPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "Contributor", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, contributorPanel.getFont()), null));
+        contributorPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "CONTRIBUTOR", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, contributorPanel.getFont()), null));
     }
 
     /**
