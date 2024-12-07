@@ -51,7 +51,7 @@ public class MainWindow {
 
     private static MainWindow mainWindow;
 
-    private static final String[] ICON_PATH = {"icon/smile.svg", "icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/check.svg", "icon/global.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/translate.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/format_painter.svg", "icon/pdf.svg", "icon/fx.svg", "icon/suffix-yml.svg"};
+    private static final String[] ICON_PATH = {"icon/smile.svg", "icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/translate.svg", "icon/check.svg", "icon/global.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/format_painter.svg", "icon/pdf.svg", "icon/fx.svg", "icon/suffix-yml.svg"};
 
     private MainWindow() {
     }
@@ -233,6 +233,9 @@ public class MainWindow {
         jsonBeautyPanel = new JPanel();
         jsonBeautyPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("JSON", new ImageIcon(getClass().getResource("/icon/object_dark.png")), jsonBeautyPanel);
+        translationPanel = new JPanel();
+        translationPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPane.addTab("翻译", new ImageIcon(getClass().getResource("/icon/translate.png")), translationPanel);
         hostPanel = new JPanel();
         hostPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("Host", new ImageIcon(getClass().getResource("/icon/check.png")), hostPanel);
@@ -260,9 +263,6 @@ public class MainWindow {
         imagePanel = new JPanel();
         imagePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("图片助手", new ImageIcon(getClass().getResource("/icon/image.png")), imagePanel);
-        translationPanel = new JPanel();
-        translationPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("翻译", new ImageIcon(getClass().getResource("/icon/translate.png")), translationPanel);
         cronPanel = new JPanel();
         cronPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("Cron", new ImageIcon(getClass().getResource("/icon/cron.png")), cronPanel);
