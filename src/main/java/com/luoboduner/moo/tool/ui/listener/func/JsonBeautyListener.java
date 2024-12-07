@@ -547,6 +547,19 @@ public class JsonBeautyListener {
             }
         });
 
+        jsonBeautyForm.getKeyValueSwapButton().addActionListener(e -> {
+            try {
+                String jsonText = jsonBeautyForm.getTextArea().getText();
+
+                jsonBeautyForm.getTextArea().setText(swapKeyValue(jsonText));
+                jsonBeautyForm.getTextArea().setCaretPosition(0);
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
+            }
+        });
+
     }
 
     private static void viewByRowNum(int selectedRow) {
@@ -686,5 +699,42 @@ public class JsonBeautyListener {
      */
     private static String getDefaultFileName() {
         return "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+    }
+
+    /**
+     * 自己实现的json Key Value互换，原理是转成map，然后互换key和value，以及递归
+     * @param jsonText
+     * @return
+     */
+    private static String swapKeyValue(String jsonText) {
+        if (StringUtils.isBlank(jsonText)) {
+            return jsonText;
+        }
+        if (jsonText.startsWith("{") && jsonText.endsWith("}")) {
+            jsonText = jsonText.substring(1, jsonText.length() - 1);
+        }
+        String[] split = jsonText.split(",");
+        StringBuilder result = new StringBuilder();
+        for (String s : split) {
+            String[] keyValue = s.split(":");
+            if (keyValue.length == 2) {
+                String key = keyValue[0];
+                String value = keyValue[1];
+                if (key.startsWith("\"")) {
+                    key = key.substring(1);
+                }
+                if (key.endsWith("\"")) {
+                    key = key.substring(0, key.length() - 1);
+                }
+                if (value.startsWith("\"")) {
+                    value = value.substring(1);
+                }
+                if (value.endsWith("\"")) {
+                    value = value.substring(0, value.length() - 1);
+                }
+                result.append(value).append(":").append(key).append(",");
+            }
+        }
+        return "{" + result.substring(0, result.length() - 1) + "}";
     }
 }
