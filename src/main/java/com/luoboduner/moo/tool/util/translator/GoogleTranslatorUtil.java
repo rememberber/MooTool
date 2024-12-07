@@ -63,7 +63,7 @@ public class GoogleTranslatorUtil implements Translator {
             return "访问Google翻译接口超时：" + e.getMessage();
         } catch (Exception e) {
             log.error("访问Google翻译异常", e);
-            return e.getMessage();
+            return "访问Google翻译接口异常：" + e.getMessage();
         }
     }
 

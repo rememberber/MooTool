@@ -1,6 +1,6 @@
 {
-  "windows": "https://gitee.com/zhoubochina/MooTool/releases/download/v1.6.5/MooTool-1.6.5-windows.exe",
-  "mac": "https://gitee.com/zhoubochina/MooTool/releases/download/v1.6.5/MooTool_1.6.5.dmg",
-  "macSilicon": "https://gitee.com/zhoubochina/MooTool/releases/download/v1.6.5/MooTool_1.6.5-AppleSilicon.dmg",
-  "linux": "https://gitee.com/zhoubochina/MooTool/releases/download/v1.6.5/MooTool_1.6.5.deb"
+  "windows": "https://gitee.com/zhoubochina/MooTool/releases/download/v1.6.6/MooTool-1.6.6-windows.exe",
+  "mac": "https://gitee.com/zhoubochina/MooTool/releases/download/v1.6.6/MooTool_1.6.6.dmg",
+  "macSilicon": "https://gitee.com/zhoubochina/MooTool/releases/download/v1.6.6/MooTool_1.6.6-AppleSilicon.dmg",
+  "linux": "https://gitee.com/zhoubochina/MooTool/releases/download/v1.6.6/MooTool_1.6.6.deb"
 }
