@@ -100,7 +100,7 @@ public class ImageListener {
 
                     String pixel = ImageListener.selectedImage.getWidth(null) + " x " + ImageListener.selectedImage.getHeight(null);
                     String size = FileUtil.readableFileSize(FileUtil.file(IMAGE_PATH_PRE_FIX + name).length());
-                    imageForm.getImageInfoLabel().setText("尺寸：" + pixel + "  大小：" + size);
+                    imageForm.getImageInfoLabel().setText("尺寸：" + pixel + "  大小：" + size + " ");
                 } catch (IOException ex) {
                     JOptionPane.showMessageDialog(App.mainFrame, ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
                     log.error(ExceptionUtils.getStackTrace(ex));

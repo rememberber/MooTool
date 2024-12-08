@@ -93,7 +93,7 @@ public class ImageForm {
         imageToolBar.add(originalSizeButton);
         imageToolBar.add(fitSizeButton);
         imageToolBar.setFloatable(false);
-        imageControlPanel.add(imageToolBar, BorderLayout.NORTH);
+        imageControlPanel.add(imageToolBar, BorderLayout.WEST);
 
         imageInfoLabel = new JLabel();
         imageInfoLabel.setToolTipText("图片信息");
@@ -185,7 +185,7 @@ public class ImageForm {
 
                 String pixel = ImageListener.selectedImage.getWidth(null) + " x " + ImageListener.selectedImage.getHeight(null);
                 String size = FileUtil.readableFileSize(FileUtil.file(ImageListener.IMAGE_PATH_PRE_FIX + fileNames.get(0)).length());
-                imageForm.getImageInfoLabel().setText("尺寸：" + pixel + "  大小：" + size);
+                imageForm.getImageInfoLabel().setText("尺寸：" + pixel + "  大小：" + size + " ");
             } catch (IOException e) {
                 logger.error(ExceptionUtils.getStackTrace(e));
             }
