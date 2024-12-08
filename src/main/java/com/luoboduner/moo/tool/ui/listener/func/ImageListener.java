@@ -332,6 +332,33 @@ public class ImageListener {
 
         });
 
+        imageForm.getZoomInButton().addActionListener(e -> {
+            int width = imageForm.getShowImageLabel().getWidth();
+            int height = imageForm.getShowImageLabel().getHeight();
+            ImageIcon imageIcon = new ImageIcon(selectedImage.getScaledInstance((int) (width * 1.1), (int) (height * 1.1), Image.SCALE_DEFAULT));
+            imageForm.getShowImageLabel().setIcon(imageIcon);
+        });
+
+        imageForm.getZoomOutButton().addActionListener(e -> {
+            int width = imageForm.getShowImageLabel().getWidth();
+            int height = imageForm.getShowImageLabel().getHeight();
+            ImageIcon imageIcon = new ImageIcon(selectedImage.getScaledInstance((int) (width * 0.9), (int) (height * 0.9), Image.SCALE_DEFAULT));
+            imageForm.getShowImageLabel().setIcon(imageIcon);
+        });
+
+        imageForm.getOriginalSizeButton().addActionListener(e -> {
+            ImageIcon imageIcon = new ImageIcon(selectedImage);
+            imageForm.getShowImageLabel().setIcon(imageIcon);
+        });
+
+        imageForm.getFitSizeButton().addActionListener(e -> {
+            int width = imageForm.getImageControlPanel().getWidth();
+//            int height = imageForm.getShowImagePanel().getHeight();
+//          只控制宽度，高度自适应
+            ImageIcon imageIcon = new ImageIcon(selectedImage.getScaledInstance(width, -1, Image.SCALE_DEFAULT));
+            imageForm.getShowImageLabel().setIcon(imageIcon);
+        });
+
     }
 
     private static void deleteFiles(ImageForm imageForm) {
