@@ -20,6 +20,7 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
+import javax.swing.border.TitledBorder;
 import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.io.File;
@@ -58,6 +59,13 @@ public class ImageForm {
     private JButton pressImageButton;
     private JButton fromBase64Button;
     private JButton toBase64Button;
+    private JPanel imageControlPanel;
+
+    private JToolBar imageToolBar;
+    private JButton zoomInButton;
+    private JButton zoomOutButton;
+    private JButton originalSizeButton;
+    private JButton fitSizeButton;
 
     private static ImageForm imageForm;
 
@@ -69,6 +77,23 @@ public class ImageForm {
         ocrButton.addActionListener(e -> previewHint());
         scaleImageButton.addActionListener(e -> previewHint());
         pressImageButton.addActionListener(e -> previewHint());
+
+        imageToolBar = new JToolBar();
+        zoomInButton = new JButton(new FlatSVGIcon("icon/zoom_in.svg"));
+        zoomInButton.setToolTipText("放大");
+        zoomOutButton = new JButton(new FlatSVGIcon("icon/zoom_out.svg"));
+        zoomOutButton.setToolTipText("缩小");
+        originalSizeButton = new JButton(new FlatSVGIcon("icon/actual_size.svg"));
+        originalSizeButton.setToolTipText("原始尺寸");
+        fitSizeButton = new JButton(new FlatSVGIcon("icon/fit_size.svg"));
+        fitSizeButton.setToolTipText("适应窗口");
+        imageToolBar.add(zoomInButton);
+        imageToolBar.add(zoomOutButton);
+        imageToolBar.add(originalSizeButton);
+        imageToolBar.add(fitSizeButton);
+        imageToolBar.setFloatable(false);
+        imageControlPanel.add(imageToolBar);
+
     }
 
     private void previewHint() {
@@ -206,7 +231,7 @@ public class ImageForm {
         listTable = new JTable();
         scrollPane1.setViewportView(listTable);
         final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel3.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane.setRightComponent(panel3);
         menuPanel = new JPanel();
         menuPanel.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
@@ -273,13 +298,17 @@ public class ImageForm {
         final Spacer spacer5 = new Spacer();
         panel7.add(spacer5, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         scrollPane = new JScrollPane();
-        panel3.add(scrollPane, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        panel3.add(scrollPane, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         showImagePanel = new JPanel();
         showImagePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         scrollPane.setViewportView(showImagePanel);
         showImageLabel = new JLabel();
         showImageLabel.setText("");
         showImagePanel.add(showImageLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        imageControlPanel = new JPanel();
+        imageControlPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
+        panel3.add(imageControlPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        imageControlPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
     }
 
     /**
