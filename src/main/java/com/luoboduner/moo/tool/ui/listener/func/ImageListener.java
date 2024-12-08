@@ -325,6 +325,11 @@ public class ImageListener {
                     if (image != null) {
                         selectedName = null;
                         imageForm.getShowImageLabel().setIcon(imageIcon);
+
+                        selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                        File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
+                        ImageIO.write(toBufferedImage(selectedImage), "png", imageFile);
+                        ImageForm.initListTable();
                     } else {
                         JOptionPane.showMessageDialog(App.mainFrame, "可能不是正确的图片Base64？\n\n", "失败", JOptionPane.WARNING_MESSAGE);
                     }
@@ -412,12 +417,20 @@ public class ImageListener {
             if (image != null) {
                 selectedName = null;
                 imageForm.getShowImageLabel().setIcon(new ImageIcon(image));
+
+                selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
+                ImageIO.write(toBufferedImage(selectedImage), "png", imageFile);
+                ImageForm.initListTable();
             } else {
                 JOptionPane.showMessageDialog(App.mainFrame, "还没有复制图片到剪贴板吧？\n\n", "失败", JOptionPane.WARNING_MESSAGE);
             }
         } catch (HeadlessException ex) {
             ex.printStackTrace();
             log.error(ExceptionUtils.getStackTrace(ex));
+        } catch (IOException e) {
+            e.printStackTrace();
+            log.error(ExceptionUtils.getStackTrace(e));
         }
     }
 
