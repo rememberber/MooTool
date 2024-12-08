@@ -66,6 +66,7 @@ public class ImageForm {
     private JButton zoomOutButton;
     private JButton originalSizeButton;
     private JButton fitSizeButton;
+    private JLabel imageInfoLabel;
 
     private static ImageForm imageForm;
 
@@ -92,7 +93,11 @@ public class ImageForm {
         imageToolBar.add(originalSizeButton);
         imageToolBar.add(fitSizeButton);
         imageToolBar.setFloatable(false);
-        imageControlPanel.add(imageToolBar);
+        imageControlPanel.add(imageToolBar, BorderLayout.NORTH);
+
+        imageInfoLabel = new JLabel();
+        imageInfoLabel.setToolTipText("图片信息");
+        imageControlPanel.add(imageInfoLabel, BorderLayout.EAST);
 
     }
 
@@ -177,6 +182,10 @@ public class ImageForm {
             ImageListener.selectedName = fileNames.get(0).replace(".png", "");
             try {
                 ImageListener.selectedImage = ImageIO.read(FileUtil.newFile(ImageListener.IMAGE_PATH_PRE_FIX + fileNames.get(0)));
+
+                String pixel = ImageListener.selectedImage.getWidth(null) + " x " + ImageListener.selectedImage.getHeight(null);
+                String size = FileUtil.readableFileSize(FileUtil.file(ImageListener.IMAGE_PATH_PRE_FIX + fileNames.get(0)).length());
+                imageForm.getImageInfoLabel().setText("尺寸：" + pixel + "  大小：" + size);
             } catch (IOException e) {
                 logger.error(ExceptionUtils.getStackTrace(e));
             }
@@ -306,7 +315,7 @@ public class ImageForm {
         showImageLabel.setText("");
         showImagePanel.add(showImageLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         imageControlPanel = new JPanel();
-        imageControlPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
+        imageControlPanel.setLayout(new BorderLayout(0, 0));
         panel3.add(imageControlPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         imageControlPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEtchedBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
     }
