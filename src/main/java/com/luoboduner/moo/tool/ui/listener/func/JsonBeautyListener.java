@@ -548,8 +548,10 @@ public class JsonBeautyListener {
             try {
                 String jsonText = jsonBeautyForm.getTextArea().getText();
 
-                jsonBeautyForm.getTextArea().setText(JsonKeyValueSwapper.swapKeysAndValues(jsonText));
-                jsonBeautyForm.getTextArea().setCaretPosition(0);
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("JSON", "Key-Value 互换结果:", "Display");
+                jsonResultDialog.setToTextArea(JSONUtil.toJsonPrettyStr(JsonKeyValueSwapper.swapKeysAndValues(jsonText)));
+                jsonResultDialog.setVisible(true);
+
             } catch (Exception e1) {
                 JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e1.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
