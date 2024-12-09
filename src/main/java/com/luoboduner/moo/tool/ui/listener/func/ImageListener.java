@@ -97,6 +97,10 @@ public class ImageListener {
                     imageForm.getShowImagePanel().updateUI();
 
                     ImageListener.selectedImage = ImageIO.read(FileUtil.newFile(ImageListener.IMAGE_PATH_PRE_FIX + name));
+
+                    String pixel = ImageListener.selectedImage.getWidth(null) + " x " + ImageListener.selectedImage.getHeight(null);
+                    String size = FileUtil.readableFileSize(FileUtil.file(IMAGE_PATH_PRE_FIX + name).length());
+                    imageForm.getImageInfoLabel().setText("尺寸：" + pixel + "  大小：" + size + " ");
                 } catch (IOException ex) {
                     JOptionPane.showMessageDialog(App.mainFrame, ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
                     log.error(ExceptionUtils.getStackTrace(ex));
@@ -229,6 +233,10 @@ public class ImageListener {
                         imageForm.getShowImagePanel().updateUI();
 
                         ImageListener.selectedImage = ImageIO.read(FileUtil.newFile(ImageListener.IMAGE_PATH_PRE_FIX + name));
+
+                        String pixel = ImageListener.selectedImage.getWidth(null) + " x " + ImageListener.selectedImage.getHeight(null);
+                        String size = FileUtil.readableFileSize(FileUtil.file(IMAGE_PATH_PRE_FIX + name).length());
+                        imageForm.getImageInfoLabel().setText("尺寸：" + pixel + "  大小：" + size + " ");
                     } catch (IOException ex) {
                         JOptionPane.showMessageDialog(App.mainFrame, ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
                         log.error(ExceptionUtils.getStackTrace(ex));
@@ -321,6 +329,11 @@ public class ImageListener {
                     if (image != null) {
                         selectedName = null;
                         imageForm.getShowImageLabel().setIcon(imageIcon);
+
+                        selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                        File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
+                        ImageIO.write(toBufferedImage(selectedImage), "png", imageFile);
+                        ImageForm.initListTable();
                     } else {
                         JOptionPane.showMessageDialog(App.mainFrame, "可能不是正确的图片Base64？\n\n", "失败", JOptionPane.WARNING_MESSAGE);
                     }
@@ -330,6 +343,33 @@ public class ImageListener {
                 log.error("从Base64获取异常,{}", ExceptionUtils.getStackTrace(e1));
             }
 
+        });
+
+        imageForm.getZoomInButton().addActionListener(e -> {
+            int width = imageForm.getShowImageLabel().getWidth();
+            int height = imageForm.getShowImageLabel().getHeight();
+            ImageIcon imageIcon = new ImageIcon(selectedImage.getScaledInstance((int) (width * 1.1), (int) (height * 1.1), Image.SCALE_DEFAULT));
+            imageForm.getShowImageLabel().setIcon(imageIcon);
+        });
+
+        imageForm.getZoomOutButton().addActionListener(e -> {
+            int width = imageForm.getShowImageLabel().getWidth();
+            int height = imageForm.getShowImageLabel().getHeight();
+            ImageIcon imageIcon = new ImageIcon(selectedImage.getScaledInstance((int) (width * 0.9), (int) (height * 0.9), Image.SCALE_DEFAULT));
+            imageForm.getShowImageLabel().setIcon(imageIcon);
+        });
+
+        imageForm.getOriginalSizeButton().addActionListener(e -> {
+            ImageIcon imageIcon = new ImageIcon(selectedImage);
+            imageForm.getShowImageLabel().setIcon(imageIcon);
+        });
+
+        imageForm.getFitSizeButton().addActionListener(e -> {
+            int width = imageForm.getImageControlPanel().getWidth();
+//            int height = imageForm.getShowImagePanel().getHeight();
+//          只控制宽度，高度自适应
+            ImageIcon imageIcon = new ImageIcon(selectedImage.getScaledInstance(width, -1, Image.SCALE_DEFAULT));
+            imageForm.getShowImageLabel().setIcon(imageIcon);
         });
 
     }
@@ -381,12 +421,20 @@ public class ImageListener {
             if (image != null) {
                 selectedName = null;
                 imageForm.getShowImageLabel().setIcon(new ImageIcon(image));
+
+                selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
+                ImageIO.write(toBufferedImage(selectedImage), "png", imageFile);
+                ImageForm.initListTable();
             } else {
                 JOptionPane.showMessageDialog(App.mainFrame, "还没有复制图片到剪贴板吧？\n\n", "失败", JOptionPane.WARNING_MESSAGE);
             }
         } catch (HeadlessException ex) {
             ex.printStackTrace();
             log.error(ExceptionUtils.getStackTrace(ex));
+        } catch (IOException e) {
+            e.printStackTrace();
+            log.error(ExceptionUtils.getStackTrace(e));
         }
     }
 

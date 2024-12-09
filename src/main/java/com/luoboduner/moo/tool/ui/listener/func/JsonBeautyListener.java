@@ -12,10 +12,7 @@ import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
 import com.luoboduner.moo.tool.ui.dialog.JsonResultDialog;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
-import com.luoboduner.moo.tool.util.MockDataGenerator;
-import com.luoboduner.moo.tool.util.MybatisUtil;
-import com.luoboduner.moo.tool.util.SqliteUtil;
-import com.luoboduner.moo.tool.util.XmlReformatUtil;
+import com.luoboduner.moo.tool.util.*;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -547,6 +544,21 @@ public class JsonBeautyListener {
             }
         });
 
+        jsonBeautyForm.getKeyValueSwapButton().addActionListener(e -> {
+            try {
+                String jsonText = jsonBeautyForm.getTextArea().getText();
+
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("JSON", "Key-Value 互换结果:", "Display");
+                jsonResultDialog.setToTextArea(JSONUtil.toJsonPrettyStr(JsonKeyValueSwapper.swapKeysAndValues(jsonText)));
+                jsonResultDialog.setVisible(true);
+
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
+            }
+        });
+
     }
 
     private static void viewByRowNum(int selectedRow) {
@@ -687,4 +699,5 @@ public class JsonBeautyListener {
     private static String getDefaultFileName() {
         return "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
     }
+
 }
