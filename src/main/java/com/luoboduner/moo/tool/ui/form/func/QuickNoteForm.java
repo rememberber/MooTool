@@ -98,6 +98,10 @@ public class QuickNoteForm {
     private JCheckBox unescapeCheckBox;
     private JCheckBox commaSingleQuotesToEnterCheckBox;
     private JCheckBox commaDoubleQuotesToEnterCheckBox;
+    private JCheckBox reverseByRowCheckBox;
+    private JCheckBox sortFromAToZByRowCheckBox;
+    private JCheckBox sortFromZToAByRowCheckBox;
+    private JCheckBox sortByPinyinCheckBox;
 
     private JToggleButton colorButton;
     private JCheckBox searchContentCheckBox;
@@ -616,7 +620,7 @@ public class QuickNoteForm {
         quickReplaceScrollPane.setMinimumSize(new Dimension(-1, -1));
         contentSplitPane.setRightComponent(quickReplaceScrollPane);
         final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(32, 1, new Insets(10, 10, 10, 10), -1, -1));
+        panel3.setLayout(new GridLayoutManager(37, 1, new Insets(10, 10, 10, 10), -1, -1));
         panel3.setMaximumSize(new Dimension(-1, -1));
         panel3.setMinimumSize(new Dimension(-1, -1));
         quickReplaceScrollPane.setViewportView(panel3);
@@ -627,7 +631,7 @@ public class QuickNoteForm {
         trimBlankRowCheckBox.setText("去掉空行");
         panel3.add(trimBlankRowCheckBox, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
-        panel3.add(spacer2, new GridConstraints(31, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        panel3.add(spacer2, new GridConstraints(36, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         clearTabTCheckBox = new JCheckBox();
         clearTabTCheckBox.setText("去掉Tab(\\t)");
         panel3.add(clearTabTCheckBox, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -666,7 +670,7 @@ public class QuickNoteForm {
         panel3.add(tabToEnterCheckBox, new GridConstraints(23, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         startQuickReplaceButton = new JButton();
         startQuickReplaceButton.setText("开始");
-        panel3.add(startQuickReplaceButton, new GridConstraints(30, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, 1, 1, null, null, null, 0, false));
+        panel3.add(startQuickReplaceButton, new GridConstraints(35, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, 1, 1, null, null, null, 0, false));
         final JSeparator separator1 = new JSeparator();
         panel3.add(separator1, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, 1, 1, null, null, null, 0, false));
         final JSeparator separator2 = new JSeparator();
@@ -715,6 +719,20 @@ public class QuickNoteForm {
         commaDoubleQuotesToEnterCheckBox = new JCheckBox();
         commaDoubleQuotesToEnterCheckBox.setText("\",\" -> 换行");
         panel3.add(commaDoubleQuotesToEnterCheckBox, new GridConstraints(22, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JSeparator separator7 = new JSeparator();
+        panel3.add(separator7, new GridConstraints(30, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, 1, 1, null, null, null, 0, false));
+        reverseByRowCheckBox = new JCheckBox();
+        reverseByRowCheckBox.setText("按行倒序");
+        panel3.add(reverseByRowCheckBox, new GridConstraints(31, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        sortFromAToZByRowCheckBox = new JCheckBox();
+        sortFromAToZByRowCheckBox.setText("按行A->Z排序");
+        panel3.add(sortFromAToZByRowCheckBox, new GridConstraints(32, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        sortFromZToAByRowCheckBox = new JCheckBox();
+        sortFromZToAByRowCheckBox.setText("按行Z->A排序");
+        panel3.add(sortFromZToAByRowCheckBox, new GridConstraints(33, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        sortByPinyinCheckBox = new JCheckBox();
+        sortByPinyinCheckBox.setText("按拼音排序");
+        panel3.add(sortByPinyinCheckBox, new GridConstraints(34, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     /**

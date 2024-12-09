@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
+import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.NumberUtil;
@@ -39,6 +40,7 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -635,6 +637,21 @@ public class QuickNoteListener {
             }
             if (quickNoteForm.getUnescapeCheckBox().isSelected()) {
                 view.setText(StringEscapeUtils.unescapeJava(view.getText()));
+            }
+
+            if (quickNoteForm.getReverseByRowCheckBox().isSelected()) {
+                view.setText(StringUtils.join(ListUtil.reverse(target), "\n"));
+            }
+            if (quickNoteForm.getSortFromAToZByRowCheckBox().isSelected()) {
+                Comparator<String> comparator = Comparator.naturalOrder();
+                view.setText(StringUtils.join(ListUtil.sort(target, comparator), "\n"));
+            }
+            if (quickNoteForm.getSortFromZToAByRowCheckBox().isSelected()) {
+                Comparator<String> comparator = Comparator.reverseOrder();
+                view.setText(StringUtils.join(ListUtil.sort(target, comparator), "\n"));
+            }
+            if (quickNoteForm.getSortByPinyinCheckBox().isSelected()) {
+                view.setText(StringUtils.join(ListUtil.sortByPinyin(target), "\n"));
             }
 
         } catch (Exception e) {
