@@ -32,12 +32,12 @@
         <guava.version>32.1.2-jre</guava.version>
         <okhttp.version>4.11.0</okhttp.version>
         <google.zxing.core.version>3.5.3</google.zxing.core.version>
-        <flatlaf.version>3.5.3</flatlaf.version>
-        <flatlaf-extras.version>3.5.3</flatlaf-extras.version>
-        <flatlaf-intellij-themes.version>3.5.3</flatlaf-intellij-themes.version>
+        <flatlaf.version>3.5.4</flatlaf.version>
+        <flatlaf-extras.version>3.5.4</flatlaf-extras.version>
+        <flatlaf-intellij-themes.version>3.5.4</flatlaf-intellij-themes.version>
         <flatlaf-fonts-jetbrains-mono.version>2.304</flatlaf-fonts-jetbrains-mono.version>
         <flatlaf-fonts-inter.version>4.0</flatlaf-fonts-inter.version>
-        <rsyntaxtextarea.version>3.5.2</rsyntaxtextarea.version>
+        <rsyntaxtextarea.version>3.5.3</rsyntaxtextarea.version>
         <sql-formatter.version>2.0.4</sql-formatter.version>
         <javaparser-core.version>3.26.2</javaparser-core.version>
         <!--        <jSystemThemeDetector.version>3.8</jSystemThemeDetector.version>-->
