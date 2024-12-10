@@ -237,6 +237,24 @@ public class AboutForm {
         } catch (Exception e) {
             log.error("获取贡献者头像失败", e);
         }
+
+        // DAU
+        try {
+            // 每天执行一次
+            ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1);
+            scheduledThreadPoolExecutor.scheduleAtFixedRate(() -> {
+                try {
+                    String dauContent = HttpUtil.get(UiConsts.DAU_URL);
+                    if (dauContent != null) {
+                        log.info("DAU:{}", dauContent);
+                    }
+                } catch (Exception e) {
+                    log.error("获取DAU失败", e);
+                }
+            }, 0, 1, TimeUnit.DAYS);
+        } catch (Exception e) {
+            log.error("获取DAU失败", e);
+        }
     }
 
     {

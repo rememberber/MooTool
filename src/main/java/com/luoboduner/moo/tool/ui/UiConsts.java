@@ -106,4 +106,9 @@ public class UiConsts {
      * 贡献者信息url
      */
     public static final String CONTRIBUTOR_URL = "https://gitee.com/zhoubochina/MooTool/raw/develop/contributor.json";
+
+    /**
+     * DAU信息url
+     */
+    public static final String DAU_URL = "https://gitee.com/zhoubochina/MooTool/raw/develop/dau.json";
 }
