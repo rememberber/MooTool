@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
+import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.NumberUtil;
@@ -39,6 +40,7 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -499,6 +501,14 @@ public class QuickNoteListener {
 
             String content = view.getText();
 
+            // 如果有选中的行，则只替换选中的行
+            int start = view.getSelectionStart();
+            int end = view.getSelectionEnd();
+            String selectedText = view.getSelectedText();
+            if (StringUtils.isNotEmpty(selectedText)) {
+                content = selectedText;
+            }
+
             String[] splits = content.split("\n");
 
             List<String> target = Lists.newArrayList();
@@ -618,23 +628,75 @@ public class QuickNoteListener {
                 target = targetWithCnt;
             }
 
+            if (quickNoteForm.getReverseByRowCheckBox().isSelected()) {
+                target = ListUtil.reverse(target);
+            }
+            if (quickNoteForm.getSortFromAToZByRowCheckBox().isSelected()) {
+                Comparator<String> comparator = Comparator.naturalOrder();
+                target = ListUtil.sort(target, comparator);
+            }
+            if (quickNoteForm.getSortFromZToAByRowCheckBox().isSelected()) {
+                Comparator<String> comparator = Comparator.reverseOrder();
+                target = ListUtil.sort(target, comparator);
+            }
+            if (quickNoteForm.getSortByPinyinCheckBox().isSelected()) {
+                target = ListUtil.sortByPinyin(target);
+            }
+
             if (quickNoteForm.getClearEnterCheckBox().isSelected()) {
-                view.setText(StringUtils.join(target, ""));
+                // 如果有选中的行，则只替换选中的行
+                if (StringUtils.isNotEmpty(selectedText)) {
+                    view.replaceSelection(StringUtils.join(target, ""));
+                } else {
+                    view.setText(StringUtils.join(target, ""));
+                }
             } else if (quickNoteForm.getEnterToCommaCheckBox().isSelected()) {
-                view.setText(StringUtils.join(target, ","));
+                // 如果有选中的行，则只替换选中的行
+                if (StringUtils.isNotEmpty(selectedText)) {
+                    view.replaceSelection(StringUtils.join(target, ","));
+                } else {
+                    view.setText(StringUtils.join(target, ","));
+                }
             } else if (quickNoteForm.getEnterToCommaSingleQuotesCheckBox().isSelected()) {
-                view.setText("'" + StringUtils.join(target, "','") + "'");
+                // 如果有选中的行，则只替换选中的行
+                if (StringUtils.isNotEmpty(selectedText)) {
+                    view.replaceSelection("'" + StringUtils.join(target, "','") + "'");
+                } else {
+                    view.setText("'" + StringUtils.join(target, "','") + "'");
+                }
             } else if (quickNoteForm.getEnterToCommaDoubleQuotesCheckBox().isSelected()) {
-                view.setText("\"" + StringUtils.join(target, "\",\"") + "\"");
+                // 如果有选中的行，则只替换选中的行
+                if (StringUtils.isNotEmpty(selectedText)) {
+                    view.replaceSelection("\"" + StringUtils.join(target, "\",\"") + "\"");
+                } else {
+                    view.setText("\"" + StringUtils.join(target, "\",\"") + "\"");
+                }
             } else {
-                view.setText(StringUtils.join(target, "\n"));
+                if (!quickNoteForm.getEscapeCheckBox().isSelected() && !quickNoteForm.getUnescapeCheckBox().isSelected()) {
+                    // 如果有选中的行，则只替换选中的行
+                    if (StringUtils.isNotEmpty(selectedText)) {
+                        view.replaceSelection(StringUtils.join(target, "\n"));
+                    } else {
+                        view.setText(StringUtils.join(target, "\n"));
+                    }
+                }
             }
 
             if (quickNoteForm.getEscapeCheckBox().isSelected()) {
-                view.setText(StringEscapeUtils.escapeJava(view.getText()));
+                // 如果有选中的行，则只替换选中的行
+                if (StringUtils.isNotEmpty(selectedText)) {
+                    view.replaceSelection(StringEscapeUtils.escapeJava(view.getSelectedText()));
+                } else {
+                    view.setText(StringEscapeUtils.escapeJava(view.getText()));
+                }
             }
             if (quickNoteForm.getUnescapeCheckBox().isSelected()) {
-                view.setText(StringEscapeUtils.unescapeJava(view.getText()));
+                // 如果有选中的行，则只替换选中的行
+                if (StringUtils.isNotEmpty(selectedText)) {
+                    view.replaceSelection(StringEscapeUtils.unescapeJava(view.getSelectedText()));
+                } else {
+                    view.setText(StringEscapeUtils.unescapeJava(view.getText()));
+                }
             }
 
         } catch (Exception e) {
