@@ -9,6 +9,7 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.bean.ContributorInfo;
+import com.luoboduner.moo.tool.bean.Dau;
 import com.luoboduner.moo.tool.bean.Grace;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.listener.AboutListener;
@@ -246,7 +247,11 @@ public class AboutForm {
                 try {
                     String dauContent = HttpUtil.get(UiConsts.DAU_URL);
                     if (dauContent != null) {
-                        log.info("DAU:{}", dauContent);
+                        Dau dau = JSON.parseObject(dauContent, Dau.class);
+                        if (dau != null) {
+                            String dauUrl = dau.getUrl();
+                            log.info("dau:" + HttpUtil.get(dauUrl));
+                        }
                     }
                 } catch (Exception e) {
                     log.error("获取DAU失败", e);
