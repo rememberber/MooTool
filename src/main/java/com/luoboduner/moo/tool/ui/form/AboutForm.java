@@ -30,6 +30,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.Locale;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <pre>
@@ -109,76 +111,83 @@ public class AboutForm {
 
         AboutListener.addListeners();
 
-        // 更新Grace
         try {
-            String graceInfoContent = HttpUtil.get(UiConsts.GRACE_INFO_URL);
-            if (graceInfoContent != null) {
-                Grace grace = JSON.parseObject(graceInfoContent, Grace.class);
-                if (grace != null) {
-                    if (!Strings.isNullOrEmpty(grace.getImage())) {
-                        URL url = new URL(grace.getImage());
-                        BufferedImage image = ImageIO.read(url);
-                        aboutForm.getGraceLabel().setIcon(new ImageIcon(image));
+            // 每天执行一次
+            ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1);
+            scheduledThreadPoolExecutor.scheduleAtFixedRate(() -> {
+                try {
+                    String graceInfoContent = HttpUtil.get(UiConsts.GRACE_INFO_URL);
+                    if (graceInfoContent != null) {
+                        Grace grace = JSON.parseObject(graceInfoContent, Grace.class);
+                        if (grace != null) {
+                            if (!Strings.isNullOrEmpty(grace.getImage())) {
+                                URL url = new URL(grace.getImage());
+                                BufferedImage image = ImageIO.read(url);
+                                aboutForm.getGraceLabel().setIcon(new ImageIcon(image));
+                            }
+                            if (!Strings.isNullOrEmpty(grace.getTips())) {
+                                aboutForm.getGraceLabel().setToolTipText(grace.getTips());
+                            }
+
+                            if (!Strings.isNullOrEmpty(grace.getTitle())) {
+                                aboutForm.getGraceTitleLabel().setText(grace.getTitle());
+                            }
+
+                            if (!Strings.isNullOrEmpty(grace.getUrl())) {
+                                aboutForm.getGracePanel().addMouseListener(new MouseAdapter() {
+                                    @Override
+                                    public void mouseClicked(MouseEvent e) {
+                                        super.mouseClicked(e);
+                                        Desktop desktop = Desktop.getDesktop();
+                                        try {
+                                            desktop.browse(new URI(grace.getUrl()));
+                                        } catch (IOException | URISyntaxException e1) {
+                                            e1.printStackTrace();
+                                        }
+                                    }
+
+                                    @Override
+                                    public void mousePressed(MouseEvent e) {
+                                        super.mousePressed(e);
+                                    }
+
+                                    @Override
+                                    public void mouseEntered(MouseEvent e) {
+                                        super.mouseEntered(e);
+                                        e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
+                                    }
+                                });
+
+                                aboutForm.getGraceLabel().addMouseListener(new MouseAdapter() {
+                                    @Override
+                                    public void mouseClicked(MouseEvent e) {
+                                        super.mouseClicked(e);
+                                        Desktop desktop = Desktop.getDesktop();
+                                        try {
+                                            desktop.browse(new URI(grace.getUrl()));
+                                        } catch (IOException | URISyntaxException e1) {
+                                            e1.printStackTrace();
+                                        }
+                                    }
+
+                                    @Override
+                                    public void mousePressed(MouseEvent e) {
+                                        super.mousePressed(e);
+                                    }
+
+                                    @Override
+                                    public void mouseEntered(MouseEvent e) {
+                                        super.mouseEntered(e);
+                                        e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
+                                    }
+                                });
+                            }
+                        }
                     }
-                    if (!Strings.isNullOrEmpty(grace.getTips())) {
-                        aboutForm.getGraceLabel().setToolTipText(grace.getTips());
-                    }
-
-                    if (!Strings.isNullOrEmpty(grace.getTitle())) {
-                        aboutForm.getGraceTitleLabel().setText(grace.getTitle());
-                    }
-
-                    if (!Strings.isNullOrEmpty(grace.getUrl())) {
-                        aboutForm.getGracePanel().addMouseListener(new MouseAdapter() {
-                            @Override
-                            public void mouseClicked(MouseEvent e) {
-                                super.mouseClicked(e);
-                                Desktop desktop = Desktop.getDesktop();
-                                try {
-                                    desktop.browse(new URI(grace.getUrl()));
-                                } catch (IOException | URISyntaxException e1) {
-                                    e1.printStackTrace();
-                                }
-                            }
-
-                            @Override
-                            public void mousePressed(MouseEvent e) {
-                                super.mousePressed(e);
-                            }
-
-                            @Override
-                            public void mouseEntered(MouseEvent e) {
-                                super.mouseEntered(e);
-                                e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
-                            }
-                        });
-
-                        aboutForm.getGraceLabel().addMouseListener(new MouseAdapter() {
-                            @Override
-                            public void mouseClicked(MouseEvent e) {
-                                super.mouseClicked(e);
-                                Desktop desktop = Desktop.getDesktop();
-                                try {
-                                    desktop.browse(new URI(grace.getUrl()));
-                                } catch (IOException | URISyntaxException e1) {
-                                    e1.printStackTrace();
-                                }
-                            }
-
-                            @Override
-                            public void mousePressed(MouseEvent e) {
-                                super.mousePressed(e);
-                            }
-
-                            @Override
-                            public void mouseEntered(MouseEvent e) {
-                                super.mouseEntered(e);
-                                e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
-                            }
-                        });
-                    }
+                } catch (Exception e) {
+                    log.error("获取Grace信息失败", e);
                 }
-            }
+            }, 0, 1, TimeUnit.DAYS);
         } catch (Exception e) {
             log.error("获取Grace信息失败", e);
         }
