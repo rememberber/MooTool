@@ -188,7 +188,7 @@ public class AboutForm {
                 } catch (Exception e) {
                     log.error("获取Grace信息失败", e);
                 }
-            }, 0, 1, TimeUnit.DAYS);
+            }, 0, 1, TimeUnit.HOURS);
         } catch (Exception e) {
             log.error("获取Grace信息失败", e);
         }
