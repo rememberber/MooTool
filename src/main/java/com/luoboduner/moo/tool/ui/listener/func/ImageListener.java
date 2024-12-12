@@ -372,6 +372,81 @@ public class ImageListener {
             imageForm.getShowImageLabel().setIcon(imageIcon);
         });
 
+        // 左侧表格增加右键菜单
+        JPopupMenu noteListPopupMenu = new JPopupMenu();
+        JMenuItem renameMenuItem = new JMenuItem("重命名");
+        JMenuItem deleteMenuItem = new JMenuItem("删除");
+        JMenuItem exportMenuItem = new JMenuItem("导出");
+        noteListPopupMenu.add(renameMenuItem);
+        noteListPopupMenu.add(deleteMenuItem);
+        noteListPopupMenu.add(exportMenuItem);
+        imageForm.getListTable().setComponentPopupMenu(noteListPopupMenu);
+
+        renameMenuItem.addActionListener(e -> {
+            int selectedRow = imageForm.getListTable().getSelectedRow();
+            String beforeName = String.valueOf(imageForm.getListTable().getValueAt(selectedRow, 0));
+            if (StringUtils.isNotBlank(beforeName)) {
+                String afterName = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", beforeName);
+                if (StringUtils.isNotBlank(afterName)) {
+                    try {
+                        FileUtil.rename(FileUtil.file(IMAGE_PATH_PRE_FIX + beforeName), afterName.replace(".png", ""), true, true);
+                        imageForm.getListTable().setValueAt(afterName, selectedRow, 0);
+                        imageForm.getListTable().setValueAt(afterName, selectedRow, 1);
+                    } catch (Exception e1) {
+                        JOptionPane.showMessageDialog(App.mainFrame, "重命名失败" + e1.getMessage());
+                        ImageForm.initListTable();
+                        log.error(ExceptionUtils.getStackTrace(e1));
+                    }
+                }
+            }
+        });
+
+        deleteMenuItem.addActionListener(e -> {
+            deleteFiles(imageForm);
+        });
+
+        exportMenuItem.addActionListener(e -> {
+            int[] selectedRows = imageForm.getListTable().getSelectedRows();
+
+            try {
+                if (selectedRows.length > 0) {
+                    JFileChooser fileChooser = new JFileChooser(App.config.getImageExportPath());
+                    fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    int approve = fileChooser.showOpenDialog(imageForm.getImagePanel());
+                    String exportPath;
+                    if (approve == JFileChooser.APPROVE_OPTION) {
+                        exportPath = fileChooser.getSelectedFile().getAbsolutePath();
+                        App.config.setImageExportPath(exportPath);
+                        App.config.save();
+                    } else {
+                        return;
+                    }
+
+                    for (int row : selectedRows) {
+                        String fileName = (String) imageForm.getListTable().getValueAt(row, 0);
+                        File exportFile = FileUtil.touch(exportPath + File.separator + fileName);
+                        FileUtil.copy(FileUtil.file(IMAGE_PATH_PRE_FIX + fileName), exportFile, true);
+                    }
+                    JOptionPane.showMessageDialog(imageForm.getImagePanel(), "导出成功！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    try {
+                        Desktop desktop = Desktop.getDesktop();
+                        desktop.open(new File(exportPath));
+                    } catch (Exception e2) {
+                        log.error(ExceptionUtils.getStackTrace(e2));
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(imageForm.getImagePanel(), "请至少选择一个！", "提示",
+                            JOptionPane.INFORMATION_MESSAGE);
+                }
+
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(imageForm.getImagePanel(), "导出失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
+            }
+
+        });
+
     }
 
     private static void deleteFiles(ImageForm imageForm) {
