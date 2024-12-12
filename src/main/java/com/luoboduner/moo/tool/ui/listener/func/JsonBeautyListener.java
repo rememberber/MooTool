@@ -559,6 +559,87 @@ public class JsonBeautyListener {
             }
         });
 
+        // 左侧表格增加右键菜单
+        JPopupMenu noteListPopupMenu = new JPopupMenu();
+        JMenuItem renameMenuItem = new JMenuItem("重命名");
+        JMenuItem deleteMenuItem = new JMenuItem("删除");
+        JMenuItem exportMenuItem = new JMenuItem("导出");
+        noteListPopupMenu.add(renameMenuItem);
+        noteListPopupMenu.add(deleteMenuItem);
+        noteListPopupMenu.add(exportMenuItem);
+        jsonBeautyForm.getNoteListTable().setComponentPopupMenu(noteListPopupMenu);
+
+        renameMenuItem.addActionListener(e -> {
+            int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
+            int noteId = Integer.parseInt(String.valueOf(jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 0)));
+            String beforeName = String.valueOf(jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 1));
+            if (StringUtils.isNotBlank(beforeName)) {
+                String afterName = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", beforeName);
+                if (StringUtils.isNotBlank(afterName)) {
+                    TJsonBeauty tJsonBeauty = new TJsonBeauty();
+                    tJsonBeauty.setId(noteId);
+                    tJsonBeauty.setName(afterName);
+                    tJsonBeauty.setModifiedTime(SqliteUtil.nowDateForSqlite());
+                    try {
+                        jsonBeautyMapper.updateByPrimaryKeySelective(tJsonBeauty);
+                        JsonBeautyForm.initListTable();
+                    } catch (Exception e1) {
+                        JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
+                        JsonBeautyForm.initListTable();
+                        log.error(e1.toString());
+                    }
+                }
+            }
+        });
+
+        deleteMenuItem.addActionListener(e -> {
+            deleteFiles(jsonBeautyForm);
+        });
+
+        exportMenuItem.addActionListener(e -> {
+            int[] selectedRows = jsonBeautyForm.getNoteListTable().getSelectedRows();
+
+            try {
+                if (selectedRows.length > 0) {
+                    JFileChooser fileChooser = new JFileChooser(App.config.getJsonBeautyExportPath());
+                    fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    int approve = fileChooser.showOpenDialog(jsonBeautyForm.getJsonBeautyPanel());
+                    String exportPath;
+                    if (approve == JFileChooser.APPROVE_OPTION) {
+                        exportPath = fileChooser.getSelectedFile().getAbsolutePath();
+                        App.config.setJsonBeautyExportPath(exportPath);
+                        App.config.save();
+                    } else {
+                        return;
+                    }
+
+                    for (int row : selectedRows) {
+                        Integer selectedId = (Integer) jsonBeautyForm.getNoteListTable().getValueAt(row, 0);
+                        TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByPrimaryKey(selectedId);
+                        File exportFile = FileUtil.touch(exportPath + File.separator + tJsonBeauty.getName() + ".json");
+                        FileUtil.writeUtf8String(tJsonBeauty.getContent(), exportFile);
+                    }
+                    JOptionPane.showMessageDialog(jsonBeautyForm.getJsonBeautyPanel(), "导出成功！", "提示",
+                            JOptionPane.INFORMATION_MESSAGE);
+                    try {
+                        Desktop desktop = Desktop.getDesktop();
+                        desktop.open(new File(exportPath));
+                    } catch (Exception e2) {
+                        log.error(ExceptionUtils.getStackTrace(e2));
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(jsonBeautyForm.getJsonBeautyPanel(), "请至少选择一个！", "提示",
+                            JOptionPane.INFORMATION_MESSAGE);
+                }
+
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(jsonBeautyForm.getJsonBeautyPanel(), "导出失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
+            }
+
+        });
+
     }
 
     private static void viewByRowNum(int selectedRow) {
