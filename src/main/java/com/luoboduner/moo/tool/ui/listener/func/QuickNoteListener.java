@@ -420,6 +420,52 @@ public class QuickNoteListener {
         quickNoteForm.getSearchContentCheckBox().addActionListener(e -> {
             QuickNoteForm.initNoteListTable();
         });
+
+        // 左侧表格增加右键菜单
+        JPopupMenu noteListPopupMenu = new JPopupMenu();
+        JMenuItem renameMenuItem = new JMenuItem("重命名");
+        JMenuItem deleteMenuItem = new JMenuItem("删除");
+        noteListPopupMenu.add(renameMenuItem);
+        noteListPopupMenu.add(deleteMenuItem);
+        quickNoteForm.getNoteListTable().setComponentPopupMenu(noteListPopupMenu);
+
+        // 重命名菜单项事件
+        renameMenuItem.addActionListener(e -> {
+            int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
+            int noteId = Integer.parseInt(String.valueOf(quickNoteForm.getNoteListTable().getValueAt(selectedRow, 0)));
+            String beforeName = String.valueOf(quickNoteForm.getNoteListTable().getValueAt(selectedRow, 1));
+
+            if (StringUtils.isNotBlank(beforeName)) {
+                String afterName = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", beforeName);
+                if (StringUtils.isNotBlank(afterName)) {
+                    TQuickNote tQuickNote = new TQuickNote();
+                    tQuickNote.setId(noteId);
+                    tQuickNote.setName(afterName);
+                    try {
+                        TQuickNote tQuickNoteBefore = quickNoteMapper.selectByPrimaryKey(noteId);
+
+                        quickNoteMapper.updateByPrimaryKeySelective(tQuickNote);
+
+                        selectedName = afterName;
+
+                        quickNoteForm.getNoteListTable().setValueAt(afterName, selectedRow, 1);
+
+                        RTextScrollPane syntaxTextViewer = quickNoteRSyntaxTextViewerManager.getRTextScrollPane(afterName);
+                        quickNoteForm.getContentSplitPane().setLeftComponent(syntaxTextViewer);
+                        quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(tQuickNoteBefore.getName());
+                    } catch (Exception e1) {
+                        JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
+                        QuickNoteForm.initNoteListTable();
+                        log.error(ExceptionUtils.getStackTrace(e1));
+                    }
+                }
+
+            }
+        });
+
+        // 删除菜单项事件
+        deleteMenuItem.addActionListener(e -> deleteFiles(quickNoteForm));
+
     }
 
     public static void showFindPanel() {
