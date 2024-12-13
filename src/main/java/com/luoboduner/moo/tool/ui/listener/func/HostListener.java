@@ -267,6 +267,87 @@ public class HostListener {
             }
         });
 
+        // 左侧表格增加右键菜单
+        JPopupMenu noteListPopupMenu = new JPopupMenu();
+        JMenuItem renameMenuItem = new JMenuItem("重命名");
+        JMenuItem deleteMenuItem = new JMenuItem("删除");
+        JMenuItem exportMenuItem = new JMenuItem("导出");
+        noteListPopupMenu.add(renameMenuItem);
+        noteListPopupMenu.add(deleteMenuItem);
+        noteListPopupMenu.add(exportMenuItem);
+        hostForm.getNoteListTable().setComponentPopupMenu(noteListPopupMenu);
+
+        renameMenuItem.addActionListener(e -> {
+            int selectedRow = hostForm.getNoteListTable().getSelectedRow();
+            int noteId = Integer.parseInt(String.valueOf(hostForm.getNoteListTable().getValueAt(selectedRow, 0)));
+            String beforeName = String.valueOf(hostForm.getNoteListTable().getValueAt(selectedRow, 1));
+            if (StringUtils.isNotBlank(beforeName)) {
+                String afterName = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", beforeName);
+                if (StringUtils.isNotBlank(afterName)) {
+                    THost tHost = new THost();
+                    tHost.setId(noteId);
+                    tHost.setName(afterName);
+                    tHost.setModifiedTime(SqliteUtil.nowDateForSqlite());
+                    try {
+                        hostMapper.updateByPrimaryKeySelective(tHost);
+                        HostForm.initListTable();
+                    } catch (Exception e1) {
+                        JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
+                        HostForm.initListTable();
+                        log.error(e1.toString());
+                    }
+                }
+            }
+        });
+
+        deleteMenuItem.addActionListener(e -> {
+            deleteFiles(hostForm);
+        });
+
+        exportMenuItem.addActionListener(e -> {
+            int[] selectedRows = hostForm.getNoteListTable().getSelectedRows();
+
+            try {
+                if (selectedRows.length > 0) {
+                    JFileChooser fileChooser = new JFileChooser(App.config.getHostExportPath());
+                    fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    int approve = fileChooser.showOpenDialog(hostForm.getHostPanel());
+                    String exportPath;
+                    if (approve == JFileChooser.APPROVE_OPTION) {
+                        exportPath = fileChooser.getSelectedFile().getAbsolutePath();
+                        App.config.setHostExportPath(exportPath);
+                        App.config.save();
+                    } else {
+                        return;
+                    }
+
+                    for (int row : selectedRows) {
+                        Integer selectedId = (Integer) hostForm.getNoteListTable().getValueAt(row, 0);
+                        THost tHost = hostMapper.selectByPrimaryKey(selectedId);
+                        File exportFile = FileUtil.touch(exportPath + File.separator + tHost.getName() + ".txt");
+                        FileUtil.writeUtf8String(tHost.getContent(), exportFile);
+                    }
+                    JOptionPane.showMessageDialog(hostForm.getHostPanel(), "导出成功！", "提示",
+                            JOptionPane.INFORMATION_MESSAGE);
+                    try {
+                        Desktop desktop = Desktop.getDesktop();
+                        desktop.open(new File(exportPath));
+                    } catch (Exception e2) {
+                        log.error(ExceptionUtils.getStackTrace(e2));
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(hostForm.getHostPanel(), "请至少选择一个！", "提示",
+                            JOptionPane.INFORMATION_MESSAGE);
+                }
+
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(hostForm.getHostPanel(), "导出失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
+            }
+
+        });
+
     }
 
     private static void deleteFiles(HostForm hostForm) {
