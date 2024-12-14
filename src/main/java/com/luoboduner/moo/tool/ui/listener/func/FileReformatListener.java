@@ -6,6 +6,7 @@ import com.luoboduner.moo.tool.util.FileReformatUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
+import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 
@@ -36,6 +37,15 @@ public class FileReformatListener {
 
         fileReformattingForm.getFormatButton().addActionListener(e -> {
             FileReformattingForm.format();
+        });
+
+        // control/command + shift + F 格式化
+        fileReformattingForm.getTextArea().getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_F, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx() | InputEvent.SHIFT_DOWN_MASK), "format");
+        fileReformattingForm.getTextArea().getActionMap().put("format", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                fileReformattingForm.getFormatButton().doClick();
+            }
         });
     }
 

@@ -51,6 +51,9 @@ public class FrameListener {
                 saveBeforeExit();
                 if (SystemUtil.isWindowsOs()) {
                     App.mainFrame.setVisible(false);
+                } else if (SystemUtil.isMacOs()) {
+                    // 最小化窗口
+                    App.mainFrame.setExtendedState(Frame.ICONIFIED);
                 } else {
                     App.mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 }

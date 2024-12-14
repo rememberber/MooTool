@@ -97,6 +97,10 @@ public class ImageListener {
                     imageForm.getShowImagePanel().updateUI();
 
                     ImageListener.selectedImage = ImageIO.read(FileUtil.newFile(ImageListener.IMAGE_PATH_PRE_FIX + name));
+
+                    String pixel = ImageListener.selectedImage.getWidth(null) + " x " + ImageListener.selectedImage.getHeight(null);
+                    String size = FileUtil.readableFileSize(FileUtil.file(IMAGE_PATH_PRE_FIX + name).length());
+                    imageForm.getImageInfoLabel().setText("尺寸：" + pixel + "  大小：" + size + " ");
                 } catch (IOException ex) {
                     JOptionPane.showMessageDialog(App.mainFrame, ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
                     log.error(ExceptionUtils.getStackTrace(ex));
@@ -229,6 +233,10 @@ public class ImageListener {
                         imageForm.getShowImagePanel().updateUI();
 
                         ImageListener.selectedImage = ImageIO.read(FileUtil.newFile(ImageListener.IMAGE_PATH_PRE_FIX + name));
+
+                        String pixel = ImageListener.selectedImage.getWidth(null) + " x " + ImageListener.selectedImage.getHeight(null);
+                        String size = FileUtil.readableFileSize(FileUtil.file(IMAGE_PATH_PRE_FIX + name).length());
+                        imageForm.getImageInfoLabel().setText("尺寸：" + pixel + "  大小：" + size + " ");
                     } catch (IOException ex) {
                         JOptionPane.showMessageDialog(App.mainFrame, ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
                         log.error(ExceptionUtils.getStackTrace(ex));
@@ -321,6 +329,11 @@ public class ImageListener {
                     if (image != null) {
                         selectedName = null;
                         imageForm.getShowImageLabel().setIcon(imageIcon);
+
+                        selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                        File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
+                        ImageIO.write(toBufferedImage(selectedImage), "png", imageFile);
+                        ImageForm.initListTable();
                     } else {
                         JOptionPane.showMessageDialog(App.mainFrame, "可能不是正确的图片Base64？\n\n", "失败", JOptionPane.WARNING_MESSAGE);
                     }
@@ -328,6 +341,108 @@ public class ImageListener {
             } catch (Exception e1) {
                 JOptionPane.showMessageDialog(App.mainFrame, "从Base64获取异常\n\n" + e1.getMessage(), "失败", JOptionPane.WARNING_MESSAGE);
                 log.error("从Base64获取异常,{}", ExceptionUtils.getStackTrace(e1));
+            }
+
+        });
+
+        imageForm.getZoomInButton().addActionListener(e -> {
+            int width = imageForm.getShowImageLabel().getWidth();
+            int height = imageForm.getShowImageLabel().getHeight();
+            ImageIcon imageIcon = new ImageIcon(selectedImage.getScaledInstance((int) (width * 1.1), (int) (height * 1.1), Image.SCALE_DEFAULT));
+            imageForm.getShowImageLabel().setIcon(imageIcon);
+        });
+
+        imageForm.getZoomOutButton().addActionListener(e -> {
+            int width = imageForm.getShowImageLabel().getWidth();
+            int height = imageForm.getShowImageLabel().getHeight();
+            ImageIcon imageIcon = new ImageIcon(selectedImage.getScaledInstance((int) (width * 0.9), (int) (height * 0.9), Image.SCALE_DEFAULT));
+            imageForm.getShowImageLabel().setIcon(imageIcon);
+        });
+
+        imageForm.getOriginalSizeButton().addActionListener(e -> {
+            ImageIcon imageIcon = new ImageIcon(selectedImage);
+            imageForm.getShowImageLabel().setIcon(imageIcon);
+        });
+
+        imageForm.getFitSizeButton().addActionListener(e -> {
+            int width = imageForm.getImageControlPanel().getWidth();
+//            int height = imageForm.getShowImagePanel().getHeight();
+//          只控制宽度，高度自适应
+            ImageIcon imageIcon = new ImageIcon(selectedImage.getScaledInstance(width, -1, Image.SCALE_DEFAULT));
+            imageForm.getShowImageLabel().setIcon(imageIcon);
+        });
+
+        // 左侧表格增加右键菜单
+        JPopupMenu noteListPopupMenu = new JPopupMenu();
+        JMenuItem renameMenuItem = new JMenuItem("重命名");
+        JMenuItem deleteMenuItem = new JMenuItem("删除");
+        JMenuItem exportMenuItem = new JMenuItem("导出");
+        noteListPopupMenu.add(renameMenuItem);
+        noteListPopupMenu.add(deleteMenuItem);
+        noteListPopupMenu.add(exportMenuItem);
+        imageForm.getListTable().setComponentPopupMenu(noteListPopupMenu);
+
+        renameMenuItem.addActionListener(e -> {
+            int selectedRow = imageForm.getListTable().getSelectedRow();
+            String beforeName = String.valueOf(imageForm.getListTable().getValueAt(selectedRow, 0));
+            if (StringUtils.isNotBlank(beforeName)) {
+                String afterName = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", beforeName);
+                if (StringUtils.isNotBlank(afterName)) {
+                    try {
+                        FileUtil.rename(FileUtil.file(IMAGE_PATH_PRE_FIX + beforeName), afterName.replace(".png", ""), true, true);
+                        imageForm.getListTable().setValueAt(afterName, selectedRow, 0);
+                        imageForm.getListTable().setValueAt(afterName, selectedRow, 1);
+                    } catch (Exception e1) {
+                        JOptionPane.showMessageDialog(App.mainFrame, "重命名失败" + e1.getMessage());
+                        ImageForm.initListTable();
+                        log.error(ExceptionUtils.getStackTrace(e1));
+                    }
+                }
+            }
+        });
+
+        deleteMenuItem.addActionListener(e -> {
+            deleteFiles(imageForm);
+        });
+
+        exportMenuItem.addActionListener(e -> {
+            int[] selectedRows = imageForm.getListTable().getSelectedRows();
+
+            try {
+                if (selectedRows.length > 0) {
+                    JFileChooser fileChooser = new JFileChooser(App.config.getImageExportPath());
+                    fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    int approve = fileChooser.showOpenDialog(imageForm.getImagePanel());
+                    String exportPath;
+                    if (approve == JFileChooser.APPROVE_OPTION) {
+                        exportPath = fileChooser.getSelectedFile().getAbsolutePath();
+                        App.config.setImageExportPath(exportPath);
+                        App.config.save();
+                    } else {
+                        return;
+                    }
+
+                    for (int row : selectedRows) {
+                        String fileName = (String) imageForm.getListTable().getValueAt(row, 0);
+                        File exportFile = FileUtil.touch(exportPath + File.separator + fileName);
+                        FileUtil.copy(FileUtil.file(IMAGE_PATH_PRE_FIX + fileName), exportFile, true);
+                    }
+                    JOptionPane.showMessageDialog(imageForm.getImagePanel(), "导出成功！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    try {
+                        Desktop desktop = Desktop.getDesktop();
+                        desktop.open(new File(exportPath));
+                    } catch (Exception e2) {
+                        log.error(ExceptionUtils.getStackTrace(e2));
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(imageForm.getImagePanel(), "请至少选择一个！", "提示",
+                            JOptionPane.INFORMATION_MESSAGE);
+                }
+
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(imageForm.getImagePanel(), "导出失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
             }
 
         });
@@ -381,12 +496,20 @@ public class ImageListener {
             if (image != null) {
                 selectedName = null;
                 imageForm.getShowImageLabel().setIcon(new ImageIcon(image));
+
+                selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
+                ImageIO.write(toBufferedImage(selectedImage), "png", imageFile);
+                ImageForm.initListTable();
             } else {
                 JOptionPane.showMessageDialog(App.mainFrame, "还没有复制图片到剪贴板吧？\n\n", "失败", JOptionPane.WARNING_MESSAGE);
             }
         } catch (HeadlessException ex) {
             ex.printStackTrace();
             log.error(ExceptionUtils.getStackTrace(ex));
+        } catch (IOException e) {
+            e.printStackTrace();
+            log.error(ExceptionUtils.getStackTrace(e));
         }
     }
 

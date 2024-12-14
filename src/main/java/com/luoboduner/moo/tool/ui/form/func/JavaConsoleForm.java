@@ -7,12 +7,16 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.component.textviewer.JavaRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.textviewer.JavaRTextScrollPane;
 import com.luoboduner.moo.tool.ui.listener.func.JavaConsoleListener;
+import com.luoboduner.moo.tool.util.codeformatter.CodeFormatterFactory;
 import lombok.Getter;
 
 import javax.swing.*;
 import javax.swing.plaf.FontUIResource;
 import javax.swing.text.StyleContext;
 import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.InputEvent;
+import java.awt.event.KeyEvent;
 import java.util.Locale;
 
 @Getter
@@ -23,6 +27,7 @@ public class JavaConsoleForm {
     private JPanel leftPanel;
     private JTextArea resultArea;
     private JSplitPane splitPane;
+    private JButton formatButton;
     private static JavaConsoleForm javaConsoleForm;
 
     private JavaRSyntaxTextViewer textArea;
@@ -46,6 +51,20 @@ public class JavaConsoleForm {
         splitPane.setDividerLocation((int) (App.mainFrame.getWidth() / 2));
         new JavaConsoleListener(getRun(), getClean(), getTextArea(), getResultArea())
                 .addListener();
+
+        formatButton.addActionListener(e -> {
+            String code = textArea.getText();
+            textArea.setText(CodeFormatterFactory.getFormatter(CodeFormatterFactory.FormatterType.JAVA).format(code));
+        });
+
+        // control/command + shift + F 格式化
+        textArea.getInputMap().put(KeyStroke.getKeyStroke(KeyEvent.VK_F, Toolkit.getDefaultToolkit().getMenuShortcutKeyMaskEx() | InputEvent.SHIFT_DOWN_MASK), "format");
+        textArea.getActionMap().put("format", new AbstractAction() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                formatButton.doClick();
+            }
+        });
     }
 
     {
@@ -66,14 +85,14 @@ public class JavaConsoleForm {
         javaConsolePanel = new JPanel();
         javaConsolePanel.setLayout(new GridLayoutManager(2, 1, new Insets(10, 10, 10, 10), -1, -1));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(1, 4, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.setLayout(new GridLayoutManager(1, 5, new Insets(0, 0, 0, 0), -1, -1));
         javaConsolePanel.add(panel1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, 1, 1, null, null, null, 0, false));
         clean = new JButton();
         clean.setText("清除");
-        panel1.add(clean, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel1.add(clean, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         run = new JButton();
         run.setText("执行");
-        panel1.add(run, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel1.add(run, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label1 = new JLabel();
         Font label1Font = this.$$$getFont$$$(null, -1, 14, label1.getFont());
         if (label1Font != null) label1.setFont(label1Font);
@@ -81,6 +100,9 @@ public class JavaConsoleForm {
         panel1.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer1 = new Spacer();
         panel1.add(spacer1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        formatButton = new JButton();
+        formatButton.setText("格式化");
+        panel1.add(formatButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         javaConsolePanel.add(panel2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));

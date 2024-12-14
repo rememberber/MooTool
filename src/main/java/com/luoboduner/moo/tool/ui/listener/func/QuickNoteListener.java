@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
+import cn.hutool.core.collection.ListUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.NumberUtil;
@@ -39,6 +40,7 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
@@ -413,6 +415,104 @@ public class QuickNoteListener {
 //                QuickNoteForm.initNoteListTable();
             }
         });
+
+        // 搜索框包含内容checkbox变更事件
+        quickNoteForm.getSearchContentCheckBox().addActionListener(e -> {
+            QuickNoteForm.initNoteListTable();
+        });
+
+        // 左侧表格增加右键菜单
+        JPopupMenu noteListPopupMenu = new JPopupMenu();
+        JMenuItem renameMenuItem = new JMenuItem("重命名");
+        JMenuItem deleteMenuItem = new JMenuItem("删除");
+        JMenuItem exportMenuItem = new JMenuItem("导出");
+        noteListPopupMenu.add(renameMenuItem);
+        noteListPopupMenu.add(deleteMenuItem);
+        noteListPopupMenu.add(exportMenuItem);
+        quickNoteForm.getNoteListTable().setComponentPopupMenu(noteListPopupMenu);
+
+        // 重命名菜单项事件
+        renameMenuItem.addActionListener(e -> {
+            int selectedRow = quickNoteForm.getNoteListTable().getSelectedRow();
+            int noteId = Integer.parseInt(String.valueOf(quickNoteForm.getNoteListTable().getValueAt(selectedRow, 0)));
+            String beforeName = String.valueOf(quickNoteForm.getNoteListTable().getValueAt(selectedRow, 1));
+
+            if (StringUtils.isNotBlank(beforeName)) {
+                String afterName = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", beforeName);
+                if (StringUtils.isNotBlank(afterName)) {
+                    TQuickNote tQuickNote = new TQuickNote();
+                    tQuickNote.setId(noteId);
+                    tQuickNote.setName(afterName);
+                    try {
+                        TQuickNote tQuickNoteBefore = quickNoteMapper.selectByPrimaryKey(noteId);
+
+                        quickNoteMapper.updateByPrimaryKeySelective(tQuickNote);
+
+                        selectedName = afterName;
+
+                        quickNoteForm.getNoteListTable().setValueAt(afterName, selectedRow, 1);
+
+                        RTextScrollPane syntaxTextViewer = quickNoteRSyntaxTextViewerManager.getRTextScrollPane(afterName);
+                        quickNoteForm.getContentSplitPane().setLeftComponent(syntaxTextViewer);
+                        quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(tQuickNoteBefore.getName());
+                    } catch (Exception e1) {
+                        JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
+                        QuickNoteForm.initNoteListTable();
+                        log.error(ExceptionUtils.getStackTrace(e1));
+                    }
+                }
+
+            }
+        });
+
+        // 删除菜单项事件
+        deleteMenuItem.addActionListener(e -> deleteFiles(quickNoteForm));
+
+        // 导出菜单项事件
+        exportMenuItem.addActionListener(e -> {
+            int[] selectedRows = quickNoteForm.getNoteListTable().getSelectedRows();
+
+            try {
+                if (selectedRows.length > 0) {
+                    JFileChooser fileChooser = new JFileChooser(App.config.getQuickNoteExportPath());
+                    fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    int approve = fileChooser.showOpenDialog(quickNoteForm.getQuickNotePanel());
+                    String exportPath;
+                    if (approve == JFileChooser.APPROVE_OPTION) {
+                        exportPath = fileChooser.getSelectedFile().getAbsolutePath();
+                        App.config.setQuickNoteExportPath(exportPath);
+                        App.config.save();
+                    } else {
+                        return;
+                    }
+
+                    for (int row : selectedRows) {
+                        Integer selectedId = (Integer) quickNoteForm.getNoteListTable().getValueAt(row, 0);
+                        TQuickNote tQuickNote = quickNoteMapper.selectByPrimaryKey(selectedId);
+                        File exportFile = FileUtil.touch(exportPath + File.separator + tQuickNote.getName() + ".txt");
+                        FileUtil.writeUtf8String(tQuickNote.getContent(), exportFile);
+                    }
+                    JOptionPane.showMessageDialog(quickNoteForm.getQuickNotePanel(), "导出成功！", "提示",
+                            JOptionPane.INFORMATION_MESSAGE);
+                    try {
+                        Desktop desktop = Desktop.getDesktop();
+                        desktop.open(new File(exportPath));
+                    } catch (Exception e2) {
+                        log.error(ExceptionUtils.getStackTrace(e2));
+                    }
+                } else {
+                    JOptionPane.showMessageDialog(quickNoteForm.getQuickNotePanel(), "请至少选择一个！", "提示",
+                            JOptionPane.INFORMATION_MESSAGE);
+                }
+
+            } catch (Exception e1) {
+                JOptionPane.showMessageDialog(quickNoteForm.getQuickNotePanel(), "导出失败！\n\n" + e1.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                log.error(ExceptionUtils.getStackTrace(e1));
+            }
+
+        });
+
     }
 
     public static void showFindPanel() {
@@ -493,6 +593,14 @@ public class QuickNoteListener {
             RSyntaxTextArea view = QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea();
 
             String content = view.getText();
+
+            // 如果有选中的行，则只替换选中的行
+            int start = view.getSelectionStart();
+            int end = view.getSelectionEnd();
+            String selectedText = view.getSelectedText();
+            if (StringUtils.isNotEmpty(selectedText)) {
+                content = selectedText;
+            }
 
             String[] splits = content.split("\n");
 
@@ -613,23 +721,75 @@ public class QuickNoteListener {
                 target = targetWithCnt;
             }
 
+            if (quickNoteForm.getReverseByRowCheckBox().isSelected()) {
+                target = ListUtil.reverse(target);
+            }
+            if (quickNoteForm.getSortFromAToZByRowCheckBox().isSelected()) {
+                Comparator<String> comparator = Comparator.naturalOrder();
+                target = ListUtil.sort(target, comparator);
+            }
+            if (quickNoteForm.getSortFromZToAByRowCheckBox().isSelected()) {
+                Comparator<String> comparator = Comparator.reverseOrder();
+                target = ListUtil.sort(target, comparator);
+            }
+            if (quickNoteForm.getSortByPinyinCheckBox().isSelected()) {
+                target = ListUtil.sortByPinyin(target);
+            }
+
             if (quickNoteForm.getClearEnterCheckBox().isSelected()) {
-                view.setText(StringUtils.join(target, ""));
+                // 如果有选中的行，则只替换选中的行
+                if (StringUtils.isNotEmpty(selectedText)) {
+                    view.replaceSelection(StringUtils.join(target, ""));
+                } else {
+                    view.setText(StringUtils.join(target, ""));
+                }
             } else if (quickNoteForm.getEnterToCommaCheckBox().isSelected()) {
-                view.setText(StringUtils.join(target, ","));
+                // 如果有选中的行，则只替换选中的行
+                if (StringUtils.isNotEmpty(selectedText)) {
+                    view.replaceSelection(StringUtils.join(target, ","));
+                } else {
+                    view.setText(StringUtils.join(target, ","));
+                }
             } else if (quickNoteForm.getEnterToCommaSingleQuotesCheckBox().isSelected()) {
-                view.setText("'" + StringUtils.join(target, "','") + "'");
+                // 如果有选中的行，则只替换选中的行
+                if (StringUtils.isNotEmpty(selectedText)) {
+                    view.replaceSelection("'" + StringUtils.join(target, "','") + "'");
+                } else {
+                    view.setText("'" + StringUtils.join(target, "','") + "'");
+                }
             } else if (quickNoteForm.getEnterToCommaDoubleQuotesCheckBox().isSelected()) {
-                view.setText("\"" + StringUtils.join(target, "\",\"") + "\"");
+                // 如果有选中的行，则只替换选中的行
+                if (StringUtils.isNotEmpty(selectedText)) {
+                    view.replaceSelection("\"" + StringUtils.join(target, "\",\"") + "\"");
+                } else {
+                    view.setText("\"" + StringUtils.join(target, "\",\"") + "\"");
+                }
             } else {
-                view.setText(StringUtils.join(target, "\n"));
+                if (!quickNoteForm.getEscapeCheckBox().isSelected() && !quickNoteForm.getUnescapeCheckBox().isSelected()) {
+                    // 如果有选中的行，则只替换选中的行
+                    if (StringUtils.isNotEmpty(selectedText)) {
+                        view.replaceSelection(StringUtils.join(target, "\n"));
+                    } else {
+                        view.setText(StringUtils.join(target, "\n"));
+                    }
+                }
             }
 
             if (quickNoteForm.getEscapeCheckBox().isSelected()) {
-                view.setText(StringEscapeUtils.escapeJava(view.getText()));
+                // 如果有选中的行，则只替换选中的行
+                if (StringUtils.isNotEmpty(selectedText)) {
+                    view.replaceSelection(StringEscapeUtils.escapeJava(view.getSelectedText()));
+                } else {
+                    view.setText(StringEscapeUtils.escapeJava(view.getText()));
+                }
             }
             if (quickNoteForm.getUnescapeCheckBox().isSelected()) {
-                view.setText(StringEscapeUtils.unescapeJava(view.getText()));
+                // 如果有选中的行，则只替换选中的行
+                if (StringUtils.isNotEmpty(selectedText)) {
+                    view.replaceSelection(StringEscapeUtils.unescapeJava(view.getSelectedText()));
+                } else {
+                    view.setText(StringEscapeUtils.unescapeJava(view.getText()));
+                }
             }
 
         } catch (Exception e) {

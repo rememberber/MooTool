@@ -15,6 +15,7 @@ import com.luoboduner.moo.tool.ui.form.func.HttpRequestForm;
 import com.luoboduner.moo.tool.ui.form.func.HttpResultForm;
 import com.luoboduner.moo.tool.ui.frame.HttpResultFrame;
 import com.luoboduner.moo.tool.util.MybatisUtil;
+import com.luoboduner.moo.tool.util.SqliteUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -384,6 +385,41 @@ public class HttpRequestListener {
             }
         });
 
+        // 左侧表格增加右键菜单
+        JPopupMenu noteListPopupMenu = new JPopupMenu();
+        JMenuItem renameMenuItem = new JMenuItem("重命名");
+        JMenuItem deleteMenuItem = new JMenuItem("删除");
+        noteListPopupMenu.add(renameMenuItem);
+        noteListPopupMenu.add(deleteMenuItem);
+        httpRequestForm.getNoteListTable().setComponentPopupMenu(noteListPopupMenu);
+
+        // 右键菜单事件
+        renameMenuItem.addActionListener(e -> {
+            int selectedRow = httpRequestForm.getNoteListTable().getSelectedRow();
+            int noteId = Integer.parseInt(String.valueOf(httpRequestForm.getNoteListTable().getValueAt(selectedRow, 0)));
+            String beforeName = String.valueOf(httpRequestForm.getNoteListTable().getValueAt(selectedRow, 1));
+            if (StringUtils.isNotBlank(beforeName)) {
+                String afterName = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", beforeName);
+                if (StringUtils.isNotBlank(afterName)) {
+                    TMsgHttp tMsgHttp = new TMsgHttp();
+                    tMsgHttp.setId(noteId);
+                    tMsgHttp.setMsgName(afterName);
+                    tMsgHttp.setModifiedTime(SqliteUtil.nowDateForSqlite());
+                    try {
+                        msgHttpMapper.updateByPrimaryKeySelective(tMsgHttp);
+                        HttpRequestForm.initListTable();
+                    } catch (Exception e1) {
+                        JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
+                        log.error(e1.toString());
+                    }
+                }
+            }
+
+        });
+
+        deleteMenuItem.addActionListener(e -> {
+            deleteFiles(httpRequestForm);
+        });
     }
 
     private static void deleteFiles(HttpRequestForm httpRequestForm) {
