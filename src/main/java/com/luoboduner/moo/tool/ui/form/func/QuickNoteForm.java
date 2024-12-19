@@ -106,6 +106,10 @@ public class QuickNoteForm {
     private JToggleButton colorButton;
     private JCheckBox searchContentCheckBox;
 
+    private JButton unOrderListButton;
+    private JButton orderListButton;
+    private JToolBar orderListToolBar;
+
     private JToolBar toolBar;
     public final static String[] COLOR_KEYS = {
             "default", "Moo.note.color.color1", "Moo.note.color.color2", "Moo.note.color.color3",
@@ -128,6 +132,17 @@ public class QuickNoteForm {
 
         toolBar = new JToolBar();
         searchContentCheckBox = new JCheckBox();
+
+        orderListToolBar = new JToolBar();
+        orderListToolBar.add(syntaxComboBox);
+        orderListToolBar.add(fontNameComboBox);
+        orderListToolBar.add(fontSizeComboBox);
+        orderListToolBar.add(wrapButton);
+        unOrderListButton = new JButton(new FlatSVGIcon("icon/list_unordered.svg"));
+        orderListButton = new JButton(new FlatSVGIcon("icon/list_ordered.svg"));
+        orderListToolBar.add(unOrderListButton);
+        orderListToolBar.add(orderListButton);
+
         UndoUtil.register(this);
     }
 
@@ -190,10 +205,7 @@ public class QuickNoteForm {
 
         quickNoteForm.getLeftMenuPanel().removeAll();
         quickNoteForm.getLeftMenuPanel().add(quickNoteForm.getColorButton());
-        quickNoteForm.getLeftMenuPanel().add(quickNoteForm.getSyntaxComboBox());
-        quickNoteForm.getLeftMenuPanel().add(quickNoteForm.getFontNameComboBox());
-        quickNoteForm.getLeftMenuPanel().add(quickNoteForm.getFontSizeComboBox());
-        quickNoteForm.getLeftMenuPanel().add(quickNoteForm.getWrapButton());
+        quickNoteForm.getLeftMenuPanel().add(quickNoteForm.getOrderListToolBar());
 
         quickNoteForm.getColorSettingPanel().setVisible(false);
 
