@@ -65,6 +65,7 @@ public class AboutForm {
     private JLabel graceTitleLabel;
     private JPanel contributorPanel;
     private JLabel logoLabel;
+    private JLabel homePageLabel;
 
     private static AboutForm aboutForm;
 
@@ -276,6 +277,32 @@ public class AboutForm {
                                     e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
                                 }
                             });
+
+                            aboutForm.getHomePageLabel().setText(dau.getHomePage());
+                            aboutForm.getHomePageLabel().setForeground(new Color(255, 255, 53));
+                            aboutForm.getHomePageLabel().addMouseListener(new MouseAdapter() {
+                                @Override
+                                public void mouseClicked(MouseEvent e) {
+                                    super.mouseClicked(e);
+                                    Desktop desktop = Desktop.getDesktop();
+                                    try {
+                                        desktop.browse(new URI(dau.getHomePage()));
+                                    } catch (IOException | URISyntaxException e1) {
+                                        e1.printStackTrace();
+                                    }
+                                }
+
+                                @Override
+                                public void mousePressed(MouseEvent e) {
+                                    super.mousePressed(e);
+                                }
+
+                                @Override
+                                public void mouseEntered(MouseEvent e) {
+                                    super.mouseEntered(e);
+                                    e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
+                                }
+                            });
                         }
                     }
                 } catch (Exception e) {
@@ -321,21 +348,24 @@ public class AboutForm {
         final Spacer spacer2 = new Spacer();
         panel1.add(spacer2, new GridConstraints(10, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JPanel panel2 = new JPanel();
-        panel2.setLayout(new GridLayoutManager(3, 1, new Insets(5, 3, 20, 0), -1, -1));
+        panel2.setLayout(new GridLayoutManager(4, 1, new Insets(5, 3, 20, 0), -1, -1));
         panel1.add(panel2, new GridConstraints(1, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         panel2.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "MooTool", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, 20, panel2.getFont()), new Color(-7883)));
         final JLabel label1 = new JLabel();
         label1.setText("Handy desktop toolset for developers");
-        panel2.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel2.add(label1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label2 = new JLabel();
         label2.setText("Proudly by RememBerBer 周波");
-        panel2.add(label2, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel2.add(label2, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         versionLabel = new JLabel();
         Font versionLabelFont = this.$$$getFont$$$(null, Font.BOLD, -1, versionLabel.getFont());
         if (versionLabelFont != null) versionLabel.setFont(versionLabelFont);
         versionLabel.setText("v0.0.0");
         versionLabel.setToolTipText("Check for updates");
-        panel2.add(versionLabel, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel2.add(versionLabel, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        homePageLabel = new JLabel();
+        homePageLabel.setText("");
+        panel2.add(homePageLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new GridLayoutManager(5, 1, new Insets(5, 3, 20, 0), -1, -1));
         panel1.add(panel3, new GridConstraints(3, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
