@@ -279,7 +279,7 @@ public class AboutForm {
                             });
 
                             aboutForm.getHomePageLabel().setText(dau.getHomePage());
-                            aboutForm.getHomePageLabel().setForeground(new Color(255, 255, 53));
+                            aboutForm.getHomePageLabel().setForeground(new Color(255, 204, 0));
                             aboutForm.getHomePageLabel().addMouseListener(new MouseAdapter() {
                                 @Override
                                 public void mouseClicked(MouseEvent e) {
