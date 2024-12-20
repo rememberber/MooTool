@@ -187,14 +187,6 @@
                               <toolTipText value="字号"/>
                             </properties>
                           </component>
-                          <component id="849d4" class="javax.swing.JButton" binding="wrapButton">
-                            <constraints/>
-                            <properties>
-                              <icon value="icon/toggleSoftWrap_dark.png"/>
-                              <text value=""/>
-                              <toolTipText value="自动换行"/>
-                            </properties>
-                          </component>
                         </children>
                       </grid>
                       <component id="23d6f" class="javax.swing.JButton" binding="listItemButton">

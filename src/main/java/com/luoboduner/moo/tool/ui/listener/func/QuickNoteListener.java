@@ -557,7 +557,7 @@ public class QuickNoteListener {
             color = QuickNoteForm.COLOR_KEYS[0];
         }
 
-        quickNoteForm.getColorButton().setIcon(new QuickNoteForm.AccentColorIcon(color));
+        quickNoteForm.getColorButton().setIcon(new QuickNoteForm.ListColorIcon(color, 20, 20));
         quickNoteForm.getSyntaxComboBox().setSelectedItem(tQuickNote.getSyntax().substring(5));
         quickNoteForm.getFontNameComboBox().setSelectedItem(tQuickNote.getFontName());
         quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(tQuickNote.getFontSize()));
@@ -568,6 +568,7 @@ public class QuickNoteListener {
         }
 
         quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setLineWrap("1".equals(tQuickNote.getLineWrap()));
+        quickNoteForm.getWrapButton().setSelected("1".equals(tQuickNote.getLineWrap()));
 
         syntaxTextViewer.putClientProperty("JComponent.outline", UIManager.getColor(color));
 
