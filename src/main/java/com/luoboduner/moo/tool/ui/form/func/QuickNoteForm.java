@@ -127,7 +127,7 @@ public class QuickNoteForm {
     public static QuickNoteRSyntaxTextViewerManager quickNoteRSyntaxTextViewerManager;
 
     private QuickNoteForm() {
-        colorButton = new JButton(new ListColorIcon("Moo.accent.blue", 20, 20));
+        colorButton = new JButton(new ListColorIcon("Moo.accent.blue", 18, 18));
         colorButton.setSelected(true);
 
         toolBar = new JToolBar();
@@ -138,15 +138,15 @@ public class QuickNoteForm {
         orderListToolBar.add(syntaxComboBox);
         orderListToolBar.add(fontNameComboBox);
         orderListToolBar.add(fontSizeComboBox);
-        wrapButton = new JToggleButton(new FlatSVGIcon("icon/wrap.svg", 20, 20));
+        wrapButton = new JToggleButton(new FlatSVGIcon("icon/wrap.svg", 18, 18));
         wrapButton.setSelected(false);
         wrapButton.setToolTipText("自动换行");
         orderListToolBar.add(wrapButton);
         // separator
         orderListToolBar.addSeparator();
-        unOrderListButton = new JButton(new FlatSVGIcon("icon/list_unordered.svg", 20, 20));
+        unOrderListButton = new JButton(new FlatSVGIcon("icon/list_unordered.svg", 18, 18));
         unOrderListButton.setToolTipText("无序列表");
-        orderListButton = new JButton(new FlatSVGIcon("icon/list_ordered.svg", 20, 20));
+        orderListButton = new JButton(new FlatSVGIcon("icon/list_ordered.svg", 18, 18));
         orderListButton.setToolTipText("有序列表");
         orderListToolBar.add(unOrderListButton);
         orderListToolBar.add(orderListButton);
@@ -425,7 +425,7 @@ public class QuickNoteForm {
                 if (StringUtils.isEmpty(color)) {
                     color = COLOR_KEYS[0];
                 }
-                quickNoteForm.getColorButton().setIcon(new QuickNoteForm.ListColorIcon(color, 20, 20));
+                quickNoteForm.getColorButton().setIcon(new QuickNoteForm.ListColorIcon(color, 18, 18));
                 quickNoteForm.getColorButton().setSelected(true);
                 quickNoteForm.getSyntaxComboBox().setSelectedItem(tQuickNote.getSyntax().substring(5));
                 quickNoteForm.getFontNameComboBox().setSelectedItem(tQuickNote.getFontName());

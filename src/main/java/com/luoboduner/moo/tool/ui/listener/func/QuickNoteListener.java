@@ -642,7 +642,7 @@ public class QuickNoteListener {
             color = QuickNoteForm.COLOR_KEYS[0];
         }
 
-        quickNoteForm.getColorButton().setIcon(new QuickNoteForm.ListColorIcon(color, 20, 20));
+        quickNoteForm.getColorButton().setIcon(new QuickNoteForm.ListColorIcon(color, 18, 18));
         quickNoteForm.getSyntaxComboBox().setSelectedItem(tQuickNote.getSyntax().substring(5));
         quickNoteForm.getFontNameComboBox().setSelectedItem(tQuickNote.getFontName());
         quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(tQuickNote.getFontSize()));
