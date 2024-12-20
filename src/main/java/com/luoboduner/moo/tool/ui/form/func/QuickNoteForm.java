@@ -108,7 +108,7 @@ public class QuickNoteForm {
     private JToggleButton wrapButton;
     private JButton unOrderListButton;
     private JButton orderListButton;
-    private JToolBar orderListToolBar;
+    private JToolBar leftMenuToolBar;
 
     private JToolBar toolBar;
     public final static String[] COLOR_KEYS = {
@@ -133,23 +133,23 @@ public class QuickNoteForm {
         toolBar = new JToolBar();
         searchContentCheckBox = new JCheckBox();
 
-        orderListToolBar = new JToolBar();
-        orderListToolBar.add(colorButton);
-        orderListToolBar.add(syntaxComboBox);
-        orderListToolBar.add(fontNameComboBox);
-        orderListToolBar.add(fontSizeComboBox);
+        leftMenuToolBar = new JToolBar();
+        leftMenuToolBar.add(colorButton);
+        leftMenuToolBar.add(syntaxComboBox);
+        leftMenuToolBar.add(fontNameComboBox);
+        leftMenuToolBar.add(fontSizeComboBox);
         wrapButton = new JToggleButton(new FlatSVGIcon("icon/wrap.svg", 18, 18));
         wrapButton.setSelected(false);
         wrapButton.setToolTipText("自动换行");
-        orderListToolBar.add(wrapButton);
+        leftMenuToolBar.add(wrapButton);
         // separator
-        orderListToolBar.addSeparator();
+        leftMenuToolBar.addSeparator();
         unOrderListButton = new JButton(new FlatSVGIcon("icon/list_unordered.svg", 18, 18));
         unOrderListButton.setToolTipText("无序列表");
         orderListButton = new JButton(new FlatSVGIcon("icon/list_ordered.svg", 18, 18));
         orderListButton.setToolTipText("有序列表");
-        orderListToolBar.add(unOrderListButton);
-        orderListToolBar.add(orderListButton);
+        leftMenuToolBar.add(unOrderListButton);
+        leftMenuToolBar.add(orderListButton);
 
         UndoUtil.register(this);
     }
@@ -211,7 +211,7 @@ public class QuickNoteForm {
         initSyntaxComboBox();
 
         quickNoteForm.getLeftMenuPanel().removeAll();
-        quickNoteForm.getLeftMenuPanel().add(quickNoteForm.getOrderListToolBar());
+        quickNoteForm.getLeftMenuPanel().add(quickNoteForm.getLeftMenuToolBar());
 
         quickNoteForm.getColorSettingPanel().setVisible(false);
 
