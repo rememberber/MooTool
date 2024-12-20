@@ -140,11 +140,14 @@ public class QuickNoteForm {
         orderListToolBar.add(fontSizeComboBox);
         wrapButton = new JToggleButton(new FlatSVGIcon("icon/wrap.svg", 20, 20));
         wrapButton.setSelected(false);
+        wrapButton.setToolTipText("自动换行");
         orderListToolBar.add(wrapButton);
         // separator
         orderListToolBar.addSeparator();
         unOrderListButton = new JButton(new FlatSVGIcon("icon/list_unordered.svg", 20, 20));
+        unOrderListButton.setToolTipText("无序列表");
         orderListButton = new JButton(new FlatSVGIcon("icon/list_ordered.svg", 20, 20));
+        orderListButton.setToolTipText("有序列表");
         orderListToolBar.add(unOrderListButton);
         orderListToolBar.add(orderListButton);
 
