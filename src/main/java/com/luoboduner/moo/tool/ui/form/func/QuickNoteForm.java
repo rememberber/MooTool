@@ -551,7 +551,7 @@ public class QuickNoteForm {
         formatButton.setToolTipText("格式化(Ctrl+Shift+F)");
         menuPanel.add(formatButton, new GridConstraints(0, 9, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         leftMenuPanel = new JPanel();
-        leftMenuPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        leftMenuPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
         leftMenuPanel.setAlignmentX(0.0f);
         menuPanel.add(leftMenuPanel, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_VERTICAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         syntaxComboBox = new JComboBox();

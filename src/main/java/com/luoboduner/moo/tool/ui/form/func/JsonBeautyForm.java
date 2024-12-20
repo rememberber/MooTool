@@ -346,7 +346,7 @@ public class JsonBeautyForm {
         beanToJsonButton.setToolTipText("JavaBean转JSON");
         menuPanel.add(beanToJsonButton, new GridConstraints(0, 8, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         leftMenuPanel = new JPanel();
-        leftMenuPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        leftMenuPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
         menuPanel.add(leftMenuPanel, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, 1, 1, null, null, null, 0, false));
         findReplacePanel = new JPanel();
         findReplacePanel.setLayout(new BorderLayout(0, 0));

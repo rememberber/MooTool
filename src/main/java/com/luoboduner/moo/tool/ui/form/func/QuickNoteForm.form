@@ -134,7 +134,7 @@
                           <toolTipText value="格式化(Ctrl+Shift+F)"/>
                         </properties>
                       </component>
-                      <grid id="7cc81" binding="leftMenuPanel" layout-manager="FlowLayout" hgap="5" vgap="0" flow-align="0">
+                      <grid id="7cc81" binding="leftMenuPanel" layout-manager="FlowLayout" hgap="0" vgap="0" flow-align="0">
                         <constraints>
                           <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="8" fill="2" indent="0" use-parent-layout="false"/>
                         </constraints>
