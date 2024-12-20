@@ -555,6 +555,49 @@ public class QuickNoteListener {
             }
         });
 
+        quickNoteForm.getOrderListButton().addActionListener(e -> {
+            try {
+                RSyntaxTextArea view = QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea();
+
+                String content = view.getText();
+
+                // 如果有选中的行，则处理选中的行
+                int start = view.getSelectionStart();
+                int end = view.getSelectionEnd();
+                String selectedText = view.getSelectedText();
+
+                if (StringUtils.isNotEmpty(selectedText)) {
+                    content = selectedText;
+                }
+
+                // 为每一行开头添加"1. "，如果已经有了则去掉
+                String[] splits = content.split("\n");
+                List<String> target = Lists.newArrayList();
+                for (int i = 0; i < splits.length; i++) {
+                    String split = splits[i];
+                    if (split.startsWith((i + 1) + ". ")) {
+                        split = split.substring((i + 1 + ". ").length());
+                    } else {
+                        split = (i + 1) + ". " + split;
+                    }
+                    target.add(split);
+                }
+                String result = StringUtils.join(target, "\n");
+
+                if (StringUtils.isNotEmpty(selectedText)) {
+                    view.replaceRange(result, start, end);
+                } else {
+                    view.setText(result);
+                }
+
+                // 重新设置光标位置
+                view.setCaretPosition(0);
+
+            } catch (Exception e1) {
+                log.error("OrderListButton error", e1);
+            }
+        });
+
     }
 
     public static void showFindPanel() {
