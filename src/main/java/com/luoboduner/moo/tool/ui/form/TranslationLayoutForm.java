@@ -18,18 +18,43 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 @Getter
 public class TranslationLayoutForm {
-    private JComboBox comboBox1;
-    private JButton exchangeButton;
-    private JComboBox comboBox2;
     private JTextArea textArea1;
     private JTextArea textArea2;
     private JPanel mainLayoutPanel;
     private JSplitPane splitPane;
+    private JPanel leftMenuPanel;
+
+    private JToolBar leftMenuToolBar;
+    private JComboBox comboBox1;
+    private JButton exchangeButton;
+    private JComboBox comboBox2;
 
     private static AtomicInteger changeCount = new AtomicInteger(0);
 
     public TranslationLayoutForm() {
+        exchangeButton = new JButton();
         exchangeButton.setIcon(new FlatSVGIcon("icon/exchange.svg"));
+
+        comboBox1 = new JComboBox();
+        comboBox1 = new JComboBox();
+        final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
+        defaultComboBoxModel1.addElement("自动检测");
+        defaultComboBoxModel1.addElement("中文（简体）");
+        defaultComboBoxModel1.addElement("英语");
+        comboBox1.setModel(defaultComboBoxModel1);
+
+        comboBox2 = new JComboBox();
+        final DefaultComboBoxModel defaultComboBoxModel2 = new DefaultComboBoxModel();
+        defaultComboBoxModel2.addElement("中文（简体）");
+        defaultComboBoxModel2.addElement("英语");
+        comboBox2.setModel(defaultComboBoxModel2);
+
+        leftMenuToolBar = new JToolBar();
+        leftMenuToolBar.add(comboBox1);
+        leftMenuToolBar.add(exchangeButton);
+        leftMenuToolBar.add(comboBox2);
+
+        leftMenuPanel.add(leftMenuToolBar);
 
         UndoUtil.register(this);
 
@@ -154,26 +179,13 @@ public class TranslationLayoutForm {
         mainLayoutPanel = new JPanel();
         mainLayoutPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         final JPanel panel1 = new JPanel();
-        panel1.setLayout(new GridLayoutManager(1, 4, new Insets(0, 0, 0, 0), -1, -1));
+        panel1.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
         mainLayoutPanel.add(panel1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        comboBox1 = new JComboBox();
-        final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
-        defaultComboBoxModel1.addElement("自动检测");
-        defaultComboBoxModel1.addElement("中文（简体）");
-        defaultComboBoxModel1.addElement("英语");
-        comboBox1.setModel(defaultComboBoxModel1);
-        panel1.add(comboBox1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer1 = new Spacer();
-        panel1.add(spacer1, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        exchangeButton = new JButton();
-        exchangeButton.setText("");
-        panel1.add(exchangeButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        comboBox2 = new JComboBox();
-        final DefaultComboBoxModel defaultComboBoxModel2 = new DefaultComboBoxModel();
-        defaultComboBoxModel2.addElement("中文（简体）");
-        defaultComboBoxModel2.addElement("英语");
-        comboBox2.setModel(defaultComboBoxModel2);
-        panel1.add(comboBox2, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel1.add(spacer1, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        leftMenuPanel = new JPanel();
+        leftMenuPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        panel1.add(leftMenuPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         splitPane = new JSplitPane();
         splitPane.setContinuousLayout(true);
         splitPane.setDividerLocation(224);
