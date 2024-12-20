@@ -102,7 +102,7 @@ public class QuickNoteForm {
     private JCheckBox sortFromZToAByRowCheckBox;
     private JCheckBox sortByPinyinCheckBox;
 
-    private JToggleButton colorButton;
+    private JButton colorButton;
     private JCheckBox searchContentCheckBox;
 
     private JToggleButton wrapButton;
@@ -127,7 +127,7 @@ public class QuickNoteForm {
     public static QuickNoteRSyntaxTextViewerManager quickNoteRSyntaxTextViewerManager;
 
     private QuickNoteForm() {
-        colorButton = new JToggleButton(new ListColorIcon("Moo.accent.blue", 20, 20));
+        colorButton = new JButton(new ListColorIcon("Moo.accent.blue", 20, 20));
         colorButton.setSelected(true);
 
         toolBar = new JToolBar();

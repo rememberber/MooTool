@@ -367,7 +367,7 @@ public class QuickNoteListener {
             }
         });
 
-        quickNoteForm.getColorButton().addActionListener(e -> quickNoteForm.getColorSettingPanel().setVisible(quickNoteForm.getColorButton().isSelected()));
+        quickNoteForm.getColorButton().addActionListener(e -> quickNoteForm.getColorSettingPanel().setVisible(!quickNoteForm.getColorSettingPanel().isVisible()));
 
         // 颜色按钮事件
         String[] colorKeys = QuickNoteForm.COLOR_KEYS;
