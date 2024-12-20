@@ -513,6 +513,48 @@ public class QuickNoteListener {
 
         });
 
+        quickNoteForm.getUnOrderListButton().addActionListener(e -> {
+            try {
+                RSyntaxTextArea view = QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea();
+
+                String content = view.getText();
+
+                // 如果有选中的行，则处理选中的行
+                int start = view.getSelectionStart();
+                int end = view.getSelectionEnd();
+                String selectedText = view.getSelectedText();
+
+                if (StringUtils.isNotEmpty(selectedText)) {
+                    content = selectedText;
+                }
+
+                // 为每一行开头添加"● "，如果已经有了则去掉
+                String[] splits = content.split("\n");
+                List<String> target = Lists.newArrayList();
+                for (String split : splits) {
+                    if (split.startsWith("● ")) {
+                        split = split.substring(2);
+                    } else {
+                        split = "● " + split;
+                    }
+                    target.add(split);
+                }
+                String result = StringUtils.join(target, "\n");
+
+                if (StringUtils.isNotEmpty(selectedText)) {
+                    view.replaceRange(result, start, end);
+                } else {
+                    view.setText(result);
+                }
+
+                // 重新设置光标位置
+                view.setCaretPosition(0);
+
+            } catch (Exception e1) {
+                log.error("UnOrderListButton error", e1);
+            }
+        });
+
     }
 
     public static void showFindPanel() {
