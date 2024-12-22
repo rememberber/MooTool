@@ -119,7 +119,7 @@ public class AboutForm {
             ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1);
             scheduledThreadPoolExecutor.scheduleAtFixedRate(() -> {
                 try {
-                    String graceInfoContent = HttpUtil.get(UiConsts.GRACE_INFO_URL);
+                    String graceInfoContent = HttpUtil.get(UiConsts.GRACE_INFO_URL, 10000);
                     if (graceInfoContent != null) {
                         Grace grace = JSON.parseObject(graceInfoContent, Grace.class);
                         if (grace != null) {
@@ -197,7 +197,7 @@ public class AboutForm {
 
         // 更新贡献者头像
         try {
-            String contributorAvatarContent = HttpUtil.get(UiConsts.CONTRIBUTOR_URL);
+            String contributorAvatarContent = HttpUtil.get(UiConsts.CONTRIBUTOR_URL, 10000);
             if (contributorAvatarContent != null) {
                 ContributorInfo contributorInfo = JSON.parseObject(contributorAvatarContent, ContributorInfo.class);
                 if (contributorInfo != null) {
@@ -247,12 +247,12 @@ public class AboutForm {
             ScheduledThreadPoolExecutor scheduledThreadPoolExecutor = new ScheduledThreadPoolExecutor(1);
             scheduledThreadPoolExecutor.scheduleAtFixedRate(() -> {
                 try {
-                    String dauContent = HttpUtil.get(UiConsts.DAU_URL);
+                    String dauContent = HttpUtil.get(UiConsts.DAU_URL, 10000);
                     if (dauContent != null) {
                         Dau dau = JSON.parseObject(dauContent, Dau.class);
                         if (dau != null) {
                             String dauUrl = dau.getUrl();
-                            log.info("dau:" + HttpUtil.get(dauUrl));
+                            log.info("dau:" + HttpUtil.get(dauUrl, 10000));
 
                             aboutForm.getLogoLabel().addMouseListener(new MouseAdapter() {
                                 @Override
