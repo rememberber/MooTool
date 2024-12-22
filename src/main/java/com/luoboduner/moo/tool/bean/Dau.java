@@ -5,4 +5,6 @@ import lombok.Data;
 @Data
 public class Dau {
     private String url;
+
+    private String homePage;
 }

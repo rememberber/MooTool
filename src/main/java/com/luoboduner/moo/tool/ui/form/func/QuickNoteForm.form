@@ -134,7 +134,7 @@
                           <toolTipText value="格式化(Ctrl+Shift+F)"/>
                         </properties>
                       </component>
-                      <grid id="7cc81" binding="leftMenuPanel" layout-manager="FlowLayout" hgap="5" vgap="0" flow-align="0">
+                      <grid id="7cc81" binding="leftMenuPanel" layout-manager="FlowLayout" hgap="0" vgap="0" flow-align="0">
                         <constraints>
                           <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="8" fill="2" indent="0" use-parent-layout="false"/>
                         </constraints>
@@ -185,14 +185,6 @@
                                 <item value="30"/>
                               </model>
                               <toolTipText value="字号"/>
-                            </properties>
-                          </component>
-                          <component id="849d4" class="javax.swing.JButton" binding="wrapButton">
-                            <constraints/>
-                            <properties>
-                              <icon value="icon/toggleSoftWrap_dark.png"/>
-                              <text value=""/>
-                              <toolTipText value="自动换行"/>
                             </properties>
                           </component>
                         </children>
