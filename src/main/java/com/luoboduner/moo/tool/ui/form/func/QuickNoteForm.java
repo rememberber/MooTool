@@ -56,7 +56,6 @@ public class QuickNoteForm {
     private JComboBox fontNameComboBox;
     private JComboBox fontSizeComboBox;
     private JButton findButton;
-    private JButton wrapButton;
     private JButton listItemButton;
     private JPanel rightPanel;
     private JPanel controlPanel;
@@ -103,8 +102,13 @@ public class QuickNoteForm {
     private JCheckBox sortFromZToAByRowCheckBox;
     private JCheckBox sortByPinyinCheckBox;
 
-    private JToggleButton colorButton;
+    private JButton colorButton;
     private JCheckBox searchContentCheckBox;
+
+    private JToggleButton wrapButton;
+    private JButton unOrderListButton;
+    private JButton orderListButton;
+    private JToolBar leftMenuToolBar;
 
     private JToolBar toolBar;
     public final static String[] COLOR_KEYS = {
@@ -123,11 +127,30 @@ public class QuickNoteForm {
     public static QuickNoteRSyntaxTextViewerManager quickNoteRSyntaxTextViewerManager;
 
     private QuickNoteForm() {
-        colorButton = new JToggleButton(new AccentColorIcon("Moo.accent.blue"));
-        colorButton.setEnabled(true);
+        colorButton = new JButton(new ListColorIcon("Moo.accent.blue", 18, 18));
+        colorButton.setSelected(true);
 
         toolBar = new JToolBar();
         searchContentCheckBox = new JCheckBox();
+
+        leftMenuToolBar = new JToolBar();
+        leftMenuToolBar.add(colorButton);
+        leftMenuToolBar.add(syntaxComboBox);
+        leftMenuToolBar.add(fontNameComboBox);
+        leftMenuToolBar.add(fontSizeComboBox);
+        wrapButton = new JToggleButton(new FlatSVGIcon("icon/wrap.svg", 18, 18));
+        wrapButton.setSelected(false);
+        wrapButton.setToolTipText("自动换行");
+        leftMenuToolBar.add(wrapButton);
+        // separator
+        leftMenuToolBar.addSeparator();
+        unOrderListButton = new JButton(new FlatSVGIcon("icon/list_unordered.svg", 18, 18));
+        unOrderListButton.setToolTipText("无序列表");
+        orderListButton = new JButton(new FlatSVGIcon("icon/list_ordered.svg", 18, 18));
+        orderListButton.setToolTipText("有序列表");
+        leftMenuToolBar.add(unOrderListButton);
+        leftMenuToolBar.add(orderListButton);
+
         UndoUtil.register(this);
     }
 
@@ -171,7 +194,6 @@ public class QuickNoteForm {
         quickNoteForm.getDeleteButton().setIcon(new FlatSVGIcon("icon/remove.svg"));
         quickNoteForm.getExportButton().setIcon(new FlatSVGIcon("icon/export.svg"));
         quickNoteForm.getListItemButton().setIcon(new FlatSVGIcon("icon/list.svg"));
-        quickNoteForm.getWrapButton().setIcon(new FlatSVGIcon("icon/wrap.svg"));
         quickNoteForm.getFormatButton().setIcon(new FlatSVGIcon("icon/json.svg"));
         quickNoteForm.getQuickReplaceCloseLabel().setIcon(new FlatSVGIcon("icon/remove2.svg"));
 
@@ -189,11 +211,7 @@ public class QuickNoteForm {
         initSyntaxComboBox();
 
         quickNoteForm.getLeftMenuPanel().removeAll();
-        quickNoteForm.getLeftMenuPanel().add(quickNoteForm.getColorButton());
-        quickNoteForm.getLeftMenuPanel().add(quickNoteForm.getSyntaxComboBox());
-        quickNoteForm.getLeftMenuPanel().add(quickNoteForm.getFontNameComboBox());
-        quickNoteForm.getLeftMenuPanel().add(quickNoteForm.getFontSizeComboBox());
-        quickNoteForm.getLeftMenuPanel().add(quickNoteForm.getWrapButton());
+        quickNoteForm.getLeftMenuPanel().add(quickNoteForm.getLeftMenuToolBar());
 
         quickNoteForm.getColorSettingPanel().setVisible(false);
 
@@ -271,12 +289,17 @@ public class QuickNoteForm {
      * See the License for the specific language governing permissions and
      * limitations under the License.
      */
-    private static class ListColorIcon
+    public static class ListColorIcon
             extends FlatAbstractIcon {
         private final String colorKey;
 
-        ListColorIcon(String colorKey) {
+        public ListColorIcon(String colorKey) {
             super(32, 32, null);
+            this.colorKey = colorKey;
+        }
+
+        public ListColorIcon(String colorKey, int width, int height) {
+            super(width, height, null);
             this.colorKey = colorKey;
         }
 
@@ -402,7 +425,8 @@ public class QuickNoteForm {
                 if (StringUtils.isEmpty(color)) {
                     color = COLOR_KEYS[0];
                 }
-                quickNoteForm.getColorButton().setIcon(new QuickNoteForm.AccentColorIcon(color));
+                quickNoteForm.getColorButton().setIcon(new QuickNoteForm.ListColorIcon(color, 18, 18));
+                quickNoteForm.getColorButton().setSelected(true);
                 quickNoteForm.getSyntaxComboBox().setSelectedItem(tQuickNote.getSyntax().substring(5));
                 quickNoteForm.getFontNameComboBox().setSelectedItem(tQuickNote.getFontName());
                 quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(tQuickNote.getFontSize()));
@@ -415,6 +439,7 @@ public class QuickNoteForm {
                     QuickNoteForm.COLOR_BUTTONS[colorIndex].setSelected(true);
                 }
                 QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setLineWrap("1".equals(tQuickNote.getLineWrap()));
+                quickNoteForm.getWrapButton().setSelected("1".equals(tQuickNote.getLineWrap()));
                 syntaxTextViewer.putClientProperty("JComponent.outline", UIManager.getColor(color));
             } catch (Exception e1) {
                 log.error(e1.toString());
@@ -526,7 +551,7 @@ public class QuickNoteForm {
         formatButton.setToolTipText("格式化(Ctrl+Shift+F)");
         menuPanel.add(formatButton, new GridConstraints(0, 9, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         leftMenuPanel = new JPanel();
-        leftMenuPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        leftMenuPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
         leftMenuPanel.setAlignmentX(0.0f);
         menuPanel.add(leftMenuPanel, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_VERTICAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         syntaxComboBox = new JComboBox();
@@ -565,11 +590,6 @@ public class QuickNoteForm {
         fontSizeComboBox.setModel(defaultComboBoxModel1);
         fontSizeComboBox.setToolTipText("字号");
         leftMenuPanel.add(fontSizeComboBox);
-        wrapButton = new JButton();
-        wrapButton.setIcon(new ImageIcon(getClass().getResource("/icon/toggleSoftWrap_dark.png")));
-        wrapButton.setText("");
-        wrapButton.setToolTipText("自动换行");
-        leftMenuPanel.add(wrapButton);
         listItemButton = new JButton();
         listItemButton.setIcon(new ImageIcon(getClass().getResource("/icon/listFiles_dark.png")));
         listItemButton.setText("");
