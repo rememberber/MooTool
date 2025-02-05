@@ -14,6 +14,7 @@ import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewerManager;
+import com.luoboduner.moo.tool.ui.dialog.DocInfoDialog;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.util.ListUtils;
@@ -595,6 +596,36 @@ public class QuickNoteListener {
 
             } catch (Exception e1) {
                 log.error("OrderListButton error", e1);
+            }
+        });
+
+        quickNoteForm.getInfoButton().addActionListener(e -> {
+            try {
+                DocInfoDialog docInfoDialog = new DocInfoDialog();
+                docInfoDialog.pack();
+
+                String createTime = "";
+                String modifiedTime = "";
+                if (StringUtils.isNotEmpty(selectedName)) {
+                    TQuickNote tQuickNote = quickNoteMapper.selectByName(selectedName);
+                    createTime = tQuickNote.getCreateTime();
+                    modifiedTime = tQuickNote.getModifiedTime();
+                }
+                RSyntaxTextArea view = QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea();
+
+                String content = view.getText();
+
+                // 去掉空格和tab和换行后的字符数
+                String wordCnt = String.valueOf(content.replace(" ", "").replace("\t", "").replace("\n", "").length());
+                // 去掉空格后的字符数
+                String charCntNoBlank = String.valueOf(content.replace(" ", "").length());
+                String charCntWithBlank = String.valueOf(content.length());
+
+                docInfoDialog.setInfo(createTime, modifiedTime, wordCnt, charCntNoBlank, charCntWithBlank);
+
+                docInfoDialog.setVisible(true);
+            } catch (Exception e1) {
+                log.error("InfoButton error", e1);
             }
         });
 
