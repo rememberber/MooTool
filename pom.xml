@@ -55,6 +55,7 @@
         <bcprov-jdk15on.version>1.70</bcprov-jdk15on.version>
         <tika.version>3.0.0</tika.version>
         <jackson-databind.version>2.13.3</jackson-databind.version>
+        <java-diff.version>4.16</java-diff.version>
     </properties>
 
     <repositories>
@@ -77,6 +78,14 @@
     </repositories>
 
     <dependencies>
+
+        <!-- 行级 diff（Myers）+ 生成 unified diff -->
+        <dependency>
+            <groupId>io.github.java-diff-utils</groupId>
+            <artifactId>java-diff-utils</artifactId>
+            <version>${java-diff.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
