@@ -112,3 +112,29 @@ create table if not exists t_func_content
     create_time   datetime,
     modified_time datetime
 );
+
+-- text diff
+-- 文档主表
+CREATE TABLE IF NOT EXISTS doc (
+        doc_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+        name        TEXT NOT NULL UNIQUE
+);
+
+-- 版本表
+CREATE TABLE IF NOT EXISTS doc_revision (
+        rev_id      INTEGER PRIMARY KEY AUTOINCREMENT,
+        doc_id      INTEGER NOT NULL,
+        created_at  DATETIME NOT NULL DEFAULT (datetime('now')),
+        content     TEXT NOT NULL,
+        FOREIGN KEY (doc_id) REFERENCES doc(doc_id)
+);
+
+-- 缓存行级 unified diff（从前一版本到本版本）
+CREATE TABLE IF NOT EXISTS doc_diff_cache (
+        from_rev_id INTEGER NOT NULL,
+        to_rev_id   INTEGER NOT NULL,
+        unified     TEXT NOT NULL,
+        PRIMARY KEY (from_rev_id, to_rev_id),
+        FOREIGN KEY (from_rev_id) REFERENCES doc_revision(rev_id),
+        FOREIGN KEY (to_rev_id)   REFERENCES doc_revision(rev_id)
+);
