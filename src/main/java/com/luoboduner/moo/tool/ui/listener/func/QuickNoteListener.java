@@ -1063,76 +1063,94 @@ public class QuickNoteListener {
     public static void format() {
         try {
             QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
-            String text = QuickNoteForm.quickNoteRSyntaxTextViewerManager.getTextByName(selectedName);
-
-            String format;
-            String selectedSyntax = (String) quickNoteForm.getSyntaxComboBox().getSelectedItem();
+            final String text = QuickNoteForm.quickNoteRSyntaxTextViewerManager.getTextByName(selectedName);
+            final String selectedSyntax = (String) quickNoteForm.getSyntaxComboBox().getSelectedItem();
             if (StringUtils.isBlank(text) || StringUtils.isEmpty(selectedSyntax)) {
                 return;
             }
 
-            switch ("text/" + selectedSyntax) {
-                case SyntaxConstants.SYNTAX_STYLE_SQL:
-                    switch (App.config.getSqlDialect()) {
-                        case "MariaDB":
-                            format = SqlFormatter.of(Dialect.MariaDb).format(text, "    ");
+            executorService.submit(() -> {
+                try {
+                    String formatted;
+                    switch ("text/" + selectedSyntax) {
+                        case SyntaxConstants.SYNTAX_STYLE_SQL:
+                            switch (App.config.getSqlDialect()) {
+                                case "MariaDB":
+                                    formatted = SqlFormatter.of(Dialect.MariaDb).format(text, "    ");
+                                    break;
+                                case "MySQL":
+                                    formatted = SqlFormatter.of(Dialect.MySql).format(text, "    ");
+                                    break;
+                                case "PostgreSQL":
+                                    formatted = SqlFormatter.of(Dialect.PostgreSql).format(text, "    ");
+                                    break;
+                                case "IBM DB2":
+                                    formatted = SqlFormatter.of(Dialect.Db2).format(text, "    ");
+                                    break;
+                                case "Oracle PL/SQL":
+                                    formatted = SqlFormatter.of(Dialect.PlSql).format(text, "    ");
+                                    break;
+                                case "Couchbase N1QL":
+                                    formatted = SqlFormatter.of(Dialect.N1ql).format(text, "    ");
+                                    break;
+                                case "Amazon Redshift":
+                                    formatted = SqlFormatter.of(Dialect.Redshift).format(text, "    ");
+                                    break;
+                                case "Spark":
+                                    formatted = SqlFormatter.of(Dialect.SparkSql).format(text, "    ");
+                                    break;
+                                case "SQL Server Transact-SQL":
+                                    formatted = SqlFormatter.of(Dialect.TSql).format(text, "    ");
+                                    break;
+                                default:
+                                    formatted = SqlFormatter.of(Dialect.StandardSql).format(text, "    ");
+                            }
                             break;
-                        case "MySQL":
-                            format = SqlFormatter.of(Dialect.MySql).format(text, "    ");
+                        case SyntaxConstants.SYNTAX_STYLE_JSON:
+                        case SyntaxConstants.SYNTAX_STYLE_JSON_WITH_COMMENTS:
+                            try {
+                                formatted = JSONUtil.toJsonPrettyStr(text);
+                            } catch (Exception e1) {
+                                log.error(ExceptionUtils.getStackTrace(e1));
+                                formatted = JSONUtil.formatJsonStr(text);
+                            }
                             break;
-                        case "PostgreSQL":
-                            format = SqlFormatter.of(Dialect.PostgreSql).format(text, "    ");
+
+                        case SyntaxConstants.SYNTAX_STYLE_XML:
+                            formatted = CodeFormatterFactory.getFormatter(CodeFormatterFactory.FormatterType.XML).format(text);
                             break;
-                        case "IBM DB2":
-                            format = SqlFormatter.of(Dialect.Db2).format(text, "    ");
-                            break;
-                        case "Oracle PL/SQL":
-                            format = SqlFormatter.of(Dialect.PlSql).format(text, "    ");
-                            break;
-                        case "Couchbase N1QL":
-                            format = SqlFormatter.of(Dialect.N1ql).format(text, "    ");
-                            break;
-                        case "Amazon Redshift":
-                            format = SqlFormatter.of(Dialect.Redshift).format(text, "    ");
-                            break;
-                        case "Spark":
-                            format = SqlFormatter.of(Dialect.SparkSql).format(text, "    ");
-                            break;
-                        case "SQL Server Transact-SQL":
-                            format = SqlFormatter.of(Dialect.TSql).format(text, "    ");
+
+                        case SyntaxConstants.SYNTAX_STYLE_JAVA:
+                            formatted = CodeFormatterFactory.getFormatter(CodeFormatterFactory.FormatterType.JAVA).format(text);
                             break;
                         default:
-                            format = SqlFormatter.of(Dialect.StandardSql).format(text, "    ");
+                            SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(App.mainFrame, "尚不支持对该语言格式化！\n", "不支持该语言",
+                                    JOptionPane.INFORMATION_MESSAGE));
+                            return;
                     }
-                    break;
-                case SyntaxConstants.SYNTAX_STYLE_JSON:
-                case SyntaxConstants.SYNTAX_STYLE_JSON_WITH_COMMENTS:
-                    try {
-                        format = JSONUtil.toJsonPrettyStr(text);
-                    } catch (Exception e1) {
-                        log.error(ExceptionUtils.getStackTrace(e1));
-                        format = JSONUtil.formatJsonStr(text);
-                    }
-                    break;
 
-                case SyntaxConstants.SYNTAX_STYLE_JAVA:
-                    format = CodeFormatterFactory.getFormatter(CodeFormatterFactory.FormatterType.JAVA).format(text);
-                    break;
-                default:
-                    JOptionPane.showMessageDialog(App.mainFrame, "尚不支持对该语言格式化！\n", "不支持该语言",
-                            JOptionPane.INFORMATION_MESSAGE);
-                    return;
-            }
-
-            QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setText(format);
-            QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setCaretPosition(0);
-
-            QuickNoteIndicatorTools.showTips("已格式化：" + selectedName, QuickNoteIndicatorTools.TipsLevel.SUCCESS);
+                    final String result = formatted;
+                    SwingUtilities.invokeLater(() -> {
+                        try {
+                            QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setText(result);
+                            QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setCaretPosition(0);
+                            QuickNoteIndicatorTools.showTips("已格式化：" + selectedName, QuickNoteIndicatorTools.TipsLevel.SUCCESS);
+                        } catch (Exception ex) {
+                            JOptionPane.showMessageDialog(App.mainFrame, "格式化失败！\n\n" + ex.getMessage(), "失败",
+                                    JOptionPane.ERROR_MESSAGE);
+                            log.error(ExceptionUtils.getStackTrace(ex));
+                        }
+                    });
+                } catch (Exception e) {
+                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(App.mainFrame, "格式化失败！\n\n" + e.getMessage(), "失败",
+                            JOptionPane.ERROR_MESSAGE));
+                    log.error(ExceptionUtils.getStackTrace(e));
+                }
+            });
         } catch (Exception e) {
             JOptionPane.showMessageDialog(App.mainFrame, "格式化失败！\n\n" + e.getMessage(), "失败",
                     JOptionPane.ERROR_MESSAGE);
             log.error(ExceptionUtils.getStackTrace(e));
         }
-
     }
 }
