@@ -479,7 +479,7 @@
                             <createTarball>true</createTarball>
                             <macConfig>
                                 <macStartup>UNIVERSAL</macStartup>
-                                <developerId>rememberber@163.com</developerId>
+<!--                                <developerId>rememberber@163.com</developerId>-->
                             </macConfig>
                             <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>
                             <additionalResources>
