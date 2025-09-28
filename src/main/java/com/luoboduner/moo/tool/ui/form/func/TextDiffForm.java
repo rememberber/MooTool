@@ -12,6 +12,7 @@ import com.luoboduner.moo.tool.dao.TFuncContentMapper;
 import com.luoboduner.moo.tool.domain.TFuncContent;
 import com.luoboduner.moo.tool.service.DiffService;
 import com.luoboduner.moo.tool.ui.FuncConsts;
+import com.luoboduner.moo.tool.ui.component.textviewer.RegexRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.listener.func.TextDiffListener;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
@@ -76,9 +77,9 @@ public class TextDiffForm {
     private JScrollPane unifiedScrollPane;
     private JPanel unifiedPanel;
 
-    private RSyntaxTextArea leftTextArea;
-    private RSyntaxTextArea rightTextArea;
-    private RSyntaxTextArea unifiedTextArea;
+    private RegexRSyntaxTextViewer leftTextArea;
+    private RegexRSyntaxTextViewer rightTextArea;
+    private RegexRSyntaxTextViewer unifiedTextArea;
 
     // Diff highlight painters
     private final DefaultHighlighter.DefaultHighlightPainter delPainter =
@@ -139,7 +140,7 @@ public class TextDiffForm {
      */
     private void initTextAreas() {
         // 左侧文本区域
-        leftTextArea = new RSyntaxTextArea();
+        leftTextArea = new RegexRSyntaxTextViewer();
         leftTextArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
         leftTextArea.setCodeFoldingEnabled(true);
         leftTextArea.setAntiAliasingEnabled(true);
@@ -150,7 +151,7 @@ public class TextDiffForm {
         leftTextArea.setCaretPosition(0);
 
         // 右侧文本区域
-        rightTextArea = new RSyntaxTextArea();
+        rightTextArea = new RegexRSyntaxTextViewer();
         rightTextArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_NONE);
         rightTextArea.setCodeFoldingEnabled(true);
         rightTextArea.setAntiAliasingEnabled(true);
@@ -161,7 +162,7 @@ public class TextDiffForm {
         rightTextArea.setCaretPosition(0);
 
         // 统一diff显示区域
-        unifiedTextArea = new RSyntaxTextArea();
+        unifiedTextArea = new RegexRSyntaxTextViewer();
         unifiedTextArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_JAVA);
         unifiedTextArea.setCodeFoldingEnabled(true);
         unifiedTextArea.setAntiAliasingEnabled(true);
