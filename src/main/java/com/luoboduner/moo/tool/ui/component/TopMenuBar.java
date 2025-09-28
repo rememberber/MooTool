@@ -12,10 +12,7 @@ import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewe
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.dialog.*;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
-import com.luoboduner.moo.tool.ui.form.func.HostForm;
-import com.luoboduner.moo.tool.ui.form.func.JavaConsoleForm;
-import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
-import com.luoboduner.moo.tool.ui.form.func.RegexForm;
+import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
 
@@ -446,6 +443,10 @@ public class TopMenuBar extends JMenuBar {
         JavaConsoleForm.getInstance().getTextArea().updateTheme();
         JavaConsoleForm.getInstance().getScrollPane().updateTheme();
         JavaConsoleForm.getInstance().getScrollPane().updateUI();
+
+        TextDiffForm.getInstance().getLeftTextArea().updateTheme();
+        TextDiffForm.getInstance().getRightTextArea().updateTheme();
+
 
         SwingUtilities.updateComponentTreeUI(App.popupMenu);
         App.popupMenu.updateUI();
