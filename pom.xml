@@ -32,12 +32,12 @@
         <guava.version>32.1.2-jre</guava.version>
         <okhttp.version>4.11.0</okhttp.version>
         <google.zxing.core.version>3.5.3</google.zxing.core.version>
-        <flatlaf.version>3.5.4</flatlaf.version>
-        <flatlaf-extras.version>3.5.4</flatlaf-extras.version>
-        <flatlaf-intellij-themes.version>3.5.4</flatlaf-intellij-themes.version>
+        <flatlaf.version>3.6.1</flatlaf.version>
+        <flatlaf-extras.version>3.6.1</flatlaf-extras.version>
+        <flatlaf-intellij-themes.version>3.6.1</flatlaf-intellij-themes.version>
         <flatlaf-fonts-jetbrains-mono.version>2.304</flatlaf-fonts-jetbrains-mono.version>
         <flatlaf-fonts-inter.version>4.0</flatlaf-fonts-inter.version>
-        <rsyntaxtextarea.version>3.5.3</rsyntaxtextarea.version>
+        <rsyntaxtextarea.version>3.6.0</rsyntaxtextarea.version>
         <sql-formatter.version>2.0.4</sql-formatter.version>
         <javaparser-core.version>3.26.2</javaparser-core.version>
         <!--        <jSystemThemeDetector.version>3.8</jSystemThemeDetector.version>-->
@@ -55,6 +55,7 @@
         <bcprov-jdk15on.version>1.70</bcprov-jdk15on.version>
         <tika.version>3.0.0</tika.version>
         <jackson-databind.version>2.13.3</jackson-databind.version>
+        <java-diff.version>4.16</java-diff.version>
     </properties>
 
     <repositories>
@@ -77,6 +78,14 @@
     </repositories>
 
     <dependencies>
+
+        <!-- 行级 diff（Myers）+ 生成 unified diff -->
+        <dependency>
+            <groupId>io.github.java-diff-utils</groupId>
+            <artifactId>java-diff-utils</artifactId>
+            <version>${java-diff.version}</version>
+        </dependency>
+
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
@@ -470,7 +479,7 @@
                             <createTarball>true</createTarball>
                             <macConfig>
                                 <macStartup>UNIVERSAL</macStartup>
-                                <developerId>rememberber@163.com</developerId>
+<!--                                <developerId>rememberber@163.com</developerId>-->
                             </macConfig>
                             <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>
                             <additionalResources>
