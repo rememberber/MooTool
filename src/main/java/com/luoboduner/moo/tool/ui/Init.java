@@ -213,6 +213,7 @@ public class Init {
         ThreadUtil.execute(ImageForm::init);
         ThreadUtil.execute(VariablesForm::init);
         ThreadUtil.execute(YmlPropertiesForm::init);
+        ThreadUtil.execute(TextDiffForm::init);
         ThreadUtil.execute(FileReformattingForm::init);
 
         // 检查新版版

@@ -47,11 +47,12 @@ public class MainWindow {
     private JPanel pdfPanel;
     private JPanel variablesPanel;
     private JPanel ymlProperties;
+    private JPanel textDiffPanel;
     private JPanel aboutPanel;
 
     private static MainWindow mainWindow;
 
-    private static final String[] ICON_PATH = {"icon/smile.svg", "icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/translate.svg", "icon/check.svg", "icon/global.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/format_painter.svg", "icon/pdf.svg", "icon/fx.svg", "icon/suffix-yml.svg"};
+    private static final String[] ICON_PATH = {"icon/smile.svg", "icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/translate.svg", "icon/check.svg", "icon/global.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/format_painter.svg", "icon/pdf.svg", "icon/fx.svg", "icon/suffix-yml.svg", "icon/find.svg"};
 
     private MainWindow() {
     }
@@ -96,6 +97,7 @@ public class MainWindow {
         mainWindow.getPdfPanel().add(PdfForm.getInstance().getPdfPanel(), gridConstraints);
         mainWindow.getVariablesPanel().add(VariablesForm.getInstance().getVariablesPanel(), gridConstraints);
         mainWindow.getYmlProperties().add(YmlPropertiesForm.getInstance().getYmlPropertiesPanel(), gridConstraints);
+        mainWindow.getTextDiffPanel().add(TextDiffForm.getInstance().getTextDiffPanel(), gridConstraints);
         mainWindow.getMainPanel().updateUI();
 
         TabListener.addListeners();
@@ -285,6 +287,9 @@ public class MainWindow {
         ymlProperties = new JPanel();
         ymlProperties.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("配置文件转换", ymlProperties);
+        textDiffPanel = new JPanel();
+        textDiffPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPane.addTab("文本差异比对", textDiffPanel);
     }
 
     /**

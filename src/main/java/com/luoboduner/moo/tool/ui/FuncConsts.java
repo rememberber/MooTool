@@ -26,4 +26,9 @@ public class FuncConsts {
      * 二维码
      */
     public static final String QR_CODE = "QrCode";
+
+    /**
+     * 文本对比
+     */
+    public static final String TEXT_DIFF = "TextDiff";
 }
