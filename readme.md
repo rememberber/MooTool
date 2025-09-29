@@ -47,6 +47,8 @@ Windows • Linux • macOS
 
 ![Overview](screen_shoot/java_mac_2.png)
 
+![Overview](screen_shoot/diff_mac.png)
+
 ![Overview](screen_shoot/mt-favoriteColor.png)
 
 ![Overview](screen_shoot/quick_note_light_mac.png)
@@ -298,6 +300,11 @@ Windows • Linux • macOS
 ### YAML->Properties
 ### JSON->YAML（TODO）
 ### YAML->JSON（TODO）
+
+## 文本对比
+### 并排对比
+### 统一差异
+### 复制差异
 
 ## 特别感谢
 
