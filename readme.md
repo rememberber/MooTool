@@ -55,8 +55,6 @@ Windows • Linux • macOS
 
 ![Overview](screen_shoot/theme.png)
 
-- 并排对比：![TextDiff-并排](/screen_shoot/textdiff_side_by_side.png)
-- 统一差异：![TextDiff-统一差异](/screen_shoot/textdiff_unified.png)
 
 ## 下载
 
