@@ -289,7 +289,7 @@ public class MainWindow {
         tabbedPane.addTab("配置文件转换", ymlProperties);
         textDiffPanel = new JPanel();
         textDiffPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
-        tabbedPane.addTab("文本差异比对", textDiffPanel);
+        tabbedPane.addTab("文本对比", new ImageIcon(getClass().getResource("/icon/find.png")), textDiffPanel);
     }
 
     /**
