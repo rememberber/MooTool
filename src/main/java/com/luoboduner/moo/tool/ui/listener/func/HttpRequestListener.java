@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.listener.func;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import cn.hutool.json.JSONUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.THttpRequestHistoryMapper;
 import com.luoboduner.moo.tool.dao.TMsgHttpMapper;
@@ -14,6 +15,9 @@ import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.HttpRequestForm;
 import com.luoboduner.moo.tool.ui.form.func.HttpResultForm;
 import com.luoboduner.moo.tool.ui.frame.HttpResultFrame;
+import com.luoboduner.moo.tool.ui.dialog.JsonResultDialog;
+import com.luoboduner.moo.tool.util.CurlParserUtil;
+import com.luoboduner.moo.tool.util.AutoIndentDocumentFilter;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -86,6 +90,52 @@ public class HttpRequestListener {
             HttpRequestForm.clearAllField();
             selectedName = null;
         });
+
+        // 导入 cURL 按钮事件（URL 文本框尾随按钮）
+        httpRequestForm.getImportCurlButton().addActionListener(e -> {
+            try {
+                JsonResultDialog dialog = new JsonResultDialog(null, "请输入 cURL 命令：", "Input");
+                dialog.setVisible(true);
+                String curl = JsonResultDialog.textInputValue;
+                if (StringUtils.isBlank(curl)) {
+                    return;
+                }
+                CurlParserUtil.CurlResult result = CurlParserUtil.parse(curl);
+
+                int headerCount = result.getHeaders() == null ? 0 : result.getHeaders().size();
+                int cookieCount = result.getCookies() == null ? 0 : result.getCookies().size();
+                int bodyLen = result.getBody() == null ? 0 : result.getBody().length();
+                String methodShow = result.getMethod() == null ? "" : result.getMethod();
+                String urlShow = result.getUrl() == null ? "" : result.getUrl();
+
+                String msg = "将导入请求：" +
+                        "\nMethod: " + methodShow +
+                        "\nURL: " + urlShow +
+                        "\nHeaders: " + headerCount +
+                        "\nCookies: " + cookieCount +
+                        "\nBody length: " + bodyLen +
+                        "\n\n确认覆盖当前表单？";
+                int confirm = JOptionPane.showConfirmDialog(App.mainFrame, msg, "确认导入", JOptionPane.YES_NO_OPTION);
+                if (confirm != JOptionPane.YES_OPTION) {
+                    return;
+                }
+
+                HttpRequestForm.clearAllField();
+                HttpRequestForm.applyImportedRequest(result);
+                HttpRequestForm.splitQueryToParamTable(result.getUrl());
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "导入 cURL 失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
+
+        // Body 自动缩进（回车保持缩进/格式化）
+        try {
+            javax.swing.text.AbstractDocument doc = (javax.swing.text.AbstractDocument) httpRequestForm.getBodyTextArea().getDocument();
+            doc.setDocumentFilter(new AutoIndentDocumentFilter(() -> (String) httpRequestForm.getBodyTypeComboBox().getSelectedItem()));
+        } catch (Exception ignore) {
+        }
 
         // 左侧列表按键事件（重命名）
         httpRequestForm.getNoteListTable().addKeyListener(new KeyListener() {
@@ -297,6 +347,48 @@ public class HttpRequestListener {
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
+
+        // Body 格式化按钮事件
+        if (httpRequestForm.getBodyFormatButton() != null) {
+            httpRequestForm.getBodyFormatButton().addActionListener(e -> {
+                try {
+                    String bodyType = (String) httpRequestForm.getBodyTypeComboBox().getSelectedItem();
+                    String text = httpRequestForm.getBodyTextArea().getText();
+                    if (StringUtils.isBlank(text)) {
+                        JOptionPane.showMessageDialog(App.mainFrame, "Body 为空", "提示", JOptionPane.INFORMATION_MESSAGE);
+                        return;
+                    }
+                    String formatted;
+                    if ("application/json".equalsIgnoreCase(bodyType)) {
+                        try {
+                            formatted = JSONUtil.toJsonPrettyStr(text);
+                        } catch (Exception ex) {
+                            JOptionPane.showMessageDialog(App.mainFrame, "JSON 格式化失败\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+                    } else if ("application/xml".equalsIgnoreCase(bodyType) || "text/xml".equalsIgnoreCase(bodyType)) {
+                        try {
+                            // pre-validate XML
+                            javax.xml.parsers.DocumentBuilderFactory.newInstance()
+                                    .newDocumentBuilder()
+                                    .parse(new org.xml.sax.InputSource(new java.io.StringReader(text)));
+                        } catch (Exception ex) {
+                            JOptionPane.showMessageDialog(App.mainFrame, "XML 非法，无法格式化\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+                            return;
+                        }
+                        formatted = com.luoboduner.moo.tool.util.XmlReformatUtil.format(text);
+                    } else {
+                        JOptionPane.showMessageDialog(App.mainFrame, "当前 Body 类型不支持格式化", "提示", JOptionPane.INFORMATION_MESSAGE);
+                        return;
+                    }
+                    httpRequestForm.getBodyTextArea().setText(formatted);
+                    httpRequestForm.getBodyTextArea().setCaretPosition(0);
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(App.mainFrame, "格式化失败\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+                    logger.error(ExceptionUtils.getStackTrace(ex));
+                }
+            });
+        }
 
         // 搜索框变更事件
         httpRequestForm.getSearchTextField().getDocument().addDocumentListener(new DocumentListener() {

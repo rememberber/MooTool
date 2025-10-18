@@ -32,6 +32,7 @@ import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableColumnModel;
 import javax.swing.text.StyleContext;
 import java.awt.*;
+import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -91,6 +92,8 @@ public class HttpRequestForm {
     private JSplitPane historySplitPane;
     private JScrollPane historyTableScrollPane;
     private JPanel historyPanel;
+    private JButton bodyFormatButton;
+    private JButton importCurlButton;
 
     private static final Log logger = LogFactory.get();
     private static HttpRequestForm httpRequestForm;
@@ -132,6 +135,14 @@ public class HttpRequestForm {
         httpRequestForm.getHistoryButton().setIcon(new FlatSVGIcon("icon/history.svg"));
         httpRequestForm.getDeleteHistoryButton().setIcon(new FlatSVGIcon("icon/remove.svg"));
         httpRequestForm.getCloseHistoryLabel().setIcon(new FlatSVGIcon("icon/remove2.svg"));
+        httpRequestForm.getBodyFormatButton().setIcon(new FlatSVGIcon("icon/format_painter.svg"));
+
+        // 将尾随组件按钮添加到 URL 字段以导入 cURL
+        httpRequestForm.importCurlButton = new JButton("CURL");
+        httpRequestForm.importCurlButton.setToolTipText("导入 cURL");
+        httpRequestForm.importCurlButton.setFocusable(false);
+        httpRequestForm.getUrlTextField().putClientProperty(FlatClientProperties.TEXT_FIELD_TRAILING_COMPONENT,
+                httpRequestForm.importCurlButton);
 
         httpRequestForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
         httpRequestForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
@@ -145,6 +156,116 @@ public class HttpRequestForm {
         httpRequestForm.getHistoryPanel().setVisible(false);
 
         httpRequestForm.getHttpRequestPanel().updateUI();
+    }
+
+    /**
+     * 将导入的请求信息应用到表单
+     */
+    public static void applyImportedRequest(CurlParserUtil.CurlResult r) {
+        if (r == null) {
+            return;
+        }
+
+        // Method & URL
+        if (r.getMethod() != null) {
+            getInstance().getMethodComboBox().setSelectedItem(r.getMethod());
+            switchMethod(r.getMethod());
+        }
+        if (r.getUrl() != null) {
+            getInstance().getUrlTextField().setText(r.getUrl());
+        }
+
+        // Body
+        getInstance().getBodyTextArea().setText(r.getBody() == null ? "" : r.getBody());
+
+        // Body type from Content-Type header
+        setBodyTypeFromContentType(r.getContentType());
+
+        // Headers
+        initHeaderTable();
+        DefaultTableModel headerModel = (DefaultTableModel) getInstance().getHeaderTable().getModel();
+        if (r.getHeaders() != null) {
+            for (CurlParserUtil.NameValue h : r.getHeaders()) {
+                headerModel.addRow(new Object[]{h.getName(), h.getValue()});
+            }
+        }
+
+        // Cookies
+        initCookieTable();
+        DefaultTableModel cookieModel = (DefaultTableModel) getInstance().getCookieTable().getModel();
+        if (r.getCookies() != null) {
+            for (CurlParserUtil.NameValue c : r.getCookies()) {
+                cookieModel.addRow(new Object[]{c.getName(), c.getValue(), "", "", ""});
+            }
+        }
+    }
+
+    /**
+     * 根据Content-Type设置Body类型
+     */
+    private static void setBodyTypeFromContentType(String contentType) {
+        if (contentType == null) {
+            return;
+        }
+        String ct = contentType.toLowerCase();
+        JComboBox combo = getInstance().getBodyTypeComboBox();
+        if (ct.contains("application/json")) {
+            combo.setSelectedItem("application/json");
+        } else if (ct.contains("text/plain")) {
+            combo.setSelectedItem("text/plain");
+        } else if (ct.contains("application/xml")) {
+            combo.setSelectedItem("application/xml");
+        } else if (ct.contains("text/xml")) {
+            combo.setSelectedItem("text/xml");
+        } else if (ct.contains("text/html")) {
+            combo.setSelectedItem("text/html");
+        } else if (ct.contains("javascript")) {
+            combo.setSelectedItem("application/javascript");
+        }
+    }
+
+    /**
+     * 从URL中提取查询参数并填充到Params表中
+     */
+    public static void splitQueryToParamTable(String url) {
+        if (url == null || url.trim().isEmpty()) {
+            return;
+        }
+        int qIdx = url.indexOf('?');
+        if (qIdx < 0) {
+            return;
+        }
+        String query = url.substring(qIdx + 1);
+        int fragIdx = query.indexOf('#');
+        if (fragIdx >= 0) {
+            query = query.substring(0, fragIdx);
+        }
+        if (query.trim().isEmpty()) {
+            return;
+        }
+        initParamTable();
+        DefaultTableModel paramModel = (DefaultTableModel) getInstance().getParamTable().getModel();
+        String[] pairs = query.split("&");
+        for (String pair : pairs) {
+            if (pair.isEmpty()) continue;
+            String name;
+            String value;
+            int eq = pair.indexOf('=');
+            if (eq >= 0) {
+                name = pair.substring(0, eq);
+                value = pair.substring(eq + 1);
+            } else {
+                name = pair;
+                value = "";
+            }
+            try {
+                name = URLDecoder.decode(name, "UTF-8");
+                value = URLDecoder.decode(value, "UTF-8");
+            } catch (Exception e) {
+                logger.error(e.toString());
+            }
+            paramModel.addRow(new Object[]{name, value});
+        }
     }
 
     public static void initMsg(String msgName) {
@@ -791,7 +912,7 @@ public class HttpRequestForm {
         panel17.setLayout(new GridLayoutManager(1, 1, new Insets(10, 0, 0, 0), -1, -1));
         tabbedPane1.addTab("Body", panel17);
         final JPanel panel18 = new JPanel();
-        panel18.setLayout(new GridLayoutManager(2, 2, new Insets(5, 0, 0, 0), -1, -1));
+        panel18.setLayout(new GridLayoutManager(2, 3, new Insets(5, 0, 0, 0), -1, -1));
         panel17.add(panel18, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         bodyTypeComboBox = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel2 = new DefaultComboBoxModel();
@@ -804,11 +925,15 @@ public class HttpRequestForm {
         bodyTypeComboBox.setModel(defaultComboBoxModel2);
         panel18.add(bodyTypeComboBox, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
-        panel18.add(spacer2, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        panel18.add(spacer2, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         final JScrollPane scrollPane7 = new JScrollPane();
-        panel18.add(scrollPane7, new GridConstraints(1, 0, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        panel18.add(scrollPane7, new GridConstraints(1, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         bodyTextArea = new JTextArea();
         scrollPane7.setViewportView(bodyTextArea);
+        bodyFormatButton = new JButton();
+        bodyFormatButton.setText("");
+        bodyFormatButton.setToolTipText("格式化 Body");
+        panel18.add(bodyFormatButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer3 = new Spacer();
         panel2.add(spacer3, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         historyPanel = new JPanel();

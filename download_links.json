@@ -1,6 +1,6 @@
 {
-  "windows": "https://mootool.oss-cn-beijing.aliyuncs.com/installer/MooTool-1.6.9-windows.exe",
-  "mac": "https://mootool.oss-cn-beijing.aliyuncs.com/installer/MooTool_1.6.9.dmg",
-  "macSilicon": "https://mootool.oss-cn-beijing.aliyuncs.com/installer/MooTool_1.6.9-AppleSilicon.dmg",
-  "linux": "https://mootool.oss-cn-beijing.aliyuncs.com/installer/MooTool_1.6.9.deb"
+  "windows": "https://mootool-1258719368.cos.ap-beijing.myqcloud.com/MooTool-1.6.9-windows.exe",
+  "mac": "https://mootool-1258719368.cos.ap-beijing.myqcloud.com/MooTool_1.6.9.dmg",
+  "macSilicon": "https://mootool-1258719368.cos.ap-beijing.myqcloud.com/MooTool_1.6.9-AppleSilicon.dmg",
+  "linux": "https://mootool-1258719368.cos.ap-beijing.myqcloud.com/MooTool_1.6.9.deb"
 }
