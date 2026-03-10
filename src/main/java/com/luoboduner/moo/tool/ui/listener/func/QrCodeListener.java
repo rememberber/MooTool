@@ -4,13 +4,12 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.util.SystemFileChooser;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.form.func.QrCodeForm;
 import com.luoboduner.moo.tool.util.ConsoleUtil;
 
 import javax.swing.*;
-import javax.swing.filechooser.FileFilter;
-import javax.swing.filechooser.FileNameExtensionFilter;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -38,34 +37,34 @@ public class QrCodeListener {
         }));
         qrCodeForm.getExploreButton().addActionListener(e -> {
             File beforeFile = new File(qrCodeForm.getLogoPathTextField().getText());
-            JFileChooser fileChooser;
+            SystemFileChooser fileChooser;
 
             if (beforeFile.exists()) {
-                fileChooser = new JFileChooser(beforeFile);
+                fileChooser = new SystemFileChooser(beforeFile);
             } else {
-                fileChooser = new JFileChooser();
+                fileChooser = new SystemFileChooser();
             }
 
-            FileFilter filter = new FileNameExtensionFilter("*.png,*.jpg,*.jpeg", "png", "jpg", "jpeg");
+            SystemFileChooser.FileNameExtensionFilter filter = new SystemFileChooser.FileNameExtensionFilter("*.png,*.jpg,*.jpeg", "png", "jpg", "jpeg");
             fileChooser.setFileFilter(filter);
 
             int approve = fileChooser.showOpenDialog(qrCodeForm.getQrCodePanel());
-            if (approve == JFileChooser.APPROVE_OPTION) {
+            if (approve == SystemFileChooser.APPROVE_OPTION) {
                 qrCodeForm.getLogoPathTextField().setText(fileChooser.getSelectedFile().getAbsolutePath());
             }
         });
         qrCodeForm.getSaveAsButton().addActionListener(e -> {
             File beforeFile = new File(App.config.getQrCodeSaveAsPath());
-            JFileChooser fileChooser;
+            SystemFileChooser fileChooser;
             if (beforeFile.exists()) {
-                fileChooser = new JFileChooser(beforeFile);
+                fileChooser = new SystemFileChooser(beforeFile);
             } else {
-                fileChooser = new JFileChooser();
+                fileChooser = new SystemFileChooser();
             }
-            fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
             int approve = fileChooser.showOpenDialog(qrCodeForm.getQrCodePanel());
             String exportPath;
-            if (approve == JFileChooser.APPROVE_OPTION) {
+            if (approve == SystemFileChooser.APPROVE_OPTION) {
                 exportPath = fileChooser.getSelectedFile().getAbsolutePath();
             } else {
                 return;
@@ -87,19 +86,19 @@ public class QrCodeListener {
         });
         qrCodeForm.getRecognitionExploreButton().addActionListener(e -> {
             File beforeFile = new File(qrCodeForm.getRecognitionImagePathTextField().getText());
-            JFileChooser fileChooser;
+            SystemFileChooser fileChooser;
 
             if (beforeFile.exists()) {
-                fileChooser = new JFileChooser(beforeFile);
+                fileChooser = new SystemFileChooser(beforeFile);
             } else {
-                fileChooser = new JFileChooser();
+                fileChooser = new SystemFileChooser();
             }
 
-            FileFilter filter = new FileNameExtensionFilter("*.png,*.jpg,*.jpeg", "png", "jpg", "jpeg");
+            SystemFileChooser.FileNameExtensionFilter filter = new SystemFileChooser.FileNameExtensionFilter("*.png,*.jpg,*.jpeg", "png", "jpg", "jpeg");
             fileChooser.setFileFilter(filter);
 
             int approve = fileChooser.showOpenDialog(qrCodeForm.getQrCodePanel());
-            if (approve == JFileChooser.APPROVE_OPTION) {
+            if (approve == SystemFileChooser.APPROVE_OPTION) {
                 qrCodeForm.getRecognitionImagePathTextField().setText(fileChooser.getSelectedFile().getAbsolutePath());
                 QrCodeForm.recognition();
             }

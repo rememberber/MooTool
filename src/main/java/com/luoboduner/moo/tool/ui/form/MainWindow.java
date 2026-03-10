@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.form;
 
+import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.util.SystemInfo;
 import com.intellij.uiDesigner.core.GridConstraints;
@@ -148,8 +149,9 @@ public class MainWindow {
 
         // 隐藏所有 tab 的标题
         if (App.config.isTabHideTitle()) {
+            tabbedPane.putClientProperty(FlatClientProperties.TABBED_PANE_TAB_WIDTH_MODE,
+                    FlatClientProperties.TABBED_PANE_TAB_WIDTH_MODE_ICON_ONLY);
             for (int i = 0; i < tabbedPane.getTabCount(); i++) {
-                tabbedPane.setTitleAt(i, "");
                 // 设置所有tab的icon放大
                 tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i], 19, 19));
             }

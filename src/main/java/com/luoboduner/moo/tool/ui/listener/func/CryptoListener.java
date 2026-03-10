@@ -19,6 +19,7 @@ import cn.hutool.crypto.symmetric.DES;
 import cn.hutool.crypto.symmetric.SymmetricAlgorithm;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.util.SystemFileChooser;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.form.func.CryptoForm;
 import com.luoboduner.moo.tool.util.AlertUtil;
@@ -171,16 +172,16 @@ public class CryptoListener {
         // 文件摘要加密-文件浏览按钮
         cryptoForm.getExploreButton().addActionListener(e -> {
             File beforeFile = new File(App.config.getDigestFilePath());
-            JFileChooser fileChooser;
+            SystemFileChooser fileChooser;
 
             if (beforeFile.exists()) {
-                fileChooser = new JFileChooser(beforeFile);
+                fileChooser = new SystemFileChooser(beforeFile);
             } else {
-                fileChooser = new JFileChooser();
+                fileChooser = new SystemFileChooser();
             }
 
             int approve = fileChooser.showOpenDialog(cryptoForm.getCryptoPanel());
-            if (approve == JFileChooser.APPROVE_OPTION) {
+            if (approve == SystemFileChooser.APPROVE_OPTION) {
                 cryptoForm.getDigestFilePathTextField().setText(fileChooser.getSelectedFile().getAbsolutePath());
             }
         });

@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
+import com.formdev.flatlaf.util.SystemFileChooser;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.FileReformattingForm;
 import com.luoboduner.moo.tool.util.FileReformatUtil;
@@ -136,9 +137,9 @@ public class FileReformatListener {
         this.uploadFileBtn.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                JFileChooser fileChooser = new JFileChooser();
+                SystemFileChooser fileChooser = new SystemFileChooser();
                 int option = fileChooser.showOpenDialog(resultArea);
-                if (option == JFileChooser.APPROVE_OPTION){
+                if (option == SystemFileChooser.APPROVE_OPTION){
                     File file = fileChooser.getSelectedFile();
                     selectFile = file;
                     selectFileLabel.setText(file.getName());

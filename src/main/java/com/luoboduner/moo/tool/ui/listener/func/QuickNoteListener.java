@@ -5,6 +5,7 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.core.util.NumberUtil;
 import cn.hutool.json.JSONUtil;
+import com.formdev.flatlaf.util.SystemFileChooser;
 import com.github.vertical_blank.sqlformatter.SqlFormatter;
 import com.github.vertical_blank.sqlformatter.languages.Dialect;
 import com.google.common.collect.Lists;
@@ -303,11 +304,11 @@ public class QuickNoteListener {
 
             try {
                 if (selectedRows.length > 0) {
-                    JFileChooser fileChooser = new JFileChooser(App.config.getQuickNoteExportPath());
-                    fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    SystemFileChooser fileChooser = new SystemFileChooser(App.config.getQuickNoteExportPath());
+                    fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
                     int approve = fileChooser.showOpenDialog(quickNoteForm.getQuickNotePanel());
                     String exportPath;
-                    if (approve == JFileChooser.APPROVE_OPTION) {
+                    if (approve == SystemFileChooser.APPROVE_OPTION) {
                         exportPath = fileChooser.getSelectedFile().getAbsolutePath();
                         App.config.setQuickNoteExportPath(exportPath);
                         App.config.save();
@@ -475,11 +476,11 @@ public class QuickNoteListener {
 
             try {
                 if (selectedRows.length > 0) {
-                    JFileChooser fileChooser = new JFileChooser(App.config.getQuickNoteExportPath());
-                    fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    SystemFileChooser fileChooser = new SystemFileChooser(App.config.getQuickNoteExportPath());
+                    fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
                     int approve = fileChooser.showOpenDialog(quickNoteForm.getQuickNotePanel());
                     String exportPath;
-                    if (approve == JFileChooser.APPROVE_OPTION) {
+                    if (approve == SystemFileChooser.APPROVE_OPTION) {
                         exportPath = fileChooser.getSelectedFile().getAbsolutePath();
                         App.config.setQuickNoteExportPath(exportPath);
                         App.config.save();

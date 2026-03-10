@@ -10,6 +10,7 @@ import com.formdev.flatlaf.themes.FlatMacDarkLaf;
 import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import com.formdev.flatlaf.util.ColorFunctions;
 import com.formdev.flatlaf.util.LoggingFacade;
+import com.formdev.flatlaf.util.SystemFileChooser;
 import com.formdev.flatlaf.util.SystemInfo;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
@@ -264,11 +265,11 @@ public class SettingDialog extends JDialog {
         });
 
         dbFilePathExploreButton.addActionListener(e -> {
-            JFileChooser fileChooser = new JFileChooser(dbFilePathTextField.getText());
-            fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            SystemFileChooser fileChooser = new SystemFileChooser(dbFilePathTextField.getText());
+            fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
             int approve = fileChooser.showOpenDialog(contentPane);
             String dbFilePath;
-            if (approve == JFileChooser.APPROVE_OPTION) {
+            if (approve == SystemFileChooser.APPROVE_OPTION) {
                 dbFilePath = fileChooser.getSelectedFile().getAbsolutePath();
                 dbFilePathTextField.setText(dbFilePath);
             }

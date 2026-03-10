@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.thread.ThreadUtil;
+import com.formdev.flatlaf.util.SystemFileChooser;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.THostMapper;
 import com.luoboduner.moo.tool.domain.THost;
@@ -210,11 +211,11 @@ public class HostListener {
 
             try {
                 if (selectedRows.length > 0) {
-                    JFileChooser fileChooser = new JFileChooser(App.config.getHostExportPath());
-                    fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    SystemFileChooser fileChooser = new SystemFileChooser(App.config.getHostExportPath());
+                    fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
                     int approve = fileChooser.showOpenDialog(hostForm.getHostPanel());
                     String exportPath;
-                    if (approve == JFileChooser.APPROVE_OPTION) {
+                    if (approve == SystemFileChooser.APPROVE_OPTION) {
                         exportPath = fileChooser.getSelectedFile().getAbsolutePath();
                         App.config.setHostExportPath(exportPath);
                         App.config.save();
@@ -309,11 +310,11 @@ public class HostListener {
 
             try {
                 if (selectedRows.length > 0) {
-                    JFileChooser fileChooser = new JFileChooser(App.config.getHostExportPath());
-                    fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    SystemFileChooser fileChooser = new SystemFileChooser(App.config.getHostExportPath());
+                    fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
                     int approve = fileChooser.showOpenDialog(hostForm.getHostPanel());
                     String exportPath;
-                    if (approve == JFileChooser.APPROVE_OPTION) {
+                    if (approve == SystemFileChooser.APPROVE_OPTION) {
                         exportPath = fileChooser.getSelectedFile().getAbsolutePath();
                         App.config.setHostExportPath(exportPath);
                         App.config.save();

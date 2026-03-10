@@ -1,6 +1,7 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import com.formdev.flatlaf.util.SystemFileChooser;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -13,9 +14,14 @@ import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.table.*;
+import javax.swing.table.AbstractTableModel;
+import javax.swing.table.DefaultTableCellRenderer;
+import javax.swing.table.JTableHeader;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.io.File;
 import java.util.LinkedList;
 import java.util.List;
@@ -330,9 +336,9 @@ public class PdfForm {
                     button.addActionListener(new ActionListener() {
                         @Override
                         public void actionPerformed(ActionEvent e) {
-                            JFileChooser fileChooser = new JFileChooser();
+                            SystemFileChooser fileChooser = new SystemFileChooser();
                             int option = fileChooser.showOpenDialog(getTaskPane());
-                            if (option == JFileChooser.APPROVE_OPTION) {
+                            if (option == SystemFileChooser.APPROVE_OPTION) {
                                 File file = fileChooser.getSelectedFile();
                                 uploadEditor(file, row);
                             }

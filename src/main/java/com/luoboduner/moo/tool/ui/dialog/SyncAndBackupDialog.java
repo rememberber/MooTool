@@ -1,6 +1,7 @@
 package com.luoboduner.moo.tool.ui.dialog;
 
 import cn.hutool.core.io.FileUtil;
+import com.formdev.flatlaf.util.SystemFileChooser;
 import com.formdev.flatlaf.util.SystemInfo;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
@@ -17,7 +18,9 @@ import javax.swing.border.TitledBorder;
 import javax.swing.plaf.FontUIResource;
 import javax.swing.text.StyleContext;
 import java.awt.*;
-import java.awt.event.*;
+import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.Locale;
 
@@ -78,11 +81,11 @@ public class SyncAndBackupDialog extends JDialog {
 
         // 导出数据
         exportDataButton.addActionListener(e -> {
-            JFileChooser fileChooser = new JFileChooser(App.config.getQuickNoteExportPath());
-            fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            SystemFileChooser fileChooser = new SystemFileChooser(App.config.getQuickNoteExportPath());
+            fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
             int approve = fileChooser.showOpenDialog(this);
             String exportPath;
-            if (approve == JFileChooser.APPROVE_OPTION) {
+            if (approve == SystemFileChooser.APPROVE_OPTION) {
                 exportPath = fileChooser.getSelectedFile().getAbsolutePath();
             } else {
                 return;
@@ -104,11 +107,11 @@ public class SyncAndBackupDialog extends JDialog {
 
         // 导出配置
         exportConfigButton.addActionListener(e -> {
-            JFileChooser fileChooser = new JFileChooser(App.config.getQuickNoteExportPath());
-            fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+            SystemFileChooser fileChooser = new SystemFileChooser(App.config.getQuickNoteExportPath());
+            fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
             int approve = fileChooser.showOpenDialog(this);
             String exportPath;
-            if (approve == JFileChooser.APPROVE_OPTION) {
+            if (approve == SystemFileChooser.APPROVE_OPTION) {
                 exportPath = fileChooser.getSelectedFile().getAbsolutePath();
             } else {
                 return;

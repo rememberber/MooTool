@@ -5,6 +5,7 @@ import cn.hutool.json.JSONConfig;
 import cn.hutool.json.JSONUtil;
 import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
 import com.formdev.flatlaf.util.FontUtils;
+import com.formdev.flatlaf.util.SystemFileChooser;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
@@ -276,11 +277,11 @@ public class JsonBeautyListener {
 
             try {
                 if (selectedRows.length > 0) {
-                    JFileChooser fileChooser = new JFileChooser(App.config.getJsonBeautyExportPath());
-                    fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    SystemFileChooser fileChooser = new SystemFileChooser(App.config.getJsonBeautyExportPath());
+                    fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
                     int approve = fileChooser.showOpenDialog(jsonBeautyForm.getJsonBeautyPanel());
                     String exportPath;
-                    if (approve == JFileChooser.APPROVE_OPTION) {
+                    if (approve == SystemFileChooser.APPROVE_OPTION) {
                         exportPath = fileChooser.getSelectedFile().getAbsolutePath();
                         App.config.setJsonBeautyExportPath(exportPath);
                         App.config.save();
@@ -601,11 +602,11 @@ public class JsonBeautyListener {
 
             try {
                 if (selectedRows.length > 0) {
-                    JFileChooser fileChooser = new JFileChooser(App.config.getJsonBeautyExportPath());
-                    fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    SystemFileChooser fileChooser = new SystemFileChooser(App.config.getJsonBeautyExportPath());
+                    fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
                     int approve = fileChooser.showOpenDialog(jsonBeautyForm.getJsonBeautyPanel());
                     String exportPath;
-                    if (approve == JFileChooser.APPROVE_OPTION) {
+                    if (approve == SystemFileChooser.APPROVE_OPTION) {
                         exportPath = fileChooser.getSelectedFile().getAbsolutePath();
                         App.config.setJsonBeautyExportPath(exportPath);
                         App.config.save();

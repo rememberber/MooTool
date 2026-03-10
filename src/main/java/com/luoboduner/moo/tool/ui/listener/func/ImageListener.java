@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.listener.func;
 import cn.hutool.core.codec.Base64;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.swing.clipboard.ClipboardUtil;
+import com.formdev.flatlaf.util.SystemFileChooser;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.Base64Dialog;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
@@ -266,11 +267,11 @@ public class ImageListener {
 
             try {
                 if (selectedRows.length > 0) {
-                    JFileChooser fileChooser = new JFileChooser(App.config.getImageExportPath());
-                    fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    SystemFileChooser fileChooser = new SystemFileChooser(App.config.getImageExportPath());
+                    fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
                     int approve = fileChooser.showOpenDialog(imageForm.getImagePanel());
                     String exportPath;
-                    if (approve == JFileChooser.APPROVE_OPTION) {
+                    if (approve == SystemFileChooser.APPROVE_OPTION) {
                         exportPath = fileChooser.getSelectedFile().getAbsolutePath();
                         App.config.setImageExportPath(exportPath);
                         App.config.save();
@@ -410,11 +411,11 @@ public class ImageListener {
 
             try {
                 if (selectedRows.length > 0) {
-                    JFileChooser fileChooser = new JFileChooser(App.config.getImageExportPath());
-                    fileChooser.setFileSelectionMode(JFileChooser.DIRECTORIES_ONLY);
+                    SystemFileChooser fileChooser = new SystemFileChooser(App.config.getImageExportPath());
+                    fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
                     int approve = fileChooser.showOpenDialog(imageForm.getImagePanel());
                     String exportPath;
-                    if (approve == JFileChooser.APPROVE_OPTION) {
+                    if (approve == SystemFileChooser.APPROVE_OPTION) {
                         exportPath = fileChooser.getSelectedFile().getAbsolutePath();
                         App.config.setImageExportPath(exportPath);
                         App.config.save();
