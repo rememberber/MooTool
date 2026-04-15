@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.component.textviewer;
 
+import com.formdev.flatlaf.util.FontUtils;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
@@ -40,7 +41,7 @@ public class JsonRSyntaxTextViewer extends CommonRSyntaxTextViewer {
         if (fontSize == 0) {
             fontSize = MainWindow.getInstance().getMainPanel().getFont().getSize() + 2;
         }
-        Font font = new Font(fontName, Font.PLAIN, fontSize);
+        Font font = FontUtils.getCompositeFont(fontName, Font.PLAIN, fontSize);
         setFont(font);
     }
 }
