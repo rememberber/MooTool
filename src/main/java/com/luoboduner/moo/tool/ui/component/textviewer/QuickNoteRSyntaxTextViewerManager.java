@@ -1,7 +1,6 @@
 package com.luoboduner.moo.tool.ui.component.textviewer;
 
 import com.formdev.flatlaf.FlatLaf;
-import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
 import com.formdev.flatlaf.util.FontUtils;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
@@ -43,16 +42,7 @@ public class QuickNoteRSyntaxTextViewerManager {
                 plainTextViewer.setSyntaxEditingStyle(tQuickNote.getSyntax());
             }
             if (StringUtils.isNotEmpty(tQuickNote.getFontName()) && StringUtils.isNotEmpty(tQuickNote.getFontSize())) {
-                Font font;
-                if (FlatJetBrainsMonoFont.FAMILY.equals(tQuickNote.getFontName())) {
-                    font = FontUtils.getCompositeFont(FlatJetBrainsMonoFont.FAMILY, Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
-                }
-//                else if (FlatInterFont.FAMILY.equals(tQuickNote.getFontName())) {
-//                    font = FontUtils.getCompositeFont(FlatInterFont.FAMILY, Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
-//                }
-                else {
-                    font = new Font(tQuickNote.getFontName(), Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
-                }
+                Font font = FontUtils.getCompositeFont(tQuickNote.getFontName(), Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
                 plainTextViewer.setFont(font);
             }
 
@@ -76,16 +66,7 @@ public class QuickNoteRSyntaxTextViewerManager {
             QuickNoteRSyntaxTextViewer plainTextViewer = (QuickNoteRSyntaxTextViewer) rTextScrollPane.getTextArea();
             TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
             if (StringUtils.isNotEmpty(tQuickNote.getFontName()) && StringUtils.isNotEmpty(tQuickNote.getFontSize())) {
-                Font font;
-                if (FlatJetBrainsMonoFont.FAMILY.equals(tQuickNote.getFontName())) {
-                    font = FontUtils.getCompositeFont(FlatJetBrainsMonoFont.FAMILY, Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
-                }
-//                else if (FlatInterFont.FAMILY.equals(tQuickNote.getFontName())) {
-//                    font = FontUtils.getCompositeFont(FlatInterFont.FAMILY, Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
-//                }
-                else {
-                    font = new Font(tQuickNote.getFontName(), Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
-                }
+                Font font = FontUtils.getCompositeFont(tQuickNote.getFontName(), Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
                 plainTextViewer.setFont(font);
             }
         }
