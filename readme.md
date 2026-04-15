@@ -217,14 +217,17 @@ Windows • Linux • macOS
 ### 对称加密/解密
 - AES
 - DES
+- SM4
 ### 非对称加密/解密
 - RSA
+- SM2
 ### 摘要算法（文件/文本摘要）
 - MD5
 - SHA1
 - SHA256
 - SHA384
 - SHA512
+- SM3
 ### Base64编码/解码
 ### Base32编码/解码
 ### 随机UUID生成

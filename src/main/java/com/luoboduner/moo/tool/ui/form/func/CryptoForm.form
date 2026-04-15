@@ -108,6 +108,7 @@
                       <model>
                         <item value="AES"/>
                         <item value="DES"/>
+                        <item value="SM4"/>
                       </model>
                     </properties>
                   </component>
@@ -268,6 +269,7 @@
                     <properties>
                       <model>
                         <item value="RSA"/>
+                        <item value="SM2"/>
                       </model>
                     </properties>
                   </component>
@@ -464,6 +466,7 @@
                         <item value="SHA-256"/>
                         <item value="SHA-384"/>
                         <item value="SHA-512"/>
+                        <item value="SM3"/>
                       </model>
                     </properties>
                   </component>
