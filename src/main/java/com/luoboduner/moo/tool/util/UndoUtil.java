@@ -6,7 +6,7 @@ import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import javax.swing.text.JTextComponent;
 import javax.swing.undo.UndoManager;
 import java.awt.event.KeyEvent;
-import java.awt.event.KeyListener;
+import java.awt.event.KeyAdapter;
 import java.lang.reflect.Field;
 
 /**
@@ -26,6 +26,10 @@ public class UndoUtil {
      * @param object
      */
     public static void register(Object object) {
+        if (object instanceof JTextComponent) {
+            registerTextComponent((JTextComponent) object);
+            return;
+        }
         Class strClass = object.getClass();
         Field[] declaredFields = strClass.getDeclaredFields();
         for (Field field : declaredFields) {
@@ -33,37 +37,38 @@ public class UndoUtil {
                 if (RSyntaxTextArea.class.isAssignableFrom(field.getType())) {
                     continue;
                 }
-                UndoManager undoManager = new UndoManager();
                 try {
                     field.setAccessible(true);
-                    ((JTextComponent) field.get(object)).getDocument().addUndoableEditListener(undoManager);
-                    ((JTextComponent) field.get(object)).addKeyListener(new KeyListener() {
-                        @Override
-                        public void keyReleased(KeyEvent arg0) {
-                        }
-
-                        @Override
-                        public void keyPressed(KeyEvent evt) {
-                            if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_Z) {
-                                if (undoManager.canUndo()) {
-                                    undoManager.undo();
-                                }
-                            }
-                            if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_Y) {
-                                if (undoManager.canRedo()) {
-                                    undoManager.redo();
-                                }
-                            }
-                        }
-
-                        @Override
-                        public void keyTyped(KeyEvent arg0) {
-                        }
-                    });
+                    registerTextComponent((JTextComponent) field.get(object));
                 } catch (IllegalAccessException e) {
                     log.error(e.toString());
                 }
             }
         }
+    }
+
+    private static void registerTextComponent(JTextComponent textComponent) {
+        if (textComponent == null) {
+            return;
+        }
+        UndoManager undoManager = new UndoManager();
+        textComponent.getDocument().addUndoableEditListener(undoManager);
+        textComponent.addKeyListener(new KeyAdapter() {
+            @Override
+            public void keyPressed(KeyEvent evt) {
+                if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_Z) {
+                    if (undoManager.canUndo()) {
+                        undoManager.undo();
+                    }
+                    evt.consume();
+                }
+                if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_Y) {
+                    if (undoManager.canRedo()) {
+                        undoManager.redo();
+                    }
+                    evt.consume();
+                }
+            }
+        });
     }
 }
