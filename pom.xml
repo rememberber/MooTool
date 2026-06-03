@@ -56,6 +56,9 @@
         <tika.version>3.0.0</tika.version>
         <jackson-databind.version>2.13.3</jackson-databind.version>
         <java-diff.version>4.16</java-diff.version>
+        <mac.outputDirectory>${project.build.directory}</mac.outputDirectory>
+        <mac.startup>UNIVERSAL</mac.startup>
+        <mac.jdkPath>${java.home}</mac.jdkPath>
     </properties>
 
     <repositories>
@@ -76,6 +79,25 @@
             <url>http://maven.aliyun.com/nexus/content/groups/public/</url>
         </repository>
     </repositories>
+
+    <profiles>
+        <profile>
+            <id>mac-intel</id>
+            <properties>
+                <mac.outputDirectory>${project.build.directory}/mac-intel</mac.outputDirectory>
+                <mac.startup>X86_64</mac.startup>
+                <mac.jdkPath>${env.MACOS_INTEL_JDK}</mac.jdkPath>
+            </properties>
+        </profile>
+        <profile>
+            <id>mac-apple-silicon</id>
+            <properties>
+                <mac.outputDirectory>${project.build.directory}/mac-apple-silicon</mac.outputDirectory>
+                <mac.startup>ARM64</mac.startup>
+                <mac.jdkPath>${env.MACOS_APPLE_SILICON_JDK}</mac.jdkPath>
+            </properties>
+        </profile>
+    </profiles>
 
     <dependencies>
 
@@ -412,7 +434,10 @@
                 <artifactId>javapackager</artifactId>
                 <version>1.7.5</version>
                 <configuration>
+                    <outputDirectory>${mac.outputDirectory}</outputDirectory>
+                    <displayName>${project.name}</displayName>
                     <bundleJre>true</bundleJre>
+                    <jdkPath>${mac.jdkPath}</jdkPath>
                     <mainClass>com.luoboduner.moo.tool.App</mainClass>
                     <generateInstaller>true</generateInstaller>
                     <!-- 这行不能被格式化为多行，否则会出错-->
@@ -478,7 +503,7 @@
                             <platform>mac</platform>
                             <createTarball>true</createTarball>
                             <macConfig>
-                                <macStartup>UNIVERSAL</macStartup>
+                                <macStartup>${mac.startup}</macStartup>
 <!--                                <developerId>rememberber@163.com</developerId>-->
                             </macConfig>
                             <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>

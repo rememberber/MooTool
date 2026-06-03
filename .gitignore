@@ -33,3 +33,5 @@ build/
 
 
 logs/
+.codegraph/
+.cursor/

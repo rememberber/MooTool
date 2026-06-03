@@ -13,6 +13,7 @@ import com.jayway.jsonpath.JsonPath;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.DownloadLinkSelector;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import org.apache.commons.lang3.StringUtils;
 
@@ -102,15 +103,7 @@ public class UpdateDialog extends JDialog {
                         return;
                     } else {
                         DocumentContext parse = JsonPath.parse(downloadLinkInfo);
-                        if (SystemUtil.isWindowsOs()) {
-                            fileUrl = parse.read("$.windows");
-                        } else if (SystemUtil.isMacOs()) {
-                            fileUrl = parse.read("$.mac");
-                        } else if (SystemUtil.isMacSilicon()) {
-                            fileUrl = parse.read("$.macSilicon");
-                        } else if (SystemUtil.isLinuxOs()) {
-                            fileUrl = parse.read("$.linux");
-                        }
+                        fileUrl = DownloadLinkSelector.select(parse);
                     }
 
                     String fileName = FileUtil.getName(fileUrl);
