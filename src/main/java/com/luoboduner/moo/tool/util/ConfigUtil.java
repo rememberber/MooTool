@@ -522,4 +522,12 @@ public class ConfigUtil extends ConfigBaseUtil {
     public void setRegexText(String regexText) {
         setting.putByGroup("regexText", "func.regex", regexText);
     }
+
+    public String getTranslatorType() {
+        return setting.getStr("translatorType", "func.translation", "GOOGLE");
+    }
+
+    public void setTranslatorType(String translatorType) {
+        setting.putByGroup("translatorType", "func.translation", translatorType);
+    }
 }

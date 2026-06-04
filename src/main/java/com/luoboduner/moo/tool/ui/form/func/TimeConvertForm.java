@@ -25,6 +25,7 @@ import javax.swing.text.StyleContext;
 import java.awt.*;
 import java.util.Date;
 import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  * <pre>
@@ -54,12 +55,52 @@ public class TimeConvertForm {
     private JSplitPane splitPane;
     private JScrollPane leftScrollPane;
     private JButton clockButton;
+    private JComboBox<String> timezoneComboBox;
+    private JLabel gmtLabel;
+    private JPanel timezoneQuickPanel;
 
     private static final Log logger = LogFactory.get();
 
     private static TimeConvertForm timeConvertForm;
 
     public static final String TIME_FORMAT = "yyyy-MM-dd HH:mm:ss";
+
+    /**
+     * Common timezone IDs for the combo box
+     */
+    private static final String[] COMMON_TIMEZONE_IDS = {
+            "UTC",
+            "Asia/Shanghai",
+            "Asia/Tokyo",
+            "Asia/Seoul",
+            "Asia/Singapore",
+            "Asia/Hong_Kong",
+            "Asia/Kolkata",
+            "Asia/Dubai",
+            "Europe/London",
+            "Europe/Paris",
+            "Europe/Berlin",
+            "Europe/Moscow",
+            "America/New_York",
+            "America/Chicago",
+            "America/Denver",
+            "America/Los_Angeles",
+            "Australia/Sydney",
+            "Pacific/Auckland"
+    };
+
+    /**
+     * Quick timezone buttons: display label -> timezone ID
+     */
+    private static final String[][] QUICK_TIMEZONE_BUTTONS = {
+            {"UTC", "UTC"},
+            {"+8", "Asia/Shanghai"},
+            {"+9", "Asia/Tokyo"},
+            {"-5", "America/New_York"},
+            {"-8", "America/Los_Angeles"},
+            {"+1", "Europe/Paris"},
+            {"+3", "Europe/Moscow"},
+    };
 
     private static TFuncContentMapper funcContentMapper = MybatisUtil.getSqlSession().getMapper(TFuncContentMapper.class);
 
@@ -74,8 +115,50 @@ public class TimeConvertForm {
         return timeConvertForm;
     }
 
+    /**
+     * Get the currently selected TimeZone from the combo box.
+     */
+    public TimeZone getSelectedTimeZone() {
+        if (timezoneComboBox == null || timezoneComboBox.getSelectedItem() == null) {
+            return TimeZone.getDefault();
+        }
+        String selected = (String) timezoneComboBox.getSelectedItem();
+        // Extract timezone ID from display string like "Asia/Shanghai (GMT+08:00)"
+        int parenIndex = selected.indexOf(" (");
+        String tzId = parenIndex > 0 ? selected.substring(0, parenIndex) : selected;
+        return TimeZone.getTimeZone(tzId);
+    }
+
+    /**
+     * Format a timezone ID for display: "Asia/Shanghai (GMT+08:00)"
+     */
+    private static String formatTimezoneDisplay(String tzId) {
+        TimeZone tz = TimeZone.getTimeZone(tzId);
+        int rawOffset = tz.getRawOffset();
+        int hours = rawOffset / 3600000;
+        int minutes = Math.abs((rawOffset % 3600000) / 60000);
+        return String.format("%s (GMT%+03d:%02d)", tzId, hours, minutes);
+    }
+
+    /**
+     * Update the gmtLabel to show the selected timezone.
+     */
+    private void updateGmtLabel() {
+        TimeZone tz = getSelectedTimeZone();
+        int rawOffset = tz.getRawOffset();
+        int hours = rawOffset / 3600000;
+        int minutes = Math.abs((rawOffset % 3600000) / 60000);
+        String offsetStr = String.format("GMT%+03d:%02d", hours, minutes);
+        if (gmtLabel != null) {
+            gmtLabel.setText("时间(" + offsetStr + ")");
+        }
+    }
+
     public static void init() {
         timeConvertForm = getInstance();
+
+        // Initialize timezone combo box
+        initTimezoneComponents();
 
         ThreadUtil.execute(() -> {
             while (true) {
@@ -89,7 +172,8 @@ public class TimeConvertForm {
             timeConvertForm.getTimestampTextField().setText(String.valueOf(System.currentTimeMillis()));
         }
         if ("".equals(timeConvertForm.getGmtTextField().getText())) {
-            timeConvertForm.getGmtTextField().setText(DateFormatUtils.format(new Date(), TIME_FORMAT));
+            TimeZone tz = timeConvertForm.getSelectedTimeZone();
+            timeConvertForm.getGmtTextField().setText(DateFormatUtils.format(new Date(), TIME_FORMAT, tz));
         }
 
         Style.emphaticIndicatorFont(timeConvertForm.getCurrentGmtLabel());
@@ -118,6 +202,112 @@ public class TimeConvertForm {
         timeConvertForm.getTimeConvertPanel().updateUI();
 
         TimeConvertListener.addListeners();
+    }
+
+    /**
+     * Initialize timezone selection components and add them to the UI.
+     */
+    private static void initTimezoneComponents() {
+        // Create timezone combo box with common timezones
+        timeConvertForm.timezoneComboBox = new JComboBox<>();
+        for (String tzId : COMMON_TIMEZONE_IDS) {
+            timeConvertForm.timezoneComboBox.addItem(formatTimezoneDisplay(tzId));
+        }
+
+        // Set default selection to system default timezone
+        String systemTzId = TimeZone.getDefault().getID();
+        String systemDisplay = formatTimezoneDisplay(systemTzId);
+        boolean found = false;
+        for (int i = 0; i < timeConvertForm.timezoneComboBox.getItemCount(); i++) {
+            if (timeConvertForm.timezoneComboBox.getItemAt(i).equals(systemDisplay)) {
+                timeConvertForm.timezoneComboBox.setSelectedIndex(i);
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            // Add system timezone if not in the common list
+            timeConvertForm.timezoneComboBox.insertItemAt(systemDisplay, 0);
+            timeConvertForm.timezoneComboBox.setSelectedIndex(0);
+        }
+
+        // Create quick timezone buttons panel
+        timeConvertForm.timezoneQuickPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        JLabel tzLabel = new JLabel("时区:");
+        timeConvertForm.timezoneQuickPanel.add(tzLabel);
+        timeConvertForm.timezoneQuickPanel.add(timeConvertForm.timezoneComboBox);
+
+        for (String[] btnDef : QUICK_TIMEZONE_BUTTONS) {
+            JButton btn = new JButton(btnDef[0]);
+            btn.setMargin(new Insets(2, 6, 2, 6));
+            String tzId = btnDef[1];
+            btn.setToolTipText(formatTimezoneDisplay(tzId));
+            btn.addActionListener(e -> {
+                String display = formatTimezoneDisplay(tzId);
+                for (int i = 0; i < timeConvertForm.timezoneComboBox.getItemCount(); i++) {
+                    if (timeConvertForm.timezoneComboBox.getItemAt(i).equals(display)) {
+                        timeConvertForm.timezoneComboBox.setSelectedIndex(i);
+                        return;
+                    }
+                }
+                // If not found, add and select
+                timeConvertForm.timezoneComboBox.addItem(display);
+                timeConvertForm.timezoneComboBox.setSelectedItem(display);
+            });
+            timeConvertForm.timezoneQuickPanel.add(btn);
+        }
+
+        // Listen for timezone changes to update label
+        timeConvertForm.timezoneComboBox.addActionListener(e -> {
+            timeConvertForm.updateGmtLabel();
+        });
+
+        // Add timezone panel to panel5 (the conversion panel, parent of gmtTextField)
+        Container gmtParent = timeConvertForm.getGmtTextField().getParent();
+        if (gmtParent instanceof JPanel) {
+            JPanel panel5 = (JPanel) gmtParent;
+            LayoutManager lm = panel5.getLayout();
+            if (lm instanceof GridLayoutManager) {
+                // Store all existing components and their constraints
+                Component[] components = panel5.getComponents();
+                GridLayoutManager glm = (GridLayoutManager) lm;
+                GridConstraints[] storedConstraints = new GridConstraints[components.length];
+                for (int i = 0; i < components.length; i++) {
+                    storedConstraints[i] = glm.getConstraintsForComponent(components[i]);
+                }
+
+                // Rebuild panel5 with 4 rows (was 3 rows x 3 cols)
+                panel5.removeAll();
+                panel5.setLayout(new GridLayoutManager(4, 3, new Insets(10, 10, 10, 10), -1, -1));
+
+                // Re-add existing components with their original constraints
+                for (int i = 0; i < components.length; i++) {
+                    panel5.add(components[i], storedConstraints[i]);
+                }
+
+                // Add timezone panel at row 3, spanning all 3 columns
+                panel5.add(timeConvertForm.timezoneQuickPanel,
+                        new GridConstraints(3, 0, 1, 3,
+                                GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
+                                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                                GridConstraints.SIZEPOLICY_FIXED,
+                                null, null, null, 0, false));
+            }
+
+            // Find and store reference to the "本地时间" label for dynamic updates
+            for (Component comp : panel5.getComponents()) {
+                if (comp instanceof JLabel) {
+                    JLabel label = (JLabel) comp;
+                    if (label.getText() != null && label.getText().contains("本地时间")) {
+                        timeConvertForm.gmtLabel = label;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // Update the label to show current timezone
+        timeConvertForm.updateGmtLabel();
     }
 
     public static int saveContent() {

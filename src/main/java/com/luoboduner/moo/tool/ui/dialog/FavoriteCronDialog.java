@@ -1,10 +1,5 @@
 package com.luoboduner.moo.tool.ui.dialog;
 
-import com.cronutils.descriptor.CronDescriptor;
-import com.cronutils.model.CronType;
-import com.cronutils.model.definition.CronDefinition;
-import com.cronutils.model.definition.CronDefinitionBuilder;
-import com.cronutils.parser.CronParser;
 import com.formdev.flatlaf.util.SystemInfo;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
@@ -18,6 +13,7 @@ import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.CronForm;
 import com.luoboduner.moo.tool.ui.form.func.FavoriteCronForm;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.CronExpressionUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -157,10 +153,7 @@ public class FavoriteCronDialog extends JDialog {
                 default -> {
                 }
             }
-            CronDescriptor descriptor = CronDescriptor.instance(selectedLocale);
-            CronDefinition cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ);
-            CronParser parser = new CronParser(cronDefinition);
-            String description = descriptor.describe(parser.parse(cron));
+            String description = CronExpressionUtil.describe(cron, selectedLocale);
 
             nameTextField.setText(description);
         } catch (Exception e) {

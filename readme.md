@@ -315,6 +315,32 @@ Windows • Linux • macOS
 [iconfont](https://www.iconfont.cn/)
 
 ## 开发温馨提示
-最低JDK版本要求：**17**  
+最低JDK版本要求：**21**  
 在你开始开发之前, **请按下图设置IntelliJ IDEA**, 然后 **maven clean**:
 ![considerations](assets/material/gui_build.png)
+
+### macOS打包
+
+默认打包使用当前运行 Maven 的 JDK：
+
+```bash
+mvn clean package -Dmaven.test.skip=true
+```
+
+Intel 芯片包需要使用 x86_64 JDK 21：
+
+```bash
+MACOS_INTEL_JDK=/path/to/jdk-21-x86_64 mvn -Pmac-intel clean package -Dmaven.test.skip=true
+```
+
+Apple Silicon 包需要使用 arm64/aarch64 JDK 21：
+
+```bash
+MACOS_APPLE_SILICON_JDK=/path/to/jdk-21-aarch64 mvn -Pmac-apple-silicon clean package -Dmaven.test.skip=true
+```
+
+对应产物目录：
+
+- 默认包：`target/`
+- Intel 包：`target/mac-intel/`
+- Apple Silicon 包：`target/mac-apple-silicon/`

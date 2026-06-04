@@ -10,12 +10,13 @@ import com.luoboduner.moo.tool.util.AlertUtil;
 import com.luoboduner.moo.tool.util.ConsoleUtil;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
-import org.apache.commons.lang3.time.DateUtils;
 
 import javax.swing.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
+import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.TimeZone;
 
 /**
  * <pre>
@@ -141,7 +142,10 @@ public class TimeConvertListener {
         try {
             String localTime = timeConvertForm.getGmtTextField().getText();
             String unit = (String) timeConvertForm.getUnitComboBox().getSelectedItem();
-            Date date = DateUtils.parseDate(localTime, TimeConvertForm.TIME_FORMAT);
+            TimeZone tz = timeConvertForm.getSelectedTimeZone();
+            SimpleDateFormat sdf = new SimpleDateFormat(TimeConvertForm.TIME_FORMAT);
+            sdf.setTimeZone(tz);
+            Date date = sdf.parse(localTime);
             long timeStamp = date.getTime();
             if ("秒(s)".equals(unit)) {
                 timeStamp = timeStamp / 1000;
@@ -149,7 +153,7 @@ public class TimeConvertListener {
             timeConvertForm.getTimestampTextField().setText(String.valueOf(timeStamp));
             timeConvertForm.getTimestampTextField().grabFocus();
 
-            output("本地时间: " + localTime + " --> 时间戳: " + timeStamp);
+            output("时间(" + tz.getID() + "): " + localTime + " --> 时间戳: " + timeStamp);
         } catch (Exception ex) {
             ex.printStackTrace();
             logger.error(ExceptionUtils.getStackTrace(ex));
@@ -170,11 +174,12 @@ public class TimeConvertListener {
             if ("秒(s)".equals(unit)) {
                 timeStamp = timeStamp * 1000;
             }
-            String localTime = DateFormatUtils.format(new Date(timeStamp), TimeConvertForm.TIME_FORMAT);
+            TimeZone tz = timeConvertForm.getSelectedTimeZone();
+            String localTime = DateFormatUtils.format(new Date(timeStamp), TimeConvertForm.TIME_FORMAT, tz);
             timeConvertForm.getGmtTextField().setText(localTime);
             timeConvertForm.getGmtTextField().grabFocus();
 
-            output("时间戳: " + timeStamp + " --> 本地时间: " + localTime);
+            output("时间戳: " + timeStamp + " --> 时间(" + tz.getID() + "): " + localTime);
         } catch (Exception ex) {
             ex.printStackTrace();
             logger.error(ExceptionUtils.getStackTrace(ex));
