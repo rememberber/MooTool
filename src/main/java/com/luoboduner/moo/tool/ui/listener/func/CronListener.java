@@ -3,28 +3,20 @@ package com.luoboduner.moo.tool.ui.listener.func;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
-import com.cronutils.descriptor.CronDescriptor;
-import com.cronutils.model.CronType;
-import com.cronutils.model.definition.CronDefinition;
-import com.cronutils.model.definition.CronDefinitionBuilder;
-import com.cronutils.model.time.ExecutionTime;
-import com.cronutils.parser.CronParser;
-import com.google.common.collect.Lists;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.dialog.CommonCronDialog;
 import com.luoboduner.moo.tool.ui.dialog.FavoriteCronDialog;
 import com.luoboduner.moo.tool.ui.form.func.CronForm;
 import com.luoboduner.moo.tool.ui.frame.FavoriteCronFrame;
+import com.luoboduner.moo.tool.util.CronExpressionUtil;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import java.awt.event.ActionListener;
-import java.time.LocalDateTime;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Locale;
-import java.util.Optional;
 
 /**
  * <pre>
@@ -54,10 +46,7 @@ public class CronListener {
                     default -> {
                     }
                 }
-                CronDescriptor descriptor = CronDescriptor.instance(selectedLocale);
-                CronDefinition cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ);
-                CronParser parser = new CronParser(cronDefinition);
-                String description = descriptor.describe(parser.parse(cronExpression));
+                String description = CronExpressionUtil.describe(cronExpression, selectedLocale);
 
                 cronForm.getHumanReadableTextField().setText(description);
             } catch (Exception ex) {
@@ -102,23 +91,12 @@ public class CronListener {
                 try {
                     String cronExpression = cronForm.getCronExpressionTextField().getText();
 
-                    CronDefinition cronDefinition = CronDefinitionBuilder.instanceDefinitionFor(CronType.QUARTZ);
-                    CronParser parser = new CronParser(cronDefinition);
-
                     // 获取未来10次运行时间：
-                    List<String> nextExecutionTimes = Lists.newArrayList();
-                    ExecutionTime executionTime = ExecutionTime.forCron(parser.parse(cronExpression));
-                    ZonedDateTime now = ZonedDateTime.now();
-                    Optional<ZonedDateTime> nextExecution = executionTime.nextExecution(now);
-                    for (int i = 0; i < 10; i++) {
-                        if (nextExecution.isPresent()) {
-                            // yyyy-MM-dd HH:mm:ss
-                            LocalDateTime localDateTime = nextExecution.get().toLocalDateTime();
-                            String format = DateUtil.format(localDateTime, "yyyy-MM-dd HH:mm:ss");
-                            nextExecutionTimes.add(format);
-                            nextExecution = executionTime.nextExecution(nextExecution.get());
-                        }
-                    }
+                    List<String> nextExecutionTimes = CronExpressionUtil.nextExecutions(cronExpression, ZonedDateTime.now(), 10)
+                            .stream()
+                            .map(ZonedDateTime::toLocalDateTime)
+                            .map(localDateTime -> DateUtil.format(localDateTime, "yyyy-MM-dd HH:mm:ss"))
+                            .toList();
                     cronForm.getNextExecutionTimeTextArea().setText("最近10次运行时间：\n" + String.join("\n", nextExecutionTimes));
                 } catch (Exception ex) {
                     cronForm.getNextExecutionTimeTextArea().setText("最近10次运行时间：\n" + ex.getMessage());
