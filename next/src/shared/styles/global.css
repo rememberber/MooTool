@@ -1,0 +1,388 @@
+:root {
+  color: #242426;
+  background: #f7f7f8;
+  font-family:
+    Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  --sidebar: #f1f2f4;
+  --surface: #ffffff;
+  --surface-soft: #f5f5f5;
+  --border: #dedee1;
+  --border-soft: #ececef;
+  --text-muted: #858589;
+  --text-soft: #a3a3a8;
+  --accent: #de8f7d;
+  --accent-strong: #cd6f5e;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  overflow: hidden;
+}
+
+button {
+  border: 0;
+  color: inherit;
+  font: inherit;
+}
+
+.window-drag {
+  -webkit-app-region: drag;
+}
+
+.app-shell {
+  display: grid;
+  grid-template-columns: 308px minmax(560px, 1fr) 360px;
+  width: 100%;
+  height: 100%;
+  background: var(--surface);
+}
+
+.sidebar {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 18px 14px 16px;
+  background: var(--sidebar);
+  border-right: 1px solid var(--border);
+}
+
+.toolbar-spacer {
+  height: 34px;
+}
+
+.sidebar-actions {
+  position: absolute;
+  top: 18px;
+  right: 14px;
+  display: flex;
+  gap: 8px;
+}
+
+.icon-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  color: #77787c;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.icon-ghost:hover {
+  background: rgba(0, 0, 0, 0.055);
+  color: #303033;
+}
+
+.mode-switch {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px;
+  padding: 4px;
+  margin: 18px 0 12px;
+  background: #e9e9eb;
+  border-radius: 12px;
+}
+
+.mode-switch__item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 36px;
+  color: #747478;
+  background: transparent;
+  border-radius: 9px;
+  cursor: pointer;
+}
+
+.mode-switch__item--active {
+  color: #303033;
+  background: #fbfbfb;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.13);
+}
+
+.tool-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tool-button,
+.recent-item {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  width: 100%;
+  min-height: 36px;
+  padding: 0 10px;
+  color: #45464a;
+  background: transparent;
+  border-radius: 8px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.tool-button:hover,
+.recent-item:hover {
+  background: rgba(0, 0, 0, 0.045);
+}
+
+.tool-button--active {
+  background: rgba(0, 0, 0, 0.075);
+  color: #27272a;
+}
+
+.recent-section {
+  margin-top: 28px;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 10px 8px;
+  color: #929297;
+  font-size: 14px;
+}
+
+.recent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.recent-dot {
+  width: 6px;
+  height: 6px;
+  border: 1px solid #bdbdc1;
+  border-radius: 999px;
+}
+
+.recent-dot--blue {
+  border-color: #2f7de1;
+  background: #2f7de1;
+}
+
+.sidebar-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+}
+
+.brand-mark {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #3f4044;
+  font-weight: 600;
+}
+
+.brand-mark svg,
+.headline-icon {
+  color: var(--accent-strong);
+}
+
+.workspace {
+  position: relative;
+  min-width: 0;
+  background: #fbfbfb;
+  border-right: 1px solid var(--border-soft);
+  overflow: hidden;
+}
+
+.workspace-topbar,
+.pane-topbar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  height: 48px;
+  padding: 0 22px;
+  color: #77787c;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.topbar-muted {
+  color: #a2a2a6;
+}
+
+.hero-pattern {
+  position: absolute;
+  top: 92px;
+  left: 50%;
+  width: 760px;
+  height: 760px;
+  transform: translateX(-42%);
+  opacity: 0.65;
+  background-image: radial-gradient(#d6d6da 1.2px, transparent 1.2px);
+  background-size: 18px 18px;
+  mask-image: radial-gradient(circle, #000 0 42%, transparent 72%);
+}
+
+.home-panel {
+  position: relative;
+  z-index: 1;
+  width: min(760px, calc(100% - 80px));
+  margin: 180px auto 0;
+}
+
+.headline-row {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+h1 {
+  margin: 0;
+  font-size: 34px;
+  line-height: 1.2;
+  letter-spacing: 0;
+}
+
+.subtle-link {
+  margin: 10px 0 34px 42px;
+  color: #808085;
+}
+
+.command-box {
+  padding: 18px 18px 14px;
+  min-height: 150px;
+  background: rgba(255, 255, 255, 0.88);
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  box-shadow: 0 16px 34px rgba(20, 20, 20, 0.06);
+}
+
+.command-input {
+  min-height: 62px;
+  color: #a1a1a5;
+  font-size: 22px;
+}
+
+.command-controls {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.round-button,
+.send-button,
+.pill-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 42px;
+  background: var(--surface-soft);
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.round-button,
+.send-button {
+  width: 42px;
+  font-size: 26px;
+}
+
+.pill-button {
+  gap: 8px;
+  padding: 0 18px;
+  margin-left: auto;
+  font-weight: 600;
+}
+
+.send-button {
+  color: #fff;
+  background: var(--accent);
+}
+
+.quick-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 84px;
+}
+
+.quick-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-height: 148px;
+  padding: 20px;
+  color: #38393d;
+  background: #f2f2f3;
+  border-radius: 16px;
+  cursor: pointer;
+}
+
+.quick-card:hover {
+  background: #ececee;
+}
+
+.quick-card span {
+  color: #7c7d82;
+  font-size: 14px;
+}
+
+.detail-pane {
+  min-width: 0;
+  background: #fafafa;
+}
+
+.pane-topbar {
+  justify-content: flex-end;
+}
+
+.state-card {
+  width: calc(100% - 48px);
+  margin: 24px;
+  padding: 18px;
+  color: #4d4e52;
+  background: #f2f2f3;
+  border-radius: 16px;
+}
+
+.state-card strong {
+  display: block;
+  margin-top: 6px;
+}
+
+.state-card p {
+  margin: 10px 0 0;
+  color: #7d7e83;
+  line-height: 1.6;
+}
+
+.state-kicker {
+  color: #999a9f;
+  font-size: 13px;
+}
+
+@media (max-width: 1180px) {
+  .app-shell {
+    grid-template-columns: 286px 1fr;
+  }
+
+  .detail-pane {
+    display: none;
+  }
+}
