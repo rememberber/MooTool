@@ -22,21 +22,25 @@ jobs:
             target: mac-x64
             profile: mac-intel
             artifact_dir: target/mac-intel
+            release_label: mac-intel
           - name: macOS Apple Silicon
             runner: macos-14
             target: mac-arm64
             profile: mac-apple-silicon
             artifact_dir: target/mac-apple-silicon
+            release_label: mac-apple-silicon
           - name: Windows x64
             runner: windows-latest
             target: windows-x64
             profile: windows-x64
             artifact_dir: target/windows-x64
+            release_label: windows-x64
           - name: Linux x64
             runner: ubuntu-latest
             target: linux-x64
             profile: linux-x64
             artifact_dir: target/linux-x64
+            release_label: linux-x64
 
     steps:
       - name: Checkout
@@ -68,12 +72,19 @@ jobs:
       - name: Build installer
         run: mvn --batch-mode --no-transfer-progress clean package -P${{ matrix.profile }} -Dmaven.test.skip=true
 
+      - name: Stage release assets
+        run: >-
+          python scripts/collect_release_assets.py
+          --source-dir ${{ matrix.artifact_dir }}
+          --output-dir dist/${{ matrix.profile }}
+          --target-label ${{ matrix.release_label }}
+
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.profile }}
           path: |
-            ${{ matrix.artifact_dir }}
+            dist/${{ matrix.profile }}
           if-no-files-found: error
           retention-days: 14
 
@@ -101,5 +112,9 @@ jobs:
             release-assets/**/*.zip
             release-assets/**/*.tar.gz
             release-assets/**/*.deb
+            release-assets/**/*.rpm
+            release-assets/**/*.msi
+            release-assets/**/*.exe
+            release-assets/**/*.jar
 
 
