@@ -347,6 +347,8 @@ python3 scripts/prepare_jdks.py --targets all --resolve-only
 
 默认 `mvn clean package` 仍然会使用当前运行 Maven 的 JDK 打一个 macOS universal 包。
 
+对于 `mac-intel`、`mac-apple-silicon`、`windows-x64`、`linux-x64` 这几个 profile，Maven 会在 `validate` 阶段先检查 `jdks/` 下是否已经准备好对应 JDK；如果缺失，会直接失败并提示先执行 `scripts/prepare_jdks.py`，避免打出“假成功”的安装包。
+
 如果要使用仓库内缓存 JDK 打指定平台包：
 
 ```bash
@@ -381,3 +383,4 @@ mvn clean package -Plinux-x64 -Dmaven.test.skip=true
   - `ubuntu-latest`：`linux-x64`
 - 使用 `actions/cache` 缓存 `downloads/jdks/` 和 `jdks/`
 - 每个 job 会上传各自平台的安装包产物
+- 推送 `v*` 标签时，会自动创建或更新对应 GitHub Release，并上传构建出的安装包附件
