@@ -385,3 +385,4 @@ mvn clean package -Plinux-x64 -Dmaven.test.skip=true
 - 每个 job 会把产物重命名为统一格式后再上传，例如：`MooTool-1.7.0-mac-intel.dmg`、`MooTool-1.7.0-windows-x64.zip`
 - Actions Summary 会列出“原始文件名 -> Release 文件名”的对照表，方便核对每个平台实际产物
 - 推送 `v*` 标签时，会自动创建或更新对应 GitHub Release，并上传构建出的安装包附件
+
