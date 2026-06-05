@@ -69,7 +69,13 @@ jobs:
       - name: Prepare packaging JDK
         run: python scripts/prepare_jdks.py --targets ${{ matrix.target }}
 
+      - name: Build installer (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: mvn --batch-mode --no-transfer-progress clean package -P${{ matrix.profile }} -Dmaven.test.skip=true
+
       - name: Build installer
+        if: runner.os != 'Windows'
         run: mvn --batch-mode --no-transfer-progress clean package -P${{ matrix.profile }} -Dmaven.test.skip=true
 
       - name: Stage release assets
