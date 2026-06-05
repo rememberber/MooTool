@@ -20,25 +20,30 @@ import {
   Terminal,
   Wand2
 } from 'lucide-react'
+import { useState } from 'react'
+import { JsonTool } from '@/features/json/JsonTool'
 import { ToolButton } from '@/shared/components/ToolButton'
 
 const primaryTools = [
-  { icon: Home, label: '主页', active: true },
-  { icon: Braces, label: 'JSON' },
-  { icon: Clock3, label: '时间转换' },
-  { icon: Shuffle, label: '编码解码' },
-  { icon: QrCode, label: '二维码' },
-  { icon: Globe, label: 'HTTP 请求' },
-  { icon: Code2, label: '文本 Diff' },
-  { icon: Regex, label: '正则' },
-  { icon: Palette, label: '颜色板' },
-  { icon: Image, label: '图片处理' },
-  { icon: CalendarClock, label: 'Cron' }
+  { id: 'home', icon: Home, label: '主页' },
+  { id: 'json', icon: Braces, label: 'JSON' },
+  { id: 'time', icon: Clock3, label: '时间转换' },
+  { id: 'encode', icon: Shuffle, label: '编码解码' },
+  { id: 'qrcode', icon: QrCode, label: '二维码' },
+  { id: 'http', icon: Globe, label: 'HTTP 请求' },
+  { id: 'diff', icon: Code2, label: '文本 Diff' },
+  { id: 'regex', icon: Regex, label: '正则' },
+  { id: 'color', icon: Palette, label: '颜色板' },
+  { id: 'image', icon: Image, label: '图片处理' },
+  { id: 'cron', icon: CalendarClock, label: 'Cron' }
 ]
 
 const recentItems = ['JSON 格式化片段', '接口调试草稿', 'Base64 转换', '颜色收藏', '正则测试']
 
 export function Workbench() {
+  const [activeTool, setActiveTool] = useState('home')
+  const activeToolLabel = primaryTools.find((tool) => tool.id === activeTool)?.label ?? '主页'
+
   return (
     <main className="app-shell">
       <aside className="sidebar">
@@ -66,7 +71,7 @@ export function Workbench() {
 
         <nav className="tool-nav" aria-label="工具导航">
           {primaryTools.map((tool) => (
-            <ToolButton key={tool.label} {...tool} />
+            <ToolButton key={tool.id} {...tool} active={activeTool === tool.id} onClick={() => setActiveTool(tool.id)} />
           ))}
         </nav>
 
@@ -100,48 +105,61 @@ export function Workbench() {
         <div className="window-drag workspace-topbar">
           <span>Home</span>
           <ChevronDown size={14} />
-          <span className="topbar-muted">Local</span>
+          <span className="topbar-muted">{activeToolLabel}</span>
         </div>
 
-        <div className="hero-pattern" aria-hidden="true" />
+        {activeTool === 'home' ? (
+          <>
+            <div className="hero-pattern" aria-hidden="true" />
 
-        <div className="home-panel">
-          <div className="headline-row">
-            <Sparkle className="headline-icon" size={28} />
-            <h1>把常用工具收进一个安静的桌面</h1>
-          </div>
-          <p className="subtle-link">MooTool Next · Electron / React / TypeScript</p>
+            <div className="home-panel">
+              <div className="headline-row">
+                <Sparkle className="headline-icon" size={28} />
+                <h1>把常用工具收进一个安静的桌面</h1>
+              </div>
+              <p className="subtle-link">MooTool Next · Electron / React / TypeScript</p>
 
-          <div className="command-box">
-            <div className="command-input">想处理什么？</div>
-            <div className="command-controls">
-              <button className="round-button">+</button>
-              <button className="pill-button">
-                JSON
-                <ChevronDown size={16} />
-              </button>
-              <button className="send-button">↑</button>
+              <div className="command-box">
+                <div className="command-input">想处理什么？</div>
+                <div className="command-controls">
+                  <button className="round-button">+</button>
+                  <button className="pill-button" onClick={() => setActiveTool('json')}>
+                    JSON
+                    <ChevronDown size={16} />
+                  </button>
+                  <button className="send-button" onClick={() => setActiveTool('json')}>
+                    ↑
+                  </button>
+                </div>
+              </div>
+
+              <div className="quick-grid">
+                <button className="quick-card" onClick={() => setActiveTool('json')}>
+                  <Braces size={30} />
+                  <strong>JSON</strong>
+                  <span>格式化、压缩、转义</span>
+                </button>
+                <button className="quick-card">
+                  <Globe size={30} />
+                  <strong>HTTP</strong>
+                  <span>发送请求，保存草稿</span>
+                </button>
+                <button className="quick-card">
+                  <Code2 size={30} />
+                  <strong>Diff</strong>
+                  <span>并排或统一视图</span>
+                </button>
+              </div>
             </div>
-          </div>
-
-          <div className="quick-grid">
-            <button className="quick-card">
-              <Braces size={30} />
-              <strong>JSON</strong>
-              <span>格式化、压缩、转义</span>
-            </button>
-            <button className="quick-card">
-              <Globe size={30} />
-              <strong>HTTP</strong>
-              <span>发送请求，保存草稿</span>
-            </button>
-            <button className="quick-card">
-              <Code2 size={30} />
-              <strong>Diff</strong>
-              <span>并排或统一视图</span>
-            </button>
-          </div>
-        </div>
+          </>
+        ) : activeTool === 'json' ? (
+          <JsonTool />
+        ) : (
+          <section className="placeholder-page">
+            <h1>{activeToolLabel}</h1>
+            <p>这个工具页会按 JSON 工作台的结构继续迁移。</p>
+          </section>
+        )}
       </section>
 
       <aside className="detail-pane">

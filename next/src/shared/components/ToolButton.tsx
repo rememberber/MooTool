@@ -4,11 +4,12 @@ type ToolButtonProps = {
   icon: LucideIcon
   label: string
   active?: boolean
+  onClick?: () => void
 }
 
-export function ToolButton({ icon: Icon, label, active = false }: ToolButtonProps) {
+export function ToolButton({ icon: Icon, label, active = false, onClick }: ToolButtonProps) {
   return (
-    <button className={active ? 'tool-button tool-button--active' : 'tool-button'}>
+    <button className={active ? 'tool-button tool-button--active' : 'tool-button'} onClick={onClick}>
       <Icon size={18} />
       <span>{label}</span>
     </button>
