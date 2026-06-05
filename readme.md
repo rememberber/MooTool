@@ -319,28 +319,65 @@ Windows • Linux • macOS
 在你开始开发之前, **请按下图设置IntelliJ IDEA**, 然后 **maven clean**:
 ![considerations](assets/material/gui_build.png)
 
-### macOS打包
+### 打包与 CI
 
-默认打包使用当前运行 Maven 的 JDK：
+项目现在支持把打包 JDK 下载并缓存到仓库本地目录：
+
+- JDK 压缩包缓存：`downloads/jdks/`
+- 解压后的 JDK：`jdks/<os>/<arch>/home`
+
+下载脚本默认使用 Eclipse Temurin 21，并且如果本地已经存在对应 JDK，就不会重复下载。
+
+#### 先准备本地打包 JDK
 
 ```bash
-mvn clean package -Dmaven.test.skip=true
+python3 scripts/prepare_jdks.py --targets mac-x64
+python3 scripts/prepare_jdks.py --targets mac-arm64
+python3 scripts/prepare_jdks.py --targets windows-x64
+python3 scripts/prepare_jdks.py --targets linux-x64
 ```
 
-Intel 芯片包需要使用 x86_64 JDK 21：
+也可以一次性查看全部目标会下载到哪里：
 
 ```bash
-MACOS_INTEL_JDK=/path/to/jdk-21-x86_64 mvn -Pmac-intel clean package -Dmaven.test.skip=true
+python3 scripts/prepare_jdks.py --targets all --resolve-only
 ```
 
-Apple Silicon 包需要使用 arm64/aarch64 JDK 21：
+#### 本地打包命令
+
+默认 `mvn clean package` 仍然会使用当前运行 Maven 的 JDK 打一个 macOS universal 包。
+
+如果要使用仓库内缓存 JDK 打指定平台包：
 
 ```bash
-MACOS_APPLE_SILICON_JDK=/path/to/jdk-21-aarch64 mvn -Pmac-apple-silicon clean package -Dmaven.test.skip=true
+mvn clean package -Pmac-intel -Dmaven.test.skip=true
+mvn clean package -Pmac-apple-silicon -Dmaven.test.skip=true
+mvn clean package -Pwindows-x64 -Dmaven.test.skip=true
+mvn clean package -Plinux-x64 -Dmaven.test.skip=true
 ```
 
 对应产物目录：
 
 - 默认包：`target/`
-- Intel 包：`target/mac-intel/`
-- Apple Silicon 包：`target/mac-apple-silicon/`
+- Intel Mac：`target/mac-intel/`
+- Apple Silicon Mac：`target/mac-apple-silicon/`
+- Windows x64：`target/windows-x64/`
+- Linux x64：`target/linux-x64/`
+
+#### GitHub Actions
+
+仓库内新增了工作流：`.github/workflows/build-installers.yml`
+
+> 建议在对应原生 runner 上产出对应平台安装包：mac 安装包在 macOS runner，Windows 安装包在 Windows runner，Linux 安装包在 Linux runner。
+
+特点：
+
+- 支持 `workflow_dispatch`
+- 推送 `v*` 标签时自动执行
+- 使用矩阵分别在以下 runner 上打包：
+  - `macos-13`：`mac-intel`
+  - `macos-14`：`mac-apple-silicon`
+  - `windows-latest`：`windows-x64`
+  - `ubuntu-latest`：`linux-x64`
+- 使用 `actions/cache` 缓存 `downloads/jdks/` 和 `jdks/`
+- 每个 job 会上传各自平台的安装包产物

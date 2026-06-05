@@ -56,9 +56,9 @@
         <tika.version>3.0.0</tika.version>
         <jackson-databind.version>2.13.3</jackson-databind.version>
         <java-diff.version>4.16</java-diff.version>
-        <mac.outputDirectory>${project.build.directory}</mac.outputDirectory>
-        <mac.startup>UNIVERSAL</mac.startup>
-        <mac.jdkPath>${java.home}</mac.jdkPath>
+        <packaging.outputDirectory>${project.build.directory}</packaging.outputDirectory>
+        <packaging.jdkPath>${java.home}</packaging.jdkPath>
+        <packaging.mac.startup>UNIVERSAL</packaging.mac.startup>
     </properties>
 
     <repositories>
@@ -82,20 +82,179 @@
 
     <profiles>
         <profile>
+            <id>mac-universal</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <properties>
+                <packaging.outputDirectory>${project.build.directory}</packaging.outputDirectory>
+                <packaging.jdkPath>${java.home}</packaging.jdkPath>
+                <packaging.mac.startup>UNIVERSAL</packaging.mac.startup>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.github.fvarrui</groupId>
+                        <artifactId>javapackager</artifactId>
+                        <executions>
+                            <execution>
+                                <id>bundling-for-mac-universal</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>package</goal>
+                                </goals>
+                                <configuration>
+                                    <platform>mac</platform>
+                                    <createTarball>true</createTarball>
+                                    <macConfig>
+                                        <macStartup>${packaging.mac.startup}</macStartup>
+                                    </macConfig>
+                                    <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>
+                                    <additionalResources>
+                                        <additionalResource>${name}.l4j.ini</additionalResource>
+                                    </additionalResources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
             <id>mac-intel</id>
             <properties>
-                <mac.outputDirectory>${project.build.directory}/mac-intel</mac.outputDirectory>
-                <mac.startup>X86_64</mac.startup>
-                <mac.jdkPath>${env.MACOS_INTEL_JDK}</mac.jdkPath>
+                <packaging.outputDirectory>${project.build.directory}/mac-intel</packaging.outputDirectory>
+                <packaging.mac.startup>X86_64</packaging.mac.startup>
+                <packaging.jdkPath>${project.basedir}/jdks/mac/x64/home</packaging.jdkPath>
             </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.github.fvarrui</groupId>
+                        <artifactId>javapackager</artifactId>
+                        <executions>
+                            <execution>
+                                <id>bundling-for-mac-intel</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>package</goal>
+                                </goals>
+                                <configuration>
+                                    <platform>mac</platform>
+                                    <createTarball>true</createTarball>
+                                    <macConfig>
+                                        <macStartup>${packaging.mac.startup}</macStartup>
+                                    </macConfig>
+                                    <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>
+                                    <additionalResources>
+                                        <additionalResource>${name}.l4j.ini</additionalResource>
+                                    </additionalResources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
         <profile>
             <id>mac-apple-silicon</id>
             <properties>
-                <mac.outputDirectory>${project.build.directory}/mac-apple-silicon</mac.outputDirectory>
-                <mac.startup>ARM64</mac.startup>
-                <mac.jdkPath>${env.MACOS_APPLE_SILICON_JDK}</mac.jdkPath>
+                <packaging.outputDirectory>${project.build.directory}/mac-apple-silicon</packaging.outputDirectory>
+                <packaging.mac.startup>ARM64</packaging.mac.startup>
+                <packaging.jdkPath>${project.basedir}/jdks/mac/arm64/home</packaging.jdkPath>
             </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.github.fvarrui</groupId>
+                        <artifactId>javapackager</artifactId>
+                        <executions>
+                            <execution>
+                                <id>bundling-for-mac-apple-silicon</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>package</goal>
+                                </goals>
+                                <configuration>
+                                    <platform>mac</platform>
+                                    <createTarball>true</createTarball>
+                                    <macConfig>
+                                        <macStartup>${packaging.mac.startup}</macStartup>
+                                    </macConfig>
+                                    <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>
+                                    <additionalResources>
+                                        <additionalResource>${name}.l4j.ini</additionalResource>
+                                    </additionalResources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>windows-x64</id>
+            <properties>
+                <packaging.outputDirectory>${project.build.directory}/windows-x64</packaging.outputDirectory>
+                <packaging.jdkPath>${project.basedir}/jdks/windows/x64/home</packaging.jdkPath>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.github.fvarrui</groupId>
+                        <artifactId>javapackager</artifactId>
+                        <executions>
+                            <execution>
+                                <id>bundling-for-windows-x64</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>package</goal>
+                                </goals>
+                                <configuration>
+                                    <platform>windows</platform>
+                                    <createZipball>true</createZipball>
+                                    <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>
+                                    <additionalResources>
+                                        <additionalResource>${name}.l4j.ini</additionalResource>
+                                    </additionalResources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
+        <profile>
+            <id>linux-x64</id>
+            <properties>
+                <packaging.outputDirectory>${project.build.directory}/linux-x64</packaging.outputDirectory>
+                <packaging.jdkPath>${project.basedir}/jdks/linux/x64/home</packaging.jdkPath>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>io.github.fvarrui</groupId>
+                        <artifactId>javapackager</artifactId>
+                        <executions>
+                            <execution>
+                                <id>bundling-for-linux-x64</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>package</goal>
+                                </goals>
+                                <configuration>
+                                    <platform>linux</platform>
+                                    <createTarball>true</createTarball>
+                                    <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>
+                                    <additionalResources>
+                                        <additionalResource>${name}.l4j.ini</additionalResource>
+                                    </additionalResources>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
         </profile>
     </profiles>
 
@@ -434,85 +593,15 @@
                 <artifactId>javapackager</artifactId>
                 <version>1.7.5</version>
                 <configuration>
-                    <outputDirectory>${mac.outputDirectory}</outputDirectory>
+                    <outputDirectory>${packaging.outputDirectory}</outputDirectory>
                     <displayName>${project.name}</displayName>
                     <bundleJre>true</bundleJre>
-                    <jdkPath>${mac.jdkPath}</jdkPath>
+                    <jdkPath>${packaging.jdkPath}</jdkPath>
                     <mainClass>com.luoboduner.moo.tool.App</mainClass>
                     <generateInstaller>true</generateInstaller>
                     <!-- 这行不能被格式化为多行，否则会出错-->
                     <vmArgs>-Dswing.aatext=true -XX:+UseZGC -XX:+ZGenerational -XX:-ZUncommit -Xms128m -Xmx512m --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</vmArgs>
                 </configuration>
-                <executions>
-<!--                                        <execution>-->
-<!--                                            <id>bundling-for-windows</id>-->
-<!--                                            <phase>package</phase>-->
-<!--                                            <goals>-->
-<!--                                                <goal>package</goal>-->
-<!--                                            </goals>-->
-<!--                                            <configuration>-->
-<!--                                                <platform>windows</platform>-->
-<!--                                                <createZipball>true</createZipball>-->
-<!--                                                <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
-<!--                                                <additionalResources>-->
-<!--                                                    <additionalResource>${name}.l4j.ini</additionalResource>-->
-<!--                                                </additionalResources>-->
-<!--                                                <administratorRequired>true</administratorRequired>-->
-<!--                                                <winConfig>-->
-
-<!--                                                    &lt;!&ndash; general properties &ndash;&gt;-->
-<!--                                                    <generateSetup>true</generateSetup>-->
-<!--                                                    <generateMsi>true</generateMsi>-->
-<!--                                                    <generateMsm>true</generateMsm>-->
-
-<!--                                                    &lt;!&ndash; setup generation properties &ndash;&gt;-->
-<!--                                                    <setupMode>installForAllUsers</setupMode>-->
-<!--                                                    <createDesktopIconTask>true</createDesktopIconTask>-->
-<!--                                                    <disableDirPage>false</disableDirPage>-->
-<!--                                                    <disableFinishedPage>false</disableFinishedPage>-->
-<!--                                                    <removeOldLibs>true</removeOldLibs>-->
-<!--                                                    <setupLanguages>-->
-<!--                                                        <english>compiler:Default.isl</english>-->
-<!--                                                        &lt;!&ndash;                                    <spanish>compiler:Languages\Chinese.isl</spanish>&ndash;&gt;-->
-<!--                                                    </setupLanguages>-->
-<!--                                                </winConfig>-->
-<!--                                            </configuration>-->
-<!--                                        </execution>-->
-                    <!--                                        <execution>-->
-                    <!--                                            <id>bundling-for-linux</id>-->
-                    <!--                                            <phase>package</phase>-->
-                    <!--                                            <goals>-->
-                    <!--                                                <goal>package</goal>-->
-                    <!--                                            </goals>-->
-                    <!--                                            <configuration>-->
-                    <!--                                                <platform>linux</platform>-->
-                    <!--                                                <createTarball>true</createTarball>-->
-                    <!--                                            <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>-->
-                    <!--                                            <additionalResources>-->
-                    <!--                                                <additionalResource>${name}.l4j.ini</additionalResource>-->
-                    <!--                                            </additionalResources>-->
-                    <!--                                            </configuration>-->
-                    <!--                                        </execution>-->
-                    <execution>
-                        <id>bundling-for-mac</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>package</goal>
-                        </goals>
-                        <configuration>
-                            <platform>mac</platform>
-                            <createTarball>true</createTarball>
-                            <macConfig>
-                                <macStartup>${mac.startup}</macStartup>
-<!--                                <developerId>rememberber@163.com</developerId>-->
-                            </macConfig>
-                            <additionalModules>jdk.crypto.ec,jdk.charsets</additionalModules>
-                            <additionalResources>
-                                <additionalResource>${name}.l4j.ini</additionalResource>
-                            </additionalResources>
-                        </configuration>
-                    </execution>
-                </executions>
             </plugin>
         </plugins>
     </build>

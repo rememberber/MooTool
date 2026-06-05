@@ -1,0 +1,80 @@
+name: Build installers
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS Intel
+            runner: macos-13
+            target: mac-x64
+            profile: mac-intel
+            artifact_dir: target/mac-intel
+          - name: macOS Apple Silicon
+            runner: macos-14
+            target: mac-arm64
+            profile: mac-apple-silicon
+            artifact_dir: target/mac-apple-silicon
+          - name: Windows x64
+            runner: windows-latest
+            target: windows-x64
+            profile: windows-x64
+            artifact_dir: target/windows-x64
+          - name: Linux x64
+            runner: ubuntu-latest
+            target: linux-x64
+            profile: linux-x64
+            artifact_dir: target/linux-x64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Maven JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Cache repository-local JDKs
+        uses: actions/cache@v4
+        with:
+          path: |
+            jdks
+            downloads/jdks
+          key: ${{ runner.os }}-${{ runner.arch }}-jdks-v1-${{ hashFiles('scripts/prepare_jdks.py') }}
+
+      - name: Prepare packaging JDK
+        run: python scripts/prepare_jdks.py --targets ${{ matrix.target }}
+
+      - name: Build installer
+        run: mvn --batch-mode --no-transfer-progress clean package -P${{ matrix.profile }} -Dmaven.test.skip=true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.profile }}
+          path: |
+            ${{ matrix.artifact_dir }}
+          if-no-files-found: error
+          retention-days: 14
+
+
