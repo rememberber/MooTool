@@ -15,7 +15,7 @@ on:
           - windows-x64
           - linux-x64
       release_tag:
-        description: Existing Git tag / Release tag to append assets to during a manual run (for example: v1.7.0)
+        description: 'Existing Git tag / Release tag to append assets to during a manual run (for example: v1.7.0)'
         required: false
         default: ""
         type: string
@@ -267,17 +267,7 @@ jobs:
 
   release-manual-assets:
     name: Append assets to existing GitHub Release
-    if: ${{
-      always()
-      && github.event_name == 'workflow_dispatch'
-      && inputs.release_tag != ''
-      && (
-        needs.package-mac-apple-silicon.result == 'success'
-        || needs.package-windows-x64.result == 'success'
-        || needs.package-linux-x64.result == 'success'
-        || needs.package-mac-intel-self-hosted.result == 'success'
-      )
-    }}
+    if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && (needs.package-mac-apple-silicon.result == 'success' || needs.package-windows-x64.result == 'success' || needs.package-linux-x64.result == 'success' || needs.package-mac-intel-self-hosted.result == 'success') }}
     needs:
       - package-mac-apple-silicon
       - package-windows-x64
