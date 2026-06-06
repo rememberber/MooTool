@@ -298,4 +298,67 @@ jobs:
             release-assets/**/*.exe
             release-assets/**/*.jar
 
+  publish-download-links:
+    name: Update download_links.json on master
+    if: >-
+      ${{
+        always() && (
+          (startsWith(github.ref, 'refs/tags/v') && needs.release.result == 'success') ||
+          (github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && needs.release-manual-assets.result == 'success')
+        )
+      }}
+    needs:
+      - package-mac-apple-silicon
+      - package-windows-x64
+      - package-linux-x64
+      - package-mac-intel-self-hosted
+      - release
+      - release-manual-assets
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Resolve release tag
+        id: release
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ inputs.release_tag }}" >> "$GITHUB_OUTPUT"
+          else
+            echo "tag=${{ github.ref_name }}" >> "$GITHUB_OUTPUT"
+          fi
+          echo "merge=true" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 1
+
+      - name: Download packaged artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Generate download_links.json
+        run: |
+          ARGS=(
+            --assets-dir release-assets
+            --tag "${{ steps.release.outputs.tag }}"
+            --output download_links.json
+          )
+          ARGS+=(--merge-existing)
+          python -u scripts/generate_download_links.py "${ARGS[@]}"
+
+      - name: Commit and push download_links.json
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add download_links.json
+          if git diff --staged --quiet; then
+            echo "download_links.json is already up to date"
+            exit 0
+          fi
+          git commit -m "chore: update download_links.json for ${{ steps.release.outputs.tag }}"
+          git push
+
 
