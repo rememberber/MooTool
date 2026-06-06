@@ -376,13 +376,25 @@ mvn clean package -Plinux-x64 -Dmaven.test.skip=true
 
 - 支持 `workflow_dispatch`
 - 推送 `v*` 标签时自动执行
-- 使用矩阵分别在以下 runner 上打包：
-  - `macos-13`：`mac-intel`
+- 推送 `v*` 标签时，默认在 GitHub Hosted runner 上打包：
   - `macos-14`：`mac-apple-silicon`
   - `windows-latest`：`windows-x64`
   - `ubuntu-latest`：`linux-x64`
+- `mac-intel` 改为单独手动触发，并使用 `self-hosted`, `macOS`, `X64` 标签的自托管 runner，避免长期卡在 `macos-13` 队列上
 - 使用 `actions/cache` 缓存 `downloads/jdks/` 和 `jdks/`
 - 每个 job 会把产物重命名为统一格式后再上传，例如：`MooTool-1.7.0-mac-intel.dmg`、`MooTool-1.7.0-windows-x64.zip`
 - Actions Summary 会列出“原始文件名 -> Release 文件名”的对照表，方便核对每个平台实际产物
 - 推送 `v*` 标签时，会自动创建或更新对应 GitHub Release，并上传构建出的安装包附件
+
+手动触发 `Build installers` 时，可以在页面中选择 `target`：
+
+- `all`：运行 Hosted 平台构建，并额外尝试运行自托管的 `mac-intel`
+- `mac-intel`：仅在自托管 Intel Mac runner 上打包
+- `mac-apple-silicon` / `windows-x64` / `linux-x64`：只跑对应 Hosted 平台
+
+如果要支持 `mac-intel`，需要先准备一台 Intel Mac，并把 GitHub Actions Runner 注册为仓库级自托管 runner，标签至少包含：
+
+- `self-hosted`
+- `macOS`
+- `X64`
 
