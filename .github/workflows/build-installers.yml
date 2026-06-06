@@ -1,0 +1,187 @@
+name: Build installers
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Target(s) to build
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - mac-intel
+          - mac-apple-silicon
+          - windows-x64
+          - linux-x64
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == matrix.profile
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS Apple Silicon
+            runner: macos-14
+            target: mac-arm64
+            profile: mac-apple-silicon
+            artifact_dir: target/mac-apple-silicon
+            release_label: mac-apple-silicon
+          - name: Windows x64
+            runner: windows-latest
+            target: windows-x64
+            profile: windows-x64
+            artifact_dir: target/windows-x64
+            release_label: windows-x64
+          - name: Linux x64
+            runner: ubuntu-latest
+            target: linux-x64
+            profile: linux-x64
+            artifact_dir: target/linux-x64
+            release_label: linux-x64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Maven JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Cache repository-local JDKs
+        uses: actions/cache@v4
+        with:
+          path: |
+            jdks
+            downloads/jdks
+          key: ${{ runner.os }}-${{ runner.arch }}-jdks-v1-${{ hashFiles('scripts/prepare_jdks.py') }}
+
+      - name: Prepare packaging JDK
+        run: python scripts/prepare_jdks.py --targets ${{ matrix.target }}
+
+      - name: Build installer (Windows)
+        if: runner.os == 'Windows'
+        shell: cmd
+        run: mvn --batch-mode --no-transfer-progress clean package -P${{ matrix.profile }} -Dmaven.test.skip=true
+
+      - name: Build installer
+        if: runner.os != 'Windows'
+        run: mvn --batch-mode --no-transfer-progress clean package -P${{ matrix.profile }} -Dmaven.test.skip=true
+
+      - name: Stage release assets
+        run: >-
+          python scripts/collect_release_assets.py
+          --source-dir ${{ matrix.artifact_dir }}
+          --output-dir dist/${{ matrix.profile }}
+          --target-label ${{ matrix.release_label }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.profile }}
+          path: |
+            dist/${{ matrix.profile }}
+          if-no-files-found: error
+          retention-days: 14
+
+  package-mac-intel-self-hosted:
+    if: github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'mac-intel')
+    name: macOS Intel (self-hosted)
+    runs-on:
+      - self-hosted
+      - macOS
+      - X64
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Maven JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Cache repository-local JDKs
+        uses: actions/cache@v4
+        with:
+          path: |
+            jdks
+            downloads/jdks
+          key: ${{ runner.os }}-${{ runner.arch }}-jdks-v1-${{ hashFiles('scripts/prepare_jdks.py') }}
+
+      - name: Prepare packaging JDK
+        run: python scripts/prepare_jdks.py --targets mac-x64
+
+      - name: Build installer
+        run: mvn --batch-mode --no-transfer-progress clean package -Pmac-intel -Dmaven.test.skip=true
+
+      - name: Stage release assets
+        run: >-
+          python scripts/collect_release_assets.py
+          --source-dir target/mac-intel
+          --output-dir dist/mac-intel
+          --target-label mac-intel
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mac-intel
+          path: |
+            dist/mac-intel
+          if-no-files-found: error
+          retention-days: 14
+
+  release:
+    name: Publish GitHub Release
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download packaged artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-assets
+          merge-multiple: true
+
+      - name: Publish release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          files: |
+            release-assets/**/*.dmg
+            release-assets/**/*.pkg
+            release-assets/**/*.zip
+            release-assets/**/*.tar.gz
+            release-assets/**/*.deb
+            release-assets/**/*.rpm
+            release-assets/**/*.msi
+            release-assets/**/*.exe
+            release-assets/**/*.jar
+
+
