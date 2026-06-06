@@ -22,32 +22,10 @@ permissions:
   contents: write
 
 jobs:
-  package:
-    if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == matrix.profile
-    name: ${{ matrix.name }}
-    runs-on: ${{ matrix.runner }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - name: macOS Apple Silicon
-            runner: macos-14
-            target: mac-arm64
-            profile: mac-apple-silicon
-            artifact_dir: target/mac-apple-silicon
-            release_label: mac-apple-silicon
-          - name: Windows x64
-            runner: windows-latest
-            target: windows-x64
-            profile: windows-x64
-            artifact_dir: target/windows-x64
-            release_label: windows-x64
-          - name: Linux x64
-            runner: ubuntu-latest
-            target: linux-x64
-            profile: linux-x64
-            artifact_dir: target/linux-x64
-            release_label: linux-x64
+  package-mac-apple-silicon:
+    if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'mac-apple-silicon'
+    name: macOS Apple Silicon
+    runs-on: macos-14
 
     steps:
       - name: Checkout
@@ -74,30 +52,127 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-jdks-v1-${{ hashFiles('scripts/prepare_jdks.py') }}
 
       - name: Prepare packaging JDK
-        run: python scripts/prepare_jdks.py --targets ${{ matrix.target }}
-
-      - name: Build installer (Windows)
-        if: runner.os == 'Windows'
-        shell: cmd
-        run: mvn --batch-mode --no-transfer-progress clean package -P${{ matrix.profile }} -Dmaven.test.skip=true
+        run: python scripts/prepare_jdks.py --targets mac-arm64
 
       - name: Build installer
-        if: runner.os != 'Windows'
-        run: mvn --batch-mode --no-transfer-progress clean package -P${{ matrix.profile }} -Dmaven.test.skip=true
+        run: mvn --batch-mode --no-transfer-progress clean package -Pmac-apple-silicon -Dmaven.test.skip=true
 
       - name: Stage release assets
         run: >-
           python scripts/collect_release_assets.py
-          --source-dir ${{ matrix.artifact_dir }}
-          --output-dir dist/${{ matrix.profile }}
-          --target-label ${{ matrix.release_label }}
+          --source-dir target/mac-apple-silicon
+          --output-dir dist/mac-apple-silicon
+          --target-label mac-apple-silicon
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.profile }}
+          name: mac-apple-silicon
           path: |
-            dist/${{ matrix.profile }}
+            dist/mac-apple-silicon
+          if-no-files-found: error
+          retention-days: 14
+
+  package-windows-x64:
+    if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'windows-x64'
+    name: Windows x64
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Maven JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Cache repository-local JDKs
+        uses: actions/cache@v4
+        with:
+          path: |
+            jdks
+            downloads/jdks
+          key: ${{ runner.os }}-${{ runner.arch }}-jdks-v1-${{ hashFiles('scripts/prepare_jdks.py') }}
+
+      - name: Prepare packaging JDK
+        run: python scripts/prepare_jdks.py --targets windows-x64
+
+      - name: Build installer
+        shell: cmd
+        run: mvn --batch-mode --no-transfer-progress clean package -Pwindows-x64 -Dmaven.test.skip=true
+
+      - name: Stage release assets
+        run: >-
+          python scripts/collect_release_assets.py
+          --source-dir target/windows-x64
+          --output-dir dist/windows-x64
+          --target-label windows-x64
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64
+          path: |
+            dist/windows-x64
+          if-no-files-found: error
+          retention-days: 14
+
+  package-linux-x64:
+    if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'linux-x64'
+    name: Linux x64
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Maven JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: maven
+
+      - name: Cache repository-local JDKs
+        uses: actions/cache@v4
+        with:
+          path: |
+            jdks
+            downloads/jdks
+          key: ${{ runner.os }}-${{ runner.arch }}-jdks-v1-${{ hashFiles('scripts/prepare_jdks.py') }}
+
+      - name: Prepare packaging JDK
+        run: python scripts/prepare_jdks.py --targets linux-x64
+
+      - name: Build installer
+        run: mvn --batch-mode --no-transfer-progress clean package -Plinux-x64 -Dmaven.test.skip=true
+
+      - name: Stage release assets
+        run: >-
+          python scripts/collect_release_assets.py
+          --source-dir target/linux-x64
+          --output-dir dist/linux-x64
+          --target-label linux-x64
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64
+          path: |
+            dist/linux-x64
           if-no-files-found: error
           retention-days: 14
 
@@ -158,7 +233,10 @@ jobs:
   release:
     name: Publish GitHub Release
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: package
+    needs:
+      - package-mac-apple-silicon
+      - package-windows-x64
+      - package-linux-x64
     runs-on: ubuntu-latest
 
     steps:
