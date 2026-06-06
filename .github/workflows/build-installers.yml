@@ -52,14 +52,14 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-jdks-v1-${{ hashFiles('scripts/prepare_jdks.py') }}
 
       - name: Prepare packaging JDK
-        run: python scripts/prepare_jdks.py --targets mac-arm64
+        run: python -u scripts/prepare_jdks.py --targets mac-arm64
 
       - name: Build installer
         run: mvn --batch-mode --no-transfer-progress clean package -Pmac-apple-silicon -Dmaven.test.skip=true
 
       - name: Stage release assets
         run: >-
-          python scripts/collect_release_assets.py
+          python -u scripts/collect_release_assets.py
           --source-dir target/mac-apple-silicon
           --output-dir dist/mac-apple-silicon
           --target-label mac-apple-silicon
@@ -103,7 +103,7 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-jdks-v1-${{ hashFiles('scripts/prepare_jdks.py') }}
 
       - name: Prepare packaging JDK
-        run: python scripts/prepare_jdks.py --targets windows-x64
+        run: python -u scripts/prepare_jdks.py --targets windows-x64
 
       - name: Build installer
         shell: cmd
@@ -111,7 +111,7 @@ jobs:
 
       - name: Stage release assets
         run: >-
-          python scripts/collect_release_assets.py
+          python -u scripts/collect_release_assets.py
           --source-dir target/windows-x64
           --output-dir dist/windows-x64
           --target-label windows-x64
@@ -155,14 +155,14 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-jdks-v1-${{ hashFiles('scripts/prepare_jdks.py') }}
 
       - name: Prepare packaging JDK
-        run: python scripts/prepare_jdks.py --targets linux-x64
+        run: python -u scripts/prepare_jdks.py --targets linux-x64
 
       - name: Build installer
         run: mvn --batch-mode --no-transfer-progress clean package -Plinux-x64 -Dmaven.test.skip=true
 
       - name: Stage release assets
         run: >-
-          python scripts/collect_release_assets.py
+          python -u scripts/collect_release_assets.py
           --source-dir target/linux-x64
           --output-dir dist/linux-x64
           --target-label linux-x64
@@ -207,14 +207,14 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-jdks-v1-${{ hashFiles('scripts/prepare_jdks.py') }}
 
       - name: Prepare packaging JDK
-        run: python3 scripts/prepare_jdks.py --targets mac-x64
+        run: python3 -u scripts/prepare_jdks.py --targets mac-x64 --java-home "$JAVA_HOME"
 
       - name: Build installer
         run: mvn --batch-mode --no-transfer-progress clean package -Pmac-intel -Dmaven.test.skip=true
 
       - name: Stage release assets
         run: >-
-          python3 scripts/collect_release_assets.py
+          python3 -u scripts/collect_release_assets.py
           --source-dir target/mac-intel
           --output-dir dist/mac-intel
           --target-label mac-intel

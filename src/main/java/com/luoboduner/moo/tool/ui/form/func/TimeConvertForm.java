@@ -232,7 +232,7 @@ public class TimeConvertForm {
         }
 
         // Create quick timezone buttons panel
-        timeConvertForm.timezoneQuickPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        timeConvertForm.timezoneQuickPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
         JLabel tzLabel = new JLabel("时区:");
         timeConvertForm.timezoneQuickPanel.add(tzLabel);
         timeConvertForm.timezoneQuickPanel.add(timeConvertForm.timezoneComboBox);
