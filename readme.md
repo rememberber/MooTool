@@ -392,6 +392,8 @@ mvn clean package -Plinux-x64 -Dmaven.test.skip=true
 - `mac-intel`：仅在自托管 Intel Mac runner 上打包
 - `mac-apple-silicon` / `windows-x64` / `linux-x64`：只跑对应 Hosted 平台
 
+如果手动运行时还填写了 `release_tag`（例如 `v1.7.0`），那么本次运行成功产出的安装包会在任务结束后自动追加上传到这个已有的 GitHub Release，适合在正式发布完成后再单独补齐 `mac-intel` 产物。
+
 如果要支持 `mac-intel`，需要先准备一台 Intel Mac，并把 GitHub Actions Runner 注册为仓库级自托管 runner，标签至少包含：
 
 - `self-hosted`
