@@ -261,9 +261,7 @@ jobs:
             release-assets/**/*.tar.gz
             release-assets/**/*.deb
             release-assets/**/*.rpm
-            release-assets/**/*.msi
             release-assets/**/*.exe
-            release-assets/**/*.jar
 
   release-manual-assets:
     name: Append assets to existing GitHub Release
@@ -282,21 +280,20 @@ jobs:
           path: release-assets
           merge-multiple: true
 
+      - name: Verify release assets
+        run: |
+          find release-assets -type f -print
+          if [ -z "$(find release-assets -type f -print -quit)" ]; then
+            echo "No release assets found" >&2
+            exit 1
+          fi
+
       - name: Append assets to release
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ inputs.release_tag }}
           fail_on_unmatched_files: true
-          files: |
-            release-assets/**/*.dmg
-            release-assets/**/*.pkg
-            release-assets/**/*.zip
-            release-assets/**/*.tar.gz
-            release-assets/**/*.deb
-            release-assets/**/*.rpm
-            release-assets/**/*.msi
-            release-assets/**/*.exe
-            release-assets/**/*.jar
+          files: release-assets/**/*
 
   publish-download-links:
     name: Update download_links.json on master
