@@ -217,14 +217,17 @@ Windows • Linux • macOS
 ### 对称加密/解密
 - AES
 - DES
+- SM4
 ### 非对称加密/解密
 - RSA
+- SM2
 ### 摘要算法（文件/文本摘要）
 - MD5
 - SHA1
 - SHA256
 - SHA384
 - SHA512
+- SM3
 ### Base64编码/解码
 ### Base32编码/解码
 ### 随机UUID生成
@@ -312,6 +315,88 @@ Windows • Linux • macOS
 [iconfont](https://www.iconfont.cn/)
 
 ## 开发温馨提示
-最低JDK版本要求：**17**  
+最低JDK版本要求：**21**  
 在你开始开发之前, **请按下图设置IntelliJ IDEA**, 然后 **maven clean**:
 ![considerations](assets/material/gui_build.png)
+
+### 打包与 CI
+
+项目现在支持把打包 JDK 下载并缓存到仓库本地目录：
+
+- JDK 压缩包缓存：`downloads/jdks/`
+- 解压后的 JDK：`jdks/<os>/<arch>/home`
+
+下载脚本默认使用 Eclipse Temurin 21，并且如果本地已经存在对应 JDK，就不会重复下载。
+
+#### 先准备本地打包 JDK
+
+```bash
+python3 scripts/prepare_jdks.py --targets mac-x64
+python3 scripts/prepare_jdks.py --targets mac-arm64
+python3 scripts/prepare_jdks.py --targets windows-x64
+python3 scripts/prepare_jdks.py --targets linux-x64
+```
+
+也可以一次性查看全部目标会下载到哪里：
+
+```bash
+python3 scripts/prepare_jdks.py --targets all --resolve-only
+```
+
+#### 本地打包命令
+
+默认 `mvn clean package` 仍然会使用当前运行 Maven 的 JDK 打一个 macOS universal 包。
+
+对于 `mac-intel`、`mac-apple-silicon`、`windows-x64`、`linux-x64` 这几个 profile，Maven 会在 `validate` 阶段先检查 `jdks/` 下是否已经准备好对应 JDK；如果缺失，会直接失败并提示先执行 `scripts/prepare_jdks.py`，避免打出“假成功”的安装包。
+
+如果要使用仓库内缓存 JDK 打指定平台包：
+
+```bash
+mvn clean package -Pmac-intel -Dmaven.test.skip=true
+mvn clean package -Pmac-apple-silicon -Dmaven.test.skip=true
+mvn clean package -Pwindows-x64 -Dmaven.test.skip=true
+mvn clean package -Plinux-x64 -Dmaven.test.skip=true
+```
+
+对应产物目录：
+
+- 默认包：`target/`
+- Intel Mac：`target/mac-intel/`
+- Apple Silicon Mac：`target/mac-apple-silicon/`
+- Windows x64：`target/windows-x64/`
+- Linux x64：`target/linux-x64/`
+
+#### GitHub Actions
+
+仓库内新增了工作流：`.github/workflows/build-installers.yml`
+
+> 建议在对应原生 runner 上产出对应平台安装包：mac 安装包在 macOS runner，Windows 安装包在 Windows runner，Linux 安装包在 Linux runner。
+
+特点：
+
+- 支持 `workflow_dispatch`
+- 推送 `v*` 标签时自动执行
+- 推送 `v*` 标签时，默认在 GitHub Hosted runner 上打包：
+  - `macos-14`：`mac-apple-silicon`
+  - `windows-latest`：`windows-x64`
+  - `ubuntu-latest`：`linux-x64`
+- `mac-intel` 改为单独手动触发，并使用 `self-hosted`, `macOS`, `X64` 标签的自托管 runner，避免长期卡在 `macos-13` 队列上
+- 使用 `actions/cache` 缓存 `downloads/jdks/` 和 `jdks/`
+- 每个 job 会把产物重命名为统一格式后再上传，例如：`MooTool-1.7.0-mac-intel.dmg`、`MooTool-1.7.0-windows-x64.zip`
+- Actions Summary 会列出“原始文件名 -> Release 文件名”的对照表，方便核对每个平台实际产物
+- 推送 `v*` 标签时，会自动创建或更新对应 GitHub Release，并上传构建出的安装包附件
+
+手动触发 `Build installers` 时，可以在页面中选择 `target`：
+
+- `all`：运行 Hosted 平台构建，并额外尝试运行自托管的 `mac-intel`
+- `mac-intel`：仅在自托管 Intel Mac runner 上打包
+- `mac-apple-silicon` / `windows-x64` / `linux-x64`：只跑对应 Hosted 平台
+
+如果手动运行时还填写了 `release_tag`（例如 `v1.7.0`），那么本次运行成功产出的安装包会在任务结束后自动追加上传到这个已有的 GitHub Release，适合在正式发布完成后再单独补齐 `mac-intel` 产物。
+
+如果要支持 `mac-intel`，需要先准备一台 Intel Mac，并把 GitHub Actions Runner 注册为仓库级自托管 runner，标签至少包含：
+
+- `self-hosted`
+- `macOS`
+- `X64`
+

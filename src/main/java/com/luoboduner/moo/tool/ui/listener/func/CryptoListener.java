@@ -9,13 +9,16 @@ import cn.hutool.core.util.IdUtil;
 import cn.hutool.core.util.RandomUtil;
 import cn.hutool.core.util.StrUtil;
 import cn.hutool.crypto.SecureUtil;
+import cn.hutool.crypto.SmUtil;
 import cn.hutool.crypto.asymmetric.KeyType;
 import cn.hutool.crypto.asymmetric.RSA;
+import cn.hutool.crypto.asymmetric.SM2;
 import cn.hutool.crypto.digest.DigestAlgorithm;
 import cn.hutool.crypto.digest.DigestUtil;
 import cn.hutool.crypto.digest.Digester;
 import cn.hutool.crypto.symmetric.AES;
 import cn.hutool.crypto.symmetric.DES;
+import cn.hutool.crypto.symmetric.SM4;
 import cn.hutool.crypto.symmetric.SymmetricAlgorithm;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
@@ -65,6 +68,13 @@ public class CryptoListener {
                     // 加密为16进制表示
                     String encryptHex = des.encryptHex(content);
                     cryptoForm.getSymTextAreaRight().setText(encryptHex);
+                } else if ("SM4".equals(symType)) {
+                    byte[] generatedKey = SecureUtil.generateKey("SM4", key.getBytes()).getEncoded();
+
+                    SM4 sm4 = SmUtil.sm4(generatedKey);
+                    // 加密为16进制表示
+                    String encryptHex = sm4.encryptHex(content);
+                    cryptoForm.getSymTextAreaRight().setText(encryptHex);
                 }
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
@@ -90,6 +100,12 @@ public class CryptoListener {
 
                     DES des = SecureUtil.des(generatedKey);
                     String decryptStr = des.decryptStr(content);
+                    cryptoForm.getSymTextAreaLeft().setText(decryptStr);
+                } else if ("SM4".equals(symType)) {
+                    byte[] generatedKey = SecureUtil.generateKey("SM4", key.getBytes()).getEncoded();
+
+                    SM4 sm4 = SmUtil.sm4(generatedKey);
+                    String decryptStr = sm4.decryptStr(content);
                     cryptoForm.getSymTextAreaLeft().setText(decryptStr);
                 }
             } catch (Exception ex) {
@@ -121,6 +137,9 @@ public class CryptoListener {
                         break;
                     case "SHA-512":
                         digestResult = new Digester(DigestAlgorithm.SHA512).digestHex(digestContent, CharsetUtil.UTF_8);
+                        break;
+                    case "SM3":
+                        digestResult = SmUtil.sm3(digestContent);
                         break;
                     default:
                         digestResult = "";
@@ -155,6 +174,9 @@ public class CryptoListener {
                         break;
                     case "SHA-512":
                         digestResult = new Digester(DigestAlgorithm.SHA512).digestHex(FileUtil.file(filePath));
+                        break;
+                    case "SM3":
+                        digestResult = SmUtil.sm3(FileUtil.file(filePath));
                         break;
                     default:
                         digestResult = "";
@@ -291,6 +313,10 @@ public class CryptoListener {
                     KeyPair pair = SecureUtil.generateKeyPair("DSA");
                     privateKeyStr = Base64.encode(pair.getPrivate().getEncoded());
                     publicKeyStr = Base64.encode(pair.getPublic().getEncoded());
+                } else if ("SM2".equals(asymType)) {
+                    SM2 sm2 = SmUtil.sm2();
+                    privateKeyStr = sm2.getPrivateKeyBase64();
+                    publicKeyStr = sm2.getPublicKeyBase64();
                 }
                 cryptoForm.getAsymPubKeyTextArea().setText(publicKeyStr);
                 cryptoForm.getAsymPubKeyTextArea().setCaretPosition(0);
@@ -313,6 +339,9 @@ public class CryptoListener {
                 if ("RSA".equals(asymType)) {
                     RSA rsa = new RSA(null, publicKeyStr);
                     encryptStr = Base64.encode(rsa.encrypt(StrUtil.bytes(toEncryptStr, CharsetUtil.CHARSET_UTF_8), KeyType.PublicKey));
+                } else if ("SM2".equals(asymType)) {
+                    SM2 sm2 = SmUtil.sm2(null, publicKeyStr);
+                    encryptStr = Base64.encode(sm2.encrypt(StrUtil.bytes(toEncryptStr, CharsetUtil.CHARSET_UTF_8), KeyType.PublicKey));
                 }
 
                 cryptoForm.getAsymRightTextArea().setText(encryptStr);
@@ -334,6 +363,9 @@ public class CryptoListener {
                 if ("RSA".equals(asymType)) {
                     RSA rsa = new RSA(privateKeyStr, null);
                     decryptStr = StrUtil.str(rsa.decrypt(Base64.decode(toDecryptStr), KeyType.PrivateKey), CharsetUtil.CHARSET_UTF_8);
+                } else if ("SM2".equals(asymType)) {
+                    SM2 sm2 = SmUtil.sm2(privateKeyStr, null);
+                    decryptStr = StrUtil.str(sm2.decrypt(Base64.decode(toDecryptStr), KeyType.PrivateKey), CharsetUtil.CHARSET_UTF_8);
                 }
 
                 cryptoForm.getAsymLeftTextArea().setText(decryptStr);

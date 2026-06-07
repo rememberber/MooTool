@@ -1,5 +1,5 @@
 {
-  "currentVersion": "v1.7.0",
+  "currentVersion": "v1.7.1",
   "versionIndex": {
     "v0.0.0": "0",
     "v1.0.0": "1",
@@ -41,7 +41,8 @@
     "v1.6.7": "37",
     "v1.6.8": "38",
     "v1.6.9": "39",
-    "v1.7.0": "40"
+    "v1.7.0": "40",
+    "v1.7.1": "41"
   },
   "versionDetailList": [
     {
@@ -248,6 +249,11 @@
       "version": "v1.7.0",
       "title": "HTTP工具支持cURL导入",
       "log": "● 新功能：HTTP工具支持cURL导入 by Cassian Florin\n\n"
+    },
+    {
+      "version": "v1.7.1",
+      "title": "近期累积的一些更新和优化",
+      "log": "● feat(cron): 支持Linux Cron表达式 by Cassian Florin\n● feat(cron): fix(undo): 修复 Ctrl+Z 撤销异常 by Cassian Florin\n● fix(tray): 修复多屏托盘菜单定位 by Cassian Florin\n● fix: support Apple Silicon macOS package selection by Cassian Florin\n● feat: 时间转换支持时区\n\n"
     }
   ]
 }

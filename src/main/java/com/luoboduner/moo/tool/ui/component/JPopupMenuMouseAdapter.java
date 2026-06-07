@@ -53,10 +53,36 @@ public class JPopupMenuMouseAdapter extends MouseAdapter {
     private void maybeShowPopup(MouseEvent e) {
         if (e.isPopupTrigger()) {
             Dimension size = popupMenu.getPreferredSize();
-            popupMenu.setLocation(e.getX() - size.width, e.getY() - size.height);
+            Point mousePoint = new Point(e.getXOnScreen(), e.getYOnScreen());
+            Point popupLocation = calculatePopupLocation(mousePoint, size, getScreenBounds(mousePoint));
+            popupMenu.setLocation(popupLocation);
             popupMenu.setInvoker(popupMenu);
             popupMenu.setVisible(true);
         }
+    }
+
+    static Point calculatePopupLocation(Point mousePoint, Dimension popupSize, Rectangle screenBounds) {
+        int x = mousePoint.x - popupSize.width;
+        int y = mousePoint.y - popupSize.height;
+
+        int maxX = Math.max(screenBounds.x, screenBounds.x + screenBounds.width - popupSize.width);
+        int maxY = Math.max(screenBounds.y, screenBounds.y + screenBounds.height - popupSize.height);
+
+        x = Math.max(screenBounds.x, Math.min(x, maxX));
+        y = Math.max(screenBounds.y, Math.min(y, maxY));
+
+        return new Point(x, y);
+    }
+
+    private static Rectangle getScreenBounds(Point point) {
+        GraphicsEnvironment graphicsEnvironment = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        for (GraphicsDevice screenDevice : graphicsEnvironment.getScreenDevices()) {
+            Rectangle bounds = screenDevice.getDefaultConfiguration().getBounds();
+            if (bounds.contains(point)) {
+                return bounds;
+            }
+        }
+        return graphicsEnvironment.getDefaultScreenDevice().getDefaultConfiguration().getBounds();
     }
 
     public static void showMainFrame() {

@@ -27,9 +27,14 @@ target/
 /nbdist/
 /.nb-gradle/
 build/
+dist/
 
 ### VS Code ###
 .vscode/
 
 
 logs/
+.codegraph/
+.cursor/
+downloads/
+jdks/
