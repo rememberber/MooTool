@@ -5,7 +5,6 @@ import com.luoboduner.moo.tool.util.ScrollUtil;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
-import javax.swing.border.TitledBorder;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.html.HTMLEditorKit;
 import java.awt.*;
@@ -47,8 +46,6 @@ public class QuickNoteMarkdownPreviewPane extends JPanel {
         scrollPane.setBorder(new EmptyBorder(0, 0, 0, 0));
         scrollPane.getViewport().setBackground(editorPane.getBackground());
         ScrollUtil.smoothPane(scrollPane);
-
-        updatePanelBorder();
         add(scrollPane, BorderLayout.CENTER);
     }
 
@@ -63,20 +60,6 @@ public class QuickNoteMarkdownPreviewPane extends JPanel {
                 scrollPane.getViewport().setBackground(background);
             }
         }
-    }
-
-    private void updatePanelBorder() {
-        TitledBorder titledBorder = BorderFactory.createTitledBorder(
-                BorderFactory.createMatteBorder(0, 1, 0, 0, UIManager.getColor("Component.borderColor")),
-                "预览",
-                TitledBorder.LEADING,
-                TitledBorder.TOP,
-                getFont().deriveFont(Font.BOLD, 11f),
-                UIManager.getColor("Label.disabledForeground")
-        );
-        titledBorder.setTitlePosition(TitledBorder.ABOVE_TOP);
-        setBorder(new EmptyBorder(4, 8, 0, 0));
-        scrollPane.setBorder(titledBorder);
     }
 
     public void updateContent(String markdown) {
@@ -94,7 +77,6 @@ public class QuickNoteMarkdownPreviewPane extends JPanel {
 
     public void refreshTheme(String markdown) {
         syncEditorBackground();
-        updatePanelBorder();
         lastMarkdown = "";
         updateContent(markdown);
     }

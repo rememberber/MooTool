@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.util;
 
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
+import com.luoboduner.moo.tool.App;
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension;
 import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughExtension;
 import com.vladsch.flexmark.ext.tables.TablesExtension;
@@ -9,13 +10,17 @@ import com.vladsch.flexmark.html.HtmlRenderer;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Node;
 import com.vladsch.flexmark.util.data.MutableDataSet;
+import org.fife.ui.rsyntaxtextarea.HtmlUtil;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
+import org.fife.ui.rsyntaxtextarea.Theme;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import javax.swing.*;
+import java.io.IOException;
 import java.awt.*;
 import java.util.Arrays;
 
@@ -26,6 +31,8 @@ public class QuickNoteMarkdownUtil {
 
     private static final Parser PARSER;
     private static final HtmlRenderer RENDERER;
+    private static final Theme DARK_SYNTAX_THEME;
+    private static final Theme LIGHT_SYNTAX_THEME;
 
     static {
         MutableDataSet options = new MutableDataSet();
@@ -38,6 +45,15 @@ public class QuickNoteMarkdownUtil {
         RENDERER = HtmlRenderer.builder(options)
                 .escapeHtml(true)
                 .build();
+
+        try {
+            DARK_SYNTAX_THEME = Theme.load(App.class.getResourceAsStream(
+                    "/org/fife/ui/rsyntaxtextarea/themes/monokai.xml"));
+            LIGHT_SYNTAX_THEME = Theme.load(App.class.getResourceAsStream(
+                    "/org/fife/ui/rsyntaxtextarea/themes/idea.xml"));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private QuickNoteMarkdownUtil() {
@@ -67,6 +83,7 @@ public class QuickNoteMarkdownUtil {
         styleParagraphs(body, theme);
         styleLinks(body, theme);
         styleInlineCode(body, theme);
+        highlightCodeBlocks(body);
         styleCodeBlocks(body, theme);
         styleBlockquotes(body, theme);
         styleLists(body, theme);
@@ -103,6 +120,103 @@ public class QuickNoteMarkdownUtil {
             }
             code.attr("style", theme.inlineCodeStyle());
         }
+    }
+
+    private static void highlightCodeBlocks(Element body) {
+        RSyntaxTextArea helper = createSyntaxHelper();
+
+        for (Element pre : body.select("pre")) {
+            Element codeEl = pre.selectFirst("code");
+            if (codeEl == null) {
+                continue;
+            }
+
+            String language = extractLanguage(codeEl);
+            if (language == null || language.isBlank()) {
+                continue;
+            }
+
+            String syntaxStyle = resolveSyntaxEditingStyle(language);
+            if (SyntaxConstants.SYNTAX_STYLE_NONE.equals(syntaxStyle)) {
+                continue;
+            }
+
+            String codeText = codeEl.text();
+            if (codeText == null) {
+                codeText = "";
+            }
+            int len = codeText.length();
+            if (len == 0) {
+                continue;
+            }
+
+            helper.setSyntaxEditingStyle(syntaxStyle);
+            helper.setText(codeText);
+            String highlighted = HtmlUtil.getTextAsHtml(helper, 0, len - 1);
+
+            Document frag = Jsoup.parseBodyFragment(highlighted);
+            Element newPre = frag.selectFirst("pre");
+            if (newPre != null) {
+                pre.replaceWith(newPre);
+            }
+        }
+    }
+
+    private static RSyntaxTextArea createSyntaxHelper() {
+        RSyntaxTextArea helper = new RSyntaxTextArea();
+        helper.setEditable(false);
+        Theme theme = FlatLaf.isLafDark() ? DARK_SYNTAX_THEME : LIGHT_SYNTAX_THEME;
+        theme.apply(helper);
+        return helper;
+    }
+
+    private static String extractLanguage(Element codeEl) {
+        String classAttr = codeEl.className();
+        if (classAttr == null || classAttr.isBlank()) {
+            return null;
+        }
+        // flexmark-fenced-code-block 的默认输出一般是: language-java / language-javascript ...
+        for (String cls : classAttr.split("\\s+")) {
+            if (cls.startsWith("language-")) {
+                return cls.substring("language-".length());
+            }
+            if (cls.startsWith("lang-")) {
+                return cls.substring("lang-".length());
+            }
+        }
+        return null;
+    }
+
+    private static String resolveSyntaxEditingStyle(String language) {
+        String lang = language.trim().toLowerCase();
+
+        // 兼容一些常见写法
+        if ("c++".equals(lang)) {
+            lang = "cpp";
+        }
+        if ("c#".equals(lang)) {
+            lang = "csharp";
+        }
+
+        return switch (lang) {
+            case "java" -> SyntaxConstants.SYNTAX_STYLE_JAVA;
+            case "javascript", "js" -> SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT;
+            case "typescript", "ts" -> SyntaxConstants.SYNTAX_STYLE_TYPESCRIPT;
+            case "python", "py" -> SyntaxConstants.SYNTAX_STYLE_PYTHON;
+            case "c" -> SyntaxConstants.SYNTAX_STYLE_C;
+            case "cpp" -> SyntaxConstants.SYNTAX_STYLE_CPLUSPLUS;
+            case "csharp" -> SyntaxConstants.SYNTAX_STYLE_CSHARP;
+            case "html" -> SyntaxConstants.SYNTAX_STYLE_HTML;
+            case "xml" -> SyntaxConstants.SYNTAX_STYLE_XML;
+            case "css" -> SyntaxConstants.SYNTAX_STYLE_CSS;
+            case "json" -> SyntaxConstants.SYNTAX_STYLE_JSON;
+            case "sql" -> SyntaxConstants.SYNTAX_STYLE_SQL;
+            case "yaml", "yml" -> SyntaxConstants.SYNTAX_STYLE_YAML;
+            case "bash", "shell", "sh", "zsh" -> SyntaxConstants.SYNTAX_STYLE_UNIX_SHELL;
+            case "dockerfile" -> SyntaxConstants.SYNTAX_STYLE_DOCKERFILE;
+            case "markdown", "md" -> SyntaxConstants.SYNTAX_STYLE_MARKDOWN;
+            default -> SyntaxConstants.SYNTAX_STYLE_NONE;
+        };
     }
 
     private static void styleCodeBlocks(Element body, MarkdownTheme theme) {
@@ -259,7 +373,7 @@ public class QuickNoteMarkdownUtil {
         String preStyle() {
             return "font-family:" + monoFamily + ";font-size:13px;color:" + codeText
                     + ";background-color:" + codeBg + ";border:1px solid " + border
-                    + ";padding:14px 16px;margin:0 0 16px 0;line-height:1.55;white-space:pre;";
+                    + ";padding:14px 16px;margin:0 0 16px 0;line-height:1.55;white-space:pre-wrap;";
         }
 
         String preCodeStyle() {
