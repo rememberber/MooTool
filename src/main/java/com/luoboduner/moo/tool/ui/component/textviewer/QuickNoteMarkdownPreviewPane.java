@@ -4,6 +4,8 @@ import com.luoboduner.moo.tool.util.QuickNoteMarkdownUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.border.TitledBorder;
 import javax.swing.event.HyperlinkEvent;
 import javax.swing.text.html.HTMLEditorKit;
 import java.awt.*;
@@ -22,12 +24,14 @@ public class QuickNoteMarkdownPreviewPane extends JPanel {
 
     public QuickNoteMarkdownPreviewPane() {
         setLayout(new BorderLayout());
+        setBackground(UIManager.getColor("Panel.background"));
+
         editorPane = new JEditorPane();
         editorPane.setEditable(false);
         editorPane.setContentType("text/html; charset=utf-8");
         editorPane.setEditorKit(new HTMLEditorKit());
         editorPane.setMargin(new Insets(0, 0, 0, 0));
-        editorPane.setBackground(UIManager.getColor("Editor.background"));
+        syncEditorBackground();
         editorPane.addHyperlinkListener(e -> {
             if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
                 Desktop desktop = Desktop.getDesktop();
@@ -40,8 +44,39 @@ public class QuickNoteMarkdownPreviewPane extends JPanel {
         });
 
         scrollPane = new JScrollPane(editorPane);
+        scrollPane.setBorder(new EmptyBorder(0, 0, 0, 0));
+        scrollPane.getViewport().setBackground(editorPane.getBackground());
         ScrollUtil.smoothPane(scrollPane);
+
+        updatePanelBorder();
         add(scrollPane, BorderLayout.CENTER);
+    }
+
+    private void syncEditorBackground() {
+        Color background = UIManager.getColor("Editor.background");
+        if (background == null) {
+            background = UIManager.getColor("Panel.background");
+        }
+        if (background != null) {
+            editorPane.setBackground(background);
+            if (scrollPane != null) {
+                scrollPane.getViewport().setBackground(background);
+            }
+        }
+    }
+
+    private void updatePanelBorder() {
+        TitledBorder titledBorder = BorderFactory.createTitledBorder(
+                BorderFactory.createMatteBorder(0, 1, 0, 0, UIManager.getColor("Component.borderColor")),
+                "预览",
+                TitledBorder.LEADING,
+                TitledBorder.TOP,
+                getFont().deriveFont(Font.BOLD, 11f),
+                UIManager.getColor("Label.disabledForeground")
+        );
+        titledBorder.setTitlePosition(TitledBorder.ABOVE_TOP);
+        setBorder(new EmptyBorder(4, 8, 0, 0));
+        scrollPane.setBorder(titledBorder);
     }
 
     public void updateContent(String markdown) {
@@ -58,6 +93,8 @@ public class QuickNoteMarkdownPreviewPane extends JPanel {
     }
 
     public void refreshTheme(String markdown) {
+        syncEditorBackground();
+        updatePanelBorder();
         lastMarkdown = "";
         updateContent(markdown);
     }

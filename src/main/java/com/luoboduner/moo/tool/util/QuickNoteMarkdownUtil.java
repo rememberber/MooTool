@@ -1,6 +1,7 @@
 package com.luoboduner.moo.tool.util;
 
 import com.formdev.flatlaf.FlatLaf;
+import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension;
 import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughExtension;
 import com.vladsch.flexmark.ext.tables.TablesExtension;
@@ -9,6 +10,10 @@ import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Node;
 import com.vladsch.flexmark.util.data.MutableDataSet;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.select.Elements;
 
 import javax.swing.*;
 import java.awt.*;
@@ -30,7 +35,9 @@ public class QuickNoteMarkdownUtil {
                 AutolinkExtension.create()
         ));
         PARSER = Parser.builder(options).build();
-        RENDERER = HtmlRenderer.builder(options).build();
+        RENDERER = HtmlRenderer.builder(options)
+                .escapeHtml(true)
+                .build();
     }
 
     private QuickNoteMarkdownUtil() {
@@ -46,64 +53,305 @@ public class QuickNoteMarkdownUtil {
         }
         Node document = PARSER.parse(markdown);
         String body = RENDERER.render(document);
-        return "<html><head><style>" + buildStyles() + "</style></head><body>" + body + "</body></html>";
+        MarkdownTheme theme = MarkdownTheme.current();
+        String styledBody = applyInlineStyles(body, theme);
+        return "<html><head><style>" + theme.baseCss() + "</style></head><body>"
+                + "<div class=\"md-root\">" + styledBody + "</div></body></html>";
     }
 
-    private static String buildStyles() {
-        Color textColor = getUiColor("Label.foreground", Color.BLACK);
-        Color background = getUiColor("Editor.background", Color.WHITE);
-        Color borderColor = getUiColor("Component.borderColor", new Color(200, 200, 200));
-        Color codeBackground = FlatLaf.isLafDark()
-                ? new Color(45, 45, 45)
-                : new Color(246, 248, 250);
-        Color linkColor = getUiColor("Component.linkColor", new Color(9, 105, 218));
-        Color quoteColor = FlatLaf.isLafDark()
-                ? new Color(180, 180, 180)
-                : new Color(106, 115, 125);
-        String fontFamily = resolveFontFamily();
+    private static String applyInlineStyles(String html, MarkdownTheme theme) {
+        Document doc = Jsoup.parseBodyFragment(html);
+        Element body = doc.body();
 
-        return "body{font-family:" + fontFamily + ";font-size:14px;color:rgb(" + toRgb(textColor)
-                + ");background:rgb(" + toRgb(background) + ");padding:12px 16px;line-height:1.6;margin:0;}"
-                + "h1{font-size:2em;font-weight:600;border-bottom:1px solid rgb(" + toRgb(borderColor)
-                + ");padding-bottom:0.3em;margin-top:0.8em;margin-bottom:0.6em;}"
-                + "h2{font-size:1.5em;font-weight:600;border-bottom:1px solid rgb(" + toRgb(borderColor)
-                + ");padding-bottom:0.3em;margin-top:0.8em;margin-bottom:0.6em;}"
-                + "h3{font-size:1.25em;font-weight:600;margin-top:0.8em;margin-bottom:0.5em;}"
-                + "h4,h5,h6{font-weight:600;margin-top:0.8em;margin-bottom:0.5em;}"
-                + "p{margin:0.6em 0;}"
-                + "a{color:rgb(" + toRgb(linkColor) + ");text-decoration:none;}"
-                + "a:hover{text-decoration:underline;}"
-                + "code{font-family:monospace;background:rgb(" + toRgb(codeBackground)
-                + ");padding:2px 5px;border-radius:4px;font-size:0.9em;}"
-                + "pre{background:rgb(" + toRgb(codeBackground) + ");padding:12px;border-radius:6px;"
-                + "border:1px solid rgb(" + toRgb(borderColor) + ");overflow:auto;}"
-                + "pre code{background:none;padding:0;border-radius:0;}"
-                + "blockquote{border-left:4px solid rgb(" + toRgb(borderColor) + ");margin:0.6em 0;"
-                + "padding:0 1em;color:rgb(" + toRgb(quoteColor) + ");}"
-                + "ul,ol{padding-left:1.6em;margin:0.6em 0;}"
-                + "li{margin:0.2em 0;}"
-                + "table{border-collapse:collapse;margin:0.8em 0;width:100%;}"
-                + "th,td{border:1px solid rgb(" + toRgb(borderColor) + ");padding:6px 12px;}"
-                + "th{background:rgb(" + toRgb(codeBackground) + ");font-weight:600;}"
-                + "hr{border:none;border-top:1px solid rgb(" + toRgb(borderColor) + ");margin:1em 0;}"
-                + "img{max-width:100%;}"
-                + "del{opacity:0.7;}";
+        styleHeadings(body, theme);
+        styleParagraphs(body, theme);
+        styleLinks(body, theme);
+        styleInlineCode(body, theme);
+        styleCodeBlocks(body, theme);
+        styleBlockquotes(body, theme);
+        styleLists(body, theme);
+        styleTables(body, theme);
+        styleHorizontalRules(body, theme);
+        styleImages(body, theme);
+        styleStrongAndEm(body, theme);
+        styleDeleted(body, theme);
+
+        return body.html();
     }
 
-    private static Color getUiColor(String key, Color fallback) {
-        Color color = UIManager.getColor(key);
-        return color != null ? color : fallback;
+    private static void styleHeadings(Element body, MarkdownTheme theme) {
+        applyStyle(body.select("h1"), theme.h1Style());
+        applyStyle(body.select("h2"), theme.h2Style());
+        applyStyle(body.select("h3"), theme.h3Style());
+        applyStyle(body.select("h4"), theme.h4Style());
+        applyStyle(body.select("h5"), theme.h5Style());
+        applyStyle(body.select("h6"), theme.h6Style());
     }
 
-    private static String resolveFontFamily() {
-        Font font = UIManager.getFont("Label.font");
-        if (font == null) {
-            return "sans-serif";
+    private static void styleParagraphs(Element body, MarkdownTheme theme) {
+        applyStyle(body.select("p"), theme.paragraphStyle());
+    }
+
+    private static void styleLinks(Element body, MarkdownTheme theme) {
+        applyStyle(body.select("a"), theme.linkStyle());
+    }
+
+    private static void styleInlineCode(Element body, MarkdownTheme theme) {
+        for (Element code : body.select("code")) {
+            if (code.parent() != null && "pre".equalsIgnoreCase(code.parent().tagName())) {
+                continue;
+            }
+            code.attr("style", theme.inlineCodeStyle());
         }
-        return font.getFamily();
     }
 
-    private static String toRgb(Color color) {
-        return color.getRed() + "," + color.getGreen() + "," + color.getBlue();
+    private static void styleCodeBlocks(Element body, MarkdownTheme theme) {
+        applyStyle(body.select("pre"), theme.preStyle());
+        for (Element code : body.select("pre > code")) {
+            code.attr("style", theme.preCodeStyle());
+        }
+    }
+
+    private static void styleBlockquotes(Element body, MarkdownTheme theme) {
+        applyStyle(body.select("blockquote"), theme.blockquoteStyle());
+        applyStyle(body.select("blockquote p"), theme.blockquoteParagraphStyle());
+    }
+
+    private static void styleLists(Element body, MarkdownTheme theme) {
+        applyStyle(body.select("ul"), theme.listStyle());
+        applyStyle(body.select("ol"), theme.listStyle());
+        applyStyle(body.select("li"), theme.listItemStyle());
+    }
+
+    private static void styleTables(Element body, MarkdownTheme theme) {
+        applyStyle(body.select("table"), theme.tableStyle());
+        applyStyle(body.select("thead"), theme.tableHeadStyle());
+        applyStyle(body.select("th"), theme.thStyle());
+        applyStyle(body.select("td"), theme.tdStyle());
+        applyStyle(body.select("tr"), theme.trStyle());
+    }
+
+    private static void styleHorizontalRules(Element body, MarkdownTheme theme) {
+        applyStyle(body.select("hr"), theme.hrStyle());
+    }
+
+    private static void styleImages(Element body, MarkdownTheme theme) {
+        applyStyle(body.select("img"), theme.imageStyle());
+    }
+
+    private static void styleStrongAndEm(Element body, MarkdownTheme theme) {
+        applyStyle(body.select("strong"), theme.strongStyle());
+        applyStyle(body.select("em"), theme.emStyle());
+    }
+
+    private static void styleDeleted(Element body, MarkdownTheme theme) {
+        applyStyle(body.select("del"), theme.delStyle());
+    }
+
+    private static void applyStyle(Elements elements, String style) {
+        for (Element element : elements) {
+            element.attr("style", style);
+        }
+    }
+
+    private static final class MarkdownTheme {
+
+        private final String text;
+        private final String muted;
+        private final String background;
+        private final String surface;
+        private final String border;
+        private final String accent;
+        private final String link;
+        private final String codeText;
+        private final String codeBg;
+        private final String quoteBorder;
+        private final String fontFamily;
+        private final String monoFamily;
+
+        private MarkdownTheme(boolean dark) {
+            Color editorBg = getUiColor("Editor.background", dark ? new Color(30, 30, 30) : Color.WHITE);
+            Color editorFg = getUiColor("Label.foreground", dark ? new Color(220, 220, 220) : new Color(36, 41, 47));
+            Color linkColor = getUiColor("Component.linkColor", dark ? new Color(88, 166, 255) : new Color(9, 105, 218));
+            Color accentColor = getUiColor("Component.accentColor", linkColor);
+
+            if (dark) {
+                text = toHex(editorFg);
+                muted = "#9ea7b3";
+                background = toHex(editorBg);
+                surface = blend(editorBg, Color.WHITE, 0.06);
+                border = "#3d444d";
+                accent = toHex(accentColor);
+                link = toHex(linkColor);
+                codeText = "#e6edf3";
+                codeBg = blend(editorBg, Color.WHITE, 0.08);
+                quoteBorder = "#484f58";
+            } else {
+                text = toHex(editorFg);
+                muted = "#656d76";
+                background = toHex(editorBg);
+                surface = "#f6f8fa";
+                border = "#d0d7de";
+                accent = toHex(accentColor);
+                link = toHex(linkColor);
+                codeText = "#24292f";
+                codeBg = "#f6f8fa";
+                quoteBorder = "#d0d7de";
+            }
+            fontFamily = resolveFontFamily();
+            monoFamily = FlatJetBrainsMonoFont.FAMILY + ", monospace";
+        }
+
+        static MarkdownTheme current() {
+            return new MarkdownTheme(FlatLaf.isLafDark());
+        }
+
+        String baseCss() {
+            return "body{margin:0;padding:0;background-color:" + background + ";}"
+                    + ".md-root{font-family:" + fontFamily + ";font-size:14px;color:" + text
+                    + ";line-height:1.7;padding:20px 24px 28px 24px;background-color:" + background + ";}";
+        }
+
+        String h1Style() {
+            return "font-family:" + fontFamily + ";font-size:28px;font-weight:bold;color:" + text
+                    + ";margin:0 0 16px 0;padding:0 0 10px 0;border-bottom:2px solid " + border + ";line-height:1.3;";
+        }
+
+        String h2Style() {
+            return "font-family:" + fontFamily + ";font-size:22px;font-weight:bold;color:" + text
+                    + ";margin:28px 0 12px 0;padding:0 0 8px 0;border-bottom:1px solid " + border + ";line-height:1.35;";
+        }
+
+        String h3Style() {
+            return "font-family:" + fontFamily + ";font-size:18px;font-weight:bold;color:" + text
+                    + ";margin:24px 0 10px 0;line-height:1.4;";
+        }
+
+        String h4Style() {
+            return "font-family:" + fontFamily + ";font-size:16px;font-weight:bold;color:" + text
+                    + ";margin:20px 0 8px 0;line-height:1.45;";
+        }
+
+        String h5Style() {
+            return "font-family:" + fontFamily + ";font-size:15px;font-weight:bold;color:" + muted
+                    + ";margin:18px 0 8px 0;line-height:1.45;";
+        }
+
+        String h6Style() {
+            return "font-family:" + fontFamily + ";font-size:14px;font-weight:bold;color:" + muted
+                    + ";margin:16px 0 8px 0;line-height:1.45;";
+        }
+
+        String paragraphStyle() {
+            return "font-family:" + fontFamily + ";font-size:14px;color:" + text
+                    + ";margin:0 0 14px 0;line-height:1.75;";
+        }
+
+        String linkStyle() {
+            return "font-family:" + fontFamily + ";color:" + link + ";text-decoration:underline;";
+        }
+
+        String inlineCodeStyle() {
+            return "font-family:" + monoFamily + ";font-size:13px;color:" + codeText
+                    + ";background-color:" + codeBg + ";padding:2px 6px;border:1px solid " + border + ";";
+        }
+
+        String preStyle() {
+            return "font-family:" + monoFamily + ";font-size:13px;color:" + codeText
+                    + ";background-color:" + codeBg + ";border:1px solid " + border
+                    + ";padding:14px 16px;margin:0 0 16px 0;line-height:1.55;white-space:pre;";
+        }
+
+        String preCodeStyle() {
+            return "font-family:" + monoFamily + ";font-size:13px;color:" + codeText
+                    + ";background-color:" + codeBg + ";padding:0;margin:0;border:0;";
+        }
+
+        String blockquoteStyle() {
+            return "font-family:" + fontFamily + ";color:" + muted + ";background-color:" + surface
+                    + ";border-left:4px solid " + quoteBorder + ";margin:0 0 16px 0;padding:12px 16px;";
+        }
+
+        String blockquoteParagraphStyle() {
+            return "font-family:" + fontFamily + ";font-size:14px;color:" + muted
+                    + ";margin:0 0 8px 0;line-height:1.7;";
+        }
+
+        String listStyle() {
+            return "font-family:" + fontFamily + ";color:" + text + ";margin:0 0 14px 0;padding-left:28px;";
+        }
+
+        String listItemStyle() {
+            return "font-family:" + fontFamily + ";font-size:14px;color:" + text
+                    + ";margin:0 0 6px 0;line-height:1.7;";
+        }
+
+        String tableStyle() {
+            return "font-family:" + fontFamily + ";font-size:14px;color:" + text
+                    + ";border-collapse:collapse;width:100%;margin:0 0 16px 0;border:1px solid " + border + ";";
+        }
+
+        String tableHeadStyle() {
+            return "background-color:" + surface + ";";
+        }
+
+        String thStyle() {
+            return "font-family:" + fontFamily + ";font-size:13px;font-weight:bold;color:" + text
+                    + ";background-color:" + surface + ";border:1px solid " + border
+                    + ";padding:10px 14px;text-align:left;";
+        }
+
+        String tdStyle() {
+            return "font-family:" + fontFamily + ";font-size:14px;color:" + text
+                    + ";border:1px solid " + border + ";padding:10px 14px;";
+        }
+
+        String trStyle() {
+            return "background-color:" + background + ";";
+        }
+
+        String hrStyle() {
+            return "border:0;height:1px;background-color:" + border + ";margin:24px 0;";
+        }
+
+        String imageStyle() {
+            return "max-width:100%;margin:8px 0 16px 0;border:1px solid " + border + ";";
+        }
+
+        String strongStyle() {
+            return "font-weight:bold;color:" + text + ";";
+        }
+
+        String emStyle() {
+            return "font-style:italic;color:" + text + ";";
+        }
+
+        String delStyle() {
+            return "color:" + muted + ";text-decoration:line-through;";
+        }
+
+        private static Color getUiColor(String key, Color fallback) {
+            Color color = UIManager.getColor(key);
+            return color != null ? color : fallback;
+        }
+
+        private static String resolveFontFamily() {
+            Font font = UIManager.getFont("Label.font");
+            if (font == null) {
+                return "sans-serif";
+            }
+            return font.getFamily();
+        }
+
+        private static String toHex(Color color) {
+            return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
+        }
+
+        private static String blend(Color base, Color overlay, double ratio) {
+            int r = (int) (base.getRed() * (1 - ratio) + overlay.getRed() * ratio);
+            int g = (int) (base.getGreen() * (1 - ratio) + overlay.getGreen() * ratio);
+            int b = (int) (base.getBlue() * (1 - ratio) + overlay.getBlue() * ratio);
+            return toHex(new Color(r, g, b));
+        }
     }
 }
