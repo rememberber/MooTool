@@ -13,6 +13,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
+import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteEditorPanel;
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.dialog.DocInfoDialog;
@@ -30,7 +31,6 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
-import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
@@ -141,9 +141,9 @@ public class QuickNoteListener {
                         quickNoteMapper.updateByName(tQuickNote);
 
                         quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(selectedName);
-                        RTextScrollPane syntaxTextViewer = quickNoteRSyntaxTextViewerManager.getRTextScrollPane(selectedName);
-                        quickNoteForm.getContentSplitPane().setLeftComponent(syntaxTextViewer);
-                        syntaxTextViewer.updateUI();
+                        QuickNoteEditorPanel editorPanel = quickNoteRSyntaxTextViewerManager.getEditorPanel(selectedName);
+                        quickNoteForm.getContentSplitPane().setLeftComponent(editorPanel);
+                        editorPanel.updateUI();
                     }
 
                 }
@@ -243,8 +243,8 @@ public class QuickNoteListener {
 
                             selectedName = name;
 
-                            RTextScrollPane syntaxTextViewer = quickNoteRSyntaxTextViewerManager.getRTextScrollPane(name);
-                            quickNoteForm.getContentSplitPane().setLeftComponent(syntaxTextViewer);
+                            QuickNoteEditorPanel editorPanel = quickNoteRSyntaxTextViewerManager.getEditorPanel(name);
+                            quickNoteForm.getContentSplitPane().setLeftComponent(editorPanel);
                             quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(tQuickNoteBefore.getName());
                         } catch (Exception e) {
                             JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
@@ -454,8 +454,8 @@ public class QuickNoteListener {
 
                         quickNoteForm.getNoteListTable().setValueAt(afterName, selectedRow, 1);
 
-                        RTextScrollPane syntaxTextViewer = quickNoteRSyntaxTextViewerManager.getRTextScrollPane(afterName);
-                        quickNoteForm.getContentSplitPane().setLeftComponent(syntaxTextViewer);
+                        QuickNoteEditorPanel editorPanel = quickNoteRSyntaxTextViewerManager.getEditorPanel(afterName);
+                        quickNoteForm.getContentSplitPane().setLeftComponent(editorPanel);
                         quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(tQuickNoteBefore.getName());
                     } catch (Exception e1) {
                         JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
@@ -664,9 +664,9 @@ public class QuickNoteListener {
         selectedName = name;
 
         quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(name);
-        RTextScrollPane syntaxTextViewer = quickNoteRSyntaxTextViewerManager.getRTextScrollPane(name);
+        QuickNoteEditorPanel editorPanel = quickNoteRSyntaxTextViewerManager.getEditorPanel(name);
 
-        quickNoteForm.getContentSplitPane().setLeftComponent(syntaxTextViewer);
+        quickNoteForm.getContentSplitPane().setLeftComponent(editorPanel);
 
         TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
         String color = tQuickNote.getColor();
@@ -687,7 +687,7 @@ public class QuickNoteListener {
         quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setLineWrap("1".equals(tQuickNote.getLineWrap()));
         quickNoteForm.getWrapButton().setSelected("1".equals(tQuickNote.getLineWrap()));
 
-        syntaxTextViewer.putClientProperty("JComponent.outline", UIManager.getColor(color));
+        editorPanel.putClientProperty("JComponent.outline", UIManager.getColor(color));
 
 //        syntaxTextViewer.updateUI();
     }

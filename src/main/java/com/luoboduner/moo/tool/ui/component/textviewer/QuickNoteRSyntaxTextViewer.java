@@ -25,6 +25,8 @@ import java.net.URISyntaxException;
 public class QuickNoteRSyntaxTextViewer extends RSyntaxTextArea {
     public static boolean ignoreQuickSave;
 
+    private Runnable onContentChanged;
+
     public QuickNoteRSyntaxTextViewer() {
 
 //        setUseSelectedTextColor(true);
@@ -86,28 +88,33 @@ public class QuickNoteRSyntaxTextViewer extends RSyntaxTextArea {
         getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                if (ignoreQuickSave) {
-                    return;
-                }
-                QuickNoteListener.quickSave(true, false);
+                notifyContentChanged();
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                if (ignoreQuickSave) {
-                    return;
-                }
-                QuickNoteListener.quickSave(true, false);
+                notifyContentChanged();
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-                if (ignoreQuickSave) {
-                    return;
-                }
-                QuickNoteListener.quickSave(true, false);
+                notifyContentChanged();
             }
         });
+    }
+
+    public void setOnContentChanged(Runnable onContentChanged) {
+        this.onContentChanged = onContentChanged;
+    }
+
+    private void notifyContentChanged() {
+        if (onContentChanged != null) {
+            onContentChanged.run();
+        }
+        if (ignoreQuickSave) {
+            return;
+        }
+        QuickNoteListener.quickSave(true, false);
     }
 
     public void updateTheme() {

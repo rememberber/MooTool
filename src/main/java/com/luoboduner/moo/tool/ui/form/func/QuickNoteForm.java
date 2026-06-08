@@ -16,6 +16,7 @@ import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.QuickNoteListTableInCellRenderer;
+import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteEditorPanel;
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
@@ -28,7 +29,6 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
-import org.fife.ui.rtextarea.RTextScrollPane;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -416,8 +416,8 @@ public class QuickNoteForm {
             QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
             try {
                 String name = quickNoteList.get(0).getName();
-                RTextScrollPane syntaxTextViewer = QuickNoteForm.quickNoteRSyntaxTextViewerManager.getRTextScrollPane(name);
-                getInstance().getContentSplitPane().setLeftComponent(syntaxTextViewer);
+                QuickNoteEditorPanel editorPanel = QuickNoteForm.quickNoteRSyntaxTextViewerManager.getEditorPanel(name);
+                getInstance().getContentSplitPane().setLeftComponent(editorPanel);
                 noteListTable.setRowSelectionInterval(0, 0);
 //                syntaxTextViewer.grabFocus();
                 QuickNoteListener.selectedName = name;
@@ -442,7 +442,7 @@ public class QuickNoteForm {
                 }
                 QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setLineWrap("1".equals(tQuickNote.getLineWrap()));
                 quickNoteForm.getWrapButton().setSelected("1".equals(tQuickNote.getLineWrap()));
-                syntaxTextViewer.putClientProperty("JComponent.outline", UIManager.getColor(color));
+                editorPanel.putClientProperty("JComponent.outline", UIManager.getColor(color));
             } catch (Exception e1) {
                 log.error(e1.toString());
             } finally {

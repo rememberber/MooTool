@@ -56,6 +56,7 @@
         <tika.version>3.0.0</tika.version>
         <jackson-databind.version>2.13.3</jackson-databind.version>
         <java-diff.version>4.16</java-diff.version>
+        <flexmark.version>0.64.8</flexmark.version>
         <packaging.outputDirectory>${project.build.directory}</packaging.outputDirectory>
         <packaging.jdkPath>${java.home}</packaging.jdkPath>
         <packaging.javaBinary>${java.home}/bin/java</packaging.javaBinary>
@@ -507,6 +508,27 @@
             <groupId>org.jsoup</groupId>
             <artifactId>jsoup</artifactId>
             <version>${jsoup.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>com.vladsch.flexmark</groupId>
+            <artifactId>flexmark</artifactId>
+            <version>${flexmark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.vladsch.flexmark</groupId>
+            <artifactId>flexmark-ext-tables</artifactId>
+            <version>${flexmark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.vladsch.flexmark</groupId>
+            <artifactId>flexmark-ext-gfm-strikethrough</artifactId>
+            <version>${flexmark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.vladsch.flexmark</groupId>
+            <artifactId>flexmark-ext-autolink</artifactId>
+            <version>${flexmark.version}</version>
         </dependency>
 
         <dependency>
