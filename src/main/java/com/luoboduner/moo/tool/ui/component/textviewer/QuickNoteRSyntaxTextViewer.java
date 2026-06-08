@@ -6,6 +6,7 @@ import com.formdev.flatlaf.util.FontUtils;
 import com.formdev.flatlaf.util.StringUtils;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
+import com.luoboduner.moo.tool.util.QuickNoteImageInsertUtil;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
@@ -105,6 +106,14 @@ public class QuickNoteRSyntaxTextViewer extends RSyntaxTextArea {
 
     public void setOnContentChanged(Runnable onContentChanged) {
         this.onContentChanged = onContentChanged;
+    }
+
+    @Override
+    public void paste() {
+        if (QuickNoteImageInsertUtil.tryPasteImage(this)) {
+            return;
+        }
+        super.paste();
     }
 
     private void notifyContentChanged() {

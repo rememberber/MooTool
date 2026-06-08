@@ -21,6 +21,7 @@ import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.util.ListUtils;
 import com.luoboduner.moo.tool.util.MybatisUtil;
+import com.luoboduner.moo.tool.util.QuickNoteImageInsertUtil;
 import com.luoboduner.moo.tool.util.QuickNoteIndicatorTools;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.codeformatter.CodeFormatterFactory;
@@ -193,6 +194,9 @@ public class QuickNoteListener {
                 }
             }
         });
+
+        // 插入图片按钮事件
+        quickNoteForm.getInsertImageButton().addActionListener(e -> QuickNoteImageInsertUtil.insertImageFromChooser());
 
         // 自动换行按钮事件
         quickNoteForm.getWrapButton().addActionListener(e -> {

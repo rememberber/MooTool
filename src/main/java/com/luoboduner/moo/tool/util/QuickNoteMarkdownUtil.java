@@ -90,6 +90,7 @@ public class QuickNoteMarkdownUtil {
         styleLists(body, theme);
         styleTables(body, theme);
         styleHorizontalRules(body, theme);
+        resolveImageSources(body);
         styleImages(body, theme);
         styleStrongAndEm(body, theme);
         styleDeleted(body, theme);
@@ -250,6 +251,13 @@ public class QuickNoteMarkdownUtil {
 
     private static void styleHorizontalRules(Element body, MarkdownTheme theme) {
         applyStyle(body.select("hr"), theme.hrStyle());
+    }
+
+    private static void resolveImageSources(Element body) {
+        for (Element img : body.select("img")) {
+            String resolved = QuickNoteAttachmentUtil.resolveImageSrc(img.attr("src"));
+            img.attr("src", resolved);
+        }
     }
 
     private static void styleImages(Element body, MarkdownTheme theme) {

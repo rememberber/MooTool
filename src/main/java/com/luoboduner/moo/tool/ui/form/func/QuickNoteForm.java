@@ -109,6 +109,7 @@ public class QuickNoteForm {
     private JToggleButton wrapButton;
     private JButton unOrderListButton;
     private JButton orderListButton;
+    private JButton insertImageButton;
     private JToolBar leftMenuToolBar;
 
     private JToolBar toolBar;
@@ -151,6 +152,9 @@ public class QuickNoteForm {
         orderListButton.setToolTipText("有序列表");
         leftMenuToolBar.add(unOrderListButton);
         leftMenuToolBar.add(orderListButton);
+        insertImageButton = new JButton(new FlatSVGIcon("icon/color_picker.svg", 18, 18));
+        insertImageButton.setToolTipText("插入图片");
+        leftMenuToolBar.add(insertImageButton);
 
         UndoUtil.register(this);
     }
