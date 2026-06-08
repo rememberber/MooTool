@@ -72,12 +72,40 @@ public class QuickNoteMarkdownUtil {
         if (markdown == null) {
             markdown = "";
         }
+        markdown = expandLeadingTabsForPreview(markdown);
         Node document = PARSER.parse(markdown);
         String body = RENDERER.render(document);
         MarkdownTheme theme = MarkdownTheme.current();
         String styledBody = applyInlineStyles(body, theme);
         return "<html><head><style>" + theme.baseCss() + "</style></head><body>"
                 + "<div class=\"md-root\">" + styledBody + "</div></body></html>";
+    }
+
+    /**
+     * 预览时将行首 Tab 转为可见缩进。仅影响预览渲染，不修改笔记原文。
+     * <p>
+     * Markdown 标准里 Tab 主要用于「缩进代码块」等等价空格计算，并不会像 Word 那样做层级排版；
+     * 随手记里 Tab 更常用来做大纲缩进，因此在预览阶段按层级转换为全角空格。
+     */
+    private static String expandLeadingTabsForPreview(String markdown) {
+        String[] lines = markdown.split("\n", -1);
+        StringBuilder sb = new StringBuilder(markdown.length() + lines.length * 4);
+        String indentUnit = "\u3000\u3000";
+        for (int i = 0; i < lines.length; i++) {
+            String line = lines[i];
+            int tabCount = 0;
+            while (tabCount < line.length() && line.charAt(tabCount) == '\t') {
+                tabCount++;
+            }
+            if (tabCount > 0) {
+                sb.append(indentUnit.repeat(tabCount));
+            }
+            sb.append(line.substring(tabCount));
+            if (i < lines.length - 1) {
+                sb.append('\n');
+            }
+        }
+        return sb.toString();
     }
 
     private static String applyInlineStyles(String html, MarkdownTheme theme) {
@@ -380,7 +408,7 @@ public class QuickNoteMarkdownUtil {
 
         String paragraphStyle() {
             return "font-family:" + fontFamily + ";font-size:14px;color:" + text
-                    + ";margin:0 0 14px 0;line-height:1.75;";
+                    + ";margin:0 0 14px 0;line-height:1.75;white-space:pre-wrap;";
         }
 
         String linkStyle() {
