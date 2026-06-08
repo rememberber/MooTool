@@ -4,6 +4,8 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**
 !**/src/test/**
+next/node_modules
+next/out
 
 ### STS ###
 .apt_generated
