@@ -42,6 +42,8 @@ public class QuickNoteMarkdownUtil {
                 StrikethroughExtension.create(),
                 AutolinkExtension.create()
         ));
+        // 随手记常用 Tab 做层级缩进，避免被 Markdown 当成缩进代码块
+        options.set(Parser.INDENTED_CODE_BLOCK_PARSER, false);
         PARSER = Parser.builder(options).build();
         RENDERER = HtmlRenderer.builder(options)
                 .escapeHtml(true)
@@ -224,9 +226,14 @@ public class QuickNoteMarkdownUtil {
     }
 
     private static void styleCodeBlocks(Element body, MarkdownTheme theme) {
-        applyStyle(body.select("pre"), theme.preStyle());
-        for (Element code : body.select("pre > code")) {
-            code.attr("style", theme.preCodeStyle());
+        for (Element pre : body.select("pre")) {
+            Element codeEl = pre.selectFirst("code");
+            String language = codeEl != null ? extractLanguage(codeEl) : null;
+            boolean syntaxHighlighted = language != null && !language.isBlank();
+            pre.attr("style", syntaxHighlighted ? theme.preStyle() : theme.prePlainStyle());
+            if (codeEl != null) {
+                codeEl.attr("style", syntaxHighlighted ? theme.preCodeStyle() : theme.prePlainCodeStyle());
+            }
         }
     }
 
@@ -392,6 +399,17 @@ public class QuickNoteMarkdownUtil {
 
         String preCodeStyle() {
             return "font-family:" + monoFamily + ";font-size:13px;color:" + codeText
+                    + ";background-color:" + codeBg + ";padding:0;margin:0;border:0;";
+        }
+
+        String prePlainStyle() {
+            return "font-family:" + fontFamily + ";font-size:14px;color:" + text
+                    + ";background-color:" + codeBg + ";border:1px solid " + border
+                    + ";padding:14px 16px;margin:0 0 16px 0;line-height:1.7;white-space:pre-wrap;";
+        }
+
+        String prePlainCodeStyle() {
+            return "font-family:" + fontFamily + ";font-size:14px;color:" + text
                     + ";background-color:" + codeBg + ";padding:0;margin:0;border:0;";
         }
 
