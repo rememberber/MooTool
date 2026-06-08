@@ -130,6 +130,7 @@ public class QuickNoteListener {
         quickNoteForm.getSyntaxComboBox().addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 String syntaxName = e.getItem().toString();
+                QuickNoteForm.updateInsertImageButtonVisibility();
 
                 if (StringUtils.isNotEmpty(syntaxName)) {
                     if (selectedName != null && !QuickNoteRSyntaxTextViewer.ignoreQuickSave) {
@@ -680,6 +681,7 @@ public class QuickNoteListener {
 
         quickNoteForm.getColorButton().setIcon(new QuickNoteForm.ListColorIcon(color, 18, 18));
         quickNoteForm.getSyntaxComboBox().setSelectedItem(tQuickNote.getSyntax().substring(5));
+        QuickNoteForm.updateInsertImageButtonVisibility();
         quickNoteForm.getFontNameComboBox().setSelectedItem(tQuickNote.getFontName());
         quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(tQuickNote.getFontSize()));
 

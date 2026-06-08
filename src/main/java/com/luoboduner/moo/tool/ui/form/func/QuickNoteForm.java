@@ -152,8 +152,9 @@ public class QuickNoteForm {
         orderListButton.setToolTipText("有序列表");
         leftMenuToolBar.add(unOrderListButton);
         leftMenuToolBar.add(orderListButton);
-        insertImageButton = new JButton(new FlatSVGIcon("icon/color_picker.svg", 18, 18));
+        insertImageButton = new JButton(new FlatSVGIcon("icon/image.svg", 18, 18));
         insertImageButton.setToolTipText("插入图片");
+        insertImageButton.setVisible(false);
         leftMenuToolBar.add(insertImageButton);
 
         UndoUtil.register(this);
@@ -183,6 +184,19 @@ public class QuickNoteForm {
 
         QuickNoteListener.addListeners();
 
+    }
+
+    public static void updateInsertImageButtonVisibility() {
+        JButton insertImageButton = getInstance().getInsertImageButton();
+        if (insertImageButton == null) {
+            return;
+        }
+        Object selectedSyntax = getInstance().getSyntaxComboBox().getSelectedItem();
+        boolean markdown = selectedSyntax != null
+                && SyntaxConstants.SYNTAX_STYLE_MARKDOWN.substring(5).equals(selectedSyntax.toString());
+        insertImageButton.setVisible(markdown);
+        getInstance().getLeftMenuToolBar().revalidate();
+        getInstance().getLeftMenuToolBar().repaint();
     }
 
     private static void initUi() {
@@ -455,6 +469,7 @@ public class QuickNoteForm {
 
         } else {
             getInstance().getContentSplitPane().setLeftComponent(new JPanel());
+            updateInsertImageButtonVisibility();
         }
 
     }
