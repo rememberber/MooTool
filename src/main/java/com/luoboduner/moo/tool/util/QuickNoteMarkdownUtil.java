@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.util;
 
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
+import com.formdev.flatlaf.util.FontUtils;
 import com.luoboduner.moo.tool.App;
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension;
 import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughExtension;
@@ -167,6 +168,8 @@ public class QuickNoteMarkdownUtil {
         helper.setEditable(false);
         Theme theme = FlatLaf.isLafDark() ? DARK_SYNTAX_THEME : LIGHT_SYNTAX_THEME;
         theme.apply(helper);
+        Font codeFont = FontUtils.getCompositeFont(FlatJetBrainsMonoFont.FAMILY, Font.PLAIN, 13);
+        helper.setFont(codeFont);
         return helper;
     }
 
@@ -312,8 +315,10 @@ public class QuickNoteMarkdownUtil {
                 codeBg = "#f6f8fa";
                 quoteBorder = "#d0d7de";
             }
-            fontFamily = resolveFontFamily();
-            monoFamily = FlatJetBrainsMonoFont.FAMILY + ", monospace";
+            String uiFont = resolveFontFamily();
+            fontFamily = toCssFontFamily(uiFont);
+            // JEditorPane 对 CompositeFont 支持有限，需显式提供中文回退字体
+            monoFamily = toCssFontFamily(FlatJetBrainsMonoFont.FAMILY) + ", " + fontFamily + ", monospace";
         }
 
         static MarkdownTheme current() {
@@ -366,7 +371,8 @@ public class QuickNoteMarkdownUtil {
         }
 
         String inlineCodeStyle() {
-            return "font-family:" + monoFamily + ";font-size:13px;color:" + codeText
+            // 行内代码常含中文，使用界面字体避免缺字方框
+            return "font-family:" + fontFamily + ";font-size:13px;color:" + codeText
                     + ";background-color:" + codeBg + ";padding:2px 6px;border:1px solid " + border + ";";
         }
 
@@ -455,6 +461,14 @@ public class QuickNoteMarkdownUtil {
                 return "sans-serif";
             }
             return font.getFamily();
+        }
+
+        private static String toCssFontFamily(String family) {
+            if (family == null || family.isBlank()
+                    || "monospace".equals(family) || "sans-serif".equals(family)) {
+                return family;
+            }
+            return "'" + family + "'";
         }
 
         private static String toHex(Color color) {
