@@ -21,6 +21,7 @@ import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.util.ListUtils;
 import com.luoboduner.moo.tool.util.MybatisUtil;
+import com.luoboduner.moo.tool.util.QuickNoteAttachmentUtil;
 import com.luoboduner.moo.tool.util.QuickNoteImageInsertUtil;
 import com.luoboduner.moo.tool.util.QuickNoteIndicatorTools;
 import com.luoboduner.moo.tool.util.SqliteUtil;
@@ -42,10 +43,12 @@ import java.awt.event.*;
 import java.io.File;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -941,14 +944,26 @@ public class QuickNoteListener {
                 int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
                 if (isDelete == JOptionPane.YES_OPTION) {
                     DefaultTableModel tableModel = (DefaultTableModel) quickNoteForm.getNoteListTable().getModel();
+                    List<String> deletedNoteContents = new ArrayList<>();
 
                     for (int i = 0; i < selectedRows.length; i++) {
                         int selectedRow = selectedRows[i];
                         Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
                         String name = (String) tableModel.getValueAt(selectedRow, 1);
+                        TQuickNote note = quickNoteMapper.selectByPrimaryKey(id);
+                        if (note != null && StringUtils.isNotBlank(note.getContent())) {
+                            deletedNoteContents.add(note.getContent());
+                        }
                         quickNoteMapper.deleteByPrimaryKey(id);
                         QuickNoteForm.quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(name);
                     }
+
+                    List<String> remainingNoteContents = quickNoteMapper.selectAll().stream()
+                            .map(TQuickNote::getContent)
+                            .collect(Collectors.toList());
+                    QuickNoteAttachmentUtil.cleanupAttachmentsForDeletedNotes(
+                            deletedNoteContents, remainingNoteContents);
+
                     selectedName = null;
                     QuickNoteForm.initNoteListTable();
                 }
@@ -970,6 +985,9 @@ public class QuickNoteListener {
         executorService.submit(() -> {
             String now = SqliteUtil.nowDateForSqlite();
             if (selectedName != null) {
+                TQuickNote existingNote = quickNoteMapper.selectByName(selectedName);
+                String oldContent = existingNote != null ? existingNote.getContent() : "";
+
                 TQuickNote tQuickNote = new TQuickNote();
                 tQuickNote.setName(selectedName);
 
@@ -983,6 +1001,12 @@ public class QuickNoteListener {
                 }
 
                 quickNoteMapper.updateByName(tQuickNote);
+
+                List<String> otherNotesContents = quickNoteMapper.selectAll().stream()
+                        .filter(note -> !selectedName.equals(note.getName()))
+                        .map(TQuickNote::getContent)
+                        .collect(Collectors.toList());
+                QuickNoteAttachmentUtil.cleanupRemovedAttachments(oldContent, text, otherNotesContents);
             }
 
             QuickNoteIndicatorTools.showTips("已保存：" + selectedName, QuickNoteIndicatorTools.TipsLevel.SUCCESS);
