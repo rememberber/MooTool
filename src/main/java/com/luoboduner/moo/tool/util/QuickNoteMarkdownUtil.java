@@ -44,6 +44,8 @@ public class QuickNoteMarkdownUtil {
         ));
         // 随手记常用 Tab 做层级缩进，避免被 Markdown 当成缩进代码块
         options.set(Parser.INDENTED_CODE_BLOCK_PARSER, false);
+        // 单换行即预览为换行，无需行尾两个空格
+        options.set(HtmlRenderer.SOFT_BREAK, "<br />\n");
         PARSER = Parser.builder(options).build();
         RENDERER = HtmlRenderer.builder(options)
                 .escapeHtml(true)
