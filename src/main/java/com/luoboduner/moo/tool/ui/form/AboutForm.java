@@ -110,7 +110,7 @@ public class AboutForm {
             }
         });
 
-        aboutForm.getMooInfoIconLabel().setIcon(new FlatSVGIcon("icon/MooInfo.svg", 64, 64));
+        aboutForm.getMooInfoIconLabel().setIcon(new FlatSVGIcon("icon/MooInfo.svg"));
 
         AboutListener.addListeners();
 

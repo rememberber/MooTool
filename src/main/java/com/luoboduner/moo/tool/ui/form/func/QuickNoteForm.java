@@ -138,19 +138,19 @@ public class QuickNoteForm {
         leftMenuToolBar.add(syntaxComboBox);
         leftMenuToolBar.add(fontNameComboBox);
         leftMenuToolBar.add(fontSizeComboBox);
-        wrapButton = new JToggleButton(new FlatSVGIcon("icon/wrap.svg", 18, 18));
+        wrapButton = new JToggleButton(new FlatSVGIcon("icon/wrap.svg"));
         wrapButton.setSelected(false);
         wrapButton.setToolTipText("自动换行");
         leftMenuToolBar.add(wrapButton);
         // separator
         leftMenuToolBar.addSeparator();
-        unOrderListButton = new JButton(new FlatSVGIcon("icon/list_unordered.svg", 18, 18));
+        unOrderListButton = new JButton(new FlatSVGIcon("icon/list_unordered.svg"));
         unOrderListButton.setToolTipText("无序列表");
-        orderListButton = new JButton(new FlatSVGIcon("icon/list_ordered.svg", 18, 18));
+        orderListButton = new JButton(new FlatSVGIcon("icon/list_ordered.svg"));
         orderListButton.setToolTipText("有序列表");
         leftMenuToolBar.add(unOrderListButton);
         leftMenuToolBar.add(orderListButton);
-        insertImageButton = new JButton(new FlatSVGIcon("icon/image.svg", 18, 18));
+        insertImageButton = new JButton(new FlatSVGIcon("icon/image.svg"));
         insertImageButton.setToolTipText("插入图片");
         insertImageButton.setVisible(false);
         leftMenuToolBar.add(insertImageButton);

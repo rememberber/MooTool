@@ -123,7 +123,7 @@ public class JsonBeautyForm {
         leftMenuToolBar.add(fontNameComboBox);
         leftMenuToolBar.add(fontSizeComboBox);
 
-        wrapButton = new JButton(new FlatSVGIcon("icon/wrap.svg", 18, 18));
+        wrapButton = new JButton(new FlatSVGIcon("icon/wrap.svg"));
         wrapButton.setToolTipText("自动换行");
         leftMenuToolBar.add(wrapButton);
 
