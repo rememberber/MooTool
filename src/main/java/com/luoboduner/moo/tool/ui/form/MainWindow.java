@@ -50,11 +50,12 @@ public class MainWindow {
     private JPanel variablesPanel;
     private JPanel ymlProperties;
     private JPanel textDiffPanel;
+    private JPanel protoBufPanel;
     private JPanel aboutPanel;
 
     private static MainWindow mainWindow;
 
-    private static final String[] ICON_PATH = {"icon/smile.svg", "icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/translate.svg", "icon/check.svg", "icon/global.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/format_painter.svg", "icon/pdf.svg", "icon/fx.svg", "icon/suffix-yml.svg", "icon/diff.svg"};
+    private static final String[] ICON_PATH = {"icon/smile.svg", "icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/translate.svg", "icon/check.svg", "icon/global.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/format_painter.svg", "icon/pdf.svg", "icon/fx.svg", "icon/suffix-yml.svg", "icon/diff.svg", "icon/protobuf.svg"};
 
     private MainWindow() {
     }
@@ -100,6 +101,7 @@ public class MainWindow {
         mainWindow.getVariablesPanel().add(VariablesForm.getInstance().getVariablesPanel(), gridConstraints);
         mainWindow.getYmlProperties().add(YmlPropertiesForm.getInstance().getYmlPropertiesPanel(), gridConstraints);
         mainWindow.getTextDiffPanel().add(TextDiffForm.getInstance().getTextDiffPanel(), gridConstraints);
+        mainWindow.getProtoBufPanel().add(ProtoBufForm.getInstance().getProtoBufPanel(), gridConstraints);
         mainWindow.getMainPanel().updateUI();
 
         TabListener.addListeners();
@@ -297,6 +299,9 @@ public class MainWindow {
         textDiffPanel = new JPanel();
         textDiffPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("文本对比", new ImageIcon(getClass().getResource("/icon/find.png")), textDiffPanel);
+        protoBufPanel = new JPanel();
+        protoBufPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPane.addTab("Protobuf", protoBufPanel);
     }
 
     /**
