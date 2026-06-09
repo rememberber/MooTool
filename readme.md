@@ -17,9 +17,11 @@ Windows • Linux • macOS
 
 ## 截图速览
 
-![Overview](screen_shoot/quick_note_2_mac.png)
+> 以下为主要功能界面截图。翻译、图片助手、PDF、环境变量、配置文件转换、Protobuf 等模块暂未单独配图，可在安装后于对应 Tab 中体验。
 
-![Overview](screen_shoot/quick_replace_mac.png)
+![随手记](screen_shoot/quick_note_2_mac.png)
+
+![随手记-快捷替换](screen_shoot/quick_replace_mac.png)
 
 ![Overview](screen_shoot/time_mac_2.png)
 
@@ -53,8 +55,7 @@ Windows • Linux • macOS
 
 ![Overview](screen_shoot/quick_note_light_mac.png)
 
-![Overview](screen_shoot/theme.png)
-
+![主题与外观](screen_shoot/theme.png)
 
 ## 下载
 
@@ -127,9 +128,14 @@ Windows • Linux • macOS
 - JSON
 - Java
 ### 有序/无序列表
-### 导出/批量导出，全局查找
+### Markdown 实时预览
+### Markdown 插入图片
+### 导出/批量导出，搜索与全局查找
+### 文档信息（创建/更新时间、字数等）
+### 超链接识别与点击跳转
 ### 字体、字号、列表颜色
-### 快捷操作
+### 快捷替换面板
+侧栏集中提供以下批量文本操作，支持仅处理选中行：
 - 自动保存
 - 去掉空格
 - 去掉空行
@@ -167,9 +173,13 @@ Windows • Linux • macOS
 - 时间->时间戳(秒)
 ### 历史记录
 ### 大屏时钟
+### 时区选择与快捷时区
 
 ## JSON
 ### JSON格式化
+- Key 按字母顺序排序
+- 忽略 key 大小写
+- 检查重复 key
 ### JSON压缩
 ### 导出/批量导出，查找
 ### 字体、字号
@@ -191,12 +201,15 @@ Windows • Linux • macOS
 ### Host格式化/语法高亮
 ### 本机Host管理/查看
 ### Host导入/导出
+### 搜索与查找/替换
 
 ## HTTP
 ### HTTP请求，支持GET/POST/PUT/DELETE/HEAD/PATCH/OPTIONS
+### cURL 导入
 ### HTTP Header/Body格式化
 ### 请求管理
 ### 请求历史记录
+### 搜索
 
 ## 编码转换
 ### Native->Unicode
@@ -211,6 +224,7 @@ Windows • Linux • macOS
 - 纠错等级自定义
 - logo自定义
 ### 二维码解析
+### 从剪贴板识别
 ### 历史记录
 
 ## 加解密/随机
@@ -242,7 +256,7 @@ Windows • Linux • macOS
 ### 排列组合数
 ### 历史记录
 
-## 网络
+## 网络/IP
 ### IP查询
 ### 域名查询
 ### netstat
@@ -260,15 +274,20 @@ Windows • Linux • macOS
 
 ## 图片助手
 ### 本地图床
+### 截图
+### 从剪贴板获取 / 复制到剪贴板
+### 图片缩放工具栏（放大/缩小/原始尺寸/适应窗口）
 ### 图片Base64编码/解码
-### 图片压缩（TODO）
-### 图片加水印（TODO）
-### 图片OCR识别（TODO）
+### 图片压缩
+### 图片加水印
+### 图片OCR识别（基于 Tesseract）
 
 ## Cron
 ### Cron表达式生成
-### Cron表达式解析
+### Cron表达式解析（支持 Linux 5 段 / Quartz 6、7 段）
 ### Cron表达式校验
+### Cron 转自然语言
+### 最近 10 次运行时间
 ### Cron表达式收藏
 ### Cron表达式历史记录（TODO）
 ### 常用Cron表达式
@@ -283,10 +302,12 @@ Windows • Linux • macOS
 ### Java/groovy代码解释执行
 
 ## 格式化
-### Nginx配置文件格式化
-### XML格式化
-### HTML格式化
-### Java格式化
+### 上传文件格式化
+- Nginx 配置文件
+- XML
+- HTML
+- Java
+### 粘贴文本直接格式化（Nginx / Java / XML / HTML）
 
 ## PDF
 ### PDF拆分
@@ -303,9 +324,34 @@ Windows • Linux • macOS
 ### YAML->JSON（TODO）
 
 ## 文本对比
-### 并排对比
+### 并排对比（左右滚动同步）
 ### 统一差异
 ### 复制差异
+
+## Protobuf
+### JSON ↔ Protobuf 二进制互转
+- 支持 Hex / Base64 输出
+- `.proto` 定义格式化
+### Wire Format 解码（无需 `.proto` 定义）
+### Hex / Base64 互转
+
+## 应用与设置
+### 同步和备份（Git 同步、数据导出）
+### 快捷键说明
+### 数据文件位置自定义
+### 启动时自动检查更新
+### SQL 方言设置
+### 系统托盘
+### 外观
+- 多主题风格（Flat Light/Dark、macOS、One Dark、Monokai 等）
+- 强调色
+- 主题颜色跟随系统
+- 窗口颜色沉浸式
+- 默认最大化窗口
+- 功能 Tab 仅图标模式
+### 使用习惯
+- 功能面板位置（菜单栏上/下/左/右）
+- 全局字体与字号
 
 ## 特别感谢
 
