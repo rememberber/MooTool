@@ -226,6 +226,8 @@ public class QuickNoteForm {
         quickNoteForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
         quickNoteForm.getNoteList().setFixedCellHeight(UiConsts.TABLE_ROW_HEIGHT);
         quickNoteForm.getNoteList().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        quickNoteForm.getNoteList().putClientProperty(FlatClientProperties.STYLE,
+                "selectionArc: 6; selectionInsets: 0,1,0,1");
 
         initSyntaxComboBox();
 
