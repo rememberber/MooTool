@@ -530,4 +530,20 @@ public class ConfigUtil extends ConfigBaseUtil {
     public void setTranslatorType(String translatorType) {
         setting.putByGroup("translatorType", "func.translation", translatorType);
     }
+
+    public String getTranslationSourceLanguage() {
+        return setting.getStr("sourceLanguage", "func.translation", "自动检测");
+    }
+
+    public void setTranslationSourceLanguage(String sourceLanguage) {
+        setting.putByGroup("sourceLanguage", "func.translation", sourceLanguage);
+    }
+
+    public String getTranslationTargetLanguage() {
+        return setting.getStr("targetLanguage", "func.translation", "中文（简体）");
+    }
+
+    public void setTranslationTargetLanguage(String targetLanguage) {
+        setting.putByGroup("targetLanguage", "func.translation", targetLanguage);
+    }
 }

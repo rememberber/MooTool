@@ -1,9 +1,11 @@
 package com.luoboduner.moo.tool.ui.form;
 
+import cn.hutool.core.swing.clipboard.ClipboardUtil;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.luoboduner.moo.tool.util.AlertUtil;
 import com.luoboduner.moo.tool.util.ConfigUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import com.luoboduner.moo.tool.util.translator.Translator;
@@ -27,52 +29,52 @@ public class TranslationLayoutForm {
     private JPanel leftMenuPanel;
 
     private JToolBar leftMenuToolBar;
-    private JComboBox comboBox1;
+    private JComboBox<String> comboBox1;
     private JButton exchangeButton;
-    private JComboBox comboBox2;
-    private JComboBox translatorComboBox;
+    private JComboBox<String> comboBox2;
+    private JComboBox<String> translatorComboBox;
+    private JButton copyButton;
+    private JButton clearButton;
 
-    private static AtomicInteger changeCount = new AtomicInteger(0);
+    private static final AtomicInteger changeCount = new AtomicInteger(0);
 
-    // Constants for translator names
     private static final String TRANSLATOR_GOOGLE = "Google翻译";
     private static final String TRANSLATOR_BING = "Bing翻译";
-    private static final String TRANSLATOR_MICROSOFT = "微软翻译";
 
     public TranslationLayoutForm() {
         exchangeButton = new JButton();
         exchangeButton.setIcon(new FlatSVGIcon("icon/exchange.svg"));
+        exchangeButton.setToolTipText("交换语言与文本");
 
-        comboBox1 = new JComboBox();
-        comboBox1 = new JComboBox();
-        final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
-        defaultComboBoxModel1.addElement("自动检测");
-        defaultComboBoxModel1.addElement("中文（简体）");
-        defaultComboBoxModel1.addElement("英语");
-        comboBox1.setModel(defaultComboBoxModel1);
+        comboBox1 = new JComboBox<>(Translator.getSourceLanguageNames());
+        comboBox2 = new JComboBox<>(Translator.getTargetLanguageNames());
 
-        comboBox2 = new JComboBox();
-        final DefaultComboBoxModel defaultComboBoxModel2 = new DefaultComboBoxModel();
-        defaultComboBoxModel2.addElement("中文（简体）");
-        defaultComboBoxModel2.addElement("英语");
-        comboBox2.setModel(defaultComboBoxModel2);
+        String savedSource = ConfigUtil.getInstance().getTranslationSourceLanguage();
+        if (containsItem(comboBox1, savedSource)) {
+            comboBox1.setSelectedItem(savedSource);
+        }
+        String savedTarget = ConfigUtil.getInstance().getTranslationTargetLanguage();
+        if (containsItem(comboBox2, savedTarget)) {
+            comboBox2.setSelectedItem(savedTarget);
+        }
 
-        translatorComboBox = new JComboBox();
-        final DefaultComboBoxModel translatorComboBoxModel = new DefaultComboBoxModel();
+        translatorComboBox = new JComboBox<>();
+        final DefaultComboBoxModel<String> translatorComboBoxModel = new DefaultComboBoxModel<>();
         translatorComboBoxModel.addElement(TRANSLATOR_GOOGLE);
         translatorComboBoxModel.addElement(TRANSLATOR_BING);
-        translatorComboBoxModel.addElement(TRANSLATOR_MICROSOFT);
         translatorComboBox.setModel(translatorComboBoxModel);
-        translatorComboBox.setToolTipText("选择翻译源。注意：微软翻译暂时回退到Google翻译");
-        // Load saved translator preference
+        translatorComboBox.setToolTipText("选择翻译源，失败时自动尝试备用翻译源");
         String savedTranslator = ConfigUtil.getInstance().getTranslatorType();
-        if ("MICROSOFT".equals(savedTranslator)) {
-            translatorComboBox.setSelectedItem(TRANSLATOR_MICROSOFT);
-        } else if ("BING".equals(savedTranslator)) {
+        if ("BING".equals(savedTranslator)) {
             translatorComboBox.setSelectedItem(TRANSLATOR_BING);
         } else {
             translatorComboBox.setSelectedItem(TRANSLATOR_GOOGLE);
         }
+
+        copyButton = new JButton(new FlatSVGIcon("icon/copy.svg"));
+        copyButton.setToolTipText("复制译文");
+        clearButton = new JButton(new FlatSVGIcon("icon/remove.svg"));
+        clearButton.setToolTipText("清空");
 
         leftMenuToolBar = new JToolBar();
         leftMenuToolBar.add(comboBox1);
@@ -81,6 +83,9 @@ public class TranslationLayoutForm {
         leftMenuToolBar.addSeparator();
         leftMenuToolBar.add(new JLabel("翻译源: "));
         leftMenuToolBar.add(translatorComboBox);
+        leftMenuToolBar.addSeparator();
+        leftMenuToolBar.add(copyButton);
+        leftMenuToolBar.add(clearButton);
 
         leftMenuPanel.add(leftMenuToolBar);
 
@@ -88,58 +93,52 @@ public class TranslationLayoutForm {
 
         textArea1.setLineWrap(true);
         textArea2.setLineWrap(true);
+        textArea2.setEditable(false);
 
         addListeners();
     }
 
+    private static boolean containsItem(JComboBox<String> comboBox, String item) {
+        for (int i = 0; i < comboBox.getItemCount(); i++) {
+            if (item.equals(comboBox.getItemAt(i))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void addListeners() {
         exchangeButton.addActionListener(e -> {
-            String from = comboBox1.getSelectedItem().toString();
-            String to = comboBox2.getSelectedItem().toString();
-            if ("自动检测".equals(from)) {
-                if ("中文（简体）".equals(to)) {
-                    comboBox1.setSelectedItem("中文（简体）");
-                    comboBox2.setSelectedItem("英语");
-                } else {
-                    comboBox1.setSelectedItem("中文（简体）");
-                    comboBox2.setSelectedItem("英语");
-                }
+            Object from = comboBox1.getSelectedItem();
+            Object to = comboBox2.getSelectedItem();
+            if (Translator.AUTO_DETECT.equals(from)) {
+                comboBox1.setSelectedItem(to);
             } else {
                 comboBox1.setSelectedItem(to);
                 comboBox2.setSelectedItem(from);
             }
 
+            String sourceText = textArea1.getText();
+            String targetText = textArea2.getText();
+            textArea1.setText(targetText);
+            textArea2.setText(sourceText);
+
+            saveLanguagePreferences();
             translateControl();
         });
 
         comboBox1.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
-                String itemName = e.getItem().toString();
-                if ("自动检测".equals(itemName)) {
-                    comboBox2.setSelectedItem("中文（简体）");
-                } else {
-                    if ("中文（简体）".equals(itemName)) {
-                        comboBox2.setSelectedItem("英语");
-                    } else {
-                        comboBox2.setSelectedItem("中文（简体）");
-                    }
-                }
+                preventSameLanguageSelection();
+                saveLanguagePreferences();
                 translateControl();
             }
         });
 
         comboBox2.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
-                String itemName = e.getItem().toString();
-                if ("自动检测".equals(itemName)) {
-                    comboBox1.setSelectedItem("中文（简体）");
-                } else {
-                    if ("中文（简体）".equals(itemName)) {
-                        comboBox1.setSelectedItem("英语");
-                    } else {
-                        comboBox1.setSelectedItem("中文（简体）");
-                    }
-                }
+                preventSameLanguageSelection();
+                saveLanguagePreferences();
                 translateControl();
             }
         });
@@ -147,20 +146,25 @@ public class TranslationLayoutForm {
         translatorComboBox.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 String itemName = e.getItem().toString();
-                String translatorType;
-                if (TRANSLATOR_GOOGLE.equals(itemName)) {
-                    translatorType = "GOOGLE";
-                } else if (TRANSLATOR_BING.equals(itemName)) {
-                    translatorType = "BING";
-                } else {
-                    translatorType = "MICROSOFT";
-                }
+                String translatorType = TRANSLATOR_BING.equals(itemName) ? "BING" : "GOOGLE";
                 ConfigUtil.getInstance().setTranslatorType(translatorType);
-                // Only translate if there's actual text to translate
                 if (!StringUtils.isEmpty(textArea1.getText())) {
                     translateControl();
                 }
             }
+        });
+
+        copyButton.addActionListener(e -> {
+            String result = textArea2.getText();
+            if (StringUtils.isNotBlank(result)) {
+                ClipboardUtil.setStr(result);
+                AlertUtil.buttonInfo(copyButton, "", "已复制", 1500);
+            }
+        });
+
+        clearButton.addActionListener(e -> {
+            textArea1.setText("");
+            textArea2.setText("");
         });
 
         textArea1.getDocument().addDocumentListener(new DocumentListener() {
@@ -180,58 +184,66 @@ public class TranslationLayoutForm {
         });
     }
 
+    private void preventSameLanguageSelection() {
+        String sourceLanguage = String.valueOf(comboBox1.getSelectedItem());
+        String targetLanguage = String.valueOf(comboBox2.getSelectedItem());
+        if (!Translator.AUTO_DETECT.equals(sourceLanguage) && sourceLanguage.equals(targetLanguage)) {
+            if ("中文（简体）".equals(targetLanguage)) {
+                comboBox2.setSelectedItem("英语");
+            } else {
+                comboBox2.setSelectedItem("中文（简体）");
+            }
+        }
+    }
+
+    private void saveLanguagePreferences() {
+        ConfigUtil.getInstance().setTranslationSourceLanguage(String.valueOf(comboBox1.getSelectedItem()));
+        ConfigUtil.getInstance().setTranslationTargetLanguage(String.valueOf(comboBox2.getSelectedItem()));
+    }
+
     public void translateControl() {
+        changeCount.incrementAndGet();
+        SwingUtilities.invokeLater(() -> {
+            if (!StringUtils.isEmpty(textArea1.getText())) {
+                textArea2.setText("翻译中...");
+            }
+        });
+
         Thread thread = new Thread(() -> {
-            changeCount.incrementAndGet();
-            textArea2.setText("^_^……");
             try {
                 Thread.sleep(500);
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                Thread.currentThread().interrupt();
+                return;
             }
             changeCount.decrementAndGet();
             if (changeCount.get() == 0) {
                 translate();
             }
         });
+        thread.setDaemon(true);
         thread.start();
     }
 
     private void translate() {
-        String sourceLanguage = comboBox1.getSelectedItem().toString();
-        String targetLanguage = comboBox2.getSelectedItem().toString();
+        String sourceLanguage = String.valueOf(comboBox1.getSelectedItem());
+        String targetLanguage = String.valueOf(comboBox2.getSelectedItem());
         String text = textArea1.getText();
 
-        // Skip translation if text is empty
         if (StringUtils.isEmpty(text)) {
-            textArea2.setText("");
+            SwingUtilities.invokeLater(() -> textArea2.setText(""));
             return;
         }
 
-        // Get the selected translator type from config
-        String translatorTypeStr = ConfigUtil.getInstance().getTranslatorType();
-        TranslatorFactory.TranslatorType translatorType = TranslatorFactory.TranslatorType.GOOGLE;
-        try {
-            translatorType = TranslatorFactory.TranslatorType.valueOf(translatorTypeStr);
-        } catch (IllegalArgumentException e) {
-            // Default to GOOGLE if invalid
-            translatorType = TranslatorFactory.TranslatorType.GOOGLE;
-        }
+        TranslatorFactory.TranslatorType translatorType = TranslatorFactory.parseType(
+                ConfigUtil.getInstance().getTranslatorType());
 
-        // Get language codes, with fallback for null values
-        String sourceLangCode = Translator.languageNameToCodeMap.get(sourceLanguage);
-        String targetLangCode = Translator.languageNameToCodeMap.get(targetLanguage);
-        
-        if (sourceLangCode == null) {
-            sourceLangCode = "auto"; // Default to auto-detect
-        }
-        if (targetLangCode == null) {
-            targetLangCode = "zh-CN"; // Default to Simplified Chinese
-        }
+        String sourceLangCode = Translator.resolveLanguageCode(sourceLanguage, "auto");
+        String targetLangCode = Translator.resolveLanguageCode(targetLanguage, "zh-CN");
 
-        String result = TranslatorFactory.getTranslator(translatorType).translate(text, sourceLangCode, targetLangCode);
+        String result = TranslatorFactory.translate(text, sourceLangCode, targetLangCode, translatorType);
 
-        textArea2.setText(result);
+        SwingUtilities.invokeLater(() -> textArea2.setText(result));
     }
 
     {
