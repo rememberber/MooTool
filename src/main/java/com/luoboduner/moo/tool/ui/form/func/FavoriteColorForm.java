@@ -82,6 +82,12 @@ public class FavoriteColorForm {
                 if (selectedIndex == -1) {
                     return;
                 }
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    if (!favoriteList.isSelectedIndex(selectedIndex)) {
+                        favoriteList.setSelectedIndex(selectedIndex);
+                    }
+                    return;
+                }
                 viewListBySelected(selectedIndex);
                 listControlPanel.setVisible(true);
                 itemControlPanel.setVisible(false);
@@ -290,6 +296,15 @@ public class FavoriteColorForm {
                 }
             }
         });
+
+        JPopupMenu favoriteListPopupMenu = new JPopupMenu();
+        JMenuItem renameMenuItem = new JMenuItem("重命名");
+        JMenuItem deleteMenuItem = new JMenuItem("删除");
+        favoriteListPopupMenu.add(renameMenuItem);
+        favoriteListPopupMenu.add(deleteMenuItem);
+        favoriteList.setComponentPopupMenu(favoriteListPopupMenu);
+        renameMenuItem.addActionListener(e -> renameSelectedList());
+        deleteMenuItem.addActionListener(e -> deleteList());
 
         // 右侧项目列表按键事件（重命名）
         itemTable.addKeyListener(new KeyListener() {
