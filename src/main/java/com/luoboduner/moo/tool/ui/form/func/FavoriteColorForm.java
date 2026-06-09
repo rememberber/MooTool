@@ -286,7 +286,7 @@ public class FavoriteColorForm {
                             favoriteColorListMapper.updateByPrimaryKeySelective(tFavoriteColorList);
                         } catch (Exception e) {
                             JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
-                            JsonBeautyForm.initListTable();
+                            JsonBeautyForm.initList();
                             log.error(e.toString());
                         }
                     }
