@@ -28,9 +28,7 @@ public class MooFlatTabbedPaneUI extends FlatTabbedPaneUI {
             return;
         }
 
-        g.setColor(tabPane.isEnabled()
-                ? (isTabbedPaneOrChildFocused() ? underlineColor : inactiveUnderlineColor)
-                : disabledUnderlineColor);
+        g.setColor(tabPane.isEnabled() ? underlineColor : disabledUnderlineColor);
 
         boolean isCard = (getTabType() == TAB_TYPE_CARD);
 
