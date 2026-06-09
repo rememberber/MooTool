@@ -387,6 +387,9 @@ public class CryptoListener {
                 if ("RSA".equals(asymType)) {
                     RSA rsa = new RSA(privateKeyStr, null);
                     encryptStr = Base64.encode(rsa.encrypt(StrUtil.bytes(toEncryptStr, CharsetUtil.CHARSET_UTF_8), KeyType.PrivateKey));
+                } else if ("SM2".equals(asymType)) {
+                    SM2 sm2 = SmUtil.sm2(privateKeyStr, null);
+                    encryptStr = Base64.encode(sm2.encrypt(StrUtil.bytes(toEncryptStr, CharsetUtil.CHARSET_UTF_8), KeyType.PrivateKey));
                 }
 
                 cryptoForm.getAsymRightTextArea().setText(encryptStr);
@@ -408,12 +411,61 @@ public class CryptoListener {
                 if ("RSA".equals(asymType)) {
                     RSA rsa = new RSA(null, publicKeyStr);
                     decryptStr = StrUtil.str(rsa.decrypt(Base64.decode(toDecryptStr), KeyType.PublicKey), CharsetUtil.CHARSET_UTF_8);
+                } else if ("SM2".equals(asymType)) {
+                    SM2 sm2 = SmUtil.sm2(null, publicKeyStr);
+                    decryptStr = StrUtil.str(sm2.decrypt(Base64.decode(toDecryptStr), KeyType.PublicKey), CharsetUtil.CHARSET_UTF_8);
                 }
 
                 cryptoForm.getAsymLeftTextArea().setText(decryptStr);
                 cryptoForm.getAsymLeftTextArea().setCaretPosition(0);
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "解密失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
+
+        // 使用私钥签名（SM2 国密）
+        cryptoForm.getAsymSignButton().addActionListener(e -> {
+            try {
+                String asymType = (String) cryptoForm.getAsymComboBox().getSelectedItem();
+                if (!"SM2".equals(asymType)) {
+                    JOptionPane.showMessageDialog(App.mainFrame, "签名功能仅支持 SM2（国密）", "提示",
+                            JOptionPane.INFORMATION_MESSAGE);
+                    return;
+                }
+                String privateKeyStr = cryptoForm.getAsymPrivateKeyTextArea().getText();
+                String content = cryptoForm.getAsymLeftTextArea().getText();
+                SM2 sm2 = SmUtil.sm2(privateKeyStr, null);
+                String signStr = Base64.encode(sm2.sign(StrUtil.bytes(content, CharsetUtil.CHARSET_UTF_8)));
+                cryptoForm.getAsymRightTextArea().setText(signStr);
+                cryptoForm.getAsymRightTextArea().setCaretPosition(0);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "签名失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
+
+        // 使用公钥验签（SM2 国密）
+        cryptoForm.getAsymVerifyButton().addActionListener(e -> {
+            try {
+                String asymType = (String) cryptoForm.getAsymComboBox().getSelectedItem();
+                if (!"SM2".equals(asymType)) {
+                    JOptionPane.showMessageDialog(App.mainFrame, "验签功能仅支持 SM2（国密）", "提示",
+                            JOptionPane.INFORMATION_MESSAGE);
+                    return;
+                }
+                String publicKeyStr = cryptoForm.getAsymPubKeyTextArea().getText();
+                String content = cryptoForm.getAsymLeftTextArea().getText();
+                String signStr = cryptoForm.getAsymRightTextArea().getText();
+                SM2 sm2 = SmUtil.sm2(null, publicKeyStr);
+                boolean verified = sm2.verify(StrUtil.bytes(content, CharsetUtil.CHARSET_UTF_8), Base64.decode(signStr));
+                JOptionPane.showMessageDialog(App.mainFrame, verified ? "验签成功" : "验签失败",
+                        verified ? "成功" : "失败",
+                        verified ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE);
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "验签失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }

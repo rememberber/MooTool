@@ -3,7 +3,6 @@ package com.luoboduner.moo.tool.ui.form.func;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.swing.clipboard.ClipboardUtil;
-import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.extra.qrcode.QrCodeUtil;
 import cn.hutool.extra.qrcode.QrConfig;
 import cn.hutool.log.Log;
@@ -80,25 +79,43 @@ public class QrCodeForm {
         UndoUtil.register(this);
     }
 
-    public static void recognition() {
-        ThreadUtil.execute(() -> {
-            try {
-                qrCodeForm = getInstance();
-                String recognitionImagePath = qrCodeForm.getRecognitionImagePathTextField().getText().trim();
-                String decode = QrCodeUtil.decode(FileUtil.file(recognitionImagePath));
-                qrCodeForm.getRecognitionContentTextArea().setText(decode);
-                App.config.setQrCodeRecognitionImagePath(recognitionImagePath);
-                App.config.save();
-                qrCodeForm.getQrCodePanel().updateUI();
+    public static String getRecognitionImagePath() {
+        return getInstance().getRecognitionImagePathTextField().getText().trim();
+    }
 
-                QrCodeListener.output("从文件识别:\n" + decode);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                JOptionPane.showMessageDialog(App.mainFrame, "识别失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
-                logger.error(ExceptionUtils.getStackTrace(ex));
+    public static String decodeImageFile(String recognitionImagePath) throws Exception {
+        return QrCodeUtil.decode(FileUtil.file(recognitionImagePath));
+    }
+
+    public static void applyRecognitionResult(String recognitionImagePath, String decode) {
+        qrCodeForm = getInstance();
+        qrCodeForm.getRecognitionContentTextArea().setText(decode);
+        App.config.setQrCodeRecognitionImagePath(recognitionImagePath);
+        App.config.save();
+        qrCodeForm.getQrCodePanel().updateUI();
+        QrCodeListener.output("从文件识别:\n" + decode);
+    }
+
+    public static void recognition() {
+        String recognitionImagePath = getRecognitionImagePath();
+        SwingWorker<String, Void> worker = new SwingWorker<>() {
+            @Override
+            protected String doInBackground() throws Exception {
+                return decodeImageFile(recognitionImagePath);
             }
-        });
+
+            @Override
+            protected void done() {
+                try {
+                    applyRecognitionResult(recognitionImagePath, get());
+                } catch (Exception ex) {
+                    JOptionPane.showMessageDialog(App.mainFrame, "识别失败！\n\n" + ex.getMessage(), "失败",
+                            JOptionPane.ERROR_MESSAGE);
+                    logger.error(ExceptionUtils.getStackTrace(ex));
+                }
+            }
+        };
+        worker.execute();
     }
 
     public static void recognitionFromClipBoard() {
@@ -116,49 +133,86 @@ public class QrCodeForm {
         }
     }
 
+    @Getter
+    public static class GenerateRequest {
+        private final String content;
+        private final int size;
+        private final String logoPath;
+        private final String errorCorrectionLevel;
+        private final boolean save;
+
+        private GenerateRequest(String content, int size, String logoPath, String errorCorrectionLevel, boolean save) {
+            this.content = content;
+            this.size = size;
+            this.logoPath = logoPath;
+            this.errorCorrectionLevel = errorCorrectionLevel;
+            this.save = save;
+        }
+    }
+
+    public static GenerateRequest collectGenerateRequest(boolean save) {
+        qrCodeForm = getInstance();
+        int size = Integer.parseInt(qrCodeForm.getSizeTextField().getText().trim());
+        return new GenerateRequest(
+                qrCodeForm.getToGenerateContentTextArea().getText(),
+                size,
+                qrCodeForm.getLogoPathTextField().getText(),
+                (String) qrCodeForm.getErrorCorrectionLevelComboBox().getSelectedItem(),
+                save
+        );
+    }
+
+    public static BufferedImage generateImage(GenerateRequest request) throws Exception {
+        String nowTime = DateUtil.now().replace(":", "-").replace(" ", "-");
+        qrCodeImageTempFile = FileUtil.file(App.tempDir + File.separator + "qrCode-" + nowTime + ".jpg");
+
+        QrConfig config = new QrConfig(request.getSize(), request.getSize());
+        if (StringUtils.isNotBlank(request.getLogoPath())) {
+            try {
+                config.setImg(request.getLogoPath());
+            } catch (Exception e) {
+                logger.error("生成二维码设置log异常{}", ExceptionUtils.getStackTrace(e));
+            }
+        }
+        applyErrorCorrection(config, request.getErrorCorrectionLevel());
+        QrCodeUtil.generate(request.getContent(), config, qrCodeImageTempFile);
+        BufferedImage image = ImageIO.read(qrCodeImageTempFile);
+        if (image == null) {
+            throw new IOException("无法读取生成的二维码图片");
+        }
+        return image;
+    }
+
+    public static void showGeneratedImage(BufferedImage image, GenerateRequest request) {
+        qrCodeForm = getInstance();
+        qrCodeForm.getQrCodeImageLabel().setIcon(new ImageIcon(image));
+        qrCodeForm.getQrCodePanel().updateUI();
+        if (request.isSave()) {
+            saveConfig();
+            QrCodeListener.output("生成:\n" + request.getContent());
+        }
+    }
+
     public static void generate(Boolean save) {
         try {
-            qrCodeForm = getInstance();
-            String nowTime = DateUtil.now().replace(":", "-").replace(" ", "-");
-            qrCodeImageTempFile = FileUtil.file(App.tempDir + File.separator + "qrCode-" + nowTime + ".jpg");
-
-            int size = Integer.parseInt(qrCodeForm.getSizeTextField().getText());
-            QrConfig config = new QrConfig(size, size);
-            String logoPath = qrCodeForm.getLogoPathTextField().getText();
-            if (StringUtils.isNotBlank(logoPath)) {
-                try {
-                    config.setImg(logoPath);
-                } catch (Exception e) {
-                    logger.error("生成二维码设置log异常{}", ExceptionUtils.getStackTrace(e));
-                }
-            }
-            String errorCorrectionLevel = (String) qrCodeForm.getErrorCorrectionLevelComboBox().getSelectedItem();
-            if ("低".equals(errorCorrectionLevel)) {
-                config.setErrorCorrection(ErrorCorrectionLevel.L);
-            } else if ("中低".equals(errorCorrectionLevel)) {
-                config.setErrorCorrection(ErrorCorrectionLevel.M);
-            } else if ("中高".equals(errorCorrectionLevel)) {
-                config.setErrorCorrection(ErrorCorrectionLevel.Q);
-            } else if ("高".equals(errorCorrectionLevel)) {
-                config.setErrorCorrection(ErrorCorrectionLevel.H);
-            }
-            QrCodeUtil.generate(qrCodeForm.getToGenerateContentTextArea().getText(), config, qrCodeImageTempFile);
-            BufferedImage image = ImageIO.read(qrCodeImageTempFile);
-            if (image == null) {
-                throw new IOException("无法读取生成的二维码图片");
-            }
-            ImageIcon imageIcon = new ImageIcon(image);
-            qrCodeForm.getQrCodeImageLabel().setIcon(imageIcon);
-            qrCodeForm.getQrCodePanel().updateUI();
-
-            if (save) {
-                saveConfig();
-                QrCodeListener.output("生成:\n" + qrCodeForm.getToGenerateContentTextArea().getText());
-            }
+            GenerateRequest request = collectGenerateRequest(save);
+            showGeneratedImage(generateImage(request), request);
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
                     JOptionPane.ERROR_MESSAGE);
             logger.error(ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
+    private static void applyErrorCorrection(QrConfig config, String errorCorrectionLevel) {
+        if ("低".equals(errorCorrectionLevel)) {
+            config.setErrorCorrection(ErrorCorrectionLevel.L);
+        } else if ("中低".equals(errorCorrectionLevel)) {
+            config.setErrorCorrection(ErrorCorrectionLevel.M);
+        } else if ("中高".equals(errorCorrectionLevel)) {
+            config.setErrorCorrection(ErrorCorrectionLevel.Q);
+        } else if ("高".equals(errorCorrectionLevel)) {
+            config.setErrorCorrection(ErrorCorrectionLevel.H);
         }
     }
 

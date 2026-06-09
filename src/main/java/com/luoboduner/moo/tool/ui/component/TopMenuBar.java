@@ -415,6 +415,7 @@ public class TopMenuBar extends JMenuBar {
 
         SwingUtilities.updateComponentTreeUI(App.mainFrame);
         SwingUtilities.updateComponentTreeUI(MainWindow.getInstance().getTabbedPane());
+        MainWindow.getInstance().initTabPlacement();
 
 //                FlatLaf.updateUI();
 

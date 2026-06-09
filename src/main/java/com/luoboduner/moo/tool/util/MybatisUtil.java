@@ -43,27 +43,37 @@ public class MybatisUtil {
 
     public static SqlSession getSqlSession() {
         if (sqlSession == null) {
-            try {
-                if (!dbFile.exists()) {
-                    initDbFile();
-                }
-                if (StringUtils.isNotBlank(App.config.getDbFilePath())) {
-                    dbFile = new File(App.config.getDbFilePath() + File.separator + "MooTool.db");
-                }
-                String resource = "mybatis-config.xml";
-                InputStream inputStream = Resources.getResourceAsStream(resource);
-                Properties properties = new Properties();
-                properties.setProperty("url", "jdbc:sqlite:" + dbFile.getAbsolutePath());
-                SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream, properties);
-                sqlSession = sqlSessionFactory.openSession(true);
-                inputStream.close();
+            synchronized (MybatisUtil.class) {
+                if (sqlSession == null) {
+                    try {
+                        dbFile = resolveDbFile();
+                        if (!dbFile.exists()) {
+                            initDbFile();
+                        }
+                        String resource = "mybatis-config.xml";
+                        InputStream inputStream = Resources.getResourceAsStream(resource);
+                        Properties properties = new Properties();
+                        properties.setProperty("url", "jdbc:sqlite:" + dbFile.getAbsolutePath());
+                        SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(inputStream, properties);
+                        sqlSession = sqlSessionFactory.openSession(true);
+                        inputStream.close();
 
-                initTables();
-            } catch (Exception e) {
-                log.error("get sqlSession error!", e);
+                        initTables();
+                    } catch (Exception e) {
+                        log.error("get sqlSession error!", e);
+                        throw new IllegalStateException("数据库初始化失败", e);
+                    }
+                }
             }
         }
         return sqlSession;
+    }
+
+    private static File resolveDbFile() {
+        if (StringUtils.isNotBlank(App.config.getDbFilePath())) {
+            return new File(App.config.getDbFilePath() + File.separator + "MooTool.db");
+        }
+        return new File(SystemUtil.CONFIG_HOME + File.separator + "MooTool.db");
     }
 
     public static void setSqlSession(SqlSession sqlSession) {
@@ -74,8 +84,9 @@ public class MybatisUtil {
      * 初始化数据库文件
      */
     public static void initDbFile() throws SQLException {
-        File configHomeDir = new File(SystemUtil.CONFIG_HOME);
-        if (!configHomeDir.exists()) {
+        dbFile = resolveDbFile();
+        File configHomeDir = dbFile.getParentFile();
+        if (configHomeDir != null && !configHomeDir.exists()) {
             configHomeDir.mkdirs();
         }
         // 不存在db文件时会自动创建一个

@@ -247,6 +247,9 @@ public class QuickNoteListener {
                     deleteFiles(quickNoteForm);
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
                     int selectedIndex = quickNoteForm.getNoteList().getSelectedIndex();
+                    if (selectedIndex < 0) {
+                        return;
+                    }
                     QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
                     try {
                         viewByIndex(selectedIndex);
@@ -625,6 +628,9 @@ public class QuickNoteListener {
      * @param index
      */
     private static void viewByIndex(int index) {
+        if (index < 0) {
+            return;
+        }
 
         QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
         QuickNoteRSyntaxTextViewerManager quickNoteRSyntaxTextViewerManager = QuickNoteForm.quickNoteRSyntaxTextViewerManager;

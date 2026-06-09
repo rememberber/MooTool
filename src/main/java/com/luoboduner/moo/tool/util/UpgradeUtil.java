@@ -31,7 +31,17 @@ import java.util.Map;
  */
 @Slf4j
 public class UpgradeUtil {
-    private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
+    private static TQuickNoteMapper quickNoteMapper() {
+        return MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
+    }
+
+    private static int parseVersionIndex(Map<String, String> versionIndexMap, String version) {
+        String index = versionIndexMap.get(version);
+        if (StringUtils.isBlank(index)) {
+            throw new IllegalStateException("版本索引缺失：" + version);
+        }
+        return Integer.parseInt(index);
+    }
 
     public static void checkUpdate(boolean initCheck) {
         // 当前版本
@@ -59,8 +69,14 @@ public class UpgradeUtil {
         List<VersionSummary.Version> versionDetailList = versionSummary.getVersionDetailList();
 
         if (newVersion.compareTo(currentVersion) > 0) {
+            int currentVersionIndex;
+            try {
+                currentVersionIndex = parseVersionIndex(versionIndexMap, currentVersion);
+            } catch (IllegalStateException e) {
+                log.error("检查更新时版本索引配置异常", e);
+                return;
+            }
             // 当前版本索引
-            int currentVersionIndex = Integer.parseInt(versionIndexMap.get(currentVersion));
             // 版本更新日志：
             StringBuilder versionLogBuilder = new StringBuilder("<h1>惊现新版本！立即下载？</h1>");
             VersionSummary.Version version;
@@ -115,8 +131,15 @@ public class UpgradeUtil {
             VersionSummary versionSummary = JSON.parseObject(versionSummaryJsonContent, VersionSummary.class);
             String versionIndex = versionSummary.getVersionIndex();
             Map<String, String> versionIndexMap = JSON.parseObject(versionIndex, Map.class);
-            int currentVersionIndex = Integer.parseInt(versionIndexMap.get(currentVersion));
-            int beforeVersionIndex = Integer.parseInt(versionIndexMap.get(beforeVersion));
+            int currentVersionIndex;
+            int beforeVersionIndex;
+            try {
+                currentVersionIndex = parseVersionIndex(versionIndexMap, currentVersion);
+                beforeVersionIndex = parseVersionIndex(versionIndexMap, beforeVersion);
+            } catch (IllegalStateException e) {
+                log.error("平滑升级时版本索引配置异常", e);
+                return;
+            }
             log.info("旧版本{}", beforeVersion);
             log.info("当前版本{}", currentVersion);
             // 遍历索引范围
@@ -167,7 +190,8 @@ public class UpgradeUtil {
                 tQuickNote.setSyntax(SyntaxConstants.SYNTAX_STYLE_NONE);
                 tQuickNote.setFontName(App.config.getQuickNoteFontName());
                 tQuickNote.setFontSize(String.valueOf(App.config.getFontSize()));
-                quickNoteMapper.updateAll(tQuickNote);
+                quickNoteMapper().updateAll(tQuickNote);
+                break;
             case 21:
                 break;
             default:

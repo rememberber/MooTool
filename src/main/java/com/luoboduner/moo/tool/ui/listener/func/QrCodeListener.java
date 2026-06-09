@@ -1,7 +1,6 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.formdev.flatlaf.util.SystemFileChooser;
@@ -11,6 +10,7 @@ import com.luoboduner.moo.tool.util.ConsoleUtil;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.File;
@@ -28,13 +28,33 @@ public class QrCodeListener {
 
     public static void addListeners() {
         QrCodeForm qrCodeForm = QrCodeForm.getInstance();
-        qrCodeForm.getGenerateButton().addActionListener(e -> ThreadUtil.execute(() -> {
+        qrCodeForm.getGenerateButton().addActionListener(e -> {
             try {
-                QrCodeForm.generate(true);
-            } catch (Exception e1) {
-                logger.error(e1);
+                QrCodeForm.GenerateRequest request = QrCodeForm.collectGenerateRequest(true);
+                SwingWorker<BufferedImage, Void> worker = new SwingWorker<>() {
+                    @Override
+                    protected BufferedImage doInBackground() throws Exception {
+                        return QrCodeForm.generateImage(request);
+                    }
+
+                    @Override
+                    protected void done() {
+                        try {
+                            QrCodeForm.showGeneratedImage(get(), request);
+                        } catch (Exception ex) {
+                            JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
+                                    JOptionPane.ERROR_MESSAGE);
+                            logger.error(ex);
+                        }
+                    }
+                };
+                worker.execute();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
+                        JOptionPane.ERROR_MESSAGE);
+                logger.error(ex);
             }
-        }));
+        });
         qrCodeForm.getExploreButton().addActionListener(e -> {
             File beforeFile = new File(qrCodeForm.getLogoPathTextField().getText());
             SystemFileChooser fileChooser;
