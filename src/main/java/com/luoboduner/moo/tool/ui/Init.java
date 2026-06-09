@@ -226,6 +226,7 @@ public class Init {
         ThreadUtil.execute(TimeConvertForm::init);
         ThreadUtil.execute(HostForm::init);
         ThreadUtil.execute(HttpRequestForm::init);
+        ThreadUtil.execute(UaParseForm::init);
         ThreadUtil.execute(EnCodeForm::init);
         ThreadUtil.execute(QrCodeForm::init);
         ThreadUtil.execute(CryptoForm::init);
