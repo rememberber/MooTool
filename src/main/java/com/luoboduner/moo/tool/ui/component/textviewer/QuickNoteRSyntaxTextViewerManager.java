@@ -59,8 +59,15 @@ public class QuickNoteRSyntaxTextViewerManager {
             plainTextViewer.setOnContentChanged(() -> newEditorPanel.updatePreview(plainTextViewer.getText()));
 
             editorPanel = newEditorPanel;
+            String noteColor = tQuickNote.getColor();
+            if (StringUtils.isEmpty(noteColor)) {
+                noteColor = "default";
+            }
+            editorPanel.applyAccentColor(QuickNoteEditorPanel.resolveAccentColor(noteColor));
 
             viewMap.put(name, editorPanel);
+            currentEditorPanel = editorPanel;
+        } else {
             currentEditorPanel = editorPanel;
         }
         return editorPanel;

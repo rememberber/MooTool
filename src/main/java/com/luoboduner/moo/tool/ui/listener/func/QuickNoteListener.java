@@ -385,7 +385,19 @@ public class QuickNoteListener {
 
                         quickNoteMapper.updateByName(tQuickNote);
 
-                        QuickNoteForm.initNoteList();
+                        quickNoteForm.getColorButton().setIcon(new QuickNoteForm.ListColorIcon(colorKey, 18, 18));
+                        QuickNoteForm.applyCurrentEditorOutline(colorKey);
+
+                        DefaultListModel<TQuickNote> listModel =
+                                (DefaultListModel<TQuickNote>) quickNoteForm.getNoteList().getModel();
+                        for (int j = 0; j < listModel.size(); j++) {
+                            TQuickNote note = listModel.getElementAt(j);
+                            if (selectedName.equals(note.getName())) {
+                                note.setColor(colorKey);
+                                quickNoteForm.getNoteList().repaint();
+                                break;
+                            }
+                        }
                     }
                 }
             });
@@ -649,7 +661,7 @@ public class QuickNoteListener {
         quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setLineWrap("1".equals(tQuickNote.getLineWrap()));
         quickNoteForm.getWrapButton().setSelected("1".equals(tQuickNote.getLineWrap()));
 
-        editorPanel.putClientProperty("JComponent.outline", UIManager.getColor(color));
+        QuickNoteForm.applyEditorOutline(editorPanel, color);
 
 //        syntaxTextViewer.updateUI();
     }

@@ -400,6 +400,24 @@ public class QuickNoteForm {
         quickNoteForm.getSyntaxComboBox().addItem(SyntaxConstants.SYNTAX_STYLE_WINDOWS_BATCH.substring(5));
     }
 
+    public static Color resolveNoteColor(String colorKey) {
+        return QuickNoteEditorPanel.resolveAccentColor(colorKey);
+    }
+
+    public static void applyEditorOutline(QuickNoteEditorPanel editorPanel, String colorKey) {
+        if (editorPanel == null) {
+            return;
+        }
+        editorPanel.applyAccentColor(QuickNoteEditorPanel.resolveAccentColor(colorKey));
+    }
+
+    public static void applyCurrentEditorOutline(String colorKey) {
+        if (quickNoteRSyntaxTextViewerManager == null || QuickNoteListener.selectedName == null) {
+            return;
+        }
+        applyEditorOutline(quickNoteRSyntaxTextViewerManager.getEditorPanel(QuickNoteListener.selectedName), colorKey);
+    }
+
     public static void initNoteList() {
         DefaultListModel<TQuickNote> model = new DefaultListModel<>();
         JList<TQuickNote> noteList = quickNoteForm.getNoteList();
@@ -423,10 +441,20 @@ public class QuickNoteForm {
         if (quickNoteList.size() > 0) {
             QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
             try {
-                String name = quickNoteList.get(0).getName();
+                int selectIndex = 0;
+                String preserveName = QuickNoteListener.selectedName;
+                if (StringUtils.isNotEmpty(preserveName)) {
+                    for (int i = 0; i < quickNoteList.size(); i++) {
+                        if (preserveName.equals(quickNoteList.get(i).getName())) {
+                            selectIndex = i;
+                            break;
+                        }
+                    }
+                }
+                String name = quickNoteList.get(selectIndex).getName();
                 QuickNoteEditorPanel editorPanel = QuickNoteForm.quickNoteRSyntaxTextViewerManager.getEditorPanel(name);
                 getInstance().getContentSplitPane().setLeftComponent(editorPanel);
-                noteList.setSelectedIndex(0);
+                noteList.setSelectedIndex(selectIndex);
 //                syntaxTextViewer.grabFocus();
                 QuickNoteListener.selectedName = name;
 
@@ -450,7 +478,7 @@ public class QuickNoteForm {
                 }
                 QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setLineWrap("1".equals(tQuickNote.getLineWrap()));
                 quickNoteForm.getWrapButton().setSelected("1".equals(tQuickNote.getLineWrap()));
-                editorPanel.putClientProperty("JComponent.outline", UIManager.getColor(color));
+                applyEditorOutline(editorPanel, color);
             } catch (Exception e1) {
                 log.error(e1.toString());
             } finally {
