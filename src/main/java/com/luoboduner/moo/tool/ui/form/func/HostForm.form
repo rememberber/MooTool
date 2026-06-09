@@ -38,7 +38,7 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="f180d" class="javax.swing.JTable" binding="noteListTable">
+                  <component id="f180d" class="javax.swing.JList" binding="noteList">
                     <constraints/>
                     <properties/>
                   </component>

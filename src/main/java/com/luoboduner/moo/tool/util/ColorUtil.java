@@ -94,4 +94,55 @@ public class ColorUtil {
         return stringBuilder.toString().toUpperCase();
     }
 
+    /**
+     * 取反色
+     */
+    public static Color invert(Color color) {
+        return new Color(255 - color.getRed(), 255 - color.getGreen(), 255 - color.getBlue());
+    }
+
+    /**
+     * 相交（正片叠底）
+     */
+    public static Color intersect(Color a, Color b) {
+        return new Color(channelMultiply(a.getRed(), b.getRed()),
+                channelMultiply(a.getGreen(), b.getGreen()),
+                channelMultiply(a.getBlue(), b.getBlue()));
+    }
+
+    /**
+     * 相加
+     */
+    public static Color add(Color a, Color b) {
+        return new Color(clampChannel(a.getRed() + b.getRed()),
+                clampChannel(a.getGreen() + b.getGreen()),
+                clampChannel(a.getBlue() + b.getBlue()));
+    }
+
+    /**
+     * 差值
+     */
+    public static Color difference(Color a, Color b) {
+        return new Color(Math.abs(a.getRed() - b.getRed()),
+                Math.abs(a.getGreen() - b.getGreen()),
+                Math.abs(a.getBlue() - b.getBlue()));
+    }
+
+    /**
+     * 平均
+     */
+    public static Color average(Color a, Color b) {
+        return new Color((a.getRed() + b.getRed()) / 2,
+                (a.getGreen() + b.getGreen()) / 2,
+                (a.getBlue() + b.getBlue()) / 2);
+    }
+
+    private static int channelMultiply(int a, int b) {
+        return a * b / 255;
+    }
+
+    private static int clampChannel(int value) {
+        return Math.min(255, Math.max(0, value));
+    }
+
 }

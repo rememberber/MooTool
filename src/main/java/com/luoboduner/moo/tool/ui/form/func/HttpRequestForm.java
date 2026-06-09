@@ -17,6 +17,7 @@ import com.luoboduner.moo.tool.domain.THttpRequestHistory;
 import com.luoboduner.moo.tool.domain.TMsgHttp;
 import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.PanelCloseUtil;
 import com.luoboduner.moo.tool.ui.component.TableInCellButtonColumn;
 import com.luoboduner.moo.tool.ui.listener.func.HttpRequestListener;
 import com.luoboduner.moo.tool.util.*;
@@ -49,7 +50,7 @@ import java.util.Locale;
 @Getter
 public class HttpRequestForm {
     private JPanel httpRequestPanel;
-    private JTable noteListTable;
+    private JList<TMsgHttp> noteList;
     private JButton deleteButton;
     private JButton saveButton;
     private JSplitPane splitPane;
@@ -88,7 +89,7 @@ public class HttpRequestForm {
     private JButton historyButton;
     private JTable historyTable;
     private JButton deleteHistoryButton;
-    private JLabel closeHistoryLabel;
+    private JButton closeHistoryButton;
     private JSplitPane historySplitPane;
     private JScrollPane historyTableScrollPane;
     private JPanel historyPanel;
@@ -116,7 +117,7 @@ public class HttpRequestForm {
         httpRequestForm = getInstance();
 
         initUi();
-        initListTable();
+        initList();
 
         HttpRequestListener.addListeners();
     }
@@ -134,8 +135,11 @@ public class HttpRequestForm {
         httpRequestForm.getSendButton().setIcon(new FlatSVGIcon("icon/run.svg"));
         httpRequestForm.getHistoryButton().setIcon(new FlatSVGIcon("icon/history.svg"));
         httpRequestForm.getDeleteHistoryButton().setIcon(new FlatSVGIcon("icon/remove.svg"));
-        httpRequestForm.getCloseHistoryLabel().setIcon(new FlatSVGIcon("icon/remove2.svg"));
         httpRequestForm.getBodyFormatButton().setIcon(new FlatSVGIcon("icon/format_painter.svg"));
+        PanelCloseUtil.installTrailingCloseButton(httpRequestForm.getCloseHistoryButton(),
+                new GridConstraints(0, 1, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
 
         // 将尾随组件按钮添加到 URL 字段以导入 cURL
         httpRequestForm.importCurlButton = new JButton("CURL");
@@ -145,7 +149,10 @@ public class HttpRequestForm {
                 httpRequestForm.importCurlButton);
 
         httpRequestForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
-        httpRequestForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
+        httpRequestForm.getNoteList().setFixedCellHeight(UiConsts.TABLE_ROW_HEIGHT);
+        httpRequestForm.getNoteList().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        httpRequestForm.getNoteList().putClientProperty(FlatClientProperties.STYLE,
+                "selectionArc: 6; selectionInsets: 0,1,0,1");
 
         Style.blackTextArea(httpRequestForm.getBodyTextArea());
 
@@ -363,31 +370,30 @@ public class HttpRequestForm {
         cookieTableColumnModel.getColumn(5).setMaxWidth(46);
     }
 
-    public static void initListTable() {
-        String[] headerNames = {"id", "名称"};
-        DefaultTableModel model = new DefaultTableModel(null, headerNames);
-        httpRequestForm.getNoteListTable().setModel(model);
-        // 隐藏表头
-        JTableUtil.hideTableHeader(httpRequestForm.getNoteListTable());
-        // 隐藏id列
-        JTableUtil.hideColumn(httpRequestForm.getNoteListTable(), 0);
-
-        Object[] data;
+    public static void initList() {
+        DefaultListModel<TMsgHttp> model = new DefaultListModel<>();
+        JList<TMsgHttp> noteList = httpRequestForm.getNoteList();
+        noteList.setModel(model);
+        noteList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                String label = value instanceof TMsgHttp ? ((TMsgHttp) value).getMsgName() : String.valueOf(value);
+                return super.getListCellRendererComponent(list, label, index, isSelected, cellHasFocus);
+            }
+        });
 
         String titleFilterKeyWord = httpRequestForm.getSearchTextField().getText();
         titleFilterKeyWord = "%" + titleFilterKeyWord + "%";
 
         List<TMsgHttp> msgHttpList = msgHttpMapper.selectByFilter(titleFilterKeyWord);
         for (TMsgHttp tMsgHttp : msgHttpList) {
-            data = new Object[2];
-            data[0] = tMsgHttp.getId();
-            data[1] = tMsgHttp.getMsgName();
-            model.addRow(data);
+            model.addElement(tMsgHttp);
         }
         if (msgHttpList.size() > 0) {
             initHistoryTable();
             initMsg(msgHttpList.get(0).getMsgName());
-            httpRequestForm.getNoteListTable().setRowSelectionInterval(0, 0);
+            noteList.setSelectedIndex(0);
             HttpRequestListener.selectedName = msgHttpList.get(0).getMsgName();
         }
     }
@@ -493,7 +499,7 @@ public class HttpRequestForm {
             msgHttpMapper.insertSelective(tMsgHttp);
             TMsgHttp tMsgHttpInserted = msgHttpMapper.selectByMsgName(msgName);
             tMsgHttp.setId(tMsgHttpInserted.getId());
-            initListTable();
+            initList();
         }
 
         saveHistory(tMsgHttp);
@@ -734,8 +740,8 @@ public class HttpRequestForm {
         splitPane.setLeftComponent(panel1);
         final JScrollPane scrollPane1 = new JScrollPane();
         panel1.add(scrollPane1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        noteListTable = new JTable();
-        scrollPane1.setViewportView(noteListTable);
+        noteList = new JList();
+        scrollPane1.setViewportView(noteList);
         searchTextField = new JTextField();
         panel1.add(searchTextField, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         rightPanel = new JPanel();
@@ -943,12 +949,10 @@ public class HttpRequestForm {
         final JPanel panel19 = new JPanel();
         panel19.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
         historyPanel.add(panel19, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        closeHistoryLabel = new JLabel();
-        closeHistoryLabel.setText("");
-        closeHistoryLabel.setToolTipText("关闭");
-        panel19.add(closeHistoryLabel, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer4 = new Spacer();
-        panel19.add(spacer4, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        closeHistoryButton = new JButton();
+        closeHistoryButton.setText("");
+        closeHistoryButton.setToolTipText("关闭");
+        panel19.add(closeHistoryButton, new GridConstraints(0, 1, 1, 2, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, 1, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label10 = new JLabel();
         Font label10Font = this.$$$getFont$$$(null, Font.BOLD, -1, label10.getFont());
         if (label10Font != null) label10.setFont(label10Font);
@@ -965,8 +969,8 @@ public class HttpRequestForm {
         deleteHistoryButton.setText("");
         deleteHistoryButton.setToolTipText("删除");
         panel20.add(deleteHistoryButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer5 = new Spacer();
-        panel20.add(spacer5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        final Spacer spacer4 = new Spacer();
+        panel20.add(spacer4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         controlPanel = new JPanel();
         controlPanel.setLayout(new GridLayoutManager(1, 6, new Insets(0, 0, 0, 5), -1, -1));
         contentPanel.add(controlPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
@@ -975,8 +979,8 @@ public class HttpRequestForm {
         saveButton.setText("");
         saveButton.setToolTipText("保存");
         controlPanel.add(saveButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer6 = new Spacer();
-        controlPanel.add(spacer6, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        final Spacer spacer5 = new Spacer();
+        controlPanel.add(spacer5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         addButton = new JButton();
         addButton.setIcon(new ImageIcon(getClass().getResource("/icon/add.png")));
         addButton.setText("");

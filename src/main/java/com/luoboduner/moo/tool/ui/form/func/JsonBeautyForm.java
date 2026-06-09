@@ -11,10 +11,10 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.PanelCloseUtil;
 import com.luoboduner.moo.tool.ui.component.textviewer.JsonRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.textviewer.JsonRTextScrollPane;
 import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
-import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
@@ -22,7 +22,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
@@ -38,7 +37,7 @@ import java.util.List;
 @Slf4j
 public class JsonBeautyForm {
     private JPanel jsonBeautyPanel;
-    private JTable noteListTable;
+    private JList<TJsonBeauty> noteList;
     private JButton deleteButton;
     private JButton saveButton;
     private JSplitPane splitPane;
@@ -63,7 +62,7 @@ public class JsonBeautyForm {
     private JButton customFormatButton;
     private JTextField jsonPathTextField;
     private JButton getByJsonPathButton;
-    private JLabel moreCloseLabel;
+    private JButton moreCloseButton;
     private JButton getJsonPathButton;
     private JScrollPane moreScrollPane;
     private JButton escapeJsonButton;
@@ -125,7 +124,7 @@ public class JsonBeautyForm {
         leftMenuToolBar.add(fontNameComboBox);
         leftMenuToolBar.add(fontSizeComboBox);
 
-        wrapButton = new JButton(new FlatSVGIcon("icon/wrap.svg", 18, 18));
+        wrapButton = new JButton(new FlatSVGIcon("icon/wrap.svg"));
         wrapButton.setToolTipText("自动换行");
         leftMenuToolBar.add(wrapButton);
 
@@ -146,7 +145,7 @@ public class JsonBeautyForm {
 
         initUi();
 
-        initListTable();
+        initList();
 
         initTextAreaFont();
 
@@ -171,7 +170,10 @@ public class JsonBeautyForm {
         jsonBeautyForm.getExportButton().setIcon(new FlatSVGIcon("icon/export.svg"));
         jsonBeautyForm.getListItemButton().setIcon(new FlatSVGIcon("icon/list.svg"));
         jsonBeautyForm.getWrapButton().setIcon(new FlatSVGIcon("icon/wrap.svg"));
-        jsonBeautyForm.getMoreCloseLabel().setIcon(new FlatSVGIcon("icon/remove2.svg"));
+        PanelCloseUtil.installTrailingCloseButton(jsonBeautyForm.getMoreCloseButton(),
+                new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
 
         jsonBeautyForm.getFindReplacePanel().setVisible(false);
         int totalWidth = jsonBeautyForm.getContentSplitPane().getWidth();
@@ -179,40 +181,42 @@ public class JsonBeautyForm {
         jsonBeautyForm.getMoreScrollPane().setVisible(false);
 
         jsonBeautyForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
-        jsonBeautyForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
+        jsonBeautyForm.getNoteList().setFixedCellHeight(UiConsts.TABLE_ROW_HEIGHT);
+        jsonBeautyForm.getNoteList().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        jsonBeautyForm.getNoteList().putClientProperty(FlatClientProperties.STYLE,
+                "selectionArc: 6; selectionInsets: 0,1,0,1");
 
         jsonBeautyForm.getTextArea().grabFocus();
 
         jsonBeautyForm.getJsonBeautyPanel().updateUI();
     }
 
-    public static void initListTable() {
-        String[] headerNames = {"id", "名称"};
-        DefaultTableModel model = new DefaultTableModel(null, headerNames);
-        jsonBeautyForm.getNoteListTable().setModel(model);
-        // 隐藏表头
-        JTableUtil.hideTableHeader(jsonBeautyForm.getNoteListTable());
-        // 隐藏id列
-        JTableUtil.hideColumn(jsonBeautyForm.getNoteListTable(), 0);
-
-        Object[] data;
+    public static void initList() {
+        DefaultListModel<TJsonBeauty> model = new DefaultListModel<>();
+        JList<TJsonBeauty> noteList = jsonBeautyForm.getNoteList();
+        noteList.setModel(model);
+        noteList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                String label = value instanceof TJsonBeauty ? ((TJsonBeauty) value).getName() : String.valueOf(value);
+                return super.getListCellRendererComponent(list, label, index, isSelected, cellHasFocus);
+            }
+        });
 
         String titleFilterKeyWord = jsonBeautyForm.getSearchTextField().getText();
         titleFilterKeyWord = "%" + titleFilterKeyWord + "%";
 
         List<TJsonBeauty> jsonBeautyList = jsonBeautyMapper.selectByFilter(titleFilterKeyWord);
         for (TJsonBeauty tJsonBeauty : jsonBeautyList) {
-            data = new Object[2];
-            data[0] = tJsonBeauty.getId();
-            data[1] = tJsonBeauty.getName();
-            model.addRow(data);
+            model.addElement(tJsonBeauty);
         }
         if (jsonBeautyList.size() > 0) {
             JsonBeautyListener.ignoreQuickSave = true;
             try {
                 JsonBeautyListener.selectedNameJson = jsonBeautyList.get(0).getName();
                 jsonBeautyForm.getTextArea().setText(jsonBeautyList.get(0).getContent());
-                jsonBeautyForm.getNoteListTable().setRowSelectionInterval(0, 0);
+                noteList.setSelectedIndex(0);
             } catch (Exception e2) {
                 log.error(e2.getMessage());
             } finally {
@@ -284,8 +288,8 @@ public class JsonBeautyForm {
         splitPane.setLeftComponent(panel1);
         final JScrollPane scrollPane1 = new JScrollPane();
         panel1.add(scrollPane1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        noteListTable = new JTable();
-        scrollPane1.setViewportView(noteListTable);
+        noteList = new JList();
+        scrollPane1.setViewportView(noteList);
         searchTextField = new JTextField();
         panel1.add(searchTextField, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         rightPanel = new JPanel();
@@ -376,14 +380,10 @@ public class JsonBeautyForm {
         panel3.add(checkDuplicateCheckBox, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JSeparator separator1 = new JSeparator();
         panel3.add(separator1, new GridConstraints(6, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        final JPanel panel4 = new JPanel();
-        panel4.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        panel3.add(panel4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        final Spacer spacer3 = new Spacer();
-        panel4.add(spacer3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        moreCloseLabel = new JLabel();
-        moreCloseLabel.setText("");
-        panel4.add(moreCloseLabel, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        moreCloseButton = new JButton();
+        moreCloseButton.setText("");
+        moreCloseButton.setToolTipText("关闭");
+        panel3.add(moreCloseButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, 1, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         jsonToXmlButton = new JButton();
         jsonToXmlButton.setText("JSON转XML");
         panel3.add(jsonToXmlButton, new GridConstraints(7, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -426,8 +426,8 @@ public class JsonBeautyForm {
         keyValueSwapButton = new JButton();
         keyValueSwapButton.setText("Key-Value互换");
         panel3.add(keyValueSwapButton, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer4 = new Spacer();
-        controlPanel.add(spacer4, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        final Spacer spacer3 = new Spacer();
+        controlPanel.add(spacer3, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
     }
 
     /**

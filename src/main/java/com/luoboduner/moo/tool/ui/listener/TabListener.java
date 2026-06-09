@@ -3,7 +3,9 @@ package com.luoboduner.moo.tool.ui.listener;
 
 import cn.hutool.core.util.RuntimeUtil;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
+import com.luoboduner.moo.tool.ui.form.func.HardwareInfoForm;
 import com.luoboduner.moo.tool.ui.form.func.NetForm;
+import com.luoboduner.moo.tool.ui.listener.func.HardwareInfoListener;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -34,6 +36,10 @@ public class TabListener {
             @Override
             public void stateChanged(ChangeEvent e) {
                 int index = MainWindow.getInstance().getTabbedPane().getSelectedIndex();
+                String tabTitle = MainWindow.getInstance().getTabbedPane().getTitleAt(index);
+                if (HardwareInfoForm.TAB_TITLE.equals(tabTitle)) {
+                    HardwareInfoListener.onTabSelected();
+                }
                 switch (index) {
                     case 9:
                         try {

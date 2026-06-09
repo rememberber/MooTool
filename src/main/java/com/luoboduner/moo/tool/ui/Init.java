@@ -12,6 +12,8 @@ import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import com.jthemedetecor.OsThemeDetector;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.component.JPopupMenuMouseAdapter;
+import com.luoboduner.moo.tool.ui.component.MooFlatTabbedPaneUI;
+import com.luoboduner.moo.tool.ui.component.TabUiUtil;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
 import com.luoboduner.moo.tool.ui.dialog.SettingDialog;
 import com.luoboduner.moo.tool.ui.dialog.TranslationDialog;
@@ -179,9 +181,32 @@ public class Init {
                 UIManager.put("TitlePane.unifiedBackground", true);
             }
 
+            installSafeTabbedPaneUi();
+
         } catch (Exception e) {
             logger.error(e);
         }
+    }
+
+    /**
+     * 全局使用带空指针防护的 Tab UI，避免 FlatLaf 在 UI 重装期间绘制时 tabInsets 为 null。
+     */
+    public static void installSafeTabbedPaneUi() {
+        UIManager.put("TabbedPaneUI", MooFlatTabbedPaneUI.class.getName());
+    }
+
+    /**
+     * 刷新 FlatLaf 后恢复安全 Tab UI 与主窗口 Tab 配置。
+     */
+    public static void refreshFlatLafUi() {
+        installSafeTabbedPaneUi();
+        FlatLaf.updateUI();
+        SwingUtilities.invokeLater(() -> {
+            if (App.mainFrame != null) {
+                com.luoboduner.moo.tool.ui.form.MainWindow.getInstance().refreshTabbedPaneUi();
+                TabUiUtil.applySafeTabbedPaneUi(App.mainFrame.getContentPane());
+            }
+        });
     }
 
     private static void setAccentColor() {
@@ -212,9 +237,17 @@ public class Init {
         ThreadUtil.execute(RegexForm::init);
         ThreadUtil.execute(ImageForm::init);
         ThreadUtil.execute(VariablesForm::init);
+        ThreadUtil.execute(HardwareInfoForm::init);
         ThreadUtil.execute(YmlPropertiesForm::init);
         ThreadUtil.execute(TextDiffForm::init);
+        ThreadUtil.execute(ProtoBufForm::init);
         ThreadUtil.execute(FileReformattingForm::init);
+
+        SwingUtilities.invokeLater(() -> {
+            if (App.mainFrame != null) {
+                TabUiUtil.applySafeTabbedPaneUi(App.mainFrame.getContentPane());
+            }
+        });
 
         // 检查新版版
         if (App.config.isAutoCheckUpdate()) {
@@ -319,7 +352,9 @@ public class Init {
 
     public static void shutdown() {
         FrameListener.saveBeforeExit();
-        App.sqlSession.close();
+        if (App.sqlSession != null) {
+            App.sqlSession.close();
+        }
         App.mainFrame.dispose();
         System.exit(0);
     }

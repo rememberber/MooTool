@@ -217,7 +217,7 @@
                 line_wrap = #{lineWrap,jdbcType=VARCHAR},
             </if>
         </set>
-        where name = #{name,jdbcType=INTEGER}
+        where name = #{name,jdbcType=VARCHAR}
     </update>
     <update id="updateAll" parameterType="com.luoboduner.moo.tool.domain.TQuickNote">
         update t_quick_note

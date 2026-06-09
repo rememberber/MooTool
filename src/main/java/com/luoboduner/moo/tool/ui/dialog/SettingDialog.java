@@ -17,6 +17,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.service.HttpMsgSender;
+import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.component.TopMenuBar;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.*;
@@ -239,7 +240,7 @@ public class SettingDialog extends JDialog {
 
                 // 复制之前的数据文件到新位置
                 String dbFilePathBefore = App.config.getDbFilePathBefore();
-                if (dbFilePathBefore.equals(dbFilePath)) {
+                if (StringUtils.equals(dbFilePathBefore, dbFilePath)) {
                     JOptionPane.showMessageDialog(contentPane, "保存成功！", "成功", JOptionPane.INFORMATION_MESSAGE);
                     return;
                 }
@@ -247,7 +248,18 @@ public class SettingDialog extends JDialog {
                     dbFilePathBefore = SystemUtil.CONFIG_HOME;
                 }
                 if (StringUtils.isNotBlank(dbFilePath)) {
-                    FileUtil.copy(dbFilePathBefore + File.separator + "MooTool.db", dbFilePath, false);
+                    File sourceDb = FileUtil.file(dbFilePathBefore, "MooTool.db");
+                    if (!sourceDb.isFile()) {
+                        throw new IllegalStateException("源数据库不存在：" + sourceDb.getAbsolutePath());
+                    }
+                    File targetDir = FileUtil.file(dbFilePath);
+                    if (!targetDir.isDirectory()) {
+                        targetDir = targetDir.getParentFile();
+                    }
+                    if (targetDir == null) {
+                        throw new IllegalStateException("无效的数据库保存路径");
+                    }
+                    FileUtil.copy(sourceDb, FileUtil.file(targetDir, "MooTool.db"), false);
                 }
 
                 MybatisUtil.setSqlSession(null);
@@ -366,7 +378,7 @@ public class SettingDialog extends JDialog {
         Class<? extends LookAndFeel> lafClass = UIManager.getLookAndFeel().getClass();
         try {
             FlatLaf.setup(lafClass.getDeclaredConstructor().newInstance());
-            FlatLaf.updateUI();
+            Init.refreshFlatLafUi();
         } catch (InstantiationException | IllegalAccessException ex) {
             LoggingFacade.INSTANCE.logSevere(null, ex);
         } catch (InvocationTargetException | NoSuchMethodException ex) {

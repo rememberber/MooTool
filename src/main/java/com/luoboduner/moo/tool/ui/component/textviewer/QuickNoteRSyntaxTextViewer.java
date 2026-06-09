@@ -6,6 +6,7 @@ import com.formdev.flatlaf.util.FontUtils;
 import com.formdev.flatlaf.util.StringUtils;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
+import com.luoboduner.moo.tool.util.QuickNoteImageInsertUtil;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
@@ -24,6 +25,8 @@ import java.net.URISyntaxException;
 
 public class QuickNoteRSyntaxTextViewer extends RSyntaxTextArea {
     public static boolean ignoreQuickSave;
+
+    private Runnable onContentChanged;
 
     public QuickNoteRSyntaxTextViewer() {
 
@@ -86,28 +89,41 @@ public class QuickNoteRSyntaxTextViewer extends RSyntaxTextArea {
         getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                if (ignoreQuickSave) {
-                    return;
-                }
-                QuickNoteListener.quickSave(true, false);
+                notifyContentChanged();
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                if (ignoreQuickSave) {
-                    return;
-                }
-                QuickNoteListener.quickSave(true, false);
+                notifyContentChanged();
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-                if (ignoreQuickSave) {
-                    return;
-                }
-                QuickNoteListener.quickSave(true, false);
+                notifyContentChanged();
             }
         });
+    }
+
+    public void setOnContentChanged(Runnable onContentChanged) {
+        this.onContentChanged = onContentChanged;
+    }
+
+    @Override
+    public void paste() {
+        if (QuickNoteImageInsertUtil.tryPasteImage(this)) {
+            return;
+        }
+        super.paste();
+    }
+
+    private void notifyContentChanged() {
+        if (onContentChanged != null) {
+            onContentChanged.run();
+        }
+        if (ignoreQuickSave) {
+            return;
+        }
+        QuickNoteListener.quickSave(true, false);
     }
 
     public void updateTheme() {
