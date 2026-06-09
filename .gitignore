@@ -31,5 +31,10 @@ build/
 ### VS Code ###
 .vscode/
 
+docs
+
 
 logs/
+
+.codegraph
+.cursor
