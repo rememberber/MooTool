@@ -113,7 +113,7 @@ public class MainWindow {
     public void initTabPlacement() {
         // 设置所有tab的图标
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
-            tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i], 16, 16));
+            tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i]));
         }
 
         // 设置所有tab的tips和标题一致
@@ -160,14 +160,14 @@ public class MainWindow {
             tabbedPane.putClientProperty(FlatClientProperties.TABBED_PANE_TAB_WIDTH_MODE,
                     FlatClientProperties.TABBED_PANE_TAB_WIDTH_MODE_ICON_ONLY);
             for (int i = 0; i < tabbedPane.getTabCount(); i++) {
-                // 设置所有tab的icon放大
-                tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i], 19, 19));
+                // 设置所有tab的icon
+                tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i]));
             }
         } else {
             for (int i = 0; i < tabbedPane.getTabCount(); i++) {
                 tabbedPane.setTitleAt(i, tabbedPane.getToolTipTextAt(i));
-                // 还原所有tab的icon大小
-                tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i], 16, 16));
+                // 设置所有tab的icon
+                tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i]));
             }
         }
 
@@ -195,8 +195,8 @@ public class MainWindow {
             if (App.config.isTabHideTitle()) {
                 for (int i = 0; i < tabbedPane.getTabCount(); i++) {
                     tabbedPane.setTitleAt(i, tabbedPane.getToolTipTextAt(i));
-                    // 还原所有tab的icon大小
-                    tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i], 16, 16));
+                    // 设置所有tab的icon
+                    tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i]));
                 }
                 App.config.setTabHideTitle(false);
                 App.config.save();
@@ -204,7 +204,7 @@ public class MainWindow {
                 for (int i = 0; i < tabbedPane.getTabCount(); i++) {
                     tabbedPane.setTitleAt(i, "");
                     // 设置所有tab的icon放大
-                    tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i], 19, 19));
+                    tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i]));
                 }
                 App.config.setTabHideTitle(true);
                 App.config.save();

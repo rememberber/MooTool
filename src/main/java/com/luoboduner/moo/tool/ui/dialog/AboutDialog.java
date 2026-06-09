@@ -283,7 +283,7 @@ public class AboutDialog extends JDialog {
             }
         });
 
-        mooInfoIconLabel.setIcon(new FlatSVGIcon("icon/MooInfo.svg", 64, 64));
+        mooInfoIconLabel.setIcon(new FlatSVGIcon("icon/MooInfo.svg"));
 
         vsCodeIconsLabel.addMouseListener(new MouseAdapter() {
             @Override
