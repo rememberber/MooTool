@@ -27,5 +27,6 @@
         <mapper resource="mapper/TFuncContentMapper.xml"/>
         <mapper resource="mapper/THttpRequestHistoryMapper.xml"/>
         <mapper resource="mapper/TTranslationWordMapper.xml"/>
+        <mapper resource="mapper/TTranslationHistoryMapper.xml"/>
     </mappers>
 </configuration>

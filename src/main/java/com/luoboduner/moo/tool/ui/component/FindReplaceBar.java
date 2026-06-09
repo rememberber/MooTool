@@ -24,8 +24,6 @@ import javax.swing.event.DocumentListener;
 import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
-import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -51,7 +49,7 @@ public class FindReplaceBar {
     private JTextField replaceField;
     private JButton doFindButton;
     private JButton replaceButton;
-    private JLabel closeButton;
+    private JButton closeButton;
     private JCheckBox matchCaseToggleButton;
     private JCheckBox matchWholeWordToggleButton;
     private JCheckBox regexToggleButton;
@@ -70,6 +68,9 @@ public class FindReplaceBar {
         this.textArea = textArea;
 
         $$$setupUI$$$();
+        PanelCloseUtil.installCompactCloseButton(closeButton, new GridConstraints(1, 5, 1, 1,
+                GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
+                GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         initComponents();
 
         findField.getDocument().addDocumentListener(new MarkAllUpdater());
@@ -88,8 +89,6 @@ public class FindReplaceBar {
 
         findPreviousButton.setIcon(new FlatSVGIcon("icon/up.svg"));
         findNextButton.setIcon(new FlatSVGIcon("icon/down.svg"));
-        closeButton.setIcon(new FlatSVGIcon("icon/remove2.svg"));
-
         SearchContext context = new SearchContext();
         context.setSearchWrap(true);
         setSearchContext(context);
@@ -289,33 +288,7 @@ public class FindReplaceBar {
         regexToggleButton.addActionListener(e -> regexChanged());
 
         //---- closeButton ----
-        closeButton.setToolTipText("Close");
-        closeButton.addMouseListener(new MouseListener() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                close();
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseReleased(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-
-            }
-
-            @Override
-            public void mouseExited(MouseEvent e) {
-
-            }
-        });
+        closeButton.addActionListener(e -> close());
 
 
         //---- replaceButton ----
@@ -389,9 +362,9 @@ public class FindReplaceBar {
         replaceButton = new JButton();
         replaceButton.setText("替换");
         findOptionPanel.add(replaceButton, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        closeButton = new JLabel();
-        closeButton.setIcon(new ImageIcon(getClass().getResource("/icon/remove_dark.png")));
+        closeButton = new JButton();
         closeButton.setText("");
+        closeButton.setToolTipText("关闭");
         findOptionPanel.add(closeButton, new GridConstraints(1, 5, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(1, 8, new Insets(0, 0, 0, 0), -1, -1));

@@ -464,23 +464,9 @@ public class JsonBeautyListener {
             }
         });
 
-        jsonBeautyForm.getMoreCloseLabel().addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                jsonBeautyForm.getContentSplitPane().setDividerLocation(jsonBeautyForm.getContentSplitPane().getWidth());
-                jsonBeautyForm.getMoreScrollPane().setVisible(false);
-                super.mouseClicked(e);
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                super.mousePressed(e);
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                super.mouseEntered(e);
-            }
+        jsonBeautyForm.getMoreCloseButton().addActionListener(e -> {
+            jsonBeautyForm.getContentSplitPane().setDividerLocation(jsonBeautyForm.getContentSplitPane().getWidth());
+            jsonBeautyForm.getMoreScrollPane().setVisible(false);
         });
 
         jsonBeautyForm.getBeanToJsonButton().addActionListener(e -> {

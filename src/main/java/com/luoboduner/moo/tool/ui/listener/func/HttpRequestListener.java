@@ -424,13 +424,9 @@ public class HttpRequestListener {
         });
 
         // 历史记录关闭按钮事件
-        httpRequestForm.getCloseHistoryLabel().addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                httpRequestForm.getHistorySplitPane().setDividerLocation(httpRequestForm.getHistorySplitPane().getWidth());
-                httpRequestForm.getHistoryPanel().setVisible(false);
-                super.mouseClicked(e);
-            }
+        httpRequestForm.getCloseHistoryButton().addActionListener(e -> {
+            httpRequestForm.getHistorySplitPane().setDividerLocation(httpRequestForm.getHistorySplitPane().getWidth());
+            httpRequestForm.getHistoryPanel().setVisible(false);
         });
 
         // 点击历史记录表格事件

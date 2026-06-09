@@ -14,6 +14,7 @@ import com.luoboduner.moo.tool.ui.form.TranslationLayoutForm;
 import com.luoboduner.moo.tool.ui.listener.func.TranslationListener;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
+import lombok.AccessLevel;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -47,19 +48,66 @@ public class TranslationForm {
     private JButton wordCopySourceButton;
     private JButton wordCopyTargetButton;
 
+    @Getter(AccessLevel.NONE)
+    private JTabbedPane translationTabbedPane;
+    @Getter(AccessLevel.NONE)
+    private JPanel historyPanel;
+    private JTable historyTable;
+    private JTextField historySearchField;
+    private JButton historyDeleteButton;
+    private JButton historyClearButton;
+    private JButton historyApplyButton;
+    private JButton historyCopySourceButton;
+    private JButton historyCopyTargetButton;
+    private JTextArea historySourceTextArea;
+    private JTextArea historyTargetTextArea;
+    private JLabel historyMetaLabel;
+
     private static TranslationForm translationForm;
 
     private TranslationLayoutForm translationLayoutForm;
 
     private static final Log logger = LogFactory.get();
 
+    public JTabbedPane getTranslationTabbedPane() {
+        bindGeneratedUiRefs();
+        return translationTabbedPane;
+    }
+
+    public JPanel getHistoryPanel() {
+        bindGeneratedUiRefs();
+        return historyPanel;
+    }
+
+    /**
+     * GUI Designer 生成的 $$$setupUI$$$ 使用局部变量，此处从已挂载组件树回填字段引用。
+     */
+    private void bindGeneratedUiRefs() {
+        if (translationTabbedPane == null && translationPanel != null) {
+            for (Component child : translationPanel.getComponents()) {
+                if (child instanceof JTabbedPane tabbedPane) {
+                    translationTabbedPane = tabbedPane;
+                    break;
+                }
+            }
+        }
+        if (historyPanel == null && translationTabbedPane != null && translationTabbedPane.getTabCount() > 2) {
+            Component historyTab = translationTabbedPane.getComponentAt(2);
+            if (historyTab instanceof JPanel panel) {
+                historyPanel = panel;
+            }
+        }
+    }
+
     private TranslationForm(TranslationLayoutForm translationLayoutForm) {
         this.translationLayoutForm = translationLayoutForm;
+        bindGeneratedUiRefs();
         translatePanel.setLayout(new BorderLayout());
         translatePanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         translatePanel.add(translationLayoutForm.getMainLayoutPanel());
 
         initWordBookPanel();
+        initHistoryPanel();
 
         UndoUtil.register(this);
     }
@@ -150,6 +198,72 @@ public class TranslationForm {
         splitPane.setRightComponent(wordBookDetailPanel);
     }
 
+    private void initHistoryPanel() {
+        bindGeneratedUiRefs();
+        if (historyPanel == null) {
+            historyPanel = new JPanel();
+            JTabbedPane tabbedPane = getTranslationTabbedPane();
+            if (tabbedPane != null && tabbedPane.getTabCount() >= 3) {
+                tabbedPane.setComponentAt(2, historyPanel);
+            } else if (tabbedPane != null) {
+                tabbedPane.addTab("历史记录", historyPanel);
+            }
+        }
+
+        historySearchField = new JTextField();
+        historySearchField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "搜索原文、译文或语言");
+        historySearchField.putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON, new FlatSearchIcon());
+
+        historyDeleteButton = new JButton(new FlatSVGIcon("icon/remove.svg"));
+        historyDeleteButton.setToolTipText("删除选中");
+        historyClearButton = new JButton("清空全部");
+        historyApplyButton = new JButton("应用到翻译");
+        historyApplyButton.setIcon(new FlatSVGIcon("icon/translate.svg"));
+        historyCopySourceButton = new JButton(new FlatSVGIcon("icon/copy.svg"));
+        historyCopySourceButton.setToolTipText("复制原文");
+        historyCopyTargetButton = new JButton(new FlatSVGIcon("icon/copy.svg"));
+        historyCopyTargetButton.setToolTipText("复制译文");
+
+        historyTable = new JTable();
+        historySourceTextArea = new JTextArea(4, 20);
+        historyTargetTextArea = new JTextArea(4, 20);
+        historySourceTextArea.setLineWrap(true);
+        historyTargetTextArea.setLineWrap(true);
+        historyTargetTextArea.setEditable(false);
+        historyMetaLabel = new JLabel(" ");
+
+        JPanel buttonBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        buttonBar.add(historyApplyButton);
+        buttonBar.add(historyCopySourceButton);
+        buttonBar.add(historyCopyTargetButton);
+        buttonBar.add(historyDeleteButton);
+        buttonBar.add(historyClearButton);
+
+        JPanel detailPanel = new JPanel(new BorderLayout(0, 8));
+        detailPanel.setBorder(BorderFactory.createEmptyBorder(4, 8, 8, 8));
+        detailPanel.add(historyMetaLabel, BorderLayout.NORTH);
+
+        JSplitPane detailSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        detailSplitPane.setTopComponent(new JScrollPane(historySourceTextArea));
+        detailSplitPane.setBottomComponent(new JScrollPane(historyTargetTextArea));
+        detailSplitPane.setResizeWeight(0.5);
+        detailSplitPane.setContinuousLayout(true);
+        detailPanel.add(detailSplitPane, BorderLayout.CENTER);
+        detailPanel.add(buttonBar, BorderLayout.SOUTH);
+
+        JSplitPane historySplitPane = new JSplitPane(JSplitPane.HORIZONTAL_SPLIT);
+        historySplitPane.setContinuousLayout(true);
+        historySplitPane.setDividerSize(2);
+        historySplitPane.setDividerLocation(260);
+        historySplitPane.setLeftComponent(new JScrollPane(historyTable));
+        historySplitPane.setRightComponent(detailPanel);
+
+        historyPanel.setLayout(new BorderLayout(0, 6));
+        historyPanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
+        historyPanel.add(historySearchField, BorderLayout.NORTH);
+        historyPanel.add(historySplitPane, BorderLayout.CENTER);
+    }
+
     public static TranslationForm getInstance() {
         if (translationForm == null) {
             TranslationLayoutForm translationLayoutForm = new TranslationLayoutForm();
@@ -160,15 +274,18 @@ public class TranslationForm {
 
     public static void init() {
         translationForm = getInstance();
+        translationForm.bindGeneratedUiRefs();
 
         initUi();
         initWordBookTable();
+        initHistoryTable();
         TranslationListener.addListeners();
     }
 
     private static void initUi() {
         translationForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
         translationForm.getListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
+        translationForm.getHistoryTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
 
         translationForm.getTranslationLayoutForm().getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 2) - 80);
 
@@ -182,6 +299,15 @@ public class TranslationForm {
         form.getListTable().getTableHeader().setReorderingAllowed(false);
         JTableUtil.hideColumn(form.getListTable(), 0);
         TranslationListener.refreshWordBookList();
+    }
+
+    public static void initHistoryTable() {
+        TranslationForm form = getInstance();
+        form.getHistoryTable().setModel(TranslationListener.createHistoryTableModel());
+        form.getHistoryTable().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        form.getHistoryTable().getTableHeader().setReorderingAllowed(false);
+        JTableUtil.hideColumn(form.getHistoryTable(), 0);
+        TranslationListener.refreshHistoryList();
     }
 
     {

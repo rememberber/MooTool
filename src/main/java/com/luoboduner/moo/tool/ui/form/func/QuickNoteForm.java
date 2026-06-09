@@ -15,6 +15,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.PanelCloseUtil;
 import com.luoboduner.moo.tool.ui.component.QuickNoteListCellRenderer;
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteEditorPanel;
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewer;
@@ -73,7 +74,7 @@ public class QuickNoteForm {
     private JCheckBox enterToCommaSingleQuotesCheckBox;
     private JScrollPane quickReplaceScrollPane;
     private JButton quickReplaceButton;
-    private JLabel quickReplaceCloseLabel;
+    private JButton quickReplaceCloseButton;
     private JSplitPane contentSplitPane;
     private JComboBox syntaxComboBox;
     private JButton formatButton;
@@ -212,8 +213,11 @@ public class QuickNoteForm {
         quickNoteForm.getExportButton().setIcon(new FlatSVGIcon("icon/export.svg"));
         quickNoteForm.getListItemButton().setIcon(new FlatSVGIcon("icon/list.svg"));
         quickNoteForm.getFormatButton().setIcon(new FlatSVGIcon("icon/json.svg"));
-        quickNoteForm.getQuickReplaceCloseLabel().setIcon(new FlatSVGIcon("icon/remove2.svg"));
         quickNoteForm.getInfoButton().setIcon(new FlatSVGIcon("icon/info.svg"));
+        PanelCloseUtil.installTrailingCloseButton(quickNoteForm.getQuickReplaceCloseButton(),
+                new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
 
         getInstance().getContentSplitPane().setLeftComponent(new JPanel());
 
@@ -743,15 +747,10 @@ public class QuickNoteForm {
         clearEnterCheckBox = new JCheckBox();
         clearEnterCheckBox.setText("去掉换行");
         panel3.add(clearEnterCheckBox, new GridConstraints(15, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JPanel panel4 = new JPanel();
-        panel4.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        panel3.add(panel4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, 1, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        quickReplaceCloseLabel = new JLabel();
-        quickReplaceCloseLabel.setIcon(new ImageIcon(getClass().getResource("/icon/remove_dark.png")));
-        quickReplaceCloseLabel.setText("");
-        panel4.add(quickReplaceCloseLabel, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer3 = new Spacer();
-        panel4.add(spacer3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        quickReplaceCloseButton = new JButton();
+        quickReplaceCloseButton.setText("");
+        quickReplaceCloseButton.setToolTipText("关闭");
+        panel3.add(quickReplaceCloseButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, 1, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JSeparator separator4 = new JSeparator();
         panel3.add(separator4, new GridConstraints(24, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, 1, 1, null, null, null, 0, false));
         final JSeparator separator5 = new JSeparator();

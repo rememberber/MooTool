@@ -7,6 +7,8 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.util.AlertUtil;
 import com.luoboduner.moo.tool.util.ConfigUtil;
+import com.luoboduner.moo.tool.ui.listener.func.TranslationListener;
+import com.luoboduner.moo.tool.util.TranslationHistoryUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import com.luoboduner.moo.tool.util.translator.Translator;
 import com.luoboduner.moo.tool.util.translator.TranslatorFactory;
@@ -38,6 +40,8 @@ public class TranslationLayoutForm {
     private JButton saveToWordBookButton;
 
     private static final AtomicInteger changeCount = new AtomicInteger(0);
+
+    private final AtomicInteger suppressAutoTranslate = new AtomicInteger(0);
 
     private static final String TRANSLATOR_GOOGLE = "Google翻译";
     private static final String TRANSLATOR_BING = "Bing翻译";
@@ -174,18 +178,45 @@ public class TranslationLayoutForm {
         textArea1.getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                translateControl();
+                if (suppressAutoTranslate.get() == 0) {
+                    translateControl();
+                }
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                translateControl();
+                if (suppressAutoTranslate.get() == 0) {
+                    translateControl();
+                }
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
             }
         });
+    }
+
+    /**
+     * 从历史记录回填翻译内容，不触发自动重新翻译。
+     */
+    public void applyFromHistory(String sourceText,
+                                 String targetText,
+                                 String sourceLang,
+                                 String targetLang) {
+        suppressAutoTranslate.incrementAndGet();
+        try {
+            if (containsItem(comboBox1, sourceLang)) {
+                comboBox1.setSelectedItem(sourceLang);
+            }
+            if (containsItem(comboBox2, targetLang)) {
+                comboBox2.setSelectedItem(targetLang);
+            }
+            textArea1.setText(StringUtils.defaultString(sourceText));
+            textArea2.setText(StringUtils.defaultString(targetText));
+            saveLanguagePreferences();
+        } finally {
+            suppressAutoTranslate.decrementAndGet();
+        }
     }
 
     private void preventSameLanguageSelection() {
@@ -247,7 +278,13 @@ public class TranslationLayoutForm {
 
         String result = TranslatorFactory.translate(text, sourceLangCode, targetLangCode, translatorType);
 
-        SwingUtilities.invokeLater(() -> textArea2.setText(result));
+        SwingUtilities.invokeLater(() -> {
+            textArea2.setText(result);
+            if (TranslationHistoryUtil.isSuccessfulTranslation(result)) {
+                TranslationHistoryUtil.save(text, result, sourceLanguage, targetLanguage, translatorType);
+                TranslationListener.refreshHistoryListIfVisible();
+            }
+        });
     }
 
     {

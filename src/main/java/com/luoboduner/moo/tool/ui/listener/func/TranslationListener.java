@@ -2,7 +2,9 @@ package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.swing.clipboard.ClipboardUtil;
 import cn.hutool.core.thread.ThreadUtil;
+import com.luoboduner.moo.tool.dao.TTranslationHistoryMapper;
 import com.luoboduner.moo.tool.dao.TTranslationWordMapper;
+import com.luoboduner.moo.tool.domain.TTranslationHistory;
 import com.luoboduner.moo.tool.domain.TTranslationWord;
 import com.luoboduner.moo.tool.ui.form.TranslationLayoutForm;
 import com.luoboduner.moo.tool.ui.form.func.TranslationForm;
@@ -10,6 +12,7 @@ import com.luoboduner.moo.tool.util.AlertUtil;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
+import com.luoboduner.moo.tool.util.TranslationHistoryUtil;
 import com.luoboduner.moo.tool.util.TranslationWordBookUtil;
 import com.luoboduner.moo.tool.util.translator.Translator;
 import lombok.extern.slf4j.Slf4j;
@@ -27,12 +30,18 @@ import java.util.List;
 public class TranslationListener {
 
     private static final String[] WORD_BOOK_COLUMNS = {"id", "原文", "译文"};
+    private static final String[] HISTORY_COLUMNS = {"id", "时间", "原文", "语言", "翻译源"};
 
     private static TTranslationWordMapper wordMapper() {
         return MybatisUtil.getSqlSession().getMapper(TTranslationWordMapper.class);
     }
 
+    private static TTranslationHistoryMapper historyMapper() {
+        return MybatisUtil.getSqlSession().getMapper(TTranslationHistoryMapper.class);
+    }
+
     private static Integer selectedWordId;
+    private static Integer selectedHistoryId;
 
     public static void addListeners() {
         TranslationForm translationForm = TranslationForm.getInstance();
@@ -84,6 +93,62 @@ public class TranslationListener {
                 }
             }
         });
+
+        translationForm.getHistoryDeleteButton().addActionListener(e -> deleteSelectedHistory());
+        translationForm.getHistoryClearButton().addActionListener(e -> clearAllHistory());
+        translationForm.getHistoryApplyButton().addActionListener(e -> applyHistoryToTranslation());
+        translationForm.getHistoryCopySourceButton().addActionListener(e -> copyText(
+                translationForm.getHistorySourceTextArea().getText(), translationForm.getHistoryCopySourceButton()));
+        translationForm.getHistoryCopyTargetButton().addActionListener(e -> copyText(
+                translationForm.getHistoryTargetTextArea().getText(), translationForm.getHistoryCopyTargetButton()));
+
+        translationForm.getHistorySearchField().getDocument().addDocumentListener(new DocumentListener() {
+            @Override
+            public void insertUpdate(DocumentEvent e) {
+                refreshHistoryList();
+            }
+
+            @Override
+            public void removeUpdate(DocumentEvent e) {
+                refreshHistoryList();
+            }
+
+            @Override
+            public void changedUpdate(DocumentEvent e) {
+            }
+        });
+
+        translationForm.getHistoryTable().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                int row = translationForm.getHistoryTable().rowAtPoint(e.getPoint());
+                if (row >= 0) {
+                    translationForm.getHistoryTable().setRowSelectionInterval(row, row);
+                    viewHistoryByRow(row);
+                    if (e.getClickCount() >= 2) {
+                        applyHistoryToTranslation();
+                    }
+                }
+            }
+        });
+
+        translationForm.getHistoryTable().getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int row = translationForm.getHistoryTable().getSelectedRow();
+                if (row >= 0) {
+                    viewHistoryByRow(row);
+                }
+            }
+        });
+
+        JTabbedPane translationTabbedPane = translationForm.getTranslationTabbedPane();
+        if (translationTabbedPane != null) {
+            translationTabbedPane.addChangeListener(e -> {
+                if (translationTabbedPane.getSelectedIndex() == 2) {
+                    refreshHistoryList();
+                }
+            });
+        }
     }
 
     public static DefaultTableModel createWordBookTableModel() {
@@ -298,5 +363,168 @@ public class TranslationListener {
             ClipboardUtil.setStr(text);
             AlertUtil.buttonInfo(button, "", "已复制", 1500);
         }
+    }
+
+    public static DefaultTableModel createHistoryTableModel() {
+        DefaultTableModel model = new DefaultTableModel(HISTORY_COLUMNS, 0) {
+            @Override
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
+        };
+        loadHistoryIntoModel(model, "");
+        return model;
+    }
+
+    public static void refreshHistoryListIfVisible() {
+        TranslationForm translationForm = TranslationForm.getInstance();
+        if (translationForm.getTranslationTabbedPane() != null
+                && translationForm.getTranslationTabbedPane().getSelectedIndex() == 2) {
+            refreshHistoryList();
+        }
+    }
+
+    public static void refreshHistoryList() {
+        TranslationForm translationForm = TranslationForm.getInstance();
+        DefaultTableModel model = (DefaultTableModel) translationForm.getHistoryTable().getModel();
+        String keyword = translationForm.getHistorySearchField().getText();
+        loadHistoryIntoModel(model, keyword);
+        JTableUtil.hideColumn(translationForm.getHistoryTable(), 0);
+
+        if (selectedHistoryId != null) {
+            selectHistoryRowById(selectedHistoryId);
+        } else if (translationForm.getHistoryTable().getRowCount() > 0) {
+            translationForm.getHistoryTable().setRowSelectionInterval(0, 0);
+            viewHistoryByRow(0);
+        } else {
+            clearHistoryDetail();
+        }
+    }
+
+    private static void loadHistoryIntoModel(DefaultTableModel model, String keyword) {
+        while (model.getRowCount() > 0) {
+            model.removeRow(0);
+        }
+
+        List<TTranslationHistory> histories;
+        if (StringUtils.isBlank(keyword)) {
+            histories = historyMapper().selectAll();
+        } else {
+            histories = historyMapper().selectByFilter("%" + keyword.trim() + "%");
+        }
+
+        for (TTranslationHistory history : histories) {
+            String langPair = String.format("%s → %s",
+                    StringUtils.defaultIfBlank(history.getSourceLang(), Translator.AUTO_DETECT),
+                    StringUtils.defaultIfBlank(history.getTargetLang(), "中文（简体）"));
+            model.addRow(new Object[]{
+                    history.getId(),
+                    StringUtils.defaultString(history.getCreateTime()),
+                    TranslationHistoryUtil.previewText(history.getSourceText(), 36),
+                    langPair,
+                    TranslationHistoryUtil.formatTranslatorType(history.getTranslatorType())
+            });
+        }
+    }
+
+    private static void viewHistoryByRow(int row) {
+        TranslationForm translationForm = TranslationForm.getInstance();
+        Integer id = (Integer) translationForm.getHistoryTable().getValueAt(row, 0);
+        TTranslationHistory history = historyMapper().selectByPrimaryKey(id);
+        if (history == null) {
+            return;
+        }
+
+        selectedHistoryId = history.getId();
+        translationForm.getHistorySourceTextArea().setText(history.getSourceText());
+        translationForm.getHistoryTargetTextArea().setText(StringUtils.defaultString(history.getTargetText()));
+
+        String meta = String.format("%s → %s  |  %s  |  %s",
+                StringUtils.defaultIfBlank(history.getSourceLang(), Translator.AUTO_DETECT),
+                StringUtils.defaultIfBlank(history.getTargetLang(), "中文（简体）"),
+                TranslationHistoryUtil.formatTranslatorType(history.getTranslatorType()),
+                StringUtils.defaultIfBlank(history.getCreateTime(), "-"));
+        translationForm.getHistoryMetaLabel().setText(meta);
+    }
+
+    private static void selectHistoryRowById(Integer id) {
+        TranslationForm translationForm = TranslationForm.getInstance();
+        DefaultTableModel model = (DefaultTableModel) translationForm.getHistoryTable().getModel();
+        for (int i = 0; i < model.getRowCount(); i++) {
+            if (id.equals(model.getValueAt(i, 0))) {
+                translationForm.getHistoryTable().setRowSelectionInterval(i, i);
+                viewHistoryByRow(i);
+                return;
+            }
+        }
+    }
+
+    private static void clearHistoryDetail() {
+        TranslationForm translationForm = TranslationForm.getInstance();
+        translationForm.getHistorySourceTextArea().setText("");
+        translationForm.getHistoryTargetTextArea().setText("");
+        translationForm.getHistoryMetaLabel().setText(" ");
+    }
+
+    private static void deleteSelectedHistory() {
+        TranslationForm translationForm = TranslationForm.getInstance();
+        int row = translationForm.getHistoryTable().getSelectedRow();
+        if (row < 0) {
+            return;
+        }
+
+        Integer id = (Integer) translationForm.getHistoryTable().getValueAt(row, 0);
+        int confirm = JOptionPane.showConfirmDialog(translationForm.getTranslationPanel(),
+                "确定删除选中的历史记录吗？", "确认", JOptionPane.YES_NO_OPTION);
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        historyMapper().deleteByPrimaryKey(id);
+        selectedHistoryId = null;
+        refreshHistoryList();
+    }
+
+    private static void clearAllHistory() {
+        TranslationForm translationForm = TranslationForm.getInstance();
+        if (translationForm.getHistoryTable().getRowCount() == 0) {
+            return;
+        }
+
+        int confirm = JOptionPane.showConfirmDialog(translationForm.getTranslationPanel(),
+                "确定清空全部翻译历史吗？此操作不可恢复。", "确认", JOptionPane.YES_NO_OPTION);
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        historyMapper().deleteAll();
+        selectedHistoryId = null;
+        refreshHistoryList();
+    }
+
+    private static void applyHistoryToTranslation() {
+        TranslationForm translationForm = TranslationForm.getInstance();
+        int row = translationForm.getHistoryTable().getSelectedRow();
+        if (row < 0) {
+            return;
+        }
+
+        Integer id = (Integer) translationForm.getHistoryTable().getValueAt(row, 0);
+        TTranslationHistory history = historyMapper().selectByPrimaryKey(id);
+        if (history == null) {
+            return;
+        }
+
+        TranslationLayoutForm layoutForm = translationForm.getTranslationLayoutForm();
+        layoutForm.applyFromHistory(
+                history.getSourceText(),
+                history.getTargetText(),
+                history.getSourceLang(),
+                history.getTargetLang());
+        JTabbedPane translationTabbedPane = translationForm.getTranslationTabbedPane();
+        if (translationTabbedPane != null) {
+            translationTabbedPane.setSelectedIndex(0);
+        }
+        AlertUtil.buttonInfo(translationForm.getHistoryApplyButton(), "应用到翻译", "已应用", 1500);
     }
 }

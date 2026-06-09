@@ -11,6 +11,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.PanelCloseUtil;
 import com.luoboduner.moo.tool.ui.component.textviewer.JsonRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.textviewer.JsonRTextScrollPane;
 import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
@@ -61,7 +62,7 @@ public class JsonBeautyForm {
     private JButton customFormatButton;
     private JTextField jsonPathTextField;
     private JButton getByJsonPathButton;
-    private JLabel moreCloseLabel;
+    private JButton moreCloseButton;
     private JButton getJsonPathButton;
     private JScrollPane moreScrollPane;
     private JButton escapeJsonButton;
@@ -169,7 +170,10 @@ public class JsonBeautyForm {
         jsonBeautyForm.getExportButton().setIcon(new FlatSVGIcon("icon/export.svg"));
         jsonBeautyForm.getListItemButton().setIcon(new FlatSVGIcon("icon/list.svg"));
         jsonBeautyForm.getWrapButton().setIcon(new FlatSVGIcon("icon/wrap.svg"));
-        jsonBeautyForm.getMoreCloseLabel().setIcon(new FlatSVGIcon("icon/remove2.svg"));
+        PanelCloseUtil.installTrailingCloseButton(jsonBeautyForm.getMoreCloseButton(),
+                new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
+                        GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
 
         jsonBeautyForm.getFindReplacePanel().setVisible(false);
         int totalWidth = jsonBeautyForm.getContentSplitPane().getWidth();
@@ -376,14 +380,10 @@ public class JsonBeautyForm {
         panel3.add(checkDuplicateCheckBox, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JSeparator separator1 = new JSeparator();
         panel3.add(separator1, new GridConstraints(6, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        final JPanel panel4 = new JPanel();
-        panel4.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        panel3.add(panel4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        final Spacer spacer3 = new Spacer();
-        panel4.add(spacer3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        moreCloseLabel = new JLabel();
-        moreCloseLabel.setText("");
-        panel4.add(moreCloseLabel, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        moreCloseButton = new JButton();
+        moreCloseButton.setText("");
+        moreCloseButton.setToolTipText("关闭");
+        panel3.add(moreCloseButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, 1, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         jsonToXmlButton = new JButton();
         jsonToXmlButton.setText("JSON转XML");
         panel3.add(jsonToXmlButton, new GridConstraints(7, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -426,8 +426,8 @@ public class JsonBeautyForm {
         keyValueSwapButton = new JButton();
         keyValueSwapButton.setText("Key-Value互换");
         panel3.add(keyValueSwapButton, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final Spacer spacer4 = new Spacer();
-        controlPanel.add(spacer4, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        final Spacer spacer3 = new Spacer();
+        controlPanel.add(spacer3, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
     }
 
     /**

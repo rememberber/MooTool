@@ -58,13 +58,13 @@
               <text value="替换"/>
             </properties>
           </component>
-          <component id="6d7e" class="javax.swing.JLabel" binding="closeButton">
+          <component id="6d7e" class="javax.swing.JButton" binding="closeButton">
             <constraints>
               <grid row="1" column="5" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
             </constraints>
             <properties>
-              <icon value="icon/remove_dark.png"/>
               <text value=""/>
+              <toolTipText value="关闭"/>
             </properties>
           </component>
           <grid id="6d9e8" layout-manager="GridLayoutManager" row-count="1" column-count="8" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
