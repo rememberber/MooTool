@@ -195,6 +195,7 @@ public class CryptoForm {
         final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
         defaultComboBoxModel1.addElement("AES");
         defaultComboBoxModel1.addElement("DES");
+        defaultComboBoxModel1.addElement("SM4");
         symTypeComboBox.setModel(defaultComboBoxModel1);
         panel2.add(symTypeComboBox, new GridConstraints(2, 0, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label1 = new JLabel();
@@ -250,6 +251,7 @@ public class CryptoForm {
         asymComboBox = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel2 = new DefaultComboBoxModel();
         defaultComboBoxModel2.addElement("RSA");
+        defaultComboBoxModel2.addElement("SM2");
         asymComboBox.setModel(defaultComboBoxModel2);
         asyPanelCenter.add(asymComboBox, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel4 = new JPanel();
@@ -324,6 +326,7 @@ public class CryptoForm {
         defaultComboBoxModel3.addElement("SHA-256");
         defaultComboBoxModel3.addElement("SHA-384");
         defaultComboBoxModel3.addElement("SHA-512");
+        defaultComboBoxModel3.addElement("SM3");
         digestTypeComboBox.setModel(defaultComboBoxModel3);
         panel8.add(digestTypeComboBox, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel9 = new JPanel();
