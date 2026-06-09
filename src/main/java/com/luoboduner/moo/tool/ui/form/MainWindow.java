@@ -55,6 +55,8 @@ public class MainWindow {
 
     private static MainWindow mainWindow;
 
+    private boolean tabUiRestoreListenerInstalled;
+
     private static final String[] ICON_PATH = {"icon/smile.svg", "icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/translate.svg", "icon/check.svg", "icon/global.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/format_painter.svg", "icon/pdf.svg", "icon/fx.svg", "icon/suffix-yml.svg", "icon/diff.svg", "icon/protobuf.svg"};
 
     private MainWindow() {
@@ -77,6 +79,7 @@ public class MainWindow {
             gridLayoutManager.setMargin(new Insets(25, 0, 0, 0));
         }
 
+        ensureTabUiRestoreListener();
         initTabPlacement();
 
         mainWindow.getAboutPanel().add(AboutForm.getInstance().getAboutPanel(), gridConstraints);
@@ -123,9 +126,7 @@ public class MainWindow {
         if ("左侧".equals(App.config.getFuncTabPosition())) {
             tabbedPane.setTabPlacement(JTabbedPane.LEFT);
             tabbedPane.putClientProperty(TABBED_PANE_TAB_ALIGNMENT, TABBED_PANE_ALIGN_LEADING);
-            MooFlatTabbedPaneUI tabbedPaneUI = new MooFlatTabbedPaneUI();
-            tabbedPaneUI.setSelectionOnLeadingEdge(true);
-            tabbedPane.setUI(tabbedPaneUI);
+            installCustomTabbedPaneUiIfNeeded();
 
             if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
                 GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
@@ -210,6 +211,29 @@ public class MainWindow {
             }
         });
         tabbedPane.putClientProperty(TABBED_PANE_LEADING_COMPONENT, panel);
+    }
+
+    private void ensureTabUiRestoreListener() {
+        if (tabUiRestoreListenerInstalled) {
+            return;
+        }
+        tabbedPane.addPropertyChangeListener("UI", evt -> installCustomTabbedPaneUiIfNeeded());
+        tabUiRestoreListenerInstalled = true;
+    }
+
+    /**
+     * 主题切换等场景会触发 updateUI()，将 Tab UI 重置为默认实现，需重新挂载自定义 UI。
+     */
+    private void installCustomTabbedPaneUiIfNeeded() {
+        if (!"左侧".equals(App.config.getFuncTabPosition())) {
+            return;
+        }
+        if (tabbedPane.getUI() instanceof MooFlatTabbedPaneUI) {
+            return;
+        }
+        MooFlatTabbedPaneUI tabbedPaneUI = new MooFlatTabbedPaneUI();
+        tabbedPaneUI.setSelectionOnLeadingEdge(true);
+        tabbedPane.setUI(tabbedPaneUI);
     }
 
     {
