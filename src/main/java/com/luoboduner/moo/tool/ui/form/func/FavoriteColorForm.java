@@ -17,7 +17,6 @@ import com.luoboduner.moo.tool.domain.TFavoriteColorItem;
 import com.luoboduner.moo.tool.domain.TFavoriteColorList;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.TableInCellColorBlockRenderer;
-import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.frame.FavoriteColorFrame;
 import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
 import com.luoboduner.moo.tool.util.*;
@@ -115,7 +114,7 @@ public class FavoriteColorForm {
             }
         });
         newListButton.addActionListener(e -> {
-            String title = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "收藏夹名称", "");
+            String title = JOptionPane.showInputDialog(favoriteColorPanel, "收藏夹名称", "");
             if (StringUtils.isNotBlank(title)) {
                 try {
                     TFavoriteColorList tFavoriteColorList = new TFavoriteColorList();
@@ -333,7 +332,7 @@ public class FavoriteColorForm {
                         try {
                             favoriteColorItemMapper.updateByPrimaryKeySelective(tFavoriteColorItem);
                         } catch (Exception e) {
-                            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
+                            JOptionPane.showMessageDialog(favoriteColorPanel, "重命名失败，和已有文件重名");
                             viewListBySelected(selectedRow);
                             log.error(e.toString());
                         }
@@ -394,7 +393,7 @@ public class FavoriteColorForm {
             return;
         }
         suppressListEnterRename = true;
-        String afterTitle = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "收藏夹名称", beforeTitle);
+        String afterTitle = JOptionPane.showInputDialog(favoriteColorPanel, "收藏夹名称", beforeTitle);
         if (StringUtils.isBlank(afterTitle) || afterTitle.equals(beforeTitle)) {
             return;
         }
@@ -405,7 +404,7 @@ public class FavoriteColorForm {
             favoriteColorListMapper.updateByPrimaryKeySelective(tFavoriteColorList);
             initList();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
+            JOptionPane.showMessageDialog(favoriteColorPanel, "重命名失败，和已有文件重名");
             initList();
             log.error(e.toString());
         }

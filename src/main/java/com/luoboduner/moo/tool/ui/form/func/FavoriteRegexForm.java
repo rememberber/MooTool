@@ -16,7 +16,6 @@ import com.luoboduner.moo.tool.dao.TFavoriteRegexListMapper;
 import com.luoboduner.moo.tool.domain.TFavoriteRegexItem;
 import com.luoboduner.moo.tool.domain.TFavoriteRegexList;
 import com.luoboduner.moo.tool.ui.UiConsts;
-import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.frame.FavoriteRegexFrame;
 import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
 import com.luoboduner.moo.tool.util.*;
@@ -132,7 +131,7 @@ public class FavoriteRegexForm {
             }
         });
         newListButton.addActionListener(e -> {
-            String title = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "收藏夹名称", "");
+            String title = JOptionPane.showInputDialog(favoriteRegexPanel, "收藏夹名称", "");
             if (StringUtils.isNotBlank(title)) {
                 try {
                     TFavoriteRegexList tFavoriteRegexList = new TFavoriteRegexList();
@@ -342,7 +341,7 @@ public class FavoriteRegexForm {
                         try {
                             favoriteRegexItemMapper.updateByPrimaryKeySelective(tFavoriteRegexItem);
                         } catch (Exception e) {
-                            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
+                            JOptionPane.showMessageDialog(favoriteRegexPanel, "重命名失败，和已有文件重名");
                             viewListBySelected(selectedRow);
                             log.error(e.toString());
                         }
@@ -427,7 +426,7 @@ public class FavoriteRegexForm {
             return;
         }
         suppressListEnterRename = true;
-        String afterTitle = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "收藏夹名称", beforeTitle);
+        String afterTitle = JOptionPane.showInputDialog(favoriteRegexPanel, "收藏夹名称", beforeTitle);
         if (StringUtils.isBlank(afterTitle) || afterTitle.equals(beforeTitle)) {
             return;
         }
@@ -438,7 +437,7 @@ public class FavoriteRegexForm {
             favoriteRegexListMapper.updateByPrimaryKeySelective(tFavoriteRegexList);
             initList();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
+            JOptionPane.showMessageDialog(favoriteRegexPanel, "重命名失败，和已有文件重名");
             initList();
             log.error(e.toString());
         }
