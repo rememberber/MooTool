@@ -47,6 +47,13 @@ public class ColorBoardForm {
     private JPanel themeColorSubPanel;
     private JLabel aboutLabel;
     private JButton chooseColorButton;
+    private JPanel secondaryColorPanel;
+    private JButton swapColorButton;
+    private JButton invertColorButton;
+    private JButton intersectColorButton;
+    private JButton addColorButton;
+    private JButton diffColorButton;
+    private JButton averageColorButton;
 
     private static ColorBoardForm colorBoardForm;
 
@@ -96,9 +103,53 @@ public class ColorBoardForm {
         colorBoardForm.getChooseColorButton().setIcon(new FlatSVGIcon("icon/color.svg"));
         colorBoardForm.getAboutLabel().setIcon(new FlatSVGIcon("icon/help.svg"));
 
+        colorBoardForm.initColorOpsPanel();
+
         fillColorBlocks();
 
         ColorBoardListener.addListeners();
+    }
+
+    private void initColorOpsPanel() {
+        showColorPanel.setLayout(new BorderLayout(0, 8));
+
+        JPanel primaryPanel = new JPanel(new BorderLayout());
+        primaryPanel.setOpaque(false);
+        primaryPanel.setBorder(BorderFactory.createTitledBorder("当前颜色"));
+        JPanel primaryColorDisplay = new JPanel();
+        primaryColorDisplay.setBackground(showColorPanel.getBackground());
+        primaryPanel.add(primaryColorDisplay, BorderLayout.CENTER);
+        showColorPanel.add(primaryPanel, BorderLayout.CENTER);
+
+        JPanel colorOpsPanel = new JPanel(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), 5, 5));
+        colorOpsPanel.setBorder(BorderFactory.createTitledBorder("颜色运算"));
+
+        JPanel secondaryRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        secondaryRow.add(new JLabel("对比色"));
+        secondaryColorPanel = new JPanel();
+        secondaryColorPanel.setBackground(Color.WHITE);
+        secondaryColorPanel.setPreferredSize(new Dimension(36, 36));
+        secondaryColorPanel.setMinimumSize(new Dimension(36, 36));
+        secondaryRow.add(secondaryColorPanel);
+        swapColorButton = new JButton("交换");
+        secondaryRow.add(swapColorButton);
+        colorOpsPanel.add(secondaryRow, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+
+        JPanel opsRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        invertColorButton = new JButton("取反");
+        intersectColorButton = new JButton("相交");
+        addColorButton = new JButton("相加");
+        diffColorButton = new JButton("差值");
+        averageColorButton = new JButton("平均");
+        opsRow.add(invertColorButton);
+        opsRow.add(intersectColorButton);
+        opsRow.add(addColorButton);
+        opsRow.add(diffColorButton);
+        opsRow.add(averageColorButton);
+        colorOpsPanel.add(opsRow, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+
+        showColorPanel.add(colorOpsPanel, BorderLayout.SOUTH);
+        showColorPanel.putClientProperty("primaryColorDisplay", primaryColorDisplay);
     }
 
     public static void fillColorBlocks() {
@@ -174,7 +225,11 @@ public class ColorBoardForm {
             public void mouseClicked(MouseEvent e) {
                 JPanel clickedPanel = (JPanel) e.getComponent();
                 Color background = clickedPanel.getBackground();
-                setSelectedColor(background);
+                if (e.isShiftDown()) {
+                    setSecondaryColor(background);
+                } else {
+                    setSelectedColor(background);
+                }
                 super.mouseClicked(e);
             }
 
@@ -196,12 +251,42 @@ public class ColorBoardForm {
 
     public static void setSelectedColor(Color color) {
         String hex = ColorUtil.toHex(color);
-        colorBoardForm.getShowColorPanel().setBackground(color);
-        colorBoardForm.getShowColorPanel().updateUI();
+        JPanel primaryColorDisplay = (JPanel) colorBoardForm.getShowColorPanel().getClientProperty("primaryColorDisplay");
+        if (primaryColorDisplay != null) {
+            primaryColorDisplay.setBackground(color);
+            primaryColorDisplay.repaint();
+        } else {
+            colorBoardForm.getShowColorPanel().setBackground(color);
+            colorBoardForm.getShowColorPanel().updateUI();
+        }
         setColorCode(hex);
         colorBoardForm.getColorCodeTextField().grabFocus();
         App.config.setLastSelectedColor(hex);
         App.config.save();
+    }
+
+    public static Color getSelectedColor() {
+        JPanel primaryColorDisplay = (JPanel) colorBoardForm.getShowColorPanel().getClientProperty("primaryColorDisplay");
+        if (primaryColorDisplay != null) {
+            return primaryColorDisplay.getBackground();
+        }
+        return colorBoardForm.getShowColorPanel().getBackground();
+    }
+
+    public static void setSecondaryColor(Color color) {
+        colorBoardForm.getSecondaryColorPanel().setBackground(color);
+        colorBoardForm.getSecondaryColorPanel().repaint();
+    }
+
+    public static Color getSecondaryColor() {
+        return colorBoardForm.getSecondaryColorPanel().getBackground();
+    }
+
+    public static void swapColors() {
+        Color primary = getSelectedColor();
+        Color secondary = getSecondaryColor();
+        setSecondaryColor(primary);
+        setSelectedColor(secondary);
     }
 
     {

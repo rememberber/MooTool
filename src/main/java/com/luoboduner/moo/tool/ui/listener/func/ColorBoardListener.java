@@ -89,7 +89,7 @@ public class ColorBoardListener {
         colorBoardForm.getFavoriteButton().addActionListener(e -> {
             FavoriteColorDialog favoriteColorDialog = new FavoriteColorDialog();
             favoriteColorDialog.pack();
-            favoriteColorDialog.init(colorBoardForm.getShowColorPanel().getBackground());
+            favoriteColorDialog.init(ColorBoardForm.getSelectedColor());
             favoriteColorDialog.setVisible(true);
         });
         colorBoardForm.getColorCodeTextField().addKeyListener(new KeyListener() {
@@ -118,6 +118,8 @@ public class ColorBoardListener {
                 StringBuilder tipsBuilder = new StringBuilder();
                 tipsBuilder.append("<h1>关于调色板</h1>");
                 tipsBuilder.append("<p>调色板和取色器的设计借鉴了PicPick，其中的颜色主题更是完全照搬了过来。</p>");
+                tipsBuilder.append("<p>颜色运算：取反对当前颜色取反色；相交/相加/差值/平均对当前颜色与对比色进行运算，结果更新为当前颜色。</p>");
+                tipsBuilder.append("<p>按住 Shift 点击色块可将其设为对比色；点击对比色色块可自由选色。</p>");
                 tipsBuilder.append("<p>PicPick是一款非常优秀的集取色、截图、标尺、放大镜、图片编辑等于一身的桌面应用，我非常喜欢它，感谢作者的付出！</p>");
 
                 dialog.setHtmlText(tipsBuilder.toString());
@@ -144,10 +146,47 @@ public class ColorBoardListener {
         });
 
         colorBoardForm.getChooseColorButton().addActionListener(e -> {
-            Color color = JColorChooser.showDialog(colorBoardForm.getColorBoardPanel(), "选择颜色", colorBoardForm.getShowColorPanel().getBackground());
+            Color color = JColorChooser.showDialog(colorBoardForm.getColorBoardPanel(), "选择颜色", ColorBoardForm.getSelectedColor());
             if (color != null) {
                 ColorBoardForm.setSelectedColor(color);
             }
         });
+
+        colorBoardForm.getSecondaryColorPanel().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                Color color = JColorChooser.showDialog(colorBoardForm.getColorBoardPanel(), "选择对比色", ColorBoardForm.getSecondaryColor());
+                if (color != null) {
+                    ColorBoardForm.setSecondaryColor(color);
+                }
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                colorBoardForm.getSecondaryColorPanel().setBorder(BorderFactory.createEtchedBorder());
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                colorBoardForm.getSecondaryColorPanel().setBorder(BorderFactory.createEmptyBorder());
+            }
+        });
+
+        colorBoardForm.getSwapColorButton().addActionListener(e -> ColorBoardForm.swapColors());
+
+        colorBoardForm.getInvertColorButton().addActionListener(e ->
+                ColorBoardForm.setSelectedColor(ColorUtil.invert(ColorBoardForm.getSelectedColor())));
+
+        colorBoardForm.getIntersectColorButton().addActionListener(e ->
+                ColorBoardForm.setSelectedColor(ColorUtil.intersect(ColorBoardForm.getSelectedColor(), ColorBoardForm.getSecondaryColor())));
+
+        colorBoardForm.getAddColorButton().addActionListener(e ->
+                ColorBoardForm.setSelectedColor(ColorUtil.add(ColorBoardForm.getSelectedColor(), ColorBoardForm.getSecondaryColor())));
+
+        colorBoardForm.getDiffColorButton().addActionListener(e ->
+                ColorBoardForm.setSelectedColor(ColorUtil.difference(ColorBoardForm.getSelectedColor(), ColorBoardForm.getSecondaryColor())));
+
+        colorBoardForm.getAverageColorButton().addActionListener(e ->
+                ColorBoardForm.setSelectedColor(ColorUtil.average(ColorBoardForm.getSelectedColor(), ColorBoardForm.getSecondaryColor())));
     }
 }

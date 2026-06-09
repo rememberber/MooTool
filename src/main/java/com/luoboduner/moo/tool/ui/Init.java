@@ -237,6 +237,7 @@ public class Init {
         ThreadUtil.execute(RegexForm::init);
         ThreadUtil.execute(ImageForm::init);
         ThreadUtil.execute(VariablesForm::init);
+        ThreadUtil.execute(HardwareInfoForm::init);
         ThreadUtil.execute(YmlPropertiesForm::init);
         ThreadUtil.execute(TextDiffForm::init);
         ThreadUtil.execute(ProtoBufForm::init);
