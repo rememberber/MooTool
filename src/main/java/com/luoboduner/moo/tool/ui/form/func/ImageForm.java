@@ -15,6 +15,7 @@ import com.luoboduner.moo.tool.ui.listener.func.ImageListener;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.imageio.ImageIO;
@@ -133,6 +134,7 @@ public class ImageForm {
     }
 
     public static void initList() {
+        String previousSelectedName = ImageListener.selectedName;
         DefaultListModel<String> model = new DefaultListModel<>();
         JList<String> imageList = imageForm.getImageList();
         imageList.setModel(model);
@@ -156,10 +158,20 @@ public class ImageForm {
         for (String fileName : fileNames) {
             model.addElement(fileName);
         }
-        if (!fileNames.isEmpty()) {
-            imageList.setSelectedIndex(0);
-            ImageListener.showImageByFileName(imageForm, fileNames.get(0));
+        if (fileNames.isEmpty()) {
+            return;
         }
+        if (StringUtils.isNotBlank(previousSelectedName)) {
+            for (int i = 0; i < fileNames.size(); i++) {
+                if (previousSelectedName.equals(FileUtil.mainName(fileNames.get(i)))) {
+                    imageList.setSelectedIndex(i);
+                    ImageListener.showImageByFileName(imageForm, fileNames.get(i));
+                    return;
+                }
+            }
+        }
+        imageList.setSelectedIndex(0);
+        ImageListener.showImageByFileName(imageForm, fileNames.get(0));
     }
 
     {

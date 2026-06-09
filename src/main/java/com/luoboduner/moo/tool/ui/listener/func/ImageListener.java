@@ -30,7 +30,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
-import java.awt.image.ImageObserver;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -304,14 +303,15 @@ public class ImageListener {
 
         // 导出为Base64
         imageForm.getToBase64Button().addActionListener(e -> {
-            if (StringUtils.isBlank(selectedName)) {
+            File imageFile = resolveCurrentImageFile(imageForm);
+            if (imageFile == null || !imageFile.isFile()) {
                 JOptionPane.showMessageDialog(imageForm.getImagePanel(), "请先选择或保存一张图片！", "提示",
                         JOptionPane.INFORMATION_MESSAGE);
                 return;
             }
             Base64Dialog dialog = new Base64Dialog();
 
-            dialog.setToTextArea(Base64.encode(FileUtil.file(IMAGE_PATH_PRE_FIX + selectedName + ".png")));
+            dialog.setToTextArea(Base64.encode(imageFile));
 
             dialog.pack();
             dialog.setVisible(true);
@@ -544,6 +544,10 @@ public class ImageListener {
         progressPanel.setBorder(BorderFactory.createEmptyBorder(16, 20, 16, 20));
         progressPanel.add(new JLabel("正在识别文字，请稍候…"), BorderLayout.NORTH);
         progressPanel.add(new JProgressBar(), BorderLayout.CENTER);
+        JPanel progressButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        JButton cancelButton = new JButton("取消");
+        progressButtonPanel.add(cancelButton);
+        progressPanel.add(progressButtonPanel, BorderLayout.SOUTH);
         progressDialog.add(progressPanel);
         progressDialog.pack();
         progressDialog.setLocationRelativeTo(imageForm.getImagePanel());
@@ -557,6 +561,9 @@ public class ImageListener {
             @Override
             protected void done() {
                 progressDialog.dispose();
+                if (isCancelled()) {
+                    return;
+                }
                 try {
                     String result = get();
                     if (StringUtils.isBlank(result)) {
@@ -581,17 +588,27 @@ public class ImageListener {
                 }
             }
         };
+        cancelButton.addActionListener(ev -> {
+            worker.cancel(true);
+            progressDialog.dispose();
+        });
         worker.execute();
         progressDialog.setVisible(true);
     }
 
     private static File resolveCurrentImageFile(ImageForm imageForm) {
         int selectedIndex = imageForm.getImageList().getSelectedIndex();
+        DefaultListModel<String> listModel = (DefaultListModel<String>) imageForm.getImageList().getModel();
         if (selectedIndex >= 0) {
-            DefaultListModel<String> listModel = (DefaultListModel<String>) imageForm.getImageList().getModel();
             return FileUtil.file(IMAGE_PATH_PRE_FIX + listModel.getElementAt(selectedIndex));
         }
         if (StringUtils.isNotBlank(selectedName)) {
+            for (int i = 0; i < listModel.size(); i++) {
+                String fileName = listModel.getElementAt(i);
+                if (selectedName.equals(FileUtil.mainName(fileName))) {
+                    return FileUtil.file(IMAGE_PATH_PRE_FIX + fileName);
+                }
+            }
             File pngFile = FileUtil.file(IMAGE_PATH_PRE_FIX + selectedName + ".png");
             if (pngFile.isFile()) {
                 return pngFile;
@@ -900,14 +917,30 @@ public class ImageListener {
     }
 
     public static BufferedImage toBufferedImage(Image image) {
-        if (image instanceof BufferedImage) {
-            return (BufferedImage) image;
-        } else {
-            BufferedImage bufferedImage = new BufferedImage(image.getWidth((ImageObserver) null), image.getHeight((ImageObserver) null), 2);
-            Graphics2D g = bufferedImage.createGraphics();
-            g.drawImage(image, 0, 0, (ImageObserver) null);
-            g.dispose();
+        if (image instanceof BufferedImage bufferedImage) {
             return bufferedImage;
         }
+        int width = image.getWidth(null);
+        int height = image.getHeight(null);
+        if (width < 1 || height < 1) {
+            MediaTracker tracker = new MediaTracker(new JLabel());
+            tracker.addImage(image, 0);
+            try {
+                tracker.waitForID(0, 5000);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new IllegalStateException("图片加载被中断", e);
+            }
+            width = image.getWidth(null);
+            height = image.getHeight(null);
+        }
+        if (width < 1 || height < 1) {
+            throw new IllegalStateException("无法获取图片尺寸");
+        }
+        BufferedImage bufferedImage = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
+        Graphics2D g = bufferedImage.createGraphics();
+        g.drawImage(image, 0, 0, null);
+        g.dispose();
+        return bufferedImage;
     }
 }

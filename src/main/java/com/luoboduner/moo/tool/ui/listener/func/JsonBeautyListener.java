@@ -228,6 +228,9 @@ public class JsonBeautyListener {
                     deleteFiles(jsonBeautyForm);
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
                     int selectedIndex = jsonBeautyForm.getNoteList().getSelectedIndex();
+                    if (selectedIndex < 0) {
+                        return;
+                    }
                     ignoreQuickSave = true;
                     try {
                         viewByIndex(selectedIndex);
@@ -604,6 +607,9 @@ public class JsonBeautyListener {
     }
 
     private static void viewByIndex(int index) {
+        if (index < 0) {
+            return;
+        }
         JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
 
         DefaultListModel<TJsonBeauty> listModel = (DefaultListModel<TJsonBeauty>) jsonBeautyForm.getNoteList().getModel();

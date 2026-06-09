@@ -165,6 +165,9 @@ public class HttpRequestListener {
                     deleteFiles(httpRequestForm);
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
                     int selectedIndex = httpRequestForm.getNoteList().getSelectedIndex();
+                    if (selectedIndex < 0) {
+                        return;
+                    }
                     DefaultListModel<TMsgHttp> listModel = (DefaultListModel<TMsgHttp>) httpRequestForm.getNoteList().getModel();
                     String name = listModel.getElementAt(selectedIndex).getMsgName();
                     selectedName = name;

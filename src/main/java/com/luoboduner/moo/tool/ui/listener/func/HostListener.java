@@ -54,11 +54,14 @@ public class HostListener {
 
         hostForm.getSaveButton().addActionListener(e -> save(true));
 
-        hostForm.getSwitchButton().addActionListener(e -> ThreadUtil.execute(() -> {
+        hostForm.getSwitchButton().addActionListener(e -> {
             String hostText = hostForm.getTextArea().getText();
-            HostForm.setHost(selectedNameHost, hostText);
-            save(false);
-        }));
+            String hostName = selectedNameHost;
+            ThreadUtil.execute(() -> {
+                HostForm.setHost(hostName, hostText);
+                persistHostContent(hostName, hostText);
+            });
+        });
 
         // 点击左侧列表事件
         hostForm.getNoteList().addMouseListener(new MouseAdapter() {
@@ -184,6 +187,9 @@ public class HostListener {
                     ignoreQuickSave = true;
                     try {
                         int selectedIndex = hostForm.getNoteList().getSelectedIndex();
+                        if (selectedIndex < 0) {
+                            return;
+                        }
                         refreshHostContentInTextArea(selectedIndex);
                     } catch (Exception e) {
                         log.error(e.getMessage());
@@ -463,22 +469,30 @@ public class HostListener {
             name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", selectedNameHost);
         }
         if (StringUtils.isNotBlank(name)) {
-            THost tHost = hostMapper.selectByName(name);
-            if (tHost == null) {
-                tHost = new THost();
-            }
-            String now = SqliteUtil.nowDateForSqlite();
-            tHost.setName(name);
-            tHost.setContent(HostForm.getInstance().getTextArea().getText());
-            tHost.setCreateTime(now);
-            tHost.setModifiedTime(now);
-            if (tHost.getId() == null) {
-                hostMapper.insert(tHost);
-                HostForm.initList();
-                selectedNameHost = name;
-            } else {
-                hostMapper.updateByPrimaryKey(tHost);
-            }
+            String content = HostForm.getInstance().getTextArea().getText();
+            persistHostContent(name, content);
+            selectedNameHost = name;
+        }
+    }
+
+    private static void persistHostContent(String name, String content) {
+        if (StringUtils.isBlank(name)) {
+            return;
+        }
+        THost tHost = hostMapper.selectByName(name);
+        if (tHost == null) {
+            tHost = new THost();
+        }
+        String now = SqliteUtil.nowDateForSqlite();
+        tHost.setName(name);
+        tHost.setContent(content);
+        tHost.setCreateTime(now);
+        tHost.setModifiedTime(now);
+        if (tHost.getId() == null) {
+            hostMapper.insert(tHost);
+            SwingUtilities.invokeLater(HostForm::initList);
+        } else {
+            hostMapper.updateByPrimaryKey(tHost);
         }
     }
 
