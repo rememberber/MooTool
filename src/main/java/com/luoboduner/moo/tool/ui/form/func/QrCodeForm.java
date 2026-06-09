@@ -29,6 +29,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
 
 /**
  * <pre>
@@ -143,6 +144,9 @@ public class QrCodeForm {
             }
             QrCodeUtil.generate(qrCodeForm.getToGenerateContentTextArea().getText(), config, qrCodeImageTempFile);
             BufferedImage image = ImageIO.read(qrCodeImageTempFile);
+            if (image == null) {
+                throw new IOException("无法读取生成的二维码图片");
+            }
             ImageIcon imageIcon = new ImageIcon(image);
             qrCodeForm.getQrCodeImageLabel().setIcon(imageIcon);
             qrCodeForm.getQrCodePanel().updateUI();

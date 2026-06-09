@@ -93,19 +93,36 @@ public class TesseractEnvUtil {
         }
 
         ProcessBuilder processBuilder = new ProcessBuilder(command);
-        processBuilder.redirectErrorStream(true);
+        processBuilder.redirectError(ProcessBuilder.Redirect.PIPE);
         Process process = processBuilder.start();
+
+        StringBuilder stderrBuilder = new StringBuilder();
+        Thread stderrReader = new Thread(() -> {
+            try (InputStream errorStream = process.getErrorStream()) {
+                stderrBuilder.append(IoUtil.read(errorStream, StandardCharsets.UTF_8));
+            } catch (Exception e) {
+                log.warn("Failed to read tesseract stderr", e);
+            }
+        }, "tesseract-stderr-reader");
+        stderrReader.start();
+
         String output;
         try (InputStream inputStream = process.getInputStream()) {
             output = IoUtil.read(inputStream, StandardCharsets.UTF_8);
         }
+        stderrReader.join(TimeUnit.SECONDS.toMillis(5));
+
         boolean finished = process.waitFor(120, TimeUnit.SECONDS);
         if (!finished) {
             process.destroyForcibly();
             throw new IllegalStateException("Tesseract 识别超时");
         }
         if (process.exitValue() != 0) {
-            throw new IllegalStateException(StringUtils.defaultIfBlank(output, "Tesseract 执行失败"));
+            String errorDetail = StringUtils.trimToNull(stderrBuilder.toString());
+            throw new IllegalStateException(StringUtils.defaultIfBlank(errorDetail, "Tesseract 执行失败"));
+        }
+        if (StringUtils.isNotBlank(stderrBuilder)) {
+            log.debug("Tesseract stderr: {}", stderrBuilder);
         }
         return output;
     }
@@ -152,6 +169,7 @@ public class TesseractEnvUtil {
             candidates.add("C:\\Program Files (x86)\\Tesseract-OCR");
         } else if (SystemUtil.isLinuxOs()) {
             candidates.add("/usr/lib/x86_64-linux-gnu");
+            candidates.add("/usr/lib/aarch64-linux-gnu");
             candidates.add("/usr/lib64");
             candidates.add("/usr/lib");
             candidates.add("/usr/local/lib");

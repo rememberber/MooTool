@@ -171,9 +171,13 @@ public class ImageOcrUtil {
 
     private static String runOcr(File imageFile, BufferedImage image, String tessdataPath, String language) throws Exception {
         TesseractEnvUtil.ensureConfigured();
-        String cliResult = TesseractEnvUtil.ocrViaCli(imageFile, tessdataPath, language);
-        if (StringUtils.isNotBlank(cliResult)) {
-            return cliResult;
+        try {
+            String cliResult = TesseractEnvUtil.ocrViaCli(imageFile, tessdataPath, language);
+            if (StringUtils.isNotBlank(cliResult)) {
+                return cliResult;
+            }
+        } catch (Exception e) {
+            log.warn("Tesseract CLI failed, fallback to Tess4J: {}", e.getMessage());
         }
         return doOcrViaTess4j(image, tessdataPath, language);
     }
@@ -255,6 +259,7 @@ public class ImageOcrUtil {
                 HttpUtil.downloadFile(url, dataFile);
             } catch (Exception e) {
                 log.warn("Download tessdata failed: {}", url, e);
+                FileUtil.del(dataFile);
                 throw new IOException("下载语言包失败：" + langFile + "（" + e.getMessage() + "）");
             }
         }

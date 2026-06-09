@@ -156,8 +156,12 @@ public class ImageListener {
                 // 双击打开图片
                 int clickTimes = e.getClickCount();
                 if (clickTimes == 2) {
+                    File imageFile = resolveCurrentImageFile(imageForm);
+                    if (imageFile == null) {
+                        return;
+                    }
                     try {
-                        Desktop.getDesktop().open(FileUtil.file(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
+                        Desktop.getDesktop().open(imageFile);
                     } catch (IOException ex) {
                         log.error(ExceptionUtils.getStackTrace(ex));
                     }
@@ -187,8 +191,14 @@ public class ImageListener {
 
         // 从系统打开按钮事件
         imageForm.getOpenButton().addActionListener(e -> {
+            File imageFile = resolveCurrentImageFile(imageForm);
+            if (imageFile == null) {
+                JOptionPane.showMessageDialog(imageForm.getImagePanel(), "请先选择一张图片！", "提示",
+                        JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
             try {
-                Desktop.getDesktop().open(FileUtil.file(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
+                Desktop.getDesktop().open(imageFile);
             } catch (IOException ex) {
                 log.error(ExceptionUtils.getStackTrace(ex));
             }
@@ -224,6 +234,9 @@ public class ImageListener {
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
                     quickSave();
                     int selectedIndex = imageForm.getImageList().getSelectedIndex();
+                    if (selectedIndex < 0) {
+                        return;
+                    }
                     DefaultListModel<String> listModel = (DefaultListModel<String>) imageForm.getImageList().getModel();
                     showImageByFileName(imageForm, listModel.getElementAt(selectedIndex));
                 }
@@ -291,6 +304,11 @@ public class ImageListener {
 
         // 导出为Base64
         imageForm.getToBase64Button().addActionListener(e -> {
+            if (StringUtils.isBlank(selectedName)) {
+                JOptionPane.showMessageDialog(imageForm.getImagePanel(), "请先选择或保存一张图片！", "提示",
+                        JOptionPane.INFORMATION_MESSAGE);
+                return;
+            }
             Base64Dialog dialog = new Base64Dialog();
 
             dialog.setToTextArea(Base64.encode(FileUtil.file(IMAGE_PATH_PRE_FIX + selectedName + ".png")));
@@ -332,6 +350,9 @@ public class ImageListener {
         });
 
         imageForm.getZoomInButton().addActionListener(e -> {
+            if (selectedImage == null) {
+                return;
+            }
             int width = imageForm.getShowImageLabel().getWidth();
             int height = imageForm.getShowImageLabel().getHeight();
             ImageIcon imageIcon = new ImageIcon(selectedImage.getScaledInstance((int) (width * 1.1), (int) (height * 1.1), Image.SCALE_DEFAULT));
@@ -339,6 +360,9 @@ public class ImageListener {
         });
 
         imageForm.getZoomOutButton().addActionListener(e -> {
+            if (selectedImage == null) {
+                return;
+            }
             int width = imageForm.getShowImageLabel().getWidth();
             int height = imageForm.getShowImageLabel().getHeight();
             ImageIcon imageIcon = new ImageIcon(selectedImage.getScaledInstance((int) (width * 0.9), (int) (height * 0.9), Image.SCALE_DEFAULT));
@@ -346,11 +370,17 @@ public class ImageListener {
         });
 
         imageForm.getOriginalSizeButton().addActionListener(e -> {
+            if (selectedImage == null) {
+                return;
+            }
             ImageIcon imageIcon = new ImageIcon(selectedImage);
             imageForm.getShowImageLabel().setIcon(imageIcon);
         });
 
         imageForm.getFitSizeButton().addActionListener(e -> {
+            if (selectedImage == null) {
+                return;
+            }
             int width = imageForm.getImageControlPanel().getWidth();
 //            int height = imageForm.getShowImagePanel().getHeight();
 //          只控制宽度，高度自适应
@@ -555,6 +585,21 @@ public class ImageListener {
         progressDialog.setVisible(true);
     }
 
+    private static File resolveCurrentImageFile(ImageForm imageForm) {
+        int selectedIndex = imageForm.getImageList().getSelectedIndex();
+        if (selectedIndex >= 0) {
+            DefaultListModel<String> listModel = (DefaultListModel<String>) imageForm.getImageList().getModel();
+            return FileUtil.file(IMAGE_PATH_PRE_FIX + listModel.getElementAt(selectedIndex));
+        }
+        if (StringUtils.isNotBlank(selectedName)) {
+            File pngFile = FileUtil.file(IMAGE_PATH_PRE_FIX + selectedName + ".png");
+            if (pngFile.isFile()) {
+                return pngFile;
+            }
+        }
+        return null;
+    }
+
     private static List<File> resolveOcrImageFiles(ImageForm imageForm) {
         List<File> files = new ArrayList<>();
         int[] selectedIndices = imageForm.getImageList().getSelectedIndices();
@@ -645,11 +690,15 @@ public class ImageListener {
             imageForm.getShowImageLabel().setIcon(new ImageIcon(DEFAULT_IMAGE));
             imageForm.getShowImagePanel().updateUI();
 
-            selectedName = fileName.replace(".png", "");
+            selectedName = FileUtil.mainName(fileName);
             imageForm.getShowImageLabel().setIcon(new ImageIcon(IMAGE_PATH_PRE_FIX + fileName));
             imageForm.getShowImagePanel().updateUI();
 
             selectedImage = ImageIO.read(FileUtil.newFile(IMAGE_PATH_PRE_FIX + fileName));
+            if (selectedImage == null) {
+                JOptionPane.showMessageDialog(App.mainFrame, "无法读取图片：" + fileName, "异常", JOptionPane.ERROR_MESSAGE);
+                return;
+            }
 
             String pixel = selectedImage.getWidth(null) + " x " + selectedImage.getHeight(null);
             String size = FileUtil.readableFileSize(FileUtil.file(IMAGE_PATH_PRE_FIX + fileName).length());
@@ -791,6 +840,10 @@ public class ImageListener {
     }
 
     private static void copyToClipboard() {
+        if (selectedImage == null) {
+            JOptionPane.showMessageDialog(App.mainFrame, "请先选择一张图片！", "提示", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
         try {
             ClipboardUtil.setImage(selectedImage);
             ImageForm imageForm = ImageForm.getInstance();
