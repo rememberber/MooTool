@@ -17,7 +17,6 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 
 import javax.imageio.ImageIO;
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.awt.image.BufferedImage;
@@ -43,6 +42,9 @@ public class ImageListener {
     public static final String IMAGE_PATH_PRE_FIX = SystemUtil.CONFIG_HOME + File.separator + "images" + File.separator;
 
     public static final Image DEFAULT_IMAGE = Toolkit.getDefaultToolkit().getImage(ImageListener.class.getResource("/icon/image_128.png"));
+
+    /** 忽略 JOptionPane 关闭后回传到列表的 Enter 键，避免重命名弹框重复弹出 */
+    private static boolean suppressListEnterRename;
 
     public static void addListeners() {
         ImageForm imageForm = ImageForm.getInstance();
@@ -79,39 +81,23 @@ public class ImageListener {
         } else {
             imageForm.getImagePanel().registerKeyboardAction(e -> quickSave(), KeyStroke.getKeyStroke(KeyEvent.VK_S, InputEvent.CTRL_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
         }
-        // 点击左侧表格事件
-        imageForm.getListTable().addMouseListener(new MouseAdapter() {
+        // 点击左侧列表事件
+        imageForm.getImageList().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
                 quickSave();
-                try {
-                    imageForm.getShowImageLabel().setIcon(new ImageIcon(DEFAULT_IMAGE));
-                    imageForm.getShowImagePanel().updateUI();
-
-                    int focusedRowIndex = imageForm.getListTable().rowAtPoint(e.getPoint());
-                    if (focusedRowIndex == -1) {
-                        return;
-                    }
-                    String name = imageForm.getListTable().getValueAt(focusedRowIndex, 1).toString();
-                    selectedName = name.replace(".png", "");
-                    imageForm.getShowImageLabel().setIcon(new ImageIcon(ImageListener.IMAGE_PATH_PRE_FIX + name));
-                    imageForm.getShowImagePanel().updateUI();
-
-                    ImageListener.selectedImage = ImageIO.read(FileUtil.newFile(ImageListener.IMAGE_PATH_PRE_FIX + name));
-
-                    String pixel = ImageListener.selectedImage.getWidth(null) + " x " + ImageListener.selectedImage.getHeight(null);
-                    String size = FileUtil.readableFileSize(FileUtil.file(IMAGE_PATH_PRE_FIX + name).length());
-                    imageForm.getImageInfoLabel().setText("尺寸：" + pixel + "  大小：" + size + " ");
-                } catch (IOException ex) {
-                    JOptionPane.showMessageDialog(App.mainFrame, ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
-                    log.error(ExceptionUtils.getStackTrace(ex));
+                int index = imageForm.getImageList().locationToIndex(e.getPoint());
+                if (index == -1) {
+                    return;
                 }
+                DefaultListModel<String> listModel = (DefaultListModel<String>) imageForm.getImageList().getModel();
+                showImageByFileName(imageForm, listModel.getElementAt(index));
                 super.mousePressed(e);
             }
         });
 
         // 左侧列表鼠标点击事件（显示下方删除按钮）
-        imageForm.getListTable().addMouseListener(new MouseListener() {
+        imageForm.getImageList().addMouseListener(new MouseListener() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 imageForm.getDeletePanel().setVisible(true);
@@ -190,7 +176,7 @@ public class ImageListener {
         });
 
         // 左侧列表按键事件（重命名）
-        imageForm.getListTable().addKeyListener(new KeyListener() {
+        imageForm.getImageList().addKeyListener(new KeyListener() {
             @Override
             public void keyTyped(KeyEvent e) {
 
@@ -204,44 +190,18 @@ public class ImageListener {
             @Override
             public void keyReleased(KeyEvent evt) {
                 if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-                    int selectedRow = imageForm.getListTable().getSelectedRow();
-                    String originalName = String.valueOf(imageForm.getListTable().getValueAt(selectedRow, 0));
-                    String newName = String.valueOf(imageForm.getListTable().getValueAt(selectedRow, 1)).replace(".png", "");
-
-                    if (StringUtils.isNotBlank(newName)) {
-                        try {
-                            FileUtil.rename(FileUtil.file(IMAGE_PATH_PRE_FIX + originalName), newName, true, true);
-                            imageForm.getListTable().setValueAt(newName + ".png", selectedRow, 0);
-                            imageForm.getListTable().setValueAt(newName + ".png", selectedRow, 1);
-                        } catch (Exception e) {
-                            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败" + e.getMessage());
-                            ImageForm.initListTable();
-                            log.error(ExceptionUtils.getStackTrace(e));
-                        }
+                    if (suppressListEnterRename) {
+                        suppressListEnterRename = false;
+                        return;
                     }
+                    renameSelectedImage(imageForm);
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteFiles(imageForm);
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
                     quickSave();
-                    try {
-                        imageForm.getShowImageLabel().setIcon(new ImageIcon(DEFAULT_IMAGE));
-                        imageForm.getShowImagePanel().updateUI();
-
-                        int selectedRow = imageForm.getListTable().getSelectedRow();
-                        String name = imageForm.getListTable().getValueAt(selectedRow, 1).toString();
-                        selectedName = name.replace(".png", "");
-                        imageForm.getShowImageLabel().setIcon(new ImageIcon(ImageListener.IMAGE_PATH_PRE_FIX + name));
-                        imageForm.getShowImagePanel().updateUI();
-
-                        ImageListener.selectedImage = ImageIO.read(FileUtil.newFile(ImageListener.IMAGE_PATH_PRE_FIX + name));
-
-                        String pixel = ImageListener.selectedImage.getWidth(null) + " x " + ImageListener.selectedImage.getHeight(null);
-                        String size = FileUtil.readableFileSize(FileUtil.file(IMAGE_PATH_PRE_FIX + name).length());
-                        imageForm.getImageInfoLabel().setText("尺寸：" + pixel + "  大小：" + size + " ");
-                    } catch (IOException ex) {
-                        JOptionPane.showMessageDialog(App.mainFrame, ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
-                        log.error(ExceptionUtils.getStackTrace(ex));
-                    }
+                    int selectedIndex = imageForm.getImageList().getSelectedIndex();
+                    DefaultListModel<String> listModel = (DefaultListModel<String>) imageForm.getImageList().getModel();
+                    showImageByFileName(imageForm, listModel.getElementAt(selectedIndex));
                 }
             }
         });
@@ -263,10 +223,10 @@ public class ImageListener {
 
         // 导出
         imageForm.getExportButton().addActionListener(e -> {
-            int[] selectedRows = imageForm.getListTable().getSelectedRows();
+            int[] selectedIndices = imageForm.getImageList().getSelectedIndices();
 
             try {
-                if (selectedRows.length > 0) {
+                if (selectedIndices.length > 0) {
                     SystemFileChooser fileChooser = new SystemFileChooser(App.config.getImageExportPath());
                     fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
                     int approve = fileChooser.showOpenDialog(imageForm.getImagePanel());
@@ -279,8 +239,9 @@ public class ImageListener {
                         return;
                     }
 
-                    for (int row : selectedRows) {
-                        String fileName = (String) imageForm.getListTable().getValueAt(row, 0);
+                    DefaultListModel<String> listModel = (DefaultListModel<String>) imageForm.getImageList().getModel();
+                    for (int index : selectedIndices) {
+                        String fileName = listModel.getElementAt(index);
                         File exportFile = FileUtil.touch(exportPath + File.separator + fileName);
                         FileUtil.copy(FileUtil.file(IMAGE_PATH_PRE_FIX + fileName), exportFile, true);
                     }
@@ -334,7 +295,7 @@ public class ImageListener {
                         selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
                         File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
                         ImageIO.write(toBufferedImage(selectedImage), "png", imageFile);
-                        ImageForm.initListTable();
+                        ImageForm.initList();
                     } else {
                         JOptionPane.showMessageDialog(App.mainFrame, "可能不是正确的图片Base64？\n\n", "失败", JOptionPane.WARNING_MESSAGE);
                     }
@@ -373,7 +334,7 @@ public class ImageListener {
             imageForm.getShowImageLabel().setIcon(imageIcon);
         });
 
-        // 左侧表格增加右键菜单
+        // 左侧列表增加右键菜单
         JPopupMenu noteListPopupMenu = new JPopupMenu();
         JMenuItem renameMenuItem = new JMenuItem("重命名");
         JMenuItem deleteMenuItem = new JMenuItem("删除");
@@ -381,36 +342,19 @@ public class ImageListener {
         noteListPopupMenu.add(renameMenuItem);
         noteListPopupMenu.add(deleteMenuItem);
         noteListPopupMenu.add(exportMenuItem);
-        imageForm.getListTable().setComponentPopupMenu(noteListPopupMenu);
+        imageForm.getImageList().setComponentPopupMenu(noteListPopupMenu);
 
-        renameMenuItem.addActionListener(e -> {
-            int selectedRow = imageForm.getListTable().getSelectedRow();
-            String beforeName = String.valueOf(imageForm.getListTable().getValueAt(selectedRow, 0));
-            if (StringUtils.isNotBlank(beforeName)) {
-                String afterName = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", beforeName);
-                if (StringUtils.isNotBlank(afterName)) {
-                    try {
-                        FileUtil.rename(FileUtil.file(IMAGE_PATH_PRE_FIX + beforeName), afterName.replace(".png", ""), true, true);
-                        imageForm.getListTable().setValueAt(afterName, selectedRow, 0);
-                        imageForm.getListTable().setValueAt(afterName, selectedRow, 1);
-                    } catch (Exception e1) {
-                        JOptionPane.showMessageDialog(App.mainFrame, "重命名失败" + e1.getMessage());
-                        ImageForm.initListTable();
-                        log.error(ExceptionUtils.getStackTrace(e1));
-                    }
-                }
-            }
-        });
+        renameMenuItem.addActionListener(e -> renameSelectedImage(imageForm));
 
         deleteMenuItem.addActionListener(e -> {
             deleteFiles(imageForm);
         });
 
         exportMenuItem.addActionListener(e -> {
-            int[] selectedRows = imageForm.getListTable().getSelectedRows();
+            int[] selectedIndices = imageForm.getImageList().getSelectedIndices();
 
             try {
-                if (selectedRows.length > 0) {
+                if (selectedIndices.length > 0) {
                     SystemFileChooser fileChooser = new SystemFileChooser(App.config.getImageExportPath());
                     fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
                     int approve = fileChooser.showOpenDialog(imageForm.getImagePanel());
@@ -423,8 +367,9 @@ public class ImageListener {
                         return;
                     }
 
-                    for (int row : selectedRows) {
-                        String fileName = (String) imageForm.getListTable().getValueAt(row, 0);
+                    DefaultListModel<String> listModel = (DefaultListModel<String>) imageForm.getImageList().getModel();
+                    for (int index : selectedIndices) {
+                        String fileName = listModel.getElementAt(index);
                         File exportFile = FileUtil.touch(exportPath + File.separator + fileName);
                         FileUtil.copy(FileUtil.file(IMAGE_PATH_PRE_FIX + fileName), exportFile, true);
                     }
@@ -450,24 +395,69 @@ public class ImageListener {
 
     }
 
+    public static void showImageByFileName(ImageForm imageForm, String fileName) {
+        try {
+            imageForm.getShowImageLabel().setIcon(new ImageIcon(DEFAULT_IMAGE));
+            imageForm.getShowImagePanel().updateUI();
+
+            selectedName = fileName.replace(".png", "");
+            imageForm.getShowImageLabel().setIcon(new ImageIcon(IMAGE_PATH_PRE_FIX + fileName));
+            imageForm.getShowImagePanel().updateUI();
+
+            selectedImage = ImageIO.read(FileUtil.newFile(IMAGE_PATH_PRE_FIX + fileName));
+
+            String pixel = selectedImage.getWidth(null) + " x " + selectedImage.getHeight(null);
+            String size = FileUtil.readableFileSize(FileUtil.file(IMAGE_PATH_PRE_FIX + fileName).length());
+            imageForm.getImageInfoLabel().setText("尺寸：" + pixel + "  大小：" + size + " ");
+        } catch (IOException ex) {
+            JOptionPane.showMessageDialog(App.mainFrame, ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
+            log.error(ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
+    private static void renameSelectedImage(ImageForm imageForm) {
+        int selectedIndex = imageForm.getImageList().getSelectedIndex();
+        if (selectedIndex < 0) {
+            return;
+        }
+        DefaultListModel<String> model = (DefaultListModel<String>) imageForm.getImageList().getModel();
+        String beforeName = model.getElementAt(selectedIndex);
+        if (StringUtils.isBlank(beforeName)) {
+            return;
+        }
+        suppressListEnterRename = true;
+        String afterName = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", beforeName);
+        if (StringUtils.isBlank(afterName) || afterName.equals(beforeName)) {
+            return;
+        }
+        try {
+            FileUtil.rename(FileUtil.file(IMAGE_PATH_PRE_FIX + beforeName), afterName.replace(".png", ""), true, true);
+            model.set(selectedIndex, afterName);
+            selectedName = afterName.replace(".png", "");
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败" + e.getMessage());
+            ImageForm.initList();
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
     private static void deleteFiles(ImageForm imageForm) {
         try {
-            int[] selectedRows = imageForm.getListTable().getSelectedRows();
+            int[] selectedIndices = imageForm.getImageList().getSelectedIndices();
 
-            if (selectedRows.length == 0) {
+            if (selectedIndices.length == 0) {
                 JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
             } else {
                 int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
                 if (isDelete == JOptionPane.YES_OPTION) {
-                    DefaultTableModel tableModel = (DefaultTableModel) imageForm.getListTable().getModel();
+                    DefaultListModel<String> listModel = (DefaultListModel<String>) imageForm.getImageList().getModel();
 
-                    for (int i = 0; i < selectedRows.length; i++) {
-                        int selectedRow = selectedRows[i];
-                        String fileName = (String) tableModel.getValueAt(selectedRow, 0);
+                    for (int selectedIndex : selectedIndices) {
+                        String fileName = listModel.getElementAt(selectedIndex);
                         FileUtil.del(IMAGE_PATH_PRE_FIX + fileName);
                     }
                     selectedName = null;
-                    ImageForm.initListTable();
+                    ImageForm.initList();
                 }
             }
         } catch (Exception e1) {
@@ -501,7 +491,7 @@ public class ImageListener {
                 selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
                 File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
                 ImageIO.write(toBufferedImage(selectedImage), "png", imageFile);
-                ImageForm.initListTable();
+                ImageForm.initList();
             } else {
                 JOptionPane.showMessageDialog(App.mainFrame, "还没有复制图片到剪贴板吧？\n\n", "失败", JOptionPane.WARNING_MESSAGE);
             }
@@ -539,7 +529,7 @@ public class ImageListener {
                 if (selectedImage != null) {
                     File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + name + ".png"));
                     ImageIO.write(toBufferedImage(selectedImage), "png", imageFile);
-                    ImageForm.initListTable();
+                    ImageForm.initList();
                 }
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "保存失败！\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
@@ -561,7 +551,7 @@ public class ImageListener {
 
                     File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + name + ".png"));
                     ImageIO.write(toBufferedImage(selectedImage), "png", imageFile);
-                    ImageForm.initListTable();
+                    ImageForm.initList();
                     selectedName = name;
                 }
             }
