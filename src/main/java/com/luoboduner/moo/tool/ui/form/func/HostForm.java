@@ -14,9 +14,11 @@ import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.textviewer.HostRTextScrollPane;
 import com.luoboduner.moo.tool.ui.component.textviewer.HostRSyntaxTextViewer;
+import com.luoboduner.moo.tool.ui.dialog.CommonTipsDialog;
 import com.luoboduner.moo.tool.ui.dialog.TranslationDialog;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
+import com.luoboduner.moo.tool.util.HostFileUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
@@ -60,17 +62,17 @@ public class HostForm {
     private static HostForm hostForm;
     private static THostMapper hostMapper = MybatisUtil.getSqlSession().getMapper(THostMapper.class);
 
-    public static final String WIN_HOST_FILE_PATH = "C:\\Windows\\System32\\drivers\\etc\\hosts";
+    public static final String WIN_HOST_FILE_PATH = HostFileUtil.WIN_HOST_FILE_PATH;
 
-    public static final String MAC_HOST_FILE_PATH = "/etc/hosts";
+    public static final String MAC_HOST_FILE_PATH = HostFileUtil.MAC_HOST_FILE_PATH;
 
-    public static final String LINUX_HOST_FILE_PATH = "/etc/hosts";
+    public static final String LINUX_HOST_FILE_PATH = HostFileUtil.LINUX_HOST_FILE_PATH;
 
     public static final String MAC_HOST_DIR_PATH = "/etc/";
 
     public static final String LINUX_HOST_DIR_PATH = "/etc/";
 
-    public static final String NOT_SUPPORTED_TIPS = "暂不支持该操作系统！";
+    public static final String NOT_SUPPORTED_TIPS = HostFileUtil.NOT_SUPPORTED_TIPS;
 
     private HostRSyntaxTextViewer textArea;
 
@@ -84,60 +86,81 @@ public class HostForm {
     }
 
     public static void setHost(String hostName, String hostText) {
+        HostForm hostForm = HostForm.getInstance();
+        hostForm.getSwitchButton().setEnabled(false);
         try {
-            HostForm hostForm = HostForm.getInstance();
-            hostForm.getSwitchButton().setEnabled(false);
-            if (SystemUtil.isWindowsOs()) {
-                File hostFile = FileUtil.file(WIN_HOST_FILE_PATH);
-                FileUtil.writeUtf8String(hostText, hostFile);
-                if (App.trayIcon != null) {
-                    App.trayIcon.displayMessage("MooTool", "Host已切换！\n" + hostName, TrayIcon.MessageType.INFO);
-                    highlightHostMenu(hostName);
-                }
-            } else if (SystemUtil.isMacOs()) {
-                try {
-                    File hostFile = FileUtil.file(MAC_HOST_FILE_PATH);
-                    FileUtil.writeUtf8String(hostText, hostFile);
-                    if (App.trayIcon != null) {
-                        App.trayIcon.displayMessage("MooTool", "Host已切换！\n" + hostName, TrayIcon.MessageType.INFO);
-                        highlightHostMenu(hostName);
-                    }
-                } catch (Exception e) {
-                    JOptionPane.showMessageDialog(hostForm.getHostPanel(), "需要管理员或root权限运行！\n现在帮你打开hosts文件所在目录，请自行修改替换" + e.getMessage(), "切换失败！", JOptionPane.ERROR_MESSAGE);
-                    e.printStackTrace();
-                    try {
-                        Desktop desktop = Desktop.getDesktop();
-                        desktop.open(new File(MAC_HOST_DIR_PATH));
-                    } catch (Exception e2) {
-                        log.error(ExceptionUtils.getStackTrace(e2));
-                    }
-                }
-            } else if (SystemUtil.isLinuxOs()) {
-                try {
-                    File hostFile = FileUtil.file(LINUX_HOST_FILE_PATH);
-                    FileUtil.writeUtf8String(hostText, hostFile);
-                    if (App.trayIcon != null) {
-                        App.trayIcon.displayMessage("MooTool", "Host已切换！\n" + hostName, TrayIcon.MessageType.INFO);
-                        highlightHostMenu(hostName);
-                    }
-                } catch (Exception e) {
-                    JOptionPane.showMessageDialog(hostForm.getHostPanel(), "需要管理员或root权限运行！\n现在帮你打开hosts文件所在目录，请自行修改替换" + e.getMessage(), "切换失败！", JOptionPane.ERROR_MESSAGE);
-                    e.printStackTrace();
-                    try {
-                        Desktop desktop = Desktop.getDesktop();
-                        desktop.open(new File(LINUX_HOST_DIR_PATH));
-                    } catch (Exception e2) {
-                        log.error(ExceptionUtils.getStackTrace(e2));
-                    }
-                }
-            } else {
-                JOptionPane.showMessageDialog(hostForm.getHostPanel(), NOT_SUPPORTED_TIPS, "抱歉！", JOptionPane.INFORMATION_MESSAGE);
-            }
+            HostFileUtil.writeSystemHosts(hostText);
+            onHostSwitched(hostName);
+        } catch (HostFileUtil.HostWriteException e) {
+            log.warn("Switch host failed: {}", e.getMessage());
+            showHostWriteError(hostForm, e);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(hostForm.getHostPanel(), ex.getMessage(), "切换失败！", JOptionPane.ERROR_MESSAGE);
+            log.error(ExceptionUtils.getStackTrace(ex));
+            showError(hostForm, ex.getMessage(), "切换失败！");
         } finally {
-            hostForm.getSwitchButton().setEnabled(true);
+            SwingUtilities.invokeLater(() -> hostForm.getSwitchButton().setEnabled(true));
+        }
+    }
+
+    private static void onHostSwitched(String hostName) {
+        Runnable updateUi = () -> {
+            if (App.trayIcon != null) {
+                App.trayIcon.displayMessage("MooTool", "Host已切换！\n" + hostName, TrayIcon.MessageType.INFO);
+            }
+            highlightHostMenu(hostName);
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            updateUi.run();
+        } else {
+            SwingUtilities.invokeLater(updateUi);
+        }
+    }
+
+    private static void showHostWriteError(HostForm hostForm, HostFileUtil.HostWriteException e) {
+        Runnable show = () -> {
+            HostFileUtil.HostWriteException.Reason reason = e.getReason();
+            if (SystemUtil.isMacOs() && (reason == HostFileUtil.HostWriteException.Reason.USER_CANCELED
+                    || reason == HostFileUtil.HostWriteException.Reason.PERMISSION_DENIED
+                    || reason == HostFileUtil.HostWriteException.Reason.TIMEOUT)) {
+                CommonTipsDialog dialog = new CommonTipsDialog();
+                dialog.setTitle("需要管理员权限");
+                dialog.setHtmlText(e.getMessage());
+                dialog.pack();
+                dialog.setVisible(true);
+                return;
+            }
+            if (SystemUtil.isLinuxOs() && reason == HostFileUtil.HostWriteException.Reason.PERMISSION_DENIED) {
+                showError(hostForm, e.getMessage(), "切换失败！");
+                openHostDir(LINUX_HOST_DIR_PATH);
+                return;
+            }
+            if (reason == HostFileUtil.HostWriteException.Reason.NOT_SUPPORTED) {
+                showError(hostForm, e.getMessage(), "抱歉！");
+                return;
+            }
+            showError(hostForm, e.getMessage(), "切换失败！");
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            show.run();
+        } else {
+            SwingUtilities.invokeLater(show);
+        }
+    }
+
+    private static void showError(HostForm hostForm, String message, String title) {
+        Runnable show = () -> JOptionPane.showMessageDialog(hostForm.getHostPanel(), message, title, JOptionPane.ERROR_MESSAGE);
+        if (SwingUtilities.isEventDispatchThread()) {
+            show.run();
+        } else {
+            SwingUtilities.invokeLater(show);
+        }
+    }
+
+    private static void openHostDir(String dirPath) {
+        try {
+            Desktop.getDesktop().open(new File(dirPath));
+        } catch (Exception e) {
+            log.error(ExceptionUtils.getStackTrace(e));
         }
     }
 
