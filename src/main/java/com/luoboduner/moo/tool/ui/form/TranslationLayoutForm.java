@@ -35,6 +35,7 @@ public class TranslationLayoutForm {
     private JComboBox<String> translatorComboBox;
     private JButton copyButton;
     private JButton clearButton;
+    private JButton saveToWordBookButton;
 
     private static final AtomicInteger changeCount = new AtomicInteger(0);
 
@@ -75,6 +76,8 @@ public class TranslationLayoutForm {
         copyButton.setToolTipText("复制译文");
         clearButton = new JButton(new FlatSVGIcon("icon/remove.svg"));
         clearButton.setToolTipText("清空");
+        saveToWordBookButton = new JButton(new FlatSVGIcon("icon/favorite.svg"));
+        saveToWordBookButton.setToolTipText("收藏到单词本");
 
         leftMenuToolBar = new JToolBar();
         leftMenuToolBar.add(comboBox1);
@@ -86,6 +89,7 @@ public class TranslationLayoutForm {
         leftMenuToolBar.addSeparator();
         leftMenuToolBar.add(copyButton);
         leftMenuToolBar.add(clearButton);
+        leftMenuToolBar.add(saveToWordBookButton);
 
         leftMenuPanel.add(leftMenuToolBar);
 

@@ -2,12 +2,17 @@ package com.luoboduner.moo.tool.ui.form.func;
 
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.FlatClientProperties;
+import com.formdev.flatlaf.extras.FlatSVGIcon;
+import com.formdev.flatlaf.icons.FlatSearchIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.form.TranslationLayoutForm;
+import com.luoboduner.moo.tool.ui.listener.func.TranslationListener;
+import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 
@@ -30,6 +35,18 @@ public class TranslationForm {
     private JSplitPane splitPane;
     private JPanel translatePanel;
 
+    private JButton wordBookAddButton;
+    private JTextField wordBookSearchField;
+    private JPanel wordBookDetailPanel;
+    private JTextArea wordSourceTextArea;
+    private JTextArea wordTargetTextArea;
+    private JLabel wordLangLabel;
+    private JTextField wordRemarkTextField;
+    private JButton wordSaveButton;
+    private JButton wordRetranslateButton;
+    private JButton wordCopySourceButton;
+    private JButton wordCopyTargetButton;
+
     private static TranslationForm translationForm;
 
     private TranslationLayoutForm translationLayoutForm;
@@ -39,10 +56,98 @@ public class TranslationForm {
     private TranslationForm(TranslationLayoutForm translationLayoutForm) {
         this.translationLayoutForm = translationLayoutForm;
         translatePanel.setLayout(new BorderLayout());
-        // 设置四边距:10
         translatePanel.setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
         translatePanel.add(translationLayoutForm.getMainLayoutPanel());
+
+        initWordBookPanel();
+
         UndoUtil.register(this);
+    }
+
+    private void initWordBookPanel() {
+        wordBookSearchField = new JTextField();
+        wordBookSearchField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "搜索单词或译文");
+        wordBookSearchField.putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON, new FlatSearchIcon());
+
+        wordBookAddButton = new JButton(new FlatSVGIcon("icon/add.svg"));
+        wordBookAddButton.setToolTipText("新建单词");
+        button4.setIcon(new FlatSVGIcon("icon/remove.svg"));
+        button4.setToolTipText("删除选中");
+
+        JPanel originalLeft = (JPanel) splitPane.getLeftComponent();
+        JScrollPane tableScrollPane = null;
+        for (Component child : originalLeft.getComponents()) {
+            if (child instanceof JPanel) {
+                for (Component grandChild : ((JPanel) child).getComponents()) {
+                    if (grandChild instanceof JScrollPane) {
+                        tableScrollPane = (JScrollPane) grandChild;
+                        break;
+                    }
+                }
+            }
+            if (tableScrollPane != null) {
+                break;
+            }
+        }
+
+        JPanel buttonBar = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        buttonBar.add(wordBookAddButton);
+        buttonBar.add(button4);
+
+        JPanel tableArea = new JPanel(new BorderLayout());
+        if (tableScrollPane != null) {
+            tableArea.add(tableScrollPane, BorderLayout.CENTER);
+        }
+        tableArea.add(buttonBar, BorderLayout.SOUTH);
+
+        JPanel newLeft = new JPanel(new BorderLayout(0, 6));
+        newLeft.add(wordBookSearchField, BorderLayout.NORTH);
+        newLeft.add(tableArea, BorderLayout.CENTER);
+        splitPane.setLeftComponent(newLeft);
+
+        wordSourceTextArea = new JTextArea(4, 20);
+        wordTargetTextArea = new JTextArea(4, 20);
+        wordSourceTextArea.setLineWrap(true);
+        wordTargetTextArea.setLineWrap(true);
+        wordTargetTextArea.setEditable(false);
+
+        wordLangLabel = new JLabel(" ");
+        wordRemarkTextField = new JTextField();
+        wordRemarkTextField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "备注（可选）");
+
+        wordSaveButton = new JButton("保存");
+        wordSaveButton.setIcon(new FlatSVGIcon("icon/save.svg"));
+        wordRetranslateButton = new JButton("重新翻译");
+        wordRetranslateButton.setIcon(new FlatSVGIcon("icon/translate.svg"));
+        wordCopySourceButton = new JButton(new FlatSVGIcon("icon/copy.svg"));
+        wordCopySourceButton.setToolTipText("复制原文");
+        wordCopyTargetButton = new JButton(new FlatSVGIcon("icon/copy.svg"));
+        wordCopyTargetButton.setToolTipText("复制译文");
+
+        JPanel toolbarPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 4, 0));
+        toolbarPanel.add(wordSaveButton);
+        toolbarPanel.add(wordRetranslateButton);
+        toolbarPanel.add(wordCopySourceButton);
+        toolbarPanel.add(wordCopyTargetButton);
+
+        JPanel detailPanel = new JPanel(new BorderLayout(0, 8));
+        detailPanel.setBorder(BorderFactory.createEmptyBorder(4, 8, 8, 8));
+        detailPanel.add(wordLangLabel, BorderLayout.NORTH);
+
+        JSplitPane detailSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT);
+        detailSplitPane.setTopComponent(new JScrollPane(wordSourceTextArea));
+        detailSplitPane.setBottomComponent(new JScrollPane(wordTargetTextArea));
+        detailSplitPane.setResizeWeight(0.5);
+        detailSplitPane.setContinuousLayout(true);
+        detailPanel.add(detailSplitPane, BorderLayout.CENTER);
+
+        JPanel bottomPanel = new JPanel(new BorderLayout(0, 6));
+        bottomPanel.add(wordRemarkTextField, BorderLayout.CENTER);
+        bottomPanel.add(toolbarPanel, BorderLayout.SOUTH);
+        detailPanel.add(bottomPanel, BorderLayout.SOUTH);
+
+        wordBookDetailPanel = detailPanel;
+        splitPane.setRightComponent(wordBookDetailPanel);
     }
 
     public static TranslationForm getInstance() {
@@ -57,6 +162,8 @@ public class TranslationForm {
         translationForm = getInstance();
 
         initUi();
+        initWordBookTable();
+        TranslationListener.addListeners();
     }
 
     private static void initUi() {
@@ -66,6 +173,15 @@ public class TranslationForm {
         translationForm.getTranslationLayoutForm().getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 2) - 80);
 
         translationForm.getTranslationPanel().updateUI();
+    }
+
+    public static void initWordBookTable() {
+        TranslationForm form = getInstance();
+        form.getListTable().setModel(TranslationListener.createWordBookTableModel());
+        form.getListTable().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        form.getListTable().getTableHeader().setReorderingAllowed(false);
+        JTableUtil.hideColumn(form.getListTable(), 0);
+        TranslationListener.refreshWordBookList();
     }
 
     {

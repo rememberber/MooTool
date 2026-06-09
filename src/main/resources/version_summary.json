@@ -1,5 +1,5 @@
 {
-  "currentVersion": "v1.7.1",
+  "currentVersion": "v1.7.2",
   "versionIndex": {
     "v0.0.0": "0",
     "v1.0.0": "1",
@@ -42,7 +42,8 @@
     "v1.6.8": "38",
     "v1.6.9": "39",
     "v1.7.0": "40",
-    "v1.7.1": "41"
+    "v1.7.1": "41",
+    "v1.7.2": "42"
   },
   "versionDetailList": [
     {
@@ -254,6 +255,11 @@
       "version": "v1.7.1",
       "title": "近期累积的一些更新和优化",
       "log": "● feat(cron): 支持Linux Cron表达式 by Cassian Florin\n● feat(cron): fix(undo): 修复 Ctrl+Z 撤销异常 by Cassian Florin\n● fix(tray): 修复多屏托盘菜单定位 by Cassian Florin\n● fix: support Apple Silicon macOS package selection by Cassian Florin\n● feat: 时间转换支持时区\n\n"
+    },
+    {
+      "version": "v1.7.2",
+      "title": "完善翻译与单词本功能",
+      "log": "● 翻译：支持更多语言、Bing/Google 自动降级、收藏到单词本\n● 单词本：支持搜索、新建、编辑、删除、重新翻译\n\n"
     }
   ]
 }
