@@ -73,7 +73,6 @@ public class ImageForm {
 
     private ImageForm() {
         UndoUtil.register(this);
-        截图Button.addActionListener(e -> previewHint());
         ocrButton.addActionListener(e -> previewHint());
         scaleImageButton.addActionListener(e -> previewHint());
         pressImageButton.addActionListener(e -> previewHint());

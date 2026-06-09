@@ -5,9 +5,11 @@ import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.swing.clipboard.ClipboardUtil;
 import com.formdev.flatlaf.util.SystemFileChooser;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.dialog.Base64Dialog;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.ImageForm;
+import com.luoboduner.moo.tool.ui.frame.ScreenCaptureFrame;
 import com.luoboduner.moo.tool.util.AlertUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -48,6 +50,9 @@ public class ImageListener {
 
     public static void addListeners() {
         ImageForm imageForm = ImageForm.getInstance();
+
+        // 截图
+        imageForm.get截图Button().addActionListener(e -> captureScreen());
 
         // 从剪贴板获取
         imageForm.getSaveFromClipboardButton().addActionListener(e -> getImageFromClipboard());
@@ -476,6 +481,47 @@ public class ImageListener {
         ImageListener.selectedImage = image;
         if (image != null) {
             imageForm.getShowImageLabel().setIcon(new ImageIcon(image));
+        }
+    }
+
+    public static void captureScreen() {
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice gd = ge.getDefaultScreenDevice();
+        if (!gd.isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency.TRANSLUCENT)) {
+            JOptionPane.showMessageDialog(App.mainFrame, "当前系统环境不支持截图功能", "提示", JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        App.mainFrame.setVisible(false);
+        Timer timer = new Timer(300, evt -> {
+            ((Timer) evt.getSource()).stop();
+            ScreenCaptureFrame.start(
+                    ImageListener::loadCapturedImage,
+                    Init::showMainFrame
+            );
+        });
+        timer.setRepeats(false);
+        timer.start();
+    }
+
+    private static void loadCapturedImage(BufferedImage image) {
+        try {
+            Init.showMainFrame();
+            ImageForm imageForm = ImageForm.getInstance();
+            selectedImage = image;
+            selectedName = "截图_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+            imageForm.getShowImageLabel().setIcon(new ImageIcon(image));
+
+            File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
+            ImageIO.write(image, "png", imageFile);
+            ImageForm.initList();
+
+            String pixel = image.getWidth() + " x " + image.getHeight();
+            String size = FileUtil.readableFileSize(imageFile.length());
+            imageForm.getImageInfoLabel().setText("尺寸：" + pixel + "  大小：" + size + " ");
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(App.mainFrame, "截图保存失败！\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+            log.error(ExceptionUtils.getStackTrace(ex));
         }
     }
 
