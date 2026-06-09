@@ -54,6 +54,8 @@ public class ColorBoardForm {
     private JButton addColorButton;
     private JButton diffColorButton;
     private JButton averageColorButton;
+    private JPanel primaryColorWrapperPanel;
+    private JPanel colorOpsWrapperPanel;
 
     private static ColorBoardForm colorBoardForm;
 
@@ -113,16 +115,14 @@ public class ColorBoardForm {
     private void initColorOpsPanel() {
         showColorPanel.setLayout(new BorderLayout(0, 8));
 
-        JPanel primaryPanel = new JPanel(new BorderLayout());
-        primaryPanel.setOpaque(false);
-        primaryPanel.setBorder(BorderFactory.createTitledBorder("当前颜色"));
+        primaryColorWrapperPanel = new JPanel(new BorderLayout());
+        primaryColorWrapperPanel.setOpaque(true);
         JPanel primaryColorDisplay = new JPanel();
         primaryColorDisplay.setBackground(showColorPanel.getBackground());
-        primaryPanel.add(primaryColorDisplay, BorderLayout.CENTER);
-        showColorPanel.add(primaryPanel, BorderLayout.CENTER);
+        primaryColorWrapperPanel.add(primaryColorDisplay, BorderLayout.CENTER);
+        showColorPanel.add(primaryColorWrapperPanel, BorderLayout.CENTER);
 
-        JPanel colorOpsPanel = new JPanel(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), 5, 5));
-        colorOpsPanel.setBorder(BorderFactory.createTitledBorder("颜色运算"));
+        colorOpsWrapperPanel = new JPanel(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), 5, 5));
 
         JPanel secondaryRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         secondaryRow.add(new JLabel("对比色"));
@@ -133,7 +133,7 @@ public class ColorBoardForm {
         secondaryRow.add(secondaryColorPanel);
         swapColorButton = new JButton("交换");
         secondaryRow.add(swapColorButton);
-        colorOpsPanel.add(secondaryRow, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        colorOpsWrapperPanel.add(secondaryRow, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
 
         JPanel opsRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
         invertColorButton = new JButton("取反");
@@ -146,10 +146,44 @@ public class ColorBoardForm {
         opsRow.add(addColorButton);
         opsRow.add(diffColorButton);
         opsRow.add(averageColorButton);
-        colorOpsPanel.add(opsRow, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        colorOpsWrapperPanel.add(opsRow, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
 
-        showColorPanel.add(colorOpsPanel, BorderLayout.SOUTH);
+        showColorPanel.add(colorOpsWrapperPanel, BorderLayout.SOUTH);
         showColorPanel.putClientProperty("primaryColorDisplay", primaryColorDisplay);
+        applyThemeBorders();
+    }
+
+    private TitledBorder createThemeTitledBorder(String title) {
+        Font font = colorBoardPanel.getFont().deriveFont(Font.BOLD);
+        return BorderFactory.createTitledBorder(
+                BorderFactory.createEmptyBorder(),
+                title,
+                TitledBorder.DEFAULT_JUSTIFICATION,
+                TitledBorder.DEFAULT_POSITION,
+                font,
+                null);
+    }
+
+    private void applyThemeBorders() {
+        Color panelBg = UIManager.getColor("Panel.background");
+        showColorPanel.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createEmptyBorder(), null,
+                TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
+        showColorPanel.setBackground(panelBg);
+        if (primaryColorWrapperPanel != null) {
+            primaryColorWrapperPanel.setBorder(createThemeTitledBorder("当前颜色"));
+            primaryColorWrapperPanel.setBackground(panelBg);
+        }
+        if (colorOpsWrapperPanel != null) {
+            colorOpsWrapperPanel.setBorder(createThemeTitledBorder("颜色运算"));
+            colorOpsWrapperPanel.setBackground(panelBg);
+        }
+    }
+
+    public static void updateTheme() {
+        if (colorBoardForm != null) {
+            colorBoardForm.applyThemeBorders();
+        }
     }
 
     public static void fillColorBlocks() {

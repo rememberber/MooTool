@@ -451,6 +451,7 @@ public class TopMenuBar extends JMenuBar {
         TextDiffForm.getInstance().getLeftTextArea().updateTheme();
         TextDiffForm.getInstance().getRightTextArea().updateTheme();
 
+        ColorBoardForm.updateTheme();
 
         SwingUtilities.updateComponentTreeUI(App.popupMenu);
         App.popupMenu.updateUI();
