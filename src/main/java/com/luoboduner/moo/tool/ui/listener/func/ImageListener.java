@@ -487,13 +487,13 @@ public class ImageListener {
     public static void captureScreen() {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice gd = ge.getDefaultScreenDevice();
-        if (!gd.isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency.TRANSLUCENT)) {
+        if (!gd.isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency.PERPIXEL_TRANSLUCENT)) {
             JOptionPane.showMessageDialog(App.mainFrame, "当前系统环境不支持截图功能", "提示", JOptionPane.INFORMATION_MESSAGE);
             return;
         }
 
         App.mainFrame.setVisible(false);
-        Timer timer = new Timer(300, evt -> {
+        Timer timer = new Timer(150, evt -> {
             ((Timer) evt.getSource()).stop();
             ScreenCaptureFrame.start(
                     ImageListener::loadCapturedImage,

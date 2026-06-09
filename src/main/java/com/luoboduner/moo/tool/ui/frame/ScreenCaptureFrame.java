@@ -22,7 +22,6 @@ public class ScreenCaptureFrame extends JWindow {
 
     private static ScreenCaptureFrame screenCaptureFrame;
 
-    private final BufferedImage screenImage;
     private final Rectangle virtualBounds;
     private final Consumer<BufferedImage> captureCallback;
     private final Runnable cancelCallback;
@@ -31,10 +30,9 @@ public class ScreenCaptureFrame extends JWindow {
     private Rectangle selectionRect;
     private boolean capturing;
 
-    private ScreenCaptureFrame(BufferedImage screenImage, Rectangle virtualBounds,
+    private ScreenCaptureFrame(Rectangle virtualBounds,
                                Consumer<BufferedImage> captureCallback, Runnable cancelCallback) {
         super((Window) null);
-        this.screenImage = screenImage;
         this.virtualBounds = virtualBounds;
         this.captureCallback = captureCallback;
         this.cancelCallback = cancelCallback;
@@ -42,19 +40,20 @@ public class ScreenCaptureFrame extends JWindow {
     }
 
     public static void start(Consumer<BufferedImage> captureCallback, Runnable cancelCallback) {
-        try {
-            Rectangle virtualBounds = getVirtualScreenBounds();
-            BufferedImage screenImage = captureScreens(virtualBounds);
-            screenCaptureFrame = new ScreenCaptureFrame(screenImage, virtualBounds, captureCallback, cancelCallback);
-            screenCaptureFrame.setVisible(true);
-            screenCaptureFrame.requestFocus();
-        } catch (AWTException e) {
-            log.error(ExceptionUtils.getStackTrace(e));
-            JOptionPane.showMessageDialog(null, "截图失败：\n\n" + e.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        GraphicsDevice gd = ge.getDefaultScreenDevice();
+        if (!gd.isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency.PERPIXEL_TRANSLUCENT)) {
+            JOptionPane.showMessageDialog(null, "当前系统环境不支持截图功能", "提示", JOptionPane.INFORMATION_MESSAGE);
             if (cancelCallback != null) {
                 cancelCallback.run();
             }
+            return;
         }
+
+        Rectangle virtualBounds = getVirtualScreenBounds();
+        screenCaptureFrame = new ScreenCaptureFrame(virtualBounds, captureCallback, cancelCallback);
+        screenCaptureFrame.setVisible(true);
+        screenCaptureFrame.requestFocus();
     }
 
     public static void exit() {
@@ -69,6 +68,7 @@ public class ScreenCaptureFrame extends JWindow {
         setName(UiConsts.APP_NAME);
         setAlwaysOnTop(true);
         setBounds(virtualBounds);
+        setBackground(new Color(0, 0, 0, 0));
         setCursor(Cursor.getPredefinedCursor(Cursor.CROSSHAIR_CURSOR));
         setFocusableWindowState(true);
         setFocusable(true);
@@ -76,25 +76,16 @@ public class ScreenCaptureFrame extends JWindow {
         JPanel capturePanel = new JPanel() {
             @Override
             protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                if (screenImage == null) {
-                    return;
-                }
-                g.drawImage(screenImage, 0, 0, null);
-
                 Graphics2D g2 = (Graphics2D) g.create();
                 g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 
-                g2.setColor(new Color(0, 0, 0, 120));
+                g2.setColor(new Color(0, 0, 0, 100));
                 g2.fillRect(0, 0, getWidth(), getHeight());
 
                 if (selectionRect != null && selectionRect.width > 0 && selectionRect.height > 0) {
-                    g2.drawImage(screenImage,
-                            selectionRect.x, selectionRect.y,
-                            selectionRect.x + selectionRect.width, selectionRect.y + selectionRect.height,
-                            selectionRect.x, selectionRect.y,
-                            selectionRect.x + selectionRect.width, selectionRect.y + selectionRect.height,
-                            null);
+                    g2.setComposite(AlphaComposite.Clear);
+                    g2.fillRect(selectionRect.x, selectionRect.y, selectionRect.width, selectionRect.height);
+                    g2.setComposite(AlphaComposite.SrcOver);
 
                     g2.setColor(new Color(64, 158, 255));
                     g2.setStroke(new BasicStroke(2));
@@ -118,6 +109,7 @@ public class ScreenCaptureFrame extends JWindow {
                 g2.dispose();
             }
         };
+        capturePanel.setOpaque(false);
         capturePanel.setLayout(null);
 
         JLabel hintLabel = new JLabel("拖动鼠标选择截图区域，Esc 取消");
@@ -185,20 +177,35 @@ public class ScreenCaptureFrame extends JWindow {
         }
         capturing = true;
 
-        int x = Math.max(0, selectionRect.x);
-        int y = Math.max(0, selectionRect.y);
-        int width = Math.min(selectionRect.width, screenImage.getWidth() - x);
-        int height = Math.min(selectionRect.height, screenImage.getHeight() - y);
-        if (width <= 0 || height <= 0) {
-            cancel();
-            return;
-        }
+        Rectangle screenRect = new Rectangle(
+                virtualBounds.x + selectionRect.x,
+                virtualBounds.y + selectionRect.y,
+                selectionRect.width,
+                selectionRect.height
+        );
 
-        BufferedImage captured = screenImage.getSubimage(x, y, width, height);
+        Consumer<BufferedImage> callback = captureCallback;
+        Runnable onError = cancelCallback;
         exit();
-        if (captureCallback != null) {
-            captureCallback.accept(captured);
-        }
+
+        int delay = SystemInfo.isMacOS ? 150 : 80;
+        Timer timer = new Timer(delay, e -> {
+            ((Timer) e.getSource()).stop();
+            try {
+                BufferedImage captured = captureRegion(screenRect);
+                if (callback != null) {
+                    callback.accept(captured);
+                }
+            } catch (Exception ex) {
+                log.error(ExceptionUtils.getStackTrace(ex));
+                JOptionPane.showMessageDialog(null, "截图失败：\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+                if (onError != null) {
+                    onError.run();
+                }
+            }
+        });
+        timer.setRepeats(false);
+        timer.start();
     }
 
     private void cancel() {
@@ -225,24 +232,11 @@ public class ScreenCaptureFrame extends JWindow {
         return bounds;
     }
 
-    private static BufferedImage captureScreens(Rectangle virtualBounds) throws AWTException {
+    private static BufferedImage captureRegion(Rectangle screenRect) throws AWTException {
         Robot robot = new Robot();
         if (SystemInfo.isMacOS) {
             robot.delay(50);
         }
-
-        BufferedImage image = new BufferedImage(virtualBounds.width, virtualBounds.height, BufferedImage.TYPE_INT_RGB);
-        Graphics2D g = image.createGraphics();
-        try {
-            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-            for (GraphicsDevice device : ge.getScreenDevices()) {
-                Rectangle bounds = device.getDefaultConfiguration().getBounds();
-                BufferedImage screen = robot.createScreenCapture(bounds);
-                g.drawImage(screen, bounds.x - virtualBounds.x, bounds.y - virtualBounds.y, null);
-            }
-        } finally {
-            g.dispose();
-        }
-        return image;
+        return robot.createScreenCapture(screenRect);
     }
 }
