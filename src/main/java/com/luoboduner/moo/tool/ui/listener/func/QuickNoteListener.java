@@ -66,6 +66,9 @@ public class QuickNoteListener {
 
     public static String selectedName;
 
+    /** 忽略 JOptionPane 关闭后回传到列表的 Enter 键，避免重命名弹框重复弹出 */
+    private static boolean suppressListEnterRename;
+
     // 创建一个单线程的ExecutorService
     public static ExecutorService executorService = Executors.newSingleThreadExecutor();
 
@@ -235,6 +238,10 @@ public class QuickNoteListener {
             @Override
             public void keyReleased(KeyEvent evt) {
                 if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+                    if (suppressListEnterRename) {
+                        suppressListEnterRename = false;
+                        return;
+                    }
                     renameSelectedNote(quickNoteForm);
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteFiles(quickNoteForm);
@@ -886,6 +893,7 @@ public class QuickNoteListener {
         if (StringUtils.isBlank(beforeName)) {
             return;
         }
+        suppressListEnterRename = true;
         String afterName = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", beforeName);
         if (StringUtils.isBlank(afterName) || afterName.equals(beforeName)) {
             return;
