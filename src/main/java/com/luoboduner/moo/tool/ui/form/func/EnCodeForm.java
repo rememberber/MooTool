@@ -37,6 +37,11 @@ public class EnCodeForm {
     private JTextArea hexTextArea;
     private JButton nativeToHexButton;
     private JButton hexToNativeButton;
+    private JTextArea nativeForAsciiTextArea;
+    private JTextArea asciiTextArea;
+    private JButton nativeToAsciiButton;
+    private JButton asciiToNativeButton;
+    private JComboBox asciiFormatComboBox;
 
     private static EnCodeForm enCodeForm;
 
@@ -65,7 +70,8 @@ public class EnCodeForm {
         Style.blackTextArea(enCodeForm.getUrlEncodeTextArea());
         Style.blackTextArea(enCodeForm.getNativeForHexTextArea());
         Style.blackTextArea(enCodeForm.getHexTextArea());
-        Style.blackTextArea(enCodeForm.getHexTextArea());
+        Style.blackTextArea(enCodeForm.getNativeForAsciiTextArea());
+        Style.blackTextArea(enCodeForm.getAsciiTextArea());
 
         enCodeForm.getUrlEncodeButton().setIcon(new FlatSVGIcon("icon/right_arrow.svg"));
         enCodeForm.getUrlDecodeButton().setIcon(new FlatSVGIcon("icon/left_arrow.svg"));
@@ -192,6 +198,42 @@ public class EnCodeForm {
         hexToNativeButton = new JButton();
         hexToNativeButton.setText("Native <-- Hex");
         panel10.add(hexToNativeButton, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel11 = new JPanel();
+        panel11.setLayout(new GridLayoutManager(1, 3, new Insets(10, 10, 10, 10), -1, -1));
+        tabbedPane1.addTab("Native/ASCII", panel11);
+        final JPanel panel12 = new JPanel();
+        panel12.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel11.add(panel12, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        final JScrollPane scrollPane7 = new JScrollPane();
+        panel12.add(scrollPane7, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        nativeForAsciiTextArea = new JTextArea();
+        scrollPane7.setViewportView(nativeForAsciiTextArea);
+        final JPanel panel13 = new JPanel();
+        panel13.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel11.add(panel13, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        final JScrollPane scrollPane8 = new JScrollPane();
+        panel13.add(scrollPane8, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        asciiTextArea = new JTextArea();
+        scrollPane8.setViewportView(asciiTextArea);
+        final JPanel panel14 = new JPanel();
+        panel14.setLayout(new GridLayoutManager(5, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel11.add(panel14, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        nativeToAsciiButton = new JButton();
+        nativeToAsciiButton.setText("Native --> ASCII");
+        panel14.add(nativeToAsciiButton, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        asciiToNativeButton = new JButton();
+        asciiToNativeButton.setText("Native <-- ASCII");
+        panel14.add(asciiToNativeButton, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        asciiFormatComboBox = new JComboBox();
+        final DefaultComboBoxModel defaultComboBoxModel2 = new DefaultComboBoxModel();
+        defaultComboBoxModel2.addElement("十进制");
+        defaultComboBoxModel2.addElement("十六进制");
+        asciiFormatComboBox.setModel(defaultComboBoxModel2);
+        panel14.add(asciiFormatComboBox, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final Spacer spacer7 = new Spacer();
+        panel14.add(spacer7, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        final Spacer spacer8 = new Spacer();
+        panel14.add(spacer8, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
     }
 
     /**

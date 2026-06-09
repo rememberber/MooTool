@@ -5,6 +5,7 @@ import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.core.util.HexUtil;
 import cn.hutool.core.util.URLUtil;
 import com.luoboduner.moo.tool.ui.form.func.EnCodeForm;
+import com.luoboduner.moo.tool.util.AsciiUtil;
 
 /**
  * <pre>
@@ -60,6 +61,21 @@ public class EnCodeListener {
             enCodeForm.getNativeForHexTextArea().setText(nativeStr);
             enCodeForm.getNativeForHexTextArea().setCaretPosition(0);
             enCodeForm.getNativeForHexTextArea().grabFocus();
+        });
+        enCodeForm.getNativeToAsciiButton().addActionListener(e -> {
+            String nativeText = enCodeForm.getNativeForAsciiTextArea().getText();
+            String format = (String) enCodeForm.getAsciiFormatComboBox().getSelectedItem();
+            String ascii = AsciiUtil.toAscii(nativeText, format);
+            enCodeForm.getAsciiTextArea().setText(ascii);
+            enCodeForm.getAsciiTextArea().setCaretPosition(0);
+            enCodeForm.getAsciiTextArea().grabFocus();
+        });
+        enCodeForm.getAsciiToNativeButton().addActionListener(e -> {
+            String ascii = enCodeForm.getAsciiTextArea().getText();
+            String nativeText = AsciiUtil.fromAscii(ascii);
+            enCodeForm.getNativeForAsciiTextArea().setText(nativeText);
+            enCodeForm.getNativeForAsciiTextArea().setCaretPosition(0);
+            enCodeForm.getNativeForAsciiTextArea().grabFocus();
         });
     }
 }

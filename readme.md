@@ -222,6 +222,8 @@ Windows • Linux • macOS
 ### URL编码/解码
 ### Native->十六进制
 ### 十六进制->Native
+### Native->ASCII（十进制/十六进制字符码）
+### ASCII->Native
 
 ## 二维码
 ### 二维码生成
