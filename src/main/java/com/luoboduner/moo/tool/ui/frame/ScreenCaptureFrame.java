@@ -233,10 +233,24 @@ public class ScreenCaptureFrame extends JWindow {
     }
 
     private static BufferedImage captureRegion(Rectangle screenRect) throws AWTException {
-        Robot robot = new Robot();
+        GraphicsDevice device = findScreenDevice(screenRect);
+        Robot robot = new Robot(device);
         if (SystemInfo.isMacOS) {
             robot.delay(50);
         }
         return robot.createScreenCapture(screenRect);
+    }
+
+    private static GraphicsDevice findScreenDevice(Rectangle screenRect) {
+        GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+        int centerX = screenRect.x + screenRect.width / 2;
+        int centerY = screenRect.y + screenRect.height / 2;
+        for (GraphicsDevice device : ge.getScreenDevices()) {
+            Rectangle bounds = device.getDefaultConfiguration().getBounds();
+            if (bounds.contains(centerX, centerY)) {
+                return device;
+            }
+        }
+        return ge.getDefaultScreenDevice();
     }
 }
