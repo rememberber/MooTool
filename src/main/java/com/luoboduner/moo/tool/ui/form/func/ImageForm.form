@@ -79,7 +79,7 @@
                     <properties/>
                     <border type="none"/>
                     <children>
-                      <component id="f66c8" class="javax.swing.JTable" binding="listTable">
+                      <component id="f66c8" class="javax.swing.JList" binding="imageList">
                         <constraints/>
                         <properties/>
                       </component>

@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.form.func;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.google.common.collect.Lists;
 import com.intellij.uiDesigner.core.GridConstraints;
@@ -10,9 +11,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.UiConsts;
-import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.listener.func.ImageListener;
-import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
@@ -21,7 +20,6 @@ import org.apache.commons.lang3.exception.ExceptionUtils;
 import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.io.File;
 import java.io.IOException;
@@ -38,7 +36,7 @@ import java.util.List;
 @Getter
 public class ImageForm {
     private JPanel imagePanel;
-    private JTable listTable;
+    private JList<String> imageList;
     private JButton deleteButton;
     private JButton 截图Button;
     private JButton saveFromClipboardButton;
@@ -74,10 +72,6 @@ public class ImageForm {
 
     private ImageForm() {
         UndoUtil.register(this);
-        截图Button.addActionListener(e -> previewHint());
-        ocrButton.addActionListener(e -> previewHint());
-        scaleImageButton.addActionListener(e -> previewHint());
-        pressImageButton.addActionListener(e -> previewHint());
 
         imageToolBar = new JToolBar();
         zoomInButton = new JButton(new FlatSVGIcon("icon/zoom_in.svg"));
@@ -101,12 +95,6 @@ public class ImageForm {
 
     }
 
-    private void previewHint() {
-        JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "\n该功能尚未实现，目前仅供UI预览\n" +
-                        "\n", "预览提示",
-                JOptionPane.INFORMATION_MESSAGE);
-    }
-
     public static ImageForm getInstance() {
         if (imageForm == null) {
             imageForm = new ImageForm();
@@ -118,14 +106,17 @@ public class ImageForm {
         imageForm = getInstance();
 
         initUi();
-        initListTable();
+        initList();
 
         ImageListener.addListeners();
     }
 
     private static void initUi() {
         imageForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
-        imageForm.getListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
+        imageForm.getImageList().setFixedCellHeight(UiConsts.TABLE_ROW_HEIGHT);
+        imageForm.getImageList().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        imageForm.getImageList().putClientProperty(FlatClientProperties.STYLE,
+                "selectionArc: 6; selectionInsets: 0,1,0,1");
 
         imageForm.getDeletePanel().setVisible(false);
 
@@ -141,23 +132,16 @@ public class ImageForm {
         imageForm.getImagePanel().updateUI();
     }
 
-    public static void initListTable() {
-        String[] headerNames = {"id", "名称"};
-        DefaultTableModel model = new DefaultTableModel(null, headerNames);
-        imageForm.getListTable().setModel(model);
-        // 隐藏表头
-        JTableUtil.hideTableHeader(imageForm.getListTable());
-        // 隐藏id列
-        JTableUtil.hideColumn(imageForm.getListTable(), 0);
-
-        Object[] data;
+    public static void initList() {
+        DefaultListModel<String> model = new DefaultListModel<>();
+        JList<String> imageList = imageForm.getImageList();
+        imageList.setModel(model);
 
         if (!FileUtil.exist(ImageListener.IMAGE_PATH_PRE_FIX)) {
             FileUtil.mkdir(ImageListener.IMAGE_PATH_PRE_FIX);
         }
         List<String> fileNames = Lists.newArrayList();
         List<File> files = FileUtil.loopFiles(ImageListener.IMAGE_PATH_PRE_FIX);
-        // 按照修改时间倒序排序汇总文件名到fileNames
         files.stream().sorted((f1, f2) -> {
             long diff = f2.lastModified() - f1.lastModified();
             if (diff > 0) {
@@ -170,25 +154,11 @@ public class ImageForm {
         }).forEach(file -> fileNames.add(file.getName()));
 
         for (String fileName : fileNames) {
-            data = new Object[2];
-            data[0] = fileName;
-            data[1] = fileName;
-            model.addRow(data);
+            model.addElement(fileName);
         }
-        if (fileNames.size() > 0) {
-            imageForm.getShowImageLabel().setIcon(new ImageIcon(ImageListener.IMAGE_PATH_PRE_FIX + fileNames.get(0)));
-            imageForm.getShowImagePanel().updateUI();
-            imageForm.getListTable().setRowSelectionInterval(0, 0);
-            ImageListener.selectedName = fileNames.get(0).replace(".png", "");
-            try {
-                ImageListener.selectedImage = ImageIO.read(FileUtil.newFile(ImageListener.IMAGE_PATH_PRE_FIX + fileNames.get(0)));
-
-                String pixel = ImageListener.selectedImage.getWidth(null) + " x " + ImageListener.selectedImage.getHeight(null);
-                String size = FileUtil.readableFileSize(FileUtil.file(ImageListener.IMAGE_PATH_PRE_FIX + fileNames.get(0)).length());
-                imageForm.getImageInfoLabel().setText("尺寸：" + pixel + "  大小：" + size + " ");
-            } catch (IOException e) {
-                logger.error(ExceptionUtils.getStackTrace(e));
-            }
+        if (!fileNames.isEmpty()) {
+            imageList.setSelectedIndex(0);
+            ImageListener.showImageByFileName(imageForm, fileNames.get(0));
         }
     }
 
@@ -237,8 +207,8 @@ public class ImageForm {
         panel1.add(panel2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JScrollPane scrollPane1 = new JScrollPane();
         panel2.add(scrollPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        listTable = new JTable();
-        scrollPane1.setViewportView(listTable);
+        imageList = new JList();
+        scrollPane1.setViewportView(imageList);
         final JPanel panel3 = new JPanel();
         panel3.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane.setRightComponent(panel3);

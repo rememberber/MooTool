@@ -10,6 +10,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewerManager;
+import org.fife.ui.rtextarea.RTextScrollPane;
 import com.luoboduner.moo.tool.ui.dialog.*;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.*;
@@ -421,10 +422,12 @@ public class TopMenuBar extends JMenuBar {
 
         initThemesMenu();
 
-        QuickNoteRSyntaxTextViewerManager.viewMap.forEach((name, rTextScrollPane) -> {
+        QuickNoteRSyntaxTextViewerManager.viewMap.forEach((name, editorPanel) -> {
+            RTextScrollPane rTextScrollPane = editorPanel.getEditorScrollPane();
             ((QuickNoteRSyntaxTextViewer) rTextScrollPane.getTextArea()).updateTheme();
             QuickNoteRSyntaxTextViewerManager.updateGutter(rTextScrollPane);
             rTextScrollPane.updateUI();
+            editorPanel.updatePreviewTheme();
         });
 
         JsonBeautyForm.getInstance().getTextArea().updateTheme();

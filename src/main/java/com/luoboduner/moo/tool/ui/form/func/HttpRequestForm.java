@@ -49,7 +49,7 @@ import java.util.Locale;
 @Getter
 public class HttpRequestForm {
     private JPanel httpRequestPanel;
-    private JTable noteListTable;
+    private JList<TMsgHttp> noteList;
     private JButton deleteButton;
     private JButton saveButton;
     private JSplitPane splitPane;
@@ -116,7 +116,7 @@ public class HttpRequestForm {
         httpRequestForm = getInstance();
 
         initUi();
-        initListTable();
+        initList();
 
         HttpRequestListener.addListeners();
     }
@@ -145,7 +145,10 @@ public class HttpRequestForm {
                 httpRequestForm.importCurlButton);
 
         httpRequestForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
-        httpRequestForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
+        httpRequestForm.getNoteList().setFixedCellHeight(UiConsts.TABLE_ROW_HEIGHT);
+        httpRequestForm.getNoteList().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        httpRequestForm.getNoteList().putClientProperty(FlatClientProperties.STYLE,
+                "selectionArc: 6; selectionInsets: 0,1,0,1");
 
         Style.blackTextArea(httpRequestForm.getBodyTextArea());
 
@@ -363,31 +366,30 @@ public class HttpRequestForm {
         cookieTableColumnModel.getColumn(5).setMaxWidth(46);
     }
 
-    public static void initListTable() {
-        String[] headerNames = {"id", "名称"};
-        DefaultTableModel model = new DefaultTableModel(null, headerNames);
-        httpRequestForm.getNoteListTable().setModel(model);
-        // 隐藏表头
-        JTableUtil.hideTableHeader(httpRequestForm.getNoteListTable());
-        // 隐藏id列
-        JTableUtil.hideColumn(httpRequestForm.getNoteListTable(), 0);
-
-        Object[] data;
+    public static void initList() {
+        DefaultListModel<TMsgHttp> model = new DefaultListModel<>();
+        JList<TMsgHttp> noteList = httpRequestForm.getNoteList();
+        noteList.setModel(model);
+        noteList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                String label = value instanceof TMsgHttp ? ((TMsgHttp) value).getMsgName() : String.valueOf(value);
+                return super.getListCellRendererComponent(list, label, index, isSelected, cellHasFocus);
+            }
+        });
 
         String titleFilterKeyWord = httpRequestForm.getSearchTextField().getText();
         titleFilterKeyWord = "%" + titleFilterKeyWord + "%";
 
         List<TMsgHttp> msgHttpList = msgHttpMapper.selectByFilter(titleFilterKeyWord);
         for (TMsgHttp tMsgHttp : msgHttpList) {
-            data = new Object[2];
-            data[0] = tMsgHttp.getId();
-            data[1] = tMsgHttp.getMsgName();
-            model.addRow(data);
+            model.addElement(tMsgHttp);
         }
         if (msgHttpList.size() > 0) {
             initHistoryTable();
             initMsg(msgHttpList.get(0).getMsgName());
-            httpRequestForm.getNoteListTable().setRowSelectionInterval(0, 0);
+            noteList.setSelectedIndex(0);
             HttpRequestListener.selectedName = msgHttpList.get(0).getMsgName();
         }
     }
@@ -493,7 +495,7 @@ public class HttpRequestForm {
             msgHttpMapper.insertSelective(tMsgHttp);
             TMsgHttp tMsgHttpInserted = msgHttpMapper.selectByMsgName(msgName);
             tMsgHttp.setId(tMsgHttpInserted.getId());
-            initListTable();
+            initList();
         }
 
         saveHistory(tMsgHttp);
@@ -734,8 +736,8 @@ public class HttpRequestForm {
         splitPane.setLeftComponent(panel1);
         final JScrollPane scrollPane1 = new JScrollPane();
         panel1.add(scrollPane1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        noteListTable = new JTable();
-        scrollPane1.setViewportView(noteListTable);
+        noteList = new JList();
+        scrollPane1.setViewportView(noteList);
         searchTextField = new JTextField();
         panel1.add(searchTextField, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         rightPanel = new JPanel();

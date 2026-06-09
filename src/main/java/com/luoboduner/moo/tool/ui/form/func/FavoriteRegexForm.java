@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.form.func;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.util.SystemInfo;
 import com.google.common.collect.Lists;
@@ -15,7 +16,6 @@ import com.luoboduner.moo.tool.dao.TFavoriteRegexListMapper;
 import com.luoboduner.moo.tool.domain.TFavoriteRegexItem;
 import com.luoboduner.moo.tool.domain.TFavoriteRegexList;
 import com.luoboduner.moo.tool.ui.UiConsts;
-import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.frame.FavoriteRegexFrame;
 import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
 import com.luoboduner.moo.tool.util.*;
@@ -42,7 +42,7 @@ import java.util.List;
 @Slf4j
 public class FavoriteRegexForm {
     private JPanel favoriteRegexPanel;
-    private JTable listTable;
+    private JList<TFavoriteRegexList> favoriteList;
     private JButton deleteListButton;
     private JTable itemTable;
     private JButton deleteItemButton;
@@ -63,20 +63,28 @@ public class FavoriteRegexForm {
 
     private static Integer lastSelectedListId;
 
+    private boolean suppressListEnterRename;
+
     private FavoriteRegexForm() {
         UndoUtil.register(this);
         favoriteRegexPanel.registerKeyboardAction(e -> FindResultFrame.getInstance().dispose(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
-        // 点击左侧表格事件
-        listTable.addMouseListener(new MouseAdapter() {
+        // 点击左侧列表事件
+        favoriteList.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                int focusedRowIndex = listTable.rowAtPoint(e.getPoint());
-                if (focusedRowIndex == -1) {
+                int selectedIndex = favoriteList.locationToIndex(e.getPoint());
+                if (selectedIndex == -1) {
+                    return;
+                }
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    if (!favoriteList.isSelectedIndex(selectedIndex)) {
+                        favoriteList.setSelectedIndex(selectedIndex);
+                    }
                     return;
                 }
 
-                viewListBySelected(focusedRowIndex);
+                viewListBySelected(selectedIndex);
                 listControlPanel.setVisible(true);
                 itemControlPanel.setVisible(false);
                 super.mousePressed(e);
@@ -123,7 +131,7 @@ public class FavoriteRegexForm {
             }
         });
         newListButton.addActionListener(e -> {
-            String title = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "收藏夹名称", "");
+            String title = JOptionPane.showInputDialog(favoriteRegexPanel, "收藏夹名称", "");
             if (StringUtils.isNotBlank(title)) {
                 try {
                     TFavoriteRegexList tFavoriteRegexList = new TFavoriteRegexList();
@@ -132,7 +140,7 @@ public class FavoriteRegexForm {
                     tFavoriteRegexList.setCreateTime(now);
                     tFavoriteRegexList.setModifiedTime(now);
                     favoriteRegexListMapper.insert(tFavoriteRegexList);
-                    initListTable();
+                    initList();
                 } catch (Exception ex) {
                     if (ex.getMessage().contains("constraint")) {
                         JOptionPane.showMessageDialog(favoriteRegexPanel, "存在相同的名称，请重新命名！", "失败", JOptionPane.WARNING_MESSAGE);
@@ -270,7 +278,7 @@ public class FavoriteRegexForm {
         });
 
         // 左侧列表按键事件（重命名）
-        listTable.addKeyListener(new KeyListener() {
+        favoriteList.addKeyListener(new KeyListener() {
             @Override
             public void keyTyped(KeyEvent e) {
 
@@ -284,30 +292,27 @@ public class FavoriteRegexForm {
             @Override
             public void keyReleased(KeyEvent evt) {
                 if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-                    int selectedRow = listTable.getSelectedRow();
-                    int id = Integer.parseInt(String.valueOf(listTable.getValueAt(selectedRow, 0)));
-                    String title = String.valueOf(listTable.getValueAt(selectedRow, 1));
-                    if (StringUtils.isNotBlank(title)) {
-                        TFavoriteRegexList tFavoriteRegexList = new TFavoriteRegexList();
-                        tFavoriteRegexList.setId(id);
-                        tFavoriteRegexList.setTitle(title);
-                        try {
-                            favoriteRegexListMapper.updateByPrimaryKeySelective(tFavoriteRegexList);
-                        } catch (Exception e) {
-                            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
-                            JsonBeautyForm.initListTable();
-                            log.error(e.toString());
-                        }
+                    if (suppressListEnterRename) {
+                        suppressListEnterRename = false;
+                        return;
                     }
-                    viewListBySelected(selectedRow);
+                    renameSelectedList();
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteList();
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
-                    int selectedRow = listTable.getSelectedRow();
-                    viewListBySelected(selectedRow);
+                    viewListBySelected(favoriteList.getSelectedIndex());
                 }
             }
         });
+
+        JPopupMenu favoriteListPopupMenu = new JPopupMenu();
+        JMenuItem renameMenuItem = new JMenuItem("重命名");
+        JMenuItem deleteMenuItem = new JMenuItem("删除");
+        favoriteListPopupMenu.add(renameMenuItem);
+        favoriteListPopupMenu.add(deleteMenuItem);
+        favoriteList.setComponentPopupMenu(favoriteListPopupMenu);
+        renameMenuItem.addActionListener(e -> renameSelectedList());
+        deleteMenuItem.addActionListener(e -> deleteList());
 
         // 右侧项目列表按键事件（重命名）
         itemTable.addKeyListener(new KeyListener() {
@@ -336,7 +341,7 @@ public class FavoriteRegexForm {
                         try {
                             favoriteRegexItemMapper.updateByPrimaryKeySelective(tFavoriteRegexItem);
                         } catch (Exception e) {
-                            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
+                            JOptionPane.showMessageDialog(favoriteRegexPanel, "重命名失败，和已有文件重名");
                             viewListBySelected(selectedRow);
                             log.error(e.toString());
                         }
@@ -376,21 +381,19 @@ public class FavoriteRegexForm {
 
     private void deleteList() {
         try {
-            int[] selectedRows = listTable.getSelectedRows();
+            int[] selectedIndices = favoriteList.getSelectedIndices();
 
-            if (selectedRows.length == 0) {
+            if (selectedIndices.length == 0) {
                 JOptionPane.showMessageDialog(favoriteRegexPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
             } else {
                 int isDelete = JOptionPane.showConfirmDialog(favoriteRegexPanel, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
                 if (isDelete == JOptionPane.YES_OPTION) {
-                    DefaultTableModel tableModel = (DefaultTableModel) listTable.getModel();
+                    DefaultListModel<TFavoriteRegexList> model = (DefaultListModel<TFavoriteRegexList>) favoriteList.getModel();
 
-                    for (int i = 0; i < selectedRows.length; i++) {
-                        int selectedRow = selectedRows[i];
-                        Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
-                        favoriteRegexListMapper.deleteByPrimaryKey(id);
+                    for (int i = selectedIndices.length - 1; i >= 0; i--) {
+                        favoriteRegexListMapper.deleteByPrimaryKey(model.getElementAt(selectedIndices[i]).getId());
                     }
-                    initListTable();
+                    initList();
                 }
             }
         } catch (Exception e1) {
@@ -400,9 +403,44 @@ public class FavoriteRegexForm {
         }
     }
 
-    private void viewListBySelected(int selectedRow) {
-        int listId = Integer.parseInt(listTable.getValueAt(selectedRow, 0).toString());
-        initItemTable(listId);
+    private void viewListBySelected(int selectedIndex) {
+        if (selectedIndex < 0) {
+            return;
+        }
+        DefaultListModel<TFavoriteRegexList> model = (DefaultListModel<TFavoriteRegexList>) favoriteList.getModel();
+        if (selectedIndex >= model.getSize()) {
+            return;
+        }
+        initItemTable(model.getElementAt(selectedIndex).getId());
+    }
+
+    private void renameSelectedList() {
+        int selectedIndex = favoriteList.getSelectedIndex();
+        if (selectedIndex < 0) {
+            return;
+        }
+        DefaultListModel<TFavoriteRegexList> model = (DefaultListModel<TFavoriteRegexList>) favoriteList.getModel();
+        TFavoriteRegexList item = model.getElementAt(selectedIndex);
+        String beforeTitle = item.getTitle();
+        if (StringUtils.isBlank(beforeTitle)) {
+            return;
+        }
+        suppressListEnterRename = true;
+        String afterTitle = JOptionPane.showInputDialog(favoriteRegexPanel, "收藏夹名称", beforeTitle);
+        if (StringUtils.isBlank(afterTitle) || afterTitle.equals(beforeTitle)) {
+            return;
+        }
+        try {
+            TFavoriteRegexList tFavoriteRegexList = new TFavoriteRegexList();
+            tFavoriteRegexList.setId(item.getId());
+            tFavoriteRegexList.setTitle(afterTitle);
+            favoriteRegexListMapper.updateByPrimaryKeySelective(tFavoriteRegexList);
+            initList();
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(favoriteRegexPanel, "重命名失败，和已有文件重名");
+            initList();
+            log.error(e.toString());
+        }
     }
 
     public void init() {
@@ -410,7 +448,10 @@ public class FavoriteRegexForm {
         favoriteRegexForm.getListControlPanel().setVisible(false);
         favoriteRegexForm.getItemControlPanel().setVisible(false);
         favoriteRegexForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
-        favoriteRegexForm.getListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
+        favoriteRegexForm.getFavoriteList().setFixedCellHeight(UiConsts.TABLE_ROW_HEIGHT);
+        favoriteRegexForm.getFavoriteList().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        favoriteRegexForm.getFavoriteList().putClientProperty(FlatClientProperties.STYLE,
+                "selectionArc: 6; selectionInsets: 0,1,0,1");
         favoriteRegexForm.getItemTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
 
         favoriteRegexForm.getListItemButton().setIcon(new FlatSVGIcon("icon/list.svg"));
@@ -429,7 +470,7 @@ public class FavoriteRegexForm {
             gridLayoutManager.setMargin(new Insets(28, 0, 0, 0));
         }
 
-        initListTable();
+        initList();
         favoriteRegexForm.getFavoriteRegexPanel().updateUI();
     }
 
@@ -441,26 +482,25 @@ public class FavoriteRegexForm {
         return favoriteRegexForm;
     }
 
-    public static void initListTable() {
-        String[] headerNames = {"id", "名称"};
-        DefaultTableModel model = new DefaultTableModel(null, headerNames);
-        favoriteRegexForm.getListTable().setModel(model);
-        // 隐藏表头
-        JTableUtil.hideTableHeader(favoriteRegexForm.getListTable());
-        // 隐藏id列
-        JTableUtil.hideColumn(favoriteRegexForm.getListTable(), 0);
-
-        Object[] data;
+    public static void initList() {
+        DefaultListModel<TFavoriteRegexList> model = new DefaultListModel<>();
+        JList<TFavoriteRegexList> favoriteList = favoriteRegexForm.getFavoriteList();
+        favoriteList.setModel(model);
+        favoriteList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                String label = value instanceof TFavoriteRegexList ? ((TFavoriteRegexList) value).getTitle() : String.valueOf(value);
+                return super.getListCellRendererComponent(list, label, index, isSelected, cellHasFocus);
+            }
+        });
 
         List<TFavoriteRegexList> favoriteRegexLists = favoriteRegexListMapper.selectAll();
         for (TFavoriteRegexList tFavoriteRegexList : favoriteRegexLists) {
-            data = new Object[2];
-            data[0] = tFavoriteRegexList.getId();
-            data[1] = tFavoriteRegexList.getTitle();
-            model.addRow(data);
+            model.addElement(tFavoriteRegexList);
         }
-        if (favoriteRegexLists.size() > 0) {
-            favoriteRegexForm.getListTable().setRowSelectionInterval(0, 0);
+        if (!favoriteRegexLists.isEmpty()) {
+            favoriteList.setSelectedIndex(0);
             initItemTable(favoriteRegexLists.get(0).getId());
         }
     }
@@ -533,8 +573,8 @@ public class FavoriteRegexForm {
         listControlPanel.add(newListButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JScrollPane scrollPane1 = new JScrollPane();
         panel1.add(scrollPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        listTable = new JTable();
-        scrollPane1.setViewportView(listTable);
+        favoriteList = new JList();
+        scrollPane1.setViewportView(favoriteList);
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 10, 10), -1, -1));
         splitPane.setRightComponent(panel2);

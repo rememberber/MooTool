@@ -14,7 +14,6 @@ import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.textviewer.JsonRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.textviewer.JsonRTextScrollPane;
 import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
-import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
@@ -22,7 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.util.List;
 
@@ -38,7 +36,7 @@ import java.util.List;
 @Slf4j
 public class JsonBeautyForm {
     private JPanel jsonBeautyPanel;
-    private JTable noteListTable;
+    private JList<TJsonBeauty> noteList;
     private JButton deleteButton;
     private JButton saveButton;
     private JSplitPane splitPane;
@@ -146,7 +144,7 @@ public class JsonBeautyForm {
 
         initUi();
 
-        initListTable();
+        initList();
 
         initTextAreaFont();
 
@@ -179,40 +177,42 @@ public class JsonBeautyForm {
         jsonBeautyForm.getMoreScrollPane().setVisible(false);
 
         jsonBeautyForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
-        jsonBeautyForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
+        jsonBeautyForm.getNoteList().setFixedCellHeight(UiConsts.TABLE_ROW_HEIGHT);
+        jsonBeautyForm.getNoteList().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        jsonBeautyForm.getNoteList().putClientProperty(FlatClientProperties.STYLE,
+                "selectionArc: 6; selectionInsets: 0,1,0,1");
 
         jsonBeautyForm.getTextArea().grabFocus();
 
         jsonBeautyForm.getJsonBeautyPanel().updateUI();
     }
 
-    public static void initListTable() {
-        String[] headerNames = {"id", "名称"};
-        DefaultTableModel model = new DefaultTableModel(null, headerNames);
-        jsonBeautyForm.getNoteListTable().setModel(model);
-        // 隐藏表头
-        JTableUtil.hideTableHeader(jsonBeautyForm.getNoteListTable());
-        // 隐藏id列
-        JTableUtil.hideColumn(jsonBeautyForm.getNoteListTable(), 0);
-
-        Object[] data;
+    public static void initList() {
+        DefaultListModel<TJsonBeauty> model = new DefaultListModel<>();
+        JList<TJsonBeauty> noteList = jsonBeautyForm.getNoteList();
+        noteList.setModel(model);
+        noteList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                String label = value instanceof TJsonBeauty ? ((TJsonBeauty) value).getName() : String.valueOf(value);
+                return super.getListCellRendererComponent(list, label, index, isSelected, cellHasFocus);
+            }
+        });
 
         String titleFilterKeyWord = jsonBeautyForm.getSearchTextField().getText();
         titleFilterKeyWord = "%" + titleFilterKeyWord + "%";
 
         List<TJsonBeauty> jsonBeautyList = jsonBeautyMapper.selectByFilter(titleFilterKeyWord);
         for (TJsonBeauty tJsonBeauty : jsonBeautyList) {
-            data = new Object[2];
-            data[0] = tJsonBeauty.getId();
-            data[1] = tJsonBeauty.getName();
-            model.addRow(data);
+            model.addElement(tJsonBeauty);
         }
         if (jsonBeautyList.size() > 0) {
             JsonBeautyListener.ignoreQuickSave = true;
             try {
                 JsonBeautyListener.selectedNameJson = jsonBeautyList.get(0).getName();
                 jsonBeautyForm.getTextArea().setText(jsonBeautyList.get(0).getContent());
-                jsonBeautyForm.getNoteListTable().setRowSelectionInterval(0, 0);
+                noteList.setSelectedIndex(0);
             } catch (Exception e2) {
                 log.error(e2.getMessage());
             } finally {
@@ -284,8 +284,8 @@ public class JsonBeautyForm {
         splitPane.setLeftComponent(panel1);
         final JScrollPane scrollPane1 = new JScrollPane();
         panel1.add(scrollPane1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        noteListTable = new JTable();
-        scrollPane1.setViewportView(noteListTable);
+        noteList = new JList();
+        scrollPane1.setViewportView(noteList);
         searchTextField = new JTextField();
         panel1.add(searchTextField, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         rightPanel = new JPanel();

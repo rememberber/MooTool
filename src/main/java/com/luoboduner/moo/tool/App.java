@@ -14,6 +14,7 @@ import com.luoboduner.moo.tool.ui.frame.MainFrame;
 import com.luoboduner.moo.tool.util.ConfigUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
+import com.luoboduner.moo.tool.util.TesseractEnvUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -49,6 +50,7 @@ public class App {
     public static File tempDir = null;
 
     public static void main(String[] args) {
+        TesseractEnvUtil.ensureConfigured();
 
         if (SystemInfo.isMacOS) {
 //            java -Xdock:name="MooTool" -Xdock:icon=MooTool.jpg ... (whatever else you normally specify here)

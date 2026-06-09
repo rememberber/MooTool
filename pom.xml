@@ -37,7 +37,7 @@
         <flatlaf-intellij-themes.version>3.7.1</flatlaf-intellij-themes.version>
         <flatlaf-fonts-jetbrains-mono.version>2.304</flatlaf-fonts-jetbrains-mono.version>
         <flatlaf-fonts-inter.version>4.0</flatlaf-fonts-inter.version>
-        <rsyntaxtextarea.version>3.6.2</rsyntaxtextarea.version>
+        <rsyntaxtextarea.version>3.6.3</rsyntaxtextarea.version>
         <sql-formatter.version>2.0.4</sql-formatter.version>
         <javaparser-core.version>3.26.2</javaparser-core.version>
         <!--        <jSystemThemeDetector.version>3.8</jSystemThemeDetector.version>-->
@@ -55,7 +55,9 @@
         <bcprov-jdk15on.version>1.70</bcprov-jdk15on.version>
         <tika.version>3.0.0</tika.version>
         <jackson-databind.version>2.13.3</jackson-databind.version>
+        <tess4j.version>5.11.0</tess4j.version>
         <java-diff.version>4.16</java-diff.version>
+        <flexmark.version>0.64.8</flexmark.version>
         <packaging.outputDirectory>${project.build.directory}</packaging.outputDirectory>
         <packaging.jdkPath>${java.home}</packaging.jdkPath>
         <packaging.javaBinary>${java.home}/bin/java</packaging.javaBinary>
@@ -510,6 +512,27 @@
         </dependency>
 
         <dependency>
+            <groupId>com.vladsch.flexmark</groupId>
+            <artifactId>flexmark</artifactId>
+            <version>${flexmark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.vladsch.flexmark</groupId>
+            <artifactId>flexmark-ext-tables</artifactId>
+            <version>${flexmark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.vladsch.flexmark</groupId>
+            <artifactId>flexmark-ext-gfm-strikethrough</artifactId>
+            <version>${flexmark.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.vladsch.flexmark</groupId>
+            <artifactId>flexmark-ext-autolink</artifactId>
+            <version>${flexmark.version}</version>
+        </dependency>
+
+        <dependency>
             <groupId>jalopy</groupId>
             <artifactId>jalopy</artifactId>
             <version>${jalopy.version}</version>
@@ -590,6 +613,12 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson-databind.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>net.sourceforge.tess4j</groupId>
+            <artifactId>tess4j</artifactId>
+            <version>${tess4j.version}</version>
         </dependency>
 
     </dependencies>

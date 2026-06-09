@@ -17,7 +17,6 @@ import com.luoboduner.moo.tool.ui.component.textviewer.HostRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.dialog.TranslationDialog;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
-import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
@@ -26,7 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.io.File;
 import java.util.List;
@@ -45,7 +43,7 @@ import static java.awt.GraphicsDevice.WindowTranslucency.TRANSLUCENT;
 @Slf4j
 public class HostForm {
     private JPanel hostPanel;
-    private JTable noteListTable;
+    private JList<THost> noteList;
     private JButton deleteButton;
     private JButton saveButton;
     private JSplitPane splitPane;
@@ -155,7 +153,7 @@ public class HostForm {
         Init.initTray();
 
         initUi();
-        initListTable();
+        initList();
 
         HostListener.addListeners();
     }
@@ -189,32 +187,35 @@ public class HostForm {
         hostForm.getFindReplacePanel().setVisible(false);
 
         hostForm.getSplitPane().setDividerLocation(App.mainFrame.getWidth() / 5);
-        hostForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
+        hostForm.getNoteList().setFixedCellHeight(UiConsts.TABLE_ROW_HEIGHT);
+        hostForm.getNoteList().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        hostForm.getNoteList().putClientProperty(FlatClientProperties.STYLE,
+                "selectionArc: 6; selectionInsets: 0,1,0,1");
 
         hostForm.getTextArea().grabFocus();
 
         hostForm.getHostPanel().updateUI();
     }
 
-    public static void initListTable() {
-        String[] headerNames = {"id", "名称"};
-        DefaultTableModel model = new DefaultTableModel(null, headerNames);
-        hostForm.getNoteListTable().setModel(model);
-        // 隐藏表头
-        JTableUtil.hideTableHeader(hostForm.getNoteListTable());
-        // 隐藏id列
-        JTableUtil.hideColumn(hostForm.getNoteListTable(), 0);
+    public static void initList() {
+        DefaultListModel<THost> model = new DefaultListModel<>();
+        JList<THost> noteList = hostForm.getNoteList();
+        noteList.setModel(model);
+        noteList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                String label = value instanceof THost ? ((THost) value).getName() : String.valueOf(value);
+                return super.getListCellRendererComponent(list, label, index, isSelected, cellHasFocus);
+            }
+        });
 
         String titleFilterKeyWord = hostForm.getSearchTextField().getText();
         titleFilterKeyWord = "%" + titleFilterKeyWord + "%";
         List<THost> hostList = hostMapper.selectByFilter(titleFilterKeyWord);
 
-        Object[] data;
         for (THost tHost : hostList) {
-            data = new Object[2];
-            data[0] = tHost.getId();
-            data[1] = tHost.getName();
-            model.addRow(data);
+            model.addElement(tHost);
         }
 
         if (hostList.size() > 0) {
@@ -222,7 +223,7 @@ public class HostForm {
             try {
                 HostListener.selectedNameHost = hostList.get(0).getName();
                 hostForm.getTextArea().setText(hostList.get(0).getContent());
-                hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
+                noteList.setSelectedIndex(0);
             } catch (Exception e1) {
                 log.error(e1.getMessage());
             } finally {
@@ -231,8 +232,8 @@ public class HostForm {
 
         }
 
-        if (hostForm.getNoteListTable().getRowCount() > 0) {
-            hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
+        if (model.getSize() > 0) {
+            noteList.setSelectedIndex(0);
         }
 
         // 更新系统托盘
@@ -337,8 +338,8 @@ public class HostForm {
         splitPane.setLeftComponent(panel1);
         final JScrollPane scrollPane1 = new JScrollPane();
         panel1.add(scrollPane1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        noteListTable = new JTable();
-        scrollPane1.setViewportView(noteListTable);
+        noteList = new JList();
+        scrollPane1.setViewportView(noteList);
         searchTextField = new JTextField();
         panel1.add(searchTextField, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         rightPanel = new JPanel();

@@ -319,7 +319,9 @@ public class Init {
 
     public static void shutdown() {
         FrameListener.saveBeforeExit();
-        App.sqlSession.close();
+        if (App.sqlSession != null) {
+            App.sqlSession.close();
+        }
         App.mainFrame.dispose();
         System.exit(0);
     }

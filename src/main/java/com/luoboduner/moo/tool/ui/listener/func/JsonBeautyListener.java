@@ -22,7 +22,6 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
@@ -44,6 +43,9 @@ public class JsonBeautyListener {
     public static String selectedNameJson;
 
     public static boolean ignoreQuickSave;
+
+    /** 忽略 JOptionPane 关闭后回传到列表的 Enter 键，避免重命名弹框重复弹出 */
+    private static boolean suppressListEnterRename;
 
     public static void addListeners() {
         JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
@@ -73,7 +75,7 @@ public class JsonBeautyListener {
                 tJsonBeauty.setModifiedTime(now);
                 if (tJsonBeauty.getId() == null) {
                     jsonBeautyMapper.insert(tJsonBeauty);
-                    JsonBeautyForm.initListTable();
+                    JsonBeautyForm.initList();
                     selectedNameJson = name;
                 } else {
                     jsonBeautyMapper.updateByPrimaryKey(tJsonBeauty);
@@ -82,20 +84,20 @@ public class JsonBeautyListener {
             }
         });
 
-        // 点击左侧表格事件
-        jsonBeautyForm.getNoteListTable().addMouseListener(new MouseAdapter() {
+        // 点击左侧列表事件
+        jsonBeautyForm.getNoteList().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
                 super.mousePressed(e);
 
-                int focusedRowIndex = jsonBeautyForm.getNoteListTable().rowAtPoint(e.getPoint());
-                if (focusedRowIndex == -1) {
+                int index = jsonBeautyForm.getNoteList().locationToIndex(e.getPoint());
+                if (index == -1) {
                     return;
                 }
 
                 ignoreQuickSave = true;
                 try {
-                    viewByRowNum(focusedRowIndex);
+                    viewByIndex(index);
                 } catch (Exception e2) {
                     log.error(e2.getMessage());
                 } finally {
@@ -203,7 +205,7 @@ public class JsonBeautyListener {
         });
 
         // 左侧列表按键事件（重命名）
-        jsonBeautyForm.getNoteListTable().addKeyListener(new KeyListener() {
+        jsonBeautyForm.getNoteList().addKeyListener(new KeyListener() {
             @Override
             public void keyTyped(KeyEvent e) {
 
@@ -217,28 +219,18 @@ public class JsonBeautyListener {
             @Override
             public void keyReleased(KeyEvent evt) {
                 if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-                    int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
-                    int noteId = Integer.parseInt(String.valueOf(jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 0)));
-                    String name = String.valueOf(jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 1));
-                    if (StringUtils.isNotBlank(name)) {
-                        TJsonBeauty tJsonBeauty = new TJsonBeauty();
-                        tJsonBeauty.setId(noteId);
-                        tJsonBeauty.setName(name);
-                        try {
-                            jsonBeautyMapper.updateByPrimaryKeySelective(tJsonBeauty);
-                        } catch (Exception e) {
-                            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
-                            JsonBeautyForm.initListTable();
-                            log.error(e.toString());
-                        }
+                    if (suppressListEnterRename) {
+                        suppressListEnterRename = false;
+                        return;
                     }
+                    renameSelectedNote(jsonBeautyForm);
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteFiles(jsonBeautyForm);
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
-                    int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
+                    int selectedIndex = jsonBeautyForm.getNoteList().getSelectedIndex();
                     ignoreQuickSave = true;
                     try {
-                        viewByRowNum(selectedRow);
+                        viewByIndex(selectedIndex);
                     } catch (Exception e) {
                         log.error(e.getMessage());
                     } finally {
@@ -262,10 +254,10 @@ public class JsonBeautyListener {
         });
 
         jsonBeautyForm.getExportButton().addActionListener(e -> {
-            int[] selectedRows = jsonBeautyForm.getNoteListTable().getSelectedRows();
+            int[] selectedIndices = jsonBeautyForm.getNoteList().getSelectedIndices();
 
             try {
-                if (selectedRows.length > 0) {
+                if (selectedIndices.length > 0) {
                     SystemFileChooser fileChooser = new SystemFileChooser(App.config.getJsonBeautyExportPath());
                     fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
                     int approve = fileChooser.showOpenDialog(jsonBeautyForm.getJsonBeautyPanel());
@@ -278,9 +270,9 @@ public class JsonBeautyListener {
                         return;
                     }
 
-                    for (int row : selectedRows) {
-                        Integer selectedId = (Integer) jsonBeautyForm.getNoteListTable().getValueAt(row, 0);
-                        TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByPrimaryKey(selectedId);
+                    DefaultListModel<TJsonBeauty> listModel = (DefaultListModel<TJsonBeauty>) jsonBeautyForm.getNoteList().getModel();
+                    for (int index : selectedIndices) {
+                        TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByPrimaryKey(listModel.getElementAt(index).getId());
                         File exportFile = FileUtil.touch(exportPath + File.separator + tJsonBeauty.getName() + ".json");
                         FileUtil.writeUtf8String(tJsonBeauty.getContent(), exportFile);
                     }
@@ -309,17 +301,17 @@ public class JsonBeautyListener {
         jsonBeautyForm.getSearchTextField().getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                JsonBeautyForm.initListTable();
+                JsonBeautyForm.initList();
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                JsonBeautyForm.initListTable();
+                JsonBeautyForm.initList();
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-//                JsonBeautyForm.initListTable();
+//                JsonBeautyForm.initList();
             }
         });
 
@@ -549,7 +541,7 @@ public class JsonBeautyListener {
             }
         });
 
-        // 左侧表格增加右键菜单
+        // 左侧列表增加右键菜单
         JPopupMenu noteListPopupMenu = new JPopupMenu();
         JMenuItem renameMenuItem = new JMenuItem("重命名");
         JMenuItem deleteMenuItem = new JMenuItem("删除");
@@ -557,40 +549,19 @@ public class JsonBeautyListener {
         noteListPopupMenu.add(renameMenuItem);
         noteListPopupMenu.add(deleteMenuItem);
         noteListPopupMenu.add(exportMenuItem);
-        jsonBeautyForm.getNoteListTable().setComponentPopupMenu(noteListPopupMenu);
+        jsonBeautyForm.getNoteList().setComponentPopupMenu(noteListPopupMenu);
 
-        renameMenuItem.addActionListener(e -> {
-            int selectedRow = jsonBeautyForm.getNoteListTable().getSelectedRow();
-            int noteId = Integer.parseInt(String.valueOf(jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 0)));
-            String beforeName = String.valueOf(jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 1));
-            if (StringUtils.isNotBlank(beforeName)) {
-                String afterName = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", beforeName);
-                if (StringUtils.isNotBlank(afterName)) {
-                    TJsonBeauty tJsonBeauty = new TJsonBeauty();
-                    tJsonBeauty.setId(noteId);
-                    tJsonBeauty.setName(afterName);
-                    tJsonBeauty.setModifiedTime(SqliteUtil.nowDateForSqlite());
-                    try {
-                        jsonBeautyMapper.updateByPrimaryKeySelective(tJsonBeauty);
-                        JsonBeautyForm.initListTable();
-                    } catch (Exception e1) {
-                        JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
-                        JsonBeautyForm.initListTable();
-                        log.error(e1.toString());
-                    }
-                }
-            }
-        });
+        renameMenuItem.addActionListener(e -> renameSelectedNote(jsonBeautyForm));
 
         deleteMenuItem.addActionListener(e -> {
             deleteFiles(jsonBeautyForm);
         });
 
         exportMenuItem.addActionListener(e -> {
-            int[] selectedRows = jsonBeautyForm.getNoteListTable().getSelectedRows();
+            int[] selectedIndices = jsonBeautyForm.getNoteList().getSelectedIndices();
 
             try {
-                if (selectedRows.length > 0) {
+                if (selectedIndices.length > 0) {
                     SystemFileChooser fileChooser = new SystemFileChooser(App.config.getJsonBeautyExportPath());
                     fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
                     int approve = fileChooser.showOpenDialog(jsonBeautyForm.getJsonBeautyPanel());
@@ -603,9 +574,9 @@ public class JsonBeautyListener {
                         return;
                     }
 
-                    for (int row : selectedRows) {
-                        Integer selectedId = (Integer) jsonBeautyForm.getNoteListTable().getValueAt(row, 0);
-                        TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByPrimaryKey(selectedId);
+                    DefaultListModel<TJsonBeauty> listModel = (DefaultListModel<TJsonBeauty>) jsonBeautyForm.getNoteList().getModel();
+                    for (int index : selectedIndices) {
+                        TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByPrimaryKey(listModel.getElementAt(index).getId());
                         File exportFile = FileUtil.touch(exportPath + File.separator + tJsonBeauty.getName() + ".json");
                         FileUtil.writeUtf8String(tJsonBeauty.getContent(), exportFile);
                     }
@@ -632,12 +603,45 @@ public class JsonBeautyListener {
 
     }
 
-    private static void viewByRowNum(int selectedRow) {
+    private static void viewByIndex(int index) {
         JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
 
-        String name = jsonBeautyForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
+        DefaultListModel<TJsonBeauty> listModel = (DefaultListModel<TJsonBeauty>) jsonBeautyForm.getNoteList().getModel();
+        String name = listModel.getElementAt(index).getName();
         selectedNameJson = name;
         setContentByName(name);
+    }
+
+    private static void renameSelectedNote(JsonBeautyForm jsonBeautyForm) {
+        int selectedIndex = jsonBeautyForm.getNoteList().getSelectedIndex();
+        if (selectedIndex < 0) {
+            return;
+        }
+        DefaultListModel<TJsonBeauty> model = (DefaultListModel<TJsonBeauty>) jsonBeautyForm.getNoteList().getModel();
+        TJsonBeauty item = model.getElementAt(selectedIndex);
+        String beforeName = item.getName();
+        if (StringUtils.isBlank(beforeName)) {
+            return;
+        }
+        suppressListEnterRename = true;
+        String afterName = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", beforeName);
+        if (StringUtils.isBlank(afterName) || afterName.equals(beforeName)) {
+            return;
+        }
+        try {
+            TJsonBeauty tJsonBeauty = new TJsonBeauty();
+            tJsonBeauty.setId(item.getId());
+            tJsonBeauty.setName(afterName);
+            tJsonBeauty.setModifiedTime(SqliteUtil.nowDateForSqlite());
+            jsonBeautyMapper.updateByPrimaryKeySelective(tJsonBeauty);
+            selectedNameJson = afterName;
+            item.setName(afterName);
+            model.set(selectedIndex, item);
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
+            JsonBeautyForm.initList();
+            log.error(e.toString());
+        }
     }
 
     private static void setContentByName(String name) {
@@ -653,22 +657,21 @@ public class JsonBeautyListener {
 
     private static void deleteFiles(JsonBeautyForm jsonBeautyForm) {
         try {
-            int[] selectedRows = jsonBeautyForm.getNoteListTable().getSelectedRows();
+            int[] selectedIndices = jsonBeautyForm.getNoteList().getSelectedIndices();
 
-            if (selectedRows.length == 0) {
+            if (selectedIndices.length == 0) {
                 JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
             } else {
                 int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
                 if (isDelete == JOptionPane.YES_OPTION) {
-                    DefaultTableModel tableModel = (DefaultTableModel) jsonBeautyForm.getNoteListTable().getModel();
+                    DefaultListModel<TJsonBeauty> listModel = (DefaultListModel<TJsonBeauty>) jsonBeautyForm.getNoteList().getModel();
 
-                    for (int i = 0; i < selectedRows.length; i++) {
-                        int selectedRow = selectedRows[i];
-                        Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
+                    for (int selectedIndex : selectedIndices) {
+                        Integer id = listModel.getElementAt(selectedIndex).getId();
                         jsonBeautyMapper.deleteByPrimaryKey(id);
                     }
                     selectedNameJson = null;
-                    JsonBeautyForm.initListTable();
+                    JsonBeautyForm.initList();
                 }
             }
         } catch (Exception e1) {
@@ -705,7 +708,7 @@ public class JsonBeautyListener {
                 tJsonBeauty.setModifiedTime(now);
 
                 jsonBeautyMapper.insert(tJsonBeauty);
-                JsonBeautyForm.initListTable();
+                JsonBeautyForm.initList();
                 selectedNameJson = name;
             }
         }
@@ -727,7 +730,7 @@ public class JsonBeautyListener {
             tJsonBeauty.setCreateTime(now);
             tJsonBeauty.setModifiedTime(now);
             jsonBeautyMapper.insert(tJsonBeauty);
-            JsonBeautyForm.initListTable();
+            JsonBeautyForm.initList();
         }
     }
 

@@ -69,7 +69,7 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <component id="14263" class="javax.swing.JTable" binding="listTable">
+                  <component id="14263" class="javax.swing.JList" binding="favoriteList">
                     <constraints/>
                     <properties/>
                   </component>
