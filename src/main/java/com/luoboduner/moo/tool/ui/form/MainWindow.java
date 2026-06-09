@@ -59,6 +59,15 @@ public class MainWindow {
 
     private static final String[] ICON_PATH = {"icon/smile.svg", "icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/translate.svg", "icon/check.svg", "icon/global.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/format_painter.svg", "icon/pdf.svg", "icon/fx.svg", "icon/suffix-yml.svg", "icon/diff.svg", "icon/protobuf.svg"};
 
+    private static final int TAB_ICON_ONLY_SIZE = 20;
+
+    private static FlatSVGIcon tabIcon(String path, boolean iconOnly) {
+        if (iconOnly) {
+            return new FlatSVGIcon(path, TAB_ICON_ONLY_SIZE, TAB_ICON_ONLY_SIZE);
+        }
+        return new FlatSVGIcon(path);
+    }
+
     private MainWindow() {
     }
 
@@ -111,9 +120,10 @@ public class MainWindow {
     }
 
     public void initTabPlacement() {
+        boolean iconOnly = App.config.isTabHideTitle();
         // 设置所有tab的图标
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
-            tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i]));
+            tabbedPane.setIconAt(i, tabIcon(ICON_PATH[i], iconOnly));
         }
 
         // 设置所有tab的tips和标题一致
@@ -156,18 +166,16 @@ public class MainWindow {
         }
 
         // 隐藏所有 tab 的标题
-        if (App.config.isTabHideTitle()) {
+        if (iconOnly) {
             tabbedPane.putClientProperty(FlatClientProperties.TABBED_PANE_TAB_WIDTH_MODE,
                     FlatClientProperties.TABBED_PANE_TAB_WIDTH_MODE_ICON_ONLY);
             for (int i = 0; i < tabbedPane.getTabCount(); i++) {
-                // 设置所有tab的icon
-                tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i]));
+                tabbedPane.setIconAt(i, tabIcon(ICON_PATH[i], true));
             }
         } else {
             for (int i = 0; i < tabbedPane.getTabCount(); i++) {
                 tabbedPane.setTitleAt(i, tabbedPane.getToolTipTextAt(i));
-                // 设置所有tab的icon
-                tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i]));
+                tabbedPane.setIconAt(i, tabIcon(ICON_PATH[i], false));
             }
         }
 
@@ -195,16 +203,14 @@ public class MainWindow {
             if (App.config.isTabHideTitle()) {
                 for (int i = 0; i < tabbedPane.getTabCount(); i++) {
                     tabbedPane.setTitleAt(i, tabbedPane.getToolTipTextAt(i));
-                    // 设置所有tab的icon
-                    tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i]));
+                    tabbedPane.setIconAt(i, tabIcon(ICON_PATH[i], false));
                 }
                 App.config.setTabHideTitle(false);
                 App.config.save();
             } else {
                 for (int i = 0; i < tabbedPane.getTabCount(); i++) {
                     tabbedPane.setTitleAt(i, "");
-                    // 设置所有tab的icon放大
-                    tabbedPane.setIconAt(i, new FlatSVGIcon(ICON_PATH[i]));
+                    tabbedPane.setIconAt(i, tabIcon(ICON_PATH[i], true));
                 }
                 App.config.setTabHideTitle(true);
                 App.config.save();

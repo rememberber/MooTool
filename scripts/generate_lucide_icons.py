@@ -46,7 +46,7 @@ ICON_MAP = {
     "java.svg": "coffee",
     "json.svg": "braces",
     "left_arrow.svg": "arrow-left",
-    "list.svg": "list",
+    "list.svg": "align-justify",
     "list_ordered.svg": "list-ordered",
     "list_unordered.svg": "list",
     "method.svg": "box",
