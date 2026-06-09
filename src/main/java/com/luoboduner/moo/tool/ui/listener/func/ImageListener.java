@@ -8,7 +8,9 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.dialog.Base64Dialog;
 import com.luoboduner.moo.tool.ui.dialog.ImageCompressDialog;
+import com.luoboduner.moo.tool.ui.dialog.ImageWatermarkDialog;
 import com.luoboduner.moo.tool.util.ImageCompressUtil;
+import com.luoboduner.moo.tool.util.ImageWatermarkUtil;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.ImageForm;
 import com.luoboduner.moo.tool.ui.frame.ScreenCaptureFrame;
@@ -81,6 +83,9 @@ public class ImageListener {
 
         // 压缩按钮事件
         imageForm.getScaleImageButton().addActionListener(e -> compressImages(imageForm));
+
+        // 加水印按钮事件
+        imageForm.getPressImageButton().addActionListener(e -> watermarkImages(imageForm));
 
         // 保存按钮事件
         imageForm.getSaveButton().addActionListener(e -> {
@@ -476,6 +481,69 @@ public class ImageListener {
             message += "\n\n以下图片压缩失败：\n" + errorMessages;
         }
         JOptionPane.showMessageDialog(imageForm.getImagePanel(), message, "压缩完成",
+                errorMessages.length() > 0 ? JOptionPane.WARNING_MESSAGE : JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private static void watermarkImages(ImageForm imageForm) {
+        int[] selectedIndices = imageForm.getImageList().getSelectedIndices();
+        if (selectedIndices.length == 0) {
+            JOptionPane.showMessageDialog(imageForm.getImagePanel(), "请至少选择一张图片！", "提示",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        ImageWatermarkDialog dialog = new ImageWatermarkDialog(selectedIndices.length);
+        dialog.setVisible(true);
+        if (!dialog.isConfirmed()) {
+            return;
+        }
+
+        ImageWatermarkUtil.WatermarkOptions options = dialog.getOptions();
+        if (options.getOutputMode() == ImageWatermarkUtil.OutputMode.OVERWRITE) {
+            int confirm = JOptionPane.showConfirmDialog(imageForm.getImagePanel(),
+                    "将直接覆盖选中的 " + selectedIndices.length + " 张原图，此操作不可恢复，是否继续？",
+                    "确认覆盖", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+            if (confirm != JOptionPane.YES_OPTION) {
+                return;
+            }
+        }
+
+        DefaultListModel<String> listModel = (DefaultListModel<String>) imageForm.getImageList().getModel();
+        int successCount = 0;
+        StringBuilder errorMessages = new StringBuilder();
+
+        for (int index : selectedIndices) {
+            String fileName = listModel.getElementAt(index);
+            File sourceFile = FileUtil.file(IMAGE_PATH_PRE_FIX + fileName);
+            ImageWatermarkUtil.WatermarkResult result = ImageWatermarkUtil.watermark(sourceFile, options);
+            if (result.isSuccess()) {
+                successCount++;
+            } else {
+                errorMessages.append(fileName).append("：").append(result.getErrorMessage()).append("\n");
+            }
+        }
+
+        String refreshBaseName = selectedName;
+        ImageForm.initList();
+
+        if (refreshBaseName != null) {
+            DefaultListModel<String> refreshedModel = (DefaultListModel<String>) imageForm.getImageList().getModel();
+            for (int i = 0; i < refreshedModel.size(); i++) {
+                String name = refreshedModel.getElementAt(i);
+                String baseName = FileUtil.mainName(name);
+                if (refreshBaseName.equals(baseName) || baseName.equals(refreshBaseName + "_watermarked")) {
+                    imageForm.getImageList().setSelectedIndex(i);
+                    showImageByFileName(imageForm, name);
+                    break;
+                }
+            }
+        }
+
+        String message = "成功添加水印 " + successCount + " / " + selectedIndices.length + " 张";
+        if (errorMessages.length() > 0) {
+            message += "\n\n以下图片处理失败：\n" + errorMessages;
+        }
+        JOptionPane.showMessageDialog(imageForm.getImagePanel(), message, "加水印完成",
                 errorMessages.length() > 0 ? JOptionPane.WARNING_MESSAGE : JOptionPane.INFORMATION_MESSAGE);
     }
 

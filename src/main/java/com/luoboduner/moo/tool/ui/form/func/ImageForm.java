@@ -74,7 +74,6 @@ public class ImageForm {
     private ImageForm() {
         UndoUtil.register(this);
         ocrButton.addActionListener(e -> previewHint());
-        pressImageButton.addActionListener(e -> previewHint());
 
         imageToolBar = new JToolBar();
         zoomInButton = new JButton(new FlatSVGIcon("icon/zoom_in.svg"));
