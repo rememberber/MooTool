@@ -343,24 +343,10 @@ public class QuickNoteListener {
         // 执行快捷替换
         quickNoteForm.getStartQuickReplaceButton().addActionListener(e -> quickReplace());
 
-        // 关闭快捷查找面板按钮
-        quickNoteForm.getQuickReplaceCloseLabel().addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                quickNoteForm.getContentSplitPane().setDividerLocation(quickNoteForm.getContentSplitPane().getWidth());
-                quickNoteForm.getQuickReplaceScrollPane().setVisible(false);
-                super.mouseClicked(e);
-            }
-
-            @Override
-            public void mousePressed(MouseEvent e) {
-                super.mousePressed(e);
-            }
-
-            @Override
-            public void mouseEntered(MouseEvent e) {
-                super.mouseEntered(e);
-            }
+        // 关闭快捷操作面板
+        quickNoteForm.getQuickReplaceCloseButton().addActionListener(e -> {
+            quickNoteForm.getContentSplitPane().setDividerLocation(quickNoteForm.getContentSplitPane().getWidth());
+            quickNoteForm.getQuickReplaceScrollPane().setVisible(false);
         });
 
         quickNoteForm.getColorButton().addActionListener(e -> quickNoteForm.getColorSettingPanel().setVisible(!quickNoteForm.getColorSettingPanel().isVisible()));

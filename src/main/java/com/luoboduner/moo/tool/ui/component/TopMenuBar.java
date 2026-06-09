@@ -163,7 +163,7 @@ public class TopMenuBar extends JMenuBar {
             App.config.setUnifiedBackground(selected);
             App.config.save();
             UIManager.put("TitlePane.unifiedBackground", selected);
-            FlatLaf.updateUI();
+            Init.refreshFlatLafUi();
         });
         appearanceMenu.add(unifiedBackgrounditem);
 
@@ -451,6 +451,7 @@ public class TopMenuBar extends JMenuBar {
         TextDiffForm.getInstance().getLeftTextArea().updateTheme();
         TextDiffForm.getInstance().getRightTextArea().updateTheme();
 
+        ColorBoardForm.updateTheme();
 
         SwingUtilities.updateComponentTreeUI(App.popupMenu);
         App.popupMenu.updateUI();

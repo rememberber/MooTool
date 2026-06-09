@@ -17,6 +17,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.service.HttpMsgSender;
+import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.component.TopMenuBar;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.*;
@@ -377,7 +378,7 @@ public class SettingDialog extends JDialog {
         Class<? extends LookAndFeel> lafClass = UIManager.getLookAndFeel().getClass();
         try {
             FlatLaf.setup(lafClass.getDeclaredConstructor().newInstance());
-            FlatLaf.updateUI();
+            Init.refreshFlatLafUi();
         } catch (InstantiationException | IllegalAccessException ex) {
             LoggingFacade.INSTANCE.logSevere(null, ex);
         } catch (InvocationTargetException | NoSuchMethodException ex) {

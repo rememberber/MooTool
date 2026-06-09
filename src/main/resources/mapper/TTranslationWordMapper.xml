@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.luoboduner.moo.tool.dao.TTranslationWordMapper">
+    <resultMap id="BaseResultMap" type="com.luoboduner.moo.tool.domain.TTranslationWord">
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="source_text" jdbcType="VARCHAR" property="sourceText"/>
+        <result column="target_text" jdbcType="VARCHAR" property="targetText"/>
+        <result column="source_lang" jdbcType="VARCHAR" property="sourceLang"/>
+        <result column="target_lang" jdbcType="VARCHAR" property="targetLang"/>
+        <result column="remark" jdbcType="VARCHAR" property="remark"/>
+        <result column="create_time" jdbcType="VARCHAR" property="createTime"/>
+        <result column="modified_time" jdbcType="VARCHAR" property="modifiedTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, source_text, target_text, source_lang, target_lang, remark, create_time, modified_time
+    </sql>
+
+    <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from t_translation_word
+        where id = #{id,jdbcType=INTEGER}
+    </select>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from t_translation_word
+        order by modified_time desc, id desc
+    </select>
+
+    <select id="selectByFilter" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from t_translation_word
+        where source_text like #{keyword,jdbcType=VARCHAR}
+           or target_text like #{keyword,jdbcType=VARCHAR}
+           or remark like #{keyword,jdbcType=VARCHAR}
+        order by modified_time desc, id desc
+    </select>
+
+    <select id="selectBySourceAndLang" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from t_translation_word
+        where source_text = #{sourceText,jdbcType=VARCHAR}
+          and source_lang = #{sourceLang,jdbcType=VARCHAR}
+          and target_lang = #{targetLang,jdbcType=VARCHAR}
+        limit 1
+    </select>
+
+    <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+        delete
+        from t_translation_word
+        where id = #{id,jdbcType=INTEGER}
+    </delete>
+
+    <insert id="insert" parameterType="com.luoboduner.moo.tool.domain.TTranslationWord">
+        insert into t_translation_word (source_text, target_text, source_lang, target_lang, remark, create_time,
+                                        modified_time)
+        values (#{sourceText,jdbcType=VARCHAR}, #{targetText,jdbcType=VARCHAR}, #{sourceLang,jdbcType=VARCHAR},
+                #{targetLang,jdbcType=VARCHAR}, #{remark,jdbcType=VARCHAR}, #{createTime,jdbcType=VARCHAR},
+                #{modifiedTime,jdbcType=VARCHAR})
+    </insert>
+
+    <update id="updateByPrimaryKey" parameterType="com.luoboduner.moo.tool.domain.TTranslationWord">
+        update t_translation_word
+        set source_text   = #{sourceText,jdbcType=VARCHAR},
+            target_text   = #{targetText,jdbcType=VARCHAR},
+            source_lang   = #{sourceLang,jdbcType=VARCHAR},
+            target_lang   = #{targetLang,jdbcType=VARCHAR},
+            remark        = #{remark,jdbcType=VARCHAR},
+            modified_time = #{modifiedTime,jdbcType=VARCHAR}
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+</mapper>

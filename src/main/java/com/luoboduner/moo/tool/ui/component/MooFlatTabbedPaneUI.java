@@ -4,6 +4,7 @@ import com.formdev.flatlaf.ui.FlatTabbedPaneUI;
 import com.formdev.flatlaf.ui.FlatUIUtils;
 
 import javax.swing.*;
+import javax.swing.plaf.ComponentUI;
 import java.awt.*;
 import java.awt.geom.Area;
 import java.awt.geom.Rectangle2D;
@@ -19,10 +20,59 @@ import static com.formdev.flatlaf.util.UIScale.scale;
  */
 public class MooFlatTabbedPaneUI extends FlatTabbedPaneUI {
 
+    public static ComponentUI createUI(JComponent c) {
+        return new MooFlatTabbedPaneUI();
+    }
+
     private boolean selectionOnLeadingEdge;
 
     public void setSelectionOnLeadingEdge(boolean selectionOnLeadingEdge) {
         this.selectionOnLeadingEdge = selectionOnLeadingEdge;
+    }
+
+    /**
+     * FlatLaf 在 UI 卸载/重装间隙绘制 Tab 时 tabInsets 可能为 null，需防御性初始化。
+     */
+    private boolean ensureUiDefaults() {
+        if (tabPane == null) {
+            return false;
+        }
+        if (tabInsets == null) {
+            installDefaults();
+        }
+        return tabInsets != null;
+    }
+
+    @Override
+    public void update(Graphics g, JComponent c) {
+        if (!ensureUiDefaults()) {
+            return;
+        }
+        super.update(g, c);
+    }
+
+    @Override
+    public void paint(Graphics g, JComponent c) {
+        if (!ensureUiDefaults()) {
+            return;
+        }
+        super.paint(g, c);
+    }
+
+    @Override
+    protected int calculateTabWidth(int tabPlacement, int tabIndex, FontMetrics metrics) {
+        if (!ensureUiDefaults()) {
+            return 0;
+        }
+        return super.calculateTabWidth(tabPlacement, tabIndex, metrics);
+    }
+
+    @Override
+    protected int calculateMaxTabWidth(int tabPlacement) {
+        if (!ensureUiDefaults()) {
+            return 0;
+        }
+        return super.calculateMaxTabWidth(tabPlacement);
     }
 
     /**

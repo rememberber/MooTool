@@ -7,120 +7,94 @@ import org.apache.commons.lang3.StringUtils;
 
 import javax.net.ssl.SSLHandshakeException;
 import java.io.BufferedReader;
+import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.CookieHandler;
+import java.net.CookieManager;
+import java.net.CookiePolicy;
 import java.net.HttpURLConnection;
 import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * Bing翻译工具类 (使用Bing翻译API，在中国大陆可访问)
+ * Bing翻译工具类 (使用Bing翻译网页版API，在中国大陆可访问)
  */
 @Slf4j
 public class BingTranslatorUtil implements Translator {
 
-    /**
-     * Bing Translator API endpoint identifier
-     * This value is used by the Bing Translator public API
-     * It may need to be updated if Bing changes their API
-     */
-    private static final String BING_TRANSLATOR_IID = "translator.5028.1";
+    private static final String BING_HOST = "https://cn.bing.com";
+    private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0";
+    private static final Pattern IG_PATTERN = Pattern.compile("IG:\"([A-F0-9]{32})\"");
+    private static final Pattern ABUSE_PREVENTION_PATTERN = Pattern.compile(
+            "params_AbusePreventionHelper\\s*=\\s*\\[(\\d+),\"([^\"]+)\",(\\d+)\\]");
 
-    /**
-     * @param word
-     * @param sourceLanguage 源语言 默认auto 英文为 en
-     * @param targetLanguage 目标语言 默认zh-CN
-     * @return
-     */
+    private static final CookieManager COOKIE_MANAGER = new CookieManager(null, CookiePolicy.ACCEPT_ALL);
+    private static final Object SESSION_LOCK = new Object();
+    private static BingSession cachedSession;
+
+    static {
+        CookieHandler.setDefault(COOKIE_MANAGER);
+    }
+
+    @Override
     public String translate(String word, String sourceLanguage, String targetLanguage) {
         try {
             if (StringUtils.isEmpty(word)) {
                 return "";
             }
-            
+
             if (StringUtils.isEmpty(sourceLanguage)) {
-                sourceLanguage = "auto-detect";
+                sourceLanguage = "auto";
             }
             if (StringUtils.isEmpty(targetLanguage)) {
-                targetLanguage = "zh-Hans";
+                targetLanguage = "zh-CN";
             }
-            
-            // Convert language codes to Bing format
+
             sourceLanguage = convertToBingLanguageCode(sourceLanguage);
             targetLanguage = convertToBingLanguageCode(targetLanguage);
-            
-            /**
-             * Build Bing Translator API URL with required parameters
-             * The IG and IID parameters are required by Bing Translator API
-             */
-            String url = "https://www.bing.com/ttranslatev3?isVertical=1&IG=" + 
-                    generateIG() + "&IID=" + BING_TRANSLATOR_IID;
 
-            URL obj = new URL(url);
-            HttpURLConnection con = (HttpURLConnection) obj.openConnection();
-            con.setRequestMethod("POST");
-            con.setConnectTimeout(10000);
-            con.setReadTimeout(10000);
-            con.setRequestProperty("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36 Edg/130.0.0.0");
-            con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
-            con.setRequestProperty("Referer", "https://www.bing.com/translator");
-            con.setRequestProperty("Origin", "https://www.bing.com");
-            con.setRequestProperty("Accept", "*/*");
-            con.setRequestProperty("Accept-Language", "en-US,en;q=0.9");
-            con.setDoOutput(true);
-
+            BingSession session = getSession();
             String postData = "fromLang=" + sourceLanguage +
                     "&to=" + targetLanguage +
-                    "&text=" + URLEncoder.encode(word, StandardCharsets.UTF_8);
+                    "&text=" + URLEncoder.encode(word, StandardCharsets.UTF_8) +
+                    "&token=" + URLEncoder.encode(session.token, StandardCharsets.UTF_8) +
+                    "&key=" + session.key +
+                    "&tryFetchingGenderDebiasedTranslations=true";
 
-            log.debug("Bing translation request - from: {}, to: {}, text: {}", sourceLanguage, targetLanguage, word);
+            String url = BING_HOST + "/ttranslatev3?isVertical=1&IG=" + session.ig +
+                    "&IID=translator.5026." + session.nextRequestId();
 
-            // Write request body with proper resource management
-            try (java.io.OutputStream os = con.getOutputStream()) {
+            log.debug("Bing translation request - from: {}, to: {}, text length: {}", sourceLanguage, targetLanguage, word.length());
+
+            HttpURLConnection con = openConnection(url, "POST");
+            con.setRequestProperty("Content-Type", "application/x-www-form-urlencoded");
+            con.setRequestProperty("Referer", BING_HOST + "/translator");
+            con.setRequestProperty("Origin", BING_HOST);
+            con.setDoOutput(true);
+
+            try (OutputStream os = con.getOutputStream()) {
                 os.write(postData.getBytes(StandardCharsets.UTF_8));
             }
 
-            // Check response code
             int responseCode = con.getResponseCode();
+            String responseStr = readResponseBody(con, responseCode);
             log.debug("Bing API response code: {}", responseCode);
-            
+
             if (responseCode != 200) {
-                // Try to read error stream for more details
-                StringBuilder errorResponse = new StringBuilder();
-                try {
-                    java.io.InputStream errorStream = con.getErrorStream();
-                    if (errorStream != null) {
-                        try (BufferedReader errorReader = new BufferedReader(
-                                new InputStreamReader(errorStream, StandardCharsets.UTF_8))) {
-                            String line;
-                            while ((line = errorReader.readLine()) != null) {
-                                errorResponse.append(line);
-                            }
-                        }
-                    }
-                } catch (Exception ex) {
-                    log.warn("Failed to read error stream", ex);
-                }
-                log.warn("Bing API error response (code {}): {}", responseCode, errorResponse);
+                log.warn("Bing API error response (code {}): {}", responseCode, responseStr);
                 return "Bing翻译接口返回错误状态码: " + responseCode;
             }
 
-            // Read response with proper resource management
-            StringBuilder response = new StringBuilder();
-            try (BufferedReader in = new BufferedReader(
-                    new InputStreamReader(con.getInputStream(), StandardCharsets.UTF_8))) {
-                String inputLine;
-                while ((inputLine = in.readLine()) != null) {
-                    response.append(inputLine);
-                }
+            if (responseStr.contains("\"ShowCaptcha\":true")) {
+                invalidateSession();
+                return "Bing翻译触发验证码，请稍后重试或切换其他翻译源";
             }
-            
-            String responseStr = response.toString();
-            if (responseStr.isEmpty()) {
-                log.warn("Bing API returned empty response body despite 200 status code");
-            }
-            
+
             return parseResult(responseStr);
         } catch (SSLHandshakeException e) {
             log.error("SSLHandshakeException", e);
@@ -134,30 +108,88 @@ public class BingTranslatorUtil implements Translator {
         }
     }
 
-    /**
-     * Generate IG parameter for Bing Translator API
-     * This is a hash-like value that changes over time
-     * @return IG parameter value
-     */
-    private String generateIG() {
-        // Simple IG generation based on timestamp
-        // Format: hexadecimal string based on current time
-        long timestamp = System.currentTimeMillis();
-        return Long.toHexString(timestamp).toUpperCase();
+    static BingSession parseSessionFromPage(String pageHtml) {
+        Matcher igMatcher = IG_PATTERN.matcher(pageHtml);
+        if (!igMatcher.find()) {
+            throw new IllegalStateException("无法从Bing页面解析IG参数");
+        }
+
+        Matcher abuseMatcher = ABUSE_PREVENTION_PATTERN.matcher(pageHtml);
+        if (!abuseMatcher.find()) {
+            throw new IllegalStateException("无法从Bing页面解析token/key参数");
+        }
+
+        BingSession session = new BingSession();
+        session.ig = igMatcher.group(1);
+        session.key = Long.parseLong(abuseMatcher.group(1));
+        session.token = abuseMatcher.group(2);
+        long ttl = Long.parseLong(abuseMatcher.group(3));
+        session.expireAt = System.currentTimeMillis() + ttl - 60_000;
+        return session;
     }
 
-    private String convertToBingLanguageCode(String code) {
+    private BingSession getSession() throws IOException {
+        synchronized (SESSION_LOCK) {
+            if (cachedSession != null && System.currentTimeMillis() < cachedSession.expireAt) {
+                return cachedSession;
+            }
+            cachedSession = refreshSession();
+            return cachedSession;
+        }
+    }
+
+    private void invalidateSession() {
+        synchronized (SESSION_LOCK) {
+            cachedSession = null;
+        }
+    }
+
+    private BingSession refreshSession() throws IOException {
+        HttpURLConnection con = openConnection(BING_HOST + "/translator", "GET");
+        int responseCode = con.getResponseCode();
+        String pageHtml = readResponseBody(con, responseCode);
+        if (responseCode != 200) {
+            throw new IOException("获取Bing翻译页面失败，状态码: " + responseCode);
+        }
+        return parseSessionFromPage(pageHtml);
+    }
+
+    private HttpURLConnection openConnection(String urlStr, String method) throws IOException {
+        URL obj = new URL(urlStr);
+        HttpURLConnection con = (HttpURLConnection) obj.openConnection();
+        con.setRequestMethod(method);
+        con.setConnectTimeout(10_000);
+        con.setReadTimeout(10_000);
+        con.setRequestProperty("User-Agent", USER_AGENT);
+        con.setRequestProperty("Accept", "*/*");
+        con.setRequestProperty("Accept-Language", "zh-CN,zh;q=0.9,en;q=0.8");
+        return con;
+    }
+
+    private String readResponseBody(HttpURLConnection con, int responseCode) throws IOException {
+        java.io.InputStream stream = responseCode >= 400 ? con.getErrorStream() : con.getInputStream();
+        if (stream == null) {
+            stream = con.getInputStream();
+        }
+        StringBuilder response = new StringBuilder();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                response.append(line);
+            }
+        }
+        return response.toString();
+    }
+
+    String convertToBingLanguageCode(String code) {
         if (StringUtils.isEmpty(code) || "auto".equals(code)) {
             return "auto-detect";
         }
-        // Convert common codes to Bing format
         switch (code) {
             case "zh-CN":
                 return "zh-Hans";
             case "cht":
                 return "zh-Hant";
-            case "en":
-                return "en";
             case "jp":
                 return "ja";
             case "kor":
@@ -166,30 +198,10 @@ public class BingTranslatorUtil implements Translator {
                 return "fr";
             case "spa":
                 return "es";
-            case "th":
-                return "th";
             case "ara":
                 return "ar";
-            case "ru":
-                return "ru";
-            case "pt":
-                return "pt";
-            case "de":
-                return "de";
-            case "it":
-                return "it";
-            case "el":
-                return "el";
-            case "nl":
-                return "nl";
-            case "pl":
-                return "pl";
-            case "cs":
-                return "cs";
             case "swe":
                 return "sv";
-            case "hu":
-                return "hu";
             case "vie":
                 return "vi";
             default:
@@ -203,15 +215,17 @@ public class BingTranslatorUtil implements Translator {
                 log.warn("Bing API returned empty response");
                 return "翻译返回结果为空";
             }
-            
-            log.debug("Bing API response: {}", inputJson);
-            
+
+            if (inputJson.contains("\"ShowCaptcha\"")) {
+                return "Bing翻译触发验证码，请稍后重试或切换其他翻译源";
+            }
+
             JSONArray jsonArray = new JSONArray(inputJson);
-            if (jsonArray.size() > 0) {
+            if (!jsonArray.isEmpty()) {
                 JSONObject firstItem = jsonArray.getJSONObject(0);
                 if (firstItem.containsKey("translations")) {
                     JSONArray translations = firstItem.getJSONArray("translations");
-                    if (translations.size() > 0) {
+                    if (!translations.isEmpty()) {
                         JSONObject translation = translations.getJSONObject(0);
                         String result = translation.getStr("text");
                         if (!StringUtils.isEmpty(result)) {
@@ -225,6 +239,19 @@ public class BingTranslatorUtil implements Translator {
         } catch (Exception e) {
             log.error("解析翻译结果异常，原始响应: {}", inputJson, e);
             return "解析翻译结果异常：" + e.getMessage();
+        }
+    }
+
+    static final class BingSession {
+        String ig;
+        String token;
+        long key;
+        long expireAt;
+        int requestCount;
+
+        int nextRequestId() {
+            requestCount += 2;
+            return requestCount;
         }
     }
 }

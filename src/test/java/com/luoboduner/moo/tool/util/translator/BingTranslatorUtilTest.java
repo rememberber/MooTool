@@ -1,57 +1,57 @@
 package com.luoboduner.moo.tool.util.translator;
 
 import org.junit.Test;
-import static org.junit.Assert.*;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Test for BingTranslatorUtil
- * 
- * Note: These tests focus on the parsing logic and parameter handling
- * rather than actual API calls which require network access.
  */
 public class BingTranslatorUtilTest {
 
-    private BingTranslatorUtil translator = new BingTranslatorUtil();
+    private final BingTranslatorUtil translator = new BingTranslatorUtil();
 
     @Test
     public void testTranslateEmptyString() {
         String result = translator.translate("", "auto", "zh-CN");
-        assertEquals("Empty string should return empty result", "", result);
+        assertEquals("", result);
     }
 
     @Test
     public void testTranslateNull() {
         String result = translator.translate(null, "auto", "zh-CN");
-        assertEquals("Null string should return empty result", "", result);
+        assertEquals("", result);
+    }
+
+    @Test
+    public void testParseSessionFromPage() {
+        String page = "<script>var _G={IG:\"CE86760F79114B048DE00FB3AB4D0B12\"};" +
+                "params_AbusePreventionHelper = [1781010085450,\"McgxNajxoyup0SKv8fPExQtAQfGc1Gv1\",3600000];</script>";
+
+        BingTranslatorUtil.BingSession session = BingTranslatorUtil.parseSessionFromPage(page);
+
+        assertEquals("CE86760F79114B048DE00FB3AB4D0B12", session.ig);
+        assertEquals(1781010085450L, session.key);
+        assertEquals("McgxNajxoyup0SKv8fPExQtAQfGc1Gv1", session.token);
+        assertTrue(session.expireAt > System.currentTimeMillis());
     }
 
     @Test
     public void testLanguageCodeConversion() {
-        // Test that language code conversion doesn't cause crashes
-        // This is important because the translator needs to convert between
-        // the app's language codes and Bing's expected format
-        
-        // We can't easily test the actual conversion without making it public,
-        // but we can verify the translator handles various language codes without exceptions
-        
-        // Note: These calls will attempt to reach the API, so they may fail with network errors
-        // That's acceptable - we're mainly testing that language code handling doesn't crash
-        
-        String result;
-        
-        // Test Chinese to English
-        result = translator.translate("test", "zh-CN", "en");
-        assertNotNull("Result should not be null", result);
-        
-        // Test English to Chinese  
-        result = translator.translate("test", "en", "zh-CN");
-        assertNotNull("Result should not be null", result);
-        
-        // Test auto-detect
-        result = translator.translate("test", "auto", "zh-CN");
-        assertNotNull("Result should not be null", result);
-        
-        // Even if API fails, we should get an error message, not crash or return null
-        assertNotNull("Result should not be null even on API failure", result);
+        assertEquals("auto-detect", translator.convertToBingLanguageCode("auto"));
+        assertEquals("zh-Hans", translator.convertToBingLanguageCode("zh-CN"));
+        assertEquals("zh-Hant", translator.convertToBingLanguageCode("cht"));
+        assertEquals("ja", translator.convertToBingLanguageCode("jp"));
+        assertEquals("ko", translator.convertToBingLanguageCode("kor"));
+        assertEquals("fr", translator.convertToBingLanguageCode("fra"));
+        assertEquals("vi", translator.convertToBingLanguageCode("vie"));
+    }
+
+    @Test
+    public void testLanguageCodeConversionDoesNotCrash() {
+        String result = translator.translate("test", "zh-CN", "en");
+        assertNotNull(result);
     }
 }

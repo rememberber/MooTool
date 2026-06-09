@@ -8,6 +8,7 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.ui.form.func.NetForm;
 import com.luoboduner.moo.tool.util.SystemUtil;
+import com.luoboduner.moo.tool.util.WhoisUtil;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
@@ -186,6 +187,33 @@ public class NetListener {
                 JOptionPane.showMessageDialog(netForm.getNetPanel(), ex.getMessage(), "失败！", JOptionPane.ERROR_MESSAGE);
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
+        });
+
+        // WHOIS
+        netForm.getWhoisButton().addActionListener(e -> {
+            String query = netForm.getWhoisTextField().getText().trim();
+            if (query.isEmpty()) {
+                JOptionPane.showMessageDialog(netForm.getNetPanel(), "请输入域名或 IP", "提示", JOptionPane.WARNING_MESSAGE);
+                return;
+            }
+            netForm.getWhoisButton().setEnabled(false);
+            netForm.getIpConfigTextArea().setText("查询中...\n");
+            ThreadUtil.execute(() -> {
+                try {
+                    String result = WhoisUtil.query(query);
+                    SwingUtilities.invokeLater(() -> {
+                        netForm.getIpConfigTextArea().setText(result);
+                        netForm.getIpConfigTextArea().setCaretPosition(0);
+                        netForm.getWhoisButton().setEnabled(true);
+                    });
+                } catch (Exception ex) {
+                    logger.error(ExceptionUtils.getStackTrace(ex));
+                    SwingUtilities.invokeLater(() -> {
+                        JOptionPane.showMessageDialog(netForm.getNetPanel(), ex.getMessage(), "查询失败！", JOptionPane.ERROR_MESSAGE);
+                        netForm.getWhoisButton().setEnabled(true);
+                    });
+                }
+            });
         });
     }
 }

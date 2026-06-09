@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.luoboduner.moo.tool.dao.TTranslationHistoryMapper">
+    <resultMap id="BaseResultMap" type="com.luoboduner.moo.tool.domain.TTranslationHistory">
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="source_text" jdbcType="VARCHAR" property="sourceText"/>
+        <result column="target_text" jdbcType="VARCHAR" property="targetText"/>
+        <result column="source_lang" jdbcType="VARCHAR" property="sourceLang"/>
+        <result column="target_lang" jdbcType="VARCHAR" property="targetLang"/>
+        <result column="translator_type" jdbcType="VARCHAR" property="translatorType"/>
+        <result column="create_time" jdbcType="VARCHAR" property="createTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, source_text, target_text, source_lang, target_lang, translator_type, create_time
+    </sql>
+
+    <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from t_translation_history
+        where id = #{id,jdbcType=INTEGER}
+    </select>
+
+    <select id="selectAll" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from t_translation_history
+        order by create_time desc, id desc
+    </select>
+
+    <select id="selectByFilter" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from t_translation_history
+        where source_text like #{keyword,jdbcType=VARCHAR}
+           or target_text like #{keyword,jdbcType=VARCHAR}
+           or source_lang like #{keyword,jdbcType=VARCHAR}
+           or target_lang like #{keyword,jdbcType=VARCHAR}
+        order by create_time desc, id desc
+    </select>
+
+    <select id="count" resultType="int">
+        select count(*)
+        from t_translation_history
+    </select>
+
+    <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+        delete
+        from t_translation_history
+        where id = #{id,jdbcType=INTEGER}
+    </delete>
+
+    <delete id="deleteAll">
+        delete
+        from t_translation_history
+    </delete>
+
+    <delete id="deleteBeyondLimit">
+        delete
+        from t_translation_history
+        where id not in (select id
+                         from t_translation_history
+                         order by create_time desc, id desc
+                         limit #{maxCount,jdbcType=INTEGER})
+    </delete>
+
+    <insert id="insert" parameterType="com.luoboduner.moo.tool.domain.TTranslationHistory">
+        insert into t_translation_history (source_text, target_text, source_lang, target_lang, translator_type,
+                                           create_time)
+        values (#{sourceText,jdbcType=VARCHAR}, #{targetText,jdbcType=VARCHAR}, #{sourceLang,jdbcType=VARCHAR},
+                #{targetLang,jdbcType=VARCHAR}, #{translatorType,jdbcType=VARCHAR}, #{createTime,jdbcType=VARCHAR})
+    </insert>
+</mapper>

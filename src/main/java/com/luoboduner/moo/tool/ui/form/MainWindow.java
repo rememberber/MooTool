@@ -5,7 +5,7 @@ import com.formdev.flatlaf.util.SystemInfo;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.ui.component.MooFlatTabbedPaneUI;
+import com.luoboduner.moo.tool.ui.component.TabUiUtil;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.listener.TabListener;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -47,6 +47,7 @@ public class MainWindow {
     private JPanel reformattingPanel;
     private JPanel pdfPanel;
     private JPanel variablesPanel;
+    private JPanel hardwareInfoPanel;
     private JPanel ymlProperties;
     private JPanel textDiffPanel;
     private JPanel protoBufPanel;
@@ -60,9 +61,9 @@ public class MainWindow {
 
     private JPanel tabLeadingPanel;
 
-    private static final String[] TAB_TITLES = {"MooTool", "随手记", "时间转换", "JSON", "翻译", "Host", "HTTP", "编码转换", "二维码", "加解密/随机", "计算", "网络/IP", "调色板", "图片助手", "Cron", "正则", "Java", "格式化", "PDF", "环境变量", "配置文件转换", "文本对比", "Protobuf"};
+    private static final String[] TAB_TITLES = {"MooTool", "随手记", "时间转换", "JSON", "翻译", "Host", "HTTP", "编码转换", "二维码", "加解密/随机", "计算", "网络/IP", "调色板", "图片助手", "Cron", "正则", "Java", "格式化", "PDF", "环境变量", "系统信息", "配置文件转换", "文本对比", "Protobuf"};
 
-    private static final String[] ICON_PATH = {"icon/smile.svg", "icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/translate.svg", "icon/check.svg", "icon/global.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/format_painter.svg", "icon/pdf.svg", "icon/fx.svg", "icon/suffix-yml.svg", "icon/diff.svg", "icon/protobuf.svg"};
+    private static final String[] ICON_PATH = {"icon/smile.svg", "icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/translate.svg", "icon/check.svg", "icon/global.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/format_painter.svg", "icon/pdf.svg", "icon/fx.svg", "icon/info.svg", "icon/suffix-yml.svg", "icon/diff.svg", "icon/protobuf.svg"};
 
     private static final int TAB_ICON_ONLY_SIZE = 20;
 
@@ -79,6 +80,7 @@ public class MainWindow {
     public static MainWindow getInstance() {
         if (mainWindow == null) {
             mainWindow = new MainWindow();
+            TabUiUtil.installSafeUi(mainWindow.tabbedPane, "左侧".equals(App.config.getFuncTabPosition()));
         }
         return mainWindow;
     }
@@ -87,7 +89,6 @@ public class MainWindow {
 
     public void init() {
         mainWindow = getInstance();
-        mainWindow.getMainPanel().updateUI();
         if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
             GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
             gridLayoutManager.setMargin(new Insets(25, 0, 0, 0));
@@ -116,19 +117,25 @@ public class MainWindow {
         mainWindow.getReformattingPanel().add(FileReformattingForm.getInstance().getReformattingPanel(), gridConstraints);
         mainWindow.getPdfPanel().add(PdfForm.getInstance().getPdfPanel(), gridConstraints);
         mainWindow.getVariablesPanel().add(VariablesForm.getInstance().getVariablesPanel(), gridConstraints);
+        mainWindow.getHardwareInfoPanel().add(HardwareInfoForm.getInstance().getHardwareInfoPanel(), gridConstraints);
         mainWindow.getYmlProperties().add(YmlPropertiesForm.getInstance().getYmlPropertiesPanel(), gridConstraints);
         mainWindow.getTextDiffPanel().add(TextDiffForm.getInstance().getTextDiffPanel(), gridConstraints);
         mainWindow.getProtoBufPanel().add(ProtoBufForm.getInstance().getProtoBufPanel(), gridConstraints);
-        mainWindow.getMainPanel().updateUI();
 
+        refreshTabbedPaneUi();
+        TabUiUtil.applySafeTabbedPaneUi(mainPanel);
         TabListener.addListeners();
+    }
+
+    public void refreshTabbedPaneUi() {
+        TabUiUtil.installSafeUi(tabbedPane, "左侧".equals(App.config.getFuncTabPosition()));
+        ensureTabLeadingComponent();
     }
 
     public void initTabPlacement() {
         if ("左侧".equals(App.config.getFuncTabPosition())) {
             tabbedPane.setTabPlacement(JTabbedPane.LEFT);
             tabbedPane.putClientProperty(TABBED_PANE_TAB_ALIGNMENT, TABBED_PANE_ALIGN_LEADING);
-            installCustomTabbedPaneUiIfNeeded();
 
             if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
                 GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
@@ -139,7 +146,6 @@ public class MainWindow {
             }
         } else {
             tabbedPane.setTabPlacement(JTabbedPane.TOP);
-            tabbedPane.updateUI();
 
             if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
                 GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
@@ -164,7 +170,7 @@ public class MainWindow {
             tabbedPane.putClientProperty(TABBED_PANE_SHOW_TAB_SEPARATORS, false);
         }
 
-        ensureTabLeadingComponent();
+        refreshTabbedPaneUi();
     }
 
     private String tabTitleAt(int index) {
@@ -218,34 +224,14 @@ public class MainWindow {
         }
         tabLeadingPanel.add(toggleTitleButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(-1, -1), null, 0, false));
         tabbedPane.putClientProperty(TABBED_PANE_LEADING_COMPONENT, tabLeadingPanel);
-        tabbedPane.revalidate();
-        tabbedPane.repaint();
     }
 
     private void ensureTabUiRestoreListener() {
         if (tabUiRestoreListenerInstalled) {
             return;
         }
-        tabbedPane.addPropertyChangeListener("UI", evt -> {
-            installCustomTabbedPaneUiIfNeeded();
-            ensureTabLeadingComponent();
-        });
+        tabbedPane.addPropertyChangeListener("UI", evt -> SwingUtilities.invokeLater(this::refreshTabbedPaneUi));
         tabUiRestoreListenerInstalled = true;
-    }
-
-    /**
-     * 主题切换等场景会触发 updateUI()，将 Tab UI 重置为默认实现，需重新挂载自定义 UI。
-     */
-    private void installCustomTabbedPaneUiIfNeeded() {
-        if (!"左侧".equals(App.config.getFuncTabPosition())) {
-            return;
-        }
-        if (tabbedPane.getUI() instanceof MooFlatTabbedPaneUI) {
-            return;
-        }
-        MooFlatTabbedPaneUI tabbedPaneUI = new MooFlatTabbedPaneUI();
-        tabbedPaneUI.setSelectionOnLeadingEdge(true);
-        tabbedPane.setUI(tabbedPaneUI);
     }
 
     {
@@ -329,6 +315,9 @@ public class MainWindow {
         variablesPanel = new JPanel();
         variablesPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("环境变量", variablesPanel);
+        hardwareInfoPanel = new JPanel();
+        hardwareInfoPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPane.addTab("系统信息", hardwareInfoPanel);
         ymlProperties = new JPanel();
         ymlProperties.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("配置文件转换", ymlProperties);
