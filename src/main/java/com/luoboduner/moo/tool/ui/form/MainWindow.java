@@ -6,6 +6,7 @@ import com.formdev.flatlaf.util.SystemInfo;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.component.MooFlatTabbedPaneUI;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.listener.TabListener;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -120,6 +121,9 @@ public class MainWindow {
         if ("左侧".equals(App.config.getFuncTabPosition())) {
             tabbedPane.setTabPlacement(JTabbedPane.LEFT);
             tabbedPane.putClientProperty(TABBED_PANE_TAB_ALIGNMENT, TABBED_PANE_ALIGN_LEADING);
+            MooFlatTabbedPaneUI tabbedPaneUI = new MooFlatTabbedPaneUI();
+            tabbedPaneUI.setSelectionOnLeadingEdge(true);
+            tabbedPane.setUI(tabbedPaneUI);
 
             if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
                 GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
@@ -130,6 +134,7 @@ public class MainWindow {
             }
         } else {
             tabbedPane.setTabPlacement(JTabbedPane.TOP);
+            tabbedPane.updateUI();
 
             if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
                 GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
