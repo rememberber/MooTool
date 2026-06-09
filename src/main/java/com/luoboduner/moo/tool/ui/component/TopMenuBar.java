@@ -163,7 +163,7 @@ public class TopMenuBar extends JMenuBar {
             App.config.setUnifiedBackground(selected);
             App.config.save();
             UIManager.put("TitlePane.unifiedBackground", selected);
-            FlatLaf.updateUI();
+            Init.refreshFlatLafUi();
         });
         appearanceMenu.add(unifiedBackgrounditem);
 
