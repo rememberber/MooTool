@@ -338,6 +338,7 @@ Windows • Linux • macOS
 ## 配置文件转换
 ### Properties->YAML
 ### YAML->Properties
+### YAML格式校验（语法校验、错误行号定位、格式化）
 ### JSON->YAML（TODO）
 ### YAML->JSON（TODO）
 
