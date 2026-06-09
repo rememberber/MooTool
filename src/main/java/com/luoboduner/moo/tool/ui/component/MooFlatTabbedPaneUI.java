@@ -11,7 +11,11 @@ import java.awt.geom.Rectangle2D;
 import static com.formdev.flatlaf.util.UIScale.scale;
 
 /**
- * 左侧功能 Tab 时，将选中指示器绘制在 Tab 左侧（靠窗口边缘），而非默认的右侧。
+ * 左侧功能 Tab 定制 UI：
+ * <ul>
+ *   <li>选中指示器绘制在 Tab 左侧（靠窗口边缘）</li>
+ *   <li>失焦时保持与点击选中时一致的样式</li>
+ * </ul>
  */
 public class MooFlatTabbedPaneUI extends FlatTabbedPaneUI {
 
@@ -19,6 +23,62 @@ public class MooFlatTabbedPaneUI extends FlatTabbedPaneUI {
 
     public void setSelectionOnLeadingEdge(boolean selectionOnLeadingEdge) {
         this.selectionOnLeadingEdge = selectionOnLeadingEdge;
+    }
+
+    /**
+     * 失焦时仍按「有焦点」绘制选中指示器，避免 inactiveUnderlineColor 导致强调线消失。
+     */
+    @Override
+    protected boolean isTabbedPaneOrChildFocused() {
+        return true;
+    }
+
+    /**
+     * 选中 Tab 始终使用 focus/selected 前景色，不随 TabbedPane 失焦而回退为普通前景色。
+     */
+    @Override
+    protected Color getTabForeground(int tabPlacement, int tabIndex, boolean isSelected) {
+        if (!tabPane.isEnabled() || !tabPane.isEnabledAt(tabIndex)) {
+            return disabledForeground;
+        }
+        if (hoverForeground != null && getRolloverTab() == tabIndex) {
+            return hoverForeground;
+        }
+        Color foreground = tabPane.getForegroundAt(tabIndex);
+        if (foreground != tabPane.getForeground()) {
+            return foreground;
+        }
+        if (focusForeground != null && isSelected) {
+            return focusForeground;
+        }
+        if (selectedForeground != null && isSelected) {
+            return selectedForeground;
+        }
+        return foreground;
+    }
+
+    /**
+     * 选中 Tab 始终使用 focus/selected 背景色，不随 TabbedPane 失焦而回退为普通背景色。
+     */
+    @Override
+    protected Color getTabBackground(int tabPlacement, int tabIndex, boolean isSelected) {
+        Color background = tabPane.getBackgroundAt(tabIndex);
+        if (!tabPane.isEnabled() || !tabPane.isEnabledAt(tabIndex)) {
+            return background;
+        }
+        if (hoverColor != null && getRolloverTab() == tabIndex) {
+            return hoverColor;
+        }
+        if (background != tabPane.getBackground()) {
+            return background;
+        }
+        if (focusColor != null && isSelected) {
+            return focusColor;
+        }
+        if (selectedBackground != null && isSelected) {
+            return selectedBackground;
+        }
+        return background;
     }
 
     @Override
