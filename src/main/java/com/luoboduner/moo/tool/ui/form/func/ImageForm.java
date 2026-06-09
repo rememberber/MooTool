@@ -74,7 +74,6 @@ public class ImageForm {
     private ImageForm() {
         UndoUtil.register(this);
         ocrButton.addActionListener(e -> previewHint());
-        scaleImageButton.addActionListener(e -> previewHint());
         pressImageButton.addActionListener(e -> previewHint());
 
         imageToolBar = new JToolBar();
