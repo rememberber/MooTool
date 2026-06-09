@@ -8,9 +8,13 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.dialog.Base64Dialog;
 import com.luoboduner.moo.tool.ui.dialog.ImageCompressDialog;
+import com.luoboduner.moo.tool.ui.dialog.ImageOcrDialog;
+import com.luoboduner.moo.tool.ui.dialog.ImageOcrResultDialog;
 import com.luoboduner.moo.tool.ui.dialog.ImageWatermarkDialog;
 import com.luoboduner.moo.tool.util.ImageCompressUtil;
+import com.luoboduner.moo.tool.util.ImageOcrUtil;
 import com.luoboduner.moo.tool.util.ImageWatermarkUtil;
+import com.luoboduner.moo.tool.util.TesseractEnvUtil;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.ImageForm;
 import com.luoboduner.moo.tool.ui.frame.ScreenCaptureFrame;
@@ -29,7 +33,9 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ImageObserver;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 
 /**
  * <pre>
@@ -86,6 +92,9 @@ public class ImageListener {
 
         // 加水印按钮事件
         imageForm.getPressImageButton().addActionListener(e -> watermarkImages(imageForm));
+
+        // OCR 识别按钮事件
+        imageForm.getOcrButton().addActionListener(e -> ocrImages(imageForm));
 
         // 保存按钮事件
         imageForm.getSaveButton().addActionListener(e -> {
@@ -482,6 +491,90 @@ public class ImageListener {
         }
         JOptionPane.showMessageDialog(imageForm.getImagePanel(), message, "压缩完成",
                 errorMessages.length() > 0 ? JOptionPane.WARNING_MESSAGE : JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private static void ocrImages(ImageForm imageForm) {
+        List<File> imageFiles = resolveOcrImageFiles(imageForm);
+        if (imageFiles.isEmpty()) {
+            JOptionPane.showMessageDialog(imageForm.getImagePanel(), "请至少选择一张图片！", "提示",
+                    JOptionPane.INFORMATION_MESSAGE);
+            return;
+        }
+
+        ImageOcrDialog dialog = new ImageOcrDialog(imageFiles.size());
+        dialog.setVisible(true);
+        if (!dialog.isConfirmed()) {
+            return;
+        }
+
+        ImageOcrUtil.OcrOptions options = dialog.getOptions();
+        JDialog progressDialog = new JDialog(App.mainFrame, "正在识别", true);
+        progressDialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+        JPanel progressPanel = new JPanel(new BorderLayout(12, 12));
+        progressPanel.setBorder(BorderFactory.createEmptyBorder(16, 20, 16, 20));
+        progressPanel.add(new JLabel("正在识别文字，请稍候…"), BorderLayout.NORTH);
+        progressPanel.add(new JProgressBar(), BorderLayout.CENTER);
+        progressDialog.add(progressPanel);
+        progressDialog.pack();
+        progressDialog.setLocationRelativeTo(imageForm.getImagePanel());
+
+        SwingWorker<String, Void> worker = new SwingWorker<>() {
+            @Override
+            protected String doInBackground() {
+                return ImageOcrUtil.recognizeFiles(imageFiles, options);
+            }
+
+            @Override
+            protected void done() {
+                progressDialog.dispose();
+                try {
+                    String result = get();
+                    if (StringUtils.isBlank(result)) {
+                        JOptionPane.showMessageDialog(imageForm.getImagePanel(),
+                                "未识别到文字，请尝试更换语言或开启图像预处理。",
+                                "OCR 识别", JOptionPane.INFORMATION_MESSAGE);
+                        return;
+                    }
+                    ImageOcrResultDialog resultDialog = new ImageOcrResultDialog(result);
+                    resultDialog.setVisible(true);
+                } catch (Exception ex) {
+                    String message = ex.getMessage();
+                    Throwable cause = ex.getCause();
+                    if (cause instanceof UnsatisfiedLinkError
+                            || StringUtils.containsIgnoreCase(message, "UnsatisfiedLinkError")
+                            || StringUtils.containsIgnoreCase(message, "libtesseract")) {
+                        message = TesseractEnvUtil.getInstallHint();
+                    }
+                    JOptionPane.showMessageDialog(imageForm.getImagePanel(),
+                            "OCR 识别失败：\n" + message, "失败", JOptionPane.ERROR_MESSAGE);
+                    log.error(ExceptionUtils.getStackTrace(ex));
+                }
+            }
+        };
+        worker.execute();
+        progressDialog.setVisible(true);
+    }
+
+    private static List<File> resolveOcrImageFiles(ImageForm imageForm) {
+        List<File> files = new ArrayList<>();
+        int[] selectedIndices = imageForm.getImageList().getSelectedIndices();
+        DefaultListModel<String> listModel = (DefaultListModel<String>) imageForm.getImageList().getModel();
+        if (selectedIndices.length > 0) {
+            for (int index : selectedIndices) {
+                files.add(FileUtil.file(IMAGE_PATH_PRE_FIX + listModel.getElementAt(index)));
+            }
+            return files;
+        }
+        if (StringUtils.isNotBlank(selectedName)) {
+            for (int i = 0; i < listModel.size(); i++) {
+                String fileName = listModel.getElementAt(i);
+                if (selectedName.equals(FileUtil.mainName(fileName))) {
+                    files.add(FileUtil.file(IMAGE_PATH_PRE_FIX + fileName));
+                    break;
+                }
+            }
+        }
+        return files;
     }
 
     private static void watermarkImages(ImageForm imageForm) {

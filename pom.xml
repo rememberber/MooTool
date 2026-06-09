@@ -55,6 +55,7 @@
         <bcprov-jdk15on.version>1.70</bcprov-jdk15on.version>
         <tika.version>3.0.0</tika.version>
         <jackson-databind.version>2.13.3</jackson-databind.version>
+        <tess4j.version>5.11.0</tess4j.version>
         <java-diff.version>4.16</java-diff.version>
         <flexmark.version>0.64.8</flexmark.version>
         <packaging.outputDirectory>${project.build.directory}</packaging.outputDirectory>
@@ -612,6 +613,12 @@
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson-databind.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>net.sourceforge.tess4j</groupId>
+            <artifactId>tess4j</artifactId>
+            <version>${tess4j.version}</version>
         </dependency>
 
     </dependencies>

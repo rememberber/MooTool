@@ -11,7 +11,6 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.UiConsts;
-import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.listener.func.ImageListener;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
@@ -73,7 +72,6 @@ public class ImageForm {
 
     private ImageForm() {
         UndoUtil.register(this);
-        ocrButton.addActionListener(e -> previewHint());
 
         imageToolBar = new JToolBar();
         zoomInButton = new JButton(new FlatSVGIcon("icon/zoom_in.svg"));
@@ -95,12 +93,6 @@ public class ImageForm {
         imageInfoLabel.setToolTipText("图片信息");
         imageControlPanel.add(imageInfoLabel, BorderLayout.EAST);
 
-    }
-
-    private void previewHint() {
-        JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "\n该功能尚未实现，目前仅供UI预览\n" +
-                        "\n", "预览提示",
-                JOptionPane.INFORMATION_MESSAGE);
     }
 
     public static ImageForm getInstance() {
