@@ -69,6 +69,22 @@ public class ImagePreviewComponent extends JComponent {
         repaint();
     }
 
+    /**
+     * 在固定逻辑尺寸区域内展示图片（如头像、应用图标）
+     */
+    public void setSourceImageInLogicalBounds(BufferedImage image, int logicalWidth, int logicalHeight) {
+        this.sourceImage = image;
+        this.placeholderImage = null;
+        this.pixelEqualsLogicalPoint = false;
+        this.zoomFactor = 1.0;
+        Dimension size = new Dimension(Math.max(1, logicalWidth), Math.max(1, logicalHeight));
+        setPreferredSize(size);
+        setMinimumSize(size);
+        setMaximumSize(size);
+        revalidate();
+        repaint();
+    }
+
     public int getBaseLogicalWidth() {
         if (sourceImage == null) {
             return 0;
