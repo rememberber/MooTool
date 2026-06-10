@@ -126,7 +126,7 @@ public class MainWindow {
         mainWindow.getProtoBufPanel().add(ProtoBufForm.getInstance().getProtoBufPanel(), gridConstraints);
 
         refreshTabbedPaneUi();
-        TabUiUtil.applySafeTabbedPaneUi(mainPanel);
+        TabUiUtil.applySafeTabbedPaneUi(mainPanel, tabbedPane);
         TabListener.addListeners();
     }
 
@@ -233,7 +233,7 @@ public class MainWindow {
         if (tabUiRestoreListenerInstalled) {
             return;
         }
-        tabbedPane.addPropertyChangeListener("UI", evt -> SwingUtilities.invokeLater(this::refreshTabbedPaneUi));
+        tabbedPane.addPropertyChangeListener("UI", evt -> refreshTabbedPaneUi());
         tabUiRestoreListenerInstalled = true;
     }
 

@@ -19,6 +19,7 @@ import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
 import com.luoboduner.moo.tool.ui.dialog.SettingDialog;
 import com.luoboduner.moo.tool.ui.dialog.TranslationDialog;
 import com.luoboduner.moo.tool.ui.form.AboutForm;
+import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
@@ -205,8 +206,9 @@ public class Init {
         FlatLaf.updateUI();
         SwingUtilities.invokeLater(() -> {
             if (App.mainFrame != null) {
-                com.luoboduner.moo.tool.ui.form.MainWindow.getInstance().refreshTabbedPaneUi();
-                TabUiUtil.applySafeTabbedPaneUi(App.mainFrame.getContentPane());
+                MainWindow mainWindow = MainWindow.getInstance();
+                mainWindow.refreshTabbedPaneUi();
+                TabUiUtil.applySafeTabbedPaneUi(App.mainFrame.getContentPane(), mainWindow.getTabbedPane());
             }
         });
     }
@@ -248,7 +250,9 @@ public class Init {
 
         SwingUtilities.invokeLater(() -> {
             if (App.mainFrame != null) {
-                TabUiUtil.applySafeTabbedPaneUi(App.mainFrame.getContentPane());
+                TabUiUtil.applySafeTabbedPaneUi(
+                        App.mainFrame.getContentPane(),
+                        MainWindow.getInstance().getTabbedPane());
             }
         });
 
