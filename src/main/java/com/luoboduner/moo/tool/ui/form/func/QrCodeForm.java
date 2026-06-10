@@ -17,6 +17,7 @@ import com.luoboduner.moo.tool.domain.TFuncContent;
 import com.luoboduner.moo.tool.domain.TQrCode;
 import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.Style;
+import com.luoboduner.moo.tool.ui.component.ImagePreviewComponent;
 import com.luoboduner.moo.tool.ui.listener.func.QrCodeListener;
 import com.luoboduner.moo.tool.util.*;
 import lombok.Getter;
@@ -48,6 +49,7 @@ public class QrCodeForm {
     private JTextArea toGenerateContentTextArea;
     private JButton generateButton;
     private JLabel qrCodeImageLabel;
+    private ImagePreviewComponent qrCodeImagePreview;
     private JComboBox errorCorrectionLevelComboBox;
     private JTextField sizeTextField;
     private JTextField logoPathTextField;
@@ -185,8 +187,11 @@ public class QrCodeForm {
 
     public static void showGeneratedImage(BufferedImage image, GenerateRequest request) {
         qrCodeForm = getInstance();
-        qrCodeForm.getQrCodeImageLabel().setIcon(new ImageIcon(image));
-        qrCodeForm.getQrCodePanel().updateUI();
+        ImagePreviewComponent preview = qrCodeForm.getQrCodeImagePreview();
+        preview.setCrispPixels(true);
+        preview.setSourceImage(image, 1.0, true);
+        qrCodeForm.getQrCodePanel().revalidate();
+        qrCodeForm.getQrCodePanel().repaint();
         if (request.isSave()) {
             saveConfig();
             QrCodeListener.output("生成:\n" + request.getContent());
@@ -296,6 +301,14 @@ public class QrCodeForm {
         }
 
         qrCodeForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 2));
+
+        if (qrCodeForm.getQrCodeImagePreview() == null) {
+            Container parent = qrCodeForm.getQrCodeImageLabel().getParent();
+            parent.remove(qrCodeForm.getQrCodeImageLabel());
+            qrCodeForm.qrCodeImagePreview = new ImagePreviewComponent();
+            qrCodeForm.qrCodeImagePreview.setCrispPixels(true);
+            parent.add(qrCodeForm.qrCodeImagePreview, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        }
 
         Style.blackTextArea(qrCodeForm.getRecognitionContentTextArea());
         Style.blackTextArea(qrCodeForm.getToGenerateContentTextArea());

@@ -10,6 +10,7 @@ import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
 import com.luoboduner.moo.tool.ui.dialog.CurrentHostDialog;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
+import com.luoboduner.moo.tool.util.HostFileUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -147,14 +148,7 @@ public class HostListener {
         // 查看系统当前host按钮事件
         hostForm.getCurrentHostButton().addActionListener(e -> {
 
-            String content;
-            if (SystemUtil.isWindowsOs()) {
-                content = FileUtil.readUtf8String(HostForm.WIN_HOST_FILE_PATH);
-            } else if (SystemUtil.isMacOs()) {
-                content = FileUtil.readUtf8String(HostForm.MAC_HOST_FILE_PATH);
-            } else {
-                content = HostForm.NOT_SUPPORTED_TIPS;
-            }
+            String content = HostFileUtil.readSystemHosts();
             CurrentHostDialog currentHostDialog = new CurrentHostDialog();
             currentHostDialog.setPlaneText(content);
             currentHostDialog.setVisible(true);

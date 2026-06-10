@@ -6,6 +6,7 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.dialog.SystemEnvResultDialog;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
@@ -64,8 +65,7 @@ public class VariablesForm {
         ScrollUtil.smoothPane(variablesForm.getScrollPane2());
 
         JToolBar trailing = new JToolBar();
-        trailing.setFloatable(false);
-        trailing.setBorder(null);
+        ToolbarUiUtil.configure(trailing);
         trailing.add(Box.createHorizontalGlue());
 
         JButton refreshButton = new JButton(new FlatSVGIcon("icon/refresh.svg"));

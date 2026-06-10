@@ -4,10 +4,16 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.domain.TFuncHistory;
+import com.luoboduner.moo.tool.ui.FuncConsts;
+import com.luoboduner.moo.tool.ui.component.FuncHistoryPanel;
 import com.luoboduner.moo.tool.ui.component.textviewer.JavaRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.textviewer.JavaRTextScrollPane;
 import com.luoboduner.moo.tool.ui.listener.func.JavaConsoleListener;
+import com.luoboduner.moo.tool.util.FuncHistorySupport;
+import com.luoboduner.moo.tool.util.FuncHistoryUtil;
 import com.luoboduner.moo.tool.util.codeformatter.CodeFormatterFactory;
+import org.apache.commons.lang3.StringUtils;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -29,6 +35,8 @@ public class JavaConsoleForm {
     private JSplitPane splitPane;
     private JButton formatButton;
     private static JavaConsoleForm javaConsoleForm;
+
+    private static FuncHistoryPanel historyPanel;
 
     private JavaRSyntaxTextViewer textArea;
     private JavaRTextScrollPane scrollPane;
@@ -65,6 +73,31 @@ public class JavaConsoleForm {
                 formatButton.doClick();
             }
         });
+
+        historyPanel = FuncHistorySupport.wrapWithTabs(
+                javaConsolePanel, "Java", FuncConsts.JAVA_CONSOLE, JavaConsoleForm::applyHistory);
+    }
+
+    public static FuncHistoryPanel getHistoryPanel() {
+        return historyPanel;
+    }
+
+    public static void saveRunHistory(String code, String result) {
+        if (StringUtils.isBlank(code)) {
+            return;
+        }
+        FuncHistoryUtil.save(FuncConsts.JAVA_CONSOLE, "代码执行", code, result, "执行");
+        if (historyPanel != null) {
+            historyPanel.refreshListIfVisible();
+        }
+    }
+
+    public static void applyHistory(TFuncHistory history) {
+        if (history == null) {
+            return;
+        }
+        javaConsoleForm.getTextArea().setText(history.getInputText());
+        javaConsoleForm.getResultArea().setText(history.getOutputText());
     }
 
     {

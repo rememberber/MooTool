@@ -20,9 +20,13 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
+import javax.imageio.ImageIO;
 import javax.swing.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
 import java.io.IOException;
 import java.awt.*;
+import java.net.URI;
 import java.util.Arrays;
 
 /**
@@ -291,9 +295,32 @@ public class QuickNoteMarkdownUtil {
     }
 
     private static void resolveImageSources(Element body) {
+        double scale = ImageDisplayUtil.getScaleFactor(null);
         for (Element img : body.select("img")) {
             String resolved = QuickNoteAttachmentUtil.resolveImageSrc(img.attr("src"));
             img.attr("src", resolved);
+            if (resolved.startsWith("file:")) {
+                applyLogicalImageSize(img, resolved, scale);
+            }
+        }
+    }
+
+    private static void applyLogicalImageSize(Element img, String fileUri, double scale) {
+        try {
+            File file = new File(URI.create(fileUri));
+            if (!file.isFile()) {
+                return;
+            }
+            BufferedImage image = ImageIO.read(file);
+            if (image == null || image.getWidth() <= 0 || image.getHeight() <= 0) {
+                return;
+            }
+            int logicalWidth = Math.max(1, (int) Math.round(image.getWidth() / scale));
+            int logicalHeight = Math.max(1, (int) Math.round(image.getHeight() / scale));
+            img.attr("width", String.valueOf(logicalWidth));
+            img.attr("height", String.valueOf(logicalHeight));
+        } catch (Exception ignored) {
+            // 预览时图片尺寸解析失败则保持默认渲染
         }
     }
 

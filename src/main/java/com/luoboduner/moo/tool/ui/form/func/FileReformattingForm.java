@@ -3,10 +3,16 @@ package com.luoboduner.moo.tool.ui.form.func;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.luoboduner.moo.tool.domain.TFuncHistory;
+import com.luoboduner.moo.tool.ui.FuncConsts;
+import com.luoboduner.moo.tool.ui.component.FuncHistoryPanel;
 import com.luoboduner.moo.tool.ui.component.textviewer.RegexRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.textviewer.RegexRTextScrollPane;
 import com.luoboduner.moo.tool.ui.listener.func.FileReformatListener;
+import com.luoboduner.moo.tool.util.FuncHistorySupport;
+import com.luoboduner.moo.tool.util.FuncHistoryUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
+import org.apache.commons.lang3.StringUtils;
 import com.luoboduner.moo.tool.util.codeformatter.CodeFormatterFactory;
 import lombok.Getter;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
@@ -33,6 +39,8 @@ public class FileReformattingForm {
     private RegexRTextScrollPane scrollPane;
 
     private static FileReformattingForm fileReformattingForm;
+
+    private static FuncHistoryPanel historyPanel;
 
     public static FileReformattingForm getInstance() {
         if (null == fileReformattingForm) {
@@ -66,7 +74,23 @@ public class FileReformattingForm {
                 .buildSelectFileLabel(fileReformattingForm.getSelectFileName())
                 .start();
 
+        historyPanel = FuncHistorySupport.attachTab(
+                fileReformattingForm.getTabbedPane1(), FuncConsts.FILE_REFORMAT, FileReformattingForm::applyHistory);
+
         FileReformatListener.addListeners();
+    }
+
+    public static FuncHistoryPanel getHistoryPanel() {
+        return historyPanel;
+    }
+
+    public static void applyHistory(TFuncHistory history) {
+        if (history == null || StringUtils.isBlank(history.getExtraData())) {
+            return;
+        }
+        fileReformattingForm.getStringTypeComboBox().setSelectedItem(history.getExtraData());
+        changeStringType();
+        fileReformattingForm.getTextArea().setText(history.getInputText());
     }
 
     public static void changeStringType() {
@@ -86,7 +110,8 @@ public class FileReformattingForm {
 
     public static void format() {
         fileReformattingForm = getInstance();
-        String text = fileReformattingForm.getTextArea().getText();
+        String original = fileReformattingForm.getTextArea().getText();
+        String text = original;
         String stringType = (String) fileReformattingForm.getStringTypeComboBox().getSelectedItem();
 
         if ("Nginx配置".equals(stringType)) {
@@ -100,8 +125,14 @@ public class FileReformattingForm {
         }
 
         fileReformattingForm.getTextArea().setText(text);
-        // 回到顶部
         fileReformattingForm.getTextArea().setCaretPosition(0);
+
+        if (StringUtils.isNotBlank(original)) {
+            FuncHistoryUtil.save(FuncConsts.FILE_REFORMAT, stringType + " 格式化", original, text, stringType);
+            if (historyPanel != null) {
+                historyPanel.refreshListIfVisible();
+            }
+        }
     }
 
     {

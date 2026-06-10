@@ -9,6 +9,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
 import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
+import com.luoboduner.moo.tool.ui.dialog.JsonPathPickerDialog;
 import com.luoboduner.moo.tool.ui.dialog.JsonResultDialog;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
@@ -440,9 +441,18 @@ public class JsonBeautyListener {
 
         jsonBeautyForm.getGetJsonPathButton().addActionListener(e -> {
             try {
-                // alert:施工中，敬请期待
-                JOptionPane.showMessageDialog(App.mainFrame, "施工中，敬请期待！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
+                String jsonText = jsonBeautyForm.getTextArea().getText();
+                if (StringUtils.isBlank(jsonText)) {
+                    JOptionPane.showMessageDialog(App.mainFrame, "JSON内容为空！", "提示",
+                            JOptionPane.WARNING_MESSAGE);
+                    return;
+                }
+                JsonPathPickerDialog jsonPathPickerDialog = new JsonPathPickerDialog(jsonText);
+                jsonPathPickerDialog.setVisible(true);
+                String selectedJsonPath = jsonPathPickerDialog.getSelectedJsonPath();
+                if (StringUtils.isNotBlank(selectedJsonPath)) {
+                    jsonBeautyForm.getJsonPathTextField().setText(selectedJsonPath);
+                }
             } catch (Exception e1) {
                 JOptionPane.showMessageDialog(App.mainFrame, "获取失败！\n\n" + e1.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);

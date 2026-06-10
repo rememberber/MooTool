@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
+import com.luoboduner.moo.tool.ui.form.func.JavaConsoleForm;
 import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
@@ -68,7 +69,9 @@ public class JavaConsoleListener {
                 } catch (Exception ex) {
                     logException(ex);
                 }
-                getResultArea().setText(log.toString());
+                String result = log.toString();
+                getResultArea().setText(result);
+                JavaConsoleForm.saveRunHistory(code, result);
             }
         });
     }

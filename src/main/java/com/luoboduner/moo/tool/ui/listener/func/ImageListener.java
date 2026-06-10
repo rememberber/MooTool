@@ -12,6 +12,7 @@ import com.luoboduner.moo.tool.ui.dialog.ImageOcrDialog;
 import com.luoboduner.moo.tool.ui.dialog.ImageOcrResultDialog;
 import com.luoboduner.moo.tool.ui.dialog.ImageWatermarkDialog;
 import com.luoboduner.moo.tool.util.ImageCompressUtil;
+import com.luoboduner.moo.tool.util.ImageDisplayUtil;
 import com.luoboduner.moo.tool.util.ImageOcrUtil;
 import com.luoboduner.moo.tool.util.ImageWatermarkUtil;
 import com.luoboduner.moo.tool.util.TesseractEnvUtil;
@@ -49,6 +50,9 @@ public class ImageListener {
     public static String selectedName;
 
     public static Image selectedImage;
+
+    /** 相对原图的展示缩放比例，始终从原图重采样以避免多次缩放导致模糊 */
+    private static double displayZoomFactor = 1.0;
 
     public static final String IMAGE_PATH_PRE_FIX = SystemUtil.CONFIG_HOME + File.separator + "images" + File.separator;
 
@@ -332,7 +336,8 @@ public class ImageListener {
                     ImageListener.selectedImage = image;
                     if (image != null) {
                         selectedName = null;
-                        imageForm.getShowImageLabel().setIcon(imageIcon);
+                        displayZoomFactor = 1.0;
+                        updateImageDisplay(imageForm);
 
                         selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
                         File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
@@ -353,39 +358,41 @@ public class ImageListener {
             if (selectedImage == null) {
                 return;
             }
-            int width = imageForm.getShowImageLabel().getWidth();
-            int height = imageForm.getShowImageLabel().getHeight();
-            ImageIcon imageIcon = new ImageIcon(selectedImage.getScaledInstance((int) (width * 1.1), (int) (height * 1.1), Image.SCALE_DEFAULT));
-            imageForm.getShowImageLabel().setIcon(imageIcon);
+            displayZoomFactor *= 1.1;
+            updateImageDisplay(imageForm);
         });
 
         imageForm.getZoomOutButton().addActionListener(e -> {
             if (selectedImage == null) {
                 return;
             }
-            int width = imageForm.getShowImageLabel().getWidth();
-            int height = imageForm.getShowImageLabel().getHeight();
-            ImageIcon imageIcon = new ImageIcon(selectedImage.getScaledInstance((int) (width * 0.9), (int) (height * 0.9), Image.SCALE_DEFAULT));
-            imageForm.getShowImageLabel().setIcon(imageIcon);
+            displayZoomFactor *= 0.9;
+            updateImageDisplay(imageForm);
         });
 
         imageForm.getOriginalSizeButton().addActionListener(e -> {
             if (selectedImage == null) {
                 return;
             }
-            ImageIcon imageIcon = new ImageIcon(selectedImage);
-            imageForm.getShowImageLabel().setIcon(imageIcon);
+            displayZoomFactor = 1.0;
+            updateImageDisplay(imageForm);
         });
 
         imageForm.getFitSizeButton().addActionListener(e -> {
             if (selectedImage == null) {
                 return;
             }
-            int width = imageForm.getImageControlPanel().getWidth();
-//            int height = imageForm.getShowImagePanel().getHeight();
-//          只控制宽度，高度自适应
-            ImageIcon imageIcon = new ImageIcon(selectedImage.getScaledInstance(width, -1, Image.SCALE_DEFAULT));
-            imageForm.getShowImageLabel().setIcon(imageIcon);
+            double scale = ImageDisplayUtil.getScaleFactor(imageForm.getImagePreview());
+            BufferedImage source = toBufferedImage(selectedImage);
+            int baseLogicalWidth = Math.max(1, (int) Math.round(source.getWidth() / scale));
+            int availableWidth = imageForm.getScrollPane().getViewport().getWidth();
+            if (availableWidth <= 0) {
+                availableWidth = imageForm.getImageControlPanel().getWidth();
+            }
+            if (availableWidth > 0) {
+                displayZoomFactor = (double) availableWidth / baseLogicalWidth;
+            }
+            updateImageDisplay(imageForm);
         });
 
         // 左侧列表增加右键菜单
@@ -704,18 +711,18 @@ public class ImageListener {
 
     public static void showImageByFileName(ImageForm imageForm, String fileName) {
         try {
-            imageForm.getShowImageLabel().setIcon(new ImageIcon(DEFAULT_IMAGE));
-            imageForm.getShowImagePanel().updateUI();
+            imageForm.getImagePreview().setPlaceholderImage(DEFAULT_IMAGE);
 
             selectedName = FileUtil.mainName(fileName);
-            imageForm.getShowImageLabel().setIcon(new ImageIcon(IMAGE_PATH_PRE_FIX + fileName));
-            imageForm.getShowImagePanel().updateUI();
-
             selectedImage = ImageIO.read(FileUtil.newFile(IMAGE_PATH_PRE_FIX + fileName));
             if (selectedImage == null) {
                 JOptionPane.showMessageDialog(App.mainFrame, "无法读取图片：" + fileName, "异常", JOptionPane.ERROR_MESSAGE);
                 return;
             }
+
+            displayZoomFactor = 1.0;
+            updateImageDisplay(imageForm);
+            imageForm.getShowImagePanel().updateUI();
 
             String pixel = selectedImage.getWidth(null) + " x " + selectedImage.getHeight(null);
             String size = FileUtil.readableFileSize(FileUtil.file(IMAGE_PATH_PRE_FIX + fileName).length());
@@ -779,14 +786,15 @@ public class ImageListener {
 
     private static void newImage() {
         ImageForm imageForm = ImageForm.getInstance();
-        imageForm.getShowImageLabel().setIcon(new ImageIcon(DEFAULT_IMAGE));
+        imageForm.getImagePreview().setPlaceholderImage(DEFAULT_IMAGE);
         selectedName = null;
         selectedImage = null;
+        displayZoomFactor = 1.0;
 
         Image image = ClipboardUtil.getImage();
         ImageListener.selectedImage = image;
         if (image != null) {
-            imageForm.getShowImageLabel().setIcon(new ImageIcon(image));
+            updateImageDisplay(imageForm);
         }
     }
 
@@ -816,7 +824,8 @@ public class ImageListener {
             ImageForm imageForm = ImageForm.getInstance();
             selectedImage = image;
             selectedName = "截图_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-            imageForm.getShowImageLabel().setIcon(new ImageIcon(image));
+            displayZoomFactor = 1.0;
+            updateImageDisplay(imageForm);
 
             File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
             ImageIO.write(image, "png", imageFile);
@@ -838,7 +847,8 @@ public class ImageListener {
             ImageListener.selectedImage = image;
             if (image != null) {
                 selectedName = null;
-                imageForm.getShowImageLabel().setIcon(new ImageIcon(image));
+                displayZoomFactor = 1.0;
+                updateImageDisplay(imageForm);
 
                 selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
                 File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
@@ -914,6 +924,15 @@ public class ImageListener {
         } catch (Exception ex) {
             log.error(ExceptionUtils.getStackTrace(ex));
         }
+    }
+
+    private static void updateImageDisplay(ImageForm imageForm) {
+        if (selectedImage == null) {
+            return;
+        }
+        imageForm.getImagePreview().setSourceImage(toBufferedImage(selectedImage), displayZoomFactor);
+        imageForm.getShowImagePanel().revalidate();
+        imageForm.getShowImagePanel().repaint();
     }
 
     public static BufferedImage toBufferedImage(Image image) {

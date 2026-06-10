@@ -30,6 +30,23 @@ public class MooFlatTabbedPaneUI extends FlatTabbedPaneUI {
         this.selectionOnLeadingEdge = selectionOnLeadingEdge;
     }
 
+    @Override
+    public void installUI(JComponent c) {
+        super.installUI(c);
+        syncSelectionOnLeadingEdgeFromClientProperty();
+    }
+
+    private void syncSelectionOnLeadingEdgeFromClientProperty() {
+        if (tabPane != null && TabUiUtil.isSelectionOnLeadingEdge(tabPane)) {
+            selectionOnLeadingEdge = true;
+        }
+    }
+
+    private boolean isSelectionOnLeadingEdge() {
+        return selectionOnLeadingEdge
+                || (tabPane != null && TabUiUtil.isSelectionOnLeadingEdge(tabPane));
+    }
+
     /**
      * FlatLaf 在 UI 卸载/重装间隙绘制 Tab 时 tabInsets 可能为 null，需防御性初始化。
      */
@@ -133,7 +150,7 @@ public class MooFlatTabbedPaneUI extends FlatTabbedPaneUI {
 
     @Override
     protected void paintTabSelection(Graphics g, int tabPlacement, int tabIndex, int x, int y, int w, int h) {
-        if (!selectionOnLeadingEdge || tabPlacement != JTabbedPane.LEFT) {
+        if (!isSelectionOnLeadingEdge() || tabPlacement != JTabbedPane.LEFT) {
             super.paintTabSelection(g, tabPlacement, tabIndex, x, y, w, h);
             return;
         }

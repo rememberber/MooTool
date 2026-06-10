@@ -12,12 +12,14 @@ import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import com.jthemedetecor.OsThemeDetector;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.component.JPopupMenuMouseAdapter;
+import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.component.MooFlatTabbedPaneUI;
 import com.luoboduner.moo.tool.ui.component.TabUiUtil;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
 import com.luoboduner.moo.tool.ui.dialog.SettingDialog;
 import com.luoboduner.moo.tool.ui.dialog.TranslationDialog;
 import com.luoboduner.moo.tool.ui.form.AboutForm;
+import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
@@ -182,6 +184,7 @@ public class Init {
             }
 
             installSafeTabbedPaneUi();
+            ToolbarUiUtil.applyGlobalDefaults();
 
         } catch (Exception e) {
             logger.error(e);
@@ -203,8 +206,9 @@ public class Init {
         FlatLaf.updateUI();
         SwingUtilities.invokeLater(() -> {
             if (App.mainFrame != null) {
-                com.luoboduner.moo.tool.ui.form.MainWindow.getInstance().refreshTabbedPaneUi();
-                TabUiUtil.applySafeTabbedPaneUi(App.mainFrame.getContentPane());
+                MainWindow mainWindow = MainWindow.getInstance();
+                mainWindow.refreshTabbedPaneUi();
+                TabUiUtil.applySafeTabbedPaneUi(App.mainFrame.getContentPane(), mainWindow.getTabbedPane());
             }
         });
     }
@@ -226,6 +230,7 @@ public class Init {
         ThreadUtil.execute(TimeConvertForm::init);
         ThreadUtil.execute(HostForm::init);
         ThreadUtil.execute(HttpRequestForm::init);
+        ThreadUtil.execute(UaParseForm::init);
         ThreadUtil.execute(EnCodeForm::init);
         ThreadUtil.execute(QrCodeForm::init);
         ThreadUtil.execute(CryptoForm::init);
@@ -245,7 +250,9 @@ public class Init {
 
         SwingUtilities.invokeLater(() -> {
             if (App.mainFrame != null) {
-                TabUiUtil.applySafeTabbedPaneUi(App.mainFrame.getContentPane());
+                TabUiUtil.applySafeTabbedPaneUi(
+                        App.mainFrame.getContentPane(),
+                        MainWindow.getInstance().getTabbedPane());
             }
         });
 
@@ -342,11 +349,13 @@ public class Init {
 
     public static void showMainFrame() {
         App.mainFrame.setVisible(true);
-        if (App.mainFrame.getExtendedState() == Frame.ICONIFIED) {
+        int extendedState = App.mainFrame.getExtendedState();
+        if ((extendedState & Frame.ICONIFIED) != 0) {
             App.mainFrame.setExtendedState(Frame.NORMAL);
-        } else if (App.mainFrame.getExtendedState() == 7) {
+        } else if ((extendedState & Frame.MAXIMIZED_BOTH) == Frame.MAXIMIZED_BOTH) {
             App.mainFrame.setExtendedState(Frame.MAXIMIZED_BOTH);
         }
+        App.mainFrame.toFront();
         App.mainFrame.requestFocus();
     }
 

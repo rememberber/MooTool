@@ -18,6 +18,7 @@ import com.luoboduner.moo.tool.domain.TMsgHttp;
 import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.PanelCloseUtil;
+import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.component.TableInCellButtonColumn;
 import com.luoboduner.moo.tool.ui.listener.func.HttpRequestListener;
 import com.luoboduner.moo.tool.util.*;
@@ -101,9 +102,38 @@ public class HttpRequestForm {
     private static TMsgHttpMapper msgHttpMapper = MybatisUtil.getSqlSession().getMapper(TMsgHttpMapper.class);
     private static THttpRequestHistoryMapper httpRequestHistoryMapper = MybatisUtil.getSqlSession().getMapper(THttpRequestHistoryMapper.class);
 
-    private HttpRequestForm() {
-        UndoUtil.register(this);
+    private JToolBar actionToolBar;
 
+    private JPanel actionToolBarPanel;
+
+    private HttpRequestForm() {
+        addButton = new JButton();
+        addButton.setText("");
+        addButton.setToolTipText("新建");
+        saveButton = new JButton();
+        saveButton.setText("");
+        saveButton.setToolTipText("保存");
+        deleteButton = new JButton();
+        deleteButton.setText("");
+        deleteButton.setToolTipText("删除");
+        historyButton = new JButton();
+        historyButton.setText("");
+        historyButton.setToolTipText("历史记录");
+        sendToWindowButton = new JButton();
+        sendToWindowButton.setText("");
+        sendToWindowButton.setToolTipText("发送至新窗口");
+
+        actionToolBar = new JToolBar();
+        ToolbarUiUtil.configure(actionToolBar);
+        actionToolBar.add(addButton);
+        actionToolBar.add(saveButton);
+        ToolbarUiUtil.addGroupSeparator(actionToolBar);
+        actionToolBar.add(deleteButton);
+        actionToolBar.add(historyButton);
+        actionToolBar.add(sendToWindowButton);
+        actionToolBarPanel.add(actionToolBar, BorderLayout.EAST);
+
+        UndoUtil.register(this);
     }
 
     public static HttpRequestForm getInstance() {
@@ -972,34 +1002,13 @@ public class HttpRequestForm {
         final Spacer spacer4 = new Spacer();
         panel20.add(spacer4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         controlPanel = new JPanel();
-        controlPanel.setLayout(new GridLayoutManager(1, 6, new Insets(0, 0, 0, 5), -1, -1));
+        controlPanel.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 5), -1, -1));
         contentPanel.add(controlPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        saveButton = new JButton();
-        saveButton.setIcon(new ImageIcon(getClass().getResource("/icon/menu-saveall_dark.png")));
-        saveButton.setText("");
-        saveButton.setToolTipText("保存");
-        controlPanel.add(saveButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer5 = new Spacer();
         controlPanel.add(spacer5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        addButton = new JButton();
-        addButton.setIcon(new ImageIcon(getClass().getResource("/icon/add.png")));
-        addButton.setText("");
-        addButton.setToolTipText("新建");
-        controlPanel.add(addButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        sendToWindowButton = new JButton();
-        sendToWindowButton.setIcon(new ImageIcon(getClass().getResource("/icon/send.png")));
-        sendToWindowButton.setText("");
-        sendToWindowButton.setToolTipText("发送至新窗口");
-        controlPanel.add(sendToWindowButton, new GridConstraints(0, 5, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        deleteButton = new JButton();
-        deleteButton.setIcon(new ImageIcon(getClass().getResource("/icon/remove.png")));
-        deleteButton.setText("");
-        deleteButton.setToolTipText("删除");
-        controlPanel.add(deleteButton, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        historyButton = new JButton();
-        historyButton.setText("");
-        historyButton.setToolTipText("历史记录");
-        controlPanel.add(historyButton, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        actionToolBarPanel = new JPanel();
+        actionToolBarPanel.setLayout(new BorderLayout(0, 0));
+        controlPanel.add(actionToolBarPanel, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     /**

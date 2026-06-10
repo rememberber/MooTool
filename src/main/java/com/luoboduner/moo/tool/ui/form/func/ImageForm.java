@@ -11,6 +11,8 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.ImagePreviewComponent;
+import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.listener.func.ImageListener;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
@@ -45,6 +47,7 @@ public class ImageForm {
     private JSplitPane splitPane;
     private JPanel showImagePanel;
     private JLabel showImageLabel;
+    private ImagePreviewComponent imagePreview;
     private JScrollPane scrollPane;
     private JPanel menuPanel;
     private JButton copyToClipboardButton;
@@ -75,6 +78,7 @@ public class ImageForm {
         UndoUtil.register(this);
 
         imageToolBar = new JToolBar();
+        ToolbarUiUtil.configure(imageToolBar);
         zoomInButton = new JButton(new FlatSVGIcon("icon/zoom_in.svg"));
         zoomInButton.setToolTipText("放大");
         zoomOutButton = new JButton(new FlatSVGIcon("icon/zoom_out.svg"));
@@ -87,13 +91,15 @@ public class ImageForm {
         imageToolBar.add(zoomOutButton);
         imageToolBar.add(originalSizeButton);
         imageToolBar.add(fitSizeButton);
-        imageToolBar.setFloatable(false);
         imageControlPanel.add(imageToolBar, BorderLayout.WEST);
 
         imageInfoLabel = new JLabel();
         imageInfoLabel.setToolTipText("图片信息");
         imageControlPanel.add(imageInfoLabel, BorderLayout.EAST);
 
+        showImagePanel.remove(showImageLabel);
+        imagePreview = new ImagePreviewComponent();
+        showImagePanel.add(imagePreview, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     public static ImageForm getInstance() {

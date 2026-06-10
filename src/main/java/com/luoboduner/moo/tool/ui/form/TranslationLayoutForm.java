@@ -5,6 +5,7 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.util.AlertUtil;
 import com.luoboduner.moo.tool.util.ConfigUtil;
 import com.luoboduner.moo.tool.ui.listener.func.TranslationListener;
@@ -84,13 +85,14 @@ public class TranslationLayoutForm {
         saveToWordBookButton.setToolTipText("收藏到单词本");
 
         leftMenuToolBar = new JToolBar();
-        leftMenuToolBar.add(comboBox1);
+        ToolbarUiUtil.configure(leftMenuToolBar);
+        ToolbarUiUtil.add(leftMenuToolBar, comboBox1);
         leftMenuToolBar.add(exchangeButton);
-        leftMenuToolBar.add(comboBox2);
-        leftMenuToolBar.addSeparator();
-        leftMenuToolBar.add(new JLabel("翻译源: "));
-        leftMenuToolBar.add(translatorComboBox);
-        leftMenuToolBar.addSeparator();
+        ToolbarUiUtil.add(leftMenuToolBar, comboBox2);
+        ToolbarUiUtil.addGroupSeparator(leftMenuToolBar);
+        ToolbarUiUtil.add(leftMenuToolBar, new JLabel("翻译源: "));
+        ToolbarUiUtil.add(leftMenuToolBar, translatorComboBox);
+        ToolbarUiUtil.addGroupSeparator(leftMenuToolBar);
         leftMenuToolBar.add(copyButton);
         leftMenuToolBar.add(clearButton);
         leftMenuToolBar.add(saveToWordBookButton);

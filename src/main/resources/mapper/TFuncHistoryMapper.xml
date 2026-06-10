@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.luoboduner.moo.tool.dao.TFuncHistoryMapper">
+    <resultMap id="BaseResultMap" type="com.luoboduner.moo.tool.domain.TFuncHistory">
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="func_type" jdbcType="VARCHAR" property="funcType"/>
+        <result column="summary" jdbcType="VARCHAR" property="summary"/>
+        <result column="input_text" jdbcType="VARCHAR" property="inputText"/>
+        <result column="output_text" jdbcType="VARCHAR" property="outputText"/>
+        <result column="extra_data" jdbcType="VARCHAR" property="extraData"/>
+        <result column="create_time" jdbcType="VARCHAR" property="createTime"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, func_type, summary, input_text, output_text, extra_data, create_time
+    </sql>
+
+    <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from t_func_history
+        where id = #{id,jdbcType=INTEGER}
+    </select>
+
+    <select id="selectByFuncType" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from t_func_history
+        where func_type = #{funcType,jdbcType=VARCHAR}
+        order by create_time desc, id desc
+    </select>
+
+    <select id="selectByFuncTypeAndFilter" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from t_func_history
+        where func_type = #{funcType,jdbcType=VARCHAR}
+          and (summary like #{keyword,jdbcType=VARCHAR}
+            or input_text like #{keyword,jdbcType=VARCHAR}
+            or output_text like #{keyword,jdbcType=VARCHAR}
+            or extra_data like #{keyword,jdbcType=VARCHAR})
+        order by create_time desc, id desc
+    </select>
+
+    <select id="countByFuncType" resultType="int">
+        select count(*)
+        from t_func_history
+        where func_type = #{funcType,jdbcType=VARCHAR}
+    </select>
+
+    <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+        delete
+        from t_func_history
+        where id = #{id,jdbcType=INTEGER}
+    </delete>
+
+    <delete id="deleteAllByFuncType">
+        delete
+        from t_func_history
+        where func_type = #{funcType,jdbcType=VARCHAR}
+    </delete>
+
+    <delete id="deleteBeyondLimit">
+        delete
+        from t_func_history
+        where func_type = #{funcType,jdbcType=VARCHAR}
+          and id not in (select id
+                         from t_func_history
+                         where func_type = #{funcType,jdbcType=VARCHAR}
+                         order by create_time desc, id desc
+                         limit #{maxCount,jdbcType=INTEGER})
+    </delete>
+
+    <insert id="insert" parameterType="com.luoboduner.moo.tool.domain.TFuncHistory">
+        insert into t_func_history (func_type, summary, input_text, output_text, extra_data, create_time)
+        values (#{funcType,jdbcType=VARCHAR}, #{summary,jdbcType=VARCHAR}, #{inputText,jdbcType=VARCHAR},
+                #{outputText,jdbcType=VARCHAR}, #{extraData,jdbcType=VARCHAR}, #{createTime,jdbcType=VARCHAR})
+    </insert>
+</mapper>

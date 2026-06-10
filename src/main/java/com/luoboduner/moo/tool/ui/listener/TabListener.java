@@ -41,7 +41,7 @@ public class TabListener {
                     HardwareInfoListener.onTabSelected();
                 }
                 switch (index) {
-                    case 9:
+                    case 10:
                         try {
                             String ipConfigStr;
                             if (SystemUtil.isWindowsOs()) {
