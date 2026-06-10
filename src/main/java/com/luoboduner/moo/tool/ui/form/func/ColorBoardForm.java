@@ -71,7 +71,7 @@ public class ColorBoardForm {
 
     private static final String[] THEME_KEYS = {
             "color.theme.default", "color.theme1", "color.theme2",
-            "color.theme3", "color.theme4", "color.theme5"
+            "color.theme3", "color.theme4", "color.theme5", "color.theme.china"
     };
 
     private JLabel contrastColorLabel;
@@ -317,6 +317,10 @@ public class ColorBoardForm {
             case 5 -> {
                 mainColors = ColorConsts.THEME_5_MAIN;
                 subColors = ColorConsts.THEME_5_SUB;
+            }
+            case 6 -> {
+                mainColors = ColorConsts.THEME_CHINA_MAIN;
+                subColors = ColorConsts.THEME_CHINA_SUB;
             }
             default -> {
                 mainColors = ColorConsts.THEME_DEFAULT_MAIN;

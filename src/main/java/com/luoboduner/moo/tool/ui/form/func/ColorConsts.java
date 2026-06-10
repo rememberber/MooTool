@@ -92,4 +92,23 @@ class ColorConsts {
             {"CDEBF2", "9FD7E5", "75C5D9", "19788F", "0B4F60"}, {"F8CDD0", "F09EA2", "E97177", "A31118", "6D080D"},
             {"FBDECF", "F7BEA0", "F39F72", "B0480F", "752D07"}, {"CDDAEB", "A1B8D8", "7999C4", "204476", "0E294F"},
             {"D1D3E4", "A8ABC9", "8387AE", "282C5A", "12153C"}, {"E5CDD2", "CBA1AA", "B17A86", "5E222F", "3E0F19"}};
+
+    /**
+     * 主题-中国色-main（象牙白、玄青、胭脂、朱砂、绯红、琥珀、缃色、竹青、青黛、黛紫）
+     */
+    static final String[] THEME_CHINA_MAIN = {"FFFEF9", "3D3B4F", "9D2933", "FF461F", "C91F37", "CA6924", "F0C239", "789262", "177CB0", "815463"};
+    /**
+     * 主题-中国色-sub
+     */
+    static final String[][] THEME_CHINA_SUB = {
+            {"FFFEFD", "FFFEF9", "FFF8EF", "FFF2E5", "FFE8D5"},
+            {"D5D4DC", "ACABB9", "828190", "59576C", "3D3B4F"},
+            {"EBD4D6", "D7A9AD", "C37E84", "AF535C", "7A1E26"},
+            {"FFE2D9", "FFBFAD", "FF9C81", "FF7955", "CC2E08"},
+            {"F2D0D4", "E5A1A9", "D8727E", "B83D4D", "8F1525"},
+            {"F5E6D9", "EBCCB3", "E1B28D", "C48542", "8F5118"},
+            {"FCF3D4", "F8E7A9", "F4DB7E", "D9AE2A", "A67E15"},
+            {"E5EDE0", "CBDBC1", "B1C9A2", "93A97E", "5A7348"},
+            {"D5EBF4", "ABDAEA", "81C9E0", "45A8CC", "0E5F85"},
+            {"E5D8DD", "CBACB8", "B18099", "946B7B", "5C3445"}};
 }
