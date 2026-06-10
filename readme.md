@@ -17,7 +17,7 @@ Windows • Linux • macOS
 
 ## 截图速览
 
-> 以下为主要功能界面截图。翻译、图片助手、PDF、环境变量、系统信息、配置文件转换、Protobuf 等模块暂未单独配图，可在安装后于对应 Tab 中体验。
+> 以下为主要功能界面截图。翻译、UA分析、图片助手、PDF、环境变量、系统信息、配置文件转换、Protobuf 等模块暂未单独配图，可在安装后于对应 Tab 中体验。
 
 ![随手记](screen_shoot/quick_note_2_mac.png)
 
@@ -71,6 +71,9 @@ Windows • Linux • macOS
 ![zanshang](assets/material/wx-zanshang.jpg)
 
 # MooTool全功能地图
+
+> 多个工具模块提供统一的「历史记录」子 Tab，支持搜索、应用、复制输入/输出、删除与清空。
+
 ## 随手记
 ### 多语言语法高亮支持
 - markdown
@@ -216,6 +219,13 @@ Windows • Linux • macOS
 ### 请求历史记录
 ### 搜索
 
+## UA分析
+### User-Agent 解析（浏览器、引擎、操作系统、设备类型/品牌/型号等）
+### 识别移动端 / 爬虫 Bot
+### 预设 UA 快速选择（Chrome、Firefox、Safari、Edge、微信内置浏览器、curl 等）
+### 粘贴 / 清空
+### 历史记录
+
 ## 编码转换
 ### Native->Unicode
 ### Unicode->Native
@@ -224,6 +234,7 @@ Windows • Linux • macOS
 ### 十六进制->Native
 ### Native->ASCII（十进制/十六进制字符码）
 ### ASCII->Native
+### 历史记录
 
 ## 二维码
 ### 二维码生成
@@ -255,6 +266,7 @@ Windows • Linux • macOS
 ### 随机UUID生成
 ### 随机生成只包含数字/字母/数字字母的字符串，位数自定义
 ### 随机生成复杂密码，位数自定义
+### 历史记录
 
 ## 计算
 ### 四则运算
@@ -280,6 +292,7 @@ Windows • Linux • macOS
 ### 颜色格式转换
 ### 颜色收藏
 ### 颜色混合计算（取反、相交、相加、差值、平均）
+### 历史记录
 
 ## 图片助手
 ### 本地图床
@@ -298,17 +311,19 @@ Windows • Linux • macOS
 ### Cron 转自然语言
 ### 最近 10 次运行时间
 ### Cron表达式收藏
-### Cron表达式历史记录（TODO）
+### 历史记录
 ### 常用Cron表达式
 
 ## 正则
 ### 正则表达式匹配测试
 ### 收藏正则表达式
 ### 常用正则表达式
+### 历史记录
 
 ## Java
 ### Java/groovy代码格式化、高亮
 ### Java/groovy代码解释执行
+### 历史记录
 
 ## 格式化
 ### 上传文件格式化
@@ -317,6 +332,7 @@ Windows • Linux • macOS
 - HTML
 - Java
 ### 粘贴文本直接格式化（Nginx / Java / XML / HTML）
+### 历史记录
 
 ## PDF
 ### PDF拆分
@@ -338,7 +354,9 @@ Windows • Linux • macOS
 ## 配置文件转换
 ### Properties->YAML
 ### YAML->Properties
-### YAML格式校验（语法校验、错误行号定位、格式化）
+### YAML 校验（语法校验、错误行号定位）
+### YAML 格式化
+### 历史记录
 ### JSON->YAML（TODO）
 ### YAML->JSON（TODO）
 
@@ -353,6 +371,7 @@ Windows • Linux • macOS
 - `.proto` 定义格式化
 ### Wire Format 解码（无需 `.proto` 定义）
 ### Hex / Base64 互转
+### 历史记录
 
 ## 应用与设置
 ### 同步和备份（Git 同步、数据导出）
@@ -361,6 +380,9 @@ Windows • Linux • macOS
 ### 启动时自动检查更新
 ### SQL 方言设置
 ### 系统托盘
+### 窗口行为
+- macOS / Windows：点击关闭按钮时隐藏到 Dock / 任务栏，应用继续在后台运行
+- Linux：点击关闭按钮退出应用
 ### 外观
 - 多主题风格（Flat Light/Dark、macOS、One Dark、Monokai 等）
 - 强调色
