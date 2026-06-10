@@ -945,7 +945,7 @@ public class TextDiffForm {
                 false));
 
         statusLabel = new JLabel();
-        statusLabel.setText("准备就绪");
+        statusLabel.setText(I18n.get("textDiff.status.ready"));
         toolBarPanel.add(statusLabel, new GridConstraints(0,
                 11,
                 1,

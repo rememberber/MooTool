@@ -120,8 +120,7 @@ public class QrCodeForm {
                 try {
                     applyRecognitionResult(recognitionImagePath, get());
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(App.mainFrame, "识别失败！\n\n" + ex.getMessage(), "失败",
-                            JOptionPane.ERROR_MESSAGE);
+                    MsgUtil.errorWithDetail(App.mainFrame, "msg.qrRecognizeFailed", ex.getMessage());
                     logger.error(ExceptionUtils.getStackTrace(ex));
                 }
             }
@@ -139,8 +138,7 @@ public class QrCodeForm {
 
             QrCodeListener.output("从剪贴板识别:\n" + recognitionContent);
         } else {
-            JOptionPane.showMessageDialog(App.mainFrame, "剪贴板中没有图片！", "提示",
-                    JOptionPane.INFORMATION_MESSAGE);
+            MsgUtil.info(App.mainFrame, "msg.clipboardNoImage");
         }
     }
 
@@ -212,8 +210,7 @@ public class QrCodeForm {
             GenerateRequest request = collectGenerateRequest(save);
             showGeneratedImage(generateImage(request), request);
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
-                    JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(App.mainFrame, "msg.generateFailed", ex.getMessage());
             logger.error(ExceptionUtils.getStackTrace(ex));
         }
     }

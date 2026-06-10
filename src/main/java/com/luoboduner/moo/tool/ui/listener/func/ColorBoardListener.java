@@ -12,6 +12,7 @@ import com.luoboduner.moo.tool.ui.form.func.ColorBoardForm;
 import com.luoboduner.moo.tool.ui.frame.FavoriteColorFrame;
 import com.luoboduner.moo.tool.util.AlertUtil;
 import com.luoboduner.moo.tool.util.ColorUtil;
+import com.luoboduner.moo.tool.util.MsgUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -35,7 +36,7 @@ public class ColorBoardListener {
 //            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 //            GraphicsDevice gd = ge.getDefaultScreenDevice();
 //            if (!gd.isWindowTranslucencySupported(TRANSLUCENT)) {
-//                JOptionPane.showMessageDialog(colorBoardForm.getColorBoardPanel(), "当前系统环境不支持！", "系统环境", JOptionPane.INFORMATION_MESSAGE);
+//                MsgUtil.info(colorBoardForm.getColorBoardPanel(), "msg.systemEnvUnsupported");
 //                return;
 //            }
 //            App.mainFrame.setVisible(false);
@@ -61,7 +62,7 @@ public class ColorBoardListener {
                         });
             } catch (AWTException | UnsupportedOperationException ex) {
                 logger.error(ex);
-                JOptionPane.showMessageDialog(colorBoardForm.getColorBoardPanel(), "当前系统环境不支持！", "系统环境", JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(colorBoardForm.getColorBoardPanel(), "msg.systemEnvUnsupported");
             }
         });
         colorBoardForm.getCopyButton().addActionListener(e -> {

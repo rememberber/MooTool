@@ -4,6 +4,7 @@ import cn.hutool.core.swing.clipboard.ClipboardUtil;
 import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.form.func.UaParseForm;
 import com.luoboduner.moo.tool.util.FuncHistoryUtil;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.UaParseUtil;
 import org.apache.commons.lang3.StringUtils;
 
@@ -49,7 +50,7 @@ public class UaParseListener {
         Map<String, String> result = UaParseUtil.parse(ua);
         String[] fields = result.keySet().toArray(new String[0]);
         String[] values = result.values().toArray(new String[0]);
-        DefaultTableModel model = new DefaultTableModel(new String[]{"字段", "值"}, 0) {
+        DefaultTableModel model = new DefaultTableModel(resultColumns(), 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -73,6 +74,10 @@ public class UaParseListener {
     }
 
     private static void clearResult(UaParseForm form) {
-        form.getResultTable().setModel(new DefaultTableModel(new String[]{"字段", "值"}, 0));
+        form.getResultTable().setModel(new DefaultTableModel(resultColumns(), 0));
+    }
+
+    private static String[] resultColumns() {
+        return new String[]{I18n.get("table.col.field"), I18n.get("table.col.value")};
     }
 }

@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.ui.frame;
 
 import com.formdev.flatlaf.util.SystemInfo;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -43,7 +44,7 @@ public class ScreenCaptureFrame extends JWindow {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice gd = ge.getDefaultScreenDevice();
         if (!gd.isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency.PERPIXEL_TRANSLUCENT)) {
-            JOptionPane.showMessageDialog(null, "当前系统环境不支持截图功能", "提示", JOptionPane.INFORMATION_MESSAGE);
+            MsgUtil.info(null, "msg.screenshotUnsupported");
             if (cancelCallback != null) {
                 cancelCallback.run();
             }
@@ -198,7 +199,7 @@ public class ScreenCaptureFrame extends JWindow {
                 }
             } catch (Exception ex) {
                 log.error(ExceptionUtils.getStackTrace(ex));
-                JOptionPane.showMessageDialog(null, "截图失败：\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(null, "msg.screenshotFailed", ex.getMessage());
                 if (onError != null) {
                     onError.run();
                 }

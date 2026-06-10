@@ -20,8 +20,11 @@ public final class TranslationHistoryUtil {
         if (StringUtils.isBlank(result)) {
             return false;
         }
-        return !result.startsWith("翻译中")
-                && !result.startsWith("访问")
+        String translating = I18n.get("translation.translating");
+        if (result.startsWith(translating) || result.startsWith("翻译中")) {
+            return false;
+        }
+        return !result.startsWith("访问")
                 && !result.startsWith("Bing翻译")
                 && !result.startsWith("解析翻译")
                 && !result.startsWith("Google翻译")

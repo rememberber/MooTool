@@ -51,16 +51,14 @@ public class QuickNoteImageInsertUtil {
 
         File selectedFile = fileChooser.getSelectedFile();
         if (selectedFile == null || !QuickNoteAttachmentUtil.isImageFile(selectedFile)) {
-            JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(),
-                    "请选择有效的图片文件", "提示", JOptionPane.WARNING_MESSAGE);
+            MsgUtil.info(MainWindow.getInstance().getMainPanel(), "msg.selectValidImage");
             return;
         }
 
         try {
             insertImageFromFile(textArea, selectedFile);
         } catch (IOException e) {
-            JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(),
-                    "插入图片失败\n\n" + e.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(MainWindow.getInstance().getMainPanel(), "msg.insertImageFailed", e.getMessage());
             log.error(ExceptionUtils.getStackTrace(e));
         }
     }
@@ -148,8 +146,7 @@ public class QuickNoteImageInsertUtil {
             return null;
         }
         if (StringUtils.isBlank(QuickNoteListener.selectedName)) {
-            JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(),
-                    "请先选择或新建一条笔记", "提示", JOptionPane.INFORMATION_MESSAGE);
+            MsgUtil.info(MainWindow.getInstance().getMainPanel(), "msg.selectOrCreateNote");
             return null;
         }
         return QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea();

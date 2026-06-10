@@ -9,6 +9,7 @@ import com.luoboduner.moo.tool.ui.listener.func.PDFMergerListener;
 import com.luoboduner.moo.tool.ui.listener.func.PDFSplitterListener;
 import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.I18nUiUtil;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import lombok.Getter;
 
@@ -313,7 +314,7 @@ public class PdfForm {
 
         public void add() {
             if (count >= maxRow) {
-                JOptionPane.showMessageDialog(taskPane, "最大为20个！", "警告", JOptionPane.WARNING_MESSAGE);
+                MsgUtil.show(taskPane, I18n.get("msg.pdfMaxTasks"), "common.warning", JOptionPane.WARNING_MESSAGE);
                 return;
             }
             rowCount++;
@@ -479,7 +480,7 @@ public class PdfForm {
             progressBar.setStringPainted(true);
             progressBar.setBounds(0, 0, 150, 2);
             components[4] = progressBar;
-            JLabel label = new JLabel("未开始");
+            JLabel label = new JLabel(I18n.get("pdf.status.notStarted"));
             label.setHorizontalAlignment(JLabel.CENTER);
             components[5] = label;
             return components;
@@ -556,7 +557,7 @@ public class PdfForm {
             progressBar.setStringPainted(true);
             progressBar.setBounds(0, 0, 150, 2);
             components[6] = progressBar;
-            JLabel label = new JLabel("未开始");
+            JLabel label = new JLabel(I18n.get("pdf.status.notStarted"));
             label.setHorizontalAlignment(JLabel.CENTER);
             components[7] = label;
             return components;

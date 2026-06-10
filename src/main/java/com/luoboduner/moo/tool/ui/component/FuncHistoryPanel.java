@@ -8,7 +8,10 @@ import com.luoboduner.moo.tool.dao.TFuncHistoryMapper;
 import com.luoboduner.moo.tool.domain.TFuncHistory;
 import com.luoboduner.moo.tool.util.AlertUtil;
 import com.luoboduner.moo.tool.util.FuncHistoryUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.JTableUtil;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import org.apache.commons.lang3.StringUtils;
 
@@ -20,6 +23,7 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 /**
@@ -27,7 +31,8 @@ import java.util.function.Consumer;
  */
 public class FuncHistoryPanel extends JPanel {
 
-    private static final String[] HISTORY_COLUMNS = {"id", "时间", "摘要", "操作"};
+    private static final CopyOnWriteArrayList<FuncHistoryPanel> INSTANCES = new CopyOnWriteArrayList<>();
+    private static boolean i18nRegistered;
 
     private final String funcType;
     private final Consumer<TFuncHistory> applyHandler;
@@ -37,33 +42,58 @@ public class FuncHistoryPanel extends JPanel {
     private final JTextArea inputTextArea = new JTextArea(4, 20);
     private final JTextArea outputTextArea = new JTextArea(4, 20);
     private final JLabel metaLabel = new JLabel(" ");
-    private final JButton applyButton = new JButton("应用");
+    private final JButton applyButton = new JButton();
     private final JButton copyInputButton = new JButton(new FlatSVGIcon("icon/copy.svg"));
     private final JButton copyOutputButton = new JButton(new FlatSVGIcon("icon/copy.svg"));
     private final JButton deleteButton = new JButton(new FlatSVGIcon("icon/remove.svg"));
-    private final JButton clearButton = new JButton("清空全部");
+    private final JButton clearButton = new JButton();
 
     private Integer selectedHistoryId;
 
     public FuncHistoryPanel(String funcType, Consumer<TFuncHistory> applyHandler) {
         this.funcType = funcType;
         this.applyHandler = applyHandler;
+        INSTANCES.add(this);
         initUi();
         addListeners();
+        applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(FuncHistoryPanel::refreshAllI18n);
+            i18nRegistered = true;
+        }
         refreshList();
+    }
+
+    private static String[] historyColumns() {
+        return new String[]{"id", I18n.get("history.col.time"), I18n.get("history.col.summary"),
+                I18n.get("history.col.action")};
+    }
+
+    public static void refreshAllI18n() {
+        com.luoboduner.moo.tool.util.FuncHistorySupport.refreshHistoryTabTitles();
+        for (FuncHistoryPanel panel : INSTANCES) {
+            panel.applyI18n();
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setPlaceholder(searchField, "history.searchPlaceholder");
+        applyButton.setText(I18n.get("common.apply"));
+        copyInputButton.setToolTipText(I18n.get("history.copyInput"));
+        copyOutputButton.setToolTipText(I18n.get("history.copyOutput"));
+        deleteButton.setToolTipText(I18n.get("history.deleteSelected"));
+        clearButton.setText(I18n.get("history.clearAll"));
+        DefaultTableModel model = (DefaultTableModel) historyTable.getModel();
+        model.setColumnIdentifiers(historyColumns());
     }
 
     private void initUi() {
         setLayout(new BorderLayout(0, 6));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        searchField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "搜索摘要、输入或输出");
         searchField.putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON, new FlatSearchIcon());
 
         applyButton.setIcon(new FlatSVGIcon("icon/run.svg"));
-        copyInputButton.setToolTipText("复制输入");
-        copyOutputButton.setToolTipText("复制输出");
-        deleteButton.setToolTipText("删除选中");
         inputTextArea.setLineWrap(true);
         outputTextArea.setLineWrap(true);
         outputTextArea.setEditable(false);
@@ -168,7 +198,7 @@ public class FuncHistoryPanel extends JPanel {
     }
 
     private DefaultTableModel createTableModel() {
-        DefaultTableModel model = new DefaultTableModel(HISTORY_COLUMNS, 0) {
+        DefaultTableModel model = new DefaultTableModel(historyColumns(), 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -258,9 +288,7 @@ public class FuncHistoryPanel extends JPanel {
     }
 
     private void clearAllHistory() {
-        int confirm = JOptionPane.showConfirmDialog(this, "确定清空全部历史记录？", "确认",
-                JOptionPane.YES_NO_OPTION);
-        if (confirm != JOptionPane.YES_OPTION) {
+        if (MsgUtil.confirm(this, "msg.clearHistoryConfirm") != JOptionPane.YES_OPTION) {
             return;
         }
         MybatisUtil.getSqlSession().getMapper(TFuncHistoryMapper.class).deleteAllByFuncType(funcType);
@@ -271,7 +299,7 @@ public class FuncHistoryPanel extends JPanel {
     private void copyText(String text, JButton button) {
         if (StringUtils.isNotBlank(text)) {
             ClipboardUtil.setStr(text);
-            AlertUtil.buttonInfo(button, "", "已复制", 1500);
+            AlertUtil.buttonInfo(button, "", I18n.get("common.copied"), 1500);
         }
     }
 }

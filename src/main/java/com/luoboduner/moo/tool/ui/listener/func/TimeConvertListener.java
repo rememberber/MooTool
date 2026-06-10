@@ -8,6 +8,7 @@ import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
 import com.luoboduner.moo.tool.ui.frame.ClockFrame;
 import com.luoboduner.moo.tool.util.AlertUtil;
 import com.luoboduner.moo.tool.util.ConsoleUtil;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
 
@@ -157,7 +158,7 @@ public class TimeConvertListener {
         } catch (Exception ex) {
             ex.printStackTrace();
             logger.error(ExceptionUtils.getStackTrace(ex));
-            JOptionPane.showMessageDialog(timeConvertForm.getTimeConvertPanel(), ex.getMessage(), "转换失败！", JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorDetail(timeConvertForm.getTimeConvertPanel(), "msg.convertFailedTitle", ex.getMessage());
         }
     }
 
@@ -183,7 +184,7 @@ public class TimeConvertListener {
         } catch (Exception ex) {
             ex.printStackTrace();
             logger.error(ExceptionUtils.getStackTrace(ex));
-            JOptionPane.showMessageDialog(timeConvertForm.getTimeConvertPanel(), ex.getMessage(), "转换失败！", JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorDetail(timeConvertForm.getTimeConvertPanel(), "msg.convertFailedTitle", ex.getMessage());
         }
     }
 

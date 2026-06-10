@@ -9,7 +9,10 @@ import com.luoboduner.moo.tool.domain.TTranslationWord;
 import com.luoboduner.moo.tool.ui.form.TranslationLayoutForm;
 import com.luoboduner.moo.tool.ui.form.func.TranslationForm;
 import com.luoboduner.moo.tool.util.AlertUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.JTableUtil;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.TranslationHistoryUtil;
@@ -29,8 +32,16 @@ import java.util.List;
 @Slf4j
 public class TranslationListener {
 
-    private static final String[] WORD_BOOK_COLUMNS = {"id", "原文", "译文"};
-    private static final String[] HISTORY_COLUMNS = {"id", "时间", "原文", "语言", "翻译源"};
+    private static boolean i18nRegistered;
+
+    private static String[] wordBookColumns() {
+        return new String[]{"id", I18n.get("table.col.source"), I18n.get("table.col.target")};
+    }
+
+    private static String[] historyColumns() {
+        return new String[]{"id", I18n.get("history.col.time"), I18n.get("table.col.source"),
+                I18n.get("table.col.lang"), I18n.get("table.col.translator")};
+    }
 
     private static TTranslationWordMapper wordMapper() {
         return MybatisUtil.getSqlSession().getMapper(TTranslationWordMapper.class);
@@ -46,6 +57,11 @@ public class TranslationListener {
     public static void addListeners() {
         TranslationForm translationForm = TranslationForm.getInstance();
         TranslationLayoutForm layoutForm = translationForm.getTranslationLayoutForm();
+        applyI18nStatic();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(TranslationListener::applyI18nStatic);
+            i18nRegistered = true;
+        }
 
         layoutForm.getSaveToWordBookButton().addActionListener(e -> saveFromTranslationTab());
 
@@ -152,7 +168,7 @@ public class TranslationListener {
     }
 
     public static DefaultTableModel createWordBookTableModel() {
-        DefaultTableModel model = new DefaultTableModel(WORD_BOOK_COLUMNS, 0) {
+        DefaultTableModel model = new DefaultTableModel(wordBookColumns(), 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -207,15 +223,11 @@ public class TranslationListener {
         String sourceText = layoutForm.getTextArea1().getText();
         String targetText = layoutForm.getTextArea2().getText();
         if (StringUtils.isBlank(sourceText)) {
-            JOptionPane.showMessageDialog(translationForm.getTranslationPanel(), "请先输入要收藏的原文", "提示",
-                    JOptionPane.INFORMATION_MESSAGE);
+            MsgUtil.info(translationForm.getTranslationPanel(), "msg.enterSourceToSave");
             return;
         }
-        if (StringUtils.isBlank(targetText) || targetText.startsWith("翻译中")
-                || targetText.startsWith("访问") || targetText.startsWith("Bing翻译")
-                || targetText.startsWith("解析翻译")) {
-            JOptionPane.showMessageDialog(translationForm.getTranslationPanel(), "请等待翻译完成后再收藏", "提示",
-                    JOptionPane.INFORMATION_MESSAGE);
+        if (StringUtils.isBlank(targetText) || !TranslationHistoryUtil.isSuccessfulTranslation(targetText)) {
+            MsgUtil.info(translationForm.getTranslationPanel(), "msg.waitTranslation");
             return;
         }
 
@@ -225,7 +237,7 @@ public class TranslationListener {
         if (saved != null) {
             selectedWordId = saved.getId();
             refreshWordBookList();
-            AlertUtil.buttonInfo(layoutForm.getSaveToWordBookButton(), "", "已收藏", 1500);
+            AlertUtil.buttonInfo(layoutForm.getSaveToWordBookButton(), "", I18n.get("msg.savedToWordBook"), 1500);
         }
     }
 
@@ -236,7 +248,7 @@ public class TranslationListener {
         translationForm.getWordSourceTextArea().setText("");
         translationForm.getWordTargetTextArea().setText("");
         translationForm.getWordRemarkTextField().setText("");
-        translationForm.getWordLangLabel().setText("新建单词");
+        translationForm.getWordLangLabel().setText(I18n.get("translation.status.newWord"));
         translationForm.getWordSourceTextArea().requestFocusInWindow();
     }
 
@@ -248,9 +260,7 @@ public class TranslationListener {
         }
 
         Integer id = (Integer) translationForm.getListTable().getValueAt(row, 0);
-        int confirm = JOptionPane.showConfirmDialog(translationForm.getTranslationPanel(),
-                "确定删除选中的单词吗？", "确认", JOptionPane.YES_NO_OPTION);
-        if (confirm != JOptionPane.YES_OPTION) {
+        if (MsgUtil.confirm(translationForm.getTranslationPanel(), "msg.confirmDeleteWord") != JOptionPane.YES_OPTION) {
             return;
         }
 
@@ -263,8 +273,7 @@ public class TranslationListener {
         TranslationForm translationForm = TranslationForm.getInstance();
         String sourceText = translationForm.getWordSourceTextArea().getText();
         if (StringUtils.isBlank(sourceText)) {
-            JOptionPane.showMessageDialog(translationForm.getTranslationPanel(), "原文不能为空", "提示",
-                    JOptionPane.INFORMATION_MESSAGE);
+            MsgUtil.info(translationForm.getTranslationPanel(), "msg.sourceRequired");
             return;
         }
 
@@ -290,7 +299,7 @@ public class TranslationListener {
         if (saved != null) {
             selectedWordId = saved.getId();
             refreshWordBookList();
-            AlertUtil.buttonInfo(translationForm.getWordSaveButton(), "保存", "已保存", 1500);
+            AlertUtil.buttonInfo(translationForm.getWordSaveButton(), I18n.get("common.save"), I18n.get("msg.saved"), 1500);
         }
     }
 
@@ -312,7 +321,7 @@ public class TranslationListener {
             word.setTargetLang("中文（简体）");
         }
 
-        translationForm.getWordTargetTextArea().setText("翻译中...");
+        translationForm.getWordTargetTextArea().setText(I18n.get("translation.translating"));
         ThreadUtil.execute(() -> {
             String result = TranslationWordBookUtil.retranslate(word);
             SwingUtilities.invokeLater(() -> translationForm.getWordTargetTextArea().setText(result));
@@ -361,12 +370,12 @@ public class TranslationListener {
     private static void copyText(String text, JButton button) {
         if (StringUtils.isNotBlank(text)) {
             ClipboardUtil.setStr(text);
-            AlertUtil.buttonInfo(button, "", "已复制", 1500);
+            AlertUtil.buttonInfo(button, "", I18n.get("common.copied"), 1500);
         }
     }
 
     public static DefaultTableModel createHistoryTableModel() {
-        DefaultTableModel model = new DefaultTableModel(HISTORY_COLUMNS, 0) {
+        DefaultTableModel model = new DefaultTableModel(historyColumns(), 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
@@ -474,9 +483,7 @@ public class TranslationListener {
         }
 
         Integer id = (Integer) translationForm.getHistoryTable().getValueAt(row, 0);
-        int confirm = JOptionPane.showConfirmDialog(translationForm.getTranslationPanel(),
-                "确定删除选中的历史记录吗？", "确认", JOptionPane.YES_NO_OPTION);
-        if (confirm != JOptionPane.YES_OPTION) {
+        if (MsgUtil.confirm(translationForm.getTranslationPanel(), "msg.confirmDeleteHistory") != JOptionPane.YES_OPTION) {
             return;
         }
 
@@ -491,9 +498,7 @@ public class TranslationListener {
             return;
         }
 
-        int confirm = JOptionPane.showConfirmDialog(translationForm.getTranslationPanel(),
-                "确定清空全部翻译历史吗？此操作不可恢复。", "确认", JOptionPane.YES_NO_OPTION);
-        if (confirm != JOptionPane.YES_OPTION) {
+        if (MsgUtil.confirm(translationForm.getTranslationPanel(), "msg.confirmClearHistoryIrreversible") != JOptionPane.YES_OPTION) {
             return;
         }
 
@@ -525,6 +530,17 @@ public class TranslationListener {
         if (translationTabbedPane != null) {
             translationTabbedPane.setSelectedIndex(0);
         }
-        AlertUtil.buttonInfo(translationForm.getHistoryApplyButton(), "应用到翻译", "已应用", 1500);
+        AlertUtil.buttonInfo(translationForm.getHistoryApplyButton(), I18n.get("translation.applyToTranslation"),
+                I18n.get("msg.applied"), 1500);
+    }
+
+    public static void applyI18nStatic() {
+        TranslationForm form = TranslationForm.getInstance();
+        if (form.getListTable() != null) {
+            ((DefaultTableModel) form.getListTable().getModel()).setColumnIdentifiers(wordBookColumns());
+        }
+        if (form.getHistoryTable() != null) {
+            ((DefaultTableModel) form.getHistoryTable().getModel()).setColumnIdentifiers(historyColumns());
+        }
     }
 }
