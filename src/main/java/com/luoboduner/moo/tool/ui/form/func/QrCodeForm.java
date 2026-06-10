@@ -19,6 +19,8 @@ import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.component.ImagePreviewComponent;
 import com.luoboduner.moo.tool.ui.listener.func.QrCodeListener;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.*;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -30,6 +32,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * <pre>
@@ -68,6 +71,12 @@ public class QrCodeForm {
     private static final Log logger = LogFactory.get();
 
     private static QrCodeForm qrCodeForm;
+
+    private static boolean i18nRegistered;
+
+    private static final String[] ERROR_CORRECTION_KEYS = {
+            "qrcode.error.low", "qrcode.error.mediumLow", "qrcode.error.mediumHigh", "qrcode.error.high"
+    };
 
     private static TQrCodeMapper qrCodeMapper = MybatisUtil.getSqlSession().getMapper(TQrCodeMapper.class);
 
@@ -210,13 +219,14 @@ public class QrCodeForm {
     }
 
     private static void applyErrorCorrection(QrConfig config, String errorCorrectionLevel) {
-        if ("低".equals(errorCorrectionLevel)) {
+        int index = qrCodeForm.getErrorCorrectionLevelComboBox().getSelectedIndex();
+        if (index == 0) {
             config.setErrorCorrection(ErrorCorrectionLevel.L);
-        } else if ("中低".equals(errorCorrectionLevel)) {
+        } else if (index == 1) {
             config.setErrorCorrection(ErrorCorrectionLevel.M);
-        } else if ("中高".equals(errorCorrectionLevel)) {
+        } else if (index == 2) {
             config.setErrorCorrection(ErrorCorrectionLevel.Q);
-        } else if ("高".equals(errorCorrectionLevel)) {
+        } else if (index == 3) {
             config.setErrorCorrection(ErrorCorrectionLevel.H);
         }
     }
@@ -288,6 +298,49 @@ public class QrCodeForm {
         QrCodeListener.addListeners();
 
         ScrollUtil.smoothPane(qrCodeForm.getHistoryScrollPane());
+
+        qrCodeForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(QrCodeForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setTabTitle(tabbedPane1, 0, "qrcode.tab.generate");
+        I18nUiUtil.setTabTitle(tabbedPane1, 1, "qrcode.tab.recognize");
+        I18nUiUtil.setTabTitle(tabbedPane1, 2, "qrcode.tab.history");
+        I18nUiUtil.setText(generateButton, "qrcode.generate");
+        I18nUiUtil.setText(saveAsButton, "common.save");
+        I18nUiUtil.setText(recognitionButton, "qrcode.recognize");
+        I18nUiUtil.setText(fromClipBoardButton, "qrcode.fromClipboard");
+        I18nUiUtil.localizeTree(controlPanel, Map.of(
+                "大小", "qrcode.size",
+                "纠错级别", "qrcode.errorLevel",
+                "Logo图片", "qrcode.logoImage"
+        ));
+        if (tabbedPane1.getTabCount() > 1 && tabbedPane1.getComponentAt(1) instanceof Container recognizeTab) {
+            I18nUiUtil.localizeTree(recognizeTab, Map.of(
+                    "二维码图片路径", "qrcode.imagePath"
+            ));
+        }
+        errorCorrectionLevelComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (index >= 0 && index < ERROR_CORRECTION_KEYS.length) {
+                    setText(I18n.get(ERROR_CORRECTION_KEYS[index]));
+                }
+                return this;
+            }
+        });
+    }
+
+    private static void applyI18nStatic() {
+        if (qrCodeForm != null) {
+            qrCodeForm.applyI18n();
+        }
     }
 
     private static void initUi() {

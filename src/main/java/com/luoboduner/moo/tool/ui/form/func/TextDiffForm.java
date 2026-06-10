@@ -14,6 +14,8 @@ import com.luoboduner.moo.tool.service.DiffService;
 import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.component.textviewer.RegexRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.listener.func.TextDiffListener;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
@@ -43,8 +45,6 @@ import java.awt.Insets;
 import java.awt.Toolkit;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-
 /**
  * <pre>
  * TextDiffForm - 文本对比功能界面
@@ -114,6 +114,8 @@ public class TextDiffForm {
 
     private static TextDiffForm textDiffForm;
 
+    private static boolean i18nRegistered;
+
     private static final Log logger = LogFactory.get();
 
     private static final TFuncContentMapper funcContentMapper = MybatisUtil.getSqlSession().getMapper(TFuncContentMapper.class);
@@ -133,6 +135,77 @@ public class TextDiffForm {
     public static void init() {
         textDiffForm = getInstance();
         textDiffForm.initForm();
+        textDiffForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(TextDiffForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setText(compareButton, "textDiff.compare");
+        I18nUiUtil.setText(clearButton, "textDiff.clear");
+        I18nUiUtil.setText(swapButton, "textDiff.swap");
+        I18nUiUtil.setText(copyDiffButton, "textDiff.copyDiff");
+        I18nUiUtil.setText(prevDiffButton, "textDiff.prevDiff");
+        I18nUiUtil.setText(nextDiffButton, "textDiff.nextDiff");
+        I18nUiUtil.setText(realTimeCheckBox, "textDiff.realTime");
+        I18nUiUtil.setText(ignoreWhitespaceCheckBox, "textDiff.ignoreWhitespace");
+        I18nUiUtil.setTitledBorder(leftPanel, "textDiff.leftPanel");
+        I18nUiUtil.setTitledBorder(rightPanel, "textDiff.rightPanel");
+        I18nUiUtil.setTitledBorder(unifiedPanel, "textDiff.unifiedPanel");
+
+        refreshDisplayModeComboBox();
+        refreshHighlightModeComboBox();
+        refreshIdleStatus();
+    }
+
+    private static void applyI18nStatic() {
+        if (textDiffForm != null) {
+            textDiffForm.applyI18n();
+        }
+    }
+
+    private void refreshDisplayModeComboBox() {
+        int index = displayModeComboBox.getSelectedIndex();
+        displayModeComboBox.removeAllItems();
+        displayModeComboBox.addItem(I18n.get("textDiff.display.sideBySide"));
+        displayModeComboBox.addItem(I18n.get("textDiff.display.unified"));
+        if (index >= 0 && index < displayModeComboBox.getItemCount()) {
+            displayModeComboBox.setSelectedIndex(index);
+        } else {
+            displayModeComboBox.setSelectedIndex(0);
+        }
+    }
+
+    private void refreshHighlightModeComboBox() {
+        int index = highlightModeComboBox.getSelectedIndex();
+        highlightModeComboBox.removeAllItems();
+        highlightModeComboBox.addItem(I18n.get("textDiff.highlight.both"));
+        highlightModeComboBox.addItem(I18n.get("textDiff.highlight.charOnly"));
+        highlightModeComboBox.addItem(I18n.get("textDiff.highlight.lineOnly"));
+        if (index >= 0 && index < highlightModeComboBox.getItemCount()) {
+            highlightModeComboBox.setSelectedIndex(index);
+        } else {
+            highlightModeComboBox.setSelectedIndex(1);
+        }
+        syncHighlightModeFromCombo();
+    }
+
+    private void syncHighlightModeFromCombo() {
+        switch (highlightModeComboBox.getSelectedIndex()) {
+            case 1 -> highlightMode = HighlightMode.CHAR_ONLY;
+            case 2 -> highlightMode = HighlightMode.LINE_ONLY;
+            default -> highlightMode = HighlightMode.BOTH;
+        }
+    }
+
+    private void refreshIdleStatus() {
+        if (leftTextArea.getText().isEmpty() && rightTextArea.getText().isEmpty()) {
+            statusLabel.setText(I18n.get("textDiff.status.ready"));
+        } else if (realTimeCheckBox.isSelected()) {
+            performDiff();
+        }
     }
 
     /**
@@ -278,25 +351,8 @@ public class TextDiffForm {
     public void initForm() {
         TextDiffListener.addListeners();
 
-        // 设置默认显示模式
-        displayModeComboBox.addItem("并排对比");
-        displayModeComboBox.addItem("统一差异");
-        displayModeComboBox.setSelectedIndex(0);
-
-        // 高亮模式（默认仅字符，避免把相同部分也高亮）
-        highlightModeComboBox.addItem("双层高亮");
-        highlightModeComboBox.addItem("仅字符");
-        highlightModeComboBox.addItem("仅整行");
-        highlightModeComboBox.setSelectedIndex(1);
         highlightModeComboBox.addActionListener(e -> {
-            switch ((String) Objects.requireNonNull(highlightModeComboBox.getSelectedItem())) {
-                case "仅字符":
-                    highlightMode = HighlightMode.CHAR_ONLY; break;
-                case "仅整行":
-                    highlightMode = HighlightMode.LINE_ONLY; break;
-                default:
-                    highlightMode = HighlightMode.BOTH;
-            }
+            syncHighlightModeFromCombo();
             if (realTimeCheckBox.isSelected()) {
                 performDiff();
             }
@@ -391,9 +447,7 @@ public class TextDiffForm {
      * 更新显示模式
      */
     public void updateDisplayMode() {
-        String selectedMode = (String) displayModeComboBox.getSelectedItem();
-
-        if ("并排对比".equals(selectedMode)) {
+        if (displayModeComboBox.getSelectedIndex() == 0) {
             // 显示并排对比模式
             mainSplitPane.setLeftComponent(leftScrollPane);
             mainSplitPane.setRightComponent(rightScrollPane);
@@ -419,7 +473,7 @@ public class TextDiffForm {
         String rightText = rightTextArea.getText();
 
         if (leftText.isEmpty() && rightText.isEmpty()) {
-            statusLabel.setText("请输入要对比的文本");
+            statusLabel.setText(I18n.get("textDiff.status.enterText"));
             return;
         }
 
@@ -456,14 +510,14 @@ public class TextDiffForm {
             // 更新状态：与可跳转点一致
             int changes = (diffResult.segments() != null) ? diffResult.segments().size() : 0;
             if (highlightMode == HighlightMode.CHAR_ONLY) {
-                statusLabel.setText("字符差异 " + changes + " 处");
+                statusLabel.setText(I18n.format("textDiff.status.charDiff", changes));
             } else {
-                statusLabel.setText("对比完成，共发现 " + changes + " 处差异");
+                statusLabel.setText(I18n.format("textDiff.status.complete", changes));
             }
 
         } catch (Exception e) {
             logger.error("执行文本对比失败", e);
-            statusLabel.setText("对比失败：" + e.getMessage());
+            statusLabel.setText(I18n.format("textDiff.status.failed", e.getMessage()));
         }
     }
 
@@ -586,7 +640,7 @@ public class TextDiffForm {
         if (rOff >= 0) {
             centerOnOffset(rightTextArea, rOff);
         }
-        statusLabel.setText("跳至第 " + (navIndex + 1) + "/" + max + " 处差异");
+        statusLabel.setText(I18n.format("textDiff.status.gotoDiff", navIndex + 1, max));
     }
 
     private void centerOnOffset(RSyntaxTextArea ta, int offset) {
@@ -642,7 +696,7 @@ public class TextDiffForm {
         leftTextArea.setText("");
         rightTextArea.setText("");
         unifiedTextArea.setText("");
-        statusLabel.setText("已清空");
+        statusLabel.setText(I18n.get("textDiff.status.cleared"));
     }
 
     /**
@@ -658,7 +712,7 @@ public class TextDiffForm {
         // 交换后也做一次对比，确保高亮与内容同步
         performDiff();
 
-        statusLabel.setText("已交换文本");
+        statusLabel.setText(I18n.get("textDiff.status.swapped"));
     }
 
     /**
@@ -669,9 +723,9 @@ public class TextDiffForm {
         if (!diffText.isEmpty()) {
             Toolkit.getDefaultToolkit().getSystemClipboard()
                     .setContents(new java.awt.datatransfer.StringSelection(diffText), null);
-            statusLabel.setText("差异结果已复制到剪贴板");
+            statusLabel.setText(I18n.get("textDiff.status.copied"));
         } else {
-            statusLabel.setText("没有差异结果可复制");
+            statusLabel.setText(I18n.get("textDiff.status.noCopy"));
         }
     }
 

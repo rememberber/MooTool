@@ -14,6 +14,8 @@ import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.ImagePreviewComponent;
 import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.listener.func.ImageListener;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
@@ -27,6 +29,7 @@ import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 /**
  * <pre>
@@ -72,6 +75,8 @@ public class ImageForm {
 
     private static ImageForm imageForm;
 
+    private static boolean i18nRegistered;
+
     private static final Log logger = LogFactory.get();
 
     private ImageForm() {
@@ -116,6 +121,48 @@ public class ImageForm {
         initList();
 
         ImageListener.addListeners();
+
+        imageForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(ImageForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setToolTip(zoomInButton, "image.tooltip.zoomIn");
+        I18nUiUtil.setToolTip(zoomOutButton, "image.tooltip.zoomOut");
+        I18nUiUtil.setToolTip(originalSizeButton, "image.tooltip.originalSize");
+        I18nUiUtil.setToolTip(fitSizeButton, "image.tooltip.fitSize");
+        I18nUiUtil.setToolTip(imageInfoLabel, "image.tooltip.imageInfo");
+        I18nUiUtil.setToolTip(deleteButton, "common.delete");
+        I18nUiUtil.setToolTip(exportButton, "common.export");
+        I18nUiUtil.setToolTip(saveFromClipboardButton, "image.fromClipboard");
+        I18nUiUtil.setToolTip(newButton, "common.new");
+        I18nUiUtil.setToolTip(saveButton, "common.save");
+        I18nUiUtil.setToolTip(copyToClipboardButton, "common.copy");
+
+        I18nUiUtil.setText(newButton, "common.new");
+        I18nUiUtil.setText(saveButton, "common.save");
+        I18nUiUtil.setText(copyToClipboardButton, "common.copy");
+
+        I18nUiUtil.localizeTree(imagePanel, Map.of(
+                "截图", "image.screenshot",
+                "从剪贴板获取", "image.fromClipboard",
+                "从系统打开", "image.openFromSystem",
+                "从Base64获取", "image.fromBase64",
+                "压缩", "image.compress",
+                "加水印", "image.watermark",
+                "OCR识别", "image.ocr",
+                "导出为Base64", "image.toBase64",
+                "复制到剪贴板", "image.copyToClipboard"
+        ));
+    }
+
+    private static void applyI18nStatic() {
+        if (imageForm != null) {
+            imageForm.applyI18n();
+        }
     }
 
     private static void initUi() {

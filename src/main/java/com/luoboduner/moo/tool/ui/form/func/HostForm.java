@@ -20,6 +20,7 @@ import com.luoboduner.moo.tool.ui.dialog.TranslationDialog;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
 import com.luoboduner.moo.tool.util.HostFileUtil;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
@@ -61,6 +62,9 @@ public class HostForm {
     private JTextField searchTextField;
 
     private static HostForm hostForm;
+
+    private static boolean i18nRegistered;
+
     private static THostMapper hostMapper = MybatisUtil.getSqlSession().getMapper(THostMapper.class);
 
     public static final String WIN_HOST_FILE_PATH = HostFileUtil.WIN_HOST_FILE_PATH;
@@ -218,6 +222,29 @@ public class HostForm {
         initList();
 
         HostListener.addListeners();
+
+        hostForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(HostForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setPlaceholder(searchTextField, "common.search");
+        I18nUiUtil.setToolTip(currentHostButton, "host.tooltip.currentHost");
+        I18nUiUtil.setToolTip(addButton, "quickNote.tooltip.new");
+        I18nUiUtil.setToolTip(findButton, "quickNote.tooltip.find");
+        I18nUiUtil.setToolTip(saveButton, "quickNote.tooltip.save");
+        I18nUiUtil.setToolTip(deleteButton, "quickNote.tooltip.delete");
+        I18nUiUtil.setToolTip(exportButton, "quickNote.tooltip.export");
+        I18nUiUtil.setToolTip(switchButton, "host.tooltip.switchHost");
+    }
+
+    private static void applyI18nStatic() {
+        if (hostForm != null) {
+            hostForm.applyI18n();
+        }
     }
 
     private static void initUi() {

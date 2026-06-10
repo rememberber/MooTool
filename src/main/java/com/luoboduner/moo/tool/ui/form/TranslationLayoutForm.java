@@ -8,6 +8,8 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.util.AlertUtil;
 import com.luoboduner.moo.tool.util.ConfigUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.ui.listener.func.TranslationListener;
 import com.luoboduner.moo.tool.util.TranslationHistoryUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
@@ -39,18 +41,19 @@ public class TranslationLayoutForm {
     private JButton copyButton;
     private JButton clearButton;
     private JButton saveToWordBookButton;
+    private JLabel translatorSourceLabel;
 
     private static final AtomicInteger changeCount = new AtomicInteger(0);
 
     private final AtomicInteger suppressAutoTranslate = new AtomicInteger(0);
 
-    private static final String TRANSLATOR_GOOGLE = "Google翻译";
-    private static final String TRANSLATOR_BING = "Bing翻译";
+    private static final String TRANSLATOR_GOOGLE_KEY = "translation.translator.google";
+    private static final String TRANSLATOR_BING_KEY = "translation.translator.bing";
 
     public TranslationLayoutForm() {
         exchangeButton = new JButton();
         exchangeButton.setIcon(new FlatSVGIcon("icon/exchange.svg"));
-        exchangeButton.setToolTipText("交换语言与文本");
+        exchangeButton.setToolTipText("交换语言与文本"); // updated in applyI18n
 
         comboBox1 = new JComboBox<>(Translator.getSourceLanguageNames());
         comboBox2 = new JComboBox<>(Translator.getTargetLanguageNames());
@@ -66,15 +69,15 @@ public class TranslationLayoutForm {
 
         translatorComboBox = new JComboBox<>();
         final DefaultComboBoxModel<String> translatorComboBoxModel = new DefaultComboBoxModel<>();
-        translatorComboBoxModel.addElement(TRANSLATOR_GOOGLE);
-        translatorComboBoxModel.addElement(TRANSLATOR_BING);
+        translatorComboBoxModel.addElement(I18n.get(TRANSLATOR_GOOGLE_KEY));
+        translatorComboBoxModel.addElement(I18n.get(TRANSLATOR_BING_KEY));
         translatorComboBox.setModel(translatorComboBoxModel);
-        translatorComboBox.setToolTipText("选择翻译源，失败时自动尝试备用翻译源");
+        translatorComboBox.setToolTipText("选择翻译源，失败时自动尝试备用翻译源"); // updated in applyI18n
         String savedTranslator = ConfigUtil.getInstance().getTranslatorType();
         if ("BING".equals(savedTranslator)) {
-            translatorComboBox.setSelectedItem(TRANSLATOR_BING);
+            translatorComboBox.setSelectedIndex(1);
         } else {
-            translatorComboBox.setSelectedItem(TRANSLATOR_GOOGLE);
+            translatorComboBox.setSelectedIndex(0);
         }
 
         copyButton = new JButton(new FlatSVGIcon("icon/copy.svg"));
@@ -90,7 +93,8 @@ public class TranslationLayoutForm {
         leftMenuToolBar.add(exchangeButton);
         ToolbarUiUtil.add(leftMenuToolBar, comboBox2);
         ToolbarUiUtil.addGroupSeparator(leftMenuToolBar);
-        ToolbarUiUtil.add(leftMenuToolBar, new JLabel("翻译源: "));
+        translatorSourceLabel = new JLabel("翻译源: ");
+        ToolbarUiUtil.add(leftMenuToolBar, translatorSourceLabel);
         ToolbarUiUtil.add(leftMenuToolBar, translatorComboBox);
         ToolbarUiUtil.addGroupSeparator(leftMenuToolBar);
         leftMenuToolBar.add(copyButton);
@@ -155,8 +159,7 @@ public class TranslationLayoutForm {
 
         translatorComboBox.addItemListener(e -> {
             if (e.getStateChange() == ItemEvent.SELECTED) {
-                String itemName = e.getItem().toString();
-                String translatorType = TRANSLATOR_BING.equals(itemName) ? "BING" : "GOOGLE";
+                String translatorType = translatorComboBox.getSelectedIndex() == 1 ? "BING" : "GOOGLE";
                 ConfigUtil.getInstance().setTranslatorType(translatorType);
                 if (!StringUtils.isEmpty(textArea1.getText())) {
                     translateControl();
@@ -242,7 +245,7 @@ public class TranslationLayoutForm {
         changeCount.incrementAndGet();
         SwingUtilities.invokeLater(() -> {
             if (!StringUtils.isEmpty(textArea1.getText())) {
-                textArea2.setText("翻译中...");
+                textArea2.setText(I18n.get("translation.translating"));
             }
         });
 
@@ -260,6 +263,23 @@ public class TranslationLayoutForm {
         });
         thread.setDaemon(true);
         thread.start();
+    }
+
+    public void applyI18n() {
+        I18nUiUtil.setToolTip(exchangeButton, "translation.tooltip.exchange");
+        I18nUiUtil.setToolTip(translatorComboBox, "translation.tooltip.selectTranslator");
+        I18nUiUtil.setToolTip(copyButton, "translation.tooltip.copyTranslation");
+        I18nUiUtil.setToolTip(clearButton, "common.clear");
+        I18nUiUtil.setToolTip(saveToWordBookButton, "translation.tooltip.saveToWordBook");
+        I18nUiUtil.setText(translatorSourceLabel, "translation.translatorSource");
+        int selectedIndex = translatorComboBox.getSelectedIndex();
+        DefaultComboBoxModel<String> model = (DefaultComboBoxModel<String>) translatorComboBox.getModel();
+        model.removeAllElements();
+        model.addElement(I18n.get(TRANSLATOR_GOOGLE_KEY));
+        model.addElement(I18n.get(TRANSLATOR_BING_KEY));
+        if (selectedIndex >= 0 && selectedIndex < model.getSize()) {
+            translatorComboBox.setSelectedIndex(selectedIndex);
+        }
     }
 
     private void translate() {
