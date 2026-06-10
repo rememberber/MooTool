@@ -16,12 +16,16 @@ import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.component.MooFlatTabbedPaneUI;
 import com.luoboduner.moo.tool.ui.component.TabUiUtil;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
+import com.luoboduner.moo.tool.ui.dialog.LanguageSelectDialog;
 import com.luoboduner.moo.tool.ui.dialog.SettingDialog;
 import com.luoboduner.moo.tool.ui.dialog.TranslationDialog;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.form.AboutForm;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
+import com.luoboduner.moo.tool.ui.frame.MainFrame;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
@@ -264,6 +268,32 @@ public class Init {
     }
 
     /**
+     * 首次启动引导用户选择语言
+     */
+    public static void languageGuide() {
+        if (App.config.isLanguagePromptShown()) {
+            return;
+        }
+        LanguageSelectDialog dialog = new LanguageSelectDialog();
+        dialog.pack();
+        dialog.setVisible(true);
+
+        String selectedLocale = dialog.getSelectedLocale();
+        if (!selectedLocale.equals(App.config.getLocale())) {
+            App.config.setLocale(selectedLocale);
+            I18n.setLocale(selectedLocale);
+            MainWindow.getInstance().refreshTabTitles();
+            if (MainFrame.topMenuBar != null) {
+                MainFrame.topMenuBar.refreshTexts();
+            }
+            refreshTrayMenuTexts();
+        }
+
+        App.config.setLanguagePromptShown(true);
+        App.config.save();
+    }
+
+    /**
      * 引导用户调整字号
      */
     public static void fontSizeGuide() {
@@ -289,10 +319,10 @@ public class Init {
                 App.popupMenu = new JPopupMenu();
 //                App.popupMenu.setFont(App.mainFrame.getContentPane().getFont());
 
-                JMenuItem openItem = new JMenuItem("MooTool");
-                JMenuItem colorPickerItem = new JMenuItem("取色器");
-                JMenuItem translationItem = new JMenuItem("翻译");
-                JMenuItem exitItem = new JMenuItem("Quit");
+                JMenuItem openItem = new JMenuItem(UiConsts.APP_NAME);
+                JMenuItem colorPickerItem = new JMenuItem(I18n.get("tray.colorPicker"));
+                JMenuItem translationItem = new JMenuItem(I18n.get("tray.translation"));
+                JMenuItem exitItem = new JMenuItem(I18n.get("common.quit"));
 
                 openItem.addActionListener(e -> {
                     showMainFrame();
@@ -357,6 +387,15 @@ public class Init {
         }
         App.mainFrame.toFront();
         App.mainFrame.requestFocus();
+    }
+
+    public static void refreshTrayMenuTexts() {
+        if (App.popupMenu == null || App.popupMenu.getComponentCount() < 5) {
+            return;
+        }
+        ((JMenuItem) App.popupMenu.getComponent(2)).setText(I18n.get("tray.colorPicker"));
+        ((JMenuItem) App.popupMenu.getComponent(3)).setText(I18n.get("tray.translation"));
+        ((JMenuItem) App.popupMenu.getComponent(5)).setText(I18n.get("common.quit"));
     }
 
     public static void shutdown() {

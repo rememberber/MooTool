@@ -371,20 +371,72 @@ public class ConfigUtil extends ConfigBaseUtil {
         setting.putByGroup("randomPasswordDigit", "func.crypto", String.valueOf(randomPasswordDigit));
     }
 
+    public String getLocale() {
+        return setting.getStr("locale", "setting.common", I18n.LOCALE_EN);
+    }
+
+    public void setLocale(String locale) {
+        setting.putByGroup("locale", "setting.common", locale);
+    }
+
+    public boolean isLanguagePromptShown() {
+        return setting.getBool("languagePromptShown", "setting.common", false);
+    }
+
+    public void setLanguagePromptShown(boolean shown) {
+        setting.putByGroup("languagePromptShown", "setting.common", String.valueOf(shown));
+    }
+
     public String getMenuBarPosition() {
-        return setting.getStr("menuBarPosition", "setting.custom", "上方");
+        return normalizeMenuBarPosition(
+                setting.getStr("menuBarPosition", "setting.custom", "top"));
     }
 
     public void setMenuBarPosition(String menuBarPosition) {
-        setting.putByGroup("menuBarPosition", "setting.custom", menuBarPosition);
+        setting.putByGroup("menuBarPosition", "setting.custom", normalizeMenuBarPosition(menuBarPosition));
+    }
+
+    public boolean isMenuBarOnTop() {
+        return "top".equals(getMenuBarPosition());
+    }
+
+    public boolean isMenuBarOnBottom() {
+        return "bottom".equals(getMenuBarPosition());
     }
 
     public String getFuncTabPosition() {
-        return setting.getStr("funcTabPosition", "setting.custom", "左侧");
+        return normalizeFuncTabPosition(
+                setting.getStr("funcTabPosition", "setting.custom", "left"));
     }
 
     public void setFuncTabPosition(String funcTabPosition) {
-        setting.putByGroup("funcTabPosition", "setting.custom", funcTabPosition);
+        setting.putByGroup("funcTabPosition", "setting.custom", normalizeFuncTabPosition(funcTabPosition));
+    }
+
+    public boolean isFuncTabOnLeft() {
+        return "left".equals(getFuncTabPosition());
+    }
+
+    private static String normalizeMenuBarPosition(String value) {
+        if (value == null) {
+            return "top";
+        }
+        return switch (value) {
+            case "上方", "top" -> "top";
+            case "下方", "bottom" -> "bottom";
+            default -> "top";
+        };
+    }
+
+    private static String normalizeFuncTabPosition(String value) {
+        if (value == null) {
+            return "left";
+        }
+        return switch (value) {
+            case "上方", "top" -> "top";
+            case "左侧", "left" -> "left";
+            default -> "left";
+        };
     }
 
     public boolean isTabCompact() {

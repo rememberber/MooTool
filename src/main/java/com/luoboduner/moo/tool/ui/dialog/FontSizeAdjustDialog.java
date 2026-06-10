@@ -6,6 +6,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.SystemUtil;
 
 import javax.swing.*;
@@ -29,9 +30,11 @@ public class FontSizeAdjustDialog extends JDialog {
     private static final long serialVersionUID = -5644281737118296595L;
     private JPanel contentPane;
     private JButton buttonCancel;
+    private JLabel headlineLabel;
+    private JLabel hintLabel;
 
     public FontSizeAdjustDialog() {
-        super(App.mainFrame, "字号初始化设置");
+        super(App.mainFrame, I18n.get("fontSize.guide.title"));
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonCancel);
@@ -46,6 +49,11 @@ public class FontSizeAdjustDialog extends JDialog {
         }
 
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 420, 200);
+
+        setTitle(I18n.get("fontSize.guide.title"));
+        headlineLabel.setText(I18n.get("fontSize.guide.headline"));
+        hintLabel.setText(I18n.get("fontSize.guide.hint"));
+        buttonCancel.setText(I18n.get("fontSize.guide.ok"));
 
         buttonCancel.addActionListener(e -> onCancel());
 

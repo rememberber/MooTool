@@ -18,6 +18,7 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.service.HttpMsgSender;
 import com.luoboduner.moo.tool.ui.Init;
+import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.component.TopMenuBar;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
@@ -25,6 +26,8 @@ import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.frame.MainFrame;
 import com.luoboduner.moo.tool.util.*;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.Map;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
@@ -80,9 +83,45 @@ public class SettingDialog extends JDialog {
     };
     private final JToggleButton[] accentColorButtons = new JToggleButton[accentColorKeys.length];
 
+    private static final Map<String, String> TITLED_BORDER_KEYS = Map.of(
+            "常规", "setting.section.general",
+            " 随手记", "setting.section.quickNote",
+            "使用习惯", "setting.section.habits",
+            "功能Tab样式", "setting.section.tabStyle",
+            "高级", "setting.section.advanced",
+            "HTTP请求", "setting.section.http"
+    );
+
+    private static final Map<String, String> LABEL_KEYS = Map.ofEntries(
+            Map.entry("语言", "setting.language"),
+            Map.entry("字体", "setting.font"),
+            Map.entry("强调色", "setting.accentColor"),
+            Map.entry("SQL\"方言\"(dialect)", "setting.sqlDialect"),
+            Map.entry("菜单栏(按钮操作区)位置", "setting.menuBarPosition"),
+            Map.entry("功能Tab位置", "setting.funcTabPosition"),
+            Map.entry("数据存储位置", "setting.dataPath"),
+            Map.entry("Host", "Host"),
+            Map.entry("端口", "setting.port"),
+            Map.entry("用户名", "setting.username"),
+            Map.entry("密码", "setting.password")
+    );
+
+    private static final Map<String, String> CHECKBOX_KEYS = Map.of(
+            "启动时自动检查更新", "setting.autoCheckUpdate",
+            "紧凑", "setting.tabCompact",
+            "隐藏标题", "setting.tabHideTitle",
+            "显示分割线", "setting.tabSeparator",
+            "卡片页签", "setting.tabCard",
+            "使用HTTP代理", "setting.httpProxy"
+    );
+
+    private static final Map<String, String> BUTTON_KEYS = Map.of(
+            "保存", "common.save"
+    );
+
     public SettingDialog() {
 
-        super(App.mainFrame, "设置");
+        super(App.mainFrame, I18n.get("setting.title"));
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.5, 0.68);
         setContentPane(contentPane);
         setModal(true);
@@ -115,6 +154,9 @@ public class SettingDialog extends JDialog {
 
         initAccentColors();
 
+        initLanguageCombo();
+        initPositionCombos();
+
         // 常规
         autoCheckUpdateCheckBox.setSelected(App.config.isAutoCheckUpdate());
 
@@ -126,10 +168,6 @@ public class SettingDialog extends JDialog {
         httpProxyPasswordTextField.setText(App.config.getHttpProxyPassword());
 
         toggleHttpProxyPanel();
-
-        // 使用习惯
-        menuBarPositionComboBox.setSelectedItem(App.config.getMenuBarPosition());
-        funcTabPositionComboBox.setSelectedItem(App.config.getFuncTabPosition());
 
         // 功能Tab样式
         tabCompactCheckBox.setSelected(App.config.isTabCompact());
@@ -147,6 +185,7 @@ public class SettingDialog extends JDialog {
         // 高级
         dbFilePathTextField.setText(App.config.getDbFilePath());
 
+        applyI18nTexts();
         contentPane.updateUI();
 
         // 设置-常规-启动时自动检查更新
@@ -165,10 +204,10 @@ public class SettingDialog extends JDialog {
                 App.config.save();
 
                 HttpMsgSender.proxy = null;
-                AlertUtil.buttonInfo(httpSaveButton, "保存", "保存成功", 2000);
+                AlertUtil.buttonInfo(httpSaveButton, I18n.get("common.save"), I18n.get("common.saveSuccess"), 2000);
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(contentPane, "保存失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(contentPane, I18n.format("common.saveFailed", e1.getMessage()),
+                        I18n.get("common.failure"), JOptionPane.ERROR_MESSAGE);
                 logger.error(e1);
             }
         });
@@ -242,7 +281,8 @@ public class SettingDialog extends JDialog {
                 // 复制之前的数据文件到新位置
                 String dbFilePathBefore = App.config.getDbFilePathBefore();
                 if (StringUtils.equals(dbFilePathBefore, dbFilePath)) {
-                    JOptionPane.showMessageDialog(contentPane, "保存成功！", "成功", JOptionPane.INFORMATION_MESSAGE);
+                    JOptionPane.showMessageDialog(contentPane, I18n.get("common.saveSuccess"),
+                            I18n.get("common.success"), JOptionPane.INFORMATION_MESSAGE);
                     return;
                 }
                 if (StringUtils.isBlank(dbFilePathBefore)) {
@@ -268,11 +308,14 @@ public class SettingDialog extends JDialog {
                 App.config.setDbFilePath(dbFilePath);
                 App.config.setDbFilePathBefore(dbFilePath);
                 App.config.save();
-                JOptionPane.showMessageDialog(contentPane, "保存成功！\n\n需要重启MooTool生效", "成功", JOptionPane.INFORMATION_MESSAGE);
-                JOptionPane.showMessageDialog(contentPane, "MooTool即将关闭！\n\n关闭后需要手动再次打开", "MooTool即将关闭", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(contentPane, I18n.get("setting.restartToApply"),
+                        I18n.get("common.success"), JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(contentPane, I18n.get("setting.shuttingDown"),
+                        UiConsts.APP_NAME, JOptionPane.INFORMATION_MESSAGE);
                 System.exit(0);
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(contentPane, "保存失败！\n\n" + e1.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(contentPane, I18n.format("common.saveFailed", e1.getMessage()),
+                        I18n.get("common.failure"), JOptionPane.ERROR_MESSAGE);
                 logger.error(ExceptionUtils.getStackTrace(e1));
             }
         });
@@ -291,8 +334,106 @@ public class SettingDialog extends JDialog {
     }
 
     private void onOK() {
-        // add your code here
         dispose();
+    }
+
+    private void initLanguageCombo() {
+        comboBox1.setEnabled(true);
+        comboBox1.removeAllItems();
+        comboBox1.addItem(I18n.LOCALE_EN);
+        comboBox1.addItem(I18n.LOCALE_ZH_CN);
+        comboBox1.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof String localeTag) {
+                    setText(I18n.displayLanguage(localeTag));
+                }
+                return this;
+            }
+        });
+        comboBox1.setSelectedItem(App.config.getLocale());
+        comboBox1.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                String localeTag = (String) e.getItem();
+                if (!localeTag.equals(App.config.getLocale())) {
+                    App.config.setLocale(localeTag);
+                    App.config.save();
+                    int choice = JOptionPane.showConfirmDialog(contentPane,
+                            I18n.get("language.restart.message"),
+                            I18n.get("language.restart.title"),
+                            JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE);
+                    if (choice == JOptionPane.YES_OPTION) {
+                        System.exit(0);
+                    }
+                }
+            }
+        });
+    }
+
+    private void initPositionCombos() {
+        setupPositionCombo(menuBarPositionComboBox, "top", "bottom");
+        menuBarPositionComboBox.setSelectedItem(App.config.getMenuBarPosition());
+        setupPositionCombo(funcTabPositionComboBox, "top", "left");
+        funcTabPositionComboBox.setSelectedItem(App.config.getFuncTabPosition());
+    }
+
+    private void setupPositionCombo(JComboBox<String> comboBox, String... keys) {
+        comboBox.removeAllItems();
+        for (String key : keys) {
+            comboBox.addItem(key);
+        }
+        comboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof String key) {
+                    setText(I18n.get("position." + key));
+                }
+                return this;
+            }
+        });
+    }
+
+    private void applyI18nTexts() {
+        setTitle(I18n.get("setting.title"));
+        localizeContainer(contentPane);
+    }
+
+    private void localizeContainer(Container container) {
+        for (Component component : container.getComponents()) {
+            if (component instanceof JLabel label) {
+                String key = LABEL_KEYS.get(label.getText());
+                if (key != null) {
+                    label.setText(I18n.get(key));
+                }
+            } else if (component instanceof JCheckBox checkBox) {
+                String key = CHECKBOX_KEYS.get(checkBox.getText());
+                if (key != null) {
+                    checkBox.setText(I18n.get(key));
+                }
+            } else if (component instanceof JButton button) {
+                String key = BUTTON_KEYS.get(button.getText());
+                if (key != null) {
+                    button.setText(I18n.get(key));
+                }
+            } else if (component instanceof JPanel panel) {
+                if (panel.getBorder() instanceof TitledBorder titledBorder) {
+                    String key = TITLED_BORDER_KEYS.get(titledBorder.getTitle());
+                    if (key != null) {
+                        titledBorder.setTitle(I18n.get(key));
+                    }
+                }
+                localizeContainer(panel);
+            } else if (component instanceof JScrollPane scrollPane && scrollPane.getViewport() != null) {
+                Component view = scrollPane.getViewport().getView();
+                if (view instanceof Container viewContainer) {
+                    localizeContainer(viewContainer);
+                }
+            }
+        }
     }
 
     /**
