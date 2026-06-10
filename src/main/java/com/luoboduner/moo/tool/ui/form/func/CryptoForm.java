@@ -162,6 +162,19 @@ public class CryptoForm {
                 cryptoForm.getAsymRightTextArea().setText(history.getInputText());
                 cryptoForm.getAsymLeftTextArea().setText(history.getOutputText());
             }
+            case "RandomUuid" -> cryptoForm.getUuidTextField().setText(history.getOutputText());
+            case "RandomNum" -> {
+                cryptoForm.getRandomNumDigitTextField().setText(history.getInputText());
+                cryptoForm.getRandomNumTextField().setText(history.getOutputText());
+            }
+            case "RandomString" -> {
+                cryptoForm.getRandomStringDigitTextField().setText(history.getInputText());
+                cryptoForm.getRandomStringTextField().setText(history.getOutputText());
+            }
+            case "RandomPassword" -> {
+                cryptoForm.getRandomPasswordDigitTextField().setText(history.getInputText());
+                cryptoForm.getRandomPasswordTextField().setText(history.getOutputText());
+            }
             default -> {
             }
         }

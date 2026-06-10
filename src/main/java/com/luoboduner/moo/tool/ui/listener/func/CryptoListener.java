@@ -216,6 +216,7 @@ public class CryptoListener {
         cryptoForm.getGenerateUuidButton().addActionListener(e -> {
             String randomUUID = IdUtil.randomUUID();
             cryptoForm.getUuidTextField().setText(randomUUID);
+            saveCryptoHistory("随机", "RandomUuid", "", randomUUID, "UUID");
         });
 
         cryptoForm.getGenerateRandomNumButton().addActionListener(e -> {
@@ -225,6 +226,7 @@ public class CryptoListener {
                 cryptoForm.getRandomNumTextField().setText(randomNumbers);
                 App.config.setRandomNumDigit(digit);
                 App.config.save();
+                saveCryptoHistory("随机", "RandomNum", String.valueOf(digit), randomNumbers, digit + "位随机数");
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
@@ -239,6 +241,7 @@ public class CryptoListener {
                 cryptoForm.getRandomStringTextField().setText(randomString);
                 App.config.setRandomStringDigit(digit);
                 App.config.save();
+                saveCryptoHistory("随机", "RandomString", String.valueOf(digit), randomString, digit + "位随机串");
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
@@ -261,6 +264,7 @@ public class CryptoListener {
                 cryptoForm.getRandomPasswordTextField().setText(randomPassword);
                 App.config.setRandomPasswordDigit(digit);
                 App.config.save();
+                saveCryptoHistory("随机", "RandomPassword", String.valueOf(digit), randomPassword, digit + "位随机密码");
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
