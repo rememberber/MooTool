@@ -12,6 +12,8 @@ import com.luoboduner.moo.tool.domain.TFuncContent;
 import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.listener.func.TimeConvertListener;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
@@ -57,9 +59,12 @@ public class TimeConvertForm {
     private JButton clockButton;
     private JComboBox<String> timezoneComboBox;
     private JLabel gmtLabel;
+    private JLabel timestampLabel;
+    private JLabel timezoneLabel;
     private JPanel timezoneQuickPanel;
 
     private static final Log logger = LogFactory.get();
+    private static boolean i18nRegistered;
 
     private static TimeConvertForm timeConvertForm;
 
@@ -150,7 +155,59 @@ public class TimeConvertForm {
         int minutes = Math.abs((rawOffset % 3600000) / 60000);
         String offsetStr = String.format("GMT%+03d:%02d", hours, minutes);
         if (gmtLabel != null) {
-            gmtLabel.setText("时间(" + offsetStr + ")");
+            gmtLabel.setText(I18n.format("timeConvert.localTime", offsetStr));
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setText(timestampLabel, "timeConvert.timestamp");
+        updateGmtLabel();
+        I18nUiUtil.setText(copyCurrentGmtButton, "common.copy");
+        I18nUiUtil.setText(copyCurrentTimestampButton, "common.copy");
+        I18nUiUtil.setText(copyGeneratedTimestampButton, "common.copy");
+        I18nUiUtil.setText(copyGeneratedLocalTimeButton, "common.copy");
+        I18nUiUtil.setText(toLocalTimeButton, "common.convert");
+        I18nUiUtil.setText(toTimestampButton, "common.convert");
+        I18nUiUtil.setToolTip(clockButton, "timeConvert.clock");
+        I18nUiUtil.setToolTip(toLocalTimeButton, "timeConvert.toLocalTime.tip");
+        I18nUiUtil.setToolTip(toTimestampButton, "timeConvert.toTimestamp.tip");
+        if (timezoneLabel != null) {
+            I18nUiUtil.setText(timezoneLabel, "timeConvert.timezone");
+        }
+        initUnitComboBox();
+    }
+
+    private void initUnitComboBox() {
+        if (unitComboBox == null) {
+            return;
+        }
+        Object selected = unitComboBox.getSelectedItem();
+        unitComboBox.removeAllItems();
+        unitComboBox.addItem("second");
+        unitComboBox.addItem("millisecond");
+        unitComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if ("millisecond".equals(value)) {
+                    setText(I18n.get("timeConvert.unit.millisecond"));
+                } else if ("second".equals(value)) {
+                    setText(I18n.get("timeConvert.unit.second"));
+                }
+                return this;
+            }
+        });
+        if ("毫秒(ms)".equals(selected) || "millisecond".equals(selected)) {
+            unitComboBox.setSelectedItem("millisecond");
+        } else {
+            unitComboBox.setSelectedItem("second");
+        }
+    }
+
+    private static void applyI18nStatic() {
+        if (timeConvertForm != null) {
+            timeConvertForm.applyI18n();
         }
     }
 
@@ -202,6 +259,12 @@ public class TimeConvertForm {
         timeConvertForm.getTimeConvertPanel().updateUI();
 
         TimeConvertListener.addListeners();
+
+        timeConvertForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(TimeConvertForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
     }
 
     /**
@@ -233,8 +296,8 @@ public class TimeConvertForm {
 
         // Create quick timezone buttons panel
         timeConvertForm.timezoneQuickPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 0));
-        JLabel tzLabel = new JLabel("时区:");
-        timeConvertForm.timezoneQuickPanel.add(tzLabel);
+        timeConvertForm.timezoneLabel = new JLabel("时区:");
+        timeConvertForm.timezoneQuickPanel.add(timeConvertForm.timezoneLabel);
         timeConvertForm.timezoneQuickPanel.add(timeConvertForm.timezoneComboBox);
 
         for (String[] btnDef : QUICK_TIMEZONE_BUTTONS) {
@@ -294,16 +357,6 @@ public class TimeConvertForm {
                                 null, null, null, 0, false));
             }
 
-            // Find and store reference to the "本地时间" label for dynamic updates
-            for (Component comp : panel5.getComponents()) {
-                if (comp instanceof JLabel) {
-                    JLabel label = (JLabel) comp;
-                    if (label.getText() != null && label.getText().contains("本地时间")) {
-                        timeConvertForm.gmtLabel = label;
-                        break;
-                    }
-                }
-            }
         }
 
         // Update the label to show current timezone

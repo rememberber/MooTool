@@ -147,7 +147,7 @@ public class TimeConvertListener {
             sdf.setTimeZone(tz);
             Date date = sdf.parse(localTime);
             long timeStamp = date.getTime();
-            if ("秒(s)".equals(unit)) {
+            if ("second".equals(unit)) {
                 timeStamp = timeStamp / 1000;
             }
             timeConvertForm.getTimestampTextField().setText(String.valueOf(timeStamp));
@@ -166,12 +166,12 @@ public class TimeConvertListener {
         try {
             long timeStamp = Long.parseLong(timeConvertForm.getTimestampTextField().getText());
             if (String.valueOf(timeStamp).length() >= 13) {
-                timeConvertForm.getUnitComboBox().setSelectedItem("毫秒(ms)");
+                timeConvertForm.getUnitComboBox().setSelectedItem("millisecond");
             } else {
-                timeConvertForm.getUnitComboBox().setSelectedItem("秒(s)");
+                timeConvertForm.getUnitComboBox().setSelectedItem("second");
             }
             String unit = (String) timeConvertForm.getUnitComboBox().getSelectedItem();
-            if ("秒(s)".equals(unit)) {
+            if ("second".equals(unit)) {
                 timeStamp = timeStamp * 1000;
             }
             TimeZone tz = timeConvertForm.getSelectedTimeZone();

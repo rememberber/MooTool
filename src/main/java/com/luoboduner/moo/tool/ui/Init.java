@@ -287,6 +287,7 @@ public class Init {
                 MainFrame.topMenuBar.refreshTexts();
             }
             refreshTrayMenuTexts();
+            I18n.refreshUi();
         }
 
         App.config.setLanguagePromptShown(true);

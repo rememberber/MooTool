@@ -32,6 +32,10 @@ public final class I18n {
         bundle = ResourceBundle.getBundle(BUNDLE_BASE, currentLocale);
     }
 
+    public static void refreshUi() {
+        I18nUiUtil.refreshAll();
+    }
+
     public static String getLocaleTag() {
         if (LOCALE_ZH_CN.equals(currentLocale.toLanguageTag())
                 || "zh-CN".equals(currentLocale.toLanguageTag())) {
