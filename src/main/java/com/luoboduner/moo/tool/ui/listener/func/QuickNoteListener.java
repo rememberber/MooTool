@@ -18,6 +18,7 @@ import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewe
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.dialog.DocInfoDialog;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
+import com.luoboduner.moo.tool.ui.component.SplitPaneUtil;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.NamingUtil;
@@ -278,9 +279,9 @@ public class QuickNoteListener {
 
             if (totalWidth - currentDividerLocation < 10) {
                 quickNoteForm.getQuickReplaceScrollPane().setVisible(true);
-                quickNoteForm.getContentSplitPane().setDividerLocation((int) (totalWidth * 0.72));
+                SplitPaneUtil.showSecondary(quickNoteForm.getContentSplitPane(), SplitPaneUtil.SECONDARY_PANEL_RATIO);
             } else {
-                quickNoteForm.getContentSplitPane().setDividerLocation(totalWidth);
+                SplitPaneUtil.hideSecondary(quickNoteForm.getContentSplitPane());
                 quickNoteForm.getQuickReplaceScrollPane().setVisible(false);
             }
         });
@@ -289,7 +290,7 @@ public class QuickNoteListener {
         quickNoteForm.getListItemButton().addActionListener(e -> {
             int currentDividerLocation = quickNoteForm.getSplitPane().getDividerLocation();
             if (currentDividerLocation < 5) {
-                quickNoteForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
+                SplitPaneUtil.configureListEditorSplit(quickNoteForm.getSplitPane());
             } else {
                 quickNoteForm.getSplitPane().setDividerLocation(0);
             }
@@ -345,7 +346,7 @@ public class QuickNoteListener {
 
         // 关闭快捷操作面板
         quickNoteForm.getQuickReplaceCloseButton().addActionListener(e -> {
-            quickNoteForm.getContentSplitPane().setDividerLocation(quickNoteForm.getContentSplitPane().getWidth());
+            SplitPaneUtil.hideSecondary(quickNoteForm.getContentSplitPane());
             quickNoteForm.getQuickReplaceScrollPane().setVisible(false);
         });
 

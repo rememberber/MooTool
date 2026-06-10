@@ -9,6 +9,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
 import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
+import com.luoboduner.moo.tool.ui.component.SplitPaneUtil;
 import com.luoboduner.moo.tool.ui.dialog.JsonPathPickerDialog;
 import com.luoboduner.moo.tool.ui.dialog.JsonResultDialog;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
@@ -252,7 +253,7 @@ public class JsonBeautyListener {
         jsonBeautyForm.getListItemButton().addActionListener(e -> {
             int currentDividerLocation = jsonBeautyForm.getSplitPane().getDividerLocation();
             if (currentDividerLocation < 5) {
-                jsonBeautyForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
+                SplitPaneUtil.configureListEditorSplit(jsonBeautyForm.getSplitPane());
             } else {
                 jsonBeautyForm.getSplitPane().setDividerLocation(0);
             }
@@ -456,15 +457,15 @@ public class JsonBeautyListener {
 
             if (totalWidth - currentDividerLocation < 10) {
                 jsonBeautyForm.getMoreScrollPane().setVisible(true);
-                jsonBeautyForm.getContentSplitPane().setDividerLocation((int) (totalWidth * 0.72));
+                SplitPaneUtil.showSecondary(jsonBeautyForm.getContentSplitPane(), SplitPaneUtil.SECONDARY_PANEL_RATIO);
             } else {
-                jsonBeautyForm.getContentSplitPane().setDividerLocation(totalWidth);
+                SplitPaneUtil.hideSecondary(jsonBeautyForm.getContentSplitPane());
                 jsonBeautyForm.getMoreScrollPane().setVisible(false);
             }
         });
 
         jsonBeautyForm.getMoreCloseButton().addActionListener(e -> {
-            jsonBeautyForm.getContentSplitPane().setDividerLocation(jsonBeautyForm.getContentSplitPane().getWidth());
+            SplitPaneUtil.hideSecondary(jsonBeautyForm.getContentSplitPane());
             jsonBeautyForm.getMoreScrollPane().setVisible(false);
         });
 

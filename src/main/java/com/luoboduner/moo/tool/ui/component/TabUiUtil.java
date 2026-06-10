@@ -2,6 +2,10 @@ package com.luoboduner.moo.tool.ui.component;
 
 import javax.swing.*;
 import java.awt.*;
+import java.beans.PropertyChangeEvent;
+import java.beans.PropertyChangeListener;
+
+import static com.formdev.flatlaf.FlatClientProperties.TABBED_PANE_TAB_WIDTH_MODE;
 
 public final class TabUiUtil {
 
@@ -51,6 +55,7 @@ public final class TabUiUtil {
         }
         if (tabbedPane.getUI() instanceof MooFlatTabbedPaneUI) {
             ((MooFlatTabbedPaneUI) tabbedPane.getUI()).setSelectionOnLeadingEdge(leadingEdgeSelection);
+            tabbedPane.revalidate();
             tabbedPane.repaint();
             return;
         }
@@ -62,5 +67,79 @@ public final class TabUiUtil {
         } finally {
             INSTALLING.set(false);
         }
+    }
+
+    /**
+     * Tab 栏宽度变化后，强制 JTabbedPane 重新分配内容区 bounds，并刷新当前 Tab 内部布局。
+     */
+    public static void forceTabContentLayout(JTabbedPane tabbedPane) {
+        if (tabbedPane == null) {
+            return;
+        }
+        Runnable layout = () -> {
+            tabbedPane.invalidate();
+            if (tabbedPane.getWidth() > 0 && tabbedPane.getHeight() > 0) {
+                tabbedPane.doLayout();
+            }
+            Component selected = tabbedPane.getSelectedComponent();
+            if (selected instanceof Container container) {
+                SplitPaneUtil.relaxHorizontalMinimumDeep(container);
+                SplitPaneUtil.normalizeSplitPaneDividers(container);
+                validateDeep(container);
+            }
+            tabbedPane.revalidate();
+            tabbedPane.repaint();
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            layout.run();
+            SwingUtilities.invokeLater(layout);
+        } else {
+            SwingUtilities.invokeLater(layout);
+        }
+    }
+
+    public static void relayoutAfterTabStripChanged(JTabbedPane tabbedPane, JComponent contentRoot) {
+        forceTabContentLayout(tabbedPane);
+        if (contentRoot != null) {
+            SplitPaneUtil.relaxHorizontalMinimumDeep(contentRoot);
+            SwingUtilities.invokeLater(() -> {
+                contentRoot.revalidate();
+                contentRoot.repaint();
+            });
+        }
+    }
+
+    public static void relaxTabContentMinimumSizes(JTabbedPane tabbedPane) {
+        if (tabbedPane == null) {
+            return;
+        }
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            Component tab = tabbedPane.getComponentAt(i);
+            if (tab instanceof Container container) {
+                SplitPaneUtil.relaxHorizontalMinimumDeep(container);
+            }
+        }
+    }
+
+    public static PropertyChangeListener createTabStripLayoutListener(JTabbedPane tabbedPane) {
+        return (PropertyChangeEvent event) -> {
+            String name = event.getPropertyName();
+            if (TABBED_PANE_TAB_WIDTH_MODE.equals(name)
+                    || "tabPlacement".equals(name)
+                    || "font".equals(name)
+                    || "fontSize".equals(name)) {
+                forceTabContentLayout(tabbedPane);
+            }
+        };
+    }
+
+    private static void validateDeep(Container container) {
+        container.invalidate();
+        for (Component child : container.getComponents()) {
+            if (child instanceof Container childContainer) {
+                validateDeep(childContainer);
+            }
+        }
+        container.validate();
     }
 }

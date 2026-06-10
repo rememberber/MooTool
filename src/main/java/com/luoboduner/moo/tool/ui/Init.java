@@ -254,9 +254,13 @@ public class Init {
 
         SwingUtilities.invokeLater(() -> {
             if (App.mainFrame != null) {
+                MainWindow mainWindow = MainWindow.getInstance();
                 TabUiUtil.applySafeTabbedPaneUi(
                         App.mainFrame.getContentPane(),
-                        MainWindow.getInstance().getTabbedPane());
+                        mainWindow.getTabbedPane());
+                TabUiUtil.relayoutAfterTabStripChanged(
+                        mainWindow.getTabbedPane(),
+                        mainWindow.getMainPanel());
             }
         });
 
@@ -282,12 +286,14 @@ public class Init {
         if (!selectedLocale.equals(App.config.getLocale())) {
             App.config.setLocale(selectedLocale);
             I18n.setLocale(selectedLocale);
-            MainWindow.getInstance().refreshTabTitles();
+            MainWindow mainWindow = MainWindow.getInstance();
+            mainWindow.refreshTabTitles();
             if (MainFrame.topMenuBar != null) {
                 MainFrame.topMenuBar.refreshTexts();
             }
             refreshTrayMenuTexts();
             I18n.refreshUi();
+            TabUiUtil.relayoutAfterTabStripChanged(mainWindow.getTabbedPane(), mainWindow.getMainPanel());
         }
 
         App.config.setLanguagePromptShown(true);

@@ -15,6 +15,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.SplitPaneUtil;
 import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.component.PanelCloseUtil;
 import com.luoboduner.moo.tool.ui.component.QuickNoteListCellRenderer;
@@ -331,11 +332,9 @@ public class QuickNoteForm {
 
         quickNoteForm.getFindReplacePanel().setVisible(false);
 
-        int totalWidth = quickNoteForm.getContentSplitPane().getWidth();
-        quickNoteForm.getContentSplitPane().setDividerLocation(totalWidth);
         quickNoteForm.getQuickReplaceScrollPane().setVisible(false);
-
-        quickNoteForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
+        configureSplitPanes();
+        quickNoteForm.getQuickNotePanel().setMinimumSize(new Dimension(0, 300));
         quickNoteForm.getNoteList().setFixedCellHeight(UiConsts.TABLE_ROW_HEIGHT);
         quickNoteForm.getNoteList().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         quickNoteForm.getNoteList().putClientProperty(FlatClientProperties.STYLE,
@@ -362,6 +361,18 @@ public class QuickNoteForm {
 
         quickNoteForm.getQuickNotePanel().updateUI();
 
+    }
+
+    private static void configureSplitPanes() {
+        SplitPaneUtil.configureListEditorSplit(quickNoteForm.getSplitPane());
+        SplitPaneUtil.configureEditorSecondarySplit(quickNoteForm.getContentSplitPane());
+        SplitPaneUtil.relaxHorizontalMinimum(
+                quickNoteForm.getQuickNotePanel(),
+                quickNoteForm.getRightPanel(),
+                quickNoteForm.getControlPanel(),
+                quickNoteForm.getSplitPane(),
+                quickNoteForm.getContentSplitPane()
+        );
     }
 
     /**

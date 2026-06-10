@@ -60,6 +60,8 @@ public class MainWindow {
 
     private boolean tabUiRestoreListenerInstalled;
 
+    private boolean tabStripLayoutListenerInstalled;
+
     private JButton toggleTitleButton;
 
     private JPanel tabLeadingPanel;
@@ -90,11 +92,24 @@ public class MainWindow {
         if (mainWindow == null) {
             mainWindow = new MainWindow();
             TabUiUtil.installSafeUi(mainWindow.tabbedPane, App.config.isFuncTabOnLeft());
+            mainWindow.syncTabStripBeforeLayout();
         }
         return mainWindow;
     }
 
-    private static GridConstraints gridConstraints = new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false);
+    /**
+     * 在首次 layout 前同步 Tab 位置与 i18n 标题，避免仍按设计器中文标题估算 Tab 栏宽度。
+     */
+    private void syncTabStripBeforeLayout() {
+        if (App.config.isFuncTabOnLeft()) {
+            tabbedPane.setTabPlacement(JTabbedPane.LEFT);
+        } else {
+            tabbedPane.setTabPlacement(JTabbedPane.TOP);
+        }
+        applyTabTitleVisibility(App.config.isTabHideTitle());
+    }
+
+    private static GridConstraints gridConstraints = new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(0, 200), null, 0, false);
 
     public void init() {
         mainWindow = getInstance();
@@ -104,6 +119,7 @@ public class MainWindow {
         }
 
         ensureTabUiRestoreListener();
+        ensureTabStripLayoutListener();
         initTabPlacement();
 
         mainWindow.getAboutPanel().add(AboutForm.getInstance().getAboutPanel(), gridConstraints);
@@ -134,7 +150,9 @@ public class MainWindow {
 
         refreshTabbedPaneUi();
         TabUiUtil.applySafeTabbedPaneUi(mainPanel, tabbedPane);
+        TabUiUtil.relaxTabContentMinimumSizes(tabbedPane);
         TabListener.addListeners();
+        relayoutAfterTabStripChanged();
     }
 
     public void refreshTabbedPaneUi() {
@@ -181,10 +199,16 @@ public class MainWindow {
         }
 
         refreshTabbedPaneUi();
+        relayoutAfterTabStripChanged();
     }
 
     public void refreshTabTitles() {
         applyTabTitleVisibility(App.config.isTabHideTitle());
+        relayoutAfterTabStripChanged();
+    }
+
+    private void relayoutAfterTabStripChanged() {
+        TabUiUtil.relayoutAfterTabStripChanged(tabbedPane, mainPanel);
     }
 
     private String tabTitleAt(int index) {
@@ -210,11 +234,10 @@ public class MainWindow {
             String title = tabTitleAt(i);
             tabbedPane.setToolTipTextAt(i, title);
             tabbedPane.setIconAt(i, tabIcon(ICON_PATH[i], iconOnly));
-            if (!iconOnly) {
-                tabbedPane.setTitleAt(i, title);
-            }
+            tabbedPane.setTitleAt(i, iconOnly ? "" : title);
         }
         applyTabWidthMode(iconOnly);
+        TabUiUtil.forceTabContentLayout(tabbedPane);
     }
 
     private void ensureTabLeadingComponent() {
@@ -224,7 +247,7 @@ public class MainWindow {
                 boolean iconOnly = !App.config.isTabHideTitle();
                 App.config.setTabHideTitle(iconOnly);
                 App.config.save();
-                applyTabTitleVisibility(iconOnly);
+                refreshTabTitles();
             });
         }
         if (tabLeadingPanel == null) {
@@ -246,6 +269,14 @@ public class MainWindow {
         }
         tabbedPane.addPropertyChangeListener("UI", evt -> refreshTabbedPaneUi());
         tabUiRestoreListenerInstalled = true;
+    }
+
+    private void ensureTabStripLayoutListener() {
+        if (tabStripLayoutListenerInstalled) {
+            return;
+        }
+        tabbedPane.addPropertyChangeListener(TabUiUtil.createTabStripLayoutListener(tabbedPane));
+        tabStripLayoutListenerInstalled = true;
     }
 
     {

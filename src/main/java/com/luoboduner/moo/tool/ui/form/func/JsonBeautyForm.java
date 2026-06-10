@@ -11,6 +11,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.SplitPaneUtil;
 import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.component.PanelCloseUtil;
 import com.luoboduner.moo.tool.ui.component.textviewer.JsonRSyntaxTextViewer;
@@ -267,11 +268,9 @@ public class JsonBeautyForm {
                         GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
 
         jsonBeautyForm.getFindReplacePanel().setVisible(false);
-        int totalWidth = jsonBeautyForm.getContentSplitPane().getWidth();
-        jsonBeautyForm.getContentSplitPane().setDividerLocation(totalWidth);
         jsonBeautyForm.getMoreScrollPane().setVisible(false);
-
-        jsonBeautyForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
+        configureSplitPanes();
+        jsonBeautyForm.getJsonBeautyPanel().setMinimumSize(new Dimension(0, 300));
         jsonBeautyForm.getNoteList().setFixedCellHeight(UiConsts.TABLE_ROW_HEIGHT);
         jsonBeautyForm.getNoteList().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         jsonBeautyForm.getNoteList().putClientProperty(FlatClientProperties.STYLE,
@@ -280,6 +279,18 @@ public class JsonBeautyForm {
         jsonBeautyForm.getTextArea().grabFocus();
 
         jsonBeautyForm.getJsonBeautyPanel().updateUI();
+    }
+
+    private static void configureSplitPanes() {
+        SplitPaneUtil.configureListEditorSplit(jsonBeautyForm.getSplitPane());
+        SplitPaneUtil.configureEditorSecondarySplit(jsonBeautyForm.getContentSplitPane());
+        SplitPaneUtil.relaxHorizontalMinimum(
+                jsonBeautyForm.getJsonBeautyPanel(),
+                jsonBeautyForm.getRightPanel(),
+                jsonBeautyForm.getControlPanel(),
+                jsonBeautyForm.getSplitPane(),
+                jsonBeautyForm.getContentSplitPane()
+        );
     }
 
     public static void initList() {
