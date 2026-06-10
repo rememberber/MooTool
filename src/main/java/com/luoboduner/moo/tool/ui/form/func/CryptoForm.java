@@ -7,9 +7,14 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.domain.TFuncHistory;
+import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.Style;
+import com.luoboduner.moo.tool.ui.component.FuncHistoryPanel;
 import com.luoboduner.moo.tool.ui.listener.func.CryptoListener;
+import com.luoboduner.moo.tool.util.FuncHistorySupport;
 import com.luoboduner.moo.tool.util.UndoUtil;
+import org.apache.commons.lang3.StringUtils;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -83,6 +88,8 @@ public class CryptoForm {
 
     private static CryptoForm cryptoForm;
 
+    private static FuncHistoryPanel historyPanel;
+
     private static final Log logger = LogFactory.get();
 
     private CryptoForm() {
@@ -100,8 +107,77 @@ public class CryptoForm {
         cryptoForm = getInstance();
 
         initUi();
+        historyPanel = FuncHistorySupport.attachTab(
+                cryptoForm.getTabbedPane1(), FuncConsts.CRYPTO, CryptoForm::applyHistory);
 
         CryptoListener.addListeners();
+    }
+
+    public static FuncHistoryPanel getHistoryPanel() {
+        return historyPanel;
+    }
+
+    public static void applyHistory(TFuncHistory history) {
+        if (history == null || StringUtils.isBlank(history.getExtraData())) {
+            return;
+        }
+        String[] parts = history.getExtraData().split("\\|", 2);
+        if (parts.length < 2) {
+            return;
+        }
+        String tab = parts[0];
+        String operation = parts[1];
+        for (int i = 0; i < cryptoForm.getTabbedPane1().getTabCount(); i++) {
+            if (tab.equals(cryptoForm.getTabbedPane1().getTitleAt(i))) {
+                cryptoForm.getTabbedPane1().setSelectedIndex(i);
+                break;
+            }
+        }
+        switch (operation) {
+            case "SymEncrypt" -> {
+                cryptoForm.getSymTextAreaLeft().setText(history.getInputText());
+                cryptoForm.getSymTextAreaRight().setText(history.getOutputText());
+            }
+            case "SymDecrypt" -> {
+                cryptoForm.getSymTextAreaRight().setText(history.getInputText());
+                cryptoForm.getSymTextAreaLeft().setText(history.getOutputText());
+            }
+            case "DigestText" -> {
+                cryptoForm.getDigestContentTextArea().setText(history.getInputText());
+                cryptoForm.getDigestResultTextArea().setText(history.getOutputText());
+            }
+            case "Base64Encode" -> {
+                cryptoForm.getBase64LeftTextArea().setText(history.getInputText());
+                cryptoForm.getBase64RightTextArea().setText(history.getOutputText());
+            }
+            case "Base64Decode" -> {
+                cryptoForm.getBase64RightTextArea().setText(history.getInputText());
+                cryptoForm.getBase64LeftTextArea().setText(history.getOutputText());
+            }
+            case "AsymEncryptPub" -> {
+                cryptoForm.getAsymLeftTextArea().setText(history.getInputText());
+                cryptoForm.getAsymRightTextArea().setText(history.getOutputText());
+            }
+            case "AsymDecryptPri" -> {
+                cryptoForm.getAsymRightTextArea().setText(history.getInputText());
+                cryptoForm.getAsymLeftTextArea().setText(history.getOutputText());
+            }
+            case "RandomUuid" -> cryptoForm.getUuidTextField().setText(history.getOutputText());
+            case "RandomNum" -> {
+                cryptoForm.getRandomNumDigitTextField().setText(history.getInputText());
+                cryptoForm.getRandomNumTextField().setText(history.getOutputText());
+            }
+            case "RandomString" -> {
+                cryptoForm.getRandomStringDigitTextField().setText(history.getInputText());
+                cryptoForm.getRandomStringTextField().setText(history.getOutputText());
+            }
+            case "RandomPassword" -> {
+                cryptoForm.getRandomPasswordDigitTextField().setText(history.getInputText());
+                cryptoForm.getRandomPasswordTextField().setText(history.getOutputText());
+            }
+            default -> {
+            }
+        }
     }
 
     private static void initUi() {

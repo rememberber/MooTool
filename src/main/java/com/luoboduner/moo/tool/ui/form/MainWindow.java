@@ -5,6 +5,7 @@ import com.formdev.flatlaf.util.SystemInfo;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.UiMetrics;
 import com.luoboduner.moo.tool.ui.component.TabUiUtil;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.listener.TabListener;
@@ -92,7 +93,7 @@ public class MainWindow {
         mainWindow = getInstance();
         if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
             GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
-            gridLayoutManager.setMargin(new Insets(25, 0, 0, 0));
+            gridLayoutManager.setMargin(UiMetrics.macMainPanelMarginTop());
         }
 
         ensureTabUiRestoreListener();
@@ -125,7 +126,7 @@ public class MainWindow {
         mainWindow.getProtoBufPanel().add(ProtoBufForm.getInstance().getProtoBufPanel(), gridConstraints);
 
         refreshTabbedPaneUi();
-        TabUiUtil.applySafeTabbedPaneUi(mainPanel);
+        TabUiUtil.applySafeTabbedPaneUi(mainPanel, tabbedPane);
         TabListener.addListeners();
     }
 
@@ -141,20 +142,20 @@ public class MainWindow {
 
             if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
                 GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
-                gridLayoutManager.setMargin(new Insets(15, 0, 0, 0));
+                gridLayoutManager.setMargin(UiMetrics.macTabLeftPanelMarginTop());
             } else {
                 GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
-                gridLayoutManager.setMargin(new Insets(-10, 0, 0, 0));
+                gridLayoutManager.setMargin(UiMetrics.tabLeftPanelMarginTop());
             }
         } else {
             tabbedPane.setTabPlacement(JTabbedPane.TOP);
 
             if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
                 GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
-                gridLayoutManager.setMargin(new Insets(25, 0, 0, 0));
+                gridLayoutManager.setMargin(UiMetrics.macMainPanelMarginTop());
             } else {
                 GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
-                gridLayoutManager.setMargin(new Insets(0, 0, 0, 0));
+                gridLayoutManager.setMargin(UiMetrics.zero());
             }
         }
 
@@ -220,9 +221,9 @@ public class MainWindow {
         }
         tabLeadingPanel.removeAll();
         if ("左侧".equals(App.config.getFuncTabPosition())) {
-            tabLeadingPanel.setLayout(new GridLayoutManager(1, 1, new Insets(10, 0, 0, 0), -1, -1));
+            tabLeadingPanel.setLayout(new GridLayoutManager(1, 1, UiMetrics.tabLeadingInsets(true), -1, -1));
         } else {
-            tabLeadingPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 10, 0, 0), -1, -1));
+            tabLeadingPanel.setLayout(new GridLayoutManager(1, 1, UiMetrics.tabLeadingInsets(false), -1, -1));
         }
         tabLeadingPanel.add(toggleTitleButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(-1, -1), null, 0, false));
         tabbedPane.putClientProperty(TABBED_PANE_LEADING_COMPONENT, tabLeadingPanel);
@@ -232,7 +233,7 @@ public class MainWindow {
         if (tabUiRestoreListenerInstalled) {
             return;
         }
-        tabbedPane.addPropertyChangeListener("UI", evt -> SwingUtilities.invokeLater(this::refreshTabbedPaneUi));
+        tabbedPane.addPropertyChangeListener("UI", evt -> refreshTabbedPaneUi());
         tabUiRestoreListenerInstalled = true;
     }
 

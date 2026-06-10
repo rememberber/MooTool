@@ -28,5 +28,6 @@
         <mapper resource="mapper/THttpRequestHistoryMapper.xml"/>
         <mapper resource="mapper/TTranslationWordMapper.xml"/>
         <mapper resource="mapper/TTranslationHistoryMapper.xml"/>
+        <mapper resource="mapper/TFuncHistoryMapper.xml"/>
     </mappers>
 </configuration>

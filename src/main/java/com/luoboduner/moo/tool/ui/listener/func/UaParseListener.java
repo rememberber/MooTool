@@ -1,8 +1,11 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.swing.clipboard.ClipboardUtil;
+import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.form.func.UaParseForm;
+import com.luoboduner.moo.tool.util.FuncHistoryUtil;
 import com.luoboduner.moo.tool.util.UaParseUtil;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.table.DefaultTableModel;
 import java.util.List;
@@ -16,7 +19,7 @@ public class UaParseListener {
     public static void addListeners() {
         UaParseForm form = UaParseForm.getInstance();
 
-        form.getParseButton().addActionListener(e -> parse(form));
+        form.getParseButton().addActionListener(e -> parse(form, true));
         form.getClearButton().addActionListener(e -> {
             form.getUaInputTextArea().setText("");
             clearResult(form);
@@ -25,7 +28,7 @@ public class UaParseListener {
             String clipboard = ClipboardUtil.getStr();
             if (clipboard != null) {
                 form.getUaInputTextArea().setText(clipboard);
-                parse(form);
+                parse(form, true);
             }
         });
         form.getPresetComboBox().addActionListener(e -> {
@@ -36,13 +39,14 @@ public class UaParseListener {
             List<String[]> presets = UaParseUtil.presetUserAgents();
             if (index - 1 < presets.size()) {
                 form.getUaInputTextArea().setText(presets.get(index - 1)[1]);
-                parse(form);
+                parse(form, true);
             }
         });
     }
 
-    private static void parse(UaParseForm form) {
-        Map<String, String> result = UaParseUtil.parse(form.getUaInputTextArea().getText());
+    public static void parse(UaParseForm form, boolean saveHistory) {
+        String ua = form.getUaInputTextArea().getText();
+        Map<String, String> result = UaParseUtil.parse(ua);
         String[] fields = result.keySet().toArray(new String[0]);
         String[] values = result.values().toArray(new String[0]);
         DefaultTableModel model = new DefaultTableModel(new String[]{"字段", "值"}, 0) {
@@ -51,12 +55,21 @@ public class UaParseListener {
                 return false;
             }
         };
+        StringBuilder outputBuilder = new StringBuilder();
         for (int i = 0; i < fields.length; i++) {
             model.addRow(new Object[]{fields[i], values[i]});
+            outputBuilder.append(fields[i]).append(": ").append(values[i]).append('\n');
         }
         form.getResultTable().setModel(model);
         form.getResultTable().getColumnModel().getColumn(0).setPreferredWidth(120);
         form.getResultTable().getColumnModel().getColumn(1).setPreferredWidth(400);
+
+        if (saveHistory && StringUtils.isNotBlank(ua)) {
+            FuncHistoryUtil.save(FuncConsts.UA_PARSE, "UA解析", ua, outputBuilder.toString().trim(), "UA解析");
+            if (UaParseForm.getHistoryPanel() != null) {
+                UaParseForm.getHistoryPanel().refreshListIfVisible();
+            }
+        }
     }
 
     private static void clearResult(UaParseForm form) {

@@ -18,6 +18,7 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.service.HttpMsgSender;
 import com.luoboduner.moo.tool.ui.Init;
+import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.component.TopMenuBar;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.*;
@@ -317,6 +318,7 @@ public class SettingDialog extends JDialog {
 
     private void initAccentColors() {
         toolBar = new JToolBar();
+        ToolbarUiUtil.configure(toolBar);
 
         toolBar.add(Box.createHorizontalGlue());
 

@@ -12,6 +12,7 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.ImagePreviewComponent;
+import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.listener.func.ImageListener;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
@@ -77,6 +78,7 @@ public class ImageForm {
         UndoUtil.register(this);
 
         imageToolBar = new JToolBar();
+        ToolbarUiUtil.configure(imageToolBar);
         zoomInButton = new JButton(new FlatSVGIcon("icon/zoom_in.svg"));
         zoomInButton.setToolTipText("放大");
         zoomOutButton = new JButton(new FlatSVGIcon("icon/zoom_out.svg"));
@@ -89,7 +91,6 @@ public class ImageForm {
         imageToolBar.add(zoomOutButton);
         imageToolBar.add(originalSizeButton);
         imageToolBar.add(fitSizeButton);
-        imageToolBar.setFloatable(false);
         imageControlPanel.add(imageToolBar, BorderLayout.WEST);
 
         imageInfoLabel = new JLabel();

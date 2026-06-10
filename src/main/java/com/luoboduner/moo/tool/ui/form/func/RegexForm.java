@@ -8,8 +8,11 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TFuncContentMapper;
 import com.luoboduner.moo.tool.domain.TFuncContent;
+import com.luoboduner.moo.tool.domain.TFuncHistory;
 import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.component.CustomizeIcon;
+import com.luoboduner.moo.tool.ui.component.FuncHistoryPanel;
+import com.luoboduner.moo.tool.util.FuncHistorySupport;
 import com.luoboduner.moo.tool.ui.component.textviewer.RegexRTextScrollPane;
 import com.luoboduner.moo.tool.ui.component.textviewer.RegexRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.listener.func.RegexListener;
@@ -72,6 +75,8 @@ public class RegexForm {
 
     private static RegexForm regexForm;
 
+    private static FuncHistoryPanel historyPanel;
+
     private static final Log logger = LogFactory.get();
 
     private static TFuncContentMapper funcContentMapper = MybatisUtil.getSqlSession().getMapper(TFuncContentMapper.class);
@@ -103,7 +108,23 @@ public class RegexForm {
             regexForm.getTextArea().setText(tFuncContent.getContent());
         }
 
+        historyPanel = FuncHistorySupport.attachTab(
+                regexForm.getTabbedPane1(), FuncConsts.REGEX, RegexForm::applyHistory);
+
         RegexListener.addListeners();
+    }
+
+    public static FuncHistoryPanel getHistoryPanel() {
+        return historyPanel;
+    }
+
+    public static void applyHistory(TFuncHistory history) {
+        if (history == null) {
+            return;
+        }
+        regexForm.getRegexTextField().setText(history.getInputText());
+        regexForm.getTextArea().setText(history.getOutputText());
+        RegexListener.markAll(false);
     }
 
     private static void initUi() {

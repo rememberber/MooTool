@@ -4,8 +4,11 @@ import cn.hutool.core.text.UnicodeUtil;
 import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.core.util.HexUtil;
 import cn.hutool.core.util.URLUtil;
+import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.form.func.EnCodeForm;
 import com.luoboduner.moo.tool.util.AsciiUtil;
+import com.luoboduner.moo.tool.util.FuncHistoryUtil;
+import org.apache.commons.lang3.StringUtils;
 
 /**
  * <pre>
@@ -24,6 +27,7 @@ public class EnCodeListener {
             enCodeForm.getUnicodeTextArea().setText(unicodeText);
             enCodeForm.getUnicodeTextArea().setCaretPosition(0);
             enCodeForm.getUnicodeTextArea().grabFocus();
+            saveHistory("Native/Unicode", "NativeToUnicode", nativeText1, unicodeText);
         });
         enCodeForm.getUnicodeToNativeButton().addActionListener(e -> {
             String unicodeText = enCodeForm.getUnicodeTextArea().getText();
@@ -31,6 +35,7 @@ public class EnCodeListener {
             enCodeForm.getNativeTextArea().setText(nativeText1);
             enCodeForm.getNativeTextArea().setCaretPosition(0);
             enCodeForm.getNativeTextArea().grabFocus();
+            saveHistory("Native/Unicode", "UnicodeToNative", unicodeText, nativeText1);
         });
         enCodeForm.getUrlEncodeButton().addActionListener(e -> {
             String url = enCodeForm.getUrlTextArea().getText();
@@ -39,6 +44,7 @@ public class EnCodeListener {
             enCodeForm.getUrlEncodeTextArea().setText(urlEncode);
             enCodeForm.getUrlEncodeTextArea().setCaretPosition(0);
             enCodeForm.getUrlEncodeTextArea().grabFocus();
+            saveHistory("URL", "UrlEncode", url, urlEncode, "URL编码(" + urlEncodeCharset + ")");
         });
         enCodeForm.getUrlDecodeButton().addActionListener(e -> {
             String urlEncode = enCodeForm.getUrlEncodeTextArea().getText();
@@ -47,6 +53,7 @@ public class EnCodeListener {
             enCodeForm.getUrlTextArea().setText(urlDecode);
             enCodeForm.getUrlTextArea().setCaretPosition(0);
             enCodeForm.getUrlTextArea().grabFocus();
+            saveHistory("URL", "UrlDecode", urlEncode, urlDecode, "URL解码(" + urlEncodeCharset + ")");
         });
         enCodeForm.getNativeToHexButton().addActionListener(e -> {
             String nativeForHexStr = enCodeForm.getNativeForHexTextArea().getText();
@@ -54,6 +61,7 @@ public class EnCodeListener {
             enCodeForm.getHexTextArea().setText(hex);
             enCodeForm.getHexTextArea().setCaretPosition(0);
             enCodeForm.getHexTextArea().grabFocus();
+            saveHistory("Hex", "NativeToHex", nativeForHexStr, hex);
         });
         enCodeForm.getHexToNativeButton().addActionListener(e -> {
             String hex = enCodeForm.getHexTextArea().getText();
@@ -61,6 +69,7 @@ public class EnCodeListener {
             enCodeForm.getNativeForHexTextArea().setText(nativeStr);
             enCodeForm.getNativeForHexTextArea().setCaretPosition(0);
             enCodeForm.getNativeForHexTextArea().grabFocus();
+            saveHistory("Hex", "HexToNative", hex, nativeStr);
         });
         enCodeForm.getNativeToAsciiButton().addActionListener(e -> {
             String nativeText = enCodeForm.getNativeForAsciiTextArea().getText();
@@ -69,6 +78,7 @@ public class EnCodeListener {
             enCodeForm.getAsciiTextArea().setText(ascii);
             enCodeForm.getAsciiTextArea().setCaretPosition(0);
             enCodeForm.getAsciiTextArea().grabFocus();
+            saveHistory("ASCII", "NativeToAscii", nativeText, ascii, "ASCII编码(" + format + ")");
         });
         enCodeForm.getAsciiToNativeButton().addActionListener(e -> {
             String ascii = enCodeForm.getAsciiTextArea().getText();
@@ -76,6 +86,21 @@ public class EnCodeListener {
             enCodeForm.getNativeForAsciiTextArea().setText(nativeText);
             enCodeForm.getNativeForAsciiTextArea().setCaretPosition(0);
             enCodeForm.getNativeForAsciiTextArea().grabFocus();
+            saveHistory("ASCII", "AsciiToNative", ascii, nativeText);
         });
+    }
+
+    private static void saveHistory(String tab, String operation, String input, String output) {
+        saveHistory(tab, operation, input, output, operation);
+    }
+
+    private static void saveHistory(String tab, String operation, String input, String output, String summary) {
+        if (StringUtils.isAllBlank(input, output)) {
+            return;
+        }
+        FuncHistoryUtil.save(FuncConsts.ENCODE, summary, input, output, tab + "|" + operation);
+        if (EnCodeForm.getHistoryPanel() != null) {
+            EnCodeForm.getHistoryPanel().refreshListIfVisible();
+        }
     }
 }

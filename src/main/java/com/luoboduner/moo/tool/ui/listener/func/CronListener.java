@@ -4,11 +4,14 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.dialog.CommonCronDialog;
 import com.luoboduner.moo.tool.ui.dialog.FavoriteCronDialog;
 import com.luoboduner.moo.tool.ui.form.func.CronForm;
 import com.luoboduner.moo.tool.ui.frame.FavoriteCronFrame;
 import com.luoboduner.moo.tool.util.CronExpressionUtil;
+import com.luoboduner.moo.tool.util.FuncHistoryUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
@@ -49,6 +52,13 @@ public class CronListener {
                 String description = CronExpressionUtil.describe(cronExpression, selectedLocale);
 
                 cronForm.getHumanReadableTextField().setText(description);
+                if (StringUtils.isNotBlank(cronExpression)) {
+                    FuncHistoryUtil.save(FuncConsts.CRON, "Cron转自然语言", cronExpression, description,
+                            selectedLocaleStr);
+                    if (CronForm.getHistoryPanel() != null) {
+                        CronForm.getHistoryPanel().refreshListIfVisible();
+                    }
+                }
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
