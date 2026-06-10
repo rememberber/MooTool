@@ -2,7 +2,7 @@ package com.luoboduner.moo.tool.ui.component;
 
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
-import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.Init;
 
 import javax.swing.*;
 import java.awt.*;
@@ -86,12 +86,6 @@ public class JPopupMenuMouseAdapter extends MouseAdapter {
     }
 
     public static void showMainFrame() {
-        App.mainFrame.setVisible(true);
-        if (App.mainFrame.getExtendedState() == Frame.ICONIFIED) {
-            App.mainFrame.setExtendedState(Frame.NORMAL);
-        } else if (App.mainFrame.getExtendedState() == 7) {
-            App.mainFrame.setExtendedState(Frame.MAXIMIZED_BOTH);
-        }
-        App.mainFrame.requestFocus();
+        Init.showMainFrame();
     }
 }

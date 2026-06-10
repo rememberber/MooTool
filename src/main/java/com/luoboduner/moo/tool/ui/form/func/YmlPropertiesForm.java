@@ -28,6 +28,10 @@ public class YmlPropertiesForm {
     private JTextArea ymlTextArea;
     private JButton properties2ymlButton;
     private JButton yml2propertiesButton;
+    private JTextArea yamlValidateInputTextArea;
+    private JTextArea yamlValidateResultTextArea;
+    private JButton yamlValidateButton;
+    private JButton yamlFormatButton;
 
     private static YmlPropertiesForm ymlPropertiesForm;
 
@@ -53,6 +57,8 @@ public class YmlPropertiesForm {
     private static void initUi() {
         Style.blackTextArea(ymlPropertiesForm.getPropertiesTextArea());
         Style.blackTextArea(ymlPropertiesForm.getYmlTextArea());
+        Style.blackTextArea(ymlPropertiesForm.getYamlValidateInputTextArea());
+        Style.blackTextArea(ymlPropertiesForm.getYamlValidateResultTextArea());
 
         ymlPropertiesForm.getYmlPropertiesPanel().updateUI();
     }
@@ -115,6 +121,33 @@ public class YmlPropertiesForm {
         ymlTextArea.setLineWrap(true);
         ymlTextArea.setWrapStyleWord(true);
         scrollPane2.setViewportView(ymlTextArea);
+        final JPanel panel5 = new JPanel();
+        panel5.setLayout(new GridLayoutManager(3, 1, new Insets(10, 10, 10, 10), -1, -1));
+        tabbedPane1.addTab("YAML校验", panel5);
+        final JScrollPane scrollPane3 = new JScrollPane();
+        scrollPane3.setHorizontalScrollBarPolicy(31);
+        panel5.add(scrollPane3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        yamlValidateInputTextArea = new JTextArea();
+        yamlValidateInputTextArea.setLineWrap(true);
+        yamlValidateInputTextArea.setWrapStyleWord(true);
+        scrollPane3.setViewportView(yamlValidateInputTextArea);
+        final JPanel panel6 = new JPanel();
+        panel6.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        panel5.add(panel6, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        yamlValidateButton = new JButton();
+        yamlValidateButton.setText("校验");
+        panel6.add(yamlValidateButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        yamlFormatButton = new JButton();
+        yamlFormatButton.setText("格式化");
+        panel6.add(yamlFormatButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JScrollPane scrollPane4 = new JScrollPane();
+        scrollPane4.setHorizontalScrollBarPolicy(31);
+        panel5.add(scrollPane4, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(-1, 120), null, 0, false));
+        yamlValidateResultTextArea = new JTextArea();
+        yamlValidateResultTextArea.setEditable(false);
+        yamlValidateResultTextArea.setLineWrap(true);
+        yamlValidateResultTextArea.setWrapStyleWord(true);
+        scrollPane4.setViewportView(yamlValidateResultTextArea);
     }
 
     /**

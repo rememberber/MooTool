@@ -33,6 +33,7 @@ public class MainWindow {
     private JPanel timeConvertPanel;
     private JPanel hostPanel;
     private JPanel httpRequestPanel;
+    private JPanel uaParsePanel;
     private JPanel encodePanel;
     private JPanel qrCodePanel;
     private JPanel cryptoPanel;
@@ -61,9 +62,9 @@ public class MainWindow {
 
     private JPanel tabLeadingPanel;
 
-    private static final String[] TAB_TITLES = {"MooTool", "随手记", "时间转换", "JSON", "翻译", "Host", "HTTP", "编码转换", "二维码", "加解密/随机", "计算", "网络/IP", "调色板", "图片助手", "Cron", "正则", "Java", "格式化", "PDF", "环境变量", "系统信息", "配置文件转换", "文本对比", "Protobuf"};
+    private static final String[] TAB_TITLES = {"MooTool", "随手记", "时间转换", "JSON", "翻译", "Host", "HTTP", "UA分析", "编码转换", "二维码", "加解密/随机", "计算", "网络/IP", "调色板", "图片助手", "Cron", "正则", "Java", "格式化", "PDF", "环境变量", "系统信息", "配置文件转换", "文本对比", "Protobuf"};
 
-    private static final String[] ICON_PATH = {"icon/smile.svg", "icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/translate.svg", "icon/check.svg", "icon/global.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/format_painter.svg", "icon/pdf.svg", "icon/fx.svg", "icon/info.svg", "icon/suffix-yml.svg", "icon/diff.svg", "icon/protobuf.svg"};
+    private static final String[] ICON_PATH = {"icon/smile.svg", "icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/translate.svg", "icon/check.svg", "icon/global.svg", "icon/ua.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/format_painter.svg", "icon/pdf.svg", "icon/fx.svg", "icon/info.svg", "icon/suffix-yml.svg", "icon/diff.svg", "icon/protobuf.svg"};
 
     private static final int TAB_ICON_ONLY_SIZE = 20;
 
@@ -103,6 +104,7 @@ public class MainWindow {
         mainWindow.getTimeConvertPanel().add(TimeConvertForm.getInstance().getTimeConvertPanel(), gridConstraints);
         mainWindow.getHostPanel().add(HostForm.getInstance().getHostPanel(), gridConstraints);
         mainWindow.getHttpRequestPanel().add(HttpRequestForm.getInstance().getHttpRequestPanel(), gridConstraints);
+        mainWindow.getUaParsePanel().add(UaParseForm.getInstance().getUaParsePanel(), gridConstraints);
         mainWindow.getEncodePanel().add(EnCodeForm.getInstance().getEnCodePanel(), gridConstraints);
         mainWindow.getQrCodePanel().add(QrCodeForm.getInstance().getQrCodePanel(), gridConstraints);
         mainWindow.getCryptoPanel().add(CryptoForm.getInstance().getCryptoPanel(), gridConstraints);
@@ -275,6 +277,9 @@ public class MainWindow {
         httpRequestPanel = new JPanel();
         httpRequestPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("HTTP", new ImageIcon(getClass().getResource("/icon/global.png")), httpRequestPanel);
+        uaParsePanel = new JPanel();
+        uaParsePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
+        tabbedPane.addTab("UA分析", uaParsePanel);
         encodePanel = new JPanel();
         encodePanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         tabbedPane.addTab("编码转换", new ImageIcon(getClass().getResource("/icon/exchange.png")), encodePanel);

@@ -49,11 +49,9 @@ public class FrameListener {
             @Override
             public void windowClosing(WindowEvent e) {
                 saveBeforeExit();
-                if (SystemUtil.isWindowsOs()) {
-                    App.mainFrame.setVisible(false);
-                } else if (SystemUtil.isMacOs()) {
-                    // 最小化窗口
-                    App.mainFrame.setExtendedState(Frame.ICONIFIED);
+                if (SystemUtil.isWindowsOs() || SystemUtil.isMacOs()) {
+                    // 延迟隐藏窗口，避免在 windowClosing 中同步修改窗口状态导致部分系统版本卡死
+                    hideMainFrame();
                 } else {
                     App.mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 }
@@ -66,6 +64,9 @@ public class FrameListener {
 
             @Override
             public void windowActivated(WindowEvent e) {
+                if (!App.mainFrame.isVisible()) {
+                    return;
+                }
                 if (App.config.isDefaultMaxWindow()) {
                     // 低分辨率下自动最大化窗口
                     App.mainFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
@@ -113,9 +114,13 @@ public class FrameListener {
             MainWindow.getInstance().getMainPanel().registerKeyboardAction(e -> App.mainFrame.setExtendedState(Frame.ICONIFIED), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
         }
 
-        // Command + W 最小化窗口
-        MainWindow.getInstance().getMainPanel().registerKeyboardAction(e -> App.mainFrame.setExtendedState(Frame.ICONIFIED), KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.META_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        // Command + W 隐藏窗口
+        MainWindow.getInstance().getMainPanel().registerKeyboardAction(e -> hideMainFrame(), KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.META_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
+    }
+
+    private static void hideMainFrame() {
+        SwingUtilities.invokeLater(() -> App.mainFrame.setVisible(false));
     }
 
     public static void saveBeforeExit() {

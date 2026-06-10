@@ -226,6 +226,7 @@ public class Init {
         ThreadUtil.execute(TimeConvertForm::init);
         ThreadUtil.execute(HostForm::init);
         ThreadUtil.execute(HttpRequestForm::init);
+        ThreadUtil.execute(UaParseForm::init);
         ThreadUtil.execute(EnCodeForm::init);
         ThreadUtil.execute(QrCodeForm::init);
         ThreadUtil.execute(CryptoForm::init);
@@ -342,11 +343,13 @@ public class Init {
 
     public static void showMainFrame() {
         App.mainFrame.setVisible(true);
-        if (App.mainFrame.getExtendedState() == Frame.ICONIFIED) {
+        int extendedState = App.mainFrame.getExtendedState();
+        if ((extendedState & Frame.ICONIFIED) != 0) {
             App.mainFrame.setExtendedState(Frame.NORMAL);
-        } else if (App.mainFrame.getExtendedState() == 7) {
+        } else if ((extendedState & Frame.MAXIMIZED_BOTH) == Frame.MAXIMIZED_BOTH) {
             App.mainFrame.setExtendedState(Frame.MAXIMIZED_BOTH);
         }
+        App.mainFrame.toFront();
         App.mainFrame.requestFocus();
     }
 

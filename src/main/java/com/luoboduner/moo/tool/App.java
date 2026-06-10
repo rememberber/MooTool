@@ -22,6 +22,7 @@ import org.apache.ibatis.session.SqlSession;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.desktop.AppReopenedListener;
 import java.io.File;
 
 /**
@@ -83,6 +84,10 @@ public class App {
             });
             FlatDesktop.setQuitHandler(FlatDesktop.QuitResponse::performQuit);
 
+            if (Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().addAppEventListener((AppReopenedListener) e ->
+                        SwingUtilities.invokeLater(Init::showMainFrame));
+            }
         }
 
         FlatLaf.registerCustomDefaultsSource("themes");

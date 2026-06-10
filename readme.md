@@ -17,7 +17,7 @@ Windows • Linux • macOS
 
 ## 截图速览
 
-> 以下为主要功能界面截图。翻译、图片助手、PDF、环境变量、配置文件转换、Protobuf 等模块暂未单独配图，可在安装后于对应 Tab 中体验。
+> 以下为主要功能界面截图。翻译、图片助手、PDF、环境变量、系统信息、配置文件转换、Protobuf 等模块暂未单独配图，可在安装后于对应 Tab 中体验。
 
 ![随手记](screen_shoot/quick_note_2_mac.png)
 
@@ -194,8 +194,13 @@ Windows • Linux • macOS
 ### 可视化获取JsonPath
 
 ## 翻译
-### 中英互译
-### 自动检测语言
+### 多语言互译（中/英/日/韩/法/西/德/俄等 20+ 语言，支持自动检测）
+### Google / Bing 翻译源，失败时自动降级
+### 收藏到单词本
+### 单词本
+- 搜索、新建、编辑、删除
+- 重新翻译
+### 翻译历史记录
 
 ## Host
 ### Host格式化/语法高亮
@@ -217,6 +222,8 @@ Windows • Linux • macOS
 ### URL编码/解码
 ### Native->十六进制
 ### 十六进制->Native
+### Native->ASCII（十进制/十六进制字符码）
+### ASCII->Native
 
 ## 二维码
 ### 二维码生成
@@ -228,13 +235,14 @@ Windows • Linux • macOS
 ### 历史记录
 
 ## 加解密/随机
+> 支持国密 SM2 / SM3 / SM4
 ### 对称加密/解密
 - AES
 - DES
 - SM4
 ### 非对称加密/解密
 - RSA
-- SM2
+- SM2（加密/解密、私钥签名、公钥验签）
 ### 摘要算法（文件/文本摘要）
 - MD5
 - SHA1
@@ -262,6 +270,7 @@ Windows • Linux • macOS
 ### netstat
 ### ping
 ### ipv4-Long互相转换
+### WHOIS 查询
 ### 刷新DNS
 
 ## 调色板
@@ -314,12 +323,22 @@ Windows • Linux • macOS
 ### PDF合并
 
 ## 环境变量
-### 系统环境变量
-### Java环境变量
+### 系统环境变量（表格浏览）
+### Java properties
+### 刷新 / 导出
+
+## 系统信息
+基于 OSHI 采集本机系统与硬件信息，首次进入 Tab 或点击刷新时按需加载：
+### 系统（操作系统、计算机、固件、主板等）
+### 处理器
+### 内存
+### 存储
+### 网络
 
 ## 配置文件转换
 ### Properties->YAML
 ### YAML->Properties
+### YAML格式校验（语法校验、错误行号定位、格式化）
 ### JSON->YAML（TODO）
 ### YAML->JSON（TODO）
 
