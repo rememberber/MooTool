@@ -15,6 +15,8 @@ import com.luoboduner.moo.tool.ui.component.CustomizeIcon;
 import com.luoboduner.moo.tool.ui.component.FuncHistoryPanel;
 import com.luoboduner.moo.tool.ui.listener.func.CronListener;
 import com.luoboduner.moo.tool.util.FuncHistorySupport;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -313,6 +315,8 @@ public class CronForm {
 
     private static CronForm cronForm;
 
+    private static boolean i18nRegistered;
+
     private static FuncHistoryPanel historyPanel;
 
     private static final Log logger = LogFactory.get();
@@ -550,6 +554,91 @@ public class CronForm {
                 cronForm.getCronPanel(), "Cron", FuncConsts.CRON, CronForm::applyHistory);
 
         CronListener.addListeners();
+
+        cronForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(CronForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setTabTitle(tabbedPane1, 0, "cron.tab.second");
+        I18nUiUtil.setTabTitle(tabbedPane1, 1, "cron.tab.minute");
+        I18nUiUtil.setTabTitle(tabbedPane1, 2, "cron.tab.hour");
+        I18nUiUtil.setTabTitle(tabbedPane1, 3, "cron.tab.day");
+        I18nUiUtil.setTabTitle(tabbedPane1, 4, "cron.tab.month");
+        I18nUiUtil.setTabTitle(tabbedPane1, 5, "cron.tab.week");
+        I18nUiUtil.setTabTitle(tabbedPane1, 6, "cron.tab.year");
+
+        I18nUiUtil.localizeTree(cronPanel, buildLocalizeMap());
+        I18nUiUtil.setText(weekCheckBox1, "cron.weekMon");
+        I18nUiUtil.setText(weekCheckBox2, "cron.weekTue");
+        I18nUiUtil.setText(weekCheckBox3, "cron.weekWed");
+        I18nUiUtil.setText(weekCheckBox4, "cron.weekThu");
+        I18nUiUtil.setText(weekCheckBox5, "cron.weekFri");
+        I18nUiUtil.setText(weekCheckBox6, "cron.weekSat");
+        I18nUiUtil.setText(weekCheckBox7, "cron.weekSun");
+        refreshLocaleComboBox();
+        nextExecutionTimeTextArea.setText(I18n.get("cron.nextRuns"));
+    }
+
+    private static Map<String, String> buildLocalizeMap() {
+        return Map.ofEntries(
+                Map.entry("周期：从", "cron.cycleFrom"),
+                Map.entry("开始，每", "cron.startEvery"),
+                Map.entry("秒执行一次", "cron.secOnce"),
+                Map.entry("每秒", "cron.everySecond"),
+                Map.entry("指定：", "cron.assign"),
+                Map.entry("秒", "cron.second"),
+                Map.entry("每分钟", "cron.everyMinute"),
+                Map.entry("分钟执行一次", "cron.minOnce"),
+                Map.entry("分钟", "cron.minute"),
+                Map.entry("每小时", "cron.everyHour"),
+                Map.entry("小时执行一次", "cron.hourOnce"),
+                Map.entry("小时", "cron.hour"),
+                Map.entry("每天", "cron.everyDay"),
+                Map.entry("天执行一次", "cron.dayOnce"),
+                Map.entry("日", "cron.day"),
+                Map.entry("不指定", "cron.notAssign"),
+                Map.entry("每月", "cron.everyMonth"),
+                Map.entry("日之后最近的那个工作日", "cron.afterWorkday"),
+                Map.entry("每月最后一天", "cron.lastDayOfMonth"),
+                Map.entry("月开始，每", "cron.monthStartEvery"),
+                Map.entry("个月", "cron.months"),
+                Map.entry("月", "cron.month"),
+                Map.entry("每周", "cron.everyWeek"),
+                Map.entry("当月第", "cron.weekOfMonth"),
+                Map.entry("周的", "cron.inMonthWeek"),
+                Map.entry("当月最后一个", "cron.lastWeekOfMonth"),
+                Map.entry("每年", "cron.everyYear"),
+                Map.entry("周期：", "cron.cycle"),
+                Map.entry("自然语言", "cron.naturalLanguage"),
+                Map.entry("Cron 表达式", "cron.expression"),
+                Map.entry("常用Cron", "cron.common"),
+                Map.entry("收藏夹", "cron.favorites"),
+                Map.entry("收藏", "cron.favorite"),
+                Map.entry("星期", "cron.weekLabel"),
+                Map.entry("年", "cron.yearLabel"),
+                Map.entry("反解析到UI", "cron.resolveToUi")
+        );
+    }
+
+    private void refreshLocaleComboBox() {
+        int index = localComboBox.getSelectedIndex();
+        localComboBox.removeAllItems();
+        localComboBox.addItem(I18n.get("cron.locale.zh"));
+        localComboBox.addItem(I18n.get("cron.locale.en"));
+        localComboBox.addItem(I18n.get("cron.locale.ja"));
+        if (index >= 0 && index < localComboBox.getItemCount()) {
+            localComboBox.setSelectedIndex(index);
+        }
+    }
+
+    private static void applyI18nStatic() {
+        if (cronForm != null) {
+            cronForm.applyI18n();
+        }
     }
 
     public static FuncHistoryPanel getHistoryPanel() {
@@ -570,7 +659,7 @@ public class CronForm {
         cronForm.getButton2().setIcon(new FlatSVGIcon("icon/up.svg"));
         cronForm.getCronToHumanReadableButton().setIcon(new FlatSVGIcon("icon/down.svg"));
         cronForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 2) - 100);
-        cronForm.getNextExecutionTimeTextArea().setText("最近10次运行时间：");
+        cronForm.getNextExecutionTimeTextArea().setText(I18n.get("cron.nextRuns"));
 
         Style.blackTextArea(cronForm.getNextExecutionTimeTextArea());
 

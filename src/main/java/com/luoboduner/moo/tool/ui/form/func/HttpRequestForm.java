@@ -39,6 +39,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * <pre>
@@ -98,6 +99,7 @@ public class HttpRequestForm {
     private JButton importCurlButton;
 
     private static final Log logger = LogFactory.get();
+    private static boolean i18nRegistered;
     private static HttpRequestForm httpRequestForm;
     private static TMsgHttpMapper msgHttpMapper = MybatisUtil.getSqlSession().getMapper(TMsgHttpMapper.class);
     private static THttpRequestHistoryMapper httpRequestHistoryMapper = MybatisUtil.getSqlSession().getMapper(THttpRequestHistoryMapper.class);
@@ -150,6 +152,84 @@ public class HttpRequestForm {
         initList();
 
         HttpRequestListener.addListeners();
+
+        httpRequestForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(HttpRequestForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setPlaceholder(searchTextField, "common.search");
+        I18nUiUtil.setToolTip(addButton, "httpRequest.tooltip.new");
+        I18nUiUtil.setToolTip(saveButton, "common.save");
+        I18nUiUtil.setToolTip(deleteButton, "common.delete");
+        I18nUiUtil.setToolTip(historyButton, "httpRequest.tooltip.history");
+        I18nUiUtil.setToolTip(sendToWindowButton, "httpRequest.tooltip.sendToWindow");
+        I18nUiUtil.setToolTip(sendButton, "httpRequest.tooltip.send");
+        I18nUiUtil.setToolTip(bodyFormatButton, "httpRequest.tooltip.formatBody");
+        I18nUiUtil.setToolTip(importCurlButton, "httpRequest.tooltip.importCurl");
+        I18nUiUtil.setToolTip(closeHistoryButton, "common.close");
+        I18nUiUtil.setToolTip(deleteHistoryButton, "common.delete");
+        I18nUiUtil.setText(importCurlButton, "httpRequest.curl");
+
+        I18nUiUtil.setTabTitle(tabbedPane1, 0, "Params");
+        I18nUiUtil.setTabTitle(tabbedPane1, 1, "Headers");
+        I18nUiUtil.setTabTitle(tabbedPane1, 2, "Cookies");
+        I18nUiUtil.setTabTitle(tabbedPane1, 3, "Body");
+        I18nUiUtil.setTabTitle(tabbedPane2, 0, "Body");
+        I18nUiUtil.setTabTitle(tabbedPane2, 1, "Headers");
+        I18nUiUtil.setTabTitle(tabbedPane2, 2, "Cookies");
+
+        I18nUiUtil.localizeTree(httpRequestPanel, Map.of(
+                "Name", "httpRequest.col.name",
+                "Value", "httpRequest.col.value",
+                "Domain", "httpRequest.col.domain",
+                "Path", "httpRequest.col.path",
+                "Expiry DateTime", "httpRequest.col.expiry",
+                "请求：", "httpRequest.request",
+                "响应：", "httpRequest.response",
+                "历史记录", "httpRequest.history"
+        ));
+
+        refreshTableHeaders();
+    }
+
+    private static void applyI18nStatic() {
+        if (httpRequestForm != null) {
+            httpRequestForm.applyI18n();
+        }
+    }
+
+    private void refreshTableHeaders() {
+        String[] nameValueHeaders = {I18n.get("httpRequest.col.name"), I18n.get("httpRequest.col.value"), ""};
+        updateTableHeaders(paramTable, nameValueHeaders);
+        updateTableHeaders(headerTable, nameValueHeaders);
+        String[] cookieHeaders = {
+                I18n.get("httpRequest.col.name"),
+                I18n.get("httpRequest.col.value"),
+                I18n.get("httpRequest.col.domain"),
+                I18n.get("httpRequest.col.path"),
+                I18n.get("httpRequest.col.expiry"),
+                ""
+        };
+        updateTableHeaders(cookieTable, cookieHeaders);
+        String[] historyHeaders = {
+                "id",
+                I18n.get("httpRequest.col.time"),
+                I18n.get("httpRequest.col.params"),
+                I18n.get("httpRequest.col.requestBody"),
+                I18n.get("httpRequest.col.responseBody")
+        };
+        updateTableHeaders(historyTable, historyHeaders);
+    }
+
+    private static void updateTableHeaders(JTable table, String[] headers) {
+        if (table == null || table.getModel().getColumnCount() != headers.length) {
+            return;
+        }
+        ((DefaultTableModel) table.getModel()).setColumnIdentifiers(headers);
     }
 
     private static void initUi() {

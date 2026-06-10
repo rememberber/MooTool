@@ -6,6 +6,8 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.listener.func.HardwareInfoListener;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
@@ -36,6 +38,13 @@ public class HardwareInfoForm {
 
     private static HardwareInfoForm hardwareInfoForm;
 
+    private static boolean i18nRegistered;
+
+    private static final String PLACEHOLDER_ZH =
+            "点击「刷新」或首次进入本页时自动采集系统与硬件信息";
+    private static final String PLACEHOLDER_EN =
+            "Click Refresh or open this tab to collect system and hardware info";
+
     private HardwareInfoForm() {
         UndoUtil.register(this);
     }
@@ -51,6 +60,40 @@ public class HardwareInfoForm {
         hardwareInfoForm = getInstance();
         initUi();
         HardwareInfoListener.addListeners();
+
+        hardwareInfoForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(HardwareInfoForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setTabTitle(tabbedPane, 0, "hardware.tab.system");
+        I18nUiUtil.setTabTitle(tabbedPane, 1, "hardware.tab.cpu");
+        I18nUiUtil.setTabTitle(tabbedPane, 2, "hardware.tab.memory");
+        I18nUiUtil.setTabTitle(tabbedPane, 3, "hardware.tab.disk");
+        I18nUiUtil.setTabTitle(tabbedPane, 4, "hardware.tab.network");
+        I18nUiUtil.setToolTip(refreshButton, "common.refresh");
+        String placeholder = I18n.get("hardware.placeholder");
+        updatePlaceholderIfNeeded(systemTextArea, placeholder);
+        updatePlaceholderIfNeeded(cpuTextArea, placeholder);
+        updatePlaceholderIfNeeded(memoryTextArea, placeholder);
+        updatePlaceholderIfNeeded(diskTextArea, placeholder);
+        updatePlaceholderIfNeeded(networkTextArea, placeholder);
+    }
+
+    private static void updatePlaceholderIfNeeded(JTextArea textArea, String placeholder) {
+        String text = textArea.getText();
+        if (text.isEmpty() || text.equals(PLACEHOLDER_ZH) || text.equals(PLACEHOLDER_EN)) {
+            textArea.setText(placeholder);
+        }
+    }
+
+    private static void applyI18nStatic() {
+        if (hardwareInfoForm != null) {
+            hardwareInfoForm.applyI18n();
+        }
     }
 
     private static void initUi() {
@@ -68,7 +111,7 @@ public class HardwareInfoForm {
         ScrollUtil.smoothPane(form.getDiskScrollPane());
         ScrollUtil.smoothPane(form.getNetworkScrollPane());
 
-        String placeholder = "点击「刷新」或首次进入本页时自动采集系统与硬件信息";
+        String placeholder = I18n.get("hardware.placeholder");
         form.getSystemTextArea().setText(placeholder);
         form.getCpuTextArea().setText(placeholder);
         form.getMemoryTextArea().setText(placeholder);

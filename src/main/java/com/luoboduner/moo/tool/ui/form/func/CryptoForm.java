@@ -13,12 +13,14 @@ import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.component.FuncHistoryPanel;
 import com.luoboduner.moo.tool.ui.listener.func.CryptoListener;
 import com.luoboduner.moo.tool.util.FuncHistorySupport;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import org.apache.commons.lang3.StringUtils;
 import lombok.Getter;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Map;
 
 /**
  * <pre>
@@ -88,6 +90,8 @@ public class CryptoForm {
 
     private static CryptoForm cryptoForm;
 
+    private static boolean i18nRegistered;
+
     private static FuncHistoryPanel historyPanel;
 
     private static final Log logger = LogFactory.get();
@@ -111,6 +115,62 @@ public class CryptoForm {
                 cryptoForm.getTabbedPane1(), FuncConsts.CRYPTO, CryptoForm::applyHistory);
 
         CryptoListener.addListeners();
+
+        cryptoForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(CryptoForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setToolTip(symKeyTextField, "crypto.keyTip");
+
+        I18nUiUtil.setTabTitle(tabbedPane1, 0, "crypto.tab.symmetric");
+        I18nUiUtil.setTabTitle(tabbedPane1, 1, "crypto.tab.asymmetric");
+        I18nUiUtil.setTabTitle(tabbedPane1, 2, "crypto.tab.digest");
+        I18nUiUtil.setTabTitle(tabbedPane1, 3, "Base64");
+        I18nUiUtil.setTabTitle(tabbedPane1, 4, "crypto.tab.random");
+
+        I18nUiUtil.setText(copyUuidButton, "common.copy");
+        I18nUiUtil.setText(copyRandomNumButton, "common.copy");
+        I18nUiUtil.setText(copyRadomStringButton, "common.copy");
+        I18nUiUtil.setText(copyRandomPasswordButton, "common.copy");
+
+        I18nUiUtil.localizeTree(cryptoPanel, Map.ofEntries(
+                Map.entry("加密", "crypto.encrypt"),
+                Map.entry("解密", "crypto.decrypt"),
+                Map.entry("密钥", "crypto.key"),
+                Map.entry("公钥", "crypto.pubKey"),
+                Map.entry("私钥", "crypto.privateKey"),
+                Map.entry("待加密/解密结果：", "crypto.leftPlain"),
+                Map.entry("待解密/加密结果：", "crypto.rightCipher"),
+                Map.entry("生成一对密钥", "crypto.generateKeyPair"),
+                Map.entry("使用公钥加密", "crypto.encryptWithPub"),
+                Map.entry("使用私钥解密", "crypto.decryptWithPri"),
+                Map.entry("使用私钥加密", "crypto.encryptWithPri"),
+                Map.entry("使用公钥解密", "crypto.decryptWithPub"),
+                Map.entry("使用私钥签名（SM2）", "crypto.signSm2"),
+                Map.entry("使用公钥验签（SM2）", "crypto.verifySm2"),
+                Map.entry("文件", "crypto.file"),
+                Map.entry("文本摘要加密/哈希", "crypto.digestText"),
+                Map.entry("文件摘要加密/哈希", "crypto.digestFile"),
+                Map.entry("随机UUID", "crypto.randomUuid"),
+                Map.entry("获得一个只包含数字的字符串", "crypto.digitsOnly"),
+                Map.entry("位数", "crypto.digits"),
+                Map.entry("获得一个随机的字符串（只包含数字和字符）", "crypto.randomString"),
+                Map.entry("随机生成一个复杂的密码（带特殊符号）", "crypto.randomPassword"),
+                Map.entry("复制", "common.copy"),
+                Map.entry("生成", "crypto.generate"),
+                Map.entry("转大写", "crypto.toUpper"),
+                Map.entry("转小写", "crypto.toLower")
+        ));
+    }
+
+    private static void applyI18nStatic() {
+        if (cryptoForm != null) {
+            cryptoForm.applyI18n();
+        }
     }
 
     public static FuncHistoryPanel getHistoryPanel() {
@@ -182,10 +242,10 @@ public class CryptoForm {
 
     private static void initUi() {
         cryptoForm.getDigestLeftPanel().removeAll();
-        if ("上方".equals(App.config.getMenuBarPosition())) {
+        if (App.config.isMenuBarOnTop()) {
             cryptoForm.getDigestLeftPanel().add(cryptoForm.getDigestControlPanel(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
             cryptoForm.getDigestLeftPanel().add(cryptoForm.getDigestLeftScrollPane(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        } else if ("下方".equals(App.config.getMenuBarPosition())) {
+        } else if (App.config.isMenuBarOnBottom()) {
             cryptoForm.getDigestLeftPanel().add(cryptoForm.getDigestControlPanel(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
             cryptoForm.getDigestLeftPanel().add(cryptoForm.getDigestLeftScrollPane(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         }

@@ -6,22 +6,32 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.util.Map;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 
 public class KeyMapDialog extends JDialog {
     private JPanel contentPane;
 
+    private static final Map<String, String> LABEL_KEYS = Map.of(
+            "保存", "common.save",
+            "查找", "common.find",
+            "格式化", "common.format",
+            "删除选择的行", "keyMap.deleteLine"
+    );
+
     private static GridConstraints gridConstraints = new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false);
 
     public KeyMapDialog() {
 
-        super(App.mainFrame, "快捷键");
+        super(App.mainFrame, I18n.get("keyMap.title"));
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 600, 200);
         setContentPane(contentPane);
         setModal(true);
@@ -46,6 +56,12 @@ public class KeyMapDialog extends JDialog {
         // call onCancel() on ESCAPE
         contentPane.registerKeyboardAction(e -> onOK(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 
+        applyI18n();
+    }
+
+    private void applyI18n() {
+        setTitle(I18n.get("keyMap.title"));
+        I18nUiUtil.localizeTree(contentPane, LABEL_KEYS);
     }
 
     private void onOK() {

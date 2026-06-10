@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.dialog;
 import com.formdev.flatlaf.util.SystemInfo;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.ImageCompressUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 
@@ -28,7 +29,7 @@ public class ImageCompressDialog extends JDialog {
     private boolean confirmed;
 
     public ImageCompressDialog(int imageCount) {
-        super(App.mainFrame, "压缩图片", true);
+        super(App.mainFrame, I18n.get("imageCompress.title"), true);
         confirmed = false;
 
         JPanel contentPane = new JPanel(new BorderLayout(0, 12));
@@ -42,7 +43,7 @@ public class ImageCompressDialog extends JDialog {
             getRootPane().putClientProperty("apple.awt.windowTitleVisible", false);
         }
 
-        countLabel = new JLabel("已选择 " + imageCount + " 张图片");
+        countLabel = new JLabel(I18n.format("imageCompress.selectedCount", imageCount));
         contentPane.add(countLabel, BorderLayout.NORTH);
 
         JPanel optionsPanel = new JPanel(new GridBagLayout());
@@ -54,7 +55,7 @@ public class ImageCompressDialog extends JDialog {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 0;
 
-        optionsPanel.add(new JLabel("压缩质量："), gbc);
+        optionsPanel.add(new JLabel(I18n.get("imageCompress.quality")), gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 1;
@@ -73,35 +74,39 @@ public class ImageCompressDialog extends JDialog {
         gbc.gridx = 0;
         gbc.gridy++;
         gbc.weightx = 0;
-        optionsPanel.add(new JLabel("缩放比例："), gbc);
+        optionsPanel.add(new JLabel(I18n.get("imageCompress.scale")), gbc);
 
         gbc.gridx = 1;
         gbc.gridwidth = 2;
         gbc.weightx = 1;
-        scaleComboBox = new JComboBox<>(new String[]{"100%（仅压缩）", "90%", "75%", "50%"});
+        scaleComboBox = new JComboBox<>(new String[]{
+                I18n.get("imageCompress.scale100"), "90%", "75%", "50%"
+        });
         optionsPanel.add(scaleComboBox, gbc);
 
         gbc.gridx = 0;
         gbc.gridy++;
         gbc.gridwidth = 1;
         gbc.weightx = 0;
-        optionsPanel.add(new JLabel("输出格式："), gbc);
+        optionsPanel.add(new JLabel(I18n.get("imageCompress.format")), gbc);
 
         gbc.gridx = 1;
         gbc.gridwidth = 2;
         gbc.weightx = 1;
-        formatComboBox = new JComboBox<>(new String[]{"保持原格式", "PNG", "JPEG"});
+        formatComboBox = new JComboBox<>(new String[]{
+                I18n.get("imageCompress.formatKeep"), "PNG", "JPEG"
+        });
         optionsPanel.add(formatComboBox, gbc);
 
         gbc.gridx = 0;
         gbc.gridy++;
         gbc.gridwidth = 3;
         gbc.weightx = 1;
-        optionsPanel.add(new JLabel("保存方式："), gbc);
+        optionsPanel.add(new JLabel(I18n.get("imageCompress.saveMode")), gbc);
 
         gbc.gridy++;
-        overwriteRadio = new JRadioButton("覆盖原图");
-        keepOriginalRadio = new JRadioButton("保留原图（另存为 *_compressed.*）", true);
+        overwriteRadio = new JRadioButton(I18n.get("imageCompress.overwrite"));
+        keepOriginalRadio = new JRadioButton(I18n.get("imageCompress.keepOriginal"), true);
         ButtonGroup saveModeGroup = new ButtonGroup();
         saveModeGroup.add(overwriteRadio);
         saveModeGroup.add(keepOriginalRadio);
@@ -114,8 +119,8 @@ public class ImageCompressDialog extends JDialog {
         contentPane.add(optionsPanel, BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        JButton cancelButton = new JButton("取消");
-        JButton okButton = new JButton("开始压缩");
+        JButton cancelButton = new JButton(I18n.get("common.cancel"));
+        JButton okButton = new JButton(I18n.get("imageCompress.start"));
         getRootPane().setDefaultButton(okButton);
         buttonPanel.add(cancelButton);
         buttonPanel.add(okButton);
@@ -148,37 +153,28 @@ public class ImageCompressDialog extends JDialog {
     public ImageCompressUtil.CompressOptions getOptions() {
         ImageCompressUtil.CompressOptions options = new ImageCompressUtil.CompressOptions();
         options.setQuality(qualitySlider.getValue() / 100f);
-        options.setScale(parseScale((String) scaleComboBox.getSelectedItem()));
-        options.setOutputFormat(parseFormat((String) formatComboBox.getSelectedItem()));
+        options.setScale(parseScale(scaleComboBox.getSelectedIndex()));
+        options.setOutputFormat(parseFormat(formatComboBox.getSelectedIndex()));
         options.setOutputMode(overwriteRadio.isSelected()
                 ? ImageCompressUtil.OutputMode.OVERWRITE
                 : ImageCompressUtil.OutputMode.KEEP_ORIGINAL);
         return options;
     }
 
-    private static float parseScale(String scaleText) {
-        if (scaleText == null) {
-            return 1.0f;
-        }
-        if (scaleText.startsWith("90")) {
-            return 0.9f;
-        }
-        if (scaleText.startsWith("75")) {
-            return 0.75f;
-        }
-        if (scaleText.startsWith("50")) {
-            return 0.5f;
-        }
-        return 1.0f;
+    private static float parseScale(int index) {
+        return switch (index) {
+            case 1 -> 0.9f;
+            case 2 -> 0.75f;
+            case 3 -> 0.5f;
+            default -> 1.0f;
+        };
     }
 
-    private static ImageCompressUtil.OutputFormat parseFormat(String formatText) {
-        if ("PNG".equals(formatText)) {
-            return ImageCompressUtil.OutputFormat.PNG;
-        }
-        if ("JPEG".equals(formatText)) {
-            return ImageCompressUtil.OutputFormat.JPEG;
-        }
-        return ImageCompressUtil.OutputFormat.AUTO;
+    private static ImageCompressUtil.OutputFormat parseFormat(int index) {
+        return switch (index) {
+            case 1 -> ImageCompressUtil.OutputFormat.PNG;
+            case 2 -> ImageCompressUtil.OutputFormat.JPEG;
+            default -> ImageCompressUtil.OutputFormat.AUTO;
+        };
     }
 }

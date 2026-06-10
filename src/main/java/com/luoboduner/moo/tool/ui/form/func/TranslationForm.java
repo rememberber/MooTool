@@ -12,6 +12,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.form.TranslationLayoutForm;
 import com.luoboduner.moo.tool.ui.listener.func.TranslationListener;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.AccessLevel;
@@ -64,6 +65,8 @@ public class TranslationForm {
     private JLabel historyMetaLabel;
 
     private static TranslationForm translationForm;
+
+    private static boolean i18nRegistered;
 
     private TranslationLayoutForm translationLayoutForm;
 
@@ -280,6 +283,50 @@ public class TranslationForm {
         initWordBookTable();
         initHistoryTable();
         TranslationListener.addListeners();
+
+        translationForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(TranslationForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        JTabbedPane tabbedPane = getTranslationTabbedPane();
+        if (tabbedPane != null) {
+            if (tabbedPane.getTabCount() > 0) {
+                I18nUiUtil.setTabTitle(tabbedPane, 0, "translation.tab.translate");
+            }
+            if (tabbedPane.getTabCount() > 1) {
+                I18nUiUtil.setTabTitle(tabbedPane, 1, "translation.tab.wordBook");
+            }
+            if (tabbedPane.getTabCount() > 2) {
+                I18nUiUtil.setTabTitle(tabbedPane, 2, "translation.tab.history");
+            }
+        }
+        I18nUiUtil.setPlaceholder(wordBookSearchField, "translation.searchWord");
+        I18nUiUtil.setToolTip(wordBookAddButton, "translation.tooltip.newWord");
+        I18nUiUtil.setToolTip(button4, "translation.tooltip.deleteSelected");
+        I18nUiUtil.setPlaceholder(wordRemarkTextField, "translation.remarkPlaceholder");
+        I18nUiUtil.setText(wordSaveButton, "common.save");
+        I18nUiUtil.setText(wordRetranslateButton, "translation.retranslate");
+        I18nUiUtil.setToolTip(wordCopySourceButton, "translation.tooltip.copySource");
+        I18nUiUtil.setToolTip(wordCopyTargetButton, "translation.tooltip.copyTarget");
+        I18nUiUtil.setPlaceholder(historySearchField, "translation.searchHistory");
+        I18nUiUtil.setToolTip(historyDeleteButton, "translation.tooltip.deleteSelected");
+        I18nUiUtil.setText(historyClearButton, "translation.clearAll");
+        I18nUiUtil.setText(historyApplyButton, "translation.applyToTranslate");
+        I18nUiUtil.setToolTip(historyCopySourceButton, "translation.tooltip.copySource");
+        I18nUiUtil.setToolTip(historyCopyTargetButton, "translation.tooltip.copyTarget");
+        if (translationLayoutForm != null) {
+            translationLayoutForm.applyI18n();
+        }
+    }
+
+    private static void applyI18nStatic() {
+        if (translationForm != null) {
+            translationForm.applyI18n();
+        }
     }
 
     private static void initUi() {

@@ -10,12 +10,14 @@ import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.component.FuncHistoryPanel;
 import com.luoboduner.moo.tool.ui.listener.func.ProtoBufListener;
 import com.luoboduner.moo.tool.util.FuncHistorySupport;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import org.apache.commons.lang3.StringUtils;
 import lombok.Getter;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Map;
 
 /**
  * Protobuf 工具
@@ -43,6 +45,8 @@ public class ProtoBufForm {
 
     private static ProtoBufForm protoBufForm;
 
+    private static boolean i18nRegistered;
+
     private static FuncHistoryPanel historyPanel;
 
     private ProtoBufForm() {
@@ -62,6 +66,42 @@ public class ProtoBufForm {
         historyPanel = FuncHistorySupport.attachTab(
                 protoBufForm.getTabbedPane1(), FuncConsts.PROTOBUF, ProtoBufForm::applyHistory);
         ProtoBufListener.addListeners();
+
+        protoBufForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(ProtoBufForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setTabTitle(tabbedPane1, 0, "protoBuf.tab.jsonBinary");
+        I18nUiUtil.setTabTitle(tabbedPane1, 1, "protoBuf.tab.wire");
+        I18nUiUtil.setTabTitle(tabbedPane1, 2, "protoBuf.tab.hexBase64");
+
+        I18nUiUtil.setText(formatProtoButton, "common.format");
+
+        I18nUiUtil.localizeTree(protoBufPanel, Map.ofEntries(
+                Map.entry(".proto 定义:", "protoBuf.protoDef"),
+                Map.entry("格式化", "common.format"),
+                Map.entry("Message:", "protoBuf.message"),
+                Map.entry("二进制格式:", "protoBuf.binaryFormat"),
+                Map.entry("JSON", "protoBuf.json"),
+                Map.entry("二进制", "protoBuf.binary"),
+                Map.entry("JSON → 二进制", "protoBuf.jsonToBinary"),
+                Map.entry("JSON ← 二进制", "protoBuf.binaryToJson"),
+                Map.entry("二进制输入", "protoBuf.wireInput"),
+                Map.entry("解码", "protoBuf.decode"),
+                Map.entry("Wire 格式", "protoBuf.wireFormat"),
+                Map.entry("Hex → Base64", "protoBuf.hexToBase64"),
+                Map.entry("Hex ← Base64", "protoBuf.base64ToHex")
+        ));
+    }
+
+    private static void applyI18nStatic() {
+        if (protoBufForm != null) {
+            protoBufForm.applyI18n();
+        }
     }
 
     public static FuncHistoryPanel getHistoryPanel() {

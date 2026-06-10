@@ -23,6 +23,7 @@ import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewe
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
@@ -128,6 +129,7 @@ public class QuickNoteForm {
     public final static JToggleButton[] COLOR_BUTTONS = new JToggleButton[COLOR_KEYS.length];
 
     private static QuickNoteForm quickNoteForm;
+    private static boolean i18nRegistered;
     private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
 
     public static QuickNoteRSyntaxTextViewerManager quickNoteRSyntaxTextViewerManager;
@@ -228,6 +230,67 @@ public class QuickNoteForm {
 
         QuickNoteListener.addListeners();
 
+        quickNoteForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(QuickNoteForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setPlaceholder(searchTextField, "common.search");
+        I18nUiUtil.setToolTip(addButton, "quickNote.tooltip.new");
+        I18nUiUtil.setToolTip(findButton, "quickNote.tooltip.find");
+        I18nUiUtil.setToolTip(saveButton, "quickNote.tooltip.save");
+        I18nUiUtil.setToolTip(deleteButton, "quickNote.tooltip.delete");
+        I18nUiUtil.setToolTip(exportButton, "quickNote.tooltip.export");
+        I18nUiUtil.setToolTip(formatButton, "quickNote.tooltip.format");
+        I18nUiUtil.setToolTip(infoButton, "quickNote.tooltip.docInfo");
+        I18nUiUtil.setToolTip(quickReplaceButton, "quickNote.tooltip.quickReplace");
+        I18nUiUtil.setToolTip(searchContentCheckBox, "quickNote.tooltip.includeContent");
+        I18nUiUtil.setToolTip(fontNameComboBox, "quickNote.tooltip.font");
+        I18nUiUtil.setToolTip(fontSizeComboBox, "quickNote.tooltip.fontSize");
+        I18nUiUtil.setToolTip(listItemButton, "quickNote.tooltip.toggleList");
+        I18nUiUtil.setToolTip(wrapButton, "quickNote.tooltip.wrap");
+        I18nUiUtil.setToolTip(unOrderListButton, "quickNote.tooltip.unorderedList");
+        I18nUiUtil.setToolTip(orderListButton, "quickNote.tooltip.orderedList");
+        I18nUiUtil.setToolTip(insertImageButton, "quickNote.tooltip.insertImage");
+        I18nUiUtil.setToolTip(quickReplaceCloseButton, "quickNote.tooltip.close");
+
+        I18nUiUtil.setText(trimBlankCheckBox, "quickNote.replace.trimBlank");
+        I18nUiUtil.setText(trimBlankRowCheckBox, "quickNote.replace.trimBlankRow");
+        I18nUiUtil.setText(clearTabTCheckBox, "quickNote.replace.clearTab");
+        I18nUiUtil.setText(scientificToNormalCheckBox, "quickNote.replace.scientificToNormal");
+        I18nUiUtil.setText(normalToScientificCheckBox, "quickNote.replace.normalToScientific");
+        I18nUiUtil.setText(toThousandthCheckBox, "quickNote.replace.toThousandth");
+        I18nUiUtil.setText(toNormalNumCheckBox, "quickNote.replace.toNormalNum");
+        I18nUiUtil.setText(underlineToHumpCheckBox, "quickNote.replace.underlineToHump");
+        I18nUiUtil.setText(humpToUnderlineCheckBox, "quickNote.replace.humpToUnderline");
+        I18nUiUtil.setText(enterToCommaCheckBox, "quickNote.replace.enterToComma");
+        I18nUiUtil.setText(enterToCommaSingleQuotesCheckBox, "quickNote.replace.enterToCommaSingle");
+        I18nUiUtil.setText(enterToCommaDoubleQuotesCheckBox, "quickNote.replace.enterToCommaDouble");
+        I18nUiUtil.setText(commaToEnterCheckBox, "quickNote.replace.commaToEnter");
+        I18nUiUtil.setText(tabToEnterCheckBox, "quickNote.replace.tabToEnter");
+        I18nUiUtil.setText(clearEnterCheckBox, "quickNote.replace.clearEnter");
+        I18nUiUtil.setText(uperToLowerCheckBox, "quickNote.replace.upperToLower");
+        I18nUiUtil.setText(lowerToUperCheckBox, "quickNote.replace.lowerToUpper");
+        I18nUiUtil.setText(deduplicationByLineCheckBox, "quickNote.replace.dedupByLine");
+        I18nUiUtil.setText(deduplicationByLineCntCheckBox, "quickNote.replace.dedupByLineCount");
+        I18nUiUtil.setText(escapeCheckBox, "quickNote.replace.escape");
+        I18nUiUtil.setText(unescapeCheckBox, "quickNote.replace.unescape");
+        I18nUiUtil.setText(commaSingleQuotesToEnterCheckBox, "quickNote.replace.commaSingleToEnter");
+        I18nUiUtil.setText(commaDoubleQuotesToEnterCheckBox, "quickNote.replace.commaDoubleToEnter");
+        I18nUiUtil.setText(reverseByRowCheckBox, "quickNote.replace.reverseByRow");
+        I18nUiUtil.setText(sortFromAToZByRowCheckBox, "quickNote.replace.sortAToZ");
+        I18nUiUtil.setText(sortFromZToAByRowCheckBox, "quickNote.replace.sortZToA");
+        I18nUiUtil.setText(sortByPinyinCheckBox, "quickNote.replace.sortByPinyin");
+        I18nUiUtil.setText(startQuickReplaceButton, "common.start");
+    }
+
+    private static void applyI18nStatic() {
+        if (quickNoteForm != null) {
+            quickNoteForm.applyI18n();
+        }
     }
 
     public static void updateInsertImageButtonVisibility() {
@@ -244,7 +307,7 @@ public class QuickNoteForm {
     }
 
     private static void initUi() {
-        quickNoteForm.getSearchTextField().putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "搜索");
+        quickNoteForm.getSearchTextField().putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "搜索"); // updated in applyI18n
         quickNoteForm.getSearchTextField().putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON,
                 new FlatSearchIcon());
         quickNoteForm.getSearchContentCheckBox().setToolTipText("包含内容");

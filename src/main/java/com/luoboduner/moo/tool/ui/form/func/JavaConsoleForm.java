@@ -12,6 +12,8 @@ import com.luoboduner.moo.tool.ui.component.textviewer.JavaRTextScrollPane;
 import com.luoboduner.moo.tool.ui.listener.func.JavaConsoleListener;
 import com.luoboduner.moo.tool.util.FuncHistorySupport;
 import com.luoboduner.moo.tool.util.FuncHistoryUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.codeformatter.CodeFormatterFactory;
 import org.apache.commons.lang3.StringUtils;
 import lombok.Getter;
@@ -34,7 +36,10 @@ public class JavaConsoleForm {
     private JTextArea resultArea;
     private JSplitPane splitPane;
     private JButton formatButton;
+    private JLabel hintLabel;
     private static JavaConsoleForm javaConsoleForm;
+
+    private static boolean i18nRegistered;
 
     private static FuncHistoryPanel historyPanel;
 
@@ -76,6 +81,25 @@ public class JavaConsoleForm {
 
         historyPanel = FuncHistorySupport.wrapWithTabs(
                 javaConsolePanel, "Java", FuncConsts.JAVA_CONSOLE, JavaConsoleForm::applyHistory);
+
+        applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(JavaConsoleForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setText(hintLabel, "java.hint");
+        I18nUiUtil.setText(run, "java.run");
+        I18nUiUtil.setText(clean, "java.clean");
+        I18nUiUtil.setText(formatButton, "common.format");
+    }
+
+    private static void applyI18nStatic() {
+        if (javaConsoleForm != null) {
+            javaConsoleForm.applyI18n();
+        }
     }
 
     public static FuncHistoryPanel getHistoryPanel() {
@@ -86,7 +110,7 @@ public class JavaConsoleForm {
         if (StringUtils.isBlank(code)) {
             return;
         }
-        FuncHistoryUtil.save(FuncConsts.JAVA_CONSOLE, "代码执行", code, result, "执行");
+        FuncHistoryUtil.save(FuncConsts.JAVA_CONSOLE, I18n.get("history.summary.javaExec"), code, result, "执行");
         if (historyPanel != null) {
             historyPanel.refreshListIfVisible();
         }

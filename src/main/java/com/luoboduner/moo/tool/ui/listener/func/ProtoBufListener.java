@@ -6,6 +6,7 @@ import cn.hutool.core.util.StrUtil;
 import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.form.func.ProtoBufForm;
 import com.luoboduner.moo.tool.util.FuncHistoryUtil;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.ProtoBufUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -37,8 +38,7 @@ public class ProtoBufListener {
                 saveHistory("JSON转Protobuf", "JSON/二进制|JsonToBinary", json, output, messageName + " (" + format + ")");
             } catch (Exception ex) {
                 log.error("JSON转Protobuf失败", ex);
-                JOptionPane.showMessageDialog(form.getProtoBufPanel(),
-                        "转换失败:\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(form.getProtoBufPanel(), "msg.convertFailed", ex.getMessage());
             }
         });
 
@@ -58,8 +58,7 @@ public class ProtoBufListener {
                 saveHistory("Protobuf转JSON", "JSON/二进制|BinaryToJson", binaryText, json, messageName + " (" + format + ")");
             } catch (Exception ex) {
                 log.error("Protobuf转JSON失败", ex);
-                JOptionPane.showMessageDialog(form.getProtoBufPanel(),
-                        "转换失败:\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(form.getProtoBufPanel(), "msg.convertFailed", ex.getMessage());
             }
         });
 
@@ -88,8 +87,7 @@ public class ProtoBufListener {
                 saveHistory("Wire解码", "Wire解码|WireDecode", input, output, format);
             } catch (Exception ex) {
                 log.error("Wire格式解码失败", ex);
-                JOptionPane.showMessageDialog(form.getProtoBufPanel(),
-                        "解码失败:\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(form.getProtoBufPanel(), "msg.decodeFailed", ex.getMessage());
             }
         });
 
@@ -105,8 +103,7 @@ public class ProtoBufListener {
                 form.getBase64TextArea().setCaretPosition(0);
                 saveHistory("Hex转Base64", "Hex/Base64|HexToBase64", hex, base64, "Hex转Base64");
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(form.getProtoBufPanel(),
-                        "转换失败:\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(form.getProtoBufPanel(), "msg.convertFailed", ex.getMessage());
             }
         });
 
@@ -122,8 +119,7 @@ public class ProtoBufListener {
                 form.getHexTextArea().setCaretPosition(0);
                 saveHistory("Base64转Hex", "Hex/Base64|Base64ToHex", base64, hex, "Base64转Hex");
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(form.getProtoBufPanel(),
-                        "转换失败:\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(form.getProtoBufPanel(), "msg.convertFailed", ex.getMessage());
             }
         });
     }

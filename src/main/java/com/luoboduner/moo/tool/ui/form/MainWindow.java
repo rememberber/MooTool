@@ -9,6 +9,7 @@ import com.luoboduner.moo.tool.ui.UiMetrics;
 import com.luoboduner.moo.tool.ui.component.TabUiUtil;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.listener.TabListener;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.Getter;
 
@@ -63,7 +64,13 @@ public class MainWindow {
 
     private JPanel tabLeadingPanel;
 
-    private static final String[] TAB_TITLES = {"MooTool", "随手记", "时间转换", "JSON", "翻译", "Host", "HTTP", "UA分析", "编码转换", "二维码", "加解密/随机", "计算", "网络/IP", "调色板", "图片助手", "Cron", "正则", "Java", "格式化", "PDF", "环境变量", "系统信息", "配置文件转换", "文本对比", "Protobuf"};
+    private static final String[] TAB_TITLE_KEYS = {
+            "tab.mootool", "tab.quickNote", "tab.timeConvert", "tab.json", "tab.translation",
+            "tab.host", "tab.http", "tab.uaParse", "tab.encode", "tab.qrCode", "tab.crypto",
+            "tab.calculator", "tab.net", "tab.colorBoard", "tab.image", "tab.cron", "tab.regex",
+            "tab.java", "tab.reformat", "tab.pdf", "tab.variables", "tab.hardware",
+            "tab.ymlProperties", "tab.textDiff", "tab.protobuf"
+    };
 
     private static final String[] ICON_PATH = {"icon/smile.svg", "icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/translate.svg", "icon/check.svg", "icon/global.svg", "icon/ua.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/format_painter.svg", "icon/pdf.svg", "icon/fx.svg", "icon/info.svg", "icon/suffix-yml.svg", "icon/diff.svg", "icon/protobuf.svg"};
 
@@ -82,7 +89,7 @@ public class MainWindow {
     public static MainWindow getInstance() {
         if (mainWindow == null) {
             mainWindow = new MainWindow();
-            TabUiUtil.installSafeUi(mainWindow.tabbedPane, "左侧".equals(App.config.getFuncTabPosition()));
+            TabUiUtil.installSafeUi(mainWindow.tabbedPane, App.config.isFuncTabOnLeft());
         }
         return mainWindow;
     }
@@ -131,12 +138,12 @@ public class MainWindow {
     }
 
     public void refreshTabbedPaneUi() {
-        TabUiUtil.installSafeUi(tabbedPane, "左侧".equals(App.config.getFuncTabPosition()));
+        TabUiUtil.installSafeUi(tabbedPane, App.config.isFuncTabOnLeft());
         ensureTabLeadingComponent();
     }
 
     public void initTabPlacement() {
-        if ("左侧".equals(App.config.getFuncTabPosition())) {
+        if (App.config.isFuncTabOnLeft()) {
             tabbedPane.setTabPlacement(JTabbedPane.LEFT);
             tabbedPane.putClientProperty(TABBED_PANE_TAB_ALIGNMENT, TABBED_PANE_ALIGN_LEADING);
 
@@ -176,9 +183,13 @@ public class MainWindow {
         refreshTabbedPaneUi();
     }
 
+    public void refreshTabTitles() {
+        applyTabTitleVisibility(App.config.isTabHideTitle());
+    }
+
     private String tabTitleAt(int index) {
-        if (index < TAB_TITLES.length) {
-            return TAB_TITLES[index];
+        if (index < TAB_TITLE_KEYS.length) {
+            return I18n.get(TAB_TITLE_KEYS[index]);
         }
         String title = tabbedPane.getTitleAt(index);
         return title != null ? title : "";
@@ -220,7 +231,7 @@ public class MainWindow {
             tabLeadingPanel = new JPanel();
         }
         tabLeadingPanel.removeAll();
-        if ("左侧".equals(App.config.getFuncTabPosition())) {
+        if (App.config.isFuncTabOnLeft()) {
             tabLeadingPanel.setLayout(new GridLayoutManager(1, 1, UiMetrics.tabLeadingInsets(true), -1, -1));
         } else {
             tabLeadingPanel.setLayout(new GridLayoutManager(1, 1, UiMetrics.tabLeadingInsets(false), -1, -1));

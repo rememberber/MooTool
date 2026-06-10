@@ -20,6 +20,9 @@ import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.ImageForm;
 import com.luoboduner.moo.tool.ui.frame.ScreenCaptureFrame;
 import com.luoboduner.moo.tool.util.AlertUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.NamingUtil;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -196,8 +199,7 @@ public class ImageListener {
         imageForm.getOpenButton().addActionListener(e -> {
             File imageFile = resolveCurrentImageFile(imageForm);
             if (imageFile == null) {
-                JOptionPane.showMessageDialog(imageForm.getImagePanel(), "请先选择一张图片！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(imageForm.getImagePanel(), "msg.selectImageFirst");
                 return;
             }
             try {
@@ -285,7 +287,7 @@ public class ImageListener {
                         File exportFile = FileUtil.touch(exportPath + File.separator + fileName);
                         FileUtil.copy(FileUtil.file(IMAGE_PATH_PRE_FIX + fileName), exportFile, true);
                     }
-                    JOptionPane.showMessageDialog(imageForm.getImagePanel(), "导出成功！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.success(imageForm.getImagePanel(), "msg.exportSuccess");
                     try {
                         Desktop desktop = Desktop.getDesktop();
                         desktop.open(new File(exportPath));
@@ -293,13 +295,11 @@ public class ImageListener {
                         log.error(ExceptionUtils.getStackTrace(e2));
                     }
                 } else {
-                    JOptionPane.showMessageDialog(imageForm.getImagePanel(), "请至少选择一个！", "提示",
-                            JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(imageForm.getImagePanel(), "msg.selectAtLeastOne");
                 }
 
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(imageForm.getImagePanel(), "导出失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(imageForm.getImagePanel(), "msg.exportFailed", e1.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
 
@@ -309,8 +309,7 @@ public class ImageListener {
         imageForm.getToBase64Button().addActionListener(e -> {
             File imageFile = resolveCurrentImageFile(imageForm);
             if (imageFile == null || !imageFile.isFile()) {
-                JOptionPane.showMessageDialog(imageForm.getImagePanel(), "请先选择或保存一张图片！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(imageForm.getImagePanel(), "msg.selectOrSaveImageFirst");
                 return;
             }
             Base64Dialog dialog = new Base64Dialog();
@@ -339,16 +338,16 @@ public class ImageListener {
                         displayZoomFactor = 1.0;
                         updateImageDisplay(imageForm);
 
-                        selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                        selectedName = NamingUtil.defaultUntitledName();
                         File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
                         ImageIO.write(toBufferedImage(selectedImage), "png", imageFile);
                         ImageForm.initList();
                     } else {
-                        JOptionPane.showMessageDialog(App.mainFrame, "可能不是正确的图片Base64？\n\n", "失败", JOptionPane.WARNING_MESSAGE);
+                        MsgUtil.info(App.mainFrame, "msg.invalidImageBase64");
                     }
                 }
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "从Base64获取异常\n\n" + e1.getMessage(), "失败", JOptionPane.WARNING_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.base64FetchFailed", e1.getMessage());
                 log.error("从Base64获取异常,{}", ExceptionUtils.getStackTrace(e1));
             }
 
@@ -397,9 +396,9 @@ public class ImageListener {
 
         // 左侧列表增加右键菜单
         JPopupMenu noteListPopupMenu = new JPopupMenu();
-        JMenuItem renameMenuItem = new JMenuItem("重命名");
-        JMenuItem deleteMenuItem = new JMenuItem("删除");
-        JMenuItem exportMenuItem = new JMenuItem("导出");
+        JMenuItem renameMenuItem = new JMenuItem(I18n.get("common.rename"));
+        JMenuItem deleteMenuItem = new JMenuItem(I18n.get("common.delete"));
+        JMenuItem exportMenuItem = new JMenuItem(I18n.get("common.export"));
         noteListPopupMenu.add(renameMenuItem);
         noteListPopupMenu.add(deleteMenuItem);
         noteListPopupMenu.add(exportMenuItem);
@@ -434,7 +433,7 @@ public class ImageListener {
                         File exportFile = FileUtil.touch(exportPath + File.separator + fileName);
                         FileUtil.copy(FileUtil.file(IMAGE_PATH_PRE_FIX + fileName), exportFile, true);
                     }
-                    JOptionPane.showMessageDialog(imageForm.getImagePanel(), "导出成功！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.success(imageForm.getImagePanel(), "msg.exportSuccess");
                     try {
                         Desktop desktop = Desktop.getDesktop();
                         desktop.open(new File(exportPath));
@@ -442,13 +441,11 @@ public class ImageListener {
                         log.error(ExceptionUtils.getStackTrace(e2));
                     }
                 } else {
-                    JOptionPane.showMessageDialog(imageForm.getImagePanel(), "请至少选择一个！", "提示",
-                            JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(imageForm.getImagePanel(), "msg.selectAtLeastOne");
                 }
 
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(imageForm.getImagePanel(), "导出失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(imageForm.getImagePanel(), "msg.exportFailed", e1.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
 
@@ -459,8 +456,7 @@ public class ImageListener {
     private static void compressImages(ImageForm imageForm) {
         int[] selectedIndices = imageForm.getImageList().getSelectedIndices();
         if (selectedIndices.length == 0) {
-            JOptionPane.showMessageDialog(imageForm.getImagePanel(), "请至少选择一张图片！", "提示",
-                    JOptionPane.INFORMATION_MESSAGE);
+            MsgUtil.info(imageForm.getImagePanel(), "msg.selectAtLeastOneImage");
             return;
         }
 
@@ -473,8 +469,8 @@ public class ImageListener {
         ImageCompressUtil.CompressOptions options = dialog.getOptions();
         if (options.getOutputMode() == ImageCompressUtil.OutputMode.OVERWRITE) {
             int confirm = JOptionPane.showConfirmDialog(imageForm.getImagePanel(),
-                    "将直接覆盖选中的 " + selectedIndices.length + " 张原图，此操作不可恢复，是否继续？",
-                    "确认覆盖", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                    I18n.format("msg.confirmOverwrite", selectedIndices.length),
+                    I18n.get("msg.confirmOverwriteTitle"), JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             if (confirm != JOptionPane.YES_OPTION) {
                 return;
             }
@@ -517,24 +513,24 @@ public class ImageListener {
             }
         }
 
-        String message = "成功压缩 " + successCount + " / " + selectedIndices.length + " 张";
+        String suffix = "";
         if (savedBytes > 0) {
-            message += "，共节省 " + FileUtil.readableFileSize(savedBytes);
+            suffix = I18n.format("msg.compressSavedSuffix", FileUtil.readableFileSize(savedBytes));
         } else if (successCount > 0) {
-            message += "（部分图片压缩后体积未减小）";
+            suffix = I18n.get("msg.compressNoReduction");
         }
+        String message = I18n.format("msg.compressResult", successCount, selectedIndices.length, suffix);
         if (errorMessages.length() > 0) {
-            message += "\n\n以下图片压缩失败：\n" + errorMessages;
+            message += I18n.format("msg.compressFailedList", errorMessages);
         }
-        JOptionPane.showMessageDialog(imageForm.getImagePanel(), message, "压缩完成",
+        MsgUtil.show(imageForm.getImagePanel(), message, "msg.compressCompleteTitle",
                 errorMessages.length() > 0 ? JOptionPane.WARNING_MESSAGE : JOptionPane.INFORMATION_MESSAGE);
     }
 
     private static void ocrImages(ImageForm imageForm) {
         List<File> imageFiles = resolveOcrImageFiles(imageForm);
         if (imageFiles.isEmpty()) {
-            JOptionPane.showMessageDialog(imageForm.getImagePanel(), "请至少选择一张图片！", "提示",
-                    JOptionPane.INFORMATION_MESSAGE);
+            MsgUtil.info(imageForm.getImagePanel(), "msg.selectAtLeastOneImage");
             return;
         }
 
@@ -574,9 +570,8 @@ public class ImageListener {
                 try {
                     String result = get();
                     if (StringUtils.isBlank(result)) {
-                        JOptionPane.showMessageDialog(imageForm.getImagePanel(),
-                                "未识别到文字，请尝试更换语言或开启图像预处理。",
-                                "OCR 识别", JOptionPane.INFORMATION_MESSAGE);
+                        MsgUtil.show(imageForm.getImagePanel(), I18n.get("msg.ocrNoText"), "msg.ocrTitle",
+                                JOptionPane.INFORMATION_MESSAGE);
                         return;
                     }
                     ImageOcrResultDialog resultDialog = new ImageOcrResultDialog(result);
@@ -589,8 +584,7 @@ public class ImageListener {
                             || StringUtils.containsIgnoreCase(message, "libtesseract")) {
                         message = TesseractEnvUtil.getInstallHint();
                     }
-                    JOptionPane.showMessageDialog(imageForm.getImagePanel(),
-                            "OCR 识别失败：\n" + message, "失败", JOptionPane.ERROR_MESSAGE);
+                    MsgUtil.errorWithDetail(imageForm.getImagePanel(), "msg.ocrFailed", message);
                     log.error(ExceptionUtils.getStackTrace(ex));
                 }
             }
@@ -649,8 +643,7 @@ public class ImageListener {
     private static void watermarkImages(ImageForm imageForm) {
         int[] selectedIndices = imageForm.getImageList().getSelectedIndices();
         if (selectedIndices.length == 0) {
-            JOptionPane.showMessageDialog(imageForm.getImagePanel(), "请至少选择一张图片！", "提示",
-                    JOptionPane.INFORMATION_MESSAGE);
+            MsgUtil.info(imageForm.getImagePanel(), "msg.selectAtLeastOneImage");
             return;
         }
 
@@ -663,8 +656,8 @@ public class ImageListener {
         ImageWatermarkUtil.WatermarkOptions options = dialog.getOptions();
         if (options.getOutputMode() == ImageWatermarkUtil.OutputMode.OVERWRITE) {
             int confirm = JOptionPane.showConfirmDialog(imageForm.getImagePanel(),
-                    "将直接覆盖选中的 " + selectedIndices.length + " 张原图，此操作不可恢复，是否继续？",
-                    "确认覆盖", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                    I18n.format("msg.confirmOverwrite", selectedIndices.length),
+                    I18n.get("msg.confirmOverwriteTitle"), JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
             if (confirm != JOptionPane.YES_OPTION) {
                 return;
             }
@@ -701,11 +694,11 @@ public class ImageListener {
             }
         }
 
-        String message = "成功添加水印 " + successCount + " / " + selectedIndices.length + " 张";
+        String message = I18n.format("msg.watermarkResult", successCount, selectedIndices.length, "");
         if (errorMessages.length() > 0) {
-            message += "\n\n以下图片处理失败：\n" + errorMessages;
+            message += I18n.format("msg.watermarkFailedList", errorMessages);
         }
-        JOptionPane.showMessageDialog(imageForm.getImagePanel(), message, "加水印完成",
+        MsgUtil.show(imageForm.getImagePanel(), message, "msg.watermarkCompleteTitle",
                 errorMessages.length() > 0 ? JOptionPane.WARNING_MESSAGE : JOptionPane.INFORMATION_MESSAGE);
     }
 
@@ -716,7 +709,7 @@ public class ImageListener {
             selectedName = FileUtil.mainName(fileName);
             selectedImage = ImageIO.read(FileUtil.newFile(IMAGE_PATH_PRE_FIX + fileName));
             if (selectedImage == null) {
-                JOptionPane.showMessageDialog(App.mainFrame, "无法读取图片：" + fileName, "异常", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.error(App.mainFrame, "msg.cannotReadImage", fileName);
                 return;
             }
 
@@ -726,9 +719,9 @@ public class ImageListener {
 
             String pixel = selectedImage.getWidth(null) + " x " + selectedImage.getHeight(null);
             String size = FileUtil.readableFileSize(FileUtil.file(IMAGE_PATH_PRE_FIX + fileName).length());
-            imageForm.getImageInfoLabel().setText("尺寸：" + pixel + "  大小：" + size + " ");
+            imageForm.getImageInfoLabel().setText(I18n.format("image.info.size", pixel, size));
         } catch (IOException ex) {
-            JOptionPane.showMessageDialog(App.mainFrame, ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorDetail(App.mainFrame, "common.exception", ex.getMessage());
             log.error(ExceptionUtils.getStackTrace(ex));
         }
     }
@@ -744,7 +737,7 @@ public class ImageListener {
             return;
         }
         suppressListEnterRename = true;
-        String afterName = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", beforeName);
+        String afterName = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), beforeName);
         if (StringUtils.isBlank(afterName) || afterName.equals(beforeName)) {
             return;
         }
@@ -753,7 +746,7 @@ public class ImageListener {
             model.set(selectedIndex, afterName);
             selectedName = afterName.replace(".png", "");
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败" + e.getMessage());
+            MsgUtil.errorWithDetail(App.mainFrame, "msg.renameFailedDetail", e.getMessage());
             ImageForm.initList();
             log.error(ExceptionUtils.getStackTrace(e));
         }
@@ -764,9 +757,9 @@ public class ImageListener {
             int[] selectedIndices = imageForm.getImageList().getSelectedIndices();
 
             if (selectedIndices.length == 0) {
-                JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(App.mainFrame, "msg.selectAtLeastOne");
             } else {
-                int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                int isDelete = MsgUtil.confirm(App.mainFrame, "msg.confirmDelete");
                 if (isDelete == JOptionPane.YES_OPTION) {
                     DefaultListModel<String> listModel = (DefaultListModel<String>) imageForm.getImageList().getModel();
 
@@ -779,7 +772,7 @@ public class ImageListener {
                 }
             }
         } catch (Exception e1) {
-            JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(App.mainFrame, "msg.deleteFailed", e1.getMessage());
             log.error(ExceptionUtils.getStackTrace(e1));
         }
     }
@@ -802,7 +795,7 @@ public class ImageListener {
         GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
         GraphicsDevice gd = ge.getDefaultScreenDevice();
         if (!gd.isWindowTranslucencySupported(GraphicsDevice.WindowTranslucency.PERPIXEL_TRANSLUCENT)) {
-            JOptionPane.showMessageDialog(App.mainFrame, "当前系统环境不支持截图功能", "提示", JOptionPane.INFORMATION_MESSAGE);
+            MsgUtil.info(App.mainFrame, "msg.screenshotUnsupported");
             return;
         }
 
@@ -833,9 +826,9 @@ public class ImageListener {
 
             String pixel = image.getWidth() + " x " + image.getHeight();
             String size = FileUtil.readableFileSize(imageFile.length());
-            imageForm.getImageInfoLabel().setText("尺寸：" + pixel + "  大小：" + size + " ");
+            imageForm.getImageInfoLabel().setText(I18n.format("image.info.size", pixel, size));
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(App.mainFrame, "截图保存失败！\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(App.mainFrame, "msg.screenshotSaveFailed", ex.getMessage());
             log.error(ExceptionUtils.getStackTrace(ex));
         }
     }
@@ -850,12 +843,12 @@ public class ImageListener {
                 displayZoomFactor = 1.0;
                 updateImageDisplay(imageForm);
 
-                selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                selectedName = NamingUtil.defaultUntitledName();
                 File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
                 ImageIO.write(toBufferedImage(selectedImage), "png", imageFile);
                 ImageForm.initList();
             } else {
-                JOptionPane.showMessageDialog(App.mainFrame, "还没有复制图片到剪贴板吧？\n\n", "失败", JOptionPane.WARNING_MESSAGE);
+                MsgUtil.info(App.mainFrame, "msg.clipboardNoImage");
             }
         } catch (HeadlessException ex) {
             ex.printStackTrace();
@@ -868,7 +861,7 @@ public class ImageListener {
 
     private static void copyToClipboard() {
         if (selectedImage == null) {
-            JOptionPane.showMessageDialog(App.mainFrame, "请先选择一张图片！", "提示", JOptionPane.INFORMATION_MESSAGE);
+            MsgUtil.info(App.mainFrame, "msg.selectImageFirst");
             return;
         }
         try {
@@ -877,7 +870,7 @@ public class ImageListener {
             AlertUtil.buttonInfo(imageForm.getCopyToClipboardButton(), "复制到剪贴板", "已复制", 2000);
 
         } catch (Exception e1) {
-            JOptionPane.showMessageDialog(App.mainFrame, "复制失败！\n\n" + e1.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(App.mainFrame, "msg.copyFailed", e1.getMessage());
             log.error(ExceptionUtils.getStackTrace(e1));
         }
     }
@@ -887,9 +880,9 @@ public class ImageListener {
      */
     private static void saveImage() {
         if (StringUtils.isEmpty(selectedName)) {
-            selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+            selectedName = NamingUtil.defaultUntitledName();
         }
-        String name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", selectedName);
+        String name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), selectedName);
         if (StringUtils.isNotBlank(name)) {
             try {
                 if (selectedImage != null) {
@@ -898,7 +891,7 @@ public class ImageListener {
                     ImageForm.initList();
                 }
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "保存失败！\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.saveFailed", ex.getMessage());
                 log.error(ExceptionUtils.getStackTrace(ex));
             }
         }
@@ -910,8 +903,8 @@ public class ImageListener {
     private static void quickSave() {
         try {
             if (selectedImage != null && selectedName == null) {
-                String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-                String name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", tempName);
+                String tempName = NamingUtil.defaultUntitledName();
+                String name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), tempName);
                 if (StringUtils.isNotBlank(name)) {
                     name = name.replace(".png", "");
 

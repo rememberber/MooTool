@@ -11,6 +11,8 @@ import com.luoboduner.moo.tool.ui.component.textviewer.RegexRTextScrollPane;
 import com.luoboduner.moo.tool.ui.listener.func.FileReformatListener;
 import com.luoboduner.moo.tool.util.FuncHistorySupport;
 import com.luoboduner.moo.tool.util.FuncHistoryUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import org.apache.commons.lang3.StringUtils;
 import com.luoboduner.moo.tool.util.codeformatter.CodeFormatterFactory;
@@ -19,6 +21,7 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.Map;
 
 @Getter
 public class FileReformattingForm {
@@ -39,6 +42,8 @@ public class FileReformattingForm {
     private RegexRTextScrollPane scrollPane;
 
     private static FileReformattingForm fileReformattingForm;
+
+    private static boolean i18nRegistered;
 
     private static FuncHistoryPanel historyPanel;
 
@@ -78,6 +83,46 @@ public class FileReformattingForm {
                 fileReformattingForm.getTabbedPane1(), FuncConsts.FILE_REFORMAT, FileReformattingForm::applyHistory);
 
         FileReformatListener.addListeners();
+
+        fileReformattingForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(FileReformattingForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setTabTitle(tabbedPane1, 0, "reformat.tab.string");
+        I18nUiUtil.setTabTitle(tabbedPane1, 1, "reformat.tab.file");
+        I18nUiUtil.setText(formatButton, "common.format");
+        I18nUiUtil.setText(reformat, "common.format");
+        I18nUiUtil.setText(uploadFile, "reformat.selectFile");
+        I18nUiUtil.localizeTree(controlPanel, Map.of(
+                "文本类型", "reformat.textType"
+        ));
+        if (tabbedPane1.getTabCount() > 1 && tabbedPane1.getComponentAt(1) instanceof Container fileTab) {
+            I18nUiUtil.localizeTree(fileTab, Map.of(
+                    "文件类型", "reformat.fileType",
+                    "空格数量", "reformat.spaceCount"
+            ));
+        }
+        stringTypeComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (index == 0) {
+                    setText(I18n.get("reformat.type.nginx"));
+                }
+                return this;
+            }
+        });
+    }
+
+    private static void applyI18nStatic() {
+        if (fileReformattingForm != null) {
+            fileReformattingForm.applyI18n();
+        }
     }
 
     public static FuncHistoryPanel getHistoryPanel() {

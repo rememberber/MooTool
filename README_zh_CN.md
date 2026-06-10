@@ -1,8 +1,13 @@
 ![logo](assets/logo/logo-128.png)
 
+<p align="center">
+  <a href="README.md">English</a> ·
+  <strong>简体中文</strong> ·
+  <a href="README_ja.md">日本語</a>
+</p>
+
 # MooTool
 
-Handy tool set for developers.   
 开发者常备小工具
 
 [![码云Gitee](https://gitee.com/zhoubochina/MooTool/badge/star.svg?theme=blue)](https://gitee.com/zhoubochina/MooTool)
@@ -486,4 +491,3 @@ mvn clean package -Plinux-x64 -Dmaven.test.skip=true
 - `self-hosted`
 - `macOS`
 - `X64`
-

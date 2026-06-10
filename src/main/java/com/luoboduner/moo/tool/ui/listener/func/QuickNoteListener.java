@@ -19,6 +19,8 @@ import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewe
 import com.luoboduner.moo.tool.ui.dialog.DocInfoDialog;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.NamingUtil;
 import com.luoboduner.moo.tool.util.ListUtils;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.QuickNoteAttachmentUtil;
@@ -26,6 +28,7 @@ import com.luoboduner.moo.tool.util.QuickNoteImageInsertUtil;
 import com.luoboduner.moo.tool.util.QuickNoteIndicatorTools;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.codeformatter.CodeFormatterFactory;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -83,7 +86,7 @@ public class QuickNoteListener {
             }
 
             // show input dialog
-            String name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", selectedName);
+            String name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), selectedName);
             if (StringUtils.isNotBlank(name)) {
                 TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
 
@@ -316,8 +319,7 @@ public class QuickNoteListener {
                         File exportFile = FileUtil.touch(exportPath + File.separator + tQuickNote.getName() + ".txt");
                         FileUtil.writeUtf8String(tQuickNote.getContent(), exportFile);
                     }
-                    JOptionPane.showMessageDialog(quickNoteForm.getQuickNotePanel(), "导出成功！", "提示",
-                            JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.success(quickNoteForm.getQuickNotePanel(), "msg.exportSuccess");
                     try {
                         Desktop desktop = Desktop.getDesktop();
                         desktop.open(new File(exportPath));
@@ -325,13 +327,11 @@ public class QuickNoteListener {
                         log.error(ExceptionUtils.getStackTrace(e2));
                     }
                 } else {
-                    JOptionPane.showMessageDialog(quickNoteForm.getQuickNotePanel(), "请至少选择一个！", "提示",
-                            JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(quickNoteForm.getQuickNotePanel(), "msg.selectAtLeastOne");
                 }
 
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(quickNoteForm.getQuickNotePanel(), "导出失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(quickNoteForm.getQuickNotePanel(), "msg.exportFailed", e1.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
 
@@ -417,9 +417,9 @@ public class QuickNoteListener {
 
         // 左侧列表增加右键菜单
         JPopupMenu noteListPopupMenu = new JPopupMenu();
-        JMenuItem renameMenuItem = new JMenuItem("重命名");
-        JMenuItem deleteMenuItem = new JMenuItem("删除");
-        JMenuItem exportMenuItem = new JMenuItem("导出");
+        JMenuItem renameMenuItem = new JMenuItem(I18n.get("common.rename"));
+        JMenuItem deleteMenuItem = new JMenuItem(I18n.get("common.delete"));
+        JMenuItem exportMenuItem = new JMenuItem(I18n.get("common.export"));
         noteListPopupMenu.add(renameMenuItem);
         noteListPopupMenu.add(deleteMenuItem);
         noteListPopupMenu.add(exportMenuItem);
@@ -455,8 +455,7 @@ public class QuickNoteListener {
                         File exportFile = FileUtil.touch(exportPath + File.separator + tQuickNote.getName() + ".txt");
                         FileUtil.writeUtf8String(tQuickNote.getContent(), exportFile);
                     }
-                    JOptionPane.showMessageDialog(quickNoteForm.getQuickNotePanel(), "导出成功！", "提示",
-                            JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.success(quickNoteForm.getQuickNotePanel(), "msg.exportSuccess");
                     try {
                         Desktop desktop = Desktop.getDesktop();
                         desktop.open(new File(exportPath));
@@ -464,13 +463,11 @@ public class QuickNoteListener {
                         log.error(ExceptionUtils.getStackTrace(e2));
                     }
                 } else {
-                    JOptionPane.showMessageDialog(quickNoteForm.getQuickNotePanel(), "请至少选择一个！", "提示",
-                            JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(quickNoteForm.getQuickNotePanel(), "msg.selectAtLeastOne");
                 }
 
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(quickNoteForm.getQuickNotePanel(), "导出失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(quickNoteForm.getQuickNotePanel(), "msg.exportFailed", e1.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
 
@@ -664,7 +661,7 @@ public class QuickNoteListener {
      * @return
      */
     private static String getDefaultFileName() {
-        return "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+        return NamingUtil.defaultUntitledName();
     }
 
     /**
@@ -800,7 +797,7 @@ public class QuickNoteListener {
                 List<String> targetWithCnt = Lists.newArrayList();
                 for (String str : target) {
                     long cnt = ListUtils.matchCount(Arrays.asList(splits), s -> s.equals(str));
-                    targetWithCnt.add("\"" + str + "\" 出现了 " + cnt + " 次");
+                    targetWithCnt.add(I18n.format("quickNote.lineOccurrence", str, cnt));
                 }
                 target = targetWithCnt;
             }
@@ -877,8 +874,7 @@ public class QuickNoteListener {
             }
 
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e.getMessage(), "失败",
-                    JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(App.mainFrame, "msg.convertFailed", e.getMessage());
             log.error(ExceptionUtils.getStackTrace(e));
         } finally {
             QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
@@ -898,7 +894,7 @@ public class QuickNoteListener {
             return;
         }
         suppressListEnterRename = true;
-        String afterName = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", beforeName);
+        String afterName = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), beforeName);
         if (StringUtils.isBlank(afterName) || afterName.equals(beforeName)) {
             return;
         }
@@ -915,7 +911,7 @@ public class QuickNoteListener {
             quickNoteForm.getContentSplitPane().setLeftComponent(editorPanel);
             QuickNoteForm.quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(tQuickNoteBefore.getName());
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
+            MsgUtil.info(App.mainFrame, "msg.renameNoteFailed");
             QuickNoteForm.initNoteList();
             log.error(ExceptionUtils.getStackTrace(e));
         }
@@ -931,9 +927,9 @@ public class QuickNoteListener {
             int[] selectedIndices = quickNoteForm.getNoteList().getSelectedIndices();
 
             if (selectedIndices.length == 0) {
-                JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(App.mainFrame, "msg.selectAtLeastOne");
             } else {
-                int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                int isDelete = MsgUtil.confirm(App.mainFrame, "msg.confirmDelete");
                 if (isDelete == JOptionPane.YES_OPTION) {
                     DefaultListModel<TQuickNote> listModel = (DefaultListModel<TQuickNote>) quickNoteForm.getNoteList().getModel();
                     List<String> deletedNoteContents = new ArrayList<>();
@@ -961,8 +957,7 @@ public class QuickNoteListener {
                 }
             }
         } catch (Exception e1) {
-            JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
-                    JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(App.mainFrame, "msg.deleteFailed", e1.getMessage());
             log.error(ExceptionUtils.getStackTrace(e1));
         }
     }
@@ -1001,7 +996,8 @@ public class QuickNoteListener {
                 QuickNoteAttachmentUtil.cleanupRemovedAttachments(oldContent, text, otherNotesContents);
             }
 
-            QuickNoteIndicatorTools.showTips("已保存：" + selectedName, QuickNoteIndicatorTools.TipsLevel.SUCCESS);
+            QuickNoteIndicatorTools.showTips(I18n.format("quickNote.saved", selectedName),
+                    QuickNoteIndicatorTools.TipsLevel.SUCCESS);
         });
 
     }
@@ -1011,13 +1007,13 @@ public class QuickNoteListener {
      */
     public static void newNote() {
         String name = getDefaultFileName();
-        name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", name);
+        name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), name);
         if (StringUtils.isNotBlank(name)) {
             TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
             if (tQuickNote == null) {
                 tQuickNote = new TQuickNote();
             } else {
-                JOptionPane.showMessageDialog(App.mainFrame, "存在同名笔记，请重新命名！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(App.mainFrame, "msg.duplicateNoteName");
                 return;
             }
             String now = SqliteUtil.nowDateForSqlite();
@@ -1178,8 +1174,7 @@ public class QuickNoteListener {
                             formatted = CodeFormatterFactory.getFormatter(CodeFormatterFactory.FormatterType.JAVA).format(text);
                             break;
                         default:
-                            SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(App.mainFrame, "尚不支持对该语言格式化！\n", "不支持该语言",
-                                    JOptionPane.INFORMATION_MESSAGE));
+                            SwingUtilities.invokeLater(() -> MsgUtil.info(App.mainFrame, "msg.unsupportedLanguage"));
                             return;
                     }
 
@@ -1188,22 +1183,20 @@ public class QuickNoteListener {
                         try {
                             QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setText(result);
                             QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setCaretPosition(0);
-                            QuickNoteIndicatorTools.showTips("已格式化：" + selectedName, QuickNoteIndicatorTools.TipsLevel.SUCCESS);
+                            QuickNoteIndicatorTools.showTips(I18n.format("quickNote.formatted", selectedName),
+                                    QuickNoteIndicatorTools.TipsLevel.SUCCESS);
                         } catch (Exception ex) {
-                            JOptionPane.showMessageDialog(App.mainFrame, "格式化失败！\n\n" + ex.getMessage(), "失败",
-                                    JOptionPane.ERROR_MESSAGE);
+                            MsgUtil.errorWithDetail(App.mainFrame, "msg.formatFailed", ex.getMessage());
                             log.error(ExceptionUtils.getStackTrace(ex));
                         }
                     });
                 } catch (Exception e) {
-                    SwingUtilities.invokeLater(() -> JOptionPane.showMessageDialog(App.mainFrame, "格式化失败！\n\n" + e.getMessage(), "失败",
-                            JOptionPane.ERROR_MESSAGE));
+                    SwingUtilities.invokeLater(() -> MsgUtil.errorWithDetail(App.mainFrame, "msg.formatFailed", e.getMessage()));
                     log.error(ExceptionUtils.getStackTrace(e));
                 }
             });
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(App.mainFrame, "格式化失败！\n\n" + e.getMessage(), "失败",
-                    JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(App.mainFrame, "msg.formatFailed", e.getMessage());
             log.error(ExceptionUtils.getStackTrace(e));
         }
     }

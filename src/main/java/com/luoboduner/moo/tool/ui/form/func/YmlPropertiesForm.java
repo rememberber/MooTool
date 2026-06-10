@@ -9,6 +9,7 @@ import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.component.FuncHistoryPanel;
 import com.luoboduner.moo.tool.ui.listener.func.YmlPropertiesListener;
 import com.luoboduner.moo.tool.util.FuncHistorySupport;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import org.apache.commons.lang3.StringUtils;
 import lombok.Getter;
@@ -40,6 +41,8 @@ public class YmlPropertiesForm {
 
     private static YmlPropertiesForm ymlPropertiesForm;
 
+    private static boolean i18nRegistered;
+
     private static FuncHistoryPanel historyPanel;
 
     public static YmlPropertiesForm getInstance() {
@@ -62,6 +65,27 @@ public class YmlPropertiesForm {
                 ymlPropertiesForm.getTabbedPane1(), FuncConsts.YML_PROPERTIES, YmlPropertiesForm::applyHistory);
 
         YmlPropertiesListener.addListeners();
+
+        ymlPropertiesForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(YmlPropertiesForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setTabTitle(tabbedPane1, 0, "yml.tab.convert");
+        I18nUiUtil.setTabTitle(tabbedPane1, 1, "yml.tab.validate");
+        I18nUiUtil.setText(properties2ymlButton, "yml.prop2yml");
+        I18nUiUtil.setText(yml2propertiesButton, "yml.yml2prop");
+        I18nUiUtil.setText(yamlValidateButton, "yml.validate");
+        I18nUiUtil.setText(yamlFormatButton, "common.format");
+    }
+
+    private static void applyI18nStatic() {
+        if (ymlPropertiesForm != null) {
+            ymlPropertiesForm.applyI18n();
+        }
     }
 
     public static FuncHistoryPanel getHistoryPanel() {

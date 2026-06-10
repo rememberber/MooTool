@@ -10,6 +10,8 @@ import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.component.FuncHistoryPanel;
 import com.luoboduner.moo.tool.ui.listener.func.EnCodeListener;
 import com.luoboduner.moo.tool.util.FuncHistorySupport;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import org.apache.commons.lang3.StringUtils;
 import lombok.Getter;
@@ -50,7 +52,11 @@ public class EnCodeForm {
 
     private static EnCodeForm enCodeForm;
 
+    private static boolean i18nRegistered;
+
     private static FuncHistoryPanel historyPanel;
+
+    private static final String[] ASCII_FORMAT_KEYS = {"encode.asciiDecimal", "encode.asciiHex"};
 
     private EnCodeForm() {
         UndoUtil.register(this);
@@ -69,6 +75,44 @@ public class EnCodeForm {
         historyPanel = FuncHistorySupport.attachTab(
                 enCodeForm.getTabbedPane1(), FuncConsts.ENCODE, EnCodeForm::applyHistory);
         EnCodeListener.addListeners();
+
+        enCodeForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(EnCodeForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setTabTitle(tabbedPane1, 0, "encode.tab.nativeUnicode");
+        I18nUiUtil.setTabTitle(tabbedPane1, 1, "encode.tab.url");
+        I18nUiUtil.setTabTitle(tabbedPane1, 2, "encode.tab.hex");
+        I18nUiUtil.setTabTitle(tabbedPane1, 3, "encode.tab.ascii");
+        I18nUiUtil.setText(nativeToUnicodeButton, "encode.nativeToUnicode");
+        I18nUiUtil.setText(unicodeToNativeButton, "encode.unicodeToNative");
+        I18nUiUtil.setText(urlEncodeButton, "encode.urlEncode");
+        I18nUiUtil.setText(urlDecodeButton, "encode.urlDecode");
+        I18nUiUtil.setText(nativeToHexButton, "encode.nativeToHex");
+        I18nUiUtil.setText(hexToNativeButton, "encode.hexToNative");
+        I18nUiUtil.setText(nativeToAsciiButton, "encode.nativeToAscii");
+        I18nUiUtil.setText(asciiToNativeButton, "encode.asciiToNative");
+        asciiFormatComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (index >= 0 && index < ASCII_FORMAT_KEYS.length) {
+                    setText(I18n.get(ASCII_FORMAT_KEYS[index]));
+                }
+                return this;
+            }
+        });
+    }
+
+    private static void applyI18nStatic() {
+        if (enCodeForm != null) {
+            enCodeForm.applyI18n();
+        }
     }
 
     public static FuncHistoryPanel getHistoryPanel() {

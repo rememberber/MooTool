@@ -11,6 +11,8 @@ import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.dialog.SupportMeDialog;
 import com.luoboduner.moo.tool.ui.dialog.UpdateInfoDialog;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
@@ -50,8 +52,7 @@ public class UpgradeUtil {
         // 从github获取最新版本相关信息
         String versionSummaryJsonContent = HttpUtil.get(UiConsts.CHECK_VERSION_URL);
         if (StringUtils.isEmpty(versionSummaryJsonContent) && !initCheck) {
-            JOptionPane.showMessageDialog(App.mainFrame,
-                    "检查超时，请关注GitHub Release！", "网络错误",
+            MsgUtil.show(App.mainFrame, I18n.get("msg.upgradeCheckTimeout"), "msg.upgradeNetworkError",
                     JOptionPane.INFORMATION_MESSAGE);
             return;
         } else if (StringUtils.isEmpty(versionSummaryJsonContent) || versionSummaryJsonContent.contains("404: Not Found")) {
@@ -78,7 +79,9 @@ public class UpgradeUtil {
             }
             // 当前版本索引
             // 版本更新日志：
-            StringBuilder versionLogBuilder = new StringBuilder("<h1>惊现新版本！立即下载？</h1>");
+            StringBuilder versionLogBuilder = new StringBuilder("<h1>")
+                    .append(I18n.get("msg.upgradeNewVersion"))
+                    .append("</h1>");
             VersionSummary.Version version;
             for (int i = currentVersionIndex + 1; i < versionDetailList.size(); i++) {
                 version = versionDetailList.get(i);
@@ -95,8 +98,7 @@ public class UpgradeUtil {
             updateInfoDialog.setVisible(true);
         } else {
             if (!initCheck) {
-                JOptionPane.showMessageDialog(App.mainFrame,
-                        "当前已经是最新版本！", "恭喜",
+                MsgUtil.show(App.mainFrame, I18n.get("msg.upgradeLatest"), "msg.upgradeCongrats",
                         JOptionPane.INFORMATION_MESSAGE);
             }
         }

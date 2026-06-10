@@ -7,6 +7,7 @@ import com.formdev.flatlaf.util.SystemFileChooser;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.form.func.QrCodeForm;
 import com.luoboduner.moo.tool.util.ConsoleUtil;
+import com.luoboduner.moo.tool.util.MsgUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -42,16 +43,14 @@ public class QrCodeListener {
                         try {
                             QrCodeForm.showGeneratedImage(get(), request);
                         } catch (Exception ex) {
-                            JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
-                                    JOptionPane.ERROR_MESSAGE);
+                            MsgUtil.errorWithDetail(App.mainFrame, "msg.generateFailed", ex.getMessage());
                             logger.error(ex);
                         }
                     }
                 };
                 worker.execute();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.generateFailed", ex.getMessage());
                 logger.error(ex);
             }
         });
@@ -92,8 +91,7 @@ public class QrCodeListener {
 
             if (QrCodeForm.qrCodeImageTempFile.exists()) {
                 FileUtil.copy(QrCodeForm.qrCodeImageTempFile.getAbsolutePath(), exportPath, true);
-                JOptionPane.showMessageDialog(qrCodeForm.getQrCodePanel(), "保存成功！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.success(qrCodeForm.getQrCodePanel(), "msg.saveSuccess");
                 App.config.setQrCodeSaveAsPath(exportPath);
                 App.config.save();
                 try {

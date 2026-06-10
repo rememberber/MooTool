@@ -5,6 +5,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
@@ -32,6 +33,8 @@ public class FindResultForm {
     private JScrollPane scrollPane;
     private JPanel findResultPanel;
     private JLabel findResultCount;
+    private JLabel findResultPrefixLabel;
+    private JLabel findResultUnitLabel;
 
     private static FindResultForm findResultForm;
 
@@ -48,9 +51,22 @@ public class FindResultForm {
     public static FindResultForm getInstance() {
         if (findResultForm == null) {
             findResultForm = new FindResultForm();
+            findResultForm.applyI18n();
+            I18nUiUtil.register(FindResultForm::applyI18nStatic);
             UndoUtil.register(findResultForm);
         }
         return findResultForm;
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setText(findResultPrefixLabel, "findResult.foundPrefix");
+        I18nUiUtil.setText(findResultUnitLabel, "findResult.unit");
+    }
+
+    private static void applyI18nStatic() {
+        if (findResultForm != null) {
+            findResultForm.applyI18n();
+        }
     }
 
     public void setHtmlText(String htmlText) {

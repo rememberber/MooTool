@@ -14,6 +14,8 @@ import java.util.regex.Pattern;
  */
 public class UaParseUtil {
 
+    private static final String BROWSER_WECHAT = "WeChat";
+
     private static final Pattern BOT_PATTERN = Pattern.compile(
             "bot|spider|crawl|slurp|archiver|wget|curl|python-requests|java/|okhttp|go-http|libwww|httpclient",
             Pattern.CASE_INSENSITIVE);
@@ -24,7 +26,7 @@ public class UaParseUtil {
     public static Map<String, String> parse(String userAgent) {
         Map<String, String> result = new LinkedHashMap<>();
         if (StringUtils.isBlank(userAgent)) {
-            result.put("错误", "User-Agent 不能为空");
+            result.put(I18n.get("ua.field.error"), I18n.get("ua.error.empty"));
             return result;
         }
 
@@ -42,17 +44,17 @@ public class UaParseUtil {
         String deviceBrand = parseDeviceBrand(ua);
         String deviceModel = parseDeviceModel(ua);
 
-        result.put("浏览器", browser);
-        result.put("浏览器版本", browserVersion);
-        result.put("渲染引擎", engine);
-        result.put("引擎版本", engineVersion);
-        result.put("操作系统", os);
-        result.put("系统版本", osVersion);
-        result.put("设备类型", deviceType);
-        result.put("设备品牌", deviceBrand);
-        result.put("设备型号", deviceModel);
-        result.put("是否移动端", mobile ? "是" : "否");
-        result.put("是否爬虫/Bot", bot ? "是" : "否");
+        result.put(I18n.get("ua.field.browser"), localizeBrowserName(browser));
+        result.put(I18n.get("ua.field.browserVersion"), browserVersion);
+        result.put(I18n.get("ua.field.engine"), engine);
+        result.put(I18n.get("ua.field.engineVersion"), engineVersion);
+        result.put(I18n.get("ua.field.os"), os);
+        result.put(I18n.get("ua.field.osVersion"), osVersion);
+        result.put(I18n.get("ua.field.deviceType"), deviceType);
+        result.put(I18n.get("ua.field.deviceBrand"), deviceBrand);
+        result.put(I18n.get("ua.field.deviceModel"), deviceModel);
+        result.put(I18n.get("ua.field.mobile"), mobile ? I18n.get("common.yes") : I18n.get("common.no"));
+        result.put(I18n.get("ua.field.bot"), bot ? I18n.get("common.yes") : I18n.get("common.no"));
         return result;
     }
 
@@ -66,9 +68,16 @@ public class UaParseUtil {
         presets.add(new String[]{"Chrome (Android)", "Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Mobile Safari/537.36"});
         presets.add(new String[]{"Safari (iPhone)", "Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.2 Mobile/15E148 Safari/604.1"});
         presets.add(new String[]{"Safari (iPad)", "Mozilla/5.0 (iPad; CPU OS 18_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.2 Mobile/15E148 Safari/604.1"});
-        presets.add(new String[]{"微信内置浏览器", "Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.56(0x1800383b) NetType/WIFI Language/zh_CN"});
+        presets.add(new String[]{I18n.get("ua.preset.wechat"), "Mozilla/5.0 (iPhone; CPU iPhone OS 18_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148 MicroMessenger/8.0.56(0x1800383b) NetType/WIFI Language/zh_CN"});
         presets.add(new String[]{"curl", "curl/8.7.1"});
         return presets;
+    }
+
+    private static String localizeBrowserName(String browser) {
+        if (BROWSER_WECHAT.equals(browser)) {
+            return I18n.get("ua.preset.wechat");
+        }
+        return browser;
     }
 
     private static boolean isBot(String ua) {
@@ -102,7 +111,7 @@ public class UaParseUtil {
         if (ua.contains("CrOS")) {
             return "Chrome OS";
         }
-        return "未知";
+        return I18n.get("ua.value.unknown");
     }
 
     private static String parseOsVersion(String ua, String os) {
@@ -145,7 +154,7 @@ public class UaParseUtil {
             default:
                 break;
         }
-        return "未知";
+        return I18n.get("ua.value.unknown");
     }
 
     private static String mapWindowsVersion(String ntVersion) {
@@ -169,7 +178,7 @@ public class UaParseUtil {
 
     private static String parseBrowser(String ua) {
         if (ua.contains("MicroMessenger")) {
-            return "微信内置浏览器";
+            return BROWSER_WECHAT;
         }
         if (ua.contains("Edg/") || ua.contains("Edge/")) {
             return "Microsoft Edge";
@@ -195,7 +204,7 @@ public class UaParseUtil {
         if (ua.contains("PostmanRuntime")) {
             return "Postman";
         }
-        return "未知";
+        return I18n.get("ua.value.unknown");
     }
 
     private static String parseBrowserVersion(String ua, String browser) {
@@ -245,7 +254,7 @@ public class UaParseUtil {
                     return matcher.group(1);
                 }
                 break;
-            case "微信内置浏览器":
+            case BROWSER_WECHAT:
                 matcher = Pattern.compile("MicroMessenger/([\\d.()]+)").matcher(ua);
                 if (matcher.find()) {
                     return matcher.group(1);
@@ -260,7 +269,7 @@ public class UaParseUtil {
             default:
                 break;
         }
-        return "未知";
+        return I18n.get("ua.value.unknown");
     }
 
     private static String parseEngine(String ua) {
@@ -273,7 +282,7 @@ public class UaParseUtil {
         if (ua.contains("Trident/")) {
             return "Trident";
         }
-        return "未知";
+        return I18n.get("ua.value.unknown");
     }
 
     private static String parseEngineVersion(String ua, String engine) {
@@ -300,20 +309,20 @@ public class UaParseUtil {
             default:
                 break;
         }
-        return "未知";
+        return I18n.get("ua.value.unknown");
     }
 
     private static String parseDeviceType(String ua, boolean mobile, boolean bot) {
         if (bot) {
-            return "Bot/爬虫";
+            return I18n.get("ua.value.device.bot");
         }
         if (ua.contains("iPad") || ua.contains("Tablet")) {
-            return "平板";
+            return I18n.get("ua.value.device.tablet");
         }
         if (mobile) {
-            return "手机";
+            return I18n.get("ua.value.device.mobile");
         }
-        return "桌面";
+        return I18n.get("ua.value.device.desktop");
     }
 
     private static String parseDeviceBrand(String ua) {
@@ -331,7 +340,7 @@ public class UaParseUtil {
                 return parts[0];
             }
         }
-        return "未知";
+        return I18n.get("ua.value.unknown");
     }
 
     private static String parseDeviceModel(String ua) {
@@ -349,6 +358,6 @@ public class UaParseUtil {
             }
             return device;
         }
-        return "未知";
+        return I18n.get("ua.value.unknown");
     }
 }

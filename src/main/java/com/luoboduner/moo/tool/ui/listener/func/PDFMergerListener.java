@@ -9,6 +9,8 @@ import com.itextpdf.text.pdf.parser.PdfTextExtractor;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.dialog.CommonTipsDialog;
 import com.luoboduner.moo.tool.ui.form.func.PdfForm;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -109,7 +111,7 @@ public class PDFMergerListener {
     public void selectFile(File file, int row) {
         String fileName = file.getName().toLowerCase();
         if (!fileName.endsWith(".pdf")) {
-            showErrorMessage("错误：文件类型错误，该功能仅支持PDF格式文件。");
+            showErrorMessage("msg.pdfTypeOnly");
         } else {
             getPdfReader(file, reader -> {
                 JLabel label = get(row, 2, JLabel.class);
@@ -123,7 +125,7 @@ public class PDFMergerListener {
                 JLabel statusLabel = get(row, 5, JLabel.class);
                 progressBar.setValue(0);
                 progressBar.updateUI();
-                statusLabel.setText("未开始");
+                statusLabel.setText(I18n.get("pdf.status.notStarted"));
 
                 PdfParam param = getPdfParam(row);
                 param.setFile(file);
@@ -163,12 +165,12 @@ public class PDFMergerListener {
                     JProgressBar progressBar = get(i, 4, JProgressBar.class);
                     progressBar.setValue(100);
                     JLabel label = get(i, 5, JLabel.class);
-                    label.setText("已完成");
+                    label.setText(I18n.get("pdf.status.completed"));
                     model.fireTableRowsUpdated(i, i);
                 }
             }
         } catch (IllegalArgumentException e) {
-            showErrorMessage("错误：" + e.getMessage());
+            showErrorMessage("msg.exceptionWithDetail", e.getMessage());
             JTextField jTextField = get(i, 3, JTextField.class);
             PdfParam pdfParam = getPdfParam(i);
             ThreadUtil.execute(() -> jTextField.setText("1-" + pdfParam.getMaxPage()));
@@ -217,12 +219,8 @@ public class PDFMergerListener {
         return param;
     }
 
-    private void showMessageDialog(String message, String title, int type) {
-        JOptionPane.showMessageDialog(jPanel, message, title, type);
-    }
-
-    private void showErrorMessage(String message) {
-        showMessageDialog(message, "错误", JOptionPane.ERROR_MESSAGE);
+    private void showErrorMessage(String messageKey, Object... args) {
+        MsgUtil.error(jPanel, messageKey, args);
     }
 
     private void getPdfReader(File file, Consumer<PdfReader> consumer) {

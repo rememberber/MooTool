@@ -1,6 +1,7 @@
 package com.luoboduner.moo.tool.ui.component;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
+import com.luoboduner.moo.tool.util.I18n;
 import com.intellij.uiDesigner.core.GridConstraints;
 
 import javax.swing.*;
@@ -55,7 +56,7 @@ public final class PanelCloseUtil {
     private static void styleCloseButton(JButton closeButton) {
         closeButton.setIcon(new FlatSVGIcon("icon/remove2.svg"));
         closeButton.setText("");
-        closeButton.setToolTipText("关闭");
+        closeButton.setToolTipText(I18n.get("common.close"));
     }
 
     private static JToolBar createToolBar() {

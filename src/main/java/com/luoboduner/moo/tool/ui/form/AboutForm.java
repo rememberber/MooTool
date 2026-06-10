@@ -13,6 +13,8 @@ import com.luoboduner.moo.tool.bean.Dau;
 import com.luoboduner.moo.tool.bean.Grace;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.listener.AboutListener;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -66,8 +68,27 @@ public class AboutForm {
     private JPanel contributorPanel;
     private JLabel logoLabel;
     private JLabel homePageLabel;
+    private JLabel taglineLabel;
+    private JLabel authorLabel;
+    private JLabel aboutLine1Label;
+    private JLabel aboutLine2Label;
+    private JLabel aboutLine3Label;
+    private JLabel aboutLine4Label;
+    private JLabel aboutLine5Label;
+    private JLabel wePushDescLabel;
+    private JLabel mooInfoDescLabel;
+    private JLabel sponsorPromptLabel;
+    private JLabel sponsorQrLabel;
+    private JPanel aboutSectionPanel;
+    private JPanel codeSectionPanel;
+    private JPanel helpSectionPanel;
+    private JPanel thanksSectionPanel;
+    private JPanel otherWorksSectionPanel;
+    private JPanel sponsorSectionPanel;
+    private JPanel mooToolHeaderPanel;
 
     private static AboutForm aboutForm;
+    private static boolean i18nRegistered;
 
     private AboutForm() {
     }
@@ -113,6 +134,12 @@ public class AboutForm {
         aboutForm.getMooInfoIconLabel().setIcon(new FlatSVGIcon("icon/MooInfo.svg"));
 
         AboutListener.addListeners();
+
+        aboutForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(AboutForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
 
         try {
             // 每天执行一次
@@ -311,6 +338,39 @@ public class AboutForm {
             }, 0, 1, TimeUnit.DAYS);
         } catch (Exception e) {
             log.error("获取DAU失败", e);
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setTitledBorder(mooToolHeaderPanel, "tab.mootool");
+        I18nUiUtil.setTitledBorder(aboutSectionPanel, "about.section.about");
+        I18nUiUtil.setTitledBorder(codeSectionPanel, "about.section.code");
+        I18nUiUtil.setTitledBorder(helpSectionPanel, "about.section.help");
+        I18nUiUtil.setTitledBorder(thanksSectionPanel, "about.section.thanks");
+        I18nUiUtil.setTitledBorder(otherWorksSectionPanel, "about.section.otherWorks");
+        I18nUiUtil.setTitledBorder(sponsorSectionPanel, "about.section.sponsor");
+        I18nUiUtil.setTitledBorder(contributorPanel, "about.section.contributor");
+
+        I18nUiUtil.setText(taglineLabel, "about.tagline");
+        I18nUiUtil.setText(authorLabel, "about.author");
+        versionLabel.setToolTipText(I18n.get("about.checkUpdates"));
+        I18nUiUtil.setText(aboutLine1Label, "about.line1");
+        I18nUiUtil.setText(aboutLine2Label, "about.line2");
+        I18nUiUtil.setText(aboutLine3Label, "about.line3");
+        I18nUiUtil.setText(aboutLine4Label, "about.line4");
+        I18nUiUtil.setText(aboutLine5Label, "about.line5");
+        codeGitHubLabel.setText(I18n.get("about.githubLink"));
+        codeGiteeLabel.setText(I18n.get("about.giteeLink"));
+        issueLabel.setText(I18n.get("about.issueLink"));
+        I18nUiUtil.setText(wePushDescLabel, "about.wepush.desc");
+        I18nUiUtil.setText(mooInfoDescLabel, "about.mooinfo.desc");
+        I18nUiUtil.setText(sponsorPromptLabel, "about.sponsor.prompt");
+        I18nUiUtil.setToolTip(sponsorQrLabel, "about.sponsor.tip");
+    }
+
+    private static void applyI18nStatic() {
+        if (aboutForm != null) {
+            aboutForm.applyI18n();
         }
     }
 

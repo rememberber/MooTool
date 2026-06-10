@@ -8,6 +8,8 @@ import com.itextpdf.text.pdf.PdfReader;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.dialog.CommonTipsDialog;
 import com.luoboduner.moo.tool.ui.form.func.PdfForm;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.math.NumberUtils;
@@ -48,7 +50,7 @@ public class PDFSplitterListener {
     public void selectFile(File file, int row) {
         String fileName = file.getName().toLowerCase();
         if (!fileName.endsWith(".pdf")) {
-            showErrorMessage("错误：文件类型错误，该功能仅支持PDF格式文件。");
+            showErrorMessage("msg.pdfTypeOnly");
         } else {
             JLabel label = get(row, 2, JLabel.class);
             label.setText(file.getName());
@@ -61,7 +63,7 @@ public class PDFSplitterListener {
                 JLabel statusLabel = get(row, 7, JLabel.class);
                 progressBar.setValue(0);
                 progressBar.updateUI();
-                statusLabel.setText("未开始");
+                statusLabel.setText(I18n.get("pdf.status.notStarted"));
 
                 PdfParam param = getPdfParam(row);
                 param.setFile(file);
@@ -101,28 +103,28 @@ public class PDFSplitterListener {
         }
 
         if (StringUtils.isBlank(range)) {
-            showErrorMessage("错误：拆分范围不能为空！");
+            showErrorMessage("msg.pdfSplitRangeEmpty");
             return;
         }
 
         if (!compile.matcher(range).find()) {
-            showErrorMessage("错误：拆分范围内容输入错误，例如（1-20或15-15）！");
+            showErrorMessage("msg.pdfSplitRangeInvalid");
             asyncRun(() -> jTextField.setText("1-" + param.getMaxPage()));
         } else {
             String[] split = range.split("-");
             Integer start = NumberUtils.createInteger(split[0]);
             Integer end = NumberUtils.createInteger(split[1]);
             if (start > end) {
-                showErrorMessage("错误：拆分范围内容输入错误，例如（1-20或15-15）！");
+                showErrorMessage("msg.pdfSplitRangeInvalid");
                 asyncRun(() -> jTextField.setText("1-" + param.getMaxPage()));
                 return;
             }
             if (start < 1 || param.getMaxPage() < start) {
-                showErrorMessage("错误：拆分范围内容输入错误，拆分起始页只能是1-" + param.getMaxPage() + "中任一一个数字。");
+                showErrorMessage("msg.pdfSplitStartInvalid", param.getMaxPage());
                 asyncRun(() -> jTextField.setText("1-" + param.getMaxPage()));
                 return;
             } else if (param.maxPage < end) {
-                showErrorMessage("错误：拆分范围内容输入错误，拆分终止页只能是1-" + param.getMaxPage() + "中任一一个数字。");
+                showErrorMessage("msg.pdfSplitEndInvalid", param.getMaxPage());
                 asyncRun(() -> jTextField.setText("1-" + param.getMaxPage()));
                 return;
             }
@@ -146,7 +148,7 @@ public class PDFSplitterListener {
 
     public void changeSplitRule(String rule, int row) {
         if (StringUtils.isBlank(rule)) {
-            showErrorMessage("错误：自定义规则不能为空！");
+            showErrorMessage("msg.pdfCustomRuleEmpty");
             return;
         }
         PdfParam param = this.getPdfParam(row);
@@ -179,10 +181,10 @@ public class PDFSplitterListener {
 
     private String ruleChecker(String rule) {
         if (StringUtils.isBlank(rule)) {
-            return "自定义规则不能为空！";
+            return I18n.get("msg.pdfCustomRuleEmpty");
         }
         if (!ruleCompile.matcher(rule).find()) {
-            return "自定义规则格式输入错误！";
+            return I18n.get("msg.pdfCustomRuleInvalid");
         }
         return null;
     }
@@ -193,16 +195,16 @@ public class PDFSplitterListener {
             if (SplitType.CUSTOM == param.getSplitType()) {
                 String errorMsg = ruleChecker(param.getRule());
                 if (StringUtils.isNotBlank(errorMsg)) {
-                    errs.add(0, "错误：" + param.getFile().getName() + errorMsg);
+                    errs.add(0, I18n.format("msg.pdfFileError", param.getFile().getName(), errorMsg));
                 }
             }
             if (param.isSplit && null == param.getFile()) {
-                errs.add(0, String.format("错误：第%d个任务未选择文件！" , i + 1));
+                errs.add(0, I18n.format("msg.pdfTaskNoFile", i + 1));
             }
         });
 
         if (!errs.isEmpty()) {
-            showErrorMessage(errs.get(0));
+            showErrorText(errs.get(0));
             return;
         }
 
@@ -211,7 +213,7 @@ public class PDFSplitterListener {
             progressBar.setValue(0);
             model.fireTableCellUpdated(i, 6);
             JLabel label = get(i, 7, JLabel.class);
-            label.setText("未开始");
+            label.setText(I18n.get("pdf.status.notStarted"));
             model.fireTableCellUpdated(i, 7);
         });
 
@@ -222,7 +224,7 @@ public class PDFSplitterListener {
             try {
                 JProgressBar progressBar = get(n, 6, JProgressBar.class);
                 JLabel label = get(n, 7, JLabel.class);
-                label.setText("拆分中");
+                label.setText(I18n.get("pdf.status.splitting"));
                 String filePath = param.getFile().getAbsolutePath();
                 String parent = param.getFile().getParent();
                 document = new Document();
@@ -244,7 +246,7 @@ public class PDFSplitterListener {
                     progressBar.updateUI();
                     model.fireTableDataChanged();
                 }
-                label.setText("已完成");
+                label.setText(I18n.get("pdf.status.completed"));
                 model.fireTableDataChanged();
             } catch (Exception e) {
                 log.error("拆分文件出错！", e);
@@ -347,12 +349,12 @@ public class PDFSplitterListener {
         });
     }
 
-    private void showMessageDialog(String message, String title, int type) {
-        JOptionPane.showMessageDialog(jPanel, message, title, type);
+    private void showErrorMessage(String messageKey, Object... args) {
+        MsgUtil.error(jPanel, messageKey, args);
     }
 
-    private void showErrorMessage(String message) {
-        showMessageDialog(message, "错误", JOptionPane.ERROR_MESSAGE);
+    private void showErrorText(String message) {
+        MsgUtil.show(jPanel, message, "common.exception", JOptionPane.ERROR_MESSAGE);
     }
 
     public static class PdfParam {

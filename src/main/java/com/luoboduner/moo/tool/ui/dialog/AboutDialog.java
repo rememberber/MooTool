@@ -9,6 +9,7 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
@@ -44,7 +45,7 @@ public class AboutDialog extends JDialog {
 
     public AboutDialog() {
 
-        super(App.mainFrame, "关于");
+        super(App.mainFrame, I18n.get("menu.about"));
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.5, 0.68);
         setContentPane(contentPane);
         setModal(true);

@@ -12,6 +12,7 @@ import com.luoboduner.moo.tool.domain.TFuncContent;
 import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.listener.func.CalculatorListener;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
@@ -24,6 +25,7 @@ import javax.swing.plaf.FontUIResource;
 import javax.swing.text.StyleContext;
 import java.awt.*;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * <pre>
@@ -64,6 +66,8 @@ public class CalculatorForm {
 
     private static CalculatorForm calculatorForm;
 
+    private static boolean i18nRegistered;
+
     private static TFuncContentMapper funcContentMapper = MybatisUtil.getSqlSession().getMapper(TFuncContentMapper.class);
 
     private static final Log logger = LogFactory.get();
@@ -92,6 +96,47 @@ public class CalculatorForm {
         }
 
         CalculatorListener.addListeners();
+
+        calculatorForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(CalculatorForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setToolTip(resultTextField, "calc.result");
+        I18nUiUtil.setToolTip(inputExpressTextField, "calc.inputExpression");
+        I18nUiUtil.setToolTip(decTextField, "calc.result");
+        I18nUiUtil.setToolTip(binaryTextField, "calc.result");
+        I18nUiUtil.setText(hexToDecButton, "common.convert");
+        I18nUiUtil.setText(decToHexButton, "common.convert");
+        I18nUiUtil.setText(decToBinaryButton, "common.convert");
+        I18nUiUtil.setText(binaryToDecButton, "common.convert");
+        I18nUiUtil.setText(divisorButton, "calc.calcGcd");
+        I18nUiUtil.setText(multipleButton, "calc.calcLcm");
+        if (leftScrollPane.getViewport().getView() instanceof Container leftPanel) {
+            I18nUiUtil.localizeTree(leftPanel, Map.ofEntries(
+                    Map.entry("四则运算", "calc.arithmetic"),
+                    Map.entry("进制转换", "calc.baseConvert"),
+                    Map.entry("十六进制", "calc.hex"),
+                    Map.entry("十进制", "calc.decimal"),
+                    Map.entry("二进制", "calc.binary"),
+                    Map.entry("最大公约数", "calc.gcd"),
+                    Map.entry("最小公倍数", "calc.lcm"),
+                    Map.entry("排列数", "calc.permutation"),
+                    Map.entry("组合数", "calc.combination"),
+                    Map.entry("转换", "common.convert"),
+                    Map.entry("计算最大公约数", "calc.calcGcd"),
+                    Map.entry("计算最小公倍数", "calc.calcLcm")
+            ));
+        }
+    }
+
+    private static void applyI18nStatic() {
+        if (calculatorForm != null) {
+            calculatorForm.applyI18n();
+        }
     }
 
     private static void initUi() {

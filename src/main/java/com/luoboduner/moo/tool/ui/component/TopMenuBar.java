@@ -14,6 +14,7 @@ import org.fife.ui.rtextarea.RTextScrollPane;
 import com.luoboduner.moo.tool.ui.dialog.*;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.*;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
 
@@ -37,6 +38,24 @@ public class TopMenuBar extends JMenuBar {
     private static JMenu fontFamilyMenu;
 
     private static JMenu fontSizeMenu;
+
+    private static JMenu appMenu;
+    private static JMenu appearanceMenu;
+    private static JMenu aboutMenu;
+    private static JMenu supportMeMenu;
+
+    private static JMenuItem settingMenuItem;
+    private static JMenuItem syncAndBackupMenuItem;
+    private static JMenuItem keyMapMenuItem;
+    private static JMenuItem logMenuItem;
+    private static JMenuItem sysEnvMenuItem;
+    private static JMenuItem exitMenuItem;
+    private static JCheckBoxMenuItem defaultMaxWindowItem;
+    private static JCheckBoxMenuItem unifiedBackgroundItem;
+    private static JCheckBoxMenuItem systemColorItem;
+    private static JMenuItem checkUpdateMenuItem;
+    private static JMenuItem aboutMenuItem;
+    private static JMenuItem supportMeMenuItem;
 
     private static int initialThemeItemCount = -1;
 
@@ -103,49 +122,35 @@ public class TopMenuBar extends JMenuBar {
 
     public void init() {
         TopMenuBar topMenuBar = getInstance();
-        // ---------应用
-        JMenu appMenu = new JMenu();
-        appMenu.setText("应用");
-        // 设置
-        JMenuItem settingMenuItem = new JMenuItem();
-        settingMenuItem.setText("设置");
+        topMenuBar.removeAll();
+
+        appMenu = new JMenu();
+        settingMenuItem = new JMenuItem();
         settingMenuItem.addActionListener(e -> settingActionPerformed());
         appMenu.add(settingMenuItem);
-        // 同步和备份
-        JMenuItem syncAndBackupMenuItem = new JMenuItem();
-        syncAndBackupMenuItem.setText("同步和备份");
+        syncAndBackupMenuItem = new JMenuItem();
         syncAndBackupMenuItem.addActionListener(e -> syncAndBackupActionPerformed());
         appMenu.add(syncAndBackupMenuItem);
-        // 快捷键
-        JMenuItem keyMapMenuItem = new JMenuItem();
-        keyMapMenuItem.setText("快捷键");
+        keyMapMenuItem = new JMenuItem();
         keyMapMenuItem.addActionListener(e -> keyMapActionPerformed());
         appMenu.add(keyMapMenuItem);
-        // 查看日志
-        JMenuItem logMenuItem = new JMenuItem();
-        logMenuItem.setText("查看日志");
+        logMenuItem = new JMenuItem();
         logMenuItem.addActionListener(e -> logActionPerformed());
         appMenu.add(logMenuItem);
-        // 系统环境变量
-        JMenuItem sysEnvMenuItem = new JMenuItem();
-        sysEnvMenuItem.setText("系统环境变量");
+        sysEnvMenuItem = new JMenuItem();
         sysEnvMenuItem.addActionListener(e -> sysEnvActionPerformed());
         appMenu.add(sysEnvMenuItem);
-        // 退出
-        JMenuItem exitMenuItem = new JMenuItem();
-        exitMenuItem.setText("退出");
+        exitMenuItem = new JMenuItem();
         exitMenuItem.addActionListener(e -> exitActionPerformed());
         appMenu.add(exitMenuItem);
         topMenuBar.add(appMenu);
 
-        // ---------外观
-        JMenu appearanceMenu = new JMenu();
-        appearanceMenu.setText("外观");
+        appearanceMenu = new JMenu();
 
-        JCheckBoxMenuItem defaultMaxWindowitem = new JCheckBoxMenuItem("默认最大化窗口");
-        defaultMaxWindowitem.setSelected(App.config.isDefaultMaxWindow());
-        defaultMaxWindowitem.addActionListener(e -> {
-            boolean selected = defaultMaxWindowitem.isSelected();
+        defaultMaxWindowItem = new JCheckBoxMenuItem();
+        defaultMaxWindowItem.setSelected(App.config.isDefaultMaxWindow());
+        defaultMaxWindowItem.addActionListener(e -> {
+            boolean selected = defaultMaxWindowItem.isSelected();
             if (selected) {
                 App.mainFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
             } else {
@@ -154,20 +159,20 @@ public class TopMenuBar extends JMenuBar {
             App.config.setDefaultMaxWindow(selected);
             App.config.save();
         });
-        appearanceMenu.add(defaultMaxWindowitem);
+        appearanceMenu.add(defaultMaxWindowItem);
 
-        JCheckBoxMenuItem unifiedBackgrounditem = new JCheckBoxMenuItem("窗口颜色沉浸式");
-        unifiedBackgrounditem.setSelected(App.config.isUnifiedBackground());
-        unifiedBackgrounditem.addActionListener(e -> {
-            boolean selected = unifiedBackgrounditem.isSelected();
+        unifiedBackgroundItem = new JCheckBoxMenuItem();
+        unifiedBackgroundItem.setSelected(App.config.isUnifiedBackground());
+        unifiedBackgroundItem.addActionListener(e -> {
+            boolean selected = unifiedBackgroundItem.isSelected();
             App.config.setUnifiedBackground(selected);
             App.config.save();
             UIManager.put("TitlePane.unifiedBackground", selected);
             Init.refreshFlatLafUi();
         });
-        appearanceMenu.add(unifiedBackgrounditem);
+        appearanceMenu.add(unifiedBackgroundItem);
 
-        JCheckBoxMenuItem systemColorItem = new JCheckBoxMenuItem("主题颜色跟随系统");
+        systemColorItem = new JCheckBoxMenuItem();
         systemColorItem.setSelected(App.config.isThemeColorFollowSystem());
         systemColorItem.addActionListener(e -> {
             boolean selected = systemColorItem.isSelected();
@@ -186,56 +191,36 @@ public class TopMenuBar extends JMenuBar {
         appearanceMenu.add(systemColorItem);
 
         themeMenu = new JMenu();
-        themeMenu.setText("主题风格");
-
         initThemesMenu();
-
         appearanceMenu.add(themeMenu);
 
         fontFamilyMenu = new JMenu();
-        fontFamilyMenu.setText("字体");
         fontFamilyMenu.setAutoscrolls(true);
         initFontFamilyMenu();
-
         appearanceMenu.add(fontFamilyMenu);
 
         fontSizeMenu = new JMenu();
-        fontSizeMenu.setText("字号");
         initFontSizeMenu();
-
         appearanceMenu.add(fontSizeMenu);
 
         topMenuBar.add(appearanceMenu);
 
-        // ---------关于
-        JMenu aboutMenu = new JMenu();
-        aboutMenu.setText("关于");
-
-        // 检查更新
-        JMenuItem checkUpdateMenuItem = new JMenuItem();
-        checkUpdateMenuItem.setText("检查更新");
+        aboutMenu = new JMenu();
+        checkUpdateMenuItem = new JMenuItem();
         checkUpdateMenuItem.addActionListener(e -> checkUpdateActionPerformed());
         aboutMenu.add(checkUpdateMenuItem);
-
-        // 关于
-        JMenuItem aboutMenuItem = new JMenuItem();
-        aboutMenuItem.setText("关于");
+        aboutMenuItem = new JMenuItem();
         aboutMenuItem.addActionListener(e -> aboutActionPerformed());
         aboutMenu.add(aboutMenuItem);
-
         topMenuBar.add(aboutMenu);
 
-        // ---------鼓励和支持
-        JMenu supportMeMenu = new JMenu();
-        supportMeMenu.setText("支持一下");
-
-        // 鼓励和支持
-        JMenuItem supportMeMenuItem = new JMenuItem();
-        supportMeMenuItem.setText("鼓励和支持");
+        supportMeMenu = new JMenu();
+        supportMeMenuItem = new JMenuItem();
         supportMeMenuItem.addActionListener(e -> supportMeActionPerformed());
         supportMeMenu.add(supportMeMenuItem);
-
         topMenuBar.add(supportMeMenu);
+
+        refreshTexts();
 
         final OsThemeDetector detector = OsThemeDetector.getDetector();
         detector.registerListener(isDark -> SwingUtilities.invokeLater(() -> {
@@ -247,6 +232,32 @@ public class TopMenuBar extends JMenuBar {
                 }
             }
         }));
+    }
+
+    public void refreshTexts() {
+        if (appMenu == null) {
+            return;
+        }
+        appMenu.setText(I18n.get("menu.app"));
+        settingMenuItem.setText(I18n.get("menu.settings"));
+        syncAndBackupMenuItem.setText(I18n.get("menu.syncBackup"));
+        keyMapMenuItem.setText(I18n.get("menu.keymap"));
+        logMenuItem.setText(I18n.get("menu.viewLog"));
+        sysEnvMenuItem.setText(I18n.get("menu.systemEnv"));
+        exitMenuItem.setText(I18n.get("menu.exit"));
+        appearanceMenu.setText(I18n.get("menu.appearance"));
+        defaultMaxWindowItem.setText(I18n.get("menu.defaultMaxWindow"));
+        unifiedBackgroundItem.setText(I18n.get("menu.unifiedBackground"));
+        systemColorItem.setText(I18n.get("menu.themeFollowSystem"));
+        themeMenu.setText(I18n.get("menu.theme"));
+        fontFamilyMenu.setText(I18n.get("menu.font"));
+        fontSizeMenu.setText(I18n.get("menu.fontSize"));
+        aboutMenu.setText(I18n.get("menu.about"));
+        checkUpdateMenuItem.setText(I18n.get("menu.checkUpdate"));
+        aboutMenuItem.setText(I18n.get("menu.about"));
+        supportMeMenu.setText(I18n.get("menu.support"));
+        supportMeMenuItem.setText(I18n.get("menu.supportMe"));
+        initThemesMenu();
     }
 
     private void supportMeActionPerformed() {
@@ -319,7 +330,8 @@ public class TopMenuBar extends JMenuBar {
                 themeMenu.remove(i);
         }
         for (String themeName : themeNames) {
-            JCheckBoxMenuItem item = new JCheckBoxMenuItem(themeName);
+            JCheckBoxMenuItem item = new JCheckBoxMenuItem(displayThemeName(themeName));
+            item.setActionCommand(themeName);
             item.setSelected(themeName.equals(App.config.getTheme()));
             item.addActionListener(this::themeChanged);
             themeMenu.add(item);
@@ -349,7 +361,8 @@ public class TopMenuBar extends JMenuBar {
             initFontSizeMenu();
 
         } catch (Exception e1) {
-            JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "保存失败！\n\n" + e1.getMessage(), "失败",
+            JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(),
+                    I18n.format("common.saveFailed", e1.getMessage()), I18n.get("common.failure"),
                     JOptionPane.ERROR_MESSAGE);
             logger.error(e1);
         }
@@ -379,7 +392,8 @@ public class TopMenuBar extends JMenuBar {
             initFontFamilyMenu();
 
         } catch (Exception e1) {
-            JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "保存失败！\n\n" + e1.getMessage(), "失败",
+            JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(),
+                    I18n.format("common.saveFailed", e1.getMessage()), I18n.get("common.failure"),
                     JOptionPane.ERROR_MESSAGE);
             logger.error(e1);
         }
@@ -395,10 +409,18 @@ public class TopMenuBar extends JMenuBar {
 //                    JOptionPane.INFORMATION_MESSAGE);
 
         } catch (Exception e1) {
-            JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "保存失败！\n\n" + e1.getMessage(), "失败",
+            JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(),
+                    I18n.format("common.saveFailed", e1.getMessage()), I18n.get("common.failure"),
                     JOptionPane.ERROR_MESSAGE);
             logger.error(e1);
         }
+    }
+
+    private static String displayThemeName(String themeName) {
+        if ("系统默认".equals(themeName)) {
+            return I18n.get("theme.systemDefault");
+        }
+        return themeName;
     }
 
     private void changeTheme(String selectedThemeName) {

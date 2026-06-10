@@ -28,6 +28,7 @@ import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.form.func.CryptoForm;
 import com.luoboduner.moo.tool.util.AlertUtil;
 import com.luoboduner.moo.tool.util.FuncHistoryUtil;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -79,8 +80,7 @@ public class CryptoListener {
                     saveCryptoHistory("对称加密", "SymEncrypt", content, encryptHex, symType + " 加密");
                 }
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.encryptFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -113,8 +113,7 @@ public class CryptoListener {
                     saveCryptoHistory("对称加密", "SymDecrypt", content, decryptStr, symType + " 解密");
                 }
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "解密失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.decryptFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -151,8 +150,7 @@ public class CryptoListener {
                 cryptoForm.getDigestResultTextArea().setText(digestResult);
                 saveCryptoHistory("摘要", "DigestText", digestContent, digestResult, digestType + " 摘要");
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.encryptFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -190,8 +188,7 @@ public class CryptoListener {
                 App.config.setDigestFilePath(filePath);
                 App.config.save();
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.encryptFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -228,8 +225,7 @@ public class CryptoListener {
                 App.config.save();
                 saveCryptoHistory("随机", "RandomNum", String.valueOf(digit), randomNumbers, digit + "位随机数");
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.generateFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -243,8 +239,7 @@ public class CryptoListener {
                 App.config.save();
                 saveCryptoHistory("随机", "RandomString", String.valueOf(digit), randomString, digit + "位随机串");
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.generateFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -266,8 +261,7 @@ public class CryptoListener {
                 App.config.save();
                 saveCryptoHistory("随机", "RandomPassword", String.valueOf(digit), randomPassword, digit + "位随机密码");
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.generateFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -332,8 +326,7 @@ public class CryptoListener {
                 cryptoForm.getAsymPrivateKeyTextArea().setText(privateKeyStr);
                 cryptoForm.getAsymPrivateKeyTextArea().setCaretPosition(0);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.generateFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -357,8 +350,7 @@ public class CryptoListener {
                 cryptoForm.getAsymRightTextArea().setCaretPosition(0);
                 saveCryptoHistory("非对称加密", "AsymEncryptPub", toEncryptStr, encryptStr, asymType + " 公钥加密");
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.encryptFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -382,8 +374,7 @@ public class CryptoListener {
                 cryptoForm.getAsymLeftTextArea().setCaretPosition(0);
                 saveCryptoHistory("非对称加密", "AsymDecryptPri", toDecryptStr, decryptStr, asymType + " 私钥解密");
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "解密失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.decryptFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -406,8 +397,7 @@ public class CryptoListener {
                 cryptoForm.getAsymRightTextArea().setText(encryptStr);
                 cryptoForm.getAsymRightTextArea().setCaretPosition(0);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.encryptFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -430,8 +420,7 @@ public class CryptoListener {
                 cryptoForm.getAsymLeftTextArea().setText(decryptStr);
                 cryptoForm.getAsymLeftTextArea().setCaretPosition(0);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "解密失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.decryptFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -441,8 +430,7 @@ public class CryptoListener {
             try {
                 String asymType = (String) cryptoForm.getAsymComboBox().getSelectedItem();
                 if (!"SM2".equals(asymType)) {
-                    JOptionPane.showMessageDialog(App.mainFrame, "签名功能仅支持 SM2（国密）", "提示",
-                            JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(App.mainFrame, "msg.signSm2Only");
                     return;
                 }
                 String privateKeyStr = cryptoForm.getAsymPrivateKeyTextArea().getText();
@@ -452,8 +440,7 @@ public class CryptoListener {
                 cryptoForm.getAsymRightTextArea().setText(signStr);
                 cryptoForm.getAsymRightTextArea().setCaretPosition(0);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "签名失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.signFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -463,8 +450,7 @@ public class CryptoListener {
             try {
                 String asymType = (String) cryptoForm.getAsymComboBox().getSelectedItem();
                 if (!"SM2".equals(asymType)) {
-                    JOptionPane.showMessageDialog(App.mainFrame, "验签功能仅支持 SM2（国密）", "提示",
-                            JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(App.mainFrame, "msg.verifySm2Only");
                     return;
                 }
                 String publicKeyStr = cryptoForm.getAsymPubKeyTextArea().getText();
@@ -472,12 +458,13 @@ public class CryptoListener {
                 String signStr = cryptoForm.getAsymRightTextArea().getText();
                 SM2 sm2 = SmUtil.sm2(null, publicKeyStr);
                 boolean verified = sm2.verify(StrUtil.bytes(content, CharsetUtil.CHARSET_UTF_8), Base64.decode(signStr));
-                JOptionPane.showMessageDialog(App.mainFrame, verified ? "验签成功" : "验签失败",
-                        verified ? "成功" : "失败",
-                        verified ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.ERROR_MESSAGE);
+                if (verified) {
+                    MsgUtil.success(App.mainFrame, "msg.verifySuccess");
+                } else {
+                    MsgUtil.error(App.mainFrame, "msg.verifyFailedResult");
+                }
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "验签失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.verifyFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -498,8 +485,7 @@ public class CryptoListener {
                 cryptoForm.getBase64RightTextArea().setCaretPosition(0);
                 saveCryptoHistory("Base64", "Base64Encode", text, encode, type + " 编码");
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.encryptFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -520,8 +506,7 @@ public class CryptoListener {
                 cryptoForm.getBase64LeftTextArea().setCaretPosition(0);
                 saveCryptoHistory("Base64", "Base64Decode", text, decode, type + " 解码");
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "解密失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.decryptFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });

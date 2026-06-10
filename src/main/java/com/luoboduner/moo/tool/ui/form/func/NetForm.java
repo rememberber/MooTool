@@ -9,6 +9,7 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.listener.func.NetListener;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
@@ -20,6 +21,7 @@ import javax.swing.plaf.FontUIResource;
 import javax.swing.text.StyleContext;
 import java.awt.*;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * <pre>
@@ -56,6 +58,8 @@ public class NetForm {
 
     private static NetForm netForm;
 
+    private static boolean i18nRegistered;
+
     private static final Log logger = LogFactory.get();
 
     private NetForm() {
@@ -75,6 +79,50 @@ public class NetForm {
         initUi();
 
         NetListener.addListeners();
+
+        netForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(NetForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        if (!SystemUtil.isWindowsOs()) {
+            I18nUiUtil.setText(ipConfigButton, "net.refreshIfconfig");
+            I18nUiUtil.setText(ipConfigAllButton, "net.refreshNetstat");
+        } else {
+            I18nUiUtil.setText(ipConfigButton, "net.refreshIpconfig");
+            I18nUiUtil.setText(ipConfigAllButton, "net.refreshIpconfigAll");
+        }
+        I18nUiUtil.setText(ipv4ToLongButton, "common.convert");
+        I18nUiUtil.setText(longToIpv4Button, "common.convert");
+        I18nUiUtil.setText(refreshIpv4ListButton, "common.refresh");
+        I18nUiUtil.setText(refreshIpv6ListButton, "common.refresh");
+        I18nUiUtil.setText(hostToIpButton, "net.fetch");
+        I18nUiUtil.setText(whoisButton, "net.query");
+        I18nUiUtil.setText(flushDnsButton, "net.flushDns");
+        if (rightScrollPane.getViewport().getView() instanceof Container rightPanel) {
+            I18nUiUtil.localizeTree(rightPanel, Map.ofEntries(
+                    Map.entry("ipv4地址和Long值互转", "net.ipv4Long"),
+                    Map.entry("ipv4", "net.ipv4"),
+                    Map.entry("Long", "net.long"),
+                    Map.entry("获取本机ipv4列表", "net.localIpv4"),
+                    Map.entry("获取本机ipv6列表", "net.localIpv6"),
+                    Map.entry("通过域名获取IP", "net.hostToIp"),
+                    Map.entry("域名", "net.domain"),
+                    Map.entry("IP", "net.ip"),
+                    Map.entry("WHOIS 查询", "net.whois"),
+                    Map.entry("PING", "net.ping"),
+                    Map.entry("DNS", "net.dns")
+            ));
+        }
+    }
+
+    private static void applyI18nStatic() {
+        if (netForm != null) {
+            netForm.applyI18n();
+        }
     }
 
     private static void initUi() {

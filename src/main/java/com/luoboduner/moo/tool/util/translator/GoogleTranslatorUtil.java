@@ -48,13 +48,13 @@ public class GoogleTranslatorUtil implements Translator {
             return result.toString();
         } catch (SSLHandshakeException e) {
             log.error("SSLHandshakeException", e);
-            return "访问Google翻译接口网络异常：" + e.getMessage();
+            return TranslationErrorUtil.error("translation.error.google.network", e.getMessage());
         } catch (SocketTimeoutException e) {
             log.error("SocketTimeoutException", e);
-            return "访问Google翻译接口超时：" + e.getMessage();
+            return TranslationErrorUtil.error("translation.error.google.timeout", e.getMessage());
         } catch (Exception e) {
             log.error("访问Google翻译异常", e);
-            return "访问Google翻译接口异常：" + e.getMessage();
+            return TranslationErrorUtil.error("translation.error.google.exception", e.getMessage());
         }
     }
 
