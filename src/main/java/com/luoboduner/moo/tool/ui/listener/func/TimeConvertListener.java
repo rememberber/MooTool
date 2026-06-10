@@ -8,6 +8,7 @@ import com.luoboduner.moo.tool.ui.form.func.TimeConvertForm;
 import com.luoboduner.moo.tool.ui.frame.ClockFrame;
 import com.luoboduner.moo.tool.util.AlertUtil;
 import com.luoboduner.moo.tool.util.ConsoleUtil;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.MsgUtil;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -77,7 +78,8 @@ public class TimeConvertListener {
         timeConvertForm.getCopyCurrentGmtButton().addActionListener(e -> ThreadUtil.execute(() -> {
             try {
                 ClipboardUtil.setStr(timeConvertForm.getCurrentGmtLabel().getText());
-                AlertUtil.buttonInfo(timeConvertForm.getCopyCurrentGmtButton(), "复制", "已复制", 2000);
+                AlertUtil.buttonInfo(timeConvertForm.getCopyCurrentGmtButton(),
+                        I18n.get("common.copy"), I18n.get("common.copied"), 2000);
 
             } catch (Exception e1) {
                 logger.error(e1);
@@ -86,7 +88,8 @@ public class TimeConvertListener {
         timeConvertForm.getCopyCurrentTimestampButton().addActionListener(e -> ThreadUtil.execute(() -> {
             try {
                 ClipboardUtil.setStr(timeConvertForm.getCurrentTimestampLabel().getText());
-                AlertUtil.buttonInfo(timeConvertForm.getCopyCurrentTimestampButton(), "复制", "已复制", 2000);
+                AlertUtil.buttonInfo(timeConvertForm.getCopyCurrentTimestampButton(),
+                        I18n.get("common.copy"), I18n.get("common.copied"), 2000);
 
             } catch (Exception e1) {
                 logger.error(e1);
@@ -95,7 +98,8 @@ public class TimeConvertListener {
         timeConvertForm.getCopyGeneratedTimestampButton().addActionListener(e -> ThreadUtil.execute(() -> {
             try {
                 ClipboardUtil.setStr(timeConvertForm.getTimestampTextField().getText());
-                AlertUtil.buttonInfo(timeConvertForm.getCopyGeneratedTimestampButton(), "复制", "已复制", 2000);
+                AlertUtil.buttonInfo(timeConvertForm.getCopyGeneratedTimestampButton(),
+                        I18n.get("common.copy"), I18n.get("common.copied"), 2000);
 
             } catch (Exception e1) {
                 logger.error(e1);
@@ -104,7 +108,8 @@ public class TimeConvertListener {
         timeConvertForm.getCopyGeneratedLocalTimeButton().addActionListener(e -> ThreadUtil.execute(() -> {
             try {
                 ClipboardUtil.setStr(timeConvertForm.getGmtTextField().getText());
-                AlertUtil.buttonInfo(timeConvertForm.getCopyGeneratedLocalTimeButton(), "复制", "已复制", 2000);
+                AlertUtil.buttonInfo(timeConvertForm.getCopyGeneratedLocalTimeButton(),
+                        I18n.get("common.copy"), I18n.get("common.copied"), 2000);
 
             } catch (Exception e1) {
                 logger.error(e1);
@@ -154,7 +159,7 @@ public class TimeConvertListener {
             timeConvertForm.getTimestampTextField().setText(String.valueOf(timeStamp));
             timeConvertForm.getTimestampTextField().grabFocus();
 
-            output("时间(" + tz.getID() + "): " + localTime + " --> 时间戳: " + timeStamp);
+            output(I18n.format("timeConvert.history.localToTimestamp", tz.getID(), localTime, timeStamp));
         } catch (Exception ex) {
             ex.printStackTrace();
             logger.error(ExceptionUtils.getStackTrace(ex));
@@ -180,7 +185,7 @@ public class TimeConvertListener {
             timeConvertForm.getGmtTextField().setText(localTime);
             timeConvertForm.getGmtTextField().grabFocus();
 
-            output("时间戳: " + timeStamp + " --> 时间(" + tz.getID() + "): " + localTime);
+            output(I18n.format("timeConvert.history.timestampToLocal", timeStamp, tz.getID(), localTime));
         } catch (Exception ex) {
             ex.printStackTrace();
             logger.error(ExceptionUtils.getStackTrace(ex));

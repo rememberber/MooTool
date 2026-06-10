@@ -160,21 +160,34 @@ public class TimeConvertForm {
     }
 
     private void applyI18n() {
-        I18nUiUtil.setText(timestampLabel, "timeConvert.timestamp");
-        updateGmtLabel();
-        I18nUiUtil.setText(copyCurrentGmtButton, "common.copy");
-        I18nUiUtil.setText(copyCurrentTimestampButton, "common.copy");
-        I18nUiUtil.setText(copyGeneratedTimestampButton, "common.copy");
-        I18nUiUtil.setText(copyGeneratedLocalTimeButton, "common.copy");
-        I18nUiUtil.setText(toLocalTimeButton, "common.convert");
-        I18nUiUtil.setText(toTimestampButton, "common.convert");
-        I18nUiUtil.setToolTip(clockButton, "timeConvert.clock");
-        I18nUiUtil.setToolTip(toLocalTimeButton, "timeConvert.toLocalTime.tip");
-        I18nUiUtil.setToolTip(toTimestampButton, "timeConvert.toTimestamp.tip");
-        if (timezoneLabel != null) {
-            I18nUiUtil.setText(timezoneLabel, "timeConvert.timezone");
+        Runnable refresh = () -> {
+            if (timestampLabel != null) {
+                timestampLabel.setText(I18n.get("timeConvert.timestamp"));
+            }
+            updateGmtLabel();
+            I18nUiUtil.setText(copyCurrentGmtButton, "common.copy");
+            I18nUiUtil.setText(copyCurrentTimestampButton, "common.copy");
+            I18nUiUtil.setText(copyGeneratedTimestampButton, "common.copy");
+            I18nUiUtil.setText(copyGeneratedLocalTimeButton, "common.copy");
+            I18nUiUtil.setText(toLocalTimeButton, "timeConvert.convert");
+            I18nUiUtil.setText(toTimestampButton, "timeConvert.convert");
+            I18nUiUtil.setToolTip(clockButton, "timeConvert.clock");
+            I18nUiUtil.setToolTip(toLocalTimeButton, "timeConvert.toLocalTime.tip");
+            I18nUiUtil.setToolTip(toTimestampButton, "timeConvert.toTimestamp.tip");
+            if (timezoneLabel != null) {
+                timezoneLabel.setText(I18n.get("timeConvert.timezone"));
+            }
+            initUnitComboBox();
+            if (timeConvertPanel != null) {
+                timeConvertPanel.revalidate();
+                timeConvertPanel.repaint();
+            }
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            refresh.run();
+        } else {
+            SwingUtilities.invokeLater(refresh);
         }
-        initUnitComboBox();
     }
 
     private void initUnitComboBox() {
@@ -361,6 +374,7 @@ public class TimeConvertForm {
 
         // Update the label to show current timezone
         timeConvertForm.updateGmtLabel();
+        timeConvertForm.applyI18n();
     }
 
     public static int saveContent() {
@@ -456,11 +470,11 @@ public class TimeConvertForm {
         final JPanel panel5 = new JPanel();
         panel5.setLayout(new GridLayoutManager(3, 3, new Insets(10, 10, 10, 10), -1, -1));
         panel1.add(panel5, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        final JLabel label1 = new JLabel();
-        label1.setHorizontalAlignment(10);
-        label1.setHorizontalTextPosition(11);
-        label1.setText("时间戳(Unix timestamp)");
-        panel5.add(label1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        timestampLabel = new JLabel();
+        timestampLabel.setHorizontalAlignment(10);
+        timestampLabel.setHorizontalTextPosition(11);
+        timestampLabel.setText("时间戳(Unix timestamp)");
+        panel5.add(timestampLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         timestampTextField = new JTextField();
         Font timestampTextFieldFont = this.$$$getFont$$$(null, -1, 26, timestampTextField.getFont());
         if (timestampTextFieldFont != null) timestampTextField.setFont(timestampTextFieldFont);
@@ -468,11 +482,11 @@ public class TimeConvertForm {
         copyGeneratedTimestampButton = new JButton();
         copyGeneratedTimestampButton.setText("复制");
         panel5.add(copyGeneratedTimestampButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, 1, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JLabel label2 = new JLabel();
-        label2.setHorizontalAlignment(10);
-        label2.setHorizontalTextPosition(11);
-        label2.setText("本地时间(GMT +08)");
-        panel5.add(label2, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        gmtLabel = new JLabel();
+        gmtLabel.setHorizontalAlignment(10);
+        gmtLabel.setHorizontalTextPosition(11);
+        gmtLabel.setText("本地时间(GMT +08)");
+        panel5.add(gmtLabel, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         gmtTextField = new JTextField();
         Font gmtTextFieldFont = this.$$$getFont$$$(null, -1, 26, gmtTextField.getFont());
         if (gmtTextFieldFont != null) gmtTextField.setFont(gmtTextFieldFont);

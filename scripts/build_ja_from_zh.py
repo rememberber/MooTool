@@ -305,6 +305,17 @@ LANGUAGE_OVERRIDES = {
     "host.sorry": "申し訳ありません！",
     "host.switched": "Host を切り替えました！\\n{0}",
     "host.notSupported": "このオペレーティングシステムには未対応です！",
+    "timeConvert.timestamp": "タイムスタンプ (Unix)",
+    "timeConvert.localTime": "ローカル時刻 ({0})",
+    "timeConvert.convert": "変換",
+    "timeConvert.clock": "全画面クロック",
+    "timeConvert.toLocalTime.tip": "タイムスタンプをローカル時刻に変換",
+    "timeConvert.toTimestamp.tip": "ローカル時刻をタイムスタンプに変換",
+    "timeConvert.unit.second": "秒 (s)",
+    "timeConvert.unit.millisecond": "ミリ秒 (ms)",
+    "timeConvert.timezone": "タイムゾーン:",
+    "timeConvert.history.localToTimestamp": "時間 ({0}): {1} --> タイムスタンプ: {2}",
+    "timeConvert.history.timestampToLocal": "タイムスタンプ: {0} --> 時間 ({1}): {2}",
 }
 
 
