@@ -151,7 +151,8 @@ public class FavoriteRegexDialog extends JDialog {
             regex = regex.substring(0, 40) + "...";
         }
         regexValueLabel.setText(regex);
-        nameTextField.setText("未命名正则表达式-" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss"));
+        nameTextField.setText(I18n.get("favorite.regex.defaultNamePrefix")
+                + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss"));
         nameTextField.grabFocus();
         nameTextField.selectAll();
         fillFavoriteListComboBox();

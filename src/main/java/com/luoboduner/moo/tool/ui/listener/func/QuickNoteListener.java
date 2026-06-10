@@ -20,6 +20,7 @@ import com.luoboduner.moo.tool.ui.dialog.DocInfoDialog;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.NamingUtil;
 import com.luoboduner.moo.tool.util.ListUtils;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.QuickNoteAttachmentUtil;
@@ -660,7 +661,7 @@ public class QuickNoteListener {
      * @return
      */
     private static String getDefaultFileName() {
-        return "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+        return NamingUtil.defaultUntitledName();
     }
 
     /**
@@ -796,7 +797,7 @@ public class QuickNoteListener {
                 List<String> targetWithCnt = Lists.newArrayList();
                 for (String str : target) {
                     long cnt = ListUtils.matchCount(Arrays.asList(splits), s -> s.equals(str));
-                    targetWithCnt.add("\"" + str + "\" 出现了 " + cnt + " 次");
+                    targetWithCnt.add(I18n.format("quickNote.lineOccurrence", str, cnt));
                 }
                 target = targetWithCnt;
             }
@@ -995,7 +996,8 @@ public class QuickNoteListener {
                 QuickNoteAttachmentUtil.cleanupRemovedAttachments(oldContent, text, otherNotesContents);
             }
 
-            QuickNoteIndicatorTools.showTips("已保存：" + selectedName, QuickNoteIndicatorTools.TipsLevel.SUCCESS);
+            QuickNoteIndicatorTools.showTips(I18n.format("quickNote.saved", selectedName),
+                    QuickNoteIndicatorTools.TipsLevel.SUCCESS);
         });
 
     }
@@ -1181,7 +1183,8 @@ public class QuickNoteListener {
                         try {
                             QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setText(result);
                             QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setCaretPosition(0);
-                            QuickNoteIndicatorTools.showTips("已格式化：" + selectedName, QuickNoteIndicatorTools.TipsLevel.SUCCESS);
+                            QuickNoteIndicatorTools.showTips(I18n.format("quickNote.formatted", selectedName),
+                                    QuickNoteIndicatorTools.TipsLevel.SUCCESS);
                         } catch (Exception ex) {
                             MsgUtil.errorWithDetail(App.mainFrame, "msg.formatFailed", ex.getMessage());
                             log.error(ExceptionUtils.getStackTrace(ex));

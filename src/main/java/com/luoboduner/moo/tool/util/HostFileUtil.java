@@ -19,7 +19,9 @@ public class HostFileUtil {
     public static final String WIN_HOST_FILE_PATH = "C:\\Windows\\System32\\drivers\\etc\\hosts";
     public static final String MAC_HOST_FILE_PATH = "/etc/hosts";
     public static final String LINUX_HOST_FILE_PATH = "/etc/hosts";
-    public static final String NOT_SUPPORTED_TIPS = "暂不支持该操作系统！";
+    public static String getNotSupportedTips() {
+        return I18n.get("host.notSupported");
+    }
 
     private static final int MAC_AUTH_TIMEOUT_SECONDS = 120;
 
@@ -36,7 +38,7 @@ public class HostFileUtil {
         if (SystemUtil.isLinuxOs()) {
             return FileUtil.readUtf8String(LINUX_HOST_FILE_PATH);
         }
-        return NOT_SUPPORTED_TIPS;
+        return getNotSupportedTips();
     }
 
     public static void writeSystemHosts(String content) throws HostWriteException {
@@ -52,21 +54,15 @@ public class HostFileUtil {
             writeLinuxHosts(content);
             return;
         }
-        throw new HostWriteException(NOT_SUPPORTED_TIPS, HostWriteException.Reason.NOT_SUPPORTED);
+        throw new HostWriteException(getNotSupportedTips(), HostWriteException.Reason.NOT_SUPPORTED);
     }
 
     public static String getMacPermissionHintHtml() {
-        return "<h2>需要管理员权限</h2>"
-                + "<p>修改 <code>/etc/hosts</code> 需要管理员权限。</p>"
-                + "<p>切换 host 时，macOS 会弹出<strong>系统授权窗口</strong>，请输入当前 Mac 登录密码并确认。</p>"
-                + "<p>若刚才取消了授权，请再次点击「切换 host」重试。</p>"
-                + "<p>也可以手动修改：在终端执行 <code>sudo nano /etc/hosts</code></p>";
+        return I18n.get("host.macPermissionHintHtml");
     }
 
     public static String getLinuxPermissionHint() {
-        return "需要管理员或 root 权限才能修改 /etc/hosts。\n\n"
-                + "请使用 sudo 启动 MooTool，或在终端执行：\n"
-                + "  sudo nano /etc/hosts";
+        return I18n.get("host.linuxPermissionHint");
     }
 
     private static void writeMacHosts(String content) throws HostWriteException {
@@ -94,19 +90,20 @@ public class HostFileUtil {
             boolean finished = process.waitFor(MAC_AUTH_TIMEOUT_SECONDS, TimeUnit.SECONDS);
             if (!finished) {
                 process.destroyForcibly();
-                throw new HostWriteException("授权操作超时，请重试。", HostWriteException.Reason.TIMEOUT);
+                throw new HostWriteException(I18n.get("host.authTimeout"), HostWriteException.Reason.TIMEOUT);
             }
             if (process.exitValue() != 0) {
                 if (isUserCanceled(output)) {
                     throw new HostWriteException(getMacPermissionHintHtml(), HostWriteException.Reason.USER_CANCELED);
                 }
-                String message = StringUtils.isBlank(output) ? "未知错误" : output.trim();
-                throw new HostWriteException("写入 hosts 失败：" + message, HostWriteException.Reason.WRITE_FAILED);
+                String message = StringUtils.isBlank(output) ? I18n.get("host.unknownError") : output.trim();
+                throw new HostWriteException(I18n.format("host.writeFailed", message), HostWriteException.Reason.WRITE_FAILED);
             }
         } catch (HostWriteException e) {
             throw e;
         } catch (Exception e) {
-            throw new HostWriteException("写入 hosts 失败：" + e.getMessage(), HostWriteException.Reason.WRITE_FAILED, e);
+            throw new HostWriteException(I18n.format("host.writeFailed", e.getMessage()),
+                    HostWriteException.Reason.WRITE_FAILED, e);
         } finally {
             if (tempFile != null) {
                 FileUtil.del(tempFile);

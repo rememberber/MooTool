@@ -6,6 +6,8 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 
 import javax.swing.*;
@@ -25,11 +27,12 @@ public class Base64Dialog extends JDialog {
 
     public Base64Dialog() {
 
-        super(App.mainFrame, "Base64");
+        super(App.mainFrame, I18n.get("base64Dialog.title"));
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.4, 0.64);
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
+        I18nUiUtil.setText(buttonOK, "common.ok");
 
         if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
             this.getRootPane().putClientProperty("apple.awt.fullWindowContent", true);

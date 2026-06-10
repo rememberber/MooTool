@@ -12,6 +12,7 @@ import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
 import com.luoboduner.moo.tool.util.HostFileUtil;
 import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.NamingUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -394,7 +395,7 @@ public class HostListener {
         } else {
             if (refreshModifiedTime) {
                 // 通过refreshModifiedTime可以判断是否主动按快捷键保存，只有主动触发时才保存，避免初次点击列表误提示问题
-                String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                String tempName = NamingUtil.defaultUntitledName();
                 String name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), tempName);
                 if (StringUtils.isNotBlank(name)) {
                     THost tHost = new THost();
@@ -451,7 +452,7 @@ public class HostListener {
 
     private static void save(boolean needRename) {
         if (StringUtils.isEmpty(selectedNameHost)) {
-            selectedNameHost = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+            selectedNameHost = NamingUtil.defaultUntitledName();
         }
         String name = selectedNameHost;
         if (needRename) {
@@ -504,6 +505,6 @@ public class HostListener {
      * @return
      */
     private static String getDefaultFileName() {
-        return "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+        return NamingUtil.defaultUntitledName();
     }
 }

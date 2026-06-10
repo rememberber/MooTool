@@ -21,6 +21,7 @@ import com.luoboduner.moo.tool.ui.form.func.ImageForm;
 import com.luoboduner.moo.tool.ui.frame.ScreenCaptureFrame;
 import com.luoboduner.moo.tool.util.AlertUtil;
 import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.NamingUtil;
 import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -337,7 +338,7 @@ public class ImageListener {
                         displayZoomFactor = 1.0;
                         updateImageDisplay(imageForm);
 
-                        selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                        selectedName = NamingUtil.defaultUntitledName();
                         File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
                         ImageIO.write(toBufferedImage(selectedImage), "png", imageFile);
                         ImageForm.initList();
@@ -842,7 +843,7 @@ public class ImageListener {
                 displayZoomFactor = 1.0;
                 updateImageDisplay(imageForm);
 
-                selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                selectedName = NamingUtil.defaultUntitledName();
                 File imageFile = FileUtil.touch(new File(IMAGE_PATH_PRE_FIX + selectedName + ".png"));
                 ImageIO.write(toBufferedImage(selectedImage), "png", imageFile);
                 ImageForm.initList();
@@ -879,7 +880,7 @@ public class ImageListener {
      */
     private static void saveImage() {
         if (StringUtils.isEmpty(selectedName)) {
-            selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+            selectedName = NamingUtil.defaultUntitledName();
         }
         String name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), selectedName);
         if (StringUtils.isNotBlank(name)) {
@@ -902,7 +903,7 @@ public class ImageListener {
     private static void quickSave() {
         try {
             if (selectedImage != null && selectedName == null) {
-                String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                String tempName = NamingUtil.defaultUntitledName();
                 String name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), tempName);
                 if (StringUtils.isNotBlank(name)) {
                     name = name.replace(".png", "");

@@ -41,7 +41,7 @@ public class QuickNoteImageInsertUtil {
 
         SystemFileChooser fileChooser = new SystemFileChooser(QuickNoteAttachmentUtil.getAttachmentsDir());
         SystemFileChooser.FileNameExtensionFilter filter = new SystemFileChooser.FileNameExtensionFilter(
-                "图片文件 (*.png, *.jpg, *.jpeg, *.gif, *.bmp, *.webp)",
+                I18n.get("quickNote.imageFileFilter"),
                 "png", "jpg", "jpeg", "gif", "bmp", "webp");
         fileChooser.setFileFilter(filter);
         int approve = fileChooser.showOpenDialog(MainWindow.getInstance().getMainPanel());

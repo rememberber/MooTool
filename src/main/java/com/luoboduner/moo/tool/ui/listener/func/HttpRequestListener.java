@@ -22,6 +22,7 @@ import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.MsgUtil;
+import com.luoboduner.moo.tool.util.NamingUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -62,7 +63,7 @@ public class HttpRequestListener {
 
         httpRequestForm.getSaveButton().addActionListener(e -> {
             if (StringUtils.isBlank(selectedName)) {
-                selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                selectedName = NamingUtil.defaultUntitledName();
             }
             String name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), selectedName);
             if (StringUtils.isNotBlank(name)) {
@@ -100,7 +101,7 @@ public class HttpRequestListener {
         // 导入 cURL 按钮事件（URL 文本框尾随按钮）
         httpRequestForm.getImportCurlButton().addActionListener(e -> {
             try {
-                JsonResultDialog dialog = new JsonResultDialog(null, "请输入 cURL 命令：", "Input");
+                JsonResultDialog dialog = new JsonResultDialog(null, I18n.get("http.curlInputPrompt"), "Input");
                 dialog.setVisible(true);
                 String curl = JsonResultDialog.textInputValue;
                 if (StringUtils.isBlank(curl)) {
@@ -287,7 +288,7 @@ public class HttpRequestListener {
                     HttpResultFrame.showResultWindow();
 
                     if (StringUtils.isBlank(selectedName)) {
-                        selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                        selectedName = NamingUtil.defaultUntitledName();
                     }
                     HttpRequestForm.save(selectedName);
                 } else {
@@ -320,7 +321,7 @@ public class HttpRequestListener {
                     httpRequestForm.getCookiesTextArea().setCaretPosition(0);
 
                     if (StringUtils.isBlank(selectedName)) {
-                        selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                        selectedName = NamingUtil.defaultUntitledName();
                     }
                     HttpRequestForm.save(selectedName);
                 } else {

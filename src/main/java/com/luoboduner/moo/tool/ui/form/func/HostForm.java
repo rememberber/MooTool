@@ -78,7 +78,9 @@ public class HostForm {
 
     public static final String LINUX_HOST_DIR_PATH = "/etc/";
 
-    public static final String NOT_SUPPORTED_TIPS = HostFileUtil.NOT_SUPPORTED_TIPS;
+    public static String getNotSupportedTips() {
+        return HostFileUtil.getNotSupportedTips();
+    }
 
     private HostRSyntaxTextViewer textArea;
 
@@ -140,7 +142,7 @@ public class HostForm {
             showHostWriteError(hostForm, e);
         } catch (Exception ex) {
             log.error(ExceptionUtils.getStackTrace(ex));
-            showError(hostForm, ex.getMessage(), "切换失败！");
+            showError(hostForm, ex.getMessage(), I18n.get("host.switchFailed"));
         } finally {
             SwingUtilities.invokeLater(() -> hostForm.getSwitchButton().setEnabled(true));
         }
@@ -149,7 +151,7 @@ public class HostForm {
     private static void onHostSwitched(String hostName) {
         Runnable updateUi = () -> {
             if (App.trayIcon != null) {
-                App.trayIcon.displayMessage("MooTool", "Host已切换！\n" + hostName, TrayIcon.MessageType.INFO);
+                App.trayIcon.displayMessage("MooTool", I18n.format("host.switched", hostName), TrayIcon.MessageType.INFO);
             }
             highlightHostMenu(hostName);
         };
@@ -174,15 +176,15 @@ public class HostForm {
                 return;
             }
             if (SystemUtil.isLinuxOs() && reason == HostFileUtil.HostWriteException.Reason.PERMISSION_DENIED) {
-                showError(hostForm, e.getMessage(), "切换失败！");
+                showError(hostForm, e.getMessage(), I18n.get("host.switchFailed"));
                 openHostDir(LINUX_HOST_DIR_PATH);
                 return;
             }
             if (reason == HostFileUtil.HostWriteException.Reason.NOT_SUPPORTED) {
-                showError(hostForm, e.getMessage(), "抱歉！");
+                showError(hostForm, e.getMessage(), I18n.get("host.sorry"));
                 return;
             }
-            showError(hostForm, e.getMessage(), "切换失败！");
+            showError(hostForm, e.getMessage(), I18n.get("host.switchFailed"));
         };
         if (SwingUtilities.isEventDispatchThread()) {
             show.run();
@@ -262,7 +264,7 @@ public class HostForm {
             hostForm.getRightPanel().add(hostForm.getControlPanel(), new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         }
 
-        hostForm.getSearchTextField().putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "搜索");
+        hostForm.getSearchTextField().putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, I18n.get("common.search"));
         hostForm.getSearchTextField().putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON,
                 new FlatSearchIcon());
 

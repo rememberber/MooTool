@@ -74,7 +74,7 @@ public class RegexListener {
             String content = regexForm.getTextArea().getText();
             if (StringUtils.isNotBlank(regex)) {
                 FuncHistoryUtil.save(FuncConsts.REGEX, I18n.get("history.summary.regex"), regex, content,
-                        "匹配数:" + result.getMarkedCount());
+                        I18n.format("regex.matchCountSummary", result.getMarkedCount()));
                 if (RegexForm.getHistoryPanel() != null) {
                     RegexForm.getHistoryPanel().refreshListIfVisible();
                 }

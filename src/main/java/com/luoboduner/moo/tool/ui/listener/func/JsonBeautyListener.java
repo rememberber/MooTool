@@ -62,7 +62,7 @@ public class JsonBeautyListener {
         // 保存按钮事件
         jsonBeautyForm.getSaveButton().addActionListener(e -> {
             if (StringUtils.isEmpty(selectedNameJson)) {
-                selectedNameJson = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                selectedNameJson = NamingUtil.defaultUntitledName();
             }
             String name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), selectedNameJson);
             if (StringUtils.isNotBlank(name)) {
@@ -350,7 +350,7 @@ public class JsonBeautyListener {
         jsonBeautyForm.getJsonToXmlButton().addActionListener(e -> {
             try {
                 String jsonText = jsonBeautyForm.getTextArea().getText();
-                JsonResultDialog jsonResultDialog = new JsonResultDialog("XML", "JSON转XML", "Display");
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("XML", I18n.get("jsonBeauty.jsonToXml"), "Display");
                 String xmlStr = JSONUtil.toXmlStr(JSONUtil.isTypeJSONArray(jsonText) ? JSONUtil.parseArray(jsonText) : JSONUtil.parseObj(jsonText));
                 xmlStr = "<root>" + xmlStr + "</root>";
                 jsonResultDialog.setToTextArea(XmlReformatUtil.format(xmlStr));
@@ -364,7 +364,7 @@ public class JsonBeautyListener {
 
         jsonBeautyForm.getXmlToJsonButton().addActionListener(e -> {
             try {
-                JsonResultDialog jsonResultDialog = new JsonResultDialog("XML", "请输入XML文本：", "Input");
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("XML", I18n.get("jsonBeauty.xmlInput"), "Input");
                 jsonResultDialog.setVisible(true);
                 String inputValue = JsonResultDialog.textInputValue;
                 if (StringUtils.isBlank(inputValue)) {
@@ -420,7 +420,7 @@ public class JsonBeautyListener {
                 String jsonText = jsonBeautyForm.getTextArea().getText();
                 String jsonPath = jsonBeautyForm.getJsonPathTextField().getText();
                 if (StringUtils.isNotBlank(jsonPath)) {
-                    JsonResultDialog jsonResultDialog = new JsonResultDialog("JSON", "根据JSON Path，取值如下：", "Display");
+                    JsonResultDialog jsonResultDialog = new JsonResultDialog("JSON", I18n.get("jsonBeauty.jsonPathResult"), "Display");
                     jsonResultDialog.setToTextArea(JSONUtil.toJsonPrettyStr(JSONUtil.getByPath(JSONUtil.parse(jsonText), jsonPath).toString()));
                     jsonResultDialog.setVisible(true);
                 }
@@ -470,7 +470,7 @@ public class JsonBeautyListener {
 
         jsonBeautyForm.getBeanToJsonButton().addActionListener(e -> {
             try {
-                JsonResultDialog jsonResultDialog = new JsonResultDialog("Java", "请输入JavaBean类代码：", "Input");
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("Java", I18n.get("jsonBeauty.javaBeanInput"), "Input");
                 jsonResultDialog.setVisible(true);
                 String inputValue = JsonResultDialog.textInputValue;
                 if (StringUtils.isBlank(inputValue)) {
@@ -486,7 +486,7 @@ public class JsonBeautyListener {
 
         jsonBeautyForm.getJavaBeanToJSONButton().addActionListener(e -> {
             try {
-                JsonResultDialog jsonResultDialog = new JsonResultDialog("Java", "请输入JavaBean类代码：", "Input");
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("Java", I18n.get("jsonBeauty.javaBeanInput"), "Input");
                 jsonResultDialog.setVisible(true);
                 String inputValue = JsonResultDialog.textInputValue;
                 if (StringUtils.isBlank(inputValue)) {
@@ -502,7 +502,7 @@ public class JsonBeautyListener {
 
         jsonBeautyForm.getJsonToJavaBeanButton().addActionListener(e -> {
             try {
-                JsonResultDialog jsonResultDialog = new JsonResultDialog("Java", "JSON转换JavaBean结果：", "Display");
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("Java", I18n.get("jsonBeauty.javaBeanResult"), "Display");
                 jsonResultDialog.setToTextArea(MockDataGenerator.jsonToClassCode(jsonBeautyForm.getTextArea().getText()));
                 jsonResultDialog.setVisible(true);
             } catch (Exception e1) {
@@ -515,7 +515,7 @@ public class JsonBeautyListener {
             try {
                 String jsonText = jsonBeautyForm.getTextArea().getText();
 
-                JsonResultDialog jsonResultDialog = new JsonResultDialog("JSON", "Key-Value 互换结果:", "Display");
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("JSON", I18n.get("jsonBeauty.kvSwapResult"), "Display");
                 jsonResultDialog.setToTextArea(JSONUtil.toJsonPrettyStr(JsonKeyValueSwapper.swapKeysAndValues(jsonText)));
                 jsonResultDialog.setVisible(true);
 
@@ -681,7 +681,7 @@ public class JsonBeautyListener {
             }
             jsonBeautyMapper.updateByName(tJsonBeauty);
         } else {
-            String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+            String tempName = NamingUtil.defaultUntitledName();
             String name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), tempName);
             if (StringUtils.isNotBlank(name)) {
                 TJsonBeauty tJsonBeauty = new TJsonBeauty();
@@ -752,7 +752,7 @@ public class JsonBeautyListener {
      * @return
      */
     private static String getDefaultFileName() {
-        return "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+        return NamingUtil.defaultUntitledName();
     }
 
 }

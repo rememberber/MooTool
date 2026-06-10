@@ -69,7 +69,8 @@ public class ColorBoardListener {
         colorBoardForm.getCopyButton().addActionListener(e -> {
             try {
                 ClipboardUtil.setStr(colorBoardForm.getColorCodeTextField().getText());
-                AlertUtil.buttonInfo(colorBoardForm.getCopyButton(), "复制", "已复制", 2000);
+                AlertUtil.buttonInfo(colorBoardForm.getCopyButton(), I18n.get("common.copy"),
+                        I18n.get("common.copied"), 2000);
             } catch (Exception e1) {
                 logger.error(e1);
             }
@@ -122,14 +123,8 @@ public class ColorBoardListener {
             public void mousePressed(MouseEvent e) {
                 CommonTipsDialog dialog = new CommonTipsDialog();
 
-                StringBuilder tipsBuilder = new StringBuilder();
-                tipsBuilder.append("<h1>关于调色板</h1>");
-                tipsBuilder.append("<p>调色板和取色器的设计借鉴了PicPick，其中的颜色主题更是完全照搬了过来。</p>");
-                tipsBuilder.append("<p>颜色运算：取反对当前颜色取反色；相交/相加/差值/平均对当前颜色与对比色进行运算，结果更新为当前颜色。</p>");
-                tipsBuilder.append("<p>按住 Shift 点击色块可将其设为对比色；点击对比色色块可自由选色。</p>");
-                tipsBuilder.append("<p>PicPick是一款非常优秀的集取色、截图、标尺、放大镜、图片编辑等于一身的桌面应用，我非常喜欢它，感谢作者的付出！</p>");
-
-                dialog.setHtmlText(tipsBuilder.toString());
+                dialog.setTitle(I18n.get("colorBoard.about.title"));
+                dialog.setHtmlText(I18n.get("colorBoard.about.html"));
                 dialog.pack();
                 dialog.setVisible(true);
 
@@ -154,7 +149,8 @@ public class ColorBoardListener {
 
         colorBoardForm.getChooseColorButton().addActionListener(e -> {
             Color before = ColorBoardForm.getSelectedColor();
-            Color color = JColorChooser.showDialog(colorBoardForm.getColorBoardPanel(), "选择颜色", before);
+            Color color = JColorChooser.showDialog(colorBoardForm.getColorBoardPanel(),
+                    I18n.get("colorBoard.op.chooseColor"), before);
             if (color != null) {
                 ColorBoardForm.setSelectedColor(color);
                 ColorBoardForm.saveColorHistory(I18n.get("colorBoard.op.chooseColor"), ColorUtil.toHex(before), ColorUtil.toHex(color));
@@ -164,7 +160,8 @@ public class ColorBoardListener {
         colorBoardForm.getSecondaryColorPanel().addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                Color color = JColorChooser.showDialog(colorBoardForm.getColorBoardPanel(), "选择对比色", ColorBoardForm.getSecondaryColor());
+                Color color = JColorChooser.showDialog(colorBoardForm.getColorBoardPanel(),
+                        I18n.get("colorBoard.chooseCompareColor"), ColorBoardForm.getSecondaryColor());
                 if (color != null) {
                     ColorBoardForm.setSecondaryColor(color);
                 }
