@@ -8,9 +8,13 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.domain.TFuncHistory;
+import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.component.CustomizeIcon;
+import com.luoboduner.moo.tool.ui.component.FuncHistoryPanel;
 import com.luoboduner.moo.tool.ui.listener.func.CronListener;
+import com.luoboduner.moo.tool.util.FuncHistorySupport;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -309,6 +313,8 @@ public class CronForm {
 
     private static CronForm cronForm;
 
+    private static FuncHistoryPanel historyPanel;
+
     private static final Log logger = LogFactory.get();
 
     public static final Map<Integer, JCheckBox> SEC_CHECK_BOX_MAP = new TreeMap<>();
@@ -540,7 +546,22 @@ public class CronForm {
 
         initUi();
 
+        historyPanel = FuncHistorySupport.wrapWithTabs(
+                cronForm.getCronPanel(), "Cron", FuncConsts.CRON, CronForm::applyHistory);
+
         CronListener.addListeners();
+    }
+
+    public static FuncHistoryPanel getHistoryPanel() {
+        return historyPanel;
+    }
+
+    public static void applyHistory(TFuncHistory history) {
+        if (history == null) {
+            return;
+        }
+        cronForm.getCronExpressionTextField().setText(history.getInputText());
+        cronForm.getHumanReadableTextField().setText(history.getOutputText());
     }
 
     private static void initUi() {

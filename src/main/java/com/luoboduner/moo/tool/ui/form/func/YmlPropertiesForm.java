@@ -3,9 +3,14 @@ package com.luoboduner.moo.tool.ui.form.func;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.luoboduner.moo.tool.domain.TFuncHistory;
+import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.Style;
+import com.luoboduner.moo.tool.ui.component.FuncHistoryPanel;
 import com.luoboduner.moo.tool.ui.listener.func.YmlPropertiesListener;
+import com.luoboduner.moo.tool.util.FuncHistorySupport;
 import com.luoboduner.moo.tool.util.UndoUtil;
+import org.apache.commons.lang3.StringUtils;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -35,6 +40,8 @@ public class YmlPropertiesForm {
 
     private static YmlPropertiesForm ymlPropertiesForm;
 
+    private static FuncHistoryPanel historyPanel;
+
     public static YmlPropertiesForm getInstance() {
         if (ymlPropertiesForm == null) {
             ymlPropertiesForm = new YmlPropertiesForm();
@@ -49,9 +56,46 @@ public class YmlPropertiesForm {
     }
 
     public static void init() {
+        ymlPropertiesForm = getInstance();
         initUi();
+        historyPanel = FuncHistorySupport.attachTab(
+                ymlPropertiesForm.getTabbedPane1(), FuncConsts.YML_PROPERTIES, YmlPropertiesForm::applyHistory);
 
         YmlPropertiesListener.addListeners();
+    }
+
+    public static FuncHistoryPanel getHistoryPanel() {
+        return historyPanel;
+    }
+
+    public static void applyHistory(TFuncHistory history) {
+        if (history == null || StringUtils.isBlank(history.getExtraData())) {
+            return;
+        }
+        switch (history.getExtraData()) {
+            case "Prop2Yml" -> {
+                ymlPropertiesForm.getPropertiesTextArea().setText(history.getInputText());
+                ymlPropertiesForm.getYmlTextArea().setText(history.getOutputText());
+                ymlPropertiesForm.getTabbedPane1().setSelectedIndex(0);
+            }
+            case "Yml2Prop" -> {
+                ymlPropertiesForm.getYmlTextArea().setText(history.getInputText());
+                ymlPropertiesForm.getPropertiesTextArea().setText(history.getOutputText());
+                ymlPropertiesForm.getTabbedPane1().setSelectedIndex(0);
+            }
+            case "YamlValidate" -> {
+                ymlPropertiesForm.getYamlValidateInputTextArea().setText(history.getInputText());
+                ymlPropertiesForm.getYamlValidateResultTextArea().setText(history.getOutputText());
+                ymlPropertiesForm.getTabbedPane1().setSelectedIndex(1);
+            }
+            case "YamlFormat" -> {
+                ymlPropertiesForm.getYamlValidateInputTextArea().setText(history.getOutputText());
+                ymlPropertiesForm.getYamlValidateResultTextArea().setText(history.getInputText());
+                ymlPropertiesForm.getTabbedPane1().setSelectedIndex(1);
+            }
+            default -> {
+            }
+        }
     }
 
     private static void initUi() {

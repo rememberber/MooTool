@@ -24,8 +24,11 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.formdev.flatlaf.util.SystemFileChooser;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.form.func.CryptoForm;
 import com.luoboduner.moo.tool.util.AlertUtil;
+import com.luoboduner.moo.tool.util.FuncHistoryUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
@@ -53,28 +56,27 @@ public class CryptoListener {
                 String symType = (String) cryptoForm.getSymTypeComboBox().getSelectedItem();
                 String content = cryptoForm.getSymTextAreaLeft().getText();
                 String key = cryptoForm.getSymKeyTextField().getText();
+                String encryptHex = null;
 
                 if ("AES".equals(symType)) {
                     byte[] generatedKey = SecureUtil.generateKey(SymmetricAlgorithm.AES.getValue(), key.getBytes()).getEncoded();
 
                     AES aes = SecureUtil.aes(generatedKey);
-                    // 加密为16进制表示
-                    String encryptHex = aes.encryptHex(content);
-                    cryptoForm.getSymTextAreaRight().setText(encryptHex);
+                    encryptHex = aes.encryptHex(content);
                 } else if ("DES".equals(symType)) {
                     byte[] generatedKey = SecureUtil.generateKey(SymmetricAlgorithm.DES.getValue(), key.getBytes()).getEncoded();
 
                     DES des = SecureUtil.des(generatedKey);
-                    // 加密为16进制表示
-                    String encryptHex = des.encryptHex(content);
-                    cryptoForm.getSymTextAreaRight().setText(encryptHex);
+                    encryptHex = des.encryptHex(content);
                 } else if ("SM4".equals(symType)) {
                     byte[] generatedKey = SecureUtil.generateKey("SM4", key.getBytes()).getEncoded();
 
                     SM4 sm4 = SmUtil.sm4(generatedKey);
-                    // 加密为16进制表示
-                    String encryptHex = sm4.encryptHex(content);
+                    encryptHex = sm4.encryptHex(content);
+                }
+                if (encryptHex != null) {
                     cryptoForm.getSymTextAreaRight().setText(encryptHex);
+                    saveCryptoHistory("对称加密", "SymEncrypt", content, encryptHex, symType + " 加密");
                 }
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
@@ -89,24 +91,26 @@ public class CryptoListener {
                 String symType = (String) cryptoForm.getSymTypeComboBox().getSelectedItem();
                 String content = cryptoForm.getSymTextAreaRight().getText();
                 String key = cryptoForm.getSymKeyTextField().getText();
+                String decryptStr = null;
                 if ("AES".equals(symType)) {
                     byte[] generatedKey = SecureUtil.generateKey(SymmetricAlgorithm.AES.getValue(), key.getBytes()).getEncoded();
 
                     AES aes = SecureUtil.aes(generatedKey);
-                    String decryptStr = aes.decryptStr(content);
-                    cryptoForm.getSymTextAreaLeft().setText(decryptStr);
+                    decryptStr = aes.decryptStr(content);
                 } else if ("DES".equals(symType)) {
                     byte[] generatedKey = SecureUtil.generateKey(SymmetricAlgorithm.DES.getValue(), key.getBytes()).getEncoded();
 
                     DES des = SecureUtil.des(generatedKey);
-                    String decryptStr = des.decryptStr(content);
-                    cryptoForm.getSymTextAreaLeft().setText(decryptStr);
+                    decryptStr = des.decryptStr(content);
                 } else if ("SM4".equals(symType)) {
                     byte[] generatedKey = SecureUtil.generateKey("SM4", key.getBytes()).getEncoded();
 
                     SM4 sm4 = SmUtil.sm4(generatedKey);
-                    String decryptStr = sm4.decryptStr(content);
+                    decryptStr = sm4.decryptStr(content);
+                }
+                if (decryptStr != null) {
                     cryptoForm.getSymTextAreaLeft().setText(decryptStr);
+                    saveCryptoHistory("对称加密", "SymDecrypt", content, decryptStr, symType + " 解密");
                 }
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "解密失败！\n\n" + ex.getMessage(), "失败",
@@ -145,6 +149,7 @@ public class CryptoListener {
                         digestResult = "";
                 }
                 cryptoForm.getDigestResultTextArea().setText(digestResult);
+                saveCryptoHistory("摘要", "DigestText", digestContent, digestResult, digestType + " 摘要");
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
@@ -346,6 +351,7 @@ public class CryptoListener {
 
                 cryptoForm.getAsymRightTextArea().setText(encryptStr);
                 cryptoForm.getAsymRightTextArea().setCaretPosition(0);
+                saveCryptoHistory("非对称加密", "AsymEncryptPub", toEncryptStr, encryptStr, asymType + " 公钥加密");
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
@@ -370,6 +376,7 @@ public class CryptoListener {
 
                 cryptoForm.getAsymLeftTextArea().setText(decryptStr);
                 cryptoForm.getAsymLeftTextArea().setCaretPosition(0);
+                saveCryptoHistory("非对称加密", "AsymDecryptPri", toDecryptStr, decryptStr, asymType + " 私钥解密");
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "解密失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
@@ -485,6 +492,7 @@ public class CryptoListener {
 
                 cryptoForm.getBase64RightTextArea().setText(encode);
                 cryptoForm.getBase64RightTextArea().setCaretPosition(0);
+                saveCryptoHistory("Base64", "Base64Encode", text, encode, type + " 编码");
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "加密失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
@@ -506,11 +514,22 @@ public class CryptoListener {
 
                 cryptoForm.getBase64LeftTextArea().setText(decode);
                 cryptoForm.getBase64LeftTextArea().setCaretPosition(0);
+                saveCryptoHistory("Base64", "Base64Decode", text, decode, type + " 解码");
             } catch (Exception ex) {
                 JOptionPane.showMessageDialog(App.mainFrame, "解密失败！\n\n" + ex.getMessage(), "失败",
                         JOptionPane.ERROR_MESSAGE);
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
+    }
+
+    private static void saveCryptoHistory(String tab, String operation, String input, String output, String summary) {
+        if (StringUtils.isAllBlank(input, output)) {
+            return;
+        }
+        FuncHistoryUtil.save(FuncConsts.CRYPTO, summary, input, output, tab + "|" + operation);
+        if (CryptoForm.getHistoryPanel() != null) {
+            CryptoForm.getHistoryPanel().refreshListIfVisible();
+        }
     }
 }

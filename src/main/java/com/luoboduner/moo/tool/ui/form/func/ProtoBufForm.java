@@ -4,9 +4,14 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.luoboduner.moo.tool.domain.TFuncHistory;
+import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.Style;
+import com.luoboduner.moo.tool.ui.component.FuncHistoryPanel;
 import com.luoboduner.moo.tool.ui.listener.func.ProtoBufListener;
+import com.luoboduner.moo.tool.util.FuncHistorySupport;
 import com.luoboduner.moo.tool.util.UndoUtil;
+import org.apache.commons.lang3.StringUtils;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -38,6 +43,8 @@ public class ProtoBufForm {
 
     private static ProtoBufForm protoBufForm;
 
+    private static FuncHistoryPanel historyPanel;
+
     private ProtoBufForm() {
         UndoUtil.register(this);
     }
@@ -52,7 +59,58 @@ public class ProtoBufForm {
     public static void init() {
         protoBufForm = getInstance();
         initUi();
+        historyPanel = FuncHistorySupport.attachTab(
+                protoBufForm.getTabbedPane1(), FuncConsts.PROTOBUF, ProtoBufForm::applyHistory);
         ProtoBufListener.addListeners();
+    }
+
+    public static FuncHistoryPanel getHistoryPanel() {
+        return historyPanel;
+    }
+
+    public static void applyHistory(TFuncHistory history) {
+        if (history == null || StringUtils.isBlank(history.getExtraData())) {
+            return;
+        }
+        String[] parts = history.getExtraData().split("\\|", 2);
+        if (parts.length < 2) {
+            return;
+        }
+        String tab = parts[0];
+        String operation = parts[1];
+        for (int i = 0; i < protoBufForm.getTabbedPane1().getTabCount(); i++) {
+            if (tab.equals(protoBufForm.getTabbedPane1().getTitleAt(i))) {
+                protoBufForm.getTabbedPane1().setSelectedIndex(i);
+                break;
+            }
+        }
+        switch (operation) {
+            case "JsonToBinary" -> {
+                protoBufForm.getJsonTextArea().setText(history.getInputText());
+                protoBufForm.getBinaryTextArea().setText(history.getOutputText());
+            }
+            case "BinaryToJson" -> {
+                protoBufForm.getBinaryTextArea().setText(history.getInputText());
+                protoBufForm.getJsonTextArea().setText(history.getOutputText());
+            }
+            case "WireDecode" -> {
+                protoBufForm.getWireInputTextArea().setText(history.getInputText());
+                protoBufForm.getWireOutputTextArea().setText(history.getOutputText());
+            }
+            case "HexToBase64" -> {
+                protoBufForm.getHexTextArea().setText(history.getInputText());
+                protoBufForm.getBase64TextArea().setText(history.getOutputText());
+            }
+            case "Base64ToHex" -> {
+                protoBufForm.getBase64TextArea().setText(history.getInputText());
+                protoBufForm.getHexTextArea().setText(history.getOutputText());
+            }
+            case "FormatProto" -> {
+                protoBufForm.getProtoDefinitionTextArea().setText(history.getOutputText());
+            }
+            default -> {
+            }
+        }
     }
 
     private static void initUi() {

@@ -4,9 +4,14 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
+import com.luoboduner.moo.tool.domain.TFuncHistory;
+import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.Style;
+import com.luoboduner.moo.tool.ui.component.FuncHistoryPanel;
 import com.luoboduner.moo.tool.ui.listener.func.EnCodeListener;
+import com.luoboduner.moo.tool.util.FuncHistorySupport;
 import com.luoboduner.moo.tool.util.UndoUtil;
+import org.apache.commons.lang3.StringUtils;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -45,6 +50,8 @@ public class EnCodeForm {
 
     private static EnCodeForm enCodeForm;
 
+    private static FuncHistoryPanel historyPanel;
+
     private EnCodeForm() {
         UndoUtil.register(this);
     }
@@ -59,8 +66,67 @@ public class EnCodeForm {
     public static void init() {
         enCodeForm = getInstance();
         initUi();
-
+        historyPanel = FuncHistorySupport.attachTab(
+                enCodeForm.getTabbedPane1(), FuncConsts.ENCODE, EnCodeForm::applyHistory);
         EnCodeListener.addListeners();
+    }
+
+    public static FuncHistoryPanel getHistoryPanel() {
+        return historyPanel;
+    }
+
+    public static void applyHistory(TFuncHistory history) {
+        if (history == null || StringUtils.isBlank(history.getExtraData())) {
+            return;
+        }
+        String[] parts = history.getExtraData().split("\\|", 2);
+        if (parts.length < 2) {
+            return;
+        }
+        String tab = parts[0];
+        String operation = parts[1];
+        for (int i = 0; i < enCodeForm.getTabbedPane1().getTabCount(); i++) {
+            if (tab.equals(enCodeForm.getTabbedPane1().getTitleAt(i))) {
+                enCodeForm.getTabbedPane1().setSelectedIndex(i);
+                break;
+            }
+        }
+        switch (operation) {
+            case "NativeToUnicode" -> {
+                enCodeForm.getNativeTextArea().setText(history.getInputText());
+                enCodeForm.getUnicodeTextArea().setText(history.getOutputText());
+            }
+            case "UnicodeToNative" -> {
+                enCodeForm.getUnicodeTextArea().setText(history.getInputText());
+                enCodeForm.getNativeTextArea().setText(history.getOutputText());
+            }
+            case "UrlEncode" -> {
+                enCodeForm.getUrlTextArea().setText(history.getInputText());
+                enCodeForm.getUrlEncodeTextArea().setText(history.getOutputText());
+            }
+            case "UrlDecode" -> {
+                enCodeForm.getUrlEncodeTextArea().setText(history.getInputText());
+                enCodeForm.getUrlTextArea().setText(history.getOutputText());
+            }
+            case "NativeToHex" -> {
+                enCodeForm.getNativeForHexTextArea().setText(history.getInputText());
+                enCodeForm.getHexTextArea().setText(history.getOutputText());
+            }
+            case "HexToNative" -> {
+                enCodeForm.getHexTextArea().setText(history.getInputText());
+                enCodeForm.getNativeForHexTextArea().setText(history.getOutputText());
+            }
+            case "NativeToAscii" -> {
+                enCodeForm.getNativeForAsciiTextArea().setText(history.getInputText());
+                enCodeForm.getAsciiTextArea().setText(history.getOutputText());
+            }
+            case "AsciiToNative" -> {
+                enCodeForm.getAsciiTextArea().setText(history.getInputText());
+                enCodeForm.getNativeForAsciiTextArea().setText(history.getOutputText());
+            }
+            default -> {
+            }
+        }
     }
 
     private static void initUi() {

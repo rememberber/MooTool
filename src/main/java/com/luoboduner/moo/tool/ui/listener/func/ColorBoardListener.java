@@ -53,7 +53,9 @@ public class ColorBoardListener {
                         },
                         color -> {
                             if (color != null) {
+                                String before = ColorUtil.toHex(ColorBoardForm.getSelectedColor());
                                 ColorBoardForm.setSelectedColor(color);
+                                ColorBoardForm.saveColorHistory("取色器", before, ColorUtil.toHex(color));
                             }
                             App.mainFrame.setExtendedState(Frame.NORMAL);
                         });
@@ -101,7 +103,10 @@ public class ColorBoardListener {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    ColorBoardForm.setSelectedColor(ColorUtil.fromHex(colorBoardForm.getColorCodeTextField().getText()));
+                    String before = ColorUtil.toHex(ColorBoardForm.getSelectedColor());
+                    Color color = ColorUtil.fromHex(colorBoardForm.getColorCodeTextField().getText());
+                    ColorBoardForm.setSelectedColor(color);
+                    ColorBoardForm.saveColorHistory("输入色值", before, ColorUtil.toHex(color));
                 }
             }
 
@@ -146,9 +151,11 @@ public class ColorBoardListener {
         });
 
         colorBoardForm.getChooseColorButton().addActionListener(e -> {
-            Color color = JColorChooser.showDialog(colorBoardForm.getColorBoardPanel(), "选择颜色", ColorBoardForm.getSelectedColor());
+            Color before = ColorBoardForm.getSelectedColor();
+            Color color = JColorChooser.showDialog(colorBoardForm.getColorBoardPanel(), "选择颜色", before);
             if (color != null) {
                 ColorBoardForm.setSelectedColor(color);
+                ColorBoardForm.saveColorHistory("选择颜色", ColorUtil.toHex(before), ColorUtil.toHex(color));
             }
         });
 
@@ -172,21 +179,34 @@ public class ColorBoardListener {
             }
         });
 
-        colorBoardForm.getSwapColorButton().addActionListener(e -> ColorBoardForm.swapColors());
+        colorBoardForm.getSwapColorButton().addActionListener(e -> {
+            String primary = ColorUtil.toHex(ColorBoardForm.getSelectedColor());
+            String secondary = ColorUtil.toHex(ColorBoardForm.getSecondaryColor());
+            ColorBoardForm.swapColors();
+            ColorBoardForm.saveColorHistory("交换颜色", primary + " / " + secondary,
+                    ColorUtil.toHex(ColorBoardForm.getSelectedColor()) + " / " + ColorUtil.toHex(ColorBoardForm.getSecondaryColor()));
+        });
 
         colorBoardForm.getInvertColorButton().addActionListener(e ->
-                ColorBoardForm.setSelectedColor(ColorUtil.invert(ColorBoardForm.getSelectedColor())));
+                applyColorOperation("取反", ColorUtil.invert(ColorBoardForm.getSelectedColor())));
 
         colorBoardForm.getIntersectColorButton().addActionListener(e ->
-                ColorBoardForm.setSelectedColor(ColorUtil.intersect(ColorBoardForm.getSelectedColor(), ColorBoardForm.getSecondaryColor())));
+                applyColorOperation("相交", ColorUtil.intersect(ColorBoardForm.getSelectedColor(), ColorBoardForm.getSecondaryColor())));
 
         colorBoardForm.getAddColorButton().addActionListener(e ->
-                ColorBoardForm.setSelectedColor(ColorUtil.add(ColorBoardForm.getSelectedColor(), ColorBoardForm.getSecondaryColor())));
+                applyColorOperation("相加", ColorUtil.add(ColorBoardForm.getSelectedColor(), ColorBoardForm.getSecondaryColor())));
 
         colorBoardForm.getDiffColorButton().addActionListener(e ->
-                ColorBoardForm.setSelectedColor(ColorUtil.difference(ColorBoardForm.getSelectedColor(), ColorBoardForm.getSecondaryColor())));
+                applyColorOperation("差值", ColorUtil.difference(ColorBoardForm.getSelectedColor(), ColorBoardForm.getSecondaryColor())));
 
         colorBoardForm.getAverageColorButton().addActionListener(e ->
-                ColorBoardForm.setSelectedColor(ColorUtil.average(ColorBoardForm.getSelectedColor(), ColorBoardForm.getSecondaryColor())));
+                applyColorOperation("平均", ColorUtil.average(ColorBoardForm.getSelectedColor(), ColorBoardForm.getSecondaryColor())));
+    }
+
+    private static void applyColorOperation(String operation, Color resultColor) {
+        String before = ColorUtil.toHex(ColorBoardForm.getSelectedColor());
+        String secondary = ColorUtil.toHex(ColorBoardForm.getSecondaryColor());
+        ColorBoardForm.setSelectedColor(resultColor);
+        ColorBoardForm.saveColorHistory(operation, before, ColorUtil.toHex(resultColor) + " (对比色:" + secondary + ")");
     }
 }

@@ -3,8 +3,12 @@ package com.luoboduner.moo.tool.ui.form.func;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.luoboduner.moo.tool.domain.TFuncHistory;
+import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.Style;
+import com.luoboduner.moo.tool.ui.component.FuncHistoryPanel;
 import com.luoboduner.moo.tool.ui.listener.func.UaParseListener;
+import com.luoboduner.moo.tool.util.FuncHistorySupport;
 import com.luoboduner.moo.tool.util.UaParseUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
@@ -28,6 +32,8 @@ public class UaParseForm {
 
     private static UaParseForm uaParseForm;
 
+    private static FuncHistoryPanel historyPanel;
+
     private UaParseForm() {
         UndoUtil.register(this);
     }
@@ -42,7 +48,21 @@ public class UaParseForm {
     public static void init() {
         uaParseForm = getInstance();
         initUi();
+        historyPanel = FuncHistorySupport.wrapWithTabs(
+                uaParseForm.getUaParsePanel(), "UA分析", FuncConsts.UA_PARSE, UaParseForm::applyHistory);
         UaParseListener.addListeners();
+    }
+
+    public static FuncHistoryPanel getHistoryPanel() {
+        return historyPanel;
+    }
+
+    public static void applyHistory(TFuncHistory history) {
+        if (history == null) {
+            return;
+        }
+        uaParseForm.getUaInputTextArea().setText(history.getInputText());
+        UaParseListener.parse(uaParseForm, false);
     }
 
     private static void initUi() {

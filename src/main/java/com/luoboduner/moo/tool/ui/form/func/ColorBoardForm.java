@@ -7,10 +7,16 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.domain.TFuncHistory;
+import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.component.CustomizeIcon;
+import com.luoboduner.moo.tool.ui.component.FuncHistoryPanel;
 import com.luoboduner.moo.tool.ui.listener.func.ColorBoardListener;
 import com.luoboduner.moo.tool.util.ColorUtil;
+import com.luoboduner.moo.tool.util.FuncHistorySupport;
+import com.luoboduner.moo.tool.util.FuncHistoryUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
+import org.apache.commons.lang3.StringUtils;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -58,6 +64,8 @@ public class ColorBoardForm {
     private JPanel colorOpsWrapperPanel;
 
     private static ColorBoardForm colorBoardForm;
+
+    private static FuncHistoryPanel historyPanel;
 
     private static final Log logger = LogFactory.get();
 
@@ -109,7 +117,41 @@ public class ColorBoardForm {
 
         fillColorBlocks();
 
+        historyPanel = FuncHistorySupport.wrapWithTabs(
+                colorBoardForm.getColorBoardPanel(), "调色板", FuncConsts.COLOR_BOARD, ColorBoardForm::applyHistory);
+
         ColorBoardListener.addListeners();
+    }
+
+    public static FuncHistoryPanel getHistoryPanel() {
+        return historyPanel;
+    }
+
+    public static void saveColorHistory(String operation, String inputColor, String outputColor) {
+        if (StringUtils.isAllBlank(inputColor, outputColor)) {
+            return;
+        }
+        FuncHistoryUtil.save(FuncConsts.COLOR_BOARD, operation, inputColor, outputColor, operation);
+        if (historyPanel != null) {
+            historyPanel.refreshListIfVisible();
+        }
+    }
+
+    public static void applyHistory(TFuncHistory history) {
+        if (history == null) {
+            return;
+        }
+        if (StringUtils.isNotBlank(history.getOutputText())) {
+            String colorToken = history.getOutputText().split("[\\s(]")[0];
+            if (colorToken.startsWith("#")) {
+                setSelectedColor(ColorUtil.fromHex(colorToken));
+                return;
+            }
+        }
+        if (StringUtils.isNotBlank(history.getInputText())) {
+            String primary = history.getInputText().split(" / ")[0].trim();
+            setSelectedColor(ColorUtil.fromHex(primary));
+        }
     }
 
     private void initColorOpsPanel() {
