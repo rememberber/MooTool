@@ -7,6 +7,7 @@ import com.formdev.flatlaf.util.SystemInfo;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.AlertUtil;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.time.DateFormatUtils;
@@ -82,7 +83,7 @@ public class ImageOcrResultDialog extends JDialog {
     private void saveAsText() {
         String text = resultArea.getText();
         if (StringUtils.isBlank(text)) {
-            JOptionPane.showMessageDialog(this, "没有可保存的内容", "提示", JOptionPane.INFORMATION_MESSAGE);
+            MsgUtil.info(this, "msg.ocrNothingToSave");
             return;
         }
         String defaultName = "OCR_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss") + ".txt";
@@ -96,7 +97,6 @@ public class ImageOcrResultDialog extends JDialog {
             file = FileUtil.file(file.getParent(), file.getName() + ".txt");
         }
         FileUtil.writeString(text, file, StandardCharsets.UTF_8);
-        JOptionPane.showMessageDialog(this, "已保存到：\n" + file.getAbsolutePath(), "保存成功",
-                JOptionPane.INFORMATION_MESSAGE);
+        MsgUtil.success(this, "msg.savedToPath", file.getAbsolutePath());
     }
 }

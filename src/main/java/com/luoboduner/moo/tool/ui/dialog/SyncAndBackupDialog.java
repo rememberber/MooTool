@@ -9,6 +9,7 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.listener.func.ImageListener;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -95,8 +96,7 @@ public class SyncAndBackupDialog extends JDialog {
 
             FileUtil.copy(FileUtil.file(localDataPath), exportFile, true);
 
-            JOptionPane.showMessageDialog(this, "导出成功！", "提示",
-                    JOptionPane.INFORMATION_MESSAGE);
+            MsgUtil.success(this, "msg.exportSuccess");
             try {
                 Desktop desktop = Desktop.getDesktop();
                 desktop.open(new File(exportPath));
@@ -121,8 +121,7 @@ public class SyncAndBackupDialog extends JDialog {
 
             FileUtil.copy(FileUtil.file(localConfigPath), exportFile, true);
 
-            JOptionPane.showMessageDialog(this, "导出成功！", "提示",
-                    JOptionPane.INFORMATION_MESSAGE);
+            MsgUtil.success(this, "msg.exportSuccess");
             try {
                 Desktop desktop = Desktop.getDesktop();
                 desktop.open(new File(exportPath));

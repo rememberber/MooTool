@@ -73,7 +73,7 @@ public class FavoriteColorDialog extends JDialog {
         // call onCancel() on ESCAPE
         contentPane.registerKeyboardAction(e -> onCancel(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         newFavoriteBookListButton.addActionListener(e -> {
-            String title = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "收藏夹名称", "");
+            String title = MsgUtil.input(MainWindow.getInstance().getMainPanel(), "favorite.folderName", "");
             if (StringUtils.isNotBlank(title)) {
                 try {
                     TFavoriteColorList tFavoriteColorList = new TFavoriteColorList();
@@ -85,9 +85,9 @@ public class FavoriteColorDialog extends JDialog {
                     fillFavoriteListComboBox();
                 } catch (Exception ex) {
                     if (ex.getMessage().contains("constraint")) {
-                        JOptionPane.showMessageDialog(this, "存在相同的名称，请重新命名！", "失败", JOptionPane.WARNING_MESSAGE);
+                        MsgUtil.warn(this, "msg.duplicateFolderName");
                     } else {
-                        JOptionPane.showMessageDialog(this, "异常：" + ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
+                        MsgUtil.errorWithDetail(this, "msg.exceptionWithDetail", ex.getMessage());
                     }
                     log.error(ExceptionUtils.getStackTrace(ex));
                 }
@@ -115,11 +115,11 @@ public class FavoriteColorDialog extends JDialog {
             FavoriteColorForm.getInstance().init();
         } catch (Exception e) {
             if (e.getMessage().contains("constraint")) {
-                JOptionPane.showMessageDialog(this, "存在相同的名称，请重新命名！", "失败", JOptionPane.WARNING_MESSAGE);
+                MsgUtil.warn(this, "msg.duplicateFolderName");
                 nameTextField.grabFocus();
                 nameTextField.selectAll();
             } else {
-                JOptionPane.showMessageDialog(this, "异常：" + e.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(this, "msg.exceptionWithDetail", e.getMessage());
             }
             log.error(ExceptionUtils.getStackTrace(e));
         }

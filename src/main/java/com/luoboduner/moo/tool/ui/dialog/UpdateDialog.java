@@ -13,6 +13,8 @@ import com.jayway.jsonpath.JsonPath;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.DownloadLinkSelector;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -97,9 +99,8 @@ public class UpdateDialog extends JDialog {
                     // 从github获取最新版本相关信息
                     String downloadLinkInfo = HttpUtil.get(UiConsts.DOWNLOAD_LINK_INFO_URL);
                     if (StringUtils.isEmpty(downloadLinkInfo) || downloadLinkInfo.contains("404: Not Found")) {
-                        JOptionPane.showMessageDialog(App.mainFrame,
-                                "获取下载链接失败，请关注 GitHub Release！", "网络错误",
-                                JOptionPane.INFORMATION_MESSAGE);
+                        MsgUtil.show(App.mainFrame, I18n.get("msg.downloadLinkFailed"),
+                                "msg.upgradeNetworkError", JOptionPane.INFORMATION_MESSAGE);
                         return;
                     } else {
                         DocumentContext parse = JsonPath.parse(downloadLinkInfo);

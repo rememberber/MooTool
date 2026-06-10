@@ -131,7 +131,7 @@ public class FavoriteRegexForm {
             }
         });
         newListButton.addActionListener(e -> {
-            String title = JOptionPane.showInputDialog(favoriteRegexPanel, "收藏夹名称", "");
+            String title = MsgUtil.input(favoriteRegexPanel, "favorite.folderName", "");
             if (StringUtils.isNotBlank(title)) {
                 try {
                     TFavoriteRegexList tFavoriteRegexList = new TFavoriteRegexList();
@@ -143,9 +143,9 @@ public class FavoriteRegexForm {
                     initList();
                 } catch (Exception ex) {
                     if (ex.getMessage().contains("constraint")) {
-                        JOptionPane.showMessageDialog(favoriteRegexPanel, "存在相同的名称，请重新命名！", "失败", JOptionPane.WARNING_MESSAGE);
+                        MsgUtil.warn(favoriteRegexPanel, "msg.duplicateFolderName");
                     } else {
-                        JOptionPane.showMessageDialog(favoriteRegexPanel, "异常：" + ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
+                        MsgUtil.errorWithDetail(favoriteRegexPanel, "msg.exceptionWithDetail", ex.getMessage());
                     }
                     logger.error(ExceptionUtils.getStackTrace(ex));
                 }
@@ -164,9 +164,9 @@ public class FavoriteRegexForm {
                 int[] selectedRows = itemTable.getSelectedRows();
 
                 if (selectedRows.length == 0) {
-                    JOptionPane.showMessageDialog(favoriteRegexPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(favoriteRegexPanel, "msg.selectAtLeastOne");
                 } else if (selectedRows[0] == 0) {
-                    JOptionPane.showMessageDialog(favoriteRegexPanel, "已到顶部！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(favoriteRegexPanel, "msg.alreadyAtTop");
                 } else {
                     ListSelectionModel listSelectionModel = new DefaultListSelectionModel();
                     DefaultTableModel tableModel = (DefaultTableModel) itemTable.getModel();
@@ -213,8 +213,7 @@ public class FavoriteRegexForm {
                     itemTable.setSelectionModel(listSelectionModel);
                 }
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(favoriteRegexPanel, "操作失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(favoriteRegexPanel, "msg.operationFailed", e1.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(e1));
             }
         });
@@ -223,9 +222,9 @@ public class FavoriteRegexForm {
                 int[] selectedRows = itemTable.getSelectedRows();
 
                 if (selectedRows.length == 0) {
-                    JOptionPane.showMessageDialog(favoriteRegexPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(favoriteRegexPanel, "msg.selectAtLeastOne");
                 } else if (selectedRows[selectedRows.length - 1] == itemTable.getRowCount() - 1) {
-                    JOptionPane.showMessageDialog(favoriteRegexPanel, "已到底部！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(favoriteRegexPanel, "msg.alreadyAtBottom");
                 } else {
                     ListSelectionModel listSelectionModel = new DefaultListSelectionModel();
                     DefaultTableModel tableModel = (DefaultTableModel) itemTable.getModel();
@@ -271,8 +270,7 @@ public class FavoriteRegexForm {
                     itemTable.setSelectionModel(listSelectionModel);
                 }
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(favoriteRegexPanel, "操作失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(favoriteRegexPanel, "msg.operationFailed", e1.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(e1));
             }
         });
@@ -341,7 +339,7 @@ public class FavoriteRegexForm {
                         try {
                             favoriteRegexItemMapper.updateByPrimaryKeySelective(tFavoriteRegexItem);
                         } catch (Exception e) {
-                            JOptionPane.showMessageDialog(favoriteRegexPanel, "重命名失败，和已有文件重名");
+                            MsgUtil.info(favoriteRegexPanel, "msg.renameFailed");
                             viewListBySelected(selectedRow);
                             log.error(e.toString());
                         }
@@ -358,9 +356,9 @@ public class FavoriteRegexForm {
             int[] selectedRows = itemTable.getSelectedRows();
 
             if (selectedRows.length == 0) {
-                JOptionPane.showMessageDialog(favoriteRegexPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(favoriteRegexPanel, "msg.selectAtLeastOne");
             } else {
-                int isDelete = JOptionPane.showConfirmDialog(favoriteRegexPanel, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                int isDelete = MsgUtil.confirm(favoriteRegexPanel, "msg.confirmDelete");
                 if (isDelete == JOptionPane.YES_OPTION) {
                     DefaultTableModel tableModel = (DefaultTableModel) itemTable.getModel();
 
@@ -373,8 +371,7 @@ public class FavoriteRegexForm {
                 }
             }
         } catch (Exception e1) {
-            JOptionPane.showMessageDialog(favoriteRegexPanel, "删除失败！\n\n" + e1.getMessage(), "失败",
-                    JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(favoriteRegexPanel, "msg.deleteFailed", e1.getMessage());
             logger.error(ExceptionUtils.getStackTrace(e1));
         }
     }
@@ -384,9 +381,9 @@ public class FavoriteRegexForm {
             int[] selectedIndices = favoriteList.getSelectedIndices();
 
             if (selectedIndices.length == 0) {
-                JOptionPane.showMessageDialog(favoriteRegexPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(favoriteRegexPanel, "msg.selectAtLeastOne");
             } else {
-                int isDelete = JOptionPane.showConfirmDialog(favoriteRegexPanel, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                int isDelete = MsgUtil.confirm(favoriteRegexPanel, "msg.confirmDelete");
                 if (isDelete == JOptionPane.YES_OPTION) {
                     DefaultListModel<TFavoriteRegexList> model = (DefaultListModel<TFavoriteRegexList>) favoriteList.getModel();
 
@@ -397,8 +394,7 @@ public class FavoriteRegexForm {
                 }
             }
         } catch (Exception e1) {
-            JOptionPane.showMessageDialog(favoriteRegexPanel, "删除失败！\n\n" + e1.getMessage(), "失败",
-                    JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(favoriteRegexPanel, "msg.deleteFailed", e1.getMessage());
             logger.error(ExceptionUtils.getStackTrace(e1));
         }
     }
@@ -426,7 +422,7 @@ public class FavoriteRegexForm {
             return;
         }
         suppressListEnterRename = true;
-        String afterTitle = JOptionPane.showInputDialog(favoriteRegexPanel, "收藏夹名称", beforeTitle);
+        String afterTitle = MsgUtil.input(favoriteRegexPanel, "favorite.folderName", beforeTitle);
         if (StringUtils.isBlank(afterTitle) || afterTitle.equals(beforeTitle)) {
             return;
         }
@@ -437,7 +433,7 @@ public class FavoriteRegexForm {
             favoriteRegexListMapper.updateByPrimaryKeySelective(tFavoriteRegexList);
             initList();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(favoriteRegexPanel, "重命名失败，和已有文件重名");
+            MsgUtil.info(favoriteRegexPanel, "msg.renameFailed");
             initList();
             log.error(e.toString());
         }

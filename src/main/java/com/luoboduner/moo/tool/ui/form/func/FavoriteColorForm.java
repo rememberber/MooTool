@@ -114,7 +114,7 @@ public class FavoriteColorForm {
             }
         });
         newListButton.addActionListener(e -> {
-            String title = JOptionPane.showInputDialog(favoriteColorPanel, "收藏夹名称", "");
+            String title = MsgUtil.input(favoriteColorPanel, "favorite.folderName", "");
             if (StringUtils.isNotBlank(title)) {
                 try {
                     TFavoriteColorList tFavoriteColorList = new TFavoriteColorList();
@@ -126,9 +126,9 @@ public class FavoriteColorForm {
                     initList();
                 } catch (Exception ex) {
                     if (ex.getMessage().contains("constraint")) {
-                        JOptionPane.showMessageDialog(favoriteColorPanel, "存在相同的名称，请重新命名！", "失败", JOptionPane.WARNING_MESSAGE);
+                        MsgUtil.warn(favoriteColorPanel, "msg.duplicateFolderName");
                     } else {
-                        JOptionPane.showMessageDialog(favoriteColorPanel, "异常：" + ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
+                        MsgUtil.errorWithDetail(favoriteColorPanel, "msg.exceptionWithDetail", ex.getMessage());
                     }
                     logger.error(ExceptionUtils.getStackTrace(ex));
                 }
@@ -140,8 +140,7 @@ public class FavoriteColorForm {
             try {
                 deleteList();
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(favoriteColorPanel, "删除失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(favoriteColorPanel, "msg.deleteFailed", e1.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(e1));
             }
         });
@@ -155,9 +154,9 @@ public class FavoriteColorForm {
                 int[] selectedRows = itemTable.getSelectedRows();
 
                 if (selectedRows.length == 0) {
-                    JOptionPane.showMessageDialog(favoriteColorPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(favoriteColorPanel, "msg.selectAtLeastOne");
                 } else if (selectedRows[0] == 0) {
-                    JOptionPane.showMessageDialog(favoriteColorPanel, "已到顶部！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(favoriteColorPanel, "msg.alreadyAtTop");
                 } else {
                     ListSelectionModel listSelectionModel = new DefaultListSelectionModel();
                     DefaultTableModel tableModel = (DefaultTableModel) itemTable.getModel();
@@ -204,8 +203,7 @@ public class FavoriteColorForm {
                     itemTable.setSelectionModel(listSelectionModel);
                 }
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(favoriteColorPanel, "操作失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(favoriteColorPanel, "msg.operationFailed", e1.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(e1));
             }
         });
@@ -214,9 +212,9 @@ public class FavoriteColorForm {
                 int[] selectedRows = itemTable.getSelectedRows();
 
                 if (selectedRows.length == 0) {
-                    JOptionPane.showMessageDialog(favoriteColorPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(favoriteColorPanel, "msg.selectAtLeastOne");
                 } else if (selectedRows[selectedRows.length - 1] == itemTable.getRowCount() - 1) {
-                    JOptionPane.showMessageDialog(favoriteColorPanel, "已到底部！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(favoriteColorPanel, "msg.alreadyAtBottom");
                 } else {
                     ListSelectionModel listSelectionModel = new DefaultListSelectionModel();
                     DefaultTableModel tableModel = (DefaultTableModel) itemTable.getModel();
@@ -262,8 +260,7 @@ public class FavoriteColorForm {
                     itemTable.setSelectionModel(listSelectionModel);
                 }
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(favoriteColorPanel, "操作失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(favoriteColorPanel, "msg.operationFailed", e1.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(e1));
             }
         });
@@ -332,7 +329,7 @@ public class FavoriteColorForm {
                         try {
                             favoriteColorItemMapper.updateByPrimaryKeySelective(tFavoriteColorItem);
                         } catch (Exception e) {
-                            JOptionPane.showMessageDialog(favoriteColorPanel, "重命名失败，和已有文件重名");
+                            MsgUtil.info(favoriteColorPanel, "msg.renameFailed");
                             viewListBySelected(selectedRow);
                             log.error(e.toString());
                         }
@@ -349,9 +346,9 @@ public class FavoriteColorForm {
             int[] selectedRows = itemTable.getSelectedRows();
 
             if (selectedRows.length == 0) {
-                JOptionPane.showMessageDialog(favoriteColorPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(favoriteColorPanel, "msg.selectAtLeastOne");
             } else {
-                int isDelete = JOptionPane.showConfirmDialog(favoriteColorPanel, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                int isDelete = MsgUtil.confirm(favoriteColorPanel, "msg.confirmDelete");
                 if (isDelete == JOptionPane.YES_OPTION) {
                     DefaultTableModel tableModel = (DefaultTableModel) itemTable.getModel();
 
@@ -364,8 +361,7 @@ public class FavoriteColorForm {
                 }
             }
         } catch (Exception e1) {
-            JOptionPane.showMessageDialog(favoriteColorPanel, "删除失败！\n\n" + e1.getMessage(), "失败",
-                    JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(favoriteColorPanel, "msg.deleteFailed", e1.getMessage());
             logger.error(ExceptionUtils.getStackTrace(e1));
         }
     }
@@ -393,7 +389,7 @@ public class FavoriteColorForm {
             return;
         }
         suppressListEnterRename = true;
-        String afterTitle = JOptionPane.showInputDialog(favoriteColorPanel, "收藏夹名称", beforeTitle);
+        String afterTitle = MsgUtil.input(favoriteColorPanel, "favorite.folderName", beforeTitle);
         if (StringUtils.isBlank(afterTitle) || afterTitle.equals(beforeTitle)) {
             return;
         }
@@ -404,7 +400,7 @@ public class FavoriteColorForm {
             favoriteColorListMapper.updateByPrimaryKeySelective(tFavoriteColorList);
             initList();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(favoriteColorPanel, "重命名失败，和已有文件重名");
+            MsgUtil.info(favoriteColorPanel, "msg.renameFailed");
             initList();
             log.error(e.toString());
         }
@@ -414,9 +410,9 @@ public class FavoriteColorForm {
         int[] selectedIndices = favoriteList.getSelectedIndices();
 
         if (selectedIndices.length == 0) {
-            JOptionPane.showMessageDialog(favoriteColorPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+            MsgUtil.info(favoriteColorPanel, "msg.selectAtLeastOne");
         } else {
-            int isDelete = JOptionPane.showConfirmDialog(favoriteColorPanel, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+            int isDelete = MsgUtil.confirm(favoriteColorPanel, "msg.confirmDelete");
             if (isDelete == JOptionPane.YES_OPTION) {
                 DefaultListModel<TFavoriteColorList> model = (DefaultListModel<TFavoriteColorList>) favoriteList.getModel();
 
@@ -498,12 +494,13 @@ public class FavoriteColorForm {
         } else {
             lastSelectedListId = listId;
         }
-        String[] headerNames = {"id", "显示", "色值", "名称", "排序号"};
+        String[] headerNames = {"id", I18n.get("favorite.col.display"), I18n.get("favorite.col.colorValue"),
+                I18n.get("favorite.col.name"), I18n.get("favorite.col.sortOrder")};
         DefaultTableModel model = new DefaultTableModel(null, headerNames);
         favoriteColorForm.getItemTable().setModel(model);
-        favoriteColorForm.getItemTable().getColumn("显示").setCellRenderer(new TableInCellColorBlockRenderer());
-        favoriteColorForm.getItemTable().getColumn("色值").setPreferredWidth(100);
-        favoriteColorForm.getItemTable().getColumn("色值").setMaxWidth(100);
+        favoriteColorForm.getItemTable().getColumnModel().getColumn(1).setCellRenderer(new TableInCellColorBlockRenderer());
+        favoriteColorForm.getItemTable().getColumnModel().getColumn(2).setPreferredWidth(100);
+        favoriteColorForm.getItemTable().getColumnModel().getColumn(2).setMaxWidth(100);
         // 隐藏表头
         JTableUtil.hideTableHeader(favoriteColorForm.getItemTable());
         // 隐藏id列和排序列
