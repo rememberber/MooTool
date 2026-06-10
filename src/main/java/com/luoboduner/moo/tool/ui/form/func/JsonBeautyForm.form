@@ -73,7 +73,7 @@
                 <properties/>
                 <border type="none"/>
                 <children>
-                  <grid id="407da" binding="menuPanel" layout-manager="GridLayoutManager" row-count="1" column-count="12" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+                  <grid id="407da" binding="menuPanel" layout-manager="GridLayoutManager" row-count="1" column-count="4" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                     <margin top="0" left="0" bottom="0" right="0"/>
                     <constraints>
                       <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="true"/>
@@ -81,41 +81,19 @@
                     <properties/>
                     <border type="none"/>
                     <children>
-                      <component id="88a82" class="javax.swing.JButton" binding="saveButton">
-                        <constraints>
-                          <grid row="0" column="5" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <icon value="icon/menu-saveall_dark.png"/>
-                          <text value=""/>
-                          <toolTipText value="保存(Ctrl+S)"/>
-                        </properties>
-                      </component>
                       <hspacer id="d3a69">
                         <constraints>
                           <grid row="0" column="2" row-span="1" col-span="1" vsize-policy="1" hsize-policy="6" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
                       </hspacer>
-                      <component id="57aca" class="javax.swing.JButton" binding="findButton">
+                      <grid id="a1b2c" binding="actionToolBarPanel" layout-manager="BorderLayout" hgap="0" vgap="0">
                         <constraints>
-                          <grid row="0" column="4" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
+                          <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="4" fill="1" indent="0" use-parent-layout="false"/>
                         </constraints>
-                        <properties>
-                          <icon value="icon/find_dark.png"/>
-                          <text value=""/>
-                          <toolTipText value="查找(Ctrl+F)"/>
-                        </properties>
-                      </component>
-                      <component id="138ed" class="javax.swing.JButton" binding="beautifyButton">
-                        <constraints>
-                          <grid row="0" column="10" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <icon value="icon/object_dark.png"/>
-                          <text value=""/>
-                          <toolTipText value="格式化(Ctrl+Shift+F)"/>
-                        </properties>
-                      </component>
+                        <properties/>
+                        <border type="none"/>
+                        <children/>
+                      </grid>
                       <component id="3e817" class="javax.swing.JButton" binding="listItemButton">
                         <constraints>
                           <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
@@ -126,65 +104,9 @@
                           <toolTipText value="显示/隐藏列表"/>
                         </properties>
                       </component>
-                      <component id="3c87c" class="javax.swing.JButton" binding="addButton">
-                        <constraints>
-                          <grid row="0" column="3" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <icon value="icon/add.png"/>
-                          <text value=""/>
-                          <toolTipText value="新建(Ctrl+N)"/>
-                        </properties>
-                      </component>
-                      <component id="9b9a2" class="javax.swing.JButton" binding="exportButton">
-                        <constraints>
-                          <grid row="0" column="7" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <icon value="icon/export_dark.png"/>
-                          <text value=""/>
-                          <toolTipText value="导出"/>
-                        </properties>
-                      </component>
-                      <component id="43ac2" class="javax.swing.JButton" binding="deleteButton">
-                        <constraints>
-                          <grid row="0" column="6" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <icon value="icon/remove.png"/>
-                          <text value=""/>
-                          <toolTipText value="删除"/>
-                        </properties>
-                      </component>
-                      <component id="891bc" class="javax.swing.JButton" binding="compressButton">
-                        <constraints>
-                          <grid row="0" column="9" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <text value=""/>
-                          <toolTipText value="压缩JSON"/>
-                        </properties>
-                      </component>
-                      <component id="eb22b" class="javax.swing.JButton" binding="moreButton">
-                        <constraints>
-                          <grid row="0" column="11" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <text value=""/>
-                        </properties>
-                      </component>
-                      <component id="1fcdd" class="javax.swing.JButton" binding="beanToJsonButton">
-                        <constraints>
-                          <grid row="0" column="8" row-span="1" col-span="1" vsize-policy="0" hsize-policy="3" anchor="0" fill="1" indent="0" use-parent-layout="false"/>
-                        </constraints>
-                        <properties>
-                          <text value=""/>
-                          <toolTipText value="JavaBean转JSON"/>
-                        </properties>
-                      </component>
                       <grid id="b2da3" binding="leftMenuPanel" layout-manager="FlowLayout" hgap="0" vgap="0" flow-align="0">
                         <constraints>
-                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="1" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
+                          <grid row="0" column="1" row-span="1" col-span="1" vsize-policy="1" hsize-policy="1" anchor="8" fill="2" indent="0" use-parent-layout="false"/>
                         </constraints>
                         <properties/>
                         <border type="none"/>
