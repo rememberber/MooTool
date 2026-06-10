@@ -112,6 +112,10 @@ public class QuickNoteForm {
     private JToolBar leftMenuToolBar;
 
     private JToolBar toolBar;
+
+    private JToolBar actionToolBar;
+
+    private JPanel actionToolBarPanel;
     public final static String[] COLOR_KEYS = {
             "default", "Moo.note.color.color1", "Moo.note.color.color2", "Moo.note.color.color3",
             "Moo.note.color.color4", "Moo.note.color.color5", "Moo.note.color.color6",
@@ -132,9 +136,15 @@ public class QuickNoteForm {
         colorButton.setSelected(true);
 
         toolBar = new JToolBar();
+        toolBar.setFloatable(false);
+        toolBar.setBorder(null);
+        toolBar.setRollover(true);
         searchContentCheckBox = new JCheckBox();
 
         leftMenuToolBar = new JToolBar();
+        leftMenuToolBar.setFloatable(false);
+        leftMenuToolBar.setBorder(null);
+        leftMenuToolBar.setRollover(true);
         leftMenuToolBar.add(colorButton);
         leftMenuToolBar.add(syntaxComboBox);
         leftMenuToolBar.add(fontNameComboBox);
@@ -155,6 +165,46 @@ public class QuickNoteForm {
         insertImageButton.setToolTipText("插入图片");
         insertImageButton.setVisible(false);
         leftMenuToolBar.add(insertImageButton);
+
+        addButton = new JButton();
+        addButton.setText("");
+        addButton.setToolTipText("新建(Ctrl+N)");
+        findButton = new JButton();
+        findButton.setText("");
+        findButton.setToolTipText("查找(Ctrl+F)");
+        saveButton = new JButton();
+        saveButton.setText("");
+        saveButton.setToolTipText("保存(Ctrl+S)");
+        deleteButton = new JButton();
+        deleteButton.setText("");
+        deleteButton.setToolTipText("删除");
+        exportButton = new JButton();
+        exportButton.setText("");
+        exportButton.setToolTipText("导出");
+        formatButton = new JButton();
+        formatButton.setText("");
+        formatButton.setToolTipText("格式化(Ctrl+Shift+F)");
+        infoButton = new JButton();
+        infoButton.setText("");
+        infoButton.setToolTipText("文档信息");
+        quickReplaceButton = new JButton();
+        quickReplaceButton.setText("");
+        quickReplaceButton.setToolTipText("快捷替换");
+
+        actionToolBar = new JToolBar();
+        actionToolBar.setFloatable(false);
+        actionToolBar.setBorder(null);
+        actionToolBar.setRollover(true);
+        actionToolBar.add(addButton);
+        actionToolBar.add(findButton);
+        actionToolBar.add(saveButton);
+        actionToolBar.addSeparator();
+        actionToolBar.add(deleteButton);
+        actionToolBar.add(exportButton);
+        actionToolBar.add(formatButton);
+        actionToolBar.add(infoButton);
+        actionToolBar.add(quickReplaceButton);
+        actionToolBarPanel.add(actionToolBar, BorderLayout.EAST);
 
         UndoUtil.register(this);
     }
@@ -566,33 +616,13 @@ public class QuickNoteForm {
         controlPanel.setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
         rightPanel.add(controlPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         menuPanel = new JPanel();
-        menuPanel.setLayout(new GridLayoutManager(2, 12, new Insets(0, 0, 0, 0), -1, -1));
+        menuPanel.setLayout(new GridLayoutManager(2, 5, new Insets(0, 0, 0, 0), -1, -1));
         controlPanel.add(menuPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        saveButton = new JButton();
-        saveButton.setIcon(new ImageIcon(getClass().getResource("/icon/menu-saveall_dark.png")));
-        saveButton.setText("");
-        saveButton.setToolTipText("保存(Ctrl+S)");
-        menuPanel.add(saveButton, new GridConstraints(0, 6, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer1 = new Spacer();
-        menuPanel.add(spacer1, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        findButton = new JButton();
-        findButton.setIcon(new ImageIcon(getClass().getResource("/icon/find_dark.png")));
-        findButton.setText("");
-        findButton.setToolTipText("查找(Ctrl+F)");
-        menuPanel.add(findButton, new GridConstraints(0, 5, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        addButton = new JButton();
-        addButton.setIcon(new ImageIcon(getClass().getResource("/icon/add.png")));
-        addButton.setText("");
-        addButton.setToolTipText("新建(Ctrl+N)");
-        menuPanel.add(addButton, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        quickReplaceButton = new JButton();
-        quickReplaceButton.setText("");
-        quickReplaceButton.setToolTipText("快捷替换");
-        menuPanel.add(quickReplaceButton, new GridConstraints(0, 11, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        formatButton = new JButton();
-        formatButton.setText("");
-        formatButton.setToolTipText("格式化(Ctrl+Shift+F)");
-        menuPanel.add(formatButton, new GridConstraints(0, 9, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        menuPanel.add(spacer1, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        actionToolBarPanel = new JPanel();
+        actionToolBarPanel.setLayout(new BorderLayout(0, 0));
+        menuPanel.add(actionToolBarPanel, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         leftMenuPanel = new JPanel();
         leftMenuPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
         leftMenuPanel.setAlignmentX(0.0f);
@@ -641,17 +671,7 @@ public class QuickNoteForm {
         colorSettingPanel = new JPanel();
         colorSettingPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
         colorSettingPanel.setAlignmentX(0.0f);
-        menuPanel.add(colorSettingPanel, new GridConstraints(1, 1, 1, 11, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        exportButton = new JButton();
-        exportButton.setIcon(new ImageIcon(getClass().getResource("/icon/export_dark.png")));
-        exportButton.setText("");
-        exportButton.setToolTipText("导出");
-        menuPanel.add(exportButton, new GridConstraints(0, 8, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        deleteButton = new JButton();
-        deleteButton.setIcon(new ImageIcon(getClass().getResource("/icon/remove.png")));
-        deleteButton.setText("");
-        deleteButton.setToolTipText("删除");
-        menuPanel.add(deleteButton, new GridConstraints(0, 7, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        menuPanel.add(colorSettingPanel, new GridConstraints(1, 1, 1, 4, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         indicatorPanel = new JPanel();
         indicatorPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         indicatorPanel.setAlignmentX(0.0f);
@@ -659,17 +679,13 @@ public class QuickNoteForm {
         indicatorPanel.setFocusable(false);
         indicatorPanel.setRequestFocusEnabled(false);
         indicatorPanel.setVisible(true);
-        menuPanel.add(indicatorPanel, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, true));
+        menuPanel.add(indicatorPanel, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, true));
         indicatorPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         tipsLabel = new JLabel();
         tipsLabel.setFocusable(false);
         tipsLabel.setRequestFocusEnabled(false);
         tipsLabel.setText(" ");
         indicatorPanel.add(tipsLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        infoButton = new JButton();
-        infoButton.setText("");
-        infoButton.setToolTipText("文档信息");
-        menuPanel.add(infoButton, new GridConstraints(0, 10, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         findReplacePanel = new JPanel();
         findReplacePanel.setLayout(new BorderLayout(0, 0));
         findReplacePanel.setVisible(true);
