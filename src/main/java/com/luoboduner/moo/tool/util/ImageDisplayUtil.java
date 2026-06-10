@@ -1,15 +1,25 @@
 package com.luoboduner.moo.tool.util;
 
+import com.intellij.uiDesigner.core.GridConstraints;
+import com.intellij.uiDesigner.core.GridLayoutManager;
+import com.luoboduner.moo.tool.ui.component.ImagePreviewComponent;
+
+import javax.imageio.ImageIO;
+import javax.swing.JLabel;
+import javax.swing.SwingUtilities;
 import java.awt.Component;
+import java.awt.Container;
 import java.awt.Graphics2D;
 import java.awt.GraphicsConfiguration;
 import java.awt.GraphicsEnvironment;
 import java.awt.RenderingHints;
 import java.awt.Window;
+import java.awt.event.MouseListener;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-
-import javax.swing.SwingUtilities;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
 
 /**
  * 图片展示工具
@@ -77,5 +87,92 @@ public final class ImageDisplayUtil {
         g.drawImage(source, 0, 0, targetWidth, targetHeight, null);
         g.dispose();
         return scaled;
+    }
+
+    public static BufferedImage readResourceImage(String resourcePath) throws IOException {
+        String path = resourcePath.startsWith("/") ? resourcePath : "/" + resourcePath;
+        try (InputStream in = ImageDisplayUtil.class.getResourceAsStream(path)) {
+            if (in == null) {
+                throw new IOException("Resource not found: " + path);
+            }
+            BufferedImage image = ImageIO.read(in);
+            if (image == null) {
+                throw new IOException("Cannot decode image: " + path);
+            }
+            return image;
+        }
+    }
+
+    public static BufferedImage readImage(URL url) throws IOException {
+        BufferedImage image = ImageIO.read(url);
+        if (image == null) {
+            throw new IOException("Cannot decode image: " + url);
+        }
+        return image;
+    }
+
+    public static ImagePreviewComponent replaceLabelWithImagePreview(JLabel label) {
+        ImagePreviewComponent preview = new ImagePreviewComponent();
+        preview.setToolTipText(label.getToolTipText());
+        for (MouseListener listener : label.getMouseListeners()) {
+            preview.addMouseListener(listener);
+        }
+        Container parent = label.getParent();
+        if (parent == null) {
+            return preview;
+        }
+        if (parent.getLayout() instanceof GridLayoutManager layout) {
+            GridConstraints constraints = layout.getConstraintsForComponent(label);
+            parent.remove(label);
+            parent.add(preview, constraints);
+        } else {
+            int index = indexOfComponent(parent, label);
+            parent.remove(label);
+            if (index >= 0) {
+                parent.add(preview, index);
+            } else {
+                parent.add(preview);
+            }
+        }
+        parent.revalidate();
+        parent.repaint();
+        return preview;
+    }
+
+    public static ImagePreviewComponent installResourceImage(JLabel label, String resourcePath) throws IOException {
+        ImagePreviewComponent preview = replaceLabelWithImagePreview(label);
+        preview.setSourceImage(readResourceImage(resourcePath), 1.0);
+        return preview;
+    }
+
+    public static ImagePreviewComponent installImage(JLabel label, BufferedImage image) {
+        ImagePreviewComponent preview = replaceLabelWithImagePreview(label);
+        preview.setSourceImage(image, 1.0);
+        return preview;
+    }
+
+    public static ImagePreviewComponent installImageInLogicalBounds(JLabel label, BufferedImage image,
+                                                                    int logicalWidth, int logicalHeight) {
+        ImagePreviewComponent preview = replaceLabelWithImagePreview(label);
+        preview.setSourceImageInLogicalBounds(image, logicalWidth, logicalHeight);
+        return preview;
+    }
+
+    public static ImagePreviewComponent installResourceImageQuietly(JLabel label, String resourcePath) {
+        try {
+            return installResourceImage(label, resourcePath);
+        } catch (IOException ignored) {
+            // 静态资源加载失败时保留原 JLabel 展示
+            return null;
+        }
+    }
+
+    private static int indexOfComponent(Container parent, Component component) {
+        for (int i = 0; i < parent.getComponentCount(); i++) {
+            if (parent.getComponent(i) == component) {
+                return i;
+            }
+        }
+        return -1;
     }
 }

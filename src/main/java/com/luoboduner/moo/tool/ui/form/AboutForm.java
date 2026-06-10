@@ -1,6 +1,5 @@
 package com.luoboduner.moo.tool.ui.form;
 
-import cn.hutool.core.img.ImgUtil;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSON;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
@@ -12,14 +11,15 @@ import com.luoboduner.moo.tool.bean.ContributorInfo;
 import com.luoboduner.moo.tool.bean.Dau;
 import com.luoboduner.moo.tool.bean.Grace;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.ImagePreviewComponent;
 import com.luoboduner.moo.tool.ui.listener.AboutListener;
 import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.I18nUiUtil;
+import com.luoboduner.moo.tool.util.ImageDisplayUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.plaf.FontUIResource;
@@ -87,6 +87,10 @@ public class AboutForm {
     private JPanel sponsorSectionPanel;
     private JPanel mooToolHeaderPanel;
 
+    private ImagePreviewComponent logoPreview;
+    private ImagePreviewComponent gracePreview;
+    private ImagePreviewComponent sponsorQrPreview;
+
     private static AboutForm aboutForm;
     private static boolean i18nRegistered;
 
@@ -105,6 +109,7 @@ public class AboutForm {
         aboutForm.versionLabel.setText(UiConsts.APP_VERSION);
 
         ScrollUtil.smoothPane(aboutForm.getScrollPane());
+        aboutForm.installStaticImages();
         aboutForm.getAboutPanel().updateUI();
 
         aboutForm.getMooInfoPanel().addMouseListener(new MouseAdapter() {
@@ -150,68 +155,78 @@ public class AboutForm {
                     if (graceInfoContent != null) {
                         Grace grace = JSON.parseObject(graceInfoContent, Grace.class);
                         if (grace != null) {
-                            if (!Strings.isNullOrEmpty(grace.getImage())) {
-                                URL url = new URL(grace.getImage());
-                                BufferedImage image = ImageIO.read(url);
-                                aboutForm.getGraceLabel().setIcon(new ImageIcon(image));
-                            }
-                            if (!Strings.isNullOrEmpty(grace.getTips())) {
-                                aboutForm.getGraceLabel().setToolTipText(grace.getTips());
-                            }
-
-                            if (!Strings.isNullOrEmpty(grace.getTitle())) {
-                                aboutForm.getGraceTitleLabel().setText(grace.getTitle());
-                            }
-
-                            if (!Strings.isNullOrEmpty(grace.getUrl())) {
-                                aboutForm.getGracePanel().addMouseListener(new MouseAdapter() {
-                                    @Override
-                                    public void mouseClicked(MouseEvent e) {
-                                        super.mouseClicked(e);
-                                        Desktop desktop = Desktop.getDesktop();
-                                        try {
-                                            desktop.browse(new URI(grace.getUrl()));
-                                        } catch (IOException | URISyntaxException e1) {
-                                            e1.printStackTrace();
+                            SwingUtilities.invokeLater(() -> {
+                                if (!Strings.isNullOrEmpty(grace.getImage())) {
+                                    try {
+                                        URL url = new URL(grace.getImage());
+                                        BufferedImage image = ImageDisplayUtil.readImage(url);
+                                        if (aboutForm.gracePreview != null) {
+                                            aboutForm.gracePreview.setSourceImage(image, 1.0);
                                         }
+                                    } catch (IOException e) {
+                                        log.error("加载 Grace 图片失败", e);
                                     }
+                                }
+                                if (!Strings.isNullOrEmpty(grace.getTips()) && aboutForm.gracePreview != null) {
+                                    aboutForm.gracePreview.setToolTipText(grace.getTips());
+                                }
 
-                                    @Override
-                                    public void mousePressed(MouseEvent e) {
-                                        super.mousePressed(e);
-                                    }
+                                if (!Strings.isNullOrEmpty(grace.getTitle())) {
+                                    aboutForm.getGraceTitleLabel().setText(grace.getTitle());
+                                }
 
-                                    @Override
-                                    public void mouseEntered(MouseEvent e) {
-                                        super.mouseEntered(e);
-                                        e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
-                                    }
-                                });
-
-                                aboutForm.getGraceLabel().addMouseListener(new MouseAdapter() {
-                                    @Override
-                                    public void mouseClicked(MouseEvent e) {
-                                        super.mouseClicked(e);
-                                        Desktop desktop = Desktop.getDesktop();
-                                        try {
-                                            desktop.browse(new URI(grace.getUrl()));
-                                        } catch (IOException | URISyntaxException e1) {
-                                            e1.printStackTrace();
+                                if (!Strings.isNullOrEmpty(grace.getUrl())) {
+                                    aboutForm.getGracePanel().addMouseListener(new MouseAdapter() {
+                                        @Override
+                                        public void mouseClicked(MouseEvent e) {
+                                            super.mouseClicked(e);
+                                            Desktop desktop = Desktop.getDesktop();
+                                            try {
+                                                desktop.browse(new URI(grace.getUrl()));
+                                            } catch (IOException | URISyntaxException e1) {
+                                                e1.printStackTrace();
+                                            }
                                         }
-                                    }
 
-                                    @Override
-                                    public void mousePressed(MouseEvent e) {
-                                        super.mousePressed(e);
-                                    }
+                                        @Override
+                                        public void mousePressed(MouseEvent e) {
+                                            super.mousePressed(e);
+                                        }
 
-                                    @Override
-                                    public void mouseEntered(MouseEvent e) {
-                                        super.mouseEntered(e);
-                                        e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
+                                        @Override
+                                        public void mouseEntered(MouseEvent e) {
+                                            super.mouseEntered(e);
+                                            e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
+                                        }
+                                    });
+
+                                    if (aboutForm.gracePreview != null) {
+                                        aboutForm.gracePreview.addMouseListener(new MouseAdapter() {
+                                            @Override
+                                            public void mouseClicked(MouseEvent e) {
+                                                super.mouseClicked(e);
+                                                Desktop desktop = Desktop.getDesktop();
+                                                try {
+                                                    desktop.browse(new URI(grace.getUrl()));
+                                                } catch (IOException | URISyntaxException e1) {
+                                                    e1.printStackTrace();
+                                                }
+                                            }
+
+                                            @Override
+                                            public void mousePressed(MouseEvent e) {
+                                                super.mousePressed(e);
+                                            }
+
+                                            @Override
+                                            public void mouseEntered(MouseEvent e) {
+                                                super.mouseEntered(e);
+                                                e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
+                                            }
+                                        });
                                     }
-                                });
-                            }
+                                }
+                            });
                         }
                     }
                 } catch (Exception e) {
@@ -229,15 +244,19 @@ public class AboutForm {
                 ContributorInfo contributorInfo = JSON.parseObject(contributorAvatarContent, ContributorInfo.class);
                 if (contributorInfo != null) {
                     for (ContributorInfo.Contributor contributor : contributorInfo.getContributorList()) {
-                        JLabel contributorLabel = new JLabel();
-                        contributorLabel.setToolTipText(contributor.getName());
-                        contributorLabel.setText(contributor.getName());
+                        JPanel contributorItem = new JPanel(new BorderLayout(0, 4));
+                        contributorItem.setOpaque(false);
+                        contributorItem.setToolTipText(contributor.getName());
 
-                        Image image = ImgUtil.read(new URL(contributor.getAvatarUrl()));
-                        Image scale = image.getScaledInstance(50, 50, Image.SCALE_AREA_AVERAGING);
+                        ImagePreviewComponent avatarPreview = new ImagePreviewComponent();
+                        BufferedImage avatar = ImageDisplayUtil.readImage(new URL(contributor.getAvatarUrl()));
+                        avatarPreview.setSourceImageInLogicalBounds(avatar, 50, 50);
+                        contributorItem.add(avatarPreview, BorderLayout.NORTH);
 
-                        contributorLabel.setIcon(new ImageIcon(scale));
-                        contributorLabel.addMouseListener(new MouseAdapter() {
+                        JLabel nameLabel = new JLabel(contributor.getName(), SwingConstants.CENTER);
+                        contributorItem.add(nameLabel, BorderLayout.SOUTH);
+
+                        contributorItem.addMouseListener(new MouseAdapter() {
                             @Override
                             public void mouseClicked(MouseEvent e) {
                                 super.mouseClicked(e);
@@ -260,7 +279,7 @@ public class AboutForm {
                                 e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
                             }
                         });
-                        aboutForm.getContributorPanel().add(contributorLabel);
+                        aboutForm.getContributorPanel().add(contributorItem);
                     }
                 }
             }
@@ -281,7 +300,9 @@ public class AboutForm {
                             String dauUrl = dau.getUrl();
                             log.info("dau:" + HttpUtil.get(dauUrl, 10000));
 
-                            aboutForm.getLogoLabel().addMouseListener(new MouseAdapter() {
+                            Component logoComponent = aboutForm.logoPreview != null
+                                    ? aboutForm.logoPreview : aboutForm.getLogoLabel();
+                            logoComponent.addMouseListener(new MouseAdapter() {
                                 @Override
                                 public void mouseClicked(MouseEvent e) {
                                     super.mouseClicked(e);
@@ -365,7 +386,46 @@ public class AboutForm {
         I18nUiUtil.setText(wePushDescLabel, "about.wepush.desc");
         I18nUiUtil.setText(mooInfoDescLabel, "about.mooinfo.desc");
         I18nUiUtil.setText(sponsorPromptLabel, "about.sponsor.prompt");
-        I18nUiUtil.setToolTip(sponsorQrLabel, "about.sponsor.tip");
+        if (sponsorQrPreview != null) {
+            I18nUiUtil.setToolTip(sponsorQrPreview, "about.sponsor.tip");
+        }
+    }
+
+    private void installStaticImages() {
+        logoPreview = ImageDisplayUtil.installResourceImageQuietly(logoLabel, "/icon/logo-256.png");
+        gracePreview = ImageDisplayUtil.replaceLabelWithImagePreview(graceLabel);
+        sponsorQrPreview = installResourceImageForIconLabel(aboutPanel, "/icon/wx-zanshang.jpg");
+        installResourceImageForIconLabel(wePushPanel, "/icon/WePush-logo-128.png");
+    }
+
+    private static ImagePreviewComponent installResourceImageForIconLabel(Container root, String resourcePath) {
+        JLabel target = findIconOnlyLabel(root, resourcePath);
+        if (target == null) {
+            return null;
+        }
+        return ImageDisplayUtil.installResourceImageQuietly(target, resourcePath);
+    }
+
+    private static JLabel findIconOnlyLabel(Container root, String resourcePath) {
+        String fileName = resourcePath.substring(resourcePath.lastIndexOf('/') + 1);
+        for (Component component : root.getComponents()) {
+            if (component instanceof JLabel label && label.getIcon() != null
+                    && (label.getText() == null || label.getText().isEmpty())) {
+                if (label.getIcon() instanceof ImageIcon imageIcon) {
+                    Object description = imageIcon.getDescription();
+                    if (description != null && description.toString().contains(fileName)) {
+                        return label;
+                    }
+                }
+            }
+            if (component instanceof Container container) {
+                JLabel found = findIconOnlyLabel(container, resourcePath);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
     }
 
     private static void applyI18nStatic() {

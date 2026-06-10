@@ -7,13 +7,13 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.ComponentUtil;
 import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.ImageDisplayUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import java.awt.*;
 import java.awt.event.*;
-import java.util.Objects;
 
 /**
  * 鼓励和支持
@@ -39,7 +39,7 @@ public class SupportMeDialog extends JDialog {
             gridLayoutManager.setMargin(new Insets(28, 0, 0, 0));
         }
 
-        zanLabel.setIcon(new ImageIcon(Objects.requireNonNull(getClass().getResource("/icon/wx-zanshang.jpg"))));
+        ImageDisplayUtil.installResourceImageQuietly(zanLabel, "/icon/wx-zanshang.jpg");
 
         buttonOK.addActionListener(new ActionListener() {
             public void actionPerformed(ActionEvent e) {

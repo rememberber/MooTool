@@ -8,8 +8,10 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.ImagePreviewComponent;
 import com.luoboduner.moo.tool.util.ComponentUtil;
 import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.ImageDisplayUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
@@ -42,6 +44,7 @@ public class AboutDialog extends JDialog {
     private JPanel mooInfoPanel;
     private JLabel mooInfoLinkLabel;
     private JLabel mooInfoIconLabel;
+    private ImagePreviewComponent logoPreview;
 
     public AboutDialog() {
 
@@ -73,9 +76,11 @@ public class AboutDialog extends JDialog {
         versionLabel.setText(UiConsts.APP_VERSION);
 
         ScrollUtil.smoothPane(scrollPane);
+        installStaticImages();
         contentPane.updateUI();
 
-        logoLabel.addMouseListener(new MouseAdapter() {
+        Component logoComponent = logoPreview != null ? logoPreview : logoLabel;
+        logoComponent.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
                 super.mouseClicked(e);
@@ -323,6 +328,41 @@ public class AboutDialog extends JDialog {
                 e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
             }
         });
+    }
+
+    private void installStaticImages() {
+        logoPreview = ImageDisplayUtil.installResourceImageQuietly(logoLabel, "/icon/logo-256.png");
+        installResourceImageForIconLabel(contentPane, "/icon/wx-zanshang.jpg");
+        installResourceImageForIconLabel(contentPane, "/icon/WePush-logo-128.png");
+    }
+
+    private static void installResourceImageForIconLabel(Container root, String resourcePath) {
+        JLabel target = findIconOnlyLabel(root, resourcePath);
+        if (target != null) {
+            ImageDisplayUtil.installResourceImageQuietly(target, resourcePath);
+        }
+    }
+
+    private static JLabel findIconOnlyLabel(Container root, String resourcePath) {
+        String fileName = resourcePath.substring(resourcePath.lastIndexOf('/') + 1);
+        for (Component component : root.getComponents()) {
+            if (component instanceof JLabel label && label.getIcon() != null
+                    && (label.getText() == null || label.getText().isEmpty())) {
+                if (label.getIcon() instanceof ImageIcon imageIcon) {
+                    Object description = imageIcon.getDescription();
+                    if (description != null && description.toString().contains(fileName)) {
+                        return label;
+                    }
+                }
+            }
+            if (component instanceof Container container) {
+                JLabel found = findIconOnlyLabel(container, resourcePath);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
     }
 
     private void onOK() {
