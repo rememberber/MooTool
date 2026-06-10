@@ -21,9 +21,9 @@ import java.awt.event.WindowEvent;
 public class LanguageSelectDialog extends JDialog {
 
     private JPanel contentPane;
-    private JButton keepEnglishButton;
-    private JButton switchToZhButton;
+    private JButton continueButton;
     private JLabel messageLabel;
+    private JComboBox<String> languageComboBox;
 
     private String selectedLocale = I18n.LOCALE_EN;
 
@@ -41,15 +41,11 @@ public class LanguageSelectDialog extends JDialog {
             gridLayoutManager.setMargin(new Insets(28, 0, 0, 0));
         }
 
-        ComponentUtil.setPreferSizeAndLocateToCenter(this, 480, 220);
+        ComponentUtil.setPreferSizeAndLocateToCenter(this, 480, 240);
         applyTexts();
 
-        keepEnglishButton.addActionListener(e -> {
-            selectedLocale = I18n.LOCALE_EN;
-            onClose();
-        });
-        switchToZhButton.addActionListener(e -> {
-            selectedLocale = I18n.LOCALE_ZH_CN;
+        continueButton.addActionListener(e -> {
+            selectedLocale = localeTagForSelection(languageComboBox.getSelectedIndex());
             onClose();
         });
 
@@ -68,11 +64,26 @@ public class LanguageSelectDialog extends JDialog {
         return selectedLocale;
     }
 
+    private static String localeTagForSelection(int index) {
+        return switch (index) {
+            case 1 -> I18n.LOCALE_ZH_CN;
+            case 2 -> I18n.LOCALE_JA;
+            default -> I18n.LOCALE_EN;
+        };
+    }
+
     private void applyTexts() {
         setTitle(I18n.get("language.prompt.title"));
         messageLabel.setText(I18n.get("language.prompt.message"));
-        switchToZhButton.setText(I18n.get("language.prompt.switchToZh"));
-        keepEnglishButton.setText(I18n.get("language.prompt.keepEnglish"));
+        continueButton.setText(I18n.get("language.prompt.continue"));
+        String selectedTag = languageComboBox.getSelectedIndex() >= 0
+                ? localeTagForSelection(languageComboBox.getSelectedIndex())
+                : I18n.LOCALE_EN;
+        languageComboBox.removeAllItems();
+        for (String localeTag : I18n.supportedLocaleTags()) {
+            languageComboBox.addItem(I18n.displayLanguage(localeTag));
+        }
+        languageComboBox.setSelectedItem(I18n.displayLanguage(selectedTag));
     }
 
     private void onClose() {
@@ -92,12 +103,12 @@ public class LanguageSelectDialog extends JDialog {
         final Spacer spacer1 = new Spacer();
         panel1.add(spacer1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         final JPanel panel2 = new JPanel();
-        panel2.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 10, 0), 8, -1));
+        panel2.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), 8, -1));
         panel1.add(panel2, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        switchToZhButton = new JButton();
-        panel2.add(switchToZhButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        keepEnglishButton = new JButton();
-        panel2.add(keepEnglishButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        languageComboBox = new JComboBox<>();
+        panel2.add(languageComboBox, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        continueButton = new JButton();
+        panel2.add(continueButton, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
         panel1.add(spacer2, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         final JPanel panel3 = new JPanel();

@@ -340,8 +340,9 @@ public class SettingDialog extends JDialog {
     private void initLanguageCombo() {
         comboBox1.setEnabled(true);
         comboBox1.removeAllItems();
-        comboBox1.addItem(I18n.LOCALE_EN);
-        comboBox1.addItem(I18n.LOCALE_ZH_CN);
+        for (String localeTag : I18n.supportedLocaleTags()) {
+            comboBox1.addItem(localeTag);
+        }
         comboBox1.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index,
