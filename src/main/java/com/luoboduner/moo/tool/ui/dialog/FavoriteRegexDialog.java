@@ -12,6 +12,8 @@ import com.luoboduner.moo.tool.domain.TFavoriteRegexList;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.FavoriteRegexForm;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
@@ -46,7 +48,7 @@ public class FavoriteRegexDialog extends JDialog {
     private static TFavoriteRegexItemMapper favoriteRegexItemMapper = MybatisUtil.getSqlSession().getMapper(TFavoriteRegexItemMapper.class);
 
     public FavoriteRegexDialog() {
-        super(App.mainFrame, "正则表达式收藏");
+        super(App.mainFrame, I18n.get("favorite.dialog.regex.title"));
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
@@ -98,6 +100,15 @@ public class FavoriteRegexDialog extends JDialog {
                 }
             }
         });
+
+        applyI18n();
+    }
+
+    private void applyI18n() {
+        setTitle(I18n.get("favorite.dialog.regex.title"));
+        I18nUiUtil.setText(buttonOK, "common.ok");
+        I18nUiUtil.setText(buttonCancel, "common.cancel");
+        I18nUiUtil.setText(newFavoriteBookListButton, "favorite.newFolder");
     }
 
     private void onOK() {

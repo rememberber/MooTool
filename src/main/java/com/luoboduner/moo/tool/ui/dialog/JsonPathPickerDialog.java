@@ -4,6 +4,7 @@ import cn.hutool.json.JSONUtil;
 import com.formdev.flatlaf.util.SystemInfo;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.JsonPathTreeUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -29,7 +30,7 @@ public class JsonPathPickerDialog extends JDialog {
     private String selectedJsonPath;
 
     public JsonPathPickerDialog(String jsonText) {
-        super(App.mainFrame, "可视化获取 JSON Path");
+        super(App.mainFrame, I18n.get("jsonPathPicker.title"));
         this.jsonText = jsonText;
         setModal(true);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);

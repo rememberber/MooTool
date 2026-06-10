@@ -459,8 +459,8 @@ public class HttpRequestListener {
 
         // 左侧列表增加右键菜单
         JPopupMenu noteListPopupMenu = new JPopupMenu();
-        JMenuItem renameMenuItem = new JMenuItem("重命名");
-        JMenuItem deleteMenuItem = new JMenuItem("删除");
+        JMenuItem renameMenuItem = new JMenuItem(I18n.get("common.rename"));
+        JMenuItem deleteMenuItem = new JMenuItem(I18n.get("common.delete"));
         noteListPopupMenu.add(renameMenuItem);
         noteListPopupMenu.add(deleteMenuItem);
         httpRequestForm.getNoteList().setComponentPopupMenu(noteListPopupMenu);

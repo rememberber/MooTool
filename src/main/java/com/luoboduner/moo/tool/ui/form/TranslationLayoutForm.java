@@ -171,7 +171,7 @@ public class TranslationLayoutForm {
             String result = textArea2.getText();
             if (StringUtils.isNotBlank(result)) {
                 ClipboardUtil.setStr(result);
-                AlertUtil.buttonInfo(copyButton, "", "已复制", 1500);
+                AlertUtil.buttonInfo(copyButton, "", I18n.get("common.copied"), 1500);
             }
         });
 

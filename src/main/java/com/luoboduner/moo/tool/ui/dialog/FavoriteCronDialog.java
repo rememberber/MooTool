@@ -13,6 +13,8 @@ import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.CronForm;
 import com.luoboduner.moo.tool.ui.form.func.FavoriteCronForm;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.CronExpressionUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
@@ -47,7 +49,7 @@ public class FavoriteCronDialog extends JDialog {
     private static TFavoriteCronItemMapper favoriteCronItemMapper = MybatisUtil.getSqlSession().getMapper(TFavoriteCronItemMapper.class);
 
     public FavoriteCronDialog() {
-        super(App.mainFrame, "Cron表达式收藏");
+        super(App.mainFrame, I18n.get("favorite.dialog.cron.title"));
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
@@ -99,6 +101,15 @@ public class FavoriteCronDialog extends JDialog {
                 }
             }
         });
+
+        applyI18n();
+    }
+
+    private void applyI18n() {
+        setTitle(I18n.get("favorite.dialog.cron.title"));
+        I18nUiUtil.setText(buttonOK, "common.ok");
+        I18nUiUtil.setText(buttonCancel, "common.cancel");
+        I18nUiUtil.setText(newFavoriteBookListButton, "favorite.newFolder");
     }
 
     private void onOK() {

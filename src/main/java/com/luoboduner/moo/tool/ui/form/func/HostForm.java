@@ -20,6 +20,7 @@ import com.luoboduner.moo.tool.ui.dialog.TranslationDialog;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
 import com.luoboduner.moo.tool.util.HostFileUtil;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -166,7 +167,7 @@ public class HostForm {
                     || reason == HostFileUtil.HostWriteException.Reason.PERMISSION_DENIED
                     || reason == HostFileUtil.HostWriteException.Reason.TIMEOUT)) {
                 CommonTipsDialog dialog = new CommonTipsDialog();
-                dialog.setTitle("需要管理员权限");
+                dialog.setTitle(I18n.get("host.adminRequiredTitle"));
                 dialog.setHtmlText(e.getMessage());
                 dialog.pack();
                 dialog.setVisible(true);
@@ -330,9 +331,9 @@ public class HostForm {
             hostList = hostMapper.selectAll();
             App.popupMenu.removeAll();
             JMenuItem openItem = new JMenuItem("MooTool");
-            JMenuItem colorPickerItem = new JMenuItem("取色器");
-            JMenuItem translateItem = new JMenuItem("翻译");
-            JMenuItem exitItem = new JMenuItem("Quit");
+            JMenuItem colorPickerItem = new JMenuItem(I18n.get("tray.colorPicker"));
+            JMenuItem translateItem = new JMenuItem(I18n.get("tray.translation"));
+            JMenuItem exitItem = new JMenuItem(I18n.get("common.quit"));
 
             openItem.addActionListener(e -> {
                 Init.showMainFrame();

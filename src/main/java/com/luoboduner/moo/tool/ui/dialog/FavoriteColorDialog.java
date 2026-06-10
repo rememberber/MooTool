@@ -41,7 +41,7 @@ public class FavoriteColorDialog extends JDialog {
     private static TFavoriteColorItemMapper favoriteColorItemMapper = MybatisUtil.getSqlSession().getMapper(TFavoriteColorItemMapper.class);
 
     public FavoriteColorDialog() {
-        super(App.mainFrame, "颜色收藏");
+        super(App.mainFrame, I18n.get("favorite.dialog.color.title"));
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
@@ -93,6 +93,15 @@ public class FavoriteColorDialog extends JDialog {
                 }
             }
         });
+
+        applyI18n();
+    }
+
+    private void applyI18n() {
+        setTitle(I18n.get("favorite.dialog.color.title"));
+        I18nUiUtil.setText(buttonOK, "common.ok");
+        I18nUiUtil.setText(buttonCancel, "common.cancel");
+        I18nUiUtil.setText(newFavoriteBookListButton, "favorite.newFolder");
     }
 
     private void onOK() {

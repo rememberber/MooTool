@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.ui.frame;
 
 import com.formdev.flatlaf.util.SystemInfo;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.MsgUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -113,7 +114,7 @@ public class ScreenCaptureFrame extends JWindow {
         capturePanel.setOpaque(false);
         capturePanel.setLayout(null);
 
-        JLabel hintLabel = new JLabel("拖动鼠标选择截图区域，Esc 取消");
+        JLabel hintLabel = new JLabel(I18n.get("frame.screenshot.hint"));
         hintLabel.setForeground(Color.WHITE);
         hintLabel.setOpaque(true);
         hintLabel.setBackground(new Color(0, 0, 0, 160));

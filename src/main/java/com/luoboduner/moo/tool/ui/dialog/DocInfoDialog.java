@@ -5,6 +5,8 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
@@ -14,6 +16,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Locale;
+import java.util.Map;
 
 public class DocInfoDialog extends JDialog {
     private JPanel contentPane;
@@ -24,8 +27,16 @@ public class DocInfoDialog extends JDialog {
     private JLabel charCntNoBlankLabel;
     private JLabel charCntWithBlankLabel;
 
+    private static final Map<String, String> LABEL_KEYS = Map.of(
+            "创建时间：", "docInfo.createTime",
+            "更新时间：", "docInfo.modifiedTime",
+            "字数：", "docInfo.wordCount",
+            "字符数（不计空格）：", "docInfo.charNoSpace",
+            "字符数（计空格）：", "docInfo.charWithSpace"
+    );
+
     public DocInfoDialog() {
-        super(App.mainFrame, "文档信息");
+        super(App.mainFrame, I18n.get("docInfo.title"));
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 300, 300);
 
         setContentPane(contentPane);
@@ -37,6 +48,14 @@ public class DocInfoDialog extends JDialog {
                 onOK();
             }
         });
+
+        applyI18n();
+    }
+
+    private void applyI18n() {
+        setTitle(I18n.get("docInfo.title"));
+        I18nUiUtil.localizeTree(contentPane, LABEL_KEYS);
+        I18nUiUtil.setText(buttonOK, "common.ok");
     }
 
     public void setInfo(String createTime, String modifiedTime, String wordCnt, String charCntNoBlank, String charCntWithBlank) {

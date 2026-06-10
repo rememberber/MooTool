@@ -57,10 +57,14 @@ public class FavoriteColorForm {
     private JPanel listControlPanel;
     private JPanel itemControlPanel;
     private JButton listItemButton;
+    private JMenuItem renameMenuItem;
+    private JMenuItem deleteMenuItem;
 
     public static FavoriteColorForm favoriteColorForm;
 
     private static final Log logger = LogFactory.get();
+
+    private static boolean i18nRegistered;
 
     private static TFavoriteColorListMapper favoriteColorListMapper = MybatisUtil.getSqlSession().getMapper(TFavoriteColorListMapper.class);
     private static TFavoriteColorItemMapper favoriteColorItemMapper = MybatisUtil.getSqlSession().getMapper(TFavoriteColorItemMapper.class);
@@ -294,8 +298,8 @@ public class FavoriteColorForm {
         });
 
         JPopupMenu favoriteListPopupMenu = new JPopupMenu();
-        JMenuItem renameMenuItem = new JMenuItem("重命名");
-        JMenuItem deleteMenuItem = new JMenuItem("删除");
+        renameMenuItem = new JMenuItem();
+        deleteMenuItem = new JMenuItem();
         favoriteListPopupMenu.add(renameMenuItem);
         favoriteListPopupMenu.add(deleteMenuItem);
         favoriteList.setComponentPopupMenu(favoriteListPopupMenu);
@@ -455,6 +459,30 @@ public class FavoriteColorForm {
 
         initList();
         favoriteColorForm.getFavoriteColorPanel().updateUI();
+
+        favoriteColorForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(FavoriteColorForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setToolTip(newListButton, "favorite.tooltip.newList");
+        I18nUiUtil.setToolTip(deleteListButton, "favorite.tooltip.deleteList");
+        I18nUiUtil.setToolTip(deleteItemButton, "favorite.tooltip.deleteItem");
+        I18nUiUtil.setToolTip(moveUpButton, "favorite.tooltip.moveUp");
+        I18nUiUtil.setToolTip(moveDownButton, "favorite.tooltip.moveDown");
+        I18nUiUtil.setToolTip(listItemButton, "favorite.tooltip.toggleList");
+        I18nUiUtil.setText(renameMenuItem, "common.rename");
+        I18nUiUtil.setText(deleteMenuItem, "common.delete");
+        initItemTable(null);
+    }
+
+    private static void applyI18nStatic() {
+        if (favoriteColorForm != null) {
+            favoriteColorForm.applyI18n();
+        }
     }
 
     public static FavoriteColorForm getInstance() {

@@ -53,10 +53,14 @@ public class FavoriteRegexForm {
     private JPanel listControlPanel;
     private JPanel itemControlPanel;
     private JButton listItemButton;
+    private JMenuItem renameMenuItem;
+    private JMenuItem deleteMenuItem;
 
     public static FavoriteRegexForm favoriteRegexForm;
 
     private static final Log logger = LogFactory.get();
+
+    private static boolean i18nRegistered;
 
     private static TFavoriteRegexListMapper favoriteRegexListMapper = MybatisUtil.getSqlSession().getMapper(TFavoriteRegexListMapper.class);
     private static TFavoriteRegexItemMapper favoriteRegexItemMapper = MybatisUtil.getSqlSession().getMapper(TFavoriteRegexItemMapper.class);
@@ -304,8 +308,8 @@ public class FavoriteRegexForm {
         });
 
         JPopupMenu favoriteListPopupMenu = new JPopupMenu();
-        JMenuItem renameMenuItem = new JMenuItem("重命名");
-        JMenuItem deleteMenuItem = new JMenuItem("删除");
+        renameMenuItem = new JMenuItem();
+        deleteMenuItem = new JMenuItem();
         favoriteListPopupMenu.add(renameMenuItem);
         favoriteListPopupMenu.add(deleteMenuItem);
         favoriteList.setComponentPopupMenu(favoriteListPopupMenu);
@@ -468,6 +472,30 @@ public class FavoriteRegexForm {
 
         initList();
         favoriteRegexForm.getFavoriteRegexPanel().updateUI();
+
+        favoriteRegexForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(FavoriteRegexForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setToolTip(newListButton, "favorite.tooltip.newList");
+        I18nUiUtil.setToolTip(deleteListButton, "favorite.tooltip.deleteList");
+        I18nUiUtil.setToolTip(deleteItemButton, "favorite.tooltip.deleteItem");
+        I18nUiUtil.setToolTip(moveUpButton, "favorite.tooltip.moveUp");
+        I18nUiUtil.setToolTip(moveDownButton, "favorite.tooltip.moveDown");
+        I18nUiUtil.setToolTip(listItemButton, "favorite.tooltip.toggleList");
+        I18nUiUtil.setText(renameMenuItem, "common.rename");
+        I18nUiUtil.setText(deleteMenuItem, "common.delete");
+        initItemTable(null);
+    }
+
+    private static void applyI18nStatic() {
+        if (favoriteRegexForm != null) {
+            favoriteRegexForm.applyI18n();
+        }
     }
 
     public static FavoriteRegexForm getInstance() {
@@ -507,7 +535,7 @@ public class FavoriteRegexForm {
         } else {
             lastSelectedListId = listId;
         }
-        String[] headerNames = {"id", "regex", "名称", "排序号"};
+        String[] headerNames = {"id", "regex", I18n.get("favorite.col.name"), I18n.get("favorite.col.sortOrder")};
         DefaultTableModel model = new DefaultTableModel(null, headerNames);
         favoriteRegexForm.getItemTable().setModel(model);
         // 隐藏表头

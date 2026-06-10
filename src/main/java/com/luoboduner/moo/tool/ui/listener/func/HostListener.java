@@ -11,6 +11,7 @@ import com.luoboduner.moo.tool.ui.dialog.CurrentHostDialog;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
 import com.luoboduner.moo.tool.util.HostFileUtil;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -260,9 +261,9 @@ public class HostListener {
 
         // 左侧列表增加右键菜单
         JPopupMenu noteListPopupMenu = new JPopupMenu();
-        JMenuItem renameMenuItem = new JMenuItem("重命名");
-        JMenuItem deleteMenuItem = new JMenuItem("删除");
-        JMenuItem exportMenuItem = new JMenuItem("导出");
+        JMenuItem renameMenuItem = new JMenuItem(I18n.get("common.rename"));
+        JMenuItem deleteMenuItem = new JMenuItem(I18n.get("common.delete"));
+        JMenuItem exportMenuItem = new JMenuItem(I18n.get("common.export"));
         noteListPopupMenu.add(renameMenuItem);
         noteListPopupMenu.add(deleteMenuItem);
         noteListPopupMenu.add(exportMenuItem);

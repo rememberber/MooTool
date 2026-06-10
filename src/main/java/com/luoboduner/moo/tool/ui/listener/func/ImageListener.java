@@ -395,9 +395,9 @@ public class ImageListener {
 
         // 左侧列表增加右键菜单
         JPopupMenu noteListPopupMenu = new JPopupMenu();
-        JMenuItem renameMenuItem = new JMenuItem("重命名");
-        JMenuItem deleteMenuItem = new JMenuItem("删除");
-        JMenuItem exportMenuItem = new JMenuItem("导出");
+        JMenuItem renameMenuItem = new JMenuItem(I18n.get("common.rename"));
+        JMenuItem deleteMenuItem = new JMenuItem(I18n.get("common.delete"));
+        JMenuItem exportMenuItem = new JMenuItem(I18n.get("common.export"));
         noteListPopupMenu.add(renameMenuItem);
         noteListPopupMenu.add(deleteMenuItem);
         noteListPopupMenu.add(exportMenuItem);

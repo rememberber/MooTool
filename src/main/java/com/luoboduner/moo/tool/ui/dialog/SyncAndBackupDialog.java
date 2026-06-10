@@ -9,6 +9,8 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.listener.func.ImageListener;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.extern.slf4j.Slf4j;
@@ -24,6 +26,7 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * 同步和备份
@@ -46,8 +49,25 @@ public class SyncAndBackupDialog extends JDialog {
     private JButton openImageDirButton;
     private JTextField imagePathTextField;
 
+    private static final Map<String, String> TEXT_KEYS = Map.ofEntries(
+            Map.entry("同步", "syncBackup.section.sync"),
+            Map.entry("备份", "syncBackup.section.backup"),
+            Map.entry("用于同步MooTool数据的Git仓库地址：", "syncBackup.gitRepoLabel"),
+            Map.entry("功能尚未实现……", "syncBackup.notImplemented"),
+            Map.entry("保存", "common.save"),
+            Map.entry("从远程覆盖本地", "syncBackup.fromRemote"),
+            Map.entry("从本地覆盖远程", "syncBackup.toRemote"),
+            Map.entry("自动同步", "syncBackup.autoSync"),
+            Map.entry("本地数据路径：", "syncBackup.localDataPath"),
+            Map.entry("导出", "common.export"),
+            Map.entry("本地配置路径：", "syncBackup.localConfigPath"),
+            Map.entry("图片助手路径：", "syncBackup.imagePath"),
+            Map.entry("*建议使用网盘对该路径进行同步备份", "syncBackup.imagePathTip"),
+            Map.entry("打开", "syncBackup.open")
+    );
+
     public SyncAndBackupDialog() {
-        super(App.mainFrame, "同步和备份");
+        super(App.mainFrame, I18n.get("syncBackup.title"));
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.5, 0.6);
         setContentPane(contentPane);
         setModal(true);
@@ -138,6 +158,14 @@ public class SyncAndBackupDialog extends JDialog {
                 log.error(ExceptionUtils.getStackTrace(e2));
             }
         });
+
+        applyI18n();
+    }
+
+    private void applyI18n() {
+        setTitle(I18n.get("syncBackup.title"));
+        I18nUiUtil.localizeTree(contentPane, TEXT_KEYS);
+        gitRepoTextField.setText(I18n.get("syncBackup.notImplemented"));
     }
 
     private void onOK() {

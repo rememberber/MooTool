@@ -2,6 +2,8 @@ package com.luoboduner.moo.tool.ui.frame;
 
 import com.luoboduner.moo.tool.ui.form.func.FavoriteColorForm;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -18,6 +20,8 @@ import java.awt.event.WindowListener;
  */
 public class FavoriteColorFrame extends JFrame {
     private static FavoriteColorFrame favoriteColorFrame;
+
+    private static boolean i18nRegistered;
 
     public FavoriteColorFrame() throws HeadlessException {
         addWindowListener(new WindowListener() {
@@ -60,11 +64,25 @@ public class FavoriteColorFrame extends JFrame {
     }
 
     public void init() {
-        String title = "调色板-收藏夹";
-        this.setName(title);
-        this.setTitle(title);
+        applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(FavoriteColorFrame::applyI18nStatic);
+            i18nRegistered = true;
+        }
         FrameUtil.setFrameIcon(this);
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.6, 0.6);
+    }
+
+    private void applyI18n() {
+        String title = I18n.get("favorite.frame.color.title");
+        this.setName(title);
+        this.setTitle(title);
+    }
+
+    private static void applyI18nStatic() {
+        if (favoriteColorFrame != null) {
+            favoriteColorFrame.applyI18n();
+        }
     }
 
     public static FavoriteColorFrame getInstance() {

@@ -6,6 +6,7 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.Getter;
 
@@ -31,7 +32,7 @@ public class CurrentHostDialog extends JDialog {
     private JTextArea textArea;
 
     public CurrentHostDialog() {
-        super(App.mainFrame, "系统当前host");
+        super(App.mainFrame, I18n.get("currentHost.title"));
         setContentPane(contentPane);
         setAlwaysOnTop(false);
         setFocusable(true);
@@ -62,6 +63,12 @@ public class CurrentHostDialog extends JDialog {
 
         // call onCancel() on ESCAPE
         contentPane.registerKeyboardAction(e -> onCancel(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+
+        applyI18n();
+    }
+
+    private void applyI18n() {
+        setTitle(I18n.get("currentHost.title"));
     }
 
     private void onCancel() {

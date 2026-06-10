@@ -66,7 +66,7 @@ public class UaParseListener {
         form.getResultTable().getColumnModel().getColumn(1).setPreferredWidth(400);
 
         if (saveHistory && StringUtils.isNotBlank(ua)) {
-            FuncHistoryUtil.save(FuncConsts.UA_PARSE, "UA解析", ua, outputBuilder.toString().trim(), "UA解析");
+            FuncHistoryUtil.save(FuncConsts.UA_PARSE, I18n.get("history.summary.uaParse"), ua, outputBuilder.toString().trim(), I18n.get("history.summary.uaParse"));
             if (UaParseForm.getHistoryPanel() != null) {
                 UaParseForm.getHistoryPanel().refreshListIfVisible();
             }

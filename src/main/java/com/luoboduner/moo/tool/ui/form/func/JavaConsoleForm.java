@@ -12,6 +12,7 @@ import com.luoboduner.moo.tool.ui.component.textviewer.JavaRTextScrollPane;
 import com.luoboduner.moo.tool.ui.listener.func.JavaConsoleListener;
 import com.luoboduner.moo.tool.util.FuncHistorySupport;
 import com.luoboduner.moo.tool.util.FuncHistoryUtil;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.codeformatter.CodeFormatterFactory;
 import org.apache.commons.lang3.StringUtils;
@@ -109,7 +110,7 @@ public class JavaConsoleForm {
         if (StringUtils.isBlank(code)) {
             return;
         }
-        FuncHistoryUtil.save(FuncConsts.JAVA_CONSOLE, "代码执行", code, result, "执行");
+        FuncHistoryUtil.save(FuncConsts.JAVA_CONSOLE, I18n.get("history.summary.javaExec"), code, result, "执行");
         if (historyPanel != null) {
             historyPanel.refreshListIfVisible();
         }

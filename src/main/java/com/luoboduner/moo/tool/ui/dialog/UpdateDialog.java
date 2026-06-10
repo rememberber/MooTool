@@ -14,6 +14,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.util.ComponentUtil;
 import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.DownloadLinkSelector;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -50,7 +51,7 @@ public class UpdateDialog extends JDialog {
     private File downLoadFile;
 
     public UpdateDialog() {
-        super(App.mainFrame, "下载新版");
+        super(App.mainFrame, I18n.get("update.download.title"));
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
@@ -89,6 +90,16 @@ public class UpdateDialog extends JDialog {
                 ex.printStackTrace();
             }
         });
+
+        applyI18n();
+    }
+
+    private void applyI18n() {
+        setTitle(I18n.get("update.download.title"));
+        I18nUiUtil.setText(buttonOK, "update.installNow");
+        I18nUiUtil.setText(buttonCancel, "common.cancel");
+        I18nUiUtil.setText(buttonDownloadFromWeb, "update.openDownloadPage");
+        I18nUiUtil.setText(statusLabel, "update.ready");
     }
 
     public void downLoad(String newVersion) {
@@ -129,18 +140,19 @@ public class UpdateDialog extends JDialog {
 
                         @Override
                         public void start() {
-                            statusLabel.setText("开始下载。。。。");
+                            statusLabel.setText(I18n.get("update.starting"));
                         }
 
                         @Override
                         public void progress(long totalSize, long progressSize) {
                             progressBarDownload.setValue((int) progressSize);
-                            statusLabel.setText("已下载：" + FileUtil.readableFileSize(progressSize) + "/" + FileUtil.readableFileSize(totalSize));
+                            statusLabel.setText(I18n.format("update.downloadProgress",
+                                    FileUtil.readableFileSize(progressSize), FileUtil.readableFileSize(totalSize)));
                         }
 
                         @Override
                         public void finish() {
-                            statusLabel.setText("下载完成！");
+                            statusLabel.setText(I18n.get("update.complete"));
                             buttonOK.setEnabled(true);
                         }
                     });

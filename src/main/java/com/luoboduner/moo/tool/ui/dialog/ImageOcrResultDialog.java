@@ -7,6 +7,8 @@ import com.formdev.flatlaf.util.SystemInfo;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.AlertUtil;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -28,11 +30,15 @@ public class ImageOcrResultDialog extends JDialog {
 
     private final JTextArea resultArea;
     private final JButton copyButton;
+    private final JButton saveButton;
+    private final JButton closeButton;
 
     public ImageOcrResultDialog(String resultText) {
-        super(App.mainFrame, "OCR 识别结果", false);
+        super(App.mainFrame, I18n.get("imageOcrResult.title"), false);
         resultArea = new JTextArea(resultText);
         copyButton = new JButton("复制到剪贴板");
+        saveButton = new JButton("保存为文本");
+        closeButton = new JButton("关闭");
 
         JPanel contentPane = new JPanel(new BorderLayout(0, 12));
         contentPane.setBorder(BorderFactory.createEmptyBorder(16, 16, 12, 16));
@@ -52,8 +58,6 @@ public class ImageOcrResultDialog extends JDialog {
         contentPane.add(scrollPane, BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        JButton saveButton = new JButton("保存为文本");
-        JButton closeButton = new JButton("关闭");
         buttonPanel.add(copyButton);
         buttonPanel.add(saveButton);
         buttonPanel.add(closeButton);
@@ -61,7 +65,7 @@ public class ImageOcrResultDialog extends JDialog {
 
         copyButton.addActionListener(e -> {
             ClipboardUtil.setStr(resultArea.getText());
-            AlertUtil.buttonInfo(copyButton, "复制到剪贴板", "已复制", 2000);
+            AlertUtil.buttonInfo(copyButton, I18n.get("imageOcrResult.copy"), I18n.get("imageOcrResult.copied"), 2000);
         });
         saveButton.addActionListener(e -> saveAsText());
         closeButton.addActionListener(e -> dispose());
@@ -76,8 +80,16 @@ public class ImageOcrResultDialog extends JDialog {
         contentPane.registerKeyboardAction(e -> dispose(),
                 KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
 
+        applyI18n();
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.5, 0.6);
         pack();
+    }
+
+    private void applyI18n() {
+        setTitle(I18n.get("imageOcrResult.title"));
+        I18nUiUtil.setText(copyButton, "imageOcrResult.copy");
+        I18nUiUtil.setText(saveButton, "imageOcrResult.saveAsText");
+        I18nUiUtil.setText(closeButton, "common.close");
     }
 
     private void saveAsText() {
