@@ -17,7 +17,7 @@ import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.TranslationHistoryUtil;
 import com.luoboduner.moo.tool.util.TranslationWordBookUtil;
-import com.luoboduner.moo.tool.util.translator.Translator;
+import com.luoboduner.moo.tool.util.translator.TranslatorLangUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
@@ -291,8 +291,8 @@ public class TranslationListener {
             saved = TranslationWordBookUtil.saveOrUpdate(
                     sourceText,
                     translationForm.getWordTargetTextArea().getText(),
-                    Translator.AUTO_DETECT,
-                    "中文（简体）",
+                    TranslatorLangUtil.getAutoDetectLabel(),
+                    TranslatorLangUtil.getDisplayName(TranslatorLangUtil.DEFAULT_TARGET_CODE),
                     translationForm.getWordRemarkTextField().getText());
         }
 
@@ -317,8 +317,8 @@ public class TranslationListener {
             word.setSourceLang(existing.getSourceLang());
             word.setTargetLang(existing.getTargetLang());
         } else {
-            word.setSourceLang(Translator.AUTO_DETECT);
-            word.setTargetLang("中文（简体）");
+            word.setSourceLang(TranslatorLangUtil.getAutoDetectLabel());
+            word.setTargetLang(TranslatorLangUtil.getDisplayName(TranslatorLangUtil.DEFAULT_TARGET_CODE));
         }
 
         translationForm.getWordTargetTextArea().setText(I18n.get("translation.translating"));
@@ -342,8 +342,9 @@ public class TranslationListener {
         translationForm.getWordRemarkTextField().setText(StringUtils.defaultString(word.getRemark()));
 
         String langInfo = String.format("%s → %s",
-                StringUtils.defaultIfBlank(word.getSourceLang(), Translator.AUTO_DETECT),
-                StringUtils.defaultIfBlank(word.getTargetLang(), "中文（简体）"));
+                TranslatorLangUtil.toDisplayName(word.getSourceLang()),
+                TranslatorLangUtil.toDisplayName(
+                        StringUtils.defaultIfBlank(word.getTargetLang(), TranslatorLangUtil.DEFAULT_TARGET_CODE)));
         translationForm.getWordLangLabel().setText(langInfo);
     }
 
@@ -424,8 +425,9 @@ public class TranslationListener {
 
         for (TTranslationHistory history : histories) {
             String langPair = String.format("%s → %s",
-                    StringUtils.defaultIfBlank(history.getSourceLang(), Translator.AUTO_DETECT),
-                    StringUtils.defaultIfBlank(history.getTargetLang(), "中文（简体）"));
+                    TranslatorLangUtil.toDisplayName(history.getSourceLang()),
+                    TranslatorLangUtil.toDisplayName(
+                            StringUtils.defaultIfBlank(history.getTargetLang(), TranslatorLangUtil.DEFAULT_TARGET_CODE)));
             model.addRow(new Object[]{
                     history.getId(),
                     StringUtils.defaultString(history.getCreateTime()),
@@ -449,8 +451,9 @@ public class TranslationListener {
         translationForm.getHistoryTargetTextArea().setText(StringUtils.defaultString(history.getTargetText()));
 
         String meta = String.format("%s → %s  |  %s  |  %s",
-                StringUtils.defaultIfBlank(history.getSourceLang(), Translator.AUTO_DETECT),
-                StringUtils.defaultIfBlank(history.getTargetLang(), "中文（简体）"),
+                TranslatorLangUtil.toDisplayName(history.getSourceLang()),
+                TranslatorLangUtil.toDisplayName(
+                        StringUtils.defaultIfBlank(history.getTargetLang(), TranslatorLangUtil.DEFAULT_TARGET_CODE)),
                 TranslationHistoryUtil.formatTranslatorType(history.getTranslatorType()),
                 StringUtils.defaultIfBlank(history.getCreateTime(), "-"));
         translationForm.getHistoryMetaLabel().setText(meta);

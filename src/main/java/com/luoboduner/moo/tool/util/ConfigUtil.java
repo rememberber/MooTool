@@ -584,7 +584,8 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public String getTranslationSourceLanguage() {
-        return setting.getStr("sourceLanguage", "func.translation", "自动检测");
+        return setting.getStr("sourceLanguage", "func.translation",
+                com.luoboduner.moo.tool.util.translator.TranslatorLangUtil.getAutoDetectLabel());
     }
 
     public void setTranslationSourceLanguage(String sourceLanguage) {
@@ -592,7 +593,9 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public String getTranslationTargetLanguage() {
-        return setting.getStr("targetLanguage", "func.translation", "中文（简体）");
+        return setting.getStr("targetLanguage", "func.translation",
+                com.luoboduner.moo.tool.util.translator.TranslatorLangUtil.getDisplayName(
+                        com.luoboduner.moo.tool.util.translator.TranslatorLangUtil.DEFAULT_TARGET_CODE));
     }
 
     public void setTranslationTargetLanguage(String targetLanguage) {

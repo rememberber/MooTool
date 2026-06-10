@@ -111,7 +111,7 @@ public class UaParseUtil {
         if (ua.contains("CrOS")) {
             return "Chrome OS";
         }
-        return "未知";
+        return I18n.get("ua.value.unknown");
     }
 
     private static String parseOsVersion(String ua, String os) {
@@ -154,7 +154,7 @@ public class UaParseUtil {
             default:
                 break;
         }
-        return "未知";
+        return I18n.get("ua.value.unknown");
     }
 
     private static String mapWindowsVersion(String ntVersion) {
@@ -204,7 +204,7 @@ public class UaParseUtil {
         if (ua.contains("PostmanRuntime")) {
             return "Postman";
         }
-        return "未知";
+        return I18n.get("ua.value.unknown");
     }
 
     private static String parseBrowserVersion(String ua, String browser) {
@@ -269,7 +269,7 @@ public class UaParseUtil {
             default:
                 break;
         }
-        return "未知";
+        return I18n.get("ua.value.unknown");
     }
 
     private static String parseEngine(String ua) {
@@ -282,7 +282,7 @@ public class UaParseUtil {
         if (ua.contains("Trident/")) {
             return "Trident";
         }
-        return "未知";
+        return I18n.get("ua.value.unknown");
     }
 
     private static String parseEngineVersion(String ua, String engine) {
@@ -309,20 +309,20 @@ public class UaParseUtil {
             default:
                 break;
         }
-        return "未知";
+        return I18n.get("ua.value.unknown");
     }
 
     private static String parseDeviceType(String ua, boolean mobile, boolean bot) {
         if (bot) {
-            return "Bot/爬虫";
+            return I18n.get("ua.value.device.bot");
         }
         if (ua.contains("iPad") || ua.contains("Tablet")) {
-            return "平板";
+            return I18n.get("ua.value.device.tablet");
         }
         if (mobile) {
-            return "手机";
+            return I18n.get("ua.value.device.mobile");
         }
-        return "桌面";
+        return I18n.get("ua.value.device.desktop");
     }
 
     private static String parseDeviceBrand(String ua) {
@@ -340,7 +340,7 @@ public class UaParseUtil {
                 return parts[0];
             }
         }
-        return "未知";
+        return I18n.get("ua.value.unknown");
     }
 
     private static String parseDeviceModel(String ua) {
@@ -358,6 +358,6 @@ public class UaParseUtil {
             }
             return device;
         }
-        return "未知";
+        return I18n.get("ua.value.unknown");
     }
 }

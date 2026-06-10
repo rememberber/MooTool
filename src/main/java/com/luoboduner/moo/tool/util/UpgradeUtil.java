@@ -79,7 +79,9 @@ public class UpgradeUtil {
             }
             // 当前版本索引
             // 版本更新日志：
-            StringBuilder versionLogBuilder = new StringBuilder("<h1>惊现新版本！立即下载？</h1>");
+            StringBuilder versionLogBuilder = new StringBuilder("<h1>")
+                    .append(I18n.get("msg.upgradeNewVersion"))
+                    .append("</h1>");
             VersionSummary.Version version;
             for (int i = currentVersionIndex + 1; i < versionDetailList.size(); i++) {
                 version = versionDetailList.get(i);

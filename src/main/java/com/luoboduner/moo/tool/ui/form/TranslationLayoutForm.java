@@ -15,6 +15,7 @@ import com.luoboduner.moo.tool.util.TranslationHistoryUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import com.luoboduner.moo.tool.util.translator.Translator;
 import com.luoboduner.moo.tool.util.translator.TranslatorFactory;
+import com.luoboduner.moo.tool.util.translator.TranslatorLangUtil;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
 
@@ -59,13 +60,11 @@ public class TranslationLayoutForm {
         comboBox2 = new JComboBox<>(Translator.getTargetLanguageNames());
 
         String savedSource = ConfigUtil.getInstance().getTranslationSourceLanguage();
-        if (containsItem(comboBox1, savedSource)) {
-            comboBox1.setSelectedItem(savedSource);
-        }
+        TranslatorLangUtil.selectComboByCode(comboBox1,
+                TranslatorLangUtil.resolveCode(savedSource, TranslatorLangUtil.AUTO_DETECT_CODE));
         String savedTarget = ConfigUtil.getInstance().getTranslationTargetLanguage();
-        if (containsItem(comboBox2, savedTarget)) {
-            comboBox2.setSelectedItem(savedTarget);
-        }
+        TranslatorLangUtil.selectComboByCode(comboBox2,
+                TranslatorLangUtil.resolveCode(savedTarget, TranslatorLangUtil.DEFAULT_TARGET_CODE));
 
         translatorComboBox = new JComboBox<>();
         final DefaultComboBoxModel<String> translatorComboBoxModel = new DefaultComboBoxModel<>();
@@ -112,20 +111,11 @@ public class TranslationLayoutForm {
         addListeners();
     }
 
-    private static boolean containsItem(JComboBox<String> comboBox, String item) {
-        for (int i = 0; i < comboBox.getItemCount(); i++) {
-            if (item.equals(comboBox.getItemAt(i))) {
-                return true;
-            }
-        }
-        return false;
-    }
-
     public void addListeners() {
         exchangeButton.addActionListener(e -> {
             Object from = comboBox1.getSelectedItem();
             Object to = comboBox2.getSelectedItem();
-            if (Translator.AUTO_DETECT.equals(from)) {
+            if (TranslatorLangUtil.isAutoDetectLabel(String.valueOf(from))) {
                 comboBox1.setSelectedItem(to);
             } else {
                 comboBox1.setSelectedItem(to);
@@ -210,12 +200,10 @@ public class TranslationLayoutForm {
                                  String targetLang) {
         suppressAutoTranslate.incrementAndGet();
         try {
-            if (containsItem(comboBox1, sourceLang)) {
-                comboBox1.setSelectedItem(sourceLang);
-            }
-            if (containsItem(comboBox2, targetLang)) {
-                comboBox2.setSelectedItem(targetLang);
-            }
+            TranslatorLangUtil.selectComboByCode(comboBox1,
+                    TranslatorLangUtil.resolveCode(sourceLang, TranslatorLangUtil.AUTO_DETECT_CODE));
+            TranslatorLangUtil.selectComboByCode(comboBox2,
+                    TranslatorLangUtil.resolveCode(targetLang, TranslatorLangUtil.DEFAULT_TARGET_CODE));
             textArea1.setText(StringUtils.defaultString(sourceText));
             textArea2.setText(StringUtils.defaultString(targetText));
             saveLanguagePreferences();
@@ -225,14 +213,13 @@ public class TranslationLayoutForm {
     }
 
     private void preventSameLanguageSelection() {
-        String sourceLanguage = String.valueOf(comboBox1.getSelectedItem());
-        String targetLanguage = String.valueOf(comboBox2.getSelectedItem());
-        if (!Translator.AUTO_DETECT.equals(sourceLanguage) && sourceLanguage.equals(targetLanguage)) {
-            if ("中文（简体）".equals(targetLanguage)) {
-                comboBox2.setSelectedItem("英语");
-            } else {
-                comboBox2.setSelectedItem("中文（简体）");
-            }
+        String sourceCode = TranslatorLangUtil.resolveCode(String.valueOf(comboBox1.getSelectedItem()),
+                TranslatorLangUtil.AUTO_DETECT_CODE);
+        String targetCode = TranslatorLangUtil.resolveCode(String.valueOf(comboBox2.getSelectedItem()),
+                TranslatorLangUtil.DEFAULT_TARGET_CODE);
+        if (!TranslatorLangUtil.AUTO_DETECT_CODE.equals(sourceCode) && sourceCode.equals(targetCode)) {
+            String fallbackCode = TranslatorLangUtil.DEFAULT_TARGET_CODE.equals(targetCode) ? "en" : "zh-CN";
+            TranslatorLangUtil.selectComboByCode(comboBox2, fallbackCode);
         }
     }
 
@@ -280,6 +267,18 @@ public class TranslationLayoutForm {
         if (selectedIndex >= 0 && selectedIndex < model.getSize()) {
             translatorComboBox.setSelectedIndex(selectedIndex);
         }
+        refreshLanguageCombos();
+    }
+
+    private void refreshLanguageCombos() {
+        String sourceCode = TranslatorLangUtil.resolveCode(String.valueOf(comboBox1.getSelectedItem()),
+                TranslatorLangUtil.AUTO_DETECT_CODE);
+        String targetCode = TranslatorLangUtil.resolveCode(String.valueOf(comboBox2.getSelectedItem()),
+                TranslatorLangUtil.DEFAULT_TARGET_CODE);
+        comboBox1.setModel(new DefaultComboBoxModel<>(Translator.getSourceLanguageNames()));
+        comboBox2.setModel(new DefaultComboBoxModel<>(Translator.getTargetLanguageNames()));
+        TranslatorLangUtil.selectComboByCode(comboBox1, sourceCode);
+        TranslatorLangUtil.selectComboByCode(comboBox2, targetCode);
     }
 
     private void translate() {

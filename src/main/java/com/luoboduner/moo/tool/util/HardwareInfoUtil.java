@@ -203,7 +203,8 @@ public final class HardwareInfoUtil {
             appendLine(sb, "  " + I18n.get("hardware.label.mtu"), String.valueOf(net.getMTU()));
             appendLine(sb, "  " + I18n.get("hardware.label.ipv4"), Arrays.toString(net.getIPv4addr()));
             appendLine(sb, "  " + I18n.get("hardware.label.ipv6"), Arrays.toString(net.getIPv6addr()));
-            appendLine(sb, "  " + I18n.get("hardware.label.status"), net.isKnownVmMacAddr() ? "虚拟 MAC" : "活动");
+            appendLine(sb, "  " + I18n.get("hardware.label.status"),
+                    net.isKnownVmMacAddr() ? I18n.get("hardware.status.virtualMac") : I18n.get("hardware.status.active"));
             appendLine(sb, "  " + I18n.get("hardware.label.speed"), formatBitsPerSecond(net.getSpeed()));
             appendLine(sb, "  " + I18n.get("hardware.label.packetsRecv"), String.valueOf(net.getPacketsRecv()));
             appendLine(sb, "  " + I18n.get("hardware.label.packetsSent"), String.valueOf(net.getPacketsSent()));
@@ -300,12 +301,12 @@ public final class HardwareInfoUtil {
         long minutes = TimeUnit.SECONDS.toMinutes(seconds) % 60;
         long secs = seconds % 60;
         if (days > 0) {
-            return String.format(Locale.ROOT, "%d 天 %d 小时 %d 分钟", days, hours, minutes);
+            return I18n.format("hardware.duration.days", days, hours, minutes);
         }
         if (hours > 0) {
-            return String.format(Locale.ROOT, "%d 小时 %d 分钟", hours, minutes);
+            return I18n.format("hardware.duration.hours", hours, minutes);
         }
-        return String.format(Locale.ROOT, "%d 分钟 %d 秒", minutes, secs);
+        return I18n.format("hardware.duration.minutes", minutes, secs);
     }
 
     private static void sleepQuietly(long millis) {
