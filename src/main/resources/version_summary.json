@@ -271,7 +271,7 @@
     {
       "version": "v1.7.4",
       "title": "多模块增加历史记录",
-      "log": "● UA分析、编码转换、加解密、调色板、Cron、正则、Java、格式化、配置文件转换、Protobuf 增加历史记录\n● 历史记录支持搜索、应用、复制、删除与清空\n\n"
+      "log": "● feat：【全局】图片显示质量提升，不再模糊 \n● feat：【全局】调整点击窗口关闭按钮逻辑（窗口应隐藏到 Dock）\n● feat：【JSON】实现“JSON”工具中的可视化获取JSON Path按钮功能\n● feat：【UA分析】新增UA分析功能\n● feat：【编码转换】增加转ASCII功能 \n● feat：【配置文件转换】增加YAML配置格式校验功能\n● opt：【Host】优化macos host 权限提示\n● UA分析、编码转换、加解密、调色板、Cron、正则、Java、格式化、配置文件转换、Protobuf 增加历史记录\n● 历史记录支持搜索、应用、复制、删除与清空\n\n"
     }
   ]
 }
