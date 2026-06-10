@@ -78,9 +78,12 @@ public final class I18nUiUtil {
         }
         for (Component component : root.getComponents()) {
             if (component instanceof JLabel label) {
-                String key = defaultTextToKey.get(label.getText());
-                if (key != null) {
-                    label.setText(I18n.get(key));
+                String text = label.getText();
+                if (text != null) {
+                    String key = defaultTextToKey.get(text);
+                    if (key != null) {
+                        label.setText(I18n.get(key));
+                    }
                 }
             } else if (component instanceof AbstractButton button) {
                 String text = button.getText();
@@ -92,9 +95,12 @@ public final class I18nUiUtil {
                 }
             } else if (component instanceof JComponent jc) {
                 if (jc.getBorder() instanceof TitledBorder titledBorder) {
-                    String key = defaultTextToKey.get(titledBorder.getTitle());
-                    if (key != null) {
-                        titledBorder.setTitle(I18n.get(key));
+                    String title = titledBorder.getTitle();
+                    if (title != null) {
+                        String key = defaultTextToKey.get(title);
+                        if (key != null) {
+                            titledBorder.setTitle(I18n.get(key));
+                        }
                     }
                 }
             }
