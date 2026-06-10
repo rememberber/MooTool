@@ -12,6 +12,7 @@ import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import com.jthemedetecor.OsThemeDetector;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.component.JPopupMenuMouseAdapter;
+import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.component.MooFlatTabbedPaneUI;
 import com.luoboduner.moo.tool.ui.component.TabUiUtil;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
@@ -182,6 +183,7 @@ public class Init {
             }
 
             installSafeTabbedPaneUi();
+            ToolbarUiUtil.applyGlobalDefaults();
 
         } catch (Exception e) {
             logger.error(e);

@@ -12,6 +12,7 @@ import com.luoboduner.moo.tool.dao.THostMapper;
 import com.luoboduner.moo.tool.domain.THost;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.component.textviewer.HostRTextScrollPane;
 import com.luoboduner.moo.tool.ui.component.textviewer.HostRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.dialog.CommonTipsDialog;
@@ -109,14 +110,12 @@ public class HostForm {
         switchButton.setToolTipText("切换host");
 
         actionToolBar = new JToolBar();
-        actionToolBar.setFloatable(false);
-        actionToolBar.setBorder(null);
-        actionToolBar.setRollover(true);
+        ToolbarUiUtil.configure(actionToolBar);
         actionToolBar.add(currentHostButton);
         actionToolBar.add(addButton);
         actionToolBar.add(findButton);
         actionToolBar.add(saveButton);
-        actionToolBar.addSeparator();
+        ToolbarUiUtil.addGroupSeparator(actionToolBar);
         actionToolBar.add(deleteButton);
         actionToolBar.add(exportButton);
         actionToolBar.add(switchButton);

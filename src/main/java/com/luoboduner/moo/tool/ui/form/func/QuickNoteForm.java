@@ -15,6 +15,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.component.PanelCloseUtil;
 import com.luoboduner.moo.tool.ui.component.QuickNoteListCellRenderer;
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteEditorPanel;
@@ -136,25 +137,21 @@ public class QuickNoteForm {
         colorButton.setSelected(true);
 
         toolBar = new JToolBar();
-        toolBar.setFloatable(false);
-        toolBar.setBorder(null);
-        toolBar.setRollover(true);
+        ToolbarUiUtil.configure(toolBar);
         searchContentCheckBox = new JCheckBox();
 
         leftMenuToolBar = new JToolBar();
-        leftMenuToolBar.setFloatable(false);
-        leftMenuToolBar.setBorder(null);
-        leftMenuToolBar.setRollover(true);
+        ToolbarUiUtil.configure(leftMenuToolBar);
         leftMenuToolBar.add(colorButton);
-        leftMenuToolBar.add(syntaxComboBox);
-        leftMenuToolBar.add(fontNameComboBox);
-        leftMenuToolBar.add(fontSizeComboBox);
+        ToolbarUiUtil.add(leftMenuToolBar, syntaxComboBox);
+        ToolbarUiUtil.add(leftMenuToolBar, fontNameComboBox);
+        ToolbarUiUtil.add(leftMenuToolBar, fontSizeComboBox);
         wrapButton = new JToggleButton(new FlatSVGIcon("icon/wrap.svg"));
         wrapButton.setSelected(false);
         wrapButton.setToolTipText("自动换行");
         leftMenuToolBar.add(wrapButton);
         // separator
-        leftMenuToolBar.addSeparator();
+        ToolbarUiUtil.addGroupSeparator(leftMenuToolBar);
         unOrderListButton = new JButton(new FlatSVGIcon("icon/list_unordered.svg"));
         unOrderListButton.setToolTipText("无序列表");
         orderListButton = new JButton(new FlatSVGIcon("icon/list_ordered.svg"));
@@ -192,13 +189,11 @@ public class QuickNoteForm {
         quickReplaceButton.setToolTipText("快捷替换");
 
         actionToolBar = new JToolBar();
-        actionToolBar.setFloatable(false);
-        actionToolBar.setBorder(null);
-        actionToolBar.setRollover(true);
+        ToolbarUiUtil.configure(actionToolBar);
         actionToolBar.add(addButton);
         actionToolBar.add(findButton);
         actionToolBar.add(saveButton);
-        actionToolBar.addSeparator();
+        ToolbarUiUtil.addGroupSeparator(actionToolBar);
         actionToolBar.add(deleteButton);
         actionToolBar.add(exportButton);
         actionToolBar.add(formatButton);

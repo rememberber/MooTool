@@ -60,9 +60,7 @@ public final class PanelCloseUtil {
 
     private static JToolBar createToolBar() {
         JToolBar toolBar = new JToolBar();
-        toolBar.setFloatable(false);
-        toolBar.setBorder(null);
-        toolBar.setRollover(true);
+        ToolbarUiUtil.configure(toolBar);
         return toolBar;
     }
 }

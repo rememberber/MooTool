@@ -11,6 +11,7 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.component.PanelCloseUtil;
 import com.luoboduner.moo.tool.ui.component.textviewer.JsonRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.textviewer.JsonRTextScrollPane;
@@ -91,9 +92,7 @@ public class JsonBeautyForm {
         scrollPane = new JsonRTextScrollPane(textArea);
 
         leftMenuToolBar = new JToolBar();
-        leftMenuToolBar.setFloatable(false);
-        leftMenuToolBar.setBorder(null);
-        leftMenuToolBar.setRollover(true);
+        ToolbarUiUtil.configure(leftMenuToolBar);
         fontNameComboBox = new JComboBox();
         fontSizeComboBox = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
@@ -126,8 +125,8 @@ public class JsonBeautyForm {
         fontSizeComboBox.setModel(defaultComboBoxModel1);
         fontSizeComboBox.setToolTipText("字号");
 
-        leftMenuToolBar.add(fontNameComboBox);
-        leftMenuToolBar.add(fontSizeComboBox);
+        ToolbarUiUtil.add(leftMenuToolBar, fontNameComboBox);
+        ToolbarUiUtil.add(leftMenuToolBar, fontSizeComboBox);
 
         wrapButton = new JButton(new FlatSVGIcon("icon/wrap.svg"));
         wrapButton.setToolTipText("自动换行");
@@ -163,13 +162,11 @@ public class JsonBeautyForm {
         moreButton.setText("");
 
         actionToolBar = new JToolBar();
-        actionToolBar.setFloatable(false);
-        actionToolBar.setBorder(null);
-        actionToolBar.setRollover(true);
+        ToolbarUiUtil.configure(actionToolBar);
         actionToolBar.add(addButton);
         actionToolBar.add(findButton);
         actionToolBar.add(saveButton);
-        actionToolBar.addSeparator();
+        ToolbarUiUtil.addGroupSeparator(actionToolBar);
         actionToolBar.add(deleteButton);
         actionToolBar.add(exportButton);
         actionToolBar.add(beanToJsonButton);

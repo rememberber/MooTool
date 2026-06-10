@@ -18,6 +18,7 @@ import com.luoboduner.moo.tool.domain.TMsgHttp;
 import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.PanelCloseUtil;
+import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.component.TableInCellButtonColumn;
 import com.luoboduner.moo.tool.ui.listener.func.HttpRequestListener;
 import com.luoboduner.moo.tool.util.*;
@@ -123,12 +124,10 @@ public class HttpRequestForm {
         sendToWindowButton.setToolTipText("发送至新窗口");
 
         actionToolBar = new JToolBar();
-        actionToolBar.setFloatable(false);
-        actionToolBar.setBorder(null);
-        actionToolBar.setRollover(true);
+        ToolbarUiUtil.configure(actionToolBar);
         actionToolBar.add(addButton);
         actionToolBar.add(saveButton);
-        actionToolBar.addSeparator();
+        ToolbarUiUtil.addGroupSeparator(actionToolBar);
         actionToolBar.add(deleteButton);
         actionToolBar.add(historyButton);
         actionToolBar.add(sendToWindowButton);
