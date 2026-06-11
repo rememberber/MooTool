@@ -46,6 +46,7 @@ public class QuickNoteMarkdownPreviewPane extends JPanel {
         scrollPane.setBorder(new EmptyBorder(0, 0, 0, 0));
         scrollPane.getViewport().setBackground(editorPane.getBackground());
         ScrollUtil.smoothPane(scrollPane);
+        ScrollUtil.gentleWheelScroll(scrollPane, editorPane);
         add(scrollPane, BorderLayout.CENTER);
     }
 

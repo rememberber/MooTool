@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Generate README.md (EN), README_zh_CN.md, README_ja.md from README_zh_CN.md.
 
-Edit README_zh_CN.md (body under ## headings), then run:
+Edit README_zh_CN.md (body under ## headings) and scripts/readme_feature_map.md
+(feature map in heading/list form), then run:
   python3 scripts/build_readme_i18n.py
 """
 
@@ -16,9 +17,21 @@ from readme_zh_ja_map import ZH_JA_MAP
 
 ROOT = Path(__file__).resolve().parents[1]
 SRC = ROOT / "README_zh_CN.md"
+FEATURE_MAP_SRC = Path(__file__).resolve().parent / "readme_feature_map.md"
 OUT_EN = ROOT / "README.md"
 OUT_ZH = ROOT / "README_zh_CN.md"
 OUT_JA = ROOT / "README_ja.md"
+
+FEATURE_MAP_STARTS = (
+    "# MooTool全功能地图",
+    "# MooTool feature map",
+    "# MooTool 機能一覧",
+)
+FEATURE_MAP_ENDS = (
+    "## 特别感谢",
+    "## Acknowledgements",
+    "## 謝辞",
+)
 
 SWITCHER = {
     "en": (
@@ -343,6 +356,94 @@ EN_MAP = [
      "For `mac-intel`, register a self-hosted Intel Mac runner with labels:"),
 ]
 
+def _parse_feature_map_lines(lines: list[str]) -> list[dict]:
+    root: dict = {"name": "MooTool", "children": []}
+    current_module: dict | None = None
+    current_feature: dict | None = None
+
+    for raw in lines:
+        line = raw.rstrip()
+        if not line.strip():
+            continue
+        if line.startswith("## "):
+            current_module = {"name": line[3:].strip(), "children": []}
+            root["children"].append(current_module)
+            current_feature = None
+        elif line.startswith("### "):
+            current_feature = {"name": line[4:].strip(), "children": []}
+            if current_module is not None:
+                current_module["children"].append(current_feature)
+        elif line.startswith("- "):
+            item = {"name": line[2:].strip(), "children": []}
+            parent = current_feature or current_module
+            if parent is not None:
+                parent["children"].append(item)
+        elif line.startswith("> "):
+            note = {"name": line[2:].strip(), "children": []}
+            if current_module is not None:
+                current_module["children"].append(note)
+        else:
+            note = {"name": line.strip(), "children": []}
+            parent = current_feature or current_module
+            if parent is not None:
+                parent["children"].append(note)
+    return [root]
+
+
+def _render_tree_lines(node: dict, prefix: str = "", is_last: bool = True, is_root: bool = True) -> list[str]:
+    lines: list[str] = []
+    if is_root:
+        lines.append(node["name"])
+        children = node["children"]
+        for index, child in enumerate(children):
+            lines.extend(_render_tree_lines(child, "", index == len(children) - 1, False))
+        return lines
+
+    branch = "└── " if is_last else "├── "
+    lines.append(f"{prefix}{branch}{node['name']}")
+    child_prefix = prefix + ("    " if is_last else "│   ")
+    children = node["children"]
+    for index, child in enumerate(children):
+        lines.extend(_render_tree_lines(child, child_prefix, index == len(children) - 1, False))
+    return lines
+
+
+def feature_map_to_tree_block(text: str, root_name: str = "MooTool") -> str:
+    nodes = _parse_feature_map_lines(text.splitlines())
+    nodes[0]["name"] = root_name
+    tree = "\n".join(_render_tree_lines(nodes[0]))
+    return f"```text\n{tree}\n```"
+
+
+def inject_feature_map_tree(body: str, feature_map_body: str, root_name: str = "MooTool") -> str:
+    lines = body.splitlines()
+    start = end = None
+    for index, line in enumerate(lines):
+        if any(line.startswith(title) for title in FEATURE_MAP_STARTS):
+            start = index
+        elif start is not None and any(line.startswith(marker) for marker in FEATURE_MAP_ENDS):
+            end = index
+            break
+    if start is None or end is None:
+        return body
+
+    header: list[str] = []
+    for line in lines[start:end]:
+        if line.startswith("# MooTool") or line.startswith(">"):
+            header.append(line)
+        elif not line.strip() and header:
+            header.append(line)
+        else:
+            break
+
+    while header and not header[-1].strip():
+        header.pop()
+
+    tree_block = feature_map_to_tree_block(feature_map_body, root_name)
+    replacement = header + ["", tree_block, ""]
+    return "\n".join(lines[:start] + replacement + lines[end:])
+
+
 def apply_map(text: str, mapping: list[tuple[str, str]]) -> str:
     multiline = [(s, d) for s, d in mapping if "\n" in s]
     line_maps = [(s, d) for s, d in mapping if "\n" not in s]
@@ -416,9 +517,17 @@ def strip_preamble(text: str) -> str:
 
 def main() -> None:
     src = strip_preamble(SRC.read_text(encoding="utf-8"))
-    zh_body = build_body(src, "zh")
-    en_body = build_body(src, "en")
-    ja_body = build_body(src, "ja")
+    feature_map_src = FEATURE_MAP_SRC.read_text(encoding="utf-8")
+
+    zh_body = inject_feature_map_tree(build_body(src, "zh"), feature_map_src)
+    en_body = inject_feature_map_tree(
+        build_body(src, "en"),
+        apply_map(feature_map_src, EN_MAP),
+    )
+    ja_body = inject_feature_map_tree(
+        build_body(src, "ja"),
+        apply_map(feature_map_src, ZH_JA_MAP),
+    )
 
     OUT_ZH.write_text(prepend_header(zh_body, "zh"), encoding="utf-8")
     OUT_EN.write_text(prepend_header(en_body, "en"), encoding="utf-8")
