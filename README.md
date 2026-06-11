@@ -77,325 +77,254 @@ Windows • Linux • macOS
 
 > Many modules include a **History** sub-tab: search, apply, copy input/output, delete, and clear all.
 
-## Quick Note
-### Multi-language syntax highlighting
-- markdown
-- java
-- c
-- cpp
-- cs
-- python
-- golang
-- kotlin
-- scala
-- groovy
-- ruby
-- html
-- sql
-- json
-- jshintrc
-- xml
-- yaml
-- javascript
-- jsp
-- typescript
-- css
-- less
-- php
-- properties
-- asm
-- asm6502
-- bbcode
-- clojure
-- csv
-- d
-- dockerfile
-- dart
-- delphi
-- dtd
-- fortran
-- hosts
-- htaccess
-- ini
-- latex
-- lisp
-- lua
-- makefile
-- mxml
-- nsis
-- perl
-- sas
-- tcl
-- unix
-- vb
-- bat
-### Common code formatting
-- SQL
-- JSON
-- Java
-### Ordered / unordered lists
-### Markdown live preview
-### Insert images in Markdown
-### Export / batch export, search, global find
-### Document info (created/updated time, word count, etc.)
-### Link detection and click-to-open
-### Font, font size, list colors
-### Quick replace panel
-Batch text operations in the side panel (selected lines only):
-- Auto save
-- Trim spaces
-- Remove empty lines
-- Remove tabs (\t)
-- Scientific notation → plain number
-- Plain number → scientific notation
-- Plain number → thousands separator
-- Thousands separator → plain number
-- snake_case → camelCase
-- camelCase → snake_case
-- UPPER → lower
-- lower → UPPER
-- Remove line breaks
-- Line break → comma
-- Line break → ','
-- Line break → ","
-- Comma → line break
-- ',' → line break
-- "," → line break
-- Tab (\t) → line break
-- Deduplicate lines
-- Deduplicate lines and count occurrences
-- Escape
-- Unescape
-- Reverse lines
-- Sort lines A→Z
-- Sort lines Z→A
-- Sort by pinyin
-
-## Time convert
-### Timestamp conversion
-- Date/time → timestamp (ms)
-- Timestamp (ms) → date/time
-- Timestamp (s) → date/time
-- Date/time → timestamp (s)
-### History
-### Fullscreen clock
-### Timezone picker and quick shortcuts
-
-## JSON
-### JSON format
-- Sort keys alphabetically
-- Ignore key case
-- Check duplicate keys
-### JSON minify
-### Export / batch export, find
-### Font and size
-### Swap JSON keys and values
-### JSON → XML
-### XML → JSON
-### JavaBean → JSON
-### JSON → JavaBean
-### Escape
-### Unescape
-### Get JSON via JSON Path
-### Visual JSON Path picker
-
-## Translation
-### 20+ languages with auto-detect (Chinese, English, Japanese, Korean, French, Spanish, German, Russian, …)
-### Google / Bing translators with automatic fallback
-### Save to word book
-### Word book
-- Search, create, edit, delete
-- Retranslate
-### Translation history
-
-## Host
-### Host formatting / syntax highlight
-### Manage / view system hosts
-### Import / export hosts
-### Search, find & replace
-
-## HTTP
-### HTTP requests: GET/POST/PUT/DELETE/HEAD/PATCH/OPTIONS
-### Import cURL
-### Format HTTP header/body
-### Request management
-### Request history
-### Search
-
-## UA analysis
-### Parse User-Agent (browser, engine, OS, device type/brand/model, …)
-### Detect mobile / bot crawlers
-### Preset UAs (Chrome, Firefox, Safari, Edge, WeChat in-app browser, curl, …)
-### Paste / clear
-### History
-
-## Encode / decode
-### Native → Unicode
-### Unicode → Native
-### URL encode / decode
-### Native → hex
-### Hex → Native
-### Native → ASCII (decimal/hex code points)
-### ASCII → Native
-### History
-
-## QR code
-### Generate QR code
-- Custom size
-- Custom error correction level
-- Custom logo
-### Decode QR code
-### Read from clipboard
-### History
-
-## Crypto / random
-> Supports Chinese national crypto SM2 / SM3 / SM4
-### Symmetric encrypt/decrypt
-- AES
-- DES
-- SM4
-### Asymmetric encrypt/decrypt
-- RSA
-- SM2 (encrypt/decrypt, sign, verify)
-### Digest (file/text)
-- MD5
-- SHA1
-- SHA256
-- SHA384
-- SHA512
-- SM3
-### Base64 encode/decode
-### Base32 encode/decode
-### Random UUID
-### Random numeric/alpha/alphanumeric strings (custom length)
-### Random strong passwords (custom length)
-### History
-
-## Calculator
-### Arithmetic
-### Base conversion
-### Greatest common divisor
-### Least common multiple
-### Permutations & combinations
-### History
-
-## Network / IP
-### IP lookup
-### Domain lookup
-### netstat
-### ping
-### IPv4 ↔ long conversion
-### WHOIS lookup
-### Flush DNS
-
-## Color board
-### Theme / standard palettes
-### Screen color picker
-### Free-form color pick
-### Color format conversion
-### Favorite colors
-### Color ops (invert, intersect, add, difference, average)
-### History
-
-## Image assistant
-### Local image host
-### Screenshot
-### Clipboard import / export
-### Zoom toolbar (in/out/original/fit)
-### Image Base64 encode/decode
-### Image compression
-### Image watermark
-### Image OCR (Tesseract)
-
-## Cron
-### Cron expression builder
-### Parse cron (Linux 5-field / Quartz 6–7 field)
-### Validate cron
-### Cron to natural language
-### Next 10 run times
-### Favorite cron expressions
-### History
-### Common cron examples
-
-## Regex
-### Regex match test
-### Favorite regex
-### Common regex patterns
-### History
-
-## Java
-### Java/Groovy format & highlight
-### Java/Groovy interpret & run
-### History
-
-## Reformat
-### Format uploaded files
-- Nginx config
-- XML
-- HTML
-- Java
-### Paste & format (Nginx / Java / XML / HTML)
-### History
-
-## PDF
-### Split PDF
-### Merge PDF
-
-## Environment
-### System environment variables (table)
-### Java properties
-### Refresh / export
-
-## System info
-Collects local system/hardware info via OSHI; loads on first visit or refresh:
-### System (OS, computer, firmware, motherboard, …)
-### CPU
-### Memory
-### Storage
-### Network
-
-## Config conversion
-### Properties → YAML
-### YAML → Properties
-### YAML validate (syntax & line numbers)
-### YAML format
-### History
-### JSON → YAML (TODO)
-### YAML → JSON (TODO)
-
-## Text diff
-### Side-by-side diff (sync scroll)
-### Unified diff
-### Copy diff
-
-## Protobuf
-### JSON ↔ Protobuf binary
-- Hex / Base64 output
-- Format `.proto` definitions
-### Decode wire format (no `.proto` required)
-### Hex / Base64 conversion
-### History
-
-## App & settings
-### Sync & backup (Git sync, data export)
-### Keyboard shortcuts
-### Custom data directory
-### Check for updates on startup
-### SQL dialect
-### System tray
-### Window behavior
-- macOS / Windows: close button hides to Dock/taskbar; app keeps running
-- Linux: close button quits the app
-### Appearance
-- Many themes (Flat Light/Dark, macOS, One Dark, Monokai, …)
-- Accent color
-- Follow system accent
-- Immersive window background
-- Maximize on startup
-- Tab icons only mode
-### Layout
-- Panel position (top/bottom/left/right)
-- Global font & size
+```text
+MooTool
+├── Quick Note
+│   ├── Multi-language syntax highlighting
+│   ├── Common code formatting
+│   │   ├── SQL
+│   │   ├── JSON
+│   │   └── Java
+│   ├── Ordered / unordered lists
+│   ├── Markdown live preview
+│   ├── Insert images in Markdown
+│   ├── Export / batch export, search, global find
+│   ├── Document info (created/updated time, word count, etc.)
+│   ├── Link detection and click-to-open
+│   ├── Font, font size, list colors
+│   └── Quick replace panel
+│       ├── Batch text operations in the side panel (selected lines only):
+│       ├── Auto save
+│       ├── Trim spaces
+│       ├── Remove empty lines
+│       ├── Remove tabs (\t)
+│       ├── Scientific notation → plain number
+│       ├── Plain number → scientific notation
+│       ├── Plain number → thousands separator
+│       ├── Thousands separator → plain number
+│       ├── snake_case → camelCase
+│       ├── camelCase → snake_case
+│       ├── UPPER → lower
+│       ├── lower → UPPER
+│       ├── Remove line breaks
+│       ├── Line break → comma
+│       ├── Line break → ','
+│       ├── Line break → ","
+│       ├── Comma → line break
+│       ├── ',' → line break
+│       ├── "," → line break
+│       ├── Tab (\t) → line break
+│       ├── Deduplicate lines
+│       ├── Deduplicate lines and count occurrences
+│       ├── Escape
+│       ├── Unescape
+│       ├── Reverse lines
+│       ├── Sort lines A→Z
+│       ├── Sort lines Z→A
+│       └── Sort by pinyin
+├── Time convert
+│   ├── Timestamp conversion
+│   │   ├── Date/time → timestamp (ms)
+│   │   ├── Timestamp (ms) → date/time
+│   │   ├── Timestamp (s) → date/time
+│   │   └── Date/time → timestamp (s)
+│   ├── History
+│   ├── Fullscreen clock
+│   └── Timezone picker and quick shortcuts
+├── JSON
+│   ├── JSON format
+│   │   ├── Sort keys alphabetically
+│   │   ├── Ignore key case
+│   │   └── Check duplicate keys
+│   ├── JSON minify
+│   ├── Export / batch export, find
+│   ├── Font and size
+│   ├── Swap JSON keys and values
+│   ├── JSON → XML
+│   ├── XML → JSON
+│   ├── JavaBean → JSON
+│   ├── JSON → JavaBean
+│   ├── Escape
+│   ├── Unescape
+│   ├── Get JSON via JSON Path
+│   └── Visual JSON Path picker
+├── Translation
+│   ├── 20+ languages with auto-detect (Chinese, English, Japanese, Korean, French, Spanish, German, Russian, …)
+│   ├── Google / Bing translators with automatic fallback
+│   ├── Save to word book
+│   ├── Word book
+│   │   ├── Search, create, edit, delete
+│   │   └── Retranslate
+│   └── Translation history
+├── Host
+│   ├── Host formatting / syntax highlight
+│   ├── Manage / view system hosts
+│   ├── Import / export hosts
+│   └── Search, find & replace
+├── HTTP
+│   ├── HTTP requests: GET/POST/PUT/DELETE/HEAD/PATCH/OPTIONS
+│   ├── Import cURL
+│   ├── Format HTTP header/body
+│   ├── Request management
+│   ├── Request history
+│   └── Search
+├── UA analysis
+│   ├── Parse User-Agent (browser, engine, OS, device type/brand/model, …)
+│   ├── Detect mobile / bot crawlers
+│   ├── Preset UAs (Chrome, Firefox, Safari, Edge, WeChat in-app browser, curl, …)
+│   ├── Paste / clear
+│   └── History
+├── Encode / decode
+│   ├── Native → Unicode
+│   ├── Unicode → Native
+│   ├── URL encode / decode
+│   ├── Native → hex
+│   ├── Hex → Native
+│   ├── Native → ASCII (decimal/hex code points)
+│   ├── ASCII → Native
+│   └── History
+├── QR code
+│   ├── Generate QR code
+│   │   ├── Custom size
+│   │   ├── Custom error correction level
+│   │   └── Custom logo
+│   ├── Decode QR code
+│   ├── Read from clipboard
+│   └── History
+├── Crypto / random
+│   ├── Supports Chinese national crypto SM2 / SM3 / SM4
+│   ├── Symmetric encrypt/decrypt
+│   │   ├── AES
+│   │   ├── DES
+│   │   └── SM4
+│   ├── Asymmetric encrypt/decrypt
+│   │   ├── RSA
+│   │   └── SM2 (encrypt/decrypt, sign, verify)
+│   ├── Digest (file/text)
+│   │   ├── MD5
+│   │   ├── SHA1
+│   │   ├── SHA256
+│   │   ├── SHA384
+│   │   ├── SHA512
+│   │   └── SM3
+│   ├── Base64 encode/decode
+│   ├── Base32 encode/decode
+│   ├── Random UUID
+│   ├── Random numeric/alpha/alphanumeric strings (custom length)
+│   ├── Random strong passwords (custom length)
+│   └── History
+├── Calculator
+│   ├── Arithmetic
+│   ├── Base conversion
+│   ├── Greatest common divisor
+│   ├── Least common multiple
+│   ├── Permutations & combinations
+│   └── History
+├── Network / IP
+│   ├── IP lookup
+│   ├── Domain lookup
+│   ├── netstat
+│   ├── ping
+│   ├── IPv4 ↔ long conversion
+│   ├── WHOIS lookup
+│   └── Flush DNS
+├── Color board
+│   ├── Theme / standard palettes
+│   ├── Screen color picker
+│   ├── Free-form color pick
+│   ├── Color format conversion
+│   ├── Favorite colors
+│   ├── Color ops (invert, intersect, add, difference, average)
+│   └── History
+├── Image assistant
+│   ├── Local image host
+│   ├── Screenshot
+│   ├── Clipboard import / export
+│   ├── Zoom toolbar (in/out/original/fit)
+│   ├── Image Base64 encode/decode
+│   ├── Image compression
+│   ├── Image watermark
+│   └── Image OCR (Tesseract)
+├── Cron
+│   ├── Cron expression builder
+│   ├── Parse cron (Linux 5-field / Quartz 6–7 field)
+│   ├── Validate cron
+│   ├── Cron to natural language
+│   ├── Next 10 run times
+│   ├── Favorite cron expressions
+│   ├── History
+│   └── Common cron examples
+├── Regex
+│   ├── Regex match test
+│   ├── Favorite regex
+│   ├── Common regex patterns
+│   └── History
+├── Java
+│   ├── Java/Groovy format & highlight
+│   ├── Java/Groovy interpret & run
+│   └── History
+├── Reformat
+│   ├── Format uploaded files
+│   │   ├── Nginx config
+│   │   ├── XML
+│   │   ├── HTML
+│   │   └── Java
+│   ├── Paste & format (Nginx / Java / XML / HTML)
+│   └── History
+├── PDF
+│   ├── Split PDF
+│   └── Merge PDF
+├── Environment
+│   ├── System environment variables (table)
+│   ├── Java properties
+│   └── Refresh / export
+├── System info
+│   ├── Collects local system/hardware info via OSHI; loads on first visit or refresh:
+│   ├── System (OS, computer, firmware, motherboard, …)
+│   ├── CPU
+│   ├── Memory
+│   ├── Storage
+│   └── Network
+├── Config conversion
+│   ├── Properties → YAML
+│   ├── YAML → Properties
+│   ├── YAML validate (syntax & line numbers)
+│   ├── YAML format
+│   ├── History
+│   ├── JSON → YAML (TODO)
+│   └── YAML → JSON (TODO)
+├── Text diff
+│   ├── Side-by-side diff (sync scroll)
+│   ├── Unified diff
+│   └── Copy diff
+├── Protobuf
+│   ├── JSON ↔ Protobuf binary
+│   │   ├── Hex / Base64 output
+│   │   └── Format `.proto` definitions
+│   ├── Decode wire format (no `.proto` required)
+│   ├── Hex / Base64 conversion
+│   └── History
+└── App & settings
+    ├── Sync & backup (Git sync, data export)
+    ├── Keyboard shortcuts
+    ├── Custom data directory
+    ├── Check for updates on startup
+    ├── SQL dialect
+    ├── System tray
+    ├── Window behavior
+    │   ├── macOS / Windows: close button hides to Dock/taskbar; app keeps running
+    │   └── Linux: close button quits the app
+    ├── Appearance
+    │   ├── Many themes (Flat Light/Dark, macOS, One Dark, Monokai, …)
+    │   ├── Accent color
+    │   ├── Follow system accent
+    │   ├── Immersive window background
+    │   ├── Maximize on startup
+    │   └── Tab icons only mode
+    └── Layout
+        ├── Panel position (top/bottom/left/right)
+        └── Global font & size
+```
 
 ## Acknowledgements
 
