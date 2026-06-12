@@ -19,8 +19,12 @@ public final class JsonPathTreeUtil {
 
     public static DefaultTreeModel buildTreeModel(String jsonText) {
         Object parsed = JSONUtil.parse(jsonText);
-        DefaultMutableTreeNode root = buildNode(parsed, "$", "(root)");
+        DefaultMutableTreeNode root = buildNode(parsed, "$", formatRootLabel(parsed));
         return new DefaultTreeModel(root);
+    }
+
+    static String formatRootLabel(Object value) {
+        return "(root): " + formatValueSummary(value);
     }
 
     public static DefaultMutableTreeNode buildNode(Object value, String jsonPath, String label) {
