@@ -11,11 +11,13 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.SplitPaneUtil;
 import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.component.PanelCloseUtil;
 import com.luoboduner.moo.tool.ui.component.textviewer.JsonRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.textviewer.JsonRTextScrollPane;
 import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
@@ -76,6 +78,7 @@ public class JsonBeautyForm {
     private JPanel leftMenuPanel;
 
     private static JsonBeautyForm jsonBeautyForm;
+    private static boolean i18nRegistered;
     private static TJsonBeautyMapper jsonBeautyMapper = MybatisUtil.getSqlSession().getMapper(TJsonBeautyMapper.class);
 
     private JsonRSyntaxTextViewer textArea;
@@ -195,6 +198,50 @@ public class JsonBeautyForm {
         initTextAreaFont();
 
         JsonBeautyListener.addListeners();
+
+        jsonBeautyForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(JsonBeautyForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setPlaceholder(searchTextField, "common.search");
+        I18nUiUtil.setToolTip(fontSizeComboBox, "quickNote.tooltip.fontSize");
+        I18nUiUtil.setToolTip(wrapButton, "quickNote.tooltip.wrap");
+        I18nUiUtil.setToolTip(addButton, "quickNote.tooltip.new");
+        I18nUiUtil.setToolTip(findButton, "quickNote.tooltip.find");
+        I18nUiUtil.setToolTip(saveButton, "quickNote.tooltip.save");
+        I18nUiUtil.setToolTip(deleteButton, "quickNote.tooltip.delete");
+        I18nUiUtil.setToolTip(exportButton, "quickNote.tooltip.export");
+        I18nUiUtil.setToolTip(beanToJsonButton, "json.tooltip.beanToJson");
+        I18nUiUtil.setToolTip(compressButton, "json.tooltip.compress");
+        I18nUiUtil.setToolTip(beautifyButton, "quickNote.tooltip.format");
+        I18nUiUtil.setToolTip(moreButton, "json.tooltip.more");
+        I18nUiUtil.setToolTip(listItemButton, "quickNote.tooltip.toggleList");
+        I18nUiUtil.setToolTip(moreCloseButton, "quickNote.tooltip.close");
+
+        I18nUiUtil.setText(ignoreCaseCheckBox, "json.ignoreCase");
+        I18nUiUtil.setText(keySortCheckBox, "json.keySort");
+        I18nUiUtil.setText(checkDuplicateCheckBox, "json.checkDuplicate");
+        I18nUiUtil.setText(jsonToXmlButton, "json.toXml");
+        I18nUiUtil.setText(xmlToJsonButton, "json.fromXml");
+        I18nUiUtil.setText(javaBeanToJSONButton, "json.javaBeanToJson");
+        I18nUiUtil.setText(jsonToJavaBeanButton, "json.jsonToJavaBean");
+        I18nUiUtil.setText(getByJsonPathButton, "json.getByPath");
+        I18nUiUtil.setText(getJsonPathButton, "json.pickPath");
+        I18nUiUtil.setText(customFormatButton, "json.customFormat");
+        I18nUiUtil.setText(escapeJsonButton, "json.escapeJson");
+        I18nUiUtil.setText(escapeStringButton, "json.escapeString");
+        I18nUiUtil.setText(unescapeButton, "json.unescape");
+        I18nUiUtil.setText(keyValueSwapButton, "json.keyValueSwap");
+    }
+
+    private static void applyI18nStatic() {
+        if (jsonBeautyForm != null) {
+            jsonBeautyForm.applyI18n();
+        }
     }
 
     private static void initUi() {
@@ -221,11 +268,9 @@ public class JsonBeautyForm {
                         GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
 
         jsonBeautyForm.getFindReplacePanel().setVisible(false);
-        int totalWidth = jsonBeautyForm.getContentSplitPane().getWidth();
-        jsonBeautyForm.getContentSplitPane().setDividerLocation(totalWidth);
         jsonBeautyForm.getMoreScrollPane().setVisible(false);
-
-        jsonBeautyForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
+        configureSplitPanes();
+        jsonBeautyForm.getJsonBeautyPanel().setMinimumSize(new Dimension(0, 300));
         jsonBeautyForm.getNoteList().setFixedCellHeight(UiConsts.TABLE_ROW_HEIGHT);
         jsonBeautyForm.getNoteList().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
         jsonBeautyForm.getNoteList().putClientProperty(FlatClientProperties.STYLE,
@@ -234,6 +279,18 @@ public class JsonBeautyForm {
         jsonBeautyForm.getTextArea().grabFocus();
 
         jsonBeautyForm.getJsonBeautyPanel().updateUI();
+    }
+
+    private static void configureSplitPanes() {
+        SplitPaneUtil.configureListEditorSplit(jsonBeautyForm.getSplitPane());
+        SplitPaneUtil.configureEditorSecondarySplit(jsonBeautyForm.getContentSplitPane());
+        SplitPaneUtil.relaxHorizontalMinimum(
+                jsonBeautyForm.getJsonBeautyPanel(),
+                jsonBeautyForm.getRightPanel(),
+                jsonBeautyForm.getControlPanel(),
+                jsonBeautyForm.getSplitPane(),
+                jsonBeautyForm.getContentSplitPane()
+        );
     }
 
     public static void initList() {

@@ -9,6 +9,8 @@ import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.component.FuncHistoryPanel;
 import com.luoboduner.moo.tool.ui.listener.func.UaParseListener;
 import com.luoboduner.moo.tool.util.FuncHistorySupport;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.UaParseUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
@@ -29,8 +31,12 @@ public class UaParseForm {
     private JButton clearButton;
     private JButton pasteButton;
     private JComboBox<String> presetComboBox;
+    private JPanel inputPanel;
+    private JPanel resultPanel;
 
     private static UaParseForm uaParseForm;
+
+    private static boolean i18nRegistered;
 
     private static FuncHistoryPanel historyPanel;
 
@@ -51,6 +57,34 @@ public class UaParseForm {
         historyPanel = FuncHistorySupport.wrapWithTabs(
                 uaParseForm.getUaParsePanel(), "UA分析", FuncConsts.UA_PARSE, UaParseForm::applyHistory);
         UaParseListener.addListeners();
+
+        uaParseForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(UaParseForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setTitledBorder(inputPanel, "ua.inputBorder");
+        I18nUiUtil.setTitledBorder(resultPanel, "ua.resultBorder");
+        I18nUiUtil.setText(parseButton, "ua.parse");
+        I18nUiUtil.setText(pasteButton, "common.paste");
+        I18nUiUtil.setText(clearButton, "common.clear");
+        if (presetComboBox.getItemCount() > 0) {
+            int selectedIndex = presetComboBox.getSelectedIndex();
+            presetComboBox.removeItemAt(0);
+            presetComboBox.insertItemAt(I18n.get("ua.presetPlaceholder"), 0);
+            if (selectedIndex >= 0) {
+                presetComboBox.setSelectedIndex(selectedIndex);
+            }
+        }
+    }
+
+    private static void applyI18nStatic() {
+        if (uaParseForm != null) {
+            uaParseForm.applyI18n();
+        }
     }
 
     public static FuncHistoryPanel getHistoryPanel() {
@@ -92,7 +126,7 @@ public class UaParseForm {
         uaParsePanel.setMinimumSize(new Dimension(400, 300));
         uaParsePanel.setPreferredSize(new Dimension(400, 300));
 
-        final JPanel inputPanel = new JPanel();
+        inputPanel = new JPanel();
         inputPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 8, 0), -1, -1));
         inputPanel.setBorder(BorderFactory.createTitledBorder(null, "User-Agent 输入", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         uaParsePanel.add(inputPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(-1, 150), null, 0, false));
@@ -122,7 +156,7 @@ public class UaParseForm {
         uaInputTextArea.setWrapStyleWord(true);
         inputScroll.setViewportView(uaInputTextArea);
 
-        final JPanel resultPanel = new JPanel();
+        resultPanel = new JPanel();
         resultPanel.setLayout(new GridLayoutManager(1, 1, new Insets(0, 0, 0, 0), -1, -1));
         resultPanel.setBorder(BorderFactory.createTitledBorder(null, "解析结果", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         uaParsePanel.add(resultPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));

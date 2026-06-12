@@ -6,6 +6,8 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.Getter;
 
@@ -40,7 +42,7 @@ public class UpdateInfoDialog extends JDialog {
     }
 
     public UpdateInfoDialog() {
-        super(App.mainFrame, "惊现新版本");
+        super(App.mainFrame, I18n.get("updateInfo.title"));
 
         setContentPane(contentPane);
         setModal(true);
@@ -72,6 +74,14 @@ public class UpdateInfoDialog extends JDialog {
 
         // call onCancel() on ESCAPE
         contentPane.registerKeyboardAction(e -> onCancel(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+
+        applyI18n();
+    }
+
+    private void applyI18n() {
+        setTitle(I18n.get("updateInfo.title"));
+        I18nUiUtil.setText(buttonOK, "updateInfo.downloadNow");
+        I18nUiUtil.setText(buttonCancel, "common.cancel");
     }
 
     private void onOK() {

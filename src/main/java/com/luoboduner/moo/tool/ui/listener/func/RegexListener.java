@@ -6,6 +6,7 @@ import com.luoboduner.moo.tool.ui.dialog.FavoriteRegexDialog;
 import com.luoboduner.moo.tool.ui.form.func.RegexForm;
 import com.luoboduner.moo.tool.ui.frame.FavoriteRegexFrame;
 import com.luoboduner.moo.tool.util.FuncHistoryUtil;
+import com.luoboduner.moo.tool.util.I18n;
 import org.apache.commons.lang3.StringUtils;
 import org.fife.ui.rsyntaxtextarea.DocumentRange;
 import org.fife.ui.rsyntaxtextarea.RSyntaxUtilities;
@@ -72,8 +73,8 @@ public class RegexListener {
             String regex = regexForm.getRegexTextField().getText();
             String content = regexForm.getTextArea().getText();
             if (StringUtils.isNotBlank(regex)) {
-                FuncHistoryUtil.save(FuncConsts.REGEX, "正则匹配", regex, content,
-                        "匹配数:" + result.getMarkedCount());
+                FuncHistoryUtil.save(FuncConsts.REGEX, I18n.get("history.summary.regex"), regex, content,
+                        I18n.format("regex.matchCountSummary", result.getMarkedCount()));
                 if (RegexForm.getHistoryPanel() != null) {
                     RegexForm.getHistoryPanel().refreshListIfVisible();
                 }

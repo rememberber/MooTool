@@ -6,6 +6,8 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.Getter;
 
@@ -36,7 +38,7 @@ public class CommonTipsDialog extends JDialog {
     private JTextPane textPane1;
 
     public CommonTipsDialog() {
-        super(App.mainFrame, "提示");
+        super(App.mainFrame, I18n.get("common.tip"));
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
@@ -63,12 +65,12 @@ public class CommonTipsDialog extends JDialog {
                     Desktop.getDesktop().browse(linkUrl.toURI());
                 } catch (Exception e1) {
                     e1.printStackTrace();
-                    JOptionPane.showMessageDialog(this, "超链接错误", "无法打开超链接:" + linkUrl
-                            + "\n详情:" + e1, JOptionPane.ERROR_MESSAGE);
+                    MsgUtil.errorDetail(this, "msg.hyperlinkError",
+                            I18n.format("msg.hyperlinkOpenFailed", linkUrl, e1));
                 }
             } else {
-                JOptionPane.showMessageDialog(this, "超链接错误", "超链接信息不完整:" + e.getDescription()
-                        + "\n请确保链接带有协议信息，如http://,mailto:", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorDetail(this, "msg.hyperlinkError",
+                        I18n.format("msg.hyperlinkIncomplete", e.getDescription()));
             }
         });
 

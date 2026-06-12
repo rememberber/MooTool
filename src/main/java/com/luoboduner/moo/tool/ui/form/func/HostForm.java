@@ -20,6 +20,8 @@ import com.luoboduner.moo.tool.ui.dialog.TranslationDialog;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
 import com.luoboduner.moo.tool.util.HostFileUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
@@ -61,6 +63,9 @@ public class HostForm {
     private JTextField searchTextField;
 
     private static HostForm hostForm;
+
+    private static boolean i18nRegistered;
+
     private static THostMapper hostMapper = MybatisUtil.getSqlSession().getMapper(THostMapper.class);
 
     public static final String WIN_HOST_FILE_PATH = HostFileUtil.WIN_HOST_FILE_PATH;
@@ -73,7 +78,9 @@ public class HostForm {
 
     public static final String LINUX_HOST_DIR_PATH = "/etc/";
 
-    public static final String NOT_SUPPORTED_TIPS = HostFileUtil.NOT_SUPPORTED_TIPS;
+    public static String getNotSupportedTips() {
+        return HostFileUtil.getNotSupportedTips();
+    }
 
     private HostRSyntaxTextViewer textArea;
 
@@ -135,7 +142,7 @@ public class HostForm {
             showHostWriteError(hostForm, e);
         } catch (Exception ex) {
             log.error(ExceptionUtils.getStackTrace(ex));
-            showError(hostForm, ex.getMessage(), "切换失败！");
+            showError(hostForm, ex.getMessage(), I18n.get("host.switchFailed"));
         } finally {
             SwingUtilities.invokeLater(() -> hostForm.getSwitchButton().setEnabled(true));
         }
@@ -144,7 +151,7 @@ public class HostForm {
     private static void onHostSwitched(String hostName) {
         Runnable updateUi = () -> {
             if (App.trayIcon != null) {
-                App.trayIcon.displayMessage("MooTool", "Host已切换！\n" + hostName, TrayIcon.MessageType.INFO);
+                App.trayIcon.displayMessage("MooTool", I18n.format("host.switched", hostName), TrayIcon.MessageType.INFO);
             }
             highlightHostMenu(hostName);
         };
@@ -162,22 +169,22 @@ public class HostForm {
                     || reason == HostFileUtil.HostWriteException.Reason.PERMISSION_DENIED
                     || reason == HostFileUtil.HostWriteException.Reason.TIMEOUT)) {
                 CommonTipsDialog dialog = new CommonTipsDialog();
-                dialog.setTitle("需要管理员权限");
+                dialog.setTitle(I18n.get("host.adminRequiredTitle"));
                 dialog.setHtmlText(e.getMessage());
                 dialog.pack();
                 dialog.setVisible(true);
                 return;
             }
             if (SystemUtil.isLinuxOs() && reason == HostFileUtil.HostWriteException.Reason.PERMISSION_DENIED) {
-                showError(hostForm, e.getMessage(), "切换失败！");
+                showError(hostForm, e.getMessage(), I18n.get("host.switchFailed"));
                 openHostDir(LINUX_HOST_DIR_PATH);
                 return;
             }
             if (reason == HostFileUtil.HostWriteException.Reason.NOT_SUPPORTED) {
-                showError(hostForm, e.getMessage(), "抱歉！");
+                showError(hostForm, e.getMessage(), I18n.get("host.sorry"));
                 return;
             }
-            showError(hostForm, e.getMessage(), "切换失败！");
+            showError(hostForm, e.getMessage(), I18n.get("host.switchFailed"));
         };
         if (SwingUtilities.isEventDispatchThread()) {
             show.run();
@@ -218,23 +225,46 @@ public class HostForm {
         initList();
 
         HostListener.addListeners();
+
+        hostForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(HostForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setPlaceholder(searchTextField, "common.search");
+        I18nUiUtil.setToolTip(currentHostButton, "host.tooltip.currentHost");
+        I18nUiUtil.setToolTip(addButton, "quickNote.tooltip.new");
+        I18nUiUtil.setToolTip(findButton, "quickNote.tooltip.find");
+        I18nUiUtil.setToolTip(saveButton, "quickNote.tooltip.save");
+        I18nUiUtil.setToolTip(deleteButton, "quickNote.tooltip.delete");
+        I18nUiUtil.setToolTip(exportButton, "quickNote.tooltip.export");
+        I18nUiUtil.setToolTip(switchButton, "host.tooltip.switchHost");
+    }
+
+    private static void applyI18nStatic() {
+        if (hostForm != null) {
+            hostForm.applyI18n();
+        }
     }
 
     private static void initUi() {
 
         hostForm.getRightPanel().removeAll();
         hostForm.getRightPanel().setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
-        if ("上方".equals(App.config.getMenuBarPosition())) {
+        if (App.config.isMenuBarOnTop()) {
             hostForm.getRightPanel().add(hostForm.getControlPanel(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
             hostForm.getRightPanel().add(hostForm.getFindReplacePanel(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
             hostForm.getRightPanel().add(hostForm.getScrollPane(), new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        } else if ("下方".equals(App.config.getMenuBarPosition())) {
+        } else if (App.config.isMenuBarOnBottom()) {
             hostForm.getRightPanel().add(hostForm.getScrollPane(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
             hostForm.getRightPanel().add(hostForm.getFindReplacePanel(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
             hostForm.getRightPanel().add(hostForm.getControlPanel(), new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         }
 
-        hostForm.getSearchTextField().putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "搜索");
+        hostForm.getSearchTextField().putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, I18n.get("common.search"));
         hostForm.getSearchTextField().putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON,
                 new FlatSearchIcon());
 
@@ -303,9 +333,9 @@ public class HostForm {
             hostList = hostMapper.selectAll();
             App.popupMenu.removeAll();
             JMenuItem openItem = new JMenuItem("MooTool");
-            JMenuItem colorPickerItem = new JMenuItem("取色器");
-            JMenuItem translateItem = new JMenuItem("翻译");
-            JMenuItem exitItem = new JMenuItem("Quit");
+            JMenuItem colorPickerItem = new JMenuItem(I18n.get("tray.colorPicker"));
+            JMenuItem translateItem = new JMenuItem(I18n.get("tray.translation"));
+            JMenuItem exitItem = new JMenuItem(I18n.get("common.quit"));
 
             openItem.addActionListener(e -> {
                 Init.showMainFrame();

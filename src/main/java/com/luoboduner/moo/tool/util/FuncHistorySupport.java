@@ -9,6 +9,7 @@ import javax.swing.*;
 import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 /**
@@ -16,14 +17,26 @@ import java.util.function.Consumer;
  */
 public final class FuncHistorySupport {
 
+    private static final CopyOnWriteArrayList<HistoryTabBinding> HISTORY_TAB_BINDINGS = new CopyOnWriteArrayList<>();
+
     private FuncHistorySupport() {
+    }
+
+    public static void refreshHistoryTabTitles() {
+        for (HistoryTabBinding binding : HISTORY_TAB_BINDINGS) {
+            int idx = binding.tabbedPane.indexOfComponent(binding.panel);
+            if (idx >= 0) {
+                binding.tabbedPane.setTitleAt(idx, I18n.get("history.tab"));
+            }
+        }
     }
 
     public static FuncHistoryPanel attachTab(JTabbedPane tabbedPane,
                                              String funcType,
                                              Consumer<TFuncHistory> applyHandler) {
         FuncHistoryPanel historyPanel = new FuncHistoryPanel(funcType, applyHandler);
-        tabbedPane.addTab("历史记录", historyPanel);
+        tabbedPane.addTab(I18n.get("history.tab"), historyPanel);
+        HISTORY_TAB_BINDINGS.add(new HistoryTabBinding(tabbedPane, historyPanel));
         tabbedPane.addChangeListener(e -> {
             if (tabbedPane.getSelectedComponent() == historyPanel) {
                 historyPanel.refreshList();
@@ -61,7 +74,8 @@ public final class FuncHistorySupport {
         JTabbedPane tabbedPane = new JTabbedPane();
         tabbedPane.addTab(mainTabTitle, mainContent);
         FuncHistoryPanel historyPanel = new FuncHistoryPanel(funcType, applyHandler);
-        tabbedPane.addTab("历史记录", historyPanel);
+        tabbedPane.addTab(I18n.get("history.tab"), historyPanel);
+        HISTORY_TAB_BINDINGS.add(new HistoryTabBinding(tabbedPane, historyPanel));
         tabbedPane.addChangeListener(e -> {
             if (tabbedPane.getSelectedComponent() == historyPanel) {
                 historyPanel.refreshList();
@@ -71,6 +85,9 @@ public final class FuncHistorySupport {
         panel.setLayout(new BorderLayout());
         panel.add(tabbedPane, BorderLayout.CENTER);
         return historyPanel;
+    }
+
+    private record HistoryTabBinding(JTabbedPane tabbedPane, FuncHistoryPanel panel) {
     }
 
     private record ComponentEntry(Component component, Object constraints) {

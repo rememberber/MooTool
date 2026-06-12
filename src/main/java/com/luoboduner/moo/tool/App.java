@@ -12,6 +12,7 @@ import com.luoboduner.moo.tool.ui.form.LoadingForm;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.frame.MainFrame;
 import com.luoboduner.moo.tool.util.ConfigUtil;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.TesseractEnvUtil;
@@ -51,6 +52,7 @@ public class App {
     public static File tempDir = null;
 
     public static void main(String[] args) {
+        I18n.init();
         TesseractEnvUtil.ensureConfigured();
 
         if (SystemInfo.isMacOS) {
@@ -135,6 +137,7 @@ public class App {
         Init.initAllTab();
         Init.initOthers();
         mainFrame.remove(loadingPanel);
+        Init.languageGuide();
         Init.fontSizeGuide();
     }
 }

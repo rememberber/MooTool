@@ -87,36 +87,36 @@ public class BingTranslatorUtil implements Translator {
 
             if (responseCode != 200) {
                 log.warn("Bing API error response (code {}): {}", responseCode, responseStr);
-                return "Bing翻译接口返回错误状态码: " + responseCode;
+                return TranslationErrorUtil.error("translation.error.bing.httpStatus", responseCode);
             }
 
             if (responseStr.contains("\"ShowCaptcha\":true")) {
                 invalidateSession();
-                return "Bing翻译触发验证码，请稍后重试或切换其他翻译源";
+                return TranslationErrorUtil.error("translation.error.bing.captcha");
             }
 
             return parseResult(responseStr);
         } catch (SSLHandshakeException e) {
             log.error("SSLHandshakeException", e);
-            return "访问Bing翻译接口网络异常：" + e.getMessage();
+            return TranslationErrorUtil.error("translation.error.bing.network", e.getMessage());
         } catch (SocketTimeoutException e) {
             log.error("SocketTimeoutException", e);
-            return "访问Bing翻译接口超时：" + e.getMessage();
+            return TranslationErrorUtil.error("translation.error.bing.timeout", e.getMessage());
         } catch (Exception e) {
             log.error("访问Bing翻译异常", e);
-            return "访问Bing翻译接口异常：" + e.getMessage();
+            return TranslationErrorUtil.error("translation.error.bing.exception", e.getMessage());
         }
     }
 
     static BingSession parseSessionFromPage(String pageHtml) {
         Matcher igMatcher = IG_PATTERN.matcher(pageHtml);
         if (!igMatcher.find()) {
-            throw new IllegalStateException("无法从Bing页面解析IG参数");
+            throw new IllegalStateException(TranslationErrorUtil.error("translation.error.bing.parseIg"));
         }
 
         Matcher abuseMatcher = ABUSE_PREVENTION_PATTERN.matcher(pageHtml);
         if (!abuseMatcher.find()) {
-            throw new IllegalStateException("无法从Bing页面解析token/key参数");
+            throw new IllegalStateException(TranslationErrorUtil.error("translation.error.bing.parseToken"));
         }
 
         BingSession session = new BingSession();
@@ -149,7 +149,7 @@ public class BingTranslatorUtil implements Translator {
         int responseCode = con.getResponseCode();
         String pageHtml = readResponseBody(con, responseCode);
         if (responseCode != 200) {
-            throw new IOException("获取Bing翻译页面失败，状态码: " + responseCode);
+            throw new IOException(TranslationErrorUtil.error("translation.error.bing.fetchPage", responseCode));
         }
         return parseSessionFromPage(pageHtml);
     }
@@ -213,11 +213,11 @@ public class BingTranslatorUtil implements Translator {
         try {
             if (StringUtils.isEmpty(inputJson)) {
                 log.warn("Bing API returned empty response");
-                return "翻译返回结果为空";
+                return TranslationErrorUtil.error("translation.error.bing.emptyResult");
             }
 
             if (inputJson.contains("\"ShowCaptcha\"")) {
-                return "Bing翻译触发验证码，请稍后重试或切换其他翻译源";
+                return TranslationErrorUtil.error("translation.error.bing.captcha");
             }
 
             JSONArray jsonArray = new JSONArray(inputJson);
@@ -235,10 +235,10 @@ public class BingTranslatorUtil implements Translator {
                 }
             }
             log.warn("Bing API response format unexpected: {}", inputJson);
-            return "解析翻译结果失败，返回格式不符合预期";
+            return TranslationErrorUtil.error("translation.error.bing.parseFormat");
         } catch (Exception e) {
             log.error("解析翻译结果异常，原始响应: {}", inputJson, e);
-            return "解析翻译结果异常：" + e.getMessage();
+            return TranslationErrorUtil.error("translation.error.bing.parseException", e.getMessage());
         }
     }
 

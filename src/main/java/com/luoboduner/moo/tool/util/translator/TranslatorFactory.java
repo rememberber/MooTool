@@ -25,7 +25,7 @@ public class TranslatorFactory {
     public static String translate(String text, String from, String to, TranslatorType preferredType) {
         Translator primary = getTranslator(preferredType);
         String result = primary.translate(text, from, to);
-        if (!isTranslationError(result)) {
+        if (!TranslationErrorUtil.isErrorResult(result)) {
             return result;
         }
 
@@ -33,7 +33,7 @@ public class TranslatorFactory {
                 ? TranslatorType.BING
                 : TranslatorType.GOOGLE;
         String fallbackResult = getTranslator(fallbackType).translate(text, from, to);
-        if (!isTranslationError(fallbackResult)) {
+        if (!TranslationErrorUtil.isErrorResult(fallbackResult)) {
             return fallbackResult;
         }
         return result;
@@ -53,11 +53,4 @@ public class TranslatorFactory {
         }
     }
 
-    private static boolean isTranslationError(String result) {
-        return StringUtils.isBlank(result)
-                || result.startsWith("访问")
-                || result.startsWith("Bing翻译")
-                || result.startsWith("解析翻译")
-                || result.startsWith("翻译返回");
-    }
 }

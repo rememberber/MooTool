@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.dialog;
 import com.formdev.flatlaf.util.SystemInfo;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.ImageOcrUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 
@@ -17,13 +18,17 @@ import java.awt.event.WindowEvent;
  */
 public class ImageOcrDialog extends JDialog {
 
+    private final JLabel countLabel;
     private final JComboBox<ImageOcrUtil.LanguageMode> languageComboBox;
     private final JCheckBox preprocessCheckBox;
+    private final JTextArea tipArea;
+    private final JButton cancelButton;
+    private final JButton okButton;
 
     private boolean confirmed;
 
     public ImageOcrDialog(int imageCount) {
-        super(App.mainFrame, "OCR 识别", true);
+        super(App.mainFrame, I18n.get("imageOcr.title"), true);
         confirmed = false;
 
         JPanel contentPane = new JPanel(new BorderLayout(0, 12));
@@ -37,7 +42,8 @@ public class ImageOcrDialog extends JDialog {
             getRootPane().putClientProperty("apple.awt.windowTitleVisible", false);
         }
 
-        contentPane.add(new JLabel("已选择 " + imageCount + " 张图片"), BorderLayout.NORTH);
+        countLabel = new JLabel(I18n.format("imageOcr.selectedCount", imageCount));
+        contentPane.add(countLabel, BorderLayout.NORTH);
 
         JPanel optionsPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -47,7 +53,7 @@ public class ImageOcrDialog extends JDialog {
         gbc.insets = new Insets(4, 0, 4, 8);
         gbc.fill = GridBagConstraints.HORIZONTAL;
 
-        optionsPanel.add(new JLabel("识别语言："), gbc);
+        optionsPanel.add(new JLabel(I18n.get("imageOcr.language")), gbc);
         gbc.gridx = 1;
         gbc.weightx = 1;
         languageComboBox = new JComboBox<>(ImageOcrUtil.LanguageMode.values());
@@ -57,7 +63,7 @@ public class ImageOcrDialog extends JDialog {
                                                           boolean isSelected, boolean cellHasFocus) {
                 super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
                 if (value instanceof ImageOcrUtil.LanguageMode mode) {
-                    setText(mode.getLabel());
+                    setText(languageLabel(mode));
                 }
                 return this;
             }
@@ -67,13 +73,11 @@ public class ImageOcrDialog extends JDialog {
         gbc.gridx = 0;
         gbc.gridy++;
         gbc.gridwidth = 2;
-        preprocessCheckBox = new JCheckBox("图像预处理（灰度化并放大过小图片，提升识别率）", true);
+        preprocessCheckBox = new JCheckBox(I18n.get("imageOcr.preprocess"), true);
         optionsPanel.add(preprocessCheckBox, gbc);
 
         gbc.gridy++;
-        JTextArea tipArea = new JTextArea(
-                "OCR 依赖本机 Tesseract 引擎（macOS: brew install tesseract tesseract-lang）。\n"
-                        + "若未安装系统语言包，将自动下载到 ~/.MooTool/tessdata。");
+        tipArea = new JTextArea(I18n.get("imageOcr.tip"));
         tipArea.setEditable(false);
         tipArea.setOpaque(false);
         tipArea.setLineWrap(true);
@@ -84,8 +88,8 @@ public class ImageOcrDialog extends JDialog {
         contentPane.add(optionsPanel, BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        JButton cancelButton = new JButton("取消");
-        JButton okButton = new JButton("开始识别");
+        cancelButton = new JButton(I18n.get("common.cancel"));
+        okButton = new JButton(I18n.get("imageOcr.start"));
         getRootPane().setDefaultButton(okButton);
         buttonPanel.add(cancelButton);
         buttonPanel.add(okButton);
@@ -109,6 +113,14 @@ public class ImageOcrDialog extends JDialog {
 
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 460, 260);
         pack();
+    }
+
+    private static String languageLabel(ImageOcrUtil.LanguageMode mode) {
+        return switch (mode) {
+            case CHINESE_ENGLISH -> I18n.get("imageOcr.lang.chineseEnglish");
+            case CHINESE -> I18n.get("imageOcr.lang.chinese");
+            case ENGLISH -> I18n.get("imageOcr.lang.english");
+        };
     }
 
     public boolean isConfirmed() {

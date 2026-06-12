@@ -3,7 +3,9 @@ package com.luoboduner.moo.tool.ui.dialog;
 import com.formdev.flatlaf.util.SystemInfo;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.ImageWatermarkUtil;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import org.apache.commons.lang3.StringUtils;
 
@@ -31,7 +33,7 @@ public class ImageWatermarkDialog extends JDialog {
     private boolean confirmed;
 
     public ImageWatermarkDialog(int imageCount) {
-        super(App.mainFrame, "添加水印", true);
+        super(App.mainFrame, I18n.get("imageWatermark.title"), true);
         confirmed = false;
 
         JPanel contentPane = new JPanel(new BorderLayout(0, 12));
@@ -45,7 +47,7 @@ public class ImageWatermarkDialog extends JDialog {
             getRootPane().putClientProperty("apple.awt.windowTitleVisible", false);
         }
 
-        contentPane.add(new JLabel("已选择 " + imageCount + " 张图片"), BorderLayout.NORTH);
+        contentPane.add(new JLabel(I18n.format("imageCompress.selectedCount", imageCount)), BorderLayout.NORTH);
 
         JPanel optionsPanel = new JPanel(new GridBagLayout());
         GridBagConstraints gbc = new GridBagConstraints();
@@ -56,7 +58,7 @@ public class ImageWatermarkDialog extends JDialog {
         gbc.fill = GridBagConstraints.HORIZONTAL;
         gbc.weightx = 0;
 
-        optionsPanel.add(new JLabel("水印文字："), gbc);
+        optionsPanel.add(new JLabel(I18n.get("imageWatermark.text")), gbc);
         gbc.gridx = 1;
         gbc.gridwidth = 2;
         gbc.weightx = 1;
@@ -67,7 +69,7 @@ public class ImageWatermarkDialog extends JDialog {
         gbc.gridy++;
         gbc.gridwidth = 1;
         gbc.weightx = 0;
-        optionsPanel.add(new JLabel("不透明度："), gbc);
+        optionsPanel.add(new JLabel(I18n.get("imageWatermark.opacity")), gbc);
 
         gbc.gridx = 1;
         gbc.weightx = 1;
@@ -86,13 +88,18 @@ public class ImageWatermarkDialog extends JDialog {
         gbc.gridx = 0;
         gbc.gridy++;
         gbc.weightx = 0;
-        optionsPanel.add(new JLabel("水印位置："), gbc);
+        optionsPanel.add(new JLabel(I18n.get("imageWatermark.position")), gbc);
 
         gbc.gridx = 1;
         gbc.gridwidth = 2;
         gbc.weightx = 1;
         positionComboBox = new JComboBox<>(new String[]{
-                "右下角", "左下角", "右上角", "左上角", "居中", "平铺"
+                I18n.get("imageWatermark.pos.bottomRight"),
+                I18n.get("imageWatermark.pos.bottomLeft"),
+                I18n.get("imageWatermark.pos.topRight"),
+                I18n.get("imageWatermark.pos.topLeft"),
+                I18n.get("imageWatermark.pos.center"),
+                I18n.get("imageWatermark.pos.tile")
         });
         optionsPanel.add(positionComboBox, gbc);
 
@@ -100,38 +107,48 @@ public class ImageWatermarkDialog extends JDialog {
         gbc.gridy++;
         gbc.gridwidth = 1;
         gbc.weightx = 0;
-        optionsPanel.add(new JLabel("字体大小："), gbc);
+        optionsPanel.add(new JLabel(I18n.get("imageWatermark.fontSize")), gbc);
 
         gbc.gridx = 1;
         gbc.gridwidth = 2;
         gbc.weightx = 1;
-        fontSizeComboBox = new JComboBox<>(new String[]{"自动", "小", "中", "大"});
+        fontSizeComboBox = new JComboBox<>(new String[]{
+                I18n.get("imageWatermark.font.auto"),
+                I18n.get("imageWatermark.font.small"),
+                I18n.get("imageWatermark.font.medium"),
+                I18n.get("imageWatermark.font.large")
+        });
         optionsPanel.add(fontSizeComboBox, gbc);
 
         gbc.gridx = 0;
         gbc.gridy++;
         gbc.gridwidth = 1;
         gbc.weightx = 0;
-        optionsPanel.add(new JLabel("文字颜色："), gbc);
+        optionsPanel.add(new JLabel(I18n.get("imageWatermark.color")), gbc);
 
         gbc.gridx = 1;
         gbc.gridwidth = 2;
         gbc.weightx = 1;
-        colorComboBox = new JComboBox<>(new String[]{"白色", "黑色", "灰色", "红色"});
+        colorComboBox = new JComboBox<>(new String[]{
+                I18n.get("imageWatermark.color.white"),
+                I18n.get("imageWatermark.color.black"),
+                I18n.get("imageWatermark.color.gray"),
+                I18n.get("imageWatermark.color.red")
+        });
         optionsPanel.add(colorComboBox, gbc);
 
         gbc.gridx = 0;
         gbc.gridy++;
         gbc.gridwidth = 3;
-        diagonalCheckBox = new JCheckBox("倾斜显示（-45°）");
+        diagonalCheckBox = new JCheckBox(I18n.get("imageWatermark.diagonal"));
         optionsPanel.add(diagonalCheckBox, gbc);
 
         gbc.gridy++;
-        optionsPanel.add(new JLabel("保存方式："), gbc);
+        optionsPanel.add(new JLabel(I18n.get("imageCompress.saveMode")), gbc);
 
         gbc.gridy++;
-        overwriteRadio = new JRadioButton("覆盖原图");
-        keepOriginalRadio = new JRadioButton("保留原图（另存为 *_watermarked.*）", true);
+        overwriteRadio = new JRadioButton(I18n.get("imageCompress.overwrite"));
+        keepOriginalRadio = new JRadioButton(I18n.get("imageWatermark.keepOriginal"), true);
         ButtonGroup saveModeGroup = new ButtonGroup();
         saveModeGroup.add(overwriteRadio);
         saveModeGroup.add(keepOriginalRadio);
@@ -144,8 +161,8 @@ public class ImageWatermarkDialog extends JDialog {
         contentPane.add(optionsPanel, BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
-        JButton cancelButton = new JButton("取消");
-        JButton okButton = new JButton("添加水印");
+        JButton cancelButton = new JButton(I18n.get("common.cancel"));
+        JButton okButton = new JButton(I18n.get("imageWatermark.start"));
         getRootPane().setDefaultButton(okButton);
         buttonPanel.add(cancelButton);
         buttonPanel.add(okButton);
@@ -153,7 +170,7 @@ public class ImageWatermarkDialog extends JDialog {
 
         okButton.addActionListener(e -> {
             if (StringUtils.isBlank(textField.getText())) {
-                JOptionPane.showMessageDialog(this, "请输入水印文字", "提示", JOptionPane.WARNING_MESSAGE);
+                MsgUtil.warn(this, "msg.watermarkTextRequired");
                 return;
             }
             confirmed = true;
@@ -183,9 +200,9 @@ public class ImageWatermarkDialog extends JDialog {
         ImageWatermarkUtil.WatermarkOptions options = new ImageWatermarkUtil.WatermarkOptions();
         options.setText(textField.getText().trim());
         options.setOpacity(opacitySlider.getValue() / 100f);
-        options.setPosition(parsePosition((String) positionComboBox.getSelectedItem()));
-        options.setFontSizeMode(parseFontSize((String) fontSizeComboBox.getSelectedItem()));
-        options.setColor(parseColor((String) colorComboBox.getSelectedItem()));
+        options.setPosition(parsePosition(positionComboBox.getSelectedIndex()));
+        options.setFontSizeMode(parseFontSize(fontSizeComboBox.getSelectedIndex()));
+        options.setColor(parseColor(colorComboBox.getSelectedIndex()));
         options.setDiagonal(diagonalCheckBox.isSelected());
         options.setOutputMode(overwriteRadio.isSelected()
                 ? ImageWatermarkUtil.OutputMode.OVERWRITE
@@ -193,42 +210,32 @@ public class ImageWatermarkDialog extends JDialog {
         return options;
     }
 
-    private static ImageWatermarkUtil.Position parsePosition(String positionText) {
-        if (positionText == null) {
-            return ImageWatermarkUtil.Position.BOTTOM_RIGHT;
-        }
-        return switch (positionText) {
-            case "左下角" -> ImageWatermarkUtil.Position.BOTTOM_LEFT;
-            case "右上角" -> ImageWatermarkUtil.Position.TOP_RIGHT;
-            case "左上角" -> ImageWatermarkUtil.Position.TOP_LEFT;
-            case "居中" -> ImageWatermarkUtil.Position.CENTER;
-            case "平铺" -> ImageWatermarkUtil.Position.TILE;
+    private static ImageWatermarkUtil.Position parsePosition(int index) {
+        return switch (index) {
+            case 1 -> ImageWatermarkUtil.Position.BOTTOM_LEFT;
+            case 2 -> ImageWatermarkUtil.Position.TOP_RIGHT;
+            case 3 -> ImageWatermarkUtil.Position.TOP_LEFT;
+            case 4 -> ImageWatermarkUtil.Position.CENTER;
+            case 5 -> ImageWatermarkUtil.Position.TILE;
             default -> ImageWatermarkUtil.Position.BOTTOM_RIGHT;
         };
     }
 
-    private static ImageWatermarkUtil.FontSizeMode parseFontSize(String fontSizeText) {
-        if (fontSizeText == null) {
-            return ImageWatermarkUtil.FontSizeMode.AUTO;
-        }
-        return switch (fontSizeText) {
-            case "小" -> ImageWatermarkUtil.FontSizeMode.SMALL;
-            case "中" -> ImageWatermarkUtil.FontSizeMode.MEDIUM;
-            case "大" -> ImageWatermarkUtil.FontSizeMode.LARGE;
+    private static ImageWatermarkUtil.FontSizeMode parseFontSize(int index) {
+        return switch (index) {
+            case 1 -> ImageWatermarkUtil.FontSizeMode.SMALL;
+            case 2 -> ImageWatermarkUtil.FontSizeMode.MEDIUM;
+            case 3 -> ImageWatermarkUtil.FontSizeMode.LARGE;
             default -> ImageWatermarkUtil.FontSizeMode.AUTO;
         };
     }
 
-    private static Color parseColor(String colorText) {
-        if ("黑色".equals(colorText)) {
-            return Color.BLACK;
-        }
-        if ("灰色".equals(colorText)) {
-            return Color.GRAY;
-        }
-        if ("红色".equals(colorText)) {
-            return Color.RED;
-        }
-        return Color.WHITE;
+    private static Color parseColor(int index) {
+        return switch (index) {
+            case 1 -> Color.BLACK;
+            case 2 -> Color.GRAY;
+            case 3 -> Color.RED;
+            default -> Color.WHITE;
+        };
     }
 }

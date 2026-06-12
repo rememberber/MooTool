@@ -11,6 +11,8 @@ import com.luoboduner.moo.tool.ui.form.func.CronForm;
 import com.luoboduner.moo.tool.ui.frame.FavoriteCronFrame;
 import com.luoboduner.moo.tool.util.CronExpressionUtil;
 import com.luoboduner.moo.tool.util.FuncHistoryUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -60,8 +62,7 @@ public class CronListener {
                     }
                 }
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.convertFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -107,9 +108,10 @@ public class CronListener {
                             .map(ZonedDateTime::toLocalDateTime)
                             .map(localDateTime -> DateUtil.format(localDateTime, "yyyy-MM-dd HH:mm:ss"))
                             .toList();
-                    cronForm.getNextExecutionTimeTextArea().setText("最近10次运行时间：\n" + String.join("\n", nextExecutionTimes));
+                    cronForm.getNextExecutionTimeTextArea().setText(
+                            I18n.get("cron.nextRuns") + String.join("\n", nextExecutionTimes));
                 } catch (Exception ex) {
-                    cronForm.getNextExecutionTimeTextArea().setText("最近10次运行时间：\n" + ex.getMessage());
+                    cronForm.getNextExecutionTimeTextArea().setText(I18n.format("cron.parseFailed", ex.getMessage()));
                 }
             }
         });

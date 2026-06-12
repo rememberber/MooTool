@@ -9,6 +9,7 @@ import com.luoboduner.moo.tool.ui.UiMetrics;
 import com.luoboduner.moo.tool.ui.component.TabUiUtil;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.listener.TabListener;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.Getter;
 
@@ -59,11 +60,19 @@ public class MainWindow {
 
     private boolean tabUiRestoreListenerInstalled;
 
+    private boolean tabStripLayoutListenerInstalled;
+
     private JButton toggleTitleButton;
 
     private JPanel tabLeadingPanel;
 
-    private static final String[] TAB_TITLES = {"MooTool", "随手记", "时间转换", "JSON", "翻译", "Host", "HTTP", "UA分析", "编码转换", "二维码", "加解密/随机", "计算", "网络/IP", "调色板", "图片助手", "Cron", "正则", "Java", "格式化", "PDF", "环境变量", "系统信息", "配置文件转换", "文本对比", "Protobuf"};
+    private static final String[] TAB_TITLE_KEYS = {
+            "tab.mootool", "tab.quickNote", "tab.timeConvert", "tab.json", "tab.translation",
+            "tab.host", "tab.http", "tab.uaParse", "tab.encode", "tab.qrCode", "tab.crypto",
+            "tab.calculator", "tab.net", "tab.colorBoard", "tab.image", "tab.cron", "tab.regex",
+            "tab.java", "tab.reformat", "tab.pdf", "tab.variables", "tab.hardware",
+            "tab.ymlProperties", "tab.textDiff", "tab.protobuf"
+    };
 
     private static final String[] ICON_PATH = {"icon/smile.svg", "icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/translate.svg", "icon/check.svg", "icon/global.svg", "icon/ua.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/format_painter.svg", "icon/pdf.svg", "icon/fx.svg", "icon/info.svg", "icon/suffix-yml.svg", "icon/diff.svg", "icon/protobuf.svg"};
 
@@ -82,12 +91,25 @@ public class MainWindow {
     public static MainWindow getInstance() {
         if (mainWindow == null) {
             mainWindow = new MainWindow();
-            TabUiUtil.installSafeUi(mainWindow.tabbedPane, "左侧".equals(App.config.getFuncTabPosition()));
+            TabUiUtil.installSafeUi(mainWindow.tabbedPane, App.config.isFuncTabOnLeft());
+            mainWindow.syncTabStripBeforeLayout();
         }
         return mainWindow;
     }
 
-    private static GridConstraints gridConstraints = new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false);
+    /**
+     * 在首次 layout 前同步 Tab 位置与 i18n 标题，避免仍按设计器中文标题估算 Tab 栏宽度。
+     */
+    private void syncTabStripBeforeLayout() {
+        if (App.config.isFuncTabOnLeft()) {
+            tabbedPane.setTabPlacement(JTabbedPane.LEFT);
+        } else {
+            tabbedPane.setTabPlacement(JTabbedPane.TOP);
+        }
+        applyTabTitleVisibility(App.config.isTabHideTitle());
+    }
+
+    private static GridConstraints gridConstraints = new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(0, 200), null, 0, false);
 
     public void init() {
         mainWindow = getInstance();
@@ -97,6 +119,7 @@ public class MainWindow {
         }
 
         ensureTabUiRestoreListener();
+        ensureTabStripLayoutListener();
         initTabPlacement();
 
         mainWindow.getAboutPanel().add(AboutForm.getInstance().getAboutPanel(), gridConstraints);
@@ -127,16 +150,18 @@ public class MainWindow {
 
         refreshTabbedPaneUi();
         TabUiUtil.applySafeTabbedPaneUi(mainPanel, tabbedPane);
+        TabUiUtil.relaxTabContentMinimumSizes(tabbedPane);
         TabListener.addListeners();
+        relayoutAfterTabStripChanged();
     }
 
     public void refreshTabbedPaneUi() {
-        TabUiUtil.installSafeUi(tabbedPane, "左侧".equals(App.config.getFuncTabPosition()));
+        TabUiUtil.installSafeUi(tabbedPane, App.config.isFuncTabOnLeft());
         ensureTabLeadingComponent();
     }
 
     public void initTabPlacement() {
-        if ("左侧".equals(App.config.getFuncTabPosition())) {
+        if (App.config.isFuncTabOnLeft()) {
             tabbedPane.setTabPlacement(JTabbedPane.LEFT);
             tabbedPane.putClientProperty(TABBED_PANE_TAB_ALIGNMENT, TABBED_PANE_ALIGN_LEADING);
 
@@ -174,11 +199,21 @@ public class MainWindow {
         }
 
         refreshTabbedPaneUi();
+        relayoutAfterTabStripChanged();
+    }
+
+    public void refreshTabTitles() {
+        applyTabTitleVisibility(App.config.isTabHideTitle());
+        relayoutAfterTabStripChanged();
+    }
+
+    private void relayoutAfterTabStripChanged() {
+        TabUiUtil.relayoutAfterTabStripChanged(tabbedPane, mainPanel);
     }
 
     private String tabTitleAt(int index) {
-        if (index < TAB_TITLES.length) {
-            return TAB_TITLES[index];
+        if (index < TAB_TITLE_KEYS.length) {
+            return I18n.get(TAB_TITLE_KEYS[index]);
         }
         String title = tabbedPane.getTitleAt(index);
         return title != null ? title : "";
@@ -199,11 +234,10 @@ public class MainWindow {
             String title = tabTitleAt(i);
             tabbedPane.setToolTipTextAt(i, title);
             tabbedPane.setIconAt(i, tabIcon(ICON_PATH[i], iconOnly));
-            if (!iconOnly) {
-                tabbedPane.setTitleAt(i, title);
-            }
+            tabbedPane.setTitleAt(i, iconOnly ? "" : title);
         }
         applyTabWidthMode(iconOnly);
+        TabUiUtil.forceTabContentLayout(tabbedPane);
     }
 
     private void ensureTabLeadingComponent() {
@@ -213,14 +247,14 @@ public class MainWindow {
                 boolean iconOnly = !App.config.isTabHideTitle();
                 App.config.setTabHideTitle(iconOnly);
                 App.config.save();
-                applyTabTitleVisibility(iconOnly);
+                refreshTabTitles();
             });
         }
         if (tabLeadingPanel == null) {
             tabLeadingPanel = new JPanel();
         }
         tabLeadingPanel.removeAll();
-        if ("左侧".equals(App.config.getFuncTabPosition())) {
+        if (App.config.isFuncTabOnLeft()) {
             tabLeadingPanel.setLayout(new GridLayoutManager(1, 1, UiMetrics.tabLeadingInsets(true), -1, -1));
         } else {
             tabLeadingPanel.setLayout(new GridLayoutManager(1, 1, UiMetrics.tabLeadingInsets(false), -1, -1));
@@ -235,6 +269,14 @@ public class MainWindow {
         }
         tabbedPane.addPropertyChangeListener("UI", evt -> refreshTabbedPaneUi());
         tabUiRestoreListenerInstalled = true;
+    }
+
+    private void ensureTabStripLayoutListener() {
+        if (tabStripLayoutListenerInstalled) {
+            return;
+        }
+        tabbedPane.addPropertyChangeListener(TabUiUtil.createTabStripLayoutListener(tabbedPane));
+        tabStripLayoutListenerInstalled = true;
     }
 
     {

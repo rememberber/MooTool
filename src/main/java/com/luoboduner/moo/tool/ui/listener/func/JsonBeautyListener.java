@@ -9,11 +9,13 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
 import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
+import com.luoboduner.moo.tool.ui.component.SplitPaneUtil;
 import com.luoboduner.moo.tool.ui.dialog.JsonPathPickerDialog;
 import com.luoboduner.moo.tool.ui.dialog.JsonResultDialog;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
 import com.luoboduner.moo.tool.util.*;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
@@ -61,9 +63,9 @@ public class JsonBeautyListener {
         // 保存按钮事件
         jsonBeautyForm.getSaveButton().addActionListener(e -> {
             if (StringUtils.isEmpty(selectedNameJson)) {
-                selectedNameJson = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                selectedNameJson = NamingUtil.defaultUntitledName();
             }
-            String name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", selectedNameJson);
+            String name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), selectedNameJson);
             if (StringUtils.isNotBlank(name)) {
                 TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByName(name);
                 if (tJsonBeauty == null) {
@@ -251,7 +253,7 @@ public class JsonBeautyListener {
         jsonBeautyForm.getListItemButton().addActionListener(e -> {
             int currentDividerLocation = jsonBeautyForm.getSplitPane().getDividerLocation();
             if (currentDividerLocation < 5) {
-                jsonBeautyForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
+                SplitPaneUtil.configureListEditorSplit(jsonBeautyForm.getSplitPane());
             } else {
                 jsonBeautyForm.getSplitPane().setDividerLocation(0);
             }
@@ -280,8 +282,7 @@ public class JsonBeautyListener {
                         File exportFile = FileUtil.touch(exportPath + File.separator + tJsonBeauty.getName() + ".json");
                         FileUtil.writeUtf8String(tJsonBeauty.getContent(), exportFile);
                     }
-                    JOptionPane.showMessageDialog(jsonBeautyForm.getJsonBeautyPanel(), "导出成功！", "提示",
-                            JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.success(jsonBeautyForm.getJsonBeautyPanel(), "msg.exportSuccess");
                     try {
                         Desktop desktop = Desktop.getDesktop();
                         desktop.open(new File(exportPath));
@@ -289,13 +290,11 @@ public class JsonBeautyListener {
                         log.error(ExceptionUtils.getStackTrace(e2));
                     }
                 } else {
-                    JOptionPane.showMessageDialog(jsonBeautyForm.getJsonBeautyPanel(), "请至少选择一个！", "提示",
-                            JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(jsonBeautyForm.getJsonBeautyPanel(), "msg.selectAtLeastOne");
                 }
 
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(jsonBeautyForm.getJsonBeautyPanel(), "导出失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(jsonBeautyForm.getJsonBeautyPanel(), "msg.exportFailed", e1.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
 
@@ -343,8 +342,7 @@ public class JsonBeautyListener {
                 jsonBeautyForm.getTextArea().setText(JSONUtil.toJsonPrettyStr(JSONUtil.parse(jsonText, jsonConfig)));
                 jsonBeautyForm.getTextArea().setCaretPosition(0);
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "格式化失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.formatFailed", e1.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
 
@@ -353,14 +351,13 @@ public class JsonBeautyListener {
         jsonBeautyForm.getJsonToXmlButton().addActionListener(e -> {
             try {
                 String jsonText = jsonBeautyForm.getTextArea().getText();
-                JsonResultDialog jsonResultDialog = new JsonResultDialog("XML", "JSON转XML", "Display");
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("XML", I18n.get("jsonBeauty.jsonToXml"), "Display");
                 String xmlStr = JSONUtil.toXmlStr(JSONUtil.isTypeJSONArray(jsonText) ? JSONUtil.parseArray(jsonText) : JSONUtil.parseObj(jsonText));
                 xmlStr = "<root>" + xmlStr + "</root>";
                 jsonResultDialog.setToTextArea(XmlReformatUtil.format(xmlStr));
                 jsonResultDialog.setVisible(true);
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.convertFailed", e1.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
 
@@ -368,7 +365,7 @@ public class JsonBeautyListener {
 
         jsonBeautyForm.getXmlToJsonButton().addActionListener(e -> {
             try {
-                JsonResultDialog jsonResultDialog = new JsonResultDialog("XML", "请输入XML文本：", "Input");
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("XML", I18n.get("jsonBeauty.xmlInput"), "Input");
                 jsonResultDialog.setVisible(true);
                 String inputValue = JsonResultDialog.textInputValue;
                 if (StringUtils.isBlank(inputValue)) {
@@ -377,8 +374,7 @@ public class JsonBeautyListener {
                 jsonBeautyForm.getTextArea().setText(JSONUtil.toJsonPrettyStr(JSONUtil.xmlToJson(inputValue)));
                 jsonBeautyForm.getTextArea().setCaretPosition(0);
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.convertFailed", e1.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
 
@@ -390,8 +386,7 @@ public class JsonBeautyListener {
                 jsonBeautyForm.getTextArea().setText(JSONUtil.escape(jsonText));
                 jsonBeautyForm.getTextArea().setCaretPosition(0);
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "转义失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.escapeFailed", e1.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
 
@@ -403,8 +398,7 @@ public class JsonBeautyListener {
                 jsonBeautyForm.getTextArea().setText(StringEscapeUtils.escapeJava(jsonText));
                 jsonBeautyForm.getTextArea().setCaretPosition(0);
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "转义失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.escapeFailed", e1.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
 
@@ -416,8 +410,7 @@ public class JsonBeautyListener {
                 jsonBeautyForm.getTextArea().setText(StringEscapeUtils.unescapeJson(jsonText));
                 jsonBeautyForm.getTextArea().setCaretPosition(0);
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "反转义失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.unescapeFailed", e1.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
 
@@ -428,13 +421,12 @@ public class JsonBeautyListener {
                 String jsonText = jsonBeautyForm.getTextArea().getText();
                 String jsonPath = jsonBeautyForm.getJsonPathTextField().getText();
                 if (StringUtils.isNotBlank(jsonPath)) {
-                    JsonResultDialog jsonResultDialog = new JsonResultDialog("JSON", "根据JSON Path，取值如下：", "Display");
+                    JsonResultDialog jsonResultDialog = new JsonResultDialog("JSON", I18n.get("jsonBeauty.jsonPathResult"), "Display");
                     jsonResultDialog.setToTextArea(JSONUtil.toJsonPrettyStr(JSONUtil.getByPath(JSONUtil.parse(jsonText), jsonPath).toString()));
                     jsonResultDialog.setVisible(true);
                 }
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "获取失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.getFailed", e1.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
         });
@@ -443,8 +435,7 @@ public class JsonBeautyListener {
             try {
                 String jsonText = jsonBeautyForm.getTextArea().getText();
                 if (StringUtils.isBlank(jsonText)) {
-                    JOptionPane.showMessageDialog(App.mainFrame, "JSON内容为空！", "提示",
-                            JOptionPane.WARNING_MESSAGE);
+                    MsgUtil.info(App.mainFrame, "msg.emptyJson");
                     return;
                 }
                 JsonPathPickerDialog jsonPathPickerDialog = new JsonPathPickerDialog(jsonText);
@@ -454,8 +445,7 @@ public class JsonBeautyListener {
                     jsonBeautyForm.getJsonPathTextField().setText(selectedJsonPath);
                 }
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "获取失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.getFailed", e1.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
         });
@@ -467,21 +457,21 @@ public class JsonBeautyListener {
 
             if (totalWidth - currentDividerLocation < 10) {
                 jsonBeautyForm.getMoreScrollPane().setVisible(true);
-                jsonBeautyForm.getContentSplitPane().setDividerLocation((int) (totalWidth * 0.72));
+                SplitPaneUtil.showSecondary(jsonBeautyForm.getContentSplitPane(), SplitPaneUtil.SECONDARY_PANEL_RATIO);
             } else {
-                jsonBeautyForm.getContentSplitPane().setDividerLocation(totalWidth);
+                SplitPaneUtil.hideSecondary(jsonBeautyForm.getContentSplitPane());
                 jsonBeautyForm.getMoreScrollPane().setVisible(false);
             }
         });
 
         jsonBeautyForm.getMoreCloseButton().addActionListener(e -> {
-            jsonBeautyForm.getContentSplitPane().setDividerLocation(jsonBeautyForm.getContentSplitPane().getWidth());
+            SplitPaneUtil.hideSecondary(jsonBeautyForm.getContentSplitPane());
             jsonBeautyForm.getMoreScrollPane().setVisible(false);
         });
 
         jsonBeautyForm.getBeanToJsonButton().addActionListener(e -> {
             try {
-                JsonResultDialog jsonResultDialog = new JsonResultDialog("Java", "请输入JavaBean类代码：", "Input");
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("Java", I18n.get("jsonBeauty.javaBeanInput"), "Input");
                 jsonResultDialog.setVisible(true);
                 String inputValue = JsonResultDialog.textInputValue;
                 if (StringUtils.isBlank(inputValue)) {
@@ -490,15 +480,14 @@ public class JsonBeautyListener {
                 jsonBeautyForm.getTextArea().setText(MockDataGenerator.classCodeToJson(inputValue));
                 jsonBeautyForm.getTextArea().setCaretPosition(0);
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.convertFailed", e1.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
         });
 
         jsonBeautyForm.getJavaBeanToJSONButton().addActionListener(e -> {
             try {
-                JsonResultDialog jsonResultDialog = new JsonResultDialog("Java", "请输入JavaBean类代码：", "Input");
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("Java", I18n.get("jsonBeauty.javaBeanInput"), "Input");
                 jsonResultDialog.setVisible(true);
                 String inputValue = JsonResultDialog.textInputValue;
                 if (StringUtils.isBlank(inputValue)) {
@@ -507,20 +496,18 @@ public class JsonBeautyListener {
                 jsonBeautyForm.getTextArea().setText(MockDataGenerator.classCodeToJson(inputValue));
                 jsonBeautyForm.getTextArea().setCaretPosition(0);
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.convertFailed", e1.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
         });
 
         jsonBeautyForm.getJsonToJavaBeanButton().addActionListener(e -> {
             try {
-                JsonResultDialog jsonResultDialog = new JsonResultDialog("Java", "JSON转换JavaBean结果：", "Display");
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("Java", I18n.get("jsonBeauty.javaBeanResult"), "Display");
                 jsonResultDialog.setToTextArea(MockDataGenerator.jsonToClassCode(jsonBeautyForm.getTextArea().getText()));
                 jsonResultDialog.setVisible(true);
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.convertFailed", e1.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
         });
@@ -529,22 +516,21 @@ public class JsonBeautyListener {
             try {
                 String jsonText = jsonBeautyForm.getTextArea().getText();
 
-                JsonResultDialog jsonResultDialog = new JsonResultDialog("JSON", "Key-Value 互换结果:", "Display");
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("JSON", I18n.get("jsonBeauty.kvSwapResult"), "Display");
                 jsonResultDialog.setToTextArea(JSONUtil.toJsonPrettyStr(JsonKeyValueSwapper.swapKeysAndValues(jsonText)));
                 jsonResultDialog.setVisible(true);
 
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.convertFailed", e1.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
         });
 
         // 左侧列表增加右键菜单
         JPopupMenu noteListPopupMenu = new JPopupMenu();
-        JMenuItem renameMenuItem = new JMenuItem("重命名");
-        JMenuItem deleteMenuItem = new JMenuItem("删除");
-        JMenuItem exportMenuItem = new JMenuItem("导出");
+        JMenuItem renameMenuItem = new JMenuItem(I18n.get("common.rename"));
+        JMenuItem deleteMenuItem = new JMenuItem(I18n.get("common.delete"));
+        JMenuItem exportMenuItem = new JMenuItem(I18n.get("common.export"));
         noteListPopupMenu.add(renameMenuItem);
         noteListPopupMenu.add(deleteMenuItem);
         noteListPopupMenu.add(exportMenuItem);
@@ -579,8 +565,7 @@ public class JsonBeautyListener {
                         File exportFile = FileUtil.touch(exportPath + File.separator + tJsonBeauty.getName() + ".json");
                         FileUtil.writeUtf8String(tJsonBeauty.getContent(), exportFile);
                     }
-                    JOptionPane.showMessageDialog(jsonBeautyForm.getJsonBeautyPanel(), "导出成功！", "提示",
-                            JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.success(jsonBeautyForm.getJsonBeautyPanel(), "msg.exportSuccess");
                     try {
                         Desktop desktop = Desktop.getDesktop();
                         desktop.open(new File(exportPath));
@@ -588,13 +573,11 @@ public class JsonBeautyListener {
                         log.error(ExceptionUtils.getStackTrace(e2));
                     }
                 } else {
-                    JOptionPane.showMessageDialog(jsonBeautyForm.getJsonBeautyPanel(), "请至少选择一个！", "提示",
-                            JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(jsonBeautyForm.getJsonBeautyPanel(), "msg.selectAtLeastOne");
                 }
 
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(jsonBeautyForm.getJsonBeautyPanel(), "导出失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(jsonBeautyForm.getJsonBeautyPanel(), "msg.exportFailed", e1.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
 
@@ -626,7 +609,7 @@ public class JsonBeautyListener {
             return;
         }
         suppressListEnterRename = true;
-        String afterName = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", beforeName);
+        String afterName = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), beforeName);
         if (StringUtils.isBlank(afterName) || afterName.equals(beforeName)) {
             return;
         }
@@ -640,7 +623,7 @@ public class JsonBeautyListener {
             item.setName(afterName);
             model.set(selectedIndex, item);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
+            MsgUtil.info(App.mainFrame, "msg.renameFailed");
             JsonBeautyForm.initList();
             log.error(e.toString());
         }
@@ -662,9 +645,9 @@ public class JsonBeautyListener {
             int[] selectedIndices = jsonBeautyForm.getNoteList().getSelectedIndices();
 
             if (selectedIndices.length == 0) {
-                JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(App.mainFrame, "msg.selectAtLeastOne");
             } else {
-                int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                int isDelete = MsgUtil.confirm(App.mainFrame, "msg.confirmDelete");
                 if (isDelete == JOptionPane.YES_OPTION) {
                     DefaultListModel<TJsonBeauty> listModel = (DefaultListModel<TJsonBeauty>) jsonBeautyForm.getNoteList().getModel();
 
@@ -677,8 +660,7 @@ public class JsonBeautyListener {
                 }
             }
         } catch (Exception e1) {
-            JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
-                    JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(App.mainFrame, "msg.deleteFailed", e1.getMessage());
             log.error(e1.toString());
         }
     }
@@ -700,8 +682,8 @@ public class JsonBeautyListener {
             }
             jsonBeautyMapper.updateByName(tJsonBeauty);
         } else {
-            String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-            String name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", tempName);
+            String tempName = NamingUtil.defaultUntitledName();
+            String name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), tempName);
             if (StringUtils.isNotBlank(name)) {
                 TJsonBeauty tJsonBeauty = new TJsonBeauty();
                 tJsonBeauty.setName(name);
@@ -718,13 +700,13 @@ public class JsonBeautyListener {
 
     private static void newJson() {
         String name = getDefaultFileName();
-        name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", name);
+        name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), name);
         if (StringUtils.isNotBlank(name)) {
             TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByName(name);
             if (tJsonBeauty == null) {
                 tJsonBeauty = new TJsonBeauty();
             } else {
-                JOptionPane.showMessageDialog(App.mainFrame, "存在同名文件，请重新命名！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(App.mainFrame, "msg.duplicateName");
                 return;
             }
             String now = SqliteUtil.nowDateForSqlite();
@@ -740,14 +722,12 @@ public class JsonBeautyListener {
         try {
             jsonText = JSONUtil.toJsonPrettyStr(jsonText);
         } catch (Exception e1) {
-            JOptionPane.showMessageDialog(App.mainFrame, "格式化失败！\n\n" + e1.getMessage(), "失败",
-                    JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(App.mainFrame, "msg.formatFailed", e1.getMessage());
             log.error(ExceptionUtils.getStackTrace(e1));
             try {
                 jsonText = JSONUtil.formatJsonStr(jsonText);
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(App.mainFrame, "格式化失败！\n\n" + e.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.formatFailed", e.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e));
             }
         }
@@ -773,7 +753,7 @@ public class JsonBeautyListener {
      * @return
      */
     private static String getDefaultFileName() {
-        return "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+        return NamingUtil.defaultUntitledName();
     }
 
 }

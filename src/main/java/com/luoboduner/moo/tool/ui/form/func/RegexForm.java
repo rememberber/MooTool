@@ -13,6 +13,7 @@ import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.component.CustomizeIcon;
 import com.luoboduner.moo.tool.ui.component.FuncHistoryPanel;
 import com.luoboduner.moo.tool.util.FuncHistorySupport;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.ui.component.textviewer.RegexRTextScrollPane;
 import com.luoboduner.moo.tool.ui.component.textviewer.RegexRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.listener.func.RegexListener;
@@ -28,6 +29,7 @@ import javax.swing.plaf.FontUIResource;
 import javax.swing.text.StyleContext;
 import java.awt.*;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * <pre>
@@ -75,6 +77,8 @@ public class RegexForm {
 
     private static RegexForm regexForm;
 
+    private static boolean i18nRegistered;
+
     private static FuncHistoryPanel historyPanel;
 
     private static final Log logger = LogFactory.get();
@@ -112,6 +116,56 @@ public class RegexForm {
                 regexForm.getTabbedPane1(), FuncConsts.REGEX, RegexForm::applyHistory);
 
         RegexListener.addListeners();
+
+        regexForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(RegexForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setText(favoriteBookButton, "regex.favorites");
+        I18nUiUtil.setText(addToFavoriteButton, "regex.favorite");
+        I18nUiUtil.setText(matchTestButton, "regex.matchTest");
+
+        I18nUiUtil.setTabTitle(tabbedPane1, 0, "regex.tab.matchTest");
+        I18nUiUtil.setTabTitle(tabbedPane1, 1, "regex.tab.common");
+
+        I18nUiUtil.localizeTree(regexPanel, Map.ofEntries(
+                Map.entry("正则表达式", "regex.expression"),
+                Map.entry("收藏夹", "regex.favorites"),
+                Map.entry("收藏", "regex.favorite"),
+                Map.entry("匹配测试", "regex.matchTest"),
+                Map.entry("个匹配", "regex.matchesSuffix"),
+                Map.entry("电话号码", "regex.phone"),
+                Map.entry("电子邮箱", "regex.email"),
+                Map.entry("域名", "regex.domain"),
+                Map.entry("账号校验", "regex.account"),
+                Map.entry("HTML标签属性(id=\"***\")", "regex.htmlId"),
+                Map.entry("颜色代码(#FFFFFF)", "regex.color"),
+                Map.entry("jpg图片", "regex.jpg"),
+                Map.entry("磁力链接", "regex.magnet"),
+                Map.entry("汉字", "regex.chinese"),
+                Map.entry("英文和数字", "regex.alnum"),
+                Map.entry("长度为3-20的所有字符", "regex.len3to20"),
+                Map.entry("由26个英文字母组成的字符串", "regex.letters26"),
+                Map.entry("由数字、26个英文字母或者下划线组成的字符串", "regex.wordUnderscore"),
+                Map.entry("中文、英文、数字包括下划线", "regex.cnEnNum"),
+                Map.entry("禁止输入含有%',;=?$\"等字符", "regex.noSpecial"),
+                Map.entry("整数", "regex.integer"),
+                Map.entry("正整数 ", "regex.positiveInt"),
+                Map.entry("负整数", "regex.negativeInt"),
+                Map.entry("非负整数", "regex.nonNegativeInt"),
+                Map.entry("浮点数", "regex.float"),
+                Map.entry("以上大部分来自：https://github.com/cdoco/common-regex, MIT License by cdoco/common-regex, Copyright (c) 2016 ZiHang Gao <ocdoco@gmail.com>", "regex.attribution")
+        ));
+    }
+
+    private static void applyI18nStatic() {
+        if (regexForm != null) {
+            regexForm.applyI18n();
+        }
     }
 
     public static FuncHistoryPanel getHistoryPanel() {

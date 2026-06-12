@@ -6,6 +6,8 @@ import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.form.func.YmlPropertiesForm;
 import com.luoboduner.moo.tool.util.FuncHistoryUtil;
 import com.luoboduner.moo.tool.util.YamlValidateUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.YmlAndPropUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -68,12 +70,11 @@ public class YmlPropertiesListener {
                 String formatted = YamlValidateUtil.format(yamlStr);
                 ymlForm.getYamlValidateInputTextArea().setText(formatted);
                 ymlForm.getYamlValidateInputTextArea().setCaretPosition(0);
-                ymlForm.getYamlValidateResultTextArea().setText("✓ 格式化成功");
+                ymlForm.getYamlValidateResultTextArea().setText(I18n.get("yml.formatSuccess"));
                 saveHistory("YAML格式化", "YamlFormat", yamlStr, formatted);
             } catch (Exception ex) {
-                ymlForm.getYamlValidateResultTextArea().setText("✗ 格式化失败：\n" + ex.getMessage());
-                JOptionPane.showMessageDialog(App.mainFrame, "格式化失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                ymlForm.getYamlValidateResultTextArea().setText(I18n.format("yml.formatFailed", ex.getMessage()));
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.formatFailed", ex.getMessage());
                 log.error("YAML格式化失败", ex);
             }
         });

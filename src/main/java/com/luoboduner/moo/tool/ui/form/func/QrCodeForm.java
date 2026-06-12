@@ -19,6 +19,8 @@ import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.component.ImagePreviewComponent;
 import com.luoboduner.moo.tool.ui.listener.func.QrCodeListener;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.*;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -30,6 +32,7 @@ import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
 
 /**
  * <pre>
@@ -68,6 +71,12 @@ public class QrCodeForm {
     private static final Log logger = LogFactory.get();
 
     private static QrCodeForm qrCodeForm;
+
+    private static boolean i18nRegistered;
+
+    private static final String[] ERROR_CORRECTION_KEYS = {
+            "qrcode.error.low", "qrcode.error.mediumLow", "qrcode.error.mediumHigh", "qrcode.error.high"
+    };
 
     private static TQrCodeMapper qrCodeMapper = MybatisUtil.getSqlSession().getMapper(TQrCodeMapper.class);
 
@@ -111,8 +120,7 @@ public class QrCodeForm {
                 try {
                     applyRecognitionResult(recognitionImagePath, get());
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(App.mainFrame, "识别失败！\n\n" + ex.getMessage(), "失败",
-                            JOptionPane.ERROR_MESSAGE);
+                    MsgUtil.errorWithDetail(App.mainFrame, "msg.qrRecognizeFailed", ex.getMessage());
                     logger.error(ExceptionUtils.getStackTrace(ex));
                 }
             }
@@ -130,8 +138,7 @@ public class QrCodeForm {
 
             QrCodeListener.output("从剪贴板识别:\n" + recognitionContent);
         } else {
-            JOptionPane.showMessageDialog(App.mainFrame, "剪贴板中没有图片！", "提示",
-                    JOptionPane.INFORMATION_MESSAGE);
+            MsgUtil.info(App.mainFrame, "msg.clipboardNoImage");
         }
     }
 
@@ -203,20 +210,20 @@ public class QrCodeForm {
             GenerateRequest request = collectGenerateRequest(save);
             showGeneratedImage(generateImage(request), request);
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
-                    JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(App.mainFrame, "msg.generateFailed", ex.getMessage());
             logger.error(ExceptionUtils.getStackTrace(ex));
         }
     }
 
     private static void applyErrorCorrection(QrConfig config, String errorCorrectionLevel) {
-        if ("低".equals(errorCorrectionLevel)) {
+        int index = qrCodeForm.getErrorCorrectionLevelComboBox().getSelectedIndex();
+        if (index == 0) {
             config.setErrorCorrection(ErrorCorrectionLevel.L);
-        } else if ("中低".equals(errorCorrectionLevel)) {
+        } else if (index == 1) {
             config.setErrorCorrection(ErrorCorrectionLevel.M);
-        } else if ("中高".equals(errorCorrectionLevel)) {
+        } else if (index == 2) {
             config.setErrorCorrection(ErrorCorrectionLevel.Q);
-        } else if ("高".equals(errorCorrectionLevel)) {
+        } else if (index == 3) {
             config.setErrorCorrection(ErrorCorrectionLevel.H);
         }
     }
@@ -288,14 +295,57 @@ public class QrCodeForm {
         QrCodeListener.addListeners();
 
         ScrollUtil.smoothPane(qrCodeForm.getHistoryScrollPane());
+
+        qrCodeForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(QrCodeForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setTabTitle(tabbedPane1, 0, "qrcode.tab.generate");
+        I18nUiUtil.setTabTitle(tabbedPane1, 1, "qrcode.tab.recognize");
+        I18nUiUtil.setTabTitle(tabbedPane1, 2, "qrcode.tab.history");
+        I18nUiUtil.setText(generateButton, "qrcode.generate");
+        I18nUiUtil.setText(saveAsButton, "common.save");
+        I18nUiUtil.setText(recognitionButton, "qrcode.recognize");
+        I18nUiUtil.setText(fromClipBoardButton, "qrcode.fromClipboard");
+        I18nUiUtil.localizeTree(controlPanel, Map.of(
+                "大小", "qrcode.size",
+                "纠错级别", "qrcode.errorLevel",
+                "Logo图片", "qrcode.logoImage"
+        ));
+        if (tabbedPane1.getTabCount() > 1 && tabbedPane1.getComponentAt(1) instanceof Container recognizeTab) {
+            I18nUiUtil.localizeTree(recognizeTab, Map.of(
+                    "二维码图片路径", "qrcode.imagePath"
+            ));
+        }
+        errorCorrectionLevelComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (index >= 0 && index < ERROR_CORRECTION_KEYS.length) {
+                    setText(I18n.get(ERROR_CORRECTION_KEYS[index]));
+                }
+                return this;
+            }
+        });
+    }
+
+    private static void applyI18nStatic() {
+        if (qrCodeForm != null) {
+            qrCodeForm.applyI18n();
+        }
     }
 
     private static void initUi() {
         qrCodeForm.getGeneratePanel().removeAll();
-        if ("上方".equals(App.config.getMenuBarPosition())) {
+        if (App.config.isMenuBarOnTop()) {
             qrCodeForm.getGeneratePanel().add(qrCodeForm.getControlPanel(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
             qrCodeForm.getGeneratePanel().add(qrCodeForm.getSplitPane(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        } else if ("下方".equals(App.config.getMenuBarPosition())) {
+        } else if (App.config.isMenuBarOnBottom()) {
             qrCodeForm.getGeneratePanel().add(qrCodeForm.getControlPanel(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
             qrCodeForm.getGeneratePanel().add(qrCodeForm.getSplitPane(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         }

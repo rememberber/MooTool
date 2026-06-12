@@ -20,6 +20,9 @@ import com.luoboduner.moo.tool.util.CurlParserUtil;
 import com.luoboduner.moo.tool.util.AutoIndentDocumentFilter;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.MsgUtil;
+import com.luoboduner.moo.tool.util.NamingUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -60,9 +63,9 @@ public class HttpRequestListener {
 
         httpRequestForm.getSaveButton().addActionListener(e -> {
             if (StringUtils.isBlank(selectedName)) {
-                selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                selectedName = NamingUtil.defaultUntitledName();
             }
-            String name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", selectedName);
+            String name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), selectedName);
             if (StringUtils.isNotBlank(name)) {
                 HttpRequestForm.save(name);
             }
@@ -98,7 +101,7 @@ public class HttpRequestListener {
         // 导入 cURL 按钮事件（URL 文本框尾随按钮）
         httpRequestForm.getImportCurlButton().addActionListener(e -> {
             try {
-                JsonResultDialog dialog = new JsonResultDialog(null, "请输入 cURL 命令：", "Input");
+                JsonResultDialog dialog = new JsonResultDialog(null, I18n.get("http.curlInputPrompt"), "Input");
                 dialog.setVisible(true);
                 String curl = JsonResultDialog.textInputValue;
                 if (StringUtils.isBlank(curl)) {
@@ -112,14 +115,8 @@ public class HttpRequestListener {
                 String methodShow = result.getMethod() == null ? "" : result.getMethod();
                 String urlShow = result.getUrl() == null ? "" : result.getUrl();
 
-                String msg = "将导入请求：" +
-                        "\nMethod: " + methodShow +
-                        "\nURL: " + urlShow +
-                        "\nHeaders: " + headerCount +
-                        "\nCookies: " + cookieCount +
-                        "\nBody length: " + bodyLen +
-                        "\n\n确认覆盖当前表单？";
-                int confirm = JOptionPane.showConfirmDialog(App.mainFrame, msg, "确认导入", JOptionPane.YES_NO_OPTION);
+                String msg = I18n.format("msg.confirmImportBody", methodShow, urlShow, headerCount, cookieCount, bodyLen);
+                int confirm = JOptionPane.showConfirmDialog(App.mainFrame, msg, I18n.get("msg.confirmImport"), JOptionPane.YES_NO_OPTION);
                 if (confirm != JOptionPane.YES_OPTION) {
                     return;
                 }
@@ -128,8 +125,7 @@ public class HttpRequestListener {
                 HttpRequestForm.applyImportedRequest(result);
                 HttpRequestForm.splitQueryToParamTable(result.getUrl());
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "导入 cURL 失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.importCurlFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -197,11 +193,9 @@ public class HttpRequestListener {
             }
 
             if (StringUtils.isEmpty(data[0]) || StringUtils.isEmpty(data[1])) {
-                JOptionPane.showMessageDialog(App.mainFrame, "Name和Value不能为空！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(App.mainFrame, "msg.nameValueRequired");
             } else if (keySet.contains(data[0])) {
-                JOptionPane.showMessageDialog(App.mainFrame, "Name不能重复！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(App.mainFrame, "msg.nameDuplicate");
             } else {
                 tableModel.addRow(data);
             }
@@ -227,11 +221,9 @@ public class HttpRequestListener {
             }
 
             if (StringUtils.isEmpty(data[0]) || StringUtils.isEmpty(data[1])) {
-                JOptionPane.showMessageDialog(App.mainFrame, "Name和Value不能为空！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(App.mainFrame, "msg.nameValueRequired");
             } else if (keySet.contains(data[0])) {
-                JOptionPane.showMessageDialog(App.mainFrame, "Name不能重复！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(App.mainFrame, "msg.nameDuplicate");
             } else {
                 tableModel.addRow(data);
             }
@@ -260,11 +252,9 @@ public class HttpRequestListener {
             }
 
             if (StringUtils.isEmpty(data[0]) || StringUtils.isEmpty(data[1]) || StringUtils.isEmpty(data[4])) {
-                JOptionPane.showMessageDialog(App.mainFrame, "Name、Value、Expiry不能为空！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(App.mainFrame, "msg.nameValueExpiryRequired");
             } else if (keySet.contains(data[0])) {
-                JOptionPane.showMessageDialog(App.mainFrame, "Name不能重复！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(App.mainFrame, "msg.nameDuplicate");
             } else {
                 tableModel.addRow(data);
             }
@@ -298,17 +288,15 @@ public class HttpRequestListener {
                     HttpResultFrame.showResultWindow();
 
                     if (StringUtils.isBlank(selectedName)) {
-                        selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                        selectedName = NamingUtil.defaultUntitledName();
                     }
                     HttpRequestForm.save(selectedName);
                 } else {
-                    JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + httpSendResult.getInfo(), "失败",
-                            JOptionPane.ERROR_MESSAGE);
+                    MsgUtil.errorWithDetail(App.mainFrame, "msg.sendFailed", httpSendResult.getInfo());
                 }
 
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.sendFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -333,17 +321,15 @@ public class HttpRequestListener {
                     httpRequestForm.getCookiesTextArea().setCaretPosition(0);
 
                     if (StringUtils.isBlank(selectedName)) {
-                        selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                        selectedName = NamingUtil.defaultUntitledName();
                     }
                     HttpRequestForm.save(selectedName);
                 } else {
-                    JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + httpSendResult.getInfo(), "失败",
-                            JOptionPane.ERROR_MESSAGE);
+                    MsgUtil.errorWithDetail(App.mainFrame, "msg.sendFailed", httpSendResult.getInfo());
                 }
 
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.sendFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -355,7 +341,7 @@ public class HttpRequestListener {
                     String bodyType = (String) httpRequestForm.getBodyTypeComboBox().getSelectedItem();
                     String text = httpRequestForm.getBodyTextArea().getText();
                     if (StringUtils.isBlank(text)) {
-                        JOptionPane.showMessageDialog(App.mainFrame, "Body 为空", "提示", JOptionPane.INFORMATION_MESSAGE);
+                        MsgUtil.info(App.mainFrame, "msg.bodyEmpty");
                         return;
                     }
                     String formatted;
@@ -363,7 +349,7 @@ public class HttpRequestListener {
                         try {
                             formatted = JSONUtil.toJsonPrettyStr(text);
                         } catch (Exception ex) {
-                            JOptionPane.showMessageDialog(App.mainFrame, "JSON 格式化失败\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+                            MsgUtil.errorWithDetail(App.mainFrame, "msg.jsonFormatFailed", ex.getMessage());
                             return;
                         }
                     } else if ("application/xml".equalsIgnoreCase(bodyType) || "text/xml".equalsIgnoreCase(bodyType)) {
@@ -373,18 +359,18 @@ public class HttpRequestListener {
                                     .newDocumentBuilder()
                                     .parse(new org.xml.sax.InputSource(new java.io.StringReader(text)));
                         } catch (Exception ex) {
-                            JOptionPane.showMessageDialog(App.mainFrame, "XML 非法，无法格式化\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+                            MsgUtil.errorWithDetail(App.mainFrame, "msg.xmlFormatFailed", ex.getMessage());
                             return;
                         }
                         formatted = com.luoboduner.moo.tool.util.XmlReformatUtil.format(text);
                     } else {
-                        JOptionPane.showMessageDialog(App.mainFrame, "当前 Body 类型不支持格式化", "提示", JOptionPane.INFORMATION_MESSAGE);
+                        MsgUtil.info(App.mainFrame, "msg.bodyTypeNoFormat");
                         return;
                     }
                     httpRequestForm.getBodyTextArea().setText(formatted);
                     httpRequestForm.getBodyTextArea().setCaretPosition(0);
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(App.mainFrame, "格式化失败\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+                    MsgUtil.errorWithDetail(App.mainFrame, "msg.formatFailedShort", ex.getMessage());
                     logger.error(ExceptionUtils.getStackTrace(ex));
                 }
             });
@@ -448,9 +434,9 @@ public class HttpRequestListener {
                 int[] selectedRows = httpRequestForm.getHistoryTable().getSelectedRows();
 
                 if (selectedRows.length == 0) {
-                    JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(App.mainFrame, "msg.selectAtLeastOne");
                 } else {
-                    int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                    int isDelete = MsgUtil.confirm(App.mainFrame, "msg.confirmDelete");
                     if (isDelete == JOptionPane.YES_OPTION) {
                         DefaultTableModel tableModel = (DefaultTableModel) httpRequestForm.getHistoryTable().getModel();
 
@@ -467,16 +453,15 @@ public class HttpRequestListener {
                     }
                 }
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.deleteFailed", e1.getMessage());
                 log.error(e1.toString());
             }
         });
 
         // 左侧列表增加右键菜单
         JPopupMenu noteListPopupMenu = new JPopupMenu();
-        JMenuItem renameMenuItem = new JMenuItem("重命名");
-        JMenuItem deleteMenuItem = new JMenuItem("删除");
+        JMenuItem renameMenuItem = new JMenuItem(I18n.get("common.rename"));
+        JMenuItem deleteMenuItem = new JMenuItem(I18n.get("common.delete"));
         noteListPopupMenu.add(renameMenuItem);
         noteListPopupMenu.add(deleteMenuItem);
         httpRequestForm.getNoteList().setComponentPopupMenu(noteListPopupMenu);
@@ -500,7 +485,7 @@ public class HttpRequestListener {
             return;
         }
         suppressListEnterRename = true;
-        String afterName = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", beforeName);
+        String afterName = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), beforeName);
         if (StringUtils.isBlank(afterName) || afterName.equals(beforeName)) {
             return;
         }
@@ -514,7 +499,7 @@ public class HttpRequestListener {
             item.setMsgName(afterName);
             model.set(selectedIndex, item);
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
+            MsgUtil.info(App.mainFrame, "msg.renameNoteFailed");
             HttpRequestForm.initList();
             log.error(e.toString());
         }
@@ -525,9 +510,9 @@ public class HttpRequestListener {
             int[] selectedIndices = httpRequestForm.getNoteList().getSelectedIndices();
 
             if (selectedIndices.length == 0) {
-                JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(App.mainFrame, "msg.selectAtLeastOne");
             } else {
-                int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                int isDelete = MsgUtil.confirm(App.mainFrame, "msg.confirmDelete");
                 if (isDelete == JOptionPane.YES_OPTION) {
                     DefaultListModel<TMsgHttp> listModel = (DefaultListModel<TMsgHttp>) httpRequestForm.getNoteList().getModel();
 
@@ -540,8 +525,7 @@ public class HttpRequestListener {
                 }
             }
         } catch (Exception e1) {
-            JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
-                    JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(App.mainFrame, "msg.deleteFailed", e1.getMessage());
             log.error(e1.toString());
         }
     }

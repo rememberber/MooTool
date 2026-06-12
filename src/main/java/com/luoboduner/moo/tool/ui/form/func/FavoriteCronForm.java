@@ -53,10 +53,14 @@ public class FavoriteCronForm {
     private JPanel listControlPanel;
     private JPanel itemControlPanel;
     private JButton listItemButton;
+    private JMenuItem renameMenuItem;
+    private JMenuItem deleteMenuItem;
 
     public static FavoriteCronForm favoriteCronForm;
 
     private static final Log logger = LogFactory.get();
+
+    private static boolean i18nRegistered;
 
     private static TFavoriteCronListMapper favoriteCronListMapper = MybatisUtil.getSqlSession().getMapper(TFavoriteCronListMapper.class);
     private static TFavoriteCronItemMapper favoriteCronItemMapper = MybatisUtil.getSqlSession().getMapper(TFavoriteCronItemMapper.class);
@@ -131,7 +135,7 @@ public class FavoriteCronForm {
             }
         });
         newListButton.addActionListener(e -> {
-            String title = JOptionPane.showInputDialog(favoriteCronPanel, "收藏夹名称", "");
+            String title = MsgUtil.input(favoriteCronPanel, "favorite.folderName", "");
             if (StringUtils.isNotBlank(title)) {
                 try {
                     TFavoriteCronList tFavoriteCronList = new TFavoriteCronList();
@@ -143,9 +147,9 @@ public class FavoriteCronForm {
                     initList();
                 } catch (Exception ex) {
                     if (ex.getMessage().contains("constraint")) {
-                        JOptionPane.showMessageDialog(favoriteCronPanel, "存在相同的名称，请重新命名！", "失败", JOptionPane.WARNING_MESSAGE);
+                        MsgUtil.warn(favoriteCronPanel, "msg.duplicateFolderName");
                     } else {
-                        JOptionPane.showMessageDialog(favoriteCronPanel, "异常：" + ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
+                        MsgUtil.errorWithDetail(favoriteCronPanel, "msg.exceptionWithDetail", ex.getMessage());
                     }
                     logger.error(ExceptionUtils.getStackTrace(ex));
                 }
@@ -164,9 +168,9 @@ public class FavoriteCronForm {
                 int[] selectedRows = itemTable.getSelectedRows();
 
                 if (selectedRows.length == 0) {
-                    JOptionPane.showMessageDialog(favoriteCronPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(favoriteCronPanel, "msg.selectAtLeastOne");
                 } else if (selectedRows[0] == 0) {
-                    JOptionPane.showMessageDialog(favoriteCronPanel, "已到顶部！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(favoriteCronPanel, "msg.alreadyAtTop");
                 } else {
                     ListSelectionModel listSelectionModel = new DefaultListSelectionModel();
                     DefaultTableModel tableModel = (DefaultTableModel) itemTable.getModel();
@@ -213,8 +217,7 @@ public class FavoriteCronForm {
                     itemTable.setSelectionModel(listSelectionModel);
                 }
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(favoriteCronPanel, "操作失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(favoriteCronPanel, "msg.operationFailed", e1.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(e1));
             }
         });
@@ -223,9 +226,9 @@ public class FavoriteCronForm {
                 int[] selectedRows = itemTable.getSelectedRows();
 
                 if (selectedRows.length == 0) {
-                    JOptionPane.showMessageDialog(favoriteCronPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(favoriteCronPanel, "msg.selectAtLeastOne");
                 } else if (selectedRows[selectedRows.length - 1] == itemTable.getRowCount() - 1) {
-                    JOptionPane.showMessageDialog(favoriteCronPanel, "已到底部！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(favoriteCronPanel, "msg.alreadyAtBottom");
                 } else {
                     ListSelectionModel listSelectionModel = new DefaultListSelectionModel();
                     DefaultTableModel tableModel = (DefaultTableModel) itemTable.getModel();
@@ -271,8 +274,7 @@ public class FavoriteCronForm {
                     itemTable.setSelectionModel(listSelectionModel);
                 }
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(favoriteCronPanel, "操作失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(favoriteCronPanel, "msg.operationFailed", e1.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(e1));
             }
         });
@@ -306,8 +308,8 @@ public class FavoriteCronForm {
         });
 
         JPopupMenu favoriteListPopupMenu = new JPopupMenu();
-        JMenuItem renameMenuItem = new JMenuItem("重命名");
-        JMenuItem deleteMenuItem = new JMenuItem("删除");
+        renameMenuItem = new JMenuItem();
+        deleteMenuItem = new JMenuItem();
         favoriteListPopupMenu.add(renameMenuItem);
         favoriteListPopupMenu.add(deleteMenuItem);
         favoriteList.setComponentPopupMenu(favoriteListPopupMenu);
@@ -341,7 +343,7 @@ public class FavoriteCronForm {
                         try {
                             favoriteCronItemMapper.updateByPrimaryKeySelective(tFavoriteCronItem);
                         } catch (Exception e) {
-                            JOptionPane.showMessageDialog(favoriteCronPanel, "重命名失败，和已有文件重名");
+                            MsgUtil.info(favoriteCronPanel, "msg.renameFailed");
                             viewListBySelected(selectedRow);
                             log.error(e.toString());
                         }
@@ -358,9 +360,9 @@ public class FavoriteCronForm {
             int[] selectedRows = itemTable.getSelectedRows();
 
             if (selectedRows.length == 0) {
-                JOptionPane.showMessageDialog(favoriteCronPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(favoriteCronPanel, "msg.selectAtLeastOne");
             } else {
-                int isDelete = JOptionPane.showConfirmDialog(favoriteCronPanel, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                int isDelete = MsgUtil.confirm(favoriteCronPanel, "msg.confirmDelete");
                 if (isDelete == JOptionPane.YES_OPTION) {
                     DefaultTableModel tableModel = (DefaultTableModel) itemTable.getModel();
 
@@ -373,8 +375,7 @@ public class FavoriteCronForm {
                 }
             }
         } catch (Exception e1) {
-            JOptionPane.showMessageDialog(favoriteCronPanel, "删除失败！\n\n" + e1.getMessage(), "失败",
-                    JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(favoriteCronPanel, "msg.deleteFailed", e1.getMessage());
             logger.error(ExceptionUtils.getStackTrace(e1));
         }
     }
@@ -384,9 +385,9 @@ public class FavoriteCronForm {
             int[] selectedIndices = favoriteList.getSelectedIndices();
 
             if (selectedIndices.length == 0) {
-                JOptionPane.showMessageDialog(favoriteCronPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(favoriteCronPanel, "msg.selectAtLeastOne");
             } else {
-                int isDelete = JOptionPane.showConfirmDialog(favoriteCronPanel, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                int isDelete = MsgUtil.confirm(favoriteCronPanel, "msg.confirmDelete");
                 if (isDelete == JOptionPane.YES_OPTION) {
                     DefaultListModel<TFavoriteCronList> model = (DefaultListModel<TFavoriteCronList>) favoriteList.getModel();
 
@@ -397,8 +398,7 @@ public class FavoriteCronForm {
                 }
             }
         } catch (Exception e1) {
-            JOptionPane.showMessageDialog(favoriteCronPanel, "删除失败！\n\n" + e1.getMessage(), "失败",
-                    JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(favoriteCronPanel, "msg.deleteFailed", e1.getMessage());
             logger.error(ExceptionUtils.getStackTrace(e1));
         }
     }
@@ -426,7 +426,7 @@ public class FavoriteCronForm {
             return;
         }
         suppressListEnterRename = true;
-        String afterTitle = JOptionPane.showInputDialog(favoriteCronPanel, "收藏夹名称", beforeTitle);
+        String afterTitle = MsgUtil.input(favoriteCronPanel, "favorite.folderName", beforeTitle);
         if (StringUtils.isBlank(afterTitle) || afterTitle.equals(beforeTitle)) {
             return;
         }
@@ -437,7 +437,7 @@ public class FavoriteCronForm {
             favoriteCronListMapper.updateByPrimaryKeySelective(tFavoriteCronList);
             initList();
         } catch (Exception e) {
-            JOptionPane.showMessageDialog(favoriteCronPanel, "重命名失败，和已有文件重名");
+            MsgUtil.info(favoriteCronPanel, "msg.renameFailed");
             initList();
             log.error(e.toString());
         }
@@ -472,6 +472,30 @@ public class FavoriteCronForm {
 
         initList();
         favoriteCronForm.getFavoriteCronPanel().updateUI();
+
+        favoriteCronForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(FavoriteCronForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setToolTip(newListButton, "favorite.tooltip.newList");
+        I18nUiUtil.setToolTip(deleteListButton, "favorite.tooltip.deleteList");
+        I18nUiUtil.setToolTip(deleteItemButton, "favorite.tooltip.deleteItem");
+        I18nUiUtil.setToolTip(moveUpButton, "favorite.tooltip.moveUp");
+        I18nUiUtil.setToolTip(moveDownButton, "favorite.tooltip.moveDown");
+        I18nUiUtil.setToolTip(listItemButton, "favorite.tooltip.toggleList");
+        I18nUiUtil.setText(renameMenuItem, "common.rename");
+        I18nUiUtil.setText(deleteMenuItem, "common.delete");
+        initItemTable(null);
+    }
+
+    private static void applyI18nStatic() {
+        if (favoriteCronForm != null) {
+            favoriteCronForm.applyI18n();
+        }
     }
 
     public static FavoriteCronForm getInstance() {
@@ -511,7 +535,7 @@ public class FavoriteCronForm {
         } else {
             lastSelectedListId = listId;
         }
-        String[] headerNames = {"id", "cron", "名称", "排序号"};
+        String[] headerNames = {"id", "cron", I18n.get("favorite.col.name"), I18n.get("favorite.col.sortOrder")};
         DefaultTableModel model = new DefaultTableModel(null, headerNames);
         favoriteCronForm.getItemTable().setModel(model);
         // 隐藏表头

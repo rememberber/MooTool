@@ -8,6 +8,8 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.component.textviewer.RegexRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.textviewer.RegexRTextScrollPane;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
@@ -32,13 +34,16 @@ public class JsonResultDialog extends JDialog {
 
     public JsonResultDialog(String contentType, String tips, String displayOrInput) {
 
-        super(App.mainFrame, "Result");
+        super(App.mainFrame, "display".equalsIgnoreCase(displayOrInput)
+                ? I18n.get("dialog.title.result")
+                : I18n.get("dialog.title.input"));
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.6, 0.8);
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
 
         tipsLabel.setText(tips);
+        I18nUiUtil.setText(buttonOK, "common.ok");
         textArea = new RegexRSyntaxTextViewer();
         switch (contentType) {
             case "XML" -> textArea.setSyntaxEditingStyle(SyntaxConstants.SYNTAX_STYLE_XML);

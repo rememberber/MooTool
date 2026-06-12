@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.ui.component;
 
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.util.MsgUtil;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
@@ -73,8 +74,7 @@ public class TableInCellButtonColumn extends AbstractCellEditor implements
 
     @Override
     public void actionPerformed(ActionEvent e) {
-        int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确定移除？", "请确认",
-                JOptionPane.YES_NO_OPTION);
+        int isDelete = MsgUtil.confirmWithTitle(App.mainFrame, "msg.confirmRemove", "common.pleaseConfirm");
         if (isDelete == JOptionPane.YES_OPTION) {
             fireEditingStopped();
             DefaultTableModel model = (DefaultTableModel) table.getModel();

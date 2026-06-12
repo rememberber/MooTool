@@ -12,6 +12,9 @@ import com.luoboduner.moo.tool.domain.TFavoriteRegexList;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.FavoriteRegexForm;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -45,7 +48,7 @@ public class FavoriteRegexDialog extends JDialog {
     private static TFavoriteRegexItemMapper favoriteRegexItemMapper = MybatisUtil.getSqlSession().getMapper(TFavoriteRegexItemMapper.class);
 
     public FavoriteRegexDialog() {
-        super(App.mainFrame, "正则表达式收藏");
+        super(App.mainFrame, I18n.get("favorite.dialog.regex.title"));
         setContentPane(contentPane);
         setModal(true);
         getRootPane().setDefaultButton(buttonOK);
@@ -77,7 +80,7 @@ public class FavoriteRegexDialog extends JDialog {
         // call onCancel() on ESCAPE
         contentPane.registerKeyboardAction(e -> onCancel(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
         newFavoriteBookListButton.addActionListener(e -> {
-            String title = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "收藏夹名称", "");
+            String title = MsgUtil.input(MainWindow.getInstance().getMainPanel(), "favorite.folderName", "");
             if (StringUtils.isNotBlank(title)) {
                 try {
                     TFavoriteRegexList tFavoriteRegexList = new TFavoriteRegexList();
@@ -89,14 +92,23 @@ public class FavoriteRegexDialog extends JDialog {
                     fillFavoriteListComboBox();
                 } catch (Exception ex) {
                     if (ex.getMessage().contains("constraint")) {
-                        JOptionPane.showMessageDialog(this, "存在相同的名称，请重新命名！", "失败", JOptionPane.WARNING_MESSAGE);
+                        MsgUtil.warn(this, "msg.duplicateFolderName");
                     } else {
-                        JOptionPane.showMessageDialog(this, "异常：" + ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
+                        MsgUtil.errorWithDetail(this, "msg.exceptionWithDetail", ex.getMessage());
                     }
                     log.error(ExceptionUtils.getStackTrace(ex));
                 }
             }
         });
+
+        applyI18n();
+    }
+
+    private void applyI18n() {
+        setTitle(I18n.get("favorite.dialog.regex.title"));
+        I18nUiUtil.setText(buttonOK, "common.ok");
+        I18nUiUtil.setText(buttonCancel, "common.cancel");
+        I18nUiUtil.setText(newFavoriteBookListButton, "favorite.newFolder");
     }
 
     private void onOK() {
@@ -119,11 +131,11 @@ public class FavoriteRegexDialog extends JDialog {
             FavoriteRegexForm.getInstance().init();
         } catch (Exception e) {
             if (e.getMessage().contains("constraint")) {
-                JOptionPane.showMessageDialog(this, "存在相同的名称，请重新命名！", "失败", JOptionPane.WARNING_MESSAGE);
+                MsgUtil.warn(this, "msg.duplicateFolderName");
                 nameTextField.grabFocus();
                 nameTextField.selectAll();
             } else {
-                JOptionPane.showMessageDialog(this, "异常：" + e.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(this, "msg.exceptionWithDetail", e.getMessage());
             }
             log.error(ExceptionUtils.getStackTrace(e));
         }
@@ -139,7 +151,8 @@ public class FavoriteRegexDialog extends JDialog {
             regex = regex.substring(0, 40) + "...";
         }
         regexValueLabel.setText(regex);
-        nameTextField.setText("未命名正则表达式-" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss"));
+        nameTextField.setText(I18n.get("favorite.regex.defaultNamePrefix")
+                + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss"));
         nameTextField.grabFocus();
         nameTextField.selectAll();
         fillFavoriteListComboBox();

@@ -8,6 +8,7 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
 import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.fife.ui.rsyntaxtextarea.DocumentRange;
@@ -25,6 +26,8 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.function.Consumer;
 
 /**
@@ -44,6 +47,10 @@ import java.util.function.Consumer;
 @Getter
 @Slf4j
 public class FindReplaceBar {
+
+    private static final CopyOnWriteArrayList<FindReplaceBar> INSTANCES = new CopyOnWriteArrayList<>();
+    private static volatile boolean I18N_REGISTERED;
+
     private JPanel findOptionPanel;
     private JTextField findField;
     private JTextField replaceField;
@@ -72,6 +79,9 @@ public class FindReplaceBar {
                 GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE,
                 GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         initComponents();
+        applyI18n();
+        INSTANCES.add(this);
+        registerI18n();
 
         findField.getDocument().addDocumentListener(new MarkAllUpdater());
 
@@ -260,6 +270,33 @@ public class FindReplaceBar {
         findOptionPanel.getParent().setVisible(false);
         context.setSearchFor(null);
         SearchEngine.markAll(textArea, context);
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setText(doFindButton, "common.find");
+        I18nUiUtil.setText(replaceButton, "findReplace.replace");
+        I18nUiUtil.setToolTip(closeButton, "common.close");
+        I18nUiUtil.setText(regexToggleButton, "findReplace.regex");
+        I18nUiUtil.setText(matchCaseToggleButton, "findReplace.matchCase");
+        I18nUiUtil.setText(matchWholeWordToggleButton, "findReplace.wholeWord");
+        I18nUiUtil.setText(replaceAllButton, "findReplace.replaceAll");
+        I18nUiUtil.setToolTip(findPreviousButton, "findReplace.previous");
+        I18nUiUtil.setToolTip(findNextButton, "findReplace.next");
+        I18nUiUtil.localizeTree(findOptionPanel, Map.of(
+                "共找到:", "findReplace.foundPrefix",
+                "已替换:", "findReplace.replacedPrefix"
+        ));
+    }
+
+    private static void registerI18n() {
+        if (!I18N_REGISTERED) {
+            synchronized (FindReplaceBar.class) {
+                if (!I18N_REGISTERED) {
+                    I18nUiUtil.register(() -> INSTANCES.forEach(FindReplaceBar::applyI18n));
+                    I18N_REGISTERED = true;
+                }
+            }
+        }
     }
 
     private void initComponents() {

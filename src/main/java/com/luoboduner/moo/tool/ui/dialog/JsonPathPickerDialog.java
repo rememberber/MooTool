@@ -4,6 +4,8 @@ import cn.hutool.json.JSONUtil;
 import com.formdev.flatlaf.util.SystemInfo;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.JsonPathTreeUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -28,7 +30,7 @@ public class JsonPathPickerDialog extends JDialog {
     private String selectedJsonPath;
 
     public JsonPathPickerDialog(String jsonText) {
-        super(App.mainFrame, "可视化获取 JSON Path");
+        super(App.mainFrame, I18n.get("jsonPathPicker.title"));
         this.jsonText = jsonText;
         setModal(true);
         setDefaultCloseOperation(DISPOSE_ON_CLOSE);
@@ -124,7 +126,7 @@ public class JsonPathPickerDialog extends JDialog {
     private void onOK() {
         String jsonPath = StringUtils.trimToEmpty(jsonPathTextField.getText());
         if (StringUtils.isBlank(jsonPath)) {
-            JOptionPane.showMessageDialog(this, "JSON Path 不能为空！", "提示", JOptionPane.WARNING_MESSAGE);
+            MsgUtil.info(this, "msg.jsonPathEmpty");
             jsonPathTextField.grabFocus();
             return;
         }
@@ -133,8 +135,7 @@ public class JsonPathPickerDialog extends JDialog {
             selectedJsonPath = jsonPath;
             dispose();
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(this, "JSON Path 无效！\n\n" + ex.getMessage(), "失败",
-                    JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(this, "msg.jsonPathInvalid", ex.getMessage());
             jsonPathTextField.grabFocus();
             jsonPathTextField.selectAll();
         }
