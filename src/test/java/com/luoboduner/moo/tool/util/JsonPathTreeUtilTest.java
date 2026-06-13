@@ -12,6 +12,19 @@ import static org.junit.Assert.assertTrue;
 public class JsonPathTreeUtilTest {
 
     @Test
+    public void shouldShowElementCountOnRootNode() {
+        String objectJson = "{\"name\":\"test\",\"arr\":[{\"id\":1}],\"a.b\":2}";
+        DefaultMutableTreeNode objectRoot = JsonPathTreeUtil.buildNode(JSONUtil.parse(objectJson), "$", JsonPathTreeUtil.formatRootLabel(JSONUtil.parse(objectJson)));
+        JsonPathTreeUtil.JsonPathNode objectRootData = (JsonPathTreeUtil.JsonPathNode) objectRoot.getUserObject();
+        assertEquals("(root): {...} (3 keys)", objectRootData.getDisplayText());
+
+        String arrayJson = "[1,2,{\"a\":3}]";
+        DefaultMutableTreeNode arrayRoot = JsonPathTreeUtil.buildNode(JSONUtil.parse(arrayJson), "$", JsonPathTreeUtil.formatRootLabel(JSONUtil.parse(arrayJson)));
+        JsonPathTreeUtil.JsonPathNode arrayRootData = (JsonPathTreeUtil.JsonPathNode) arrayRoot.getUserObject();
+        assertEquals("(root): [...] (3 items)", arrayRootData.getDisplayText());
+    }
+
+    @Test
     public void shouldBuildObjectAndArrayPaths() {
         String json = "{\"name\":\"test\",\"arr\":[{\"id\":1}],\"a.b\":2}";
         DefaultMutableTreeNode root = JsonPathTreeUtil.buildNode(JSONUtil.parse(json), "$", "(root)");
