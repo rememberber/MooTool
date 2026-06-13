@@ -11,6 +11,8 @@ public final class TabUiUtil {
 
     public static final String SELECTION_ON_LEADING_EDGE = "MooTool.selectionOnLeadingEdge";
 
+    public static final String HIDE_TAB_STRIP = "MooTool.hideTabStrip";
+
     private static final ThreadLocal<Boolean> INSTALLING = ThreadLocal.withInitial(() -> false);
 
     private TabUiUtil() {
@@ -42,6 +44,23 @@ public final class TabUiUtil {
 
     public static boolean isSelectionOnLeadingEdge(JTabbedPane tabbedPane) {
         return Boolean.TRUE.equals(tabbedPane.getClientProperty(SELECTION_ON_LEADING_EDGE));
+    }
+
+    public static boolean isTabStripHidden(JTabbedPane tabbedPane) {
+        return Boolean.TRUE.equals(tabbedPane.getClientProperty(HIDE_TAB_STRIP));
+    }
+
+    public static void setTabStripHidden(JTabbedPane tabbedPane, boolean hidden) {
+        if (hidden) {
+            tabbedPane.putClientProperty(HIDE_TAB_STRIP, Boolean.TRUE);
+        } else {
+            tabbedPane.putClientProperty(HIDE_TAB_STRIP, null);
+        }
+        if (tabbedPane.getUI() != null) {
+            tabbedPane.revalidate();
+            tabbedPane.repaint();
+            forceTabContentLayout(tabbedPane);
+        }
     }
 
     public static void installSafeUi(JTabbedPane tabbedPane, boolean leadingEdgeSelection) {

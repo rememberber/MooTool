@@ -69,6 +69,8 @@ public class SettingDialog extends JDialog {
     private JCheckBox tabHideTitleCheckBox;
     private JCheckBox tabCardCheckBox;
     private JCheckBox tabGroupedCheckBox;
+
+    private boolean updatingTabStyle;
     private JToolBar toolBar;
     public static String[] accentColorKeys = {
             "Moo.accent.default",
@@ -179,6 +181,7 @@ public class SettingDialog extends JDialog {
         tabHideTitleCheckBox.setSelected(App.config.isTabHideTitle());
         tabCardCheckBox.setSelected(App.config.isTabCard());
         tabGroupedCheckBox.setSelected(App.config.isFuncTabGrouped());
+        updateTabStyleControlsState();
 
         // sql dialect
         sqlDialectComboBox.setSelectedItem(App.config.getSqlDialect());
@@ -258,14 +261,30 @@ public class SettingDialog extends JDialog {
             MainWindow.getInstance().initTabPlacement();
         });
         tabCardCheckBox.addItemListener(e -> {
-            App.config.setTabCard(e.getStateChange() == ItemEvent.SELECTED);
-            App.config.save();
-            MainWindow.getInstance().initTabPlacement();
+            if (updatingTabStyle) {
+                return;
+            }
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                applyExclusiveTabStyle(false, true);
+            } else {
+                App.config.setTabCard(false);
+                App.config.save();
+                updateTabStyleControlsState();
+                MainWindow.getInstance().initTabPlacement();
+            }
         });
         tabGroupedCheckBox.addItemListener(e -> {
-            App.config.setFuncTabGrouped(e.getStateChange() == ItemEvent.SELECTED);
-            App.config.save();
-            MainWindow.getInstance().initTabPlacement();
+            if (updatingTabStyle) {
+                return;
+            }
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                applyExclusiveTabStyle(true, false);
+            } else {
+                App.config.setFuncTabGrouped(false);
+                App.config.save();
+                updateTabStyleControlsState();
+                MainWindow.getInstance().initTabPlacement();
+            }
         });
 
         sqlDialectComboBox.addItemListener(e -> {
@@ -399,6 +418,33 @@ public class SettingDialog extends JDialog {
         panel9.add(tabGroupedCheckBox, new GridConstraints(3, 1, 1, 1, GridConstraints.ANCHOR_WEST,
                 GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                 GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+    }
+
+    private void applyExclusiveTabStyle(boolean grouped, boolean card) {
+        updatingTabStyle = true;
+        try {
+            tabGroupedCheckBox.setSelected(grouped);
+            tabCardCheckBox.setSelected(card);
+            App.config.setFuncTabGrouped(grouped);
+            App.config.setTabCard(card);
+            App.config.save();
+            updateTabStyleControlsState();
+            MainWindow.getInstance().initTabPlacement();
+        } finally {
+            updatingTabStyle = false;
+        }
+    }
+
+    private void updateTabStyleControlsState() {
+        boolean grouped = tabGroupedCheckBox.isSelected();
+        boolean card = tabCardCheckBox.isSelected();
+        tabGroupedCheckBox.setEnabled(!card);
+        tabCardCheckBox.setEnabled(!grouped);
+        boolean classicTabStyle = !grouped;
+        tabCompactCheckBox.setEnabled(classicTabStyle);
+        tabHideTitleCheckBox.setEnabled(classicTabStyle);
+        tabSeparatorCheckBox.setEnabled(classicTabStyle);
+        funcTabPositionComboBox.setEnabled(classicTabStyle);
     }
 
     private void setupPositionCombo(JComboBox<String> comboBox, String... keys) {

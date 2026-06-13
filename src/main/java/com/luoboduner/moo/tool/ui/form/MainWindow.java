@@ -161,6 +161,7 @@ public class MainWindow {
         initFuncTabShell();
         boolean grouped = App.config.isFuncTabGrouped();
         if (grouped) {
+            TabUiUtil.installSafeUi(tabbedPane, false);
             if (funcTabGroupSidebar == null) {
                 funcTabGroupSidebar = new FuncTabGroupSidebar(tabbedPane);
             } else {
@@ -182,14 +183,13 @@ public class MainWindow {
     }
 
     private void setTabStripHidden(boolean hidden) {
+        TabUiUtil.setTabStripHidden(tabbedPane, hidden);
         if (hidden) {
-            tabbedPane.putClientProperty(TABBED_PANE_TAB_HEIGHT, 0);
             tabbedPane.putClientProperty(TABBED_PANE_SHOW_CONTENT_SEPARATOR, false);
         } else {
-            tabbedPane.putClientProperty(TABBED_PANE_TAB_HEIGHT, null);
             tabbedPane.putClientProperty(TABBED_PANE_SHOW_CONTENT_SEPARATOR, null);
+            tabbedPane.putClientProperty(TABBED_PANE_TAB_HEIGHT, null);
         }
-        TabUiUtil.forceTabContentLayout(tabbedPane);
     }
 
     public void refreshTabbedPaneUi() {

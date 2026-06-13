@@ -472,11 +472,17 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public boolean isTabCard() {
+        if (isFuncTabGrouped()) {
+            return false;
+        }
         return setting.getBool("tabCard", "setting.custom", false);
     }
 
     public void setTabCard(boolean tabCard) {
         setting.putByGroup("tabCard", "setting.custom", String.valueOf(tabCard));
+        if (tabCard) {
+            setting.putByGroup("funcTabGrouped", "setting.custom", "false");
+        }
     }
 
     public boolean isFuncTabGrouped() {
@@ -485,6 +491,9 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setFuncTabGrouped(boolean funcTabGrouped) {
         setting.putByGroup("funcTabGrouped", "setting.custom", String.valueOf(funcTabGrouped));
+        if (funcTabGrouped) {
+            setting.putByGroup("tabCard", "setting.custom", "false");
+        }
     }
 
     public String getSqlDialect() {

@@ -149,6 +149,14 @@ public class MooFlatTabbedPaneUI extends FlatTabbedPaneUI {
     }
 
     @Override
+    protected boolean hideTabArea() {
+        if (tabPane != null && TabUiUtil.isTabStripHidden(tabPane)) {
+            return true;
+        }
+        return super.hideTabArea();
+    }
+
+    @Override
     protected void paintTabSelection(Graphics g, int tabPlacement, int tabIndex, int x, int y, int w, int h) {
         if (!isSelectionOnLeadingEdge() || tabPlacement != JTabbedPane.LEFT) {
             super.paintTabSelection(g, tabPlacement, tabIndex, x, y, w, h);
