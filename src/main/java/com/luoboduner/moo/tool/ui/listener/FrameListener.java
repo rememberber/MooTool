@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.listener;
 
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
+import com.luoboduner.moo.tool.ui.dialog.FuncNavigatorDialog;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -116,6 +117,12 @@ public class FrameListener {
 
         // Command + W 隐藏窗口
         MainWindow.getInstance().getMainPanel().registerKeyboardAction(e -> hideMainFrame(), KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.META_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+
+        int searchShortcutMask = SystemUtil.isMacOs() ? InputEvent.META_DOWN_MASK : InputEvent.CTRL_DOWN_MASK;
+        MainWindow.getInstance().getMainPanel().registerKeyboardAction(
+                e -> FuncNavigatorDialog.showDialog(),
+                KeyStroke.getKeyStroke(KeyEvent.VK_F, searchShortcutMask | InputEvent.SHIFT_DOWN_MASK),
+                JComponent.WHEN_IN_FOCUSED_WINDOW);
 
     }
 

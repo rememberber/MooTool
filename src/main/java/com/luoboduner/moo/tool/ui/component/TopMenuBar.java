@@ -47,6 +47,7 @@ public class TopMenuBar extends JMenuBar {
     private static JMenuItem settingMenuItem;
     private static JMenuItem syncAndBackupMenuItem;
     private static JMenuItem keyMapMenuItem;
+    private static JMenuItem funcNavigatorMenuItem;
     private static JMenuItem logMenuItem;
     private static JMenuItem sysEnvMenuItem;
     private static JMenuItem exitMenuItem;
@@ -134,6 +135,9 @@ public class TopMenuBar extends JMenuBar {
         keyMapMenuItem = new JMenuItem();
         keyMapMenuItem.addActionListener(e -> keyMapActionPerformed());
         appMenu.add(keyMapMenuItem);
+        funcNavigatorMenuItem = new JMenuItem();
+        funcNavigatorMenuItem.addActionListener(e -> FuncNavigatorDialog.showDialog());
+        appMenu.add(funcNavigatorMenuItem);
         logMenuItem = new JMenuItem();
         logMenuItem.addActionListener(e -> logActionPerformed());
         appMenu.add(logMenuItem);
@@ -242,6 +246,7 @@ public class TopMenuBar extends JMenuBar {
         settingMenuItem.setText(I18n.get("menu.settings"));
         syncAndBackupMenuItem.setText(I18n.get("menu.syncBackup"));
         keyMapMenuItem.setText(I18n.get("menu.keymap"));
+        funcNavigatorMenuItem.setText(I18n.get("menu.funcNavigator"));
         logMenuItem.setText(I18n.get("menu.viewLog"));
         sysEnvMenuItem.setText(I18n.get("menu.systemEnv"));
         exitMenuItem.setText(I18n.get("menu.exit"));

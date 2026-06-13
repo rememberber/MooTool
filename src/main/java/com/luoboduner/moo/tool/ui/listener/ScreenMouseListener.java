@@ -1,7 +1,7 @@
 package com.luoboduner.moo.tool.ui.listener;
 
 import com.luoboduner.moo.tool.ui.Init;
-import com.luoboduner.moo.tool.ui.form.MainWindow;
+import com.luoboduner.moo.tool.ui.FuncTabCatalog;
 import com.luoboduner.moo.tool.ui.form.func.ColorBoardForm;
 import com.luoboduner.moo.tool.ui.form.func.ColorPickerForm;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
@@ -35,7 +35,7 @@ public class ScreenMouseListener implements MouseInputListener {
         Color color = robot.getPixelColor(point.x, point.y);
 
         ColorBoardForm.setSelectedColor(color);
-        MainWindow.getInstance().getTabbedPane().setSelectedIndex(10);
+        FuncTabCatalog.switchToById("colorBoard");
         Init.showMainFrame();
         ColorPickerFrame.exit();
         ScreenMouseListener.robot = null;

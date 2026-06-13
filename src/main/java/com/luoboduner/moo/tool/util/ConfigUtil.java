@@ -169,6 +169,14 @@ public class ConfigUtil extends ConfigBaseUtil {
         setting.putByGroup("recentTabIndex", "setting.common", String.valueOf(recentTabIndex));
     }
 
+    public String getSettingStr(String key, String group, String defaultValue) {
+        return setting.getStr(key, group, defaultValue);
+    }
+
+    public void putSettingByGroup(String key, String group, String value) {
+        setting.putByGroup(key, group, value);
+    }
+
     public String getBeforeVersion() {
         return setting.getStr("beforeVersion", "setting.common", "v0.0.0");
     }
@@ -469,6 +477,14 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setTabCard(boolean tabCard) {
         setting.putByGroup("tabCard", "setting.custom", String.valueOf(tabCard));
+    }
+
+    public boolean isFuncTabGrouped() {
+        return setting.getBool("funcTabGrouped", "setting.custom", true);
+    }
+
+    public void setFuncTabGrouped(boolean funcTabGrouped) {
+        setting.putByGroup("funcTabGrouped", "setting.custom", String.valueOf(funcTabGrouped));
     }
 
     public String getSqlDialect() {

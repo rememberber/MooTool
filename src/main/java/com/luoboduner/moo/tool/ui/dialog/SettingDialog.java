@@ -68,6 +68,7 @@ public class SettingDialog extends JDialog {
     private JCheckBox tabSeparatorCheckBox;
     private JCheckBox tabHideTitleCheckBox;
     private JCheckBox tabCardCheckBox;
+    private JCheckBox tabGroupedCheckBox;
     private JToolBar toolBar;
     public static String[] accentColorKeys = {
             "Moo.accent.default",
@@ -112,6 +113,7 @@ public class SettingDialog extends JDialog {
             "隐藏标题", "setting.tabHideTitle",
             "显示分割线", "setting.tabSeparator",
             "卡片页签", "setting.tabCard",
+            "分组导航", "setting.tabGrouped",
             "使用HTTP代理", "setting.httpProxy"
     );
 
@@ -169,11 +171,14 @@ public class SettingDialog extends JDialog {
 
         toggleHttpProxyPanel();
 
+        initTabGroupedCheckBox();
+
         // 功能Tab样式
         tabCompactCheckBox.setSelected(App.config.isTabCompact());
         tabSeparatorCheckBox.setSelected(App.config.isTabSeparator());
         tabHideTitleCheckBox.setSelected(App.config.isTabHideTitle());
         tabCardCheckBox.setSelected(App.config.isTabCard());
+        tabGroupedCheckBox.setSelected(App.config.isFuncTabGrouped());
 
         // sql dialect
         sqlDialectComboBox.setSelectedItem(App.config.getSqlDialect());
@@ -254,6 +259,11 @@ public class SettingDialog extends JDialog {
         });
         tabCardCheckBox.addItemListener(e -> {
             App.config.setTabCard(e.getStateChange() == ItemEvent.SELECTED);
+            App.config.save();
+            MainWindow.getInstance().initTabPlacement();
+        });
+        tabGroupedCheckBox.addItemListener(e -> {
+            App.config.setFuncTabGrouped(e.getStateChange() == ItemEvent.SELECTED);
             App.config.save();
             MainWindow.getInstance().initTabPlacement();
         });
@@ -378,6 +388,17 @@ public class SettingDialog extends JDialog {
         menuBarPositionComboBox.setSelectedItem(App.config.getMenuBarPosition());
         setupPositionCombo(funcTabPositionComboBox, "top", "left");
         funcTabPositionComboBox.setSelectedItem(App.config.getFuncTabPosition());
+    }
+
+    private void initTabGroupedCheckBox() {
+        if (tabGroupedCheckBox != null) {
+            return;
+        }
+        Container panel9 = tabCompactCheckBox.getParent();
+        tabGroupedCheckBox = new JCheckBox("分组导航");
+        panel9.add(tabGroupedCheckBox, new GridConstraints(3, 1, 1, 1, GridConstraints.ANCHOR_WEST,
+                GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     private void setupPositionCombo(JComboBox<String> comboBox, String... keys) {

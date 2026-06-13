@@ -3,6 +3,8 @@ package com.luoboduner.moo.tool.ui.listener;
 
 import cn.hutool.core.util.RuntimeUtil;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
+import com.luoboduner.moo.tool.util.FuncGroupUtil;
+import com.luoboduner.moo.tool.ui.FuncTabCatalog;
 import com.luoboduner.moo.tool.ui.form.func.HardwareInfoForm;
 import com.luoboduner.moo.tool.ui.form.func.NetForm;
 import com.luoboduner.moo.tool.ui.listener.func.HardwareInfoListener;
@@ -36,28 +38,25 @@ public class TabListener {
             @Override
             public void stateChanged(ChangeEvent e) {
                 int index = MainWindow.getInstance().getTabbedPane().getSelectedIndex();
+                FuncGroupUtil.recordRecent(index);
                 String tabTitle = MainWindow.getInstance().getTabbedPane().getTitleAt(index);
                 if (HardwareInfoForm.TAB_TITLE.equals(tabTitle)) {
                     HardwareInfoListener.onTabSelected();
                 }
-                switch (index) {
-                    case 10:
-                        try {
-                            String ipConfigStr;
-                            if (SystemUtil.isWindowsOs()) {
-                                ipConfigStr = RuntimeUtil.execForStr("ipconfig");
-                            } else {
-                                ipConfigStr = RuntimeUtil.execForStr("ifconfig");
-                            }
-                            NetForm.getInstance().getIpConfigTextArea().setText(ipConfigStr);
-                            NetForm.getInstance().getIpConfigTextArea().setCaretPosition(0);
-                        } catch (Exception ex) {
-                            ex.printStackTrace();
-                            log.error(ExceptionUtils.getStackTrace(ex));
+                if (FuncTabCatalog.byId("net").map(tab -> tab.index() == index).orElse(false)) {
+                    try {
+                        String ipConfigStr;
+                        if (SystemUtil.isWindowsOs()) {
+                            ipConfigStr = RuntimeUtil.execForStr("ipconfig");
+                        } else {
+                            ipConfigStr = RuntimeUtil.execForStr("ifconfig");
                         }
-                        break;
-                    default:
-                        break;
+                        NetForm.getInstance().getIpConfigTextArea().setText(ipConfigStr);
+                        NetForm.getInstance().getIpConfigTextArea().setCaretPosition(0);
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                        log.error(ExceptionUtils.getStackTrace(ex));
+                    }
                 }
             }
         });
