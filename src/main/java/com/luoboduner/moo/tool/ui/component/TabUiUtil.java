@@ -5,6 +5,9 @@ import java.awt.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 
+import static com.formdev.flatlaf.FlatClientProperties.TABBED_PANE_POLICY_NEVER;
+import static com.formdev.flatlaf.FlatClientProperties.TABBED_PANE_SCROLL_BUTTONS_POLICY;
+import static com.formdev.flatlaf.FlatClientProperties.TABBED_PANE_TABS_POPUP_POLICY;
 import static com.formdev.flatlaf.FlatClientProperties.TABBED_PANE_TAB_WIDTH_MODE;
 
 public final class TabUiUtil {
@@ -53,14 +56,61 @@ public final class TabUiUtil {
     public static void setTabStripHidden(JTabbedPane tabbedPane, boolean hidden) {
         if (hidden) {
             tabbedPane.putClientProperty(HIDE_TAB_STRIP, Boolean.TRUE);
+            tabbedPane.putClientProperty(TABBED_PANE_SCROLL_BUTTONS_POLICY, TABBED_PANE_POLICY_NEVER);
+            tabbedPane.putClientProperty(TABBED_PANE_TABS_POPUP_POLICY, TABBED_PANE_POLICY_NEVER);
         } else {
             tabbedPane.putClientProperty(HIDE_TAB_STRIP, null);
+            tabbedPane.putClientProperty(TABBED_PANE_SCROLL_BUTTONS_POLICY, null);
+            tabbedPane.putClientProperty(TABBED_PANE_TABS_POPUP_POLICY, null);
         }
+        applyTabStripChildVisibility(tabbedPane);
         if (tabbedPane.getUI() != null) {
             tabbedPane.revalidate();
             tabbedPane.repaint();
             forceTabContentLayout(tabbedPane);
+            SwingUtilities.invokeLater(() -> applyTabStripChildVisibility(tabbedPane));
         }
+    }
+
+    /**
+     * 隐藏 Tab 栏时，FlatLaf 仍可能布局并显示「更多 Tab」三角按钮，需显式隐藏辅助组件。
+     */
+    static void applyTabStripChildVisibility(JTabbedPane tabbedPane) {
+        if (tabbedPane == null) {
+            return;
+        }
+        boolean hide = isTabStripHidden(tabbedPane);
+        for (Component child : tabbedPane.getComponents()) {
+            if (isTabContentComponent(tabbedPane, child)) {
+                continue;
+            }
+            if (isTabStripAuxiliaryComponent(child)) {
+                child.setVisible(!hide);
+                if (hide) {
+                    child.setBounds(0, 0, 0, 0);
+                }
+            }
+        }
+    }
+
+    private static boolean isTabContentComponent(JTabbedPane tabbedPane, Component child) {
+        for (int i = 0; i < tabbedPane.getTabCount(); i++) {
+            if (tabbedPane.getComponentAt(i) == child) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static boolean isTabStripAuxiliaryComponent(Component child) {
+        if (child instanceof JViewport) {
+            return true;
+        }
+        String className = child.getClass().getName();
+        return className.contains("FlatTabbedPaneUI$")
+                || className.contains("FlatMoreTabsButton")
+                || className.contains("FlatScrollableTabButton")
+                || className.contains("FlatTabAreaButton");
     }
 
     public static void installSafeUi(JTabbedPane tabbedPane, boolean leadingEdgeSelection) {
@@ -72,8 +122,9 @@ public final class TabUiUtil {
         } else {
             tabbedPane.putClientProperty(SELECTION_ON_LEADING_EDGE, null);
         }
-        if (tabbedPane.getUI() instanceof MooFlatTabbedPaneUI) {
-            ((MooFlatTabbedPaneUI) tabbedPane.getUI()).setSelectionOnLeadingEdge(leadingEdgeSelection);
+        if (tabbedPane.getUI() instanceof MooFlatTabbedPaneUI mooUi) {
+            mooUi.setSelectionOnLeadingEdge(leadingEdgeSelection);
+            applyTabStripChildVisibility(tabbedPane);
             tabbedPane.revalidate();
             tabbedPane.repaint();
             return;
@@ -83,6 +134,7 @@ public final class TabUiUtil {
             MooFlatTabbedPaneUI ui = new MooFlatTabbedPaneUI();
             ui.setSelectionOnLeadingEdge(leadingEdgeSelection);
             tabbedPane.setUI(ui);
+            applyTabStripChildVisibility(tabbedPane);
         } finally {
             INSTALLING.set(false);
         }

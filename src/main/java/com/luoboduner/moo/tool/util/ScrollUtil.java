@@ -23,6 +23,21 @@ public class ScrollUtil {
     }
 
     /**
+     * 统一滚轮滚动步长，并将滚轮事件绑定到滚动面板及其子组件（如复选框列表）。
+     */
+    public static void smoothWheelScroll(JScrollPane scrollPane, Component wheelRoot) {
+        smoothPane(scrollPane);
+        scrollPane.setWheelScrollingEnabled(false);
+        MouseWheelListener listener = e -> applyUnitWheelScroll(scrollPane, e);
+        scrollPane.addMouseWheelListener(listener);
+        if (wheelRoot instanceof Container container) {
+            registerWheelOnTree(container, listener);
+        } else if (wheelRoot != null) {
+            wheelRoot.addMouseWheelListener(listener);
+        }
+    }
+
+    /**
      * 降低滚轮滚动速度，避免 JEditorPane 等组件默认滚动过快。
      */
     public static void gentleWheelScroll(JScrollPane scrollPane, Component wheelTarget) {
@@ -46,6 +61,35 @@ public class ScrollUtil {
         }
         bar.setValue(bar.getValue() + wheelDelta(e));
         e.consume();
+    }
+
+    private static void applyUnitWheelScroll(JScrollPane scrollPane, MouseWheelEvent e) {
+        if (e.isConsumed()) {
+            return;
+        }
+        JScrollBar bar = e.isShiftDown()
+                ? scrollPane.getHorizontalScrollBar()
+                : scrollPane.getVerticalScrollBar();
+        if (bar == null || !bar.isVisible()) {
+            return;
+        }
+        int unit = bar.getUnitIncrement();
+        int delta = e.getPreciseWheelRotation() != 0.0d
+                ? (int) Math.round(e.getPreciseWheelRotation() * unit)
+                : e.getWheelRotation() * unit;
+        bar.setValue(bar.getValue() + delta);
+        e.consume();
+    }
+
+    private static void registerWheelOnTree(Container container, MouseWheelListener listener) {
+        container.addMouseWheelListener(listener);
+        for (Component child : container.getComponents()) {
+            if (child instanceof Container childContainer) {
+                registerWheelOnTree(childContainer, listener);
+            } else {
+                child.addMouseWheelListener(listener);
+            }
+        }
     }
 
     private static int wheelDelta(MouseWheelEvent e) {

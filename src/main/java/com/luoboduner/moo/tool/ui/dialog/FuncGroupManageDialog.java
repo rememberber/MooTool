@@ -10,6 +10,7 @@ import com.luoboduner.moo.tool.ui.FuncTabCatalog.FuncTab;
 import com.luoboduner.moo.tool.util.FuncGroupUtil;
 import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.MsgUtil;
+import com.luoboduner.moo.tool.util.ScrollUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
@@ -59,6 +60,7 @@ public class FuncGroupManageDialog extends JDialog {
         groupList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         JScrollPane groupScroll = new JScrollPane(groupList);
         groupScroll.setPreferredSize(new Dimension(160, 360));
+        ScrollUtil.smoothPane(groupScroll);
 
         funcCheckPanel.setLayout(new BoxLayout(funcCheckPanel, BoxLayout.Y_AXIS));
         for (FuncTab tab : FuncTabCatalog.toolTabs()) {
@@ -68,6 +70,7 @@ public class FuncGroupManageDialog extends JDialog {
         }
         JScrollPane funcScroll = new JScrollPane(funcCheckPanel);
         funcScroll.setPreferredSize(new Dimension(300, 360));
+        ScrollUtil.smoothWheelScroll(funcScroll, funcCheckPanel);
 
         JPanel editorPanel = new JPanel(new GridLayoutManager(2, 1, new Insets(0, 8, 0, 0), -1, 8));
         editorPanel.add(nameField, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST,
