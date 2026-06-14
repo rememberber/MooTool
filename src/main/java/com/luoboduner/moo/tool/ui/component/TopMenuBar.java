@@ -256,6 +256,9 @@ public class TopMenuBar extends JMenuBar {
         } else if (!grouped && inMenu) {
             appMenu.remove(funcNavigatorMenuItem);
         }
+        if (grouped) {
+            funcNavigatorMenuItem.setText(I18n.get("menu.funcNavigator"));
+        }
     }
 
     public void refreshTexts() {
@@ -266,7 +269,7 @@ public class TopMenuBar extends JMenuBar {
         settingMenuItem.setText(I18n.get("menu.settings"));
         syncAndBackupMenuItem.setText(I18n.get("menu.syncBackup"));
         keyMapMenuItem.setText(I18n.get("menu.keymap"));
-        if (funcNavigatorMenuItem.getParent() == appMenu) {
+        if (funcNavigatorMenuItem != null) {
             funcNavigatorMenuItem.setText(I18n.get("menu.funcNavigator"));
         }
         logMenuItem.setText(I18n.get("menu.viewLog"));
