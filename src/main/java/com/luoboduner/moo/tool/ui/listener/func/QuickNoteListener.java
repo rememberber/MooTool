@@ -278,11 +278,11 @@ public class QuickNoteListener {
             int currentDividerLocation = quickNoteForm.getContentSplitPane().getDividerLocation();
 
             if (totalWidth - currentDividerLocation < 10) {
-                quickNoteForm.getQuickReplaceScrollPane().setVisible(true);
+                quickNoteForm.getQuickReplacePanel().setVisible(true);
                 SplitPaneUtil.showSecondary(quickNoteForm.getContentSplitPane(), SplitPaneUtil.SECONDARY_PANEL_RATIO);
             } else {
                 SplitPaneUtil.hideSecondary(quickNoteForm.getContentSplitPane());
-                quickNoteForm.getQuickReplaceScrollPane().setVisible(false);
+                quickNoteForm.getQuickReplacePanel().setVisible(false);
             }
         });
 
@@ -347,7 +347,7 @@ public class QuickNoteListener {
         // 关闭快捷操作面板
         quickNoteForm.getQuickReplaceCloseButton().addActionListener(e -> {
             SplitPaneUtil.hideSecondary(quickNoteForm.getContentSplitPane());
-            quickNoteForm.getQuickReplaceScrollPane().setVisible(false);
+            quickNoteForm.getQuickReplacePanel().setVisible(false);
         });
 
         quickNoteForm.getColorButton().addActionListener(e -> quickNoteForm.getColorSettingPanel().setVisible(!quickNoteForm.getColorSettingPanel().isVisible()));

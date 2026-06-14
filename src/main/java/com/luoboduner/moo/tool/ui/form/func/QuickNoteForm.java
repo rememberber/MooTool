@@ -76,6 +76,7 @@ public class QuickNoteForm {
     private JCheckBox tabToEnterCheckBox;
     private JCheckBox enterToCommaSingleQuotesCheckBox;
     private JScrollPane quickReplaceScrollPane;
+    private JPanel quickReplacePanel;
     private JButton quickReplaceButton;
     private JButton quickReplaceCloseButton;
     private JSplitPane contentSplitPane;
@@ -332,7 +333,8 @@ public class QuickNoteForm {
 
         quickNoteForm.getFindReplacePanel().setVisible(false);
 
-        quickNoteForm.getQuickReplaceScrollPane().setVisible(false);
+        configureQuickReplacePanel();
+        quickNoteForm.getQuickReplacePanel().setVisible(false);
         configureSplitPanes();
         quickNoteForm.getQuickNotePanel().setMinimumSize(new Dimension(0, 300));
         quickNoteForm.getNoteList().setFixedCellHeight(UiConsts.TABLE_ROW_HEIGHT);
@@ -361,6 +363,28 @@ public class QuickNoteForm {
 
         quickNoteForm.getQuickNotePanel().updateUI();
 
+    }
+
+    private static void configureQuickReplacePanel() {
+        JScrollPane scrollPane = quickNoteForm.getQuickReplaceScrollPane();
+        JPanel contentPanel = (JPanel) scrollPane.getViewport().getView();
+        contentPanel.remove(quickNoteForm.getStartQuickReplaceButton());
+        for (Component component : contentPanel.getComponents()) {
+            if (component instanceof Spacer) {
+                contentPanel.remove(component);
+                break;
+            }
+        }
+
+        quickNoteForm.quickReplacePanel = new JPanel(new BorderLayout(0, 0));
+        quickNoteForm.quickReplacePanel.add(scrollPane, BorderLayout.CENTER);
+
+        JPanel startButtonPanel = new JPanel(new BorderLayout());
+        startButtonPanel.setBorder(BorderFactory.createEmptyBorder(0, 10, 10, 10));
+        startButtonPanel.add(quickNoteForm.getStartQuickReplaceButton(), BorderLayout.CENTER);
+        quickNoteForm.quickReplacePanel.add(startButtonPanel, BorderLayout.SOUTH);
+
+        quickNoteForm.getContentSplitPane().setRightComponent(quickNoteForm.quickReplacePanel);
     }
 
     private static void configureSplitPanes() {

@@ -68,7 +68,12 @@ public class SettingDialog extends JDialog {
     private JCheckBox tabSeparatorCheckBox;
     private JCheckBox tabHideTitleCheckBox;
     private JCheckBox tabCardCheckBox;
-    private JCheckBox tabGroupedCheckBox;
+
+    private JRadioButton tabClassicRadio;
+    private JRadioButton tabCardRadio;
+    private JRadioButton tabGroupedRadio;
+    private ButtonGroup tabStyleButtonGroup;
+    private JPanel tabStyleModePanel;
 
     private boolean updatingTabStyle;
     private JToolBar toolBar;
@@ -114,9 +119,13 @@ public class SettingDialog extends JDialog {
             "紧凑", "setting.tabCompact",
             "隐藏标题", "setting.tabHideTitle",
             "显示分割线", "setting.tabSeparator",
-            "卡片页签", "setting.tabCard",
-            "分组导航", "setting.tabGrouped",
             "使用HTTP代理", "setting.httpProxy"
+    );
+
+    private static final Map<String, String> TAB_STYLE_RADIO_KEYS = Map.of(
+            "经典页签", "setting.tabClassic",
+            "卡片页签", "setting.tabCard",
+            "分组导航", "setting.tabGrouped"
     );
 
     private static final Map<String, String> BUTTON_KEYS = Map.of(
@@ -173,15 +182,14 @@ public class SettingDialog extends JDialog {
 
         toggleHttpProxyPanel();
 
-        initTabGroupedCheckBox();
+        initTabStyleModeRadios();
+        syncTabStyleRadiosFromConfig();
+        updateTabStyleControlsState();
 
         // 功能Tab样式
         tabCompactCheckBox.setSelected(App.config.isTabCompact());
         tabSeparatorCheckBox.setSelected(App.config.isTabSeparator());
         tabHideTitleCheckBox.setSelected(App.config.isTabHideTitle());
-        tabCardCheckBox.setSelected(App.config.isTabCard());
-        tabGroupedCheckBox.setSelected(App.config.isFuncTabGrouped());
-        updateTabStyleControlsState();
 
         // sql dialect
         sqlDialectComboBox.setSelectedItem(App.config.getSqlDialect());
@@ -260,30 +268,19 @@ public class SettingDialog extends JDialog {
             App.config.save();
             MainWindow.getInstance().initTabPlacement();
         });
-        tabCardCheckBox.addItemListener(e -> {
-            if (updatingTabStyle) {
-                return;
-            }
-            if (e.getStateChange() == ItemEvent.SELECTED) {
-                applyExclusiveTabStyle(false, true);
-            } else {
-                App.config.setTabCard(false);
-                App.config.save();
-                updateTabStyleControlsState();
-                MainWindow.getInstance().initTabPlacement();
+        tabClassicRadio.addActionListener(e -> {
+            if (!updatingTabStyle && tabClassicRadio.isSelected()) {
+                applyTabStyleMode(TabStyleMode.CLASSIC);
             }
         });
-        tabGroupedCheckBox.addItemListener(e -> {
-            if (updatingTabStyle) {
-                return;
+        tabCardRadio.addActionListener(e -> {
+            if (!updatingTabStyle && tabCardRadio.isSelected()) {
+                applyTabStyleMode(TabStyleMode.CARD);
             }
-            if (e.getStateChange() == ItemEvent.SELECTED) {
-                applyExclusiveTabStyle(true, false);
-            } else {
-                App.config.setFuncTabGrouped(false);
-                App.config.save();
-                updateTabStyleControlsState();
-                MainWindow.getInstance().initTabPlacement();
+        });
+        tabGroupedRadio.addActionListener(e -> {
+            if (!updatingTabStyle && tabGroupedRadio.isSelected()) {
+                applyTabStyleMode(TabStyleMode.GROUPED);
             }
         });
 
@@ -409,25 +406,76 @@ public class SettingDialog extends JDialog {
         funcTabPositionComboBox.setSelectedItem(App.config.getFuncTabPosition());
     }
 
-    private void initTabGroupedCheckBox() {
-        if (tabGroupedCheckBox != null) {
+    private enum TabStyleMode {
+        CLASSIC, CARD, GROUPED
+    }
+
+    private void initTabStyleModeRadios() {
+        if (tabStyleModePanel != null) {
             return;
         }
         Container panel9 = tabCompactCheckBox.getParent();
-        tabGroupedCheckBox = new JCheckBox("分组导航");
-        panel9.add(tabGroupedCheckBox, new GridConstraints(3, 1, 1, 1, GridConstraints.ANCHOR_WEST,
-                GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+        panel9.remove(tabCardCheckBox);
+        tabCardCheckBox = null;
+
+        tabStyleModePanel = new JPanel();
+        tabStyleModePanel.setLayout(new BoxLayout(tabStyleModePanel, BoxLayout.Y_AXIS));
+        tabClassicRadio = new JRadioButton("经典页签");
+        tabCardRadio = new JRadioButton("卡片页签");
+        tabGroupedRadio = new JRadioButton("分组导航");
+        tabStyleButtonGroup = new ButtonGroup();
+        tabStyleButtonGroup.add(tabClassicRadio);
+        tabStyleButtonGroup.add(tabCardRadio);
+        tabStyleButtonGroup.add(tabGroupedRadio);
+        tabStyleModePanel.add(tabClassicRadio);
+        tabStyleModePanel.add(tabCardRadio);
+        tabStyleModePanel.add(tabGroupedRadio);
+        panel9.add(tabStyleModePanel, new GridConstraints(3, 0, 1, 2, GridConstraints.ANCHOR_WEST,
+                GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
                 GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
-    private void applyExclusiveTabStyle(boolean grouped, boolean card) {
+    private void syncTabStyleRadiosFromConfig() {
         updatingTabStyle = true;
         try {
-            tabGroupedCheckBox.setSelected(grouped);
-            tabCardCheckBox.setSelected(card);
-            App.config.setFuncTabGrouped(grouped);
-            App.config.setTabCard(card);
+            TabStyleMode mode = resolveTabStyleMode();
+            tabClassicRadio.setSelected(mode == TabStyleMode.CLASSIC);
+            tabCardRadio.setSelected(mode == TabStyleMode.CARD);
+            tabGroupedRadio.setSelected(mode == TabStyleMode.GROUPED);
+        } finally {
+            updatingTabStyle = false;
+        }
+    }
+
+    private TabStyleMode resolveTabStyleMode() {
+        if (App.config.isFuncTabGrouped()) {
+            return TabStyleMode.GROUPED;
+        }
+        if (App.config.isTabCard()) {
+            return TabStyleMode.CARD;
+        }
+        return TabStyleMode.CLASSIC;
+    }
+
+    private void applyTabStyleMode(TabStyleMode mode) {
+        updatingTabStyle = true;
+        try {
+            switch (mode) {
+                case GROUPED -> {
+                    App.config.setFuncTabGrouped(true);
+                    App.config.setTabCard(false);
+                }
+                case CARD -> {
+                    App.config.setFuncTabGrouped(false);
+                    App.config.setTabCard(true);
+                }
+                default -> {
+                    App.config.setFuncTabGrouped(false);
+                    App.config.setTabCard(false);
+                }
+            }
             App.config.save();
+            syncTabStyleRadiosFromConfig();
             updateTabStyleControlsState();
             MainWindow.getInstance().initTabPlacement();
         } finally {
@@ -435,11 +483,17 @@ public class SettingDialog extends JDialog {
         }
     }
 
+    private void applyTabStyleRadioI18n() {
+        if (tabClassicRadio == null) {
+            return;
+        }
+        tabClassicRadio.setText(I18n.get("setting.tabClassic"));
+        tabCardRadio.setText(I18n.get("setting.tabCard"));
+        tabGroupedRadio.setText(I18n.get("setting.tabGrouped"));
+    }
+
     private void updateTabStyleControlsState() {
-        boolean grouped = tabGroupedCheckBox.isSelected();
-        boolean card = tabCardCheckBox.isSelected();
-        tabGroupedCheckBox.setEnabled(!card);
-        tabCardCheckBox.setEnabled(!grouped);
+        boolean grouped = tabGroupedRadio != null && tabGroupedRadio.isSelected();
         boolean classicTabStyle = !grouped;
         tabCompactCheckBox.setEnabled(classicTabStyle);
         tabHideTitleCheckBox.setEnabled(classicTabStyle);
@@ -468,6 +522,7 @@ public class SettingDialog extends JDialog {
     private void applyI18nTexts() {
         setTitle(I18n.get("setting.title"));
         localizeContainer(contentPane);
+        applyTabStyleRadioI18n();
     }
 
     private void localizeContainer(Container container) {
@@ -481,6 +536,11 @@ public class SettingDialog extends JDialog {
                 String key = CHECKBOX_KEYS.get(checkBox.getText());
                 if (key != null) {
                     checkBox.setText(I18n.get(key));
+                }
+            } else if (component instanceof JRadioButton radioButton) {
+                String key = TAB_STYLE_RADIO_KEYS.get(radioButton.getText());
+                if (key != null) {
+                    radioButton.setText(I18n.get(key));
                 }
             } else if (component instanceof JButton button) {
                 String key = BUTTON_KEYS.get(button.getText());
