@@ -9,9 +9,9 @@ import com.luoboduner.moo.tool.ui.FuncTabCatalog;
 import com.luoboduner.moo.tool.ui.UiMetrics;
 import com.luoboduner.moo.tool.ui.component.FuncTabGroupSidebar;
 import com.luoboduner.moo.tool.ui.component.TabUiUtil;
+import com.luoboduner.moo.tool.ui.component.TopMenuBar;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.listener.TabListener;
-import com.luoboduner.moo.tool.ui.dialog.FuncNavigatorDialog;
 import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.Getter;
@@ -66,8 +66,6 @@ public class MainWindow {
     private boolean tabStripLayoutListenerInstalled;
 
     private JButton toggleTitleButton;
-
-    private JButton funcNavigatorButton;
 
     private JPanel tabLeadingPanel;
 
@@ -180,6 +178,7 @@ public class MainWindow {
             ensureTabLeadingComponent();
         }
         relayoutAfterTabStripChanged();
+        TopMenuBar.refreshFuncNavigatorMenuVisibility();
     }
 
     private void setTabStripHidden(boolean hidden) {
@@ -299,11 +298,6 @@ public class MainWindow {
         if (App.config.isFuncTabGrouped()) {
             return;
         }
-        if (funcNavigatorButton == null) {
-            funcNavigatorButton = new JButton(new FlatSVGIcon("icon/find.svg"));
-            funcNavigatorButton.setToolTipText(I18n.get("funcGroup.navigator.tooltip"));
-            funcNavigatorButton.addActionListener(e -> FuncNavigatorDialog.showDialog());
-        }
         if (toggleTitleButton == null) {
             toggleTitleButton = new JButton(new FlatSVGIcon("icon/list.svg"));
             toggleTitleButton.addActionListener(e -> {
@@ -317,13 +311,9 @@ public class MainWindow {
             tabLeadingPanel = new JPanel();
         }
         tabLeadingPanel.removeAll();
-        if (App.config.isFuncTabOnLeft()) {
-            tabLeadingPanel.setLayout(new GridLayoutManager(2, 1, UiMetrics.tabLeadingInsets(true), -1, -1));
-        } else {
-            tabLeadingPanel.setLayout(new GridLayoutManager(1, 2, UiMetrics.tabLeadingInsets(false), -1, -1));
-        }
-        tabLeadingPanel.add(funcNavigatorButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(-1, -1), null, 0, false));
-        tabLeadingPanel.add(toggleTitleButton, new GridConstraints(App.config.isFuncTabOnLeft() ? 1 : 0, App.config.isFuncTabOnLeft() ? 0 : 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(-1, -1), null, 0, false));
+        boolean leftTab = App.config.isFuncTabOnLeft();
+        tabLeadingPanel.setLayout(new GridLayoutManager(1, 1, UiMetrics.tabLeadingInsets(leftTab), -1, -1));
+        tabLeadingPanel.add(toggleTitleButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(-1, -1), null, 0, false));
         tabbedPane.putClientProperty(TABBED_PANE_LEADING_COMPONENT, tabLeadingPanel);
     }
 

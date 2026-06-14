@@ -120,7 +120,11 @@ public class FrameListener {
 
         int searchShortcutMask = SystemUtil.isMacOs() ? InputEvent.META_DOWN_MASK : InputEvent.CTRL_DOWN_MASK;
         MainWindow.getInstance().getMainPanel().registerKeyboardAction(
-                e -> FuncNavigatorDialog.showDialog(),
+                e -> {
+                    if (App.config.isFuncTabGrouped()) {
+                        FuncNavigatorDialog.showDialog();
+                    }
+                },
                 KeyStroke.getKeyStroke(KeyEvent.VK_F, searchShortcutMask | InputEvent.SHIFT_DOWN_MASK),
                 JComponent.WHEN_IN_FOCUSED_WINDOW);
 

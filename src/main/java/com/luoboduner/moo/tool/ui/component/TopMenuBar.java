@@ -137,7 +137,7 @@ public class TopMenuBar extends JMenuBar {
         appMenu.add(keyMapMenuItem);
         funcNavigatorMenuItem = new JMenuItem();
         funcNavigatorMenuItem.addActionListener(e -> FuncNavigatorDialog.showDialog());
-        appMenu.add(funcNavigatorMenuItem);
+        refreshFuncNavigatorMenuVisibility();
         logMenuItem = new JMenuItem();
         logMenuItem.addActionListener(e -> logActionPerformed());
         appMenu.add(logMenuItem);
@@ -238,6 +238,26 @@ public class TopMenuBar extends JMenuBar {
         }));
     }
 
+    public static void refreshFuncNavigatorMenuVisibility() {
+        if (appMenu == null || funcNavigatorMenuItem == null || keyMapMenuItem == null) {
+            return;
+        }
+        boolean grouped = App.config.isFuncTabGrouped();
+        boolean inMenu = funcNavigatorMenuItem.getParent() == appMenu;
+        if (grouped && !inMenu) {
+            int index = 0;
+            for (int i = 0; i < appMenu.getMenuComponentCount(); i++) {
+                if (appMenu.getMenuComponent(i) == keyMapMenuItem) {
+                    index = i + 1;
+                    break;
+                }
+            }
+            appMenu.insert(funcNavigatorMenuItem, index);
+        } else if (!grouped && inMenu) {
+            appMenu.remove(funcNavigatorMenuItem);
+        }
+    }
+
     public void refreshTexts() {
         if (appMenu == null) {
             return;
@@ -246,7 +266,9 @@ public class TopMenuBar extends JMenuBar {
         settingMenuItem.setText(I18n.get("menu.settings"));
         syncAndBackupMenuItem.setText(I18n.get("menu.syncBackup"));
         keyMapMenuItem.setText(I18n.get("menu.keymap"));
-        funcNavigatorMenuItem.setText(I18n.get("menu.funcNavigator"));
+        if (funcNavigatorMenuItem.getParent() == appMenu) {
+            funcNavigatorMenuItem.setText(I18n.get("menu.funcNavigator"));
+        }
         logMenuItem.setText(I18n.get("menu.viewLog"));
         sysEnvMenuItem.setText(I18n.get("menu.systemEnv"));
         exitMenuItem.setText(I18n.get("menu.exit"));
