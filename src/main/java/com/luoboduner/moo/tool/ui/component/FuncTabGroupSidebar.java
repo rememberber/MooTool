@@ -108,9 +108,21 @@ public class FuncTabGroupSidebar extends JPanel {
         tabbedPane.addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
-                updateSelection(tabbedPane.getSelectedIndex());
+                int index = tabbedPane.getSelectedIndex();
+                updateSelection(index);
+                if (index > 0) {
+                    // 等 TabListener 完成 recordRecent 后再刷新最近使用列表
+                    SwingUtilities.invokeLater(FuncTabGroupSidebar.this::refreshPreservingScroll);
+                }
             }
         });
+    }
+
+    private void refreshPreservingScroll() {
+        int scroll = scrollPane.getVerticalScrollBar().getValue();
+        refresh();
+        JScrollBar verticalBar = scrollPane.getVerticalScrollBar();
+        verticalBar.setValue(Math.min(scroll, verticalBar.getMaximum()));
     }
 
     private void applyI18n() {
