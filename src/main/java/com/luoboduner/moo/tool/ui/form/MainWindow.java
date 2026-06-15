@@ -5,8 +5,11 @@ import com.formdev.flatlaf.util.SystemInfo;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.FuncTabCatalog;
 import com.luoboduner.moo.tool.ui.UiMetrics;
+import com.luoboduner.moo.tool.ui.component.FuncTabGroupSidebar;
 import com.luoboduner.moo.tool.ui.component.TabUiUtil;
+import com.luoboduner.moo.tool.ui.component.TopMenuBar;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.listener.TabListener;
 import com.luoboduner.moo.tool.util.I18n;
@@ -66,24 +69,9 @@ public class MainWindow {
 
     private JPanel tabLeadingPanel;
 
-    private static final String[] TAB_TITLE_KEYS = {
-            "tab.mootool", "tab.quickNote", "tab.timeConvert", "tab.json", "tab.translation",
-            "tab.host", "tab.http", "tab.uaParse", "tab.encode", "tab.qrCode", "tab.crypto",
-            "tab.calculator", "tab.net", "tab.colorBoard", "tab.image", "tab.cron", "tab.regex",
-            "tab.java", "tab.reformat", "tab.pdf", "tab.variables", "tab.hardware",
-            "tab.ymlProperties", "tab.textDiff", "tab.protobuf"
-    };
+    private JPanel funcShellPanel;
 
-    private static final String[] ICON_PATH = {"icon/smile.svg", "icon/edit.svg", "icon/time.svg", "icon/json.svg", "icon/translate.svg", "icon/check.svg", "icon/global.svg", "icon/ua.svg", "icon/exchange.svg", "icon/QRcode.svg", "icon/method.svg", "icon/calculate.svg", "icon/network.svg", "icon/color.svg", "icon/image.svg", "icon/schedule.svg", "icon/reg.svg", "icon/java.svg", "icon/format_painter.svg", "icon/pdf.svg", "icon/fx.svg", "icon/info.svg", "icon/suffix-yml.svg", "icon/diff.svg", "icon/protobuf.svg"};
-
-    private static final int TAB_ICON_ONLY_SIZE = 20;
-
-    private static FlatSVGIcon tabIcon(String path, boolean iconOnly) {
-        if (iconOnly) {
-            return new FlatSVGIcon(path, TAB_ICON_ONLY_SIZE, TAB_ICON_ONLY_SIZE);
-        }
-        return new FlatSVGIcon(path);
-    }
+    private FuncTabGroupSidebar funcTabGroupSidebar;
 
     private MainWindow() {
     }
@@ -151,16 +139,82 @@ public class MainWindow {
         refreshTabbedPaneUi();
         TabUiUtil.applySafeTabbedPaneUi(mainPanel, tabbedPane);
         TabUiUtil.relaxTabContentMinimumSizes(tabbedPane);
+        initFuncTabShell();
+        refreshFuncTabNavigation();
         TabListener.addListeners();
         relayoutAfterTabStripChanged();
     }
 
+    private void initFuncTabShell() {
+        if (funcShellPanel != null) {
+            return;
+        }
+        funcShellPanel = new JPanel(new BorderLayout());
+        mainPanel.removeAll();
+        mainPanel.add(funcShellPanel, gridConstraints);
+        funcShellPanel.add(tabbedPane, BorderLayout.CENTER);
+    }
+
+    public void refreshFuncTabNavigation() {
+        initFuncTabShell();
+        boolean grouped = App.config.isFuncTabGrouped();
+        if (grouped) {
+            TabUiUtil.installSafeUi(tabbedPane, false);
+            if (funcTabGroupSidebar == null) {
+                funcTabGroupSidebar = new FuncTabGroupSidebar(tabbedPane);
+            } else {
+                funcTabGroupSidebar.refresh();
+            }
+            if (funcTabGroupSidebar.getParent() != funcShellPanel) {
+                funcShellPanel.add(funcTabGroupSidebar, BorderLayout.WEST);
+            }
+            setTabStripHidden(true);
+            tabbedPane.putClientProperty(TABBED_PANE_LEADING_COMPONENT, null);
+        } else {
+            if (funcTabGroupSidebar != null && funcTabGroupSidebar.getParent() == funcShellPanel) {
+                funcShellPanel.remove(funcTabGroupSidebar);
+            }
+            setTabStripHidden(false);
+            ensureTabLeadingComponent();
+        }
+        relayoutAfterTabStripChanged();
+        TopMenuBar.refreshFuncNavigatorMenuVisibility();
+    }
+
+    private void setTabStripHidden(boolean hidden) {
+        TabUiUtil.setTabStripHidden(tabbedPane, hidden);
+        if (hidden) {
+            tabbedPane.putClientProperty(TABBED_PANE_SHOW_CONTENT_SEPARATOR, false);
+        } else {
+            tabbedPane.putClientProperty(TABBED_PANE_SHOW_CONTENT_SEPARATOR, null);
+            tabbedPane.putClientProperty(TABBED_PANE_TAB_HEIGHT, null);
+        }
+    }
+
     public void refreshTabbedPaneUi() {
+        if (App.config.isFuncTabGrouped()) {
+            TabUiUtil.installSafeUi(tabbedPane, false);
+            return;
+        }
         TabUiUtil.installSafeUi(tabbedPane, App.config.isFuncTabOnLeft());
         ensureTabLeadingComponent();
     }
 
     public void initTabPlacement() {
+        if (App.config.isFuncTabGrouped()) {
+            tabbedPane.setTabPlacement(JTabbedPane.TOP);
+            if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
+                GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
+                gridLayoutManager.setMargin(UiMetrics.macMainPanelMarginTop());
+            } else {
+                GridLayoutManager gridLayoutManager = (GridLayoutManager) mainPanel.getLayout();
+                gridLayoutManager.setMargin(UiMetrics.zero());
+            }
+            applyTabTitleVisibility(App.config.isTabHideTitle());
+            refreshTabbedPaneUi();
+            refreshFuncTabNavigation();
+            return;
+        }
         if (App.config.isFuncTabOnLeft()) {
             tabbedPane.setTabPlacement(JTabbedPane.LEFT);
             tabbedPane.putClientProperty(TABBED_PANE_TAB_ALIGNMENT, TABBED_PANE_ALIGN_LEADING);
@@ -199,11 +253,15 @@ public class MainWindow {
         }
 
         refreshTabbedPaneUi();
+        refreshFuncTabNavigation();
         relayoutAfterTabStripChanged();
     }
 
     public void refreshTabTitles() {
         applyTabTitleVisibility(App.config.isTabHideTitle());
+        if (App.config.isFuncTabGrouped() && funcTabGroupSidebar != null) {
+            funcTabGroupSidebar.refresh();
+        }
         relayoutAfterTabStripChanged();
     }
 
@@ -212,11 +270,7 @@ public class MainWindow {
     }
 
     private String tabTitleAt(int index) {
-        if (index < TAB_TITLE_KEYS.length) {
-            return I18n.get(TAB_TITLE_KEYS[index]);
-        }
-        String title = tabbedPane.getTitleAt(index);
-        return title != null ? title : "";
+        return FuncTabCatalog.titleAt(index);
     }
 
     private void applyTabWidthMode(boolean iconOnly) {
@@ -233,7 +287,7 @@ public class MainWindow {
         for (int i = 0; i < tabbedPane.getTabCount(); i++) {
             String title = tabTitleAt(i);
             tabbedPane.setToolTipTextAt(i, title);
-            tabbedPane.setIconAt(i, tabIcon(ICON_PATH[i], iconOnly));
+            tabbedPane.setIconAt(i, FuncTabCatalog.iconAt(i, iconOnly));
             tabbedPane.setTitleAt(i, iconOnly ? "" : title);
         }
         applyTabWidthMode(iconOnly);
@@ -241,6 +295,9 @@ public class MainWindow {
     }
 
     private void ensureTabLeadingComponent() {
+        if (App.config.isFuncTabGrouped()) {
+            return;
+        }
         if (toggleTitleButton == null) {
             toggleTitleButton = new JButton(new FlatSVGIcon("icon/list.svg"));
             toggleTitleButton.addActionListener(e -> {
@@ -254,11 +311,8 @@ public class MainWindow {
             tabLeadingPanel = new JPanel();
         }
         tabLeadingPanel.removeAll();
-        if (App.config.isFuncTabOnLeft()) {
-            tabLeadingPanel.setLayout(new GridLayoutManager(1, 1, UiMetrics.tabLeadingInsets(true), -1, -1));
-        } else {
-            tabLeadingPanel.setLayout(new GridLayoutManager(1, 1, UiMetrics.tabLeadingInsets(false), -1, -1));
-        }
+        boolean leftTab = App.config.isFuncTabOnLeft();
+        tabLeadingPanel.setLayout(new GridLayoutManager(1, 1, UiMetrics.tabLeadingInsets(leftTab), -1, -1));
         tabLeadingPanel.add(toggleTitleButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(-1, -1), null, 0, false));
         tabbedPane.putClientProperty(TABBED_PANE_LEADING_COMPONENT, tabLeadingPanel);
     }

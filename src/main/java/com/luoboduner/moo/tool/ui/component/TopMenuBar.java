@@ -47,6 +47,7 @@ public class TopMenuBar extends JMenuBar {
     private static JMenuItem settingMenuItem;
     private static JMenuItem syncAndBackupMenuItem;
     private static JMenuItem keyMapMenuItem;
+    private static JMenuItem funcNavigatorMenuItem;
     private static JMenuItem logMenuItem;
     private static JMenuItem sysEnvMenuItem;
     private static JMenuItem exitMenuItem;
@@ -134,6 +135,9 @@ public class TopMenuBar extends JMenuBar {
         keyMapMenuItem = new JMenuItem();
         keyMapMenuItem.addActionListener(e -> keyMapActionPerformed());
         appMenu.add(keyMapMenuItem);
+        funcNavigatorMenuItem = new JMenuItem();
+        funcNavigatorMenuItem.addActionListener(e -> FuncNavigatorDialog.showDialog());
+        refreshFuncNavigatorMenuVisibility();
         logMenuItem = new JMenuItem();
         logMenuItem.addActionListener(e -> logActionPerformed());
         appMenu.add(logMenuItem);
@@ -234,6 +238,29 @@ public class TopMenuBar extends JMenuBar {
         }));
     }
 
+    public static void refreshFuncNavigatorMenuVisibility() {
+        if (appMenu == null || funcNavigatorMenuItem == null || keyMapMenuItem == null) {
+            return;
+        }
+        boolean grouped = App.config.isFuncTabGrouped();
+        boolean inMenu = funcNavigatorMenuItem.getParent() == appMenu;
+        if (grouped && !inMenu) {
+            int index = 0;
+            for (int i = 0; i < appMenu.getMenuComponentCount(); i++) {
+                if (appMenu.getMenuComponent(i) == keyMapMenuItem) {
+                    index = i + 1;
+                    break;
+                }
+            }
+            appMenu.insert(funcNavigatorMenuItem, index);
+        } else if (!grouped && inMenu) {
+            appMenu.remove(funcNavigatorMenuItem);
+        }
+        if (grouped) {
+            funcNavigatorMenuItem.setText(I18n.get("menu.funcNavigator"));
+        }
+    }
+
     public void refreshTexts() {
         if (appMenu == null) {
             return;
@@ -242,6 +269,9 @@ public class TopMenuBar extends JMenuBar {
         settingMenuItem.setText(I18n.get("menu.settings"));
         syncAndBackupMenuItem.setText(I18n.get("menu.syncBackup"));
         keyMapMenuItem.setText(I18n.get("menu.keymap"));
+        if (funcNavigatorMenuItem != null) {
+            funcNavigatorMenuItem.setText(I18n.get("menu.funcNavigator"));
+        }
         logMenuItem.setText(I18n.get("menu.viewLog"));
         sysEnvMenuItem.setText(I18n.get("menu.systemEnv"));
         exitMenuItem.setText(I18n.get("menu.exit"));

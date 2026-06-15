@@ -8,6 +8,7 @@ import javax.swing.plaf.ComponentUI;
 import java.awt.*;
 import java.awt.geom.Area;
 import java.awt.geom.Rectangle2D;
+import java.beans.PropertyChangeListener;
 
 import static com.formdev.flatlaf.util.UIScale.scale;
 
@@ -30,10 +31,44 @@ public class MooFlatTabbedPaneUI extends FlatTabbedPaneUI {
         this.selectionOnLeadingEdge = selectionOnLeadingEdge;
     }
 
+    private PropertyChangeListener hideTabStripListener;
+
     @Override
     public void installUI(JComponent c) {
         super.installUI(c);
         syncSelectionOnLeadingEdgeFromClientProperty();
+        installHideTabStripListener();
+        TabUiUtil.applyTabStripChildVisibility(tabPane);
+    }
+
+    @Override
+    public void uninstallUI(JComponent c) {
+        uninstallHideTabStripListener();
+        super.uninstallUI(c);
+    }
+
+    private void installHideTabStripListener() {
+        if (tabPane == null || hideTabStripListener != null) {
+            return;
+        }
+        hideTabStripListener = evt -> {
+            if (TabUiUtil.HIDE_TAB_STRIP.equals(evt.getPropertyName())) {
+                TabUiUtil.applyTabStripChildVisibility(tabPane);
+            }
+        };
+        tabPane.addPropertyChangeListener(hideTabStripListener);
+        tabPane.addHierarchyListener(e -> {
+            if (tabPane != null && TabUiUtil.isTabStripHidden(tabPane)) {
+                TabUiUtil.applyTabStripChildVisibility(tabPane);
+            }
+        });
+    }
+
+    private void uninstallHideTabStripListener() {
+        if (tabPane != null && hideTabStripListener != null) {
+            tabPane.removePropertyChangeListener(hideTabStripListener);
+            hideTabStripListener = null;
+        }
     }
 
     private void syncSelectionOnLeadingEdgeFromClientProperty() {
@@ -66,11 +101,17 @@ public class MooFlatTabbedPaneUI extends FlatTabbedPaneUI {
             return;
         }
         super.update(g, c);
+        if (tabPane != null && TabUiUtil.isTabStripHidden(tabPane)) {
+            TabUiUtil.applyTabStripChildVisibility(tabPane);
+        }
     }
 
     @Override
     public void paint(Graphics g, JComponent c) {
         if (!ensureUiDefaults()) {
+            return;
+        }
+        if (tabPane != null && TabUiUtil.isTabStripHidden(tabPane)) {
             return;
         }
         super.paint(g, c);
@@ -146,6 +187,14 @@ public class MooFlatTabbedPaneUI extends FlatTabbedPaneUI {
             return selectedBackground;
         }
         return background;
+    }
+
+    @Override
+    protected boolean hideTabArea() {
+        if (tabPane != null && TabUiUtil.isTabStripHidden(tabPane)) {
+            return true;
+        }
+        return super.hideTabArea();
     }
 
     @Override
