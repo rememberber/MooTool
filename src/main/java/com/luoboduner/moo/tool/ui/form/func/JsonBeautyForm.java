@@ -465,7 +465,7 @@ public class JsonBeautyForm {
         final JSeparator separator3 = new JSeparator();
         panel3.add(separator3, new GridConstraints(16, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         jsonPathTextField = new JTextField();
-        jsonPathTextField.setText("$.");
+        jsonPathTextField.setText("$");
         panel3.add(jsonPathTextField, new GridConstraints(17, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         getByJsonPathButton = new JButton();
         getByJsonPathButton.setText("通过JSON Path取值");
