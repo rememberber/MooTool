@@ -171,6 +171,9 @@ public class FuncNavigatorDialog extends JDialog {
     }
 
     private void appendRecentGroup() {
+        if (!FuncGroupUtil.isRecentVisible()) {
+            return;
+        }
         List<FuncTab> recentTabs = FuncGroupUtil.getRecentTabs();
         if (!recentTabs.isEmpty()) {
             contentPanel.add(createGroupPanel(I18n.get("funcGroup.recent"), recentTabs));
