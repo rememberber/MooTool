@@ -19,6 +19,7 @@ import com.luoboduner.moo.tool.ui.dialog.CommonTipsDialog;
 import com.luoboduner.moo.tool.ui.dialog.TranslationDialog;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
+import com.luoboduner.moo.tool.util.AlertUtil;
 import com.luoboduner.moo.tool.util.HostFileUtil;
 import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.I18nUiUtil;
@@ -134,9 +135,11 @@ public class HostForm {
     public static void setHost(String hostName, String hostText) {
         HostForm hostForm = HostForm.getInstance();
         hostForm.getSwitchButton().setEnabled(false);
+        boolean success = false;
         try {
             HostFileUtil.writeSystemHosts(hostText);
             onHostSwitched(hostName);
+            success = true;
         } catch (HostFileUtil.HostWriteException e) {
             log.warn("Switch host failed: {}", e.getMessage());
             showHostWriteError(hostForm, e);
@@ -144,8 +147,18 @@ public class HostForm {
             log.error(ExceptionUtils.getStackTrace(ex));
             showError(hostForm, ex.getMessage(), I18n.get("host.switchFailed"));
         } finally {
-            SwingUtilities.invokeLater(() -> hostForm.getSwitchButton().setEnabled(true));
+            boolean switchSuccess = success;
+            SwingUtilities.invokeLater(() -> {
+                JButton switchButton = hostForm.getSwitchButton();
+                switchButton.setEnabled(true);
+                showSwitchButtonFeedback(switchButton, switchSuccess);
+            });
         }
+    }
+
+    private static void showSwitchButtonFeedback(JButton switchButton, boolean success) {
+        String message = success ? I18n.get("common.success") : I18n.get("host.switchFailed");
+        AlertUtil.buttonInfo(switchButton, "", message, 1500);
     }
 
     private static void onHostSwitched(String hostName) {

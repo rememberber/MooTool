@@ -15,6 +15,7 @@ import com.luoboduner.moo.tool.ui.dialog.*;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.MacApplicationMenuUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
 
@@ -125,6 +126,8 @@ public class TopMenuBar extends JMenuBar {
         TopMenuBar topMenuBar = getInstance();
         topMenuBar.removeAll();
 
+        boolean isMac = SystemUtil.isMacOs();
+
         appMenu = new JMenu();
         settingMenuItem = new JMenuItem();
         settingMenuItem.addActionListener(e -> settingActionPerformed());
@@ -144,9 +147,18 @@ public class TopMenuBar extends JMenuBar {
         sysEnvMenuItem = new JMenuItem();
         sysEnvMenuItem.addActionListener(e -> sysEnvActionPerformed());
         appMenu.add(sysEnvMenuItem);
+
+        checkUpdateMenuItem = new JMenuItem();
+        checkUpdateMenuItem.addActionListener(e -> checkUpdateActionPerformed());
+        if (isMac) {
+            appMenu.add(checkUpdateMenuItem);
+        }
+
         exitMenuItem = new JMenuItem();
         exitMenuItem.addActionListener(e -> exitActionPerformed());
-        appMenu.add(exitMenuItem);
+        if (!isMac) {
+            appMenu.add(exitMenuItem);
+        }
         topMenuBar.add(appMenu);
 
         appearanceMenu = new JMenu();
@@ -210,13 +222,13 @@ public class TopMenuBar extends JMenuBar {
         topMenuBar.add(appearanceMenu);
 
         aboutMenu = new JMenu();
-        checkUpdateMenuItem = new JMenuItem();
-        checkUpdateMenuItem.addActionListener(e -> checkUpdateActionPerformed());
-        aboutMenu.add(checkUpdateMenuItem);
         aboutMenuItem = new JMenuItem();
         aboutMenuItem.addActionListener(e -> aboutActionPerformed());
-        aboutMenu.add(aboutMenuItem);
-        topMenuBar.add(aboutMenu);
+        if (!isMac) {
+            aboutMenu.add(checkUpdateMenuItem);
+            aboutMenu.add(aboutMenuItem);
+            topMenuBar.add(aboutMenu);
+        }
 
         supportMeMenu = new JMenu();
         supportMeMenuItem = new JMenuItem();
@@ -282,9 +294,13 @@ public class TopMenuBar extends JMenuBar {
         themeMenu.setText(I18n.get("menu.theme"));
         fontFamilyMenu.setText(I18n.get("menu.font"));
         fontSizeMenu.setText(I18n.get("menu.fontSize"));
-        aboutMenu.setText(I18n.get("menu.about"));
         checkUpdateMenuItem.setText(I18n.get("menu.checkUpdate"));
-        aboutMenuItem.setText(I18n.get("menu.about"));
+        if (!SystemUtil.isMacOs()) {
+            aboutMenu.setText(I18n.get("menu.about"));
+            aboutMenuItem.setText(I18n.get("menu.about"));
+        } else {
+            MacApplicationMenuUtil.refreshCheckForUpdatesMenuTitle();
+        }
         supportMeMenu.setText(I18n.get("menu.support"));
         supportMeMenuItem.setText(I18n.get("menu.supportMe"));
         initThemesMenu();

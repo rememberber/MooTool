@@ -496,6 +496,14 @@ public class ConfigUtil extends ConfigBaseUtil {
         }
     }
 
+    public boolean isFuncRecentVisible() {
+        return setting.getBool("funcRecentVisible", "setting.custom", false);
+    }
+
+    public void setFuncRecentVisible(boolean funcRecentVisible) {
+        setting.putByGroup("funcRecentVisible", "setting.custom", String.valueOf(funcRecentVisible));
+    }
+
     public String getSqlDialect() {
         return setting.getStr("sqlDialect", "setting.quickNote", "Standard SQL");
     }

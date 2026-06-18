@@ -21,6 +21,7 @@ import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.component.TopMenuBar;
+import com.luoboduner.moo.tool.ui.component.FuncTabGroupSidebar;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.frame.MainFrame;
@@ -68,6 +69,7 @@ public class SettingDialog extends JDialog {
     private JCheckBox tabSeparatorCheckBox;
     private JCheckBox tabHideTitleCheckBox;
     private JCheckBox tabCardCheckBox;
+    private JCheckBox showFuncRecentCheckBox;
 
     private JRadioButton tabClassicRadio;
     private JRadioButton tabCardRadio;
@@ -119,6 +121,7 @@ public class SettingDialog extends JDialog {
             "紧凑", "setting.tabCompact",
             "隐藏标题", "setting.tabHideTitle",
             "显示分割线", "setting.tabSeparator",
+            "显示最近使用", "setting.showFuncRecent",
             "使用HTTP代理", "setting.httpProxy"
     );
 
@@ -186,6 +189,9 @@ public class SettingDialog extends JDialog {
         syncTabStyleRadiosFromConfig();
         updateTabStyleControlsState();
 
+        // 使用习惯
+        showFuncRecentCheckBox.setSelected(App.config.isFuncRecentVisible());
+
         // 功能Tab样式
         tabCompactCheckBox.setSelected(App.config.isTabCompact());
         tabSeparatorCheckBox.setSelected(App.config.isTabSeparator());
@@ -229,6 +235,13 @@ public class SettingDialog extends JDialog {
         });
 
         httpUseProxyCheckBox.addChangeListener(e -> toggleHttpProxyPanel());
+
+        // 使用习惯-功能列表显示最近使用
+        showFuncRecentCheckBox.addItemListener(e -> {
+            App.config.setFuncRecentVisible(e.getStateChange() == ItemEvent.SELECTED);
+            App.config.save();
+            FuncTabGroupSidebar.refreshAllI18n();
+        });
 
         // 使用习惯-菜单栏位置
         menuBarPositionComboBox.addItemListener(e -> {
@@ -810,7 +823,7 @@ public class SettingDialog extends JDialog {
         final Spacer spacer3 = new Spacer();
         panel4.add(spacer3, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         final JPanel panel5 = new JPanel();
-        panel5.setLayout(new GridLayoutManager(2, 1, new Insets(15, 15, 25, 0), -1, -1));
+        panel5.setLayout(new GridLayoutManager(3, 1, new Insets(15, 15, 25, 0), -1, -1));
         panel2.add(panel5, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         panel5.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "使用习惯", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel5.getFont()), null));
         final JPanel panel6 = new JPanel();
@@ -841,6 +854,9 @@ public class SettingDialog extends JDialog {
         defaultComboBoxModel5.addElement("左侧");
         funcTabPositionComboBox.setModel(defaultComboBoxModel5);
         panel7.add(funcTabPositionComboBox, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        showFuncRecentCheckBox = new JCheckBox();
+        showFuncRecentCheckBox.setText("显示最近使用");
+        panel5.add(showFuncRecentCheckBox, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel8 = new JPanel();
         panel8.setLayout(new GridLayoutManager(1, 1, new Insets(15, 15, 25, 0), -1, -1));
         panel2.add(panel8, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));

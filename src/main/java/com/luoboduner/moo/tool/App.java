@@ -14,6 +14,7 @@ import com.luoboduner.moo.tool.ui.frame.MainFrame;
 import com.luoboduner.moo.tool.util.ConfigUtil;
 import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.MybatisUtil;
+import com.luoboduner.moo.tool.util.MacApplicationMenuUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.TesseractEnvUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
@@ -139,5 +140,9 @@ public class App {
         mainFrame.remove(loadingPanel);
         Init.languageGuide();
         Init.fontSizeGuide();
+
+        if (SystemInfo.isMacOS) {
+            SwingUtilities.invokeLater(MacApplicationMenuUtil::installCheckForUpdatesMenu);
+        }
     }
 }
