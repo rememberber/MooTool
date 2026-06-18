@@ -51,6 +51,8 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -474,90 +476,11 @@ public class QuickNoteListener {
 
         });
 
-        quickNoteForm.getUnOrderListButton().addActionListener(e -> {
-            try {
-                RSyntaxTextArea view = QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea();
+        quickNoteForm.getUnOrderListButton().addActionListener(e -> toggleUnorderedList(
+                QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea()));
 
-                String content = view.getText();
-
-                // 如果有选中的行，则处理选中的行
-                int start = view.getSelectionStart();
-                int end = view.getSelectionEnd();
-                String selectedText = view.getSelectedText();
-
-                if (StringUtils.isNotEmpty(selectedText)) {
-                    content = selectedText;
-                }
-
-                // 为每一行开头添加"● "，如果已经有了则去掉
-                String[] splits = content.split("\n");
-                List<String> target = Lists.newArrayList();
-                for (String split : splits) {
-                    if (split.startsWith("● ")) {
-                        split = split.substring(2);
-                    } else {
-                        split = "● " + split;
-                    }
-                    target.add(split);
-                }
-                String result = StringUtils.join(target, "\n");
-
-                if (StringUtils.isNotEmpty(selectedText)) {
-                    view.replaceRange(result, start, end);
-                } else {
-                    view.setText(result);
-                }
-
-                // 重新设置光标位置
-                view.setCaretPosition(0);
-
-            } catch (Exception e1) {
-                log.error("UnOrderListButton error", e1);
-            }
-        });
-
-        quickNoteForm.getOrderListButton().addActionListener(e -> {
-            try {
-                RSyntaxTextArea view = QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea();
-
-                String content = view.getText();
-
-                // 如果有选中的行，则处理选中的行
-                int start = view.getSelectionStart();
-                int end = view.getSelectionEnd();
-                String selectedText = view.getSelectedText();
-
-                if (StringUtils.isNotEmpty(selectedText)) {
-                    content = selectedText;
-                }
-
-                // 为每一行开头添加"1. "，如果已经有了则去掉
-                String[] splits = content.split("\n");
-                List<String> target = Lists.newArrayList();
-                for (int i = 0; i < splits.length; i++) {
-                    String split = splits[i];
-                    if (split.startsWith((i + 1) + ". ")) {
-                        split = split.substring((i + 1 + ". ").length());
-                    } else {
-                        split = (i + 1) + ". " + split;
-                    }
-                    target.add(split);
-                }
-                String result = StringUtils.join(target, "\n");
-
-                if (StringUtils.isNotEmpty(selectedText)) {
-                    view.replaceRange(result, start, end);
-                } else {
-                    view.setText(result);
-                }
-
-                // 重新设置光标位置
-                view.setCaretPosition(0);
-
-            } catch (Exception e1) {
-                log.error("OrderListButton error", e1);
-            }
-        });
+        quickNoteForm.getOrderListButton().addActionListener(e -> toggleOrderedList(
+                QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea()));
 
         quickNoteForm.getInfoButton().addActionListener(e -> {
             try {
@@ -1199,6 +1122,238 @@ public class QuickNoteListener {
         } catch (Exception e) {
             MsgUtil.errorWithDetail(App.mainFrame, "msg.formatFailed", e.getMessage());
             log.error(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    /**
+     * 行首缩进捕获（空格或制表符）。
+     */
+    private static final Pattern LINE_INDENT = Pattern.compile("^([\\s\\t]*)(.*)$");
+
+    /**
+     * 已有无序列表标记的行：缩进 + （-、*、+、•、●） + 至少一个空白 + 内容。
+     * group(1)=缩进, group(2)=marker, group(3)=内容（不含前导空白）。
+     */
+    private static final Pattern UNORDERED_LINE = Pattern.compile("^([\\s\\t]*)([-*+•●])\\s+(.*)$");
+
+    /**
+     * 已有有序列表标记的行：缩进 + 数字 + . + 至少一个空白 + 内容。
+     * group(1)=缩进, group(2)=数字, group(3)=内容。
+     */
+    private static final Pattern ORDERED_LINE = Pattern.compile("^([\\s\\t]*)(\\d+)\\.\\s+(.*)$");
+
+    /**
+     * 无序列表按钮处理：
+     * <ul>
+     *     <li>markdown 语法下使用 {@code - } 标记，其他语法沿用 {@code ● }，更贴近笔记场景</li>
+     *     <li>能识别 {@code -}、{@code *}、{@code +}、{@code •}、{@code ●} 等已有标记并替换/移除</li>
+     *     <li>保留行首缩进；跳过纯空行</li>
+     *     <li>整批 toggle：选中区域所有非空行都是当前 marker 时批量移除，否则批量添加/替换</li>
+     *     <li>有选区时仅处理选区行，无选区时处理全文</li>
+     * </ul>
+     */
+    static void toggleUnorderedList(RSyntaxTextArea view) {
+        if (view == null) {
+            return;
+        }
+        try {
+            int start = view.getSelectionStart();
+            int end = view.getSelectionEnd();
+            String selectedText = view.getSelectedText();
+
+            boolean isMarkdown = isCurrentSyntaxMarkdown();
+            String marker = isMarkdown ? "-" : "●";
+            String prefix = marker + " ";
+
+            List<String> lines = getTargetLines(view, start, end, selectedText);
+
+            // 整批判断：如果所有非空行都以当前 marker 开头，则本次为"批量移除"操作
+            boolean allMarkedWithCurrent = hasNonEmptyLine(lines)
+                    && lines.stream()
+                    .filter(l -> !StringUtils.isBlank(l))
+                    .allMatch(l -> l.startsWith(prefix));
+
+            List<String> result = Lists.newArrayListWithCapacity(lines.size());
+            for (String line : lines) {
+                result.add(toggleUnorderedOnLine(line, marker, prefix, allMarkedWithCurrent));
+            }
+
+            applyLines(view, start, end, selectedText, result);
+            view.setCaretPosition(0);
+        } catch (Exception e1) {
+            log.error("UnOrderListButton error", e1);
+        }
+    }
+
+    /**
+     * 处理单行无序列表 toggle。
+     */
+    private static String toggleUnorderedOnLine(String line, String marker, String prefix,
+                                                boolean allMarkedWithCurrent) {
+        if (StringUtils.isBlank(line)) {
+            return line;
+        }
+        Matcher m = UNORDERED_LINE.matcher(line);
+        if (m.matches()) {
+            String indent = m.group(1);
+            String content = m.group(3);
+            if (allMarkedWithCurrent) {
+                // 整批移除
+                return indent + content;
+            }
+            // 替换为当前 marker（不管原本是 -/*/+/•/●）
+            return indent + prefix + content;
+        }
+        // 普通行：仅做缩进 + 添加 marker
+        Matcher indentMatch = LINE_INDENT.matcher(line);
+        indentMatch.matches();
+        return indentMatch.group(1) + prefix + indentMatch.group(2);
+    }
+
+    /**
+     * 有序列表按钮处理：
+     * <ul>
+     *     <li>重新按行顺序从 1 开始编号，不再依赖行索引匹配</li>
+     *     <li>整批 toggle：所有非空行都已经形成 1..N 连续编号时批量移除，否则全部重排/添加</li>
+     *     <li>保留行首缩进；跳过纯空行（编号计数器不递增）</li>
+     *     <li>能识别任意 {@code 数字. } 前缀并按当前序号重写</li>
+     *     <li>有选区时仅处理选区行，无选区时处理全文</li>
+     * </ul>
+     */
+    static void toggleOrderedList(RSyntaxTextArea view) {
+        if (view == null) {
+            return;
+        }
+        try {
+            int start = view.getSelectionStart();
+            int end = view.getSelectionEnd();
+            String selectedText = view.getSelectedText();
+
+            List<String> lines = getTargetLines(view, start, end, selectedText);
+
+            // 收集每个非空行的现有编号，用于判断整批是否已经"1..N 连续"
+            int[] nonEmptyNumbers = collectOrderedNumbers(lines);
+            boolean allSequentialFromOne = nonEmptyNumbers.length > 0;
+            for (int i = 0; i < nonEmptyNumbers.length; i++) {
+                if (nonEmptyNumbers[i] != i + 1) {
+                    allSequentialFromOne = false;
+                    break;
+                }
+            }
+
+            List<String> result = Lists.newArrayListWithCapacity(lines.size());
+            int counter = 1;
+            for (String line : lines) {
+                if (StringUtils.isBlank(line)) {
+                    // 空行不编号，但参与占位以保持行数
+                    result.add(line);
+                    continue;
+                }
+                result.add(toggleOrderedOnLine(line, counter, allSequentialFromOne));
+                counter++;
+            }
+
+            applyLines(view, start, end, selectedText, result);
+            view.setCaretPosition(0);
+        } catch (Exception e1) {
+            log.error("OrderListButton error", e1);
+        }
+    }
+
+    /**
+     * 处理单行有序列表 toggle。{@code number} 是该行在选中区域中的目标序号（从 1 开始）。
+     */
+    private static String toggleOrderedOnLine(String line, int number, boolean allSequentialFromOne) {
+        Matcher m = ORDERED_LINE.matcher(line);
+        if (m.matches()) {
+            String indent = m.group(1);
+            String content = m.group(3);
+            if (allSequentialFromOne) {
+                // 整批移除编号
+                return indent + content;
+            }
+            // 已带编号或编号错误，重排为目标序号
+            return indent + number + ". " + content;
+        }
+        // 普通行：加缩进 + 编号
+        Matcher indentMatch = LINE_INDENT.matcher(line);
+        indentMatch.matches();
+        return indentMatch.group(1) + number + ". " + indentMatch.group(2);
+    }
+
+    /**
+     * 获取"目标处理行"：有选区时取选区文本按行切分，否则取全文。
+     * 使用 {@code split("\n", -1)} 保留末尾空行，避免丢行。
+     */
+    private static List<String> getTargetLines(RSyntaxTextArea view, int start, int end, String selectedText) {
+        String content = StringUtils.isNotEmpty(selectedText) ? selectedText : view.getText();
+        return Lists.newArrayList(content.split("\n", -1));
+    }
+
+    /**
+     * 收集非空行的现有有序编号（解析失败的行记为 {@code -1}，表示"无编号"）。
+     */
+    private static int[] collectOrderedNumbers(List<String> lines) {
+        List<Integer> numbers = Lists.newArrayList();
+        for (String line : lines) {
+            if (StringUtils.isBlank(line)) {
+                continue;
+            }
+            Matcher m = ORDERED_LINE.matcher(line);
+            if (m.matches()) {
+                try {
+                    numbers.add(Integer.parseInt(m.group(2)));
+                } catch (NumberFormatException ignore) {
+                    numbers.add(-1);
+                }
+            } else {
+                numbers.add(-1);
+            }
+        }
+        int[] result = new int[numbers.size()];
+        for (int i = 0; i < numbers.size(); i++) {
+            result[i] = numbers.get(i);
+        }
+        return result;
+    }
+
+    private static boolean hasNonEmptyLine(List<String> lines) {
+        for (String line : lines) {
+            if (StringUtils.isNotBlank(line)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 把处理后的行写回编辑器：有选区时替换选区，无选区时整文覆盖。
+     */
+    private static void applyLines(RSyntaxTextArea view, int start, int end, String selectedText,
+                                   List<String> result) {
+        String joined = StringUtils.join(result, "\n");
+        if (StringUtils.isNotEmpty(selectedText)) {
+            view.replaceRange(joined, start, end);
+        } else {
+            view.setText(joined);
+        }
+    }
+
+    /**
+     * 判断当前笔记的语法下拉是否为 markdown，用于切换列表标记风格。
+     */
+    private static boolean isCurrentSyntaxMarkdown() {
+        try {
+            QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
+            if (quickNoteForm == null || quickNoteForm.getSyntaxComboBox() == null) {
+                return false;
+            }
+            Object selectedSyntax = quickNoteForm.getSyntaxComboBox().getSelectedItem();
+            return selectedSyntax != null
+                    && SyntaxConstants.SYNTAX_STYLE_MARKDOWN.substring(5).equals(selectedSyntax.toString());
+        } catch (Exception e1) {
+            log.warn("isCurrentSyntaxMarkdown check failed", e1);
+            return false;
         }
     }
 }

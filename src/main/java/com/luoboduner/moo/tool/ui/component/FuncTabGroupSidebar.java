@@ -148,6 +148,9 @@ public class FuncTabGroupSidebar extends JPanel {
     }
 
     private void appendRecentGroup(String query) {
+        if (!FuncGroupUtil.isRecentVisible()) {
+            return;
+        }
         List<FuncTab> tabs = new ArrayList<>();
         for (FuncTab tab : FuncGroupUtil.getRecentTabs()) {
             if (matchesQuery(tab, query)) {

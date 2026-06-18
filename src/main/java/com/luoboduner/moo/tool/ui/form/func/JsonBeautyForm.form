@@ -252,7 +252,7 @@
                                   </grid>
                                 </constraints>
                                 <properties>
-                                  <text value="$."/>
+                                  <text value="$"/>
                                 </properties>
                               </component>
                               <component id="10896" class="javax.swing.JButton" binding="getByJsonPathButton">

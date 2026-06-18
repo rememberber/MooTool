@@ -39,6 +39,10 @@ public final class FuncGroupUtil {
         App.config.save();
     }
 
+    public static boolean isRecentVisible() {
+        return App.config.isFuncRecentVisible();
+    }
+
     public static List<FuncTab> getRecentTabs() {
         String raw = App.config.getSettingStr(RECENT_FUNC_IDS_KEY, GROUP_SETTING, "");
         if (StringUtils.isBlank(raw)) {

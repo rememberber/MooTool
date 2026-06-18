@@ -1,12 +1,12 @@
 package com.luoboduner.moo.tool.ui.dialog;
 
-import cn.hutool.json.JSONUtil;
 import com.formdev.flatlaf.util.SystemInfo;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.ComponentUtil;
 import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.JsonPathTreeUtil;
+import com.luoboduner.moo.tool.util.JsonPathUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import org.apache.commons.lang3.StringUtils;
 
@@ -27,6 +27,7 @@ public class JsonPathPickerDialog extends JDialog {
     private final String jsonText;
     private final JTree jsonTree;
     private final JTextField jsonPathTextField;
+    private final JTextArea valuePreviewTextArea;
     private String selectedJsonPath;
 
     public JsonPathPickerDialog(String jsonText) {
@@ -43,6 +44,12 @@ public class JsonPathPickerDialog extends JDialog {
 
         jsonPathTextField = new JTextField("$");
         jsonPathTextField.setEditable(true);
+
+        valuePreviewTextArea = new JTextArea(4, 20);
+        valuePreviewTextArea.setEditable(false);
+        valuePreviewTextArea.setLineWrap(true);
+        valuePreviewTextArea.setWrapStyleWord(true);
+        valuePreviewTextArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, valuePreviewTextArea.getFont().getSize()));
 
         JButton okButton = new JButton("确定");
         JButton cancelButton = new JButton("取消");
@@ -61,7 +68,12 @@ public class JsonPathPickerDialog extends JDialog {
         JPanel pathPanel = new JPanel(new BorderLayout(8, 0));
         pathPanel.add(new JLabel("JSON Path:"), BorderLayout.WEST);
         pathPanel.add(jsonPathTextField, BorderLayout.CENTER);
-        bottomPanel.add(pathPanel, BorderLayout.CENTER);
+        bottomPanel.add(pathPanel, BorderLayout.NORTH);
+
+        JPanel previewPanel = new JPanel(new BorderLayout(8, 0));
+        previewPanel.add(new JLabel("取值预览:"), BorderLayout.NORTH);
+        previewPanel.add(new JScrollPane(valuePreviewTextArea), BorderLayout.CENTER);
+        bottomPanel.add(previewPanel, BorderLayout.CENTER);
 
         JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         buttonPanel.add(okButton);
@@ -73,6 +85,22 @@ public class JsonPathPickerDialog extends JDialog {
         applyMacWindowStyle(contentPane);
 
         jsonTree.addTreeSelectionListener(this::onTreeSelectionChanged);
+        jsonPathTextField.getDocument().addDocumentListener(new javax.swing.event.DocumentListener() {
+            @Override
+            public void insertUpdate(javax.swing.event.DocumentEvent e) {
+                updateValuePreview();
+            }
+
+            @Override
+            public void removeUpdate(javax.swing.event.DocumentEvent e) {
+                updateValuePreview();
+            }
+
+            @Override
+            public void changedUpdate(javax.swing.event.DocumentEvent e) {
+                updateValuePreview();
+            }
+        });
         jsonTree.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
@@ -100,6 +128,7 @@ public class JsonPathPickerDialog extends JDialog {
         TreePath rootPath = new TreePath(jsonTree.getModel().getRoot());
         jsonTree.setSelectionPath(rootPath);
         jsonTree.scrollPathToVisible(rootPath);
+        updateValuePreview();
     }
 
     private void applyMacWindowStyle(JPanel contentPane) {
@@ -120,6 +149,20 @@ public class JsonPathPickerDialog extends JDialog {
         Object userObject = selectedNode.getUserObject();
         if (userObject instanceof JsonPathTreeUtil.JsonPathNode jsonPathNode) {
             jsonPathTextField.setText(jsonPathNode.getJsonPath());
+            valuePreviewTextArea.setText(JsonPathUtil.formatValue(jsonPathNode.getValue()));
+        }
+    }
+
+    private void updateValuePreview() {
+        String jsonPath = StringUtils.trimToEmpty(jsonPathTextField.getText());
+        if (StringUtils.isBlank(jsonPath)) {
+            valuePreviewTextArea.setText("");
+            return;
+        }
+        try {
+            valuePreviewTextArea.setText(JsonPathUtil.getFormattedValue(jsonText, jsonPath));
+        } catch (Exception ex) {
+            valuePreviewTextArea.setText("");
         }
     }
 
@@ -131,7 +174,7 @@ public class JsonPathPickerDialog extends JDialog {
             return;
         }
         try {
-            JSONUtil.getByPath(JSONUtil.parse(jsonText), jsonPath);
+            JsonPathUtil.getByPath(jsonText, jsonPath);
             selectedJsonPath = jsonPath;
             dispose();
         } catch (Exception ex) {

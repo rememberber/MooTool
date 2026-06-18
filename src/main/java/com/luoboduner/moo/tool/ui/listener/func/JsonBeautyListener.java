@@ -420,11 +420,17 @@ public class JsonBeautyListener {
             try {
                 String jsonText = jsonBeautyForm.getTextArea().getText();
                 String jsonPath = jsonBeautyForm.getJsonPathTextField().getText();
-                if (StringUtils.isNotBlank(jsonPath)) {
-                    JsonResultDialog jsonResultDialog = new JsonResultDialog("JSON", I18n.get("jsonBeauty.jsonPathResult"), "Display");
-                    jsonResultDialog.setToTextArea(JSONUtil.toJsonPrettyStr(JSONUtil.getByPath(JSONUtil.parse(jsonText), jsonPath).toString()));
-                    jsonResultDialog.setVisible(true);
+                if (StringUtils.isBlank(jsonText)) {
+                    MsgUtil.info(App.mainFrame, "msg.emptyJson");
+                    return;
                 }
+                if (StringUtils.isBlank(jsonPath)) {
+                    MsgUtil.info(App.mainFrame, "msg.jsonPathEmpty");
+                    return;
+                }
+                JsonResultDialog jsonResultDialog = new JsonResultDialog("JSON", I18n.get("jsonBeauty.jsonPathResult"), "Display");
+                jsonResultDialog.setToTextArea(JsonPathUtil.getFormattedValue(jsonText, jsonPath));
+                jsonResultDialog.setVisible(true);
             } catch (Exception e1) {
                 MsgUtil.errorWithDetail(App.mainFrame, "msg.getFailed", e1.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e1));
