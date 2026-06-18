@@ -131,9 +131,7 @@ public class TopMenuBar extends JMenuBar {
         appMenu = new JMenu();
         settingMenuItem = new JMenuItem();
         settingMenuItem.addActionListener(e -> settingActionPerformed());
-        if (!isMac) {
-            appMenu.add(settingMenuItem);
-        }
+        appMenu.add(settingMenuItem);
         syncAndBackupMenuItem = new JMenuItem();
         syncAndBackupMenuItem.addActionListener(e -> syncAndBackupActionPerformed());
         appMenu.add(syncAndBackupMenuItem);
@@ -149,6 +147,13 @@ public class TopMenuBar extends JMenuBar {
         sysEnvMenuItem = new JMenuItem();
         sysEnvMenuItem.addActionListener(e -> sysEnvActionPerformed());
         appMenu.add(sysEnvMenuItem);
+
+        checkUpdateMenuItem = new JMenuItem();
+        checkUpdateMenuItem.addActionListener(e -> checkUpdateActionPerformed());
+        if (isMac) {
+            appMenu.add(checkUpdateMenuItem);
+        }
+
         exitMenuItem = new JMenuItem();
         exitMenuItem.addActionListener(e -> exitActionPerformed());
         if (!isMac) {
@@ -217,11 +222,9 @@ public class TopMenuBar extends JMenuBar {
         topMenuBar.add(appearanceMenu);
 
         aboutMenu = new JMenu();
-        checkUpdateMenuItem = new JMenuItem();
-        checkUpdateMenuItem.addActionListener(e -> checkUpdateActionPerformed());
         aboutMenuItem = new JMenuItem();
         aboutMenuItem.addActionListener(e -> aboutActionPerformed());
-        if (!SystemUtil.isMacOs()) {
+        if (!isMac) {
             aboutMenu.add(checkUpdateMenuItem);
             aboutMenu.add(aboutMenuItem);
             topMenuBar.add(aboutMenu);
