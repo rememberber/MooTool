@@ -18,6 +18,7 @@ import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewe
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.dialog.DocInfoDialog;
 import com.luoboduner.moo.tool.ui.dialog.QuickNoteGitDialog;
+import com.luoboduner.moo.tool.ui.dialog.QuickNoteSettingsUi;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.component.SplitPaneUtil;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
@@ -377,9 +378,11 @@ public class QuickNoteListener {
         noteListPopupMenu.add(revealInFolderMenuItem);
         JMenuItem refreshMenuItem = new JMenuItem(I18n.get("quickNote.menu.refresh"));
         JMenuItem openVaultMenuItem = new JMenuItem(I18n.get("quickNote.menu.openVault"));
+        JMenuItem vaultSettingsMenuItem = new JMenuItem(I18n.get("quickNote.menu.vaultSettings"));
         JMenuItem gitMenuItem = new JMenuItem(I18n.get("quickNote.menu.git"));
         noteListPopupMenu.add(refreshMenuItem);
         noteListPopupMenu.add(openVaultMenuItem);
+        noteListPopupMenu.add(vaultSettingsMenuItem);
         noteListPopupMenu.add(gitMenuItem);
         if (noteTree != null) {
             noteTree.setComponentPopupMenu(noteListPopupMenu);
@@ -427,6 +430,7 @@ public class QuickNoteListener {
 
         refreshMenuItem.addActionListener(e -> QuickNoteVaultRefreshCoordinator.refreshAfterExternalChange());
         openVaultMenuItem.addActionListener(e -> QuickNoteVaultUtil.openVaultDir());
+        vaultSettingsMenuItem.addActionListener(e -> QuickNoteSettingsUi.showDialog());
         gitMenuItem.addActionListener(e -> QuickNoteGitDialog.showDialog());
 
         quickNoteForm.getUnOrderListButton().addActionListener(e -> toggleUnorderedList(
@@ -436,6 +440,7 @@ public class QuickNoteListener {
                 QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea()));
 
         quickNoteForm.getGitButton().addActionListener(e -> QuickNoteGitDialog.showDialog());
+        quickNoteForm.getVaultSettingsButton().addActionListener(e -> QuickNoteSettingsUi.showDialog());
 
         quickNoteForm.getInfoButton().addActionListener(e -> {
             try {

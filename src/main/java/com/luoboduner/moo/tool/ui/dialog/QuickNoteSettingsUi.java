@@ -7,7 +7,9 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.util.AlertUtil;
+import com.luoboduner.moo.tool.util.ComponentUtil;
 import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.QuickNoteAutoPullScheduler;
 import com.luoboduner.moo.tool.util.QuickNoteGitUtil;
 import com.luoboduner.moo.tool.util.QuickNoteVaultUtil;
 import com.luoboduner.moo.tool.util.QuickNoteVaultWatcher;
@@ -23,12 +25,25 @@ import java.io.File;
  */
 public final class QuickNoteSettingsUi {
 
+    private static final int MIN_IDLE_SECONDS = 5;
+    private static final int MAX_IDLE_SECONDS = 3600;
+    private static final int MIN_INACTIVE_SECONDS = 10;
+    private static final int MAX_INACTIVE_SECONDS = 7200;
+    private static final int MAX_AUTO_PULL_MINUTES = 1440;
+
     private final JTextField vaultPathTextField = new JTextField();
     private final JButton vaultBrowseButton = new JButton("…");
     private final JButton vaultSaveButton = new JButton();
     private final JCheckBox autoGitCommitCheckBox = new JCheckBox();
     private final JCheckBox hideGitignoredCheckBox = new JCheckBox();
     private final JLabel autoGitCommitHintLabel = new JLabel();
+    private final JSpinner autoGitIdleSpinner = new JSpinner(
+            new SpinnerNumberModel(30, MIN_IDLE_SECONDS, MAX_IDLE_SECONDS, 5));
+    private final JSpinner autoGitInactiveSpinner = new JSpinner(
+            new SpinnerNumberModel(120, MIN_INACTIVE_SECONDS, MAX_INACTIVE_SECONDS, 10));
+    private final JSpinner autoPullIntervalSpinner = new JSpinner(
+            new SpinnerNumberModel(5, 0, MAX_AUTO_PULL_MINUTES, 1));
+    private final JLabel autoPullHintLabel = new JLabel();
     private final JTextField gitRemoteTextField = new JTextField();
     private final JButton gitRemoteSaveButton = new JButton();
     private final JButton openVaultButton = new JButton();
@@ -38,18 +53,34 @@ public final class QuickNoteSettingsUi {
     private QuickNoteSettingsUi() {
     }
 
-    public static void install(JPanel quickNotePanel, JComponent hostDialog) {
+    public static void install(JPanel quickNotePanel, Component hostDialog) {
         new QuickNoteSettingsUi().attach(quickNotePanel, hostDialog);
     }
 
-    private void attach(JPanel quickNotePanel, JComponent hostDialog) {
+    public static void showDialog() {
+        QuickNoteSettingsUi ui = new QuickNoteSettingsUi();
+        JDialog dialog = new JDialog(App.mainFrame, I18n.get("setting.quickNote.vaultSettingsTitle"), true);
+        ComponentUtil.setPreferSizeAndLocateToCenter(dialog, 0.58, 0.68);
+        JPanel root = new JPanel(new BorderLayout());
+        root.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
+        root.add(ui.buildExtraPanel(dialog), BorderLayout.CENTER);
+        ui.loadValues();
+        ui.bindActions(dialog);
+        ui.applyTexts();
+        ui.updateAutoGitControlsEnabled();
+        dialog.setContentPane(root);
+        dialog.setVisible(true);
+    }
+
+    private void attach(JPanel quickNotePanel, Component hostDialog) {
         rebuildQuickNotePanel(quickNotePanel, hostDialog);
         loadValues();
         bindActions(hostDialog);
         applyTexts();
+        updateAutoGitControlsEnabled();
     }
 
-    private void rebuildQuickNotePanel(JPanel quickNotePanel, JComponent hostDialog) {
+    private void rebuildQuickNotePanel(JPanel quickNotePanel, Component hostDialog) {
         Component[] children = quickNotePanel.getComponents();
         quickNotePanel.removeAll();
         quickNotePanel.setLayout(new BorderLayout(0, 10));
@@ -66,8 +97,8 @@ public final class QuickNoteSettingsUi {
         quickNotePanel.add(buildExtraPanel(hostDialog), BorderLayout.CENTER);
     }
 
-    private JPanel buildExtraPanel(JComponent hostDialog) {
-        JPanel panel = new JPanel(new GridLayoutManager(5, 3, new Insets(0, 0, 0, 0), -1, -1));
+    private JPanel buildExtraPanel(Component hostDialog) {
+        JPanel panel = new JPanel(new GridLayoutManager(8, 3, new Insets(0, 0, 0, 0), -1, -1));
 
         panel.add(label("setting.quickNote.vaultPath"), row(0, 0));
         panel.add(vaultPathTextField, row(0, 1));
@@ -80,17 +111,30 @@ public final class QuickNoteSettingsUi {
         autoGitPanel.add(autoGitCommitHintLabel, BorderLayout.CENTER);
         panel.add(autoGitPanel, rowSpan(1, 1, 2));
 
-        panel.add(label("setting.quickNote.hideGitignoredFiles"), row(2, 0));
+        panel.add(label("setting.quickNote.autoGitIdleSeconds"), row(2, 0));
+        panel.add(autoGitIdleSpinner, row(2, 1));
+
+        panel.add(label("setting.quickNote.autoGitInactiveSeconds"), row(3, 0));
+        panel.add(autoGitInactiveSpinner, row(3, 1));
+
+        panel.add(label("setting.quickNote.autoPullIntervalMinutes"), row(4, 0));
+        JPanel autoPullPanel = new JPanel(new BorderLayout(0, 4));
+        autoPullPanel.add(autoPullIntervalSpinner, BorderLayout.NORTH);
+        autoPullHintLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
+        autoPullPanel.add(autoPullHintLabel, BorderLayout.CENTER);
+        panel.add(autoPullPanel, rowSpan(4, 1, 2));
+
+        panel.add(label("setting.quickNote.hideGitignoredFiles"), row(5, 0));
         JPanel hideGitignoredPanel = new JPanel(new BorderLayout(0, 4));
         hideGitignoredPanel.add(hideGitignoredCheckBox, BorderLayout.NORTH);
         JLabel hideGitignoredHintLabel = new JLabel(I18n.get("setting.quickNote.hideGitignoredFilesHint"));
         hideGitignoredHintLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
         hideGitignoredPanel.add(hideGitignoredHintLabel, BorderLayout.CENTER);
-        panel.add(hideGitignoredPanel, rowSpan(2, 1, 2));
+        panel.add(hideGitignoredPanel, rowSpan(5, 1, 2));
 
-        panel.add(label("setting.quickNote.gitRemote"), row(3, 0));
-        panel.add(gitRemoteTextField, row(3, 1));
-        panel.add(gitRemoteSaveButton, row(3, 2));
+        panel.add(label("setting.quickNote.gitRemote"), row(6, 0));
+        panel.add(gitRemoteTextField, row(6, 1));
+        panel.add(gitRemoteSaveButton, row(6, 2));
 
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         vaultSaveButton.setIcon(new FlatSVGIcon("icon/save.svg"));
@@ -101,7 +145,7 @@ public final class QuickNoteSettingsUi {
         actionPanel.add(openVaultButton);
         actionPanel.add(resetVaultPathButton);
         actionPanel.add(openGitPanelButton);
-        panel.add(actionPanel, rowSpan(4, 0, 3));
+        panel.add(actionPanel, rowSpan(7, 0, 3));
         return panel;
     }
 
@@ -114,9 +158,17 @@ public final class QuickNoteSettingsUi {
         autoGitCommitCheckBox.setSelected(App.config.isQuickNoteAutoGitCommit());
         hideGitignoredCheckBox.setSelected(App.config.isQuickNoteHideGitignoredFiles());
         gitRemoteTextField.setText(App.config.getQuickNoteGitRemoteUrl());
+        autoGitIdleSpinner.setValue(clamp(
+                App.config.getQuickNoteAutoGitIdleSeconds(), MIN_IDLE_SECONDS, MAX_IDLE_SECONDS));
+        autoGitInactiveSpinner.setValue(clamp(
+                App.config.getQuickNoteAutoGitInactiveSeconds(), MIN_INACTIVE_SECONDS, MAX_INACTIVE_SECONDS));
+        autoPullIntervalSpinner.setValue(clamp(
+                App.config.getQuickNoteAutoPullIntervalMinutes(), 0, MAX_AUTO_PULL_MINUTES));
     }
 
-    private void bindActions(JComponent hostDialog) {
+    private void bindActions(Component hostDialog) {
+        autoGitCommitCheckBox.addActionListener(e -> updateAutoGitControlsEnabled());
+
         vaultBrowseButton.addActionListener(e -> {
             SystemFileChooser fileChooser = new SystemFileChooser(vaultPathTextField.getText());
             fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
@@ -125,19 +177,7 @@ public final class QuickNoteSettingsUi {
             }
         });
 
-        vaultSaveButton.addActionListener(e -> {
-            String vaultPath = vaultPathTextField.getText().trim();
-            App.config.setQuickNoteVaultPath(vaultPath);
-            App.config.setQuickNoteAutoGitCommit(autoGitCommitCheckBox.isSelected());
-            App.config.setQuickNoteHideGitignoredFiles(hideGitignoredCheckBox.isSelected());
-            App.config.save();
-            QuickNoteVaultUtil.resetVaultCache();
-            QuickNoteVaultUtil.ensureVaultReady();
-            QuickNoteVaultWatcher.restart();
-            QuickNoteForm.initNoteList();
-            QuickNoteForm.updateGitButtonStatus();
-            AlertUtil.buttonInfo(vaultSaveButton, I18n.get("common.save"), I18n.get("common.saveSuccess"), 2000);
-        });
+        vaultSaveButton.addActionListener(e -> saveVaultSettings());
 
         gitRemoteSaveButton.addActionListener(e -> {
             String remoteUrl = gitRemoteTextField.getText().trim();
@@ -152,15 +192,53 @@ public final class QuickNoteSettingsUi {
         resetVaultPathButton.addActionListener(e -> vaultPathTextField.setText(QuickNoteVaultUtil.getDefaultVaultPath()));
     }
 
+    private void saveVaultSettings() {
+        String vaultPath = vaultPathTextField.getText().trim();
+        App.config.setQuickNoteVaultPath(vaultPath);
+        App.config.setQuickNoteAutoGitCommit(autoGitCommitCheckBox.isSelected());
+        App.config.setQuickNoteHideGitignoredFiles(hideGitignoredCheckBox.isSelected());
+        App.config.setQuickNoteAutoGitIdleSeconds(spinnerIntValue(autoGitIdleSpinner));
+        App.config.setQuickNoteAutoGitInactiveSeconds(spinnerIntValue(autoGitInactiveSpinner));
+        App.config.setQuickNoteAutoPullIntervalMinutes(spinnerIntValue(autoPullIntervalSpinner));
+        App.config.save();
+
+        QuickNoteVaultUtil.resetVaultCache();
+        QuickNoteVaultUtil.ensureVaultReady();
+        QuickNoteVaultWatcher.restart();
+        QuickNoteAutoPullScheduler.onSettingsChanged();
+        QuickNoteForm.initNoteList();
+        QuickNoteForm.updateGitButtonStatus();
+        AlertUtil.buttonInfo(vaultSaveButton, I18n.get("common.save"), I18n.get("common.saveSuccess"), 2000);
+    }
+
+    private void updateAutoGitControlsEnabled() {
+        boolean enabled = autoGitCommitCheckBox.isSelected();
+        autoGitIdleSpinner.setEnabled(enabled);
+        autoGitInactiveSpinner.setEnabled(enabled);
+    }
+
     private void applyTexts() {
         autoGitCommitCheckBox.setText(I18n.get("setting.quickNote.autoGitCommit"));
         hideGitignoredCheckBox.setText(I18n.get("setting.quickNote.hideGitignoredFiles"));
         autoGitCommitHintLabel.setText(I18n.get("setting.quickNote.autoGitCommitHint"));
+        autoPullHintLabel.setText(I18n.get("setting.quickNote.autoPullIntervalHint"));
         vaultSaveButton.setText(I18n.get("setting.quickNote.saveVault"));
         gitRemoteSaveButton.setText(I18n.get("common.save"));
         openGitPanelButton.setText(I18n.get("setting.quickNote.openGitPanel"));
         openVaultButton.setText(I18n.get("setting.quickNote.openVault"));
         resetVaultPathButton.setText(I18n.get("setting.quickNote.resetVaultPath"));
+    }
+
+    private static int spinnerIntValue(JSpinner spinner) {
+        Object value = spinner.getValue();
+        if (value instanceof Number number) {
+            return number.intValue();
+        }
+        return 0;
+    }
+
+    private static int clamp(int value, int min, int max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     private static JLabel label(String key) {

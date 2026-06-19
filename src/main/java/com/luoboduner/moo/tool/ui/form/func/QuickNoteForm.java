@@ -25,6 +25,7 @@ import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewe
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.dialog.QuickNoteConflictResolverDialog;
 import com.luoboduner.moo.tool.ui.dialog.QuickNoteGitDialog;
+import com.luoboduner.moo.tool.ui.dialog.QuickNoteSettingsUi;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.I18nUiUtil;
@@ -125,6 +126,7 @@ public class QuickNoteForm {
     private JCheckBox sortByPinyinCheckBox;
     private JButton infoButton;
     private JButton gitButton;
+    private JButton vaultSettingsButton;
 
     private JButton colorButton;
     private JCheckBox searchContentCheckBox;
@@ -210,6 +212,10 @@ public class QuickNoteForm {
         gitButton = new JButton();
         gitButton.setText("");
         gitButton.setToolTipText("Git");
+        vaultSettingsButton = new JButton();
+        vaultSettingsButton.setText("");
+        vaultSettingsButton.setIcon(new FlatSVGIcon("icon/host.svg"));
+        vaultSettingsButton.setToolTipText("Vault settings");
         quickReplaceButton = new JButton();
         quickReplaceButton.setText("");
         quickReplaceButton.setToolTipText("快捷替换");
@@ -224,6 +230,7 @@ public class QuickNoteForm {
         actionToolBar.add(exportButton);
         actionToolBar.add(formatButton);
         actionToolBar.add(infoButton);
+        actionToolBar.add(vaultSettingsButton);
         actionToolBar.add(gitButton);
         actionToolBar.add(quickReplaceButton);
         actionToolBarPanel.add(actionToolBar, BorderLayout.EAST);
@@ -279,6 +286,7 @@ public class QuickNoteForm {
         I18nUiUtil.setToolTip(formatButton, "quickNote.tooltip.format");
         I18nUiUtil.setToolTip(infoButton, "quickNote.tooltip.docInfo");
         I18nUiUtil.setToolTip(gitButton, "quickNote.tooltip.git");
+        I18nUiUtil.setToolTip(vaultSettingsButton, "quickNote.tooltip.vaultSettings");
         I18nUiUtil.setToolTip(quickReplaceButton, "quickNote.tooltip.quickReplace");
         I18nUiUtil.setToolTip(searchContentCheckBox, "quickNote.tooltip.includeContent");
         I18nUiUtil.setToolTip(fontNameComboBox, "quickNote.tooltip.font");

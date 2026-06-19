@@ -45,6 +45,10 @@ public final class QuickNoteAutoPullScheduler {
         pullInProgress = false;
     }
 
+    public static void onSettingsChanged() {
+        lastPullAt = System.currentTimeMillis();
+    }
+
     private static void evaluatePull() {
         int intervalMinutes = App.config.getQuickNoteAutoPullIntervalMinutes();
         if (intervalMinutes <= 0) {
