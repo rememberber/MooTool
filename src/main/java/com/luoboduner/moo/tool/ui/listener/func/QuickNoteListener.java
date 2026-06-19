@@ -27,6 +27,7 @@ import com.luoboduner.moo.tool.util.ListUtils;
 import com.luoboduner.moo.tool.util.QuickNoteAttachmentUtil;
 import com.luoboduner.moo.tool.util.QuickNoteImageInsertUtil;
 import com.luoboduner.moo.tool.util.QuickNoteIndicatorTools;
+import com.luoboduner.moo.tool.util.QuickNoteVaultRefreshCoordinator;
 import com.luoboduner.moo.tool.util.QuickNoteVaultUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.codeformatter.CodeFormatterFactory;
@@ -58,6 +59,8 @@ import java.util.regex.Pattern;
 import java.util.function.Consumer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <pre>
@@ -100,7 +103,7 @@ public class QuickNoteListener {
                     TQuickNote created = QuickNoteVaultUtil.createNote(name, QuickNoteForm.getSelectedFolderPath());
                     selectedPath = created.getRelativePath();
                     selectedName = created.getName();
-                    quickSave(true, false);
+                    quickSaveSync(true, false, true);
                     QuickNoteForm.initNoteList();
                     return;
                 }
@@ -111,7 +114,7 @@ public class QuickNoteListener {
                     selectedPath = newPath;
                     selectedName = name;
                 }
-                quickSave(true, false);
+                quickSaveSync(true, false, true);
                 QuickNoteForm.initNoteList();
             }
         });
@@ -335,23 +338,22 @@ public class QuickNoteListener {
         quickNoteForm.getSearchTextField().getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                QuickNoteForm.initNoteList();
+                QuickNoteForm.refreshNoteTree();
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                QuickNoteForm.initNoteList();
+                QuickNoteForm.refreshNoteTree();
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-//                QuickNoteForm.initNoteList();
             }
         });
 
         // 搜索框包含内容checkbox变更事件
         quickNoteForm.getSearchContentCheckBox().addActionListener(e -> {
-            QuickNoteForm.initNoteList();
+            QuickNoteForm.refreshNoteTree();
         });
 
         // 左侧列表增加右键菜单
@@ -423,10 +425,7 @@ public class QuickNoteListener {
         exportMenuItem.addActionListener(e -> exportSelectedNotes(quickNoteForm));
         duplicateMenuItem.addActionListener(e -> duplicateSelectedNotes(quickNoteForm));
 
-        refreshMenuItem.addActionListener(e -> {
-            QuickNoteForm.initNoteList();
-            QuickNoteForm.updateGitButtonStatus();
-        });
+        refreshMenuItem.addActionListener(e -> QuickNoteVaultRefreshCoordinator.refreshAfterExternalChange());
         openVaultMenuItem.addActionListener(e -> QuickNoteVaultUtil.openVaultDir());
         gitMenuItem.addActionListener(e -> QuickNoteGitDialog.showDialog());
 
@@ -988,38 +987,82 @@ public class QuickNoteListener {
      *
      * @param refreshModifiedTime
      */
-    public static void quickSave(boolean refreshModifiedTime, boolean writeLog) {
+    public static Future<?> quickSave(boolean refreshModifiedTime, boolean writeLog) {
+        return quickSave(refreshModifiedTime, writeLog, writeLog);
+    }
 
-        executorService.submit(() -> {
-            String now = SqliteUtil.nowDateForSqlite();
-            if (selectedPath != null) {
-                TQuickNote existingNote = QuickNoteVaultUtil.loadByPath(selectedPath);
-                String oldContent = existingNote != null ? existingNote.getContent() : "";
-
-                TQuickNote tQuickNote = existingNote != null ? existingNote : new TQuickNote();
-                tQuickNote.setRelativePath(selectedPath);
-                tQuickNote.setName(selectedName);
-
-                String text = QuickNoteForm.quickNoteRSyntaxTextViewerManager.getTextByPath(selectedPath);
-                if (writeLog) {
-                    log.info("save note: " + selectedPath + ", content: " + text);
+    public static Future<?> quickSave(boolean refreshModifiedTime, boolean writeLog, boolean notifyUser) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            java.util.concurrent.CompletableFuture<Void> bridge = new java.util.concurrent.CompletableFuture<>();
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    quickSave(refreshModifiedTime, writeLog, notifyUser).get();
+                    bridge.complete(null);
+                } catch (Exception ex) {
+                    bridge.completeExceptionally(ex);
                 }
-                tQuickNote.setContent(text);
-                if (refreshModifiedTime) {
-                    tQuickNote.setModifiedTime(now);
+            });
+            return bridge;
+        }
+
+        final String path = selectedPath;
+        final String name = selectedName;
+        String editorText = null;
+        if (path != null && QuickNoteForm.quickNoteRSyntaxTextViewerManager != null) {
+            editorText = QuickNoteForm.quickNoteRSyntaxTextViewerManager.getTextByPath(path);
+        }
+        final String capturedText = editorText;
+
+        QuickNoteVaultRefreshCoordinator.onSaveTaskStarted();
+        return executorService.submit(() -> {
+            try {
+                String now = SqliteUtil.nowDateForSqlite();
+                if (path != null) {
+                    TQuickNote existingNote = QuickNoteVaultUtil.loadByPath(path);
+                    String oldContent = existingNote != null ? existingNote.getContent() : "";
+
+                    TQuickNote tQuickNote = existingNote != null ? existingNote : new TQuickNote();
+                    tQuickNote.setRelativePath(path);
+                    tQuickNote.setName(name);
+
+                    String text = capturedText;
+                    if (writeLog) {
+                        log.info("save note: " + path + ", content: " + text);
+                    }
+                    tQuickNote.setContent(text);
+                    if (refreshModifiedTime) {
+                        tQuickNote.setModifiedTime(now);
+                    }
+
+                    QuickNoteVaultUtil.saveNote(tQuickNote, text);
+
+                    List<String> otherNotesContents = QuickNoteVaultUtil.listOtherBodies(path);
+                    QuickNoteAttachmentUtil.cleanupRemovedAttachments(oldContent, text, otherNotesContents);
                 }
 
-                QuickNoteVaultUtil.saveNote(tQuickNote, text);
-
-                List<String> otherNotesContents = QuickNoteVaultUtil.listOtherBodies(selectedPath);
-                QuickNoteAttachmentUtil.cleanupRemovedAttachments(oldContent, text, otherNotesContents);
+                if (notifyUser) {
+                    final String savedName = name;
+                    SwingUtilities.invokeLater(() -> QuickNoteIndicatorTools.showTips(
+                            I18n.format("quickNote.saved", savedName),
+                            QuickNoteIndicatorTools.TipsLevel.SUCCESS));
+                }
+                SwingUtilities.invokeLater(QuickNoteForm::updateGitButtonStatus);
+            } finally {
+                QuickNoteVaultRefreshCoordinator.onSaveTaskFinished();
             }
-
-            QuickNoteIndicatorTools.showTips(I18n.format("quickNote.saved", selectedName),
-                    QuickNoteIndicatorTools.TipsLevel.SUCCESS);
-            SwingUtilities.invokeLater(QuickNoteForm::updateGitButtonStatus);
         });
+    }
 
+    public static void quickSaveSync(boolean refreshModifiedTime, boolean writeLog) {
+        quickSaveSync(refreshModifiedTime, writeLog, writeLog);
+    }
+
+    public static void quickSaveSync(boolean refreshModifiedTime, boolean writeLog, boolean notifyUser) {
+        try {
+            quickSave(refreshModifiedTime, writeLog, notifyUser).get(60, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.error("Quick note save failed: {}", ExceptionUtils.getStackTrace(e));
+        }
     }
 
     /**

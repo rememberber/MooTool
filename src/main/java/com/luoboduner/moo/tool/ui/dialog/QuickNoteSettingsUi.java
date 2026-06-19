@@ -27,6 +27,7 @@ public final class QuickNoteSettingsUi {
     private final JButton vaultBrowseButton = new JButton("…");
     private final JButton vaultSaveButton = new JButton();
     private final JCheckBox autoGitCommitCheckBox = new JCheckBox();
+    private final JLabel autoGitCommitHintLabel = new JLabel();
     private final JTextField gitRemoteTextField = new JTextField();
     private final JButton gitRemoteSaveButton = new JButton();
     private final JButton openVaultButton = new JButton();
@@ -72,7 +73,11 @@ public final class QuickNoteSettingsUi {
         panel.add(vaultBrowseButton, row(0, 2));
 
         panel.add(label("setting.quickNote.autoGitCommit"), row(1, 0));
-        panel.add(autoGitCommitCheckBox, rowSpan(1, 1, 2));
+        JPanel autoGitPanel = new JPanel(new BorderLayout(0, 4));
+        autoGitPanel.add(autoGitCommitCheckBox, BorderLayout.NORTH);
+        autoGitCommitHintLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
+        autoGitPanel.add(autoGitCommitHintLabel, BorderLayout.CENTER);
+        panel.add(autoGitPanel, rowSpan(1, 1, 2));
 
         panel.add(label("setting.quickNote.gitRemote"), row(2, 0));
         panel.add(gitRemoteTextField, row(2, 1));
@@ -138,6 +143,7 @@ public final class QuickNoteSettingsUi {
 
     private void applyTexts() {
         autoGitCommitCheckBox.setText(I18n.get("setting.quickNote.autoGitCommit"));
+        autoGitCommitHintLabel.setText(I18n.get("setting.quickNote.autoGitCommitHint"));
         vaultSaveButton.setText(I18n.get("setting.quickNote.saveVault"));
         gitRemoteSaveButton.setText(I18n.get("common.save"));
         openGitPanelButton.setText(I18n.get("setting.quickNote.openGitPanel"));

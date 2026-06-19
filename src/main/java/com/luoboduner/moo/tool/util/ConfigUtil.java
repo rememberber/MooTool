@@ -568,6 +568,14 @@ public class ConfigUtil extends ConfigBaseUtil {
         setting.putByGroup("quickNoteAutoGitCommit", "func.quickNote", String.valueOf(quickNoteAutoGitCommit));
     }
 
+    public int getQuickNoteAutoGitIdleSeconds() {
+        return setting.getInt("quickNoteAutoGitIdleSeconds", "func.quickNote", 30);
+    }
+
+    public int getQuickNoteAutoGitInactiveSeconds() {
+        return setting.getInt("quickNoteAutoGitInactiveSeconds", "func.quickNote", 120);
+    }
+
     public String getQuickNoteGitRemoteUrl() {
         return setting.getStr("quickNoteGitRemoteUrl", "func.quickNote", "");
     }

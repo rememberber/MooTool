@@ -3,7 +3,6 @@ package com.luoboduner.moo.tool.util;
 import cn.hutool.core.io.FileUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
-import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -20,8 +19,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
-import javax.swing.SwingUtilities;
-import javax.swing.Timer;
 
 /**
  * 随手记 Vault：以 txt 文件 + YAML frontmatter 管理笔记，支持文件夹嵌套。
@@ -140,7 +137,7 @@ public final class QuickNoteVaultUtil {
         Map<String, Object> metadata = buildMetadata(note);
         String raw = QuickNoteFrontmatter.serialize(metadata, body == null ? "" : body);
         FileUtil.writeString(raw, file, StandardCharsets.UTF_8);
-        maybeAutoCommit("Updated note: " + note.getName());
+        QuickNoteVaultRefreshCoordinator.markInternalWrite();
     }
 
     public static void saveMetadata(TQuickNote note) {
@@ -170,7 +167,6 @@ public final class QuickNoteVaultUtil {
         note.setLineWrap("0");
 
         saveNote(note, "");
-        maybeAutoCommit("Created note: " + title);
         return note;
     }
 
@@ -199,7 +195,6 @@ public final class QuickNoteVaultUtil {
         copy.setLineWrap(defaultString(source.getLineWrap(), "0"));
 
         saveNote(copy, source.getContent());
-        maybeAutoCommit("Duplicated note: " + sourceRelativePath + " -> " + newRelativePath);
         return copy;
     }
 
@@ -210,7 +205,7 @@ public final class QuickNoteVaultUtil {
         File file = toAbsoluteFile(relativePath);
         if (file.isFile()) {
             FileUtil.del(file);
-            maybeAutoCommit("Deleted note: " + relativePath);
+            QuickNoteVaultRefreshCoordinator.markInternalWrite();
         }
     }
 
@@ -229,12 +224,12 @@ public final class QuickNoteVaultUtil {
         File newFile = toAbsoluteFile(newRelativePath);
         FileUtil.mkParentDirs(newFile);
         FileUtil.move(oldFile, newFile, true);
+        QuickNoteVaultRefreshCoordinator.markInternalWrite();
 
         existing.setRelativePath(newRelativePath);
         existing.setName(newTitle);
         existing.setModifiedTime(SqliteUtil.nowDateForSqlite());
         saveMetadata(existing);
-        maybeAutoCommit("Renamed note: " + oldRelativePath + " -> " + newRelativePath);
         return newRelativePath;
     }
 
@@ -242,7 +237,6 @@ public final class QuickNoteVaultUtil {
         ensureVaultReady();
         File folder = toAbsoluteFolder(folderRelativePath);
         FileUtil.mkdir(folder);
-        maybeAutoCommit("Created folder: " + normalizeFolderPath(folderRelativePath));
     }
 
     public static String moveNoteToFolder(String oldRelativePath, String targetFolderPath) {
@@ -265,11 +259,11 @@ public final class QuickNoteVaultUtil {
         File newFile = toAbsoluteFile(newRelativePath);
         FileUtil.mkParentDirs(newFile);
         FileUtil.move(oldFile, newFile, true);
+        QuickNoteVaultRefreshCoordinator.markInternalWrite();
 
         existing.setRelativePath(newRelativePath);
         existing.setModifiedTime(SqliteUtil.nowDateForSqlite());
         saveMetadata(existing);
-        maybeAutoCommit("Moved note: " + oldRelativePath + " -> " + newRelativePath);
         return newRelativePath;
     }
 
@@ -302,7 +296,7 @@ public final class QuickNoteVaultUtil {
             return false;
         }
         FileUtil.del(dir);
-        maybeAutoCommit("Deleted folder: " + folder);
+        QuickNoteVaultRefreshCoordinator.markInternalWrite();
         return true;
     }
 
@@ -338,7 +332,7 @@ public final class QuickNoteVaultUtil {
             throw new IllegalStateException("Folder already exists: " + newFolder);
         }
         FileUtil.move(oldDir, newDir, true);
-        maybeAutoCommit("Renamed folder: " + oldFolder + " -> " + newFolder);
+        QuickNoteVaultRefreshCoordinator.markInternalWrite();
         return newFolder;
     }
 
@@ -366,7 +360,7 @@ public final class QuickNoteVaultUtil {
             throw new IllegalStateException("Folder already exists: " + newFolder);
         }
         FileUtil.move(oldDir, newDir, true);
-        maybeAutoCommit("Moved folder: " + folder + " -> " + newFolder);
+        QuickNoteVaultRefreshCoordinator.markInternalWrite();
         return newFolder;
     }
 
@@ -565,6 +559,7 @@ public final class QuickNoteVaultUtil {
         Map<String, Object> metadata = buildMetadata(note);
         String raw = QuickNoteFrontmatter.serialize(metadata, body == null ? "" : body);
         FileUtil.writeString(raw, file, StandardCharsets.UTF_8);
+        QuickNoteVaultRefreshCoordinator.markInternalWrite();
     }
 
     private static String buildUniqueRelativePath(String folder, String baseName) {
@@ -692,28 +687,6 @@ public final class QuickNoteVaultUtil {
         } catch (Exception e) {
             log.warn("Open directory failed: {}", e.getMessage());
         }
-    }
-
-    private static final long AUTO_COMMIT_DEBOUNCE_MS = 8000;
-    private static volatile String pendingCommitMessage;
-    private static Timer autoCommitTimer;
-
-    private static void maybeAutoCommit(String message) {
-        if (!App.config.isQuickNoteAutoGitCommit()) {
-            return;
-        }
-        pendingCommitMessage = message;
-        if (autoCommitTimer != null) {
-            autoCommitTimer.stop();
-        }
-        autoCommitTimer = new Timer((int) AUTO_COMMIT_DEBOUNCE_MS, e -> {
-            String commitMessage = pendingCommitMessage;
-            pendingCommitMessage = null;
-            QuickNoteGitUtil.commit(getVaultDir(), commitMessage);
-            SwingUtilities.invokeLater(QuickNoteForm::updateGitButtonStatus);
-        });
-        autoCommitTimer.setRepeats(false);
-        autoCommitTimer.start();
     }
 
     private static void syncConfiguredRemote(File vaultDir) {

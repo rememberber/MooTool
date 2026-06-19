@@ -1,6 +1,5 @@
 package com.luoboduner.moo.tool.util;
 
-import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
@@ -131,6 +130,9 @@ public final class QuickNoteVaultWatcher {
     }
 
     private static void scheduleRefresh() {
+        if (QuickNoteVaultRefreshCoordinator.shouldSuppressWatcherRefresh()) {
+            return;
+        }
         lastRefreshRequest.set(System.currentTimeMillis());
         SwingUtilities.invokeLater(() -> {
             if (debounceTimer != null) {
@@ -139,8 +141,9 @@ public final class QuickNoteVaultWatcher {
             debounceTimer = new Timer(600, e -> {
                 long elapsed = System.currentTimeMillis() - lastRefreshRequest.get();
                 if (elapsed >= 550) {
-                    QuickNoteForm.initNoteList();
-                    QuickNoteForm.updateGitButtonStatus();
+                    if (!QuickNoteVaultRefreshCoordinator.shouldSuppressWatcherRefresh()) {
+                        QuickNoteVaultRefreshCoordinator.refreshAfterExternalChange();
+                    }
                 }
             });
             debounceTimer.setRepeats(false);

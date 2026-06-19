@@ -23,12 +23,15 @@ import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteEditorPanel;
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
+import com.luoboduner.moo.tool.ui.dialog.QuickNoteGitDialog;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.I18nUiUtil;
+import com.luoboduner.moo.tool.util.QuickNoteAutoGitScheduler;
 import com.luoboduner.moo.tool.util.QuickNoteConflictHighlightUtil;
 import com.luoboduner.moo.tool.util.QuickNoteGitUtil;
 import com.luoboduner.moo.tool.util.QuickNoteTreeUtil;
+import com.luoboduner.moo.tool.util.QuickNoteVaultRefreshCoordinator;
 import com.luoboduner.moo.tool.util.QuickNoteVaultUtil;
 import com.luoboduner.moo.tool.util.QuickNoteVaultWatcher;
 import com.luoboduner.moo.tool.util.ScrollUtil;
@@ -45,6 +48,8 @@ import javax.swing.tree.DefaultTreeModel;
 import javax.swing.tree.TreePath;
 import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -94,6 +99,7 @@ public class QuickNoteForm {
     private JComboBox syntaxComboBox;
     private JButton formatButton;
     private JLabel tipsLabel;
+    private JLabel conflictBannerLabel;
     private JPanel indicatorPanel;
     private JPanel leftMenuPanel;
     private JPanel colorSettingPanel;
@@ -246,6 +252,9 @@ public class QuickNoteForm {
         initNoteList();
 
         QuickNoteVaultWatcher.start();
+        QuickNoteAutoGitScheduler.start();
+        quickNoteForm.initConflictBanner();
+        quickNoteForm.configureToolbarLayout();
         updateGitButtonStatus();
 
         QuickNoteListener.addListeners();
@@ -607,6 +616,64 @@ public class QuickNoteForm {
         quickNoteForm.getNoteList().setVisible(false);
     }
 
+    public static void refreshNoteTree() {
+        QuickNoteVaultUtil.ensureVaultReady();
+        if (quickNoteForm.getNoteTree() == null) {
+            log.error("Quick note tree is not initialized");
+            return;
+        }
+
+        String titleFilterKeyWord = quickNoteForm.getSearchTextField().getText();
+        boolean searchContent = quickNoteForm.getSearchContentCheckBox().isSelected();
+
+        List<TQuickNote> quickNoteList;
+        if (searchContent && StringUtils.isNotBlank(titleFilterKeyWord)) {
+            quickNoteList = QuickNoteVaultUtil.listByFilter(titleFilterKeyWord, true);
+        } else {
+            quickNoteList = QuickNoteVaultUtil.listByFilter(titleFilterKeyWord, false);
+        }
+
+        List<String> folders = searchContent && StringUtils.isNotBlank(titleFilterKeyWord)
+                ? List.of()
+                : QuickNoteVaultUtil.listFolders();
+        quickNoteForm.getNoteTree().setModel(QuickNoteTreeUtil.buildTreeModel(quickNoteList, folders));
+        expandAllTreeRows(quickNoteForm.getNoteTree());
+
+        String preservePath = QuickNoteListener.selectedPath;
+        if (StringUtils.isNotBlank(preservePath)) {
+            selectNoteInTree(preservePath);
+        }
+    }
+
+    public static void reloadCurrentNoteFromDiskIfClean() {
+        reloadCurrentNoteFromDisk(false);
+    }
+
+    public static void reloadCurrentNoteFromDisk(boolean force) {
+        if (!force && QuickNoteVaultRefreshCoordinator.hasUnsavedChanges()) {
+            return;
+        }
+        String path = QuickNoteListener.selectedPath;
+        if (StringUtils.isBlank(path)) {
+            return;
+        }
+        TQuickNote note = QuickNoteVaultUtil.loadByPath(path);
+        if (note == null) {
+            quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(path);
+            getInstance().getContentSplitPane().setLeftComponent(new JPanel());
+            QuickNoteListener.selectedPath = null;
+            QuickNoteListener.selectedName = null;
+            updateInsertImageButtonVisibility();
+            return;
+        }
+        QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
+        try {
+            showNote(note, true);
+        } finally {
+            QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
+        }
+    }
+
     public static void initNoteList() {
         QuickNoteVaultUtil.ensureVaultReady();
         if (quickNoteForm.getNoteTree() == null) {
@@ -661,6 +728,88 @@ public class QuickNoteForm {
         updateGitButtonStatus();
     }
 
+    private void initConflictBanner() {
+        if (conflictBannerLabel != null || indicatorPanel == null) {
+            return;
+        }
+        conflictBannerLabel = new JLabel(" ");
+        conflictBannerLabel.setForeground(new Color(200, 60, 60));
+        conflictBannerLabel.setVisible(false);
+        conflictBannerLabel.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        conflictBannerLabel.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                QuickNoteGitDialog.showDialog();
+            }
+        });
+        indicatorPanel.removeAll();
+        indicatorPanel.setLayout(new BoxLayout(indicatorPanel, BoxLayout.Y_AXIS));
+        indicatorPanel.add(conflictBannerLabel);
+    }
+
+    private void configureToolbarLayout() {
+        if (tipsLabel != null) {
+            tipsLabel.setVisible(false);
+            tipsLabel.setText("");
+        }
+        if (indicatorPanel != null) {
+            indicatorPanel.setBorder(null);
+            indicatorPanel.setVisible(false);
+        }
+        mergeListToggleIntoToolbar();
+    }
+
+    private void mergeListToggleIntoToolbar() {
+        if (listItemButton == null || leftMenuToolBar == null || leftMenuPanel == null || menuPanel == null) {
+            return;
+        }
+
+        if (listItemButton.getParent() != null) {
+            listItemButton.getParent().remove(listItemButton);
+        }
+
+        boolean alreadyInToolbar = false;
+        for (Component component : leftMenuToolBar.getComponents()) {
+            if (component == listItemButton) {
+                alreadyInToolbar = true;
+                break;
+            }
+        }
+        if (!alreadyInToolbar) {
+            leftMenuToolBar.add(listItemButton, 0);
+            if (leftMenuToolBar.getComponentCount() == 1
+                    || !(leftMenuToolBar.getComponent(1) instanceof JToolBar.Separator)) {
+                leftMenuToolBar.add(new JToolBar.Separator(), 1);
+            }
+        }
+
+        leftMenuPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
+        leftMenuPanel.removeAll();
+        leftMenuPanel.add(leftMenuToolBar);
+
+        menuPanel.remove(leftMenuPanel);
+        menuPanel.add(leftMenuPanel, new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_WEST,
+                GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        leftMenuPanel.revalidate();
+        leftMenuPanel.repaint();
+    }
+
+    public static void updateConflictBanner(QuickNoteGitStatus status) {
+        if (quickNoteForm == null || quickNoteForm.conflictBannerLabel == null) {
+            return;
+        }
+        boolean show = status != null && (status.getConflictCount() > 0 || status.isMerging());
+        quickNoteForm.conflictBannerLabel.setVisible(show);
+        if (quickNoteForm.indicatorPanel != null) {
+            quickNoteForm.indicatorPanel.setVisible(show);
+        }
+        if (show) {
+            quickNoteForm.conflictBannerLabel.setText(I18n.format("quickNote.git.conflictBanner",
+                    status.getConflictCount()));
+        }
+    }
+
     public static void updateGitButtonStatus() {
         if (quickNoteForm == null || quickNoteForm.gitButton == null) {
             return;
@@ -694,6 +843,7 @@ public class QuickNoteForm {
                     } else {
                         I18nUiUtil.setToolTip(button, "quickNote.tooltip.git");
                     }
+                    updateConflictBanner(status);
                 } catch (Exception ignored) {
                     // ignore background status read failures
                 }
@@ -722,6 +872,10 @@ public class QuickNoteForm {
     }
 
     public static void showNote(TQuickNote tQuickNote) {
+        showNote(tQuickNote, false);
+    }
+
+    public static void showNote(TQuickNote tQuickNote, boolean forceReload) {
         if (tQuickNote == null || StringUtils.isBlank(tQuickNote.getRelativePath())) {
             return;
         }
@@ -729,7 +883,9 @@ public class QuickNoteForm {
         QuickNoteListener.selectedPath = path;
         QuickNoteListener.selectedName = tQuickNote.getName();
 
-        quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(path);
+        if (forceReload) {
+            quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(path);
+        }
         QuickNoteEditorPanel editorPanel = quickNoteRSyntaxTextViewerManager.getEditorPanel(path);
         getInstance().getContentSplitPane().setLeftComponent(editorPanel);
 
@@ -882,7 +1038,7 @@ public class QuickNoteForm {
         leftMenuPanel = new JPanel();
         leftMenuPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 0, 0));
         leftMenuPanel.setAlignmentX(0.0f);
-        menuPanel.add(leftMenuPanel, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_VERTICAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        menuPanel.add(leftMenuPanel, new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         syntaxComboBox = new JComboBox();
         leftMenuPanel.add(syntaxComboBox);
         fontNameComboBox = new JComboBox();
@@ -923,7 +1079,7 @@ public class QuickNoteForm {
         listItemButton.setIcon(new ImageIcon(getClass().getResource("/icon/listFiles_dark.png")));
         listItemButton.setText("");
         listItemButton.setToolTipText("显示/隐藏列表");
-        menuPanel.add(listItemButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        menuPanel.add(listItemButton, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, 1, 1, null, null, null, 0, false));
         colorSettingPanel = new JPanel();
         colorSettingPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
         colorSettingPanel.setAlignmentX(0.0f);
@@ -935,7 +1091,7 @@ public class QuickNoteForm {
         indicatorPanel.setFocusable(false);
         indicatorPanel.setRequestFocusEnabled(false);
         indicatorPanel.setVisible(true);
-        menuPanel.add(indicatorPanel, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, true));
+        menuPanel.add(indicatorPanel, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_VERTICAL, 1, 1, null, null, null, 0, false));
         indicatorPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         tipsLabel = new JLabel();
         tipsLabel.setFocusable(false);

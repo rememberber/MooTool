@@ -6,6 +6,7 @@ import com.formdev.flatlaf.util.FontUtils;
 import com.formdev.flatlaf.util.StringUtils;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
+import com.luoboduner.moo.tool.util.QuickNoteAutoGitScheduler;
 import com.luoboduner.moo.tool.util.QuickNoteConflictHighlightUtil;
 import com.luoboduner.moo.tool.util.QuickNoteImageInsertUtil;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
@@ -118,6 +119,7 @@ public class QuickNoteRSyntaxTextViewer extends RSyntaxTextArea {
     }
 
     private void notifyContentChanged() {
+        QuickNoteAutoGitScheduler.recordActivity();
         if (onContentChanged != null) {
             onContentChanged.run();
         }
