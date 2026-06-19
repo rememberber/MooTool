@@ -19,6 +19,7 @@ import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewe
 import com.luoboduner.moo.tool.ui.dialog.DocInfoDialog;
 import com.luoboduner.moo.tool.ui.dialog.QuickNoteGitDialog;
 import com.luoboduner.moo.tool.ui.dialog.QuickNoteSettingsUi;
+import com.luoboduner.moo.tool.util.QuickNoteCommitEntryAction;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.component.SplitPaneUtil;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
@@ -439,7 +440,7 @@ public class QuickNoteListener {
         quickNoteForm.getOrderListButton().addActionListener(e -> toggleOrderedList(
                 QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea()));
 
-        quickNoteForm.getGitButton().addActionListener(e -> QuickNoteGitDialog.showDialog());
+        quickNoteForm.getGitButton().addActionListener(e -> QuickNoteCommitEntryAction.trigger(quickNoteForm.getGitButton()));
         quickNoteForm.getVaultSettingsButton().addActionListener(e -> QuickNoteSettingsUi.showDialog());
 
         quickNoteForm.getInfoButton().addActionListener(e -> {

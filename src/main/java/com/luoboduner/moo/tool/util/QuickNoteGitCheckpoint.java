@@ -56,14 +56,46 @@ public final class QuickNoteGitCheckpoint {
     }
 
     static CheckpointPlan planAutomaticCheckpoint(File vaultDir) {
+        return planManualCheckpoint(vaultDir, null);
+    }
+
+    static CheckpointPlan planManualCheckpoint(File vaultDir, String customMessage) {
         List<QuickNoteGitModifiedFile> modified = QuickNoteGitUtil.listModifiedFilesDetailed(vaultDir);
         if (!modified.isEmpty()) {
-            return new CheckpointPlan(CheckpointAction.COMMIT_AND_SYNC, buildCommitMessage(vaultDir));
+            String message = StringUtils.isNotBlank(customMessage)
+                    ? customMessage.trim()
+                    : buildCommitMessage(vaultDir);
+            return new CheckpointPlan(CheckpointAction.COMMIT_AND_SYNC, message);
         }
         if (shouldRetryPush(QuickNoteGitUtil.getStatus(vaultDir))) {
             return new CheckpointPlan(CheckpointAction.PUSH_ONLY, "");
         }
         return null;
+    }
+
+    public static QuickNoteGitUtil.GitCommandResult runManualCheckpoint(String customMessage) {
+        File vaultDir = QuickNoteVaultUtil.getVaultDir();
+        QuickNoteGitUtil.initRepoIfNeeded(vaultDir);
+        if (!QuickNoteGitUtil.isGitRepo(vaultDir)) {
+            return QuickNoteGitUtil.GitCommandResult.failure(I18n.get("quickNote.git.initRequired"));
+        }
+        if (isGitCheckpointBlocked(vaultDir)) {
+            return QuickNoteGitUtil.GitCommandResult.failure(I18n.get("quickNote.git.checkpointBlocked"));
+        }
+        if (QuickNoteVaultRefreshCoordinator.hasUnsavedChanges()) {
+            return QuickNoteGitUtil.GitCommandResult.failure(I18n.get("quickNote.git.unsavedChanges"));
+        }
+
+        CheckpointPlan plan = planManualCheckpoint(vaultDir, customMessage);
+        if (plan == null) {
+            return QuickNoteGitUtil.GitCommandResult.failure(I18n.get("quickNote.git.quickCommit.nothingToDo"));
+        }
+
+        QuickNoteGitUtil.GitCommandResult result = executeCheckpointPlan(vaultDir, plan);
+        if (result.isSuccess()) {
+            javax.swing.SwingUtilities.invokeLater(QuickNoteForm::updateGitButtonStatus);
+        }
+        return result;
     }
 
     public static QuickNoteGitUtil.GitCommandResult runAutomaticCheckpoint() {
