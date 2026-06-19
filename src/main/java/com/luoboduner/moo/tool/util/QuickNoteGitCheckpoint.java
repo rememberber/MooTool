@@ -14,6 +14,14 @@ import java.util.List;
  */
 public final class QuickNoteGitCheckpoint {
 
+    enum CheckpointAction {
+        COMMIT_AND_SYNC,
+        PUSH_ONLY
+    }
+
+    record CheckpointPlan(CheckpointAction action, String message) {
+    }
+
     private QuickNoteGitCheckpoint() {
     }
 
@@ -25,6 +33,10 @@ public final class QuickNoteGitCheckpoint {
         return I18n.format("quickNote.git.checkpointMany", count);
     }
 
+    public static boolean shouldRetryPush(QuickNoteGitStatus status) {
+        return status != null && status.isHasRemote() && status.getAhead() > 0;
+    }
+
     public static boolean hasPendingCheckpointWork(File vaultDir) {
         if (!QuickNoteGitUtil.isGitRepo(vaultDir)) {
             return false;
@@ -32,12 +44,26 @@ public final class QuickNoteGitCheckpoint {
         if (isGitCheckpointBlocked(vaultDir)) {
             return false;
         }
-        return !QuickNoteGitUtil.listModifiedFilesDetailed(vaultDir).isEmpty();
+        if (!QuickNoteGitUtil.listModifiedFilesDetailed(vaultDir).isEmpty()) {
+            return true;
+        }
+        return shouldRetryPush(QuickNoteGitUtil.getStatus(vaultDir));
     }
 
     public static boolean isGitCheckpointBlocked(File vaultDir) {
         QuickNoteGitStatus status = QuickNoteGitUtil.getStatus(vaultDir);
         return status.isMerging() || status.getConflictCount() > 0;
+    }
+
+    static CheckpointPlan planAutomaticCheckpoint(File vaultDir) {
+        List<QuickNoteGitModifiedFile> modified = QuickNoteGitUtil.listModifiedFilesDetailed(vaultDir);
+        if (!modified.isEmpty()) {
+            return new CheckpointPlan(CheckpointAction.COMMIT_AND_SYNC, buildCommitMessage(vaultDir));
+        }
+        if (shouldRetryPush(QuickNoteGitUtil.getStatus(vaultDir))) {
+            return new CheckpointPlan(CheckpointAction.PUSH_ONLY, "");
+        }
+        return null;
     }
 
     public static QuickNoteGitUtil.GitCommandResult runAutomaticCheckpoint() {
@@ -54,14 +80,38 @@ public final class QuickNoteGitCheckpoint {
         if (QuickNoteVaultRefreshCoordinator.hasUnsavedChanges()) {
             return QuickNoteGitUtil.GitCommandResult.success("");
         }
-        List<QuickNoteGitModifiedFile> modified = QuickNoteGitUtil.listModifiedFilesDetailed(vaultDir);
-        if (modified.isEmpty()) {
+
+        CheckpointPlan plan = planAutomaticCheckpoint(vaultDir);
+        if (plan == null) {
             return QuickNoteGitUtil.GitCommandResult.success("");
         }
-        QuickNoteGitUtil.GitCommandResult result = QuickNoteGitUtil.commit(vaultDir, buildCommitMessage(vaultDir));
+
+        QuickNoteGitUtil.GitCommandResult result = executeCheckpointPlan(vaultDir, plan);
         if (result.isSuccess()) {
             javax.swing.SwingUtilities.invokeLater(QuickNoteForm::updateGitButtonStatus);
         }
         return result;
+    }
+
+    private static QuickNoteGitUtil.GitCommandResult executeCheckpointPlan(File vaultDir, CheckpointPlan plan) {
+        if (plan.action() == CheckpointAction.PUSH_ONLY) {
+            return QuickNoteGitUtil.pushIfNeeded(vaultDir);
+        }
+        QuickNoteGitUtil.GitCommandResult commitResult = QuickNoteGitUtil.commit(vaultDir, plan.message());
+        if (!commitResult.isSuccess()) {
+            return commitResult;
+        }
+        if (!QuickNoteGitUtil.hasRemote(vaultDir)) {
+            return commitResult;
+        }
+        QuickNoteGitUtil.GitCommandResult pushResult = QuickNoteGitUtil.push(vaultDir);
+        if (pushResult.isSuccess()) {
+            return pushResult;
+        }
+        if (pushResult.isPushRejected()) {
+            return QuickNoteGitUtil.GitCommandResult.pushRejected(
+                    StringUtils.defaultIfBlank(pushResult.getMessage(), I18n.get("quickNote.git.pushRejected")));
+        }
+        return pushResult;
     }
 }

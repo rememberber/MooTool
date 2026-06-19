@@ -28,6 +28,7 @@ import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.QuickNoteAutoGitScheduler;
+import com.luoboduner.moo.tool.util.QuickNoteAutoPullScheduler;
 import com.luoboduner.moo.tool.util.QuickNoteConflictHighlightUtil;
 import com.luoboduner.moo.tool.util.QuickNoteGitUtil;
 import com.luoboduner.moo.tool.util.QuickNoteTreeUtil;
@@ -253,6 +254,7 @@ public class QuickNoteForm {
 
         QuickNoteVaultWatcher.start();
         QuickNoteAutoGitScheduler.start();
+        QuickNoteAutoPullScheduler.start();
         quickNoteForm.initConflictBanner();
         quickNoteForm.configureToolbarLayout();
         updateGitButtonStatus();

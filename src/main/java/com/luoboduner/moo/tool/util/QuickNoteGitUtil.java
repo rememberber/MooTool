@@ -2,6 +2,7 @@ package com.luoboduner.moo.tool.util;
 
 import com.luoboduner.moo.tool.domain.QuickNoteGitCommit;
 import com.luoboduner.moo.tool.domain.QuickNoteGitModifiedFile;
+import com.luoboduner.moo.tool.domain.QuickNoteGitPullResult;
 import com.luoboduner.moo.tool.domain.QuickNoteGitStatus;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -199,23 +200,131 @@ public final class QuickNoteGitUtil {
     }
 
     public static GitCommandResult pull(File vaultDir) {
+        QuickNoteGitPullResult result = pullWithResult(vaultDir);
+        if (result.isSuccess()) {
+            return GitCommandResult.success(result.getMessage());
+        }
+        return GitCommandResult.failure(result.getMessage());
+    }
+
+    public static QuickNoteGitPullResult pullWithResult(File vaultDir) {
         if (!isGitRepo(vaultDir)) {
-            return GitCommandResult.failure("Git repository is not initialized");
+            return QuickNoteGitPullResult.error("Git repository is not initialized");
         }
         if (!hasRemote(vaultDir)) {
-            return GitCommandResult.failure("Remote origin is not configured");
+            return QuickNoteGitPullResult.error("Remote origin is not configured");
         }
         try {
+            String oldHead = resolveHead(vaultDir);
             GitResult result = runGit(vaultDir, 180, "pull", "--rebase", REMOTE_NAME);
-            if (result.success()) {
-                return GitCommandResult.success(result.stdout());
+            if (!result.success()) {
+                if (isSigningFailure(result.combinedOutput())) {
+                    return QuickNoteGitPullResult.error(result.combinedOutput());
+                }
+                if (isPullConflict(vaultDir, result.combinedOutput())) {
+                    return QuickNoteGitPullResult.conflict(result.combinedOutput());
+                }
+                return QuickNoteGitPullResult.error(result.combinedOutput());
             }
-            if (isSigningFailure(result.combinedOutput())) {
-                return GitCommandResult.failure(result.combinedOutput());
+            if (isPullConflict(vaultDir, result.combinedOutput())) {
+                return QuickNoteGitPullResult.conflict(result.combinedOutput());
             }
-            return GitCommandResult.failure(result.combinedOutput());
+            String newHead = resolveHead(vaultDir);
+            if (isUpToDatePull(result.combinedOutput(), oldHead, newHead)) {
+                return QuickNoteGitPullResult.upToDate(result.combinedOutput());
+            }
+            List<String> updatedFiles = listChangedFilesBetween(vaultDir, oldHead, newHead);
+            return QuickNoteGitPullResult.updated(updatedFiles, result.combinedOutput());
         } catch (Exception e) {
-            return GitCommandResult.failure(e.getMessage());
+            return QuickNoteGitPullResult.error(e.getMessage());
+        }
+    }
+
+    public static GitCommandResult commitAndPush(File vaultDir, String message) {
+        GitCommandResult commitResult = commit(vaultDir, message);
+        if (!commitResult.isSuccess()) {
+            return commitResult;
+        }
+        if (!hasRemote(vaultDir)) {
+            return commitResult;
+        }
+        return push(vaultDir);
+    }
+
+    public static GitCommandResult pushIfNeeded(File vaultDir) {
+        if (!isGitRepo(vaultDir) || !hasRemote(vaultDir)) {
+            return GitCommandResult.success("");
+        }
+        QuickNoteGitStatus status = getStatus(vaultDir);
+        if (status.getAhead() <= 0) {
+            return GitCommandResult.success("");
+        }
+        return push(vaultDir);
+    }
+
+    public static boolean isPushRejected(String output) {
+        if (StringUtils.isBlank(output)) {
+            return false;
+        }
+        String lower = output.toLowerCase(Locale.ROOT);
+        return lower.contains("[rejected]")
+                || lower.contains("non-fast-forward")
+                || lower.contains("failed to push some refs")
+                || (lower.contains("rejected") && lower.contains("fetch first"));
+    }
+
+    private static boolean isPullConflict(File vaultDir, String output) {
+        if (isMerging(vaultDir) || !listConflictFiles(vaultDir).isEmpty()) {
+            return true;
+        }
+        if (StringUtils.isBlank(output)) {
+            return false;
+        }
+        String lower = output.toLowerCase(Locale.ROOT);
+        return lower.contains("conflict") || lower.contains("could not apply");
+    }
+
+    private static boolean isUpToDatePull(String output, String oldHead, String newHead) {
+        if (StringUtils.isNotBlank(output)) {
+            String lower = output.toLowerCase(Locale.ROOT);
+            if (lower.contains("already up to date") || lower.contains("up to date")) {
+                return true;
+            }
+        }
+        return StringUtils.isNotBlank(oldHead) && oldHead.equals(newHead);
+    }
+
+    private static String resolveHead(File vaultDir) {
+        if (!isGitRepo(vaultDir)) {
+            return "";
+        }
+        try {
+            GitResult result = runGit(vaultDir, 10, "rev-parse", "HEAD");
+            return result.success() ? result.stdout().trim() : "";
+        } catch (Exception e) {
+            return "";
+        }
+    }
+
+    private static List<String> listChangedFilesBetween(File vaultDir, String oldHead, String newHead) {
+        if (!isGitRepo(vaultDir) || StringUtils.isBlank(oldHead) || StringUtils.isBlank(newHead)
+                || oldHead.equals(newHead)) {
+            return List.of();
+        }
+        try {
+            GitResult result = runGit(vaultDir, 30, "diff", "--name-only", oldHead, newHead);
+            if (!result.success() || StringUtils.isBlank(result.stdout())) {
+                return List.of();
+            }
+            List<String> files = new ArrayList<>();
+            for (String line : result.stdout().split("\n")) {
+                if (StringUtils.isNotBlank(line)) {
+                    files.add(QuickNoteVaultUtil.normalizeRelativePath(line.trim()));
+                }
+            }
+            return files;
+        } catch (Exception e) {
+            return List.of();
         }
     }
 
@@ -230,6 +339,9 @@ public final class QuickNoteGitUtil {
             GitResult result = runGit(vaultDir, 180, "push", "-u", REMOTE_NAME, "HEAD");
             if (result.success()) {
                 return GitCommandResult.success(result.stdout());
+            }
+            if (isPushRejected(result.combinedOutput())) {
+                return GitCommandResult.pushRejected(result.combinedOutput());
             }
             return GitCommandResult.failure(result.combinedOutput());
         } catch (Exception e) {
@@ -645,19 +757,25 @@ public final class QuickNoteGitUtil {
     @Getter
     public static class GitCommandResult {
         private final boolean success;
+        private final boolean pushRejected;
         private final String message;
 
-        private GitCommandResult(boolean success, String message) {
+        private GitCommandResult(boolean success, boolean pushRejected, String message) {
             this.success = success;
+            this.pushRejected = pushRejected;
             this.message = message;
         }
 
         public static GitCommandResult success(String message) {
-            return new GitCommandResult(true, StringUtils.defaultString(message));
+            return new GitCommandResult(true, false, StringUtils.defaultString(message));
         }
 
         public static GitCommandResult failure(String message) {
-            return new GitCommandResult(false, StringUtils.defaultString(message));
+            return new GitCommandResult(false, false, StringUtils.defaultString(message));
+        }
+
+        public static GitCommandResult pushRejected(String message) {
+            return new GitCommandResult(false, true, StringUtils.defaultString(message));
         }
     }
 }

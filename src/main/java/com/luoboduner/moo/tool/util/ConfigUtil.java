@@ -584,6 +584,15 @@ public class ConfigUtil extends ConfigBaseUtil {
         setting.putByGroup("quickNoteGitRemoteUrl", "func.quickNote", quickNoteGitRemoteUrl);
     }
 
+    public int getQuickNoteAutoPullIntervalMinutes() {
+        return setting.getInt("quickNoteAutoPullIntervalMinutes", "func.quickNote", 5);
+    }
+
+    public void setQuickNoteAutoPullIntervalMinutes(int quickNoteAutoPullIntervalMinutes) {
+        setting.putByGroup("quickNoteAutoPullIntervalMinutes", "func.quickNote",
+                String.valueOf(quickNoteAutoPullIntervalMinutes));
+    }
+
     public String getJsonBeautyExportPath() {
         return setting.getStr("jsonBeautyExportPath", "func.jsonBeauty", "");
     }

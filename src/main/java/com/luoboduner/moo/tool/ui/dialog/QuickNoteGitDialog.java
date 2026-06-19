@@ -5,6 +5,7 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.domain.QuickNoteGitCommit;
 import com.luoboduner.moo.tool.domain.QuickNoteGitModifiedFile;
+import com.luoboduner.moo.tool.domain.QuickNoteGitPullResult;
 import com.luoboduner.moo.tool.domain.QuickNoteGitStatus;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
@@ -318,7 +319,7 @@ public class QuickNoteGitDialog extends JDialog {
             File vaultDir = QuickNoteVaultUtil.getVaultDir();
             String message = StringUtils.defaultIfBlank(commitMessageField.getText(),
                     QuickNoteGitCheckpoint.buildCommitMessage(vaultDir));
-            return QuickNoteGitUtil.commit(vaultDir, message);
+            return QuickNoteGitUtil.commitAndPush(vaultDir, message);
         }, false));
 
         discardButton.addActionListener(e -> discardSelectedChange());
@@ -345,8 +346,7 @@ public class QuickNoteGitDialog extends JDialog {
         fetchButton.addActionListener(e -> runGitTask(I18n.get("quickNote.git.fetching"), () ->
                 QuickNoteGitUtil.fetch(QuickNoteVaultUtil.getVaultDir()), false));
 
-        pullButton.addActionListener(e -> runGitTask(I18n.get("quickNote.git.pulling"), () ->
-                QuickNoteGitUtil.pull(QuickNoteVaultUtil.getVaultDir()), true));
+        pullButton.addActionListener(e -> runPullTask());
 
         pushButton.addActionListener(e -> runGitTask(I18n.get("quickNote.git.pushing"), () ->
                 QuickNoteGitUtil.push(QuickNoteVaultUtil.getVaultDir()), false));
@@ -587,6 +587,40 @@ public class QuickNoteGitDialog extends JDialog {
         JOptionPane.showMessageDialog(this, message, I18n.get("common.failure"), JOptionPane.ERROR_MESSAGE);
     }
 
+    private void runPullTask() {
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        statusLabel.setText(I18n.get("quickNote.git.pulling"));
+        SwingWorker<QuickNoteGitPullResult, Void> worker = new SwingWorker<>() {
+            @Override
+            protected QuickNoteGitPullResult doInBackground() {
+                return QuickNoteGitUtil.pullWithResult(QuickNoteVaultUtil.getVaultDir());
+            }
+
+            @Override
+            protected void done() {
+                setCursor(Cursor.getDefaultCursor());
+                try {
+                    QuickNoteGitPullResult result = get();
+                    if (result.isSuccess()) {
+                        statusLabel.setText(I18n.get("common.success"));
+                        refreshAll();
+                        QuickNoteVaultRefreshCoordinator.refreshAfterPull(result);
+                    } else if (result.getStatus() == QuickNoteGitPullResult.Status.CONFLICT) {
+                        showGitFailure(I18n.get("quickNote.git.pullConflict"));
+                        refreshAll();
+                        QuickNoteVaultRefreshCoordinator.refreshAfterPull(result);
+                    } else {
+                        showGitFailure(result.getMessage());
+                        refreshAll();
+                    }
+                } catch (Exception ex) {
+                    showGitFailure(ex.getMessage());
+                }
+            }
+        };
+        worker.execute();
+    }
+
     private void runGitTask(String pendingMessage, GitTask task) {
         runGitTask(pendingMessage, task, false);
     }
@@ -609,6 +643,9 @@ public class QuickNoteGitDialog extends JDialog {
                         statusLabel.setText(I18n.get("common.success"));
                         refreshAll();
                         QuickNoteVaultRefreshCoordinator.refreshAfterExternalChange(forceReloadEditor);
+                    } else if (result.isPushRejected()) {
+                        showGitFailure(I18n.get("quickNote.git.pushRejected"));
+                        refreshAll();
                     } else {
                         showGitFailure(result.getMessage());
                         refreshAll();

@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.util;
 
+import com.luoboduner.moo.tool.domain.QuickNoteGitPullResult;
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
@@ -89,6 +90,35 @@ public final class QuickNoteVaultRefreshCoordinator {
         } else {
             SwingUtilities.invokeLater(() -> doRefreshAfterExternalChange(forceReloadCurrentNote));
         }
+    }
+
+    public static void refreshAfterPull(QuickNoteGitPullResult result) {
+        if (result == null) {
+            return;
+        }
+        Runnable task = () -> {
+            switch (result.getStatus()) {
+                case UPDATED -> refreshAfterPullUpdates(result.getUpdatedFiles());
+                case UP_TO_DATE -> QuickNoteForm.updateGitButtonStatus();
+                case CONFLICT, ERROR -> QuickNoteForm.updateGitButtonStatus();
+            }
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            task.run();
+        } else {
+            SwingUtilities.invokeLater(task);
+        }
+    }
+
+    private static void refreshAfterPullUpdates(java.util.List<String> updatedFiles) {
+        QuickNoteForm.refreshNoteTree();
+        String currentPath = QuickNoteListener.selectedPath;
+        boolean shouldReloadCurrent = StringUtils.isNotBlank(currentPath)
+                && (updatedFiles.isEmpty() || updatedFiles.contains(QuickNoteVaultUtil.normalizeRelativePath(currentPath)));
+        if (shouldReloadCurrent) {
+            QuickNoteForm.reloadCurrentNoteFromDiskIfClean();
+        }
+        QuickNoteForm.updateGitButtonStatus();
     }
 
     private static void doRefreshAfterExternalChange(boolean forceReloadCurrentNote) {
