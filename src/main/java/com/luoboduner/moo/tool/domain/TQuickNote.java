@@ -23,6 +23,9 @@ public class TQuickNote {
 
     private String lineWrap;
 
+    /** Vault 内相对路径，如 folder/note.txt */
+    private String relativePath;
+
     public Integer getId() {
         return id;
     }
@@ -109,5 +112,13 @@ public class TQuickNote {
 
     public void setLineWrap(String lineWrap) {
         this.lineWrap = lineWrap == null ? null : lineWrap.trim();
+    }
+
+    public String getRelativePath() {
+        return relativePath;
+    }
+
+    public void setRelativePath(String relativePath) {
+        this.relativePath = relativePath == null ? null : relativePath.trim();
     }
 }

@@ -552,6 +552,30 @@ public class ConfigUtil extends ConfigBaseUtil {
         setting.putByGroup("quickNoteExportPath", "func.quickNote", quickNoteExportPath);
     }
 
+    public String getQuickNoteVaultPath() {
+        return setting.getStr("quickNoteVaultPath", "func.quickNote", "");
+    }
+
+    public void setQuickNoteVaultPath(String quickNoteVaultPath) {
+        setting.putByGroup("quickNoteVaultPath", "func.quickNote", quickNoteVaultPath);
+    }
+
+    public boolean isQuickNoteAutoGitCommit() {
+        return setting.getBool("quickNoteAutoGitCommit", "func.quickNote", true);
+    }
+
+    public void setQuickNoteAutoGitCommit(boolean quickNoteAutoGitCommit) {
+        setting.putByGroup("quickNoteAutoGitCommit", "func.quickNote", String.valueOf(quickNoteAutoGitCommit));
+    }
+
+    public String getQuickNoteGitRemoteUrl() {
+        return setting.getStr("quickNoteGitRemoteUrl", "func.quickNote", "");
+    }
+
+    public void setQuickNoteGitRemoteUrl(String quickNoteGitRemoteUrl) {
+        setting.putByGroup("quickNoteGitRemoteUrl", "func.quickNote", quickNoteGitRemoteUrl);
+    }
+
     public String getJsonBeautyExportPath() {
         return setting.getStr("jsonBeautyExportPath", "func.jsonBeauty", "");
     }

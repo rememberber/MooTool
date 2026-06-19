@@ -71,6 +71,8 @@ public class SettingDialog extends JDialog {
     private JCheckBox tabCardCheckBox;
     private JCheckBox showFuncRecentCheckBox;
 
+    private JPanel quickNoteSettingPanel;
+
     private JRadioButton tabClassicRadio;
     private JRadioButton tabCardRadio;
     private JRadioButton tabGroupedRadio;
@@ -208,6 +210,9 @@ public class SettingDialog extends JDialog {
         dbFilePathTextField.setText(App.config.getDbFilePath());
 
         applyI18nTexts();
+        if (quickNoteSettingPanel != null) {
+            QuickNoteSettingsUi.install(quickNoteSettingPanel, contentPane);
+        }
         contentPane.updateUI();
 
         // 设置-常规-启动时自动检查更新
