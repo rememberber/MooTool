@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.dialog;
 
+import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.domain.QuickNoteGitCommit;
@@ -32,6 +33,14 @@ import java.util.List;
 public class QuickNoteGitDialog extends JDialog {
 
     private static QuickNoteGitDialog instance;
+
+    static {
+        UIManager.addPropertyChangeListener(e -> {
+            if ("lookAndFeel".equals(e.getPropertyName())) {
+                onThemeChanged();
+            }
+        });
+    }
 
     private final DefaultListModel<QuickNoteGitModifiedFile> changesModel = new DefaultListModel<>();
     private final DefaultListModel<QuickNoteGitCommit> historyModel = new DefaultListModel<>();
@@ -81,19 +90,15 @@ public class QuickNoteGitDialog extends JDialog {
         diffScrollPane.setPreferredSize(new Dimension(100, 180));
 
         JPanel southPanel = new JPanel(new BorderLayout(4, 4));
-        conflictDiffLabel.setForeground(new Color(200, 60, 60));
         conflictDiffLabel.setVisible(false);
         southPanel.add(conflictDiffLabel, BorderLayout.NORTH);
         southPanel.add(diffScrollPane, BorderLayout.CENTER);
         content.add(southPanel, BorderLayout.SOUTH);
 
         JPanel bottom = new JPanel(new BorderLayout(8, 0));
-        statusLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
         bottom.add(statusLabel, BorderLayout.CENTER);
 
         JPanel topActions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 0));
-        openVaultButton.setIcon(new FlatSVGIcon("icon/list.svg"));
-        refreshButton.setIcon(new FlatSVGIcon("icon/refresh.svg"));
         refreshButton.setToolTipText(I18n.get("common.refresh"));
         topActions.add(openVaultButton);
         topActions.add(refreshButton);
@@ -102,7 +107,94 @@ public class QuickNoteGitDialog extends JDialog {
 
         bindEvents();
         applyTexts();
+        applyTheme();
         refreshAll();
+    }
+
+    private void applyTheme() {
+        Color warning = warningForeground();
+        conflictLabel.setForeground(warning);
+        conflictDiffLabel.setForeground(warning);
+
+        Color disabled = UIManager.getColor("Label.disabledForeground");
+        if (disabled != null) {
+            statusLabel.setForeground(disabled);
+        }
+
+        styleReaderTextArea(diffTextArea);
+        styleReaderTextArea(gitLogTextArea);
+        refreshButtonIcons();
+    }
+
+    private static Color warningForeground() {
+        Color color = UIManager.getColor("Objects.Red");
+        if (color != null) {
+            return color;
+        }
+        return FlatLaf.isLafDark() ? new Color(255, 120, 120) : new Color(200, 60, 60);
+    }
+
+    private static Color firstUiColor(String primaryKey, String fallbackKey) {
+        Color color = UIManager.getColor(primaryKey);
+        if (color == null) {
+            color = UIManager.getColor(fallbackKey);
+        }
+        return color;
+    }
+
+    private static void styleReaderTextArea(JTextArea area) {
+        Color background = firstUiColor("TextArea.background", "Editor.background");
+        Color foreground = firstUiColor("TextArea.foreground", "Editor.foreground");
+        if (background != null) {
+            area.setBackground(background);
+            area.setOpaque(true);
+            Container parent = area.getParent();
+            if (parent instanceof JViewport viewport) {
+                viewport.setBackground(background);
+            }
+        }
+        if (foreground != null) {
+            area.setForeground(foreground);
+        }
+        Color caret = UIManager.getColor("TextArea.caretForeground");
+        if (caret == null) {
+            caret = UIManager.getColor("Editor.caretColor");
+        }
+        if (caret != null) {
+            area.setCaretColor(caret);
+        }
+    }
+
+    private void refreshButtonIcons() {
+        openVaultButton.setIcon(new FlatSVGIcon("icon/list.svg"));
+        refreshButton.setIcon(new FlatSVGIcon("icon/refresh.svg"));
+        commitButton.setIcon(new FlatSVGIcon("icon/save.svg"));
+        discardButton.setIcon(new FlatSVGIcon("icon/remove.svg"));
+        abortMergeButton.setIcon(new FlatSVGIcon("icon/info.svg"));
+        openChangeFileButton.setIcon(new FlatSVGIcon("icon/list.svg"));
+        openConflictsButton.setIcon(new FlatSVGIcon("icon/find.svg"));
+        fetchButton.setIcon(new FlatSVGIcon("icon/refresh.svg"));
+        pullButton.setIcon(new FlatSVGIcon("icon/down.svg"));
+        pushButton.setIcon(new FlatSVGIcon("icon/up.svg"));
+        initGitButton.setIcon(new FlatSVGIcon("icon/add.svg"));
+        saveRemoteButton.setIcon(new FlatSVGIcon("icon/save.svg"));
+        clearLogButton.setIcon(new FlatSVGIcon("icon/remove.svg"));
+    }
+
+    public static void onThemeChanged() {
+        SwingUtilities.invokeLater(() -> {
+            if (instance == null) {
+                return;
+            }
+            if (!instance.isVisible()) {
+                instance.dispose();
+                instance = null;
+                return;
+            }
+            SwingUtilities.updateComponentTreeUI(instance);
+            instance.applyTheme();
+            instance.repaint();
+        });
     }
 
     private JPanel buildChangesPanel() {
@@ -110,7 +202,6 @@ public class QuickNoteGitDialog extends JDialog {
         panel.setBorder(BorderFactory.createEmptyBorder(8, 8, 8, 8));
 
         JPanel north = new JPanel(new BorderLayout(8, 4));
-        conflictLabel.setForeground(new Color(200, 60, 60));
         north.add(conflictLabel, BorderLayout.NORTH);
 
         JPanel top = new JPanel(new BorderLayout(8, 8));
@@ -124,11 +215,6 @@ public class QuickNoteGitDialog extends JDialog {
         panel.add(new JScrollPane(changesList), BorderLayout.CENTER);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        commitButton.setIcon(new FlatSVGIcon("icon/save.svg"));
-        discardButton.setIcon(new FlatSVGIcon("icon/remove.svg"));
-        abortMergeButton.setIcon(new FlatSVGIcon("icon/info.svg"));
-        openChangeFileButton.setIcon(new FlatSVGIcon("icon/list.svg"));
-        openConflictsButton.setIcon(new FlatSVGIcon("icon/find.svg"));
         actions.add(commitButton);
         actions.add(discardButton);
         actions.add(abortMergeButton);
@@ -160,7 +246,6 @@ public class QuickNoteGitDialog extends JDialog {
         panel.add(new JScrollPane(gitLogTextArea), BorderLayout.CENTER);
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        clearLogButton.setIcon(new FlatSVGIcon("icon/remove.svg"));
         actions.add(clearLogButton);
         panel.add(actions, BorderLayout.SOUTH);
         return panel;
@@ -185,17 +270,12 @@ public class QuickNoteGitDialog extends JDialog {
         gbc.gridx = 2;
         gbc.weightx = 0;
         gbc.fill = GridBagConstraints.NONE;
-        saveRemoteButton.setIcon(new FlatSVGIcon("icon/save.svg"));
         panel.add(saveRemoteButton, gbc);
 
         gbc.gridx = 0;
         gbc.gridy = 1;
         gbc.gridwidth = 3;
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
-        fetchButton.setIcon(new FlatSVGIcon("icon/refresh.svg"));
-        pullButton.setIcon(new FlatSVGIcon("icon/down.svg"));
-        pushButton.setIcon(new FlatSVGIcon("icon/up.svg"));
-        initGitButton.setIcon(new FlatSVGIcon("icon/add.svg"));
         actions.add(fetchButton);
         actions.add(pullButton);
         actions.add(pushButton);
@@ -560,6 +640,8 @@ public class QuickNoteGitDialog extends JDialog {
     public static void showDialog() {
         if (instance == null || !instance.isDisplayable()) {
             instance = new QuickNoteGitDialog();
+        } else {
+            instance.applyTheme();
         }
         instance.refreshAll();
         instance.setVisible(true);
