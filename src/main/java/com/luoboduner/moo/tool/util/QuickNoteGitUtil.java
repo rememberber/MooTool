@@ -155,6 +155,51 @@ public final class QuickNoteGitUtil {
         }
     }
 
+    /**
+     * 读取指定 ref 下的文件内容；文件不存在时返回空字符串。
+     */
+    public static String getFileContentAtRef(File vaultDir, String ref, String relativePath) {
+        if (!isGitRepo(vaultDir) || StringUtils.isBlank(ref) || StringUtils.isBlank(relativePath)) {
+            return "";
+        }
+        try {
+            String normalizedPath = QuickNoteVaultUtil.normalizeRelativePath(relativePath);
+            String objectSpec = ref + ":" + normalizedPath;
+            GitResult result = runGit(vaultDir, 30, false, "show", objectSpec);
+            if (!result.success()) {
+                return "";
+            }
+            return result.stdout();
+        } catch (Exception e) {
+            log.debug("Read git blob failed: {}", e.getMessage());
+            return "";
+        }
+    }
+
+    /**
+     * 列出某次提交涉及的文件及状态（name-status 格式）。
+     */
+    public static List<String> listCommitNameStatus(File vaultDir, String commitHash) {
+        List<String> lines = new ArrayList<>();
+        if (!isGitRepo(vaultDir) || StringUtils.isBlank(commitHash)) {
+            return lines;
+        }
+        try {
+            GitResult result = runGit(vaultDir, 30, "diff-tree", "--no-commit-id", "--name-status", "-r", commitHash);
+            if (!result.success() || StringUtils.isBlank(result.stdout())) {
+                return lines;
+            }
+            for (String line : result.stdout().split("\n")) {
+                if (StringUtils.isNotBlank(line)) {
+                    lines.add(line.trim());
+                }
+            }
+        } catch (Exception e) {
+            log.debug("List commit files failed: {}", e.getMessage());
+        }
+        return lines;
+    }
+
     public static String getRemoteUrl(File vaultDir) {
         if (!isGitRepo(vaultDir)) {
             return "";
@@ -789,11 +834,21 @@ public final class QuickNoteGitUtil {
     }
 
     private static GitResult runGit(File workDir, long timeoutSeconds, String... args) throws Exception {
-        return runGit(workDir, timeoutSeconds, Map.of(), args);
+        return runGit(workDir, timeoutSeconds, Map.of(), true, args);
+    }
+
+    private static GitResult runGit(File workDir, long timeoutSeconds, boolean trimOutput, String... args)
+            throws Exception {
+        return runGit(workDir, timeoutSeconds, Map.of(), trimOutput, args);
     }
 
     private static GitResult runGit(File workDir, long timeoutSeconds, Map<String, String> extraEnv, String... args)
             throws Exception {
+        return runGit(workDir, timeoutSeconds, extraEnv, true, args);
+    }
+
+    private static GitResult runGit(File workDir, long timeoutSeconds, Map<String, String> extraEnv, boolean trimOutput,
+                                    String... args) throws Exception {
         List<String> command = new ArrayList<>();
         command.add("git");
         command.add("-c");
@@ -828,7 +883,7 @@ public final class QuickNoteGitUtil {
             throw new IllegalStateException("git command timed out");
         }
         int exitCode = process.exitValue();
-        String text = output.toString().trim();
+        String text = trimOutput ? output.toString().trim() : output.toString();
         QuickNoteGitLog.append("git " + String.join(" ", args) + " -> "
                 + (exitCode == 0 ? "OK" : "FAIL(" + exitCode + ")")
                 + (text.isEmpty() ? "" : ": " + abbreviate(text, 120)));

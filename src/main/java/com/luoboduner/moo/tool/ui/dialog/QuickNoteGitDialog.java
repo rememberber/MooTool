@@ -16,8 +16,11 @@ import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.QuickNoteGitCheckpoint;
 import com.luoboduner.moo.tool.util.QuickNoteGitLog;
-import com.luoboduner.moo.tool.util.QuickNoteVaultRefreshCoordinator;
 import com.luoboduner.moo.tool.util.QuickNoteGitUtil;
+import com.luoboduner.moo.tool.bean.textdiff.UnifiedView;
+import com.luoboduner.moo.tool.ui.component.QuickNoteUnifiedDiffRenderer;
+import com.luoboduner.moo.tool.util.QuickNoteGitDiffHelper;
+import com.luoboduner.moo.tool.util.QuickNoteVaultRefreshCoordinator;
 import com.luoboduner.moo.tool.util.QuickNoteVaultUtil;
 import org.apache.commons.lang3.StringUtils;
 
@@ -69,6 +72,9 @@ public class QuickNoteGitDialog extends JDialog {
     private final JTextArea gitLogTextArea = new JTextArea();
     private final JButton clearLogButton = new JButton();
     private final JLabel conflictDiffLabel = new JLabel(" ");
+
+    private int diffRequestSeq;
+    private UnifiedView lastUnifiedView;
 
     public QuickNoteGitDialog() {
         super(App.mainFrame, I18n.get("quickNote.git.title"), false);
@@ -125,6 +131,9 @@ public class QuickNoteGitDialog extends JDialog {
 
         styleReaderTextArea(diffTextArea);
         styleReaderTextArea(gitLogTextArea);
+        if (lastUnifiedView != null) {
+            QuickNoteUnifiedDiffRenderer.reapplyHighlights(diffTextArea, lastUnifiedView);
+        }
         refreshButtonIcons();
     }
 
@@ -404,11 +413,14 @@ public class QuickNoteGitDialog extends JDialog {
         }
         QuickNoteGitModifiedFile selected = changesList.getSelectedValue();
         if (selected == null) {
-            diffTextArea.setText("");
+            clearDiffDisplay();
             return;
         }
-        diffTextArea.setText(QuickNoteGitUtil.getWorkingDiff(QuickNoteVaultUtil.getVaultDir(), selected.getPath()));
-        updateConflictDiffHint(diffTextArea.getText(), selected.getStatusLabel());
+        File vaultDir = QuickNoteVaultUtil.getVaultDir();
+        String path = selected.getPath();
+        String statusLabel = selected.getStatusLabel();
+        loadDiffAsync(() -> QuickNoteGitDiffHelper.buildWorkingDiff(vaultDir, path),
+                statusLabel);
     }
 
     private void showSelectedHistoryDiff(ListSelectionEvent event) {
@@ -417,18 +429,59 @@ public class QuickNoteGitDialog extends JDialog {
         }
         QuickNoteGitCommit selected = historyList.getSelectedValue();
         if (selected == null) {
-            diffTextArea.setText("");
+            clearDiffDisplay();
             return;
         }
+        File vaultDir = QuickNoteVaultUtil.getVaultDir();
         String path = historyScopeCurrentCheckBox.isSelected() ? currentNotePath() : "";
-        if (StringUtils.isBlank(path)) {
-            diffTextArea.setText(QuickNoteGitUtil.getCommitDiff(
-                    QuickNoteVaultUtil.getVaultDir(), "", selected.getHash()));
+        loadDiffAsync(() -> QuickNoteGitDiffHelper.buildCommitDiff(vaultDir, path, selected.getHash(), selected), "");
+    }
+
+    private void loadDiffAsync(java.util.function.Supplier<QuickNoteGitDiffHelper.Result> supplier,
+                               String conflictStatus) {
+        int requestId = ++diffRequestSeq;
+        new SwingWorker<QuickNoteGitDiffHelper.Result, Void>() {
+            @Override
+            protected QuickNoteGitDiffHelper.Result doInBackground() {
+                return supplier.get();
+            }
+
+            @Override
+            protected void done() {
+                if (requestId != diffRequestSeq) {
+                    return;
+                }
+                try {
+                    QuickNoteGitDiffHelper.Result result = get();
+                    displayDiff(result);
+                    updateConflictDiffHint(result.conflictProbe(), conflictStatus);
+                } catch (Exception e) {
+                    clearDiffDisplay();
+                    QuickNoteUnifiedDiffRenderer.renderPlain(diffTextArea, e.getMessage());
+                }
+            }
+        }.execute();
+    }
+
+    private void displayDiff(QuickNoteGitDiffHelper.Result result) {
+        if (result == null) {
+            clearDiffDisplay();
             return;
         }
-        diffTextArea.setText(QuickNoteGitUtil.getCommitDiff(
-                QuickNoteVaultUtil.getVaultDir(), path, selected.getHash()));
-        updateConflictDiffHint(diffTextArea.getText(), "");
+        lastUnifiedView = result.unifiedView();
+        if (result.unifiedView() != null) {
+            QuickNoteUnifiedDiffRenderer.render(diffTextArea, result.unifiedView());
+        } else {
+            lastUnifiedView = null;
+            QuickNoteUnifiedDiffRenderer.renderPlain(diffTextArea, result.text());
+        }
+    }
+
+    private void clearDiffDisplay() {
+        diffRequestSeq++;
+        lastUnifiedView = null;
+        QuickNoteUnifiedDiffRenderer.renderPlain(diffTextArea, "");
+        updateConflictDiffHint("", "");
     }
 
     private void updateConflictDiffHint(String diff, String status) {
@@ -474,7 +527,7 @@ public class QuickNoteGitDialog extends JDialog {
         for (QuickNoteGitCommit commit : history) {
             historyModel.addElement(commit);
         }
-        diffTextArea.setText("");
+        clearDiffDisplay();
     }
 
     private void refreshAll() {
@@ -517,8 +570,7 @@ public class QuickNoteGitDialog extends JDialog {
             commitMessageField.setText(QuickNoteGitCheckpoint.buildCommitMessage(vaultDir));
         }
 
-        diffTextArea.setText("");
-        updateConflictDiffHint("", "");
+        clearDiffDisplay();
         commitButton.setEnabled(gitRepo);
         discardButton.setEnabled(gitRepo);
         abortMergeButton.setEnabled(gitRepo && (status.isMerging() || status.getConflictCount() > 0));
