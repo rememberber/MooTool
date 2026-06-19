@@ -1,7 +1,7 @@
 package com.luoboduner.moo.tool.util;
 
 import cn.hutool.core.io.FileUtil;
-import com.luoboduner.moo.tool.bean.textdiff.UnifiedView;
+import com.luoboduner.moo.tool.bean.textdiff.UIDiff;
 import com.luoboduner.moo.tool.domain.QuickNoteGitCommit;
 import com.luoboduner.moo.tool.service.DiffService;
 import org.apache.commons.lang3.StringUtils;
@@ -15,19 +15,24 @@ import java.util.List;
  */
 public final class QuickNoteGitDiffHelper {
 
-    private static final int DIFF_CONTEXT = 3;
     private static final int MAX_DIFF_CHARS = 512 * 1024;
 
     private QuickNoteGitDiffHelper() {
     }
 
-    public record Result(String text, UnifiedView unifiedView, String conflictProbe) {
+    public record Result(String text, String oldText, String newText, UIDiff uiDiff, String conflictProbe,
+                         boolean sideBySide) {
         public static Result plain(String text) {
-            return new Result(StringUtils.defaultString(text), null, text);
+            return new Result(StringUtils.defaultString(text), null, null, null, text, false);
         }
 
-        public static Result unified(UnifiedView view, String conflictProbe) {
-            return new Result(view.text(), view, conflictProbe);
+        public static Result sideBySide(String oldText, String newText, UIDiff uiDiff, String conflictProbe) {
+            return new Result(null,
+                    StringUtils.defaultString(oldText),
+                    StringUtils.defaultString(newText),
+                    uiDiff,
+                    conflictProbe,
+                    true);
         }
     }
 
@@ -43,12 +48,10 @@ public final class QuickNoteGitDiffHelper {
             if (isTooLarge(oldContent, newContent)) {
                 return Result.plain(QuickNoteGitUtil.getWorkingDiff(vaultDir, normalizedPath));
             }
-            UnifiedView view = DiffService.buildUnifiedView(
-                    StringUtils.defaultString(oldContent),
-                    StringUtils.defaultString(newContent),
-                    DIFF_CONTEXT,
-                    false);
-            return Result.unified(view, conflictProbe);
+            String oldText = StringUtils.defaultString(oldContent);
+            String newText = StringUtils.defaultString(newContent);
+            UIDiff uiDiff = DiffService.getSegmentsForUI(oldText, newText, false);
+            return Result.sideBySide(oldText, newText, uiDiff, conflictProbe);
         } catch (Exception e) {
             return Result.plain(e.getMessage());
         }
@@ -70,12 +73,10 @@ public final class QuickNoteGitDiffHelper {
             if (isTooLarge(oldContent, newContent)) {
                 return Result.plain(QuickNoteGitUtil.getCommitDiff(vaultDir, normalizedPath, commitHash));
             }
-            UnifiedView view = DiffService.buildUnifiedView(
-                    StringUtils.defaultString(oldContent),
-                    StringUtils.defaultString(newContent),
-                    DIFF_CONTEXT,
-                    false);
-            return Result.unified(view, view.text());
+            String oldText = StringUtils.defaultString(oldContent);
+            String newText = StringUtils.defaultString(newContent);
+            UIDiff uiDiff = DiffService.getSegmentsForUI(oldText, newText, false);
+            return Result.sideBySide(oldText, newText, uiDiff, newText);
         } catch (Exception e) {
             return Result.plain(e.getMessage());
         }

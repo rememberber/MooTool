@@ -17,8 +17,7 @@ import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.QuickNoteGitCheckpoint;
 import com.luoboduner.moo.tool.util.QuickNoteGitLog;
 import com.luoboduner.moo.tool.util.QuickNoteGitUtil;
-import com.luoboduner.moo.tool.bean.textdiff.UnifiedView;
-import com.luoboduner.moo.tool.ui.component.QuickNoteUnifiedDiffRenderer;
+import com.luoboduner.moo.tool.ui.component.QuickNoteGitDiffPanel;
 import com.luoboduner.moo.tool.util.QuickNoteGitDiffHelper;
 import com.luoboduner.moo.tool.util.QuickNoteVaultRefreshCoordinator;
 import com.luoboduner.moo.tool.util.QuickNoteVaultUtil;
@@ -51,7 +50,7 @@ public class QuickNoteGitDialog extends JDialog {
     private final DefaultListModel<QuickNoteGitCommit> historyModel = new DefaultListModel<>();
     private final JList<QuickNoteGitModifiedFile> changesList = new JList<>(changesModel);
     private final JList<QuickNoteGitCommit> historyList = new JList<>(historyModel);
-    private final JTextArea diffTextArea = new JTextArea();
+    private final QuickNoteGitDiffPanel diffPanel = new QuickNoteGitDiffPanel();
     private final JTextField commitMessageField = new JTextField();
     private final JTextField remoteUrlField = new JTextField();
     private final JLabel statusLabel = new JLabel(" ");
@@ -74,7 +73,6 @@ public class QuickNoteGitDialog extends JDialog {
     private final JLabel conflictDiffLabel = new JLabel(" ");
 
     private int diffRequestSeq;
-    private UnifiedView lastUnifiedView;
 
     public QuickNoteGitDialog() {
         super(App.mainFrame, I18n.get("quickNote.git.title"), false);
@@ -92,15 +90,12 @@ public class QuickNoteGitDialog extends JDialog {
         tabbedPane.addTab(I18n.get("quickNote.git.tab.log"), buildLogPanel());
         content.add(tabbedPane, BorderLayout.CENTER);
 
-        diffTextArea.setEditable(false);
-        diffTextArea.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
-        JScrollPane diffScrollPane = new JScrollPane(diffTextArea);
-        diffScrollPane.setPreferredSize(new Dimension(100, 180));
+        diffPanel.setPreferredSize(new Dimension(100, 180));
 
         JPanel southPanel = new JPanel(new BorderLayout(4, 4));
         conflictDiffLabel.setVisible(false);
         southPanel.add(conflictDiffLabel, BorderLayout.NORTH);
-        southPanel.add(diffScrollPane, BorderLayout.CENTER);
+        southPanel.add(diffPanel, BorderLayout.CENTER);
         content.add(southPanel, BorderLayout.SOUTH);
 
         JPanel bottom = new JPanel(new BorderLayout(8, 0));
@@ -129,11 +124,8 @@ public class QuickNoteGitDialog extends JDialog {
             statusLabel.setForeground(disabled);
         }
 
-        styleReaderTextArea(diffTextArea);
+        diffPanel.applyTheme();
         styleReaderTextArea(gitLogTextArea);
-        if (lastUnifiedView != null) {
-            QuickNoteUnifiedDiffRenderer.reapplyHighlights(diffTextArea, lastUnifiedView);
-        }
         refreshButtonIcons();
     }
 
@@ -457,7 +449,7 @@ public class QuickNoteGitDialog extends JDialog {
                     updateConflictDiffHint(result.conflictProbe(), conflictStatus);
                 } catch (Exception e) {
                     clearDiffDisplay();
-                    QuickNoteUnifiedDiffRenderer.renderPlain(diffTextArea, e.getMessage());
+                    diffPanel.renderPlain(e.getMessage());
                 }
             }
         }.execute();
@@ -468,19 +460,16 @@ public class QuickNoteGitDialog extends JDialog {
             clearDiffDisplay();
             return;
         }
-        lastUnifiedView = result.unifiedView();
-        if (result.unifiedView() != null) {
-            QuickNoteUnifiedDiffRenderer.render(diffTextArea, result.unifiedView());
+        if (result.sideBySide()) {
+            diffPanel.renderSideBySide(result.oldText(), result.newText(), result.uiDiff());
         } else {
-            lastUnifiedView = null;
-            QuickNoteUnifiedDiffRenderer.renderPlain(diffTextArea, result.text());
+            diffPanel.renderPlain(result.text());
         }
     }
 
     private void clearDiffDisplay() {
         diffRequestSeq++;
-        lastUnifiedView = null;
-        QuickNoteUnifiedDiffRenderer.renderPlain(diffTextArea, "");
+        diffPanel.clear();
         updateConflictDiffHint("", "");
     }
 
@@ -726,6 +715,7 @@ public class QuickNoteGitDialog extends JDialog {
         openVaultButton.setText(I18n.get("quickNote.git.openVault"));
         clearLogButton.setText(I18n.get("quickNote.git.clearLog"));
         historyScopeCurrentCheckBox.setText(I18n.get("quickNote.git.historyScopeCurrent"));
+        diffPanel.updatePanelTitles();
     }
 
     public static void showDialog() {

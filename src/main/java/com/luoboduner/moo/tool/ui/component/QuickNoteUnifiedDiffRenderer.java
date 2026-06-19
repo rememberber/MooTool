@@ -2,7 +2,10 @@ package com.luoboduner.moo.tool.ui.component;
 
 import com.formdev.flatlaf.FlatLaf;
 import com.luoboduner.moo.tool.bean.textdiff.Span;
+import com.luoboduner.moo.tool.bean.textdiff.TextDiffSegment;
+import com.luoboduner.moo.tool.bean.textdiff.UIDiff;
 import com.luoboduner.moo.tool.bean.textdiff.UnifiedView;
+import com.luoboduner.moo.tool.enums.DiffTypeEnum;
 import com.luoboduner.moo.tool.enums.UnifiedSpanTypeEnum;
 
 import javax.swing.JTextArea;
@@ -46,6 +49,45 @@ public final class QuickNoteUnifiedDiffRenderer {
 
     public static void clearHighlights(JTextArea area) {
         area.getHighlighter().removeAllHighlights();
+    }
+
+    public static void renderSideBySide(JTextArea left, JTextArea right, String oldText, String newText, UIDiff uiDiff) {
+        clearHighlights(left);
+        clearHighlights(right);
+        left.setText(oldText == null ? "" : oldText);
+        right.setText(newText == null ? "" : newText);
+        left.setCaretPosition(0);
+        right.setCaretPosition(0);
+        applySideBySideHighlights(left, right, uiDiff);
+    }
+
+    private static void applySideBySideHighlights(JTextArea left, JTextArea right, UIDiff uiDiff) {
+        if (uiDiff == null || uiDiff.segments() == null) {
+            return;
+        }
+        DiffPainters painters = DiffPainters.current();
+        for (TextDiffSegment segment : uiDiff.segments()) {
+            if (segment.type() == DiffTypeEnum.DELETE) {
+                if (segment.leftStart() >= 0 && segment.leftEnd() >= 0) {
+                    safeAddHighlight(left, segment.leftStart(), segment.leftEnd(), painters.delPainter());
+                    safeAddLineHighlights(left, segment.leftStart(), segment.leftEnd(), painters.delLinePainter());
+                }
+            } else if (segment.type() == DiffTypeEnum.INSERT) {
+                if (segment.rightStart() >= 0 && segment.rightEnd() >= 0) {
+                    safeAddHighlight(right, segment.rightStart(), segment.rightEnd(), painters.insPainter());
+                    safeAddLineHighlights(right, segment.rightStart(), segment.rightEnd(), painters.insLinePainter());
+                }
+            } else if (segment.type() == DiffTypeEnum.CHANGE) {
+                if (segment.leftStart() >= 0 && segment.leftEnd() >= 0) {
+                    safeAddHighlight(left, segment.leftStart(), segment.leftEnd(), painters.changePainter());
+                    safeAddLineHighlights(left, segment.leftStart(), segment.leftEnd(), painters.changeLinePainter());
+                }
+                if (segment.rightStart() >= 0 && segment.rightEnd() >= 0) {
+                    safeAddHighlight(right, segment.rightStart(), segment.rightEnd(), painters.changePainter());
+                    safeAddLineHighlights(right, segment.rightStart(), segment.rightEnd(), painters.changeLinePainter());
+                }
+            }
+        }
     }
 
     private static void applySpans(JTextArea area, UnifiedView view) {
