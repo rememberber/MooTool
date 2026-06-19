@@ -132,11 +132,16 @@ public final class QuickNoteGitUtil {
     }
 
     public static String getCommitDiff(File vaultDir, String relativePath, String commitHash) {
-        if (!isGitRepo(vaultDir) || StringUtils.isAnyBlank(relativePath, commitHash)) {
+        if (!isGitRepo(vaultDir) || StringUtils.isBlank(commitHash)) {
             return "";
         }
         try {
-            GitResult result = runGit(vaultDir, 30, "show", "--pretty=format:", commitHash, "--", relativePath);
+            if (StringUtils.isBlank(relativePath)) {
+                GitResult result = runGit(vaultDir, 30, "show", "--pretty=medium", commitHash);
+                return result.stdout();
+            }
+            String normalizedPath = QuickNoteVaultUtil.normalizeRelativePath(relativePath);
+            GitResult result = runGit(vaultDir, 30, "show", "--pretty=format:", commitHash, "--", normalizedPath);
             return result.stdout();
         } catch (Exception e) {
             return e.getMessage();
@@ -364,29 +369,44 @@ public final class QuickNoteGitUtil {
         try {
             List<String> args = new ArrayList<>();
             args.add("log");
-            args.add("--pretty=format:%H|%h|%an|%ad|%s");
-            args.add("--date=yyyy-MM-dd HH:mm:ss");
+            // %x1f = unit separator, avoids breaking when author/message contain '|'
+            args.add("--pretty=format:%H%x1f%h%x1f%an%x1f%ai%x1f%s");
             args.add("-n");
             args.add(String.valueOf(limit));
             if (StringUtils.isNotBlank(relativePath)) {
                 args.add("--");
-                args.add(relativePath);
+                args.add(QuickNoteVaultUtil.normalizeRelativePath(relativePath));
             }
             GitResult result = runGit(vaultDir, 30, args.toArray(new String[0]));
             if (!result.success() || StringUtils.isBlank(result.stdout())) {
                 return commits;
             }
             for (String line : result.stdout().split("\n")) {
-                String[] parts = line.split("\\|", 5);
+                if (StringUtils.isBlank(line)) {
+                    continue;
+                }
+                String[] parts = line.split("\u001f", 5);
                 if (parts.length < 5) {
                     continue;
                 }
-                commits.add(new QuickNoteGitCommit(parts[0], parts[1], parts[2], parts[3], parts[4]));
+                String date = formatCommitDate(parts[3]);
+                commits.add(new QuickNoteGitCommit(parts[0], parts[1], parts[2], date, parts[4]));
             }
         } catch (Exception e) {
             log.debug("Git log failed: {}", e.getMessage());
         }
         return commits;
+    }
+
+    private static String formatCommitDate(String rawDate) {
+        if (StringUtils.isBlank(rawDate)) {
+            return "";
+        }
+        String trimmed = rawDate.trim();
+        if (trimmed.matches(".+ [+-]\\d{4}$")) {
+            return trimmed.replaceAll(" [+-]\\d{4}$", "");
+        }
+        return trimmed;
     }
 
     private static String mapStatusLabel(String statusCode) {

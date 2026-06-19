@@ -353,7 +353,8 @@ public class QuickNoteGitDialog extends JDialog {
         }
         String path = historyScopeCurrentCheckBox.isSelected() ? currentNotePath() : "";
         if (StringUtils.isBlank(path)) {
-            diffTextArea.setText(selected.getMessage());
+            diffTextArea.setText(QuickNoteGitUtil.getCommitDiff(
+                    QuickNoteVaultUtil.getVaultDir(), "", selected.getHash()));
             return;
         }
         diffTextArea.setText(QuickNoteGitUtil.getCommitDiff(
@@ -392,7 +393,12 @@ public class QuickNoteGitDialog extends JDialog {
         if (!QuickNoteGitUtil.isGitRepo(vaultDir)) {
             return;
         }
-        String path = historyScopeCurrentCheckBox.isSelected() ? QuickNoteListener.selectedPath : "";
+        boolean scopeCurrent = historyScopeCurrentCheckBox.isSelected();
+        String path = scopeCurrent ? currentNotePath() : "";
+        if (scopeCurrent && StringUtils.isBlank(path)) {
+            historyScopeCurrentCheckBox.setSelected(false);
+            path = "";
+        }
         List<QuickNoteGitCommit> history = StringUtils.isNotBlank(path)
                 ? QuickNoteGitUtil.listFileHistory(vaultDir, path, 50)
                 : QuickNoteGitUtil.listVaultHistory(vaultDir, 50);
