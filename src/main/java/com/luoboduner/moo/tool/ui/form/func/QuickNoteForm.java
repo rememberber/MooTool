@@ -23,6 +23,7 @@ import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteEditorPanel;
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
+import com.luoboduner.moo.tool.ui.dialog.QuickNoteConflictResolverDialog;
 import com.luoboduner.moo.tool.ui.dialog.QuickNoteGitDialog;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.I18n;
@@ -754,7 +755,7 @@ public class QuickNoteForm {
         conflictBannerLabel.addMouseListener(new MouseAdapter() {
             @Override
             public void mouseClicked(MouseEvent e) {
-                QuickNoteGitDialog.showDialog();
+                QuickNoteConflictResolverDialog.showDialog();
             }
         });
         indicatorPanel.removeAll();

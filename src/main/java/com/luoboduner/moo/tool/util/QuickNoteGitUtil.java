@@ -15,8 +15,11 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -505,24 +508,107 @@ public final class QuickNoteGitUtil {
     }
 
     public static List<String> listConflictFiles(File vaultDir) {
-        List<String> conflicts = new ArrayList<>();
+        Set<String> conflicts = new LinkedHashSet<>();
         if (!isGitRepo(vaultDir)) {
-            return conflicts;
+            return List.of();
         }
         try {
-            GitResult result = runGit(vaultDir, 30, "diff", "--name-only", "--diff-filter=U");
-            if (!result.success() || StringUtils.isBlank(result.stdout())) {
-                return conflicts;
+            GitResult result = runGit(vaultDir, 30, "ls-files", "--unmerged");
+            if (StringUtils.isBlank(result.stdout())) {
+                return List.of();
             }
             for (String line : result.stdout().split("\n")) {
-                if (StringUtils.isNotBlank(line)) {
-                    conflicts.add(line.trim());
+                int tabIndex = line.indexOf('\t');
+                if (tabIndex < 0 || tabIndex >= line.length() - 1) {
+                    continue;
+                }
+                String path = QuickNoteVaultUtil.normalizeRelativePath(line.substring(tabIndex + 1).trim());
+                if (StringUtils.isNotBlank(path)) {
+                    conflicts.add(path);
                 }
             }
         } catch (Exception e) {
             log.debug("Git conflict scan failed: {}", e.getMessage());
         }
-        return conflicts;
+        return new ArrayList<>(conflicts);
+    }
+
+    public static GitCommandResult resolveConflictFile(File vaultDir, String relativePath, String strategy) {
+        if (!isGitRepo(vaultDir) || StringUtils.isBlank(relativePath)) {
+            return GitCommandResult.failure(I18n.get("quickNote.git.discardInvalidPath"));
+        }
+        String checkoutFlag = switch (StringUtils.defaultString(strategy).toLowerCase(Locale.ROOT)) {
+            case "ours" -> "--ours";
+            case "theirs" -> "--theirs";
+            default -> null;
+        };
+        if (checkoutFlag == null) {
+            return GitCommandResult.failure(I18n.get("quickNote.git.invalidConflictStrategy"));
+        }
+        String path = QuickNoteVaultUtil.normalizeRelativePath(relativePath);
+        try {
+            ensureQuotePathDisabled(vaultDir);
+            GitResult checkout = runGit(vaultDir, 30, "checkout", checkoutFlag, "--", path);
+            if (!checkout.success()) {
+                return GitCommandResult.failure(checkout.stdout());
+            }
+            GitResult add = runGit(vaultDir, 30, "add", "--", path);
+            if (!add.success()) {
+                return GitCommandResult.failure(add.stdout());
+            }
+            QuickNoteVaultRefreshCoordinator.markInternalWrite();
+            return GitCommandResult.success("");
+        } catch (Exception e) {
+            return GitCommandResult.failure(StringUtils.defaultIfBlank(e.getMessage(),
+                    I18n.get("quickNote.git.resolveConflictFailed")));
+        }
+    }
+
+    public static String getConflictMode(File vaultDir) {
+        if (isRebaseInProgress(vaultDir)) {
+            return "rebase";
+        }
+        if (isMergeInProgress(vaultDir)) {
+            return "merge";
+        }
+        return "none";
+    }
+
+    public static boolean isRebaseInProgress(File vaultDir) {
+        return new File(vaultDir, ".git/rebase-merge").isDirectory()
+                || new File(vaultDir, ".git/rebase-apply").isDirectory();
+    }
+
+    public static boolean isMergeInProgress(File vaultDir) {
+        return new File(vaultDir, ".git/MERGE_HEAD").isFile();
+    }
+
+    public static GitCommandResult commitConflictResolution(File vaultDir) {
+        if (!isGitRepo(vaultDir)) {
+            return GitCommandResult.failure("Git repository is not initialized");
+        }
+        List<String> remaining = listConflictFiles(vaultDir);
+        if (!remaining.isEmpty()) {
+            return GitCommandResult.failure(I18n.format("quickNote.git.conflictsRemain", remaining.size()));
+        }
+        try {
+            ensureAuthorConfig(vaultDir);
+            String mode = getConflictMode(vaultDir);
+            GitResult result;
+            if ("rebase".equals(mode)) {
+                result = runGit(vaultDir, 60, Map.of("GIT_EDITOR", "true"), "rebase", "--continue");
+            } else {
+                result = runGit(vaultDir, 60, "commit", "-m", I18n.get("quickNote.git.resolveCommitMessage"));
+            }
+            if (!result.success()) {
+                return GitCommandResult.failure(result.stdout());
+            }
+            QuickNoteVaultRefreshCoordinator.markInternalWrite();
+            return GitCommandResult.success(result.stdout());
+        } catch (Exception e) {
+            return GitCommandResult.failure(StringUtils.defaultIfBlank(e.getMessage(),
+                    I18n.get("quickNote.git.resolveCommitFailed")));
+        }
     }
 
     public static QuickNoteGitStatus getStatus(File vaultDir) {
@@ -586,9 +672,7 @@ public final class QuickNoteGitUtil {
     }
 
     public static boolean isMerging(File vaultDir) {
-        return new File(vaultDir, ".git/MERGE_HEAD").isFile()
-                || new File(vaultDir, ".git/rebase-merge").isDirectory()
-                || new File(vaultDir, ".git/rebase-apply").isDirectory();
+        return isMergeInProgress(vaultDir) || isRebaseInProgress(vaultDir);
     }
 
     private static int[] getAheadBehind(File vaultDir) {
@@ -705,6 +789,11 @@ public final class QuickNoteGitUtil {
     }
 
     private static GitResult runGit(File workDir, long timeoutSeconds, String... args) throws Exception {
+        return runGit(workDir, timeoutSeconds, Map.of(), args);
+    }
+
+    private static GitResult runGit(File workDir, long timeoutSeconds, Map<String, String> extraEnv, String... args)
+            throws Exception {
         List<String> command = new ArrayList<>();
         command.add("git");
         command.add("-c");
@@ -715,6 +804,11 @@ public final class QuickNoteGitUtil {
         ProcessBuilder builder = new ProcessBuilder(command);
         builder.directory(workDir);
         builder.redirectErrorStream(true);
+        if (extraEnv != null) {
+            for (Map.Entry<String, String> entry : extraEnv.entrySet()) {
+                builder.environment().put(entry.getKey(), entry.getValue());
+            }
+        }
         Process process = builder.start();
         StringBuilder output = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(

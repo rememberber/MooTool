@@ -18,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -81,7 +82,7 @@ public final class QuickNoteVaultUtil {
         List<TQuickNote> notes = new ArrayList<>();
         collectNotes(getVaultDir(), "", notes);
         notes.sort(Comparator.comparing(TQuickNote::getModifiedTime, Comparator.nullsLast(Comparator.reverseOrder())));
-        return notes;
+        return filterVisibleNotes(notes);
     }
 
     public static List<TQuickNote> listByFilter(String keyword, boolean includeContent) {
@@ -401,7 +402,22 @@ public final class QuickNoteVaultUtil {
         List<String> folders = new ArrayList<>();
         collectFolders(getVaultDir(), "", folders);
         folders.sort(String::compareToIgnoreCase);
-        return folders;
+        return QuickNoteGitIgnoreUtil.filterVisibleFolders(getVaultDir(), folders);
+    }
+
+    private static List<TQuickNote> filterVisibleNotes(List<TQuickNote> notes) {
+        if (notes.isEmpty()) {
+            return notes;
+        }
+        List<String> paths = notes.stream()
+                .map(TQuickNote::getRelativePath)
+                .filter(StringUtils::isNotBlank)
+                .collect(Collectors.toList());
+        Set<String> visible = new java.util.LinkedHashSet<>(
+                QuickNoteGitIgnoreUtil.filterVisiblePaths(getVaultDir(), paths));
+        return notes.stream()
+                .filter(note -> visible.contains(note.getRelativePath()))
+                .collect(Collectors.toList());
     }
 
     public static List<String> listAllBodies() {

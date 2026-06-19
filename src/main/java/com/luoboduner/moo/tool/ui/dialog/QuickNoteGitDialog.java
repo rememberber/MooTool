@@ -8,6 +8,7 @@ import com.luoboduner.moo.tool.domain.QuickNoteGitModifiedFile;
 import com.luoboduner.moo.tool.domain.QuickNoteGitPullResult;
 import com.luoboduner.moo.tool.domain.QuickNoteGitStatus;
 import com.luoboduner.moo.tool.domain.TQuickNote;
+import com.luoboduner.moo.tool.ui.dialog.QuickNoteConflictResolverDialog;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.ComponentUtil;
@@ -334,7 +335,7 @@ public class QuickNoteGitDialog extends JDialog {
         });
 
         openChangeFileButton.addActionListener(e -> openSelectedChangeInFileManager());
-        openConflictsButton.addActionListener(e -> openConflictFilesInFileManager());
+        openConflictsButton.addActionListener(e -> QuickNoteConflictResolverDialog.showDialog());
 
         saveRemoteButton.addActionListener(e -> runGitTask(I18n.get("quickNote.git.savingRemote"), () -> {
             String remoteUrl = remoteUrlField.getText().trim();
@@ -609,6 +610,7 @@ public class QuickNoteGitDialog extends JDialog {
                         showGitFailure(I18n.get("quickNote.git.pullConflict"));
                         refreshAll();
                         QuickNoteVaultRefreshCoordinator.refreshAfterPull(result);
+                        QuickNoteConflictResolverDialog.showDialog();
                     } else {
                         showGitFailure(result.getMessage());
                         refreshAll();
@@ -663,7 +665,7 @@ public class QuickNoteGitDialog extends JDialog {
         discardButton.setText(I18n.get("quickNote.git.discard"));
         abortMergeButton.setText(I18n.get("quickNote.git.abortMerge"));
         openChangeFileButton.setText(I18n.get("quickNote.git.openFile"));
-        openConflictsButton.setText(I18n.get("quickNote.git.openConflicts"));
+        openConflictsButton.setText(I18n.get("quickNote.git.resolveConflicts"));
         fetchButton.setText(I18n.get("quickNote.git.fetch"));
         pullButton.setText(I18n.get("quickNote.git.pull"));
         pushButton.setText(I18n.get("quickNote.git.push"));

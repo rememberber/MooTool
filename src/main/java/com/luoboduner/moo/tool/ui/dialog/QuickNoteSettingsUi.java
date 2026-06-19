@@ -27,6 +27,7 @@ public final class QuickNoteSettingsUi {
     private final JButton vaultBrowseButton = new JButton("…");
     private final JButton vaultSaveButton = new JButton();
     private final JCheckBox autoGitCommitCheckBox = new JCheckBox();
+    private final JCheckBox hideGitignoredCheckBox = new JCheckBox();
     private final JLabel autoGitCommitHintLabel = new JLabel();
     private final JTextField gitRemoteTextField = new JTextField();
     private final JButton gitRemoteSaveButton = new JButton();
@@ -66,7 +67,7 @@ public final class QuickNoteSettingsUi {
     }
 
     private JPanel buildExtraPanel(JComponent hostDialog) {
-        JPanel panel = new JPanel(new GridLayoutManager(4, 3, new Insets(0, 0, 0, 0), -1, -1));
+        JPanel panel = new JPanel(new GridLayoutManager(5, 3, new Insets(0, 0, 0, 0), -1, -1));
 
         panel.add(label("setting.quickNote.vaultPath"), row(0, 0));
         panel.add(vaultPathTextField, row(0, 1));
@@ -79,9 +80,17 @@ public final class QuickNoteSettingsUi {
         autoGitPanel.add(autoGitCommitHintLabel, BorderLayout.CENTER);
         panel.add(autoGitPanel, rowSpan(1, 1, 2));
 
-        panel.add(label("setting.quickNote.gitRemote"), row(2, 0));
-        panel.add(gitRemoteTextField, row(2, 1));
-        panel.add(gitRemoteSaveButton, row(2, 2));
+        panel.add(label("setting.quickNote.hideGitignoredFiles"), row(2, 0));
+        JPanel hideGitignoredPanel = new JPanel(new BorderLayout(0, 4));
+        hideGitignoredPanel.add(hideGitignoredCheckBox, BorderLayout.NORTH);
+        JLabel hideGitignoredHintLabel = new JLabel(I18n.get("setting.quickNote.hideGitignoredFilesHint"));
+        hideGitignoredHintLabel.setForeground(UIManager.getColor("Label.disabledForeground"));
+        hideGitignoredPanel.add(hideGitignoredHintLabel, BorderLayout.CENTER);
+        panel.add(hideGitignoredPanel, rowSpan(2, 1, 2));
+
+        panel.add(label("setting.quickNote.gitRemote"), row(3, 0));
+        panel.add(gitRemoteTextField, row(3, 1));
+        panel.add(gitRemoteSaveButton, row(3, 2));
 
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         vaultSaveButton.setIcon(new FlatSVGIcon("icon/save.svg"));
@@ -92,7 +101,7 @@ public final class QuickNoteSettingsUi {
         actionPanel.add(openVaultButton);
         actionPanel.add(resetVaultPathButton);
         actionPanel.add(openGitPanelButton);
-        panel.add(actionPanel, rowSpan(3, 0, 3));
+        panel.add(actionPanel, rowSpan(4, 0, 3));
         return panel;
     }
 
@@ -103,6 +112,7 @@ public final class QuickNoteSettingsUi {
         }
         vaultPathTextField.setText(configured);
         autoGitCommitCheckBox.setSelected(App.config.isQuickNoteAutoGitCommit());
+        hideGitignoredCheckBox.setSelected(App.config.isQuickNoteHideGitignoredFiles());
         gitRemoteTextField.setText(App.config.getQuickNoteGitRemoteUrl());
     }
 
@@ -119,6 +129,7 @@ public final class QuickNoteSettingsUi {
             String vaultPath = vaultPathTextField.getText().trim();
             App.config.setQuickNoteVaultPath(vaultPath);
             App.config.setQuickNoteAutoGitCommit(autoGitCommitCheckBox.isSelected());
+            App.config.setQuickNoteHideGitignoredFiles(hideGitignoredCheckBox.isSelected());
             App.config.save();
             QuickNoteVaultUtil.resetVaultCache();
             QuickNoteVaultUtil.ensureVaultReady();
@@ -143,6 +154,7 @@ public final class QuickNoteSettingsUi {
 
     private void applyTexts() {
         autoGitCommitCheckBox.setText(I18n.get("setting.quickNote.autoGitCommit"));
+        hideGitignoredCheckBox.setText(I18n.get("setting.quickNote.hideGitignoredFiles"));
         autoGitCommitHintLabel.setText(I18n.get("setting.quickNote.autoGitCommitHint"));
         vaultSaveButton.setText(I18n.get("setting.quickNote.saveVault"));
         gitRemoteSaveButton.setText(I18n.get("common.save"));

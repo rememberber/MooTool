@@ -593,6 +593,15 @@ public class ConfigUtil extends ConfigBaseUtil {
                 String.valueOf(quickNoteAutoPullIntervalMinutes));
     }
 
+    public boolean isQuickNoteHideGitignoredFiles() {
+        return setting.getBool("quickNoteHideGitignoredFiles", "func.quickNote", true);
+    }
+
+    public void setQuickNoteHideGitignoredFiles(boolean quickNoteHideGitignoredFiles) {
+        setting.putByGroup("quickNoteHideGitignoredFiles", "func.quickNote",
+                String.valueOf(quickNoteHideGitignoredFiles));
+    }
+
     public String getJsonBeautyExportPath() {
         return setting.getStr("jsonBeautyExportPath", "func.jsonBeauty", "");
     }
