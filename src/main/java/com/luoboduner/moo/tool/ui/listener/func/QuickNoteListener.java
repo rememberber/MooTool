@@ -1016,6 +1016,9 @@ public class QuickNoteListener {
         QuickNoteVaultRefreshCoordinator.onSaveTaskStarted();
         return executorService.submit(() -> {
             try {
+                if (path != null && QuickNoteVaultRefreshCoordinator.shouldSkipSaveForPath(path)) {
+                    return;
+                }
                 String now = SqliteUtil.nowDateForSqlite();
                 if (path != null) {
                     TQuickNote existingNote = QuickNoteVaultUtil.loadByPath(path);

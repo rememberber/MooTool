@@ -18,8 +18,27 @@ public final class QuickNoteVaultRefreshCoordinator {
 
     private static volatile long lastInternalWriteAt;
     private static final AtomicInteger pendingSaveTasks = new AtomicInteger();
+    private static volatile String discardInProgressPath;
 
     private QuickNoteVaultRefreshCoordinator() {
+    }
+
+    public static void beginDiscard(String relativePath) {
+        if (StringUtils.isNotBlank(relativePath)) {
+            discardInProgressPath = QuickNoteVaultUtil.normalizeRelativePath(relativePath);
+            markInternalWrite();
+        }
+    }
+
+    public static void endDiscard() {
+        discardInProgressPath = null;
+    }
+
+    public static boolean shouldSkipSaveForPath(String relativePath) {
+        if (StringUtils.isBlank(discardInProgressPath) || StringUtils.isBlank(relativePath)) {
+            return false;
+        }
+        return discardInProgressPath.equals(QuickNoteVaultUtil.normalizeRelativePath(relativePath));
     }
 
     public static void markInternalWrite() {

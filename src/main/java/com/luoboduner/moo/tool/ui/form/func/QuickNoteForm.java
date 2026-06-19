@@ -674,6 +674,19 @@ public class QuickNoteForm {
         }
     }
 
+    public static void reloadNoteAfterDiscard(String relativePath) {
+        if (StringUtils.isBlank(relativePath) || quickNoteRSyntaxTextViewerManager == null) {
+            return;
+        }
+        String path = QuickNoteVaultUtil.normalizeRelativePath(relativePath);
+        quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(path);
+        QuickNoteVaultRefreshCoordinator.markInternalWrite();
+        if (!path.equals(QuickNoteListener.selectedPath)) {
+            return;
+        }
+        reloadCurrentNoteFromDisk(true);
+    }
+
     public static void initNoteList() {
         QuickNoteVaultUtil.ensureVaultReady();
         if (quickNoteForm.getNoteTree() == null) {

@@ -241,19 +241,7 @@ public class QuickNoteGitDialog extends JDialog {
             return QuickNoteGitUtil.commit(vaultDir, message);
         }, false));
 
-        discardButton.addActionListener(e -> {
-            QuickNoteGitModifiedFile selected = changesList.getSelectedValue();
-            if (selected == null) {
-                MsgUtil.info(this, "quickNote.git.selectChangeFirst");
-                return;
-            }
-            int confirm = MsgUtil.confirm(this, "quickNote.git.confirmDiscard");
-            if (confirm != JOptionPane.YES_OPTION) {
-                return;
-            }
-            runGitTask(I18n.get("quickNote.git.discarding"), () ->
-                    QuickNoteGitUtil.discardWorkingChanges(QuickNoteVaultUtil.getVaultDir(), selected.getPath()), true);
-        });
+        discardButton.addActionListener(e -> discardSelectedChange());
 
         abortMergeButton.addActionListener(e -> {
             int confirm = MsgUtil.confirm(this, "quickNote.git.confirmAbortMerge");
@@ -463,6 +451,62 @@ public class QuickNoteGitDialog extends JDialog {
         QuickNoteForm.updateGitButtonStatus();
     }
 
+    private void discardSelectedChange() {
+        QuickNoteGitModifiedFile selected = changesList.getSelectedValue();
+        if (selected == null) {
+            MsgUtil.info(this, "quickNote.git.selectChangeFirst");
+            return;
+        }
+        int confirm = MsgUtil.confirm(this, "quickNote.git.confirmDiscard");
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+
+        final String path = selected.getPath();
+        final String statusCode = selected.getStatusCode();
+        QuickNoteVaultRefreshCoordinator.beginDiscard(path);
+        if (QuickNoteForm.quickNoteRSyntaxTextViewerManager != null) {
+            QuickNoteForm.quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(path);
+        }
+
+        setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
+        statusLabel.setText(I18n.get("quickNote.git.discarding"));
+        new SwingWorker<QuickNoteGitUtil.GitCommandResult, Void>() {
+            @Override
+            protected QuickNoteGitUtil.GitCommandResult doInBackground() {
+                return QuickNoteGitUtil.discardWorkingChanges(
+                        QuickNoteVaultUtil.getVaultDir(), path, statusCode);
+            }
+
+            @Override
+            protected void done() {
+                setCursor(Cursor.getDefaultCursor());
+                try {
+                    QuickNoteGitUtil.GitCommandResult result = get();
+                    if (result.isSuccess()) {
+                        statusLabel.setText(I18n.get("common.success"));
+                        QuickNoteForm.reloadNoteAfterDiscard(path);
+                        refreshAll();
+                        QuickNoteVaultRefreshCoordinator.refreshAfterExternalChange(true);
+                    } else {
+                        showGitFailure(result.getMessage());
+                        refreshAll();
+                    }
+                } catch (Exception ex) {
+                    showGitFailure(ex.getMessage());
+                } finally {
+                    QuickNoteVaultRefreshCoordinator.endDiscard();
+                }
+            }
+        }.execute();
+    }
+
+    private void showGitFailure(String detail) {
+        String message = StringUtils.defaultIfBlank(detail, I18n.get("quickNote.git.discardFailed"));
+        statusLabel.setText(message);
+        JOptionPane.showMessageDialog(this, message, I18n.get("common.failure"), JOptionPane.ERROR_MESSAGE);
+    }
+
     private void runGitTask(String pendingMessage, GitTask task) {
         runGitTask(pendingMessage, task, false);
     }
@@ -486,13 +530,11 @@ public class QuickNoteGitDialog extends JDialog {
                         refreshAll();
                         QuickNoteVaultRefreshCoordinator.refreshAfterExternalChange(forceReloadEditor);
                     } else {
-                        statusLabel.setText(result.getMessage());
-                        MsgUtil.errorWithDetail(QuickNoteGitDialog.this, "common.failure", result.getMessage());
+                        showGitFailure(result.getMessage());
                         refreshAll();
                     }
                 } catch (Exception ex) {
-                    statusLabel.setText(ex.getMessage());
-                    MsgUtil.errorWithDetail(QuickNoteGitDialog.this, "common.failure", ex.getMessage());
+                    showGitFailure(ex.getMessage());
                 }
             }
         };

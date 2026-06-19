@@ -7,6 +7,7 @@ import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
+import java.io.ByteArrayOutputStream;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.InputStreamReader;
@@ -42,10 +43,12 @@ public final class QuickNoteGitUtil {
 
     public static void initRepoIfNeeded(File vaultDir) {
         if (isGitRepo(vaultDir)) {
+            ensureQuotePathDisabled(vaultDir);
             return;
         }
         try {
             runGit(vaultDir, 60, "init");
+            ensureQuotePathDisabled(vaultDir);
             File gitignore = new File(vaultDir, ".gitignore");
             if (!gitignore.exists()) {
                 Files.writeString(gitignore.toPath(), DEFAULT_GITIGNORE, StandardCharsets.UTF_8);
@@ -95,13 +98,13 @@ public final class QuickNoteGitUtil {
                 return modified;
             }
             for (String line : result.stdout().split("\n")) {
-                if (line.length() < 4) {
+                if (line.length() < 3) {
                     continue;
                 }
-                String statusCode = line.substring(0, 2).trim();
-                String path = line.substring(3).trim();
-                if (path.contains(" -> ")) {
-                    path = path.substring(path.indexOf(" -> ") + 4).trim();
+                String statusCode = line.substring(0, 2);
+                String path = extractPorcelainPath(line);
+                if (StringUtils.isBlank(path)) {
+                    continue;
                 }
                 modified.add(new QuickNoteGitModifiedFile(path, statusCode, mapStatusLabel(statusCode)));
             }
@@ -235,17 +238,158 @@ public final class QuickNoteGitUtil {
     }
 
     public static GitCommandResult discardWorkingChanges(File vaultDir, String relativePath) {
+        return discardWorkingChanges(vaultDir, relativePath, "");
+    }
+
+    public static GitCommandResult discardWorkingChanges(File vaultDir, String relativePath, String statusCode) {
         if (!isGitRepo(vaultDir) || StringUtils.isBlank(relativePath)) {
-            return GitCommandResult.failure("Invalid file path");
+            return GitCommandResult.failure(I18n.get("quickNote.git.discardInvalidPath"));
+        }
+        ensureQuotePathDisabled(vaultDir);
+        ResolvedDiscardPath resolved = resolveDiscardPath(vaultDir, relativePath, statusCode);
+        String path = resolved.path();
+        String code = resolved.statusCode();
+        try {
+            if ("??".equals(code)) {
+                GitResult clean = runGit(vaultDir, 30, "clean", "-f", "--", path);
+                if (!clean.success()) {
+                    File file = QuickNoteVaultUtil.toAbsoluteFile(path);
+                    if (!file.exists() || !file.delete()) {
+                        return GitCommandResult.failure(resolveDiscardFailureMessage(clean.stdout(), path));
+                    }
+                }
+            } else {
+                GitResult restore = runGit(vaultDir, 30, "restore", "--staged", "--worktree", "--", path);
+                if (!restore.success()) {
+                    runGit(vaultDir, 30, "reset", "HEAD", "--", path);
+                    GitResult checkout = runGit(vaultDir, 30, "checkout", "HEAD", "--", path);
+                    if (!checkout.success()) {
+                        return GitCommandResult.failure(resolveDiscardFailureMessage(
+                                StringUtils.firstNonBlank(restore.stdout(), checkout.stdout()), path));
+                    }
+                }
+            }
+
+            if (isPathStillDirty(vaultDir, path)) {
+                return GitCommandResult.failure(I18n.format("quickNote.git.discardStillDirty", path));
+            }
+            QuickNoteVaultRefreshCoordinator.markInternalWrite();
+            return GitCommandResult.success("");
+        } catch (Exception e) {
+            return GitCommandResult.failure(StringUtils.defaultIfBlank(e.getMessage(), I18n.get("quickNote.git.discardFailed")));
+        }
+    }
+
+    private record ResolvedDiscardPath(String path, String statusCode) {
+    }
+
+    private static ResolvedDiscardPath resolveDiscardPath(File vaultDir, String relativePath, String statusCode) {
+        String normalized = QuickNoteVaultUtil.normalizeRelativePath(relativePath);
+        List<QuickNoteGitModifiedFile> modified = listModifiedFilesDetailed(vaultDir);
+        for (QuickNoteGitModifiedFile file : modified) {
+            if (normalized.equals(file.getPath())) {
+                return new ResolvedDiscardPath(file.getPath(), StringUtils.defaultIfBlank(statusCode, file.getStatusCode()));
+            }
+        }
+        for (QuickNoteGitModifiedFile file : modified) {
+            if (file.getPath().endsWith(normalized)) {
+                return new ResolvedDiscardPath(file.getPath(), StringUtils.defaultIfBlank(statusCode, file.getStatusCode()));
+            }
+        }
+        if (StringUtils.isBlank(statusCode)) {
+            List<QuickNoteGitModifiedFile> sameName = modified.stream()
+                    .filter(file -> file.getPath().endsWith(normalized) || normalized.endsWith(file.getPath()))
+                    .toList();
+            if (sameName.size() == 1) {
+                QuickNoteGitModifiedFile file = sameName.get(0);
+                return new ResolvedDiscardPath(file.getPath(), file.getStatusCode());
+            }
+        }
+        return new ResolvedDiscardPath(normalized, StringUtils.defaultString(statusCode));
+    }
+
+    private static String extractPorcelainPath(String line) {
+        int index = 2;
+        while (index < line.length() && Character.isWhitespace(line.charAt(index))) {
+            index++;
+        }
+        if (index >= line.length()) {
+            return "";
+        }
+        String rawPath = line.substring(index).trim();
+        if (rawPath.contains(" -> ")) {
+            rawPath = rawPath.substring(rawPath.indexOf(" -> ") + 4).trim();
+        }
+        return QuickNoteVaultUtil.normalizeRelativePath(unquoteGitStatusPath(rawPath));
+    }
+
+    private static void ensureQuotePathDisabled(File vaultDir) {
+        if (!isGitRepo(vaultDir)) {
+            return;
         }
         try {
-            GitResult result = runGit(vaultDir, 30, "checkout", "--", relativePath);
-            return result.success()
-                    ? GitCommandResult.success(result.stdout())
-                    : GitCommandResult.failure(result.stdout());
+            runGit(vaultDir, 10, "config", "core.quotePath", "false");
         } catch (Exception e) {
-            return GitCommandResult.failure(e.getMessage());
+            log.debug("Unable to disable core.quotePath: {}", e.getMessage());
         }
+    }
+
+    private static boolean isPathStillDirty(File vaultDir, String path) {
+        return listModifiedFilesDetailed(vaultDir).stream()
+                .anyMatch(file -> path.equals(QuickNoteVaultUtil.normalizeRelativePath(file.getPath())));
+    }
+
+    private static String resolveDiscardFailureMessage(String gitOutput, String path) {
+        if (StringUtils.isNotBlank(gitOutput)) {
+            return gitOutput;
+        }
+        return I18n.format("quickNote.git.discardFailedFor", path);
+    }
+
+    static String unquoteGitStatusPath(String raw) {
+        if (StringUtils.isBlank(raw)) {
+            return raw;
+        }
+        String trimmed = raw.trim();
+        if (!(trimmed.startsWith("\"") && trimmed.endsWith("\"") && trimmed.length() >= 2)) {
+            return trimmed;
+        }
+        String body = trimmed.substring(1, trimmed.length() - 1);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        for (int i = 0; i < body.length(); i++) {
+            char c = body.charAt(i);
+            if (c == '\\' && i + 1 < body.length()) {
+                char next = body.charAt(++i);
+                if (next >= '0' && next <= '7') {
+                    int value = next - '0';
+                    for (int j = 0; j < 2 && i + 1 < body.length(); j++) {
+                        char digit = body.charAt(i + 1);
+                        if (digit < '0' || digit > '7') {
+                            break;
+                        }
+                        value = value * 8 + (digit - '0');
+                        i++;
+                    }
+                    out.write(value);
+                    continue;
+                }
+                out.write(switch (next) {
+                    case 'n' -> '\n';
+                    case 't' -> '\t';
+                    case 'r' -> '\r';
+                    case '\\' -> '\\';
+                    case '"' -> '"';
+                    default -> next < 128 ? (byte) next : '?';
+                });
+                continue;
+            }
+            if (c < 128) {
+                out.write((byte) c);
+            } else {
+                out.writeBytes(String.valueOf(c).getBytes(StandardCharsets.UTF_8));
+            }
+        }
+        return out.toString(StandardCharsets.UTF_8);
     }
 
     public static List<String> listConflictFiles(File vaultDir) {
@@ -410,16 +554,26 @@ public final class QuickNoteGitUtil {
     }
 
     private static String mapStatusLabel(String statusCode) {
-        String code = statusCode == null ? "" : statusCode.trim().toUpperCase(Locale.ROOT);
-        return switch (code) {
-            case "M", "MM" -> "modified";
-            case "A", "AM" -> "added";
-            case "D" -> "deleted";
-            case "R" -> "renamed";
-            case "??" -> "untracked";
-            case "UU", "AA", "DD", "AU", "UA", "DU", "UD" -> "conflict";
-            default -> code.isEmpty() ? "changed" : code;
-        };
+        String code = StringUtils.defaultString(statusCode);
+        if ("??".equals(code)) {
+            return "untracked";
+        }
+        if (code.contains("U")) {
+            return "conflict";
+        }
+        if (code.contains("D")) {
+            return "deleted";
+        }
+        if (code.contains("A")) {
+            return "added";
+        }
+        if (code.contains("R")) {
+            return "renamed";
+        }
+        if (code.contains("M")) {
+            return "modified";
+        }
+        return code.isBlank() ? "changed" : code.trim();
     }
 
     private static void ensureAuthorConfig(File vaultDir) throws Exception {
