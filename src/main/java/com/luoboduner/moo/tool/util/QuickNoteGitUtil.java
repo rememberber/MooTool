@@ -106,11 +106,15 @@ public final class QuickNoteGitUtil {
                     continue;
                 }
                 String statusCode = line.substring(0, 2);
-                String path = extractPorcelainPath(line);
-                if (StringUtils.isBlank(path)) {
+                PorcelainPath porcelainPath = extractPorcelainPath(line);
+                if (StringUtils.isBlank(porcelainPath.path())) {
                     continue;
                 }
-                modified.add(new QuickNoteGitModifiedFile(path, statusCode, mapStatusLabel(statusCode)));
+                modified.add(new QuickNoteGitModifiedFile(
+                        porcelainPath.path(),
+                        porcelainPath.originalPath(),
+                        statusCode,
+                        mapStatusLabel(statusCode)));
             }
         } catch (Exception e) {
             log.debug("Git status failed: {}", e.getMessage());
@@ -419,10 +423,22 @@ public final class QuickNoteGitUtil {
                     }
                 }
             } else {
-                GitResult restore = runGit(vaultDir, 30, "restore", "--staged", "--worktree", "--", path);
+                String originalPath = resolved.originalPath();
+                GitResult restore;
+                if (isRenameStatus(code) && StringUtils.isNotBlank(originalPath)) {
+                    restore = runGit(vaultDir, 30, "restore", "--staged", "--worktree", "--", originalPath, path);
+                } else {
+                    restore = runGit(vaultDir, 30, "restore", "--staged", "--worktree", "--", path);
+                }
                 if (!restore.success()) {
-                    runGit(vaultDir, 30, "reset", "HEAD", "--", path);
-                    GitResult checkout = runGit(vaultDir, 30, "checkout", "HEAD", "--", path);
+                    if (isRenameStatus(code) && StringUtils.isNotBlank(originalPath)) {
+                        runGit(vaultDir, 30, "reset", "HEAD", "--", originalPath, path);
+                    } else {
+                        runGit(vaultDir, 30, "reset", "HEAD", "--", path);
+                    }
+                    GitResult checkout = isRenameStatus(code) && StringUtils.isNotBlank(originalPath)
+                            ? runGit(vaultDir, 30, "checkout", "HEAD", "--", originalPath, path)
+                            : runGit(vaultDir, 30, "checkout", "HEAD", "--", path);
                     if (!checkout.success()) {
                         return GitCommandResult.failure(resolveDiscardFailureMessage(
                                 StringUtils.firstNonBlank(restore.stdout(), checkout.stdout()), path));
@@ -430,7 +446,7 @@ public final class QuickNoteGitUtil {
                 }
             }
 
-            if (isPathStillDirty(vaultDir, path)) {
+            if (isPathStillDirty(vaultDir, path) || isPathStillDirty(vaultDir, resolved.originalPath())) {
                 return GitCommandResult.failure(I18n.format("quickNote.git.discardStillDirty", path));
             }
             QuickNoteVaultRefreshCoordinator.markInternalWrite();
@@ -440,7 +456,7 @@ public final class QuickNoteGitUtil {
         }
     }
 
-    private record ResolvedDiscardPath(String path, String statusCode) {
+    private record ResolvedDiscardPath(String path, String originalPath, String statusCode) {
     }
 
     private static ResolvedDiscardPath resolveDiscardPath(File vaultDir, String relativePath, String statusCode) {
@@ -448,12 +464,14 @@ public final class QuickNoteGitUtil {
         List<QuickNoteGitModifiedFile> modified = listModifiedFilesDetailed(vaultDir);
         for (QuickNoteGitModifiedFile file : modified) {
             if (normalized.equals(file.getPath())) {
-                return new ResolvedDiscardPath(file.getPath(), StringUtils.defaultIfBlank(statusCode, file.getStatusCode()));
+                return new ResolvedDiscardPath(file.getPath(), file.getOriginalPath(),
+                        StringUtils.defaultIfBlank(statusCode, file.getStatusCode()));
             }
         }
         for (QuickNoteGitModifiedFile file : modified) {
             if (file.getPath().endsWith(normalized)) {
-                return new ResolvedDiscardPath(file.getPath(), StringUtils.defaultIfBlank(statusCode, file.getStatusCode()));
+                return new ResolvedDiscardPath(file.getPath(), file.getOriginalPath(),
+                        StringUtils.defaultIfBlank(statusCode, file.getStatusCode()));
             }
         }
         if (StringUtils.isBlank(statusCode)) {
@@ -462,25 +480,37 @@ public final class QuickNoteGitUtil {
                     .toList();
             if (sameName.size() == 1) {
                 QuickNoteGitModifiedFile file = sameName.get(0);
-                return new ResolvedDiscardPath(file.getPath(), file.getStatusCode());
+                return new ResolvedDiscardPath(file.getPath(), file.getOriginalPath(), file.getStatusCode());
             }
         }
-        return new ResolvedDiscardPath(normalized, StringUtils.defaultString(statusCode));
+        return new ResolvedDiscardPath(normalized, "", StringUtils.defaultString(statusCode));
     }
 
-    private static String extractPorcelainPath(String line) {
+    private record PorcelainPath(String path, String originalPath) {
+    }
+
+    private static PorcelainPath extractPorcelainPath(String line) {
         int index = 2;
         while (index < line.length() && Character.isWhitespace(line.charAt(index))) {
             index++;
         }
         if (index >= line.length()) {
-            return "";
+            return new PorcelainPath("", "");
         }
         String rawPath = line.substring(index).trim();
+        String originalPath = "";
         if (rawPath.contains(" -> ")) {
-            rawPath = rawPath.substring(rawPath.indexOf(" -> ") + 4).trim();
+            int renameIndex = rawPath.indexOf(" -> ");
+            originalPath = QuickNoteVaultUtil.normalizeRelativePath(
+                    unquoteGitStatusPath(rawPath.substring(0, renameIndex).trim()));
+            rawPath = rawPath.substring(renameIndex + 4).trim();
         }
-        return QuickNoteVaultUtil.normalizeRelativePath(unquoteGitStatusPath(rawPath));
+        String path = QuickNoteVaultUtil.normalizeRelativePath(unquoteGitStatusPath(rawPath));
+        return new PorcelainPath(path, originalPath);
+    }
+
+    private static boolean isRenameStatus(String statusCode) {
+        return StringUtils.defaultString(statusCode).contains("R");
     }
 
     private static void ensureQuotePathDisabled(File vaultDir) {
