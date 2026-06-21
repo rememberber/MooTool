@@ -73,6 +73,12 @@ public class QuickNoteGitDialog extends JDialog {
     private final JLabel conflictDiffLabel = new JLabel(" ");
 
     private int diffRequestSeq;
+    private boolean suppressListDiffEvents;
+    private DiffSource activeDiffSource = DiffSource.NONE;
+
+    private enum DiffSource {
+        NONE, CHANGES, HISTORY
+    }
 
     public QuickNoteGitDialog() {
         super(App.mainFrame, I18n.get("quickNote.git.title"), false);
@@ -405,14 +411,18 @@ public class QuickNoteGitDialog extends JDialog {
     }
 
     private void showSelectedChangeDiff(ListSelectionEvent event) {
-        if (event.getValueIsAdjusting()) {
+        if (event.getValueIsAdjusting() || suppressListDiffEvents) {
             return;
         }
         QuickNoteGitModifiedFile selected = changesList.getSelectedValue();
         if (selected == null) {
+            if (activeDiffSource == DiffSource.HISTORY) {
+                return;
+            }
             clearDiffDisplay();
             return;
         }
+        activeDiffSource = DiffSource.CHANGES;
         File vaultDir = QuickNoteVaultUtil.getVaultDir();
         String path = selected.getPath();
         String statusLabel = selected.getStatusLabel();
@@ -421,14 +431,18 @@ public class QuickNoteGitDialog extends JDialog {
     }
 
     private void showSelectedHistoryDiff(ListSelectionEvent event) {
-        if (event.getValueIsAdjusting()) {
+        if (event.getValueIsAdjusting() || suppressListDiffEvents) {
             return;
         }
         QuickNoteGitCommit selected = historyList.getSelectedValue();
         if (selected == null) {
+            if (activeDiffSource == DiffSource.CHANGES) {
+                return;
+            }
             clearDiffDisplay();
             return;
         }
+        activeDiffSource = DiffSource.HISTORY;
         File vaultDir = QuickNoteVaultUtil.getVaultDir();
         String path = historyScopeCurrentCheckBox.isSelected() ? currentNotePath() : "";
         loadDiffAsync(() -> QuickNoteGitDiffHelper.buildCommitDiff(vaultDir, path, selected.getHash(), selected), "");
@@ -474,6 +488,7 @@ public class QuickNoteGitDialog extends JDialog {
 
     private void clearDiffDisplay() {
         diffRequestSeq++;
+        activeDiffSource = DiffSource.NONE;
         diffPanel.clear();
         updateConflictDiffHint("", "");
     }
@@ -505,31 +520,68 @@ public class QuickNoteGitDialog extends JDialog {
 
     private void refreshHistory() {
         File vaultDir = QuickNoteVaultUtil.getVaultDir();
-        historyModel.clear();
-        if (!QuickNoteGitUtil.isGitRepo(vaultDir)) {
-            return;
+        QuickNoteGitCommit previousSelection = historyList.getSelectedValue();
+        String previousHash = previousSelection != null ? previousSelection.getHash() : null;
+
+        suppressListDiffEvents = true;
+        try {
+            historyModel.clear();
+            if (!QuickNoteGitUtil.isGitRepo(vaultDir)) {
+                if (previousHash == null) {
+                    clearDiffDisplay();
+                }
+                return;
+            }
+            boolean scopeCurrent = historyScopeCurrentCheckBox.isSelected();
+            String path = scopeCurrent ? currentNotePath() : "";
+            if (scopeCurrent && StringUtils.isBlank(path)) {
+                historyScopeCurrentCheckBox.setSelected(false);
+                path = "";
+            }
+            List<QuickNoteGitCommit> history = StringUtils.isNotBlank(path)
+                    ? QuickNoteGitUtil.listFileHistory(vaultDir, path, 50)
+                    : QuickNoteGitUtil.listVaultHistory(vaultDir, 50);
+            int restoredIndex = -1;
+            for (int i = 0; i < history.size(); i++) {
+                QuickNoteGitCommit commit = history.get(i);
+                historyModel.addElement(commit);
+                if (previousHash != null && previousHash.equals(commit.getHash())) {
+                    restoredIndex = i;
+                }
+            }
+            if (restoredIndex >= 0) {
+                historyList.setSelectedIndex(restoredIndex);
+            } else if (previousHash != null) {
+                clearDiffDisplay();
+            }
+        } finally {
+            suppressListDiffEvents = false;
         }
-        boolean scopeCurrent = historyScopeCurrentCheckBox.isSelected();
-        String path = scopeCurrent ? currentNotePath() : "";
-        if (scopeCurrent && StringUtils.isBlank(path)) {
-            historyScopeCurrentCheckBox.setSelected(false);
-            path = "";
-        }
-        List<QuickNoteGitCommit> history = StringUtils.isNotBlank(path)
-                ? QuickNoteGitUtil.listFileHistory(vaultDir, path, 50)
-                : QuickNoteGitUtil.listVaultHistory(vaultDir, 50);
-        for (QuickNoteGitCommit commit : history) {
-            historyModel.addElement(commit);
-        }
-        clearDiffDisplay();
     }
 
-    private void refreshAll() {
+    private void refreshChangesList() {
+        File vaultDir = QuickNoteVaultUtil.getVaultDir();
+        suppressListDiffEvents = true;
+        try {
+            changesModel.clear();
+            for (QuickNoteGitModifiedFile file : QuickNoteGitUtil.listModifiedFilesDetailed(vaultDir)) {
+                changesModel.addElement(file);
+            }
+        } finally {
+            suppressListDiffEvents = false;
+        }
+    }
+
+    private void refreshChangesAndStatus() {
         File vaultDir = QuickNoteVaultUtil.getVaultDir();
         QuickNoteGitStatus status = QuickNoteGitUtil.getStatus(vaultDir);
-        boolean gitRepo = status.isGitRepo();
-        boolean hasRemote = status.isHasRemote();
-        if (!gitRepo) {
+        applyStatusPresentation(status, vaultDir);
+        refreshChangesList();
+        applyGitActionStates(status);
+    }
+
+    private void applyStatusPresentation(QuickNoteGitStatus status, File vaultDir) {
+        if (!status.isGitRepo()) {
             statusLabel.setText(I18n.get("quickNote.git.statusNoRepo"));
         } else {
             statusLabel.setText(I18n.format("quickNote.git.statusDetail",
@@ -548,23 +600,11 @@ public class QuickNoteGitDialog extends JDialog {
             conflictLabel.setText(" ");
             conflictLabel.setVisible(false);
         }
+    }
 
-        changesModel.clear();
-        for (QuickNoteGitModifiedFile file : QuickNoteGitUtil.listModifiedFilesDetailed(vaultDir)) {
-            changesModel.addElement(file);
-        }
-
-        refreshHistory();
-
-        String remote = StringUtils.defaultIfBlank(QuickNoteGitUtil.getRemoteUrl(vaultDir),
-                App.config.getQuickNoteGitRemoteUrl());
-        remoteUrlField.setText(remote);
-
-        if (gitRepo) {
-            commitMessageField.setText(QuickNoteGitCheckpoint.buildCommitMessage(vaultDir));
-        }
-
-        clearDiffDisplay();
+    private void applyGitActionStates(QuickNoteGitStatus status) {
+        boolean gitRepo = status.isGitRepo();
+        boolean hasRemote = status.isHasRemote();
         commitButton.setEnabled(gitRepo);
         discardButton.setEnabled(gitRepo);
         abortMergeButton.setEnabled(gitRepo && (status.isMerging() || status.getConflictCount() > 0));
@@ -574,6 +614,25 @@ public class QuickNoteGitDialog extends JDialog {
         pullButton.setEnabled(gitRepo && hasRemote);
         pushButton.setEnabled(gitRepo && hasRemote);
         initGitButton.setEnabled(!gitRepo);
+    }
+
+    private void refreshAll() {
+        File vaultDir = QuickNoteVaultUtil.getVaultDir();
+        QuickNoteGitStatus status = QuickNoteGitUtil.getStatus(vaultDir);
+        applyStatusPresentation(status, vaultDir);
+
+        refreshChangesList();
+        refreshHistory();
+
+        String remote = StringUtils.defaultIfBlank(QuickNoteGitUtil.getRemoteUrl(vaultDir),
+                App.config.getQuickNoteGitRemoteUrl());
+        remoteUrlField.setText(remote);
+
+        if (status.isGitRepo()) {
+            commitMessageField.setText(QuickNoteGitCheckpoint.buildCommitMessage(vaultDir));
+        }
+
+        applyGitActionStates(status);
         refreshGitLog();
         QuickNoteForm.updateGitButtonStatus();
     }
@@ -749,7 +808,7 @@ public class QuickNoteGitDialog extends JDialog {
 
     public static void refreshIfVisible() {
         if (instance != null && instance.isDisplayable() && instance.isVisible()) {
-            instance.refreshAll();
+            instance.refreshChangesAndStatus();
         }
     }
 
