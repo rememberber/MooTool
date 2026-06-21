@@ -125,10 +125,14 @@ public class QuickNoteListener {
                 }
                 TQuickNote current = QuickNoteVaultUtil.loadByPath(selectedPath);
                 if (current != null && !name.equals(current.getName())) {
-                    String newPath = QuickNoteVaultUtil.renameNote(selectedPath, name);
-                    QuickNoteForm.quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(selectedPath);
-                    selectedPath = newPath;
-                    selectedName = name;
+                    String oldPath = selectedPath;
+                    flushSelectedNoteBeforePathChange();
+                    runNotePathMutation(() -> {
+                        String newPath = QuickNoteVaultUtil.renameNote(oldPath, name);
+                        QuickNoteForm.quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(oldPath);
+                        selectedPath = newPath;
+                        selectedName = name;
+                    }, oldPath);
                 }
                 quickSaveSync(true, false, true);
                 QuickNoteForm.initNoteList();
@@ -954,15 +958,20 @@ public class QuickNoteListener {
         }
         try {
             List<String> affectedPaths = QuickNoteVaultUtil.listNotePathsUnderFolder(folderPath);
-            String newFolderPath = QuickNoteVaultUtil.renameFolder(folderPath, afterName);
-            for (String oldPath : affectedPaths) {
-                QuickNoteForm.quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(oldPath);
+            if (StringUtils.isNotBlank(selectedPath) && affectedPaths.contains(selectedPath)) {
+                flushSelectedNoteBeforePathChange();
             }
-            if (StringUtils.isNotBlank(selectedPath)) {
-                selectedPath = QuickNoteVaultUtil.remapPathAfterFolderRename(selectedPath, folderPath, newFolderPath);
-            }
-            QuickNoteForm.initNoteList();
-            QuickNoteForm.updateGitButtonStatus();
+            runNotePathMutation(() -> {
+                String newFolderPath = QuickNoteVaultUtil.renameFolder(folderPath, afterName);
+                for (String oldPath : affectedPaths) {
+                    QuickNoteForm.quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(oldPath);
+                }
+                if (StringUtils.isNotBlank(selectedPath)) {
+                    selectedPath = QuickNoteVaultUtil.remapPathAfterFolderRename(selectedPath, folderPath, newFolderPath);
+                }
+                QuickNoteForm.initNoteList();
+                QuickNoteForm.updateGitButtonStatus();
+            }, affectedPaths.toArray(new String[0]));
         } catch (Exception e) {
             MsgUtil.info(App.mainFrame, "msg.renameFolderFailed");
             QuickNoteForm.initNoteList();
@@ -993,11 +1002,16 @@ public class QuickNoteListener {
             return;
         }
         try {
-            String newPath = QuickNoteVaultUtil.renameNote(beforePath, afterName);
-            selectedPath = newPath;
-            selectedName = afterName;
-            QuickNoteForm.quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(beforePath);
-            QuickNoteForm.initNoteList();
+            if (beforePath.equals(selectedPath)) {
+                flushSelectedNoteBeforePathChange();
+            }
+            runNotePathMutation(() -> {
+                String newPath = QuickNoteVaultUtil.renameNote(beforePath, afterName);
+                selectedPath = newPath;
+                selectedName = afterName;
+                QuickNoteForm.quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(beforePath);
+                QuickNoteForm.initNoteList();
+            }, beforePath);
         } catch (Exception e) {
             MsgUtil.info(App.mainFrame, "msg.renameNoteFailed");
             QuickNoteForm.initNoteList();
@@ -1018,24 +1032,42 @@ public class QuickNoteListener {
             } else {
                 int isDelete = MsgUtil.confirm(App.mainFrame, "msg.confirmDelete");
                 if (isDelete == JOptionPane.YES_OPTION) {
+                    List<String> deletedPaths = selectedNotes.stream()
+                            .map(TQuickNote::getRelativePath)
+                            .filter(StringUtils::isNotBlank)
+                            .toList();
                     List<String> deletedNoteContents = new ArrayList<>();
 
-                    for (TQuickNote listNote : selectedNotes) {
-                        String path = listNote.getRelativePath();
-                        TQuickNote fileNote = QuickNoteVaultUtil.loadByPath(path);
-                        if (fileNote != null && StringUtils.isNotBlank(fileNote.getContent())) {
-                            deletedNoteContents.add(fileNote.getContent());
+                    QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
+                    try {
+                        QuickNoteVaultRefreshCoordinator.addSkipSavePaths(deletedPaths);
+                        for (String path : deletedPaths) {
+                            QuickNoteForm.quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(path);
                         }
-                        QuickNoteVaultUtil.deleteByPath(path);
-                        QuickNoteForm.quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(path);
+                        if (StringUtils.isNotBlank(selectedPath) && deletedPaths.contains(selectedPath)) {
+                            selectedPath = null;
+                            selectedName = null;
+                        }
+                        drainPendingSaves();
+
+                        for (TQuickNote listNote : selectedNotes) {
+                            String path = listNote.getRelativePath();
+                            TQuickNote fileNote = QuickNoteVaultUtil.loadByPath(path);
+                            if (fileNote != null && StringUtils.isNotBlank(fileNote.getContent())) {
+                                deletedNoteContents.add(fileNote.getContent());
+                            }
+                            QuickNoteVaultUtil.deleteByPath(path);
+                        }
+                        drainPendingSaves();
+                    } finally {
+                        QuickNoteVaultRefreshCoordinator.clearSkipSavePaths();
+                        QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
                     }
 
                     List<String> remainingNoteContents = QuickNoteVaultUtil.listAllBodies();
                     QuickNoteAttachmentUtil.cleanupAttachmentsForDeletedNotes(
                             deletedNoteContents, remainingNoteContents);
 
-                    selectedName = null;
-                    selectedPath = null;
                     QuickNoteForm.initNoteList();
                 }
             }
@@ -1084,12 +1116,22 @@ public class QuickNoteListener {
                 }
                 String now = SqliteUtil.nowDateForSqlite();
                 if (path != null) {
+                    if (!QuickNoteVaultUtil.toAbsoluteFile(path).isFile()) {
+                        log.debug("Skip save for deleted or moved note: {}", path);
+                        return;
+                    }
                     TQuickNote existingNote = QuickNoteVaultUtil.loadByPath(path);
-                    String oldContent = existingNote != null ? existingNote.getContent() : "";
+                    if (existingNote == null) {
+                        log.debug("Skip save for unreadable note: {}", path);
+                        return;
+                    }
+                    String oldContent = existingNote.getContent();
 
-                    TQuickNote tQuickNote = existingNote != null ? existingNote : new TQuickNote();
+                    TQuickNote tQuickNote = existingNote;
                     tQuickNote.setRelativePath(path);
-                    tQuickNote.setName(name);
+                    if (StringUtils.isNotBlank(name)) {
+                        tQuickNote.setName(name);
+                    }
 
                     String text = capturedText;
                     if (writeLog) {
@@ -1128,6 +1170,33 @@ public class QuickNoteListener {
             quickSave(refreshModifiedTime, writeLog, notifyUser).get(60, TimeUnit.SECONDS);
         } catch (Exception e) {
             log.error("Quick note save failed: {}", ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    static void drainPendingSaves() {
+        try {
+            executorService.submit(() -> {}).get(60, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.warn("Drain pending quick-note saves failed: {}", e.getMessage());
+        }
+    }
+
+    public static void flushSelectedNoteBeforePathChange() {
+        if (StringUtils.isNotBlank(selectedPath)) {
+            quickSaveSync(true, false, false);
+        }
+    }
+
+    public static void runNotePathMutation(Runnable mutation, String... pathsToSkip) {
+        QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
+        try {
+            QuickNoteVaultRefreshCoordinator.addSkipSavePaths(List.of(pathsToSkip));
+            drainPendingSaves();
+            mutation.run();
+            drainPendingSaves();
+        } finally {
+            QuickNoteVaultRefreshCoordinator.clearSkipSavePaths();
+            QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
         }
     }
 

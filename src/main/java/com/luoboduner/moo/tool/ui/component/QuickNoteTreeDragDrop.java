@@ -141,39 +141,51 @@ public final class QuickNoteTreeDragDrop {
 
     public static void moveNotes(List<String> notePaths, String targetFolder, JTree tree) {
         String normalizedTarget = QuickNoteVaultUtil.normalizeFolderPath(targetFolder);
-        boolean moved = false;
+        List<String> pathsToMove = new ArrayList<>();
         for (String oldPath : notePaths) {
             if (StringUtils.isBlank(oldPath)) {
                 continue;
             }
             String currentFolder = QuickNoteVaultUtil.parentFolder(oldPath);
-            if (normalizedTarget.equals(currentFolder)) {
-                continue;
+            if (!normalizedTarget.equals(currentFolder)) {
+                pathsToMove.add(oldPath);
             }
-            try {
-                String newPath = QuickNoteVaultUtil.moveNoteToFolder(oldPath, normalizedTarget);
-                if (!oldPath.equals(newPath)) {
-                    moved = true;
-                    if (oldPath.equals(QuickNoteListener.selectedPath)) {
-                        QuickNoteForm.quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(oldPath);
-                        QuickNoteListener.selectedPath = newPath;
-                        TQuickNote movedNote = QuickNoteVaultUtil.loadByPath(newPath);
-                        if (movedNote != null) {
-                            QuickNoteListener.selectedName = movedNote.getName();
+        }
+        if (pathsToMove.isEmpty()) {
+            return;
+        }
+        if (StringUtils.isNotBlank(QuickNoteListener.selectedPath)
+                && pathsToMove.contains(QuickNoteListener.selectedPath)) {
+            QuickNoteListener.flushSelectedNoteBeforePathChange();
+        }
+        QuickNoteListener.runNotePathMutation(() -> {
+            boolean moved = false;
+            for (String oldPath : pathsToMove) {
+                try {
+                    String newPath = QuickNoteVaultUtil.moveNoteToFolder(oldPath, normalizedTarget);
+                    if (!oldPath.equals(newPath)) {
+                        moved = true;
+                        if (oldPath.equals(QuickNoteListener.selectedPath)) {
+                            QuickNoteForm.quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(oldPath);
+                            QuickNoteListener.selectedPath = newPath;
+                            TQuickNote movedNote = QuickNoteVaultUtil.loadByPath(newPath);
+                            if (movedNote != null) {
+                                QuickNoteListener.selectedName = movedNote.getName();
+                            }
                         }
                     }
+                } catch (Exception e) {
+                    log.warn("Move note failed {} -> {}: {}", oldPath, normalizedTarget, e.getMessage());
                 }
-            } catch (Exception e) {
-                log.warn("Move note failed {} -> {}: {}", oldPath, normalizedTarget, e.getMessage());
             }
-        }
-        if (moved) {
-            QuickNoteForm.initNoteList();
-            QuickNoteForm.updateGitButtonStatus();
-            if (tree != null) {
-                tree.updateUI();
+            if (moved) {
+                QuickNoteForm.initNoteList();
+                QuickNoteForm.updateGitButtonStatus();
+                if (tree != null) {
+                    tree.updateUI();
+                }
             }
-        }
+        }, pathsToMove.toArray(new String[0]));
     }
 
     public static void moveFolder(String folderPath, String targetFolder, JTree tree) {

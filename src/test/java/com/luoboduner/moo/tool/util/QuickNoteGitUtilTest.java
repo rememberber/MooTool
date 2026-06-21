@@ -58,6 +58,66 @@ class QuickNoteGitUtilTest {
         assertTrue(QuickNoteGitUtil.listModifiedFilesDetailed(tempDir).isEmpty());
     }
 
+    @Test
+    void discardWorkingChanges_removesUntrackedNewFile() throws Exception {
+        initRepoWithFile();
+        File file = new File(tempDir, "new.txt");
+        Files.writeString(file.toPath(), "new", StandardCharsets.UTF_8);
+
+        QuickNoteGitUtil.GitCommandResult result = QuickNoteGitUtil.discardWorkingChanges(
+                tempDir, "new.txt", "??");
+
+        assertTrue(result.isSuccess(), result.getMessage());
+        assertFalse(file.exists());
+        assertTrue(QuickNoteGitUtil.listModifiedFilesDetailed(tempDir).isEmpty());
+    }
+
+    @Test
+    void discardWorkingChanges_removesStagedNewFile() throws Exception {
+        initRepoWithFile();
+        File file = new File(tempDir, "new.txt");
+        Files.writeString(file.toPath(), "new", StandardCharsets.UTF_8);
+        runGit(tempDir, "add", "new.txt");
+
+        QuickNoteGitUtil.GitCommandResult result = QuickNoteGitUtil.discardWorkingChanges(
+                tempDir, "new.txt", "A ");
+
+        assertTrue(result.isSuccess(), result.getMessage());
+        assertFalse(file.exists());
+        assertTrue(QuickNoteGitUtil.listModifiedFilesDetailed(tempDir).isEmpty());
+    }
+
+    @Test
+    void discardWorkingChanges_restoresDeletedFile() throws Exception {
+        initRepoWithFile();
+        File file = new File(tempDir, "old.txt");
+        Files.delete(file.toPath());
+
+        QuickNoteGitUtil.GitCommandResult result = QuickNoteGitUtil.discardWorkingChanges(
+                tempDir, "old.txt", " D");
+
+        assertTrue(result.isSuccess(), result.getMessage());
+        assertTrue(file.isFile());
+        assertEquals("old", Files.readString(file.toPath(), StandardCharsets.UTF_8));
+        assertTrue(QuickNoteGitUtil.listModifiedFilesDetailed(tempDir).isEmpty());
+    }
+
+    @Test
+    void discardWorkingChanges_restoresStagedDeletedFile() throws Exception {
+        initRepoWithFile();
+        File file = new File(tempDir, "old.txt");
+        Files.delete(file.toPath());
+        runGit(tempDir, "add", "-A");
+
+        QuickNoteGitUtil.GitCommandResult result = QuickNoteGitUtil.discardWorkingChanges(
+                tempDir, "old.txt", "D ");
+
+        assertTrue(result.isSuccess(), result.getMessage());
+        assertTrue(file.isFile());
+        assertEquals("old", Files.readString(file.toPath(), StandardCharsets.UTF_8));
+        assertTrue(QuickNoteGitUtil.listModifiedFilesDetailed(tempDir).isEmpty());
+    }
+
     private void initRepoWithFile() throws Exception {
         runGit(tempDir, "init");
         runGit(tempDir, "config", "user.email", "test@example.com");

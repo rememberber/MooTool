@@ -8,6 +8,9 @@ import com.luoboduner.moo.tool.domain.TQuickNote;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.SwingUtilities;
+import java.util.Collection;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -20,8 +23,34 @@ public final class QuickNoteVaultRefreshCoordinator {
     private static volatile long lastInternalWriteAt;
     private static final AtomicInteger pendingSaveTasks = new AtomicInteger();
     private static volatile String discardInProgressPath;
+    private static final Set<String> skipSavePaths = ConcurrentHashMap.newKeySet();
 
     private QuickNoteVaultRefreshCoordinator() {
+    }
+
+    public static void addSkipSavePath(String relativePath) {
+        if (StringUtils.isNotBlank(relativePath)) {
+            skipSavePaths.add(QuickNoteVaultUtil.normalizeRelativePath(relativePath));
+        }
+    }
+
+    public static void addSkipSavePaths(Collection<String> relativePaths) {
+        if (relativePaths == null) {
+            return;
+        }
+        for (String relativePath : relativePaths) {
+            addSkipSavePath(relativePath);
+        }
+    }
+
+    public static void removeSkipSavePath(String relativePath) {
+        if (StringUtils.isNotBlank(relativePath)) {
+            skipSavePaths.remove(QuickNoteVaultUtil.normalizeRelativePath(relativePath));
+        }
+    }
+
+    public static void clearSkipSavePaths() {
+        skipSavePaths.clear();
     }
 
     public static void beginDiscard(String relativePath) {
@@ -36,10 +65,15 @@ public final class QuickNoteVaultRefreshCoordinator {
     }
 
     public static boolean shouldSkipSaveForPath(String relativePath) {
-        if (StringUtils.isBlank(discardInProgressPath) || StringUtils.isBlank(relativePath)) {
+        if (StringUtils.isBlank(relativePath)) {
             return false;
         }
-        return discardInProgressPath.equals(QuickNoteVaultUtil.normalizeRelativePath(relativePath));
+        String normalized = QuickNoteVaultUtil.normalizeRelativePath(relativePath);
+        if (skipSavePaths.contains(normalized)) {
+            return true;
+        }
+        return StringUtils.isNotBlank(discardInProgressPath)
+                && discardInProgressPath.equals(normalized);
     }
 
     public static void markInternalWrite() {
@@ -57,6 +91,10 @@ public final class QuickNoteVaultRefreshCoordinator {
     public static void onSaveTaskFinished() {
         pendingSaveTasks.decrementAndGet();
         markInternalWrite();
+    }
+
+    public static boolean hasPendingSaveTasks() {
+        return pendingSaveTasks.get() > 0;
     }
 
     public static boolean hasUnsavedChanges() {

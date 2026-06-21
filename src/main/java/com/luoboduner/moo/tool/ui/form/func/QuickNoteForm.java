@@ -895,6 +895,7 @@ public class QuickNoteForm {
                         I18nUiUtil.setToolTip(button, "quickNote.tooltip.git");
                     }
                     updateConflictBanner(status);
+                    QuickNoteGitDialog.refreshIfVisible();
                 } catch (Exception ignored) {
                     // ignore background status read failures
                 }

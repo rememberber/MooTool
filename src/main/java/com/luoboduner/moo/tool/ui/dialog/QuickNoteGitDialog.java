@@ -317,12 +317,17 @@ public class QuickNoteGitDialog extends JDialog {
             refreshGitLog();
         });
 
-        commitButton.addActionListener(e -> runGitTask(I18n.get("quickNote.git.committing"), () -> {
-            File vaultDir = QuickNoteVaultUtil.getVaultDir();
-            String message = StringUtils.defaultIfBlank(commitMessageField.getText(),
-                    QuickNoteGitCheckpoint.buildCommitMessage(vaultDir));
-            return QuickNoteGitUtil.commitAndPush(vaultDir, message);
-        }, false));
+        commitButton.addActionListener(e -> {
+            if (!flushCurrentNoteBeforeGitAction()) {
+                return;
+            }
+            runGitTask(I18n.get("quickNote.git.committing"), () -> {
+                File vaultDir = QuickNoteVaultUtil.getVaultDir();
+                String message = StringUtils.defaultIfBlank(commitMessageField.getText(),
+                        QuickNoteGitCheckpoint.buildCommitMessage(vaultDir));
+                return QuickNoteGitUtil.commitAndPush(vaultDir, message);
+            }, false);
+        });
 
         discardButton.addActionListener(e -> discardSelectedChange());
 
@@ -630,6 +635,9 @@ public class QuickNoteGitDialog extends JDialog {
     }
 
     private void runPullTask() {
+        if (!flushCurrentNoteBeforeGitAction()) {
+            return;
+        }
         setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
         statusLabel.setText(I18n.get("quickNote.git.pulling"));
         SwingWorker<QuickNoteGitPullResult, Void> worker = new SwingWorker<>() {
@@ -662,6 +670,15 @@ public class QuickNoteGitDialog extends JDialog {
             }
         };
         worker.execute();
+    }
+
+    private boolean flushCurrentNoteBeforeGitAction() {
+        QuickNoteListener.quickSaveSync(true, false, false);
+        if (QuickNoteVaultRefreshCoordinator.hasUnsavedChanges()) {
+            MsgUtil.info(this, "quickNote.git.unsavedChanges");
+            return false;
+        }
+        return true;
     }
 
     private void runGitTask(String pendingMessage, GitTask task) {
@@ -728,6 +745,12 @@ public class QuickNoteGitDialog extends JDialog {
         instance.setVisible(true);
         instance.toFront();
         instance.requestFocus();
+    }
+
+    public static void refreshIfVisible() {
+        if (instance != null && instance.isDisplayable() && instance.isVisible()) {
+            instance.refreshAll();
+        }
     }
 
     @FunctionalInterface
