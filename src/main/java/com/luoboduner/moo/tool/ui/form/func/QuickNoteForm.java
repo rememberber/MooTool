@@ -42,6 +42,7 @@ import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 
 import javax.swing.*;
@@ -345,6 +346,31 @@ public class QuickNoteForm {
         insertImageButton.setVisible(markdown);
         getInstance().getLeftMenuToolBar().revalidate();
         getInstance().getLeftMenuToolBar().repaint();
+    }
+
+    public static void updateEditorActionsEnabled() {
+        if (quickNoteForm == null) {
+            return;
+        }
+        boolean hasEditor = StringUtils.isNotBlank(QuickNoteListener.selectedPath)
+                && quickNoteRSyntaxTextViewerManager != null
+                && quickNoteRSyntaxTextViewerManager.hasCurrentEditor();
+        quickNoteForm.getFindButton().setEnabled(hasEditor);
+        quickNoteForm.getFormatButton().setEnabled(hasEditor);
+        quickNoteForm.getWrapButton().setEnabled(hasEditor);
+        quickNoteForm.getSaveButton().setEnabled(hasEditor);
+        quickNoteForm.getInfoButton().setEnabled(hasEditor);
+        quickNoteForm.getUnOrderListButton().setEnabled(hasEditor);
+        quickNoteForm.getOrderListButton().setEnabled(hasEditor);
+        quickNoteForm.getQuickReplaceButton().setEnabled(hasEditor);
+    }
+
+    private static void clearEditorPanel() {
+        getInstance().getContentSplitPane().setLeftComponent(new JPanel());
+        QuickNoteListener.selectedPath = null;
+        QuickNoteListener.selectedName = null;
+        updateInsertImageButtonVisibility();
+        updateEditorActionsEnabled();
     }
 
     private static void initUi() {
@@ -671,10 +697,7 @@ public class QuickNoteForm {
         TQuickNote note = QuickNoteVaultUtil.loadByPath(path);
         if (note == null) {
             quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(path);
-            getInstance().getContentSplitPane().setLeftComponent(new JPanel());
-            QuickNoteListener.selectedPath = null;
-            QuickNoteListener.selectedName = null;
-            updateInsertImageButtonVisibility();
+            clearEditorPanel();
             return;
         }
         QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
@@ -732,23 +755,27 @@ public class QuickNoteForm {
                             .findFirst()
                             .orElse(null);
                 }
-                if (selectedNote == null) {
+                if (selectedNote != null) {
+                    selectNoteInTree(selectedNote.getRelativePath());
+                    showNote(selectedNote);
+                } else if (StringUtils.isNotEmpty(preservePath)) {
+                    if (QuickNoteVaultUtil.loadByPath(preservePath) == null) {
+                        clearEditorPanel();
+                    }
+                } else {
                     selectedNote = quickNoteList.get(0);
+                    selectNoteInTree(selectedNote.getRelativePath());
+                    showNote(selectedNote);
                 }
-
-                selectNoteInTree(selectedNote.getRelativePath());
-                showNote(selectedNote);
             } catch (Exception e1) {
                 log.error(e1.toString());
             } finally {
                 QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
             }
         } else {
-            getInstance().getContentSplitPane().setLeftComponent(new JPanel());
-            QuickNoteListener.selectedPath = null;
-            QuickNoteListener.selectedName = null;
-            updateInsertImageButtonVisibility();
+            clearEditorPanel();
         }
+        updateEditorActionsEnabled();
         updateGitButtonStatus();
     }
 
@@ -933,10 +960,14 @@ public class QuickNoteForm {
         if (colorIndex >= 0 && colorIndex < QuickNoteForm.COLOR_BUTTONS.length) {
             QuickNoteForm.COLOR_BUTTONS[colorIndex].setSelected(true);
         }
-        quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setLineWrap("1".equals(tQuickNote.getLineWrap()));
-        quickNoteForm.getWrapButton().setSelected("1".equals(tQuickNote.getLineWrap()));
+        RSyntaxTextArea editor = quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea();
+        if (editor != null) {
+            editor.setLineWrap("1".equals(tQuickNote.getLineWrap()));
+            quickNoteForm.getWrapButton().setSelected("1".equals(tQuickNote.getLineWrap()));
+            QuickNoteConflictHighlightUtil.refresh(editor);
+        }
         applyEditorOutline(editorPanel, color);
-        QuickNoteConflictHighlightUtil.refresh(quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea());
+        updateEditorActionsEnabled();
     }
 
     public static TQuickNote getSelectedTreeNote() {

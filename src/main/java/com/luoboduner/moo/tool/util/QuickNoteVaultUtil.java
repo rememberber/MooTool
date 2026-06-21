@@ -127,6 +127,16 @@ public final class QuickNoteVaultUtil {
                 .orElse(null);
     }
 
+    /** 同一文件夹内是否已有与标题对应的笔记文件（不含自动编号后缀）。 */
+    public static boolean noteTitleExistsInFolder(String title, String folderRelativePath) {
+        if (StringUtils.isBlank(title)) {
+            return false;
+        }
+        String path = joinRelativePath(normalizeFolderPath(folderRelativePath),
+                sanitizeFileName(title) + TXT_EXTENSION);
+        return toAbsoluteFile(path).exists();
+    }
+
     public static void saveNote(TQuickNote note, String body) {
         if (note == null || StringUtils.isBlank(note.getRelativePath())) {
             throw new IllegalArgumentException("note path is required");

@@ -119,15 +119,28 @@ public class QuickNoteRSyntaxTextViewerManager {
     }
 
     public RTextScrollPane getCurrentRTextScrollPane() {
+        if (currentEditorPanel == null) {
+            return null;
+        }
         return currentEditorPanel.getEditorScrollPane();
     }
 
     public RSyntaxTextArea getCurrentRSyntaxTextArea() {
+        if (currentEditorPanel == null) {
+            return null;
+        }
         return (RSyntaxTextArea) currentEditorPanel.getEditorScrollPane().getTextArea();
     }
 
     public String getCurrentText() {
+        if (currentEditorPanel == null) {
+            return null;
+        }
         return currentEditorPanel.getEditorScrollPane().getTextArea().getText();
+    }
+
+    public boolean hasCurrentEditor() {
+        return currentEditorPanel != null;
     }
 
     public String getTextByPath(String relativePath) {
