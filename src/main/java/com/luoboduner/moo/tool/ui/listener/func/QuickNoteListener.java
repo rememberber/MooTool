@@ -537,6 +537,7 @@ public class QuickNoteListener {
         if (StringUtils.isBlank(folderName)) {
             return;
         }
+        folderName = QuickNoteVaultUtil.sanitizeFileName(folderName);
         String folderPath = StringUtils.isBlank(parentFolder)
                 ? folderName
                 : parentFolder + "/" + folderName;

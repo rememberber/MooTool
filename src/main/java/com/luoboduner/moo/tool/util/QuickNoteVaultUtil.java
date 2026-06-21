@@ -12,6 +12,7 @@ import java.awt.Desktop;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -614,18 +615,32 @@ public final class QuickNoteVaultUtil {
     }
 
     public static File toAbsoluteFile(String relativePath) {
-        return new File(getVaultDir(), normalizeRelativePath(relativePath));
+        return resolveVaultChild(normalizeRelativePath(relativePath));
     }
 
     private static File toAbsoluteFolder(String folderRelativePath) {
-        return new File(getVaultDir(), normalizeFolderPath(folderRelativePath));
+        return resolveVaultChild(normalizeFolderPath(folderRelativePath));
     }
 
     public static String normalizeRelativePath(String relativePath) {
         if (relativePath == null) {
             return "";
         }
-        return relativePath.replace('\\', '/').replaceAll("^/+", "");
+        String cleaned = relativePath.replace('\\', '/').replaceAll("^/+", "");
+        if (cleaned.indexOf('\0') >= 0) {
+            throw new IllegalArgumentException("Invalid quick note path");
+        }
+        if (StringUtils.isBlank(cleaned)) {
+            return "";
+        }
+        String normalized = Path.of(cleaned).normalize().toString().replace('\\', '/');
+        if (".".equals(normalized)) {
+            return "";
+        }
+        if (normalized.equals("..") || normalized.startsWith("../")) {
+            throw new IllegalArgumentException("Quick note path escapes vault: " + relativePath);
+        }
+        return normalized;
     }
 
     public static String normalizeFolderPath(String folderRelativePath) {
@@ -658,7 +673,21 @@ public final class QuickNoteVaultUtil {
         if (trimmed.isEmpty()) {
             return NamingUtil.defaultUntitledName();
         }
-        return trimmed.replaceAll("[\\\\/:*?\"<>|]", "_");
+        String sanitized = trimmed.replaceAll("[\\\\/:*?\"<>|]", "_");
+        while (sanitized.startsWith(".")) {
+            sanitized = "_" + sanitized.substring(1);
+        }
+        return sanitized;
+    }
+
+    private static File resolveVaultChild(String relativePath) {
+        File vaultDir = getVaultDir();
+        Path vaultPath = vaultDir.toPath().toAbsolutePath().normalize();
+        Path childPath = vaultPath.resolve(StringUtils.defaultString(relativePath)).normalize();
+        if (!childPath.startsWith(vaultPath)) {
+            throw new IllegalArgumentException("Quick note path escapes vault: " + relativePath);
+        }
+        return childPath.toFile();
     }
 
     private static boolean shouldSkipEntry(String name) {
