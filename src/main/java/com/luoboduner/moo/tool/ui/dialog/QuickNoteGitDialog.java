@@ -24,7 +24,7 @@ import com.luoboduner.moo.tool.util.QuickNoteVaultUtil;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
-import javax.swing.event.ListSelectionEvent;
+import javax.swing.event.ChangeEvent;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
@@ -37,6 +37,9 @@ import java.util.List;
 public class QuickNoteGitDialog extends JDialog {
 
     private static QuickNoteGitDialog instance;
+
+    private static final int TAB_CHANGES = 0;
+    private static final int TAB_HISTORY = 1;
 
     static {
         UIManager.addPropertyChangeListener(e -> {
@@ -71,14 +74,10 @@ public class QuickNoteGitDialog extends JDialog {
     private final JTextArea gitLogTextArea = new JTextArea();
     private final JButton clearLogButton = new JButton();
     private final JLabel conflictDiffLabel = new JLabel(" ");
+    private JTabbedPane tabbedPane;
 
     private int diffRequestSeq;
     private boolean suppressListDiffEvents;
-    private DiffSource activeDiffSource = DiffSource.NONE;
-
-    private enum DiffSource {
-        NONE, CHANGES, HISTORY
-    }
 
     public QuickNoteGitDialog() {
         super(App.mainFrame, I18n.get("quickNote.git.title"), false);
@@ -89,11 +88,12 @@ public class QuickNoteGitDialog extends JDialog {
         content.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
         add(content, BorderLayout.CENTER);
 
-        JTabbedPane tabbedPane = new JTabbedPane();
+        tabbedPane = new JTabbedPane();
         tabbedPane.addTab(I18n.get("quickNote.git.tab.changes"), buildChangesPanel());
         tabbedPane.addTab(I18n.get("quickNote.git.tab.history"), buildHistoryPanel());
         tabbedPane.addTab(I18n.get("quickNote.git.tab.sync"), buildSyncPanel());
         tabbedPane.addTab(I18n.get("quickNote.git.tab.log"), buildLogPanel());
+        tabbedPane.addChangeListener(this::onTabChanged);
         content.add(tabbedPane, BorderLayout.CENTER);
 
         diffPanel.setPreferredSize(new Dimension(100, 180));
@@ -294,8 +294,22 @@ public class QuickNoteGitDialog extends JDialog {
     }
 
     private void bindEvents() {
-        changesList.addListSelectionListener(e -> showSelectedChangeDiff(e));
-        historyList.addListSelectionListener(e -> showSelectedHistoryDiff(e));
+        changesList.addListSelectionListener(e -> {
+            if (e.getValueIsAdjusting() || suppressListDiffEvents) {
+                return;
+            }
+            if (tabbedPane.getSelectedIndex() == TAB_CHANGES) {
+                refreshDiffForSelectedChange();
+            }
+        });
+        historyList.addListSelectionListener(e -> {
+            if (e.getValueIsAdjusting() || suppressListDiffEvents) {
+                return;
+            }
+            if (tabbedPane.getSelectedIndex() == TAB_HISTORY) {
+                refreshDiffForSelectedHistory();
+            }
+        });
         historyScopeCurrentCheckBox.addActionListener(e -> refreshHistory());
 
         changesList.addMouseListener(new MouseAdapter() {
@@ -410,39 +424,35 @@ public class QuickNoteGitDialog extends JDialog {
         }
     }
 
-    private void showSelectedChangeDiff(ListSelectionEvent event) {
-        if (event.getValueIsAdjusting() || suppressListDiffEvents) {
-            return;
+    private void onTabChanged(ChangeEvent event) {
+        int tab = tabbedPane.getSelectedIndex();
+        if (tab == TAB_CHANGES) {
+            refreshDiffForSelectedChange();
+        } else if (tab == TAB_HISTORY) {
+            refreshDiffForSelectedHistory();
+        } else {
+            clearDiffDisplay();
         }
+    }
+
+    private void refreshDiffForSelectedChange() {
         QuickNoteGitModifiedFile selected = changesList.getSelectedValue();
         if (selected == null) {
-            if (activeDiffSource == DiffSource.HISTORY) {
-                return;
-            }
             clearDiffDisplay();
             return;
         }
-        activeDiffSource = DiffSource.CHANGES;
         File vaultDir = QuickNoteVaultUtil.getVaultDir();
         String path = selected.getPath();
         String statusLabel = selected.getStatusLabel();
-        loadDiffAsync(() -> QuickNoteGitDiffHelper.buildWorkingDiff(vaultDir, path),
-                statusLabel);
+        loadDiffAsync(() -> QuickNoteGitDiffHelper.buildWorkingDiff(vaultDir, path), statusLabel);
     }
 
-    private void showSelectedHistoryDiff(ListSelectionEvent event) {
-        if (event.getValueIsAdjusting() || suppressListDiffEvents) {
-            return;
-        }
+    private void refreshDiffForSelectedHistory() {
         QuickNoteGitCommit selected = historyList.getSelectedValue();
         if (selected == null) {
-            if (activeDiffSource == DiffSource.CHANGES) {
-                return;
-            }
             clearDiffDisplay();
             return;
         }
-        activeDiffSource = DiffSource.HISTORY;
         File vaultDir = QuickNoteVaultUtil.getVaultDir();
         String path = historyScopeCurrentCheckBox.isSelected() ? currentNotePath() : "";
         loadDiffAsync(() -> QuickNoteGitDiffHelper.buildCommitDiff(vaultDir, path, selected.getHash(), selected), "");
@@ -488,7 +498,6 @@ public class QuickNoteGitDialog extends JDialog {
 
     private void clearDiffDisplay() {
         diffRequestSeq++;
-        activeDiffSource = DiffSource.NONE;
         diffPanel.clear();
         updateConflictDiffHint("", "");
     }
