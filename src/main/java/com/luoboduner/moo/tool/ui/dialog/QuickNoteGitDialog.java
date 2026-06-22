@@ -3,25 +3,12 @@ package com.luoboduner.moo.tool.ui.dialog;
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.domain.QuickNoteGitCommit;
-import com.luoboduner.moo.tool.domain.QuickNoteGitModifiedFile;
-import com.luoboduner.moo.tool.domain.QuickNoteGitPullResult;
-import com.luoboduner.moo.tool.domain.QuickNoteGitStatus;
-import com.luoboduner.moo.tool.domain.TQuickNote;
-import com.luoboduner.moo.tool.ui.dialog.QuickNoteConflictResolverDialog;
-import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
-import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
-import com.luoboduner.moo.tool.util.ComponentUtil;
-import com.luoboduner.moo.tool.util.I18n;
-import com.luoboduner.moo.tool.util.MsgUtil;
-import com.luoboduner.moo.tool.util.QuickNoteGitCheckpoint;
-import com.luoboduner.moo.tool.util.QuickNoteGitLog;
-import com.luoboduner.moo.tool.util.QuickNoteGitUtil;
+import com.luoboduner.moo.tool.domain.*;
 import com.luoboduner.moo.tool.ui.component.QuickNoteGitDiffPanel;
 import com.luoboduner.moo.tool.ui.component.SplitPaneUtil;
-import com.luoboduner.moo.tool.util.QuickNoteGitDiffHelper;
-import com.luoboduner.moo.tool.util.QuickNoteVaultRefreshCoordinator;
-import com.luoboduner.moo.tool.util.QuickNoteVaultUtil;
+import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
+import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
+import com.luoboduner.moo.tool.util.*;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
@@ -82,7 +69,11 @@ public class QuickNoteGitDialog extends JDialog {
     private boolean suppressListDiffEvents;
 
     public QuickNoteGitDialog() {
-        super(App.mainFrame, I18n.get("quickNote.git.title"), false);
+        this(App.mainFrame);
+    }
+
+    public QuickNoteGitDialog(Window owner) {
+        super(owner, I18n.get("quickNote.git.title"), ModalityType.MODELESS);
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.72, 0.72);
         setLayout(new BorderLayout(8, 8));
 
@@ -811,14 +802,26 @@ public class QuickNoteGitDialog extends JDialog {
     }
 
     public static void showDialog() {
-        if (instance == null || !instance.isDisplayable()) {
-            instance = new QuickNoteGitDialog();
+        showDialog(App.mainFrame);
+    }
+
+    public static void showDialog(Component parent) {
+        Window owner = parent != null ? SwingUtilities.getWindowAncestor(parent) : App.mainFrame;
+        if (owner == null) {
+            owner = App.mainFrame;
+        }
+        if (instance == null || !instance.isDisplayable() || instance.getOwner() != owner) {
+            if (instance != null && instance.isDisplayable()) {
+                instance.dispose();
+            }
+            instance = new QuickNoteGitDialog(owner);
         } else {
             instance.applyTheme();
         }
         instance.refreshAll();
         instance.setVisible(true);
         instance.toFront();
+        instance.requestFocusInWindow();
         instance.requestFocus();
     }
 

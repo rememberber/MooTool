@@ -66,8 +66,9 @@ public class QuickNoteQuickCommitDialog extends JDialog {
 
         JPanel actions = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         openFullPanelButton.addActionListener(e -> {
+            Window owner = getOwner();
             dispose();
-            QuickNoteGitDialog.showDialog();
+            QuickNoteGitDialog.showDialog(owner);
         });
         commitButton.addActionListener(e -> commit());
         JButton cancelButton = new JButton(I18n.get("common.cancel"));

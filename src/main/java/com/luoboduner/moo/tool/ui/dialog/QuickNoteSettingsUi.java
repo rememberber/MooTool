@@ -187,7 +187,7 @@ public final class QuickNoteSettingsUi {
             AlertUtil.buttonInfo(gitRemoteSaveButton, I18n.get("common.save"), I18n.get("common.saveSuccess"), 2000);
         });
 
-        openGitPanelButton.addActionListener(e -> QuickNoteGitDialog.showDialog());
+        openGitPanelButton.addActionListener(e -> QuickNoteGitDialog.showDialog(openGitPanelButton));
         openVaultButton.addActionListener(e -> QuickNoteVaultUtil.openVaultDir());
         resetVaultPathButton.addActionListener(e -> vaultPathTextField.setText(QuickNoteVaultUtil.getDefaultVaultPath()));
     }
