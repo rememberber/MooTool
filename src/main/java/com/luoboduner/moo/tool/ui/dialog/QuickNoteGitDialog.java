@@ -18,6 +18,7 @@ import com.luoboduner.moo.tool.util.QuickNoteGitCheckpoint;
 import com.luoboduner.moo.tool.util.QuickNoteGitLog;
 import com.luoboduner.moo.tool.util.QuickNoteGitUtil;
 import com.luoboduner.moo.tool.ui.component.QuickNoteGitDiffPanel;
+import com.luoboduner.moo.tool.ui.component.SplitPaneUtil;
 import com.luoboduner.moo.tool.util.QuickNoteGitDiffHelper;
 import com.luoboduner.moo.tool.util.QuickNoteVaultRefreshCoordinator;
 import com.luoboduner.moo.tool.util.QuickNoteVaultUtil;
@@ -40,6 +41,7 @@ public class QuickNoteGitDialog extends JDialog {
 
     private static final int TAB_CHANGES = 0;
     private static final int TAB_HISTORY = 1;
+    private static final double MAIN_SPLIT_TOP_RATIO = 0.62;
 
     static {
         UIManager.addPropertyChangeListener(e -> {
@@ -94,15 +96,20 @@ public class QuickNoteGitDialog extends JDialog {
         tabbedPane.addTab(I18n.get("quickNote.git.tab.sync"), buildSyncPanel());
         tabbedPane.addTab(I18n.get("quickNote.git.tab.log"), buildLogPanel());
         tabbedPane.addChangeListener(this::onTabChanged);
-        content.add(tabbedPane, BorderLayout.CENTER);
-
-        diffPanel.setPreferredSize(new Dimension(100, 180));
 
         JPanel southPanel = new JPanel(new BorderLayout(4, 4));
         conflictDiffLabel.setVisible(false);
         southPanel.add(conflictDiffLabel, BorderLayout.NORTH);
         southPanel.add(diffPanel, BorderLayout.CENTER);
-        content.add(southPanel, BorderLayout.SOUTH);
+        southPanel.setMinimumSize(new Dimension(0, 80));
+        tabbedPane.setMinimumSize(new Dimension(0, 120));
+
+        JSplitPane mainSplitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, tabbedPane, southPanel);
+        mainSplitPane.setContinuousLayout(true);
+        mainSplitPane.setDividerSize(6);
+        mainSplitPane.setResizeWeight(MAIN_SPLIT_TOP_RATIO);
+        SplitPaneUtil.setDividerProportion(mainSplitPane, MAIN_SPLIT_TOP_RATIO);
+        content.add(mainSplitPane, BorderLayout.CENTER);
 
         JPanel bottom = new JPanel(new BorderLayout(8, 0));
         bottom.add(statusLabel, BorderLayout.CENTER);
