@@ -29,6 +29,7 @@ import com.luoboduner.moo.tool.util.ListUtils;
 import com.luoboduner.moo.tool.util.QuickNoteAttachmentUtil;
 import com.luoboduner.moo.tool.util.QuickNoteImageInsertUtil;
 import com.luoboduner.moo.tool.util.QuickNoteIndicatorTools;
+import com.luoboduner.moo.tool.util.QuickNoteListSortMode;
 import com.luoboduner.moo.tool.util.QuickNoteVaultRefreshCoordinator;
 import com.luoboduner.moo.tool.util.QuickNoteVaultUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
@@ -377,6 +378,14 @@ public class QuickNoteListener {
 
         // 搜索框包含内容checkbox变更事件
         quickNoteForm.getSearchContentCheckBox().addActionListener(e -> {
+            QuickNoteForm.refreshNoteTree();
+        });
+
+        // 列表排序方式变更事件
+        quickNoteForm.getListSortComboBox().addActionListener(e -> {
+            QuickNoteListSortMode mode = QuickNoteForm.getListSortMode();
+            App.config.setQuickNoteListSortMode(mode.name());
+            App.config.save();
             QuickNoteForm.refreshNoteTree();
         });
 

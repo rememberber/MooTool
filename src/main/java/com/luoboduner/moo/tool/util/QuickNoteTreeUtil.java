@@ -20,6 +20,11 @@ public final class QuickNoteTreeUtil {
     }
 
     public static DefaultTreeModel buildTreeModel(List<TQuickNote> notes, List<String> folders) {
+        return buildTreeModel(notes, folders, QuickNoteListSortMode.MODIFIED_TIME);
+    }
+
+    public static DefaultTreeModel buildTreeModel(List<TQuickNote> notes, List<String> folders,
+                                                  QuickNoteListSortMode sortMode) {
         DefaultMutableTreeNode root = new DefaultMutableTreeNode("");
         Map<String, DefaultMutableTreeNode> folderNodes = new LinkedHashMap<>();
         folderNodes.put("", root);
@@ -31,14 +36,29 @@ public final class QuickNoteTreeUtil {
             ensureFolderNode(folderNodes, root, folderPath);
         }
 
-        List<TQuickNote> sortedNotes = new ArrayList<>(notes);
-        sortedNotes.sort(Comparator.comparing(TQuickNote::getName, String.CASE_INSENSITIVE_ORDER));
-        for (TQuickNote note : sortedNotes) {
+        for (TQuickNote note : sortedNotes(notes, sortMode)) {
             String parent = QuickNoteVaultUtil.parentFolder(note.getRelativePath());
             DefaultMutableTreeNode parentNode = ensureFolderNode(folderNodes, root, parent);
             parentNode.add(new DefaultMutableTreeNode(note));
         }
         return new DefaultTreeModel(root);
+    }
+
+    public static List<TQuickNote> sortedNotes(List<TQuickNote> notes, QuickNoteListSortMode sortMode) {
+        List<TQuickNote> sortedNotes = new ArrayList<>(notes);
+        sortedNotes.sort(comparator(sortMode));
+        return sortedNotes;
+    }
+
+    public static Comparator<TQuickNote> comparator(QuickNoteListSortMode sortMode) {
+        QuickNoteListSortMode mode = sortMode == null ? QuickNoteListSortMode.MODIFIED_TIME : sortMode;
+        return switch (mode) {
+            case NAME -> Comparator.comparing(TQuickNote::getName, Comparator.nullsLast(String.CASE_INSENSITIVE_ORDER));
+            case CREATE_TIME -> Comparator.comparing(TQuickNote::getCreateTime,
+                    Comparator.nullsLast(Comparator.reverseOrder()));
+            case MODIFIED_TIME -> Comparator.comparing(TQuickNote::getModifiedTime,
+                    Comparator.nullsLast(Comparator.reverseOrder()));
+        };
     }
 
     public static DefaultMutableTreeNode findNodeByPath(DefaultMutableTreeNode root, String relativePath) {

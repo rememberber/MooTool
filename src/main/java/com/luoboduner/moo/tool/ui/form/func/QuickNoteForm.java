@@ -33,6 +33,7 @@ import com.luoboduner.moo.tool.util.QuickNoteAutoGitScheduler;
 import com.luoboduner.moo.tool.util.QuickNoteAutoPullScheduler;
 import com.luoboduner.moo.tool.util.QuickNoteConflictHighlightUtil;
 import com.luoboduner.moo.tool.util.QuickNoteGitUtil;
+import com.luoboduner.moo.tool.util.QuickNoteListSortMode;
 import com.luoboduner.moo.tool.util.QuickNoteTreeUtil;
 import com.luoboduner.moo.tool.util.QuickNoteVaultRefreshCoordinator;
 import com.luoboduner.moo.tool.util.QuickNoteVaultUtil;
@@ -131,6 +132,7 @@ public class QuickNoteForm {
 
     private JButton colorButton;
     private JCheckBox searchContentCheckBox;
+    private JComboBox<QuickNoteListSortMode> listSortComboBox;
 
     private JToggleButton wrapButton;
     private JButton unOrderListButton;
@@ -290,6 +292,7 @@ public class QuickNoteForm {
         I18nUiUtil.setToolTip(vaultSettingsButton, "quickNote.tooltip.vaultSettings");
         I18nUiUtil.setToolTip(quickReplaceButton, "quickNote.tooltip.quickReplace");
         I18nUiUtil.setToolTip(searchContentCheckBox, "quickNote.tooltip.includeContent");
+        I18nUiUtil.setToolTip(listSortComboBox, "quickNote.tooltip.listSort");
         I18nUiUtil.setToolTip(fontNameComboBox, "quickNote.tooltip.font");
         I18nUiUtil.setToolTip(fontSizeComboBox, "quickNote.tooltip.fontSize");
         I18nUiUtil.setToolTip(listItemButton, "quickNote.tooltip.toggleList");
@@ -327,6 +330,9 @@ public class QuickNoteForm {
         I18nUiUtil.setText(sortFromZToAByRowCheckBox, "quickNote.replace.sortZToA");
         I18nUiUtil.setText(sortByPinyinCheckBox, "quickNote.replace.sortByPinyin");
         I18nUiUtil.setText(startQuickReplaceButton, "common.start");
+        if (listSortComboBox != null) {
+            listSortComboBox.repaint();
+        }
     }
 
     private static void applyI18nStatic() {
@@ -379,6 +385,8 @@ public class QuickNoteForm {
                 new FlatSearchIcon());
         quickNoteForm.getSearchContentCheckBox().setToolTipText("包含内容");
         quickNoteForm.getSearchTextField().putClientProperty(FlatClientProperties.TEXT_FIELD_TRAILING_COMPONENT, quickNoteForm.getSearchContentCheckBox());
+
+        initListSortComboBox();
 
         quickNoteForm.getAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
         quickNoteForm.getSaveButton().setIcon(new FlatSVGIcon("icon/save.svg"));
@@ -653,6 +661,61 @@ public class QuickNoteForm {
         quickNoteForm.getNoteList().setVisible(false);
     }
 
+    private static void initListSortComboBox() {
+        JPanel leftPanel = (JPanel) quickNoteForm.getSearchTextField().getParent();
+        JScrollPane scrollPane = null;
+        for (Component child : leftPanel.getComponents()) {
+            if (child instanceof JScrollPane pane) {
+                scrollPane = pane;
+                break;
+            }
+        }
+        if (scrollPane == null) {
+            return;
+        }
+
+        leftPanel.remove(scrollPane);
+        quickNoteForm.listSortComboBox = new JComboBox<>();
+        for (QuickNoteListSortMode mode : QuickNoteListSortMode.values()) {
+            quickNoteForm.listSortComboBox.addItem(mode);
+        }
+        quickNoteForm.listSortComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                String label = value instanceof QuickNoteListSortMode mode
+                        ? I18n.get(mode.i18nKey())
+                        : "";
+                return super.getListCellRendererComponent(list, label, index, isSelected, cellHasFocus);
+            }
+        });
+        quickNoteForm.listSortComboBox.setSelectedItem(QuickNoteListSortMode.fromConfig());
+
+        JPanel listArea = new JPanel(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        listArea.add(quickNoteForm.listSortComboBox, new GridConstraints(0, 0, 1, 1,
+                GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
+                GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED,
+                null, null, null, 0, false));
+        listArea.add(scrollPane, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER,
+                GridConstraints.FILL_BOTH,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
+                null, null, null, 0, false));
+        leftPanel.add(listArea, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER,
+                GridConstraints.FILL_BOTH,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
+                null, null, null, 0, false));
+    }
+
+    public static QuickNoteListSortMode getListSortMode() {
+        if (quickNoteForm == null || quickNoteForm.listSortComboBox == null) {
+            return QuickNoteListSortMode.fromConfig();
+        }
+        Object selected = quickNoteForm.listSortComboBox.getSelectedItem();
+        return selected instanceof QuickNoteListSortMode mode ? mode : QuickNoteListSortMode.fromConfig();
+    }
+
     public static void refreshNoteTree() {
         QuickNoteVaultUtil.ensureVaultReady();
         if (quickNoteForm.getNoteTree() == null) {
@@ -673,7 +736,7 @@ public class QuickNoteForm {
         List<String> folders = searchContent && StringUtils.isNotBlank(titleFilterKeyWord)
                 ? List.of()
                 : QuickNoteVaultUtil.listFolders();
-        quickNoteForm.getNoteTree().setModel(QuickNoteTreeUtil.buildTreeModel(quickNoteList, folders));
+        quickNoteForm.getNoteTree().setModel(QuickNoteTreeUtil.buildTreeModel(quickNoteList, folders, getListSortMode()));
         expandAllTreeRows(quickNoteForm.getNoteTree());
 
         String preservePath = QuickNoteListener.selectedPath;
@@ -741,7 +804,7 @@ public class QuickNoteForm {
         List<String> folders = searchContent && StringUtils.isNotBlank(titleFilterKeyWord)
                 ? List.of()
                 : QuickNoteVaultUtil.listFolders();
-        quickNoteForm.getNoteTree().setModel(QuickNoteTreeUtil.buildTreeModel(quickNoteList, folders));
+        quickNoteForm.getNoteTree().setModel(QuickNoteTreeUtil.buildTreeModel(quickNoteList, folders, getListSortMode()));
         expandAllTreeRows(quickNoteForm.getNoteTree());
 
         if (!quickNoteList.isEmpty()) {
@@ -763,7 +826,7 @@ public class QuickNoteForm {
                         clearEditorPanel();
                     }
                 } else {
-                    selectedNote = quickNoteList.get(0);
+                    selectedNote = QuickNoteTreeUtil.sortedNotes(quickNoteList, getListSortMode()).get(0);
                     selectNoteInTree(selectedNote.getRelativePath());
                     showNote(selectedNote);
                 }

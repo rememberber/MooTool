@@ -612,6 +612,15 @@ public class ConfigUtil extends ConfigBaseUtil {
                 String.valueOf(quickNoteHideGitignoredFiles));
     }
 
+    public String getQuickNoteListSortMode() {
+        return setting.getStr("quickNoteListSortMode", "func.quickNote",
+                QuickNoteListSortMode.MODIFIED_TIME.name());
+    }
+
+    public void setQuickNoteListSortMode(String quickNoteListSortMode) {
+        setting.putByGroup("quickNoteListSortMode", "func.quickNote", quickNoteListSortMode);
+    }
+
     public String getJsonBeautyExportPath() {
         return setting.getStr("jsonBeautyExportPath", "func.jsonBeauty", "");
     }
