@@ -6,7 +6,7 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
-import com.formdev.flatlaf.icons.FlatSearchIcon;
+import com.luoboduner.moo.tool.ui.component.SearchFieldUiUtil;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -233,9 +233,8 @@ public class HttpRequestForm {
     }
 
     private static void initUi() {
+        SearchFieldUiUtil.configure(httpRequestForm.getSearchTextField());
         httpRequestForm.getSearchTextField().putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "搜索");
-        httpRequestForm.getSearchTextField().putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON,
-                new FlatSearchIcon());
 
         httpRequestForm.getAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
         httpRequestForm.getSaveButton().setIcon(new FlatSVGIcon("icon/save.svg"));

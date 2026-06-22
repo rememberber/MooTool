@@ -3,29 +3,46 @@ package com.luoboduner.moo.tool.ui.form.func;
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
-import com.formdev.flatlaf.icons.FlatSearchIcon;
+import com.luoboduner.moo.tool.ui.component.SearchFieldUiUtil;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
+import com.luoboduner.moo.tool.domain.QuickNoteGitStatus;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
-import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.JsonBeautyTreeCellRenderer;
+import com.luoboduner.moo.tool.ui.component.JsonBeautyTreeDragDrop;
 import com.luoboduner.moo.tool.ui.component.SplitPaneUtil;
 import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.component.PanelCloseUtil;
 import com.luoboduner.moo.tool.ui.component.textviewer.JsonRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.textviewer.JsonRTextScrollPane;
+import com.luoboduner.moo.tool.ui.dialog.JsonBeautyGitDialog;
 import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.I18nUiUtil;
-import com.luoboduner.moo.tool.util.MybatisUtil;
+import com.luoboduner.moo.tool.util.JsonBeautyAutoGitScheduler;
+import com.luoboduner.moo.tool.util.JsonBeautyAutoPullScheduler;
+import com.luoboduner.moo.tool.util.JsonBeautyListSortMode;
+import com.luoboduner.moo.tool.util.JsonBeautyTreeUtil;
+import com.luoboduner.moo.tool.util.JsonBeautyVaultRefreshCoordinator;
+import com.luoboduner.moo.tool.util.JsonBeautyVaultUtil;
+import com.luoboduner.moo.tool.util.JsonBeautyVaultWatcher;
+import com.luoboduner.moo.tool.util.QuickNoteGitUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
+import com.luoboduner.moo.tool.util.VaultTreeExpandMode;
+import com.luoboduner.moo.tool.util.VaultTreeUiUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -41,6 +58,8 @@ import java.util.List;
 public class JsonBeautyForm {
     private JPanel jsonBeautyPanel;
     private JList<TJsonBeauty> noteList;
+    private JTree noteTree;
+    private JComboBox<JsonBeautyListSortMode> listSortComboBox;
     private JButton deleteButton;
     private JButton saveButton;
     private JSplitPane splitPane;
@@ -76,11 +95,11 @@ public class JsonBeautyForm {
     private JButton jsonToJavaBeanButton;
     private JButton keyValueSwapButton;
     private JPanel leftMenuPanel;
+    private JButton gitButton;
+    private JButton vaultSettingsButton;
 
     private static JsonBeautyForm jsonBeautyForm;
     private static boolean i18nRegistered;
-    private static TJsonBeautyMapper jsonBeautyMapper = MybatisUtil.getSqlSession().getMapper(TJsonBeautyMapper.class);
-
     private JsonRSyntaxTextViewer textArea;
     private JsonRTextScrollPane scrollPane;
     private JToolBar leftMenuToolBar;
@@ -164,6 +183,14 @@ public class JsonBeautyForm {
         moreButton = new JButton();
         moreButton.setText("");
 
+        gitButton = new JButton();
+        gitButton.setText("");
+        gitButton.setToolTipText("Git");
+        vaultSettingsButton = new JButton();
+        vaultSettingsButton.setText("");
+        vaultSettingsButton.setIcon(new FlatSVGIcon("icon/host.svg"));
+        vaultSettingsButton.setToolTipText("Vault settings");
+
         actionToolBar = new JToolBar();
         ToolbarUiUtil.configure(actionToolBar);
         actionToolBar.add(addButton);
@@ -176,6 +203,9 @@ public class JsonBeautyForm {
         actionToolBar.add(compressButton);
         actionToolBar.add(beautifyButton);
         actionToolBar.add(moreButton);
+        ToolbarUiUtil.addGroupSeparator(actionToolBar);
+        actionToolBar.add(vaultSettingsButton);
+        actionToolBar.add(gitButton);
         actionToolBarPanel.add(actionToolBar, BorderLayout.EAST);
 
         UndoUtil.register(this);
@@ -199,6 +229,11 @@ public class JsonBeautyForm {
 
         JsonBeautyListener.addListeners();
 
+        JsonBeautyVaultWatcher.start();
+        JsonBeautyAutoGitScheduler.start();
+        JsonBeautyAutoPullScheduler.start();
+        updateGitButtonStatus();
+
         jsonBeautyForm.applyI18n();
         if (!i18nRegistered) {
             I18nUiUtil.register(JsonBeautyForm::applyI18nStatic);
@@ -219,6 +254,11 @@ public class JsonBeautyForm {
         I18nUiUtil.setToolTip(compressButton, "json.tooltip.compress");
         I18nUiUtil.setToolTip(beautifyButton, "quickNote.tooltip.format");
         I18nUiUtil.setToolTip(moreButton, "json.tooltip.more");
+        I18nUiUtil.setToolTip(gitButton, "jsonBeauty.tooltip.git");
+        I18nUiUtil.setToolTip(vaultSettingsButton, "jsonBeauty.tooltip.vaultSettings");
+        if (listSortComboBox != null) {
+            I18nUiUtil.setToolTip(listSortComboBox, "quickNote.tooltip.listSort");
+        }
         I18nUiUtil.setToolTip(listItemButton, "quickNote.tooltip.toggleList");
         I18nUiUtil.setToolTip(moreCloseButton, "quickNote.tooltip.close");
 
@@ -247,9 +287,8 @@ public class JsonBeautyForm {
     private static void initUi() {
         getInstance().getContentSplitPane().setLeftComponent(jsonBeautyForm.getScrollPane());
 
+        SearchFieldUiUtil.configure(jsonBeautyForm.getSearchTextField());
         jsonBeautyForm.getSearchTextField().putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "搜索");
-        jsonBeautyForm.getSearchTextField().putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON,
-                new FlatSearchIcon());
 
         jsonBeautyForm.getAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
         jsonBeautyForm.getFindButton().setIcon(new FlatSVGIcon("icon/find.svg"));
@@ -260,6 +299,7 @@ public class JsonBeautyForm {
         jsonBeautyForm.getMoreButton().setIcon(new FlatSVGIcon("icon/more.svg"));
         jsonBeautyForm.getDeleteButton().setIcon(new FlatSVGIcon("icon/remove.svg"));
         jsonBeautyForm.getExportButton().setIcon(new FlatSVGIcon("icon/export.svg"));
+        jsonBeautyForm.getGitButton().setIcon(new FlatSVGIcon("icon/diff.svg"));
         jsonBeautyForm.getListItemButton().setIcon(new FlatSVGIcon("icon/list.svg"));
         jsonBeautyForm.getWrapButton().setIcon(new FlatSVGIcon("icon/wrap.svg"));
         PanelCloseUtil.installTrailingCloseButton(jsonBeautyForm.getMoreCloseButton(),
@@ -270,11 +310,9 @@ public class JsonBeautyForm {
         jsonBeautyForm.getFindReplacePanel().setVisible(false);
         jsonBeautyForm.getMoreScrollPane().setVisible(false);
         configureSplitPanes();
+        initListSortComboBox();
+        initJsonTree();
         jsonBeautyForm.getJsonBeautyPanel().setMinimumSize(new Dimension(0, 300));
-        jsonBeautyForm.getNoteList().setFixedCellHeight(UiConsts.TABLE_ROW_HEIGHT);
-        jsonBeautyForm.getNoteList().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        jsonBeautyForm.getNoteList().putClientProperty(FlatClientProperties.STYLE,
-                "selectionArc: 6; selectionInsets: 0,1,0,1");
 
         jsonBeautyForm.getTextArea().grabFocus();
 
@@ -293,39 +331,332 @@ public class JsonBeautyForm {
         );
     }
 
-    public static void initList() {
-        DefaultListModel<TJsonBeauty> model = new DefaultListModel<>();
-        JList<TJsonBeauty> noteList = jsonBeautyForm.getNoteList();
-        noteList.setModel(model);
-        noteList.setCellRenderer(new DefaultListCellRenderer() {
+    private static void initJsonTree() {
+        jsonBeautyForm.noteTree = new JTree(new DefaultTreeModel(new DefaultMutableTreeNode("")));
+        jsonBeautyForm.noteTree.setRootVisible(false);
+        jsonBeautyForm.noteTree.setShowsRootHandles(true);
+        jsonBeautyForm.noteTree.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
+        jsonBeautyForm.noteTree.setCellRenderer(new JsonBeautyTreeCellRenderer());
+        jsonBeautyForm.noteTree.setVisibleRowCount(20);
+        jsonBeautyForm.noteTree.putClientProperty(FlatClientProperties.STYLE,
+                "selectionArc: 6; selectionInsets: 0,1,0,1");
+        JsonBeautyTreeDragDrop.install(jsonBeautyForm.noteTree);
+
+        Component parent = jsonBeautyForm.getNoteList();
+        while (parent != null) {
+            if (parent instanceof JScrollPane scrollPane) {
+                scrollPane.setViewportView(jsonBeautyForm.noteTree);
+                break;
+            }
+            parent = parent.getParent();
+        }
+        jsonBeautyForm.getNoteList().setVisible(false);
+    }
+
+    private static void initListSortComboBox() {
+        JPanel leftPanel = (JPanel) jsonBeautyForm.getSearchTextField().getParent();
+        JScrollPane scrollPane = null;
+        for (Component child : leftPanel.getComponents()) {
+            if (child instanceof JScrollPane pane) {
+                scrollPane = pane;
+                break;
+            }
+        }
+        if (scrollPane == null) {
+            return;
+        }
+
+        leftPanel.remove(scrollPane);
+        jsonBeautyForm.listSortComboBox = new JComboBox<>();
+        for (JsonBeautyListSortMode mode : JsonBeautyListSortMode.values()) {
+            jsonBeautyForm.listSortComboBox.addItem(mode);
+        }
+        jsonBeautyForm.listSortComboBox.setRenderer(new DefaultListCellRenderer() {
             @Override
             public Component getListCellRendererComponent(JList<?> list, Object value, int index,
                                                           boolean isSelected, boolean cellHasFocus) {
-                String label = value instanceof TJsonBeauty ? ((TJsonBeauty) value).getName() : String.valueOf(value);
+                String label = value instanceof JsonBeautyListSortMode mode
+                        ? I18n.get(mode.i18nKey())
+                        : "";
                 return super.getListCellRendererComponent(list, label, index, isSelected, cellHasFocus);
             }
         });
+        jsonBeautyForm.listSortComboBox.setSelectedItem(JsonBeautyListSortMode.fromConfig());
+
+        JPanel listArea = new JPanel(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        listArea.add(jsonBeautyForm.listSortComboBox, new GridConstraints(0, 0, 1, 1,
+                GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
+                GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED,
+                null, null, null, 0, false));
+        listArea.add(scrollPane, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER,
+                GridConstraints.FILL_BOTH,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
+                null, null, null, 0, false));
+        leftPanel.add(listArea, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER,
+                GridConstraints.FILL_BOTH,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
+                null, null, null, 0, false));
+    }
+
+    public static JsonBeautyListSortMode getListSortMode() {
+        if (jsonBeautyForm == null || jsonBeautyForm.listSortComboBox == null) {
+            return JsonBeautyListSortMode.fromConfig();
+        }
+        Object selected = jsonBeautyForm.listSortComboBox.getSelectedItem();
+        return selected instanceof JsonBeautyListSortMode mode ? mode : JsonBeautyListSortMode.fromConfig();
+    }
+
+    public static void refreshJsonTree() {
+        JsonBeautyVaultUtil.ensureVaultReady();
+        if (jsonBeautyForm.getNoteTree() == null) {
+            log.error("JSON tree is not initialized");
+            return;
+        }
 
         String titleFilterKeyWord = jsonBeautyForm.getSearchTextField().getText();
-        titleFilterKeyWord = "%" + titleFilterKeyWord + "%";
+        List<TJsonBeauty> jsonList = JsonBeautyVaultUtil.listByFilter(titleFilterKeyWord);
+        List<String> folders = StringUtils.isNotBlank(titleFilterKeyWord)
+                ? List.of()
+                : JsonBeautyVaultUtil.listFolders();
+        jsonBeautyForm.getNoteTree().setModel(
+                JsonBeautyTreeUtil.buildTreeModel(jsonList, folders, getListSortMode()));
+        applyTreeExpandPreference(jsonBeautyForm.getNoteTree());
 
-        List<TJsonBeauty> jsonBeautyList = jsonBeautyMapper.selectByFilter(titleFilterKeyWord);
-        for (TJsonBeauty tJsonBeauty : jsonBeautyList) {
-            model.addElement(tJsonBeauty);
+        String preservePath = JsonBeautyListener.selectedPathJson;
+        if (StringUtils.isNotBlank(preservePath)) {
+            selectJsonInList(preservePath);
         }
-        if (jsonBeautyList.size() > 0) {
+    }
+
+    private static void applyTreeExpandPreference(JTree tree) {
+        VaultTreeUiUtil.applyExpandMode(tree,
+                VaultTreeExpandMode.fromId(App.config.getJsonBeautyTreeExpandMode()));
+    }
+
+    public static void initList() {
+        populateJsonTree(false);
+    }
+
+    public static void refreshList() {
+        populateJsonTree(true);
+        updateGitButtonStatus();
+    }
+
+    private static void populateJsonTree(boolean preserveOnly) {
+        JsonBeautyVaultUtil.ensureVaultReady();
+        if (jsonBeautyForm.getNoteTree() == null) {
+            log.error("JSON tree is not initialized");
+            return;
+        }
+
+        String titleFilterKeyWord = jsonBeautyForm.getSearchTextField().getText();
+        List<TJsonBeauty> jsonList = JsonBeautyVaultUtil.listByFilter(titleFilterKeyWord);
+        List<String> folders = StringUtils.isNotBlank(titleFilterKeyWord)
+                ? List.of()
+                : JsonBeautyVaultUtil.listFolders();
+        jsonBeautyForm.getNoteTree().setModel(
+                JsonBeautyTreeUtil.buildTreeModel(jsonList, folders, getListSortMode()));
+        applyTreeExpandPreference(jsonBeautyForm.getNoteTree());
+
+        if (jsonList.isEmpty()) {
             JsonBeautyListener.ignoreQuickSave = true;
             try {
-                JsonBeautyListener.selectedNameJson = jsonBeautyList.get(0).getName();
-                jsonBeautyForm.getTextArea().setText(jsonBeautyList.get(0).getContent());
-                noteList.setSelectedIndex(0);
-            } catch (Exception e2) {
-                log.error(e2.getMessage());
+                JsonBeautyListener.selectedPathJson = null;
+                JsonBeautyListener.selectedNameJson = null;
+                jsonBeautyForm.getTextArea().setText("");
             } finally {
                 JsonBeautyListener.ignoreQuickSave = false;
             }
-
+            return;
         }
+
+        JsonBeautyListener.ignoreQuickSave = true;
+        try {
+            String preservePath = JsonBeautyListener.selectedPathJson;
+            TJsonBeauty selectedItem = null;
+            if (StringUtils.isNotEmpty(preservePath)) {
+                selectedItem = jsonList.stream()
+                        .filter(item -> preservePath.equals(item.getRelativePath()))
+                        .findFirst()
+                        .orElse(null);
+            }
+            if (selectedItem != null) {
+                selectJsonInList(selectedItem.getRelativePath());
+                if (!preserveOnly) {
+                    showJson(selectedItem);
+                }
+            } else if (StringUtils.isNotEmpty(preservePath)) {
+                if (JsonBeautyVaultUtil.loadByPath(preservePath) == null) {
+                    jsonBeautyForm.getTextArea().setText("");
+                    JsonBeautyListener.selectedPathJson = null;
+                    JsonBeautyListener.selectedNameJson = null;
+                }
+            } else if (!preserveOnly) {
+                selectedItem = JsonBeautyTreeUtil.sortedItems(jsonList, getListSortMode()).get(0);
+                selectJsonInList(selectedItem.getRelativePath());
+                showJson(selectedItem);
+            }
+        } catch (Exception e1) {
+            log.error(e1.toString());
+        } finally {
+            JsonBeautyListener.ignoreQuickSave = false;
+        }
+    }
+
+    public static void selectJsonInList(String relativePath) {
+        if (jsonBeautyForm == null || jsonBeautyForm.noteTree == null || StringUtils.isBlank(relativePath)) {
+            return;
+        }
+        DefaultMutableTreeNode root = (DefaultMutableTreeNode) jsonBeautyForm.noteTree.getModel().getRoot();
+        DefaultMutableTreeNode node = JsonBeautyTreeUtil.findNodeByPath(root, relativePath);
+        if (node != null) {
+            TreePath treePath = new TreePath(node.getPath());
+            VaultTreeUiUtil.ensurePathVisible(jsonBeautyForm.noteTree, treePath);
+            jsonBeautyForm.noteTree.setSelectionPath(treePath);
+        }
+    }
+
+    public static TJsonBeauty getSelectedTreeJson() {
+        if (jsonBeautyForm == null || jsonBeautyForm.getNoteTree() == null) {
+            return null;
+        }
+        TreePath selectionPath = jsonBeautyForm.getNoteTree().getSelectionPath();
+        if (selectionPath == null) {
+            return null;
+        }
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectionPath.getLastPathComponent();
+        return JsonBeautyTreeUtil.selectedItem(node);
+    }
+
+    public static String getSelectedFolderPath() {
+        if (jsonBeautyForm == null || jsonBeautyForm.getNoteTree() == null) {
+            return "";
+        }
+        TreePath selectionPath = jsonBeautyForm.getNoteTree().getSelectionPath();
+        if (selectionPath == null) {
+            return "";
+        }
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectionPath.getLastPathComponent();
+        return JsonBeautyTreeUtil.selectedFolderPath(node);
+    }
+
+    public static List<TJsonBeauty> getSelectedJsons() {
+        if (jsonBeautyForm == null || jsonBeautyForm.getNoteTree() == null) {
+            return List.of();
+        }
+        TreePath[] selectionPaths = jsonBeautyForm.getNoteTree().getSelectionPaths();
+        if (selectionPaths == null) {
+            return List.of();
+        }
+        List<TJsonBeauty> items = new ArrayList<>();
+        for (TreePath selectionPath : selectionPaths) {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectionPath.getLastPathComponent();
+            TJsonBeauty item = JsonBeautyTreeUtil.selectedItem(node);
+            if (item != null) {
+                items.add(item);
+            }
+        }
+        return items;
+    }
+
+    public static void showJson(TJsonBeauty item) {
+        if (item == null) {
+            return;
+        }
+        JsonBeautyListener.ignoreQuickSave = true;
+        try {
+            JsonBeautyListener.selectedPathJson = item.getRelativePath();
+            JsonBeautyListener.selectedNameJson = item.getName();
+        jsonBeautyForm.getTextArea().setText(item.getContent());
+        jsonBeautyForm.getTextArea().setCaretPosition(0);
+        jsonBeautyForm.getScrollPane().getVerticalScrollBar().setValue(0);
+        jsonBeautyForm.getScrollPane().getHorizontalScrollBar().setValue(0);
+        } finally {
+            JsonBeautyListener.ignoreQuickSave = false;
+        }
+    }
+
+    public static void reloadCurrentFromDiskIfClean() {
+        reloadCurrentFromDisk(false);
+    }
+
+    public static void reloadCurrentFromDisk(boolean force) {
+        if (!force && JsonBeautyVaultRefreshCoordinator.hasUnsavedChanges()) {
+            return;
+        }
+        String path = JsonBeautyListener.selectedPathJson;
+        if (StringUtils.isBlank(path)) {
+            return;
+        }
+        TJsonBeauty item = JsonBeautyVaultUtil.loadByPath(path);
+        JsonBeautyListener.ignoreQuickSave = true;
+        try {
+            if (item == null) {
+                jsonBeautyForm.getTextArea().setText("");
+                JsonBeautyListener.selectedPathJson = null;
+                JsonBeautyListener.selectedNameJson = null;
+            } else {
+                jsonBeautyForm.getTextArea().setText(item.getContent());
+            }
+        } finally {
+            JsonBeautyListener.ignoreQuickSave = false;
+        }
+    }
+
+    public static void reloadJsonAfterDiscard(String relativePath) {
+        if (StringUtils.isBlank(relativePath)) {
+            return;
+        }
+        String path = JsonBeautyVaultUtil.normalizeRelativePath(relativePath);
+        JsonBeautyVaultRefreshCoordinator.markInternalWrite();
+        if (!path.equals(JsonBeautyListener.selectedPathJson)) {
+            return;
+        }
+        reloadCurrentFromDisk(true);
+    }
+
+    public static void updateGitButtonStatus() {
+        if (jsonBeautyForm == null || jsonBeautyForm.gitButton == null) {
+            return;
+        }
+        SwingWorker<QuickNoteGitStatus, Void> worker = new SwingWorker<>() {
+            @Override
+            protected QuickNoteGitStatus doInBackground() {
+                return QuickNoteGitUtil.getStatus(JsonBeautyVaultUtil.getVaultDir());
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    QuickNoteGitStatus status = get();
+                    JButton button = jsonBeautyForm.gitButton;
+                    if (!status.isGitRepo()) {
+                        button.setText("");
+                        I18nUiUtil.setToolTip(button, "jsonBeauty.tooltip.git");
+                        return;
+                    }
+                    int pending = status.getChangedCount() + status.getConflictCount();
+                    button.setText(pending > 0 ? String.valueOf(pending) : "");
+                    if (status.hasPendingChanges() || status.getAhead() > 0 || status.getBehind() > 0
+                            || StringUtils.isNotBlank(status.getBranch())) {
+                        button.setToolTipText(I18n.format("jsonBeauty.tooltip.gitStatus",
+                                StringUtils.defaultIfBlank(status.getBranch(), "-"),
+                                status.getChangedCount(),
+                                status.getConflictCount(),
+                                status.getAhead(),
+                                status.getBehind()));
+                    } else {
+                        I18nUiUtil.setToolTip(button, "jsonBeauty.tooltip.git");
+                    }
+                    JsonBeautyGitDialog.refreshIfVisible();
+                } catch (Exception ignored) {
+                    // ignore background status read failures
+                }
+            }
+        };
+        worker.execute();
     }
 
     public static void initTextAreaFont() {

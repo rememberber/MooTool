@@ -10,23 +10,28 @@ import com.github.vertical_blank.sqlformatter.SqlFormatter;
 import com.github.vertical_blank.sqlformatter.languages.Dialect;
 import com.google.common.collect.Lists;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
+import com.luoboduner.moo.tool.ui.component.QuickNoteTreeDragDrop;
 import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteEditorPanel;
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.dialog.DocInfoDialog;
+import com.luoboduner.moo.tool.ui.dialog.QuickNoteGitDialog;
+import com.luoboduner.moo.tool.ui.dialog.QuickNoteSettingsUi;
+import com.luoboduner.moo.tool.util.QuickNoteCommitEntryAction;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.component.SplitPaneUtil;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.NamingUtil;
 import com.luoboduner.moo.tool.util.ListUtils;
-import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.QuickNoteAttachmentUtil;
 import com.luoboduner.moo.tool.util.QuickNoteImageInsertUtil;
 import com.luoboduner.moo.tool.util.QuickNoteIndicatorTools;
+import com.luoboduner.moo.tool.util.QuickNoteListSortMode;
+import com.luoboduner.moo.tool.util.QuickNoteVaultRefreshCoordinator;
+import com.luoboduner.moo.tool.util.QuickNoteVaultUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.codeformatter.CodeFormatterFactory;
 import com.luoboduner.moo.tool.util.MsgUtil;
@@ -34,28 +39,33 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
-import org.apache.commons.lang3.time.DateFormatUtils;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreePath;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.File;
 import java.math.BigDecimal;
 import java.text.DecimalFormat;
+import java.util.HashSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.Date;
 import java.util.List;
+import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import java.util.function.Consumer;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
 
 /**
  * <pre>
@@ -68,12 +78,23 @@ import java.util.concurrent.Executors;
 @Slf4j
 public class QuickNoteListener {
 
-    private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
-
     public static String selectedName;
+    public static String selectedPath;
 
-    /** 忽略 JOptionPane 关闭后回传到列表的 Enter 键，避免重命名弹框重复弹出 */
+    /** 忽略 JOptionPane 关闭后回传到列表的 Enter 键，避免命名弹框重复弹出 */
     private static boolean suppressListEnterRename;
+
+    /**
+     * 弹出名称输入框，并在关闭后忽略一次树列表 Enter，避免确认键回传再次触发重命名等操作。
+     */
+    private static String promptNameSuppressingTreeEnter(String initial) {
+        suppressListEnterRename = true;
+        String name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), initial);
+        if (StringUtils.isBlank(name)) {
+            suppressListEnterRename = false;
+        }
+        return name;
+    }
 
     // 创建一个单线程的ExecutorService
     public static ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -84,52 +105,68 @@ public class QuickNoteListener {
 
         // 保存按钮
         quickNoteForm.getSaveButton().addActionListener(e -> {
-            if (StringUtils.isEmpty(selectedName)) {
+            if (StringUtils.isEmpty(selectedPath)) {
                 selectedName = getDefaultFileName();
+            } else {
+                TQuickNote current = QuickNoteVaultUtil.loadByPath(selectedPath);
+                if (current != null) {
+                    selectedName = current.getName();
+                }
             }
 
-            // show input dialog
-            String name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), selectedName);
+            String name = promptNameSuppressingTreeEnter(selectedName);
             if (StringUtils.isNotBlank(name)) {
-                TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
-
-                if (tQuickNote == null) {
-                    tQuickNote = new TQuickNote();
-                }
-                String now = SqliteUtil.nowDateForSqlite();
-                tQuickNote.setName(name);
-                tQuickNote.setContent(quickNoteRSyntaxTextViewerManager.getCurrentText());
-                tQuickNote.setCreateTime(now);
-                tQuickNote.setModifiedTime(now);
-                if (tQuickNote.getId() == null) {
-                    quickNoteMapper.insert(tQuickNote);
+                if (StringUtils.isBlank(selectedPath)) {
+                    TQuickNote created = QuickNoteVaultUtil.createNote(name, QuickNoteForm.getSelectedFolderPath());
+                    selectedPath = created.getRelativePath();
+                    selectedName = created.getName();
+                    quickSaveSync(true, false, true);
                     QuickNoteForm.initNoteList();
-                } else {
-                    quickNoteMapper.updateByPrimaryKey(tQuickNote);
-                }
-            }
-        });
-
-        // 点击左侧列表事件
-        quickNoteForm.getNoteList().addMouseListener(new MouseAdapter() {
-            @Override
-            public void mousePressed(MouseEvent e) {
-                int index = quickNoteForm.getNoteList().locationToIndex(e.getPoint());
-                if (index == -1) {
                     return;
                 }
-                QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
-                try {
-                    viewByIndex(index);
-                } catch (Exception e1) {
-                    log.error(e1.toString());
-                } finally {
-                    QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
+                TQuickNote current = QuickNoteVaultUtil.loadByPath(selectedPath);
+                if (current != null && !name.equals(current.getName())) {
+                    String oldPath = selectedPath;
+                    flushSelectedNoteBeforePathChange();
+                    runNotePathMutation(() -> {
+                        String newPath = QuickNoteVaultUtil.renameNote(oldPath, name);
+                        QuickNoteForm.quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(oldPath);
+                        selectedPath = newPath;
+                        selectedName = name;
+                    }, oldPath);
                 }
-
-                super.mousePressed(e);
+                quickSaveSync(true, false, true);
+                QuickNoteForm.initNoteList();
             }
         });
+
+        // 点击左侧树事件
+        JTree noteTree = quickNoteForm.getNoteTree();
+        if (noteTree != null) {
+            noteTree.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    int row = noteTree.getRowForLocation(e.getX(), e.getY());
+                    if (row >= 0) {
+                        noteTree.setSelectionRow(row);
+                    }
+                    TQuickNote note = QuickNoteForm.getSelectedTreeNote();
+                    if (note == null) {
+                        return;
+                    }
+                    QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
+                    try {
+                        QuickNoteForm.showNote(note);
+                    } catch (Exception e1) {
+                        log.error(e1.toString());
+                    } finally {
+                        QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
+                    }
+
+                    super.mousePressed(e);
+                }
+            });
+        }
 
 
         // 删除按钮事件
@@ -144,17 +181,11 @@ public class QuickNoteListener {
                 QuickNoteForm.updateInsertImageButtonVisibility();
 
                 if (StringUtils.isNotEmpty(syntaxName)) {
-                    if (selectedName != null && !QuickNoteRSyntaxTextViewer.ignoreQuickSave) {
-                        TQuickNote tQuickNote = new TQuickNote();
-                        tQuickNote.setName(selectedName);
-                        tQuickNote.setSyntax("text/" + syntaxName);
-                        String now = SqliteUtil.nowDateForSqlite();
-                        tQuickNote.setModifiedTime(now);
-
-                        quickNoteMapper.updateByName(tQuickNote);
-
-                        quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(selectedName);
-                        QuickNoteEditorPanel editorPanel = quickNoteRSyntaxTextViewerManager.getEditorPanel(selectedName);
+                    if (selectedPath != null && !QuickNoteRSyntaxTextViewer.ignoreQuickSave) {
+                        quickSaveSync(true, false, false);
+                        updateCurrentMetadata(note -> note.setSyntax("text/" + syntaxName));
+                        quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(selectedPath);
+                        QuickNoteEditorPanel editorPanel = quickNoteRSyntaxTextViewerManager.getEditorPanel(selectedPath);
                         quickNoteForm.getContentSplitPane().setLeftComponent(editorPanel);
                         editorPanel.updateUI();
                     }
@@ -168,19 +199,12 @@ public class QuickNoteListener {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 String fontName = e.getItem().toString();
 
-                if (selectedName != null && !QuickNoteRSyntaxTextViewer.ignoreQuickSave) {
-
-                    TQuickNote tQuickNote = new TQuickNote();
-                    tQuickNote.setName(selectedName);
-                    tQuickNote.setFontName(fontName);
-                    String now = SqliteUtil.nowDateForSqlite();
-                    tQuickNote.setModifiedTime(now);
-
-                    quickNoteMapper.updateByName(tQuickNote);
+                if (selectedPath != null && !QuickNoteRSyntaxTextViewer.ignoreQuickSave) {
+                    updateCurrentMetadata(note -> note.setFontName(fontName));
                     App.config.setQuickNoteFontName(fontName);
                     App.config.save();
 
-                    quickNoteRSyntaxTextViewerManager.updateFont(selectedName);
+                    quickNoteRSyntaxTextViewerManager.updateFont(selectedPath);
                 }
             }
         });
@@ -190,19 +214,13 @@ public class QuickNoteListener {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 int fontSize = Integer.parseInt(e.getItem().toString());
 
-                if (selectedName != null && !QuickNoteRSyntaxTextViewer.ignoreQuickSave) {
-                    TQuickNote tQuickNote = new TQuickNote();
-                    tQuickNote.setName(selectedName);
-                    tQuickNote.setFontSize(String.valueOf(fontSize));
-                    String now = SqliteUtil.nowDateForSqlite();
-                    tQuickNote.setModifiedTime(now);
-
-                    quickNoteMapper.updateByName(tQuickNote);
+                if (selectedPath != null && !QuickNoteRSyntaxTextViewer.ignoreQuickSave) {
+                    updateCurrentMetadata(note -> note.setFontSize(String.valueOf(fontSize)));
 
                     App.config.setQuickNoteFontSize(fontSize);
                     App.config.save();
 
-                    quickNoteRSyntaxTextViewerManager.updateFont(selectedName);
+                    quickNoteRSyntaxTextViewerManager.updateFont(selectedPath);
                 }
             }
         });
@@ -213,15 +231,12 @@ public class QuickNoteListener {
         // 自动换行按钮事件
         quickNoteForm.getWrapButton().addActionListener(e -> {
             RSyntaxTextArea view = quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea();
+            if (view == null) {
+                return;
+            }
             view.setLineWrap(!view.getLineWrap());
-            if (selectedName != null && !QuickNoteRSyntaxTextViewer.ignoreQuickSave) {
-                TQuickNote tQuickNote = new TQuickNote();
-                tQuickNote.setName(selectedName);
-                tQuickNote.setLineWrap(view.getLineWrap() ? "1" : "0");
-                String now = SqliteUtil.nowDateForSqlite();
-                tQuickNote.setModifiedTime(now);
-
-                quickNoteMapper.updateByName(tQuickNote);
+            if (selectedPath != null && !QuickNoteRSyntaxTextViewer.ignoreQuickSave) {
+                updateCurrentMetadata(note -> note.setLineWrap(view.getLineWrap() ? "1" : "0"));
             }
         });
 
@@ -229,8 +244,9 @@ public class QuickNoteListener {
         quickNoteForm.getAddButton().addActionListener(e -> newNote());
 
 
-        // 左侧列表按键事件（重命名）
-        quickNoteForm.getNoteList().addKeyListener(new KeyListener() {
+        // 左侧树按键事件（重命名）
+        if (noteTree != null) {
+            noteTree.addKeyListener(new KeyListener() {
             @Override
             public void keyTyped(KeyEvent e) {
 
@@ -248,17 +264,17 @@ public class QuickNoteListener {
                         suppressListEnterRename = false;
                         return;
                     }
-                    renameSelectedNote(quickNoteForm);
+                    renameSelectedItem(quickNoteForm);
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteFiles(quickNoteForm);
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
-                    int selectedIndex = quickNoteForm.getNoteList().getSelectedIndex();
-                    if (selectedIndex < 0) {
+                    TQuickNote note = QuickNoteForm.getSelectedTreeNote();
+                    if (note == null) {
                         return;
                     }
                     QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
                     try {
-                        viewByIndex(selectedIndex);
+                        QuickNoteForm.showNote(note);
                     } catch (Exception e1) {
                         log.error(e1.toString());
                     } finally {
@@ -267,6 +283,7 @@ public class QuickNoteListener {
                 }
             }
         });
+        }
 
         // 查找按钮
         quickNoteForm.getFindButton().addActionListener(e -> {
@@ -299,46 +316,7 @@ public class QuickNoteListener {
         });
 
         // 导出按钮
-        quickNoteForm.getExportButton().addActionListener(e -> {
-            int[] selectedIndices = quickNoteForm.getNoteList().getSelectedIndices();
-
-            try {
-                if (selectedIndices.length > 0) {
-                    SystemFileChooser fileChooser = new SystemFileChooser(App.config.getQuickNoteExportPath());
-                    fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
-                    int approve = fileChooser.showOpenDialog(quickNoteForm.getQuickNotePanel());
-                    String exportPath;
-                    if (approve == SystemFileChooser.APPROVE_OPTION) {
-                        exportPath = fileChooser.getSelectedFile().getAbsolutePath();
-                        App.config.setQuickNoteExportPath(exportPath);
-                        App.config.save();
-                    } else {
-                        return;
-                    }
-
-                    DefaultListModel<TQuickNote> listModel = (DefaultListModel<TQuickNote>) quickNoteForm.getNoteList().getModel();
-                    for (int index : selectedIndices) {
-                        TQuickNote tQuickNote = quickNoteMapper.selectByPrimaryKey(listModel.getElementAt(index).getId());
-                        File exportFile = FileUtil.touch(exportPath + File.separator + tQuickNote.getName() + ".txt");
-                        FileUtil.writeUtf8String(tQuickNote.getContent(), exportFile);
-                    }
-                    MsgUtil.success(quickNoteForm.getQuickNotePanel(), "msg.exportSuccess");
-                    try {
-                        Desktop desktop = Desktop.getDesktop();
-                        desktop.open(new File(exportPath));
-                    } catch (Exception e2) {
-                        log.error(ExceptionUtils.getStackTrace(e2));
-                    }
-                } else {
-                    MsgUtil.info(quickNoteForm.getQuickNotePanel(), "msg.selectAtLeastOne");
-                }
-
-            } catch (Exception e1) {
-                MsgUtil.errorWithDetail(quickNoteForm.getQuickNotePanel(), "msg.exportFailed", e1.getMessage());
-                log.error(ExceptionUtils.getStackTrace(e1));
-            }
-
-        });
+        quickNoteForm.getExportButton().addActionListener(e -> exportSelectedNotes(quickNoteForm));
 
         // 格式化按钮
         quickNoteForm.getFormatButton().addActionListener(e -> format());
@@ -366,29 +344,15 @@ public class QuickNoteListener {
                         break;
                     }
                 }
-//                Color color = UIManager.getColor(colorKey);
-                if (StringUtils.isNotEmpty(colorKey)) {
-                    if (selectedName != null && !QuickNoteRSyntaxTextViewer.ignoreQuickSave) {
-                        TQuickNote tQuickNote = new TQuickNote();
-                        tQuickNote.setName(selectedName);
-                        tQuickNote.setColor(colorKey);
-                        String now = SqliteUtil.nowDateForSqlite();
-                        tQuickNote.setModifiedTime(now);
+                final String selectedColorKey = colorKey;
+                if (StringUtils.isNotEmpty(selectedColorKey)) {
+                    if (selectedPath != null && !QuickNoteRSyntaxTextViewer.ignoreQuickSave) {
+                        updateCurrentMetadata(note -> note.setColor(selectedColorKey));
 
-                        quickNoteMapper.updateByName(tQuickNote);
-
-                        quickNoteForm.getColorButton().setIcon(new QuickNoteForm.ListColorIcon(colorKey, 18, 18));
-                        QuickNoteForm.applyCurrentEditorOutline(colorKey);
-
-                        DefaultListModel<TQuickNote> listModel =
-                                (DefaultListModel<TQuickNote>) quickNoteForm.getNoteList().getModel();
-                        for (int j = 0; j < listModel.size(); j++) {
-                            TQuickNote note = listModel.getElementAt(j);
-                            if (selectedName.equals(note.getName())) {
-                                note.setColor(colorKey);
-                                quickNoteForm.getNoteList().repaint();
-                                break;
-                            }
+                        quickNoteForm.getColorButton().setIcon(new QuickNoteForm.ListColorIcon(selectedColorKey, 18, 18));
+                        QuickNoteForm.applyCurrentEditorOutline(selectedColorKey);
+                        if (quickNoteForm.getNoteTree() != null) {
+                            quickNoteForm.getNoteTree().repaint();
                         }
                     }
                 }
@@ -399,88 +363,119 @@ public class QuickNoteListener {
         quickNoteForm.getSearchTextField().getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                QuickNoteForm.initNoteList();
+                QuickNoteForm.refreshNoteTree();
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                QuickNoteForm.initNoteList();
+                QuickNoteForm.refreshNoteTree();
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-//                QuickNoteForm.initNoteList();
             }
         });
 
         // 搜索框包含内容checkbox变更事件
         quickNoteForm.getSearchContentCheckBox().addActionListener(e -> {
-            QuickNoteForm.initNoteList();
+            QuickNoteForm.refreshNoteTree();
+        });
+
+        // 列表排序方式变更事件
+        quickNoteForm.getListSortComboBox().addActionListener(e -> {
+            QuickNoteListSortMode mode = QuickNoteForm.getListSortMode();
+            App.config.setQuickNoteListSortMode(mode.name());
+            App.config.save();
+            QuickNoteForm.refreshNoteTree();
         });
 
         // 左侧列表增加右键菜单
         JPopupMenu noteListPopupMenu = new JPopupMenu();
+        JMenuItem newFileMenuItem = new JMenuItem(I18n.get("quickNote.newFile"));
+        JMenuItem newFolderMenuItem = new JMenuItem(I18n.get("quickNote.newFolder"));
         JMenuItem renameMenuItem = new JMenuItem(I18n.get("common.rename"));
         JMenuItem deleteMenuItem = new JMenuItem(I18n.get("common.delete"));
         JMenuItem exportMenuItem = new JMenuItem(I18n.get("common.export"));
+        JMenuItem duplicateMenuItem = new JMenuItem(I18n.get("quickNote.menu.duplicate"));
+        JMenuItem moveToFolderMenuItem = new JMenuItem(I18n.get("quickNote.menu.moveToFolder"));
+        JMenuItem deleteFolderMenuItem = new JMenuItem(I18n.get("quickNote.menu.deleteFolder"));
+        JMenuItem revealInFolderMenuItem = new JMenuItem(I18n.get("quickNote.menu.revealInFolder"));
+        noteListPopupMenu.add(newFileMenuItem);
+        noteListPopupMenu.add(newFolderMenuItem);
         noteListPopupMenu.add(renameMenuItem);
+        noteListPopupMenu.add(moveToFolderMenuItem);
         noteListPopupMenu.add(deleteMenuItem);
+        noteListPopupMenu.add(deleteFolderMenuItem);
         noteListPopupMenu.add(exportMenuItem);
-        quickNoteForm.getNoteList().setComponentPopupMenu(noteListPopupMenu);
+        noteListPopupMenu.add(duplicateMenuItem);
+        noteListPopupMenu.addSeparator();
+        noteListPopupMenu.add(revealInFolderMenuItem);
+        JMenuItem refreshMenuItem = new JMenuItem(I18n.get("quickNote.menu.refresh"));
+        JMenuItem openVaultMenuItem = new JMenuItem(I18n.get("quickNote.menu.openVault"));
+        JMenuItem vaultSettingsMenuItem = new JMenuItem(I18n.get("quickNote.menu.vaultSettings"));
+        JMenuItem gitMenuItem = new JMenuItem(I18n.get("quickNote.menu.git"));
+        noteListPopupMenu.add(refreshMenuItem);
+        noteListPopupMenu.add(openVaultMenuItem);
+        noteListPopupMenu.add(vaultSettingsMenuItem);
+        noteListPopupMenu.add(gitMenuItem);
+        if (noteTree != null) {
+            noteTree.setComponentPopupMenu(noteListPopupMenu);
+            noteListPopupMenu.addPopupMenuListener(new javax.swing.event.PopupMenuListener() {
+                @Override
+                public void popupMenuWillBecomeVisible(javax.swing.event.PopupMenuEvent e) {
+                    boolean hasNotes = !QuickNoteForm.getSelectedNotes().isEmpty();
+                    String folderPath = QuickNoteForm.getSelectedFolderPath();
+                    boolean folderNode = isFolderNodeSelected(noteTree);
+                    moveToFolderMenuItem.setEnabled(hasNotes);
+                    deleteFolderMenuItem.setEnabled(folderNode && StringUtils.isNotBlank(folderPath)
+                            && QuickNoteVaultUtil.isFolderEmpty(folderPath));
+                    renameMenuItem.setEnabled(hasNotes || (folderNode && StringUtils.isNotBlank(folderPath)));
+                    deleteMenuItem.setEnabled(hasNotes);
+                    exportMenuItem.setEnabled(hasNotes);
+                    duplicateMenuItem.setEnabled(hasNotes);
+                    revealInFolderMenuItem.setEnabled(hasNotes || folderNode);
+                }
+
+                @Override
+                public void popupMenuWillBecomeInvisible(javax.swing.event.PopupMenuEvent e) {
+                }
+
+                @Override
+                public void popupMenuCanceled(javax.swing.event.PopupMenuEvent e) {
+                }
+            });
+        }
+
+        newFileMenuItem.addActionListener(e -> newNote());
+        newFolderMenuItem.addActionListener(e -> createFolder(quickNoteForm));
 
         // 重命名菜单项事件
-        renameMenuItem.addActionListener(e -> renameSelectedNote(quickNoteForm));
+        renameMenuItem.addActionListener(e -> renameSelectedItem(quickNoteForm));
 
         // 删除菜单项事件
         deleteMenuItem.addActionListener(e -> deleteFiles(quickNoteForm));
 
+        moveToFolderMenuItem.addActionListener(e -> moveSelectedNotesToFolder(quickNoteForm));
+        deleteFolderMenuItem.addActionListener(e -> deleteSelectedFolder(quickNoteForm));
+        revealInFolderMenuItem.addActionListener(e -> revealSelectedInFileManager(quickNoteForm));
+
         // 导出菜单项事件
-        exportMenuItem.addActionListener(e -> {
-            int[] selectedIndices = quickNoteForm.getNoteList().getSelectedIndices();
+        exportMenuItem.addActionListener(e -> exportSelectedNotes(quickNoteForm));
+        duplicateMenuItem.addActionListener(e -> duplicateSelectedNotes(quickNoteForm));
 
-            try {
-                if (selectedIndices.length > 0) {
-                    SystemFileChooser fileChooser = new SystemFileChooser(App.config.getQuickNoteExportPath());
-                    fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
-                    int approve = fileChooser.showOpenDialog(quickNoteForm.getQuickNotePanel());
-                    String exportPath;
-                    if (approve == SystemFileChooser.APPROVE_OPTION) {
-                        exportPath = fileChooser.getSelectedFile().getAbsolutePath();
-                        App.config.setQuickNoteExportPath(exportPath);
-                        App.config.save();
-                    } else {
-                        return;
-                    }
-
-                    DefaultListModel<TQuickNote> listModel = (DefaultListModel<TQuickNote>) quickNoteForm.getNoteList().getModel();
-                    for (int index : selectedIndices) {
-                        TQuickNote tQuickNote = quickNoteMapper.selectByPrimaryKey(listModel.getElementAt(index).getId());
-                        File exportFile = FileUtil.touch(exportPath + File.separator + tQuickNote.getName() + ".txt");
-                        FileUtil.writeUtf8String(tQuickNote.getContent(), exportFile);
-                    }
-                    MsgUtil.success(quickNoteForm.getQuickNotePanel(), "msg.exportSuccess");
-                    try {
-                        Desktop desktop = Desktop.getDesktop();
-                        desktop.open(new File(exportPath));
-                    } catch (Exception e2) {
-                        log.error(ExceptionUtils.getStackTrace(e2));
-                    }
-                } else {
-                    MsgUtil.info(quickNoteForm.getQuickNotePanel(), "msg.selectAtLeastOne");
-                }
-
-            } catch (Exception e1) {
-                MsgUtil.errorWithDetail(quickNoteForm.getQuickNotePanel(), "msg.exportFailed", e1.getMessage());
-                log.error(ExceptionUtils.getStackTrace(e1));
-            }
-
-        });
+        refreshMenuItem.addActionListener(e -> QuickNoteVaultRefreshCoordinator.refreshAfterExternalChange());
+        openVaultMenuItem.addActionListener(e -> QuickNoteVaultUtil.openVaultDir());
+        vaultSettingsMenuItem.addActionListener(e -> QuickNoteSettingsUi.showDialog());
+        gitMenuItem.addActionListener(e -> QuickNoteGitDialog.showDialog());
 
         quickNoteForm.getUnOrderListButton().addActionListener(e -> toggleUnorderedList(
                 QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea()));
 
         quickNoteForm.getOrderListButton().addActionListener(e -> toggleOrderedList(
                 QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea()));
+
+        quickNoteForm.getGitButton().addActionListener(e -> QuickNoteCommitEntryAction.trigger(quickNoteForm.getGitButton()));
+        quickNoteForm.getVaultSettingsButton().addActionListener(e -> QuickNoteSettingsUi.showDialog());
 
         quickNoteForm.getInfoButton().addActionListener(e -> {
             try {
@@ -489,13 +484,17 @@ public class QuickNoteListener {
 
                 String createTime = "";
                 String modifiedTime = "";
-                if (StringUtils.isNotEmpty(selectedName)) {
-                    TQuickNote tQuickNote = quickNoteMapper.selectByName(selectedName);
-                    createTime = tQuickNote.getCreateTime();
-                    modifiedTime = tQuickNote.getModifiedTime();
+                if (StringUtils.isNotEmpty(selectedPath)) {
+                    TQuickNote tQuickNote = QuickNoteVaultUtil.loadByPath(selectedPath);
+                    if (tQuickNote != null) {
+                        createTime = tQuickNote.getCreateTime();
+                        modifiedTime = tQuickNote.getModifiedTime();
+                    }
                 }
                 RSyntaxTextArea view = QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea();
-
+                if (view == null) {
+                    return;
+                }
                 String content = view.getText();
 
                 // 去掉空格和tab和换行后的字符数
@@ -517,9 +516,12 @@ public class QuickNoteListener {
     public static void showFindPanel() {
         QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
         QuickNoteRSyntaxTextViewerManager quickNoteRSyntaxTextViewerManager = QuickNoteForm.quickNoteRSyntaxTextViewerManager;
+        RSyntaxTextArea view = quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea();
+        if (view == null) {
+            return;
+        }
         quickNoteForm.getFindReplacePanel().removeAll();
         quickNoteForm.getFindReplacePanel().setDoubleBuffered(true);
-        RSyntaxTextArea view = quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea();
         FindReplaceBar findReplaceBar = new FindReplaceBar(view);
         quickNoteForm.getFindReplacePanel().add(findReplaceBar.getFindOptionPanel());
         quickNoteForm.getFindReplacePanel().setVisible(true);
@@ -529,54 +531,192 @@ public class QuickNoteListener {
         findReplaceBar.getFindField().selectAll();
     }
 
-    /**
-     * view By List Index
-     *
-     * @param index
-     */
-    private static void viewByIndex(int index) {
-        if (index < 0) {
+    private static void updateCurrentMetadata(Consumer<TQuickNote> updater) {
+        if (StringUtils.isBlank(selectedPath)) {
             return;
         }
-
-        QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
-        QuickNoteRSyntaxTextViewerManager quickNoteRSyntaxTextViewerManager = QuickNoteForm.quickNoteRSyntaxTextViewerManager;
-
-        quickNoteForm.getFindReplacePanel().removeAll();
-        quickNoteForm.getFindReplacePanel().setVisible(false);
-
-        DefaultListModel<TQuickNote> listModel = (DefaultListModel<TQuickNote>) quickNoteForm.getNoteList().getModel();
-        String name = listModel.getElementAt(index).getName();
-        selectedName = name;
-
-        quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(name);
-        QuickNoteEditorPanel editorPanel = quickNoteRSyntaxTextViewerManager.getEditorPanel(name);
-
-        quickNoteForm.getContentSplitPane().setLeftComponent(editorPanel);
-
-        TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
-        String color = tQuickNote.getColor();
-        if (StringUtils.isEmpty(color)) {
-            color = QuickNoteForm.COLOR_KEYS[0];
+        TQuickNote note = QuickNoteVaultUtil.loadByPath(selectedPath);
+        if (note == null) {
+            return;
         }
+        updater.accept(note);
+        note.setModifiedTime(SqliteUtil.nowDateForSqlite());
+        QuickNoteVaultUtil.saveMetadata(note);
+    }
 
-        quickNoteForm.getColorButton().setIcon(new QuickNoteForm.ListColorIcon(color, 18, 18));
-        quickNoteForm.getSyntaxComboBox().setSelectedItem(tQuickNote.getSyntax().substring(5));
-        QuickNoteForm.updateInsertImageButtonVisibility();
-        quickNoteForm.getFontNameComboBox().setSelectedItem(tQuickNote.getFontName());
-        quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(tQuickNote.getFontSize()));
-
-        int colorIndex = ArrayUtil.indexOf(QuickNoteForm.COLOR_KEYS, color);
-        if (colorIndex >= 0 && colorIndex < QuickNoteForm.COLOR_BUTTONS.length) {
-            QuickNoteForm.COLOR_BUTTONS[colorIndex].setSelected(true);
+    private static void createFolder(QuickNoteForm quickNoteForm) {
+        String parentFolder = QuickNoteForm.getSelectedFolderPath();
+        String folderName = promptNameSuppressingTreeEnter(I18n.get("quickNote.newFolderDefault"));
+        if (StringUtils.isBlank(folderName)) {
+            return;
         }
+        folderName = QuickNoteVaultUtil.sanitizeFileName(folderName);
+        String folderPath = StringUtils.isBlank(parentFolder)
+                ? folderName
+                : parentFolder + "/" + folderName;
+        QuickNoteVaultUtil.createFolder(folderPath);
+        QuickNoteForm.initNoteList();
+    }
 
-        quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setLineWrap("1".equals(tQuickNote.getLineWrap()));
-        quickNoteForm.getWrapButton().setSelected("1".equals(tQuickNote.getLineWrap()));
+    private static boolean isFolderNodeSelected(JTree noteTree) {
+        if (noteTree == null) {
+            return false;
+        }
+        TreePath selectionPath = noteTree.getSelectionPath();
+        if (selectionPath == null) {
+            return false;
+        }
+        Object userObject = ((DefaultMutableTreeNode) selectionPath.getLastPathComponent()).getUserObject();
+        return userObject instanceof String;
+    }
 
-        QuickNoteForm.applyEditorOutline(editorPanel, color);
+    private static void moveSelectedNotesToFolder(QuickNoteForm quickNoteForm) {
+        List<TQuickNote> selectedNotes = QuickNoteForm.getSelectedNotes();
+        if (selectedNotes.isEmpty()) {
+            MsgUtil.info(App.mainFrame, "msg.selectAtLeastOne");
+            return;
+        }
+        List<String> folders = new ArrayList<>();
+        folders.add("");
+        folders.addAll(QuickNoteVaultUtil.listFolders());
+        JComboBox<String> folderComboBox = new JComboBox<>(folders.toArray(new String[0]));
+        folderComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                String folder = value == null ? "" : value.toString();
+                String label = StringUtils.isBlank(folder)
+                        ? I18n.get("quickNote.folderRoot")
+                        : folder;
+                return super.getListCellRendererComponent(list, label, index, isSelected, cellHasFocus);
+            }
+        });
+        String currentFolder = QuickNoteVaultUtil.parentFolder(selectedNotes.get(0).getRelativePath());
+        folderComboBox.setSelectedItem(currentFolder);
 
-//        syntaxTextViewer.updateUI();
+        int confirm = JOptionPane.showConfirmDialog(
+                quickNoteForm.getQuickNotePanel(),
+                folderComboBox,
+                I18n.get("quickNote.menu.moveToFolder"),
+                JOptionPane.OK_CANCEL_OPTION,
+                JOptionPane.PLAIN_MESSAGE);
+        if (confirm != JOptionPane.OK_OPTION) {
+            return;
+        }
+        Object selected = folderComboBox.getSelectedItem();
+        String targetFolder = selected == null ? "" : selected.toString();
+        QuickNoteTreeDragDrop.moveNotes(
+                selectedNotes.stream().map(TQuickNote::getRelativePath).toList(),
+                targetFolder,
+                quickNoteForm.getNoteTree());
+    }
+
+    private static void deleteSelectedFolder(QuickNoteForm quickNoteForm) {
+        String folderPath = QuickNoteForm.getSelectedFolderPath();
+        if (StringUtils.isBlank(folderPath)) {
+            return;
+        }
+        if (!QuickNoteVaultUtil.isFolderEmpty(folderPath)) {
+            MsgUtil.info(App.mainFrame, "quickNote.folderNotEmpty");
+            return;
+        }
+        int confirm = MsgUtil.confirm(App.mainFrame, "quickNote.confirmDeleteFolder");
+        if (confirm != JOptionPane.YES_OPTION) {
+            return;
+        }
+        if (QuickNoteVaultUtil.deleteFolderIfEmpty(folderPath)) {
+            QuickNoteForm.initNoteList();
+            QuickNoteForm.updateGitButtonStatus();
+        }
+    }
+
+    private static void duplicateSelectedNotes(QuickNoteForm quickNoteForm) {
+        List<TQuickNote> selectedNotes = QuickNoteForm.getSelectedNotes();
+        if (selectedNotes.isEmpty()) {
+            MsgUtil.info(App.mainFrame, "msg.selectAtLeastOne");
+            return;
+        }
+        String lastPath = null;
+        for (TQuickNote note : selectedNotes) {
+            TQuickNote copy = QuickNoteVaultUtil.duplicateNote(note.getRelativePath());
+            if (copy != null) {
+                lastPath = copy.getRelativePath();
+            }
+        }
+        if (StringUtils.isNotBlank(lastPath)) {
+            selectedPath = lastPath;
+            TQuickNote copied = QuickNoteVaultUtil.loadByPath(lastPath);
+            if (copied != null) {
+                selectedName = copied.getName();
+            }
+            QuickNoteForm.initNoteList();
+            QuickNoteForm.updateGitButtonStatus();
+        }
+    }
+
+    private static void exportSelectedNotes(QuickNoteForm quickNoteForm) {
+        try {
+            List<TQuickNote> selectedNotes = QuickNoteForm.getSelectedNotes();
+            if (selectedNotes.isEmpty()) {
+                MsgUtil.info(quickNoteForm.getQuickNotePanel(), "msg.selectAtLeastOne");
+                return;
+            }
+            SystemFileChooser fileChooser = new SystemFileChooser(App.config.getQuickNoteExportPath());
+            fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
+            int approve = fileChooser.showOpenDialog(quickNoteForm.getQuickNotePanel());
+            String exportPath;
+            if (approve == SystemFileChooser.APPROVE_OPTION) {
+                exportPath = fileChooser.getSelectedFile().getAbsolutePath();
+                App.config.setQuickNoteExportPath(exportPath);
+                App.config.save();
+            } else {
+                return;
+            }
+
+            Set<String> usedExportNames = new HashSet<>();
+            for (TQuickNote note : selectedNotes) {
+                TQuickNote fullNote = QuickNoteVaultUtil.loadByPath(note.getRelativePath());
+                if (fullNote == null) {
+                    continue;
+                }
+                String targetName = buildExportFileName(fullNote);
+                int suffix = 1;
+                String uniqueName = targetName;
+                while (usedExportNames.contains(uniqueName)) {
+                    String base = targetName.substring(0, targetName.length() - QuickNoteVaultUtil.TXT_EXTENSION.length());
+                    uniqueName = base + "-" + suffix + QuickNoteVaultUtil.TXT_EXTENSION;
+                    suffix++;
+                }
+                usedExportNames.add(uniqueName);
+                File exportFile = FileUtil.touch(exportPath + File.separator + uniqueName);
+                FileUtil.writeUtf8String(fullNote.getContent(), exportFile);
+            }
+            MsgUtil.success(quickNoteForm.getQuickNotePanel(), "msg.exportSuccess");
+            try {
+                Desktop desktop = Desktop.getDesktop();
+                desktop.open(new File(exportPath));
+            } catch (Exception e2) {
+                log.error(ExceptionUtils.getStackTrace(e2));
+            }
+        } catch (Exception e1) {
+            MsgUtil.errorWithDetail(quickNoteForm.getQuickNotePanel(), "msg.exportFailed", e1.getMessage());
+            log.error(ExceptionUtils.getStackTrace(e1));
+        }
+    }
+
+    private static String buildExportFileName(TQuickNote note) {
+        String relativePath = QuickNoteVaultUtil.normalizeRelativePath(note.getRelativePath());
+        String base;
+        if (StringUtils.isNotBlank(relativePath)) {
+            if (relativePath.endsWith(QuickNoteVaultUtil.TXT_EXTENSION)) {
+                relativePath = relativePath.substring(0,
+                        relativePath.length() - QuickNoteVaultUtil.TXT_EXTENSION.length());
+            }
+            base = relativePath.replace('/', '-').replace('\\', '-');
+        } else {
+            base = QuickNoteVaultUtil.sanitizeFileName(note.getName());
+        }
+        return QuickNoteVaultUtil.sanitizeFileName(base) + QuickNoteVaultUtil.TXT_EXTENSION;
     }
 
     /**
@@ -596,6 +736,9 @@ public class QuickNoteListener {
             QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
             QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
             RSyntaxTextArea view = QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea();
+            if (view == null) {
+                return;
+            }
 
             String content = view.getText();
 
@@ -806,34 +949,78 @@ public class QuickNoteListener {
 
     }
 
-    private static void renameSelectedNote(QuickNoteForm quickNoteForm) {
-        int selectedIndex = quickNoteForm.getNoteList().getSelectedIndex();
-        if (selectedIndex < 0) {
+    private static void renameSelectedItem(QuickNoteForm quickNoteForm) {
+        TQuickNote note = QuickNoteForm.getSelectedTreeNote();
+        if (note != null) {
+            renameSelectedNote(quickNoteForm, note);
             return;
         }
-        DefaultListModel<TQuickNote> model = (DefaultListModel<TQuickNote>) quickNoteForm.getNoteList().getModel();
-        TQuickNote note = model.getElementAt(selectedIndex);
-        String beforeName = note.getName();
-        if (StringUtils.isBlank(beforeName)) {
+        String folderPath = QuickNoteForm.getSelectedFolderPath();
+        if (StringUtils.isBlank(folderPath) || !isFolderNodeSelected(quickNoteForm.getNoteTree())) {
             return;
         }
-        suppressListEnterRename = true;
-        String afterName = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), beforeName);
+        String beforeName = QuickNoteVaultUtil.folderLeafName(folderPath);
+        String afterName = promptNameSuppressingTreeEnter(beforeName);
         if (StringUtils.isBlank(afterName) || afterName.equals(beforeName)) {
+            suppressListEnterRename = false;
             return;
         }
         try {
-            TQuickNote tQuickNoteBefore = quickNoteMapper.selectByPrimaryKey(note.getId());
-            TQuickNote tQuickNote = new TQuickNote();
-            tQuickNote.setId(note.getId());
-            tQuickNote.setName(afterName);
-            quickNoteMapper.updateByPrimaryKeySelective(tQuickNote);
-            selectedName = afterName;
-            note.setName(afterName);
-            model.set(selectedIndex, note);
-            QuickNoteEditorPanel editorPanel = QuickNoteForm.quickNoteRSyntaxTextViewerManager.getEditorPanel(afterName);
-            quickNoteForm.getContentSplitPane().setLeftComponent(editorPanel);
-            QuickNoteForm.quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(tQuickNoteBefore.getName());
+            List<String> affectedPaths = QuickNoteVaultUtil.listNotePathsUnderFolder(folderPath);
+            if (StringUtils.isNotBlank(selectedPath) && affectedPaths.contains(selectedPath)) {
+                flushSelectedNoteBeforePathChange();
+            }
+            runNotePathMutation(() -> {
+                String newFolderPath = QuickNoteVaultUtil.renameFolder(folderPath, afterName);
+                for (String oldPath : affectedPaths) {
+                    QuickNoteForm.quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(oldPath);
+                }
+                if (StringUtils.isNotBlank(selectedPath)) {
+                    selectedPath = QuickNoteVaultUtil.remapPathAfterFolderRename(selectedPath, folderPath, newFolderPath);
+                }
+                QuickNoteForm.initNoteList();
+                QuickNoteForm.updateGitButtonStatus();
+            }, affectedPaths.toArray(new String[0]));
+        } catch (Exception e) {
+            MsgUtil.info(App.mainFrame, "msg.renameFolderFailed");
+            QuickNoteForm.initNoteList();
+            log.error(ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    private static void revealSelectedInFileManager(QuickNoteForm quickNoteForm) {
+        List<TQuickNote> selectedNotes = QuickNoteForm.getSelectedNotes();
+        if (!selectedNotes.isEmpty()) {
+            QuickNoteVaultUtil.revealInFileManager(selectedNotes.get(0).getRelativePath());
+            return;
+        }
+        if (isFolderNodeSelected(quickNoteForm.getNoteTree())) {
+            QuickNoteVaultUtil.revealInFileManager(QuickNoteForm.getSelectedFolderPath());
+        }
+    }
+
+    private static void renameSelectedNote(QuickNoteForm quickNoteForm, TQuickNote note) {
+        String beforeName = note.getName();
+        String beforePath = note.getRelativePath();
+        if (StringUtils.isBlank(beforeName) || StringUtils.isBlank(beforePath)) {
+            return;
+        }
+        String afterName = promptNameSuppressingTreeEnter(beforeName);
+        if (StringUtils.isBlank(afterName) || afterName.equals(beforeName)) {
+            suppressListEnterRename = false;
+            return;
+        }
+        try {
+            if (beforePath.equals(selectedPath)) {
+                flushSelectedNoteBeforePathChange();
+            }
+            runNotePathMutation(() -> {
+                String newPath = QuickNoteVaultUtil.renameNote(beforePath, afterName);
+                selectedPath = newPath;
+                selectedName = afterName;
+                QuickNoteForm.quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(beforePath);
+                QuickNoteForm.initNoteList();
+            }, beforePath);
         } catch (Exception e) {
             MsgUtil.info(App.mainFrame, "msg.renameNoteFailed");
             QuickNoteForm.initNoteList();
@@ -848,35 +1035,48 @@ public class QuickNoteListener {
      */
     private static void deleteFiles(QuickNoteForm quickNoteForm) {
         try {
-            int[] selectedIndices = quickNoteForm.getNoteList().getSelectedIndices();
-
-            if (selectedIndices.length == 0) {
+            List<TQuickNote> selectedNotes = QuickNoteForm.getSelectedNotes();
+            if (selectedNotes.isEmpty()) {
                 MsgUtil.info(App.mainFrame, "msg.selectAtLeastOne");
             } else {
                 int isDelete = MsgUtil.confirm(App.mainFrame, "msg.confirmDelete");
                 if (isDelete == JOptionPane.YES_OPTION) {
-                    DefaultListModel<TQuickNote> listModel = (DefaultListModel<TQuickNote>) quickNoteForm.getNoteList().getModel();
+                    List<String> deletedPaths = selectedNotes.stream()
+                            .map(TQuickNote::getRelativePath)
+                            .filter(StringUtils::isNotBlank)
+                            .toList();
                     List<String> deletedNoteContents = new ArrayList<>();
 
-                    for (int selectedIndex : selectedIndices) {
-                        TQuickNote listNote = listModel.getElementAt(selectedIndex);
-                        Integer id = listNote.getId();
-                        String name = listNote.getName();
-                        TQuickNote dbNote = quickNoteMapper.selectByPrimaryKey(id);
-                        if (dbNote != null && StringUtils.isNotBlank(dbNote.getContent())) {
-                            deletedNoteContents.add(dbNote.getContent());
+                    QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
+                    try {
+                        QuickNoteVaultRefreshCoordinator.addSkipSavePaths(deletedPaths);
+                        for (String path : deletedPaths) {
+                            QuickNoteForm.quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(path);
                         }
-                        quickNoteMapper.deleteByPrimaryKey(id);
-                        QuickNoteForm.quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(name);
+                        if (StringUtils.isNotBlank(selectedPath) && deletedPaths.contains(selectedPath)) {
+                            selectedPath = null;
+                            selectedName = null;
+                        }
+                        drainPendingSaves();
+
+                        for (TQuickNote listNote : selectedNotes) {
+                            String path = listNote.getRelativePath();
+                            TQuickNote fileNote = QuickNoteVaultUtil.loadByPath(path);
+                            if (fileNote != null && StringUtils.isNotBlank(fileNote.getContent())) {
+                                deletedNoteContents.add(fileNote.getContent());
+                            }
+                            QuickNoteVaultUtil.deleteByPath(path);
+                        }
+                        drainPendingSaves();
+                    } finally {
+                        QuickNoteVaultRefreshCoordinator.clearSkipSavePaths();
+                        QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
                     }
 
-                    List<String> remainingNoteContents = quickNoteMapper.selectAll().stream()
-                            .map(TQuickNote::getContent)
-                            .collect(Collectors.toList());
+                    List<String> remainingNoteContents = QuickNoteVaultUtil.listAllBodies();
                     QuickNoteAttachmentUtil.cleanupAttachmentsForDeletedNotes(
                             deletedNoteContents, remainingNoteContents);
 
-                    selectedName = null;
                     QuickNoteForm.initNoteList();
                 }
             }
@@ -891,63 +1091,138 @@ public class QuickNoteListener {
      *
      * @param refreshModifiedTime
      */
-    public static void quickSave(boolean refreshModifiedTime, boolean writeLog) {
+    public static Future<?> quickSave(boolean refreshModifiedTime, boolean writeLog) {
+        return quickSave(refreshModifiedTime, writeLog, writeLog);
+    }
 
-        executorService.submit(() -> {
-            String now = SqliteUtil.nowDateForSqlite();
-            if (selectedName != null) {
-                TQuickNote existingNote = quickNoteMapper.selectByName(selectedName);
-                String oldContent = existingNote != null ? existingNote.getContent() : "";
-
-                TQuickNote tQuickNote = new TQuickNote();
-                tQuickNote.setName(selectedName);
-
-                String text = QuickNoteForm.quickNoteRSyntaxTextViewerManager.getTextByName(selectedName);
-                if (writeLog) {
-                    log.info("save note: " + selectedName + ", content: " + text);
+    public static Future<?> quickSave(boolean refreshModifiedTime, boolean writeLog, boolean notifyUser) {
+        if (!SwingUtilities.isEventDispatchThread()) {
+            java.util.concurrent.CompletableFuture<Void> bridge = new java.util.concurrent.CompletableFuture<>();
+            SwingUtilities.invokeLater(() -> {
+                try {
+                    quickSave(refreshModifiedTime, writeLog, notifyUser).get();
+                    bridge.complete(null);
+                } catch (Exception ex) {
+                    bridge.completeExceptionally(ex);
                 }
-                tQuickNote.setContent(text);
-                if (refreshModifiedTime) {
-                    tQuickNote.setModifiedTime(now);
+            });
+            return bridge;
+        }
+
+        final String path = selectedPath;
+        final String name = selectedName;
+        String editorText = null;
+        if (path != null && QuickNoteForm.quickNoteRSyntaxTextViewerManager != null) {
+            editorText = QuickNoteForm.quickNoteRSyntaxTextViewerManager.getTextByPath(path);
+        }
+        final String capturedText = editorText;
+
+        QuickNoteVaultRefreshCoordinator.onSaveTaskStarted();
+        return executorService.submit(() -> {
+            try {
+                if (path != null && QuickNoteVaultRefreshCoordinator.shouldSkipSaveForPath(path)) {
+                    return;
+                }
+                String now = SqliteUtil.nowDateForSqlite();
+                if (path != null) {
+                    if (!QuickNoteVaultUtil.toAbsoluteFile(path).isFile()) {
+                        log.debug("Skip save for deleted or moved note: {}", path);
+                        return;
+                    }
+                    TQuickNote existingNote = QuickNoteVaultUtil.loadByPath(path);
+                    if (existingNote == null) {
+                        log.debug("Skip save for unreadable note: {}", path);
+                        return;
+                    }
+                    String oldContent = existingNote.getContent();
+
+                    TQuickNote tQuickNote = existingNote;
+                    tQuickNote.setRelativePath(path);
+                    if (StringUtils.isNotBlank(name)) {
+                        tQuickNote.setName(name);
+                    }
+
+                    String text = capturedText;
+                    if (writeLog) {
+                        log.info("save note: " + path + ", content: " + text);
+                    }
+                    tQuickNote.setContent(text);
+                    if (refreshModifiedTime) {
+                        tQuickNote.setModifiedTime(now);
+                    }
+
+                    QuickNoteVaultUtil.saveNote(tQuickNote, text);
+
+                    List<String> otherNotesContents = QuickNoteVaultUtil.listOtherBodies(path);
+                    QuickNoteAttachmentUtil.cleanupRemovedAttachments(oldContent, text, otherNotesContents);
                 }
 
-                quickNoteMapper.updateByName(tQuickNote);
-
-                List<String> otherNotesContents = quickNoteMapper.selectAll().stream()
-                        .filter(note -> !selectedName.equals(note.getName()))
-                        .map(TQuickNote::getContent)
-                        .collect(Collectors.toList());
-                QuickNoteAttachmentUtil.cleanupRemovedAttachments(oldContent, text, otherNotesContents);
+                if (notifyUser) {
+                    final String savedName = name;
+                    SwingUtilities.invokeLater(() -> QuickNoteIndicatorTools.showTips(
+                            I18n.format("quickNote.saved", savedName),
+                            QuickNoteIndicatorTools.TipsLevel.SUCCESS));
+                }
+                SwingUtilities.invokeLater(QuickNoteForm::updateGitButtonStatus);
+            } finally {
+                QuickNoteVaultRefreshCoordinator.onSaveTaskFinished();
             }
-
-            QuickNoteIndicatorTools.showTips(I18n.format("quickNote.saved", selectedName),
-                    QuickNoteIndicatorTools.TipsLevel.SUCCESS);
         });
+    }
 
+    public static void quickSaveSync(boolean refreshModifiedTime, boolean writeLog) {
+        quickSaveSync(refreshModifiedTime, writeLog, writeLog);
+    }
+
+    public static void quickSaveSync(boolean refreshModifiedTime, boolean writeLog, boolean notifyUser) {
+        try {
+            quickSave(refreshModifiedTime, writeLog, notifyUser).get(60, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.error("Quick note save failed: {}", ExceptionUtils.getStackTrace(e));
+        }
+    }
+
+    static void drainPendingSaves() {
+        try {
+            executorService.submit(() -> {}).get(60, TimeUnit.SECONDS);
+        } catch (Exception e) {
+            log.warn("Drain pending quick-note saves failed: {}", e.getMessage());
+        }
+    }
+
+    public static void flushSelectedNoteBeforePathChange() {
+        if (StringUtils.isNotBlank(selectedPath)) {
+            quickSaveSync(true, false, false);
+        }
+    }
+
+    public static void runNotePathMutation(Runnable mutation, String... pathsToSkip) {
+        QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
+        try {
+            QuickNoteVaultRefreshCoordinator.addSkipSavePaths(List.of(pathsToSkip));
+            drainPendingSaves();
+            mutation.run();
+            drainPendingSaves();
+        } finally {
+            QuickNoteVaultRefreshCoordinator.clearSkipSavePaths();
+            QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
+        }
     }
 
     /**
      * create new Note
      */
     public static void newNote() {
-        String name = getDefaultFileName();
-        name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), name);
+        String name = promptNameSuppressingTreeEnter(getDefaultFileName());
         if (StringUtils.isNotBlank(name)) {
-            TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
-            if (tQuickNote == null) {
-                tQuickNote = new TQuickNote();
-            } else {
+            String folderPath = QuickNoteForm.getSelectedFolderPath();
+            if (QuickNoteVaultUtil.noteTitleExistsInFolder(name, folderPath)) {
                 MsgUtil.info(App.mainFrame, "msg.duplicateNoteName");
                 return;
             }
-            String now = SqliteUtil.nowDateForSqlite();
-            tQuickNote.setName(name);
-            tQuickNote.setCreateTime(now);
-            tQuickNote.setModifiedTime(now);
-            tQuickNote.setSyntax(SyntaxConstants.SYNTAX_STYLE_NONE);
-            tQuickNote.setFontName(App.config.getQuickNoteFontName());
-            tQuickNote.setFontSize(String.valueOf(App.config.getFontSize()));
-            quickNoteMapper.insert(tQuickNote);
+            TQuickNote created = QuickNoteVaultUtil.createNote(name, folderPath);
+            selectedPath = created.getRelativePath();
+            selectedName = created.getName();
             QuickNoteForm.initNoteList();
         }
     }
@@ -988,6 +1263,9 @@ public class QuickNoteListener {
         StringBuilder result = new StringBuilder();
         String[] strings = split.split("_");
         for (String str : strings) {
+            if (StringUtils.isEmpty(str)) {
+                continue;
+            }
             if (result.length() == 0) {
                 result.append(str.toLowerCase());
             } else {
@@ -1036,8 +1314,11 @@ public class QuickNoteListener {
      */
     public static void format() {
         try {
+            if (StringUtils.isBlank(selectedPath)) {
+                return;
+            }
             QuickNoteForm quickNoteForm = QuickNoteForm.getInstance();
-            final String text = QuickNoteForm.quickNoteRSyntaxTextViewerManager.getTextByName(selectedName);
+            final String text = QuickNoteForm.quickNoteRSyntaxTextViewerManager.getTextByPath(selectedPath);
             final String selectedSyntax = (String) quickNoteForm.getSyntaxComboBox().getSelectedItem();
             if (StringUtils.isBlank(text) || StringUtils.isEmpty(selectedSyntax)) {
                 return;
@@ -1105,8 +1386,13 @@ public class QuickNoteListener {
                     final String result = formatted;
                     SwingUtilities.invokeLater(() -> {
                         try {
-                            QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setText(result);
-                            QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea().setCaretPosition(0);
+                            RSyntaxTextArea editor =
+                                    QuickNoteForm.quickNoteRSyntaxTextViewerManager.getCurrentRSyntaxTextArea();
+                            if (editor == null) {
+                                return;
+                            }
+                            editor.setText(result);
+                            editor.setCaretPosition(0);
                             QuickNoteIndicatorTools.showTips(I18n.format("quickNote.formatted", selectedName),
                                     QuickNoteIndicatorTools.TipsLevel.SUCCESS);
                         } catch (Exception ex) {

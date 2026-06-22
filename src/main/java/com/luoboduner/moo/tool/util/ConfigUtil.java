@@ -552,12 +552,168 @@ public class ConfigUtil extends ConfigBaseUtil {
         setting.putByGroup("quickNoteExportPath", "func.quickNote", quickNoteExportPath);
     }
 
+    public String getQuickNoteVaultPath() {
+        return setting.getStr("quickNoteVaultPath", "func.quickNote", "");
+    }
+
+    public void setQuickNoteVaultPath(String quickNoteVaultPath) {
+        setting.putByGroup("quickNoteVaultPath", "func.quickNote", quickNoteVaultPath);
+    }
+
+    public boolean isQuickNoteAutoGitCommit() {
+        return setting.getBool("quickNoteAutoGitCommit", "func.quickNote", true);
+    }
+
+    public void setQuickNoteAutoGitCommit(boolean quickNoteAutoGitCommit) {
+        setting.putByGroup("quickNoteAutoGitCommit", "func.quickNote", String.valueOf(quickNoteAutoGitCommit));
+    }
+
+    public int getQuickNoteAutoGitIdleSeconds() {
+        return setting.getInt("quickNoteAutoGitIdleSeconds", "func.quickNote", 30);
+    }
+
+    public void setQuickNoteAutoGitIdleSeconds(int quickNoteAutoGitIdleSeconds) {
+        setting.putByGroup("quickNoteAutoGitIdleSeconds", "func.quickNote",
+                String.valueOf(quickNoteAutoGitIdleSeconds));
+    }
+
+    public int getQuickNoteAutoGitInactiveSeconds() {
+        return setting.getInt("quickNoteAutoGitInactiveSeconds", "func.quickNote", 120);
+    }
+
+    public void setQuickNoteAutoGitInactiveSeconds(int quickNoteAutoGitInactiveSeconds) {
+        setting.putByGroup("quickNoteAutoGitInactiveSeconds", "func.quickNote",
+                String.valueOf(quickNoteAutoGitInactiveSeconds));
+    }
+
+    public String getQuickNoteGitRemoteUrl() {
+        return setting.getStr("quickNoteGitRemoteUrl", "func.quickNote", "");
+    }
+
+    public void setQuickNoteGitRemoteUrl(String quickNoteGitRemoteUrl) {
+        setting.putByGroup("quickNoteGitRemoteUrl", "func.quickNote", quickNoteGitRemoteUrl);
+    }
+
+    public int getQuickNoteAutoPullIntervalMinutes() {
+        return setting.getInt("quickNoteAutoPullIntervalMinutes", "func.quickNote", 5);
+    }
+
+    public void setQuickNoteAutoPullIntervalMinutes(int quickNoteAutoPullIntervalMinutes) {
+        setting.putByGroup("quickNoteAutoPullIntervalMinutes", "func.quickNote",
+                String.valueOf(quickNoteAutoPullIntervalMinutes));
+    }
+
+    public boolean isQuickNoteHideGitignoredFiles() {
+        return setting.getBool("quickNoteHideGitignoredFiles", "func.quickNote", true);
+    }
+
+    public void setQuickNoteHideGitignoredFiles(boolean quickNoteHideGitignoredFiles) {
+        setting.putByGroup("quickNoteHideGitignoredFiles", "func.quickNote",
+                String.valueOf(quickNoteHideGitignoredFiles));
+    }
+
+    public String getQuickNoteListSortMode() {
+        return setting.getStr("quickNoteListSortMode", "func.quickNote",
+                QuickNoteListSortMode.MODIFIED_TIME.name());
+    }
+
+    public void setQuickNoteListSortMode(String quickNoteListSortMode) {
+        setting.putByGroup("quickNoteListSortMode", "func.quickNote", quickNoteListSortMode);
+    }
+
+    public String getQuickNoteTreeExpandMode() {
+        return setting.getStr("quickNoteTreeExpandMode", "func.quickNote",
+                VaultTreeExpandMode.EXPAND_ALL.name());
+    }
+
+    public void setQuickNoteTreeExpandMode(String quickNoteTreeExpandMode) {
+        setting.putByGroup("quickNoteTreeExpandMode", "func.quickNote", quickNoteTreeExpandMode);
+    }
+
     public String getJsonBeautyExportPath() {
         return setting.getStr("jsonBeautyExportPath", "func.jsonBeauty", "");
     }
 
     public void setJsonBeautyExportPath(String jsonBeautyExportPath) {
         setting.putByGroup("jsonBeautyExportPath", "func.jsonBeauty", jsonBeautyExportPath);
+    }
+
+    public String getJsonBeautyVaultPath() {
+        return setting.getStr("jsonBeautyVaultPath", "func.jsonBeauty", "");
+    }
+
+    public void setJsonBeautyVaultPath(String jsonBeautyVaultPath) {
+        setting.putByGroup("jsonBeautyVaultPath", "func.jsonBeauty", jsonBeautyVaultPath);
+    }
+
+    public String getJsonBeautyGitRemoteUrl() {
+        return setting.getStr("jsonBeautyGitRemoteUrl", "func.jsonBeauty", "");
+    }
+
+    public void setJsonBeautyGitRemoteUrl(String jsonBeautyGitRemoteUrl) {
+        setting.putByGroup("jsonBeautyGitRemoteUrl", "func.jsonBeauty", jsonBeautyGitRemoteUrl);
+    }
+
+    public boolean isJsonBeautyAutoGitCommit() {
+        return setting.getBool("jsonBeautyAutoGitCommit", "func.jsonBeauty", true);
+    }
+
+    public void setJsonBeautyAutoGitCommit(boolean jsonBeautyAutoGitCommit) {
+        setting.putByGroup("jsonBeautyAutoGitCommit", "func.jsonBeauty", String.valueOf(jsonBeautyAutoGitCommit));
+    }
+
+    public int getJsonBeautyAutoGitIdleSeconds() {
+        return setting.getInt("jsonBeautyAutoGitIdleSeconds", "func.jsonBeauty", 30);
+    }
+
+    public void setJsonBeautyAutoGitIdleSeconds(int jsonBeautyAutoGitIdleSeconds) {
+        setting.putByGroup("jsonBeautyAutoGitIdleSeconds", "func.jsonBeauty",
+                String.valueOf(jsonBeautyAutoGitIdleSeconds));
+    }
+
+    public int getJsonBeautyAutoGitInactiveSeconds() {
+        return setting.getInt("jsonBeautyAutoGitInactiveSeconds", "func.jsonBeauty", 120);
+    }
+
+    public void setJsonBeautyAutoGitInactiveSeconds(int jsonBeautyAutoGitInactiveSeconds) {
+        setting.putByGroup("jsonBeautyAutoGitInactiveSeconds", "func.jsonBeauty",
+                String.valueOf(jsonBeautyAutoGitInactiveSeconds));
+    }
+
+    public int getJsonBeautyAutoPullIntervalMinutes() {
+        return setting.getInt("jsonBeautyAutoPullIntervalMinutes", "func.jsonBeauty", 5);
+    }
+
+    public void setJsonBeautyAutoPullIntervalMinutes(int jsonBeautyAutoPullIntervalMinutes) {
+        setting.putByGroup("jsonBeautyAutoPullIntervalMinutes", "func.jsonBeauty",
+                String.valueOf(jsonBeautyAutoPullIntervalMinutes));
+    }
+
+    public boolean isJsonBeautyHideGitignoredFiles() {
+        return setting.getBool("jsonBeautyHideGitignoredFiles", "func.jsonBeauty", true);
+    }
+
+    public void setJsonBeautyHideGitignoredFiles(boolean jsonBeautyHideGitignoredFiles) {
+        setting.putByGroup("jsonBeautyHideGitignoredFiles", "func.jsonBeauty",
+                String.valueOf(jsonBeautyHideGitignoredFiles));
+    }
+
+    public String getJsonBeautyListSortMode() {
+        return setting.getStr("jsonBeautyListSortMode", "func.jsonBeauty",
+                JsonBeautyListSortMode.MODIFIED_TIME.name());
+    }
+
+    public void setJsonBeautyListSortMode(String jsonBeautyListSortMode) {
+        setting.putByGroup("jsonBeautyListSortMode", "func.jsonBeauty", jsonBeautyListSortMode);
+    }
+
+    public String getJsonBeautyTreeExpandMode() {
+        return setting.getStr("jsonBeautyTreeExpandMode", "func.jsonBeauty",
+                VaultTreeExpandMode.EXPAND_ALL.name());
+    }
+
+    public void setJsonBeautyTreeExpandMode(String jsonBeautyTreeExpandMode) {
+        setting.putByGroup("jsonBeautyTreeExpandMode", "func.jsonBeauty", jsonBeautyTreeExpandMode);
     }
 
     public String getImageExportPath() {
