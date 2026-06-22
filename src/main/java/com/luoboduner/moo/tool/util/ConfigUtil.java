@@ -629,6 +629,66 @@ public class ConfigUtil extends ConfigBaseUtil {
         setting.putByGroup("jsonBeautyExportPath", "func.jsonBeauty", jsonBeautyExportPath);
     }
 
+    public String getJsonBeautyVaultPath() {
+        return setting.getStr("jsonBeautyVaultPath", "func.jsonBeauty", "");
+    }
+
+    public void setJsonBeautyVaultPath(String jsonBeautyVaultPath) {
+        setting.putByGroup("jsonBeautyVaultPath", "func.jsonBeauty", jsonBeautyVaultPath);
+    }
+
+    public String getJsonBeautyGitRemoteUrl() {
+        return setting.getStr("jsonBeautyGitRemoteUrl", "func.jsonBeauty", "");
+    }
+
+    public void setJsonBeautyGitRemoteUrl(String jsonBeautyGitRemoteUrl) {
+        setting.putByGroup("jsonBeautyGitRemoteUrl", "func.jsonBeauty", jsonBeautyGitRemoteUrl);
+    }
+
+    public boolean isJsonBeautyAutoGitCommit() {
+        return setting.getBool("jsonBeautyAutoGitCommit", "func.jsonBeauty", true);
+    }
+
+    public void setJsonBeautyAutoGitCommit(boolean jsonBeautyAutoGitCommit) {
+        setting.putByGroup("jsonBeautyAutoGitCommit", "func.jsonBeauty", String.valueOf(jsonBeautyAutoGitCommit));
+    }
+
+    public int getJsonBeautyAutoGitIdleSeconds() {
+        return setting.getInt("jsonBeautyAutoGitIdleSeconds", "func.jsonBeauty", 30);
+    }
+
+    public void setJsonBeautyAutoGitIdleSeconds(int jsonBeautyAutoGitIdleSeconds) {
+        setting.putByGroup("jsonBeautyAutoGitIdleSeconds", "func.jsonBeauty",
+                String.valueOf(jsonBeautyAutoGitIdleSeconds));
+    }
+
+    public int getJsonBeautyAutoGitInactiveSeconds() {
+        return setting.getInt("jsonBeautyAutoGitInactiveSeconds", "func.jsonBeauty", 120);
+    }
+
+    public void setJsonBeautyAutoGitInactiveSeconds(int jsonBeautyAutoGitInactiveSeconds) {
+        setting.putByGroup("jsonBeautyAutoGitInactiveSeconds", "func.jsonBeauty",
+                String.valueOf(jsonBeautyAutoGitInactiveSeconds));
+    }
+
+    public int getJsonBeautyAutoPullIntervalMinutes() {
+        return setting.getInt("jsonBeautyAutoPullIntervalMinutes", "func.jsonBeauty", 5);
+    }
+
+    public void setJsonBeautyAutoPullIntervalMinutes(int jsonBeautyAutoPullIntervalMinutes) {
+        setting.putByGroup("jsonBeautyAutoPullIntervalMinutes", "func.jsonBeauty",
+                String.valueOf(jsonBeautyAutoPullIntervalMinutes));
+    }
+
+    public boolean isJsonBeautyHideGitignoredFiles() {
+        return setting.getBool("jsonBeautyHideGitignoredFiles", "func.jsonBeauty", true);
+    }
+
+    public void setJsonBeautyHideGitignoredFiles(boolean jsonBeautyHideGitignoredFiles) {
+        setting.putByGroup("jsonBeautyHideGitignoredFiles", "func.jsonBeauty",
+                String.valueOf(jsonBeautyHideGitignoredFiles));
+    }
+
     public String getImageExportPath() {
         return setting.getStr("imageExportPath", "func.image", "");
     }

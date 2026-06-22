@@ -8,7 +8,7 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
+import com.luoboduner.moo.tool.domain.QuickNoteGitStatus;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.SplitPaneUtil;
@@ -16,9 +16,16 @@ import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.component.PanelCloseUtil;
 import com.luoboduner.moo.tool.ui.component.textviewer.JsonRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.textviewer.JsonRTextScrollPane;
+import com.luoboduner.moo.tool.ui.dialog.JsonBeautyGitDialog;
 import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.I18nUiUtil;
-import com.luoboduner.moo.tool.util.MybatisUtil;
+import com.luoboduner.moo.tool.util.JsonBeautyAutoGitScheduler;
+import com.luoboduner.moo.tool.util.JsonBeautyAutoPullScheduler;
+import com.luoboduner.moo.tool.util.JsonBeautyVaultRefreshCoordinator;
+import com.luoboduner.moo.tool.util.JsonBeautyVaultUtil;
+import com.luoboduner.moo.tool.util.JsonBeautyVaultWatcher;
+import com.luoboduner.moo.tool.util.QuickNoteGitUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
@@ -76,11 +83,11 @@ public class JsonBeautyForm {
     private JButton jsonToJavaBeanButton;
     private JButton keyValueSwapButton;
     private JPanel leftMenuPanel;
+    private JButton gitButton;
+    private JButton vaultSettingsButton;
 
     private static JsonBeautyForm jsonBeautyForm;
     private static boolean i18nRegistered;
-    private static TJsonBeautyMapper jsonBeautyMapper = MybatisUtil.getSqlSession().getMapper(TJsonBeautyMapper.class);
-
     private JsonRSyntaxTextViewer textArea;
     private JsonRTextScrollPane scrollPane;
     private JToolBar leftMenuToolBar;
@@ -164,6 +171,14 @@ public class JsonBeautyForm {
         moreButton = new JButton();
         moreButton.setText("");
 
+        gitButton = new JButton();
+        gitButton.setText("");
+        gitButton.setToolTipText("Git");
+        vaultSettingsButton = new JButton();
+        vaultSettingsButton.setText("");
+        vaultSettingsButton.setIcon(new FlatSVGIcon("icon/host.svg"));
+        vaultSettingsButton.setToolTipText("Vault settings");
+
         actionToolBar = new JToolBar();
         ToolbarUiUtil.configure(actionToolBar);
         actionToolBar.add(addButton);
@@ -176,6 +191,9 @@ public class JsonBeautyForm {
         actionToolBar.add(compressButton);
         actionToolBar.add(beautifyButton);
         actionToolBar.add(moreButton);
+        ToolbarUiUtil.addGroupSeparator(actionToolBar);
+        actionToolBar.add(vaultSettingsButton);
+        actionToolBar.add(gitButton);
         actionToolBarPanel.add(actionToolBar, BorderLayout.EAST);
 
         UndoUtil.register(this);
@@ -199,6 +217,11 @@ public class JsonBeautyForm {
 
         JsonBeautyListener.addListeners();
 
+        JsonBeautyVaultWatcher.start();
+        JsonBeautyAutoGitScheduler.start();
+        JsonBeautyAutoPullScheduler.start();
+        updateGitButtonStatus();
+
         jsonBeautyForm.applyI18n();
         if (!i18nRegistered) {
             I18nUiUtil.register(JsonBeautyForm::applyI18nStatic);
@@ -219,6 +242,8 @@ public class JsonBeautyForm {
         I18nUiUtil.setToolTip(compressButton, "json.tooltip.compress");
         I18nUiUtil.setToolTip(beautifyButton, "quickNote.tooltip.format");
         I18nUiUtil.setToolTip(moreButton, "json.tooltip.more");
+        I18nUiUtil.setToolTip(gitButton, "jsonBeauty.tooltip.git");
+        I18nUiUtil.setToolTip(vaultSettingsButton, "jsonBeauty.tooltip.vaultSettings");
         I18nUiUtil.setToolTip(listItemButton, "quickNote.tooltip.toggleList");
         I18nUiUtil.setToolTip(moreCloseButton, "quickNote.tooltip.close");
 
@@ -259,6 +284,7 @@ public class JsonBeautyForm {
         jsonBeautyForm.getMoreButton().setIcon(new FlatSVGIcon("icon/more.svg"));
         jsonBeautyForm.getDeleteButton().setIcon(new FlatSVGIcon("icon/remove.svg"));
         jsonBeautyForm.getExportButton().setIcon(new FlatSVGIcon("icon/export.svg"));
+        jsonBeautyForm.getGitButton().setIcon(new FlatSVGIcon("icon/diff.svg"));
         jsonBeautyForm.getListItemButton().setIcon(new FlatSVGIcon("icon/list.svg"));
         jsonBeautyForm.getWrapButton().setIcon(new FlatSVGIcon("icon/wrap.svg"));
         PanelCloseUtil.installTrailingCloseButton(jsonBeautyForm.getMoreCloseButton(),
@@ -293,6 +319,15 @@ public class JsonBeautyForm {
     }
 
     public static void initList() {
+        populateListModel(null);
+    }
+
+    public static void refreshList() {
+        populateListModel(JsonBeautyListener.selectedPathJson);
+        updateGitButtonStatus();
+    }
+
+    private static void populateListModel(String preservePath) {
         DefaultListModel<TJsonBeauty> model = new DefaultListModel<>();
         JList<TJsonBeauty> noteList = jsonBeautyForm.getNoteList();
         noteList.setModel(model);
@@ -306,15 +341,25 @@ public class JsonBeautyForm {
         });
 
         String titleFilterKeyWord = jsonBeautyForm.getSearchTextField().getText();
-        titleFilterKeyWord = "%" + titleFilterKeyWord + "%";
-
-        List<TJsonBeauty> jsonBeautyList = jsonBeautyMapper.selectByFilter(titleFilterKeyWord);
-        for (TJsonBeauty tJsonBeauty : jsonBeautyList) {
-            model.addElement(tJsonBeauty);
+        List<TJsonBeauty> jsonBeautyList = JsonBeautyVaultUtil.listByFilter(titleFilterKeyWord);
+        int selectIndex = -1;
+        for (int i = 0; i < jsonBeautyList.size(); i++) {
+            TJsonBeauty item = jsonBeautyList.get(i);
+            model.addElement(item);
+            if (preservePath != null && preservePath.equals(item.getRelativePath())) {
+                selectIndex = i;
+            }
         }
+
+        if (selectIndex >= 0) {
+            noteList.setSelectedIndex(selectIndex);
+            return;
+        }
+
         if (jsonBeautyList.size() > 0) {
             JsonBeautyListener.ignoreQuickSave = true;
             try {
+                JsonBeautyListener.selectedPathJson = jsonBeautyList.get(0).getRelativePath();
                 JsonBeautyListener.selectedNameJson = jsonBeautyList.get(0).getName();
                 jsonBeautyForm.getTextArea().setText(jsonBeautyList.get(0).getContent());
                 noteList.setSelectedIndex(0);
@@ -323,8 +368,126 @@ public class JsonBeautyForm {
             } finally {
                 JsonBeautyListener.ignoreQuickSave = false;
             }
-
+        } else {
+            JsonBeautyListener.ignoreQuickSave = true;
+            try {
+                JsonBeautyListener.selectedPathJson = null;
+                JsonBeautyListener.selectedNameJson = null;
+                jsonBeautyForm.getTextArea().setText("");
+            } finally {
+                JsonBeautyListener.ignoreQuickSave = false;
+            }
         }
+    }
+
+    public static void selectJsonInList(String relativePath) {
+        if (jsonBeautyForm == null || jsonBeautyForm.noteList == null || StringUtils.isBlank(relativePath)) {
+            return;
+        }
+        DefaultListModel<TJsonBeauty> model = (DefaultListModel<TJsonBeauty>) jsonBeautyForm.noteList.getModel();
+        for (int i = 0; i < model.size(); i++) {
+            TJsonBeauty item = model.getElementAt(i);
+            if (relativePath.equals(item.getRelativePath())) {
+                jsonBeautyForm.noteList.setSelectedIndex(i);
+                return;
+            }
+        }
+    }
+
+    public static void showJson(TJsonBeauty item) {
+        if (item == null) {
+            return;
+        }
+        JsonBeautyListener.ignoreQuickSave = true;
+        try {
+            JsonBeautyListener.selectedPathJson = item.getRelativePath();
+            JsonBeautyListener.selectedNameJson = item.getName();
+            jsonBeautyForm.getTextArea().setText(item.getContent());
+            jsonBeautyForm.getTextArea().setCaretPosition(0);
+        } finally {
+            JsonBeautyListener.ignoreQuickSave = false;
+        }
+    }
+
+    public static void reloadCurrentFromDiskIfClean() {
+        reloadCurrentFromDisk(false);
+    }
+
+    public static void reloadCurrentFromDisk(boolean force) {
+        if (!force && JsonBeautyVaultRefreshCoordinator.hasUnsavedChanges()) {
+            return;
+        }
+        String path = JsonBeautyListener.selectedPathJson;
+        if (StringUtils.isBlank(path)) {
+            return;
+        }
+        TJsonBeauty item = JsonBeautyVaultUtil.loadByPath(path);
+        JsonBeautyListener.ignoreQuickSave = true;
+        try {
+            if (item == null) {
+                jsonBeautyForm.getTextArea().setText("");
+                JsonBeautyListener.selectedPathJson = null;
+                JsonBeautyListener.selectedNameJson = null;
+            } else {
+                jsonBeautyForm.getTextArea().setText(item.getContent());
+            }
+        } finally {
+            JsonBeautyListener.ignoreQuickSave = false;
+        }
+    }
+
+    public static void reloadJsonAfterDiscard(String relativePath) {
+        if (StringUtils.isBlank(relativePath)) {
+            return;
+        }
+        String path = JsonBeautyVaultUtil.normalizeRelativePath(relativePath);
+        JsonBeautyVaultRefreshCoordinator.markInternalWrite();
+        if (!path.equals(JsonBeautyListener.selectedPathJson)) {
+            return;
+        }
+        reloadCurrentFromDisk(true);
+    }
+
+    public static void updateGitButtonStatus() {
+        if (jsonBeautyForm == null || jsonBeautyForm.gitButton == null) {
+            return;
+        }
+        SwingWorker<QuickNoteGitStatus, Void> worker = new SwingWorker<>() {
+            @Override
+            protected QuickNoteGitStatus doInBackground() {
+                return QuickNoteGitUtil.getStatus(JsonBeautyVaultUtil.getVaultDir());
+            }
+
+            @Override
+            protected void done() {
+                try {
+                    QuickNoteGitStatus status = get();
+                    JButton button = jsonBeautyForm.gitButton;
+                    if (!status.isGitRepo()) {
+                        button.setText("");
+                        I18nUiUtil.setToolTip(button, "jsonBeauty.tooltip.git");
+                        return;
+                    }
+                    int pending = status.getChangedCount() + status.getConflictCount();
+                    button.setText(pending > 0 ? String.valueOf(pending) : "");
+                    if (status.hasPendingChanges() || status.getAhead() > 0 || status.getBehind() > 0
+                            || StringUtils.isNotBlank(status.getBranch())) {
+                        button.setToolTipText(I18n.format("jsonBeauty.tooltip.gitStatus",
+                                StringUtils.defaultIfBlank(status.getBranch(), "-"),
+                                status.getChangedCount(),
+                                status.getConflictCount(),
+                                status.getAhead(),
+                                status.getBehind()));
+                    } else {
+                        I18nUiUtil.setToolTip(button, "jsonBeauty.tooltip.git");
+                    }
+                    JsonBeautyGitDialog.refreshIfVisible();
+                } catch (Exception ignored) {
+                    // ignore background status read failures
+                }
+            }
+        };
+        worker.execute();
     }
 
     public static void initTextAreaFont() {

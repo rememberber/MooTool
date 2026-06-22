@@ -6,12 +6,13 @@ import cn.hutool.json.JSONUtil;
 import com.formdev.flatlaf.util.FontUtils;
 import com.formdev.flatlaf.util.SystemFileChooser;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.dao.TJsonBeautyMapper;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
 import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
 import com.luoboduner.moo.tool.ui.component.SplitPaneUtil;
 import com.luoboduner.moo.tool.ui.dialog.JsonPathPickerDialog;
 import com.luoboduner.moo.tool.ui.dialog.JsonResultDialog;
+import com.luoboduner.moo.tool.ui.dialog.JsonBeautyGitDialog;
+import com.luoboduner.moo.tool.ui.dialog.JsonBeautySettingsUi;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
 import com.luoboduner.moo.tool.util.*;
@@ -41,9 +42,9 @@ import java.util.Date;
 @Slf4j
 public class JsonBeautyListener {
 
-    private static TJsonBeautyMapper jsonBeautyMapper = MybatisUtil.getSqlSession().getMapper(TJsonBeautyMapper.class);
-
     public static String selectedNameJson;
+
+    public static String selectedPathJson;
 
     public static boolean ignoreQuickSave;
 
@@ -67,22 +68,21 @@ public class JsonBeautyListener {
             }
             String name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), selectedNameJson);
             if (StringUtils.isNotBlank(name)) {
-                TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByName(name);
+                TJsonBeauty tJsonBeauty = JsonBeautyVaultUtil.loadByName(name);
                 if (tJsonBeauty == null) {
-                    tJsonBeauty = new TJsonBeauty();
+                    tJsonBeauty = JsonBeautyVaultUtil.createJson(name);
                 }
                 String now = SqliteUtil.nowDateForSqlite();
                 tJsonBeauty.setName(name);
                 tJsonBeauty.setContent(JsonBeautyForm.getInstance().getTextArea().getText());
                 tJsonBeauty.setCreateTime(now);
                 tJsonBeauty.setModifiedTime(now);
-                if (tJsonBeauty.getId() == null) {
-                    jsonBeautyMapper.insert(tJsonBeauty);
-                    JsonBeautyForm.initList();
-                    selectedNameJson = name;
-                } else {
-                    jsonBeautyMapper.updateByPrimaryKey(tJsonBeauty);
-                }
+                JsonBeautyVaultUtil.saveJson(tJsonBeauty, tJsonBeauty.getContent());
+                JsonBeautyVaultRefreshCoordinator.markInternalWrite();
+                JsonBeautyForm.refreshList();
+                JsonBeautyForm.updateGitButtonStatus();
+                selectedNameJson = name;
+                selectedPathJson = tJsonBeauty.getRelativePath();
 
             }
         });
@@ -144,6 +144,7 @@ public class JsonBeautyListener {
                 if (ignoreQuickSave) {
                     return;
                 }
+                JsonBeautyAutoGitScheduler.recordActivity();
                 quickSave(true);
             }
 
@@ -152,6 +153,7 @@ public class JsonBeautyListener {
                 if (ignoreQuickSave) {
                     return;
                 }
+                JsonBeautyAutoGitScheduler.recordActivity();
                 quickSave(true);
             }
 
@@ -160,6 +162,7 @@ public class JsonBeautyListener {
                 if (ignoreQuickSave) {
                     return;
                 }
+                JsonBeautyAutoGitScheduler.recordActivity();
                 quickSave(true);
             }
         });
@@ -278,7 +281,10 @@ public class JsonBeautyListener {
 
                     DefaultListModel<TJsonBeauty> listModel = (DefaultListModel<TJsonBeauty>) jsonBeautyForm.getNoteList().getModel();
                     for (int index : selectedIndices) {
-                        TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByPrimaryKey(listModel.getElementAt(index).getId());
+                        TJsonBeauty tJsonBeauty = JsonBeautyVaultUtil.loadByPath(listModel.getElementAt(index).getRelativePath());
+                        if (tJsonBeauty == null) {
+                            continue;
+                        }
                         File exportFile = FileUtil.touch(exportPath + File.separator + tJsonBeauty.getName() + ".json");
                         FileUtil.writeUtf8String(tJsonBeauty.getContent(), exportFile);
                     }
@@ -304,17 +310,17 @@ public class JsonBeautyListener {
         jsonBeautyForm.getSearchTextField().getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                JsonBeautyForm.initList();
+                JsonBeautyForm.refreshList();
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                JsonBeautyForm.initList();
+                JsonBeautyForm.refreshList();
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-//                JsonBeautyForm.initList();
+//                JsonBeautyForm.refreshList();
             }
         });
 
@@ -537,9 +543,18 @@ public class JsonBeautyListener {
         JMenuItem renameMenuItem = new JMenuItem(I18n.get("common.rename"));
         JMenuItem deleteMenuItem = new JMenuItem(I18n.get("common.delete"));
         JMenuItem exportMenuItem = new JMenuItem(I18n.get("common.export"));
+        JMenuItem refreshMenuItem = new JMenuItem(I18n.get("jsonBeauty.menu.refresh"));
+        JMenuItem openVaultMenuItem = new JMenuItem(I18n.get("jsonBeauty.menu.openVault"));
+        JMenuItem vaultSettingsMenuItem = new JMenuItem(I18n.get("jsonBeauty.menu.vaultSettings"));
+        JMenuItem gitMenuItem = new JMenuItem(I18n.get("jsonBeauty.menu.git"));
         noteListPopupMenu.add(renameMenuItem);
         noteListPopupMenu.add(deleteMenuItem);
         noteListPopupMenu.add(exportMenuItem);
+        noteListPopupMenu.addSeparator();
+        noteListPopupMenu.add(refreshMenuItem);
+        noteListPopupMenu.add(openVaultMenuItem);
+        noteListPopupMenu.add(vaultSettingsMenuItem);
+        noteListPopupMenu.add(gitMenuItem);
         jsonBeautyForm.getNoteList().setComponentPopupMenu(noteListPopupMenu);
 
         renameMenuItem.addActionListener(e -> renameSelectedNote(jsonBeautyForm));
@@ -567,7 +582,10 @@ public class JsonBeautyListener {
 
                     DefaultListModel<TJsonBeauty> listModel = (DefaultListModel<TJsonBeauty>) jsonBeautyForm.getNoteList().getModel();
                     for (int index : selectedIndices) {
-                        TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByPrimaryKey(listModel.getElementAt(index).getId());
+                        TJsonBeauty tJsonBeauty = JsonBeautyVaultUtil.loadByPath(listModel.getElementAt(index).getRelativePath());
+                        if (tJsonBeauty == null) {
+                            continue;
+                        }
                         File exportFile = FileUtil.touch(exportPath + File.separator + tJsonBeauty.getName() + ".json");
                         FileUtil.writeUtf8String(tJsonBeauty.getContent(), exportFile);
                     }
@@ -589,6 +607,19 @@ public class JsonBeautyListener {
 
         });
 
+        refreshMenuItem.addActionListener(e -> JsonBeautyVaultRefreshCoordinator.refreshAfterExternalChange());
+        openVaultMenuItem.addActionListener(e -> JsonBeautyVaultUtil.openVaultDir());
+        vaultSettingsMenuItem.addActionListener(e -> JsonBeautySettingsUi.showDialog());
+        gitMenuItem.addActionListener(e -> JsonBeautyGitDialog.showDialog());
+
+        jsonBeautyForm.getGitButton().addActionListener(e ->
+                JsonBeautyCommitEntryAction.trigger(jsonBeautyForm.getGitButton()));
+        jsonBeautyForm.getVaultSettingsButton().addActionListener(e -> JsonBeautySettingsUi.showDialog());
+
+    }
+
+    public static void quickSaveSync(boolean refreshModifiedTime) {
+        quickSave(refreshModifiedTime);
     }
 
     private static void viewByIndex(int index) {
@@ -598,9 +629,10 @@ public class JsonBeautyListener {
         JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
 
         DefaultListModel<TJsonBeauty> listModel = (DefaultListModel<TJsonBeauty>) jsonBeautyForm.getNoteList().getModel();
-        String name = listModel.getElementAt(index).getName();
-        selectedNameJson = name;
-        setContentByName(name);
+        TJsonBeauty item = listModel.getElementAt(index);
+        selectedNameJson = item.getName();
+        selectedPathJson = item.getRelativePath();
+        setContentByPath(selectedPathJson);
     }
 
     private static void renameSelectedNote(JsonBeautyForm jsonBeautyForm) {
@@ -620,24 +652,28 @@ public class JsonBeautyListener {
             return;
         }
         try {
-            TJsonBeauty tJsonBeauty = new TJsonBeauty();
-            tJsonBeauty.setId(item.getId());
-            tJsonBeauty.setName(afterName);
-            tJsonBeauty.setModifiedTime(SqliteUtil.nowDateForSqlite());
-            jsonBeautyMapper.updateByPrimaryKeySelective(tJsonBeauty);
+            String newPath = JsonBeautyVaultUtil.renameJson(item.getRelativePath(), afterName);
             selectedNameJson = afterName;
+            selectedPathJson = newPath;
             item.setName(afterName);
+            item.setRelativePath(newPath);
             model.set(selectedIndex, item);
+            JsonBeautyVaultRefreshCoordinator.markInternalWrite();
+            JsonBeautyForm.updateGitButtonStatus();
         } catch (Exception e) {
             MsgUtil.info(App.mainFrame, "msg.renameFailed");
-            JsonBeautyForm.initList();
+            JsonBeautyForm.refreshList();
             log.error(e.toString());
         }
     }
 
-    private static void setContentByName(String name) {
+    private static void setContentByPath(String relativePath) {
         JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
-        TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByName(name);
+        TJsonBeauty tJsonBeauty = JsonBeautyVaultUtil.loadByPath(relativePath);
+        if (tJsonBeauty == null) {
+            jsonBeautyForm.getTextArea().setText("");
+            return;
+        }
         jsonBeautyForm.getTextArea().setText(tJsonBeauty.getContent());
         jsonBeautyForm.getTextArea().setCaretPosition(0);
         jsonBeautyForm.getScrollPane().getVerticalScrollBar().setValue(0);
@@ -658,11 +694,13 @@ public class JsonBeautyListener {
                     DefaultListModel<TJsonBeauty> listModel = (DefaultListModel<TJsonBeauty>) jsonBeautyForm.getNoteList().getModel();
 
                     for (int selectedIndex : selectedIndices) {
-                        Integer id = listModel.getElementAt(selectedIndex).getId();
-                        jsonBeautyMapper.deleteByPrimaryKey(id);
+                        JsonBeautyVaultUtil.deleteByPath(listModel.getElementAt(selectedIndex).getRelativePath());
                     }
                     selectedNameJson = null;
-                    JsonBeautyForm.initList();
+                    selectedPathJson = null;
+                    JsonBeautyVaultRefreshCoordinator.markInternalWrite();
+                    JsonBeautyForm.refreshList();
+                    JsonBeautyForm.updateGitButtonStatus();
                 }
             }
         } catch (Exception e1) {
@@ -679,27 +717,31 @@ public class JsonBeautyListener {
     private static void quickSave(boolean refreshModifiedTime) {
         JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
         String now = SqliteUtil.nowDateForSqlite();
-        if (selectedNameJson != null) {
-            TJsonBeauty tJsonBeauty = new TJsonBeauty();
-            tJsonBeauty.setName(selectedNameJson);
-            tJsonBeauty.setContent(jsonBeautyForm.getTextArea().getText());
-            if (refreshModifiedTime) {
-                tJsonBeauty.setModifiedTime(now);
+        if (selectedPathJson != null) {
+            TJsonBeauty tJsonBeauty = JsonBeautyVaultUtil.loadByPath(selectedPathJson);
+            if (tJsonBeauty == null) {
+                return;
             }
-            jsonBeautyMapper.updateByName(tJsonBeauty);
+            tJsonBeauty.setContent(jsonBeautyForm.getTextArea().getText());
+            tJsonBeauty.setModifiedTime(refreshModifiedTime ? now : tJsonBeauty.getModifiedTime());
+            JsonBeautyVaultUtil.saveJson(tJsonBeauty, tJsonBeauty.getContent());
+            JsonBeautyVaultRefreshCoordinator.markInternalWrite();
+            JsonBeautyForm.updateGitButtonStatus();
         } else {
             String tempName = NamingUtil.defaultUntitledName();
             String name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), tempName);
             if (StringUtils.isNotBlank(name)) {
-                TJsonBeauty tJsonBeauty = new TJsonBeauty();
-                tJsonBeauty.setName(name);
+                TJsonBeauty tJsonBeauty = JsonBeautyVaultUtil.createJson(name);
                 tJsonBeauty.setContent(jsonBeautyForm.getTextArea().getText());
                 tJsonBeauty.setCreateTime(now);
                 tJsonBeauty.setModifiedTime(now);
 
-                jsonBeautyMapper.insert(tJsonBeauty);
-                JsonBeautyForm.initList();
+                JsonBeautyVaultUtil.saveJson(tJsonBeauty, tJsonBeauty.getContent());
+                JsonBeautyVaultRefreshCoordinator.markInternalWrite();
+                JsonBeautyForm.refreshList();
+                JsonBeautyForm.updateGitButtonStatus();
                 selectedNameJson = name;
+                selectedPathJson = tJsonBeauty.getRelativePath();
             }
         }
     }
@@ -708,19 +750,17 @@ public class JsonBeautyListener {
         String name = getDefaultFileName();
         name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), name);
         if (StringUtils.isNotBlank(name)) {
-            TJsonBeauty tJsonBeauty = jsonBeautyMapper.selectByName(name);
-            if (tJsonBeauty == null) {
-                tJsonBeauty = new TJsonBeauty();
-            } else {
+            TJsonBeauty tJsonBeauty = JsonBeautyVaultUtil.loadByName(name);
+            if (tJsonBeauty != null) {
                 MsgUtil.info(App.mainFrame, "msg.duplicateName");
                 return;
             }
-            String now = SqliteUtil.nowDateForSqlite();
-            tJsonBeauty.setName(name);
-            tJsonBeauty.setCreateTime(now);
-            tJsonBeauty.setModifiedTime(now);
-            jsonBeautyMapper.insert(tJsonBeauty);
-            JsonBeautyForm.initList();
+            tJsonBeauty = JsonBeautyVaultUtil.createJson(name);
+            selectedNameJson = tJsonBeauty.getName();
+            selectedPathJson = tJsonBeauty.getRelativePath();
+            JsonBeautyVaultRefreshCoordinator.markInternalWrite();
+            JsonBeautyForm.refreshList();
+            JsonBeautyForm.updateGitButtonStatus();
         }
     }
 
