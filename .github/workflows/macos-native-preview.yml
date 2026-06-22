@@ -1,0 +1,29 @@
+name: macOS native preview
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  swift-package:
+    name: Swift package build and test
+    runs-on: macos-14
+    env:
+      DEVELOPER_DIR: /Applications/Xcode.app/Contents/Developer
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Print toolchain versions
+        run: |
+          xcodebuild -version
+          swift --version
+
+      - name: Build native preview
+        run: swift build --package-path macos
+
+      - name: Test native preview
+        run: swift test --package-path macos
