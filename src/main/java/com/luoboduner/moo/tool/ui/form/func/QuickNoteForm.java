@@ -38,6 +38,8 @@ import com.luoboduner.moo.tool.util.QuickNoteTreeUtil;
 import com.luoboduner.moo.tool.util.QuickNoteVaultRefreshCoordinator;
 import com.luoboduner.moo.tool.util.QuickNoteVaultUtil;
 import com.luoboduner.moo.tool.util.QuickNoteVaultWatcher;
+import com.luoboduner.moo.tool.util.VaultTreeExpandMode;
+import com.luoboduner.moo.tool.util.VaultTreeUiUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
@@ -736,7 +738,7 @@ public class QuickNoteForm {
                 ? List.of()
                 : QuickNoteVaultUtil.listFolders();
         quickNoteForm.getNoteTree().setModel(QuickNoteTreeUtil.buildTreeModel(quickNoteList, folders, getListSortMode()));
-        expandAllTreeRows(quickNoteForm.getNoteTree());
+        applyTreeExpandPreference(quickNoteForm.getNoteTree());
 
         String preservePath = QuickNoteListener.selectedPath;
         if (StringUtils.isNotBlank(preservePath)) {
@@ -804,7 +806,7 @@ public class QuickNoteForm {
                 ? List.of()
                 : QuickNoteVaultUtil.listFolders();
         quickNoteForm.getNoteTree().setModel(QuickNoteTreeUtil.buildTreeModel(quickNoteList, folders, getListSortMode()));
-        expandAllTreeRows(quickNoteForm.getNoteTree());
+        applyTreeExpandPreference(quickNoteForm.getNoteTree());
 
         if (!quickNoteList.isEmpty()) {
             QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
@@ -963,10 +965,9 @@ public class QuickNoteForm {
         worker.execute();
     }
 
-    private static void expandAllTreeRows(JTree tree) {
-        for (int i = 0; i < tree.getRowCount(); i++) {
-            tree.expandRow(i);
-        }
+    private static void applyTreeExpandPreference(JTree tree) {
+        VaultTreeUiUtil.applyExpandMode(tree,
+                VaultTreeExpandMode.fromId(App.config.getQuickNoteTreeExpandMode()));
     }
 
     public static void selectNoteInTree(String relativePath) {
@@ -977,8 +978,8 @@ public class QuickNoteForm {
         DefaultMutableTreeNode node = QuickNoteTreeUtil.findNodeByPath(root, relativePath);
         if (node != null) {
             TreePath treePath = new TreePath(node.getPath());
+            VaultTreeUiUtil.ensurePathVisible(quickNoteForm.getNoteTree(), treePath);
             quickNoteForm.getNoteTree().setSelectionPath(treePath);
-            quickNoteForm.getNoteTree().scrollPathToVisible(treePath);
         }
     }
 

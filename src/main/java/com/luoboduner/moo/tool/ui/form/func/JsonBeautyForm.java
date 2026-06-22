@@ -30,6 +30,8 @@ import com.luoboduner.moo.tool.util.JsonBeautyVaultUtil;
 import com.luoboduner.moo.tool.util.JsonBeautyVaultWatcher;
 import com.luoboduner.moo.tool.util.QuickNoteGitUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
+import com.luoboduner.moo.tool.util.VaultTreeExpandMode;
+import com.luoboduner.moo.tool.util.VaultTreeUiUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
@@ -420,7 +422,7 @@ public class JsonBeautyForm {
                 : JsonBeautyVaultUtil.listFolders();
         jsonBeautyForm.getNoteTree().setModel(
                 JsonBeautyTreeUtil.buildTreeModel(jsonList, folders, getListSortMode()));
-        expandAllTreeRows(jsonBeautyForm.getNoteTree());
+        applyTreeExpandPreference(jsonBeautyForm.getNoteTree());
 
         String preservePath = JsonBeautyListener.selectedPathJson;
         if (StringUtils.isNotBlank(preservePath)) {
@@ -428,10 +430,9 @@ public class JsonBeautyForm {
         }
     }
 
-    private static void expandAllTreeRows(JTree tree) {
-        for (int i = 0; i < tree.getRowCount(); i++) {
-            tree.expandRow(i);
-        }
+    private static void applyTreeExpandPreference(JTree tree) {
+        VaultTreeUiUtil.applyExpandMode(tree,
+                VaultTreeExpandMode.fromId(App.config.getJsonBeautyTreeExpandMode()));
     }
 
     public static void initList() {
@@ -457,7 +458,7 @@ public class JsonBeautyForm {
                 : JsonBeautyVaultUtil.listFolders();
         jsonBeautyForm.getNoteTree().setModel(
                 JsonBeautyTreeUtil.buildTreeModel(jsonList, folders, getListSortMode()));
-        expandAllTreeRows(jsonBeautyForm.getNoteTree());
+        applyTreeExpandPreference(jsonBeautyForm.getNoteTree());
 
         if (jsonList.isEmpty()) {
             JsonBeautyListener.ignoreQuickSave = true;
@@ -512,8 +513,8 @@ public class JsonBeautyForm {
         DefaultMutableTreeNode node = JsonBeautyTreeUtil.findNodeByPath(root, relativePath);
         if (node != null) {
             TreePath treePath = new TreePath(node.getPath());
+            VaultTreeUiUtil.ensurePathVisible(jsonBeautyForm.noteTree, treePath);
             jsonBeautyForm.noteTree.setSelectionPath(treePath);
-            jsonBeautyForm.noteTree.scrollPathToVisible(treePath);
         }
     }
 

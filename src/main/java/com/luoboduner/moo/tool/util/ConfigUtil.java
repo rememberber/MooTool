@@ -621,6 +621,15 @@ public class ConfigUtil extends ConfigBaseUtil {
         setting.putByGroup("quickNoteListSortMode", "func.quickNote", quickNoteListSortMode);
     }
 
+    public String getQuickNoteTreeExpandMode() {
+        return setting.getStr("quickNoteTreeExpandMode", "func.quickNote",
+                VaultTreeExpandMode.EXPAND_ALL.name());
+    }
+
+    public void setQuickNoteTreeExpandMode(String quickNoteTreeExpandMode) {
+        setting.putByGroup("quickNoteTreeExpandMode", "func.quickNote", quickNoteTreeExpandMode);
+    }
+
     public String getJsonBeautyExportPath() {
         return setting.getStr("jsonBeautyExportPath", "func.jsonBeauty", "");
     }
@@ -696,6 +705,15 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setJsonBeautyListSortMode(String jsonBeautyListSortMode) {
         setting.putByGroup("jsonBeautyListSortMode", "func.jsonBeauty", jsonBeautyListSortMode);
+    }
+
+    public String getJsonBeautyTreeExpandMode() {
+        return setting.getStr("jsonBeautyTreeExpandMode", "func.jsonBeauty",
+                VaultTreeExpandMode.EXPAND_ALL.name());
+    }
+
+    public void setJsonBeautyTreeExpandMode(String jsonBeautyTreeExpandMode) {
+        setting.putByGroup("jsonBeautyTreeExpandMode", "func.jsonBeauty", jsonBeautyTreeExpandMode);
     }
 
     public String getImageExportPath() {

@@ -13,6 +13,7 @@ import com.luoboduner.moo.tool.util.JsonBeautyAutoPullScheduler;
 import com.luoboduner.moo.tool.util.JsonBeautyVaultUtil;
 import com.luoboduner.moo.tool.util.JsonBeautyVaultWatcher;
 import com.luoboduner.moo.tool.util.QuickNoteGitUtil;
+import com.luoboduner.moo.tool.util.VaultTreeExpandMode;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import org.apache.commons.lang3.StringUtils;
 
@@ -49,8 +50,25 @@ public final class JsonBeautySettingsUi {
     private final JButton openVaultButton = new JButton();
     private final JButton resetVaultPathButton = new JButton();
     private final JButton openGitPanelButton = new JButton();
+    private final JComboBox<VaultTreeExpandMode> treeExpandComboBox = new JComboBox<>();
 
     private JsonBeautySettingsUi() {
+    }
+
+    {
+        for (VaultTreeExpandMode mode : VaultTreeExpandMode.values()) {
+            treeExpandComboBox.addItem(mode);
+        }
+        treeExpandComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                String label = value instanceof VaultTreeExpandMode mode
+                        ? I18n.get(mode.i18nKey())
+                        : "";
+                return super.getListCellRendererComponent(list, label, index, isSelected, cellHasFocus);
+            }
+        });
     }
 
     public static void showDialog() {
@@ -69,7 +87,7 @@ public final class JsonBeautySettingsUi {
     }
 
     private JPanel buildExtraPanel(Component hostDialog) {
-        JPanel panel = new JPanel(new GridLayoutManager(8, 3, new Insets(0, 0, 0, 0), -1, -1));
+        JPanel panel = new JPanel(new GridLayoutManager(9, 3, new Insets(0, 0, 0, 0), -1, -1));
 
         panel.add(label("setting.jsonBeauty.vaultPath"), row(0, 0));
         panel.add(vaultPathTextField, row(0, 1));
@@ -103,9 +121,12 @@ public final class JsonBeautySettingsUi {
         hideGitignoredPanel.add(hideGitignoredHintLabel, BorderLayout.CENTER);
         panel.add(hideGitignoredPanel, rowSpan(5, 1, 2));
 
-        panel.add(label("setting.jsonBeauty.gitRemote"), row(6, 0));
-        panel.add(gitRemoteTextField, row(6, 1));
-        panel.add(gitRemoteSaveButton, row(6, 2));
+        panel.add(label("setting.vaultTree.expandMode"), row(6, 0));
+        panel.add(treeExpandComboBox, row(6, 1));
+
+        panel.add(label("setting.jsonBeauty.gitRemote"), row(7, 0));
+        panel.add(gitRemoteTextField, row(7, 1));
+        panel.add(gitRemoteSaveButton, row(7, 2));
 
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         vaultSaveButton.setIcon(new FlatSVGIcon("icon/save.svg"));
@@ -116,7 +137,7 @@ public final class JsonBeautySettingsUi {
         actionPanel.add(openVaultButton);
         actionPanel.add(resetVaultPathButton);
         actionPanel.add(openGitPanelButton);
-        panel.add(actionPanel, rowSpan(7, 0, 3));
+        panel.add(actionPanel, rowSpan(8, 0, 3));
         return panel;
     }
 
@@ -135,6 +156,8 @@ public final class JsonBeautySettingsUi {
                 App.config.getJsonBeautyAutoGitInactiveSeconds(), MIN_INACTIVE_SECONDS, MAX_INACTIVE_SECONDS));
         autoPullIntervalSpinner.setValue(clamp(
                 App.config.getJsonBeautyAutoPullIntervalMinutes(), 0, MAX_AUTO_PULL_MINUTES));
+        treeExpandComboBox.setSelectedItem(
+                VaultTreeExpandMode.fromId(App.config.getJsonBeautyTreeExpandMode()));
     }
 
     private void bindActions(Component hostDialog) {
@@ -171,6 +194,10 @@ public final class JsonBeautySettingsUi {
         App.config.setJsonBeautyAutoGitIdleSeconds(spinnerIntValue(autoGitIdleSpinner));
         App.config.setJsonBeautyAutoGitInactiveSeconds(spinnerIntValue(autoGitInactiveSpinner));
         App.config.setJsonBeautyAutoPullIntervalMinutes(spinnerIntValue(autoPullIntervalSpinner));
+        Object selectedExpandMode = treeExpandComboBox.getSelectedItem();
+        if (selectedExpandMode instanceof VaultTreeExpandMode mode) {
+            App.config.setJsonBeautyTreeExpandMode(mode.name());
+        }
         App.config.save();
 
         JsonBeautyVaultUtil.resetVaultCache();

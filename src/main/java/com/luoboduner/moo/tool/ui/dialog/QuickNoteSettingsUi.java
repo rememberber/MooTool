@@ -14,6 +14,7 @@ import com.luoboduner.moo.tool.util.QuickNoteGitUtil;
 import com.luoboduner.moo.tool.util.QuickNoteVaultUtil;
 import com.luoboduner.moo.tool.util.QuickNoteVaultWatcher;
 import com.luoboduner.moo.tool.util.SystemUtil;
+import com.luoboduner.moo.tool.util.VaultTreeExpandMode;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
@@ -49,8 +50,25 @@ public final class QuickNoteSettingsUi {
     private final JButton openVaultButton = new JButton();
     private final JButton resetVaultPathButton = new JButton();
     private final JButton openGitPanelButton = new JButton();
+    private final JComboBox<VaultTreeExpandMode> treeExpandComboBox = new JComboBox<>();
 
     private QuickNoteSettingsUi() {
+    }
+
+    {
+        for (VaultTreeExpandMode mode : VaultTreeExpandMode.values()) {
+            treeExpandComboBox.addItem(mode);
+        }
+        treeExpandComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                String label = value instanceof VaultTreeExpandMode mode
+                        ? I18n.get(mode.i18nKey())
+                        : "";
+                return super.getListCellRendererComponent(list, label, index, isSelected, cellHasFocus);
+            }
+        });
     }
 
     public static void install(JPanel quickNotePanel, Component hostDialog) {
@@ -98,7 +116,7 @@ public final class QuickNoteSettingsUi {
     }
 
     private JPanel buildExtraPanel(Component hostDialog) {
-        JPanel panel = new JPanel(new GridLayoutManager(8, 3, new Insets(0, 0, 0, 0), -1, -1));
+        JPanel panel = new JPanel(new GridLayoutManager(9, 3, new Insets(0, 0, 0, 0), -1, -1));
 
         panel.add(label("setting.quickNote.vaultPath"), row(0, 0));
         panel.add(vaultPathTextField, row(0, 1));
@@ -132,9 +150,12 @@ public final class QuickNoteSettingsUi {
         hideGitignoredPanel.add(hideGitignoredHintLabel, BorderLayout.CENTER);
         panel.add(hideGitignoredPanel, rowSpan(5, 1, 2));
 
-        panel.add(label("setting.quickNote.gitRemote"), row(6, 0));
-        panel.add(gitRemoteTextField, row(6, 1));
-        panel.add(gitRemoteSaveButton, row(6, 2));
+        panel.add(label("setting.vaultTree.expandMode"), row(6, 0));
+        panel.add(treeExpandComboBox, row(6, 1));
+
+        panel.add(label("setting.quickNote.gitRemote"), row(7, 0));
+        panel.add(gitRemoteTextField, row(7, 1));
+        panel.add(gitRemoteSaveButton, row(7, 2));
 
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         vaultSaveButton.setIcon(new FlatSVGIcon("icon/save.svg"));
@@ -145,7 +166,7 @@ public final class QuickNoteSettingsUi {
         actionPanel.add(openVaultButton);
         actionPanel.add(resetVaultPathButton);
         actionPanel.add(openGitPanelButton);
-        panel.add(actionPanel, rowSpan(7, 0, 3));
+        panel.add(actionPanel, rowSpan(8, 0, 3));
         return panel;
     }
 
@@ -164,6 +185,8 @@ public final class QuickNoteSettingsUi {
                 App.config.getQuickNoteAutoGitInactiveSeconds(), MIN_INACTIVE_SECONDS, MAX_INACTIVE_SECONDS));
         autoPullIntervalSpinner.setValue(clamp(
                 App.config.getQuickNoteAutoPullIntervalMinutes(), 0, MAX_AUTO_PULL_MINUTES));
+        treeExpandComboBox.setSelectedItem(
+                VaultTreeExpandMode.fromId(App.config.getQuickNoteTreeExpandMode()));
     }
 
     private void bindActions(Component hostDialog) {
@@ -200,6 +223,10 @@ public final class QuickNoteSettingsUi {
         App.config.setQuickNoteAutoGitIdleSeconds(spinnerIntValue(autoGitIdleSpinner));
         App.config.setQuickNoteAutoGitInactiveSeconds(spinnerIntValue(autoGitInactiveSpinner));
         App.config.setQuickNoteAutoPullIntervalMinutes(spinnerIntValue(autoPullIntervalSpinner));
+        Object selectedExpandMode = treeExpandComboBox.getSelectedItem();
+        if (selectedExpandMode instanceof VaultTreeExpandMode mode) {
+            App.config.setQuickNoteTreeExpandMode(mode.name());
+        }
         App.config.save();
 
         QuickNoteVaultUtil.resetVaultCache();
