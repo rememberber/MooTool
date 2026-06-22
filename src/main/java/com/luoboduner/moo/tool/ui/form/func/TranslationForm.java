@@ -4,7 +4,7 @@ import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
-import com.formdev.flatlaf.icons.FlatSearchIcon;
+import com.luoboduner.moo.tool.ui.component.SearchFieldUiUtil;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -117,8 +117,8 @@ public class TranslationForm {
 
     private void initWordBookPanel() {
         wordBookSearchField = new JTextField();
+        SearchFieldUiUtil.configure(wordBookSearchField);
         wordBookSearchField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "搜索单词或译文");
-        wordBookSearchField.putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON, new FlatSearchIcon());
 
         wordBookAddButton = new JButton(new FlatSVGIcon("icon/add.svg"));
         wordBookAddButton.setToolTipText("新建单词");
@@ -214,8 +214,8 @@ public class TranslationForm {
         }
 
         historySearchField = new JTextField();
+        SearchFieldUiUtil.configure(historySearchField);
         historySearchField.putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "搜索原文、译文或语言");
-        historySearchField.putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON, new FlatSearchIcon());
 
         historyDeleteButton = new JButton(new FlatSVGIcon("icon/remove.svg"));
         historyDeleteButton.setToolTipText("删除选中");

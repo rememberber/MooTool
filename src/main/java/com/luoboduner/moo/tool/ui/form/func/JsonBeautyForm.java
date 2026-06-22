@@ -3,7 +3,7 @@ package com.luoboduner.moo.tool.ui.form.func;
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
-import com.formdev.flatlaf.icons.FlatSearchIcon;
+import com.luoboduner.moo.tool.ui.component.SearchFieldUiUtil;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -247,9 +247,8 @@ public class JsonBeautyForm {
     private static void initUi() {
         getInstance().getContentSplitPane().setLeftComponent(jsonBeautyForm.getScrollPane());
 
+        SearchFieldUiUtil.configure(jsonBeautyForm.getSearchTextField());
         jsonBeautyForm.getSearchTextField().putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "搜索");
-        jsonBeautyForm.getSearchTextField().putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON,
-                new FlatSearchIcon());
 
         jsonBeautyForm.getAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
         jsonBeautyForm.getFindButton().setIcon(new FlatSVGIcon("icon/find.svg"));

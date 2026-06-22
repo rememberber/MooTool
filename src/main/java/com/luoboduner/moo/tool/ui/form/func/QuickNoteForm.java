@@ -6,7 +6,7 @@ import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
 import com.formdev.flatlaf.icons.FlatAbstractIcon;
-import com.formdev.flatlaf.icons.FlatSearchIcon;
+import com.luoboduner.moo.tool.ui.component.SearchFieldUiUtil;
 import com.formdev.flatlaf.util.ColorFunctions;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
@@ -380,9 +380,8 @@ public class QuickNoteForm {
     }
 
     private static void initUi() {
+        SearchFieldUiUtil.configure(quickNoteForm.getSearchTextField());
         quickNoteForm.getSearchTextField().putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "搜索"); // updated in applyI18n
-        quickNoteForm.getSearchTextField().putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON,
-                new FlatSearchIcon());
         quickNoteForm.getSearchContentCheckBox().setToolTipText("包含内容");
         quickNoteForm.getSearchTextField().putClientProperty(FlatClientProperties.TEXT_FIELD_TRAILING_COMPONENT, quickNoteForm.getSearchContentCheckBox());
 

@@ -1,7 +1,6 @@
 package com.luoboduner.moo.tool.ui.component;
 
 import com.formdev.flatlaf.FlatClientProperties;
-import com.formdev.flatlaf.icons.FlatSearchIcon;
 import com.luoboduner.moo.tool.bean.FuncGroup;
 import com.luoboduner.moo.tool.ui.FuncTabCatalog;
 import com.luoboduner.moo.tool.ui.FuncTabCatalog.BuiltinGroup;
@@ -69,7 +68,7 @@ public class FuncTabGroupSidebar extends JPanel {
         setPreferredSize(new Dimension(SIDEBAR_WIDTH, 0));
         setMinimumSize(new Dimension(SIDEBAR_WIDTH, 0));
 
-        searchField.putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON, new FlatSearchIcon());
+        SearchFieldUiUtil.configure(searchField);
         manageButton.putClientProperty(FlatClientProperties.BUTTON_TYPE, FlatClientProperties.BUTTON_TYPE_TOOLBAR_BUTTON);
 
         JPanel topPanel = new JPanel(new BorderLayout(4, 0));

@@ -3,7 +3,7 @@ package com.luoboduner.moo.tool.ui.form.func;
 import cn.hutool.core.io.FileUtil;
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
-import com.formdev.flatlaf.icons.FlatSearchIcon;
+import com.luoboduner.moo.tool.ui.component.SearchFieldUiUtil;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -277,9 +277,8 @@ public class HostForm {
             hostForm.getRightPanel().add(hostForm.getControlPanel(), new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         }
 
+        SearchFieldUiUtil.configure(hostForm.getSearchTextField());
         hostForm.getSearchTextField().putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, I18n.get("common.search"));
-        hostForm.getSearchTextField().putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON,
-                new FlatSearchIcon());
 
         hostForm.getAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
         hostForm.getFindButton().setIcon(new FlatSVGIcon("icon/find.svg"));

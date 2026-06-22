@@ -1,7 +1,7 @@
 package com.luoboduner.moo.tool.ui.dialog;
 
 import com.formdev.flatlaf.FlatClientProperties;
-import com.formdev.flatlaf.icons.FlatSearchIcon;
+import com.luoboduner.moo.tool.ui.component.SearchFieldUiUtil;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.bean.FuncGroup;
 import com.luoboduner.moo.tool.ui.FuncTabCatalog;
@@ -59,7 +59,7 @@ public class FuncNavigatorDialog extends JDialog {
         JPanel root = new JPanel(new BorderLayout(0, 8));
         root.setBorder(BorderFactory.createEmptyBorder(12, 12, 12, 12));
 
-        searchField.putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON, new FlatSearchIcon());
+        SearchFieldUiUtil.configure(searchField);
 
         JPanel buttonBar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 8, 0));
         buttonBar.add(manageButton);
