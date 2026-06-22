@@ -689,6 +689,15 @@ public class ConfigUtil extends ConfigBaseUtil {
                 String.valueOf(jsonBeautyHideGitignoredFiles));
     }
 
+    public String getJsonBeautyListSortMode() {
+        return setting.getStr("jsonBeautyListSortMode", "func.jsonBeauty",
+                JsonBeautyListSortMode.MODIFIED_TIME.name());
+    }
+
+    public void setJsonBeautyListSortMode(String jsonBeautyListSortMode) {
+        setting.putByGroup("jsonBeautyListSortMode", "func.jsonBeauty", jsonBeautyListSortMode);
+    }
+
     public String getImageExportPath() {
         return setting.getStr("imageExportPath", "func.image", "");
     }

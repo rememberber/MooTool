@@ -10,7 +10,8 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.domain.QuickNoteGitStatus;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
-import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.JsonBeautyTreeCellRenderer;
+import com.luoboduner.moo.tool.ui.component.JsonBeautyTreeDragDrop;
 import com.luoboduner.moo.tool.ui.component.SplitPaneUtil;
 import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.component.PanelCloseUtil;
@@ -22,6 +23,8 @@ import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.JsonBeautyAutoGitScheduler;
 import com.luoboduner.moo.tool.util.JsonBeautyAutoPullScheduler;
+import com.luoboduner.moo.tool.util.JsonBeautyListSortMode;
+import com.luoboduner.moo.tool.util.JsonBeautyTreeUtil;
 import com.luoboduner.moo.tool.util.JsonBeautyVaultRefreshCoordinator;
 import com.luoboduner.moo.tool.util.JsonBeautyVaultUtil;
 import com.luoboduner.moo.tool.util.JsonBeautyVaultWatcher;
@@ -32,7 +35,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.DefaultTreeModel;
+import javax.swing.tree.TreePath;
+import javax.swing.tree.TreeSelectionModel;
 import java.awt.*;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -48,6 +56,8 @@ import java.util.List;
 public class JsonBeautyForm {
     private JPanel jsonBeautyPanel;
     private JList<TJsonBeauty> noteList;
+    private JTree noteTree;
+    private JComboBox<JsonBeautyListSortMode> listSortComboBox;
     private JButton deleteButton;
     private JButton saveButton;
     private JSplitPane splitPane;
@@ -244,6 +254,9 @@ public class JsonBeautyForm {
         I18nUiUtil.setToolTip(moreButton, "json.tooltip.more");
         I18nUiUtil.setToolTip(gitButton, "jsonBeauty.tooltip.git");
         I18nUiUtil.setToolTip(vaultSettingsButton, "jsonBeauty.tooltip.vaultSettings");
+        if (listSortComboBox != null) {
+            I18nUiUtil.setToolTip(listSortComboBox, "quickNote.tooltip.listSort");
+        }
         I18nUiUtil.setToolTip(listItemButton, "quickNote.tooltip.toggleList");
         I18nUiUtil.setToolTip(moreCloseButton, "quickNote.tooltip.close");
 
@@ -295,11 +308,9 @@ public class JsonBeautyForm {
         jsonBeautyForm.getFindReplacePanel().setVisible(false);
         jsonBeautyForm.getMoreScrollPane().setVisible(false);
         configureSplitPanes();
+        initListSortComboBox();
+        initJsonTree();
         jsonBeautyForm.getJsonBeautyPanel().setMinimumSize(new Dimension(0, 300));
-        jsonBeautyForm.getNoteList().setFixedCellHeight(UiConsts.TABLE_ROW_HEIGHT);
-        jsonBeautyForm.getNoteList().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
-        jsonBeautyForm.getNoteList().putClientProperty(FlatClientProperties.STYLE,
-                "selectionArc: 6; selectionInsets: 0,1,0,1");
 
         jsonBeautyForm.getTextArea().grabFocus();
 
@@ -318,57 +329,137 @@ public class JsonBeautyForm {
         );
     }
 
-    public static void initList() {
-        populateListModel(null);
-    }
+    private static void initJsonTree() {
+        jsonBeautyForm.noteTree = new JTree(new DefaultTreeModel(new DefaultMutableTreeNode("")));
+        jsonBeautyForm.noteTree.setRootVisible(false);
+        jsonBeautyForm.noteTree.setShowsRootHandles(true);
+        jsonBeautyForm.noteTree.getSelectionModel().setSelectionMode(TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION);
+        jsonBeautyForm.noteTree.setCellRenderer(new JsonBeautyTreeCellRenderer());
+        jsonBeautyForm.noteTree.setVisibleRowCount(20);
+        jsonBeautyForm.noteTree.putClientProperty(FlatClientProperties.STYLE,
+                "selectionArc: 6; selectionInsets: 0,1,0,1");
+        JsonBeautyTreeDragDrop.install(jsonBeautyForm.noteTree);
 
-    public static void refreshList() {
-        populateListModel(JsonBeautyListener.selectedPathJson);
-        updateGitButtonStatus();
-    }
-
-    private static void populateListModel(String preservePath) {
-        DefaultListModel<TJsonBeauty> model = new DefaultListModel<>();
-        JList<TJsonBeauty> noteList = jsonBeautyForm.getNoteList();
-        noteList.setModel(model);
-        noteList.setCellRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
-                                                          boolean isSelected, boolean cellHasFocus) {
-                String label = value instanceof TJsonBeauty ? ((TJsonBeauty) value).getName() : String.valueOf(value);
-                return super.getListCellRendererComponent(list, label, index, isSelected, cellHasFocus);
+        Component parent = jsonBeautyForm.getNoteList();
+        while (parent != null) {
+            if (parent instanceof JScrollPane scrollPane) {
+                scrollPane.setViewportView(jsonBeautyForm.noteTree);
+                break;
             }
-        });
+            parent = parent.getParent();
+        }
+        jsonBeautyForm.getNoteList().setVisible(false);
+    }
 
-        String titleFilterKeyWord = jsonBeautyForm.getSearchTextField().getText();
-        List<TJsonBeauty> jsonBeautyList = JsonBeautyVaultUtil.listByFilter(titleFilterKeyWord);
-        int selectIndex = -1;
-        for (int i = 0; i < jsonBeautyList.size(); i++) {
-            TJsonBeauty item = jsonBeautyList.get(i);
-            model.addElement(item);
-            if (preservePath != null && preservePath.equals(item.getRelativePath())) {
-                selectIndex = i;
+    private static void initListSortComboBox() {
+        JPanel leftPanel = (JPanel) jsonBeautyForm.getSearchTextField().getParent();
+        JScrollPane scrollPane = null;
+        for (Component child : leftPanel.getComponents()) {
+            if (child instanceof JScrollPane pane) {
+                scrollPane = pane;
+                break;
             }
         }
-
-        if (selectIndex >= 0) {
-            noteList.setSelectedIndex(selectIndex);
+        if (scrollPane == null) {
             return;
         }
 
-        if (jsonBeautyList.size() > 0) {
-            JsonBeautyListener.ignoreQuickSave = true;
-            try {
-                JsonBeautyListener.selectedPathJson = jsonBeautyList.get(0).getRelativePath();
-                JsonBeautyListener.selectedNameJson = jsonBeautyList.get(0).getName();
-                jsonBeautyForm.getTextArea().setText(jsonBeautyList.get(0).getContent());
-                noteList.setSelectedIndex(0);
-            } catch (Exception e2) {
-                log.error(e2.getMessage());
-            } finally {
-                JsonBeautyListener.ignoreQuickSave = false;
+        leftPanel.remove(scrollPane);
+        jsonBeautyForm.listSortComboBox = new JComboBox<>();
+        for (JsonBeautyListSortMode mode : JsonBeautyListSortMode.values()) {
+            jsonBeautyForm.listSortComboBox.addItem(mode);
+        }
+        jsonBeautyForm.listSortComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                String label = value instanceof JsonBeautyListSortMode mode
+                        ? I18n.get(mode.i18nKey())
+                        : "";
+                return super.getListCellRendererComponent(list, label, index, isSelected, cellHasFocus);
             }
-        } else {
+        });
+        jsonBeautyForm.listSortComboBox.setSelectedItem(JsonBeautyListSortMode.fromConfig());
+
+        JPanel listArea = new JPanel(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
+        listArea.add(jsonBeautyForm.listSortComboBox, new GridConstraints(0, 0, 1, 1,
+                GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL,
+                GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED,
+                null, null, null, 0, false));
+        listArea.add(scrollPane, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER,
+                GridConstraints.FILL_BOTH,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
+                null, null, null, 0, false));
+        leftPanel.add(listArea, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER,
+                GridConstraints.FILL_BOTH,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
+                null, null, null, 0, false));
+    }
+
+    public static JsonBeautyListSortMode getListSortMode() {
+        if (jsonBeautyForm == null || jsonBeautyForm.listSortComboBox == null) {
+            return JsonBeautyListSortMode.fromConfig();
+        }
+        Object selected = jsonBeautyForm.listSortComboBox.getSelectedItem();
+        return selected instanceof JsonBeautyListSortMode mode ? mode : JsonBeautyListSortMode.fromConfig();
+    }
+
+    public static void refreshJsonTree() {
+        JsonBeautyVaultUtil.ensureVaultReady();
+        if (jsonBeautyForm.getNoteTree() == null) {
+            log.error("JSON tree is not initialized");
+            return;
+        }
+
+        String titleFilterKeyWord = jsonBeautyForm.getSearchTextField().getText();
+        List<TJsonBeauty> jsonList = JsonBeautyVaultUtil.listByFilter(titleFilterKeyWord);
+        List<String> folders = StringUtils.isNotBlank(titleFilterKeyWord)
+                ? List.of()
+                : JsonBeautyVaultUtil.listFolders();
+        jsonBeautyForm.getNoteTree().setModel(
+                JsonBeautyTreeUtil.buildTreeModel(jsonList, folders, getListSortMode()));
+        expandAllTreeRows(jsonBeautyForm.getNoteTree());
+
+        String preservePath = JsonBeautyListener.selectedPathJson;
+        if (StringUtils.isNotBlank(preservePath)) {
+            selectJsonInList(preservePath);
+        }
+    }
+
+    private static void expandAllTreeRows(JTree tree) {
+        for (int i = 0; i < tree.getRowCount(); i++) {
+            tree.expandRow(i);
+        }
+    }
+
+    public static void initList() {
+        populateJsonTree(false);
+    }
+
+    public static void refreshList() {
+        populateJsonTree(true);
+        updateGitButtonStatus();
+    }
+
+    private static void populateJsonTree(boolean preserveOnly) {
+        JsonBeautyVaultUtil.ensureVaultReady();
+        if (jsonBeautyForm.getNoteTree() == null) {
+            log.error("JSON tree is not initialized");
+            return;
+        }
+
+        String titleFilterKeyWord = jsonBeautyForm.getSearchTextField().getText();
+        List<TJsonBeauty> jsonList = JsonBeautyVaultUtil.listByFilter(titleFilterKeyWord);
+        List<String> folders = StringUtils.isNotBlank(titleFilterKeyWord)
+                ? List.of()
+                : JsonBeautyVaultUtil.listFolders();
+        jsonBeautyForm.getNoteTree().setModel(
+                JsonBeautyTreeUtil.buildTreeModel(jsonList, folders, getListSortMode()));
+        expandAllTreeRows(jsonBeautyForm.getNoteTree());
+
+        if (jsonList.isEmpty()) {
             JsonBeautyListener.ignoreQuickSave = true;
             try {
                 JsonBeautyListener.selectedPathJson = null;
@@ -377,21 +468,96 @@ public class JsonBeautyForm {
             } finally {
                 JsonBeautyListener.ignoreQuickSave = false;
             }
+            return;
+        }
+
+        JsonBeautyListener.ignoreQuickSave = true;
+        try {
+            String preservePath = JsonBeautyListener.selectedPathJson;
+            TJsonBeauty selectedItem = null;
+            if (StringUtils.isNotEmpty(preservePath)) {
+                selectedItem = jsonList.stream()
+                        .filter(item -> preservePath.equals(item.getRelativePath()))
+                        .findFirst()
+                        .orElse(null);
+            }
+            if (selectedItem != null) {
+                selectJsonInList(selectedItem.getRelativePath());
+                if (!preserveOnly) {
+                    showJson(selectedItem);
+                }
+            } else if (StringUtils.isNotEmpty(preservePath)) {
+                if (JsonBeautyVaultUtil.loadByPath(preservePath) == null) {
+                    jsonBeautyForm.getTextArea().setText("");
+                    JsonBeautyListener.selectedPathJson = null;
+                    JsonBeautyListener.selectedNameJson = null;
+                }
+            } else if (!preserveOnly) {
+                selectedItem = JsonBeautyTreeUtil.sortedItems(jsonList, getListSortMode()).get(0);
+                selectJsonInList(selectedItem.getRelativePath());
+                showJson(selectedItem);
+            }
+        } catch (Exception e1) {
+            log.error(e1.toString());
+        } finally {
+            JsonBeautyListener.ignoreQuickSave = false;
         }
     }
 
     public static void selectJsonInList(String relativePath) {
-        if (jsonBeautyForm == null || jsonBeautyForm.noteList == null || StringUtils.isBlank(relativePath)) {
+        if (jsonBeautyForm == null || jsonBeautyForm.noteTree == null || StringUtils.isBlank(relativePath)) {
             return;
         }
-        DefaultListModel<TJsonBeauty> model = (DefaultListModel<TJsonBeauty>) jsonBeautyForm.noteList.getModel();
-        for (int i = 0; i < model.size(); i++) {
-            TJsonBeauty item = model.getElementAt(i);
-            if (relativePath.equals(item.getRelativePath())) {
-                jsonBeautyForm.noteList.setSelectedIndex(i);
-                return;
+        DefaultMutableTreeNode root = (DefaultMutableTreeNode) jsonBeautyForm.noteTree.getModel().getRoot();
+        DefaultMutableTreeNode node = JsonBeautyTreeUtil.findNodeByPath(root, relativePath);
+        if (node != null) {
+            TreePath treePath = new TreePath(node.getPath());
+            jsonBeautyForm.noteTree.setSelectionPath(treePath);
+            jsonBeautyForm.noteTree.scrollPathToVisible(treePath);
+        }
+    }
+
+    public static TJsonBeauty getSelectedTreeJson() {
+        if (jsonBeautyForm == null || jsonBeautyForm.getNoteTree() == null) {
+            return null;
+        }
+        TreePath selectionPath = jsonBeautyForm.getNoteTree().getSelectionPath();
+        if (selectionPath == null) {
+            return null;
+        }
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectionPath.getLastPathComponent();
+        return JsonBeautyTreeUtil.selectedItem(node);
+    }
+
+    public static String getSelectedFolderPath() {
+        if (jsonBeautyForm == null || jsonBeautyForm.getNoteTree() == null) {
+            return "";
+        }
+        TreePath selectionPath = jsonBeautyForm.getNoteTree().getSelectionPath();
+        if (selectionPath == null) {
+            return "";
+        }
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectionPath.getLastPathComponent();
+        return JsonBeautyTreeUtil.selectedFolderPath(node);
+    }
+
+    public static List<TJsonBeauty> getSelectedJsons() {
+        if (jsonBeautyForm == null || jsonBeautyForm.getNoteTree() == null) {
+            return List.of();
+        }
+        TreePath[] selectionPaths = jsonBeautyForm.getNoteTree().getSelectionPaths();
+        if (selectionPaths == null) {
+            return List.of();
+        }
+        List<TJsonBeauty> items = new ArrayList<>();
+        for (TreePath selectionPath : selectionPaths) {
+            DefaultMutableTreeNode node = (DefaultMutableTreeNode) selectionPath.getLastPathComponent();
+            TJsonBeauty item = JsonBeautyTreeUtil.selectedItem(node);
+            if (item != null) {
+                items.add(item);
             }
         }
+        return items;
     }
 
     public static void showJson(TJsonBeauty item) {
@@ -402,8 +568,10 @@ public class JsonBeautyForm {
         try {
             JsonBeautyListener.selectedPathJson = item.getRelativePath();
             JsonBeautyListener.selectedNameJson = item.getName();
-            jsonBeautyForm.getTextArea().setText(item.getContent());
-            jsonBeautyForm.getTextArea().setCaretPosition(0);
+        jsonBeautyForm.getTextArea().setText(item.getContent());
+        jsonBeautyForm.getTextArea().setCaretPosition(0);
+        jsonBeautyForm.getScrollPane().getVerticalScrollBar().setValue(0);
+        jsonBeautyForm.getScrollPane().getHorizontalScrollBar().setValue(0);
         } finally {
             JsonBeautyListener.ignoreQuickSave = false;
         }

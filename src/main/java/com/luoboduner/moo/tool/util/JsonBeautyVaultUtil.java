@@ -11,6 +11,7 @@ import java.awt.Desktop;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -119,9 +120,23 @@ public final class JsonBeautyVaultUtil {
     }
 
     public static TJsonBeauty createJson(String title) {
+        return createJson(title, "");
+    }
+
+    public static boolean jsonTitleExistsInFolder(String title, String folderRelativePath) {
+        if (StringUtils.isBlank(title)) {
+            return false;
+        }
+        String path = joinRelativePath(normalizeFolderPath(folderRelativePath),
+                sanitizeFileName(title) + JSON_EXTENSION);
+        return toAbsoluteFile(path).exists();
+    }
+
+    public static TJsonBeauty createJson(String title, String folderRelativePath) {
         ensureVaultReady();
         String name = StringUtils.defaultIfBlank(title, NamingUtil.defaultUntitledName());
-        String relativePath = buildUniqueRelativePath(sanitizeFileName(name));
+        String folder = normalizeFolderPath(folderRelativePath);
+        String relativePath = buildUniqueRelativePath(folder, sanitizeFileName(name));
         String now = SqliteUtil.nowDateForSqlite();
 
         TJsonBeauty item = new TJsonBeauty();
@@ -142,6 +157,28 @@ public final class JsonBeautyVaultUtil {
         File file = toAbsoluteFile(item.getRelativePath());
         FileUtil.mkParentDirs(file);
         FileUtil.writeString(content == null ? "" : content, file, StandardCharsets.UTF_8);
+        JsonBeautyVaultRefreshCoordinator.markInternalWrite();
+    }
+
+    public static TJsonBeauty duplicateJson(String sourceRelativePath) {
+        TJsonBeauty source = loadByPath(sourceRelativePath);
+        if (source == null) {
+            return null;
+        }
+        String folder = parentFolder(sourceRelativePath);
+        String copyName = source.getName() + I18n.get("quickNote.copySuffix");
+        String copyBase = sanitizeFileName(copyName);
+        String newRelativePath = buildUniqueRelativePath(folder, copyBase);
+        String now = SqliteUtil.nowDateForSqlite();
+
+        TJsonBeauty copy = new TJsonBeauty();
+        copy.setRelativePath(newRelativePath);
+        copy.setName(copyName);
+        copy.setContent(source.getContent());
+        copy.setCreateTime(now);
+        copy.setModifiedTime(now);
+        saveJson(copy, source.getContent());
+        return copy;
     }
 
     public static String renameJson(String oldRelativePath, String newTitle) {
@@ -152,12 +189,190 @@ public final class JsonBeautyVaultUtil {
         if (existing == null) {
             return oldRelativePath;
         }
-        String newRelativePath = buildUniqueRelativePath(sanitizeFileName(newTitle), oldRelativePath);
+        String folder = parentFolder(oldRelativePath);
+        String newRelativePath = buildUniqueRelativePath(folder, sanitizeFileName(newTitle), oldRelativePath);
         File oldFile = toAbsoluteFile(oldRelativePath);
         File newFile = toAbsoluteFile(newRelativePath);
         FileUtil.mkParentDirs(newFile);
         FileUtil.move(oldFile, newFile, true);
+        JsonBeautyVaultRefreshCoordinator.markInternalWrite();
         return newRelativePath;
+    }
+
+    public static void createFolder(String folderRelativePath) {
+        ensureVaultReady();
+        File folder = toAbsoluteFolder(folderRelativePath);
+        FileUtil.mkdir(folder);
+        JsonBeautyVaultRefreshCoordinator.markInternalWrite();
+    }
+
+    public static String moveJsonToFolder(String oldRelativePath, String targetFolderPath) {
+        if (StringUtils.isBlank(oldRelativePath)) {
+            return oldRelativePath;
+        }
+        TJsonBeauty existing = loadByPath(oldRelativePath);
+        if (existing == null) {
+            return oldRelativePath;
+        }
+        String targetFolder = normalizeFolderPath(targetFolderPath);
+        String currentFolder = parentFolder(oldRelativePath);
+        if (targetFolder.equals(currentFolder)) {
+            return oldRelativePath;
+        }
+        String baseName = fileNameWithoutExtension(oldRelativePath);
+        String newRelativePath = buildUniqueRelativePath(targetFolder, baseName, oldRelativePath);
+
+        File oldFile = toAbsoluteFile(oldRelativePath);
+        File newFile = toAbsoluteFile(newRelativePath);
+        FileUtil.mkParentDirs(newFile);
+        FileUtil.move(oldFile, newFile, true);
+        JsonBeautyVaultRefreshCoordinator.markInternalWrite();
+        return newRelativePath;
+    }
+
+    public static boolean isFolderEmpty(String folderRelativePath) {
+        String folder = normalizeFolderPath(folderRelativePath);
+        if (StringUtils.isBlank(folder)) {
+            return false;
+        }
+        for (TJsonBeauty item : listAll()) {
+            String parent = parentFolder(item.getRelativePath());
+            if (parent.equals(folder) || parent.startsWith(folder + "/")) {
+                return false;
+            }
+        }
+        for (String childFolder : listFolders()) {
+            if (childFolder.startsWith(folder + "/")) {
+                return false;
+            }
+        }
+        return toAbsoluteFolder(folder).isDirectory();
+    }
+
+    public static boolean deleteFolderIfEmpty(String folderRelativePath) {
+        String folder = normalizeFolderPath(folderRelativePath);
+        if (StringUtils.isBlank(folder) || !isFolderEmpty(folder)) {
+            return false;
+        }
+        File dir = toAbsoluteFolder(folder);
+        if (!dir.isDirectory()) {
+            return false;
+        }
+        FileUtil.del(dir);
+        JsonBeautyVaultRefreshCoordinator.markInternalWrite();
+        return true;
+    }
+
+    public static String folderLeafName(String folderRelativePath) {
+        String normalized = normalizeFolderPath(folderRelativePath);
+        if (StringUtils.isBlank(normalized)) {
+            return "";
+        }
+        int index = normalized.lastIndexOf('/');
+        return index < 0 ? normalized : normalized.substring(index + 1);
+    }
+
+    public static String renameFolder(String oldFolderPath, String newFolderName) {
+        String oldFolder = normalizeFolderPath(oldFolderPath);
+        if (StringUtils.isBlank(oldFolder)) {
+            throw new IllegalArgumentException("Cannot rename root folder");
+        }
+        String parent = parentFolder(oldFolder + "/.keep");
+        String newLeaf = sanitizeFileName(newFolderName);
+        if (StringUtils.isBlank(newLeaf)) {
+            throw new IllegalArgumentException("Invalid folder name");
+        }
+        String newFolder = StringUtils.isBlank(parent) ? newLeaf : parent + "/" + newLeaf;
+        if (oldFolder.equals(newFolder)) {
+            return oldFolder;
+        }
+        File oldDir = toAbsoluteFolder(oldFolder);
+        File newDir = toAbsoluteFolder(newFolder);
+        if (!oldDir.isDirectory()) {
+            throw new IllegalStateException("Folder not found: " + oldFolder);
+        }
+        if (newDir.exists()) {
+            throw new IllegalStateException("Folder already exists: " + newFolder);
+        }
+        FileUtil.move(oldDir, newDir, true);
+        JsonBeautyVaultRefreshCoordinator.markInternalWrite();
+        return newFolder;
+    }
+
+    public static String moveFolderToFolder(String folderPath, String targetFolderPath) {
+        String folder = normalizeFolderPath(folderPath);
+        String target = normalizeFolderPath(targetFolderPath);
+        if (StringUtils.isBlank(folder)) {
+            throw new IllegalArgumentException("Cannot move root folder");
+        }
+        if (folder.equals(target) || target.startsWith(folder + "/")) {
+            throw new IllegalArgumentException("Invalid target folder");
+        }
+        String leaf = folderLeafName(folder);
+        String newFolder = StringUtils.isBlank(target) ? leaf : joinRelativePath(target, leaf);
+        newFolder = normalizeFolderPath(newFolder);
+        if (folder.equals(newFolder)) {
+            return folder;
+        }
+        File oldDir = toAbsoluteFolder(folder);
+        File newDir = toAbsoluteFolder(newFolder);
+        if (!oldDir.isDirectory()) {
+            throw new IllegalStateException("Folder not found: " + folder);
+        }
+        if (newDir.exists()) {
+            throw new IllegalStateException("Folder already exists: " + newFolder);
+        }
+        FileUtil.move(oldDir, newDir, true);
+        JsonBeautyVaultRefreshCoordinator.markInternalWrite();
+        return newFolder;
+    }
+
+    public static String remapPathAfterFolderRename(String relativePath, String oldFolder, String newFolder) {
+        if (StringUtils.isBlank(relativePath) || StringUtils.isBlank(oldFolder)) {
+            return relativePath;
+        }
+        if (relativePath.equals(oldFolder) || relativePath.startsWith(oldFolder + "/")) {
+            return newFolder + relativePath.substring(oldFolder.length());
+        }
+        return relativePath;
+    }
+
+    public static List<String> listJsonPathsUnderFolder(String folderRelativePath) {
+        String folder = normalizeFolderPath(folderRelativePath);
+        if (StringUtils.isBlank(folder)) {
+            return List.of();
+        }
+        String prefix = folder + "/";
+        return listAll().stream()
+                .map(TJsonBeauty::getRelativePath)
+                .filter(path -> path.startsWith(prefix))
+                .collect(Collectors.toList());
+    }
+
+    public static List<String> listFolders() {
+        ensureVaultReady();
+        List<String> folders = new ArrayList<>();
+        collectFolders(getVaultDir(), "", folders);
+        folders.sort(String::compareToIgnoreCase);
+        return QuickNoteGitIgnoreUtil.filterVisibleFolders(
+                getVaultDir(), folders, App.config.isJsonBeautyHideGitignoredFiles());
+    }
+
+    public static String parentFolder(String relativePath) {
+        String normalized = normalizeRelativePath(relativePath);
+        int index = normalized.lastIndexOf('/');
+        if (index < 0) {
+            return "";
+        }
+        return normalized.substring(0, index);
+    }
+
+    public static String normalizeFolderPath(String folderRelativePath) {
+        String normalized = normalizeRelativePath(folderRelativePath);
+        if (normalized.endsWith("/")) {
+            normalized = normalized.substring(0, normalized.length() - 1);
+        }
+        return normalized;
     }
 
     public static void deleteByPath(String relativePath) {
@@ -167,6 +382,7 @@ public final class JsonBeautyVaultUtil {
         File file = toAbsoluteFile(relativePath);
         if (file.isFile()) {
             FileUtil.del(file);
+            JsonBeautyVaultRefreshCoordinator.markInternalWrite();
         }
     }
 
@@ -193,9 +409,19 @@ public final class JsonBeautyVaultUtil {
         if (relativePath == null) {
             return "";
         }
-        String normalized = relativePath.replace('\\', '/').trim();
-        while (normalized.startsWith("/")) {
-            normalized = normalized.substring(1);
+        String cleaned = relativePath.replace('\\', '/').replaceAll("^/+", "");
+        if (cleaned.indexOf('\0') >= 0) {
+            throw new IllegalArgumentException("Invalid JSON path");
+        }
+        if (StringUtils.isBlank(cleaned)) {
+            return "";
+        }
+        String normalized = Path.of(cleaned).normalize().toString().replace('\\', '/');
+        if (".".equals(normalized)) {
+            return "";
+        }
+        if (normalized.equals("..") || normalized.startsWith("../")) {
+            throw new IllegalArgumentException("JSON path escapes vault: " + relativePath);
         }
         return normalized;
     }
@@ -208,7 +434,21 @@ public final class JsonBeautyVaultUtil {
     }
 
     public static File toAbsoluteFile(String relativePath) {
-        return new File(getVaultDir(), normalizeRelativePath(relativePath));
+        return resolveVaultChild(normalizeRelativePath(relativePath));
+    }
+
+    private static File toAbsoluteFolder(String folderRelativePath) {
+        return resolveVaultChild(normalizeFolderPath(folderRelativePath));
+    }
+
+    private static File resolveVaultChild(String relativePath) {
+        File vaultDir = getVaultDir();
+        Path vaultPath = vaultDir.toPath().toAbsolutePath().normalize();
+        Path childPath = vaultPath.resolve(StringUtils.defaultString(relativePath)).normalize();
+        if (!childPath.startsWith(vaultPath)) {
+            throw new IllegalArgumentException("JSON path escapes vault: " + relativePath);
+        }
+        return childPath.toFile();
     }
 
     private static void collectJsonFiles(File dir, String relativePrefix, List<TJsonBeauty> items) {
@@ -251,7 +491,7 @@ public final class JsonBeautyVaultUtil {
             List<TJsonBeauty> dbItems = mapper.selectAll();
             for (TJsonBeauty dbItem : dbItems) {
                 String title = StringUtils.defaultIfBlank(dbItem.getName(), NamingUtil.defaultUntitledName());
-                String relativePath = buildUniqueRelativePath(sanitizeFileName(title));
+                String relativePath = buildUniqueRelativePath("", sanitizeFileName(title));
                 File file = new File(vaultDir, relativePath);
                 FileUtil.writeString(StringUtils.defaultString(dbItem.getContent()), file, StandardCharsets.UTF_8);
             }
@@ -287,25 +527,41 @@ public final class JsonBeautyVaultUtil {
         }
     }
 
-    private static String buildUniqueRelativePath(String baseName) {
-        return buildUniqueRelativePath(baseName, null);
+    private static void collectFolders(File dir, String relativePrefix, List<String> folders) {
+        File[] children = dir.listFiles();
+        if (children == null) {
+            return;
+        }
+        for (File child : children) {
+            String name = child.getName();
+            if (shouldSkipEntry(name) || !child.isDirectory()) {
+                continue;
+            }
+            String childRelative = joinRelativePath(relativePrefix, name);
+            folders.add(childRelative);
+            collectFolders(child, childRelative, folders);
+        }
     }
 
-    private static String buildUniqueRelativePath(String baseName, String excludePath) {
-        String candidate = baseName + JSON_EXTENSION;
+    private static String buildUniqueRelativePath(String folder, String baseName) {
+        return buildUniqueRelativePath(folder, baseName, null);
+    }
+
+    private static String buildUniqueRelativePath(String folder, String baseName, String excludePath) {
+        String candidate = joinRelativePath(folder, baseName + JSON_EXTENSION);
         if (excludePath != null && candidate.equals(excludePath)) {
             return candidate;
         }
-        if (loadByPath(candidate) == null && !toAbsoluteFile(candidate).exists()) {
+        if (!toAbsoluteFile(candidate).exists()) {
             return candidate;
         }
         int index = 1;
         while (true) {
-            String numbered = baseName + "-" + index + JSON_EXTENSION;
+            String numbered = joinRelativePath(folder, baseName + "-" + index + JSON_EXTENSION);
             if (excludePath != null && numbered.equals(excludePath)) {
                 return numbered;
             }
-            if (loadByPath(numbered) == null && !toAbsoluteFile(numbered).exists()) {
+            if (!toAbsoluteFile(numbered).exists()) {
                 return numbered;
             }
             index++;

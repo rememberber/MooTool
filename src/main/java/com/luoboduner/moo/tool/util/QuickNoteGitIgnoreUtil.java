@@ -72,10 +72,15 @@ public final class QuickNoteGitIgnoreUtil {
     }
 
     public static List<String> filterVisibleFolders(File vaultDir, List<String> folders) {
+        return filterVisibleFolders(vaultDir, folders, shouldHideGitignoredFiles());
+    }
+
+    public static List<String> filterVisibleFolders(File vaultDir, List<String> folders,
+                                                    boolean hideGitignoredFiles) {
         if (folders == null || folders.isEmpty()) {
             return List.of();
         }
-        if (!shouldHideGitignoredFiles() || !hasGitignoreFile(vaultDir)) {
+        if (!hideGitignoredFiles || !hasGitignoreFile(vaultDir)) {
             return folders;
         }
         List<String> candidates = new ArrayList<>();
