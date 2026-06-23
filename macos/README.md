@@ -10,20 +10,35 @@ The current Java/Swing application remains the stable cross-platform implementat
 - Xcode 15 or later for tests and app development
 - Swift 5.9 compatible command line tools for basic package builds
 
-## Local Build
+## Command Line
 
 ```bash
 cd macos
 swift build
 ```
 
-When full Xcode is available and its license has been accepted:
+When full Xcode is available and its license has been accepted, prefer the Xcode developer directory for tests and local launches:
 
 ```bash
 cd macos
-swift test
-swift run MooToolNative
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift test
+DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer swift run MooToolNative
 ```
+
+If `swift test` fails because the active developer directory points to Command Line Tools, either prefix the command with `DEVELOPER_DIR` as shown above or switch the active Xcode installation with `xcode-select`.
+
+## Xcode
+
+1. Open `macos/Package.swift` in Xcode.
+2. Select the `MooToolNative` scheme.
+3. Choose My Mac as the run destination.
+4. Run with Product > Run.
+
+The preview currently launches as a Swift Package executable. It is not a signed `.app` bundle and is not part of the release DMG pipeline.
+
+## GitHub Actions
+
+The `macOS native preview` workflow builds and tests this Swift Package on `macos-14`. It is intentionally separate from `Build installers`, so the existing Java-based Windows, Linux, and macOS installer jobs remain unchanged.
 
 ## Migration Direction
 

@@ -23,4 +23,10 @@ final class MooToolModuleCatalogTests: XCTestCase {
     func testFirstPreviewModuleIsDefaultSelection() {
         XCTAssertEqual(MooToolModuleCatalog.defaultSelection?.id, "quick-note")
     }
+
+    func testTimeModuleIsMarkedAsPreview() {
+        let timeModule = MooToolModuleCatalog.previewModules.first { $0.id == "time" }
+
+        XCTAssertEqual(timeModule?.status, .preview)
+    }
 }

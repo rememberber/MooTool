@@ -2,7 +2,7 @@ public enum MooToolModuleCatalog {
     public static let previewModules: [MooToolModule] = [
         MooToolModule(id: "quick-note", title: "随手记", symbolName: "note.text", status: .planned),
         MooToolModule(id: "json", title: "JSON", symbolName: "curlybraces", status: .planned),
-        MooToolModule(id: "time", title: "时间转换", symbolName: "clock", status: .planned),
+        MooToolModule(id: "time", title: "时间转换", symbolName: "clock", status: .preview),
         MooToolModule(id: "encoding", title: "编码转换", symbolName: "arrow.left.arrow.right", status: .planned),
         MooToolModule(id: "qr-code", title: "二维码", symbolName: "qrcode", status: .planned),
         MooToolModule(id: "http", title: "HTTP", symbolName: "network", status: .planned),

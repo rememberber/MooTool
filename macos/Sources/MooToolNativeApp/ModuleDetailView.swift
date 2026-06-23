@@ -16,11 +16,15 @@ struct ModuleDetailView: View {
 
                 Divider()
 
-                Text("原生版预览骨架")
-                    .font(.headline)
+                if module.id == "time" {
+                    TimeConverterView()
+                } else {
+                    Text("原生版预览骨架")
+                        .font(.headline)
 
-                Text("该模块将在骨架通过后分阶段迁移。")
-                    .foregroundStyle(.secondary)
+                    Text("该模块将在骨架通过后分阶段迁移。")
+                        .foregroundStyle(.secondary)
+                }
             } else {
                 Text("请选择模块")
                     .foregroundStyle(.secondary)
