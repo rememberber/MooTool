@@ -2,9 +2,7 @@ package com.luoboduner.moo.tool.ui.listener;
 
 
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
-import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 
 import javax.swing.*;
@@ -20,8 +18,6 @@ import java.awt.event.*;
  * @since 2017/6/21.
  */
 public class FrameListener {
-
-    private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
 
     public static void addListeners() {
         App.mainFrame.addWindowListener(new WindowListener() {

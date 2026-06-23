@@ -17,6 +17,7 @@ import com.luoboduner.moo.tool.ui.component.MooFlatTabbedPaneUI;
 import com.luoboduner.moo.tool.ui.component.TabUiUtil;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
 import com.luoboduner.moo.tool.ui.dialog.LanguageSelectDialog;
+import com.luoboduner.moo.tool.ui.dialog.QuickNoteGitDialog;
 import com.luoboduner.moo.tool.ui.dialog.SettingDialog;
 import com.luoboduner.moo.tool.ui.dialog.TranslationDialog;
 import com.luoboduner.moo.tool.util.I18n;
@@ -214,6 +215,7 @@ public class Init {
                 mainWindow.refreshTabbedPaneUi();
                 TabUiUtil.applySafeTabbedPaneUi(App.mainFrame.getContentPane(), mainWindow.getTabbedPane());
             }
+            QuickNoteGitDialog.onThemeChanged();
         });
     }
 

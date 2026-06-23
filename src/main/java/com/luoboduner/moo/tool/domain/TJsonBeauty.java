@@ -11,6 +11,8 @@ public class TJsonBeauty {
 
     private String modifiedTime;
 
+    private String relativePath;
+
     public Integer getId() {
         return id;
     }
@@ -32,7 +34,7 @@ public class TJsonBeauty {
     }
 
     public void setContent(String content) {
-        this.content = content == null ? null : content.trim();
+        this.content = content;
     }
 
     public String getCreateTime() {
@@ -49,5 +51,13 @@ public class TJsonBeauty {
 
     public void setModifiedTime(String modifiedTime) {
         this.modifiedTime = modifiedTime == null ? null : modifiedTime.trim();
+    }
+
+    public String getRelativePath() {
+        return relativePath;
+    }
+
+    public void setRelativePath(String relativePath) {
+        this.relativePath = relativePath == null ? null : relativePath.trim();
     }
 }

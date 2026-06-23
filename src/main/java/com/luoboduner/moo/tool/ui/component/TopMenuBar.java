@@ -521,6 +521,8 @@ public class TopMenuBar extends JMenuBar {
 
         ColorBoardForm.updateTheme();
 
+        QuickNoteGitDialog.onThemeChanged();
+
         SwingUtilities.updateComponentTreeUI(App.popupMenu);
         App.popupMenu.updateUI();
     }

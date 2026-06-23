@@ -2,8 +2,6 @@ package com.luoboduner.moo.tool.ui.component;
 
 import cn.hutool.core.swing.clipboard.ClipboardUtil;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
-import com.formdev.flatlaf.FlatClientProperties;
-import com.formdev.flatlaf.icons.FlatSearchIcon;
 import com.luoboduner.moo.tool.dao.TFuncHistoryMapper;
 import com.luoboduner.moo.tool.domain.TFuncHistory;
 import com.luoboduner.moo.tool.util.AlertUtil;
@@ -91,7 +89,7 @@ public class FuncHistoryPanel extends JPanel {
         setLayout(new BorderLayout(0, 6));
         setBorder(BorderFactory.createEmptyBorder(10, 10, 10, 10));
 
-        searchField.putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON, new FlatSearchIcon());
+        SearchFieldUiUtil.configure(searchField);
 
         applyButton.setIcon(new FlatSVGIcon("icon/run.svg"));
         inputTextArea.setLineWrap(true);
