@@ -30,6 +30,9 @@ struct MooToolNativeApp: App {
 
 final class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDidFinishLaunching(_ notification: Notification) {
+        if let appIconImage = NativeAppAssets.appIconImage {
+            NSApplication.shared.applicationIconImage = appIconImage
+        }
         NSApplication.shared.setActivationPolicy(.regular)
         NSApplication.shared.activate()
     }
