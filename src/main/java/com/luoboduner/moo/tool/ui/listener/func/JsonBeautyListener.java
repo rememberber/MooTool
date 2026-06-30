@@ -575,6 +575,7 @@ public class JsonBeautyListener {
         }
 
         newFileMenuItem.addActionListener(e -> newJson());
+        jsonBeautyForm.getNewFolderButton().addActionListener(e -> createFolder(jsonBeautyForm));
         newFolderMenuItem.addActionListener(e -> createFolder(jsonBeautyForm));
         renameMenuItem.addActionListener(e -> renameSelectedItem(jsonBeautyForm));
         deleteMenuItem.addActionListener(e -> deleteFiles(jsonBeautyForm));
