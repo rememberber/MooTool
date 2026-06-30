@@ -29,4 +29,14 @@ final class MooToolModuleCatalogTests: XCTestCase {
 
         XCTAssertEqual(timeModule?.status, .preview)
     }
+
+    func testBasicToolModulesAreMarkedAsPreview() {
+        let moduleStatusByID = Dictionary(
+            uniqueKeysWithValues: MooToolModuleCatalog.previewModules.map { ($0.id, $0.status) }
+        )
+
+        XCTAssertEqual(moduleStatusByID["json"], .preview)
+        XCTAssertEqual(moduleStatusByID["encoding"], .preview)
+        XCTAssertEqual(moduleStatusByID["regex"], .preview)
+    }
 }
