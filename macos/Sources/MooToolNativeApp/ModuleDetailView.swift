@@ -38,14 +38,24 @@ struct ModuleDetailView: View {
     @ViewBuilder
     private func detailContent(for module: MooToolModule) -> some View {
         switch module.id {
+        case "quick-note":
+            QuickNoteView()
         case "json":
             JSONFormatterView()
         case "time":
             TimeConverterView()
         case "encoding":
             EncodingConverterView()
+        case "qr-code":
+            QRCodeGeneratorView()
+        case "http":
+            HTTPClientView()
+        case "host":
+            HostEditorView()
         case "regex":
             RegexTesterView()
+        case "text-diff":
+            TextDiffView()
         default:
             Text("原生版预览骨架")
                 .font(.headline)

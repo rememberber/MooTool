@@ -17,7 +17,7 @@ final class MooToolModuleCatalogTests: XCTestCase {
             "text-diff"
         ])
         XCTAssertEqual(modules.first?.title, "随手记")
-        XCTAssertEqual(modules.first?.status, .planned)
+        XCTAssertEqual(modules.first?.status, .preview)
     }
 
     func testFirstPreviewModuleIsDefaultSelection() {
@@ -35,8 +35,13 @@ final class MooToolModuleCatalogTests: XCTestCase {
             uniqueKeysWithValues: MooToolModuleCatalog.previewModules.map { ($0.id, $0.status) }
         )
 
+        XCTAssertEqual(moduleStatusByID["quick-note"], .preview)
         XCTAssertEqual(moduleStatusByID["json"], .preview)
         XCTAssertEqual(moduleStatusByID["encoding"], .preview)
+        XCTAssertEqual(moduleStatusByID["qr-code"], .preview)
+        XCTAssertEqual(moduleStatusByID["http"], .preview)
+        XCTAssertEqual(moduleStatusByID["host"], .preview)
         XCTAssertEqual(moduleStatusByID["regex"], .preview)
+        XCTAssertEqual(moduleStatusByID["text-diff"], .preview)
     }
 }
