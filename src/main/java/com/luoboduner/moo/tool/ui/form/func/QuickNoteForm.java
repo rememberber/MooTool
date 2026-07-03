@@ -160,7 +160,33 @@ public class QuickNoteForm {
     private static QuickNoteForm quickNoteForm;
     private static boolean i18nRegistered;
 
+    /** 切换笔记时回显工具栏，避免触发字体下拉框保存逻辑 */
+    private static boolean syncingToolbarFromNote;
+
     public static QuickNoteRSyntaxTextViewerManager quickNoteRSyntaxTextViewerManager;
+
+    public static boolean isSyncingToolbarFromNote() {
+        return syncingToolbarFromNote;
+    }
+
+    public static String resolveNoteFontName(TQuickNote note) {
+        if (note != null && StringUtils.isNotBlank(note.getFontName())) {
+            return note.getFontName();
+        }
+        return App.config.getQuickNoteFontName();
+    }
+
+    public static int resolveNoteFontSize(TQuickNote note) {
+        if (note != null && StringUtils.isNotBlank(note.getFontSize())) {
+            try {
+                return Integer.parseInt(note.getFontSize());
+            } catch (NumberFormatException ignored) {
+                // fall through to default
+            }
+        }
+        int fontSize = App.config.getQuickNoteFontSize();
+        return fontSize > 0 ? fontSize : 14;
+    }
 
     private QuickNoteForm() {
         colorButton = new JButton(new ListColorIcon("Moo.accent.blue", 18, 18));
@@ -1019,8 +1045,7 @@ public class QuickNoteForm {
             quickNoteForm.getSyntaxComboBox().setSelectedItem(tQuickNote.getSyntax().substring(5));
         }
         updateInsertImageButtonVisibility();
-        quickNoteForm.getFontNameComboBox().setSelectedItem(tQuickNote.getFontName());
-        quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(tQuickNote.getFontSize()));
+        syncFontToolbarFromNote(tQuickNote);
 
         quickNoteForm.getFindReplacePanel().removeAll();
         quickNoteForm.getFindReplacePanel().setVisible(false);
@@ -1083,16 +1108,54 @@ public class QuickNoteForm {
     }
 
     private static void initTextAreaFont() {
-        String fontName = App.config.getQuickNoteFontName();
-        int fontSize = App.config.getQuickNoteFontSize();
-        if (fontSize == 0) {
-            fontSize = quickNoteForm.getNoteList().getFont().getSize() + 2;
+        getSysFontList();
+        syncingToolbarFromNote = true;
+        try {
+            quickNoteForm.getFontNameComboBox().setSelectedItem(App.config.getQuickNoteFontName());
+            int fontSize = App.config.getQuickNoteFontSize();
+            if (fontSize == 0) {
+                fontSize = quickNoteForm.getNoteList().getFont().getSize() + 2;
+            }
+            quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(fontSize));
+        } finally {
+            syncingToolbarFromNote = false;
+        }
+    }
+
+    private static void syncFontToolbarFromNote(TQuickNote note) {
+        if (quickNoteForm == null || note == null) {
+            return;
+        }
+        String fontName = resolveNoteFontName(note);
+        int fontSize = resolveNoteFontSize(note);
+        ensureFontNameInCombo(fontName);
+
+        syncingToolbarFromNote = true;
+        try {
+            quickNoteForm.getFontNameComboBox().setSelectedItem(fontName);
+            quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(fontSize));
+        } finally {
+            syncingToolbarFromNote = false;
         }
 
-        getSysFontList();
+        if (quickNoteRSyntaxTextViewerManager != null
+                && StringUtils.isNotBlank(note.getRelativePath())) {
+            quickNoteRSyntaxTextViewerManager.applyFont(note.getRelativePath(), fontName, fontSize);
+        }
+    }
 
-        quickNoteForm.getFontNameComboBox().setSelectedItem(fontName);
-        quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(fontSize));
+    private static void ensureFontNameInCombo(String fontName) {
+        if (StringUtils.isBlank(fontName) || quickNoteForm == null) {
+            return;
+        }
+        JComboBox comboBox = quickNoteForm.getFontNameComboBox();
+        for (int i = 0; i < comboBox.getItemCount(); i++) {
+            Object item = comboBox.getItemAt(i);
+            if (item != null && fontName.equals(item.toString())) {
+                return;
+            }
+        }
+        comboBox.addItem(fontName);
     }
 
     /**
