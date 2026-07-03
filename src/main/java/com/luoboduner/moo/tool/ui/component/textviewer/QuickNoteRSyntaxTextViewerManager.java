@@ -38,9 +38,14 @@ public class QuickNoteRSyntaxTextViewerManager {
                 tQuickNote.setRelativePath(relativePath);
                 tQuickNote.setContent("");
             }
-            plainTextViewer.setText(StringUtils.defaultString(tQuickNote.getContent()));
             if (StringUtils.isNotEmpty(tQuickNote.getSyntax())) {
                 plainTextViewer.setSyntaxEditingStyle(tQuickNote.getSyntax());
+            }
+            QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
+            try {
+                plainTextViewer.setText(StringUtils.defaultString(tQuickNote.getContent()));
+            } finally {
+                QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
             }
             if (StringUtils.isNotEmpty(tQuickNote.getFontName()) && StringUtils.isNotEmpty(tQuickNote.getFontSize())) {
                 Font font = FontUtils.getCompositeFont(tQuickNote.getFontName(), Font.PLAIN,

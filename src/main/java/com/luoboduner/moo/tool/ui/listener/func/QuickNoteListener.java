@@ -182,12 +182,17 @@ public class QuickNoteListener {
 
                 if (StringUtils.isNotEmpty(syntaxName)) {
                     if (selectedPath != null && !QuickNoteRSyntaxTextViewer.ignoreQuickSave) {
-                        quickSaveSync(true, false, false);
-                        updateCurrentMetadata(note -> note.setSyntax("text/" + syntaxName));
+                        String newSyntax = "text/" + syntaxName;
+                        updateCurrentMetadata(note -> note.setSyntax(newSyntax));
                         quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(selectedPath);
-                        QuickNoteEditorPanel editorPanel = quickNoteRSyntaxTextViewerManager.getEditorPanel(selectedPath);
-                        quickNoteForm.getContentSplitPane().setLeftComponent(editorPanel);
-                        editorPanel.updateUI();
+                        QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
+                        try {
+                            QuickNoteEditorPanel editorPanel = quickNoteRSyntaxTextViewerManager.getEditorPanel(selectedPath);
+                            quickNoteForm.getContentSplitPane().setLeftComponent(editorPanel);
+                            editorPanel.updateUI();
+                        } finally {
+                            QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
+                        }
                     }
 
                 }
@@ -535,6 +540,7 @@ public class QuickNoteListener {
         if (StringUtils.isBlank(selectedPath)) {
             return;
         }
+        drainPendingSaves();
         TQuickNote note = QuickNoteVaultUtil.loadByPath(selectedPath);
         if (note == null) {
             return;

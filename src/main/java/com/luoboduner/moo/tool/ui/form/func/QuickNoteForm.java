@@ -823,8 +823,12 @@ public class QuickNoteForm {
                     selectNoteInTree(selectedNote.getRelativePath());
                     showNote(selectedNote);
                 } else if (StringUtils.isNotEmpty(preservePath)) {
-                    if (QuickNoteVaultUtil.loadByPath(preservePath) == null) {
+                    TQuickNote noteOnDisk = QuickNoteVaultUtil.loadByPath(preservePath);
+                    if (noteOnDisk == null) {
                         clearEditorPanel();
+                    } else {
+                        selectNoteInTree(preservePath);
+                        showNote(noteOnDisk);
                     }
                 } else {
                     selectedNote = QuickNoteTreeUtil.sortedNotes(quickNoteList, getListSortMode()).get(0);
@@ -992,6 +996,10 @@ public class QuickNoteForm {
             return;
         }
         String path = tQuickNote.getRelativePath();
+        TQuickNote noteFromDisk = QuickNoteVaultUtil.loadByPath(path);
+        if (noteFromDisk != null) {
+            tQuickNote = noteFromDisk;
+        }
         QuickNoteListener.selectedPath = path;
         QuickNoteListener.selectedName = tQuickNote.getName();
 
