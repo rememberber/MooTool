@@ -2,7 +2,6 @@ package com.luoboduner.moo.tool.util;
 
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
-import com.formdev.flatlaf.util.FontUtils;
 import com.luoboduner.moo.tool.App;
 import com.vladsch.flexmark.ext.autolink.AutolinkExtension;
 import com.vladsch.flexmark.ext.gfm.strikethrough.StrikethroughExtension;
@@ -11,6 +10,7 @@ import com.vladsch.flexmark.html.HtmlRenderer;
 import com.vladsch.flexmark.parser.Parser;
 import com.vladsch.flexmark.util.ast.Node;
 import com.vladsch.flexmark.util.data.MutableDataSet;
+import org.fife.ui.rsyntaxtextarea.CjkFallbackTokenPainterFactory;
 import org.fife.ui.rsyntaxtextarea.HtmlUtil;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
@@ -203,9 +203,10 @@ public class QuickNoteMarkdownUtil {
     private static RSyntaxTextArea createSyntaxHelper() {
         RSyntaxTextArea helper = new RSyntaxTextArea();
         helper.setEditable(false);
+        helper.setTokenPainterFactory(new CjkFallbackTokenPainterFactory());
         Theme theme = FlatLaf.isLafDark() ? DARK_SYNTAX_THEME : LIGHT_SYNTAX_THEME;
         theme.apply(helper);
-        Font codeFont = FontUtils.getCompositeFont(FlatJetBrainsMonoFont.FAMILY, Font.PLAIN, 13);
+        Font codeFont = EditorFontUtil.getEditorFont(FlatJetBrainsMonoFont.FAMILY, Font.PLAIN, 13);
         helper.setFont(codeFont);
         return helper;
     }

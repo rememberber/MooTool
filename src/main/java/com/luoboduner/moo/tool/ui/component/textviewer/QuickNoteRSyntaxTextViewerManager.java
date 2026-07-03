@@ -1,8 +1,8 @@
 package com.luoboduner.moo.tool.ui.component.textviewer;
 
 import com.formdev.flatlaf.FlatLaf;
-import com.formdev.flatlaf.util.FontUtils;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.util.EditorFontUtil;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.util.QuickNoteMarkdownUtil;
 import com.luoboduner.moo.tool.util.QuickNoteVaultUtil;
@@ -48,7 +48,7 @@ public class QuickNoteRSyntaxTextViewerManager {
                 QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
             }
             if (StringUtils.isNotEmpty(tQuickNote.getFontName()) && StringUtils.isNotEmpty(tQuickNote.getFontSize())) {
-                Font font = FontUtils.getCompositeFont(tQuickNote.getFontName(), Font.PLAIN,
+                Font font = EditorFontUtil.getEditorFont(tQuickNote.getFontName(), Font.PLAIN,
                         Integer.parseInt(tQuickNote.getFontSize()));
                 plainTextViewer.setFont(font);
             }
@@ -95,7 +95,7 @@ public class QuickNoteRSyntaxTextViewerManager {
             if (tQuickNote != null
                     && StringUtils.isNotEmpty(tQuickNote.getFontName())
                     && StringUtils.isNotEmpty(tQuickNote.getFontSize())) {
-                Font font = FontUtils.getCompositeFont(tQuickNote.getFontName(), Font.PLAIN,
+                Font font = EditorFontUtil.getEditorFont(tQuickNote.getFontName(), Font.PLAIN,
                         Integer.parseInt(tQuickNote.getFontSize()));
                 plainTextViewer.setFont(font);
             }

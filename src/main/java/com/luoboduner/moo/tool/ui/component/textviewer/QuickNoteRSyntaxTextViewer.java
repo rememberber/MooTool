@@ -2,14 +2,15 @@ package com.luoboduner.moo.tool.ui.component.textviewer;
 
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
-import com.formdev.flatlaf.util.FontUtils;
 import com.formdev.flatlaf.util.StringUtils;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.util.EditorFontUtil;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
 import com.luoboduner.moo.tool.util.QuickNoteAutoGitScheduler;
 import com.luoboduner.moo.tool.util.QuickNoteConflictHighlightUtil;
 import com.luoboduner.moo.tool.util.QuickNoteImageInsertUtil;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.CjkFallbackTokenPainterFactory;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
 import org.fife.ui.rtextarea.RTextArea;
@@ -31,6 +32,7 @@ public class QuickNoteRSyntaxTextViewer extends RSyntaxTextArea {
     private Runnable onContentChanged;
 
     public QuickNoteRSyntaxTextViewer() {
+        setTokenPainterFactory(new CjkFallbackTokenPainterFactory());
 
 //        setUseSelectedTextColor(true);
 //        setSelectedTextColor(new Color(50, 50, 50));
@@ -177,13 +179,13 @@ public class QuickNoteRSyntaxTextViewer extends RSyntaxTextArea {
         if (fontSize == 0) {
             fontSize = getFont().getSize() + 2;
         }
-        Font font = FontUtils.getCompositeFont(fontName, Font.PLAIN, fontSize);
+        Font font = EditorFontUtil.getEditorFont(fontName, Font.PLAIN, fontSize);
         setFont(font);
     }
 
     private static Font createEditorFont(int sizeIncr) {
         int size = UIManager.getFont("defaultFont").getSize() + sizeIncr;
-        Font font = FontUtils.getCompositeFont(FlatJetBrainsMonoFont.FAMILY, Font.PLAIN, size);
+        Font font = EditorFontUtil.getEditorFont(FlatJetBrainsMonoFont.FAMILY, Font.PLAIN, size);
         if (isFallbackFont(font)) {
             Font defaultFont = RTextArea.getDefaultFont();
             font = defaultFont.deriveFont((float) size);

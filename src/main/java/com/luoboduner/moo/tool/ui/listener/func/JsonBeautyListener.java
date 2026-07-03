@@ -3,9 +3,9 @@ package com.luoboduner.moo.tool.ui.listener.func;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.json.JSONConfig;
 import cn.hutool.json.JSONUtil;
-import com.formdev.flatlaf.util.FontUtils;
 import com.formdev.flatlaf.util.SystemFileChooser;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.util.EditorFontUtil;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
 import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
 import com.luoboduner.moo.tool.ui.component.JsonBeautyTreeDragDrop;
@@ -228,7 +228,7 @@ public class JsonBeautyListener {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 String fontName = e.getItem().toString();
                 int fontSize = Integer.parseInt(jsonBeautyForm.getFontSizeComboBox().getSelectedItem().toString());
-                Font font = FontUtils.getCompositeFont(fontName, Font.PLAIN, fontSize);
+                Font font = EditorFontUtil.getEditorFont(fontName, Font.PLAIN, fontSize);
                 jsonBeautyForm.getTextArea().setFont(font);
 
                 App.config.setJsonBeautyFontName(fontName);
@@ -242,7 +242,7 @@ public class JsonBeautyListener {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 int fontSize = Integer.parseInt(e.getItem().toString());
                 String fontName = jsonBeautyForm.getFontNameComboBox().getSelectedItem().toString();
-                Font font = FontUtils.getCompositeFont(fontName, Font.PLAIN, fontSize);
+                Font font = EditorFontUtil.getEditorFont(fontName, Font.PLAIN, fontSize);
                 jsonBeautyForm.getTextArea().setFont(font);
 
                 App.config.setJsonBeautyFontName(fontName);
