@@ -495,10 +495,14 @@ public class JsonBeautyForm {
                     showJson(selectedItem);
                 }
             } else if (StringUtils.isNotEmpty(preservePath)) {
-                if (JsonBeautyVaultUtil.loadByPath(preservePath) == null) {
+                TJsonBeauty itemOnDisk = JsonBeautyVaultUtil.loadByPath(preservePath);
+                if (itemOnDisk == null) {
                     jsonBeautyForm.getTextArea().setText("");
                     JsonBeautyListener.selectedPathJson = null;
                     JsonBeautyListener.selectedNameJson = null;
+                } else {
+                    selectJsonInList(preservePath);
+                    showJson(itemOnDisk);
                 }
             } else if (!preserveOnly) {
                 selectedItem = JsonBeautyTreeUtil.sortedItems(jsonList, getListSortMode()).get(0);
@@ -572,11 +576,16 @@ public class JsonBeautyForm {
         if (item == null) {
             return;
         }
+        String path = item.getRelativePath();
+        TJsonBeauty itemFromDisk = JsonBeautyVaultUtil.loadByPath(path);
+        if (itemFromDisk != null) {
+            item = itemFromDisk;
+        }
         JsonBeautyListener.ignoreQuickSave = true;
         try {
-            JsonBeautyListener.selectedPathJson = item.getRelativePath();
+            JsonBeautyListener.selectedPathJson = path;
             JsonBeautyListener.selectedNameJson = item.getName();
-        jsonBeautyForm.getTextArea().setText(item.getContent());
+        jsonBeautyForm.getTextArea().setText(StringUtils.defaultString(item.getContent()));
         jsonBeautyForm.getTextArea().setCaretPosition(0);
         jsonBeautyForm.getScrollPane().getVerticalScrollBar().setValue(0);
         jsonBeautyForm.getScrollPane().getHorizontalScrollBar().setValue(0);

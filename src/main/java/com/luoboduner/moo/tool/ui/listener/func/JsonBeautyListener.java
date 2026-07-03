@@ -106,6 +106,7 @@ public class JsonBeautyListener {
                     if (item == null) {
                         return;
                     }
+                    flushSelectedJsonBeforePathChange();
                     ignoreQuickSave = true;
                     try {
                         JsonBeautyForm.showJson(item);
@@ -145,6 +146,7 @@ public class JsonBeautyListener {
                         if (item == null) {
                             return;
                         }
+                        flushSelectedJsonBeforePathChange();
                         ignoreQuickSave = true;
                         try {
                             JsonBeautyForm.showJson(item);
@@ -901,8 +903,12 @@ public class JsonBeautyListener {
     private static void quickSave(boolean refreshModifiedTime) {
         JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
         String now = SqliteUtil.nowDateForSqlite();
-        if (selectedPathJson != null) {
-            TJsonBeauty tJsonBeauty = JsonBeautyVaultUtil.loadByPath(selectedPathJson);
+        String path = selectedPathJson;
+        if (path != null) {
+            if (JsonBeautyVaultRefreshCoordinator.shouldSkipSaveForPath(path)) {
+                return;
+            }
+            TJsonBeauty tJsonBeauty = JsonBeautyVaultUtil.loadByPath(path);
             if (tJsonBeauty == null) {
                 return;
             }
