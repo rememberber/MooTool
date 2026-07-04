@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.ui.form;
 
+import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSON;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
@@ -29,9 +30,12 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -106,6 +110,7 @@ public class AboutForm {
 
     public static void init() {
         aboutForm = getInstance();
+        ThreadUtil.execute(AboutForm::loadContributors);
         aboutForm.versionLabel.setText(UiConsts.APP_VERSION);
 
         ScrollUtil.smoothPane(aboutForm.getScrollPane());
@@ -237,56 +242,6 @@ public class AboutForm {
             log.error("获取Grace信息失败", e);
         }
 
-        // 更新贡献者头像
-        try {
-            String contributorAvatarContent = HttpUtil.get(UiConsts.CONTRIBUTOR_URL, 10000);
-            if (contributorAvatarContent != null) {
-                ContributorInfo contributorInfo = JSON.parseObject(contributorAvatarContent, ContributorInfo.class);
-                if (contributorInfo != null) {
-                    for (ContributorInfo.Contributor contributor : contributorInfo.getContributorList()) {
-                        JPanel contributorItem = new JPanel(new BorderLayout(0, 4));
-                        contributorItem.setOpaque(false);
-                        contributorItem.setToolTipText(contributor.getName());
-
-                        ImagePreviewComponent avatarPreview = new ImagePreviewComponent();
-                        BufferedImage avatar = ImageDisplayUtil.readImage(new URL(contributor.getAvatarUrl()));
-                        avatarPreview.setSourceImageInLogicalBounds(avatar, 50, 50);
-                        contributorItem.add(avatarPreview, BorderLayout.NORTH);
-
-                        JLabel nameLabel = new JLabel(contributor.getName(), SwingConstants.CENTER);
-                        contributorItem.add(nameLabel, BorderLayout.SOUTH);
-
-                        contributorItem.addMouseListener(new MouseAdapter() {
-                            @Override
-                            public void mouseClicked(MouseEvent e) {
-                                super.mouseClicked(e);
-                                Desktop desktop = Desktop.getDesktop();
-                                try {
-                                    desktop.browse(new URI(contributor.getLink()));
-                                } catch (IOException | URISyntaxException e1) {
-                                    e1.printStackTrace();
-                                }
-                            }
-
-                            @Override
-                            public void mousePressed(MouseEvent e) {
-                                super.mousePressed(e);
-                            }
-
-                            @Override
-                            public void mouseEntered(MouseEvent e) {
-                                super.mouseEntered(e);
-                                e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
-                            }
-                        });
-                        aboutForm.getContributorPanel().add(contributorItem);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.error("获取贡献者头像失败", e);
-        }
-
         // DAU
         try {
             // 每天执行一次
@@ -360,6 +315,122 @@ public class AboutForm {
         } catch (Exception e) {
             log.error("获取DAU失败", e);
         }
+    }
+
+    private static void loadContributors() {
+        try {
+            ContributorInfo contributorInfo = fetchContributorInfo();
+            if (contributorInfo == null) {
+                return;
+            }
+            List<ContributorInfo.Contributor> contributors = contributorInfo.getContributorList();
+            if (contributors == null || contributors.isEmpty()) {
+                return;
+            }
+            SwingUtilities.invokeLater(() -> {
+                JPanel panel = aboutForm.getContributorPanel();
+                for (ContributorInfo.Contributor contributor : contributors) {
+                    try {
+                        addContributorItem(panel, contributor);
+                    } catch (Exception e) {
+                        log.warn("添加贡献者 {} 失败", contributor.getName(), e);
+                    }
+                }
+                panel.revalidate();
+                panel.repaint();
+            });
+        } catch (Exception e) {
+            log.error("加载贡献者列表失败", e);
+        }
+    }
+
+    private static ContributorInfo fetchContributorInfo() {
+        try {
+            String remoteContent = HttpUtil.get(UiConsts.CONTRIBUTOR_URL, 10000);
+            ContributorInfo remoteInfo = parseContributorInfo(remoteContent);
+            if (remoteInfo != null) {
+                return remoteInfo;
+            }
+        } catch (Exception e) {
+            log.warn("远程获取贡献者列表失败，尝试使用内置数据", e);
+        }
+        try {
+            return parseContributorInfo(readBundledContributorJson());
+        } catch (Exception e) {
+            log.error("读取内置贡献者列表失败", e);
+            return null;
+        }
+    }
+
+    private static ContributorInfo parseContributorInfo(String content) {
+        if (Strings.isNullOrEmpty(content)) {
+            return null;
+        }
+        ContributorInfo contributorInfo = JSON.parseObject(content, ContributorInfo.class);
+        if (contributorInfo == null || contributorInfo.getContributorList() == null
+                || contributorInfo.getContributorList().isEmpty()) {
+            return null;
+        }
+        return contributorInfo;
+    }
+
+    private static String readBundledContributorJson() throws IOException {
+        try (InputStream in = AboutForm.class.getResourceAsStream("/contributor.json")) {
+            if (in == null) {
+                return null;
+            }
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    private static void addContributorItem(JPanel panel, ContributorInfo.Contributor contributor) {
+        if (contributor == null || Strings.isNullOrEmpty(contributor.getName())) {
+            return;
+        }
+        JPanel contributorItem = new JPanel(new BorderLayout(0, 4));
+        contributorItem.setOpaque(false);
+        contributorItem.setToolTipText(contributor.getName());
+
+        if (!Strings.isNullOrEmpty(contributor.getAvatarUrl())) {
+            try {
+                ImagePreviewComponent avatarPreview = new ImagePreviewComponent();
+                BufferedImage avatar = ImageDisplayUtil.readImage(new URL(contributor.getAvatarUrl()));
+                avatarPreview.setSourceImageInLogicalBounds(avatar, 50, 50);
+                contributorItem.add(avatarPreview, BorderLayout.NORTH);
+            } catch (Exception e) {
+                log.warn("加载贡献者 {} 头像失败", contributor.getName(), e);
+            }
+        }
+
+        JLabel nameLabel = new JLabel(contributor.getName(), SwingConstants.CENTER);
+        contributorItem.add(nameLabel, BorderLayout.SOUTH);
+
+        if (!Strings.isNullOrEmpty(contributor.getLink())) {
+            contributorItem.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    super.mouseClicked(e);
+                    Desktop desktop = Desktop.getDesktop();
+                    try {
+                        desktop.browse(new URI(contributor.getLink()));
+                    } catch (IOException | URISyntaxException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    super.mousePressed(e);
+                }
+
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    super.mouseEntered(e);
+                    e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
+                }
+            });
+        }
+        panel.add(contributorItem);
     }
 
     private void applyI18n() {
