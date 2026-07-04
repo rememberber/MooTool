@@ -116,6 +116,8 @@ public class TextDiffForm {
 
     private static boolean i18nRegistered;
 
+    private boolean formInitialized;
+
     private static final Log logger = LogFactory.get();
 
     private static final TFuncContentMapper funcContentMapper = MybatisUtil.getSqlSession().getMapper(TFuncContentMapper.class);
@@ -129,13 +131,21 @@ public class TextDiffForm {
         if (textDiffForm == null) {
             textDiffForm = new TextDiffForm();
         }
+        textDiffForm.ensureInitialized();
         return textDiffForm;
     }
 
     public static void init() {
-        textDiffForm = getInstance();
-        textDiffForm.initForm();
-        textDiffForm.applyI18n();
+        getInstance();
+    }
+
+    private void ensureInitialized() {
+        if (formInitialized) {
+            return;
+        }
+        formInitialized = true;
+        initForm();
+        applyI18n();
         if (!i18nRegistered) {
             I18nUiUtil.register(TextDiffForm::applyI18nStatic);
             i18nRegistered = true;
@@ -187,7 +197,7 @@ public class TextDiffForm {
         if (index >= 0 && index < highlightModeComboBox.getItemCount()) {
             highlightModeComboBox.setSelectedIndex(index);
         } else {
-            highlightModeComboBox.setSelectedIndex(1);
+            highlightModeComboBox.setSelectedIndex(0);
         }
         syncHighlightModeFromCombo();
     }
