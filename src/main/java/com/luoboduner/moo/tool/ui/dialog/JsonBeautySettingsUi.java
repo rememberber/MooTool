@@ -13,6 +13,7 @@ import com.luoboduner.moo.tool.util.JsonBeautyAutoPullScheduler;
 import com.luoboduner.moo.tool.util.JsonBeautyVaultUtil;
 import com.luoboduner.moo.tool.util.JsonBeautyVaultWatcher;
 import com.luoboduner.moo.tool.util.QuickNoteGitUtil;
+import com.luoboduner.moo.tool.util.VaultPathMigrationUtil;
 import com.luoboduner.moo.tool.util.VaultTreeExpandMode;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -188,6 +189,17 @@ public final class JsonBeautySettingsUi {
 
     private void saveVaultSettings() {
         String vaultPath = vaultPathTextField.getText().trim();
+        try {
+            VaultPathMigrationUtil.migrateIfChanged(
+                    App.config.getJsonBeautyVaultPath(),
+                    vaultPath,
+                    JsonBeautyVaultUtil.getDefaultVaultPath());
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(vaultSaveButton,
+                    I18n.format("common.saveFailed", e.getMessage()),
+                    I18n.get("common.failure"), JOptionPane.ERROR_MESSAGE);
+            return;
+        }
         App.config.setJsonBeautyVaultPath(vaultPath);
         App.config.setJsonBeautyAutoGitCommit(autoGitCommitCheckBox.isSelected());
         App.config.setJsonBeautyHideGitignoredFiles(hideGitignoredCheckBox.isSelected());

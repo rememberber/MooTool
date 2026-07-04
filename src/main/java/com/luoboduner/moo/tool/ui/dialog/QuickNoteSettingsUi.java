@@ -14,6 +14,7 @@ import com.luoboduner.moo.tool.util.QuickNoteGitUtil;
 import com.luoboduner.moo.tool.util.QuickNoteVaultUtil;
 import com.luoboduner.moo.tool.util.QuickNoteVaultWatcher;
 import com.luoboduner.moo.tool.util.SystemUtil;
+import com.luoboduner.moo.tool.util.VaultPathMigrationUtil;
 import com.luoboduner.moo.tool.util.VaultTreeExpandMode;
 import org.apache.commons.lang3.StringUtils;
 
@@ -217,6 +218,17 @@ public final class QuickNoteSettingsUi {
 
     private void saveVaultSettings() {
         String vaultPath = vaultPathTextField.getText().trim();
+        try {
+            VaultPathMigrationUtil.migrateIfChanged(
+                    App.config.getQuickNoteVaultPath(),
+                    vaultPath,
+                    QuickNoteVaultUtil.getDefaultVaultPath());
+        } catch (Exception e) {
+            JOptionPane.showMessageDialog(vaultSaveButton,
+                    I18n.format("common.saveFailed", e.getMessage()),
+                    I18n.get("common.failure"), JOptionPane.ERROR_MESSAGE);
+            return;
+        }
         App.config.setQuickNoteVaultPath(vaultPath);
         App.config.setQuickNoteAutoGitCommit(autoGitCommitCheckBox.isSelected());
         App.config.setQuickNoteHideGitignoredFiles(hideGitignoredCheckBox.isSelected());
