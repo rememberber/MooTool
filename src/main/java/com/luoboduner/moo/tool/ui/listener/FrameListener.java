@@ -120,7 +120,22 @@ public class FrameListener {
     }
 
     public static void saveBeforeExit() {
-        App.config.setRecentTabIndex(MainWindow.getInstance().getTabbedPane().getSelectedIndex());
+        persistRecentTab(MainWindow.getInstance().getTabbedPane().getSelectedIndex());
+    }
+
+    public static void restoreRecentTab() {
+        int index = App.config.getRecentTabIndex();
+        JTabbedPane tabbedPane = MainWindow.getInstance().getTabbedPane();
+        if (index >= 0 && index < tabbedPane.getTabCount()) {
+            tabbedPane.setSelectedIndex(index);
+        }
+    }
+
+    public static void persistRecentTab(int index) {
+        if (index < 0) {
+            return;
+        }
+        App.config.setRecentTabIndex(index);
         App.config.save();
     }
 }

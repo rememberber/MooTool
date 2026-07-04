@@ -15,7 +15,10 @@ let package = Package(
         .target(name: "MooToolNativeCore"),
         .executableTarget(
             name: "MooToolNativeApp",
-            dependencies: ["MooToolNativeCore"]
+            dependencies: ["MooToolNativeCore"],
+            resources: [
+                .process("Resources")
+            ]
         ),
         .testTarget(
             name: "MooToolNativeCoreTests",

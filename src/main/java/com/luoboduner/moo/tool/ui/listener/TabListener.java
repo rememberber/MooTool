@@ -39,6 +39,7 @@ public class TabListener {
             public void stateChanged(ChangeEvent e) {
                 int index = MainWindow.getInstance().getTabbedPane().getSelectedIndex();
                 FuncGroupUtil.recordRecent(index);
+                FrameListener.persistRecentTab(index);
                 String tabTitle = MainWindow.getInstance().getTabbedPane().getTitleAt(index);
                 if (HardwareInfoForm.TAB_TITLE.equals(tabTitle)) {
                     HardwareInfoListener.onTabSelected();

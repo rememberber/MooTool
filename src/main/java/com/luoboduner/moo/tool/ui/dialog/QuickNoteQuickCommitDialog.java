@@ -134,7 +134,8 @@ public class QuickNoteQuickCommitDialog extends JDialog {
                         return;
                     }
                     MsgUtil.errorWithDetail(QuickNoteQuickCommitDialog.this,
-                            "quickNote.git.quickCommit.failed", result.getMessage());
+                            "quickNote.git.quickCommit.failed",
+                            QuickNoteGitUtil.formatFailureMessage(result.getMessage()));
                 } catch (Exception ex) {
                     MsgUtil.errorWithDetail(QuickNoteQuickCommitDialog.this,
                             "quickNote.git.quickCommit.failed", ex.getMessage());

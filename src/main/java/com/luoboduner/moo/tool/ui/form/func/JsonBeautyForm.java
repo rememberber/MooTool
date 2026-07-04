@@ -62,6 +62,7 @@ public class JsonBeautyForm {
     private JComboBox<JsonBeautyListSortMode> listSortComboBox;
     private JButton deleteButton;
     private JButton saveButton;
+    private JButton newFolderButton;
     private JSplitPane splitPane;
     private JButton addButton;
     private JButton findButton;
@@ -165,6 +166,9 @@ public class JsonBeautyForm {
         saveButton = new JButton();
         saveButton.setText("");
         saveButton.setToolTipText("保存(Ctrl+S)");
+        newFolderButton = new JButton();
+        newFolderButton.setText("");
+        newFolderButton.setToolTipText("新建文件夹");
         deleteButton = new JButton();
         deleteButton.setText("");
         deleteButton.setToolTipText("删除");
@@ -194,6 +198,7 @@ public class JsonBeautyForm {
         actionToolBar = new JToolBar();
         ToolbarUiUtil.configure(actionToolBar);
         actionToolBar.add(addButton);
+        actionToolBar.add(newFolderButton);
         actionToolBar.add(findButton);
         actionToolBar.add(saveButton);
         ToolbarUiUtil.addGroupSeparator(actionToolBar);
@@ -246,6 +251,7 @@ public class JsonBeautyForm {
         I18nUiUtil.setToolTip(fontSizeComboBox, "quickNote.tooltip.fontSize");
         I18nUiUtil.setToolTip(wrapButton, "quickNote.tooltip.wrap");
         I18nUiUtil.setToolTip(addButton, "quickNote.tooltip.new");
+        I18nUiUtil.setToolTip(newFolderButton, "quickNote.newFolder");
         I18nUiUtil.setToolTip(findButton, "quickNote.tooltip.find");
         I18nUiUtil.setToolTip(saveButton, "quickNote.tooltip.save");
         I18nUiUtil.setToolTip(deleteButton, "quickNote.tooltip.delete");
@@ -291,6 +297,7 @@ public class JsonBeautyForm {
         jsonBeautyForm.getSearchTextField().putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "搜索");
 
         jsonBeautyForm.getAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
+        jsonBeautyForm.getNewFolderButton().setIcon(new FlatSVGIcon("icon/folder-add.svg"));
         jsonBeautyForm.getFindButton().setIcon(new FlatSVGIcon("icon/find.svg"));
         jsonBeautyForm.getSaveButton().setIcon(new FlatSVGIcon("icon/save.svg"));
         jsonBeautyForm.getBeautifyButton().setIcon(new FlatSVGIcon("icon/json.svg"));
@@ -488,10 +495,14 @@ public class JsonBeautyForm {
                     showJson(selectedItem);
                 }
             } else if (StringUtils.isNotEmpty(preservePath)) {
-                if (JsonBeautyVaultUtil.loadByPath(preservePath) == null) {
+                TJsonBeauty itemOnDisk = JsonBeautyVaultUtil.loadByPath(preservePath);
+                if (itemOnDisk == null) {
                     jsonBeautyForm.getTextArea().setText("");
                     JsonBeautyListener.selectedPathJson = null;
                     JsonBeautyListener.selectedNameJson = null;
+                } else {
+                    selectJsonInList(preservePath);
+                    showJson(itemOnDisk);
                 }
             } else if (!preserveOnly) {
                 selectedItem = JsonBeautyTreeUtil.sortedItems(jsonList, getListSortMode()).get(0);
@@ -565,11 +576,16 @@ public class JsonBeautyForm {
         if (item == null) {
             return;
         }
+        String path = item.getRelativePath();
+        TJsonBeauty itemFromDisk = JsonBeautyVaultUtil.loadByPath(path);
+        if (itemFromDisk != null) {
+            item = itemFromDisk;
+        }
         JsonBeautyListener.ignoreQuickSave = true;
         try {
-            JsonBeautyListener.selectedPathJson = item.getRelativePath();
+            JsonBeautyListener.selectedPathJson = path;
             JsonBeautyListener.selectedNameJson = item.getName();
-        jsonBeautyForm.getTextArea().setText(item.getContent());
+        jsonBeautyForm.getTextArea().setText(StringUtils.defaultString(item.getContent()));
         jsonBeautyForm.getTextArea().setCaretPosition(0);
         jsonBeautyForm.getScrollPane().getVerticalScrollBar().setValue(0);
         jsonBeautyForm.getScrollPane().getHorizontalScrollBar().setValue(0);

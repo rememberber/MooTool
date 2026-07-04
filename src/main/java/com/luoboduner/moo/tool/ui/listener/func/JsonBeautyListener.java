@@ -3,9 +3,9 @@ package com.luoboduner.moo.tool.ui.listener.func;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.json.JSONConfig;
 import cn.hutool.json.JSONUtil;
-import com.formdev.flatlaf.util.FontUtils;
 import com.formdev.flatlaf.util.SystemFileChooser;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.util.EditorFontUtil;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
 import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
 import com.luoboduner.moo.tool.ui.component.JsonBeautyTreeDragDrop;
@@ -106,6 +106,7 @@ public class JsonBeautyListener {
                     if (item == null) {
                         return;
                     }
+                    flushSelectedJsonBeforePathChange();
                     ignoreQuickSave = true;
                     try {
                         JsonBeautyForm.showJson(item);
@@ -145,6 +146,7 @@ public class JsonBeautyListener {
                         if (item == null) {
                             return;
                         }
+                        flushSelectedJsonBeforePathChange();
                         ignoreQuickSave = true;
                         try {
                             JsonBeautyForm.showJson(item);
@@ -226,7 +228,7 @@ public class JsonBeautyListener {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 String fontName = e.getItem().toString();
                 int fontSize = Integer.parseInt(jsonBeautyForm.getFontSizeComboBox().getSelectedItem().toString());
-                Font font = FontUtils.getCompositeFont(fontName, Font.PLAIN, fontSize);
+                Font font = EditorFontUtil.getEditorFont(fontName, Font.PLAIN, fontSize);
                 jsonBeautyForm.getTextArea().setFont(font);
 
                 App.config.setJsonBeautyFontName(fontName);
@@ -240,7 +242,7 @@ public class JsonBeautyListener {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 int fontSize = Integer.parseInt(e.getItem().toString());
                 String fontName = jsonBeautyForm.getFontNameComboBox().getSelectedItem().toString();
-                Font font = FontUtils.getCompositeFont(fontName, Font.PLAIN, fontSize);
+                Font font = EditorFontUtil.getEditorFont(fontName, Font.PLAIN, fontSize);
                 jsonBeautyForm.getTextArea().setFont(font);
 
                 App.config.setJsonBeautyFontName(fontName);
@@ -575,6 +577,7 @@ public class JsonBeautyListener {
         }
 
         newFileMenuItem.addActionListener(e -> newJson());
+        jsonBeautyForm.getNewFolderButton().addActionListener(e -> createFolder(jsonBeautyForm));
         newFolderMenuItem.addActionListener(e -> createFolder(jsonBeautyForm));
         renameMenuItem.addActionListener(e -> renameSelectedItem(jsonBeautyForm));
         deleteMenuItem.addActionListener(e -> deleteFiles(jsonBeautyForm));
@@ -900,8 +903,12 @@ public class JsonBeautyListener {
     private static void quickSave(boolean refreshModifiedTime) {
         JsonBeautyForm jsonBeautyForm = JsonBeautyForm.getInstance();
         String now = SqliteUtil.nowDateForSqlite();
-        if (selectedPathJson != null) {
-            TJsonBeauty tJsonBeauty = JsonBeautyVaultUtil.loadByPath(selectedPathJson);
+        String path = selectedPathJson;
+        if (path != null) {
+            if (JsonBeautyVaultRefreshCoordinator.shouldSkipSaveForPath(path)) {
+                return;
+            }
+            TJsonBeauty tJsonBeauty = JsonBeautyVaultUtil.loadByPath(path);
             if (tJsonBeauty == null) {
                 return;
             }

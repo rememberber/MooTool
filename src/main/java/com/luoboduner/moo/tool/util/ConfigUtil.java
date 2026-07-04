@@ -790,4 +790,20 @@ public class ConfigUtil extends ConfigBaseUtil {
     public void setTranslationTargetLanguage(String targetLanguage) {
         setting.putByGroup("targetLanguage", "func.translation", targetLanguage);
     }
+
+    public String getVaultGitUsername() {
+        return setting.getStr("vaultGitUsername", "func.vaultGit", "");
+    }
+
+    public void setVaultGitUsername(String vaultGitUsername) {
+        setting.putByGroup("vaultGitUsername", "func.vaultGit", vaultGitUsername);
+    }
+
+    public String getVaultGitToken() {
+        return setting.getStr("vaultGitToken", "func.vaultGit", "");
+    }
+
+    public void setVaultGitToken(String vaultGitToken) {
+        setting.putByGroup("vaultGitToken", "func.vaultGit", vaultGitToken);
+    }
 }

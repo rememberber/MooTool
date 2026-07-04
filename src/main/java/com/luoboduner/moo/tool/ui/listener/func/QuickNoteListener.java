@@ -182,12 +182,17 @@ public class QuickNoteListener {
 
                 if (StringUtils.isNotEmpty(syntaxName)) {
                     if (selectedPath != null && !QuickNoteRSyntaxTextViewer.ignoreQuickSave) {
-                        quickSaveSync(true, false, false);
-                        updateCurrentMetadata(note -> note.setSyntax("text/" + syntaxName));
+                        String newSyntax = "text/" + syntaxName;
+                        updateCurrentMetadata(note -> note.setSyntax(newSyntax));
                         quickNoteRSyntaxTextViewerManager.removeRTextScrollPane(selectedPath);
-                        QuickNoteEditorPanel editorPanel = quickNoteRSyntaxTextViewerManager.getEditorPanel(selectedPath);
-                        quickNoteForm.getContentSplitPane().setLeftComponent(editorPanel);
-                        editorPanel.updateUI();
+                        QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
+                        try {
+                            QuickNoteEditorPanel editorPanel = quickNoteRSyntaxTextViewerManager.getEditorPanel(selectedPath);
+                            quickNoteForm.getContentSplitPane().setLeftComponent(editorPanel);
+                            editorPanel.updateUI();
+                        } finally {
+                            QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
+                        }
                     }
 
                 }
@@ -199,7 +204,9 @@ public class QuickNoteListener {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 String fontName = e.getItem().toString();
 
-                if (selectedPath != null && !QuickNoteRSyntaxTextViewer.ignoreQuickSave) {
+                if (selectedPath != null
+                        && !QuickNoteRSyntaxTextViewer.ignoreQuickSave
+                        && !QuickNoteForm.isSyncingToolbarFromNote()) {
                     updateCurrentMetadata(note -> note.setFontName(fontName));
                     App.config.setQuickNoteFontName(fontName);
                     App.config.save();
@@ -214,7 +221,9 @@ public class QuickNoteListener {
             if (e.getStateChange() == ItemEvent.SELECTED) {
                 int fontSize = Integer.parseInt(e.getItem().toString());
 
-                if (selectedPath != null && !QuickNoteRSyntaxTextViewer.ignoreQuickSave) {
+                if (selectedPath != null
+                        && !QuickNoteRSyntaxTextViewer.ignoreQuickSave
+                        && !QuickNoteForm.isSyncingToolbarFromNote()) {
                     updateCurrentMetadata(note -> note.setFontSize(String.valueOf(fontSize)));
 
                     App.config.setQuickNoteFontSize(fontSize);
@@ -535,6 +544,7 @@ public class QuickNoteListener {
         if (StringUtils.isBlank(selectedPath)) {
             return;
         }
+        drainPendingSaves();
         TQuickNote note = QuickNoteVaultUtil.loadByPath(selectedPath);
         if (note == null) {
             return;

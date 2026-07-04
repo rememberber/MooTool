@@ -1,5 +1,6 @@
 package com.luoboduner.moo.tool.util;
 
+import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.domain.QuickNoteGitCommit;
 import com.luoboduner.moo.tool.domain.QuickNoteGitModifiedFile;
 import com.luoboduner.moo.tool.domain.QuickNoteGitPullResult;
@@ -15,6 +16,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
@@ -37,6 +39,8 @@ public final class QuickNoteGitUtil {
             """;
 
     private static final String REMOTE_NAME = "origin";
+    private static final String GIT_USER_ENV = "MOOTOOL_GIT_USER";
+    private static final String GIT_TOKEN_ENV = "MOOTOOL_GIT_TOKEN";
 
     private QuickNoteGitUtil() {
     }
@@ -268,15 +272,15 @@ public final class QuickNoteGitUtil {
         }
         try {
             String oldHead = resolveHead(vaultDir);
-            GitResult result = runGit(vaultDir, 180, "pull", "--rebase", REMOTE_NAME);
+            GitResult result = runNetworkGit(vaultDir, 180, "pull", "--rebase", REMOTE_NAME);
             if (!result.success()) {
                 if (isSigningFailure(result.combinedOutput())) {
-                    return QuickNoteGitPullResult.error(result.combinedOutput());
+                    return QuickNoteGitPullResult.error(formatFailureMessage(result.combinedOutput()));
                 }
                 if (isPullConflict(vaultDir, result.combinedOutput())) {
                     return QuickNoteGitPullResult.conflict(result.combinedOutput());
                 }
-                return QuickNoteGitPullResult.error(result.combinedOutput());
+                return QuickNoteGitPullResult.error(formatFailureMessage(result.combinedOutput()));
             }
             if (isPullConflict(vaultDir, result.combinedOutput())) {
                 return QuickNoteGitPullResult.conflict(result.combinedOutput());
@@ -323,6 +327,51 @@ public final class QuickNoteGitUtil {
                 || lower.contains("non-fast-forward")
                 || lower.contains("failed to push some refs")
                 || (lower.contains("rejected") && lower.contains("fetch first"));
+    }
+
+    public static boolean isAuthFailure(String detail) {
+        if (StringUtils.isBlank(detail)) {
+            return false;
+        }
+        String lower = detail.toLowerCase(Locale.ROOT);
+        return lower.contains("could not read username")
+                || lower.contains("device not configured")
+                || lower.contains("terminal prompts disabled")
+                || lower.contains("authentication failed")
+                || lower.contains("invalid username or password")
+                || lower.contains("access denied")
+                || lower.contains("authorization failed")
+                || lower.contains("http 401")
+                || lower.contains("http 403");
+    }
+
+    public static String formatFailureMessage(String detail) {
+        if (isAuthFailure(detail)) {
+            return I18n.get("quickNote.git.authFailed");
+        }
+        return StringUtils.defaultIfBlank(detail, I18n.get("quickNote.git.discardFailed"));
+    }
+
+    private static boolean isHttpsRemote(File vaultDir) {
+        String url = getRemoteUrl(vaultDir);
+        return StringUtils.startsWithIgnoreCase(url, "http://")
+                || StringUtils.startsWithIgnoreCase(url, "https://");
+    }
+
+    private static VaultGitCredentials resolveCredentials() {
+        try {
+            String username = App.config.getVaultGitUsername();
+            String token = App.config.getVaultGitToken();
+            if (StringUtils.isAnyBlank(username, token)) {
+                return null;
+            }
+            return new VaultGitCredentials(username.trim(), token.trim());
+        } catch (Exception e) {
+            return null;
+        }
+    }
+
+    private record VaultGitCredentials(String username, String token) {
     }
 
     private static boolean isPullConflict(File vaultDir, String output) {
@@ -388,14 +437,14 @@ public final class QuickNoteGitUtil {
             return GitCommandResult.failure("Remote origin is not configured");
         }
         try {
-            GitResult result = runGit(vaultDir, 180, "push", "-u", REMOTE_NAME, "HEAD");
+            GitResult result = runNetworkGit(vaultDir, 180, "push", "-u", REMOTE_NAME, "HEAD");
             if (result.success()) {
                 return GitCommandResult.success(result.stdout());
             }
             if (isPushRejected(result.combinedOutput())) {
                 return GitCommandResult.pushRejected(result.combinedOutput());
             }
-            return GitCommandResult.failure(result.combinedOutput());
+            return GitCommandResult.failure(formatFailureMessage(result.combinedOutput()));
         } catch (Exception e) {
             return GitCommandResult.failure(e.getMessage());
         }
@@ -708,10 +757,10 @@ public final class QuickNoteGitUtil {
             return GitCommandResult.failure("Remote origin is not configured");
         }
         try {
-            GitResult result = runGit(vaultDir, 180, "fetch", REMOTE_NAME);
+            GitResult result = runNetworkGit(vaultDir, 180, "fetch", REMOTE_NAME);
             return result.success()
                     ? GitCommandResult.success(result.stdout())
-                    : GitCommandResult.failure(result.stdout());
+                    : GitCommandResult.failure(formatFailureMessage(result.stdout()));
         } catch (Exception e) {
             return GitCommandResult.failure(e.getMessage());
         }
@@ -863,26 +912,53 @@ public final class QuickNoteGitUtil {
         return lower.contains("cannot run gpg") || lower.contains("gpg failed") || lower.contains("signing failed");
     }
 
+    private static GitResult runNetworkGit(File workDir, long timeoutSeconds, String... args) throws Exception {
+        Map<String, String> extraEnv = new LinkedHashMap<>();
+        extraEnv.put("GIT_TERMINAL_PROMPT", "0");
+        List<String> preConfigArgs = new ArrayList<>();
+        if (isHttpsRemote(workDir)) {
+            VaultGitCredentials credentials = resolveCredentials();
+            if (credentials != null) {
+                extraEnv.put(GIT_USER_ENV, credentials.username());
+                extraEnv.put(GIT_TOKEN_ENV, credentials.token());
+                preConfigArgs.add("-c");
+                preConfigArgs.add("credential.helper=");
+                preConfigArgs.add("-c");
+                preConfigArgs.add("credential.helper=!f() { echo username=$"
+                        + GIT_USER_ENV + "; echo password=$" + GIT_TOKEN_ENV + "; }; f");
+            }
+        }
+        return runGit(workDir, timeoutSeconds, extraEnv, preConfigArgs, true, args);
+    }
+
     private static GitResult runGit(File workDir, long timeoutSeconds, String... args) throws Exception {
-        return runGit(workDir, timeoutSeconds, Map.of(), true, args);
+        return runGit(workDir, timeoutSeconds, Map.of(), List.of(), true, args);
     }
 
     private static GitResult runGit(File workDir, long timeoutSeconds, boolean trimOutput, String... args)
             throws Exception {
-        return runGit(workDir, timeoutSeconds, Map.of(), trimOutput, args);
+        return runGit(workDir, timeoutSeconds, Map.of(), List.of(), trimOutput, args);
     }
 
     private static GitResult runGit(File workDir, long timeoutSeconds, Map<String, String> extraEnv, String... args)
             throws Exception {
-        return runGit(workDir, timeoutSeconds, extraEnv, true, args);
+        return runGit(workDir, timeoutSeconds, extraEnv, List.of(), true, args);
     }
 
     private static GitResult runGit(File workDir, long timeoutSeconds, Map<String, String> extraEnv, boolean trimOutput,
                                     String... args) throws Exception {
+        return runGit(workDir, timeoutSeconds, extraEnv, List.of(), trimOutput, args);
+    }
+
+    private static GitResult runGit(File workDir, long timeoutSeconds, Map<String, String> extraEnv,
+                                    List<String> preConfigArgs, boolean trimOutput, String... args) throws Exception {
         List<String> command = new ArrayList<>();
         command.add("git");
         command.add("-c");
         command.add("core.quotePath=false");
+        if (preConfigArgs != null) {
+            command.addAll(preConfigArgs);
+        }
         for (String arg : args) {
             command.add(arg);
         }

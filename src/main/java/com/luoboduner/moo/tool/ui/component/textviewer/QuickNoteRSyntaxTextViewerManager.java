@@ -1,9 +1,10 @@
 package com.luoboduner.moo.tool.ui.component.textviewer;
 
 import com.formdev.flatlaf.FlatLaf;
-import com.formdev.flatlaf.util.FontUtils;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.domain.TQuickNote;
+import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
+import com.luoboduner.moo.tool.util.EditorFontUtil;
 import com.luoboduner.moo.tool.util.QuickNoteMarkdownUtil;
 import com.luoboduner.moo.tool.util.QuickNoteVaultUtil;
 import org.apache.commons.lang3.StringUtils;
@@ -38,15 +39,16 @@ public class QuickNoteRSyntaxTextViewerManager {
                 tQuickNote.setRelativePath(relativePath);
                 tQuickNote.setContent("");
             }
-            plainTextViewer.setText(StringUtils.defaultString(tQuickNote.getContent()));
             if (StringUtils.isNotEmpty(tQuickNote.getSyntax())) {
                 plainTextViewer.setSyntaxEditingStyle(tQuickNote.getSyntax());
             }
-            if (StringUtils.isNotEmpty(tQuickNote.getFontName()) && StringUtils.isNotEmpty(tQuickNote.getFontSize())) {
-                Font font = FontUtils.getCompositeFont(tQuickNote.getFontName(), Font.PLAIN,
-                        Integer.parseInt(tQuickNote.getFontSize()));
-                plainTextViewer.setFont(font);
+            QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
+            try {
+                plainTextViewer.setText(StringUtils.defaultString(tQuickNote.getContent()));
+            } finally {
+                QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
             }
+            applyFont(plainTextViewer, tQuickNote);
 
             plainTextViewer.setCaretPosition(0);
 
@@ -83,18 +85,31 @@ public class QuickNoteRSyntaxTextViewerManager {
 
     public void updateFont(String relativePath) {
         QuickNoteEditorPanel editorPanel = viewMap.get(relativePath);
-        if (editorPanel != null) {
-            QuickNoteRSyntaxTextViewer plainTextViewer =
-                    (QuickNoteRSyntaxTextViewer) editorPanel.getEditorScrollPane().getTextArea();
-            TQuickNote tQuickNote = QuickNoteVaultUtil.loadByPath(relativePath);
-            if (tQuickNote != null
-                    && StringUtils.isNotEmpty(tQuickNote.getFontName())
-                    && StringUtils.isNotEmpty(tQuickNote.getFontSize())) {
-                Font font = FontUtils.getCompositeFont(tQuickNote.getFontName(), Font.PLAIN,
-                        Integer.parseInt(tQuickNote.getFontSize()));
-                plainTextViewer.setFont(font);
-            }
+        if (editorPanel == null) {
+            return;
         }
+        QuickNoteRSyntaxTextViewer plainTextViewer =
+                (QuickNoteRSyntaxTextViewer) editorPanel.getEditorScrollPane().getTextArea();
+        TQuickNote tQuickNote = QuickNoteVaultUtil.loadByPath(relativePath);
+        if (tQuickNote != null) {
+            applyFont(plainTextViewer, tQuickNote);
+        }
+    }
+
+    public void applyFont(String relativePath, String fontName, int fontSize) {
+        QuickNoteEditorPanel editorPanel = viewMap.get(relativePath);
+        if (editorPanel == null) {
+            return;
+        }
+        QuickNoteRSyntaxTextViewer plainTextViewer =
+                (QuickNoteRSyntaxTextViewer) editorPanel.getEditorScrollPane().getTextArea();
+        plainTextViewer.setFont(EditorFontUtil.getEditorFont(fontName, Font.PLAIN, fontSize));
+    }
+
+    private static void applyFont(QuickNoteRSyntaxTextViewer viewer, TQuickNote note) {
+        String fontName = QuickNoteForm.resolveNoteFontName(note);
+        int fontSize = QuickNoteForm.resolveNoteFontSize(note);
+        viewer.setFont(EditorFontUtil.getEditorFont(fontName, Font.PLAIN, fontSize));
     }
 
     public static void updateGutter(RTextScrollPane rTextScrollPane) {

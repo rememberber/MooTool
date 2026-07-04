@@ -692,7 +692,7 @@ public class JsonBeautyGitDialog extends JDialog {
     }
 
     private void showGitFailure(String detail) {
-        String message = StringUtils.defaultIfBlank(detail, I18n.get("quickNote.git.discardFailed"));
+        String message = QuickNoteGitUtil.formatFailureMessage(detail);
         statusLabel.setText(message);
         JOptionPane.showMessageDialog(this, message, I18n.get("common.failure"), JOptionPane.ERROR_MESSAGE);
     }
