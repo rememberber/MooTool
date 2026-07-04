@@ -5,7 +5,6 @@ import com.luoboduner.moo.tool.ui.dialog.QuickNoteConflictResolverDialog;
 import com.luoboduner.moo.tool.ui.dialog.QuickNoteQuickCommitDialog;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -85,7 +84,7 @@ public final class QuickNoteCommitEntryAction {
                     QuickNoteIndicatorTools.TipsLevel.WARN);
             return;
         }
-        String detail = StringUtils.defaultIfBlank(result.getMessage(), I18n.get("quickNote.git.quickCommit.failed"));
+        String detail = QuickNoteGitUtil.formatFailureMessage(result.getMessage());
         QuickNoteIndicatorTools.showTips(detail, QuickNoteIndicatorTools.TipsLevel.ERROR);
     }
 

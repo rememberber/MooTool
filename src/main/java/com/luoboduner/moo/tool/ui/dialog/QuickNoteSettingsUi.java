@@ -52,6 +52,7 @@ public final class QuickNoteSettingsUi {
     private final JButton resetVaultPathButton = new JButton();
     private final JButton openGitPanelButton = new JButton();
     private final JComboBox<VaultTreeExpandMode> treeExpandComboBox = new JComboBox<>();
+    private final VaultGitCredentialUi gitCredentialUi = new VaultGitCredentialUi();
 
     private QuickNoteSettingsUi() {
     }
@@ -117,7 +118,7 @@ public final class QuickNoteSettingsUi {
     }
 
     private JPanel buildExtraPanel(Component hostDialog) {
-        JPanel panel = new JPanel(new GridLayoutManager(9, 3, new Insets(0, 0, 0, 0), -1, -1));
+        JPanel panel = new JPanel(new GridLayoutManager(11, 3, new Insets(0, 0, 0, 0), -1, -1));
 
         panel.add(label("setting.quickNote.vaultPath"), row(0, 0));
         panel.add(vaultPathTextField, row(0, 1));
@@ -158,6 +159,8 @@ public final class QuickNoteSettingsUi {
         panel.add(gitRemoteTextField, row(7, 1));
         panel.add(gitRemoteSaveButton, row(7, 2));
 
+        gitCredentialUi.addRows(panel, 8, 9);
+
         JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
         vaultSaveButton.setIcon(new FlatSVGIcon("icon/save.svg"));
         gitRemoteSaveButton.setIcon(new FlatSVGIcon("icon/save.svg"));
@@ -167,7 +170,7 @@ public final class QuickNoteSettingsUi {
         actionPanel.add(openVaultButton);
         actionPanel.add(resetVaultPathButton);
         actionPanel.add(openGitPanelButton);
-        panel.add(actionPanel, rowSpan(8, 0, 3));
+        panel.add(actionPanel, rowSpan(10, 0, 3));
         return panel;
     }
 
@@ -188,6 +191,7 @@ public final class QuickNoteSettingsUi {
                 App.config.getQuickNoteAutoPullIntervalMinutes(), 0, MAX_AUTO_PULL_MINUTES));
         treeExpandComboBox.setSelectedItem(
                 VaultTreeExpandMode.fromId(App.config.getQuickNoteTreeExpandMode()));
+        gitCredentialUi.loadValues();
     }
 
     private void bindActions(Component hostDialog) {
@@ -206,10 +210,13 @@ public final class QuickNoteSettingsUi {
         gitRemoteSaveButton.addActionListener(e -> {
             String remoteUrl = gitRemoteTextField.getText().trim();
             App.config.setQuickNoteGitRemoteUrl(remoteUrl);
+            gitCredentialUi.saveCredentialsIfTokenProvided();
             App.config.save();
             QuickNoteGitUtil.configureRemote(QuickNoteVaultUtil.getVaultDir(), remoteUrl);
             AlertUtil.buttonInfo(gitRemoteSaveButton, I18n.get("common.save"), I18n.get("common.saveSuccess"), 2000);
         });
+
+        gitCredentialUi.bindActions();
 
         openGitPanelButton.addActionListener(e -> QuickNoteGitDialog.showDialog(openGitPanelButton));
         openVaultButton.addActionListener(e -> QuickNoteVaultUtil.openVaultDir());
@@ -266,6 +273,7 @@ public final class QuickNoteSettingsUi {
         openGitPanelButton.setText(I18n.get("setting.quickNote.openGitPanel"));
         openVaultButton.setText(I18n.get("setting.quickNote.openVault"));
         resetVaultPathButton.setText(I18n.get("setting.quickNote.resetVaultPath"));
+        gitCredentialUi.applyTexts();
     }
 
     private static int spinnerIntValue(JSpinner spinner) {

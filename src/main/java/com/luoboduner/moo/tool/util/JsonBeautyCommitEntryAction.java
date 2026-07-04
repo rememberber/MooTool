@@ -5,7 +5,6 @@ import com.luoboduner.moo.tool.ui.dialog.JsonBeautyConflictResolverDialog;
 import com.luoboduner.moo.tool.ui.dialog.JsonBeautyQuickCommitDialog;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
 import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
 import java.awt.*;
@@ -85,7 +84,7 @@ public final class JsonBeautyCommitEntryAction {
                     QuickNoteIndicatorTools.TipsLevel.WARN);
             return;
         }
-        String detail = StringUtils.defaultIfBlank(result.getMessage(), I18n.get("quickNote.git.quickCommit.failed"));
+        String detail = QuickNoteGitUtil.formatFailureMessage(result.getMessage());
         QuickNoteIndicatorTools.showTips(detail, QuickNoteIndicatorTools.TipsLevel.ERROR);
     }
 

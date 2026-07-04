@@ -19,6 +19,21 @@ class QuickNoteGitUtilTest {
     File tempDir;
 
     @Test
+    void isAuthFailure_detectsCommonHttpsAuthErrors() {
+        assertTrue(QuickNoteGitUtil.isAuthFailure(
+                "fatal: could not read Username for 'https://gitee.com': Device not configured"));
+        assertTrue(QuickNoteGitUtil.isAuthFailure("remote: HTTP Basic: Access denied"));
+        assertFalse(QuickNoteGitUtil.isAuthFailure("Everything up-to-date"));
+    }
+
+    @Test
+    void formatFailureMessage_returnsFriendlyAuthHint() {
+        String message = QuickNoteGitUtil.formatFailureMessage(
+                "fatal: could not read Username for 'https://gitee.com': Device not configured");
+        assertFalse(message.contains("Device not configured"));
+    }
+
+    @Test
     void unquoteGitStatusPath_decodesUtf8OctalSequence() {
         String quoted = "\"\\346\\234\\252\\345\\221\\275\\345\\220\\215_2026-06-19_08-09-48.txt\"";
         assertEquals("未命名_2026-06-19_08-09-48.txt", QuickNoteGitUtil.unquoteGitStatusPath(quoted));
