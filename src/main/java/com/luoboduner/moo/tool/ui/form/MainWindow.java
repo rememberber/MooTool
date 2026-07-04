@@ -11,6 +11,7 @@ import com.luoboduner.moo.tool.ui.component.FuncTabGroupSidebar;
 import com.luoboduner.moo.tool.ui.component.TabUiUtil;
 import com.luoboduner.moo.tool.ui.component.TopMenuBar;
 import com.luoboduner.moo.tool.ui.form.func.*;
+import com.luoboduner.moo.tool.ui.listener.FrameListener;
 import com.luoboduner.moo.tool.ui.listener.TabListener;
 import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -142,6 +143,7 @@ public class MainWindow {
         initFuncTabShell();
         refreshFuncTabNavigation();
         TabListener.addListeners();
+        FrameListener.restoreRecentTab();
         relayoutAfterTabStripChanged();
     }
 

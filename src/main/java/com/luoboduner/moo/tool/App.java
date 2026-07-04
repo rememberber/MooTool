@@ -131,9 +131,6 @@ public class App {
         }
         FileUtil.clean(tempDir);
 
-        if (App.config.getRecentTabIndex() != 3 && MainWindow.getInstance().getTabbedPane().getTabCount() > App.config.getRecentTabIndex()) {
-            MainWindow.getInstance().getTabbedPane().setSelectedIndex(App.config.getRecentTabIndex());
-        }
         MainWindow.getInstance().init();
         Init.initAllTab();
         Init.initOthers();
