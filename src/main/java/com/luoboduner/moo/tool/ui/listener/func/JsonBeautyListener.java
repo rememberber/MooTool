@@ -92,32 +92,17 @@ public class JsonBeautyListener {
             }
         });
 
-        // 点击左侧树事件
+        // 左侧树切换：鼠标按下时直接按坐标解析节点，树选择监听统一覆盖
+        // 键盘导航和程序化选择，避免读取 Swing 尚未更新完成的 selection。
         JTree noteTree = jsonBeautyForm.getNoteTree();
         if (noteTree != null) {
             noteTree.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mousePressed(MouseEvent e) {
-                    int row = noteTree.getRowForLocation(e.getX(), e.getY());
-                    if (row >= 0) {
-                        noteTree.setSelectionRow(row);
-                    }
-                    TJsonBeauty item = JsonBeautyForm.getSelectedTreeJson();
-                    if (item == null) {
-                        return;
-                    }
-                    flushSelectedJsonBeforePathChange();
-                    ignoreQuickSave = true;
-                    try {
-                        JsonBeautyForm.showJson(item);
-                    } catch (Exception e1) {
-                        log.error(e1.toString());
-                    } finally {
-                        ignoreQuickSave = false;
-                    }
-                    super.mousePressed(e);
+                    showTreeJson(noteTree.getPathForLocation(e.getX(), e.getY()));
                 }
             });
+            noteTree.addTreeSelectionListener(e -> showTreeJson(e.getNewLeadSelectionPath()));
         }
 
         // 左侧树按键事件（重命名、删除、导航）
@@ -141,20 +126,6 @@ public class JsonBeautyListener {
                         renameSelectedItem(jsonBeautyForm);
                     } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                         deleteFiles(jsonBeautyForm);
-                    } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
-                        TJsonBeauty item = JsonBeautyForm.getSelectedTreeJson();
-                        if (item == null) {
-                            return;
-                        }
-                        flushSelectedJsonBeforePathChange();
-                        ignoreQuickSave = true;
-                        try {
-                            JsonBeautyForm.showJson(item);
-                        } catch (Exception e) {
-                            log.error(e.getMessage());
-                        } finally {
-                            ignoreQuickSave = false;
-                        }
                     }
                 }
             });
@@ -631,6 +602,27 @@ public class JsonBeautyListener {
                 : parentFolder + "/" + folderName;
         JsonBeautyVaultUtil.createFolder(folderPath);
         JsonBeautyForm.initList();
+    }
+
+    private static void showTreeJson(TreePath treePath) {
+        if (treePath == null) {
+            return;
+        }
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
+        Object value = node.getUserObject();
+        if (!(value instanceof TJsonBeauty item)
+                || StringUtils.equals(selectedPathJson, item.getRelativePath())) {
+            return;
+        }
+        flushSelectedJsonBeforePathChange();
+        ignoreQuickSave = true;
+        try {
+            JsonBeautyForm.showJson(item);
+        } catch (Exception ex) {
+            log.error("Switch JSON file failed: {}", item.getRelativePath(), ex);
+        } finally {
+            ignoreQuickSave = false;
+        }
     }
 
     private static boolean isFolderNodeSelected(JTree noteTree) {
