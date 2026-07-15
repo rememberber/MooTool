@@ -1,12 +1,13 @@
 package com.luoboduner.moo.tool.ui.listener;
 
 import com.luoboduner.moo.tool.ui.Init;
-import com.luoboduner.moo.tool.ui.form.MainWindow;
+import com.luoboduner.moo.tool.ui.FuncTabCatalog;
 import com.luoboduner.moo.tool.ui.form.func.ColorBoardForm;
 import com.luoboduner.moo.tool.ui.form.func.ColorPickerForm;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.frame.ScreenFrame;
 import com.luoboduner.moo.tool.util.ColorUtil;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -34,7 +35,7 @@ public class ScreenMouseListener implements MouseInputListener {
         Color color = robot.getPixelColor(point.x, point.y);
 
         ColorBoardForm.setSelectedColor(color);
-        MainWindow.getInstance().getTabbedPane().setSelectedIndex(10);
+        FuncTabCatalog.switchToById("colorBoard");
         Init.showMainFrame();
         ColorPickerFrame.exit();
         ScreenMouseListener.robot = null;
@@ -89,7 +90,7 @@ public class ScreenMouseListener implements MouseInputListener {
             try {
                 robot = new Robot();
             } catch (Exception e) {
-                JOptionPane.showMessageDialog(ColorBoardForm.getInstance().getColorBoardPanel(), e.getMessage(), "系统异常", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorDetail(ColorBoardForm.getInstance().getColorBoardPanel(), "common.systemError", e.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e));
             }
         }

@@ -9,6 +9,7 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.listener.func.NetListener;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
@@ -20,6 +21,7 @@ import javax.swing.plaf.FontUIResource;
 import javax.swing.text.StyleContext;
 import java.awt.*;
 import java.util.Locale;
+import java.util.Map;
 
 /**
  * <pre>
@@ -51,8 +53,12 @@ public class NetForm {
     private JTextField pingTextField;
     private JButton pingButton;
     private JButton flushDnsButton;
+    private JTextField whoisTextField;
+    private JButton whoisButton;
 
     private static NetForm netForm;
+
+    private static boolean i18nRegistered;
 
     private static final Log logger = LogFactory.get();
 
@@ -73,6 +79,50 @@ public class NetForm {
         initUi();
 
         NetListener.addListeners();
+
+        netForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(NetForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        if (!SystemUtil.isWindowsOs()) {
+            I18nUiUtil.setText(ipConfigButton, "net.refreshIfconfig");
+            I18nUiUtil.setText(ipConfigAllButton, "net.refreshNetstat");
+        } else {
+            I18nUiUtil.setText(ipConfigButton, "net.refreshIpconfig");
+            I18nUiUtil.setText(ipConfigAllButton, "net.refreshIpconfigAll");
+        }
+        I18nUiUtil.setText(ipv4ToLongButton, "common.convert");
+        I18nUiUtil.setText(longToIpv4Button, "common.convert");
+        I18nUiUtil.setText(refreshIpv4ListButton, "common.refresh");
+        I18nUiUtil.setText(refreshIpv6ListButton, "common.refresh");
+        I18nUiUtil.setText(hostToIpButton, "net.fetch");
+        I18nUiUtil.setText(whoisButton, "net.query");
+        I18nUiUtil.setText(flushDnsButton, "net.flushDns");
+        if (rightScrollPane.getViewport().getView() instanceof Container rightPanel) {
+            I18nUiUtil.localizeTree(rightPanel, Map.ofEntries(
+                    Map.entry("ipv4地址和Long值互转", "net.ipv4Long"),
+                    Map.entry("ipv4", "net.ipv4"),
+                    Map.entry("Long", "net.long"),
+                    Map.entry("获取本机ipv4列表", "net.localIpv4"),
+                    Map.entry("获取本机ipv6列表", "net.localIpv6"),
+                    Map.entry("通过域名获取IP", "net.hostToIp"),
+                    Map.entry("域名", "net.domain"),
+                    Map.entry("IP", "net.ip"),
+                    Map.entry("WHOIS 查询", "net.whois"),
+                    Map.entry("PING", "net.ping"),
+                    Map.entry("DNS", "net.dns")
+            ));
+        }
+    }
+
+    private static void applyI18nStatic() {
+        if (netForm != null) {
+            netForm.applyI18n();
+        }
     }
 
     private static void initUi() {
@@ -137,7 +187,7 @@ public class NetForm {
         splitPane.setRightComponent(rightScrollPane);
         rightScrollPane.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), null, TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
         final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(12, 1, new Insets(0, 0, 0, 0), -1, -1));
+        panel3.setLayout(new GridLayoutManager(14, 1, new Insets(0, 0, 0, 0), -1, -1));
         rightScrollPane.setViewportView(panel3);
         final JPanel panel4 = new JPanel();
         panel4.setLayout(new GridLayoutManager(3, 2, new Insets(10, 15, 10, 5), -1, -1));
@@ -219,36 +269,50 @@ public class NetForm {
         panel3.add(separator2, new GridConstraints(7, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JSeparator separator3 = new JSeparator();
         panel3.add(separator3, new GridConstraints(9, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        final Spacer spacer6 = new Spacer();
-        panel3.add(spacer6, new GridConstraints(11, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JPanel panel10 = new JPanel();
         panel10.setLayout(new GridLayoutManager(1, 1, new Insets(10, 15, 10, 5), -1, -1));
-        panel3.add(panel10, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        panel10.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "PING", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel10.getFont()), null));
+        panel3.add(panel10, new GridConstraints(12, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel10.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "WHOIS 查询", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel10.getFont()), null));
         final JPanel panel11 = new JPanel();
         panel11.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
         panel10.add(panel11, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        pingTextField = new JTextField();
-        panel11.add(pingTextField, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
-        pingButton = new JButton();
-        pingButton.setText("ping");
-        panel11.add(pingButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        whoisTextField = new JTextField();
+        panel11.add(whoisTextField, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        whoisButton = new JButton();
+        whoisButton.setText("查询");
+        panel11.add(whoisButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JSeparator separator4 = new JSeparator();
+        panel3.add(separator4, new GridConstraints(11, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        final Spacer spacer6 = new Spacer();
+        panel3.add(spacer6, new GridConstraints(13, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_VERTICAL, 1, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         final JPanel panel12 = new JPanel();
         panel12.setLayout(new GridLayoutManager(1, 1, new Insets(10, 15, 10, 5), -1, -1));
-        panel3.add(panel12, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        panel12.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "DNS", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel12.getFont()), null));
+        panel3.add(panel12, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel12.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "PING", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel12.getFont()), null));
         final JPanel panel13 = new JPanel();
         panel13.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
         panel12.add(panel13, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        pingTextField = new JTextField();
+        panel13.add(pingTextField, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        pingButton = new JButton();
+        pingButton.setText("ping");
+        panel13.add(pingButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel14 = new JPanel();
+        panel14.setLayout(new GridLayoutManager(1, 1, new Insets(10, 15, 10, 5), -1, -1));
+        panel3.add(panel14, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel14.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "DNS", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel14.getFont()), null));
+        final JPanel panel15 = new JPanel();
+        panel15.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        panel14.add(panel15, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         flushDnsButton = new JButton();
         flushDnsButton.setText("刷新DNS缓存");
-        panel13.add(flushDnsButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel15.add(flushDnsButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer7 = new Spacer();
-        panel13.add(spacer7, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        final JSeparator separator4 = new JSeparator();
-        panel3.add(separator4, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        panel15.add(spacer7, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         final JSeparator separator5 = new JSeparator();
-        panel3.add(separator5, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        panel3.add(separator5, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        final JSeparator separator6 = new JSeparator();
+        panel3.add(separator6, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
     }
 
     /**

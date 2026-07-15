@@ -169,6 +169,14 @@ public class ConfigUtil extends ConfigBaseUtil {
         setting.putByGroup("recentTabIndex", "setting.common", String.valueOf(recentTabIndex));
     }
 
+    public String getSettingStr(String key, String group, String defaultValue) {
+        return setting.getStr(key, group, defaultValue);
+    }
+
+    public void putSettingByGroup(String key, String group, String value) {
+        setting.putByGroup(key, group, value);
+    }
+
     public String getBeforeVersion() {
         return setting.getStr("beforeVersion", "setting.common", "v0.0.0");
     }
@@ -371,20 +379,72 @@ public class ConfigUtil extends ConfigBaseUtil {
         setting.putByGroup("randomPasswordDigit", "func.crypto", String.valueOf(randomPasswordDigit));
     }
 
+    public String getLocale() {
+        return setting.getStr("locale", "setting.common", I18n.LOCALE_EN);
+    }
+
+    public void setLocale(String locale) {
+        setting.putByGroup("locale", "setting.common", locale);
+    }
+
+    public boolean isLanguagePromptShown() {
+        return setting.getBool("languagePromptShown", "setting.common", false);
+    }
+
+    public void setLanguagePromptShown(boolean shown) {
+        setting.putByGroup("languagePromptShown", "setting.common", String.valueOf(shown));
+    }
+
     public String getMenuBarPosition() {
-        return setting.getStr("menuBarPosition", "setting.custom", "上方");
+        return normalizeMenuBarPosition(
+                setting.getStr("menuBarPosition", "setting.custom", "top"));
     }
 
     public void setMenuBarPosition(String menuBarPosition) {
-        setting.putByGroup("menuBarPosition", "setting.custom", menuBarPosition);
+        setting.putByGroup("menuBarPosition", "setting.custom", normalizeMenuBarPosition(menuBarPosition));
+    }
+
+    public boolean isMenuBarOnTop() {
+        return "top".equals(getMenuBarPosition());
+    }
+
+    public boolean isMenuBarOnBottom() {
+        return "bottom".equals(getMenuBarPosition());
     }
 
     public String getFuncTabPosition() {
-        return setting.getStr("funcTabPosition", "setting.custom", "左侧");
+        return normalizeFuncTabPosition(
+                setting.getStr("funcTabPosition", "setting.custom", "left"));
     }
 
     public void setFuncTabPosition(String funcTabPosition) {
-        setting.putByGroup("funcTabPosition", "setting.custom", funcTabPosition);
+        setting.putByGroup("funcTabPosition", "setting.custom", normalizeFuncTabPosition(funcTabPosition));
+    }
+
+    public boolean isFuncTabOnLeft() {
+        return "left".equals(getFuncTabPosition());
+    }
+
+    private static String normalizeMenuBarPosition(String value) {
+        if (value == null) {
+            return "top";
+        }
+        return switch (value) {
+            case "上方", "top" -> "top";
+            case "下方", "bottom" -> "bottom";
+            default -> "top";
+        };
+    }
+
+    private static String normalizeFuncTabPosition(String value) {
+        if (value == null) {
+            return "left";
+        }
+        return switch (value) {
+            case "上方", "top" -> "top";
+            case "左侧", "left" -> "left";
+            default -> "left";
+        };
     }
 
     public boolean isTabCompact() {
@@ -412,11 +472,36 @@ public class ConfigUtil extends ConfigBaseUtil {
     }
 
     public boolean isTabCard() {
+        if (isFuncTabGrouped()) {
+            return false;
+        }
         return setting.getBool("tabCard", "setting.custom", false);
     }
 
     public void setTabCard(boolean tabCard) {
         setting.putByGroup("tabCard", "setting.custom", String.valueOf(tabCard));
+        if (tabCard) {
+            setting.putByGroup("funcTabGrouped", "setting.custom", "false");
+        }
+    }
+
+    public boolean isFuncTabGrouped() {
+        return setting.getBool("funcTabGrouped", "setting.custom", true);
+    }
+
+    public void setFuncTabGrouped(boolean funcTabGrouped) {
+        setting.putByGroup("funcTabGrouped", "setting.custom", String.valueOf(funcTabGrouped));
+        if (funcTabGrouped) {
+            setting.putByGroup("tabCard", "setting.custom", "false");
+        }
+    }
+
+    public boolean isFuncRecentVisible() {
+        return setting.getBool("funcRecentVisible", "setting.custom", false);
+    }
+
+    public void setFuncRecentVisible(boolean funcRecentVisible) {
+        setting.putByGroup("funcRecentVisible", "setting.custom", String.valueOf(funcRecentVisible));
     }
 
     public String getSqlDialect() {
@@ -467,12 +552,168 @@ public class ConfigUtil extends ConfigBaseUtil {
         setting.putByGroup("quickNoteExportPath", "func.quickNote", quickNoteExportPath);
     }
 
+    public String getQuickNoteVaultPath() {
+        return setting.getStr("quickNoteVaultPath", "func.quickNote", "");
+    }
+
+    public void setQuickNoteVaultPath(String quickNoteVaultPath) {
+        setting.putByGroup("quickNoteVaultPath", "func.quickNote", quickNoteVaultPath);
+    }
+
+    public boolean isQuickNoteAutoGitCommit() {
+        return setting.getBool("quickNoteAutoGitCommit", "func.quickNote", true);
+    }
+
+    public void setQuickNoteAutoGitCommit(boolean quickNoteAutoGitCommit) {
+        setting.putByGroup("quickNoteAutoGitCommit", "func.quickNote", String.valueOf(quickNoteAutoGitCommit));
+    }
+
+    public int getQuickNoteAutoGitIdleSeconds() {
+        return setting.getInt("quickNoteAutoGitIdleSeconds", "func.quickNote", 30);
+    }
+
+    public void setQuickNoteAutoGitIdleSeconds(int quickNoteAutoGitIdleSeconds) {
+        setting.putByGroup("quickNoteAutoGitIdleSeconds", "func.quickNote",
+                String.valueOf(quickNoteAutoGitIdleSeconds));
+    }
+
+    public int getQuickNoteAutoGitInactiveSeconds() {
+        return setting.getInt("quickNoteAutoGitInactiveSeconds", "func.quickNote", 120);
+    }
+
+    public void setQuickNoteAutoGitInactiveSeconds(int quickNoteAutoGitInactiveSeconds) {
+        setting.putByGroup("quickNoteAutoGitInactiveSeconds", "func.quickNote",
+                String.valueOf(quickNoteAutoGitInactiveSeconds));
+    }
+
+    public String getQuickNoteGitRemoteUrl() {
+        return setting.getStr("quickNoteGitRemoteUrl", "func.quickNote", "");
+    }
+
+    public void setQuickNoteGitRemoteUrl(String quickNoteGitRemoteUrl) {
+        setting.putByGroup("quickNoteGitRemoteUrl", "func.quickNote", quickNoteGitRemoteUrl);
+    }
+
+    public int getQuickNoteAutoPullIntervalMinutes() {
+        return setting.getInt("quickNoteAutoPullIntervalMinutes", "func.quickNote", 5);
+    }
+
+    public void setQuickNoteAutoPullIntervalMinutes(int quickNoteAutoPullIntervalMinutes) {
+        setting.putByGroup("quickNoteAutoPullIntervalMinutes", "func.quickNote",
+                String.valueOf(quickNoteAutoPullIntervalMinutes));
+    }
+
+    public boolean isQuickNoteHideGitignoredFiles() {
+        return setting.getBool("quickNoteHideGitignoredFiles", "func.quickNote", true);
+    }
+
+    public void setQuickNoteHideGitignoredFiles(boolean quickNoteHideGitignoredFiles) {
+        setting.putByGroup("quickNoteHideGitignoredFiles", "func.quickNote",
+                String.valueOf(quickNoteHideGitignoredFiles));
+    }
+
+    public String getQuickNoteListSortMode() {
+        return setting.getStr("quickNoteListSortMode", "func.quickNote",
+                QuickNoteListSortMode.MODIFIED_TIME.name());
+    }
+
+    public void setQuickNoteListSortMode(String quickNoteListSortMode) {
+        setting.putByGroup("quickNoteListSortMode", "func.quickNote", quickNoteListSortMode);
+    }
+
+    public String getQuickNoteTreeExpandMode() {
+        return setting.getStr("quickNoteTreeExpandMode", "func.quickNote",
+                VaultTreeExpandMode.EXPAND_ALL.name());
+    }
+
+    public void setQuickNoteTreeExpandMode(String quickNoteTreeExpandMode) {
+        setting.putByGroup("quickNoteTreeExpandMode", "func.quickNote", quickNoteTreeExpandMode);
+    }
+
     public String getJsonBeautyExportPath() {
         return setting.getStr("jsonBeautyExportPath", "func.jsonBeauty", "");
     }
 
     public void setJsonBeautyExportPath(String jsonBeautyExportPath) {
         setting.putByGroup("jsonBeautyExportPath", "func.jsonBeauty", jsonBeautyExportPath);
+    }
+
+    public String getJsonBeautyVaultPath() {
+        return setting.getStr("jsonBeautyVaultPath", "func.jsonBeauty", "");
+    }
+
+    public void setJsonBeautyVaultPath(String jsonBeautyVaultPath) {
+        setting.putByGroup("jsonBeautyVaultPath", "func.jsonBeauty", jsonBeautyVaultPath);
+    }
+
+    public String getJsonBeautyGitRemoteUrl() {
+        return setting.getStr("jsonBeautyGitRemoteUrl", "func.jsonBeauty", "");
+    }
+
+    public void setJsonBeautyGitRemoteUrl(String jsonBeautyGitRemoteUrl) {
+        setting.putByGroup("jsonBeautyGitRemoteUrl", "func.jsonBeauty", jsonBeautyGitRemoteUrl);
+    }
+
+    public boolean isJsonBeautyAutoGitCommit() {
+        return setting.getBool("jsonBeautyAutoGitCommit", "func.jsonBeauty", true);
+    }
+
+    public void setJsonBeautyAutoGitCommit(boolean jsonBeautyAutoGitCommit) {
+        setting.putByGroup("jsonBeautyAutoGitCommit", "func.jsonBeauty", String.valueOf(jsonBeautyAutoGitCommit));
+    }
+
+    public int getJsonBeautyAutoGitIdleSeconds() {
+        return setting.getInt("jsonBeautyAutoGitIdleSeconds", "func.jsonBeauty", 30);
+    }
+
+    public void setJsonBeautyAutoGitIdleSeconds(int jsonBeautyAutoGitIdleSeconds) {
+        setting.putByGroup("jsonBeautyAutoGitIdleSeconds", "func.jsonBeauty",
+                String.valueOf(jsonBeautyAutoGitIdleSeconds));
+    }
+
+    public int getJsonBeautyAutoGitInactiveSeconds() {
+        return setting.getInt("jsonBeautyAutoGitInactiveSeconds", "func.jsonBeauty", 120);
+    }
+
+    public void setJsonBeautyAutoGitInactiveSeconds(int jsonBeautyAutoGitInactiveSeconds) {
+        setting.putByGroup("jsonBeautyAutoGitInactiveSeconds", "func.jsonBeauty",
+                String.valueOf(jsonBeautyAutoGitInactiveSeconds));
+    }
+
+    public int getJsonBeautyAutoPullIntervalMinutes() {
+        return setting.getInt("jsonBeautyAutoPullIntervalMinutes", "func.jsonBeauty", 5);
+    }
+
+    public void setJsonBeautyAutoPullIntervalMinutes(int jsonBeautyAutoPullIntervalMinutes) {
+        setting.putByGroup("jsonBeautyAutoPullIntervalMinutes", "func.jsonBeauty",
+                String.valueOf(jsonBeautyAutoPullIntervalMinutes));
+    }
+
+    public boolean isJsonBeautyHideGitignoredFiles() {
+        return setting.getBool("jsonBeautyHideGitignoredFiles", "func.jsonBeauty", true);
+    }
+
+    public void setJsonBeautyHideGitignoredFiles(boolean jsonBeautyHideGitignoredFiles) {
+        setting.putByGroup("jsonBeautyHideGitignoredFiles", "func.jsonBeauty",
+                String.valueOf(jsonBeautyHideGitignoredFiles));
+    }
+
+    public String getJsonBeautyListSortMode() {
+        return setting.getStr("jsonBeautyListSortMode", "func.jsonBeauty",
+                JsonBeautyListSortMode.MODIFIED_TIME.name());
+    }
+
+    public void setJsonBeautyListSortMode(String jsonBeautyListSortMode) {
+        setting.putByGroup("jsonBeautyListSortMode", "func.jsonBeauty", jsonBeautyListSortMode);
+    }
+
+    public String getJsonBeautyTreeExpandMode() {
+        return setting.getStr("jsonBeautyTreeExpandMode", "func.jsonBeauty",
+                VaultTreeExpandMode.EXPAND_ALL.name());
+    }
+
+    public void setJsonBeautyTreeExpandMode(String jsonBeautyTreeExpandMode) {
+        setting.putByGroup("jsonBeautyTreeExpandMode", "func.jsonBeauty", jsonBeautyTreeExpandMode);
     }
 
     public String getImageExportPath() {
@@ -529,5 +770,40 @@ public class ConfigUtil extends ConfigBaseUtil {
 
     public void setTranslatorType(String translatorType) {
         setting.putByGroup("translatorType", "func.translation", translatorType);
+    }
+
+    public String getTranslationSourceLanguage() {
+        return setting.getStr("sourceLanguage", "func.translation",
+                com.luoboduner.moo.tool.util.translator.TranslatorLangUtil.getAutoDetectLabel());
+    }
+
+    public void setTranslationSourceLanguage(String sourceLanguage) {
+        setting.putByGroup("sourceLanguage", "func.translation", sourceLanguage);
+    }
+
+    public String getTranslationTargetLanguage() {
+        return setting.getStr("targetLanguage", "func.translation",
+                com.luoboduner.moo.tool.util.translator.TranslatorLangUtil.getDisplayName(
+                        com.luoboduner.moo.tool.util.translator.TranslatorLangUtil.DEFAULT_TARGET_CODE));
+    }
+
+    public void setTranslationTargetLanguage(String targetLanguage) {
+        setting.putByGroup("targetLanguage", "func.translation", targetLanguage);
+    }
+
+    public String getVaultGitUsername() {
+        return setting.getStr("vaultGitUsername", "func.vaultGit", "");
+    }
+
+    public void setVaultGitUsername(String vaultGitUsername) {
+        setting.putByGroup("vaultGitUsername", "func.vaultGit", vaultGitUsername);
+    }
+
+    public String getVaultGitToken() {
+        return setting.getStr("vaultGitToken", "func.vaultGit", "");
+    }
+
+    public void setVaultGitToken(String vaultGitToken) {
+        setting.putByGroup("vaultGitToken", "func.vaultGit", vaultGitToken);
     }
 }

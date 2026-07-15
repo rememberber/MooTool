@@ -1,16 +1,17 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
 import cn.hutool.core.io.FileUtil;
-import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.formdev.flatlaf.util.SystemFileChooser;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.form.func.QrCodeForm;
 import com.luoboduner.moo.tool.util.ConsoleUtil;
+import com.luoboduner.moo.tool.util.MsgUtil;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.image.BufferedImage;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.File;
@@ -28,13 +29,31 @@ public class QrCodeListener {
 
     public static void addListeners() {
         QrCodeForm qrCodeForm = QrCodeForm.getInstance();
-        qrCodeForm.getGenerateButton().addActionListener(e -> ThreadUtil.execute(() -> {
+        qrCodeForm.getGenerateButton().addActionListener(e -> {
             try {
-                QrCodeForm.generate(true);
-            } catch (Exception e1) {
-                logger.error(e1);
+                QrCodeForm.GenerateRequest request = QrCodeForm.collectGenerateRequest(true);
+                SwingWorker<BufferedImage, Void> worker = new SwingWorker<>() {
+                    @Override
+                    protected BufferedImage doInBackground() throws Exception {
+                        return QrCodeForm.generateImage(request);
+                    }
+
+                    @Override
+                    protected void done() {
+                        try {
+                            QrCodeForm.showGeneratedImage(get(), request);
+                        } catch (Exception ex) {
+                            MsgUtil.errorWithDetail(App.mainFrame, "msg.generateFailed", ex.getMessage());
+                            logger.error(ex);
+                        }
+                    }
+                };
+                worker.execute();
+            } catch (Exception ex) {
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.generateFailed", ex.getMessage());
+                logger.error(ex);
             }
-        }));
+        });
         qrCodeForm.getExploreButton().addActionListener(e -> {
             File beforeFile = new File(qrCodeForm.getLogoPathTextField().getText());
             SystemFileChooser fileChooser;
@@ -72,8 +91,7 @@ public class QrCodeListener {
 
             if (QrCodeForm.qrCodeImageTempFile.exists()) {
                 FileUtil.copy(QrCodeForm.qrCodeImageTempFile.getAbsolutePath(), exportPath, true);
-                JOptionPane.showMessageDialog(qrCodeForm.getQrCodePanel(), "保存成功！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.success(qrCodeForm.getQrCodePanel(), "msg.saveSuccess");
                 App.config.setQrCodeSaveAsPath(exportPath);
                 App.config.save();
                 try {

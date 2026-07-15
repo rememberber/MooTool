@@ -1,8 +1,9 @@
 package com.luoboduner.moo.tool.ui.component.textviewer;
 
-import com.formdev.flatlaf.util.FontUtils;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.util.EditorFontUtil;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
+import org.fife.ui.rsyntaxtextarea.CjkFallbackTokenPainterFactory;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 
 import javax.swing.event.HyperlinkEvent;
@@ -13,6 +14,7 @@ import java.net.URISyntaxException;
 
 public class JsonRSyntaxTextViewer extends CommonRSyntaxTextViewer {
     public JsonRSyntaxTextViewer() {
+        setTokenPainterFactory(new CjkFallbackTokenPainterFactory());
 
         addHyperlinkListener(e -> {
             if (HyperlinkEvent.EventType.ACTIVATED.equals(e.getEventType())) {
@@ -41,7 +43,7 @@ public class JsonRSyntaxTextViewer extends CommonRSyntaxTextViewer {
         if (fontSize == 0) {
             fontSize = MainWindow.getInstance().getMainPanel().getFont().getSize() + 2;
         }
-        Font font = FontUtils.getCompositeFont(fontName, Font.PLAIN, fontSize);
+        Font font = EditorFontUtil.getEditorFont(fontName, Font.PLAIN, fontSize);
         setFont(font);
     }
 }

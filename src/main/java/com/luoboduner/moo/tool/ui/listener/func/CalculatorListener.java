@@ -9,6 +9,7 @@ import com.luoboduner.moo.tool.ui.form.func.CalculatorForm;
 import com.luoboduner.moo.tool.util.Calculator;
 import com.luoboduner.moo.tool.util.CalculatorUtil;
 import com.luoboduner.moo.tool.util.ConsoleUtil;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
@@ -60,7 +61,7 @@ public class CalculatorListener {
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
-                JOptionPane.showMessageDialog(calculatorForm.getCalculatorPanel(), ex.getMessage(), "转换失败！", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorDetail(calculatorForm.getCalculatorPanel(), "msg.convertFailedTitle", ex.getMessage());
             }
         });
         calculatorForm.getDecToHexButton().addActionListener(e -> {
@@ -72,7 +73,7 @@ public class CalculatorListener {
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
-                JOptionPane.showMessageDialog(calculatorForm.getCalculatorPanel(), ex.getMessage(), "转换失败！", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorDetail(calculatorForm.getCalculatorPanel(), "msg.convertFailedTitle", ex.getMessage());
             }
         });
         calculatorForm.getDecToBinaryButton().addActionListener(e -> {
@@ -84,7 +85,7 @@ public class CalculatorListener {
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
-                JOptionPane.showMessageDialog(calculatorForm.getCalculatorPanel(), ex.getMessage(), "转换失败！", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorDetail(calculatorForm.getCalculatorPanel(), "msg.convertFailedTitle", ex.getMessage());
             }
         });
         calculatorForm.getBinaryToDecButton().addActionListener(e -> {
@@ -96,7 +97,7 @@ public class CalculatorListener {
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
-                JOptionPane.showMessageDialog(calculatorForm.getCalculatorPanel(), ex.getMessage(), "转换失败！", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorDetail(calculatorForm.getCalculatorPanel(), "msg.convertFailedTitle", ex.getMessage());
             }
         });
         calculatorForm.getDivisorButton().addActionListener(e -> {
@@ -109,7 +110,7 @@ public class CalculatorListener {
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
-                JOptionPane.showMessageDialog(calculatorForm.getCalculatorPanel(), ex.getMessage(), "计算失败！", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorDetail(calculatorForm.getCalculatorPanel(), "msg.calcFailedTitle", ex.getMessage());
             }
         });
         calculatorForm.getMultipleButton().addActionListener(e -> {
@@ -122,7 +123,7 @@ public class CalculatorListener {
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
-                JOptionPane.showMessageDialog(calculatorForm.getCalculatorPanel(), ex.getMessage(), "计算失败！", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorDetail(calculatorForm.getCalculatorPanel(), "msg.calcFailedTitle", ex.getMessage());
             }
         });
         calculatorForm.getArrangementCountButton().addActionListener(e -> {
@@ -135,7 +136,7 @@ public class CalculatorListener {
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
-                JOptionPane.showMessageDialog(calculatorForm.getCalculatorPanel(), ex.getMessage(), "计算失败！", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorDetail(calculatorForm.getCalculatorPanel(), "msg.calcFailedTitle", ex.getMessage());
             }
         });
         calculatorForm.getCombinationCountButton().addActionListener(e -> {
@@ -148,7 +149,7 @@ public class CalculatorListener {
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
-                JOptionPane.showMessageDialog(calculatorForm.getCalculatorPanel(), ex.getMessage(), "计算失败！", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorDetail(calculatorForm.getCalculatorPanel(), "msg.calcFailedTitle", ex.getMessage());
             }
         });
 
@@ -188,7 +189,7 @@ public class CalculatorListener {
         } catch (Exception ex) {
             ex.printStackTrace();
             logger.error(ExceptionUtils.getStackTrace(ex));
-            JOptionPane.showMessageDialog(calculatorForm.getCalculatorPanel(), ex.getMessage(), "计算失败！", JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorDetail(calculatorForm.getCalculatorPanel(), "msg.calcFailedTitle", ex.getMessage());
         }
     }
 

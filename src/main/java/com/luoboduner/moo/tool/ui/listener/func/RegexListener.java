@@ -1,9 +1,13 @@
 package com.luoboduner.moo.tool.ui.listener.func;
 
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.dialog.FavoriteRegexDialog;
 import com.luoboduner.moo.tool.ui.form.func.RegexForm;
 import com.luoboduner.moo.tool.ui.frame.FavoriteRegexFrame;
+import com.luoboduner.moo.tool.util.FuncHistoryUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import org.apache.commons.lang3.StringUtils;
 import org.fife.ui.rsyntaxtextarea.DocumentRange;
 import org.fife.ui.rsyntaxtextarea.RSyntaxUtilities;
 import org.fife.ui.rtextarea.RTextAreaHighlighter;
@@ -26,7 +30,7 @@ public class RegexListener {
         context.setRegularExpression(true);
 
         regexForm.getRegexTextField().getDocument().addDocumentListener(new MarkAllUpdater());
-        regexForm.getMatchTestButton().addActionListener(e -> markAll());
+        regexForm.getMatchTestButton().addActionListener(e -> markAll(true));
 
         regexForm.getFavoriteBookButton().addActionListener(e -> FavoriteRegexFrame.showWindow());
         regexForm.getAddToFavoriteButton().addActionListener(e -> {
@@ -56,17 +60,33 @@ public class RegexListener {
         }
     }
 
-    private static void markAll() {
+    public static void markAll(boolean saveHistory) {
         RegexForm regexForm = RegexForm.getInstance();
-        findOrMarkAll(false);
+        SearchResult result = findOrMarkAll(false);
 
         App.config.setRegexText(regexForm.getRegexTextField().getText());
         App.config.save();
 
         RegexForm.saveContent();
+
+        if (saveHistory) {
+            String regex = regexForm.getRegexTextField().getText();
+            String content = regexForm.getTextArea().getText();
+            if (StringUtils.isNotBlank(regex)) {
+                FuncHistoryUtil.save(FuncConsts.REGEX, I18n.get("history.summary.regex"), regex, content,
+                        I18n.format("regex.matchCountSummary", result.getMarkedCount()));
+                if (RegexForm.getHistoryPanel() != null) {
+                    RegexForm.getHistoryPanel().refreshListIfVisible();
+                }
+            }
+        }
     }
 
-    private static void findOrMarkAll(boolean find) {
+    private static void markAll() {
+        markAll(false);
+    }
+
+    private static SearchResult findOrMarkAll(boolean find) {
         RegexForm regexForm = RegexForm.getInstance();
         String searchFor = regexForm.getRegexTextField().getText();
         context.setSearchFor(searchFor);
@@ -84,6 +104,7 @@ public class RegexListener {
 
         // update matches info label
         updateMatchesLabel(result, false);
+        return result;
     }
 
     private static void selectMatchNearCaret() {

@@ -2,9 +2,7 @@ package com.luoboduner.moo.tool.ui.listener;
 
 
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
-import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 
 import javax.swing.*;
@@ -20,8 +18,6 @@ import java.awt.event.*;
  * @since 2017/6/21.
  */
 public class FrameListener {
-
-    private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
 
     public static void addListeners() {
         App.mainFrame.addWindowListener(new WindowListener() {
@@ -49,11 +45,9 @@ public class FrameListener {
             @Override
             public void windowClosing(WindowEvent e) {
                 saveBeforeExit();
-                if (SystemUtil.isWindowsOs()) {
-                    App.mainFrame.setVisible(false);
-                } else if (SystemUtil.isMacOs()) {
-                    // 最小化窗口
-                    App.mainFrame.setExtendedState(Frame.ICONIFIED);
+                if (SystemUtil.isWindowsOs() || SystemUtil.isMacOs()) {
+                    // 延迟隐藏窗口，避免在 windowClosing 中同步修改窗口状态导致部分系统版本卡死
+                    hideMainFrame();
                 } else {
                     App.mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
                 }
@@ -66,6 +60,9 @@ public class FrameListener {
 
             @Override
             public void windowActivated(WindowEvent e) {
+                if (!App.mainFrame.isVisible()) {
+                    return;
+                }
                 if (App.config.isDefaultMaxWindow()) {
                     // 低分辨率下自动最大化窗口
                     App.mainFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
@@ -113,13 +110,32 @@ public class FrameListener {
             MainWindow.getInstance().getMainPanel().registerKeyboardAction(e -> App.mainFrame.setExtendedState(Frame.ICONIFIED), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
         }
 
-        // Command + W 最小化窗口
-        MainWindow.getInstance().getMainPanel().registerKeyboardAction(e -> App.mainFrame.setExtendedState(Frame.ICONIFIED), KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.META_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
+        // Command + W 隐藏窗口
+        MainWindow.getInstance().getMainPanel().registerKeyboardAction(e -> hideMainFrame(), KeyStroke.getKeyStroke(KeyEvent.VK_W, InputEvent.META_DOWN_MASK), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
     }
 
+    private static void hideMainFrame() {
+        SwingUtilities.invokeLater(() -> App.mainFrame.setVisible(false));
+    }
+
     public static void saveBeforeExit() {
-        App.config.setRecentTabIndex(MainWindow.getInstance().getTabbedPane().getSelectedIndex());
+        persistRecentTab(MainWindow.getInstance().getTabbedPane().getSelectedIndex());
+    }
+
+    public static void restoreRecentTab() {
+        int index = App.config.getRecentTabIndex();
+        JTabbedPane tabbedPane = MainWindow.getInstance().getTabbedPane();
+        if (index >= 0 && index < tabbedPane.getTabCount()) {
+            tabbedPane.setSelectedIndex(index);
+        }
+    }
+
+    public static void persistRecentTab(int index) {
+        if (index < 0) {
+            return;
+        }
+        App.config.setRecentTabIndex(index);
         App.config.save();
     }
 }

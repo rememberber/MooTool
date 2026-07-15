@@ -7,6 +7,9 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.ui.listener.func.PDFMergerListener;
 import com.luoboduner.moo.tool.ui.listener.func.PDFSplitterListener;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import lombok.Getter;
 
@@ -39,8 +42,15 @@ public class PdfForm {
     private JButton addFile;
     private JLabel helpMerge;
     private JPanel filePane;
+    private JTabbedPane tabbedPane1;
 
     private static PdfForm instance;
+
+    private static boolean i18nRegistered;
+
+    private FileTableModel fileTableModel;
+    private SplitTableModel splitTableModel;
+
     private PDFSplitterListener listener;
     private PDFMergerListener mergerListener;
 
@@ -48,6 +58,49 @@ public class PdfForm {
         $$$setupUI$$$();
         initSplitContent();
         initMergeContent();
+        applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(PdfForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setTabTitle(tabbedPane1, 0, "pdf.tab.split");
+        I18nUiUtil.setTabTitle(tabbedPane1, 1, "pdf.tab.merge");
+        I18nUiUtil.setText(startTask, "pdf.startSplit");
+        I18nUiUtil.setText(newTask, "pdf.newTask");
+        I18nUiUtil.setText(startMerge, "pdf.startMerge");
+        I18nUiUtil.setText(addFile, "pdf.addFile");
+        if (fileTableModel != null) {
+            fileTableModel.updateColumnNames(new String[]{
+                    "#",
+                    I18n.get("pdf.col.selectFile"),
+                    I18n.get("pdf.col.fileName"),
+                    I18n.get("pdf.col.mergeRange"),
+                    I18n.get("pdf.col.mergeProgress"),
+                    I18n.get("pdf.col.status")
+            });
+        }
+        if (splitTableModel != null) {
+            splitTableModel.updateColumnNames(new String[]{
+                    "#",
+                    I18n.get("pdf.col.selectFile"),
+                    I18n.get("pdf.col.fileName"),
+                    I18n.get("pdf.col.splitRange"),
+                    I18n.get("pdf.col.splitRule"),
+                    I18n.get("pdf.col.customRule"),
+                    I18n.get("pdf.col.splitProgress"),
+                    I18n.get("pdf.col.status")
+            });
+            splitTableModel.refreshRuleComboRenderer();
+        }
+    }
+
+    private static void applyI18nStatic() {
+        if (instance != null) {
+            instance.applyI18n();
+        }
     }
 
     public static PdfForm getInstance() {
@@ -62,7 +115,7 @@ public class PdfForm {
     }
 
     private void initMergeContent() {
-        FileTableModel fileTableModel = new FileTableModel(10);
+        fileTableModel = new FileTableModel(10);
         JTable table = new JTable(fileTableModel);
         PDFTableModel.CommonComponentRenderer componentRenderer = fileTableModel.new CommonComponentRenderer();
         table.setDefaultRenderer(JCheckBox.class, componentRenderer);
@@ -103,9 +156,9 @@ public class PdfForm {
     }
 
     private void initSplitContent() {
-        SplitTableModel taskTableModel = new SplitTableModel(10);
-        JTable table = new JTable(taskTableModel);
-        SplitTableModel.CommonComponentRenderer testRenderer = taskTableModel.new CommonComponentRenderer();
+        splitTableModel = new SplitTableModel(10);
+        JTable table = new JTable(splitTableModel);
+        SplitTableModel.CommonComponentRenderer testRenderer = splitTableModel.new CommonComponentRenderer();
         table.setDefaultRenderer(JCheckBox.class, testRenderer);
         table.setDefaultRenderer(JButton.class, testRenderer);
         table.setDefaultRenderer(JTextField.class, testRenderer);
@@ -113,10 +166,10 @@ public class PdfForm {
         table.setDefaultRenderer(JProgressBar.class, testRenderer);
         table.setDefaultRenderer(JLabel.class, testRenderer);
 
-        table.setDefaultEditor(JCheckBox.class, taskTableModel.new CommonCheckBoxEditor());
-        table.setDefaultEditor(JButton.class, taskTableModel.new CommonUploadEditor());
-        table.setDefaultEditor(JTextField.class, taskTableModel.new CommonTextFieldEditor());
-        table.setDefaultEditor(JComboBox.class, taskTableModel.new CommonComboBoxEditor());
+        table.setDefaultEditor(JCheckBox.class, splitTableModel.new CommonCheckBoxEditor());
+        table.setDefaultEditor(JButton.class, splitTableModel.new CommonUploadEditor());
+        table.setDefaultEditor(JTextField.class, splitTableModel.new CommonTextFieldEditor());
+        table.setDefaultEditor(JComboBox.class, splitTableModel.new CommonComboBoxEditor());
 
         table.setRowHeight(30);
         table.setRowMargin(5);
@@ -134,11 +187,11 @@ public class PdfForm {
         getTaskPane().add(jTableHeader, BorderLayout.NORTH);
         getTaskPane().add(scrollPane, BorderLayout.CENTER);
 
-        listener = new PDFSplitterListener(taskPane, taskTableModel);
+        listener = new PDFSplitterListener(taskPane, splitTableModel);
         listener.setNewTask(getNewTask());
         listener.setStartTask(getStartTask());
         listener.setHelpBtn(getHelpBtn());
-        listener.setComponents(taskTableModel.getComps());
+        listener.setComponents(splitTableModel.getComps());
         listener.startListener();
 
         getHelpBtn().setIcon(new FlatSVGIcon("icon/help.svg"));
@@ -154,13 +207,13 @@ public class PdfForm {
     private void $$$setupUI$$$() {
         pdfPanel = new JPanel();
         pdfPanel.setLayout(new GridLayoutManager(1, 1, new Insets(10, 0, 0, 0), -1, -1));
-        final JTabbedPane tabbedPane1 = new JTabbedPane();
-        tabbedPane1.setTabLayoutPolicy(1);
-        tabbedPane1.setTabPlacement(1);
-        pdfPanel.add(tabbedPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
+        final JTabbedPane tabbedPane2 = new JTabbedPane();
+        tabbedPane2.setTabLayoutPolicy(1);
+        tabbedPane2.setTabPlacement(1);
+        pdfPanel.add(tabbedPane2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(200, 200), null, 0, false));
         splitPane = new JPanel();
         splitPane.setLayout(new GridLayoutManager(2, 4, new Insets(10, 10, 10, 10), -1, -1));
-        tabbedPane1.addTab("PDF拆分", splitPane);
+        tabbedPane2.addTab("PDF拆分", splitPane);
         startTask = new JButton();
         startTask.setText("开始拆分");
         splitPane.add(startTask, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -178,7 +231,7 @@ public class PdfForm {
         splitPane.add(helpBtn, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         mergePane = new JPanel();
         mergePane.setLayout(new GridLayoutManager(2, 4, new Insets(10, 10, 10, 10), -1, -1));
-        tabbedPane1.addTab("PDF合并", mergePane);
+        tabbedPane2.addTab("PDF合并", mergePane);
         final Spacer spacer2 = new Spacer();
         mergePane.add(spacer2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         startMerge = new JButton();
@@ -261,7 +314,7 @@ public class PdfForm {
 
         public void add() {
             if (count >= maxRow) {
-                JOptionPane.showMessageDialog(taskPane, "最大为20个！", "警告", JOptionPane.WARNING_MESSAGE);
+                MsgUtil.show(taskPane, I18n.get("msg.pdfMaxTasks"), "common.warning", JOptionPane.WARNING_MESSAGE);
                 return;
             }
             rowCount++;
@@ -278,6 +331,11 @@ public class PdfForm {
         protected abstract String[] initColumns();
 
         protected abstract Class<?>[] initColumnTypes();
+
+        protected void updateColumnNames(String[] columnNames) {
+            COLUMN_NAMES = columnNames;
+            fireTableStructureChanged();
+        }
 
         protected void selectEditor(boolean isSelected, int row) {
         }
@@ -422,7 +480,7 @@ public class PdfForm {
             progressBar.setStringPainted(true);
             progressBar.setBounds(0, 0, 150, 2);
             components[4] = progressBar;
-            JLabel label = new JLabel("未开始");
+            JLabel label = new JLabel(I18n.get("pdf.status.notStarted"));
             label.setHorizontalAlignment(JLabel.CENTER);
             components[5] = label;
             return components;
@@ -499,7 +557,7 @@ public class PdfForm {
             progressBar.setStringPainted(true);
             progressBar.setBounds(0, 0, 150, 2);
             components[6] = progressBar;
-            JLabel label = new JLabel("未开始");
+            JLabel label = new JLabel(I18n.get("pdf.status.notStarted"));
             label.setHorizontalAlignment(JLabel.CENTER);
             components[7] = label;
             return components;
@@ -547,6 +605,26 @@ public class PdfForm {
 
         protected void comboBoxChange(String text, int row) {
             listener.changeSplitRuleType(text, row);
+        }
+
+        private static final String[] RULE_KEYS = {"pdf.rule.odd", "pdf.rule.even", "pdf.rule.custom"};
+
+        void refreshRuleComboRenderer() {
+            for (Object[] row : comps) {
+                if (row.length > 4 && row[4] instanceof JComboBox<?> comboBox) {
+                    comboBox.setRenderer(new DefaultListCellRenderer() {
+                        @Override
+                        public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                                      boolean isSelected, boolean cellHasFocus) {
+                            super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                            if (index >= 0 && index < RULE_KEYS.length) {
+                                setText(I18n.get(RULE_KEYS[index]));
+                            }
+                            return this;
+                        }
+                    });
+                }
+            }
         }
     }
 }

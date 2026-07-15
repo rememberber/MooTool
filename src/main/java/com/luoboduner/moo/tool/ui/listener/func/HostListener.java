@@ -10,9 +10,13 @@ import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
 import com.luoboduner.moo.tool.ui.dialog.CurrentHostDialog;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.HostForm;
+import com.luoboduner.moo.tool.util.HostFileUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.NamingUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -21,7 +25,6 @@ import org.apache.commons.lang3.time.DateFormatUtils;
 import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
@@ -47,28 +50,34 @@ public class HostListener {
 
     public static boolean ignoreQuickSave;
 
+    /** 忽略 JOptionPane 关闭后回传到列表的 Enter 键，避免重命名弹框重复弹出 */
+    private static boolean suppressListEnterRename;
+
     public static void addListeners() {
         HostForm hostForm = HostForm.getInstance();
 
         hostForm.getSaveButton().addActionListener(e -> save(true));
 
-        hostForm.getSwitchButton().addActionListener(e -> ThreadUtil.execute(() -> {
+        hostForm.getSwitchButton().addActionListener(e -> {
             String hostText = hostForm.getTextArea().getText();
-            HostForm.setHost(selectedNameHost, hostText);
-            save(false);
-        }));
+            String hostName = selectedNameHost;
+            ThreadUtil.execute(() -> {
+                HostForm.setHost(hostName, hostText);
+                persistHostContent(hostName, hostText);
+            });
+        });
 
-        // 点击左侧表格事件
-        hostForm.getNoteListTable().addMouseListener(new MouseAdapter() {
+        // 点击左侧列表事件
+        hostForm.getNoteList().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
                 ignoreQuickSave = true;
                 try {
-                    int focusedRowIndex = hostForm.getNoteListTable().rowAtPoint(e.getPoint());
-                    if (focusedRowIndex == -1) {
+                    int index = hostForm.getNoteList().locationToIndex(e.getPoint());
+                    if (index == -1) {
                         return;
                     }
-                    refreshHostContentInTextArea(focusedRowIndex);
+                    refreshHostContentInTextArea(index);
                 } catch (Exception e1) {
                     log.error(e1.getMessage());
                 } finally {
@@ -142,14 +151,7 @@ public class HostListener {
         // 查看系统当前host按钮事件
         hostForm.getCurrentHostButton().addActionListener(e -> {
 
-            String content;
-            if (SystemUtil.isWindowsOs()) {
-                content = FileUtil.readUtf8String(HostForm.WIN_HOST_FILE_PATH);
-            } else if (SystemUtil.isMacOs()) {
-                content = FileUtil.readUtf8String(HostForm.MAC_HOST_FILE_PATH);
-            } else {
-                content = HostForm.NOT_SUPPORTED_TIPS;
-            }
+            String content = HostFileUtil.readSystemHosts();
             CurrentHostDialog currentHostDialog = new CurrentHostDialog();
             currentHostDialog.setPlaneText(content);
             currentHostDialog.setVisible(true);
@@ -157,7 +159,7 @@ public class HostListener {
         });
 
         // 左侧列表按键事件（重命名）
-        hostForm.getNoteListTable().addKeyListener(new KeyListener() {
+        hostForm.getNoteList().addKeyListener(new KeyListener() {
             @Override
             public void keyTyped(KeyEvent e) {
 
@@ -171,28 +173,21 @@ public class HostListener {
             @Override
             public void keyReleased(KeyEvent evt) {
                 if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-                    int selectedRow = hostForm.getNoteListTable().getSelectedRow();
-                    int noteId = Integer.parseInt(String.valueOf(hostForm.getNoteListTable().getValueAt(selectedRow, 0)));
-                    String name = String.valueOf(hostForm.getNoteListTable().getValueAt(selectedRow, 1));
-                    if (StringUtils.isNotBlank(name)) {
-                        THost tHost = new THost();
-                        tHost.setId(noteId);
-                        tHost.setName(name);
-                        try {
-                            hostMapper.updateByPrimaryKeySelective(tHost);
-                        } catch (Exception e) {
-                            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
-                            HostForm.initListTable();
-                            log.error(e.toString());
-                        }
+                    if (suppressListEnterRename) {
+                        suppressListEnterRename = false;
+                        return;
                     }
+                    renameSelectedHost(hostForm);
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteFiles(hostForm);
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
                     ignoreQuickSave = true;
                     try {
-                        int selectedRow = hostForm.getNoteListTable().getSelectedRow();
-                        refreshHostContentInTextArea(selectedRow);
+                        int selectedIndex = hostForm.getNoteList().getSelectedIndex();
+                        if (selectedIndex < 0) {
+                            return;
+                        }
+                        refreshHostContentInTextArea(selectedIndex);
                     } catch (Exception e) {
                         log.error(e.getMessage());
                     } finally {
@@ -207,10 +202,10 @@ public class HostListener {
         });
 
         hostForm.getExportButton().addActionListener(e -> {
-            int[] selectedRows = hostForm.getNoteListTable().getSelectedRows();
+            int[] selectedIndices = hostForm.getNoteList().getSelectedIndices();
 
             try {
-                if (selectedRows.length > 0) {
+                if (selectedIndices.length > 0) {
                     SystemFileChooser fileChooser = new SystemFileChooser(App.config.getHostExportPath());
                     fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
                     int approve = fileChooser.showOpenDialog(hostForm.getHostPanel());
@@ -223,14 +218,13 @@ public class HostListener {
                         return;
                     }
 
-                    for (int row : selectedRows) {
-                        Integer selectedId = (Integer) hostForm.getNoteListTable().getValueAt(row, 0);
-                        THost tHost = hostMapper.selectByPrimaryKey(selectedId);
+                    DefaultListModel<THost> listModel = (DefaultListModel<THost>) hostForm.getNoteList().getModel();
+                    for (int index : selectedIndices) {
+                        THost tHost = hostMapper.selectByPrimaryKey(listModel.getElementAt(index).getId());
                         File exportFile = FileUtil.touch(exportPath + File.separator + tHost.getName() + ".txt");
                         FileUtil.writeUtf8String(tHost.getContent(), exportFile);
                     }
-                    JOptionPane.showMessageDialog(hostForm.getHostPanel(), "导出成功！", "提示",
-                            JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.success(hostForm.getHostPanel(), "msg.exportSuccess");
                     try {
                         Desktop desktop = Desktop.getDesktop();
                         desktop.open(new File(exportPath));
@@ -238,13 +232,11 @@ public class HostListener {
                         log.error(ExceptionUtils.getStackTrace(e2));
                     }
                 } else {
-                    JOptionPane.showMessageDialog(hostForm.getHostPanel(), "请至少选择一个！", "提示",
-                            JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(hostForm.getHostPanel(), "msg.selectAtLeastOne");
                 }
 
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(hostForm.getHostPanel(), "导出失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(hostForm.getHostPanel(), "msg.exportFailed", e1.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
 
@@ -254,62 +246,41 @@ public class HostListener {
         hostForm.getSearchTextField().getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                HostForm.initListTable();
+                HostForm.initList();
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                HostForm.initListTable();
+                HostForm.initList();
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-//                HostForm.initListTable();
+//                HostForm.initList();
             }
         });
 
-        // 左侧表格增加右键菜单
+        // 左侧列表增加右键菜单
         JPopupMenu noteListPopupMenu = new JPopupMenu();
-        JMenuItem renameMenuItem = new JMenuItem("重命名");
-        JMenuItem deleteMenuItem = new JMenuItem("删除");
-        JMenuItem exportMenuItem = new JMenuItem("导出");
+        JMenuItem renameMenuItem = new JMenuItem(I18n.get("common.rename"));
+        JMenuItem deleteMenuItem = new JMenuItem(I18n.get("common.delete"));
+        JMenuItem exportMenuItem = new JMenuItem(I18n.get("common.export"));
         noteListPopupMenu.add(renameMenuItem);
         noteListPopupMenu.add(deleteMenuItem);
         noteListPopupMenu.add(exportMenuItem);
-        hostForm.getNoteListTable().setComponentPopupMenu(noteListPopupMenu);
+        hostForm.getNoteList().setComponentPopupMenu(noteListPopupMenu);
 
-        renameMenuItem.addActionListener(e -> {
-            int selectedRow = hostForm.getNoteListTable().getSelectedRow();
-            int noteId = Integer.parseInt(String.valueOf(hostForm.getNoteListTable().getValueAt(selectedRow, 0)));
-            String beforeName = String.valueOf(hostForm.getNoteListTable().getValueAt(selectedRow, 1));
-            if (StringUtils.isNotBlank(beforeName)) {
-                String afterName = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", beforeName);
-                if (StringUtils.isNotBlank(afterName)) {
-                    THost tHost = new THost();
-                    tHost.setId(noteId);
-                    tHost.setName(afterName);
-                    tHost.setModifiedTime(SqliteUtil.nowDateForSqlite());
-                    try {
-                        hostMapper.updateByPrimaryKeySelective(tHost);
-                        HostForm.initListTable();
-                    } catch (Exception e1) {
-                        JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
-                        HostForm.initListTable();
-                        log.error(e1.toString());
-                    }
-                }
-            }
-        });
+        renameMenuItem.addActionListener(e -> renameSelectedHost(hostForm));
 
         deleteMenuItem.addActionListener(e -> {
             deleteFiles(hostForm);
         });
 
         exportMenuItem.addActionListener(e -> {
-            int[] selectedRows = hostForm.getNoteListTable().getSelectedRows();
+            int[] selectedIndices = hostForm.getNoteList().getSelectedIndices();
 
             try {
-                if (selectedRows.length > 0) {
+                if (selectedIndices.length > 0) {
                     SystemFileChooser fileChooser = new SystemFileChooser(App.config.getHostExportPath());
                     fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
                     int approve = fileChooser.showOpenDialog(hostForm.getHostPanel());
@@ -322,14 +293,13 @@ public class HostListener {
                         return;
                     }
 
-                    for (int row : selectedRows) {
-                        Integer selectedId = (Integer) hostForm.getNoteListTable().getValueAt(row, 0);
-                        THost tHost = hostMapper.selectByPrimaryKey(selectedId);
+                    DefaultListModel<THost> listModel = (DefaultListModel<THost>) hostForm.getNoteList().getModel();
+                    for (int index : selectedIndices) {
+                        THost tHost = hostMapper.selectByPrimaryKey(listModel.getElementAt(index).getId());
                         File exportFile = FileUtil.touch(exportPath + File.separator + tHost.getName() + ".txt");
                         FileUtil.writeUtf8String(tHost.getContent(), exportFile);
                     }
-                    JOptionPane.showMessageDialog(hostForm.getHostPanel(), "导出成功！", "提示",
-                            JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.success(hostForm.getHostPanel(), "msg.exportSuccess");
                     try {
                         Desktop desktop = Desktop.getDesktop();
                         desktop.open(new File(exportPath));
@@ -337,13 +307,11 @@ public class HostListener {
                         log.error(ExceptionUtils.getStackTrace(e2));
                     }
                 } else {
-                    JOptionPane.showMessageDialog(hostForm.getHostPanel(), "请至少选择一个！", "提示",
-                            JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(hostForm.getHostPanel(), "msg.selectAtLeastOne");
                 }
 
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(hostForm.getHostPanel(), "导出失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(hostForm.getHostPanel(), "msg.exportFailed", e1.getMessage());
                 log.error(ExceptionUtils.getStackTrace(e1));
             }
 
@@ -351,29 +319,58 @@ public class HostListener {
 
     }
 
+    private static void renameSelectedHost(HostForm hostForm) {
+        int selectedIndex = hostForm.getNoteList().getSelectedIndex();
+        if (selectedIndex < 0) {
+            return;
+        }
+        DefaultListModel<THost> model = (DefaultListModel<THost>) hostForm.getNoteList().getModel();
+        THost item = model.getElementAt(selectedIndex);
+        String beforeName = item.getName();
+        if (StringUtils.isBlank(beforeName)) {
+            return;
+        }
+        suppressListEnterRename = true;
+        String afterName = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), beforeName);
+        if (StringUtils.isBlank(afterName) || afterName.equals(beforeName)) {
+            return;
+        }
+        try {
+            THost tHost = new THost();
+            tHost.setId(item.getId());
+            tHost.setName(afterName);
+            tHost.setModifiedTime(SqliteUtil.nowDateForSqlite());
+            hostMapper.updateByPrimaryKeySelective(tHost);
+            selectedNameHost = afterName;
+            HostForm.initList();
+        } catch (Exception e) {
+            MsgUtil.info(App.mainFrame, "msg.renameFailed");
+            HostForm.initList();
+            log.error(e.toString());
+        }
+    }
+
     private static void deleteFiles(HostForm hostForm) {
         try {
-            int[] selectedRows = hostForm.getNoteListTable().getSelectedRows();
+            int[] selectedIndices = hostForm.getNoteList().getSelectedIndices();
 
-            if (selectedRows.length == 0) {
-                JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+            if (selectedIndices.length == 0) {
+                MsgUtil.info(App.mainFrame, "msg.selectAtLeastOne");
             } else {
-                int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                int isDelete = MsgUtil.confirm(App.mainFrame, "msg.confirmDelete");
                 if (isDelete == JOptionPane.YES_OPTION) {
-                    DefaultTableModel tableModel = (DefaultTableModel) hostForm.getNoteListTable().getModel();
+                    DefaultListModel<THost> listModel = (DefaultListModel<THost>) hostForm.getNoteList().getModel();
 
-                    for (int i = 0; i < selectedRows.length; i++) {
-                        int selectedRow = selectedRows[i];
-                        Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
+                    for (int selectedIndex : selectedIndices) {
+                        Integer id = listModel.getElementAt(selectedIndex).getId();
                         hostMapper.deleteByPrimaryKey(id);
                     }
                     selectedNameHost = null;
-                    HostForm.initListTable();
+                    HostForm.initList();
                 }
             }
         } catch (Exception e1) {
-            JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
-                    JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(App.mainFrame, "msg.deleteFailed", e1.getMessage());
             log.error(e1.toString());
         }
     }
@@ -398,8 +395,8 @@ public class HostListener {
         } else {
             if (refreshModifiedTime) {
                 // 通过refreshModifiedTime可以判断是否主动按快捷键保存，只有主动触发时才保存，避免初次点击列表误提示问题
-                String tempName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
-                String name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", tempName);
+                String tempName = NamingUtil.defaultUntitledName();
+                String name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), tempName);
                 if (StringUtils.isNotBlank(name)) {
                     THost tHost = new THost();
                     tHost.setName(name);
@@ -408,7 +405,7 @@ public class HostListener {
                     tHost.setModifiedTime(now);
 
                     hostMapper.insert(tHost);
-                    HostForm.initListTable();
+                    HostForm.initList();
                     selectedNameHost = name;
                 }
             }
@@ -417,13 +414,13 @@ public class HostListener {
 
     private static void newHost() {
         String name = getDefaultFileName();
-        name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", name);
+        name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), name);
         if (StringUtils.isNotBlank(name)) {
             THost tHost = hostMapper.selectByName(name);
             if (tHost == null) {
                 tHost = new THost();
             } else {
-                JOptionPane.showMessageDialog(App.mainFrame, "存在同名文件，请重新命名！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(App.mainFrame, "msg.duplicateName");
                 return;
             }
             String now = SqliteUtil.nowDateForSqlite();
@@ -431,17 +428,18 @@ public class HostListener {
             tHost.setCreateTime(now);
             tHost.setModifiedTime(now);
             hostMapper.insert(tHost);
-            HostForm.initListTable();
+            HostForm.initList();
         }
     }
 
-    public static void refreshHostContentInTextArea(int focusedRowIndex) {
+    public static void refreshHostContentInTextArea(int index) {
         HostForm hostForm = HostForm.getInstance();
 
         hostForm.getTextArea().setEditable(true);
         hostForm.getSwitchButton().setVisible(true);
-        if (focusedRowIndex >= 0) {
-            String name = hostForm.getNoteListTable().getValueAt(focusedRowIndex, 1).toString();
+        if (index >= 0) {
+            DefaultListModel<THost> listModel = (DefaultListModel<THost>) hostForm.getNoteList().getModel();
+            String name = listModel.getElementAt(index).getName();
             selectedNameHost = name;
             THost tHost = hostMapper.selectByName(name);
 
@@ -454,29 +452,37 @@ public class HostListener {
 
     private static void save(boolean needRename) {
         if (StringUtils.isEmpty(selectedNameHost)) {
-            selectedNameHost = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+            selectedNameHost = NamingUtil.defaultUntitledName();
         }
         String name = selectedNameHost;
         if (needRename) {
-            name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", selectedNameHost);
+            name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), selectedNameHost);
         }
         if (StringUtils.isNotBlank(name)) {
-            THost tHost = hostMapper.selectByName(name);
-            if (tHost == null) {
-                tHost = new THost();
-            }
-            String now = SqliteUtil.nowDateForSqlite();
-            tHost.setName(name);
-            tHost.setContent(HostForm.getInstance().getTextArea().getText());
-            tHost.setCreateTime(now);
-            tHost.setModifiedTime(now);
-            if (tHost.getId() == null) {
-                hostMapper.insert(tHost);
-                HostForm.initListTable();
-                selectedNameHost = name;
-            } else {
-                hostMapper.updateByPrimaryKey(tHost);
-            }
+            String content = HostForm.getInstance().getTextArea().getText();
+            persistHostContent(name, content);
+            selectedNameHost = name;
+        }
+    }
+
+    private static void persistHostContent(String name, String content) {
+        if (StringUtils.isBlank(name)) {
+            return;
+        }
+        THost tHost = hostMapper.selectByName(name);
+        if (tHost == null) {
+            tHost = new THost();
+        }
+        String now = SqliteUtil.nowDateForSqlite();
+        tHost.setName(name);
+        tHost.setContent(content);
+        tHost.setCreateTime(now);
+        tHost.setModifiedTime(now);
+        if (tHost.getId() == null) {
+            hostMapper.insert(tHost);
+            SwingUtilities.invokeLater(HostForm::initList);
+        } else {
+            hostMapper.updateByPrimaryKey(tHost);
         }
     }
 
@@ -499,6 +505,6 @@ public class HostListener {
      * @return
      */
     private static String getDefaultFileName() {
-        return "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+        return NamingUtil.defaultUntitledName();
     }
 }

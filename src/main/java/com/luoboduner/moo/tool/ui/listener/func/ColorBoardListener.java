@@ -11,7 +11,9 @@ import com.luoboduner.moo.tool.ui.dialog.FavoriteColorDialog;
 import com.luoboduner.moo.tool.ui.form.func.ColorBoardForm;
 import com.luoboduner.moo.tool.ui.frame.FavoriteColorFrame;
 import com.luoboduner.moo.tool.util.AlertUtil;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.ColorUtil;
+import com.luoboduner.moo.tool.util.MsgUtil;
 
 import javax.swing.*;
 import java.awt.*;
@@ -35,7 +37,7 @@ public class ColorBoardListener {
 //            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
 //            GraphicsDevice gd = ge.getDefaultScreenDevice();
 //            if (!gd.isWindowTranslucencySupported(TRANSLUCENT)) {
-//                JOptionPane.showMessageDialog(colorBoardForm.getColorBoardPanel(), "当前系统环境不支持！", "系统环境", JOptionPane.INFORMATION_MESSAGE);
+//                MsgUtil.info(colorBoardForm.getColorBoardPanel(), "msg.systemEnvUnsupported");
 //                return;
 //            }
 //            App.mainFrame.setVisible(false);
@@ -53,19 +55,22 @@ public class ColorBoardListener {
                         },
                         color -> {
                             if (color != null) {
+                                String before = ColorUtil.toHex(ColorBoardForm.getSelectedColor());
                                 ColorBoardForm.setSelectedColor(color);
+                                ColorBoardForm.saveColorHistory(I18n.get("colorBoard.op.picker"), before, ColorUtil.toHex(color));
                             }
                             App.mainFrame.setExtendedState(Frame.NORMAL);
                         });
             } catch (AWTException | UnsupportedOperationException ex) {
                 logger.error(ex);
-                JOptionPane.showMessageDialog(colorBoardForm.getColorBoardPanel(), "当前系统环境不支持！", "系统环境", JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(colorBoardForm.getColorBoardPanel(), "msg.systemEnvUnsupported");
             }
         });
         colorBoardForm.getCopyButton().addActionListener(e -> {
             try {
                 ClipboardUtil.setStr(colorBoardForm.getColorCodeTextField().getText());
-                AlertUtil.buttonInfo(colorBoardForm.getCopyButton(), "复制", "已复制", 2000);
+                AlertUtil.buttonInfo(colorBoardForm.getCopyButton(), I18n.get("common.copy"),
+                        I18n.get("common.copied"), 2000);
             } catch (Exception e1) {
                 logger.error(e1);
             }
@@ -89,7 +94,7 @@ public class ColorBoardListener {
         colorBoardForm.getFavoriteButton().addActionListener(e -> {
             FavoriteColorDialog favoriteColorDialog = new FavoriteColorDialog();
             favoriteColorDialog.pack();
-            favoriteColorDialog.init(colorBoardForm.getShowColorPanel().getBackground());
+            favoriteColorDialog.init(ColorBoardForm.getSelectedColor());
             favoriteColorDialog.setVisible(true);
         });
         colorBoardForm.getColorCodeTextField().addKeyListener(new KeyListener() {
@@ -101,7 +106,10 @@ public class ColorBoardListener {
             @Override
             public void keyPressed(KeyEvent e) {
                 if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                    ColorBoardForm.setSelectedColor(ColorUtil.fromHex(colorBoardForm.getColorCodeTextField().getText()));
+                    String before = ColorUtil.toHex(ColorBoardForm.getSelectedColor());
+                    Color color = ColorUtil.fromHex(colorBoardForm.getColorCodeTextField().getText());
+                    ColorBoardForm.setSelectedColor(color);
+                    ColorBoardForm.saveColorHistory(I18n.get("colorBoard.op.inputColor"), before, ColorUtil.toHex(color));
                 }
             }
 
@@ -115,12 +123,8 @@ public class ColorBoardListener {
             public void mousePressed(MouseEvent e) {
                 CommonTipsDialog dialog = new CommonTipsDialog();
 
-                StringBuilder tipsBuilder = new StringBuilder();
-                tipsBuilder.append("<h1>关于调色板</h1>");
-                tipsBuilder.append("<p>调色板和取色器的设计借鉴了PicPick，其中的颜色主题更是完全照搬了过来。</p>");
-                tipsBuilder.append("<p>PicPick是一款非常优秀的集取色、截图、标尺、放大镜、图片编辑等于一身的桌面应用，我非常喜欢它，感谢作者的付出！</p>");
-
-                dialog.setHtmlText(tipsBuilder.toString());
+                dialog.setTitle(I18n.get("colorBoard.about.title"));
+                dialog.setHtmlText(I18n.get("colorBoard.about.html"));
                 dialog.pack();
                 dialog.setVisible(true);
 
@@ -144,10 +148,65 @@ public class ColorBoardListener {
         });
 
         colorBoardForm.getChooseColorButton().addActionListener(e -> {
-            Color color = JColorChooser.showDialog(colorBoardForm.getColorBoardPanel(), "选择颜色", colorBoardForm.getShowColorPanel().getBackground());
+            Color before = ColorBoardForm.getSelectedColor();
+            Color color = JColorChooser.showDialog(colorBoardForm.getColorBoardPanel(),
+                    I18n.get("colorBoard.op.chooseColor"), before);
             if (color != null) {
                 ColorBoardForm.setSelectedColor(color);
+                ColorBoardForm.saveColorHistory(I18n.get("colorBoard.op.chooseColor"), ColorUtil.toHex(before), ColorUtil.toHex(color));
             }
         });
+
+        colorBoardForm.getSecondaryColorPanel().addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                Color color = JColorChooser.showDialog(colorBoardForm.getColorBoardPanel(),
+                        I18n.get("colorBoard.chooseCompareColor"), ColorBoardForm.getSecondaryColor());
+                if (color != null) {
+                    ColorBoardForm.setSecondaryColor(color);
+                }
+            }
+
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                colorBoardForm.getSecondaryColorPanel().setBorder(BorderFactory.createEtchedBorder());
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                colorBoardForm.getSecondaryColorPanel().setBorder(BorderFactory.createEmptyBorder());
+            }
+        });
+
+        colorBoardForm.getSwapColorButton().addActionListener(e -> {
+            String primary = ColorUtil.toHex(ColorBoardForm.getSelectedColor());
+            String secondary = ColorUtil.toHex(ColorBoardForm.getSecondaryColor());
+            ColorBoardForm.swapColors();
+            ColorBoardForm.saveColorHistory(I18n.get("colorBoard.op.swapColor"), primary + " / " + secondary,
+                    ColorUtil.toHex(ColorBoardForm.getSelectedColor()) + " / " + ColorUtil.toHex(ColorBoardForm.getSecondaryColor()));
+        });
+
+        colorBoardForm.getInvertColorButton().addActionListener(e ->
+                applyColorOperation(I18n.get("colorBoard.op.invert"), ColorUtil.invert(ColorBoardForm.getSelectedColor())));
+
+        colorBoardForm.getIntersectColorButton().addActionListener(e ->
+                applyColorOperation(I18n.get("colorBoard.op.intersect"), ColorUtil.intersect(ColorBoardForm.getSelectedColor(), ColorBoardForm.getSecondaryColor())));
+
+        colorBoardForm.getAddColorButton().addActionListener(e ->
+                applyColorOperation(I18n.get("colorBoard.op.add"), ColorUtil.add(ColorBoardForm.getSelectedColor(), ColorBoardForm.getSecondaryColor())));
+
+        colorBoardForm.getDiffColorButton().addActionListener(e ->
+                applyColorOperation(I18n.get("colorBoard.op.difference"), ColorUtil.difference(ColorBoardForm.getSelectedColor(), ColorBoardForm.getSecondaryColor())));
+
+        colorBoardForm.getAverageColorButton().addActionListener(e ->
+                applyColorOperation(I18n.get("colorBoard.op.average"), ColorUtil.average(ColorBoardForm.getSelectedColor(), ColorBoardForm.getSecondaryColor())));
+    }
+
+    private static void applyColorOperation(String operation, Color resultColor) {
+        String before = ColorUtil.toHex(ColorBoardForm.getSelectedColor());
+        String secondary = ColorUtil.toHex(ColorBoardForm.getSecondaryColor());
+        ColorBoardForm.setSelectedColor(resultColor);
+        ColorBoardForm.saveColorHistory(operation, before,
+                ColorUtil.toHex(resultColor) + " " + I18n.format("colorBoard.op.compareColorSuffix", secondary));
     }
 }

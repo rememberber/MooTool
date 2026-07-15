@@ -12,8 +12,11 @@ import com.luoboduner.moo.tool.ui.form.LoadingForm;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.frame.MainFrame;
 import com.luoboduner.moo.tool.util.ConfigUtil;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.MybatisUtil;
+import com.luoboduner.moo.tool.util.MacApplicationMenuUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
+import com.luoboduner.moo.tool.util.TesseractEnvUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -21,6 +24,7 @@ import org.apache.ibatis.session.SqlSession;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.desktop.AppReopenedListener;
 import java.io.File;
 
 /**
@@ -49,6 +53,8 @@ public class App {
     public static File tempDir = null;
 
     public static void main(String[] args) {
+        I18n.init();
+        TesseractEnvUtil.ensureConfigured();
 
         if (SystemInfo.isMacOS) {
 //            java -Xdock:name="MooTool" -Xdock:icon=MooTool.jpg ... (whatever else you normally specify here)
@@ -81,6 +87,10 @@ public class App {
             });
             FlatDesktop.setQuitHandler(FlatDesktop.QuitResponse::performQuit);
 
+            if (Desktop.isDesktopSupported()) {
+                Desktop.getDesktop().addAppEventListener((AppReopenedListener) e ->
+                        SwingUtilities.invokeLater(Init::showMainFrame));
+            }
         }
 
         FlatLaf.registerCustomDefaultsSource("themes");
@@ -121,13 +131,15 @@ public class App {
         }
         FileUtil.clean(tempDir);
 
-        if (App.config.getRecentTabIndex() != 3 && MainWindow.getInstance().getTabbedPane().getTabCount() > App.config.getRecentTabIndex()) {
-            MainWindow.getInstance().getTabbedPane().setSelectedIndex(App.config.getRecentTabIndex());
-        }
         MainWindow.getInstance().init();
         Init.initAllTab();
         Init.initOthers();
         mainFrame.remove(loadingPanel);
+        Init.languageGuide();
         Init.fontSizeGuide();
+
+        if (SystemInfo.isMacOS) {
+            SwingUtilities.invokeLater(MacApplicationMenuUtil::installCheckForUpdatesMenu);
+        }
     }
 }

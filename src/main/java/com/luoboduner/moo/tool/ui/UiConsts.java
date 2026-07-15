@@ -19,7 +19,7 @@ public class UiConsts {
      * 软件名称,版本
      */
     public static final String APP_NAME = "MooTool";
-    public static final String APP_VERSION = "v1.7.0";
+    public static final String APP_VERSION = "v1.7.8";
 
     public static final int TABLE_ROW_HEIGHT = 30;
 
@@ -88,27 +88,32 @@ public class UiConsts {
     public final static Icon HELP_FOCUSED_ICON = new FlatSVGIcon("icon/help-filling.svg");
 
     /**
+     * GitHub master 分支 raw 内容根路径
+     */
+    public static final String GITHUB_RAW_MASTER_URL = "https://raw.githubusercontent.com/rememberber/MooTool/master/";
+
+    /**
      * 软件版本检查url
      */
-    public static final String CHECK_VERSION_URL = "https://gitee.com/zhoubochina/MooTool/raw/master/src/main/resources/version_summary.json";
+    public static final String CHECK_VERSION_URL = GITHUB_RAW_MASTER_URL + "src/main/resources/version_summary.json";
 
     /**
      * 软件下载链接信息url
      */
-    public static final String DOWNLOAD_LINK_INFO_URL = "https://gitee.com/zhoubochina/MooTool/raw/develop/download_links.json";
+    public static final String DOWNLOAD_LINK_INFO_URL = GITHUB_RAW_MASTER_URL + "download_links.json";
 
     /**
      * Grace信息url
      */
-    public static final String GRACE_INFO_URL = "https://gitee.com/zhoubochina/MooTool/raw/develop/grace.json";
+    public static final String GRACE_INFO_URL = GITHUB_RAW_MASTER_URL + "grace.json";
 
     /**
      * 贡献者信息url
      */
-    public static final String CONTRIBUTOR_URL = "https://gitee.com/zhoubochina/MooTool/raw/develop/contributor.json";
+    public static final String CONTRIBUTOR_URL = GITHUB_RAW_MASTER_URL + "contributor.json";
 
     /**
      * DAU信息url
      */
-    public static final String DAU_URL = "https://gitee.com/zhoubochina/MooTool/raw/develop/dau.json";
+    public static final String DAU_URL = GITHUB_RAW_MASTER_URL + "dau.json";
 }

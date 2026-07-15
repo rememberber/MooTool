@@ -1,11 +1,12 @@
 package com.luoboduner.moo.tool.ui.component.textviewer;
 
 import com.formdev.flatlaf.FlatLaf;
-import com.formdev.flatlaf.util.FontUtils;
 import com.luoboduner.moo.tool.App;
-import com.luoboduner.moo.tool.dao.TQuickNoteMapper;
 import com.luoboduner.moo.tool.domain.TQuickNote;
-import com.luoboduner.moo.tool.util.MybatisUtil;
+import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
+import com.luoboduner.moo.tool.util.EditorFontUtil;
+import com.luoboduner.moo.tool.util.QuickNoteMarkdownUtil;
+import com.luoboduner.moo.tool.util.QuickNoteVaultUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 import org.fife.ui.rtextarea.Gutter;
@@ -21,55 +22,94 @@ import java.util.Map;
  */
 public class QuickNoteRSyntaxTextViewerManager {
 
-    public static Map<String, RTextScrollPane> viewMap = new HashMap<>();
+    public static Map<String, QuickNoteEditorPanel> viewMap = new HashMap<>();
 
-    private static TQuickNoteMapper quickNoteMapper = MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
-
-    private RTextScrollPane currentRTextScrollPane;
+    private QuickNoteEditorPanel currentEditorPanel;
 
     /**
-     * 按名称获取一个实例，若不存在则新建
-     *
-     * @return
+     * 按 Vault 相对路径获取一个实例，若不存在则新建
      */
-    public RTextScrollPane getRTextScrollPane(String name) {
-        RTextScrollPane rTextScrollPane = viewMap.get(name);
-        if (rTextScrollPane == null) {
+    public QuickNoteEditorPanel getEditorPanel(String relativePath) {
+        QuickNoteEditorPanel editorPanel = viewMap.get(relativePath);
+        if (editorPanel == null) {
             QuickNoteRSyntaxTextViewer plainTextViewer = new QuickNoteRSyntaxTextViewer();
-            TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
-            plainTextViewer.setText(tQuickNote.getContent());
+            TQuickNote tQuickNote = QuickNoteVaultUtil.loadByPath(relativePath);
+            if (tQuickNote == null) {
+                tQuickNote = new TQuickNote();
+                tQuickNote.setRelativePath(relativePath);
+                tQuickNote.setContent("");
+            }
             if (StringUtils.isNotEmpty(tQuickNote.getSyntax())) {
                 plainTextViewer.setSyntaxEditingStyle(tQuickNote.getSyntax());
             }
-            if (StringUtils.isNotEmpty(tQuickNote.getFontName()) && StringUtils.isNotEmpty(tQuickNote.getFontSize())) {
-                Font font = FontUtils.getCompositeFont(tQuickNote.getFontName(), Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
-                plainTextViewer.setFont(font);
+            QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
+            try {
+                plainTextViewer.setText(StringUtils.defaultString(tQuickNote.getContent()));
+            } finally {
+                QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
             }
+            applyFont(plainTextViewer, tQuickNote);
 
             plainTextViewer.setCaretPosition(0);
 
-            rTextScrollPane = new RTextScrollPane(plainTextViewer);
+            RTextScrollPane rTextScrollPane = new RTextScrollPane(plainTextViewer);
             rTextScrollPane.setMaximumSize(new Dimension(-1, -1));
             rTextScrollPane.setMinimumSize(new Dimension(-1, -1));
 
             updateGutter(rTextScrollPane);
 
-            viewMap.put(name, rTextScrollPane);
-            currentRTextScrollPane = rTextScrollPane;
+            QuickNoteEditorPanel newEditorPanel = new QuickNoteEditorPanel(rTextScrollPane);
+            newEditorPanel.setMarkdownPreviewEnabled(QuickNoteMarkdownUtil.isMarkdownSyntax(plainTextViewer.getSyntaxEditingStyle()));
+
+            plainTextViewer.setOnContentChanged(() -> newEditorPanel.updatePreview(plainTextViewer.getText()));
+
+            editorPanel = newEditorPanel;
+            plainTextViewer.refreshConflictHighlights();
+            String noteColor = tQuickNote.getColor();
+            if (StringUtils.isEmpty(noteColor)) {
+                noteColor = "default";
+            }
+            editorPanel.applyAccentColor(QuickNoteEditorPanel.resolveAccentColor(noteColor));
+
+            viewMap.put(relativePath, editorPanel);
+            currentEditorPanel = editorPanel;
+        } else {
+            currentEditorPanel = editorPanel;
         }
-        return rTextScrollPane;
+        return editorPanel;
     }
 
-    public void updateFont(String name) {
-        RTextScrollPane rTextScrollPane = viewMap.get(name);
-        if (rTextScrollPane != null) {
-            QuickNoteRSyntaxTextViewer plainTextViewer = (QuickNoteRSyntaxTextViewer) rTextScrollPane.getTextArea();
-            TQuickNote tQuickNote = quickNoteMapper.selectByName(name);
-            if (StringUtils.isNotEmpty(tQuickNote.getFontName()) && StringUtils.isNotEmpty(tQuickNote.getFontSize())) {
-                Font font = FontUtils.getCompositeFont(tQuickNote.getFontName(), Font.PLAIN, Integer.parseInt(tQuickNote.getFontSize()));
-                plainTextViewer.setFont(font);
-            }
+    public RTextScrollPane getRTextScrollPane(String relativePath) {
+        return getEditorPanel(relativePath).getEditorScrollPane();
+    }
+
+    public void updateFont(String relativePath) {
+        QuickNoteEditorPanel editorPanel = viewMap.get(relativePath);
+        if (editorPanel == null) {
+            return;
         }
+        QuickNoteRSyntaxTextViewer plainTextViewer =
+                (QuickNoteRSyntaxTextViewer) editorPanel.getEditorScrollPane().getTextArea();
+        TQuickNote tQuickNote = QuickNoteVaultUtil.loadByPath(relativePath);
+        if (tQuickNote != null) {
+            applyFont(plainTextViewer, tQuickNote);
+        }
+    }
+
+    public void applyFont(String relativePath, String fontName, int fontSize) {
+        QuickNoteEditorPanel editorPanel = viewMap.get(relativePath);
+        if (editorPanel == null) {
+            return;
+        }
+        QuickNoteRSyntaxTextViewer plainTextViewer =
+                (QuickNoteRSyntaxTextViewer) editorPanel.getEditorScrollPane().getTextArea();
+        plainTextViewer.setFont(EditorFontUtil.getEditorFont(fontName, Font.PLAIN, fontSize));
+    }
+
+    private static void applyFont(QuickNoteRSyntaxTextViewer viewer, TQuickNote note) {
+        String fontName = QuickNoteForm.resolveNoteFontName(note);
+        int fontSize = QuickNoteForm.resolveNoteFontSize(note);
+        viewer.setFont(EditorFontUtil.getEditorFont(fontName, Font.PLAIN, fontSize));
     }
 
     public static void updateGutter(RTextScrollPane rTextScrollPane) {
@@ -89,27 +129,45 @@ public class QuickNoteRSyntaxTextViewerManager {
         gutter.setLineNumberColor(UIManager.getColor("Editor.gutter.lineNumberColor"));
     }
 
+    public QuickNoteEditorPanel getCurrentEditorPanel() {
+        return currentEditorPanel;
+    }
+
     public RTextScrollPane getCurrentRTextScrollPane() {
-        return currentRTextScrollPane;
+        if (currentEditorPanel == null) {
+            return null;
+        }
+        return currentEditorPanel.getEditorScrollPane();
     }
 
     public RSyntaxTextArea getCurrentRSyntaxTextArea() {
-        return (RSyntaxTextArea) currentRTextScrollPane.getTextArea();
+        if (currentEditorPanel == null) {
+            return null;
+        }
+        return (RSyntaxTextArea) currentEditorPanel.getEditorScrollPane().getTextArea();
     }
 
     public String getCurrentText() {
-        return currentRTextScrollPane.getTextArea().getText();
+        if (currentEditorPanel == null) {
+            return null;
+        }
+        return currentEditorPanel.getEditorScrollPane().getTextArea().getText();
     }
 
-    public String getTextByName(String name) {
-        if (viewMap.get(name) != null) {
-            return viewMap.get(name).getTextArea().getText();
+    public boolean hasCurrentEditor() {
+        return currentEditorPanel != null;
+    }
+
+    public String getTextByPath(String relativePath) {
+        QuickNoteEditorPanel editorPanel = viewMap.get(relativePath);
+        if (editorPanel != null) {
+            return editorPanel.getEditorScrollPane().getTextArea().getText();
         }
         return null;
     }
 
-    public void removeRTextScrollPane(String name) {
-        viewMap.remove(name);
+    public void removeRTextScrollPane(String relativePath) {
+        viewMap.remove(relativePath);
     }
 
 }

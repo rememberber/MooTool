@@ -4,11 +4,16 @@ import cn.hutool.core.date.DateUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.dialog.CommonCronDialog;
 import com.luoboduner.moo.tool.ui.dialog.FavoriteCronDialog;
 import com.luoboduner.moo.tool.ui.form.func.CronForm;
 import com.luoboduner.moo.tool.ui.frame.FavoriteCronFrame;
 import com.luoboduner.moo.tool.util.CronExpressionUtil;
+import com.luoboduner.moo.tool.util.FuncHistoryUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.MsgUtil;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
@@ -49,9 +54,15 @@ public class CronListener {
                 String description = CronExpressionUtil.describe(cronExpression, selectedLocale);
 
                 cronForm.getHumanReadableTextField().setText(description);
+                if (StringUtils.isNotBlank(cronExpression)) {
+                    FuncHistoryUtil.save(FuncConsts.CRON, "Cron转自然语言", cronExpression, description,
+                            selectedLocaleStr);
+                    if (CronForm.getHistoryPanel() != null) {
+                        CronForm.getHistoryPanel().refreshListIfVisible();
+                    }
+                }
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "转换失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.convertFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -97,9 +108,10 @@ public class CronListener {
                             .map(ZonedDateTime::toLocalDateTime)
                             .map(localDateTime -> DateUtil.format(localDateTime, "yyyy-MM-dd HH:mm:ss"))
                             .toList();
-                    cronForm.getNextExecutionTimeTextArea().setText("最近10次运行时间：\n" + String.join("\n", nextExecutionTimes));
+                    cronForm.getNextExecutionTimeTextArea().setText(
+                            I18n.get("cron.nextRuns") + String.join("\n", nextExecutionTimes));
                 } catch (Exception ex) {
-                    cronForm.getNextExecutionTimeTextArea().setText("最近10次运行时间：\n" + ex.getMessage());
+                    cronForm.getNextExecutionTimeTextArea().setText(I18n.format("cron.parseFailed", ex.getMessage()));
                 }
             }
         });

@@ -7,7 +7,10 @@ import cn.hutool.core.util.RuntimeUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.ui.form.func.NetForm;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
+import com.luoboduner.moo.tool.util.WhoisUtil;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
@@ -87,7 +90,7 @@ public class NetListener {
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
-                JOptionPane.showMessageDialog(netForm.getNetPanel(), ex.getMessage(), "转换失败！", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorDetail(netForm.getNetPanel(), "msg.convertFailedTitle", ex.getMessage());
             }
         });
         netForm.getLongToIpv4Button().addActionListener(e -> {
@@ -98,7 +101,7 @@ public class NetListener {
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
-                JOptionPane.showMessageDialog(netForm.getNetPanel(), ex.getMessage(), "转换失败！", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorDetail(netForm.getNetPanel(), "msg.convertFailedTitle", ex.getMessage());
             }
         });
         netForm.getRefreshIpv4ListButton().addActionListener(e -> {
@@ -108,7 +111,7 @@ public class NetListener {
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
-                JOptionPane.showMessageDialog(netForm.getNetPanel(), ex.getMessage(), "刷新失败！", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorDetail(netForm.getNetPanel(), "msg.refreshFailedTitle", ex.getMessage());
             }
         });
         netForm.getRefreshIpv6ListButton().addActionListener(e -> {
@@ -118,7 +121,7 @@ public class NetListener {
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
-                JOptionPane.showMessageDialog(netForm.getNetPanel(), ex.getMessage(), "刷新失败！", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorDetail(netForm.getNetPanel(), "msg.refreshFailedTitle", ex.getMessage());
             }
         });
         netForm.getHostToIpButton().addActionListener(e -> {
@@ -129,7 +132,7 @@ public class NetListener {
             } catch (Exception ex) {
                 ex.printStackTrace();
                 logger.error(ExceptionUtils.getStackTrace(ex));
-                JOptionPane.showMessageDialog(netForm.getNetPanel(), ex.getMessage(), "获取失败！", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorDetail(netForm.getNetPanel(), "msg.getFailedTitle", ex.getMessage());
             }
         });
 
@@ -183,9 +186,36 @@ public class NetListener {
 //                }
                 netForm.getIpConfigTextArea().setCaretPosition(0);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(netForm.getNetPanel(), ex.getMessage(), "失败！", JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorDetail(netForm.getNetPanel(), "msg.failedTitle", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
+        });
+
+        // WHOIS
+        netForm.getWhoisButton().addActionListener(e -> {
+            String query = netForm.getWhoisTextField().getText().trim();
+            if (query.isEmpty()) {
+                MsgUtil.info(netForm.getNetPanel(), "msg.enterDomainOrIp");
+                return;
+            }
+            netForm.getWhoisButton().setEnabled(false);
+            netForm.getIpConfigTextArea().setText(I18n.get("net.querying"));
+            ThreadUtil.execute(() -> {
+                try {
+                    String result = WhoisUtil.query(query);
+                    SwingUtilities.invokeLater(() -> {
+                        netForm.getIpConfigTextArea().setText(result);
+                        netForm.getIpConfigTextArea().setCaretPosition(0);
+                        netForm.getWhoisButton().setEnabled(true);
+                    });
+                } catch (Exception ex) {
+                    logger.error(ExceptionUtils.getStackTrace(ex));
+                    SwingUtilities.invokeLater(() -> {
+                        MsgUtil.errorDetail(netForm.getNetPanel(), "msg.queryFailedTitle", ex.getMessage());
+                        netForm.getWhoisButton().setEnabled(true);
+                    });
+                }
+            });
         });
     }
 }

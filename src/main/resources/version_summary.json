@@ -1,5 +1,5 @@
 {
-  "currentVersion": "v1.7.0",
+  "currentVersion": "v1.7.8",
   "versionIndex": {
     "v0.0.0": "0",
     "v1.0.0": "1",
@@ -41,7 +41,15 @@
     "v1.6.7": "37",
     "v1.6.8": "38",
     "v1.6.9": "39",
-    "v1.7.0": "40"
+    "v1.7.0": "40",
+    "v1.7.1": "41",
+    "v1.7.2": "42",
+    "v1.7.3": "43",
+    "v1.7.4": "44",
+    "v1.7.5": "45",
+    "v1.7.6": "46",
+    "v1.7.7": "47",
+    "v1.7.8": "48"
   },
   "versionDetailList": [
     {
@@ -248,6 +256,46 @@
       "version": "v1.7.0",
       "title": "HTTP工具支持cURL导入",
       "log": "● 新功能：HTTP工具支持cURL导入 by Cassian Florin\n\n"
+    },
+    {
+      "version": "v1.7.1",
+      "title": "近期累积的一些更新和优化",
+      "log": "● feat(cron): 支持Linux Cron表达式 by Cassian Florin\n● feat(cron): fix(undo): 修复 Ctrl+Z 撤销异常 by Cassian Florin\n● fix(tray): 修复多屏托盘菜单定位 by Cassian Florin\n● fix: support Apple Silicon macOS package selection by Cassian Florin\n● feat: 时间转换支持时区\n\n"
+    },
+    {
+      "version": "v1.7.2",
+      "title": "完善翻译与单词本功能",
+      "log": "● 翻译：支持更多语言、Bing/Google 自动降级、收藏到单词本\n● 单词本：支持搜索、新建、编辑、删除、重新翻译\n\n"
+    },
+    {
+      "version": "v1.7.3",
+      "title": "大量功能更新、优化和bug修复",
+      "log": "● 随手记：markdown格式支持预览和插入图片\n● 图片助手：截图、压缩、水印、OCR功能实现\n● 加解密：支持国密\n● feat:新增protobuf工具\n● opt：完善翻译功能\n● feat:“网络/IP”增加who is 查询功能\n● feat:调色板支持颜色相交和取反等功能\n● feat:增加系统和硬件信息查看功能\n● opt:图标和细节优化\n\n"
+    },
+    {
+      "version": "v1.7.4",
+      "title": "多模块增加历史记录",
+      "log": "● feat：【全局】图片显示质量提升，不再模糊 \n● feat：【全局】调整点击窗口关闭按钮逻辑（窗口应隐藏到 Dock）\n● feat：【JSON】实现“JSON”工具中的可视化获取JSON Path按钮功能\n● feat：【UA分析】新增UA分析功能\n● feat：【编码转换】增加转ASCII功能 \n● feat：【配置文件转换】增加YAML配置格式校验功能\n● opt：【Host】优化macos host 权限提示\n● UA分析、编码转换、加解密、调色板、Cron、正则、Java、格式化、配置文件转换、Protobuf 增加历史记录\n● 历史记录支持搜索、应用、复制、删除与清空\n\n"
+    },
+    {
+      "version": "v1.7.5",
+      "title": "国际化支持与体验优化",
+      "log": "● feat：【i18n】接入国际化基础设施，支持英文、简体中文与日语，默认英文，首次启动提示切换语言\n● feat：【i18n】全部功能 Tab 与对话框完成多语言覆盖\n● feat：【调色板】新增中国传统色主题\n● opt：【全局】About 页与 Tab 图标显示质量提升\n● opt：【全局】滚动速度优化\n● fix：【i18n】修复切换语言后 Tab 名称变化导致的界面布局异常\n\n"
+    },
+    {
+      "version": "v1.7.6",
+      "title": "功能分组导航与体验优化",
+      "log": "● feat：【全局】新增功能分组导航，支持自定义常用功能组、最近使用功能组（最多 5 个）及功能搜索\n● opt：【JSON】JSON Path 可视化视图支持根节点 key 数量统计\n● opt：【i18n】完善 JSON 工具与随手记快捷替换面板的多语言覆盖\n● opt：【随手记】快捷替换面板开始按钮固定底部显示\n● fix：【全局】分组导航样式下隐藏 Tab 小三角、功能导航按钮仅在分组样式下显示\n● fix：【全局】修复功能管理组列表滚动速度不一致、最近使用未及时更新等问题\n\n"
+    },
+    {
+      "version": "v1.7.7",
+      "title": "体验优化与功能完善",
+      "log": "● feat：【全局】功能列表「最近使用」默认隐藏，可在设置中开启\n● feat：【Host】Host 切换按钮点击后短暂显示成功/失败状态\n● feat：【全局】macOS 应用主菜单增加检查更新项\n● opt：【JSON】优化 JSON Path value 相关功能\n● fix：【随手记】优化多行圆点与序号（无序列表、有序列表）逻辑\n\n"
+    },
+    {
+      "version": "v1.7.8",
+      "title": "随手记/JSON Git 化管理",
+      "log": "● feat：【随手记】数据由数据库改为 txt 文件管理，支持文件夹与 Git 版本控制\n● feat：【JSON】参考随手记实现文档化与 Git 化管理，新增文件夹工具栏操作\n● feat：【随手记/JSON】列表支持按名称/更新时间（默认）/创建时间排序\n● feat：【随手记/JSON】支持设置列表默认全部展开或全部折叠\n● feat：【Git】快捷提交、Diff 优化、同步闭环及冲突可见性体验优化\n● feat：【全局】重启应用后记忆上次操作的 Tab\n● opt：【Git】设置对话框、修改详情支持拖拽分割、搜索框圆角等体验优化\n● opt：【随手记】列表显示/隐藏行与搜索框对齐并固定顶部\n● opt：【文本对比】体验优化\n● fix：【随手记/JSON】切换文件时内容未保存、新建文件类型未保存、JetBrains Mono 中文乱码、字体类型显示异常等问题\n● fix：【Git】面板暗色模式、撤销失败、变更历史、Tab 切换联动及弹窗层级等问题\n● fix：【Vault】修改库路径后文件夹与文件未完整迁移\n● fix：【Host】切换列表时右侧布局异常\n● fix：【首页】贡献者区块不受其他元素加载失败影响\n\n"
     }
   ]
 }

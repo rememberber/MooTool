@@ -6,6 +6,8 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.util.ComponentUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 
@@ -16,6 +18,7 @@ import javax.swing.text.StyleContext;
 import java.awt.*;
 import java.awt.event.*;
 import java.util.Locale;
+import java.util.Map;
 
 public class CommonCronDialog extends JDialog {
     private JPanel contentPane;
@@ -51,8 +54,41 @@ public class CommonCronDialog extends JDialog {
     private JTextField a015106LTextField2;
     private JTextField a015106TextField1;
 
+    private static final Map<String, String> LABEL_KEYS = Map.ofEntries(
+            Map.entry("每月的1日的凌晨2点", "commonCron.example.0"),
+            Map.entry("周一到周五每天上午10：15", "commonCron.example.1"),
+            Map.entry("2002-2006年的每个月的最后一个星期五上午10:15", "commonCron.example.2"),
+            Map.entry("每天上午10点，下午2点，4点", "commonCron.example.3"),
+            Map.entry("朝九晚五工作时间内每半小时", "commonCron.example.4"),
+            Map.entry("每个星期三中午12点", "commonCron.example.5"),
+            Map.entry("每天中午12点", "commonCron.example.6"),
+            Map.entry("每天上午10:15", "commonCron.example.7"),
+            Map.entry("2005年的每天上午10:15", "commonCron.example.10"),
+            Map.entry("每天下午2点到下午2:59期间的每1分钟", "commonCron.example.11"),
+            Map.entry("每天下午2点到下午2:55期间的每5分钟", "commonCron.example.12"),
+            Map.entry("每天下午2点到2:55期间和下午6点到6:55期间的每5分钟", "commonCron.example.13"),
+            Map.entry("每天下午2点到下午2:05期间的每1分钟", "commonCron.example.14"),
+            Map.entry("每年三月的星期三的下午2:10和2:44", "commonCron.example.15"),
+            Map.entry("周一至周五的上午10:15", "commonCron.example.16"),
+            Map.entry("每月15日上午10:15", "commonCron.example.17"),
+            Map.entry("每月最后一日的上午10:15", "commonCron.example.18"),
+            Map.entry("每月的最后一个星期五上午10:15", "commonCron.example.19"),
+            Map.entry("2002年至2005年的每月的最后一个星期五上午10:15", "commonCron.example.20"),
+            Map.entry("每月的第三个星期五上午10:15", "commonCron.example.21"),
+            Map.entry("以上来自百度百科", "commonCron.sourceBaidu"),
+            Map.entry("每天10点15分", "commonCron.example.22"),
+            Map.entry("2017年每天10点15分", "commonCron.example.23"),
+            Map.entry("每天下午的 2点到2点59分每分", "commonCron.example.24"),
+            Map.entry("每天下午的 2点到2点59分(整点开始，每隔5分)", "commonCron.example.25"),
+            Map.entry("每天下午的 2点到2点59分、18点到18点59分(整点开始，每隔5分)", "commonCron.example.26"),
+            Map.entry("每天下午的 2点到2点05分每分", "commonCron.example.27"),
+            Map.entry("每月最后一周的星期五的10点15分", "commonCron.example.28"),
+            Map.entry("每月的第三周的星期五开始", "commonCron.example.29"),
+            Map.entry("以上来自https://www.pppet.net/changyong.html", "commonCron.sourcePppet")
+    );
+
     public CommonCronDialog() {
-        super(App.mainFrame, "常用Cron表达式");
+        super(App.mainFrame, I18n.get("commonCron.title"));
         setContentPane(contentPane);
         setAlwaysOnTop(false);
         setFocusable(true);
@@ -86,6 +122,13 @@ public class CommonCronDialog extends JDialog {
                 onCancel();
             }
         }, KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT);
+
+        applyI18n();
+    }
+
+    private void applyI18n() {
+        setTitle(I18n.get("commonCron.title"));
+        I18nUiUtil.localizeTree(contentPane, LABEL_KEYS);
     }
 
     private void onOK() {

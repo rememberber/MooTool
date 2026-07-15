@@ -3,7 +3,6 @@ package com.luoboduner.moo.tool.ui.form.func;
 import cn.hutool.core.date.DateUtil;
 import cn.hutool.core.io.FileUtil;
 import cn.hutool.core.swing.clipboard.ClipboardUtil;
-import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.extra.qrcode.QrCodeUtil;
 import cn.hutool.extra.qrcode.QrConfig;
 import cn.hutool.log.Log;
@@ -18,7 +17,10 @@ import com.luoboduner.moo.tool.domain.TFuncContent;
 import com.luoboduner.moo.tool.domain.TQrCode;
 import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.Style;
+import com.luoboduner.moo.tool.ui.component.ImagePreviewComponent;
 import com.luoboduner.moo.tool.ui.listener.func.QrCodeListener;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.*;
 import lombok.Getter;
 import org.apache.commons.lang3.StringUtils;
@@ -29,6 +31,8 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
+import java.util.Map;
 
 /**
  * <pre>
@@ -48,6 +52,7 @@ public class QrCodeForm {
     private JTextArea toGenerateContentTextArea;
     private JButton generateButton;
     private JLabel qrCodeImageLabel;
+    private ImagePreviewComponent qrCodeImagePreview;
     private JComboBox errorCorrectionLevelComboBox;
     private JTextField sizeTextField;
     private JTextField logoPathTextField;
@@ -67,6 +72,12 @@ public class QrCodeForm {
 
     private static QrCodeForm qrCodeForm;
 
+    private static boolean i18nRegistered;
+
+    private static final String[] ERROR_CORRECTION_KEYS = {
+            "qrcode.error.low", "qrcode.error.mediumLow", "qrcode.error.mediumHigh", "qrcode.error.high"
+    };
+
     private static TQrCodeMapper qrCodeMapper = MybatisUtil.getSqlSession().getMapper(TQrCodeMapper.class);
 
     private static TFuncContentMapper funcContentMapper = MybatisUtil.getSqlSession().getMapper(TFuncContentMapper.class);
@@ -79,25 +90,42 @@ public class QrCodeForm {
         UndoUtil.register(this);
     }
 
-    public static void recognition() {
-        ThreadUtil.execute(() -> {
-            try {
-                qrCodeForm = getInstance();
-                String recognitionImagePath = qrCodeForm.getRecognitionImagePathTextField().getText().trim();
-                String decode = QrCodeUtil.decode(FileUtil.file(recognitionImagePath));
-                qrCodeForm.getRecognitionContentTextArea().setText(decode);
-                App.config.setQrCodeRecognitionImagePath(recognitionImagePath);
-                App.config.save();
-                qrCodeForm.getQrCodePanel().updateUI();
+    public static String getRecognitionImagePath() {
+        return getInstance().getRecognitionImagePathTextField().getText().trim();
+    }
 
-                QrCodeListener.output("从文件识别:\n" + decode);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                JOptionPane.showMessageDialog(App.mainFrame, "识别失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
-                logger.error(ExceptionUtils.getStackTrace(ex));
+    public static String decodeImageFile(String recognitionImagePath) throws Exception {
+        return QrCodeUtil.decode(FileUtil.file(recognitionImagePath));
+    }
+
+    public static void applyRecognitionResult(String recognitionImagePath, String decode) {
+        qrCodeForm = getInstance();
+        qrCodeForm.getRecognitionContentTextArea().setText(decode);
+        App.config.setQrCodeRecognitionImagePath(recognitionImagePath);
+        App.config.save();
+        qrCodeForm.getQrCodePanel().updateUI();
+        QrCodeListener.output("从文件识别:\n" + decode);
+    }
+
+    public static void recognition() {
+        String recognitionImagePath = getRecognitionImagePath();
+        SwingWorker<String, Void> worker = new SwingWorker<>() {
+            @Override
+            protected String doInBackground() throws Exception {
+                return decodeImageFile(recognitionImagePath);
             }
-        });
+
+            @Override
+            protected void done() {
+                try {
+                    applyRecognitionResult(recognitionImagePath, get());
+                } catch (Exception ex) {
+                    MsgUtil.errorWithDetail(App.mainFrame, "msg.qrRecognizeFailed", ex.getMessage());
+                    logger.error(ExceptionUtils.getStackTrace(ex));
+                }
+            }
+        };
+        worker.execute();
     }
 
     public static void recognitionFromClipBoard() {
@@ -110,51 +138,93 @@ public class QrCodeForm {
 
             QrCodeListener.output("从剪贴板识别:\n" + recognitionContent);
         } else {
-            JOptionPane.showMessageDialog(App.mainFrame, "剪贴板中没有图片！", "提示",
-                    JOptionPane.INFORMATION_MESSAGE);
+            MsgUtil.info(App.mainFrame, "msg.clipboardNoImage");
+        }
+    }
+
+    @Getter
+    public static class GenerateRequest {
+        private final String content;
+        private final int size;
+        private final String logoPath;
+        private final String errorCorrectionLevel;
+        private final boolean save;
+
+        private GenerateRequest(String content, int size, String logoPath, String errorCorrectionLevel, boolean save) {
+            this.content = content;
+            this.size = size;
+            this.logoPath = logoPath;
+            this.errorCorrectionLevel = errorCorrectionLevel;
+            this.save = save;
+        }
+    }
+
+    public static GenerateRequest collectGenerateRequest(boolean save) {
+        qrCodeForm = getInstance();
+        int size = Integer.parseInt(qrCodeForm.getSizeTextField().getText().trim());
+        return new GenerateRequest(
+                qrCodeForm.getToGenerateContentTextArea().getText(),
+                size,
+                qrCodeForm.getLogoPathTextField().getText(),
+                (String) qrCodeForm.getErrorCorrectionLevelComboBox().getSelectedItem(),
+                save
+        );
+    }
+
+    public static BufferedImage generateImage(GenerateRequest request) throws Exception {
+        String nowTime = DateUtil.now().replace(":", "-").replace(" ", "-");
+        qrCodeImageTempFile = FileUtil.file(App.tempDir + File.separator + "qrCode-" + nowTime + ".jpg");
+
+        QrConfig config = new QrConfig(request.getSize(), request.getSize());
+        if (StringUtils.isNotBlank(request.getLogoPath())) {
+            try {
+                config.setImg(request.getLogoPath());
+            } catch (Exception e) {
+                logger.error("生成二维码设置log异常{}", ExceptionUtils.getStackTrace(e));
+            }
+        }
+        applyErrorCorrection(config, request.getErrorCorrectionLevel());
+        QrCodeUtil.generate(request.getContent(), config, qrCodeImageTempFile);
+        BufferedImage image = ImageIO.read(qrCodeImageTempFile);
+        if (image == null) {
+            throw new IOException("无法读取生成的二维码图片");
+        }
+        return image;
+    }
+
+    public static void showGeneratedImage(BufferedImage image, GenerateRequest request) {
+        qrCodeForm = getInstance();
+        ImagePreviewComponent preview = qrCodeForm.getQrCodeImagePreview();
+        preview.setCrispPixels(true);
+        preview.setSourceImage(image, 1.0, true);
+        qrCodeForm.getQrCodePanel().revalidate();
+        qrCodeForm.getQrCodePanel().repaint();
+        if (request.isSave()) {
+            saveConfig();
+            QrCodeListener.output("生成:\n" + request.getContent());
         }
     }
 
     public static void generate(Boolean save) {
         try {
-            qrCodeForm = getInstance();
-            String nowTime = DateUtil.now().replace(":", "-").replace(" ", "-");
-            qrCodeImageTempFile = FileUtil.file(App.tempDir + File.separator + "qrCode-" + nowTime + ".jpg");
-
-            int size = Integer.parseInt(qrCodeForm.getSizeTextField().getText());
-            QrConfig config = new QrConfig(size, size);
-            String logoPath = qrCodeForm.getLogoPathTextField().getText();
-            if (StringUtils.isNotBlank(logoPath)) {
-                try {
-                    config.setImg(logoPath);
-                } catch (Exception e) {
-                    logger.error("生成二维码设置log异常{}", ExceptionUtils.getStackTrace(e));
-                }
-            }
-            String errorCorrectionLevel = (String) qrCodeForm.getErrorCorrectionLevelComboBox().getSelectedItem();
-            if ("低".equals(errorCorrectionLevel)) {
-                config.setErrorCorrection(ErrorCorrectionLevel.L);
-            } else if ("中低".equals(errorCorrectionLevel)) {
-                config.setErrorCorrection(ErrorCorrectionLevel.M);
-            } else if ("中高".equals(errorCorrectionLevel)) {
-                config.setErrorCorrection(ErrorCorrectionLevel.Q);
-            } else if ("高".equals(errorCorrectionLevel)) {
-                config.setErrorCorrection(ErrorCorrectionLevel.H);
-            }
-            QrCodeUtil.generate(qrCodeForm.getToGenerateContentTextArea().getText(), config, qrCodeImageTempFile);
-            BufferedImage image = ImageIO.read(qrCodeImageTempFile);
-            ImageIcon imageIcon = new ImageIcon(image);
-            qrCodeForm.getQrCodeImageLabel().setIcon(imageIcon);
-            qrCodeForm.getQrCodePanel().updateUI();
-
-            if (save) {
-                saveConfig();
-                QrCodeListener.output("生成:\n" + qrCodeForm.getToGenerateContentTextArea().getText());
-            }
+            GenerateRequest request = collectGenerateRequest(save);
+            showGeneratedImage(generateImage(request), request);
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(App.mainFrame, "生成失败！\n\n" + ex.getMessage(), "失败",
-                    JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(App.mainFrame, "msg.generateFailed", ex.getMessage());
             logger.error(ExceptionUtils.getStackTrace(ex));
+        }
+    }
+
+    private static void applyErrorCorrection(QrConfig config, String errorCorrectionLevel) {
+        int index = qrCodeForm.getErrorCorrectionLevelComboBox().getSelectedIndex();
+        if (index == 0) {
+            config.setErrorCorrection(ErrorCorrectionLevel.L);
+        } else if (index == 1) {
+            config.setErrorCorrection(ErrorCorrectionLevel.M);
+        } else if (index == 2) {
+            config.setErrorCorrection(ErrorCorrectionLevel.Q);
+        } else if (index == 3) {
+            config.setErrorCorrection(ErrorCorrectionLevel.H);
         }
     }
 
@@ -225,19 +295,70 @@ public class QrCodeForm {
         QrCodeListener.addListeners();
 
         ScrollUtil.smoothPane(qrCodeForm.getHistoryScrollPane());
+
+        qrCodeForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(QrCodeForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setTabTitle(tabbedPane1, 0, "qrcode.tab.generate");
+        I18nUiUtil.setTabTitle(tabbedPane1, 1, "qrcode.tab.recognize");
+        I18nUiUtil.setTabTitle(tabbedPane1, 2, "qrcode.tab.history");
+        I18nUiUtil.setText(generateButton, "qrcode.generate");
+        I18nUiUtil.setText(saveAsButton, "common.save");
+        I18nUiUtil.setText(recognitionButton, "qrcode.recognize");
+        I18nUiUtil.setText(fromClipBoardButton, "qrcode.fromClipboard");
+        I18nUiUtil.localizeTree(controlPanel, Map.of(
+                "大小", "qrcode.size",
+                "纠错级别", "qrcode.errorLevel",
+                "Logo图片", "qrcode.logoImage"
+        ));
+        if (tabbedPane1.getTabCount() > 1 && tabbedPane1.getComponentAt(1) instanceof Container recognizeTab) {
+            I18nUiUtil.localizeTree(recognizeTab, Map.of(
+                    "二维码图片路径", "qrcode.imagePath"
+            ));
+        }
+        errorCorrectionLevelComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (index >= 0 && index < ERROR_CORRECTION_KEYS.length) {
+                    setText(I18n.get(ERROR_CORRECTION_KEYS[index]));
+                }
+                return this;
+            }
+        });
+    }
+
+    private static void applyI18nStatic() {
+        if (qrCodeForm != null) {
+            qrCodeForm.applyI18n();
+        }
     }
 
     private static void initUi() {
         qrCodeForm.getGeneratePanel().removeAll();
-        if ("上方".equals(App.config.getMenuBarPosition())) {
+        if (App.config.isMenuBarOnTop()) {
             qrCodeForm.getGeneratePanel().add(qrCodeForm.getControlPanel(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
             qrCodeForm.getGeneratePanel().add(qrCodeForm.getSplitPane(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        } else if ("下方".equals(App.config.getMenuBarPosition())) {
+        } else if (App.config.isMenuBarOnBottom()) {
             qrCodeForm.getGeneratePanel().add(qrCodeForm.getControlPanel(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
             qrCodeForm.getGeneratePanel().add(qrCodeForm.getSplitPane(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
         }
 
         qrCodeForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 2));
+
+        if (qrCodeForm.getQrCodeImagePreview() == null) {
+            Container parent = qrCodeForm.getQrCodeImageLabel().getParent();
+            parent.remove(qrCodeForm.getQrCodeImageLabel());
+            qrCodeForm.qrCodeImagePreview = new ImagePreviewComponent();
+            qrCodeForm.qrCodeImagePreview.setCrispPixels(true);
+            parent.add(qrCodeForm.qrCodeImagePreview, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
+        }
 
         Style.blackTextArea(qrCodeForm.getRecognitionContentTextArea());
         Style.blackTextArea(qrCodeForm.getToGenerateContentTextArea());

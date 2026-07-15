@@ -6,7 +6,10 @@ import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.dialog.SystemEnvResultDialog;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
@@ -29,8 +32,12 @@ public class VariablesForm {
     private JTable javaPropsTable;
     private JScrollPane scrollPane1;
     private JScrollPane scrollPane2;
+    private JButton refreshButton;
+    private JButton exportButton;
 
     private static VariablesForm variablesForm;
+
+    private static boolean i18nRegistered;
 
     private static final Log logger = LogFactory.get();
 
@@ -53,6 +60,36 @@ public class VariablesForm {
         initUi();
 
         initInfo();
+
+        variablesForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(VariablesForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setTabTitle(tabbedPane1, 0, "variables.tab.sysEnv");
+        I18nUiUtil.setTabTitle(tabbedPane1, 1, "variables.tab.javaProps");
+        I18nUiUtil.setToolTip(refreshButton, "common.refresh");
+        I18nUiUtil.setToolTip(exportButton, "common.export");
+        updateTableHeaders();
+    }
+
+    private void updateTableHeaders() {
+        String[] headerNames = {I18n.get("variables.col.key"), I18n.get("variables.col.value")};
+        if (sysEnvVarTable.getModel() instanceof DefaultTableModel sysModel) {
+            sysModel.setColumnIdentifiers(headerNames);
+        }
+        if (javaPropsTable.getModel() instanceof DefaultTableModel javaModel) {
+            javaModel.setColumnIdentifiers(headerNames);
+        }
+    }
+
+    private static void applyI18nStatic() {
+        if (variablesForm != null) {
+            variablesForm.applyI18n();
+        }
     }
 
     private static void initUi() {
@@ -64,20 +101,19 @@ public class VariablesForm {
         ScrollUtil.smoothPane(variablesForm.getScrollPane2());
 
         JToolBar trailing = new JToolBar();
-        trailing.setFloatable(false);
-        trailing.setBorder(null);
+        ToolbarUiUtil.configure(trailing);
         trailing.add(Box.createHorizontalGlue());
 
-        JButton refreshButton = new JButton(new FlatSVGIcon("icon/refresh.svg"));
-        refreshButton.setToolTipText("刷新");
-        refreshButton.addActionListener(e -> {
+        variablesForm.refreshButton = new JButton(new FlatSVGIcon("icon/refresh.svg"));
+        variablesForm.refreshButton.setToolTipText("刷新");
+        variablesForm.refreshButton.addActionListener(e -> {
             initSysEnvVarTable();
             initJavaPropsTable();
         });
 
-        JButton exportButton = new JButton(new FlatSVGIcon("icon/export.svg"));
-        exportButton.setToolTipText("导出");
-        exportButton.addActionListener(e -> {
+        variablesForm.exportButton = new JButton(new FlatSVGIcon("icon/export.svg"));
+        variablesForm.exportButton.setToolTipText("导出");
+        variablesForm.exportButton.addActionListener(e -> {
             try {
                 SystemEnvResultDialog dialog = new SystemEnvResultDialog();
 
@@ -100,8 +136,8 @@ public class VariablesForm {
             }
         });
 
-        trailing.add(refreshButton);
-        trailing.add(exportButton);
+        trailing.add(variablesForm.refreshButton);
+        trailing.add(variablesForm.exportButton);
         trailing.add(new JLabel("  "));
 
         getInstance().getTabbedPane1().putClientProperty(TABBED_PANE_TRAILING_COMPONENT, trailing);
@@ -114,7 +150,7 @@ public class VariablesForm {
     }
 
     public static void initSysEnvVarTable() {
-        String[] headerNames = {"Key", "Value"};
+        String[] headerNames = {I18n.get("variables.col.key"), I18n.get("variables.col.value")};
         DefaultTableModel model = new DefaultTableModel(null, headerNames);
 
         Map<String, String> map = System.getenv();
@@ -132,7 +168,7 @@ public class VariablesForm {
     }
 
     public static void initJavaPropsTable() {
-        String[] headerNames = {"Key", "Value"};
+        String[] headerNames = {I18n.get("variables.col.key"), I18n.get("variables.col.value")};
         DefaultTableModel model = new DefaultTableModel(null, headerNames);
 
         Properties properties = System.getProperties();

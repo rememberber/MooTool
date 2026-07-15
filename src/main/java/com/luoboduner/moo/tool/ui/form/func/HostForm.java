@@ -3,7 +3,7 @@ package com.luoboduner.moo.tool.ui.form.func;
 import cn.hutool.core.io.FileUtil;
 import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
-import com.formdev.flatlaf.icons.FlatSearchIcon;
+import com.luoboduner.moo.tool.ui.component.SearchFieldUiUtil;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
@@ -12,12 +12,17 @@ import com.luoboduner.moo.tool.dao.THostMapper;
 import com.luoboduner.moo.tool.domain.THost;
 import com.luoboduner.moo.tool.ui.Init;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.component.textviewer.HostRTextScrollPane;
 import com.luoboduner.moo.tool.ui.component.textviewer.HostRSyntaxTextViewer;
+import com.luoboduner.moo.tool.ui.dialog.CommonTipsDialog;
 import com.luoboduner.moo.tool.ui.dialog.TranslationDialog;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
-import com.luoboduner.moo.tool.util.JTableUtil;
+import com.luoboduner.moo.tool.util.AlertUtil;
+import com.luoboduner.moo.tool.util.HostFileUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
@@ -26,7 +31,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
-import javax.swing.table.DefaultTableModel;
 import java.awt.*;
 import java.io.File;
 import java.util.List;
@@ -45,7 +49,7 @@ import static java.awt.GraphicsDevice.WindowTranslucency.TRANSLUCENT;
 @Slf4j
 public class HostForm {
     private JPanel hostPanel;
-    private JTable noteListTable;
+    private JList<THost> noteList;
     private JButton deleteButton;
     private JButton saveButton;
     private JSplitPane splitPane;
@@ -60,86 +64,162 @@ public class HostForm {
     private JTextField searchTextField;
 
     private static HostForm hostForm;
+
+    private static boolean i18nRegistered;
+
     private static THostMapper hostMapper = MybatisUtil.getSqlSession().getMapper(THostMapper.class);
 
-    public static final String WIN_HOST_FILE_PATH = "C:\\Windows\\System32\\drivers\\etc\\hosts";
+    public static final String WIN_HOST_FILE_PATH = HostFileUtil.WIN_HOST_FILE_PATH;
 
-    public static final String MAC_HOST_FILE_PATH = "/etc/hosts";
+    public static final String MAC_HOST_FILE_PATH = HostFileUtil.MAC_HOST_FILE_PATH;
 
-    public static final String LINUX_HOST_FILE_PATH = "/etc/hosts";
+    public static final String LINUX_HOST_FILE_PATH = HostFileUtil.LINUX_HOST_FILE_PATH;
 
     public static final String MAC_HOST_DIR_PATH = "/etc/";
 
     public static final String LINUX_HOST_DIR_PATH = "/etc/";
 
-    public static final String NOT_SUPPORTED_TIPS = "暂不支持该操作系统！";
+    public static String getNotSupportedTips() {
+        return HostFileUtil.getNotSupportedTips();
+    }
 
     private HostRSyntaxTextViewer textArea;
 
     private HostRTextScrollPane scrollPane;
 
+    private JToolBar actionToolBar;
+
+    private JPanel actionToolBarPanel;
+
     private HostForm() {
         textArea = new HostRSyntaxTextViewer();
         scrollPane = new HostRTextScrollPane(textArea);
+
+        currentHostButton = new JButton();
+        currentHostButton.setText("");
+        currentHostButton.setToolTipText("查看系统当前host");
+        addButton = new JButton();
+        addButton.setText("");
+        addButton.setToolTipText("新建(Ctrl+N)");
+        findButton = new JButton();
+        findButton.setText("");
+        findButton.setToolTipText("查找(Ctrl+F)");
+        saveButton = new JButton();
+        saveButton.setText("");
+        saveButton.setToolTipText("保存(Ctrl+S)");
+        deleteButton = new JButton();
+        deleteButton.setText("");
+        deleteButton.setToolTipText("删除");
+        exportButton = new JButton();
+        exportButton.setText("");
+        exportButton.setToolTipText("导出");
+        switchButton = new JButton();
+        switchButton.setText("");
+        switchButton.setToolTipText("切换host");
+
+        actionToolBar = new JToolBar();
+        ToolbarUiUtil.configure(actionToolBar);
+        actionToolBar.add(currentHostButton);
+        actionToolBar.add(addButton);
+        actionToolBar.add(findButton);
+        actionToolBar.add(saveButton);
+        ToolbarUiUtil.addGroupSeparator(actionToolBar);
+        actionToolBar.add(deleteButton);
+        actionToolBar.add(exportButton);
+        actionToolBar.add(switchButton);
+        actionToolBarPanel.add(actionToolBar, BorderLayout.EAST);
 
         UndoUtil.register(this);
     }
 
     public static void setHost(String hostName, String hostText) {
+        HostForm hostForm = HostForm.getInstance();
+        hostForm.getSwitchButton().setEnabled(false);
+        boolean success = false;
         try {
-            HostForm hostForm = HostForm.getInstance();
-            hostForm.getSwitchButton().setEnabled(false);
-            if (SystemUtil.isWindowsOs()) {
-                File hostFile = FileUtil.file(WIN_HOST_FILE_PATH);
-                FileUtil.writeUtf8String(hostText, hostFile);
-                if (App.trayIcon != null) {
-                    App.trayIcon.displayMessage("MooTool", "Host已切换！\n" + hostName, TrayIcon.MessageType.INFO);
-                    highlightHostMenu(hostName);
-                }
-            } else if (SystemUtil.isMacOs()) {
-                try {
-                    File hostFile = FileUtil.file(MAC_HOST_FILE_PATH);
-                    FileUtil.writeUtf8String(hostText, hostFile);
-                    if (App.trayIcon != null) {
-                        App.trayIcon.displayMessage("MooTool", "Host已切换！\n" + hostName, TrayIcon.MessageType.INFO);
-                        highlightHostMenu(hostName);
-                    }
-                } catch (Exception e) {
-                    JOptionPane.showMessageDialog(hostForm.getHostPanel(), "需要管理员或root权限运行！\n现在帮你打开hosts文件所在目录，请自行修改替换" + e.getMessage(), "切换失败！", JOptionPane.ERROR_MESSAGE);
-                    e.printStackTrace();
-                    try {
-                        Desktop desktop = Desktop.getDesktop();
-                        desktop.open(new File(MAC_HOST_DIR_PATH));
-                    } catch (Exception e2) {
-                        log.error(ExceptionUtils.getStackTrace(e2));
-                    }
-                }
-            } else if (SystemUtil.isLinuxOs()) {
-                try {
-                    File hostFile = FileUtil.file(LINUX_HOST_FILE_PATH);
-                    FileUtil.writeUtf8String(hostText, hostFile);
-                    if (App.trayIcon != null) {
-                        App.trayIcon.displayMessage("MooTool", "Host已切换！\n" + hostName, TrayIcon.MessageType.INFO);
-                        highlightHostMenu(hostName);
-                    }
-                } catch (Exception e) {
-                    JOptionPane.showMessageDialog(hostForm.getHostPanel(), "需要管理员或root权限运行！\n现在帮你打开hosts文件所在目录，请自行修改替换" + e.getMessage(), "切换失败！", JOptionPane.ERROR_MESSAGE);
-                    e.printStackTrace();
-                    try {
-                        Desktop desktop = Desktop.getDesktop();
-                        desktop.open(new File(LINUX_HOST_DIR_PATH));
-                    } catch (Exception e2) {
-                        log.error(ExceptionUtils.getStackTrace(e2));
-                    }
-                }
-            } else {
-                JOptionPane.showMessageDialog(hostForm.getHostPanel(), NOT_SUPPORTED_TIPS, "抱歉！", JOptionPane.INFORMATION_MESSAGE);
-            }
+            HostFileUtil.writeSystemHosts(hostText);
+            onHostSwitched(hostName);
+            success = true;
+        } catch (HostFileUtil.HostWriteException e) {
+            log.warn("Switch host failed: {}", e.getMessage());
+            showHostWriteError(hostForm, e);
         } catch (Exception ex) {
-            ex.printStackTrace();
-            JOptionPane.showMessageDialog(hostForm.getHostPanel(), ex.getMessage(), "切换失败！", JOptionPane.ERROR_MESSAGE);
+            log.error(ExceptionUtils.getStackTrace(ex));
+            showError(hostForm, ex.getMessage(), I18n.get("host.switchFailed"));
         } finally {
-            hostForm.getSwitchButton().setEnabled(true);
+            boolean switchSuccess = success;
+            SwingUtilities.invokeLater(() -> {
+                JButton switchButton = hostForm.getSwitchButton();
+                switchButton.setEnabled(true);
+                showSwitchButtonFeedback(switchButton, switchSuccess);
+            });
+        }
+    }
+
+    private static void showSwitchButtonFeedback(JButton switchButton, boolean success) {
+        String message = success ? I18n.get("common.success") : I18n.get("host.switchFailed");
+        AlertUtil.buttonInfo(switchButton, "", message, 1500);
+    }
+
+    private static void onHostSwitched(String hostName) {
+        Runnable updateUi = () -> {
+            if (App.trayIcon != null) {
+                App.trayIcon.displayMessage("MooTool", I18n.format("host.switched", hostName), TrayIcon.MessageType.INFO);
+            }
+            highlightHostMenu(hostName);
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            updateUi.run();
+        } else {
+            SwingUtilities.invokeLater(updateUi);
+        }
+    }
+
+    private static void showHostWriteError(HostForm hostForm, HostFileUtil.HostWriteException e) {
+        Runnable show = () -> {
+            HostFileUtil.HostWriteException.Reason reason = e.getReason();
+            if (SystemUtil.isMacOs() && (reason == HostFileUtil.HostWriteException.Reason.USER_CANCELED
+                    || reason == HostFileUtil.HostWriteException.Reason.PERMISSION_DENIED
+                    || reason == HostFileUtil.HostWriteException.Reason.TIMEOUT)) {
+                CommonTipsDialog dialog = new CommonTipsDialog();
+                dialog.setTitle(I18n.get("host.adminRequiredTitle"));
+                dialog.setHtmlText(e.getMessage());
+                dialog.pack();
+                dialog.setVisible(true);
+                return;
+            }
+            if (SystemUtil.isLinuxOs() && reason == HostFileUtil.HostWriteException.Reason.PERMISSION_DENIED) {
+                showError(hostForm, e.getMessage(), I18n.get("host.switchFailed"));
+                openHostDir(LINUX_HOST_DIR_PATH);
+                return;
+            }
+            if (reason == HostFileUtil.HostWriteException.Reason.NOT_SUPPORTED) {
+                showError(hostForm, e.getMessage(), I18n.get("host.sorry"));
+                return;
+            }
+            showError(hostForm, e.getMessage(), I18n.get("host.switchFailed"));
+        };
+        if (SwingUtilities.isEventDispatchThread()) {
+            show.run();
+        } else {
+            SwingUtilities.invokeLater(show);
+        }
+    }
+
+    private static void showError(HostForm hostForm, String message, String title) {
+        Runnable show = () -> JOptionPane.showMessageDialog(hostForm.getHostPanel(), message, title, JOptionPane.ERROR_MESSAGE);
+        if (SwingUtilities.isEventDispatchThread()) {
+            show.run();
+        } else {
+            SwingUtilities.invokeLater(show);
+        }
+    }
+
+    private static void openHostDir(String dirPath) {
+        try {
+            Desktop.getDesktop().open(new File(dirPath));
+        } catch (Exception e) {
+            log.error(ExceptionUtils.getStackTrace(e));
         }
     }
 
@@ -155,28 +235,69 @@ public class HostForm {
         Init.initTray();
 
         initUi();
-        initListTable();
+        initList();
 
         HostListener.addListeners();
+
+        hostForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(HostForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setPlaceholder(searchTextField, "common.search");
+        I18nUiUtil.setToolTip(currentHostButton, "host.tooltip.currentHost");
+        I18nUiUtil.setToolTip(addButton, "quickNote.tooltip.new");
+        I18nUiUtil.setToolTip(findButton, "quickNote.tooltip.find");
+        I18nUiUtil.setToolTip(saveButton, "quickNote.tooltip.save");
+        I18nUiUtil.setToolTip(deleteButton, "quickNote.tooltip.delete");
+        I18nUiUtil.setToolTip(exportButton, "quickNote.tooltip.export");
+        I18nUiUtil.setToolTip(switchButton, "host.tooltip.switchHost");
+    }
+
+    private static void applyI18nStatic() {
+        if (hostForm != null) {
+            hostForm.applyI18n();
+        }
+    }
+
+    private static GridConstraints toolbarRowConstraints(int row) {
+        return new GridConstraints(row, 0, 1, 1, GridConstraints.ANCHOR_NORTH, GridConstraints.FILL_HORIZONTAL,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false);
+    }
+
+    private static GridConstraints findReplaceRowConstraints(int row) {
+        return new GridConstraints(row, 0, 1, 1, GridConstraints.ANCHOR_NORTH, GridConstraints.FILL_HORIZONTAL,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false);
+    }
+
+    private static GridConstraints editorRowConstraints(int row) {
+        return new GridConstraints(row, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
+                null, null, null, 0, false);
     }
 
     private static void initUi() {
 
         hostForm.getRightPanel().removeAll();
         hostForm.getRightPanel().setLayout(new GridLayoutManager(3, 1, new Insets(0, 0, 0, 0), -1, -1));
-        if ("上方".equals(App.config.getMenuBarPosition())) {
-            hostForm.getRightPanel().add(hostForm.getControlPanel(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-            hostForm.getRightPanel().add(hostForm.getFindReplacePanel(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-            hostForm.getRightPanel().add(hostForm.getScrollPane(), new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        } else if ("下方".equals(App.config.getMenuBarPosition())) {
-            hostForm.getRightPanel().add(hostForm.getScrollPane(), new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-            hostForm.getRightPanel().add(hostForm.getFindReplacePanel(), new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-            hostForm.getRightPanel().add(hostForm.getControlPanel(), new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        if (App.config.isMenuBarOnTop()) {
+            hostForm.getRightPanel().add(hostForm.getControlPanel(), toolbarRowConstraints(0));
+            hostForm.getRightPanel().add(hostForm.getFindReplacePanel(), findReplaceRowConstraints(1));
+            hostForm.getRightPanel().add(hostForm.getScrollPane(), editorRowConstraints(2));
+        } else if (App.config.isMenuBarOnBottom()) {
+            hostForm.getRightPanel().add(hostForm.getScrollPane(), editorRowConstraints(0));
+            hostForm.getRightPanel().add(hostForm.getFindReplacePanel(), findReplaceRowConstraints(1));
+            hostForm.getRightPanel().add(hostForm.getControlPanel(), toolbarRowConstraints(2));
         }
 
-        hostForm.getSearchTextField().putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, "搜索");
-        hostForm.getSearchTextField().putClientProperty(FlatClientProperties.TEXT_FIELD_LEADING_ICON,
-                new FlatSearchIcon());
+        SearchFieldUiUtil.configure(hostForm.getSearchTextField());
+        hostForm.getSearchTextField().putClientProperty(FlatClientProperties.PLACEHOLDER_TEXT, I18n.get("common.search"));
 
         hostForm.getAddButton().setIcon(new FlatSVGIcon("icon/add.svg"));
         hostForm.getFindButton().setIcon(new FlatSVGIcon("icon/find.svg"));
@@ -189,32 +310,35 @@ public class HostForm {
         hostForm.getFindReplacePanel().setVisible(false);
 
         hostForm.getSplitPane().setDividerLocation(App.mainFrame.getWidth() / 5);
-        hostForm.getNoteListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
+        hostForm.getNoteList().setFixedCellHeight(UiConsts.TABLE_ROW_HEIGHT);
+        hostForm.getNoteList().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        hostForm.getNoteList().putClientProperty(FlatClientProperties.STYLE,
+                "selectionArc: 6; selectionInsets: 0,1,0,1");
 
         hostForm.getTextArea().grabFocus();
 
         hostForm.getHostPanel().updateUI();
     }
 
-    public static void initListTable() {
-        String[] headerNames = {"id", "名称"};
-        DefaultTableModel model = new DefaultTableModel(null, headerNames);
-        hostForm.getNoteListTable().setModel(model);
-        // 隐藏表头
-        JTableUtil.hideTableHeader(hostForm.getNoteListTable());
-        // 隐藏id列
-        JTableUtil.hideColumn(hostForm.getNoteListTable(), 0);
+    public static void initList() {
+        DefaultListModel<THost> model = new DefaultListModel<>();
+        JList<THost> noteList = hostForm.getNoteList();
+        noteList.setModel(model);
+        noteList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                String label = value instanceof THost ? ((THost) value).getName() : String.valueOf(value);
+                return super.getListCellRendererComponent(list, label, index, isSelected, cellHasFocus);
+            }
+        });
 
         String titleFilterKeyWord = hostForm.getSearchTextField().getText();
         titleFilterKeyWord = "%" + titleFilterKeyWord + "%";
         List<THost> hostList = hostMapper.selectByFilter(titleFilterKeyWord);
 
-        Object[] data;
         for (THost tHost : hostList) {
-            data = new Object[2];
-            data[0] = tHost.getId();
-            data[1] = tHost.getName();
-            model.addRow(data);
+            model.addElement(tHost);
         }
 
         if (hostList.size() > 0) {
@@ -222,7 +346,7 @@ public class HostForm {
             try {
                 HostListener.selectedNameHost = hostList.get(0).getName();
                 hostForm.getTextArea().setText(hostList.get(0).getContent());
-                hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
+                noteList.setSelectedIndex(0);
             } catch (Exception e1) {
                 log.error(e1.getMessage());
             } finally {
@@ -231,8 +355,8 @@ public class HostForm {
 
         }
 
-        if (hostForm.getNoteListTable().getRowCount() > 0) {
-            hostForm.getNoteListTable().setRowSelectionInterval(0, 0);
+        if (model.getSize() > 0) {
+            noteList.setSelectedIndex(0);
         }
 
         // 更新系统托盘
@@ -240,9 +364,9 @@ public class HostForm {
             hostList = hostMapper.selectAll();
             App.popupMenu.removeAll();
             JMenuItem openItem = new JMenuItem("MooTool");
-            JMenuItem colorPickerItem = new JMenuItem("取色器");
-            JMenuItem translateItem = new JMenuItem("翻译");
-            JMenuItem exitItem = new JMenuItem("Quit");
+            JMenuItem colorPickerItem = new JMenuItem(I18n.get("tray.colorPicker"));
+            JMenuItem translateItem = new JMenuItem(I18n.get("tray.translation"));
+            JMenuItem exitItem = new JMenuItem(I18n.get("common.quit"));
 
             openItem.addActionListener(e -> {
                 Init.showMainFrame();
@@ -337,57 +461,25 @@ public class HostForm {
         splitPane.setLeftComponent(panel1);
         final JScrollPane scrollPane1 = new JScrollPane();
         panel1.add(scrollPane1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        noteListTable = new JTable();
-        scrollPane1.setViewportView(noteListTable);
+        noteList = new JList();
+        scrollPane1.setViewportView(noteList);
         searchTextField = new JTextField();
         panel1.add(searchTextField, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         rightPanel = new JPanel();
         rightPanel.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), -1, -1));
         splitPane.setRightComponent(rightPanel);
         controlPanel = new JPanel();
-        controlPanel.setLayout(new GridLayoutManager(1, 8, new Insets(0, 0, 0, 0), -1, -1));
-        rightPanel.add(controlPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        saveButton = new JButton();
-        saveButton.setIcon(new ImageIcon(getClass().getResource("/icon/menu-saveall_dark.png")));
-        saveButton.setText("");
-        saveButton.setToolTipText("保存(Ctrl+S)");
-        controlPanel.add(saveButton, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        controlPanel.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        rightPanel.add(controlPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer1 = new Spacer();
         controlPanel.add(spacer1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
-        addButton = new JButton();
-        addButton.setIcon(new ImageIcon(getClass().getResource("/icon/add.png")));
-        addButton.setText("");
-        addButton.setToolTipText("新建(Ctrl+N)");
-        controlPanel.add(addButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        switchButton = new JButton();
-        switchButton.setIcon(new ImageIcon(getClass().getResource("/icon/check.png")));
-        switchButton.setText("");
-        switchButton.setToolTipText("切换host");
-        controlPanel.add(switchButton, new GridConstraints(0, 7, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        currentHostButton = new JButton();
-        currentHostButton.setIcon(new ImageIcon(getClass().getResource("/icon/host.png")));
-        currentHostButton.setText("");
-        currentHostButton.setToolTipText("查看系统当前host");
-        controlPanel.add(currentHostButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        findButton = new JButton();
-        findButton.setIcon(new ImageIcon(getClass().getResource("/icon/find_dark.png")));
-        findButton.setText("");
-        findButton.setToolTipText("查找(Ctrl+F)");
-        controlPanel.add(findButton, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        exportButton = new JButton();
-        exportButton.setIcon(new ImageIcon(getClass().getResource("/icon/export_dark.png")));
-        exportButton.setText("");
-        exportButton.setToolTipText("导出");
-        controlPanel.add(exportButton, new GridConstraints(0, 6, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        deleteButton = new JButton();
-        deleteButton.setIcon(new ImageIcon(getClass().getResource("/icon/remove.png")));
-        deleteButton.setText("");
-        deleteButton.setToolTipText("删除");
-        controlPanel.add(deleteButton, new GridConstraints(0, 5, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        actionToolBarPanel = new JPanel();
+        actionToolBarPanel.setLayout(new BorderLayout(0, 0));
+        controlPanel.add(actionToolBarPanel, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_EAST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         findReplacePanel = new JPanel();
         findReplacePanel.setLayout(new BorderLayout(0, 0));
         findReplacePanel.setVisible(true);
-        rightPanel.add(findReplacePanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        rightPanel.add(findReplacePanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     /**

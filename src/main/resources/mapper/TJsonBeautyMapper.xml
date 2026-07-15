@@ -120,6 +120,6 @@
                 modified_time = #{modifiedTime,jdbcType=VARCHAR},
             </if>
         </set>
-        where name = #{name,jdbcType=INTEGER}
+        where name = #{name,jdbcType=VARCHAR}
     </update>
 </mapper>

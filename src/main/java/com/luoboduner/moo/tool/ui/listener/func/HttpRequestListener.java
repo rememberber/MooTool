@@ -20,6 +20,9 @@ import com.luoboduner.moo.tool.util.CurlParserUtil;
 import com.luoboduner.moo.tool.util.AutoIndentDocumentFilter;
 import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SqliteUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.MsgUtil;
+import com.luoboduner.moo.tool.util.NamingUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -52,28 +55,32 @@ public class HttpRequestListener {
 
     public static String selectedName;
 
+    /** 忽略 JOptionPane 关闭后回传到列表的 Enter 键，避免重命名弹框重复弹出 */
+    private static boolean suppressListEnterRename;
+
     public static void addListeners() {
         HttpRequestForm httpRequestForm = HttpRequestForm.getInstance();
 
         httpRequestForm.getSaveButton().addActionListener(e -> {
             if (StringUtils.isBlank(selectedName)) {
-                selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                selectedName = NamingUtil.defaultUntitledName();
             }
-            String name = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", selectedName);
+            String name = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), selectedName);
             if (StringUtils.isNotBlank(name)) {
                 HttpRequestForm.save(name);
             }
         });
 
-        // 点击左侧表格事件
-        httpRequestForm.getNoteListTable().addMouseListener(new MouseAdapter() {
+        // 点击左侧列表事件
+        httpRequestForm.getNoteList().addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                int focusedRowIndex = httpRequestForm.getNoteListTable().rowAtPoint(e.getPoint());
-                if (focusedRowIndex == -1) {
+                int index = httpRequestForm.getNoteList().locationToIndex(e.getPoint());
+                if (index == -1) {
                     return;
                 }
-                String name = httpRequestForm.getNoteListTable().getValueAt(focusedRowIndex, 1).toString();
+                DefaultListModel<TMsgHttp> listModel = (DefaultListModel<TMsgHttp>) httpRequestForm.getNoteList().getModel();
+                String name = listModel.getElementAt(index).getMsgName();
                 selectedName = name;
                 HttpRequestForm.initMsg(name);
                 super.mousePressed(e);
@@ -94,7 +101,7 @@ public class HttpRequestListener {
         // 导入 cURL 按钮事件（URL 文本框尾随按钮）
         httpRequestForm.getImportCurlButton().addActionListener(e -> {
             try {
-                JsonResultDialog dialog = new JsonResultDialog(null, "请输入 cURL 命令：", "Input");
+                JsonResultDialog dialog = new JsonResultDialog(null, I18n.get("http.curlInputPrompt"), "Input");
                 dialog.setVisible(true);
                 String curl = JsonResultDialog.textInputValue;
                 if (StringUtils.isBlank(curl)) {
@@ -108,14 +115,8 @@ public class HttpRequestListener {
                 String methodShow = result.getMethod() == null ? "" : result.getMethod();
                 String urlShow = result.getUrl() == null ? "" : result.getUrl();
 
-                String msg = "将导入请求：" +
-                        "\nMethod: " + methodShow +
-                        "\nURL: " + urlShow +
-                        "\nHeaders: " + headerCount +
-                        "\nCookies: " + cookieCount +
-                        "\nBody length: " + bodyLen +
-                        "\n\n确认覆盖当前表单？";
-                int confirm = JOptionPane.showConfirmDialog(App.mainFrame, msg, "确认导入", JOptionPane.YES_NO_OPTION);
+                String msg = I18n.format("msg.confirmImportBody", methodShow, urlShow, headerCount, cookieCount, bodyLen);
+                int confirm = JOptionPane.showConfirmDialog(App.mainFrame, msg, I18n.get("msg.confirmImport"), JOptionPane.YES_NO_OPTION);
                 if (confirm != JOptionPane.YES_OPTION) {
                     return;
                 }
@@ -124,8 +125,7 @@ public class HttpRequestListener {
                 HttpRequestForm.applyImportedRequest(result);
                 HttpRequestForm.splitQueryToParamTable(result.getUrl());
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "导入 cURL 失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.importCurlFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -138,7 +138,7 @@ public class HttpRequestListener {
         }
 
         // 左侧列表按键事件（重命名）
-        httpRequestForm.getNoteListTable().addKeyListener(new KeyListener() {
+        httpRequestForm.getNoteList().addKeyListener(new KeyListener() {
             @Override
             public void keyTyped(KeyEvent e) {
 
@@ -152,24 +152,20 @@ public class HttpRequestListener {
             @Override
             public void keyReleased(KeyEvent evt) {
                 if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-                    int selectedRow = httpRequestForm.getNoteListTable().getSelectedRow();
-                    int noteId = Integer.parseInt(String.valueOf(httpRequestForm.getNoteListTable().getValueAt(selectedRow, 0)));
-                    String noteName = String.valueOf(httpRequestForm.getNoteListTable().getValueAt(selectedRow, 1));
-                    TMsgHttp tMsgHttp = new TMsgHttp();
-                    tMsgHttp.setId(noteId);
-                    tMsgHttp.setMsgName(noteName);
-                    try {
-                        msgHttpMapper.updateByPrimaryKeySelective(tMsgHttp);
-                    } catch (Exception e) {
-                        JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
-                        HttpRequestForm.initListTable();
-                        log.error(e.toString());
+                    if (suppressListEnterRename) {
+                        suppressListEnterRename = false;
+                        return;
                     }
+                    renameSelectedMsg(httpRequestForm);
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteFiles(httpRequestForm);
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
-                    int selectedRow = httpRequestForm.getNoteListTable().getSelectedRow();
-                    String name = httpRequestForm.getNoteListTable().getValueAt(selectedRow, 1).toString();
+                    int selectedIndex = httpRequestForm.getNoteList().getSelectedIndex();
+                    if (selectedIndex < 0) {
+                        return;
+                    }
+                    DefaultListModel<TMsgHttp> listModel = (DefaultListModel<TMsgHttp>) httpRequestForm.getNoteList().getModel();
+                    String name = listModel.getElementAt(selectedIndex).getMsgName();
                     selectedName = name;
                     HttpRequestForm.initMsg(name);
                     HttpRequestForm.initHistoryTable();
@@ -197,11 +193,9 @@ public class HttpRequestListener {
             }
 
             if (StringUtils.isEmpty(data[0]) || StringUtils.isEmpty(data[1])) {
-                JOptionPane.showMessageDialog(App.mainFrame, "Name和Value不能为空！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(App.mainFrame, "msg.nameValueRequired");
             } else if (keySet.contains(data[0])) {
-                JOptionPane.showMessageDialog(App.mainFrame, "Name不能重复！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(App.mainFrame, "msg.nameDuplicate");
             } else {
                 tableModel.addRow(data);
             }
@@ -227,11 +221,9 @@ public class HttpRequestListener {
             }
 
             if (StringUtils.isEmpty(data[0]) || StringUtils.isEmpty(data[1])) {
-                JOptionPane.showMessageDialog(App.mainFrame, "Name和Value不能为空！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(App.mainFrame, "msg.nameValueRequired");
             } else if (keySet.contains(data[0])) {
-                JOptionPane.showMessageDialog(App.mainFrame, "Name不能重复！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(App.mainFrame, "msg.nameDuplicate");
             } else {
                 tableModel.addRow(data);
             }
@@ -260,11 +252,9 @@ public class HttpRequestListener {
             }
 
             if (StringUtils.isEmpty(data[0]) || StringUtils.isEmpty(data[1]) || StringUtils.isEmpty(data[4])) {
-                JOptionPane.showMessageDialog(App.mainFrame, "Name、Value、Expiry不能为空！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(App.mainFrame, "msg.nameValueExpiryRequired");
             } else if (keySet.contains(data[0])) {
-                JOptionPane.showMessageDialog(App.mainFrame, "Name不能重复！", "提示",
-                        JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(App.mainFrame, "msg.nameDuplicate");
             } else {
                 tableModel.addRow(data);
             }
@@ -298,17 +288,15 @@ public class HttpRequestListener {
                     HttpResultFrame.showResultWindow();
 
                     if (StringUtils.isBlank(selectedName)) {
-                        selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                        selectedName = NamingUtil.defaultUntitledName();
                     }
                     HttpRequestForm.save(selectedName);
                 } else {
-                    JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + httpSendResult.getInfo(), "失败",
-                            JOptionPane.ERROR_MESSAGE);
+                    MsgUtil.errorWithDetail(App.mainFrame, "msg.sendFailed", httpSendResult.getInfo());
                 }
 
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.sendFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -333,17 +321,15 @@ public class HttpRequestListener {
                     httpRequestForm.getCookiesTextArea().setCaretPosition(0);
 
                     if (StringUtils.isBlank(selectedName)) {
-                        selectedName = "未命名_" + DateFormatUtils.format(new Date(), "yyyy-MM-dd_HH-mm-ss");
+                        selectedName = NamingUtil.defaultUntitledName();
                     }
                     HttpRequestForm.save(selectedName);
                 } else {
-                    JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + httpSendResult.getInfo(), "失败",
-                            JOptionPane.ERROR_MESSAGE);
+                    MsgUtil.errorWithDetail(App.mainFrame, "msg.sendFailed", httpSendResult.getInfo());
                 }
 
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(App.mainFrame, "发送请求失败！\n\n" + ex.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.sendFailed", ex.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(ex));
             }
         });
@@ -355,7 +341,7 @@ public class HttpRequestListener {
                     String bodyType = (String) httpRequestForm.getBodyTypeComboBox().getSelectedItem();
                     String text = httpRequestForm.getBodyTextArea().getText();
                     if (StringUtils.isBlank(text)) {
-                        JOptionPane.showMessageDialog(App.mainFrame, "Body 为空", "提示", JOptionPane.INFORMATION_MESSAGE);
+                        MsgUtil.info(App.mainFrame, "msg.bodyEmpty");
                         return;
                     }
                     String formatted;
@@ -363,7 +349,7 @@ public class HttpRequestListener {
                         try {
                             formatted = JSONUtil.toJsonPrettyStr(text);
                         } catch (Exception ex) {
-                            JOptionPane.showMessageDialog(App.mainFrame, "JSON 格式化失败\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+                            MsgUtil.errorWithDetail(App.mainFrame, "msg.jsonFormatFailed", ex.getMessage());
                             return;
                         }
                     } else if ("application/xml".equalsIgnoreCase(bodyType) || "text/xml".equalsIgnoreCase(bodyType)) {
@@ -373,18 +359,18 @@ public class HttpRequestListener {
                                     .newDocumentBuilder()
                                     .parse(new org.xml.sax.InputSource(new java.io.StringReader(text)));
                         } catch (Exception ex) {
-                            JOptionPane.showMessageDialog(App.mainFrame, "XML 非法，无法格式化\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+                            MsgUtil.errorWithDetail(App.mainFrame, "msg.xmlFormatFailed", ex.getMessage());
                             return;
                         }
                         formatted = com.luoboduner.moo.tool.util.XmlReformatUtil.format(text);
                     } else {
-                        JOptionPane.showMessageDialog(App.mainFrame, "当前 Body 类型不支持格式化", "提示", JOptionPane.INFORMATION_MESSAGE);
+                        MsgUtil.info(App.mainFrame, "msg.bodyTypeNoFormat");
                         return;
                     }
                     httpRequestForm.getBodyTextArea().setText(formatted);
                     httpRequestForm.getBodyTextArea().setCaretPosition(0);
                 } catch (Exception ex) {
-                    JOptionPane.showMessageDialog(App.mainFrame, "格式化失败\n\n" + ex.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+                    MsgUtil.errorWithDetail(App.mainFrame, "msg.formatFailedShort", ex.getMessage());
                     logger.error(ExceptionUtils.getStackTrace(ex));
                 }
             });
@@ -394,17 +380,17 @@ public class HttpRequestListener {
         httpRequestForm.getSearchTextField().getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                HttpRequestForm.initListTable();
+                HttpRequestForm.initList();
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                HttpRequestForm.initListTable();
+                HttpRequestForm.initList();
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-//                HttpRequestForm.initListTable();
+//                HttpRequestForm.initList();
             }
         });
 
@@ -424,13 +410,9 @@ public class HttpRequestListener {
         });
 
         // 历史记录关闭按钮事件
-        httpRequestForm.getCloseHistoryLabel().addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                httpRequestForm.getHistorySplitPane().setDividerLocation(httpRequestForm.getHistorySplitPane().getWidth());
-                httpRequestForm.getHistoryPanel().setVisible(false);
-                super.mouseClicked(e);
-            }
+        httpRequestForm.getCloseHistoryButton().addActionListener(e -> {
+            httpRequestForm.getHistorySplitPane().setDividerLocation(httpRequestForm.getHistorySplitPane().getWidth());
+            httpRequestForm.getHistoryPanel().setVisible(false);
         });
 
         // 点击历史记录表格事件
@@ -452,9 +434,9 @@ public class HttpRequestListener {
                 int[] selectedRows = httpRequestForm.getHistoryTable().getSelectedRows();
 
                 if (selectedRows.length == 0) {
-                    JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(App.mainFrame, "msg.selectAtLeastOne");
                 } else {
-                    int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                    int isDelete = MsgUtil.confirm(App.mainFrame, "msg.confirmDelete");
                     if (isDelete == JOptionPane.YES_OPTION) {
                         DefaultTableModel tableModel = (DefaultTableModel) httpRequestForm.getHistoryTable().getModel();
 
@@ -471,72 +453,79 @@ public class HttpRequestListener {
                     }
                 }
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(App.mainFrame, "msg.deleteFailed", e1.getMessage());
                 log.error(e1.toString());
             }
         });
 
-        // 左侧表格增加右键菜单
+        // 左侧列表增加右键菜单
         JPopupMenu noteListPopupMenu = new JPopupMenu();
-        JMenuItem renameMenuItem = new JMenuItem("重命名");
-        JMenuItem deleteMenuItem = new JMenuItem("删除");
+        JMenuItem renameMenuItem = new JMenuItem(I18n.get("common.rename"));
+        JMenuItem deleteMenuItem = new JMenuItem(I18n.get("common.delete"));
         noteListPopupMenu.add(renameMenuItem);
         noteListPopupMenu.add(deleteMenuItem);
-        httpRequestForm.getNoteListTable().setComponentPopupMenu(noteListPopupMenu);
+        httpRequestForm.getNoteList().setComponentPopupMenu(noteListPopupMenu);
 
-        // 右键菜单事件
-        renameMenuItem.addActionListener(e -> {
-            int selectedRow = httpRequestForm.getNoteListTable().getSelectedRow();
-            int noteId = Integer.parseInt(String.valueOf(httpRequestForm.getNoteListTable().getValueAt(selectedRow, 0)));
-            String beforeName = String.valueOf(httpRequestForm.getNoteListTable().getValueAt(selectedRow, 1));
-            if (StringUtils.isNotBlank(beforeName)) {
-                String afterName = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "名称", beforeName);
-                if (StringUtils.isNotBlank(afterName)) {
-                    TMsgHttp tMsgHttp = new TMsgHttp();
-                    tMsgHttp.setId(noteId);
-                    tMsgHttp.setMsgName(afterName);
-                    tMsgHttp.setModifiedTime(SqliteUtil.nowDateForSqlite());
-                    try {
-                        msgHttpMapper.updateByPrimaryKeySelective(tMsgHttp);
-                        HttpRequestForm.initListTable();
-                    } catch (Exception e1) {
-                        JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，可能和已有笔记重名");
-                        log.error(e1.toString());
-                    }
-                }
-            }
-
-        });
+        renameMenuItem.addActionListener(e -> renameSelectedMsg(httpRequestForm));
 
         deleteMenuItem.addActionListener(e -> {
             deleteFiles(httpRequestForm);
         });
     }
 
+    private static void renameSelectedMsg(HttpRequestForm httpRequestForm) {
+        int selectedIndex = httpRequestForm.getNoteList().getSelectedIndex();
+        if (selectedIndex < 0) {
+            return;
+        }
+        DefaultListModel<TMsgHttp> model = (DefaultListModel<TMsgHttp>) httpRequestForm.getNoteList().getModel();
+        TMsgHttp item = model.getElementAt(selectedIndex);
+        String beforeName = item.getMsgName();
+        if (StringUtils.isBlank(beforeName)) {
+            return;
+        }
+        suppressListEnterRename = true;
+        String afterName = MsgUtil.inputName(MainWindow.getInstance().getMainPanel(), beforeName);
+        if (StringUtils.isBlank(afterName) || afterName.equals(beforeName)) {
+            return;
+        }
+        try {
+            TMsgHttp tMsgHttp = new TMsgHttp();
+            tMsgHttp.setId(item.getId());
+            tMsgHttp.setMsgName(afterName);
+            tMsgHttp.setModifiedTime(SqliteUtil.nowDateForSqlite());
+            msgHttpMapper.updateByPrimaryKeySelective(tMsgHttp);
+            selectedName = afterName;
+            item.setMsgName(afterName);
+            model.set(selectedIndex, item);
+        } catch (Exception e) {
+            MsgUtil.info(App.mainFrame, "msg.renameNoteFailed");
+            HttpRequestForm.initList();
+            log.error(e.toString());
+        }
+    }
+
     private static void deleteFiles(HttpRequestForm httpRequestForm) {
         try {
-            int[] selectedRows = httpRequestForm.getNoteListTable().getSelectedRows();
+            int[] selectedIndices = httpRequestForm.getNoteList().getSelectedIndices();
 
-            if (selectedRows.length == 0) {
-                JOptionPane.showMessageDialog(App.mainFrame, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+            if (selectedIndices.length == 0) {
+                MsgUtil.info(App.mainFrame, "msg.selectAtLeastOne");
             } else {
-                int isDelete = JOptionPane.showConfirmDialog(App.mainFrame, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                int isDelete = MsgUtil.confirm(App.mainFrame, "msg.confirmDelete");
                 if (isDelete == JOptionPane.YES_OPTION) {
-                    DefaultTableModel tableModel = (DefaultTableModel) httpRequestForm.getNoteListTable().getModel();
+                    DefaultListModel<TMsgHttp> listModel = (DefaultListModel<TMsgHttp>) httpRequestForm.getNoteList().getModel();
 
-                    for (int i = 0; i < selectedRows.length; i++) {
-                        int selectedRow = selectedRows[i];
-                        Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
+                    for (int selectedIndex : selectedIndices) {
+                        Integer id = listModel.getElementAt(selectedIndex).getId();
                         msgHttpMapper.deleteByPrimaryKey(id);
                     }
                     selectedName = null;
-                    HttpRequestForm.initListTable();
+                    HttpRequestForm.initList();
                 }
             }
         } catch (Exception e1) {
-            JOptionPane.showMessageDialog(App.mainFrame, "删除失败！\n\n" + e1.getMessage(), "失败",
-                    JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(App.mainFrame, "msg.deleteFailed", e1.getMessage());
             log.error(e1.toString());
         }
     }

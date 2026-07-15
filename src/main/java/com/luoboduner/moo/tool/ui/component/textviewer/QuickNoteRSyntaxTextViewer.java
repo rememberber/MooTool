@@ -2,11 +2,15 @@ package com.luoboduner.moo.tool.ui.component.textviewer;
 
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
-import com.formdev.flatlaf.util.FontUtils;
 import com.formdev.flatlaf.util.StringUtils;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.util.EditorFontUtil;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
+import com.luoboduner.moo.tool.util.QuickNoteAutoGitScheduler;
+import com.luoboduner.moo.tool.util.QuickNoteConflictHighlightUtil;
+import com.luoboduner.moo.tool.util.QuickNoteImageInsertUtil;
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
+import org.fife.ui.rsyntaxtextarea.CjkFallbackTokenPainterFactory;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import org.fife.ui.rsyntaxtextarea.Theme;
 import org.fife.ui.rtextarea.RTextArea;
@@ -25,7 +29,10 @@ import java.net.URISyntaxException;
 public class QuickNoteRSyntaxTextViewer extends RSyntaxTextArea {
     public static boolean ignoreQuickSave;
 
+    private Runnable onContentChanged;
+
     public QuickNoteRSyntaxTextViewer() {
+        setTokenPainterFactory(new CjkFallbackTokenPainterFactory());
 
 //        setUseSelectedTextColor(true);
 //        setSelectedTextColor(new Color(50, 50, 50));
@@ -86,28 +93,47 @@ public class QuickNoteRSyntaxTextViewer extends RSyntaxTextArea {
         getDocument().addDocumentListener(new DocumentListener() {
             @Override
             public void insertUpdate(DocumentEvent e) {
-                if (ignoreQuickSave) {
-                    return;
-                }
-                QuickNoteListener.quickSave(true, false);
+                notifyContentChanged();
             }
 
             @Override
             public void removeUpdate(DocumentEvent e) {
-                if (ignoreQuickSave) {
-                    return;
-                }
-                QuickNoteListener.quickSave(true, false);
+                notifyContentChanged();
             }
 
             @Override
             public void changedUpdate(DocumentEvent e) {
-                if (ignoreQuickSave) {
-                    return;
-                }
-                QuickNoteListener.quickSave(true, false);
+                notifyContentChanged();
             }
         });
+    }
+
+    public void setOnContentChanged(Runnable onContentChanged) {
+        this.onContentChanged = onContentChanged;
+    }
+
+    @Override
+    public void paste() {
+        if (QuickNoteImageInsertUtil.tryPasteImage(this)) {
+            return;
+        }
+        super.paste();
+    }
+
+    private void notifyContentChanged() {
+        QuickNoteAutoGitScheduler.recordActivity();
+        if (onContentChanged != null) {
+            onContentChanged.run();
+        }
+        SwingUtilities.invokeLater(this::refreshConflictHighlights);
+        if (ignoreQuickSave) {
+            return;
+        }
+        QuickNoteListener.quickSave(true, false);
+    }
+
+    public void refreshConflictHighlights() {
+        QuickNoteConflictHighlightUtil.refresh(this);
     }
 
     public void updateTheme() {
@@ -153,13 +179,13 @@ public class QuickNoteRSyntaxTextViewer extends RSyntaxTextArea {
         if (fontSize == 0) {
             fontSize = getFont().getSize() + 2;
         }
-        Font font = FontUtils.getCompositeFont(fontName, Font.PLAIN, fontSize);
+        Font font = EditorFontUtil.getEditorFont(fontName, Font.PLAIN, fontSize);
         setFont(font);
     }
 
     private static Font createEditorFont(int sizeIncr) {
         int size = UIManager.getFont("defaultFont").getSize() + sizeIncr;
-        Font font = FontUtils.getCompositeFont(FlatJetBrainsMonoFont.FAMILY, Font.PLAIN, size);
+        Font font = EditorFontUtil.getEditorFont(FlatJetBrainsMonoFont.FAMILY, Font.PLAIN, size);
         if (isFallbackFont(font)) {
             Font defaultFont = RTextArea.getDefaultFont();
             font = defaultFont.deriveFont((float) size);

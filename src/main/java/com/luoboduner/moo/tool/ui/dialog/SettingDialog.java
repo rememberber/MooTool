@@ -17,12 +17,18 @@ import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.service.HttpMsgSender;
+import com.luoboduner.moo.tool.ui.Init;
+import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.component.TopMenuBar;
+import com.luoboduner.moo.tool.ui.component.FuncTabGroupSidebar;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.frame.MainFrame;
 import com.luoboduner.moo.tool.util.*;
 import org.apache.commons.lang3.StringUtils;
+
+import java.util.Map;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.*;
@@ -63,6 +69,17 @@ public class SettingDialog extends JDialog {
     private JCheckBox tabSeparatorCheckBox;
     private JCheckBox tabHideTitleCheckBox;
     private JCheckBox tabCardCheckBox;
+    private JCheckBox showFuncRecentCheckBox;
+
+    private JPanel quickNoteSettingPanel;
+
+    private JRadioButton tabClassicRadio;
+    private JRadioButton tabCardRadio;
+    private JRadioButton tabGroupedRadio;
+    private ButtonGroup tabStyleButtonGroup;
+    private JPanel tabStyleModePanel;
+
+    private boolean updatingTabStyle;
     private JToolBar toolBar;
     public static String[] accentColorKeys = {
             "Moo.accent.default",
@@ -78,9 +95,51 @@ public class SettingDialog extends JDialog {
     };
     private final JToggleButton[] accentColorButtons = new JToggleButton[accentColorKeys.length];
 
+    private static final Map<String, String> TITLED_BORDER_KEYS = Map.of(
+            "常规", "setting.section.general",
+            " 随手记", "setting.section.quickNote",
+            "使用习惯", "setting.section.habits",
+            "功能Tab样式", "setting.section.tabStyle",
+            "高级", "setting.section.advanced",
+            "HTTP请求", "setting.section.http"
+    );
+
+    private static final Map<String, String> LABEL_KEYS = Map.ofEntries(
+            Map.entry("语言", "setting.language"),
+            Map.entry("字体", "setting.font"),
+            Map.entry("强调色", "setting.accentColor"),
+            Map.entry("SQL\"方言\"(dialect)", "setting.sqlDialect"),
+            Map.entry("菜单栏(按钮操作区)位置", "setting.menuBarPosition"),
+            Map.entry("功能Tab位置", "setting.funcTabPosition"),
+            Map.entry("数据存储位置", "setting.dataPath"),
+            Map.entry("Host", "Host"),
+            Map.entry("端口", "setting.port"),
+            Map.entry("用户名", "setting.username"),
+            Map.entry("密码", "setting.password")
+    );
+
+    private static final Map<String, String> CHECKBOX_KEYS = Map.of(
+            "启动时自动检查更新", "setting.autoCheckUpdate",
+            "紧凑", "setting.tabCompact",
+            "隐藏标题", "setting.tabHideTitle",
+            "显示分割线", "setting.tabSeparator",
+            "显示最近使用", "setting.showFuncRecent",
+            "使用HTTP代理", "setting.httpProxy"
+    );
+
+    private static final Map<String, String> TAB_STYLE_RADIO_KEYS = Map.of(
+            "经典页签", "setting.tabClassic",
+            "卡片页签", "setting.tabCard",
+            "分组导航", "setting.tabGrouped"
+    );
+
+    private static final Map<String, String> BUTTON_KEYS = Map.of(
+            "保存", "common.save"
+    );
+
     public SettingDialog() {
 
-        super(App.mainFrame, "设置");
+        super(App.mainFrame, I18n.get("setting.title"));
         ComponentUtil.setPreferSizeAndLocateToCenter(this, 0.5, 0.68);
         setContentPane(contentPane);
         setModal(true);
@@ -113,6 +172,9 @@ public class SettingDialog extends JDialog {
 
         initAccentColors();
 
+        initLanguageCombo();
+        initPositionCombos();
+
         // 常规
         autoCheckUpdateCheckBox.setSelected(App.config.isAutoCheckUpdate());
 
@@ -125,15 +187,17 @@ public class SettingDialog extends JDialog {
 
         toggleHttpProxyPanel();
 
+        initTabStyleModeRadios();
+        syncTabStyleRadiosFromConfig();
+        updateTabStyleControlsState();
+
         // 使用习惯
-        menuBarPositionComboBox.setSelectedItem(App.config.getMenuBarPosition());
-        funcTabPositionComboBox.setSelectedItem(App.config.getFuncTabPosition());
+        showFuncRecentCheckBox.setSelected(App.config.isFuncRecentVisible());
 
         // 功能Tab样式
         tabCompactCheckBox.setSelected(App.config.isTabCompact());
         tabSeparatorCheckBox.setSelected(App.config.isTabSeparator());
         tabHideTitleCheckBox.setSelected(App.config.isTabHideTitle());
-        tabCardCheckBox.setSelected(App.config.isTabCard());
 
         // sql dialect
         sqlDialectComboBox.setSelectedItem(App.config.getSqlDialect());
@@ -145,6 +209,10 @@ public class SettingDialog extends JDialog {
         // 高级
         dbFilePathTextField.setText(App.config.getDbFilePath());
 
+        applyI18nTexts();
+        if (quickNoteSettingPanel != null) {
+            QuickNoteSettingsUi.install(quickNoteSettingPanel, contentPane);
+        }
         contentPane.updateUI();
 
         // 设置-常规-启动时自动检查更新
@@ -163,15 +231,22 @@ public class SettingDialog extends JDialog {
                 App.config.save();
 
                 HttpMsgSender.proxy = null;
-                AlertUtil.buttonInfo(httpSaveButton, "保存", "保存成功", 2000);
+                AlertUtil.buttonInfo(httpSaveButton, I18n.get("common.save"), I18n.get("common.saveSuccess"), 2000);
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(contentPane, "保存失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(contentPane, I18n.format("common.saveFailed", e1.getMessage()),
+                        I18n.get("common.failure"), JOptionPane.ERROR_MESSAGE);
                 logger.error(e1);
             }
         });
 
         httpUseProxyCheckBox.addChangeListener(e -> toggleHttpProxyPanel());
+
+        // 使用习惯-功能列表显示最近使用
+        showFuncRecentCheckBox.addItemListener(e -> {
+            App.config.setFuncRecentVisible(e.getStateChange() == ItemEvent.SELECTED);
+            App.config.save();
+            FuncTabGroupSidebar.refreshAllI18n();
+        });
 
         // 使用习惯-菜单栏位置
         menuBarPositionComboBox.addItemListener(e -> {
@@ -211,10 +286,20 @@ public class SettingDialog extends JDialog {
             App.config.save();
             MainWindow.getInstance().initTabPlacement();
         });
-        tabCardCheckBox.addItemListener(e -> {
-            App.config.setTabCard(e.getStateChange() == ItemEvent.SELECTED);
-            App.config.save();
-            MainWindow.getInstance().initTabPlacement();
+        tabClassicRadio.addActionListener(e -> {
+            if (!updatingTabStyle && tabClassicRadio.isSelected()) {
+                applyTabStyleMode(TabStyleMode.CLASSIC);
+            }
+        });
+        tabCardRadio.addActionListener(e -> {
+            if (!updatingTabStyle && tabCardRadio.isSelected()) {
+                applyTabStyleMode(TabStyleMode.CARD);
+            }
+        });
+        tabGroupedRadio.addActionListener(e -> {
+            if (!updatingTabStyle && tabGroupedRadio.isSelected()) {
+                applyTabStyleMode(TabStyleMode.GROUPED);
+            }
         });
 
         sqlDialectComboBox.addItemListener(e -> {
@@ -239,15 +324,27 @@ public class SettingDialog extends JDialog {
 
                 // 复制之前的数据文件到新位置
                 String dbFilePathBefore = App.config.getDbFilePathBefore();
-                if (dbFilePathBefore.equals(dbFilePath)) {
-                    JOptionPane.showMessageDialog(contentPane, "保存成功！", "成功", JOptionPane.INFORMATION_MESSAGE);
+                if (StringUtils.equals(dbFilePathBefore, dbFilePath)) {
+                    JOptionPane.showMessageDialog(contentPane, I18n.get("common.saveSuccess"),
+                            I18n.get("common.success"), JOptionPane.INFORMATION_MESSAGE);
                     return;
                 }
                 if (StringUtils.isBlank(dbFilePathBefore)) {
                     dbFilePathBefore = SystemUtil.CONFIG_HOME;
                 }
                 if (StringUtils.isNotBlank(dbFilePath)) {
-                    FileUtil.copy(dbFilePathBefore + File.separator + "MooTool.db", dbFilePath, false);
+                    File sourceDb = FileUtil.file(dbFilePathBefore, "MooTool.db");
+                    if (!sourceDb.isFile()) {
+                        throw new IllegalStateException("源数据库不存在：" + sourceDb.getAbsolutePath());
+                    }
+                    File targetDir = FileUtil.file(dbFilePath);
+                    if (!targetDir.isDirectory()) {
+                        targetDir = targetDir.getParentFile();
+                    }
+                    if (targetDir == null) {
+                        throw new IllegalStateException("无效的数据库保存路径");
+                    }
+                    FileUtil.copy(sourceDb, FileUtil.file(targetDir, "MooTool.db"), false);
                 }
 
                 MybatisUtil.setSqlSession(null);
@@ -255,11 +352,14 @@ public class SettingDialog extends JDialog {
                 App.config.setDbFilePath(dbFilePath);
                 App.config.setDbFilePathBefore(dbFilePath);
                 App.config.save();
-                JOptionPane.showMessageDialog(contentPane, "保存成功！\n\n需要重启MooTool生效", "成功", JOptionPane.INFORMATION_MESSAGE);
-                JOptionPane.showMessageDialog(contentPane, "MooTool即将关闭！\n\n关闭后需要手动再次打开", "MooTool即将关闭", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(contentPane, I18n.get("setting.restartToApply"),
+                        I18n.get("common.success"), JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(contentPane, I18n.get("setting.shuttingDown"),
+                        UiConsts.APP_NAME, JOptionPane.INFORMATION_MESSAGE);
                 System.exit(0);
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(contentPane, "保存失败！\n\n" + e1.getMessage(), "失败", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(contentPane, I18n.format("common.saveFailed", e1.getMessage()),
+                        I18n.get("common.failure"), JOptionPane.ERROR_MESSAGE);
                 logger.error(ExceptionUtils.getStackTrace(e1));
             }
         });
@@ -278,8 +378,208 @@ public class SettingDialog extends JDialog {
     }
 
     private void onOK() {
-        // add your code here
         dispose();
+    }
+
+    private void initLanguageCombo() {
+        comboBox1.setEnabled(true);
+        comboBox1.removeAllItems();
+        for (String localeTag : I18n.supportedLocaleTags()) {
+            comboBox1.addItem(localeTag);
+        }
+        comboBox1.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof String localeTag) {
+                    setText(I18n.displayLanguage(localeTag));
+                }
+                return this;
+            }
+        });
+        comboBox1.setSelectedItem(App.config.getLocale());
+        comboBox1.addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                String localeTag = (String) e.getItem();
+                if (!localeTag.equals(App.config.getLocale())) {
+                    App.config.setLocale(localeTag);
+                    App.config.save();
+                    int choice = JOptionPane.showConfirmDialog(contentPane,
+                            I18n.get("language.restart.message"),
+                            I18n.get("language.restart.title"),
+                            JOptionPane.YES_NO_OPTION, JOptionPane.INFORMATION_MESSAGE);
+                    if (choice == JOptionPane.YES_OPTION) {
+                        System.exit(0);
+                    }
+                }
+            }
+        });
+    }
+
+    private void initPositionCombos() {
+        setupPositionCombo(menuBarPositionComboBox, "top", "bottom");
+        menuBarPositionComboBox.setSelectedItem(App.config.getMenuBarPosition());
+        setupPositionCombo(funcTabPositionComboBox, "top", "left");
+        funcTabPositionComboBox.setSelectedItem(App.config.getFuncTabPosition());
+    }
+
+    private enum TabStyleMode {
+        CLASSIC, CARD, GROUPED
+    }
+
+    private void initTabStyleModeRadios() {
+        if (tabStyleModePanel != null) {
+            return;
+        }
+        Container panel9 = tabCompactCheckBox.getParent();
+        panel9.remove(tabCardCheckBox);
+        tabCardCheckBox = null;
+
+        tabStyleModePanel = new JPanel();
+        tabStyleModePanel.setLayout(new BoxLayout(tabStyleModePanel, BoxLayout.Y_AXIS));
+        tabClassicRadio = new JRadioButton("经典页签");
+        tabCardRadio = new JRadioButton("卡片页签");
+        tabGroupedRadio = new JRadioButton("分组导航");
+        tabStyleButtonGroup = new ButtonGroup();
+        tabStyleButtonGroup.add(tabClassicRadio);
+        tabStyleButtonGroup.add(tabCardRadio);
+        tabStyleButtonGroup.add(tabGroupedRadio);
+        tabStyleModePanel.add(tabClassicRadio);
+        tabStyleModePanel.add(tabCardRadio);
+        tabStyleModePanel.add(tabGroupedRadio);
+        panel9.add(tabStyleModePanel, new GridConstraints(3, 0, 1, 2, GridConstraints.ANCHOR_WEST,
+                GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW,
+                GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+    }
+
+    private void syncTabStyleRadiosFromConfig() {
+        updatingTabStyle = true;
+        try {
+            TabStyleMode mode = resolveTabStyleMode();
+            tabClassicRadio.setSelected(mode == TabStyleMode.CLASSIC);
+            tabCardRadio.setSelected(mode == TabStyleMode.CARD);
+            tabGroupedRadio.setSelected(mode == TabStyleMode.GROUPED);
+        } finally {
+            updatingTabStyle = false;
+        }
+    }
+
+    private TabStyleMode resolveTabStyleMode() {
+        if (App.config.isFuncTabGrouped()) {
+            return TabStyleMode.GROUPED;
+        }
+        if (App.config.isTabCard()) {
+            return TabStyleMode.CARD;
+        }
+        return TabStyleMode.CLASSIC;
+    }
+
+    private void applyTabStyleMode(TabStyleMode mode) {
+        updatingTabStyle = true;
+        try {
+            switch (mode) {
+                case GROUPED -> {
+                    App.config.setFuncTabGrouped(true);
+                    App.config.setTabCard(false);
+                }
+                case CARD -> {
+                    App.config.setFuncTabGrouped(false);
+                    App.config.setTabCard(true);
+                }
+                default -> {
+                    App.config.setFuncTabGrouped(false);
+                    App.config.setTabCard(false);
+                }
+            }
+            App.config.save();
+            syncTabStyleRadiosFromConfig();
+            updateTabStyleControlsState();
+            MainWindow.getInstance().initTabPlacement();
+        } finally {
+            updatingTabStyle = false;
+        }
+    }
+
+    private void applyTabStyleRadioI18n() {
+        if (tabClassicRadio == null) {
+            return;
+        }
+        tabClassicRadio.setText(I18n.get("setting.tabClassic"));
+        tabCardRadio.setText(I18n.get("setting.tabCard"));
+        tabGroupedRadio.setText(I18n.get("setting.tabGrouped"));
+    }
+
+    private void updateTabStyleControlsState() {
+        boolean grouped = tabGroupedRadio != null && tabGroupedRadio.isSelected();
+        boolean classicTabStyle = !grouped;
+        tabCompactCheckBox.setEnabled(classicTabStyle);
+        tabHideTitleCheckBox.setEnabled(classicTabStyle);
+        tabSeparatorCheckBox.setEnabled(classicTabStyle);
+        funcTabPositionComboBox.setEnabled(classicTabStyle);
+    }
+
+    private void setupPositionCombo(JComboBox<String> comboBox, String... keys) {
+        comboBox.removeAllItems();
+        for (String key : keys) {
+            comboBox.addItem(key);
+        }
+        comboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
+                if (value instanceof String key) {
+                    setText(I18n.get("position." + key));
+                }
+                return this;
+            }
+        });
+    }
+
+    private void applyI18nTexts() {
+        setTitle(I18n.get("setting.title"));
+        localizeContainer(contentPane);
+        applyTabStyleRadioI18n();
+    }
+
+    private void localizeContainer(Container container) {
+        for (Component component : container.getComponents()) {
+            if (component instanceof JLabel label) {
+                String key = LABEL_KEYS.get(label.getText());
+                if (key != null) {
+                    label.setText(I18n.get(key));
+                }
+            } else if (component instanceof JCheckBox checkBox) {
+                String key = CHECKBOX_KEYS.get(checkBox.getText());
+                if (key != null) {
+                    checkBox.setText(I18n.get(key));
+                }
+            } else if (component instanceof JRadioButton radioButton) {
+                String key = TAB_STYLE_RADIO_KEYS.get(radioButton.getText());
+                if (key != null) {
+                    radioButton.setText(I18n.get(key));
+                }
+            } else if (component instanceof JButton button) {
+                String key = BUTTON_KEYS.get(button.getText());
+                if (key != null) {
+                    button.setText(I18n.get(key));
+                }
+            } else if (component instanceof JPanel panel) {
+                if (panel.getBorder() instanceof TitledBorder titledBorder) {
+                    String key = TITLED_BORDER_KEYS.get(titledBorder.getTitle());
+                    if (key != null) {
+                        titledBorder.setTitle(I18n.get(key));
+                    }
+                }
+                localizeContainer(panel);
+            } else if (component instanceof JScrollPane scrollPane && scrollPane.getViewport() != null) {
+                Component view = scrollPane.getViewport().getView();
+                if (view instanceof Container viewContainer) {
+                    localizeContainer(viewContainer);
+                }
+            }
+        }
     }
 
     /**
@@ -305,6 +605,7 @@ public class SettingDialog extends JDialog {
 
     private void initAccentColors() {
         toolBar = new JToolBar();
+        ToolbarUiUtil.configure(toolBar);
 
         toolBar.add(Box.createHorizontalGlue());
 
@@ -366,7 +667,7 @@ public class SettingDialog extends JDialog {
         Class<? extends LookAndFeel> lafClass = UIManager.getLookAndFeel().getClass();
         try {
             FlatLaf.setup(lafClass.getDeclaredConstructor().newInstance());
-            FlatLaf.updateUI();
+            Init.refreshFlatLafUi();
         } catch (InstantiationException | IllegalAccessException ex) {
             LoggingFacade.INSTANCE.logSevere(null, ex);
         } catch (InvocationTargetException | NoSuchMethodException ex) {
@@ -502,13 +803,13 @@ public class SettingDialog extends JDialog {
         final JLabel label3 = new JLabel();
         label3.setText("强调色");
         panel3.add(label3, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JPanel panel4 = new JPanel();
-        panel4.setLayout(new GridLayoutManager(1, 3, new Insets(15, 15, 25, 0), -1, -1));
-        panel2.add(panel4, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        panel4.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), " 随手记", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel4.getFont()), null));
+        quickNoteSettingPanel = new JPanel();
+        quickNoteSettingPanel.setLayout(new GridLayoutManager(1, 3, new Insets(15, 15, 25, 0), -1, -1));
+        panel2.add(quickNoteSettingPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        quickNoteSettingPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), " 随手记", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, quickNoteSettingPanel.getFont()), null));
         final JLabel label4 = new JLabel();
         label4.setText("SQL\"方言\"(dialect)");
-        panel4.add(label4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        quickNoteSettingPanel.add(label4, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         sqlDialectComboBox = new JComboBox();
         sqlDialectComboBox.setEnabled(true);
         final DefaultComboBoxModel defaultComboBoxModel3 = new DefaultComboBoxModel();
@@ -523,104 +824,107 @@ public class SettingDialog extends JDialog {
         defaultComboBoxModel3.addElement("Spark");
         defaultComboBoxModel3.addElement("SQL Server Transact-SQL");
         sqlDialectComboBox.setModel(defaultComboBoxModel3);
-        panel4.add(sqlDialectComboBox, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        quickNoteSettingPanel.add(sqlDialectComboBox, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer3 = new Spacer();
-        panel4.add(spacer3, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        quickNoteSettingPanel.add(spacer3, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        final JPanel panel4 = new JPanel();
+        panel4.setLayout(new GridLayoutManager(3, 1, new Insets(15, 15, 25, 0), -1, -1));
+        panel2.add(panel4, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel4.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "使用习惯", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel4.getFont()), null));
         final JPanel panel5 = new JPanel();
-        panel5.setLayout(new GridLayoutManager(2, 1, new Insets(15, 15, 25, 0), -1, -1));
-        panel2.add(panel5, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        panel5.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "使用习惯", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel5.getFont()), null));
-        final JPanel panel6 = new JPanel();
-        panel6.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
-        panel5.add(panel6, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel5.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
+        panel4.add(panel5, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JLabel label5 = new JLabel();
         label5.setText("菜单栏(按钮操作区)位置");
-        panel6.add(label5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel5.add(label5, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer4 = new Spacer();
-        panel6.add(spacer4, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        panel5.add(spacer4, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         menuBarPositionComboBox = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel4 = new DefaultComboBoxModel();
         defaultComboBoxModel4.addElement("上方");
         defaultComboBoxModel4.addElement("下方");
         menuBarPositionComboBox.setModel(defaultComboBoxModel4);
-        panel6.add(menuBarPositionComboBox, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JPanel panel7 = new JPanel();
-        panel7.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
-        panel5.add(panel7, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel5.add(menuBarPositionComboBox, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel6 = new JPanel();
+        panel6.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 0, 0), -1, -1));
+        panel4.add(panel6, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JLabel label6 = new JLabel();
         label6.setText("功能Tab位置");
-        panel7.add(label6, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel6.add(label6, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer5 = new Spacer();
-        panel7.add(spacer5, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        panel6.add(spacer5, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         funcTabPositionComboBox = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel5 = new DefaultComboBoxModel();
         defaultComboBoxModel5.addElement("上方");
         defaultComboBoxModel5.addElement("左侧");
         funcTabPositionComboBox.setModel(defaultComboBoxModel5);
-        panel7.add(funcTabPositionComboBox, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel6.add(funcTabPositionComboBox, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        showFuncRecentCheckBox = new JCheckBox();
+        showFuncRecentCheckBox.setText("显示最近使用");
+        panel4.add(showFuncRecentCheckBox, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel7 = new JPanel();
+        panel7.setLayout(new GridLayoutManager(1, 1, new Insets(15, 15, 25, 0), -1, -1));
+        panel2.add(panel7, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel7.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "功能Tab样式", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel7.getFont()), null));
         final JPanel panel8 = new JPanel();
-        panel8.setLayout(new GridLayoutManager(1, 1, new Insets(15, 15, 25, 0), -1, -1));
-        panel2.add(panel8, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        panel8.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "功能Tab样式", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel8.getFont()), null));
-        final JPanel panel9 = new JPanel();
-        panel9.setLayout(new GridLayoutManager(4, 2, new Insets(0, 0, 0, 0), -1, -1));
-        panel8.add(panel9, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel8.setLayout(new GridLayoutManager(4, 2, new Insets(0, 0, 0, 0), -1, -1));
+        panel7.add(panel8, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final Spacer spacer6 = new Spacer();
-        panel9.add(spacer6, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        panel8.add(spacer6, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         tabCompactCheckBox = new JCheckBox();
         tabCompactCheckBox.setText("紧凑");
-        panel9.add(tabCompactCheckBox, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel8.add(tabCompactCheckBox, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         tabHideTitleCheckBox = new JCheckBox();
         tabHideTitleCheckBox.setText("隐藏标题");
-        panel9.add(tabHideTitleCheckBox, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel8.add(tabHideTitleCheckBox, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         tabSeparatorCheckBox = new JCheckBox();
         tabSeparatorCheckBox.setText("显示分割线");
-        panel9.add(tabSeparatorCheckBox, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel8.add(tabSeparatorCheckBox, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         tabCardCheckBox = new JCheckBox();
         tabCardCheckBox.setText("卡片页签");
-        panel9.add(tabCardCheckBox, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JPanel panel10 = new JPanel();
-        panel10.setLayout(new GridLayoutManager(2, 3, new Insets(15, 15, 25, 0), -1, -1));
-        panel2.add(panel10, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        panel10.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "高级", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel10.getFont()), null));
+        panel8.add(tabCardCheckBox, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel9 = new JPanel();
+        panel9.setLayout(new GridLayoutManager(2, 3, new Insets(15, 15, 25, 0), -1, -1));
+        panel2.add(panel9, new GridConstraints(5, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel9.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "高级", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel9.getFont()), null));
         final JLabel label7 = new JLabel();
         label7.setText("数据存储位置");
-        panel10.add(label7, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel9.add(label7, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         dbFilePathTextField = new JTextField();
-        panel10.add(dbFilePathTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
+        panel9.add(dbFilePathTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         dbFilePathExploreButton = new JButton();
         dbFilePathExploreButton.setText("…");
-        panel10.add(dbFilePathExploreButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
-        final JPanel panel11 = new JPanel();
-        panel11.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        panel10.add(panel11, new GridConstraints(1, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel9.add(dbFilePathExploreButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        final JPanel panel10 = new JPanel();
+        panel10.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        panel9.add(panel10, new GridConstraints(1, 0, 1, 3, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         dbFilePathSaveButton = new JButton();
         dbFilePathSaveButton.setIcon(new ImageIcon(getClass().getResource("/icon/menu-saveall_dark.png")));
         dbFilePathSaveButton.setText("保存");
-        panel11.add(dbFilePathSaveButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel10.add(dbFilePathSaveButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer7 = new Spacer();
-        panel11.add(spacer7, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        panel10.add(spacer7, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        final JPanel panel11 = new JPanel();
+        panel11.setLayout(new GridLayoutManager(3, 1, new Insets(15, 15, 25, 0), -1, -1));
+        Font panel11Font = this.$$$getFont$$$("Microsoft YaHei UI", -1, -1, panel11.getFont());
+        if (panel11Font != null) panel11.setFont(panel11Font);
+        panel2.add(panel11, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel11.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "HTTP请求", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel11.getFont()), null));
         final JPanel panel12 = new JPanel();
-        panel12.setLayout(new GridLayoutManager(3, 1, new Insets(15, 15, 25, 0), -1, -1));
-        Font panel12Font = this.$$$getFont$$$("Microsoft YaHei UI", -1, -1, panel12.getFont());
-        if (panel12Font != null) panel12.setFont(panel12Font);
-        panel2.add(panel12, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
-        panel12.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "HTTP请求", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel12.getFont()), null));
-        final JPanel panel13 = new JPanel();
-        panel13.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        panel12.add(panel13, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel12.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
+        panel11.add(panel12, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         httpSaveButton = new JButton();
         httpSaveButton.setIcon(new ImageIcon(getClass().getResource("/icon/menu-saveall_dark.png")));
         httpSaveButton.setText("保存");
-        panel13.add(httpSaveButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel12.add(httpSaveButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer8 = new Spacer();
-        panel13.add(spacer8, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        panel12.add(spacer8, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         httpUseProxyCheckBox = new JCheckBox();
         httpUseProxyCheckBox.setText("使用HTTP代理");
-        panel12.add(httpUseProxyCheckBox, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel11.add(httpUseProxyCheckBox, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         httpProxyPanel = new JPanel();
         httpProxyPanel.setLayout(new GridLayoutManager(4, 2, new Insets(0, 26, 0, 0), -1, -1));
-        panel12.add(httpProxyPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel11.add(httpProxyPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JLabel label8 = new JLabel();
         label8.setText("Host");
         httpProxyPanel.add(label8, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));

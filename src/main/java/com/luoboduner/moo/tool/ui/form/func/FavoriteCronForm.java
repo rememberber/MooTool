@@ -3,6 +3,7 @@ package com.luoboduner.moo.tool.ui.form.func;
 import cn.hutool.core.util.ArrayUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
+import com.formdev.flatlaf.FlatClientProperties;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.util.SystemInfo;
 import com.google.common.collect.Lists;
@@ -15,7 +16,6 @@ import com.luoboduner.moo.tool.dao.TFavoriteCronListMapper;
 import com.luoboduner.moo.tool.domain.TFavoriteCronItem;
 import com.luoboduner.moo.tool.domain.TFavoriteCronList;
 import com.luoboduner.moo.tool.ui.UiConsts;
-import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.frame.FavoriteCronFrame;
 import com.luoboduner.moo.tool.ui.frame.FindResultFrame;
 import com.luoboduner.moo.tool.util.*;
@@ -42,7 +42,7 @@ import java.util.List;
 @Slf4j
 public class FavoriteCronForm {
     private JPanel favoriteCronPanel;
-    private JTable listTable;
+    private JList<TFavoriteCronList> favoriteList;
     private JButton deleteListButton;
     private JTable itemTable;
     private JButton deleteItemButton;
@@ -53,30 +53,42 @@ public class FavoriteCronForm {
     private JPanel listControlPanel;
     private JPanel itemControlPanel;
     private JButton listItemButton;
+    private JMenuItem renameMenuItem;
+    private JMenuItem deleteMenuItem;
 
     public static FavoriteCronForm favoriteCronForm;
 
     private static final Log logger = LogFactory.get();
+
+    private static boolean i18nRegistered;
 
     private static TFavoriteCronListMapper favoriteCronListMapper = MybatisUtil.getSqlSession().getMapper(TFavoriteCronListMapper.class);
     private static TFavoriteCronItemMapper favoriteCronItemMapper = MybatisUtil.getSqlSession().getMapper(TFavoriteCronItemMapper.class);
 
     private static Integer lastSelectedListId;
 
+    private boolean suppressListEnterRename;
+
     private FavoriteCronForm() {
         UndoUtil.register(this);
         favoriteCronPanel.registerKeyboardAction(e -> FindResultFrame.getInstance().dispose(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
 
-        // 点击左侧表格事件
-        listTable.addMouseListener(new MouseAdapter() {
+        // 点击左侧列表事件
+        favoriteList.addMouseListener(new MouseAdapter() {
             @Override
             public void mousePressed(MouseEvent e) {
-                int focusedRowIndex = listTable.rowAtPoint(e.getPoint());
-                if (focusedRowIndex == -1) {
+                int selectedIndex = favoriteList.locationToIndex(e.getPoint());
+                if (selectedIndex == -1) {
+                    return;
+                }
+                if (SwingUtilities.isRightMouseButton(e)) {
+                    if (!favoriteList.isSelectedIndex(selectedIndex)) {
+                        favoriteList.setSelectedIndex(selectedIndex);
+                    }
                     return;
                 }
 
-                viewListBySelected(focusedRowIndex);
+                viewListBySelected(selectedIndex);
                 listControlPanel.setVisible(true);
                 itemControlPanel.setVisible(false);
                 super.mousePressed(e);
@@ -123,7 +135,7 @@ public class FavoriteCronForm {
             }
         });
         newListButton.addActionListener(e -> {
-            String title = JOptionPane.showInputDialog(MainWindow.getInstance().getMainPanel(), "收藏夹名称", "");
+            String title = MsgUtil.input(favoriteCronPanel, "favorite.folderName", "");
             if (StringUtils.isNotBlank(title)) {
                 try {
                     TFavoriteCronList tFavoriteCronList = new TFavoriteCronList();
@@ -132,12 +144,12 @@ public class FavoriteCronForm {
                     tFavoriteCronList.setCreateTime(now);
                     tFavoriteCronList.setModifiedTime(now);
                     favoriteCronListMapper.insert(tFavoriteCronList);
-                    initListTable();
+                    initList();
                 } catch (Exception ex) {
                     if (ex.getMessage().contains("constraint")) {
-                        JOptionPane.showMessageDialog(favoriteCronPanel, "存在相同的名称，请重新命名！", "失败", JOptionPane.WARNING_MESSAGE);
+                        MsgUtil.warn(favoriteCronPanel, "msg.duplicateFolderName");
                     } else {
-                        JOptionPane.showMessageDialog(favoriteCronPanel, "异常：" + ex.getMessage(), "异常", JOptionPane.ERROR_MESSAGE);
+                        MsgUtil.errorWithDetail(favoriteCronPanel, "msg.exceptionWithDetail", ex.getMessage());
                     }
                     logger.error(ExceptionUtils.getStackTrace(ex));
                 }
@@ -156,9 +168,9 @@ public class FavoriteCronForm {
                 int[] selectedRows = itemTable.getSelectedRows();
 
                 if (selectedRows.length == 0) {
-                    JOptionPane.showMessageDialog(favoriteCronPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(favoriteCronPanel, "msg.selectAtLeastOne");
                 } else if (selectedRows[0] == 0) {
-                    JOptionPane.showMessageDialog(favoriteCronPanel, "已到顶部！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(favoriteCronPanel, "msg.alreadyAtTop");
                 } else {
                     ListSelectionModel listSelectionModel = new DefaultListSelectionModel();
                     DefaultTableModel tableModel = (DefaultTableModel) itemTable.getModel();
@@ -205,8 +217,7 @@ public class FavoriteCronForm {
                     itemTable.setSelectionModel(listSelectionModel);
                 }
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(favoriteCronPanel, "操作失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(favoriteCronPanel, "msg.operationFailed", e1.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(e1));
             }
         });
@@ -215,9 +226,9 @@ public class FavoriteCronForm {
                 int[] selectedRows = itemTable.getSelectedRows();
 
                 if (selectedRows.length == 0) {
-                    JOptionPane.showMessageDialog(favoriteCronPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(favoriteCronPanel, "msg.selectAtLeastOne");
                 } else if (selectedRows[selectedRows.length - 1] == itemTable.getRowCount() - 1) {
-                    JOptionPane.showMessageDialog(favoriteCronPanel, "已到底部！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                    MsgUtil.info(favoriteCronPanel, "msg.alreadyAtBottom");
                 } else {
                     ListSelectionModel listSelectionModel = new DefaultListSelectionModel();
                     DefaultTableModel tableModel = (DefaultTableModel) itemTable.getModel();
@@ -263,14 +274,13 @@ public class FavoriteCronForm {
                     itemTable.setSelectionModel(listSelectionModel);
                 }
             } catch (Exception e1) {
-                JOptionPane.showMessageDialog(favoriteCronPanel, "操作失败！\n\n" + e1.getMessage(), "失败",
-                        JOptionPane.ERROR_MESSAGE);
+                MsgUtil.errorWithDetail(favoriteCronPanel, "msg.operationFailed", e1.getMessage());
                 logger.error(ExceptionUtils.getStackTrace(e1));
             }
         });
 
         // 左侧列表按键事件（重命名）
-        listTable.addKeyListener(new KeyListener() {
+        favoriteList.addKeyListener(new KeyListener() {
             @Override
             public void keyTyped(KeyEvent e) {
 
@@ -284,30 +294,27 @@ public class FavoriteCronForm {
             @Override
             public void keyReleased(KeyEvent evt) {
                 if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
-                    int selectedRow = listTable.getSelectedRow();
-                    int id = Integer.parseInt(String.valueOf(listTable.getValueAt(selectedRow, 0)));
-                    String title = String.valueOf(listTable.getValueAt(selectedRow, 1));
-                    if (StringUtils.isNotBlank(title)) {
-                        TFavoriteCronList tFavoriteCronList = new TFavoriteCronList();
-                        tFavoriteCronList.setId(id);
-                        tFavoriteCronList.setTitle(title);
-                        try {
-                            favoriteCronListMapper.updateByPrimaryKeySelective(tFavoriteCronList);
-                        } catch (Exception e) {
-                            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
-                            JsonBeautyForm.initListTable();
-                            log.error(e.toString());
-                        }
+                    if (suppressListEnterRename) {
+                        suppressListEnterRename = false;
+                        return;
                     }
-                    viewListBySelected(selectedRow);
+                    renameSelectedList();
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteList();
                 } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
-                    int selectedRow = listTable.getSelectedRow();
-                    viewListBySelected(selectedRow);
+                    viewListBySelected(favoriteList.getSelectedIndex());
                 }
             }
         });
+
+        JPopupMenu favoriteListPopupMenu = new JPopupMenu();
+        renameMenuItem = new JMenuItem();
+        deleteMenuItem = new JMenuItem();
+        favoriteListPopupMenu.add(renameMenuItem);
+        favoriteListPopupMenu.add(deleteMenuItem);
+        favoriteList.setComponentPopupMenu(favoriteListPopupMenu);
+        renameMenuItem.addActionListener(e -> renameSelectedList());
+        deleteMenuItem.addActionListener(e -> deleteList());
 
         // 右侧项目列表按键事件（重命名）
         itemTable.addKeyListener(new KeyListener() {
@@ -336,7 +343,7 @@ public class FavoriteCronForm {
                         try {
                             favoriteCronItemMapper.updateByPrimaryKeySelective(tFavoriteCronItem);
                         } catch (Exception e) {
-                            JOptionPane.showMessageDialog(App.mainFrame, "重命名失败，和已有文件重名");
+                            MsgUtil.info(favoriteCronPanel, "msg.renameFailed");
                             viewListBySelected(selectedRow);
                             log.error(e.toString());
                         }
@@ -353,9 +360,9 @@ public class FavoriteCronForm {
             int[] selectedRows = itemTable.getSelectedRows();
 
             if (selectedRows.length == 0) {
-                JOptionPane.showMessageDialog(favoriteCronPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+                MsgUtil.info(favoriteCronPanel, "msg.selectAtLeastOne");
             } else {
-                int isDelete = JOptionPane.showConfirmDialog(favoriteCronPanel, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                int isDelete = MsgUtil.confirm(favoriteCronPanel, "msg.confirmDelete");
                 if (isDelete == JOptionPane.YES_OPTION) {
                     DefaultTableModel tableModel = (DefaultTableModel) itemTable.getModel();
 
@@ -368,41 +375,72 @@ public class FavoriteCronForm {
                 }
             }
         } catch (Exception e1) {
-            JOptionPane.showMessageDialog(favoriteCronPanel, "删除失败！\n\n" + e1.getMessage(), "失败",
-                    JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(favoriteCronPanel, "msg.deleteFailed", e1.getMessage());
             logger.error(ExceptionUtils.getStackTrace(e1));
         }
     }
 
     private void deleteList() {
         try {
-            int[] selectedRows = listTable.getSelectedRows();
+            int[] selectedIndices = favoriteList.getSelectedIndices();
 
-            if (selectedRows.length == 0) {
-                JOptionPane.showMessageDialog(favoriteCronPanel, "请至少选择一个！", "提示", JOptionPane.INFORMATION_MESSAGE);
+            if (selectedIndices.length == 0) {
+                MsgUtil.info(favoriteCronPanel, "msg.selectAtLeastOne");
             } else {
-                int isDelete = JOptionPane.showConfirmDialog(favoriteCronPanel, "确认删除？", "确认", JOptionPane.YES_NO_OPTION);
+                int isDelete = MsgUtil.confirm(favoriteCronPanel, "msg.confirmDelete");
                 if (isDelete == JOptionPane.YES_OPTION) {
-                    DefaultTableModel tableModel = (DefaultTableModel) listTable.getModel();
+                    DefaultListModel<TFavoriteCronList> model = (DefaultListModel<TFavoriteCronList>) favoriteList.getModel();
 
-                    for (int i = 0; i < selectedRows.length; i++) {
-                        int selectedRow = selectedRows[i];
-                        Integer id = (Integer) tableModel.getValueAt(selectedRow, 0);
-                        favoriteCronListMapper.deleteByPrimaryKey(id);
+                    for (int i = selectedIndices.length - 1; i >= 0; i--) {
+                        favoriteCronListMapper.deleteByPrimaryKey(model.getElementAt(selectedIndices[i]).getId());
                     }
-                    initListTable();
+                    initList();
                 }
             }
         } catch (Exception e1) {
-            JOptionPane.showMessageDialog(favoriteCronPanel, "删除失败！\n\n" + e1.getMessage(), "失败",
-                    JOptionPane.ERROR_MESSAGE);
+            MsgUtil.errorWithDetail(favoriteCronPanel, "msg.deleteFailed", e1.getMessage());
             logger.error(ExceptionUtils.getStackTrace(e1));
         }
     }
 
-    private void viewListBySelected(int selectedRow) {
-        int listId = Integer.parseInt(listTable.getValueAt(selectedRow, 0).toString());
-        initItemTable(listId);
+    private void viewListBySelected(int selectedIndex) {
+        if (selectedIndex < 0) {
+            return;
+        }
+        DefaultListModel<TFavoriteCronList> model = (DefaultListModel<TFavoriteCronList>) favoriteList.getModel();
+        if (selectedIndex >= model.getSize()) {
+            return;
+        }
+        initItemTable(model.getElementAt(selectedIndex).getId());
+    }
+
+    private void renameSelectedList() {
+        int selectedIndex = favoriteList.getSelectedIndex();
+        if (selectedIndex < 0) {
+            return;
+        }
+        DefaultListModel<TFavoriteCronList> model = (DefaultListModel<TFavoriteCronList>) favoriteList.getModel();
+        TFavoriteCronList item = model.getElementAt(selectedIndex);
+        String beforeTitle = item.getTitle();
+        if (StringUtils.isBlank(beforeTitle)) {
+            return;
+        }
+        suppressListEnterRename = true;
+        String afterTitle = MsgUtil.input(favoriteCronPanel, "favorite.folderName", beforeTitle);
+        if (StringUtils.isBlank(afterTitle) || afterTitle.equals(beforeTitle)) {
+            return;
+        }
+        try {
+            TFavoriteCronList tFavoriteCronList = new TFavoriteCronList();
+            tFavoriteCronList.setId(item.getId());
+            tFavoriteCronList.setTitle(afterTitle);
+            favoriteCronListMapper.updateByPrimaryKeySelective(tFavoriteCronList);
+            initList();
+        } catch (Exception e) {
+            MsgUtil.info(favoriteCronPanel, "msg.renameFailed");
+            initList();
+            log.error(e.toString());
+        }
     }
 
     public void init() {
@@ -410,7 +448,10 @@ public class FavoriteCronForm {
         favoriteCronForm.getListControlPanel().setVisible(false);
         favoriteCronForm.getItemControlPanel().setVisible(false);
         favoriteCronForm.getSplitPane().setDividerLocation((int) (App.mainFrame.getWidth() / 5));
-        favoriteCronForm.getListTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
+        favoriteCronForm.getFavoriteList().setFixedCellHeight(UiConsts.TABLE_ROW_HEIGHT);
+        favoriteCronForm.getFavoriteList().setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+        favoriteCronForm.getFavoriteList().putClientProperty(FlatClientProperties.STYLE,
+                "selectionArc: 6; selectionInsets: 0,1,0,1");
         favoriteCronForm.getItemTable().setRowHeight(UiConsts.TABLE_ROW_HEIGHT);
 
         favoriteCronForm.getListItemButton().setIcon(new FlatSVGIcon("icon/list.svg"));
@@ -429,8 +470,32 @@ public class FavoriteCronForm {
             gridLayoutManager.setMargin(new Insets(28, 0, 0, 0));
         }
 
-        initListTable();
+        initList();
         favoriteCronForm.getFavoriteCronPanel().updateUI();
+
+        favoriteCronForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(FavoriteCronForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setToolTip(newListButton, "favorite.tooltip.newList");
+        I18nUiUtil.setToolTip(deleteListButton, "favorite.tooltip.deleteList");
+        I18nUiUtil.setToolTip(deleteItemButton, "favorite.tooltip.deleteItem");
+        I18nUiUtil.setToolTip(moveUpButton, "favorite.tooltip.moveUp");
+        I18nUiUtil.setToolTip(moveDownButton, "favorite.tooltip.moveDown");
+        I18nUiUtil.setToolTip(listItemButton, "favorite.tooltip.toggleList");
+        I18nUiUtil.setText(renameMenuItem, "common.rename");
+        I18nUiUtil.setText(deleteMenuItem, "common.delete");
+        initItemTable(null);
+    }
+
+    private static void applyI18nStatic() {
+        if (favoriteCronForm != null) {
+            favoriteCronForm.applyI18n();
+        }
     }
 
     public static FavoriteCronForm getInstance() {
@@ -441,26 +506,25 @@ public class FavoriteCronForm {
         return favoriteCronForm;
     }
 
-    public static void initListTable() {
-        String[] headerNames = {"id", "名称"};
-        DefaultTableModel model = new DefaultTableModel(null, headerNames);
-        favoriteCronForm.getListTable().setModel(model);
-        // 隐藏表头
-        JTableUtil.hideTableHeader(favoriteCronForm.getListTable());
-        // 隐藏id列
-        JTableUtil.hideColumn(favoriteCronForm.getListTable(), 0);
-
-        Object[] data;
+    public static void initList() {
+        DefaultListModel<TFavoriteCronList> model = new DefaultListModel<>();
+        JList<TFavoriteCronList> favoriteList = favoriteCronForm.getFavoriteList();
+        favoriteList.setModel(model);
+        favoriteList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                String label = value instanceof TFavoriteCronList ? ((TFavoriteCronList) value).getTitle() : String.valueOf(value);
+                return super.getListCellRendererComponent(list, label, index, isSelected, cellHasFocus);
+            }
+        });
 
         List<TFavoriteCronList> favoriteCronLists = favoriteCronListMapper.selectAll();
         for (TFavoriteCronList tFavoriteCronList : favoriteCronLists) {
-            data = new Object[2];
-            data[0] = tFavoriteCronList.getId();
-            data[1] = tFavoriteCronList.getTitle();
-            model.addRow(data);
+            model.addElement(tFavoriteCronList);
         }
-        if (favoriteCronLists.size() > 0) {
-            favoriteCronForm.getListTable().setRowSelectionInterval(0, 0);
+        if (!favoriteCronLists.isEmpty()) {
+            favoriteList.setSelectedIndex(0);
             initItemTable(favoriteCronLists.get(0).getId());
         }
     }
@@ -471,7 +535,7 @@ public class FavoriteCronForm {
         } else {
             lastSelectedListId = listId;
         }
-        String[] headerNames = {"id", "cron", "名称", "排序号"};
+        String[] headerNames = {"id", "cron", I18n.get("favorite.col.name"), I18n.get("favorite.col.sortOrder")};
         DefaultTableModel model = new DefaultTableModel(null, headerNames);
         favoriteCronForm.getItemTable().setModel(model);
         // 隐藏表头
@@ -533,8 +597,8 @@ public class FavoriteCronForm {
         listControlPanel.add(newListButton, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JScrollPane scrollPane1 = new JScrollPane();
         panel1.add(scrollPane1, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, null, null, null, 0, false));
-        listTable = new JTable();
-        scrollPane1.setViewportView(listTable);
+        favoriteList = new JList();
+        scrollPane1.setViewportView(favoriteList);
         final JPanel panel2 = new JPanel();
         panel2.setLayout(new GridLayoutManager(2, 1, new Insets(0, 0, 10, 10), -1, -1));
         splitPane.setRightComponent(panel2);

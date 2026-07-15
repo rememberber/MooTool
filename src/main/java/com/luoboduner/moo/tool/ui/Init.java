@@ -12,12 +12,21 @@ import com.formdev.flatlaf.themes.FlatMacLightLaf;
 import com.jthemedetecor.OsThemeDetector;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.component.JPopupMenuMouseAdapter;
+import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
+import com.luoboduner.moo.tool.ui.component.MooFlatTabbedPaneUI;
+import com.luoboduner.moo.tool.ui.component.TabUiUtil;
 import com.luoboduner.moo.tool.ui.dialog.FontSizeAdjustDialog;
+import com.luoboduner.moo.tool.ui.dialog.LanguageSelectDialog;
+import com.luoboduner.moo.tool.ui.dialog.QuickNoteGitDialog;
 import com.luoboduner.moo.tool.ui.dialog.SettingDialog;
 import com.luoboduner.moo.tool.ui.dialog.TranslationDialog;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.form.AboutForm;
+import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
+import com.luoboduner.moo.tool.ui.frame.MainFrame;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
@@ -179,9 +188,35 @@ public class Init {
                 UIManager.put("TitlePane.unifiedBackground", true);
             }
 
+            installSafeTabbedPaneUi();
+            ToolbarUiUtil.applyGlobalDefaults();
+
         } catch (Exception e) {
             logger.error(e);
         }
+    }
+
+    /**
+     * 全局使用带空指针防护的 Tab UI，避免 FlatLaf 在 UI 重装期间绘制时 tabInsets 为 null。
+     */
+    public static void installSafeTabbedPaneUi() {
+        UIManager.put("TabbedPaneUI", MooFlatTabbedPaneUI.class.getName());
+    }
+
+    /**
+     * 刷新 FlatLaf 后恢复安全 Tab UI 与主窗口 Tab 配置。
+     */
+    public static void refreshFlatLafUi() {
+        installSafeTabbedPaneUi();
+        FlatLaf.updateUI();
+        SwingUtilities.invokeLater(() -> {
+            if (App.mainFrame != null) {
+                MainWindow mainWindow = MainWindow.getInstance();
+                mainWindow.refreshTabbedPaneUi();
+                TabUiUtil.applySafeTabbedPaneUi(App.mainFrame.getContentPane(), mainWindow.getTabbedPane());
+            }
+            QuickNoteGitDialog.onThemeChanged();
+        });
     }
 
     private static void setAccentColor() {
@@ -201,6 +236,7 @@ public class Init {
         ThreadUtil.execute(TimeConvertForm::init);
         ThreadUtil.execute(HostForm::init);
         ThreadUtil.execute(HttpRequestForm::init);
+        ThreadUtil.execute(UaParseForm::init);
         ThreadUtil.execute(EnCodeForm::init);
         ThreadUtil.execute(QrCodeForm::init);
         ThreadUtil.execute(CryptoForm::init);
@@ -212,15 +248,58 @@ public class Init {
         ThreadUtil.execute(RegexForm::init);
         ThreadUtil.execute(ImageForm::init);
         ThreadUtil.execute(VariablesForm::init);
+        ThreadUtil.execute(HardwareInfoForm::init);
         ThreadUtil.execute(YmlPropertiesForm::init);
         ThreadUtil.execute(TextDiffForm::init);
+        ThreadUtil.execute(ProtoBufForm::init);
         ThreadUtil.execute(FileReformattingForm::init);
+
+        SwingUtilities.invokeLater(() -> {
+            if (App.mainFrame != null) {
+                MainWindow mainWindow = MainWindow.getInstance();
+                TabUiUtil.applySafeTabbedPaneUi(
+                        App.mainFrame.getContentPane(),
+                        mainWindow.getTabbedPane());
+                TabUiUtil.relayoutAfterTabStripChanged(
+                        mainWindow.getTabbedPane(),
+                        mainWindow.getMainPanel());
+            }
+        });
 
         // 检查新版版
         if (App.config.isAutoCheckUpdate()) {
             ScheduledThreadPoolExecutor threadPoolExecutor = new ScheduledThreadPoolExecutor(1);
             threadPoolExecutor.scheduleAtFixedRate(() -> UpgradeUtil.checkUpdate(true), 0, 24, TimeUnit.HOURS);
         }
+    }
+
+    /**
+     * 首次启动引导用户选择语言
+     */
+    public static void languageGuide() {
+        if (App.config.isLanguagePromptShown()) {
+            return;
+        }
+        LanguageSelectDialog dialog = new LanguageSelectDialog();
+        dialog.pack();
+        dialog.setVisible(true);
+
+        String selectedLocale = dialog.getSelectedLocale();
+        if (!selectedLocale.equals(App.config.getLocale())) {
+            App.config.setLocale(selectedLocale);
+            I18n.setLocale(selectedLocale);
+            MainWindow mainWindow = MainWindow.getInstance();
+            mainWindow.refreshTabTitles();
+            if (MainFrame.topMenuBar != null) {
+                MainFrame.topMenuBar.refreshTexts();
+            }
+            refreshTrayMenuTexts();
+            I18n.refreshUi();
+            TabUiUtil.relayoutAfterTabStripChanged(mainWindow.getTabbedPane(), mainWindow.getMainPanel());
+        }
+
+        App.config.setLanguagePromptShown(true);
+        App.config.save();
     }
 
     /**
@@ -249,10 +328,10 @@ public class Init {
                 App.popupMenu = new JPopupMenu();
 //                App.popupMenu.setFont(App.mainFrame.getContentPane().getFont());
 
-                JMenuItem openItem = new JMenuItem("MooTool");
-                JMenuItem colorPickerItem = new JMenuItem("取色器");
-                JMenuItem translationItem = new JMenuItem("翻译");
-                JMenuItem exitItem = new JMenuItem("Quit");
+                JMenuItem openItem = new JMenuItem(UiConsts.APP_NAME);
+                JMenuItem colorPickerItem = new JMenuItem(I18n.get("tray.colorPicker"));
+                JMenuItem translationItem = new JMenuItem(I18n.get("tray.translation"));
+                JMenuItem exitItem = new JMenuItem(I18n.get("common.quit"));
 
                 openItem.addActionListener(e -> {
                     showMainFrame();
@@ -309,17 +388,30 @@ public class Init {
 
     public static void showMainFrame() {
         App.mainFrame.setVisible(true);
-        if (App.mainFrame.getExtendedState() == Frame.ICONIFIED) {
+        int extendedState = App.mainFrame.getExtendedState();
+        if ((extendedState & Frame.ICONIFIED) != 0) {
             App.mainFrame.setExtendedState(Frame.NORMAL);
-        } else if (App.mainFrame.getExtendedState() == 7) {
+        } else if ((extendedState & Frame.MAXIMIZED_BOTH) == Frame.MAXIMIZED_BOTH) {
             App.mainFrame.setExtendedState(Frame.MAXIMIZED_BOTH);
         }
+        App.mainFrame.toFront();
         App.mainFrame.requestFocus();
+    }
+
+    public static void refreshTrayMenuTexts() {
+        if (App.popupMenu == null || App.popupMenu.getComponentCount() < 5) {
+            return;
+        }
+        ((JMenuItem) App.popupMenu.getComponent(2)).setText(I18n.get("tray.colorPicker"));
+        ((JMenuItem) App.popupMenu.getComponent(3)).setText(I18n.get("tray.translation"));
+        ((JMenuItem) App.popupMenu.getComponent(5)).setText(I18n.get("common.quit"));
     }
 
     public static void shutdown() {
         FrameListener.saveBeforeExit();
-        App.sqlSession.close();
+        if (App.sqlSession != null) {
+            App.sqlSession.close();
+        }
         App.mainFrame.dispose();
         System.exit(0);
     }

@@ -1,6 +1,6 @@
 package com.luoboduner.moo.tool.ui.form;
 
-import cn.hutool.core.img.ImgUtil;
+import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson2.JSON;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
@@ -12,12 +12,15 @@ import com.luoboduner.moo.tool.bean.ContributorInfo;
 import com.luoboduner.moo.tool.bean.Dau;
 import com.luoboduner.moo.tool.bean.Grace;
 import com.luoboduner.moo.tool.ui.UiConsts;
+import com.luoboduner.moo.tool.ui.component.ImagePreviewComponent;
 import com.luoboduner.moo.tool.ui.listener.AboutListener;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
+import com.luoboduner.moo.tool.util.ImageDisplayUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import lombok.Getter;
 import lombok.extern.slf4j.Slf4j;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 import javax.swing.border.TitledBorder;
 import javax.swing.plaf.FontUIResource;
@@ -27,9 +30,12 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Locale;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -66,8 +72,31 @@ public class AboutForm {
     private JPanel contributorPanel;
     private JLabel logoLabel;
     private JLabel homePageLabel;
+    private JLabel taglineLabel;
+    private JLabel authorLabel;
+    private JLabel aboutLine1Label;
+    private JLabel aboutLine2Label;
+    private JLabel aboutLine3Label;
+    private JLabel aboutLine4Label;
+    private JLabel aboutLine5Label;
+    private JLabel wePushDescLabel;
+    private JLabel mooInfoDescLabel;
+    private JLabel sponsorPromptLabel;
+    private JLabel sponsorQrLabel;
+    private JPanel aboutSectionPanel;
+    private JPanel codeSectionPanel;
+    private JPanel helpSectionPanel;
+    private JPanel thanksSectionPanel;
+    private JPanel otherWorksSectionPanel;
+    private JPanel sponsorSectionPanel;
+    private JPanel mooToolHeaderPanel;
+
+    private ImagePreviewComponent logoPreview;
+    private ImagePreviewComponent gracePreview;
+    private ImagePreviewComponent sponsorQrPreview;
 
     private static AboutForm aboutForm;
+    private static boolean i18nRegistered;
 
     private AboutForm() {
     }
@@ -81,9 +110,11 @@ public class AboutForm {
 
     public static void init() {
         aboutForm = getInstance();
+        ThreadUtil.execute(AboutForm::loadContributors);
         aboutForm.versionLabel.setText(UiConsts.APP_VERSION);
 
         ScrollUtil.smoothPane(aboutForm.getScrollPane());
+        aboutForm.installStaticImages();
         aboutForm.getAboutPanel().updateUI();
 
         aboutForm.getMooInfoPanel().addMouseListener(new MouseAdapter() {
@@ -110,9 +141,15 @@ public class AboutForm {
             }
         });
 
-        aboutForm.getMooInfoIconLabel().setIcon(new FlatSVGIcon("icon/MooInfo.svg", 64, 64));
+        aboutForm.getMooInfoIconLabel().setIcon(new FlatSVGIcon("icon/MooInfo.svg"));
 
         AboutListener.addListeners();
+
+        aboutForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(AboutForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
 
         try {
             // 每天执行一次
@@ -123,68 +160,78 @@ public class AboutForm {
                     if (graceInfoContent != null) {
                         Grace grace = JSON.parseObject(graceInfoContent, Grace.class);
                         if (grace != null) {
-                            if (!Strings.isNullOrEmpty(grace.getImage())) {
-                                URL url = new URL(grace.getImage());
-                                BufferedImage image = ImageIO.read(url);
-                                aboutForm.getGraceLabel().setIcon(new ImageIcon(image));
-                            }
-                            if (!Strings.isNullOrEmpty(grace.getTips())) {
-                                aboutForm.getGraceLabel().setToolTipText(grace.getTips());
-                            }
-
-                            if (!Strings.isNullOrEmpty(grace.getTitle())) {
-                                aboutForm.getGraceTitleLabel().setText(grace.getTitle());
-                            }
-
-                            if (!Strings.isNullOrEmpty(grace.getUrl())) {
-                                aboutForm.getGracePanel().addMouseListener(new MouseAdapter() {
-                                    @Override
-                                    public void mouseClicked(MouseEvent e) {
-                                        super.mouseClicked(e);
-                                        Desktop desktop = Desktop.getDesktop();
-                                        try {
-                                            desktop.browse(new URI(grace.getUrl()));
-                                        } catch (IOException | URISyntaxException e1) {
-                                            e1.printStackTrace();
+                            SwingUtilities.invokeLater(() -> {
+                                if (!Strings.isNullOrEmpty(grace.getImage())) {
+                                    try {
+                                        URL url = new URL(grace.getImage());
+                                        BufferedImage image = ImageDisplayUtil.readImage(url);
+                                        if (aboutForm.gracePreview != null) {
+                                            aboutForm.gracePreview.setSourceImage(image, 1.0);
                                         }
+                                    } catch (IOException e) {
+                                        log.error("加载 Grace 图片失败", e);
                                     }
+                                }
+                                if (!Strings.isNullOrEmpty(grace.getTips()) && aboutForm.gracePreview != null) {
+                                    aboutForm.gracePreview.setToolTipText(grace.getTips());
+                                }
 
-                                    @Override
-                                    public void mousePressed(MouseEvent e) {
-                                        super.mousePressed(e);
-                                    }
+                                if (!Strings.isNullOrEmpty(grace.getTitle())) {
+                                    aboutForm.getGraceTitleLabel().setText(grace.getTitle());
+                                }
 
-                                    @Override
-                                    public void mouseEntered(MouseEvent e) {
-                                        super.mouseEntered(e);
-                                        e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
-                                    }
-                                });
-
-                                aboutForm.getGraceLabel().addMouseListener(new MouseAdapter() {
-                                    @Override
-                                    public void mouseClicked(MouseEvent e) {
-                                        super.mouseClicked(e);
-                                        Desktop desktop = Desktop.getDesktop();
-                                        try {
-                                            desktop.browse(new URI(grace.getUrl()));
-                                        } catch (IOException | URISyntaxException e1) {
-                                            e1.printStackTrace();
+                                if (!Strings.isNullOrEmpty(grace.getUrl())) {
+                                    aboutForm.getGracePanel().addMouseListener(new MouseAdapter() {
+                                        @Override
+                                        public void mouseClicked(MouseEvent e) {
+                                            super.mouseClicked(e);
+                                            Desktop desktop = Desktop.getDesktop();
+                                            try {
+                                                desktop.browse(new URI(grace.getUrl()));
+                                            } catch (IOException | URISyntaxException e1) {
+                                                e1.printStackTrace();
+                                            }
                                         }
-                                    }
 
-                                    @Override
-                                    public void mousePressed(MouseEvent e) {
-                                        super.mousePressed(e);
-                                    }
+                                        @Override
+                                        public void mousePressed(MouseEvent e) {
+                                            super.mousePressed(e);
+                                        }
 
-                                    @Override
-                                    public void mouseEntered(MouseEvent e) {
-                                        super.mouseEntered(e);
-                                        e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
+                                        @Override
+                                        public void mouseEntered(MouseEvent e) {
+                                            super.mouseEntered(e);
+                                            e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
+                                        }
+                                    });
+
+                                    if (aboutForm.gracePreview != null) {
+                                        aboutForm.gracePreview.addMouseListener(new MouseAdapter() {
+                                            @Override
+                                            public void mouseClicked(MouseEvent e) {
+                                                super.mouseClicked(e);
+                                                Desktop desktop = Desktop.getDesktop();
+                                                try {
+                                                    desktop.browse(new URI(grace.getUrl()));
+                                                } catch (IOException | URISyntaxException e1) {
+                                                    e1.printStackTrace();
+                                                }
+                                            }
+
+                                            @Override
+                                            public void mousePressed(MouseEvent e) {
+                                                super.mousePressed(e);
+                                            }
+
+                                            @Override
+                                            public void mouseEntered(MouseEvent e) {
+                                                super.mouseEntered(e);
+                                                e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
+                                            }
+                                        });
                                     }
-                                });
-                            }
+                                }
+                            });
                         }
                     }
                 } catch (Exception e) {
@@ -193,52 +240,6 @@ public class AboutForm {
             }, 0, 1, TimeUnit.HOURS);
         } catch (Exception e) {
             log.error("获取Grace信息失败", e);
-        }
-
-        // 更新贡献者头像
-        try {
-            String contributorAvatarContent = HttpUtil.get(UiConsts.CONTRIBUTOR_URL, 10000);
-            if (contributorAvatarContent != null) {
-                ContributorInfo contributorInfo = JSON.parseObject(contributorAvatarContent, ContributorInfo.class);
-                if (contributorInfo != null) {
-                    for (ContributorInfo.Contributor contributor : contributorInfo.getContributorList()) {
-                        JLabel contributorLabel = new JLabel();
-                        contributorLabel.setToolTipText(contributor.getName());
-                        contributorLabel.setText(contributor.getName());
-
-                        Image image = ImgUtil.read(new URL(contributor.getAvatarUrl()));
-                        Image scale = image.getScaledInstance(50, 50, Image.SCALE_AREA_AVERAGING);
-
-                        contributorLabel.setIcon(new ImageIcon(scale));
-                        contributorLabel.addMouseListener(new MouseAdapter() {
-                            @Override
-                            public void mouseClicked(MouseEvent e) {
-                                super.mouseClicked(e);
-                                Desktop desktop = Desktop.getDesktop();
-                                try {
-                                    desktop.browse(new URI(contributor.getLink()));
-                                } catch (IOException | URISyntaxException e1) {
-                                    e1.printStackTrace();
-                                }
-                            }
-
-                            @Override
-                            public void mousePressed(MouseEvent e) {
-                                super.mousePressed(e);
-                            }
-
-                            @Override
-                            public void mouseEntered(MouseEvent e) {
-                                super.mouseEntered(e);
-                                e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
-                            }
-                        });
-                        aboutForm.getContributorPanel().add(contributorLabel);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            log.error("获取贡献者头像失败", e);
         }
 
         // DAU
@@ -254,7 +255,9 @@ public class AboutForm {
                             String dauUrl = dau.getUrl();
                             log.info("dau:" + HttpUtil.get(dauUrl, 10000));
 
-                            aboutForm.getLogoLabel().addMouseListener(new MouseAdapter() {
+                            Component logoComponent = aboutForm.logoPreview != null
+                                    ? aboutForm.logoPreview : aboutForm.getLogoLabel();
+                            logoComponent.addMouseListener(new MouseAdapter() {
                                 @Override
                                 public void mouseClicked(MouseEvent e) {
                                     super.mouseClicked(e);
@@ -311,6 +314,194 @@ public class AboutForm {
             }, 0, 1, TimeUnit.DAYS);
         } catch (Exception e) {
             log.error("获取DAU失败", e);
+        }
+    }
+
+    private static void loadContributors() {
+        try {
+            ContributorInfo contributorInfo = fetchContributorInfo();
+            if (contributorInfo == null) {
+                return;
+            }
+            List<ContributorInfo.Contributor> contributors = contributorInfo.getContributorList();
+            if (contributors == null || contributors.isEmpty()) {
+                return;
+            }
+            SwingUtilities.invokeLater(() -> {
+                JPanel panel = aboutForm.getContributorPanel();
+                for (ContributorInfo.Contributor contributor : contributors) {
+                    try {
+                        addContributorItem(panel, contributor);
+                    } catch (Exception e) {
+                        log.warn("添加贡献者 {} 失败", contributor.getName(), e);
+                    }
+                }
+                panel.revalidate();
+                panel.repaint();
+            });
+        } catch (Exception e) {
+            log.error("加载贡献者列表失败", e);
+        }
+    }
+
+    private static ContributorInfo fetchContributorInfo() {
+        try {
+            String remoteContent = HttpUtil.get(UiConsts.CONTRIBUTOR_URL, 10000);
+            ContributorInfo remoteInfo = parseContributorInfo(remoteContent);
+            if (remoteInfo != null) {
+                return remoteInfo;
+            }
+        } catch (Exception e) {
+            log.warn("远程获取贡献者列表失败，尝试使用内置数据", e);
+        }
+        try {
+            return parseContributorInfo(readBundledContributorJson());
+        } catch (Exception e) {
+            log.error("读取内置贡献者列表失败", e);
+            return null;
+        }
+    }
+
+    private static ContributorInfo parseContributorInfo(String content) {
+        if (Strings.isNullOrEmpty(content)) {
+            return null;
+        }
+        ContributorInfo contributorInfo = JSON.parseObject(content, ContributorInfo.class);
+        if (contributorInfo == null || contributorInfo.getContributorList() == null
+                || contributorInfo.getContributorList().isEmpty()) {
+            return null;
+        }
+        return contributorInfo;
+    }
+
+    private static String readBundledContributorJson() throws IOException {
+        try (InputStream in = AboutForm.class.getResourceAsStream("/contributor.json")) {
+            if (in == null) {
+                return null;
+            }
+            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
+        }
+    }
+
+    private static void addContributorItem(JPanel panel, ContributorInfo.Contributor contributor) {
+        if (contributor == null || Strings.isNullOrEmpty(contributor.getName())) {
+            return;
+        }
+        JPanel contributorItem = new JPanel(new BorderLayout(0, 4));
+        contributorItem.setOpaque(false);
+        contributorItem.setToolTipText(contributor.getName());
+
+        if (!Strings.isNullOrEmpty(contributor.getAvatarUrl())) {
+            try {
+                ImagePreviewComponent avatarPreview = new ImagePreviewComponent();
+                BufferedImage avatar = ImageDisplayUtil.readImage(new URL(contributor.getAvatarUrl()));
+                avatarPreview.setSourceImageInLogicalBounds(avatar, 50, 50);
+                contributorItem.add(avatarPreview, BorderLayout.NORTH);
+            } catch (Exception e) {
+                log.warn("加载贡献者 {} 头像失败", contributor.getName(), e);
+            }
+        }
+
+        JLabel nameLabel = new JLabel(contributor.getName(), SwingConstants.CENTER);
+        contributorItem.add(nameLabel, BorderLayout.SOUTH);
+
+        if (!Strings.isNullOrEmpty(contributor.getLink())) {
+            contributorItem.addMouseListener(new MouseAdapter() {
+                @Override
+                public void mouseClicked(MouseEvent e) {
+                    super.mouseClicked(e);
+                    Desktop desktop = Desktop.getDesktop();
+                    try {
+                        desktop.browse(new URI(contributor.getLink()));
+                    } catch (IOException | URISyntaxException e1) {
+                        e1.printStackTrace();
+                    }
+                }
+
+                @Override
+                public void mousePressed(MouseEvent e) {
+                    super.mousePressed(e);
+                }
+
+                @Override
+                public void mouseEntered(MouseEvent e) {
+                    super.mouseEntered(e);
+                    e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
+                }
+            });
+        }
+        panel.add(contributorItem);
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setTitledBorder(mooToolHeaderPanel, "tab.mootool");
+        I18nUiUtil.setTitledBorder(aboutSectionPanel, "about.section.about");
+        I18nUiUtil.setTitledBorder(codeSectionPanel, "about.section.code");
+        I18nUiUtil.setTitledBorder(helpSectionPanel, "about.section.help");
+        I18nUiUtil.setTitledBorder(thanksSectionPanel, "about.section.thanks");
+        I18nUiUtil.setTitledBorder(otherWorksSectionPanel, "about.section.otherWorks");
+        I18nUiUtil.setTitledBorder(sponsorSectionPanel, "about.section.sponsor");
+        I18nUiUtil.setTitledBorder(contributorPanel, "about.section.contributor");
+
+        I18nUiUtil.setText(taglineLabel, "about.tagline");
+        I18nUiUtil.setText(authorLabel, "about.author");
+        versionLabel.setToolTipText(I18n.get("about.checkUpdates"));
+        I18nUiUtil.setText(aboutLine1Label, "about.line1");
+        I18nUiUtil.setText(aboutLine2Label, "about.line2");
+        I18nUiUtil.setText(aboutLine3Label, "about.line3");
+        I18nUiUtil.setText(aboutLine4Label, "about.line4");
+        I18nUiUtil.setText(aboutLine5Label, "about.line5");
+        codeGitHubLabel.setText(I18n.get("about.githubLink"));
+        codeGiteeLabel.setText(I18n.get("about.giteeLink"));
+        issueLabel.setText(I18n.get("about.issueLink"));
+        I18nUiUtil.setText(wePushDescLabel, "about.wepush.desc");
+        I18nUiUtil.setText(mooInfoDescLabel, "about.mooinfo.desc");
+        I18nUiUtil.setText(sponsorPromptLabel, "about.sponsor.prompt");
+        if (sponsorQrPreview != null) {
+            I18nUiUtil.setToolTip(sponsorQrPreview, "about.sponsor.tip");
+        }
+    }
+
+    private void installStaticImages() {
+        logoPreview = ImageDisplayUtil.installResourceImageQuietly(logoLabel, "/icon/logo-256.png");
+        gracePreview = ImageDisplayUtil.replaceLabelWithImagePreview(graceLabel);
+        sponsorQrPreview = installResourceImageForIconLabel(aboutPanel, "/icon/wx-zanshang.jpg");
+        installResourceImageForIconLabel(wePushPanel, "/icon/WePush-logo-128.png");
+    }
+
+    private static ImagePreviewComponent installResourceImageForIconLabel(Container root, String resourcePath) {
+        JLabel target = findIconOnlyLabel(root, resourcePath);
+        if (target == null) {
+            return null;
+        }
+        return ImageDisplayUtil.installResourceImageQuietly(target, resourcePath);
+    }
+
+    private static JLabel findIconOnlyLabel(Container root, String resourcePath) {
+        String fileName = resourcePath.substring(resourcePath.lastIndexOf('/') + 1);
+        for (Component component : root.getComponents()) {
+            if (component instanceof JLabel label && label.getIcon() != null
+                    && (label.getText() == null || label.getText().isEmpty())) {
+                if (label.getIcon() instanceof ImageIcon imageIcon) {
+                    Object description = imageIcon.getDescription();
+                    if (description != null && description.toString().contains(fileName)) {
+                        return label;
+                    }
+                }
+            }
+            if (component instanceof Container container) {
+                JLabel found = findIconOnlyLabel(container, resourcePath);
+                if (found != null) {
+                    return found;
+                }
+            }
+        }
+        return null;
+    }
+
+    private static void applyI18nStatic() {
+        if (aboutForm != null) {
+            aboutForm.applyI18n();
         }
     }
 

@@ -4,10 +4,18 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.domain.TFuncHistory;
+import com.luoboduner.moo.tool.ui.FuncConsts;
+import com.luoboduner.moo.tool.ui.component.FuncHistoryPanel;
 import com.luoboduner.moo.tool.ui.component.textviewer.JavaRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.component.textviewer.JavaRTextScrollPane;
 import com.luoboduner.moo.tool.ui.listener.func.JavaConsoleListener;
+import com.luoboduner.moo.tool.util.FuncHistorySupport;
+import com.luoboduner.moo.tool.util.FuncHistoryUtil;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.codeformatter.CodeFormatterFactory;
+import org.apache.commons.lang3.StringUtils;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -28,7 +36,12 @@ public class JavaConsoleForm {
     private JTextArea resultArea;
     private JSplitPane splitPane;
     private JButton formatButton;
+    private JLabel hintLabel;
     private static JavaConsoleForm javaConsoleForm;
+
+    private static boolean i18nRegistered;
+
+    private static FuncHistoryPanel historyPanel;
 
     private JavaRSyntaxTextViewer textArea;
     private JavaRTextScrollPane scrollPane;
@@ -65,6 +78,50 @@ public class JavaConsoleForm {
                 formatButton.doClick();
             }
         });
+
+        historyPanel = FuncHistorySupport.wrapWithTabs(
+                javaConsolePanel, "Java", FuncConsts.JAVA_CONSOLE, JavaConsoleForm::applyHistory);
+
+        applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(JavaConsoleForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setText(hintLabel, "java.hint");
+        I18nUiUtil.setText(run, "java.run");
+        I18nUiUtil.setText(clean, "java.clean");
+        I18nUiUtil.setText(formatButton, "common.format");
+    }
+
+    private static void applyI18nStatic() {
+        if (javaConsoleForm != null) {
+            javaConsoleForm.applyI18n();
+        }
+    }
+
+    public static FuncHistoryPanel getHistoryPanel() {
+        return historyPanel;
+    }
+
+    public static void saveRunHistory(String code, String result) {
+        if (StringUtils.isBlank(code)) {
+            return;
+        }
+        FuncHistoryUtil.save(FuncConsts.JAVA_CONSOLE, I18n.get("history.summary.javaExec"), code, result, "执行");
+        if (historyPanel != null) {
+            historyPanel.refreshListIfVisible();
+        }
+    }
+
+    public static void applyHistory(TFuncHistory history) {
+        if (history == null) {
+            return;
+        }
+        javaConsoleForm.getTextArea().setText(history.getInputText());
+        javaConsoleForm.getResultArea().setText(history.getOutputText());
     }
 
     {

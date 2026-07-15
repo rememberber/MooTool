@@ -4,6 +4,7 @@ import com.formdev.flatlaf.util.SystemFileChooser;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.FileReformattingForm;
 import com.luoboduner.moo.tool.util.FileReformatUtil;
+import com.luoboduner.moo.tool.util.MsgUtil;
 import lombok.extern.slf4j.Slf4j;
 
 import javax.swing.*;
@@ -124,7 +125,7 @@ public class FileReformatListener {
                         String reformat = fileType.reformat(selectFile, Integer.valueOf(spaceNumValue));
                         resultArea.setText(reformat);
                     } else {
-                        JOptionPane.showMessageDialog(MainWindow.getInstance().getMainPanel(), "错误：文件类型错误！", "错误", JOptionPane.ERROR_MESSAGE);
+                        MsgUtil.error(MainWindow.getInstance().getMainPanel(), "msg.fileTypeError");
                     }
                 } catch (Exception ex) {
                     logException(ex);

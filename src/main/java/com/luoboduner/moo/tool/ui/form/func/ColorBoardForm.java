@@ -7,10 +7,18 @@ import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
+import com.luoboduner.moo.tool.domain.TFuncHistory;
+import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.component.CustomizeIcon;
+import com.luoboduner.moo.tool.ui.component.FuncHistoryPanel;
 import com.luoboduner.moo.tool.ui.listener.func.ColorBoardListener;
 import com.luoboduner.moo.tool.util.ColorUtil;
+import com.luoboduner.moo.tool.util.FuncHistorySupport;
+import com.luoboduner.moo.tool.util.I18n;
+import com.luoboduner.moo.tool.util.I18nUiUtil;
+import com.luoboduner.moo.tool.util.FuncHistoryUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
+import org.apache.commons.lang3.StringUtils;
 import lombok.Getter;
 
 import javax.swing.*;
@@ -47,8 +55,28 @@ public class ColorBoardForm {
     private JPanel themeColorSubPanel;
     private JLabel aboutLabel;
     private JButton chooseColorButton;
+    private JPanel secondaryColorPanel;
+    private JButton swapColorButton;
+    private JButton invertColorButton;
+    private JButton intersectColorButton;
+    private JButton addColorButton;
+    private JButton diffColorButton;
+    private JButton averageColorButton;
+    private JPanel primaryColorWrapperPanel;
+    private JPanel colorOpsWrapperPanel;
 
     private static ColorBoardForm colorBoardForm;
+
+    private static boolean i18nRegistered;
+
+    private static final String[] THEME_KEYS = {
+            "color.theme.default", "color.theme1", "color.theme2",
+            "color.theme3", "color.theme4", "color.theme5", "color.theme.china"
+    };
+
+    private JLabel contrastColorLabel;
+
+    private static FuncHistoryPanel historyPanel;
 
     private static final Log logger = LogFactory.get();
 
@@ -96,9 +124,161 @@ public class ColorBoardForm {
         colorBoardForm.getChooseColorButton().setIcon(new FlatSVGIcon("icon/color.svg"));
         colorBoardForm.getAboutLabel().setIcon(new FlatSVGIcon("icon/help.svg"));
 
+        colorBoardForm.initColorOpsPanel();
+
         fillColorBlocks();
 
+        historyPanel = FuncHistorySupport.wrapWithTabs(
+                colorBoardForm.getColorBoardPanel(), "调色板", FuncConsts.COLOR_BOARD, ColorBoardForm::applyHistory);
+
         ColorBoardListener.addListeners();
+
+        colorBoardForm.applyI18n();
+        if (!i18nRegistered) {
+            I18nUiUtil.register(ColorBoardForm::applyI18nStatic);
+            i18nRegistered = true;
+        }
+    }
+
+    private void applyI18n() {
+        I18nUiUtil.setText(pickerButton, "color.picker");
+        I18nUiUtil.setText(chooseColorButton, "color.chooseColor");
+        I18nUiUtil.setText(copyButton, "common.copy");
+        I18nUiUtil.setText(favoriteButton, "color.favorite");
+        I18nUiUtil.setText(favoriteBookButton, "color.favorites");
+        I18nUiUtil.setTitledBorder(themeColorPanel, "color.themeColors");
+        I18nUiUtil.setTitledBorder(standardColorPanel, "color.standardColors");
+        I18nUiUtil.setText(swapColorButton, "color.swap");
+        I18nUiUtil.setText(invertColorButton, "color.invert");
+        I18nUiUtil.setText(intersectColorButton, "color.intersect");
+        I18nUiUtil.setText(addColorButton, "color.add");
+        I18nUiUtil.setText(diffColorButton, "color.diff");
+        I18nUiUtil.setText(averageColorButton, "color.average");
+        if (contrastColorLabel != null) {
+            I18nUiUtil.setText(contrastColorLabel, "color.contrastColor");
+        }
+        int themeIndex = themeComboBox.getSelectedIndex();
+        DefaultComboBoxModel<String> themeModel = (DefaultComboBoxModel<String>) themeComboBox.getModel();
+        themeModel.removeAllElements();
+        for (String key : THEME_KEYS) {
+            themeModel.addElement(I18n.get(key));
+        }
+        if (themeIndex >= 0 && themeIndex < themeModel.getSize()) {
+            themeComboBox.setSelectedIndex(themeIndex);
+        }
+        applyThemeBorders();
+    }
+
+    private static void applyI18nStatic() {
+        if (colorBoardForm != null) {
+            colorBoardForm.applyI18n();
+        }
+    }
+
+    public static FuncHistoryPanel getHistoryPanel() {
+        return historyPanel;
+    }
+
+    public static void saveColorHistory(String operation, String inputColor, String outputColor) {
+        if (StringUtils.isAllBlank(inputColor, outputColor)) {
+            return;
+        }
+        FuncHistoryUtil.save(FuncConsts.COLOR_BOARD, operation, inputColor, outputColor, operation);
+        if (historyPanel != null) {
+            historyPanel.refreshListIfVisible();
+        }
+    }
+
+    public static void applyHistory(TFuncHistory history) {
+        if (history == null) {
+            return;
+        }
+        if (StringUtils.isNotBlank(history.getOutputText())) {
+            String colorToken = history.getOutputText().split("[\\s(]")[0];
+            if (colorToken.startsWith("#")) {
+                setSelectedColor(ColorUtil.fromHex(colorToken));
+                return;
+            }
+        }
+        if (StringUtils.isNotBlank(history.getInputText())) {
+            String primary = history.getInputText().split(" / ")[0].trim();
+            setSelectedColor(ColorUtil.fromHex(primary));
+        }
+    }
+
+    private void initColorOpsPanel() {
+        showColorPanel.setLayout(new BorderLayout(0, 8));
+
+        primaryColorWrapperPanel = new JPanel(new BorderLayout());
+        primaryColorWrapperPanel.setOpaque(true);
+        JPanel primaryColorDisplay = new JPanel();
+        primaryColorDisplay.setBackground(showColorPanel.getBackground());
+        primaryColorWrapperPanel.add(primaryColorDisplay, BorderLayout.CENTER);
+        showColorPanel.add(primaryColorWrapperPanel, BorderLayout.CENTER);
+
+        colorOpsWrapperPanel = new JPanel(new GridLayoutManager(2, 1, new Insets(0, 0, 0, 0), 5, 5));
+
+        JPanel secondaryRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 8, 0));
+        contrastColorLabel = new JLabel("对比色");
+        secondaryRow.add(contrastColorLabel);
+        secondaryColorPanel = new JPanel();
+        secondaryColorPanel.setBackground(Color.WHITE);
+        secondaryColorPanel.setPreferredSize(new Dimension(36, 36));
+        secondaryColorPanel.setMinimumSize(new Dimension(36, 36));
+        secondaryRow.add(secondaryColorPanel);
+        swapColorButton = new JButton("交换");
+        secondaryRow.add(swapColorButton);
+        colorOpsWrapperPanel.add(secondaryRow, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+
+        JPanel opsRow = new JPanel(new FlowLayout(FlowLayout.LEFT, 5, 0));
+        invertColorButton = new JButton("取反");
+        intersectColorButton = new JButton("相交");
+        addColorButton = new JButton("相加");
+        diffColorButton = new JButton("差值");
+        averageColorButton = new JButton("平均");
+        opsRow.add(invertColorButton);
+        opsRow.add(intersectColorButton);
+        opsRow.add(addColorButton);
+        opsRow.add(diffColorButton);
+        opsRow.add(averageColorButton);
+        colorOpsWrapperPanel.add(opsRow, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+
+        showColorPanel.add(colorOpsWrapperPanel, BorderLayout.SOUTH);
+        showColorPanel.putClientProperty("primaryColorDisplay", primaryColorDisplay);
+        applyThemeBorders();
+    }
+
+    private TitledBorder createThemeTitledBorder(String title) {
+        Font font = colorBoardPanel.getFont().deriveFont(Font.BOLD);
+        return BorderFactory.createTitledBorder(
+                BorderFactory.createEmptyBorder(),
+                title,
+                TitledBorder.DEFAULT_JUSTIFICATION,
+                TitledBorder.DEFAULT_POSITION,
+                font,
+                null);
+    }
+
+    private void applyThemeBorders() {
+        Color panelBg = UIManager.getColor("Panel.background");
+        showColorPanel.setBorder(BorderFactory.createTitledBorder(
+                BorderFactory.createEmptyBorder(), null,
+                TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, null, null));
+        showColorPanel.setBackground(panelBg);
+        if (primaryColorWrapperPanel != null) {
+            primaryColorWrapperPanel.setBorder(createThemeTitledBorder(I18n.get("color.currentColor")));
+            primaryColorWrapperPanel.setBackground(panelBg);
+        }
+        if (colorOpsWrapperPanel != null) {
+            colorOpsWrapperPanel.setBorder(createThemeTitledBorder(I18n.get("color.colorOps")));
+            colorOpsWrapperPanel.setBackground(panelBg);
+        }
+    }
+
+    public static void updateTheme() {
+        if (colorBoardForm != null) {
+            colorBoardForm.applyThemeBorders();
+        }
     }
 
     public static void fillColorBlocks() {
@@ -113,28 +293,39 @@ public class ColorBoardForm {
             colorBoardForm.getStandardColorPanel().updateUI();
         }
 
-        String theme = (String) colorBoardForm.getThemeComboBox().getSelectedItem();
+        int themeIndex = colorBoardForm.getThemeComboBox().getSelectedIndex();
 
         String[] mainColors;
         String[][] subColors;
-        if ("主题1".equals(theme)) {
-            mainColors = ColorConsts.THEME_1_MAIN;
-            subColors = ColorConsts.THEME_1_SUB;
-        } else if ("主题2".equals(theme)) {
-            mainColors = ColorConsts.THEME_2_MAIN;
-            subColors = ColorConsts.THEME_2_SUB;
-        } else if ("主题3".equals(theme)) {
-            mainColors = ColorConsts.THEME_3_MAIN;
-            subColors = ColorConsts.THEME_3_SUB;
-        } else if ("主题4".equals(theme)) {
-            mainColors = ColorConsts.THEME_4_MAIN;
-            subColors = ColorConsts.THEME_4_SUB;
-        } else if ("主题5".equals(theme)) {
-            mainColors = ColorConsts.THEME_5_MAIN;
-            subColors = ColorConsts.THEME_5_SUB;
-        } else {
-            mainColors = ColorConsts.THEME_DEFAULT_MAIN;
-            subColors = ColorConsts.THEME_DEFAULT_SUB;
+        switch (themeIndex) {
+            case 1 -> {
+                mainColors = ColorConsts.THEME_1_MAIN;
+                subColors = ColorConsts.THEME_1_SUB;
+            }
+            case 2 -> {
+                mainColors = ColorConsts.THEME_2_MAIN;
+                subColors = ColorConsts.THEME_2_SUB;
+            }
+            case 3 -> {
+                mainColors = ColorConsts.THEME_3_MAIN;
+                subColors = ColorConsts.THEME_3_SUB;
+            }
+            case 4 -> {
+                mainColors = ColorConsts.THEME_4_MAIN;
+                subColors = ColorConsts.THEME_4_SUB;
+            }
+            case 5 -> {
+                mainColors = ColorConsts.THEME_5_MAIN;
+                subColors = ColorConsts.THEME_5_SUB;
+            }
+            case 6 -> {
+                mainColors = ColorConsts.THEME_CHINA_MAIN;
+                subColors = ColorConsts.THEME_CHINA_SUB;
+            }
+            default -> {
+                mainColors = ColorConsts.THEME_DEFAULT_MAIN;
+                subColors = ColorConsts.THEME_DEFAULT_SUB;
+            }
         }
 
         colorBoardForm.getThemeColorMainPanel().removeAll();
@@ -174,7 +365,11 @@ public class ColorBoardForm {
             public void mouseClicked(MouseEvent e) {
                 JPanel clickedPanel = (JPanel) e.getComponent();
                 Color background = clickedPanel.getBackground();
-                setSelectedColor(background);
+                if (e.isShiftDown()) {
+                    setSecondaryColor(background);
+                } else {
+                    setSelectedColor(background);
+                }
                 super.mouseClicked(e);
             }
 
@@ -196,12 +391,42 @@ public class ColorBoardForm {
 
     public static void setSelectedColor(Color color) {
         String hex = ColorUtil.toHex(color);
-        colorBoardForm.getShowColorPanel().setBackground(color);
-        colorBoardForm.getShowColorPanel().updateUI();
+        JPanel primaryColorDisplay = (JPanel) colorBoardForm.getShowColorPanel().getClientProperty("primaryColorDisplay");
+        if (primaryColorDisplay != null) {
+            primaryColorDisplay.setBackground(color);
+            primaryColorDisplay.repaint();
+        } else {
+            colorBoardForm.getShowColorPanel().setBackground(color);
+            colorBoardForm.getShowColorPanel().updateUI();
+        }
         setColorCode(hex);
         colorBoardForm.getColorCodeTextField().grabFocus();
         App.config.setLastSelectedColor(hex);
         App.config.save();
+    }
+
+    public static Color getSelectedColor() {
+        JPanel primaryColorDisplay = (JPanel) colorBoardForm.getShowColorPanel().getClientProperty("primaryColorDisplay");
+        if (primaryColorDisplay != null) {
+            return primaryColorDisplay.getBackground();
+        }
+        return colorBoardForm.getShowColorPanel().getBackground();
+    }
+
+    public static void setSecondaryColor(Color color) {
+        colorBoardForm.getSecondaryColorPanel().setBackground(color);
+        colorBoardForm.getSecondaryColorPanel().repaint();
+    }
+
+    public static Color getSecondaryColor() {
+        return colorBoardForm.getSecondaryColorPanel().getBackground();
+    }
+
+    public static void swapColors() {
+        Color primary = getSelectedColor();
+        Color secondary = getSecondaryColor();
+        setSecondaryColor(primary);
+        setSelectedColor(secondary);
     }
 
     {

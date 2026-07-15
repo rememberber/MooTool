@@ -19,10 +19,17 @@ import javax.swing.event.DocumentListener;
 @Slf4j
 public class TextDiffListener {
 
+    private static boolean listenersAdded;
+
     /**
      * 添加事件监听器
      */
     public static void addListeners() {
+        if (listenersAdded) {
+            return;
+        }
+        listenersAdded = true;
+
         TextDiffForm textDiffForm = TextDiffForm.getInstance();
 
         // 对比按钮事件
