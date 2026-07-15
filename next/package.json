@@ -7,6 +7,7 @@
   "scripts": {
     "dev": "electron-vite dev",
     "build": "tsc --noEmit && electron-vite build",
+    "package": "npm run build && electron-builder",
     "preview": "electron-vite preview",
     "typecheck": "tsc --noEmit"
   },
@@ -27,5 +28,26 @@
     "electron-vite": "^3.0.0",
     "typescript": "^5.8.0",
     "vite": "^6.3.5"
+  },
+  "build": {
+    "appId": "com.rememberber.mootool",
+    "productName": "MooTool",
+    "directories": {
+      "buildResources": "resources",
+      "output": "dist"
+    },
+    "files": [
+      "out/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "icon": "resources/icon.icns"
+    },
+    "win": {
+      "icon": "resources/icon.ico"
+    },
+    "linux": {
+      "icon": "resources/icon.png"
+    }
   }
 }

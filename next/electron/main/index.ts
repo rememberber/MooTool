@@ -3,6 +3,11 @@ import { join } from 'node:path'
 
 const isDev = Boolean(process.env.ELECTRON_RENDERER_URL)
 
+function getDevelopmentIconPath(): string {
+  const filename = process.platform === 'darwin' ? 'icon-mac.png' : process.platform === 'win32' ? 'icon.ico' : 'icon.png'
+  return join(__dirname, '../../resources', filename)
+}
+
 function createMainWindow(): void {
   const systemTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
   const window = new BrowserWindow({
@@ -16,6 +21,7 @@ function createMainWindow(): void {
     trafficLightPosition: { x: 18, y: 18 },
     vibrancy: 'sidebar',
     visualEffectState: 'active',
+    icon: app.isPackaged ? undefined : getDevelopmentIconPath(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -36,6 +42,10 @@ function createMainWindow(): void {
 }
 
 app.whenReady().then(() => {
+  if (process.platform === 'darwin' && !app.isPackaged) {
+    app.dock?.setIcon(getDevelopmentIconPath())
+  }
+
   ipcMain.handle('app:get-version', () => app.getVersion())
   ipcMain.handle('theme:get-system', () => (nativeTheme.shouldUseDarkColors ? 'dark' : 'light'))
 

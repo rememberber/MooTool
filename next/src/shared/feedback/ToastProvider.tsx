@@ -38,17 +38,17 @@ const ToastContext = createContext<ToastApi | null>(null)
 export function ToastProvider({ children }: { children: ReactNode }) {
   const { t } = useI18n()
   const [toasts, setToasts] = useState<ToastItem[]>([])
+  const [timers] = useState(() => new Map<number, number>())
   const nextId = useRef(1)
-  const timers = useRef(new Map<number, number>())
 
   const dismiss = useCallback((id: number) => {
-    const timer = timers.current.get(id)
+    const timer = timers.get(id)
     if (timer !== undefined) {
       window.clearTimeout(timer)
-      timers.current.delete(id)
+      timers.delete(id)
     }
     setToasts((current) => current.filter((toast) => toast.id !== id))
-  }, [])
+  }, [timers])
 
   const show = useCallback((message: ReactNode, options: ToastOptions = {}) => {
     const id = nextId.current++
@@ -59,20 +59,20 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       const next = [...current, item]
       const overflow = next.slice(0, -4)
       for (const toast of overflow) {
-        const timer = timers.current.get(toast.id)
+        const timer = timers.get(toast.id)
         if (timer !== undefined) {
           window.clearTimeout(timer)
-          timers.current.delete(toast.id)
+          timers.delete(toast.id)
         }
       }
       return next.slice(-4)
     })
 
     if (duration > 0) {
-      timers.current.set(id, window.setTimeout(() => dismiss(id), duration))
+      timers.set(id, window.setTimeout(() => dismiss(id), duration))
     }
     return id
-  }, [dismiss])
+  }, [dismiss, timers])
 
   const api = useMemo<ToastApi>(() => ({
     show,
@@ -83,11 +83,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   }), [dismiss, show])
 
   useEffect(() => () => {
-    for (const timer of timers.current.values()) {
+    for (const timer of timers.values()) {
       window.clearTimeout(timer)
     }
-    timers.current.clear()
-  }, [])
+    timers.clear()
+  }, [timers])
 
   return (
     <ToastContext.Provider value={api}>

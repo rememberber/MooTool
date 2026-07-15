@@ -1,6 +1,8 @@
 import {
   cloneElement,
+  useCallback,
   useEffect,
+  useEffectEvent,
   useId,
   useRef,
   useState,
@@ -28,14 +30,14 @@ export function Tooltip({ children, content, side = 'top', delay = 400 }: Toolti
   const [open, setOpen] = useState(false)
   const [position, setPosition] = useState<CSSProperties>({})
 
-  function clearTimer(): void {
+  const clearTimer = useCallback(() => {
     if (timerRef.current !== null) {
       window.clearTimeout(timerRef.current)
       timerRef.current = null
     }
-  }
+  }, [])
 
-  function updatePosition(): void {
+  const updatePosition = useCallback(() => {
     const trigger = triggerRef.current
     if (!trigger) {
       return
@@ -51,7 +53,7 @@ export function Tooltip({ children, content, side = 'top', delay = 400 }: Toolti
       left: { left: rect.left - tooltipGap, top: centerY }
     }
     setPosition(positions[side])
-  }
+  }, [side])
 
   function showTooltip(): void {
     clearTimer()
@@ -67,21 +69,23 @@ export function Tooltip({ children, content, side = 'top', delay = 400 }: Toolti
     setOpen(false)
   }
 
+  const repositionTooltip = useEffectEvent(updatePosition)
+
   useEffect(() => {
     if (!open) {
       return
     }
 
-    const reposition = () => updatePosition()
+    const reposition = () => repositionTooltip()
     window.addEventListener('resize', reposition)
     window.addEventListener('scroll', reposition, true)
     return () => {
       window.removeEventListener('resize', reposition)
       window.removeEventListener('scroll', reposition, true)
     }
-  }, [open, side])
+  }, [open])
 
-  useEffect(() => () => clearTimer(), [])
+  useEffect(() => () => clearTimer(), [clearTimer])
 
   const describedBy = [children.props['aria-describedby'], id].filter(Boolean).join(' ')
 

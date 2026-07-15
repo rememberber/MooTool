@@ -12,11 +12,11 @@ import {
   Regex,
   Search,
   Settings,
-  Shuffle,
-  Sparkle
+  Shuffle
 } from 'lucide-react'
 import { useState } from 'react'
 import { JsonTool } from '@/features/json/JsonTool'
+import { BrandIcon } from '@/shared/components/BrandIcon'
 import { ToolButton } from '@/shared/components/ToolButton'
 import { Tooltip } from '@/shared/components/Tooltip'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -97,7 +97,7 @@ export function Workbench() {
 
         <div className="sidebar-footer">
           <div className="brand-mark">
-            <Sparkle size={18} />
+            <BrandIcon size={18} />
             <span>MooTool</span>
           </div>
           <div className="footer-controls">
@@ -128,7 +128,7 @@ export function Workbench() {
 
             <div className="home-panel">
               <div className="headline-row">
-                <Sparkle className="headline-icon" size={28} />
+                <BrandIcon className="headline-icon" size={28} />
                 <h1>{t('app.home.title')}</h1>
               </div>
               <p className="subtle-link">{t('app.home.subtitle')}</p>

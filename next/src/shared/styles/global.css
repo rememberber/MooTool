@@ -290,9 +290,11 @@ button {
   font-weight: 600;
 }
 
-.brand-mark svg,
-.headline-icon {
-  color: var(--accent-strong);
+.brand-icon {
+  display: block;
+  flex: 0 0 auto;
+  object-fit: contain;
+  user-select: none;
 }
 
 .workspace {
