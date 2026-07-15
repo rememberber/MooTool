@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { CheckCircle2, Copy, Eraser, FileJson, Minimize2, Sparkles, WrapText, XCircle } from 'lucide-react'
 import { compressJson, escapeJsonString, formatJson, unescapeJsonString, validateJson } from './jsonTools'
+import { useI18n } from '@/shared/i18n/I18nProvider'
 
 const sampleJson = `{
   "name": "MooTool Next",
@@ -14,18 +15,19 @@ const sampleJson = `{
 type CopyState = 'idle' | 'copied' | 'failed'
 
 export function JsonTool() {
+  const { t } = useI18n()
   const [content, setContent] = useState(sampleJson)
   const [wrap, setWrap] = useState(true)
   const [copyState, setCopyState] = useState<CopyState>('idle')
   const [notice, setNotice] = useState('')
-  const status = useMemo(() => validateJson(content), [content])
+  const status = useMemo(() => validateJson(content, t), [content, t])
 
   function runTransform(transform: (value: string) => string, success: string): void {
     try {
       setContent(transform(content))
       setNotice(success)
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : '处理失败')
+      setNotice(error instanceof Error ? error.message : t('json.notice.failed'))
     }
   }
 
@@ -33,10 +35,10 @@ export function JsonTool() {
     try {
       await navigator.clipboard.writeText(content)
       setCopyState('copied')
-      setNotice('已复制到剪贴板')
+      setNotice(t('json.notice.copied'))
     } catch {
       setCopyState('failed')
-      setNotice('复制失败')
+      setNotice(t('json.notice.copyFailed'))
     }
 
     window.setTimeout(() => setCopyState('idle'), 1400)
@@ -50,7 +52,7 @@ export function JsonTool() {
             <FileJson size={16} />
             JSON
           </div>
-          <h1>JSON 工作台</h1>
+          <h1>{t('json.title')}</h1>
         </div>
         <div className={status.kind === 'valid' ? 'status-pill status-pill--valid' : status.kind === 'error' ? 'status-pill status-pill--error' : 'status-pill'}>
           {status.kind === 'valid' ? <CheckCircle2 size={16} /> : status.kind === 'error' ? <XCircle size={16} /> : <FileJson size={16} />}
@@ -61,25 +63,25 @@ export function JsonTool() {
       <div className="json-layout">
         <div className="editor-shell">
           <div className="editor-toolbar">
-            <button className="toolbar-button toolbar-button--primary" onClick={() => runTransform((value) => formatJson(value, 2), '已格式化')}>
+            <button className="toolbar-button toolbar-button--primary" onClick={() => runTransform((value) => formatJson(value, t, 2), t('json.notice.formatted'))}>
               <Sparkles size={16} />
-              格式化
+              {t('json.action.format')}
             </button>
-            <button className="toolbar-button" onClick={() => runTransform(compressJson, '已压缩')}>
+            <button className="toolbar-button" onClick={() => runTransform((value) => compressJson(value, t), t('json.notice.compressed'))}>
               <Minimize2 size={16} />
-              压缩
+              {t('json.action.compress')}
             </button>
             <button className="toolbar-button" onClick={() => setWrap((value) => !value)}>
               <WrapText size={16} />
-              {wrap ? '换行' : '单行'}
+              {wrap ? t('json.action.wrap') : t('json.action.nowrap')}
             </button>
             <button className="toolbar-button" onClick={copyContent}>
               <Copy size={16} />
-              {copyState === 'copied' ? '已复制' : '复制'}
+              {copyState === 'copied' ? t('json.action.copied') : t('json.action.copy')}
             </button>
             <button className="toolbar-button toolbar-button--quiet" onClick={() => setContent('')}>
               <Eraser size={16} />
-              清空
+              {t('json.action.clear')}
             </button>
           </div>
 
@@ -99,23 +101,23 @@ export function JsonTool() {
 
         <aside className="inspector-panel">
           <div className="inspector-card">
-            <span className="inspector-kicker">操作</span>
-            <button className="inspector-action" onClick={() => runTransform(escapeJsonString, '已转为 JSON 字符串')}>
-              JSON 字符串转义
+            <span className="inspector-kicker">{t('json.panel.actions')}</span>
+            <button className="inspector-action" onClick={() => runTransform(escapeJsonString, t('json.notice.escaped'))}>
+              {t('json.action.escape')}
             </button>
-            <button className="inspector-action" onClick={() => runTransform(unescapeJsonString, '已还原 JSON 字符串')}>
-              JSON 字符串还原
+            <button className="inspector-action" onClick={() => runTransform((value) => unescapeJsonString(value, t), t('json.notice.unescaped'))}>
+              {t('json.action.unescape')}
             </button>
           </div>
 
           <div className="inspector-card">
-            <span className="inspector-kicker">结果</span>
+            <span className="inspector-kicker">{t('json.panel.result')}</span>
             <p className={status.kind === 'error' ? 'result-text result-text--error' : 'result-text'}>{notice || status.message}</p>
           </div>
 
           <div className="inspector-card inspector-card--muted">
-            <span className="inspector-kicker">后续</span>
-            <p>保存片段、JsonPath、JSON/XML、排序和重复 key 检查会继续放在这个右侧区域里。</p>
+            <span className="inspector-kicker">{t('json.panel.next')}</span>
+            <p>{t('json.panel.nextDesc')}</p>
           </div>
         </aside>
       </div>

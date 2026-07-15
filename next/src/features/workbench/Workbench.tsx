@@ -23,26 +23,39 @@ import {
 import { useState } from 'react'
 import { JsonTool } from '@/features/json/JsonTool'
 import { ToolButton } from '@/shared/components/ToolButton'
+import { useI18n } from '@/shared/i18n/I18nProvider'
+import type { MessageKey } from '@/shared/i18n/messages'
 
 const primaryTools = [
-  { id: 'home', icon: Home, label: '主页' },
-  { id: 'json', icon: Braces, label: 'JSON' },
-  { id: 'time', icon: Clock3, label: '时间转换' },
-  { id: 'encode', icon: Shuffle, label: '编码解码' },
-  { id: 'qrcode', icon: QrCode, label: '二维码' },
-  { id: 'http', icon: Globe, label: 'HTTP 请求' },
-  { id: 'diff', icon: Code2, label: '文本 Diff' },
-  { id: 'regex', icon: Regex, label: '正则' },
-  { id: 'color', icon: Palette, label: '颜色板' },
-  { id: 'image', icon: Image, label: '图片处理' },
-  { id: 'cron', icon: CalendarClock, label: 'Cron' }
-]
+  { id: 'home', icon: Home, labelKey: 'app.nav.home' },
+  { id: 'json', icon: Braces, labelKey: 'app.nav.json' },
+  { id: 'time', icon: Clock3, labelKey: 'app.nav.time' },
+  { id: 'encode', icon: Shuffle, labelKey: 'app.nav.encode' },
+  { id: 'qrcode', icon: QrCode, labelKey: 'app.nav.qrcode' },
+  { id: 'http', icon: Globe, labelKey: 'app.nav.http' },
+  { id: 'diff', icon: Code2, labelKey: 'app.nav.diff' },
+  { id: 'regex', icon: Regex, labelKey: 'app.nav.regex' },
+  { id: 'color', icon: Palette, labelKey: 'app.nav.color' },
+  { id: 'image', icon: Image, labelKey: 'app.nav.image' },
+  { id: 'cron', icon: CalendarClock, labelKey: 'app.nav.cron' }
+] satisfies Array<{
+  id: string
+  icon: typeof Home
+  labelKey: MessageKey
+}>
 
-const recentItems = ['JSON 格式化片段', '接口调试草稿', 'Base64 转换', '颜色收藏', '正则测试']
+const recentItems = [
+  'JSON format snippet',
+  'HTTP draft',
+  'Base64 conversion',
+  'Saved color',
+  'Regex test'
+]
 
 export function Workbench() {
   const [activeTool, setActiveTool] = useState('home')
-  const activeToolLabel = primaryTools.find((tool) => tool.id === activeTool)?.label ?? '主页'
+  const { language, languageLabels, languages, setLanguage, t } = useI18n()
+  const activeToolLabel = t(primaryTools.find((tool) => tool.id === activeTool)?.labelKey ?? 'app.nav.home')
 
   return (
     <main className="app-shell">
@@ -50,34 +63,40 @@ export function Workbench() {
         <div className="window-drag toolbar-spacer" />
 
         <div className="sidebar-actions">
-          <button className="icon-ghost" aria-label="折叠侧栏">
+          <button className="icon-ghost" aria-label={t('app.nav.collapseSidebar')}>
             <FileText size={17} />
           </button>
-          <button className="icon-ghost" aria-label="搜索">
+          <button className="icon-ghost" aria-label={t('app.nav.search')}>
             <Search size={17} />
           </button>
         </div>
 
-        <div className="mode-switch" aria-label="工作模式">
+        <div className="mode-switch" aria-label={t('app.mode.tools')}>
           <button className="mode-switch__item mode-switch__item--active">
             <Wand2 size={15} />
-            工具
+            {t('app.mode.tools')}
           </button>
           <button className="mode-switch__item">
             <Terminal size={15} />
-            脚本
+            {t('app.mode.scripts')}
           </button>
         </div>
 
-        <nav className="tool-nav" aria-label="工具导航">
+        <nav className="tool-nav" aria-label={t('app.mode.tools')}>
           {primaryTools.map((tool) => (
-            <ToolButton key={tool.id} {...tool} active={activeTool === tool.id} onClick={() => setActiveTool(tool.id)} />
+            <ToolButton
+              key={tool.id}
+              icon={tool.icon}
+              label={t(tool.labelKey)}
+              active={activeTool === tool.id}
+              onClick={() => setActiveTool(tool.id)}
+            />
           ))}
         </nav>
 
         <section className="recent-section">
           <div className="section-title">
-            <span>最近</span>
+            <span>{t('app.nav.recent')}</span>
             <ChevronDown size={15} />
           </div>
           <div className="recent-list">
@@ -95,9 +114,22 @@ export function Workbench() {
             <Sparkle size={18} />
             <span>MooTool</span>
           </div>
-          <button className="icon-ghost" aria-label="设置">
-            <Settings size={17} />
-          </button>
+          <div className="footer-controls">
+            <div className="language-switch" aria-label="Language">
+              {languages.map((item) => (
+                <button
+                  className={item === language ? 'language-switch__item language-switch__item--active' : 'language-switch__item'}
+                  key={item}
+                  onClick={() => setLanguage(item)}
+                >
+                  {languageLabels[item]}
+                </button>
+              ))}
+            </div>
+            <button className="icon-ghost" aria-label={t('app.nav.settings')}>
+              <Settings size={17} />
+            </button>
+          </div>
         </div>
       </aside>
 
@@ -115,12 +147,12 @@ export function Workbench() {
             <div className="home-panel">
               <div className="headline-row">
                 <Sparkle className="headline-icon" size={28} />
-                <h1>把常用工具收进一个安静的桌面</h1>
+                <h1>{t('app.home.title')}</h1>
               </div>
-              <p className="subtle-link">MooTool Next · Electron / React / TypeScript</p>
+              <p className="subtle-link">{t('app.home.subtitle')}</p>
 
               <div className="command-box">
-                <div className="command-input">想处理什么？</div>
+                <div className="command-input">{t('app.home.prompt')}</div>
                 <div className="command-controls">
                   <button className="round-button">+</button>
                   <button className="pill-button" onClick={() => setActiveTool('json')}>
@@ -137,17 +169,17 @@ export function Workbench() {
                 <button className="quick-card" onClick={() => setActiveTool('json')}>
                   <Braces size={30} />
                   <strong>JSON</strong>
-                  <span>格式化、压缩、转义</span>
+                  <span>{t('app.home.json.desc')}</span>
                 </button>
                 <button className="quick-card">
                   <Globe size={30} />
                   <strong>HTTP</strong>
-                  <span>发送请求，保存草稿</span>
+                  <span>{t('app.home.http.desc')}</span>
                 </button>
                 <button className="quick-card">
                   <Code2 size={30} />
                   <strong>Diff</strong>
-                  <span>并排或统一视图</span>
+                  <span>{t('app.home.diff.desc')}</span>
                 </button>
               </div>
             </div>
@@ -157,25 +189,25 @@ export function Workbench() {
         ) : (
           <section className="placeholder-page">
             <h1>{activeToolLabel}</h1>
-            <p>这个工具页会按 JSON 工作台的结构继续迁移。</p>
+            <p>{t('app.placeholder')}</p>
           </section>
         )}
       </section>
 
       <aside className="detail-pane">
         <div className="window-drag pane-topbar">
-          <button className="icon-ghost" aria-label="新建">
+          <button className="icon-ghost" aria-label={t('app.detail.new')}>
             <MessageSquarePlus size={17} />
           </button>
-          <button className="icon-ghost" aria-label="打开项目">
+          <button className="icon-ghost" aria-label={t('app.detail.openProject')}>
             <Folder size={17} />
           </button>
         </div>
 
         <div className="state-card">
-          <span className="state-kicker">当前状态</span>
-          <strong>本地模式</strong>
-          <p>后续每个工具通过 preload 暴露安全 API，React 只负责界面和交互。</p>
+          <span className="state-kicker">{t('app.detail.status')}</span>
+          <strong>{t('app.detail.localMode')}</strong>
+          <p>{t('app.detail.localModeDesc')}</p>
         </div>
       </aside>
     </main>

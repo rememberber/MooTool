@@ -4,13 +4,14 @@ import { join } from 'node:path'
 const isDev = Boolean(process.env.ELECTRON_RENDERER_URL)
 
 function createMainWindow(): void {
+  const systemTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
   const window = new BrowserWindow({
     width: 1440,
     height: 920,
     minWidth: 1080,
     minHeight: 720,
     show: false,
-    backgroundColor: '#f7f7f8',
+    backgroundColor: systemTheme === 'dark' ? '#171719' : '#f7f7f8',
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 18, y: 18 },
     vibrancy: 'sidebar',
@@ -36,8 +37,16 @@ function createMainWindow(): void {
 
 app.whenReady().then(() => {
   ipcMain.handle('app:get-version', () => app.getVersion())
+  ipcMain.handle('theme:get-system', () => (nativeTheme.shouldUseDarkColors ? 'dark' : 'light'))
 
   nativeTheme.themeSource = 'system'
+  nativeTheme.on('updated', () => {
+    const systemTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
+    for (const window of BrowserWindow.getAllWindows()) {
+      window.setBackgroundColor(systemTheme === 'dark' ? '#171719' : '#f7f7f8')
+      window.webContents.send('theme:system-changed', systemTheme)
+    }
+  })
   createMainWindow()
 
   app.on('activate', () => {
