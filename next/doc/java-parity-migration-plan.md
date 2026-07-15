@@ -11,7 +11,7 @@ MooTool Next 不再以“精选 MVP”作为当前阶段目标，而是以 Java 
 
 本阶段必须同时满足以下目标：
 
-1. **功能一致**：Java 版已经可用的功能、子功能、历史记录、收藏、导入导出、快捷键和设置项都需要在 Next 中提供。
+1. **功能一致**：除本文明确批准的对齐例外外，Java 版已经可用的功能、子功能、历史记录、收藏、导入导出、快捷键和设置项都需要在 Next 中提供。
 2. **布局尽量一致**：保留旧版工具页的信息层级、主要分区、操作顺序、Tab、工具栏、历史区和弹窗流程。
 3. **桌面体验现代化**：使用当前已经确认的 Electron 左侧栏、macOS 风格窗口、明暗主题和品牌视觉，不机械复制 Swing 控件外观。
 4. **数据可迁移**：旧版用户数据、SQLite 历史、配置、Vault 和收藏应尽可能无损迁移或直接兼容。
@@ -19,6 +19,8 @@ MooTool Next 不再以“精选 MVP”作为当前阶段目标，而是以 Java 
 6. **国际化完整**：至少保持简体中文、英文、日文三种语言，新增界面不得硬编码用户可见文案。
 
 旧版代码或 README 中明确标记为 TODO 且实际尚不可用的能力，不计入首轮 parity；它们进入对齐完成后的增强列表。例如当前配置转换中的 JSON/YAML 双向转换 TODO。
+
+已确认的对齐例外：**图片助手中的 OCR 不迁移到 Next**。Next 不建设 OCR 引擎、Provider、模型下载或相关设置；截图、压缩、水印和图片导入导出等其余图片助手能力仍按 Java 版对齐。未来如重新评估 OCR，应作为独立增强需求立项，不作为本轮 parity 和发布阻塞项。
 
 ## 2. 对齐原则
 
@@ -153,7 +155,7 @@ type ToolDefinition = {
 
 - Renderer 不直接访问 Node.js、文件系统、数据库和系统命令。
 - Preload 只暴露明确的类型安全 API，不暴露通用 `invoke(channel, payload)`。
-- IPC 按域划分：`settings`、`history`、`files`、`vault`、`network`、`system`、`update`、`window`。
+- IPC 按域划分：`settings`、`history`、`files`、`vault`、`network`、`runtime`、`media`、`system`、`update`、`window`。
 - 所有入参在主进程校验；路径、命令、URL 和文件扩展名必须做边界检查。
 - 长耗时任务支持进度、取消和错误码，不依赖无法取消的单次 Promise。
 
@@ -179,7 +181,8 @@ type ToolDefinition = {
 | 网络 | HTTP 代理开关、Host、端口、用户名、密码 | 显式保存并测试 |
 | 数据与备份 | 数据目录、导入导出、SQLite 迁移、Git 同步、自动同步 | 危险操作需确认 |
 | Vault | Quick Note Vault、JSON Vault、远程仓库、自动提交、自动拉取、忽略文件、展开方式 | 显式保存 |
-| 工具默认值 | QR 尺寸/纠错级别/Logo、随机字符串长度、导出目录、OCR 路径等 | 即时或显式保存 |
+| 运行环境 | 自动探测 Java、Python、Node.js，显示路径与版本，允许覆盖可执行文件路径并测试 | 显式保存并测试 |
+| 工具默认值 | QR 尺寸/纠错级别/Logo、随机字符串长度、导出目录等 | 即时或显式保存 |
 | 快捷键 | 全局工具搜索、设置、页面操作、工具特定快捷键 | 冲突检测后保存 |
 | 关于与更新 | 版本、更新检查、项目链接、许可证 | 即时操作 |
 
@@ -195,6 +198,7 @@ type AppSettings = {
   layout: LayoutSettings
   editor: EditorSettings
   network: NetworkSettings
+  runtime: RuntimeSettings
   data: DataSettings
   shortcuts: ShortcutSettings
   tools: ToolSettings
@@ -255,7 +259,7 @@ type AppSettings = {
 | 文本 | `textDiff` | 文本对比 | 左右输入、同步滚动、Unified Tab、操作栏 | P3 | 骨架 |
 | 文本 | `reformat` | 格式化 | 字符串/文件 Tab、输入输出与格式类型 | P4 | 未开始 |
 | 开发 | `json` | JSON | Vault/列表、编辑器、工具栏、结果与弹窗 | P2 | 开发中 |
-| 开发 | `java` | Java/Groovy | 编辑器、格式化、运行结果、历史 | P6 | 未开始 |
+| 开发 | `java` | 代码运行 | Java/Python/Node.js 三个 Tab、编辑器、格式化、运行结果、历史；Java Tab 兼容旧版 Java/Groovy | P6 | 未开始 |
 | 开发 | `ymlProperties` | 配置转换 | 转换 Tab、校验、历史 | P3 | 未开始 |
 | 开发 | `protobuf` | Protobuf | JSON/二进制、Wire、Hex/Base64 三个 Tab | P4 | 未开始 |
 | 开发 | `variables` | 环境变量 | 系统变量/Java Properties Tab、表格、导出 | P5 | 未开始 |
@@ -331,7 +335,7 @@ type AppSettings = {
 - QR Code。
 - Crypto/Random，包括 SM2/SM3/SM4。
 - Color Board 与屏幕取色。
-- Image Assistant，包括截图、压缩、水印、OCR。
+- Image Assistant，包括截图、压缩、水印和图片导入导出；OCR 已列为明确的对齐例外，不进入本轮实现。
 - Reformat。
 - PDF 拆分/合并。
 - Protobuf。
@@ -352,9 +356,14 @@ type AppSettings = {
 ### P6：复杂编辑器、Vault 与运行时
 
 - Quick Note 全量能力、Markdown 预览、图片、搜索、导出、快速替换和 Git Vault。
-- Java/Groovy 格式化与运行。
+- 将旧版 Java/Groovy 工具升级为“代码运行”，页面提供 Java、Python、Node.js 三个主 Tab；Java Tab 保留旧版 Java/Groovy 的格式化与运行能力。
+- 每个 Tab 独立保存代码模板、运行参数、工作目录和历史，切换 Tab 不丢失未提交输入。
+- 默认探测用户系统的 `java`/`javac`、`groovy`、`python`/`python3`、`node`；设置中展示实际路径、版本和检测状态，并允许用户覆盖路径。
+- 未检测到对应运行时时，仅禁用该 Tab 的运行操作并给出配置提示，不影响其他 Tab 使用；首个版本不强制捆绑 JDK、Python 或 Node.js。
+- 所有代码都通过主进程受控子进程执行，使用临时工作目录、环境变量白名单、超时、输出上限、取消和进程树回收。
 - 同步与备份闭环。
-- 评估 Java/Groovy 运行时采用系统 JDK、可选运行时或受控子进程；Next 应用业务代码仍保持 TypeScript。
+
+**运行时出口条件**：三个 Tab 均能完成检测、编辑、执行、停止、输出和历史闭环；Java/Groovy 旧版用例全部通过 parity 验收。
 
 ### P7：全量对齐、迁移与发布
 
@@ -403,10 +412,9 @@ type AppSettings = {
 | 风险 | 处理策略 |
 | --- | --- |
 | SQLite 原生模块与 Electron 打包 | P1/P2 先做跨平台技术验证和 ADR |
-| Java/Groovy 运行 | 使用受控子进程，限制工作目录、参数和超时 |
+| Java/Python/Node.js 运行时差异 | 采用三个独立 Tab；自动探测系统运行时并允许在设置中覆盖路径，逐运行时验证版本；统一使用受控子进程、临时目录、超时、取消和输出限制 |
 | Host、DNS、系统命令权限 | 主进程白名单 API、平台实现、明确提权流程 |
 | SM2/SM3/SM4 正确性 | 选择成熟库，使用标准测试向量验证 |
-| OCR/Tesseract | 启动前探测、可配置路径、下载与离线策略 |
 | 翻译服务变化 | Provider 抽象、超时、fallback、代理支持 |
 | 大文件与长任务卡顿 | Worker/子进程、流式处理、进度和取消 |
 | 旧数据迁移损坏 | 只读扫描、自动备份、事务迁移、可回滚 |
@@ -427,6 +435,7 @@ type AppSettings = {
 - [ ] 创建设置模态子窗口和全部分类骨架。
 - [ ] 先接通语言、主题、强调色、字体字号、显示最近和布局设置。
 - [ ] 预留代理、数据目录、Vault、快捷键、更新和托盘设置域。
+- [ ] 在设置 Schema 中预留 Java、Python、Node.js 运行时路径和自动探测结果。
 - [ ] 建立 P0 parity checklist 模板并填写 JSON 样例。
 - [ ] 补齐当前基础可访问性和按钮类型问题。
 - [ ] 增加基础单元测试和 Electron E2E 入口。
