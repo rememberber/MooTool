@@ -4,7 +4,6 @@ import {
   ChevronDown,
   Clock3,
   Code2,
-  FileText,
   Globe,
   Home,
   Image,
@@ -14,9 +13,7 @@ import {
   Search,
   Settings,
   Shuffle,
-  Sparkle,
-  Terminal,
-  Wand2
+  Sparkle
 } from 'lucide-react'
 import { useState } from 'react'
 import { JsonTool } from '@/features/json/JsonTool'
@@ -61,26 +58,12 @@ export function Workbench() {
         <div className="window-drag toolbar-spacer" />
 
         <div className="sidebar-actions">
-          <button className="icon-ghost" aria-label={t('app.nav.collapseSidebar')}>
-            <FileText size={17} />
-          </button>
           <button className="icon-ghost" aria-label={t('app.nav.search')}>
             <Search size={17} />
           </button>
         </div>
 
-        <div className="mode-switch" aria-label={t('app.mode.tools')}>
-          <button className="mode-switch__item mode-switch__item--active">
-            <Wand2 size={15} />
-            {t('app.mode.tools')}
-          </button>
-          <button className="mode-switch__item">
-            <Terminal size={15} />
-            {t('app.mode.scripts')}
-          </button>
-        </div>
-
-        <nav className="tool-nav" aria-label={t('app.mode.tools')}>
+        <nav className="tool-nav" aria-label={t('app.nav.tools')}>
           {primaryTools.map((tool) => (
             <ToolButton
               key={tool.id}

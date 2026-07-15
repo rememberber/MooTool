@@ -157,38 +157,11 @@ button {
   color: var(--text-strong);
 }
 
-.mode-switch {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 4px;
-  padding: 4px;
-  margin: 18px 0 12px;
-  background: var(--control);
-  border-radius: 12px;
-}
-
-.mode-switch__item {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 36px;
-  color: var(--text-muted);
-  background: transparent;
-  border-radius: 9px;
-  cursor: pointer;
-}
-
-.mode-switch__item--active {
-  color: var(--text-strong);
-  background: var(--workspace);
-  box-shadow: 0 1px 2px var(--shadow);
-}
-
 .tool-nav {
   display: flex;
   flex-direction: column;
   gap: 3px;
+  margin-top: 18px;
 }
 
 .tool-button,

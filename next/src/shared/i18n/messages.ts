@@ -12,8 +12,7 @@ export const languageLabels: Record<Language, string> = {
 
 export const messages = {
   'zh-CN': {
-    'app.mode.tools': '工具',
-    'app.mode.scripts': '脚本',
+    'app.nav.tools': '工具导航',
     'app.nav.home': '主页',
     'app.nav.json': 'JSON',
     'app.nav.time': '时间转换',
@@ -27,7 +26,6 @@ export const messages = {
     'app.nav.cron': 'Cron',
     'app.nav.recent': '最近',
     'app.nav.settings': '设置',
-    'app.nav.collapseSidebar': '折叠侧栏',
     'app.nav.search': '搜索',
     'app.home.title': '把常用工具收进一个安静的桌面',
     'app.home.subtitle': 'MooTool Next · Electron / React / TypeScript',
@@ -64,8 +62,7 @@ export const messages = {
     'json.panel.nextDesc': '保存片段、JsonPath、JSON/XML、排序和重复 key 检查会继续放在这个右侧区域里。'
   },
   'en-US': {
-    'app.mode.tools': 'Tools',
-    'app.mode.scripts': 'Scripts',
+    'app.nav.tools': 'Tool navigation',
     'app.nav.home': 'Home',
     'app.nav.json': 'JSON',
     'app.nav.time': 'Time',
@@ -79,7 +76,6 @@ export const messages = {
     'app.nav.cron': 'Cron',
     'app.nav.recent': 'Recent',
     'app.nav.settings': 'Settings',
-    'app.nav.collapseSidebar': 'Collapse sidebar',
     'app.nav.search': 'Search',
     'app.home.title': 'A quiet desktop for the tools you use every day',
     'app.home.subtitle': 'MooTool Next · Electron / React / TypeScript',
@@ -116,8 +112,7 @@ export const messages = {
     'json.panel.nextDesc': 'Saved snippets, JsonPath, JSON/XML, sorting, and duplicate-key checks will live here.'
   },
   'ja-JP': {
-    'app.mode.tools': 'ツール',
-    'app.mode.scripts': 'スクリプト',
+    'app.nav.tools': 'ツールナビゲーション',
     'app.nav.home': 'ホーム',
     'app.nav.json': 'JSON',
     'app.nav.time': '時刻変換',
@@ -131,7 +126,6 @@ export const messages = {
     'app.nav.cron': 'Cron',
     'app.nav.recent': '最近',
     'app.nav.settings': '設定',
-    'app.nav.collapseSidebar': 'サイドバーを折りたたむ',
     'app.nav.search': '検索',
     'app.home.title': 'よく使うツールを静かなデスクトップに',
     'app.home.subtitle': 'MooTool Next · Electron / React / TypeScript',
