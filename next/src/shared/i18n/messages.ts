@@ -12,6 +12,7 @@ export const languageLabels: Record<Language, string> = {
 
 export const messages = {
   'zh-CN': {
+    'common.toast.dismiss': '关闭通知',
     'app.nav.tools': '工具导航',
     'app.nav.home': '主页',
     'app.nav.json': 'JSON',
@@ -62,6 +63,7 @@ export const messages = {
     'json.panel.nextDesc': '保存片段、JsonPath、JSON/XML、排序和重复 key 检查会继续放在这个右侧区域里。'
   },
   'en-US': {
+    'common.toast.dismiss': 'Dismiss notification',
     'app.nav.tools': 'Tool navigation',
     'app.nav.home': 'Home',
     'app.nav.json': 'JSON',
@@ -112,6 +114,7 @@ export const messages = {
     'json.panel.nextDesc': 'Saved snippets, JsonPath, JSON/XML, sorting, and duplicate-key checks will live here.'
   },
   'ja-JP': {
+    'common.toast.dismiss': '通知を閉じる',
     'app.nav.tools': 'ツールナビゲーション',
     'app.nav.home': 'ホーム',
     'app.nav.json': 'JSON',

@@ -38,6 +38,8 @@
   --success-bg: #e8f3ee;
   --error-text: #b25448;
   --error-bg: #f8ebe8;
+  --tooltip-bg: #2e2e31;
+  --tooltip-text: #ffffff;
   --shadow: rgba(20, 20, 20, 0.06);
   --shadow-soft: rgba(20, 20, 20, 0.045);
   --pattern-dot: #d6d6da;
@@ -78,6 +80,8 @@
   --success-bg: #20352c;
   --error-text: #e28c7d;
   --error-bg: #3a2523;
+  --tooltip-bg: #ededf0;
+  --tooltip-text: #242426;
   --shadow: rgba(0, 0, 0, 0.32);
   --shadow-soft: rgba(0, 0, 0, 0.22);
   --pattern-dot: #34353a;
@@ -169,6 +173,42 @@ button {
 .icon-ghost:hover {
   background: var(--control-hover);
   color: var(--text-strong);
+}
+
+.tooltip-trigger {
+  display: inline-flex;
+}
+
+.tooltip {
+  position: fixed;
+  z-index: 500;
+  max-width: 240px;
+  padding: 6px 8px;
+  color: var(--tooltip-text);
+  background: var(--tooltip-bg);
+  border-radius: 6px;
+  box-shadow: 0 6px 18px var(--shadow);
+  pointer-events: none;
+  font-size: 12px;
+  line-height: 1.35;
+  white-space: nowrap;
+  animation: tooltip-in 120ms ease-out;
+}
+
+.tooltip--top {
+  transform: translate(-50%, -100%);
+}
+
+.tooltip--right {
+  transform: translate(0, -50%);
+}
+
+.tooltip--bottom {
+  transform: translate(-50%, 0);
+}
+
+.tooltip--left {
+  transform: translate(-100%, -50%);
 }
 
 .tool-nav {
@@ -603,6 +643,93 @@ h1 {
 
 .placeholder-page p {
   margin: 8px 0 0;
+}
+
+.toast-viewport {
+  position: fixed;
+  z-index: 450;
+  right: 22px;
+  bottom: 22px;
+  display: flex;
+  width: min(360px, calc(100vw - 44px));
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+  -webkit-app-region: no-drag;
+}
+
+.toast {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 9px 9px 9px 13px;
+  color: var(--text-body);
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 14px 34px var(--shadow);
+  backdrop-filter: blur(18px);
+  pointer-events: auto;
+  animation: toast-in 180ms ease-out;
+}
+
+.toast__icon {
+  color: var(--blue);
+}
+
+.toast--success .toast__icon {
+  color: var(--success-text);
+}
+
+.toast--error .toast__icon {
+  color: var(--error-text);
+}
+
+.toast__message {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.toast__dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--text-muted);
+  background: transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.toast__dismiss:hover {
+  color: var(--text-strong);
+  background: var(--control-hover);
+}
+
+@keyframes tooltip-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tooltip,
+  .toast {
+    animation: none;
+  }
 }
 
 @media (max-width: 1180px) {

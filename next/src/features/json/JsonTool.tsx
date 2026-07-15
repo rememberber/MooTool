@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react'
 import { CheckCircle2, Copy, Eraser, FileJson, Minimize2, Sparkles, WrapText, XCircle } from 'lucide-react'
 import { compressJson, escapeJsonString, formatJson, unescapeJsonString, validateJson } from './jsonTools'
+import { useToast } from '@/shared/feedback/ToastProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 
 const sampleJson = `{
@@ -16,6 +17,7 @@ type CopyState = 'idle' | 'copied' | 'failed'
 
 export function JsonTool() {
   const { t } = useI18n()
+  const toast = useToast()
   const [content, setContent] = useState(sampleJson)
   const [wrap, setWrap] = useState(true)
   const [copyState, setCopyState] = useState<CopyState>('idle')
@@ -26,8 +28,11 @@ export function JsonTool() {
     try {
       setContent(transform(content))
       setNotice(success)
+      toast.success(success)
     } catch (error) {
-      setNotice(error instanceof Error ? error.message : t('json.notice.failed'))
+      const message = error instanceof Error ? error.message : t('json.notice.failed')
+      setNotice(message)
+      toast.error(message)
     }
   }
 
@@ -36,9 +41,11 @@ export function JsonTool() {
       await navigator.clipboard.writeText(content)
       setCopyState('copied')
       setNotice(t('json.notice.copied'))
+      toast.success(t('json.notice.copied'))
     } catch {
       setCopyState('failed')
       setNotice(t('json.notice.copyFailed'))
+      toast.error(t('json.notice.copyFailed'))
     }
 
     window.setTimeout(() => setCopyState('idle'), 1400)

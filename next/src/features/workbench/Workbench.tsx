@@ -18,6 +18,7 @@ import {
 import { useState } from 'react'
 import { JsonTool } from '@/features/json/JsonTool'
 import { ToolButton } from '@/shared/components/ToolButton'
+import { Tooltip } from '@/shared/components/Tooltip'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { MessageKey } from '@/shared/i18n/messages'
 
@@ -60,9 +61,11 @@ export function Workbench() {
         <div className="window-drag toolbar-spacer" />
 
         <div className="sidebar-actions">
-          <button className="icon-ghost" aria-label={t('app.nav.search')}>
-            <Search size={17} />
-          </button>
+          <Tooltip content={t('app.nav.search')} side="bottom">
+            <button className="icon-ghost" type="button" aria-label={t('app.nav.search')}>
+              <Search size={17} />
+            </button>
+          </Tooltip>
         </div>
 
         <nav className="tool-nav" aria-label={t('app.nav.tools')}>
@@ -109,9 +112,11 @@ export function Workbench() {
                 </button>
               ))}
             </div>
-            <button className="icon-ghost" aria-label={t('app.nav.settings')}>
-              <Settings size={17} />
-            </button>
+            <Tooltip content={t('app.nav.settings')} side="top">
+              <button className="icon-ghost" type="button" aria-label={t('app.nav.settings')}>
+                <Settings size={17} />
+              </button>
+            </Tooltip>
           </div>
         </div>
       </aside>
