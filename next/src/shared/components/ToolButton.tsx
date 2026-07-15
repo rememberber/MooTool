@@ -10,7 +10,7 @@ type ToolButtonProps = {
 export function ToolButton({ icon: Icon, label, active = false, onClick }: ToolButtonProps) {
   return (
     <button className={active ? 'tool-button tool-button--active' : 'tool-button'} onClick={onClick}>
-      <Icon size={18} />
+      <Icon size={17} />
       <span>{label}</span>
     </button>
   )

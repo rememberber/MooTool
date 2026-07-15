@@ -49,7 +49,7 @@ export function JsonTool() {
       <div className="tool-page__header">
         <h1>{t('json.title')}</h1>
         <div className={status.kind === 'valid' ? 'status-pill status-pill--valid' : status.kind === 'error' ? 'status-pill status-pill--error' : 'status-pill'}>
-          {status.kind === 'valid' ? <CheckCircle2 size={16} /> : status.kind === 'error' ? <XCircle size={16} /> : <FileJson size={16} />}
+          {status.kind === 'valid' ? <CheckCircle2 size={15} /> : status.kind === 'error' ? <XCircle size={15} /> : <FileJson size={15} />}
           {status.message}
         </div>
       </div>
@@ -58,23 +58,23 @@ export function JsonTool() {
         <div className="editor-shell">
           <div className="editor-toolbar">
             <button className="toolbar-button toolbar-button--primary" onClick={() => runTransform((value) => formatJson(value, t, 2), t('json.notice.formatted'))}>
-              <Sparkles size={16} />
+              <Sparkles size={15} />
               {t('json.action.format')}
             </button>
             <button className="toolbar-button" onClick={() => runTransform((value) => compressJson(value, t), t('json.notice.compressed'))}>
-              <Minimize2 size={16} />
+              <Minimize2 size={15} />
               {t('json.action.compress')}
             </button>
             <button className="toolbar-button" onClick={() => setWrap((value) => !value)}>
-              <WrapText size={16} />
+              <WrapText size={15} />
               {wrap ? t('json.action.wrap') : t('json.action.nowrap')}
             </button>
             <button className="toolbar-button" onClick={copyContent}>
-              <Copy size={16} />
+              <Copy size={15} />
               {copyState === 'copied' ? t('json.action.copied') : t('json.action.copy')}
             </button>
             <button className="toolbar-button toolbar-button--quiet" onClick={() => setContent('')}>
-              <Eraser size={16} />
+              <Eraser size={15} />
               {t('json.action.clear')}
             </button>
           </div>

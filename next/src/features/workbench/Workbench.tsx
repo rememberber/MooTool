@@ -80,7 +80,7 @@ export function Workbench() {
         <section className="recent-section">
           <div className="section-title">
             <span>{t('app.nav.recent')}</span>
-            <ChevronDown size={15} />
+            <ChevronDown size={14} />
           </div>
           <div className="recent-list">
             {recentItems.map((item, index) => (

@@ -191,6 +191,7 @@ button {
   border-radius: 8px;
   text-align: left;
   cursor: pointer;
+  font-size: 15px;
 }
 
 .tool-button:hover,
@@ -213,7 +214,7 @@ button {
   justify-content: space-between;
   padding: 0 10px 8px;
   color: var(--text-faint);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .recent-list {
@@ -396,7 +397,7 @@ h1 {
 
 .tool-page h1,
 .placeholder-page h1 {
-  font-size: 30px;
+  font-size: 29px;
 }
 
 .status-pill {
@@ -409,7 +410,7 @@ h1 {
   color: var(--text-muted);
   background: var(--surface-card);
   border-radius: 999px;
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .status-pill--valid {
@@ -462,6 +463,7 @@ h1 {
   background: transparent;
   border-radius: 9px;
   cursor: pointer;
+  font-size: 15px;
 }
 
 .toolbar-button:hover {
@@ -506,6 +508,7 @@ h1 {
   min-width: 0;
   flex-direction: column;
   gap: 14px;
+  font-size: 15px;
 }
 
 .inspector-card {
@@ -524,7 +527,7 @@ h1 {
   display: block;
   margin-bottom: 10px;
   color: var(--text-faint);
-  font-size: 13px;
+  font-size: 12px;
 }
 
 .inspector-action {
