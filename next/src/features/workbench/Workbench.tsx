@@ -5,11 +5,9 @@ import {
   Clock3,
   Code2,
   FileText,
-  Folder,
   Globe,
   Home,
   Image,
-  MessageSquarePlus,
   Palette,
   QrCode,
   Regex,
@@ -134,12 +132,6 @@ export function Workbench() {
       </aside>
 
       <section className="workspace">
-        <div className="window-drag workspace-topbar">
-          <span>Home</span>
-          <ChevronDown size={14} />
-          <span className="topbar-muted">{activeToolLabel}</span>
-        </div>
-
         {activeTool === 'home' ? (
           <>
             <div className="hero-pattern" aria-hidden="true" />
@@ -194,22 +186,6 @@ export function Workbench() {
         )}
       </section>
 
-      <aside className="detail-pane">
-        <div className="window-drag pane-topbar">
-          <button className="icon-ghost" aria-label={t('app.detail.new')}>
-            <MessageSquarePlus size={17} />
-          </button>
-          <button className="icon-ghost" aria-label={t('app.detail.openProject')}>
-            <Folder size={17} />
-          </button>
-        </div>
-
-        <div className="state-card">
-          <span className="state-kicker">{t('app.detail.status')}</span>
-          <strong>{t('app.detail.localMode')}</strong>
-          <p>{t('app.detail.localModeDesc')}</p>
-        </div>
-      </aside>
     </main>
   )
 }

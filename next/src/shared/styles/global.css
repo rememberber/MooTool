@@ -10,7 +10,6 @@
   --sidebar: #f1f2f4;
   --surface: #ffffff;
   --workspace: #fbfbfb;
-  --detail: #fafafa;
   --surface-soft: #f5f5f5;
   --surface-card: #f2f2f3;
   --surface-card-hover: #ececee;
@@ -50,7 +49,6 @@
   --sidebar: #202124;
   --surface: #171719;
   --workspace: #191a1d;
-  --detail: #1b1c1f;
   --surface-soft: #27282c;
   --surface-card: #242529;
   --surface-card-hover: #2c2d31;
@@ -114,7 +112,7 @@ button {
 
 .app-shell {
   display: grid;
-  grid-template-columns: 308px minmax(560px, 1fr) 360px;
+  grid-template-columns: 308px minmax(560px, 1fr);
   width: 100%;
   height: 100%;
   background: var(--surface);
@@ -273,23 +271,7 @@ button {
   position: relative;
   min-width: 0;
   background: var(--workspace);
-  border-right: 1px solid var(--border-soft);
   overflow: hidden;
-}
-
-.workspace-topbar,
-.pane-topbar {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  height: 48px;
-  padding: 0 22px;
-  color: var(--text-muted);
-  border-bottom: 1px solid var(--border-soft);
-}
-
-.topbar-muted {
-  color: var(--text-soft);
 }
 
 .hero-pattern {
@@ -411,42 +393,8 @@ h1 {
   font-size: 14px;
 }
 
-.detail-pane {
-  min-width: 0;
-  background: var(--detail);
-}
-
-.pane-topbar {
-  justify-content: flex-end;
-}
-
-.state-card {
-  width: calc(100% - 48px);
-  margin: 24px;
-  padding: 18px;
-  color: var(--text-body);
-  background: var(--surface-card);
-  border-radius: 16px;
-}
-
-.state-card strong {
-  display: block;
-  margin-top: 6px;
-}
-
-.state-card p {
-  margin: 10px 0 0;
-  color: var(--text-muted);
-  line-height: 1.6;
-}
-
-.state-kicker {
-  color: var(--text-faint);
-  font-size: 13px;
-}
-
 .tool-page {
-  height: calc(100% - 48px);
+  height: 100%;
   padding: 28px 30px 30px;
   overflow: hidden;
 }
@@ -631,7 +579,7 @@ h1 {
 
 .placeholder-page {
   display: grid;
-  height: calc(100% - 48px);
+  height: 100%;
   place-content: center;
   color: var(--text-muted);
   text-align: center;
@@ -679,10 +627,6 @@ h1 {
 @media (max-width: 1180px) {
   .app-shell {
     grid-template-columns: 286px 1fr;
-  }
-
-  .detail-pane {
-    display: none;
   }
 
   .json-layout {
