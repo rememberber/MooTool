@@ -47,13 +47,7 @@ export function JsonTool() {
   return (
     <section className="tool-page json-tool">
       <div className="tool-page__header">
-        <div>
-          <div className="tool-eyebrow">
-            <FileJson size={16} />
-            JSON
-          </div>
-          <h1>{t('json.title')}</h1>
-        </div>
+        <h1>{t('json.title')}</h1>
         <div className={status.kind === 'valid' ? 'status-pill status-pill--valid' : status.kind === 'error' ? 'status-pill status-pill--error' : 'status-pill'}>
           {status.kind === 'valid' ? <CheckCircle2 size={16} /> : status.kind === 'error' ? <XCircle size={16} /> : <FileJson size={16} />}
           {status.message}
