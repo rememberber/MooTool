@@ -54,6 +54,8 @@ export function Workbench() {
 
   return (
     <main className="app-shell">
+      <div className="window-drag window-drag-region" aria-hidden="true" />
+
       <aside className="sidebar">
         <div className="window-drag toolbar-spacer" />
 
