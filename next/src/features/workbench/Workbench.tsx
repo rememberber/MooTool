@@ -1,4 +1,4 @@
-import { ChevronDown, PanelLeftClose, PanelLeftOpen, Search, Settings } from 'lucide-react'
+import { ChevronDown, Languages, PanelLeftClose, PanelLeftOpen, Search, Settings } from 'lucide-react'
 import { Suspense, useEffect } from 'react'
 import { useAppStore } from '@/app/appStore'
 import { toolById, toolGroups } from '@/app/toolRegistry'
@@ -129,22 +129,16 @@ export function Workbench() {
 
         <div className="sidebar-footer">
           <div className="brand-mark">
-            <BrandIcon size={18} />
+            <BrandIcon size={24} />
             <span>MooTool</span>
           </div>
           <div className="footer-controls">
-            <div className="language-switch" aria-label={t('settings.language')}>
-              {languages.map((item) => (
-                <button
-                  className={item === language ? 'language-switch__item language-switch__item--active' : 'language-switch__item'}
-                  type="button"
-                  key={item}
-                  onClick={() => setLanguage(item)}
-                >
-                  {languageLabels[item]}
-                </button>
-              ))}
-            </div>
+            <label className="language-menu">
+              <Languages size={14} aria-hidden="true" />
+              <select aria-label={t('settings.language')} value={language} onChange={(event) => setLanguage(event.target.value as typeof language)}>
+                {languages.map((item) => <option value={item} key={item}>{languageLabels[item]}</option>)}
+              </select>
+            </label>
             <Tooltip content={t('app.nav.settings')} side="top">
               <button className="icon-ghost" type="button" aria-label={t('app.nav.settings')} onClick={() => window.mootool.openSettings()}>
                 <Settings size={17} />

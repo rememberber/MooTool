@@ -1051,7 +1051,7 @@ button {
 .app-shell {
   position: relative;
   display: grid;
-  grid-template-columns: 280px minmax(560px, 1fr);
+  grid-template-columns: 248px minmax(560px, 1fr);
   grid-template-rows: minmax(0, 1fr);
   width: 100%;
   height: 100%;
@@ -1298,7 +1298,7 @@ button {
 .app-shell--hide-nav-titles .tool-button span,
 .app-shell--hide-nav-titles .recent-section,
 .app-shell--hide-nav-titles .brand-mark span,
-.app-shell--hide-nav-titles .language-switch {
+.app-shell--hide-nav-titles .language-menu {
   display: none;
 }
 
@@ -3402,36 +3402,35 @@ button {
 .footer-controls {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 5px;
 }
 
-.language-switch {
+.language-menu {
   display: inline-flex;
   align-items: center;
-  gap: 2px;
-  padding: 3px;
+  gap: 3px;
+  height: 30px;
+  padding: 0 6px;
+  color: var(--text-muted);
   background: var(--control);
-  border-radius: 9px;
+  border-radius: 8px;
 }
 
-.language-switch__item {
-  min-width: 28px;
-  height: 24px;
-  padding: 0 7px;
-  color: var(--text-muted);
+.language-menu:hover {
+  color: var(--text-strong);
+  background: var(--control-hover);
+}
+
+.language-menu select {
+  width: 32px;
+  height: 100%;
+  padding: 0;
+  color: inherit;
   background: transparent;
-  border-radius: 7px;
+  border: 0;
+  outline: 0;
   cursor: pointer;
   font-size: 12px;
-}
-
-.language-switch__item:hover {
-  background: var(--control-hover-soft);
-}
-
-.language-switch__item--active {
-  color: var(--text-strong);
-  background: var(--workspace);
 }
 
 .placeholder-page p {
@@ -5392,7 +5391,7 @@ button {
 
 @media (max-width: 1320px) {
   .app-shell {
-    grid-template-columns: 260px 1fr;
+    grid-template-columns: 232px 1fr;
   }
 
   .app-shell--hide-nav-titles {
