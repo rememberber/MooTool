@@ -26,7 +26,9 @@ describe('QuickNoteVaultRepository', () => {
     const saved = await repository.save({ ...note, content: '# Hello\nneedle' })
 
     expect(saved.relativePath).toBe('Work/API ideas.txt')
+    expect(saved.metadata.fontName).toBe('ui-monospace')
     expect(saved.metadata.fontSize).toBe(15)
+    expect(await readFile(join(directory, saved.relativePath), 'utf8')).toContain('font_name: ui-monospace')
     expect(await readFile(join(directory, saved.relativePath), 'utf8')).toContain('font_size: "15"')
     expect((await repository.list({ keyword: 'needle' }))[0].children).toHaveLength(1)
 

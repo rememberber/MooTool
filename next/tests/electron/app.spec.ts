@@ -524,6 +524,7 @@ test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () =>
   const createDialog = mainPage.getByRole('dialog', { name: '新建笔记' })
   await createDialog.getByLabel('名称').fill('E2E Quick Note')
   await createDialog.getByRole('button', { name: '创建' }).click()
+  await expect(mainPage.getByLabel('字体')).toHaveValue('ui-monospace')
   const colorTrigger = mainPage.getByRole('button', { name: '笔记颜色', exact: true })
   await expect(colorTrigger).toHaveAttribute('data-color', 'default')
   await expect.poll(() => colorTrigger.evaluate((element) => ({
@@ -546,7 +547,7 @@ test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () =>
   await expect.poll(() => mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick Note.txt'))).toEqual(
     expect.objectContaining({
       content: '## E2E Markdown\n\n- Vault file\n- Git checkpoint',
-      metadata: expect.objectContaining({ color: 'yellow' })
+      metadata: expect.objectContaining({ color: 'yellow', fontName: 'ui-monospace' })
     })
   )
 
