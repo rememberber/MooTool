@@ -35,9 +35,9 @@
   --syntax-string: #3f755d;
   --syntax-number: #a05f27;
   --syntax-literal: #8a536b;
-  --accent: #e0b22b;
-  --accent-strong: #b78300;
-  --accent-contrast: #241c00;
+  --accent: #4f83cc;
+  --accent-strong: #3f6fae;
+  --accent-contrast: #ffffff;
   --blue: #2f7de1;
   --success-text: #35765b;
   --success-bg: #e8f3ee;
@@ -50,7 +50,7 @@
   --shadow-soft: rgba(20, 20, 20, 0.045);
   --pattern-dot: #d6d6da;
   --window-drag-height: 52px;
-  --app-font-size: 14px;
+  --app-font-size: 13px;
   --app-font-family: system-ui;
 }
 
@@ -85,9 +85,9 @@
   --syntax-string: #82b59d;
   --syntax-number: #d1a267;
   --syntax-literal: #c48aa2;
-  --accent: #e0b22b;
-  --accent-strong: #b78300;
-  --accent-contrast: #241c00;
+  --accent: #4f83cc;
+  --accent-strong: #3f6fae;
+  --accent-contrast: #ffffff;
   --blue: #6aa7ff;
   --success-text: #82c8a6;
   --success-bg: #20352c;

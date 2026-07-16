@@ -114,9 +114,9 @@ export const defaultAppSettings: AppSettings = {
   appearance: {
     interfaceStyle: 'modern',
     theme: 'system',
-    accentColor: 'yellow',
+    accentColor: 'blue',
     fontFamily: 'system-ui',
-    fontSize: 14,
+    fontSize: 13,
     unifiedBackground: true
   },
   layout: {
@@ -124,7 +124,7 @@ export const defaultAppSettings: AppSettings = {
     compactNavigation: false,
     showSeparators: true,
     hideNavigationTitles: false,
-    navigationStyle: 'grouped',
+    navigationStyle: 'classic',
     paneSizes: {}
   },
   editor: {

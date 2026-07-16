@@ -51,11 +51,12 @@ describe('LegacyMigrationService', () => {
       general: { language: 'zh-CN', autoCheckUpdates: false, startMaximized: true },
       appearance: { theme: 'dark', fontFamily: 'PingFang SC', fontSize: 13 },
       network: { proxyEnabled: true, proxyHost: '127.0.0.1', proxyPort: '7890', proxyUsername: 'moo' },
-      layout: { navigationStyle: 'card', compactNavigation: true },
+      layout: { compactNavigation: true },
       editor: { sqlDialect: 'MySQL', quickNoteFontSize: 16, jsonFontSize: 15 },
       vault: { gitUsername: 'zhoubo', autoCommit: true, autoPullMinutes: 5 },
       tools: { qrCodeSize: 480, qrErrorCorrection: 'H', randomStringLength: 24, translationProvider: 'bing' }
     })
+    expect(result.settingsPatch.layout).not.toHaveProperty('navigationStyle')
     expect(result.settingsPatch.vault).not.toHaveProperty('gitRemote')
     expect(JSON.stringify(result.settingsPatch)).not.toContain('legacy-secret')
 

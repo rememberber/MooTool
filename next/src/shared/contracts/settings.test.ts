@@ -1,9 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { defaultAppSettings, mergeSettings } from './settings'
 
-it('uses the MooTool yellow accent by default', () => {
-  expect(defaultAppSettings.appearance.accentColor).toBe('yellow')
+it('uses the MooTool Next visual defaults', () => {
+  expect(defaultAppSettings.appearance.accentColor).toBe('blue')
   expect(defaultAppSettings.appearance.interfaceStyle).toBe('modern')
+  expect(defaultAppSettings.appearance.fontSize).toBe(13)
+  expect(defaultAppSettings.layout.navigationStyle).toBe('classic')
+  expect(defaultAppSettings.editor.quickNoteFontSize).toBe(14)
 })
 
 describe('mergeSettings', () => {

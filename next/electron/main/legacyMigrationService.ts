@@ -495,7 +495,7 @@ function legacySettingsPatch(config: LegacySetting): SettingsPatch {
     appearance.theme = followSystem ? 'system' : themeName.includes('dark') || themeName.includes('darcula') ? 'dark' : 'light'
   }
   if (hasSetting(config, 'setting.appearance', 'font')) appearance.fontFamily = settingValue(config, 'setting.appearance', 'font')
-  if (hasSetting(config, 'setting.appearance', 'fontSize')) appearance.fontSize = positiveNumber(settingValue(config, 'setting.appearance', 'fontSize'), 14)
+  if (hasSetting(config, 'setting.appearance', 'fontSize')) appearance.fontSize = positiveNumber(settingValue(config, 'setting.appearance', 'fontSize'), 13)
   if (hasSetting(config, 'setting.normal', 'unifiedBackground')) appearance.unifiedBackground = booleanValue(settingValue(config, 'setting.normal', 'unifiedBackground'), true)
   if (Object.keys(appearance).length) patch.appearance = appearance
 
@@ -504,11 +504,6 @@ function legacySettingsPatch(config: LegacySetting): SettingsPatch {
   if (hasSetting(config, 'setting.custom', 'tabHideTitle')) layout.hideNavigationTitles = booleanValue(settingValue(config, 'setting.custom', 'tabHideTitle'), false)
   if (hasSetting(config, 'setting.custom', 'tabSeparator')) layout.showSeparators = booleanValue(settingValue(config, 'setting.custom', 'tabSeparator'), false)
   if (hasSetting(config, 'setting.custom', 'funcRecentVisible')) layout.showRecent = booleanValue(settingValue(config, 'setting.custom', 'funcRecentVisible'), false)
-  if (hasSetting(config, 'setting.custom', 'tabCard') || hasSetting(config, 'setting.custom', 'funcTabGrouped')) {
-    layout.navigationStyle = booleanValue(settingValue(config, 'setting.custom', 'tabCard'), false)
-      ? 'card'
-      : booleanValue(settingValue(config, 'setting.custom', 'funcTabGrouped'), true) ? 'grouped' : 'classic'
-  }
   if (Object.keys(layout).length) patch.layout = layout
 
   const editor: NonNullable<SettingsPatch['editor']> = {}

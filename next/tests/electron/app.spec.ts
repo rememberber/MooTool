@@ -62,6 +62,16 @@ test.afterAll(async () => {
 })
 
 test('matches the Java home content and persists sidebar collapse state', async () => {
+  await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({
+    appearance: { accentColor: 'blue', fontSize: 13 },
+    layout: { navigationStyle: 'classic' },
+    editor: { quickNoteFontSize: 14 }
+  })
+  await expect(mainPage.locator('.app-shell')).toHaveClass(/app-shell--nav-classic/)
+  await expect.poll(() => mainPage.evaluate(() => ({
+    accent: getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(),
+    fontSize: getComputedStyle(document.documentElement).getPropertyValue('--app-font-size').trim()
+  }))).toEqual({ accent: '#4f83cc', fontSize: '13px' })
   await expect(mainPage.getByRole('heading', { name: 'MooTool', exact: true })).toBeVisible()
   await expect(mainPage.getByRole('heading', { name: '关于', exact: true })).toBeVisible()
   await expect(mainPage.getByRole('heading', { name: '其他作品', exact: true })).toBeVisible()
