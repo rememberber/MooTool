@@ -308,6 +308,14 @@ test('runs P4 reformat, crypto, Protobuf and QR workflows', async () => {
   await expect(cryptoEditors.nth(0)).toHaveValue('MooTool E2E')
 
   await openTool('Protobuf', 'Protobuf')
+  const protobufBounds = await mainPage.locator('.protobuf-workspace').evaluate((element) => ({
+    bottom: element.getBoundingClientRect().bottom,
+    viewportHeight: window.innerHeight,
+    scrollHeight: element.scrollHeight,
+    clientHeight: element.clientHeight
+  }))
+  expect(protobufBounds.bottom).toBeLessThanOrEqual(protobufBounds.viewportHeight)
+  expect(protobufBounds.scrollHeight).toBe(protobufBounds.clientHeight)
   const protobufPanes = mainPage.locator('.protobuf-convert-grid textarea')
   await mainPage.getByRole('button', { name: '转为 Binary' }).click()
   await expect(protobufPanes.nth(1)).not.toHaveValue('')

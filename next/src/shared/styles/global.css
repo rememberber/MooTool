@@ -117,7 +117,7 @@
 }
 
 .quick-note-tool > :nth-child(2) {
-  height: calc(100% - 50px);
+  flex: 1;
   min-height: 0;
 }
 
@@ -675,7 +675,7 @@
 
 .runtime-shell {
   display: flex;
-  height: calc(100% - 50px);
+  flex: 1;
   min-height: 0;
   flex-direction: column;
   background: var(--surface);
@@ -1308,8 +1308,13 @@ button {
 }
 
 .app-shell--hide-nav-titles .sidebar-actions {
+  top: calc(var(--window-drag-height) + 4px);
   right: 12px;
   gap: 0;
+}
+
+.app-shell--hide-nav-titles .toolbar-spacer {
+  height: 72px;
 }
 
 .app-shell--hide-nav-titles .sidebar-footer {
@@ -1598,6 +1603,8 @@ button {
 }
 
 .tool-page {
+  display: flex;
+  flex-direction: column;
   height: 100%;
   padding: var(--window-drag-height) 20px 20px;
   overflow: hidden;
@@ -1605,6 +1612,7 @@ button {
 
 .tool-page__header {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: space-between;
   gap: 20px;
@@ -1639,12 +1647,18 @@ button {
   background: var(--error-bg);
 }
 
+.json-tool {
+  display: flex;
+  flex-direction: column;
+}
+
 .json-layout {
   position: relative;
   display: grid;
   grid-template-columns: 190px minmax(360px, 1fr) 280px;
   gap: 12px;
-  height: calc(100% - 50px);
+  flex: 1;
+  min-height: 0;
 }
 
 .json-layout--editor-only {
@@ -2217,9 +2231,9 @@ button {
 
 .local-tool-shell {
   display: flex;
+  flex: 1;
   min-width: 0;
   min-height: 0;
-  height: calc(100% - 50px);
   flex-direction: column;
   background: var(--surface-elevated);
   border: 1px solid var(--border);
@@ -2575,9 +2589,10 @@ button {
 
 .time-workspace {
   display: grid;
+  flex: 1;
   grid-template-columns: minmax(0, 1fr);
   align-content: start;
-  height: calc(100% - 50px);
+  min-height: 0;
   background: var(--surface-elevated);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -4739,7 +4754,8 @@ button {
 /* Image assistant */
 
 .image-workspace {
-  height: calc(100% - 50px);
+  flex: 1;
+  min-height: 0;
 }
 
 .image-main-toolbar {

@@ -54,6 +54,7 @@ export function HomePage() {
           <div className="home-about-copy">
             <p>{t('app.home.about.line1')}</p>
             <p>{t('app.home.about.line2')}</p>
+            <p>{t('app.home.about.line2Note')}</p>
             <p>{t('app.home.about.line3')}</p>
             <p>{t('app.home.about.line4')}</p>
             <p>{t('app.home.about.line5')}</p>
