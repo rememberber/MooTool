@@ -1,7 +1,7 @@
 # MooTool Next：Java 版完整对齐迁移计划
 
-> 状态：规划基线  
-> 更新日期：2026-07-15  
+> 状态：P1-P7 实现完成；Java 人工视觉签收、远端跨平台包与正式签名待验收
+> 更新日期：2026-07-16
 > 目标技术栈：TypeScript + React + Vite + Electron  
 > 功能基线：当前 Java 版 MooTool 代码、README 功能树与实际可运行行为
 
@@ -63,17 +63,41 @@ MooTool Next 不再以“精选 MVP”作为当前阶段目标，而是以 Java 
 - MooTool 正式 AppIcon、favicon 和页面品牌图标。
 - Tooltip、Toast 通用反馈基础设施。
 - JSON 格式化、压缩、换行、复制、清空、转义、还原和基础校验原型。
+- 主页 + 24 个旧版工具的 `toolRegistry`、6 个内置分组和统一懒加载入口。
+- Zustand 工作区状态、全局工具搜索、最近 5 个工具和最后页面持久化。
+- 版本化 `AppSettings`、`electron-store`、typed preload IPC 和跨窗口设置广播。
+- 设置模态子窗口及常规、外观、布局、编辑器、网络、数据、Vault、运行时、工具默认值、快捷键、关于分类。
+- Java、Groovy、Python、Node.js 本机运行时检测和自定义路径设置。
+- `safeStorage` 敏感信息存储，代理密码和 Git Token 不以明文进入普通配置。
+- 应用菜单、`Command/Ctrl + K`、设置快捷键、窗口状态、关闭策略和系统托盘。
+- Vitest 单元测试、Electron Playwright E2E 和 React Doctor 质量门槛。
+- 基于 `node:sqlite` 的 Java 兼容 `t_func_history` Repository，支持搜索、应用、复制、删除、清空和单工具 200 条上限。
+- JSON 排序、忽略大小写、重复 Key、Key/Value 互换、JSON/XML、JavaBean、JSONPath 和可视化路径选择。
+- JSON 查找、导入导出、历史记录和响应式高级工具面板。
+- 受限文件边界的 JSON Vault，支持嵌套路径、打开、新建、保存、删除和未保存保护。
+- JSON Vault Git 面板，支持状态、初始化、远程配置、提交、fetch/pull/push、历史和 diff；Token 经 `safeStorage` + `GIT_ASKPASS` 注入。
+- JSON 的 1440 明暗、1080 最小窗口、JSONPath 弹窗和 Git 面板视觉基线。
+- P3 八个纯本地工具已完成 TS/React 实现：时间转换、编码解码、UA 分析、计算器、正则、Cron、文本 Diff、Properties/YAML 配置转换。
+- P3 已接入通用 Tool Page、Tab、历史、SQLite 收藏、Tooltip、Toast、i18n 和系统明暗主题，并完成单元、Electron E2E 与视觉回归验证。
+- P4 七个文件、媒体与密码学工具已完成：格式化、加解密/随机、二维码、调色板、图片助手、PDF、Protobuf。
+- P4 已接入图片仓库、截图/剪贴板、文件摘要、PDF 处理等 typed Electron IPC，并完成三语言、明暗主题、最小窗口和视觉基线。
+- P5 六个网络与系统工具已完成：HTTP 请求、翻译、Host、网络/IP、环境变量、系统信息。
+- P5 已接入统一代理/超时/取消、Java 兼容 SQLite 表、平台 Hosts 提权、白名单系统命令和结构化硬件采集，并完成三语言、明暗主题、最小窗口和视觉基线。
+- P6 Quick Note 已完成 Java 兼容文本 Vault、Markdown、图片、搜索、树操作、导入导出、快速替换、Git、自动保存和文件监视闭环。
+- P6 代码运行已完成 Java/Groovy、Python、Node.js 独立草稿、运行参数、工作目录、检测、格式化、执行、停止、流式输出和历史闭环。
+- P6 已在设置中接入本地完整/分类备份、存储位置和运行时路径，完成 schema v3 迁移、三语言、明暗主题与最小窗口验证。
+- P7 已补齐 JSON Vault/Quick Note 高级树操作、文件监视及 Git 冲突、撤销、中止合并和自动化。
+- P7 已完成 Java SQLite、配置、Quick Note、JSON Vault、收藏、HTTP 和翻译数据的只读扫描、备份、事务迁移、幂等与回滚。
+- P7 已完成更新检查、关于页面、托盘和关闭行为验收，版本与 Java 基线统一为 `1.7.8`。
+- P7 已完成 CodeMirror 大 JSON 优化、打包 App 性能门槛、macOS ARM64 DMG/ZIP 生成与启动验证。
+- P7 已建立 macOS Apple Silicon/Intel、Windows x64、Linux x64 手动 CI 安装包矩阵。
 
 ### 3.2 尚未完成
 
-- 导航元数据仍写在 `Workbench.tsx`，没有统一工具注册中心。
-- 搜索按钮、最近使用、设置按钮尚未形成真实业务闭环。
-- 首页快捷入口与导航列表未由同一数据源生成。
-- 24 个旧版工具中只有 JSON 有真实页面，且 JSON 仍未达到旧版完整能力。
-- `electron-store` 尚未形成正式设置存储协议。
-- 历史、收藏、SQLite、Vault、旧版数据迁移尚未设计落地。
-- 系统托盘、更新、窗口关闭策略、快捷键和菜单尚未迁移。
-- 缺少单元测试、Electron E2E 和视觉回归基线。
+- 24 个工具仍需用 Java 版同尺寸截图完成最终人工布局签收；Next 明暗和最小窗口自动视觉基线已具备。
+- macOS Intel、Windows x64、Linux x64 安装包矩阵已定义，仍需在 GitHub Runner 实际执行并安装验收。
+- Apple Developer ID、公证/stapling 与 Windows 代码签名依赖发布凭证，当前本机包仅用于内部候选验收。
+- 翻译、代理和远程 Git 需要发布环境真实凭证与网络条件做最终在线验收。
 
 ## 4. 目标架构
 
@@ -254,31 +278,31 @@ type AppSettings = {
 
 | 分组 | Java ID | 工具 | 主要布局基线 | 建议阶段 | 当前状态 |
 | --- | --- | --- | --- | --- | --- |
-| 首页 | `mootool` | 首页/关于 | 首页、品牌、版本与入口 | P1 | 骨架 |
-| 文本 | `quickNote` | 随手记 | 文件树、编辑器、预览、操作栏、替换侧栏 | P6 | 未开始 |
-| 文本 | `textDiff` | 文本对比 | 左右输入、同步滚动、Unified Tab、操作栏 | P3 | 骨架 |
-| 文本 | `reformat` | 格式化 | 字符串/文件 Tab、输入输出与格式类型 | P4 | 未开始 |
-| 开发 | `json` | JSON | Vault/列表、编辑器、工具栏、结果与弹窗 | P2 | 开发中 |
-| 开发 | `java` | 代码运行 | Java/Python/Node.js 三个 Tab、编辑器、格式化、运行结果、历史；Java Tab 兼容旧版 Java/Groovy | P6 | 未开始 |
-| 开发 | `ymlProperties` | 配置转换 | 转换 Tab、校验、历史 | P3 | 未开始 |
-| 开发 | `protobuf` | Protobuf | JSON/二进制、Wire、Hex/Base64 三个 Tab | P4 | 未开始 |
-| 开发 | `variables` | 环境变量 | 系统变量/Java Properties Tab、表格、导出 | P5 | 未开始 |
-| 网络 | `http` | HTTP 请求 | 请求列表、请求编辑、响应 Body/Header/Cookie、历史 | P5 | 骨架 |
-| 网络 | `host` | Host | Host 列表、编辑器、查找替换、导入导出 | P5 | 未开始 |
-| 网络 | `net` | 网络/IP | 功能选择、参数区、结果区 | P5 | 未开始 |
-| 网络 | `uaParse` | UA 分析 | 输入、解析结果、预设、历史 | P3 | 未开始 |
-| 编码 | `encode` | 编码解码 | 多转换 Tab、上下输入输出、历史 | P3 | 骨架 |
-| 编码 | `crypto` | 加解密/随机 | 对称/非对称/摘要/Base64/随机 Tab | P4 | 未开始 |
-| 编码 | `regex` | 正则 | 匹配测试/常用正则 Tab、收藏、历史 | P3 | 骨架 |
-| 编码 | `cron` | Cron | 秒到年构建器、解析结果、运行时间、收藏 | P3 | 骨架 |
-| 编码 | `qrCode` | 二维码 | 生成/识别/历史 Tab、预览与参数 | P4 | 骨架 |
-| 日常 | `timeConvert` | 时间转换 | 双向转换、时区、快捷时间、历史、全屏钟 | P3 | 骨架 |
-| 日常 | `translation` | 翻译 | 翻译/单词本/历史 Tab、语言与翻译器 | P5 | 未开始 |
-| 日常 | `calculator` | 计算器 | 表达式、进制/GCD/LCM/排列组合、历史 | P3 | 未开始 |
-| 日常 | `colorBoard` | 调色板 | 主题色、取色、转换、运算、收藏、历史 | P4 | 骨架 |
-| 日常 | `image` | 图片助手 | 图像画布、缩放栏、导入导出、处理弹窗 | P4 | 骨架 |
-| 日常 | `pdf` | PDF | 拆分/合并 Tab、文件队列和输出设置 | P4 | 未开始 |
-| 系统 | `hardware` | 系统信息 | 系统/CPU/内存/存储/网络 Tab | P5 | 未开始 |
+| 首页 | `mootool` | 首页/关于 | 首页、品牌、版本与入口 | P1 | 待对齐验收 |
+| 文本 | `quickNote` | 随手记 | 文件树、编辑器、预览、操作栏、替换侧栏 | P6 | 待对齐验收 |
+| 文本 | `textDiff` | 文本对比 | 左右输入、同步滚动、Unified Tab、操作栏 | P3 | 待对齐验收 |
+| 文本 | `reformat` | 格式化 | 字符串/文件 Tab、输入输出与格式类型 | P4 | 待对齐验收 |
+| 开发 | `json` | JSON | Vault/列表、编辑器、工具栏、结果与弹窗 | P2 | 待对齐验收 |
+| 开发 | `java` | 代码运行 | Java/Python/Node.js 三个 Tab、编辑器、格式化、运行结果、历史；Java Tab 兼容旧版 Java/Groovy | P6 | 待对齐验收 |
+| 开发 | `ymlProperties` | 配置转换 | 转换 Tab、校验、历史 | P3 | 待对齐验收 |
+| 开发 | `protobuf` | Protobuf | JSON/二进制、Wire、Hex/Base64 三个 Tab | P4 | 待对齐验收 |
+| 开发 | `variables` | 环境变量 | 系统变量/Java Properties Tab、表格、导出 | P5 | 待对齐验收 |
+| 网络 | `http` | HTTP 请求 | 请求列表、请求编辑、响应 Body/Header/Cookie、历史 | P5 | 待对齐验收 |
+| 网络 | `host` | Host | Host 列表、编辑器、查找替换、导入导出 | P5 | 待对齐验收 |
+| 网络 | `net` | 网络/IP | 功能选择、参数区、结果区 | P5 | 待对齐验收 |
+| 网络 | `uaParse` | UA 分析 | 输入、解析结果、预设、历史 | P3 | 待对齐验收 |
+| 编码 | `encode` | 编码解码 | 多转换 Tab、上下输入输出、历史 | P3 | 待对齐验收 |
+| 编码 | `crypto` | 加解密/随机 | 对称/非对称/摘要/Base64/随机 Tab | P4 | 待对齐验收 |
+| 编码 | `regex` | 正则 | 匹配测试/常用正则 Tab、收藏、历史 | P3 | 待对齐验收 |
+| 编码 | `cron` | Cron | 秒到年构建器、解析结果、运行时间、收藏 | P3 | 待对齐验收 |
+| 编码 | `qrCode` | 二维码 | 生成/识别/历史 Tab、预览与参数 | P4 | 待对齐验收 |
+| 日常 | `timeConvert` | 时间转换 | 双向转换、时区、快捷时间、历史、全屏钟 | P3 | 待对齐验收 |
+| 日常 | `translation` | 翻译 | 翻译/单词本/历史 Tab、语言与翻译器 | P5 | 待对齐验收 |
+| 日常 | `calculator` | 计算器 | 表达式、进制/GCD/LCM/排列组合、历史 | P3 | 待对齐验收 |
+| 日常 | `colorBoard` | 调色板 | 主题色、取色、转换、运算、收藏、历史 | P4 | 待对齐验收 |
+| 日常 | `image` | 图片助手 | 图像画布、缩放栏、导入导出、处理弹窗 | P4 | 待对齐验收 |
+| 日常 | `pdf` | PDF | 拆分/合并 Tab、文件队列和输出设置 | P4 | 待对齐验收 |
+| 系统 | `hardware` | 系统信息 | 系统/CPU/内存/存储/网络 Tab | P5 | 待对齐验收 |
 
 ## 8. 分阶段实施计划
 
@@ -295,6 +319,8 @@ type AppSettings = {
 
 ### P1：导航内核、设置骨架与桌面基础
 
+**状态：已完成（2026-07-15）**
+
 - 建立 24 工具、6 分组的 `toolRegistry`。
 - 使用 Zustand 管理当前工具、搜索、最近访问和窗口 UI 状态。
 - 实现工具搜索与 `Command/Ctrl + K`。
@@ -309,6 +335,8 @@ type AppSettings = {
 
 ### P2：共享工作台能力与 JSON 完整对齐
 
+**状态：实现完成，待 Java 人工对照验收（2026-07-16）**
+
 - 抽取统一 Tool Page、Toolbar、Split Pane、Tabs、Editor、History、Favorite、File Picker。
 - 完成 SQLite 技术验证和 Repository 层。
 - 完成通用历史面板：搜索、应用、复制输入/输出、删除、清空。
@@ -317,7 +345,11 @@ type AppSettings = {
 
 **出口条件**：JSON 通过完整功能、布局、数据和快捷键 parity 验收。
 
+已完成 JSON 主功能、历史、Vault/Git 高级操作、响应式布局、Java 旧数据迁移、大文本虚拟编辑器、性能门槛和端到端测试。出口前仅保留 Java 同尺寸截图与快捷键人工签收。
+
 ### P3：纯本地计算工具
+
+**状态：实现完成，待 Java 对照验收（2026-07-15）**
 
 - 时间转换。
 - 编码解码。
@@ -330,7 +362,13 @@ type AppSettings = {
 
 这些工具优先复用通用输入输出、历史、收藏和 Tab 组件，并建立大量单元测试。
 
+已完成八个工具的功能实现、三语言文案、明暗主题、响应式布局、历史/收藏持久化和 Electron 工作流测试。`1440` 宽屏、`1080 x 720` 最小窗口及代表性深色页面均已建立截图基线；详细证据见 `doc/parity/p3-local-tools.md`。
+
+**出口结果**：P3 实现范围已完成，类型检查、42 项单元/集成测试、6 项 Electron E2E、生产构建和 React Doctor 全部通过。Java 同尺寸截图逐项签收与旧版收藏数据迁移作为共享 parity 验收工作继续跟踪，不阻塞 P3 实现阶段收口。
+
 ### P4：文件、媒体与密码学工具
+
+**状态：实现完成，待 Java 对照验收（2026-07-16）**
 
 - QR Code。
 - Crypto/Random，包括 SM2/SM3/SM4。
@@ -342,7 +380,13 @@ type AppSettings = {
 
 该阶段需要重点验证剪贴板、文件拖放、原生对话框、长任务取消和平台权限。
 
+已完成七个工具的核心功能、三语言文案、明暗主题、响应式布局、历史/收藏、图片仓库和 Electron 文件/剪贴板/PDF 服务。`1440 x 920` 浅色与 `1080 x 720` 深色共 14 张页面视觉基线已建立；详细证据见 `doc/parity/p4-file-media-crypto.md`。
+
+**出口结果**：P4 实现范围已完成，类型检查、72 项单元/集成测试、8 项 Electron E2E、生产构建、14 页视觉检查和 React Doctor 全部通过。OCR 按已批准差异排除；Java 同尺寸截图签收、跨平台安装包复测和大文件压力/取消测试继续作为共享发布验收跟踪。
+
 ### P5：网络与系统工具
+
+**状态：实现完成，待 Java 对照验收（2026-07-16）**
 
 - HTTP Request。
 - Translation、单词本与翻译器 fallback。
@@ -353,7 +397,13 @@ type AppSettings = {
 
 该阶段同时完成代理设置、离线状态、超时、取消、权限和错误码设计。
 
+已完成六个工具的功能实现、Java 兼容业务表、三语言文案、明暗主题和响应式布局。HTTP 与翻译接入统一代理、超时、取消和错误码；Hosts 与系统命令置于主进程白名单边界；`1440 x 920` 浅色与 `1080 x 720` 深色共 12 张页面视觉基线已建立。详细证据见 `doc/parity/p5-network-system.md`。
+
+**出口结果**：P5 实现范围已完成，类型检查、83 项单元/集成测试、10 项 Electron E2E、生产构建、12 页视觉检查和 React Doctor 全部通过。Java 同尺寸截图签收、第三方翻译/代理实测、系统权限和跨平台安装包复测继续作为共享发布验收跟踪。
+
 ### P6：复杂编辑器、Vault 与运行时
+
+**状态：实现完成，待 Java 对照验收（2026-07-16）**
 
 - Quick Note 全量能力、Markdown 预览、图片、搜索、导出、快速替换和 Git Vault。
 - 将旧版 Java/Groovy 工具升级为“代码运行”，页面提供 Java、Python、Node.js 三个主 Tab；Java Tab 保留旧版 Java/Groovy 的格式化与运行能力。
@@ -365,7 +415,13 @@ type AppSettings = {
 
 **运行时出口条件**：三个 Tab 均能完成检测、编辑、执行、停止、输出和历史闭环；Java/Groovy 旧版用例全部通过 parity 验收。
 
+已完成 Quick Note 的 Java 兼容 `.txt` + YAML frontmatter Vault、嵌套文件树、搜索排序、编辑/分栏/预览、图片附件、导入导出、查找替换、快速替换、Git 和自动化；已完成 Java/Groovy、Python、Node.js 受控运行台及本地完整/分类备份。详细功能、Java 对照依据和保留验收项见 `doc/parity/p6-complex-editors-runtime.md`。
+
+**出口结果**：P6 实现范围已完成，类型检查、33 个测试文件共 101 项单元/集成测试、13 项 Electron E2E、生产构建、6 页明暗/宽窄视觉审计和 React Doctor 全部通过。Quick Note 树拖拽、Git 高级处理和真实旧数据迁移已在 P7 完成；四种外部运行时及 Windows/Linux 安装包实机复测继续作为发布验收项目。
+
 ### P7：全量对齐、迁移与发布
+
+**状态：实现与本机候选包完成，待外部发布验收（2026-07-16）**
 
 - 逐工具执行 parity checklist。
 - 执行旧版数据迁移和回滚演练。
@@ -373,6 +429,10 @@ type AppSettings = {
 - 完成更新、托盘、关闭行为、设置和快捷键全量验收。
 - 完成性能、内存、启动速度和大文件压力测试。
 - 旧 Java 版继续保留，直到 Next 全量验收和迁移稳定后再决定维护策略。
+
+已完成高级 Vault/Git、旧数据迁移、完整备份、更新检查、托盘与关闭策略、大文件性能、macOS ARM64 DMG/ZIP 和四平台 CI 矩阵。详细迁移边界、回滚、性能数据、包校验和发布阻塞项见 `doc/parity/p7-release-migration.md`。
+
+**出口结果**：35 个测试文件共 114 项 Vitest、16 项 Electron E2E、生产构建、P7 四张视觉审计、React Doctor 100/100、打包 App 性能与 macOS ARM64 产物验证通过。远端 Intel/Windows/Linux Runner、正式签名/公证、真实在线服务及 Java 人工布局签收继续作为公开发布门槛。
 
 ## 9. 测试与验收
 
@@ -415,7 +475,7 @@ type AppSettings = {
 | Java/Python/Node.js 运行时差异 | 采用三个独立 Tab；自动探测系统运行时并允许在设置中覆盖路径，逐运行时验证版本；统一使用受控子进程、临时目录、超时、取消和输出限制 |
 | Host、DNS、系统命令权限 | 主进程白名单 API、平台实现、明确提权流程 |
 | SM2/SM3/SM4 正确性 | 选择成熟库，使用标准测试向量验证 |
-| 翻译服务变化 | Provider 抽象、超时、fallback、代理支持 |
+| 翻译服务变化 | 保持 Google/Bing 轻量双实现，提供超时、fallback 和代理支持；不引入重型 Provider 接口层 |
 | 大文件与长任务卡顿 | Worker/子进程、流式处理、进度和取消 |
 | 旧数据迁移损坏 | 只读扫描、自动备份、事务迁移、可回滚 |
 | 布局现代化导致功能遗漏 | 每个工具维护 Java/Next 双栏 parity checklist |
@@ -423,21 +483,49 @@ type AppSettings = {
 
 ## 11. 近期执行清单
 
-下一里程碑固定为 **P1：导航内核、设置骨架与桌面基础**。
+P1-P7 的代码实现和本机候选验收已完成。当前只继续处理公开发布所需的外部验收项。
 
-- [ ] 建立 24 工具和 6 分组的 TypeScript 注册表。
-- [ ] 将左侧导航、首页入口和搜索改为注册表驱动。
-- [ ] 建立 Zustand 工作台 Store。
-- [ ] 实现真实工具搜索和 `Command/Ctrl + K`。
-- [ ] 实现最近 5 个工具与最后打开工具持久化。
-- [ ] 定义版本化 `AppSettings` Schema。
-- [ ] 建立 `electron-store` 主进程服务和 typed preload API。
-- [ ] 创建设置模态子窗口和全部分类骨架。
-- [ ] 先接通语言、主题、强调色、字体字号、显示最近和布局设置。
-- [ ] 预留代理、数据目录、Vault、快捷键、更新和托盘设置域。
-- [ ] 在设置 Schema 中预留 Java、Python、Node.js 运行时路径和自动探测结果。
-- [ ] 建立 P0 parity checklist 模板并填写 JSON 样例。
-- [ ] 补齐当前基础可访问性和按钮类型问题。
-- [ ] 增加基础单元测试和 Electron E2E 入口。
+- [x] 建立 24 工具和 6 分组的 TypeScript 注册表。
+- [x] 将左侧导航、首页入口和搜索改为注册表驱动。
+- [x] 建立 Zustand 工作台 Store。
+- [x] 实现真实工具搜索和 `Command/Ctrl + K`。
+- [x] 实现最近 5 个工具与最后打开工具持久化。
+- [x] 定义版本化 `AppSettings` Schema。
+- [x] 建立 `electron-store` 主进程服务和 typed preload API。
+- [x] 创建设置模态子窗口和全部分类骨架。
+- [x] 接通语言、主题、强调色、字体字号、显示最近和布局设置。
+- [x] 建立代理、数据目录、Vault、快捷键、更新和托盘设置域。
+- [x] 建立 Java、Groovy、Python、Node.js 运行时设置与自动检测。
+- [x] 建立 P0 parity checklist 模板并填写 JSON 样例。
+- [x] 补齐当前基础可访问性和按钮类型问题。
+- [x] 增加基础单元测试和 Electron E2E。
 
-完成这一里程碑后，再进入 JSON 的完整 parity，而不是继续增加彼此孤立的占位页面。
+P5 完成情况：
+
+- [x] 审计 HTTP、翻译、Host、网络/IP、环境变量和系统信息的 Java 行为与布局。
+- [x] 建立统一网络请求、代理、超时、取消和错误码边界。
+- [x] 迁移 HTTP 请求编辑、响应、Cookie/Header 和历史数据模型。
+- [x] 迁移 Host 与系统命令能力，按平台设计权限和降级路径。
+- [x] 迁移环境变量、系统信息、翻译/单词本并补齐 Electron E2E 与视觉回归。
+
+P6 完成情况：
+
+- [x] 审计 Quick Note、Java/Groovy 控制台和同步备份的 Java 实际行为与文件格式。
+- [x] 迁移 Quick Note 文件树、编辑器、Markdown、图片、快速替换、Git 和 Vault 自动化。
+- [x] 建立 Java/Groovy、Python、Node.js 受控运行台与独立持久化草稿、参数、工作目录和历史。
+- [x] 建立本地完整/分类备份、存储位置展示和安全路径边界。
+- [x] 完成 101 项 Vitest、13 项 Electron E2E、6 页视觉审计与 React Doctor 验证。
+
+P7 已按逐工具 Java/Next parity、旧数据迁移、跨平台安装包、更新流程和性能压力验证推进，未扩展本轮已批准范围之外的新功能。
+
+P7 完成情况：
+
+- [x] 补齐 JSON Vault、Quick Note 和 Git 高级对齐能力。
+- [x] 完成 Java 数据扫描、完整备份、事务迁移、幂等和回滚演练。
+- [x] 完成更新检查、关于页面、托盘和关闭行为验收。
+- [x] 完成打包 App 的启动、3 MB JSON、5 MB Quick Note 和内存压力门槛。
+- [x] 生成并验证 macOS ARM64 App、DMG 和 ZIP。
+- [x] 建立 macOS Apple Silicon/Intel、Windows x64、Linux x64 CI 打包矩阵。
+- [ ] 在远端 Runner 实跑并安装验收 Intel、Windows、Linux 产物。
+- [ ] 配置正式签名/公证并完成公开发布包验收。
+- [ ] 完成 24 个 Java/Next 同尺寸截图与快捷键人工签收。

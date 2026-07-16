@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react'
+import { useSettings } from '@/features/settings/SettingsProvider'
+import { accentColorPresets } from '@/shared/contracts/settings'
 
 export type ResolvedTheme = 'light' | 'dark'
 
 export function useSystemTheme(): ResolvedTheme {
-  const [theme, setTheme] = useState<ResolvedTheme>(() => {
+  const { settings } = useSettings()
+  const [systemTheme, setSystemTheme] = useState<ResolvedTheme>(() => {
     return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
   })
 
@@ -13,17 +16,17 @@ export function useSystemTheme(): ResolvedTheme {
 
     window.mootool?.getSystemTheme?.().then((systemTheme) => {
       if (!cancelled) {
-        setTheme(systemTheme)
+        setSystemTheme(systemTheme)
       }
     })
 
     cleanupElectronListener = window.mootool?.onSystemThemeChange?.((systemTheme) => {
-      setTheme(systemTheme)
+      setSystemTheme(systemTheme)
     })
 
     const media = window.matchMedia('(prefers-color-scheme: dark)')
     const handleMediaChange = (event: MediaQueryListEvent) => {
-      setTheme(event.matches ? 'dark' : 'light')
+      setSystemTheme(event.matches ? 'dark' : 'light')
     }
     media.addEventListener('change', handleMediaChange)
 
@@ -34,10 +37,17 @@ export function useSystemTheme(): ResolvedTheme {
     }
   }, [])
 
+  const theme = settings.appearance.theme === 'system' ? systemTheme : settings.appearance.theme
+
   useEffect(() => {
+    const accent = accentColorPresets.find((preset) => preset.id === settings.appearance.accentColor)
+      ?? accentColorPresets[0]
     document.documentElement.dataset.theme = theme
     document.documentElement.style.colorScheme = theme
-  }, [theme])
+    document.documentElement.style.setProperty('--accent', accent.value)
+    document.documentElement.style.setProperty('--app-font-size', `${settings.appearance.fontSize}px`)
+    document.documentElement.style.setProperty('--app-font-family', settings.appearance.fontFamily)
+  }, [settings.appearance.accentColor, settings.appearance.fontFamily, settings.appearance.fontSize, theme])
 
   return theme
 }

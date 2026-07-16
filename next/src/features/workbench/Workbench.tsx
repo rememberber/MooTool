@@ -1,99 +1,120 @@
-import {
-  Braces,
-  CalendarClock,
-  ChevronDown,
-  Clock3,
-  Code2,
-  Globe,
-  Home,
-  Image,
-  Palette,
-  QrCode,
-  Regex,
-  Search,
-  Settings,
-  Shuffle
-} from 'lucide-react'
-import { useState } from 'react'
-import { JsonTool } from '@/features/json/JsonTool'
+import { ChevronDown, Search, Settings } from 'lucide-react'
+import { Suspense, useEffect } from 'react'
+import { useAppStore } from '@/app/appStore'
+import { toolById, toolGroups } from '@/app/toolRegistry'
+import { CommandPalette } from '@/features/search/CommandPalette'
 import { BrandIcon } from '@/shared/components/BrandIcon'
 import { ToolButton } from '@/shared/components/ToolButton'
 import { Tooltip } from '@/shared/components/Tooltip'
 import { useI18n } from '@/shared/i18n/I18nProvider'
-import type { MessageKey } from '@/shared/i18n/messages'
-
-const primaryTools = [
-  { id: 'home', icon: Home, labelKey: 'app.nav.home' },
-  { id: 'json', icon: Braces, labelKey: 'app.nav.json' },
-  { id: 'time', icon: Clock3, labelKey: 'app.nav.time' },
-  { id: 'encode', icon: Shuffle, labelKey: 'app.nav.encode' },
-  { id: 'qrcode', icon: QrCode, labelKey: 'app.nav.qrcode' },
-  { id: 'http', icon: Globe, labelKey: 'app.nav.http' },
-  { id: 'diff', icon: Code2, labelKey: 'app.nav.diff' },
-  { id: 'regex', icon: Regex, labelKey: 'app.nav.regex' },
-  { id: 'color', icon: Palette, labelKey: 'app.nav.color' },
-  { id: 'image', icon: Image, labelKey: 'app.nav.image' },
-  { id: 'cron', icon: CalendarClock, labelKey: 'app.nav.cron' }
-] satisfies Array<{
-  id: string
-  icon: typeof Home
-  labelKey: MessageKey
-}>
-
-const recentItems = [
-  'JSON format snippet',
-  'HTTP draft',
-  'Base64 conversion',
-  'Saved color',
-  'Regex test'
-]
+import { useSettings } from '@/features/settings/SettingsProvider'
 
 export function Workbench() {
-  const [activeTool, setActiveTool] = useState('home')
   const { language, languageLabels, languages, setLanguage, t } = useI18n()
-  const activeToolLabel = t(primaryTools.find((tool) => tool.id === activeTool)?.labelKey ?? 'app.nav.home')
+  const { settings } = useSettings()
+  const activeToolId = useAppStore((state) => state.activeToolId)
+  const recentToolIds = useAppStore((state) => state.recentToolIds)
+  const hydrate = useAppStore((state) => state.hydrate)
+  const openTool = useAppStore((state) => state.openTool)
+  const setSearchOpen = useAppStore((state) => state.setSearchOpen)
+  const activeTool = toolById.get(activeToolId) ?? toolById.get('mootool')!
+  const ActiveComponent = activeTool.component
+
+  useEffect(() => {
+    void hydrate()
+    return window.mootool.onNavigate((event) => {
+      if (event === 'focus-search') {
+        setSearchOpen(true)
+      }
+    })
+  }, [hydrate, setSearchOpen])
+
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === 'k') {
+        event.preventDefault()
+        setSearchOpen(true)
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [setSearchOpen])
+
+  const shellClassName = [
+    'app-shell',
+    settings.layout.compactNavigation ? 'app-shell--compact-nav' : '',
+    settings.layout.showSeparators ? 'app-shell--nav-separators' : '',
+    settings.layout.hideNavigationTitles ? 'app-shell--hide-nav-titles' : '',
+    settings.appearance.unifiedBackground ? 'app-shell--unified-background' : '',
+    `app-shell--nav-${settings.layout.navigationStyle}`
+  ].filter(Boolean).join(' ')
 
   return (
-    <main className="app-shell">
+    <main className={shellClassName}>
       <div className="window-drag window-drag-region" aria-hidden="true" />
 
       <aside className="sidebar">
         <div className="window-drag toolbar-spacer" />
 
         <div className="sidebar-actions">
-          <Tooltip content={t('app.nav.search')} side="bottom">
-            <button className="icon-ghost" type="button" aria-label={t('app.nav.search')}>
+          <Tooltip content={`${t('app.nav.search')} · ⌘K`} side="bottom">
+            <button className="icon-ghost" type="button" aria-label={t('app.nav.search')} onClick={() => setSearchOpen(true)}>
               <Search size={17} />
             </button>
           </Tooltip>
         </div>
 
-        <nav className="tool-nav" aria-label={t('app.nav.tools')}>
-          {primaryTools.map((tool) => (
+        <div className="sidebar-scroll">
+          <nav className="tool-nav" aria-label={t('app.nav.tools')}>
             <ToolButton
-              key={tool.id}
-              icon={tool.icon}
-              label={t(tool.labelKey)}
-              active={activeTool === tool.id}
-              onClick={() => setActiveTool(tool.id)}
+              icon={toolById.get('mootool')!.icon}
+              label={t('app.nav.home')}
+              active={activeToolId === 'mootool'}
+              onClick={() => openTool('mootool')}
             />
-          ))}
-        </nav>
 
-        <section className="recent-section">
-          <div className="section-title">
-            <span>{t('app.nav.recent')}</span>
-            <ChevronDown size={14} />
-          </div>
-          <div className="recent-list">
-            {recentItems.map((item, index) => (
-              <button className="recent-item" key={item}>
-                <span className={index === 1 ? 'recent-dot recent-dot--blue' : 'recent-dot'} />
-                <span>{item}</span>
-              </button>
+            {toolGroups.map((group) => (
+              <section className="tool-group" key={group.id}>
+                <h2>{t(group.titleKey)}</h2>
+                {group.toolIds.map((toolId) => {
+                  const tool = toolById.get(toolId)!
+                  return (
+                    <ToolButton
+                      key={tool.id}
+                      icon={tool.icon}
+                      label={t(tool.titleKey)}
+                      active={activeToolId === tool.id}
+                      onClick={() => openTool(tool.id)}
+                    />
+                  )
+                })}
+              </section>
             ))}
-          </div>
-        </section>
+          </nav>
+
+          {settings.layout.showRecent && <section className="recent-section">
+            <div className="section-title">
+              <span>{t('app.nav.recent')}</span>
+              <ChevronDown size={14} />
+            </div>
+            <div className="recent-list">
+              {recentToolIds.length === 0 ? (
+                <p className="recent-empty">{t('app.recent.empty')}</p>
+              ) : recentToolIds.map((toolId, index) => {
+                const tool = toolById.get(toolId)
+                if (!tool) {
+                  return null
+                }
+                return (
+                  <button className="recent-item" type="button" key={tool.id} onClick={() => openTool(tool.id)}>
+                    <span className={index === 0 ? 'recent-dot recent-dot--blue' : 'recent-dot'} />
+                    <span>{t(tool.titleKey)}</span>
+                  </button>
+                )
+              })}
+            </div>
+          </section>}
+        </div>
 
         <div className="sidebar-footer">
           <div className="brand-mark">
@@ -101,10 +122,11 @@ export function Workbench() {
             <span>MooTool</span>
           </div>
           <div className="footer-controls">
-            <div className="language-switch" aria-label="Language">
+            <div className="language-switch" aria-label={t('settings.language')}>
               {languages.map((item) => (
                 <button
                   className={item === language ? 'language-switch__item language-switch__item--active' : 'language-switch__item'}
+                  type="button"
                   key={item}
                   onClick={() => setLanguage(item)}
                 >
@@ -113,7 +135,7 @@ export function Workbench() {
               ))}
             </div>
             <Tooltip content={t('app.nav.settings')} side="top">
-              <button className="icon-ghost" type="button" aria-label={t('app.nav.settings')}>
+              <button className="icon-ghost" type="button" aria-label={t('app.nav.settings')} onClick={() => window.mootool.openSettings()}>
                 <Settings size={17} />
               </button>
             </Tooltip>
@@ -122,60 +144,18 @@ export function Workbench() {
       </aside>
 
       <section className="workspace">
-        {activeTool === 'home' ? (
-          <>
-            <div className="hero-pattern" aria-hidden="true" />
-
-            <div className="home-panel">
-              <div className="headline-row">
-                <BrandIcon className="headline-icon" size={28} />
-                <h1>{t('app.home.title')}</h1>
-              </div>
-              <p className="subtle-link">{t('app.home.subtitle')}</p>
-
-              <div className="command-box">
-                <div className="command-input">{t('app.home.prompt')}</div>
-                <div className="command-controls">
-                  <button className="round-button">+</button>
-                  <button className="pill-button" onClick={() => setActiveTool('json')}>
-                    JSON
-                    <ChevronDown size={16} />
-                  </button>
-                  <button className="send-button" onClick={() => setActiveTool('json')}>
-                    ↑
-                  </button>
-                </div>
-              </div>
-
-              <div className="quick-grid">
-                <button className="quick-card" onClick={() => setActiveTool('json')}>
-                  <Braces size={30} />
-                  <strong>JSON</strong>
-                  <span>{t('app.home.json.desc')}</span>
-                </button>
-                <button className="quick-card">
-                  <Globe size={30} />
-                  <strong>HTTP</strong>
-                  <span>{t('app.home.http.desc')}</span>
-                </button>
-                <button className="quick-card">
-                  <Code2 size={30} />
-                  <strong>Diff</strong>
-                  <span>{t('app.home.diff.desc')}</span>
-                </button>
-              </div>
-            </div>
-          </>
-        ) : activeTool === 'json' ? (
-          <JsonTool />
-        ) : (
-          <section className="placeholder-page">
-            <h1>{activeToolLabel}</h1>
-            <p>{t('app.placeholder')}</p>
-          </section>
-        )}
+        <Suspense fallback={<div className="workspace-loading">{t('common.loading')}</div>}>
+          {ActiveComponent ? <ActiveComponent /> : (
+            <section className="placeholder-page">
+              <activeTool.icon size={28} />
+              <h1>{t(activeTool.titleKey)}</h1>
+              <p>{t('app.placeholder')}</p>
+            </section>
+          )}
+        </Suspense>
       </section>
 
+      <CommandPalette />
     </main>
   )
 }
