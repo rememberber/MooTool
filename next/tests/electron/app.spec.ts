@@ -207,6 +207,13 @@ test('opens the settings window and synchronizes appearance changes', async () =
   await expect.poll(() => settingsPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ general: { trayEnabled: true, closeBehavior: 'hide' } })
   await settingsPage.getByRole('button', { name: '每次询问', exact: true }).click()
   await settingsPage.locator('.settings-nav__item').filter({ hasText: '外观' }).click()
+  await expect(mainPage.locator('html')).toHaveAttribute('data-interface-style', 'modern')
+  await settingsPage.getByRole('button', { name: '安静主题', exact: true }).click()
+  await expect(settingsPage.locator('html')).toHaveAttribute('data-interface-style', 'quiet')
+  await expect(mainPage.locator('html')).toHaveAttribute('data-interface-style', 'quiet')
+  await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ appearance: { interfaceStyle: 'quiet' } })
+  await settingsPage.getByRole('button', { name: '现代主题', exact: true }).click()
+  await expect(mainPage.locator('html')).toHaveAttribute('data-interface-style', 'modern')
   await settingsPage.getByRole('button', { name: '浅色' }).click()
   await expect(mainPage.locator('html')).toHaveAttribute('data-theme', 'light')
 

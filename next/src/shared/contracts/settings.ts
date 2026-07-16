@@ -1,7 +1,8 @@
-export const appSettingsSchemaVersion = 4
+export const appSettingsSchemaVersion = 5
 
 export type AppLanguage = 'zh-CN' | 'en-US' | 'ja-JP'
 export type ThemePreference = 'system' | 'light' | 'dark'
+export type InterfaceStyle = 'modern' | 'quiet'
 export type CloseBehavior = 'ask' | 'hide' | 'quit'
 export type NavigationStyle = 'classic' | 'card' | 'grouped'
 export type SecretKey = 'proxyPassword' | 'gitToken'
@@ -24,6 +25,7 @@ export type AppSettings = {
     trayEnabled: boolean
   }
   appearance: {
+    interfaceStyle: InterfaceStyle
     theme: ThemePreference
     accentColor: string
     fontFamily: string
@@ -110,6 +112,7 @@ export const defaultAppSettings: AppSettings = {
     trayEnabled: true
   },
   appearance: {
+    interfaceStyle: 'modern',
     theme: 'system',
     accentColor: 'yellow',
     fontFamily: 'system-ui',
@@ -199,6 +202,7 @@ export function mergeSettings(current: AppSettings, patch: SettingsPatch): AppSe
 export function normalizeSettings(value: AppSettings): AppSettings {
   const languages: AppLanguage[] = ['zh-CN', 'en-US', 'ja-JP']
   const themes: ThemePreference[] = ['system', 'light', 'dark']
+  const interfaceStyles: InterfaceStyle[] = ['modern', 'quiet']
   const closeBehaviors: CloseBehavior[] = ['ask', 'hide', 'quit']
   const navigationStyles: NavigationStyle[] = ['classic', 'card', 'grouped']
   const corrections: AppSettings['tools']['qrErrorCorrection'][] = ['L', 'M', 'Q', 'H']
@@ -214,6 +218,9 @@ export function normalizeSettings(value: AppSettings): AppSettings {
     },
     appearance: {
       ...value.appearance,
+      interfaceStyle: interfaceStyles.includes(value.appearance.interfaceStyle)
+        ? value.appearance.interfaceStyle
+        : defaultAppSettings.appearance.interfaceStyle,
       theme: themes.includes(value.appearance.theme) ? value.appearance.theme : defaultAppSettings.appearance.theme,
       accentColor: accentColorPresets.some((preset) => preset.id === value.appearance.accentColor)
         ? value.appearance.accentColor

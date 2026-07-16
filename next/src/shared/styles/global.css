@@ -6618,3 +6618,225 @@ button {
     grid-template-columns: 180px minmax(380px, 1fr);
   }
 }
+
+/* Modern interface style: sharper type hierarchy with restrained surfaces. */
+:root[data-interface-style='modern'] {
+  color: #202124;
+  background: #ffffff;
+  --sidebar: #f5f5f6;
+  --surface: #ffffff;
+  --workspace: #ffffff;
+  --surface-soft: #f7f7f8;
+  --surface-card: #f4f4f5;
+  --surface-card-hover: #ededee;
+  --surface-elevated: rgba(255, 255, 255, 0.96);
+  --surface-command: rgba(255, 255, 255, 0.96);
+  --toolbar: #fafafa;
+  --control: #f1f1f2;
+  --control-hover: rgba(0, 0, 0, 0.06);
+  --control-hover-soft: rgba(0, 0, 0, 0.045);
+  --control-active: #e7e7e9;
+  --border: #e2e2e5;
+  --border-soft: #ececef;
+  --border-control: #dcdce0;
+  --border-control-hover: #cccdd1;
+  --text: #202124;
+  --text-strong: #1d1e21;
+  --text-body: #3d3e43;
+  --text-muted: #76787e;
+  --text-soft: #9b9ca1;
+  --text-faint: #8d8f95;
+  --editor-text: #242529;
+  --shadow: rgba(25, 27, 31, 0.1);
+  --shadow-soft: rgba(25, 27, 31, 0.065);
+  --pattern-dot: #d9d9dc;
+}
+
+:root[data-interface-style='modern'][data-theme='dark'] {
+  color: #ededee;
+  background: #1c1c1e;
+  --sidebar: #242426;
+  --surface: #1c1c1e;
+  --workspace: #1c1c1e;
+  --surface-soft: #252527;
+  --surface-card: #29292c;
+  --surface-card-hover: #303033;
+  --surface-elevated: rgba(30, 30, 32, 0.97);
+  --surface-command: rgba(30, 30, 32, 0.96);
+  --toolbar: #222224;
+  --control: #2c2c2f;
+  --control-hover: rgba(255, 255, 255, 0.08);
+  --control-hover-soft: rgba(255, 255, 255, 0.055);
+  --control-active: #38383c;
+  --border: #39393d;
+  --border-soft: #303034;
+  --border-control: #414146;
+  --border-control-hover: #505056;
+  --text: #ededee;
+  --text-strong: #f7f7f8;
+  --text-body: #d9d9dc;
+  --text-muted: #a8a8ae;
+  --text-soft: #7f8086;
+  --text-faint: #929399;
+  --editor-text: #f0f0f2;
+  --shadow: rgba(0, 0, 0, 0.4);
+  --shadow-soft: rgba(0, 0, 0, 0.24);
+  --pattern-dot: #39393d;
+}
+
+:root[data-interface-style='modern'] body {
+  line-height: 1.45;
+  letter-spacing: 0;
+}
+
+:root[data-interface-style='modern'] button {
+  font-weight: 500;
+}
+
+:root[data-interface-style='modern'] .sidebar {
+  border-right-color: var(--border-soft);
+}
+
+:root[data-interface-style='modern'] .tool-group h2,
+:root[data-interface-style='modern'] .section-title {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+:root[data-interface-style='modern'] .tool-button,
+:root[data-interface-style='modern'] .recent-item,
+:root[data-interface-style='modern'] .settings-nav__item {
+  border-radius: 7px;
+  font-weight: 450;
+}
+
+:root[data-interface-style='modern'] .tool-button--active,
+:root[data-interface-style='modern'] .settings-nav__item--active {
+  color: var(--text-strong);
+  font-weight: 600;
+}
+
+:root[data-interface-style='modern'] .tool-page h1,
+:root[data-interface-style='modern'] .placeholder-page h1 {
+  color: var(--text-strong);
+  font-size: 26px;
+  font-weight: 650;
+}
+
+:root[data-interface-style='modern'] .tool-page__header {
+  margin-bottom: 12px;
+}
+
+:root[data-interface-style='modern'] .editor-shell,
+:root[data-interface-style='modern'] .local-tool-shell,
+:root[data-interface-style='modern'] .quick-note-editor-shell,
+:root[data-interface-style='modern'] .runtime-shell {
+  border-color: var(--border);
+  border-radius: 8px;
+  box-shadow: 0 5px 18px var(--shadow-soft);
+}
+
+:root[data-interface-style='modern'] .editor-toolbar,
+:root[data-interface-style='modern'] .tool-tabs,
+:root[data-interface-style='modern'] .p4-toolbar,
+:root[data-interface-style='modern'] .runtime-toolbar,
+:root[data-interface-style='modern'] .quick-note-toolbar {
+  background: var(--toolbar);
+}
+
+:root[data-interface-style='modern'] .editor-toolbar {
+  min-height: 48px;
+}
+
+:root[data-interface-style='modern'] .toolbar-button {
+  border: 1px solid transparent;
+  border-radius: 7px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+:root[data-interface-style='modern'] .toolbar-button--primary {
+  background: var(--surface);
+  border-color: var(--border-control);
+  box-shadow: 0 1px 3px var(--shadow-soft);
+}
+
+:root[data-interface-style='modern'] .icon-ghost,
+:root[data-interface-style='modern'] .icon-button,
+:root[data-interface-style='modern'] .settings-command,
+:root[data-interface-style='modern'] .dialog-button,
+:root[data-interface-style='modern'] .panel-command,
+:root[data-interface-style='modern'] .primary-command,
+:root[data-interface-style='modern'] textarea,
+:root[data-interface-style='modern'] select {
+  border-radius: 7px;
+}
+
+:root[data-interface-style='modern'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']) {
+  border-radius: 7px;
+}
+
+:root[data-interface-style='modern'] .icon-button,
+:root[data-interface-style='modern'] .settings-command,
+:root[data-interface-style='modern'] .dialog-button,
+:root[data-interface-style='modern'] .panel-command {
+  box-shadow: 0 1px 2px var(--shadow-soft);
+}
+
+:root[data-interface-style='modern'] .inspector-card,
+:root[data-interface-style='modern'] .operation-panel,
+:root[data-interface-style='modern'] .calculator-log,
+:root[data-interface-style='modern'] .common-pattern-list button {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  box-shadow: 0 2px 8px var(--shadow-soft);
+}
+
+:root[data-interface-style='modern'] .dialog,
+:root[data-interface-style='modern'] .command-palette {
+  border-radius: 8px;
+  box-shadow: 0 18px 54px var(--shadow);
+}
+
+:root[data-interface-style='modern'] .settings-content__header h1 {
+  color: var(--text-strong);
+  font-size: 18px;
+  font-weight: 650;
+}
+
+:root[data-interface-style='modern'] .settings-group h2 {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+:root[data-interface-style='modern'] .settings-group__rows {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  box-shadow: 0 2px 10px var(--shadow-soft);
+  overflow: hidden;
+}
+
+:root[data-interface-style='modern'] .setting-row {
+  min-height: 54px;
+  padding: 0 14px;
+}
+
+:root[data-interface-style='modern'] .setting-row:last-child {
+  border-bottom: 0;
+}
+
+:root[data-interface-style='modern'] .segmented {
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+}
+
+:root[data-interface-style='modern'] .segmented__item {
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+:root[data-interface-style='modern'] .segmented__item--active {
+  box-shadow: 0 1px 3px var(--shadow);
+}

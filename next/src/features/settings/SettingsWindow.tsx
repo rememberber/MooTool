@@ -180,6 +180,16 @@ function AppearanceSettings({ settings, commit }: SettingsPanelProps) {
   const { t } = useI18n()
   return (
     <SettingsGroup title={t('settings.group.theme')}>
+      <SettingRow label={t('settings.interfaceStyle')}>
+        <Segmented
+          value={settings.appearance.interfaceStyle}
+          options={[
+            { value: 'modern', label: t('settings.interfaceStyle.modern') },
+            { value: 'quiet', label: t('settings.interfaceStyle.quiet') }
+          ]}
+          onChange={(value) => commit({ appearance: { interfaceStyle: value } })}
+        />
+      </SettingRow>
       <SettingRow label={t('settings.theme')}>
         <Segmented
           value={settings.appearance.theme}

@@ -3,6 +3,7 @@ import { defaultAppSettings, mergeSettings } from './settings'
 
 it('uses the MooTool yellow accent by default', () => {
   expect(defaultAppSettings.appearance.accentColor).toBe('yellow')
+  expect(defaultAppSettings.appearance.interfaceStyle).toBe('modern')
 })
 
 describe('mergeSettings', () => {
@@ -35,7 +36,7 @@ describe('mergeSettings', () => {
     expect(settings.tools.translationProvider).toBe('bing')
   })
 
-  it('fills runtime drafts, options and pane sizes when migrating schema v2 settings', () => {
+  it('fills the modern interface style, runtime drafts, options and pane sizes when migrating schema v2 settings', () => {
     const settings = mergeSettings(defaultAppSettings, {
       schemaVersion: 2,
       runtime: {
@@ -46,7 +47,8 @@ describe('mergeSettings', () => {
       }
     })
 
-    expect(settings.schemaVersion).toBe(4)
+    expect(settings.schemaVersion).toBe(5)
+    expect(settings.appearance.interfaceStyle).toBe('modern')
     expect(settings.runtime.javaPath).toBe('/opt/java')
     expect(settings.runtime.drafts).toEqual(defaultAppSettings.runtime.drafts)
     expect(settings.runtime.options).toEqual(defaultAppSettings.runtime.options)
@@ -61,5 +63,13 @@ describe('mergeSettings', () => {
     expect(settings.layout.paneSizes.json).toEqual([0.2, 0.6, 0.2])
     expect(settings.layout.paneSizes.invalid).toBeUndefined()
     expect(settings.layout.paneSizes['../unsafe']).toBeUndefined()
+  })
+
+  it('normalizes unknown interface styles', () => {
+    const settings = mergeSettings(defaultAppSettings, {
+      appearance: { interfaceStyle: 'unknown' as 'modern' }
+    })
+
+    expect(settings.appearance.interfaceStyle).toBe('modern')
   })
 })
