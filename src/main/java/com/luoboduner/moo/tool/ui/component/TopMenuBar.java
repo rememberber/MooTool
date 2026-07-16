@@ -493,10 +493,11 @@ public class TopMenuBar extends JMenuBar {
 
         QuickNoteRSyntaxTextViewerManager.viewMap.forEach((name, editorPanel) -> {
             RTextScrollPane rTextScrollPane = editorPanel.getEditorScrollPane();
+            // Refresh cached/detached scroll-pane subtrees before applying the
+            // RSyntaxTextArea-specific colors for the new theme.
+            editorPanel.updatePreviewTheme();
             ((QuickNoteRSyntaxTextViewer) rTextScrollPane.getTextArea()).updateTheme();
             QuickNoteRSyntaxTextViewerManager.updateGutter(rTextScrollPane);
-            rTextScrollPane.updateUI();
-            editorPanel.updatePreviewTheme();
         });
 
         JsonBeautyForm.getInstance().getTextArea().updateTheme();

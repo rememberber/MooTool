@@ -140,32 +140,20 @@ public class QuickNoteListener {
             }
         });
 
-        // 点击左侧树事件
+        // 左侧树选择事件。统一监听最终选中状态，避免鼠标事件与 JTree 自身的
+        // 选择、拖拽处理相互竞争；键盘切换也通过同一条链路加载笔记。
         JTree noteTree = quickNoteForm.getNoteTree();
         if (noteTree != null) {
             noteTree.addMouseListener(new MouseAdapter() {
                 @Override
                 public void mousePressed(MouseEvent e) {
-                    int row = noteTree.getRowForLocation(e.getX(), e.getY());
-                    if (row >= 0) {
-                        noteTree.setSelectionRow(row);
-                    }
-                    TQuickNote note = QuickNoteForm.getSelectedTreeNote();
-                    if (note == null) {
-                        return;
-                    }
-                    QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
-                    try {
-                        QuickNoteForm.showNote(note);
-                    } catch (Exception e1) {
-                        log.error(e1.toString());
-                    } finally {
-                        QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
-                    }
-
-                    super.mousePressed(e);
+                    // A drag-enabled JTree may suppress mouseClicked after even a tiny pointer
+                    // movement. Resolve the pressed node directly instead of consulting the
+                    // selection model while Swing is still updating it.
+                    showTreeNote(noteTree.getPathForLocation(e.getX(), e.getY()));
                 }
             });
+            noteTree.addTreeSelectionListener(e -> showTreeNote(e.getNewLeadSelectionPath()));
         }
 
 
@@ -276,19 +264,6 @@ public class QuickNoteListener {
                     renameSelectedItem(quickNoteForm);
                 } else if (evt.getKeyCode() == KeyEvent.VK_DELETE) {
                     deleteFiles(quickNoteForm);
-                } else if (evt.getKeyCode() == KeyEvent.VK_UP || evt.getKeyCode() == KeyEvent.VK_DOWN) {
-                    TQuickNote note = QuickNoteForm.getSelectedTreeNote();
-                    if (note == null) {
-                        return;
-                    }
-                    QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
-                    try {
-                        QuickNoteForm.showNote(note);
-                    } catch (Exception e1) {
-                        log.error(e1.toString());
-                    } finally {
-                        QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
-                    }
                 }
             }
         });
@@ -520,6 +495,25 @@ public class QuickNoteListener {
             }
         });
 
+    }
+
+    private static void showTreeNote(TreePath treePath) {
+        if (treePath == null) {
+            return;
+        }
+        DefaultMutableTreeNode node = (DefaultMutableTreeNode) treePath.getLastPathComponent();
+        Object value = node.getUserObject();
+        if (!(value instanceof TQuickNote note)) {
+            return;
+        }
+        QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
+        try {
+            QuickNoteForm.showNote(note);
+        } catch (Exception ex) {
+            log.error("Switch quick note failed: {}", note.getRelativePath(), ex);
+        } finally {
+            QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
+        }
     }
 
     public static void showFindPanel() {

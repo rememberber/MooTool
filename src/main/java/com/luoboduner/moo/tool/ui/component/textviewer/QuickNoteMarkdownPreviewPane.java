@@ -77,9 +77,15 @@ public class QuickNoteMarkdownPreviewPane extends JPanel {
     }
 
     public void refreshTheme(String markdown) {
+        // The preview pane may be kept in the quick-note cache while it is not
+        // attached to the main window. In that case the global LAF refresh does
+        // not reach its scroll bars, so refresh the complete subtree explicitly.
+        SwingUtilities.updateComponentTreeUI(this);
         syncEditorBackground();
         lastMarkdown = "";
         updateContent(markdown);
+        revalidate();
+        repaint();
     }
 
     public void reset() {
