@@ -13,12 +13,6 @@ const contributors: Array<{ name: string; pageId: ExternalPageId }> = [
   { name: 'rememberber', pageId: 'contributorRememberber' }
 ]
 
-const thanks: Array<{ name: string; pageId: ExternalPageId }> = [
-  { name: 'Darcula', pageId: 'darcula' },
-  { name: 'Hutool', pageId: 'hutool' },
-  { name: 'vscode-icons', pageId: 'vscodeIcons' }
-]
-
 function openPage(pageId: ExternalPageId): void {
   void window.mootool.openExternalPage(pageId)
 }
@@ -61,40 +55,44 @@ export function HomePage() {
           </div>
         </section>
 
-        <div className="home-columns">
-          <section className="home-section">
-            <h2>{t('app.home.source.title')}</h2>
-            <div className="home-link-list">
-              <button type="button" onClick={() => openPage('github')}><Github size={15} />GitHub<ExternalLink size={12} /></button>
-              <button type="button" onClick={() => openPage('gitee')}><PackageOpen size={15} />Gitee<ExternalLink size={12} /></button>
-            </div>
-          </section>
+        <section className="home-section home-contributor-section">
+          <h2><Users size={15} />{t('app.home.contributors.title')}</h2>
+          <div className="home-contributors">
+            {contributors.map((contributor) => (
+              <button type="button" key={contributor.name} onClick={() => openPage(contributor.pageId)}>
+                <span className="home-contributor-initial">{contributor.name.slice(0, 1).toUpperCase()}</span>
+                {contributor.name}
+              </button>
+            ))}
+          </div>
+          <p className="home-contributor-thanks"><HeartHandshake size={15} />{t('app.home.contributors.thanks')}</p>
+        </section>
 
-          <section className="home-section">
-            <h2>{t('app.home.help.title')}</h2>
-            <button className="home-inline-link" type="button" onClick={() => openPage('issues')}>
-              {t('app.home.help.issue')} <ExternalLink size={12} />
-            </button>
-          </section>
-
-          <section className="home-section">
-            <h2>{t('app.home.thanks.title')}</h2>
-            <div className="home-text-links">
-              {thanks.map((item) => <button type="button" key={item.name} onClick={() => openPage(item.pageId)}>{item.name}</button>)}
+        <section className="home-section home-sponsor-section">
+          <h2>{t('app.home.sponsor.title')}</h2>
+          <div className="home-sponsor-copy">
+            <Coffee size={19} />
+            <div>
+              <p>{t('app.home.sponsor.prompt')}</p>
+              <span>{t('app.home.sponsor.tip')}</span>
             </div>
-          </section>
+          </div>
+        </section>
 
-          <section className="home-section home-sponsor-section">
-            <h2>{t('app.home.sponsor.title')}</h2>
-            <div className="home-sponsor-copy">
-              <Coffee size={19} />
-              <div>
-                <p>{t('app.home.sponsor.prompt')}</p>
-                <span>{t('app.home.sponsor.tip')}</span>
-              </div>
-            </div>
-          </section>
-        </div>
+        <section className="home-section">
+          <h2>{t('app.home.source.title')}</h2>
+          <div className="home-link-list">
+            <button type="button" onClick={() => openPage('github')}><Github size={15} />GitHub<ExternalLink size={12} /></button>
+            <button type="button" onClick={() => openPage('gitee')}><PackageOpen size={15} />Gitee<ExternalLink size={12} /></button>
+          </div>
+        </section>
+
+        <section className="home-section">
+          <h2>{t('app.home.help.title')}</h2>
+          <button className="home-inline-link" type="button" onClick={() => openPage('issues')}>
+            {t('app.home.help.issue')} <ExternalLink size={12} />
+          </button>
+        </section>
 
         <section className="home-section">
           <h2>{t('app.home.otherWorks.title')}</h2>
@@ -110,18 +108,6 @@ export function HomePage() {
           </div>
         </section>
 
-        <section className="home-section home-contributor-section">
-          <h2><Users size={15} />{t('app.home.contributors.title')}</h2>
-          <div className="home-contributors">
-            {contributors.map((contributor) => (
-              <button type="button" key={contributor.name} onClick={() => openPage(contributor.pageId)}>
-                <span className="home-contributor-initial">{contributor.name.slice(0, 1).toUpperCase()}</span>
-                {contributor.name}
-              </button>
-            ))}
-          </div>
-          <p className="home-contributor-thanks"><HeartHandshake size={15} />{t('app.home.contributors.thanks')}</p>
-        </section>
       </div>
     </section>
   )

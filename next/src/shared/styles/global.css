@@ -1573,12 +1573,6 @@ button {
   line-height: 1.65;
 }
 
-.home-columns {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  column-gap: 52px;
-}
-
 .home-link-list,
 .home-text-links,
 .home-work-list,
@@ -5521,10 +5515,6 @@ button {
   .home-page {
     padding-right: 28px;
     padding-left: 28px;
-  }
-
-  .home-columns {
-    grid-template-columns: minmax(0, 1fr);
   }
 
   .json-layout {
