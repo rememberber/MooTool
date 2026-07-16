@@ -10,17 +10,20 @@ type QuickNoteTreeProps = {
   onMove: (node: Pick<QuickNoteNode, 'relativePath' | 'kind'>, targetDirectory: string) => void
 }
 
+const quickNotePathType = 'application/x-mootool-quick-note-path'
+const quickNoteKindType = 'application/x-mootool-quick-note-kind'
+
 export function QuickNoteTree({ nodes, selectedPath, expanded, onSelect, onToggle, onMove }: QuickNoteTreeProps) {
   return (
     <div
       className="quick-note-tree"
       role="tree"
+      tabIndex={0}
       onDragOver={(event) => event.preventDefault()}
       onDrop={(event) => {
-        if (event.target !== event.currentTarget) return
-        const relativePath = event.dataTransfer.getData('application/x-mootool-quick-note-path')
-        const kind = event.dataTransfer.getData('application/x-mootool-quick-note-kind') as QuickNoteNode['kind']
-        if (relativePath) onMove({ relativePath, kind }, '')
+        event.preventDefault()
+        const draggedNode = readDraggedNode(event.dataTransfer)
+        if (draggedNode && canMoveToDirectory(draggedNode.relativePath, '')) onMove(draggedNode, '')
       }}
     >
       {nodes.map((node) => (
@@ -63,8 +66,8 @@ function QuickNoteTreeNode({ node, depth, selectedPath, expanded, onSelect, onTo
         }}
         onDragStart={(event) => {
           event.dataTransfer.effectAllowed = 'move'
-          event.dataTransfer.setData('application/x-mootool-quick-note-path', node.relativePath)
-          event.dataTransfer.setData('application/x-mootool-quick-note-kind', node.kind)
+          event.dataTransfer.setData(quickNotePathType, node.relativePath)
+          event.dataTransfer.setData(quickNoteKindType, node.kind)
         }}
         onDragOver={node.kind === 'directory' ? (event) => {
           event.preventDefault()
@@ -74,9 +77,8 @@ function QuickNoteTreeNode({ node, depth, selectedPath, expanded, onSelect, onTo
         onDrop={node.kind === 'directory' ? (event) => {
           event.preventDefault()
           event.stopPropagation()
-          const relativePath = event.dataTransfer.getData('application/x-mootool-quick-note-path')
-          const kind = event.dataTransfer.getData('application/x-mootool-quick-note-kind') as QuickNoteNode['kind']
-          if (relativePath && relativePath !== node.relativePath) onMove({ relativePath, kind }, node.relativePath)
+          const draggedNode = readDraggedNode(event.dataTransfer)
+          if (draggedNode && canMoveToDirectory(draggedNode.relativePath, node.relativePath)) onMove(draggedNode, node.relativePath)
         } : undefined}
       >
         <span className="quick-note-tree__chevron">
@@ -101,6 +103,20 @@ function QuickNoteTreeNode({ node, depth, selectedPath, expanded, onSelect, onTo
       ))}
     </div>
   )
+}
+
+function readDraggedNode(dataTransfer: DataTransfer): Pick<QuickNoteNode, 'relativePath' | 'kind'> | null {
+  const relativePath = dataTransfer.getData(quickNotePathType)
+  const kind = dataTransfer.getData(quickNoteKindType)
+  if (!relativePath || (kind !== 'file' && kind !== 'directory')) return null
+  return { relativePath, kind }
+}
+
+export function canMoveToDirectory(relativePath: string, targetDirectory: string): boolean {
+  const currentDirectory = relativePath.includes('/') ? relativePath.slice(0, relativePath.lastIndexOf('/')) : ''
+  return currentDirectory !== targetDirectory
+    && relativePath !== targetDirectory
+    && !targetDirectory.startsWith(`${relativePath}/`)
 }
 
 function noteColor(color: string | undefined): string {
