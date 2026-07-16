@@ -80,7 +80,7 @@ export const messages = {
     'app.home.wePush.desc': '专注批量推送的小而美的工具',
     'app.home.mooInfo.desc': 'OSHI 的可视化实现，查看系统与硬件信息',
     'app.home.sponsor.title': '赞助',
-    'app.home.sponsor.prompt': '请我喝杯咖啡',
+    'app.home.sponsor.prompt': '帮我续Tokens',
     'app.home.sponsor.tip': '感谢您的鼓励和支持',
     'app.home.contributors.title': '贡献者',
     'app.home.contributors.thanks': '感谢每一位参与 MooTool 的贡献者。',
