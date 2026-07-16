@@ -106,6 +106,10 @@ test('opens all registered tools through search and persists recent access', asy
 
 test('formats JSON and completes history and Vault workflows', async () => {
   await mainPage.locator('.tool-button').filter({ hasText: 'JSON' }).click()
+  await expect.poll(() => mainPage.locator('.tool-page').evaluate((element) => {
+    const style = getComputedStyle(element)
+    return { top: style.paddingTop, bottom: style.paddingBottom }
+  })).toEqual({ top: '20px', bottom: '20px' })
   const jsonVault = mainPage.locator('.vault-panel')
   await expect(mainPage.locator('.vault-panel__header h2')).toHaveCSS('font-size', '14px')
   await expect(mainPage.locator('.vault-panel__options > select')).toHaveCSS('font-size', '12px')
@@ -511,6 +515,10 @@ test('runs P5 Hosts, translation records, network and system workflows', async (
 
 test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () => {
   await openTool('随手记', '随手记')
+  await mainPage.getByRole('tab', { name: '分栏' }).click()
+  await expect(mainPage.getByRole('tab', { name: '分栏' })).toHaveAttribute('aria-selected', 'true')
+  await mainPage.getByRole('tab', { name: '编辑' }).click()
+  await expect(mainPage.getByRole('tab', { name: '编辑' })).toHaveAttribute('aria-selected', 'true')
   await expect(mainPage.locator('.quick-note-tree__row')).not.toHaveCount(0)
   await expect(mainPage.locator('.quick-note-search input')).toHaveCSS('font-size', '13px')
   await expect(mainPage.locator('.quick-note-tree__row').first()).toHaveCSS('font-size', '13px')

@@ -103,10 +103,6 @@
 
 /* Phase 6 Quick Note */
 
-.quick-note-tool {
-  padding-bottom: 22px;
-}
-
 .quick-note-page-header {
   min-height: 36px;
   margin-bottom: 14px;
@@ -1703,7 +1699,7 @@ button {
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: var(--window-drag-height) 20px 20px;
+  padding: 20px;
   overflow: hidden;
 }
 
@@ -1714,6 +1710,12 @@ button {
   justify-content: space-between;
   gap: 20px;
   margin-bottom: 14px;
+}
+
+.tool-page__header > * {
+  position: relative;
+  z-index: 101;
+  -webkit-app-region: no-drag;
 }
 
 .tool-page h1,
