@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest'
 import { defaultAppSettings, mergeSettings } from './settings'
 
+it('uses the MooTool yellow accent by default', () => {
+  expect(defaultAppSettings.appearance.accentColor).toBe('yellow')
+})
+
 describe('mergeSettings', () => {
   it('merges one section without dropping unrelated values', () => {
     const settings = mergeSettings(defaultAppSettings, {

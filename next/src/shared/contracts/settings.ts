@@ -91,12 +91,12 @@ export type SettingsPatch = {
 } & { schemaVersion?: number }
 
 export const accentColorPresets = [
-  { id: 'coral', value: '#de8f7d' },
-  { id: 'blue', value: '#4f83cc' },
-  { id: 'green', value: '#4e9275' },
-  { id: 'yellow', value: '#c99535' },
-  { id: 'red', value: '#c96761' },
-  { id: 'purple', value: '#8a72b5' }
+  { id: 'yellow', value: '#e0b22b', strongValue: '#b78300', contrastValue: '#241c00' },
+  { id: 'coral', value: '#de8f7d', strongValue: '#cd6f5e', contrastValue: '#ffffff' },
+  { id: 'blue', value: '#4f83cc', strongValue: '#3f6fae', contrastValue: '#ffffff' },
+  { id: 'green', value: '#4e9275', strongValue: '#34755b', contrastValue: '#ffffff' },
+  { id: 'red', value: '#c96761', strongValue: '#a84e49', contrastValue: '#ffffff' },
+  { id: 'purple', value: '#8a72b5', strongValue: '#6f579c', contrastValue: '#ffffff' }
 ] as const
 
 export const defaultAppSettings: AppSettings = {
@@ -110,7 +110,7 @@ export const defaultAppSettings: AppSettings = {
   },
   appearance: {
     theme: 'system',
-    accentColor: 'coral',
+    accentColor: 'yellow',
     fontFamily: 'system-ui',
     fontSize: 14,
     unifiedBackground: true

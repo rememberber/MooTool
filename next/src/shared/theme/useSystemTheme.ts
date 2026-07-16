@@ -45,6 +45,8 @@ export function useSystemTheme(): ResolvedTheme {
     document.documentElement.dataset.theme = theme
     document.documentElement.style.colorScheme = theme
     document.documentElement.style.setProperty('--accent', accent.value)
+    document.documentElement.style.setProperty('--accent-strong', accent.strongValue)
+    document.documentElement.style.setProperty('--accent-contrast', accent.contrastValue)
     document.documentElement.style.setProperty('--app-font-size', `${settings.appearance.fontSize}px`)
     document.documentElement.style.setProperty('--app-font-family', settings.appearance.fontFamily)
   }, [settings.appearance.accentColor, settings.appearance.fontFamily, settings.appearance.fontSize, theme])

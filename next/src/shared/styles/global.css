@@ -35,8 +35,9 @@
   --syntax-string: #3f755d;
   --syntax-number: #a05f27;
   --syntax-literal: #8a536b;
-  --accent: #de8f7d;
-  --accent-strong: #cd6f5e;
+  --accent: #e0b22b;
+  --accent-strong: #b78300;
+  --accent-contrast: #241c00;
   --blue: #2f7de1;
   --success-text: #35765b;
   --success-bg: #e8f3ee;
@@ -84,8 +85,9 @@
   --syntax-string: #82b59d;
   --syntax-number: #d1a267;
   --syntax-literal: #c48aa2;
-  --accent: #c9786a;
-  --accent-strong: #e08d7c;
+  --accent: #e0b22b;
+  --accent-strong: #b78300;
+  --accent-contrast: #241c00;
   --blue: #6aa7ff;
   --success-text: #82c8a6;
   --success-bg: #20352c;
@@ -767,8 +769,8 @@
   cursor: default;
 }
 
-.runtime-toolbar .runtime-run-button {
-  color: #fff;
+.runtime-toolbar > button.runtime-run-button {
+  color: var(--accent-contrast);
   background: var(--accent-strong);
   border-color: var(--accent-strong);
 }
@@ -1429,8 +1431,8 @@ h1 {
 }
 
 .send-button {
-  color: #fff;
-  background: var(--accent);
+  color: var(--accent-contrast);
+  background: var(--accent-strong);
 }
 
 .quick-grid {
@@ -2238,7 +2240,7 @@ h1 {
 }
 
 .primary-command {
-  color: var(--surface);
+  color: var(--accent-contrast);
   background: var(--accent-strong);
   border-color: transparent;
 }
@@ -2746,7 +2748,7 @@ h1 {
 }
 
 .dialog-button--primary {
-  color: #fff;
+  color: var(--accent-contrast);
   background: var(--accent-strong);
   border-color: transparent;
 }
