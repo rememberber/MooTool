@@ -1,4 +1,6 @@
 import { ChevronDown, ChevronRight, FileText, Folder, FolderOpen } from 'lucide-react'
+import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { QuickNoteNode } from '@/shared/contracts/quickNote'
 
 type QuickNoteTreeProps = {
@@ -8,46 +10,89 @@ type QuickNoteTreeProps = {
   onSelect: (node: QuickNoteNode) => void
   onToggle: (relativePath: string) => void
   onMove: (node: Pick<QuickNoteNode, 'relativePath' | 'kind'>, targetDirectory: string) => void
+  onRenameRequest: (node: QuickNoteNode) => void
+  onMoveRequest: (node: QuickNoteNode) => void
+  renameLabel: string
+  moveLabel: string
 }
 
 const quickNotePathType = 'application/x-mootool-quick-note-path'
 const quickNoteKindType = 'application/x-mootool-quick-note-kind'
 
-export function QuickNoteTree({ nodes, selectedPath, expanded, onSelect, onToggle, onMove }: QuickNoteTreeProps) {
+export function QuickNoteTree({ nodes, selectedPath, expanded, onSelect, onToggle, onMove, onRenameRequest, onMoveRequest, renameLabel, moveLabel }: QuickNoteTreeProps) {
+  const menuRef = useRef<HTMLDivElement>(null)
+  const [contextMenu, setContextMenu] = useState<{ node: QuickNoteNode; left: number; top: number } | null>(null)
+
+  useEffect(() => {
+    if (!contextMenu) return
+    const focusFrame = window.requestAnimationFrame(() => menuRef.current?.querySelector('button')?.focus())
+    const close = () => setContextMenu(null)
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') close() }
+    document.addEventListener('pointerdown', close)
+    document.addEventListener('keydown', closeOnEscape)
+    window.addEventListener('blur', close)
+    return () => {
+      window.cancelAnimationFrame(focusFrame)
+      document.removeEventListener('pointerdown', close)
+      document.removeEventListener('keydown', closeOnEscape)
+      window.removeEventListener('blur', close)
+    }
+  }, [contextMenu])
+
   return (
-    <div
-      className="quick-note-tree"
-      role="tree"
-      tabIndex={0}
-      onDragOver={(event) => event.preventDefault()}
-      onDrop={(event) => {
-        event.preventDefault()
-        const draggedNode = readDraggedNode(event.dataTransfer)
-        if (draggedNode && canMoveToDirectory(draggedNode.relativePath, '')) onMove(draggedNode, '')
-      }}
-    >
-      {nodes.map((node) => (
-        <QuickNoteTreeNode
-          key={node.relativePath}
-          node={node}
-          depth={0}
-          selectedPath={selectedPath}
-          expanded={expanded}
-          onSelect={onSelect}
-          onToggle={onToggle}
-          onMove={onMove}
-        />
-      ))}
-    </div>
+    <>
+      <div
+        className="quick-note-tree"
+        role="tree"
+        tabIndex={0}
+        onDragOver={(event) => event.preventDefault()}
+        onDrop={(event) => {
+          event.preventDefault()
+          const draggedNode = readDraggedNode(event.dataTransfer)
+          if (draggedNode && canMoveToDirectory(draggedNode.relativePath, '')) onMove(draggedNode, '')
+        }}
+      >
+        {nodes.map((node) => (
+          <QuickNoteTreeNode
+            key={node.relativePath}
+            node={node}
+            depth={0}
+            selectedPath={selectedPath}
+            expanded={expanded}
+            onSelect={onSelect}
+            onToggle={onToggle}
+            onMove={onMove}
+            onOpenContextMenu={(menuNode, left, top) => {
+              onSelect(menuNode)
+              setContextMenu({ node: menuNode, left, top })
+            }}
+          />
+        ))}
+      </div>
+      {contextMenu && createPortal(
+        <div
+          ref={menuRef}
+          className="quick-note-tree-menu"
+          role="menu"
+          style={{ left: contextMenu.left, top: contextMenu.top }}
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          <button type="button" role="menuitem" onClick={() => { onRenameRequest(contextMenu.node); setContextMenu(null) }}>{renameLabel}</button>
+          <button type="button" role="menuitem" onClick={() => { onMoveRequest(contextMenu.node); setContextMenu(null) }}>{moveLabel}</button>
+        </div>,
+        document.body
+      )}
+    </>
   )
 }
 
-type NodeProps = Omit<QuickNoteTreeProps, 'nodes'> & {
+type NodeProps = Pick<QuickNoteTreeProps, 'selectedPath' | 'expanded' | 'onSelect' | 'onToggle' | 'onMove'> & {
   node: QuickNoteNode
   depth: number
+  onOpenContextMenu: (node: QuickNoteNode, left: number, top: number) => void
 }
 
-function QuickNoteTreeNode({ node, depth, selectedPath, expanded, onSelect, onToggle, onMove }: NodeProps) {
+function QuickNoteTreeNode({ node, depth, selectedPath, expanded, onSelect, onToggle, onMove, onOpenContextMenu }: NodeProps) {
   const open = node.kind === 'directory' && expanded.has(node.relativePath)
   const label = node.title || node.name.replace(/\.txt$/i, '')
   return (
@@ -63,6 +108,10 @@ function QuickNoteTreeNode({ node, depth, selectedPath, expanded, onSelect, onTo
         onClick={() => {
           if (node.kind === 'directory') onToggle(node.relativePath)
           onSelect(node)
+        }}
+        onContextMenu={(event) => {
+          event.preventDefault()
+          onOpenContextMenu(node, Math.min(event.clientX, window.innerWidth - 164), Math.min(event.clientY, window.innerHeight - 78))
         }}
         onDragStart={(event) => {
           event.dataTransfer.effectAllowed = 'move'
@@ -99,6 +148,7 @@ function QuickNoteTreeNode({ node, depth, selectedPath, expanded, onSelect, onTo
           onSelect={onSelect}
           onToggle={onToggle}
           onMove={onMove}
+          onOpenContextMenu={onOpenContextMenu}
         />
       ))}
     </div>

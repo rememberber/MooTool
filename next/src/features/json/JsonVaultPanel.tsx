@@ -9,13 +9,12 @@ import {
   FolderPlus,
   GitBranch,
   MoreHorizontal,
-  Move,
-  Pencil,
   RefreshCw,
   Save,
   Trash2
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { Dialog } from '@/shared/components/Dialog'
 import { Tooltip } from '@/shared/components/Tooltip'
@@ -31,6 +30,8 @@ type JsonVaultPanelProps = {
 
 type SelectedEntry = { path: string; kind: JsonVaultNode['kind'] }
 type TextAction = { type: 'file' | 'folder' | 'rename'; value: string } | null
+const jsonVaultPathType = 'application/x-mootool-vault-path'
+const jsonVaultKindType = 'application/x-mootool-vault-kind'
 
 export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
   const { t } = useI18n()
@@ -45,6 +46,8 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
   const [textAction, setTextAction] = useState<TextAction>(null)
   const [moveOpen, setMoveOpen] = useState(false)
   const [moveTarget, setMoveTarget] = useState('')
+  const [contextMenu, setContextMenu] = useState<{ entry: SelectedEntry; left: number; top: number } | null>(null)
+  const contextMenuRef = useRef<HTMLDivElement>(null)
   const [sort, setSort] = useState<'name' | 'modified'>('name')
   const dirty = Boolean(selectedPath) && content !== savedContent
   const directories = useMemo(() => ['', ...flattenDirectories(nodes)], [nodes])
@@ -64,6 +67,22 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
   useEffect(() => window.mootool.onJsonVaultChange(() => {
     void load()
   }), [load])
+
+  useEffect(() => {
+    if (!contextMenu) return
+    const focusFrame = window.requestAnimationFrame(() => contextMenuRef.current?.querySelector('button')?.focus())
+    const close = () => setContextMenu(null)
+    const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') close() }
+    document.addEventListener('pointerdown', close)
+    document.addEventListener('keydown', closeOnEscape)
+    window.addEventListener('blur', close)
+    return () => {
+      window.cancelAnimationFrame(focusFrame)
+      document.removeEventListener('pointerdown', close)
+      document.removeEventListener('keydown', closeOnEscape)
+      window.removeEventListener('blur', close)
+    }
+  }, [contextMenu])
 
   async function openFile(path: string): Promise<void> {
     if (dirty && path !== selectedPath && !window.confirm(t('json.vault.confirmDiscard'))) return
@@ -103,9 +122,10 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
     setTextAction({ type: 'folder', value: [parent, t('json.vault.defaultFolder')].filter(Boolean).join('/') })
   }
 
-  function beginRename(): void {
-    if (!selectedEntry) return
-    const name = leafName(selectedEntry.path).replace(/\.json$/i, '')
+  function beginRename(entry = selectedEntry): void {
+    if (!entry) return
+    setSelectedEntry(entry)
+    const name = leafName(entry.path).replace(/\.json$/i, '')
     setTextAction({ type: 'rename', value: name })
   }
 
@@ -137,9 +157,10 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
     }
   }
 
-  function beginMove(): void {
-    if (!selectedEntry) return
-    setMoveTarget(parentPath(selectedEntry.path))
+  function beginMove(entry = selectedEntry): void {
+    if (!entry) return
+    setSelectedEntry(entry)
+    setMoveTarget(parentPath(entry.path))
     setMoveOpen(true)
   }
 
@@ -240,8 +261,6 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
         <details className="vault-more-menu">
           <summary aria-label={t('json.vault.more')} title={t('json.vault.more')}><MoreHorizontal size={14} /></summary>
           <div>
-            <MenuAction icon={Pencil} label={t('json.vault.rename')} disabled={!selectedEntry} onClick={beginRename} />
-            <MenuAction icon={Move} label={t('json.vault.move')} disabled={!selectedEntry} onClick={beginMove} />
             <MenuAction icon={Copy} label={t('json.vault.duplicate')} disabled={selectedEntry?.kind !== 'file'} onClick={() => { void duplicateSelected() }} />
             <MenuAction icon={RefreshCw} label={t('json.vault.refresh')} onClick={() => { void load() }} />
             <MenuAction icon={FolderOpen} label={t('json.vault.openFolder')} onClick={() => { void window.mootool.openJsonVault() }} />
@@ -252,12 +271,9 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
         className="vault-tree"
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
-          if (event.target !== event.currentTarget) return
-          const path = event.dataTransfer.getData('application/x-mootool-vault-path')
-          const kind = event.dataTransfer.getData('application/x-mootool-vault-kind') as JsonVaultNode['kind']
-          if (path) {
-            void moveSpecificEntry({ path, kind }, '')
-          }
+          event.preventDefault()
+          const draggedEntry = readDraggedVaultEntry(event.dataTransfer)
+          if (draggedEntry && canMoveJsonVaultEntry(draggedEntry.path, '')) void moveSpecificEntry(draggedEntry, '')
         }}
       >
         {nodes.length === 0 ? <div className="vault-empty">{t('json.vault.empty')}</div> : nodes.map((node) => (
@@ -272,12 +288,30 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
             onToggle={toggleDirectory}
             onSelect={(entry) => setSelectedEntry({ path: entry.relativePath, kind: entry.kind })}
             onOpen={(path) => { void openFile(path) }}
+            onOpenContextMenu={(entry, left, top) => {
+              const selected = { path: entry.relativePath, kind: entry.kind }
+              setSelectedEntry(selected)
+              setContextMenu({ entry: selected, left, top })
+            }}
             onDrop={(path, kind, target) => {
               void moveSpecificEntry({ path, kind }, target)
             }}
           />
         ))}
       </div>
+      {contextMenu && createPortal(
+        <div
+          ref={contextMenuRef}
+          className="vault-tree-menu"
+          role="menu"
+          style={{ left: contextMenu.left, top: contextMenu.top }}
+          onPointerDown={(event) => event.stopPropagation()}
+        >
+          <button type="button" role="menuitem" onClick={() => { beginRename(contextMenu.entry); setContextMenu(null) }}>{t('json.vault.rename')}</button>
+          <button type="button" role="menuitem" onClick={() => { beginMove(contextMenu.entry); setContextMenu(null) }}>{t('json.vault.move')}</button>
+        </div>,
+        document.body
+      )}
       {selectedEntry && <footer className="vault-panel__selection" title={selectedEntry.path}>{selectedEntry.path === selectedPath && dirty ? '• ' : ''}{selectedEntry.path}</footer>}
       <Dialog
         title={actionTitle}
@@ -330,10 +364,11 @@ type VaultNodeProps = {
   onToggle: (path: string) => void
   onSelect: (node: JsonVaultNode) => void
   onOpen: (path: string) => void
+  onOpenContextMenu: (node: JsonVaultNode, left: number, top: number) => void
   onDrop: (path: string, kind: JsonVaultNode['kind'], target: string) => void
 }
 
-function VaultNode({ node, depth, expanded, selectedEntryPath, activePath, dirty, onToggle, onSelect, onOpen, onDrop }: VaultNodeProps) {
+function VaultNode({ node, depth, expanded, selectedEntryPath, activePath, dirty, onToggle, onSelect, onOpen, onOpenContextMenu, onDrop }: VaultNodeProps) {
   const isDirectoryOpen = expanded.has(node.relativePath)
   const selected = selectedEntryPath === node.relativePath
   return (
@@ -348,10 +383,14 @@ function VaultNode({ node, depth, expanded, selectedEntryPath, activePath, dirty
           if (node.kind === 'directory') onToggle(node.relativePath)
           else onOpen(node.relativePath)
         }}
+        onContextMenu={(event) => {
+          event.preventDefault()
+          onOpenContextMenu(node, Math.min(event.clientX, window.innerWidth - 164), Math.min(event.clientY, window.innerHeight - 78))
+        }}
         onDragStart={(event) => {
           event.dataTransfer.effectAllowed = 'move'
-          event.dataTransfer.setData('application/x-mootool-vault-path', node.relativePath)
-          event.dataTransfer.setData('application/x-mootool-vault-kind', node.kind)
+          event.dataTransfer.setData(jsonVaultPathType, node.relativePath)
+          event.dataTransfer.setData(jsonVaultKindType, node.kind)
         }}
         onDragOver={node.kind === 'directory' ? (event) => {
           event.preventDefault()
@@ -361,26 +400,39 @@ function VaultNode({ node, depth, expanded, selectedEntryPath, activePath, dirty
         onDrop={node.kind === 'directory' ? (event) => {
           event.preventDefault()
           event.stopPropagation()
-          const path = event.dataTransfer.getData('application/x-mootool-vault-path')
-          const kind = event.dataTransfer.getData('application/x-mootool-vault-kind') as JsonVaultNode['kind']
-          if (path && path !== node.relativePath) onDrop(path, kind, node.relativePath)
+          const draggedEntry = readDraggedVaultEntry(event.dataTransfer)
+          if (draggedEntry && canMoveJsonVaultEntry(draggedEntry.path, node.relativePath)) onDrop(draggedEntry.path, draggedEntry.kind, node.relativePath)
         } : undefined}
       >
         {node.kind === 'directory' ? <>{isDirectoryOpen ? <ChevronDown size={13} /> : <ChevronRight size={13} />}<Folder size={13} /></> : <FileJson size={13} />}
         <span>{node.name}</span>{activePath === node.relativePath && dirty && <i />}
       </button>
       {node.kind === 'directory' && isDirectoryOpen && node.children?.map((child) => (
-        <VaultNode key={child.relativePath} node={child} depth={depth + 1} expanded={expanded} selectedEntryPath={selectedEntryPath} activePath={activePath} dirty={dirty} onToggle={onToggle} onSelect={onSelect} onOpen={onOpen} onDrop={onDrop} />
+        <VaultNode key={child.relativePath} node={child} depth={depth + 1} expanded={expanded} selectedEntryPath={selectedEntryPath} activePath={activePath} dirty={dirty} onToggle={onToggle} onSelect={onSelect} onOpen={onOpen} onOpenContextMenu={onOpenContextMenu} onDrop={onDrop} />
       ))}
     </div>
   )
+}
+
+function readDraggedVaultEntry(dataTransfer: DataTransfer): SelectedEntry | null {
+  const path = dataTransfer.getData(jsonVaultPathType)
+  const kind = dataTransfer.getData(jsonVaultKindType)
+  if (!path || (kind !== 'file' && kind !== 'directory')) return null
+  return { path, kind }
+}
+
+export function canMoveJsonVaultEntry(path: string, targetDirectory: string): boolean {
+  const currentDirectory = path.includes('/') ? path.slice(0, path.lastIndexOf('/')) : ''
+  return currentDirectory !== targetDirectory
+    && path !== targetDirectory
+    && !targetDirectory.startsWith(`${path}/`)
 }
 
 function VaultAction({ label, disabled = false, onClick, children }: { label: string; disabled?: boolean; onClick: () => void; children: React.ReactNode }) {
   return <Tooltip content={label}><button type="button" aria-label={label} disabled={disabled} onClick={onClick}>{children}</button></Tooltip>
 }
 
-function MenuAction({ icon: Icon, label, disabled = false, onClick }: { icon: typeof Pencil; label: string; disabled?: boolean; onClick: () => void }) {
+function MenuAction({ icon: Icon, label, disabled = false, onClick }: { icon: typeof Copy; label: string; disabled?: boolean; onClick: () => void }) {
   return <button type="button" disabled={disabled} onClick={onClick}><Icon size={13} /><span>{label}</span></button>
 }
 

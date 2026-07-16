@@ -266,6 +266,41 @@
   color: var(--text-soft);
 }
 
+.quick-note-tree-menu,
+.vault-tree-menu {
+  position: fixed;
+  z-index: 260;
+  display: grid;
+  min-width: 156px;
+  padding: 5px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-control);
+  border-radius: 7px;
+  box-shadow: var(--shadow-popover);
+}
+
+.quick-note-tree-menu button,
+.vault-tree-menu button {
+  min-height: 30px;
+  padding: 0 9px;
+  color: var(--text-body);
+  background: transparent;
+  border-radius: 5px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 11px;
+  text-align: left;
+}
+
+.quick-note-tree-menu button:hover,
+.quick-note-tree-menu button:focus-visible,
+.vault-tree-menu button:hover,
+.vault-tree-menu button:focus-visible {
+  color: var(--text-strong);
+  background: var(--control-hover);
+  outline: none;
+}
+
 .quick-note-empty,
 .quick-note-select-empty {
   display: grid;

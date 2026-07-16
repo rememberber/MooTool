@@ -12,7 +12,6 @@ import {
   Info,
   List,
   ListOrdered,
-  MoreHorizontal,
   PanelLeftClose,
   PanelLeftOpen,
   Replace,
@@ -346,6 +345,35 @@ export function QuickNoteTool() {
     update({ actionMode: mode, actionValue: defaultValue })
   }
 
+  async function openTreeAction(node: QuickNoteNode, mode: 'rename' | 'move'): Promise<void> {
+    if (node.kind === 'directory') {
+      update({
+        selectedPath: node.relativePath,
+        selectedKind: 'directory',
+        note: null,
+        content: '',
+        actionMode: mode,
+        actionValue: mode === 'rename' ? directoryLeaf(node.relativePath) : parentDirectory(node.relativePath)
+      })
+      return
+    }
+    if (node.relativePath !== state.note?.relativePath && dirty && !await saveCurrent(false)) return
+    try {
+      const note = node.relativePath === state.note?.relativePath ? state.note : await window.mootool.readQuickNote(node.relativePath)
+      update({
+        selectedPath: node.relativePath,
+        selectedKind: 'file',
+        note,
+        content: note.content,
+        metadataDirty: false,
+        actionMode: mode,
+        actionValue: mode === 'rename' ? note.metadata.title : parentDirectory(node.relativePath)
+      })
+    } catch (error) {
+      toast.error(errorMessage(error))
+    }
+  }
+
   async function runActionDialog(): Promise<void> {
     const mode = state.actionMode
     if (!mode) return
@@ -604,12 +632,10 @@ export function QuickNoteTool() {
               <div className="quick-note-tree-actions">
                 <IconButton label={t('quickNote.newNote')} icon={FilePlus2} onClick={() => openAction('createNote')} />
                 <IconButton label={t('quickNote.newFolder')} icon={FolderPlus} onClick={() => openAction('createFolder')} />
-                <IconButton label={t('quickNote.rename')} icon={MoreHorizontal} disabled={!state.selectedPath} onClick={() => openAction('rename')} />
-                <IconButton label={t('quickNote.move')} icon={FolderOpen} disabled={!state.selectedPath} onClick={() => openAction('move')} />
               </div>
               <div className="quick-note-tree-scroll">
                 {state.nodes.length
-                  ? <QuickNoteTree nodes={state.nodes} selectedPath={state.selectedPath} expanded={state.expanded} onSelect={(node) => { void selectNode(node) }} onToggle={toggleDirectory} onMove={(node, targetDirectory) => { void moveTreeEntry(node, targetDirectory) }} />
+                  ? <QuickNoteTree nodes={state.nodes} selectedPath={state.selectedPath} expanded={state.expanded} onSelect={(node) => { void selectNode(node) }} onToggle={toggleDirectory} onMove={(node, targetDirectory) => { void moveTreeEntry(node, targetDirectory) }} onRenameRequest={(node) => { void openTreeAction(node, 'rename') }} onMoveRequest={(node) => { void openTreeAction(node, 'move') }} renameLabel={t('quickNote.rename')} moveLabel={t('quickNote.move')} />
                   : <div className="quick-note-empty">{t('quickNote.empty')}</div>}
               </div>
             </aside>
