@@ -1269,9 +1269,25 @@ button {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  width: 100%;
   padding: 0 10px 8px;
   color: var(--text-faint);
+  background: transparent;
+  cursor: pointer;
   font-size: 13px;
+  text-align: left;
+}
+
+.section-title:hover {
+  color: var(--text-body);
+}
+
+.section-title svg {
+  transition: transform 140ms ease;
+}
+
+.section-title[aria-expanded='false'] svg {
+  transform: rotate(-90deg);
 }
 
 .recent-list {
@@ -6946,7 +6962,7 @@ button {
 
 /* Quick Note */
 .quick-note-search {
-  min-height: 40px;
+  min-height: 34px;
 }
 
 .quick-note-search input {

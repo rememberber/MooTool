@@ -1,5 +1,5 @@
 import { ChevronDown, Languages, PanelLeftClose, PanelLeftOpen, Search, Settings } from 'lucide-react'
-import { Suspense, useEffect } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useAppStore } from '@/app/appStore'
 import { toolById, toolGroups } from '@/app/toolRegistry'
 import { CommandPalette } from '@/features/search/CommandPalette'
@@ -17,6 +17,7 @@ export function Workbench() {
   const hydrate = useAppStore((state) => state.hydrate)
   const openTool = useAppStore((state) => state.openTool)
   const setSearchOpen = useAppStore((state) => state.setSearchOpen)
+  const [recentCollapsed, setRecentCollapsed] = useState(false)
   const activeTool = toolById.get(activeToolId) ?? toolById.get('mootool')!
   const ActiveComponent = activeTool.component
 
@@ -104,11 +105,11 @@ export function Workbench() {
           </nav>
 
           {settings.layout.showRecent && <section className="recent-section">
-            <div className="section-title">
+            <button className="section-title" type="button" aria-expanded={!recentCollapsed} onClick={() => setRecentCollapsed((collapsed) => !collapsed)}>
               <span>{t('app.nav.recent')}</span>
               <ChevronDown size={14} />
-            </div>
-            <div className="recent-list">
+            </button>
+            {!recentCollapsed && <div className="recent-list">
               {recentToolIds.length === 0 ? (
                 <p className="recent-empty">{t('app.recent.empty')}</p>
               ) : recentToolIds.map((toolId, index) => {
@@ -123,7 +124,7 @@ export function Workbench() {
                   </button>
                 )
               })}
-            </div>
+            </div>}
           </section>}
         </div>
 

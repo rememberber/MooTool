@@ -100,6 +100,14 @@ test('opens all registered tools through search and persists recent access', asy
 
   await expect(mainPage.locator('.runtime-tool h1')).toHaveText('代码运行')
   await expect(mainPage.locator('.recent-item').first()).toContainText('代码运行')
+  const recentToggle = mainPage.getByRole('button', { name: '最近', exact: true })
+  await expect(recentToggle).toHaveAttribute('aria-expanded', 'true')
+  await recentToggle.click()
+  await expect(recentToggle).toHaveAttribute('aria-expanded', 'false')
+  await expect(mainPage.locator('.recent-list')).toHaveCount(0)
+  await recentToggle.click()
+  await expect(recentToggle).toHaveAttribute('aria-expanded', 'true')
+  await expect(mainPage.locator('.recent-item').first()).toContainText('代码运行')
   const workspace = await mainPage.evaluate(() => window.mootool.getWorkspaceState())
   expect(workspace).toEqual({ activeToolId: 'java', recentToolIds: ['java'] })
 })
@@ -521,6 +529,7 @@ test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () =>
   await expect(mainPage.getByRole('tab', { name: '编辑' })).toHaveAttribute('aria-selected', 'true')
   await expect(mainPage.locator('.quick-note-tree__row')).not.toHaveCount(0)
   await expect(mainPage.locator('.quick-note-search input')).toHaveCSS('font-size', '13px')
+  await expect.poll(() => mainPage.locator('.quick-note-search').evaluate((element) => element.getBoundingClientRect().height)).toBe(34)
   await expect(mainPage.locator('.quick-note-tree__row').first()).toHaveCSS('font-size', '13px')
   await expect.poll(() => mainPage.getByLabel('语法').evaluate((element) => element.getBoundingClientRect().height)).toBe(32)
   await expect.poll(() => mainPage.locator('.quick-note-tree-actions button').first().evaluate((element) => ({
