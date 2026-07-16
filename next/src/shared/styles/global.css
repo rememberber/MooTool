@@ -1352,6 +1352,45 @@ button {
   overflow: hidden;
 }
 
+.resizable-columns {
+  position: relative;
+}
+
+.pane-resizer {
+  position: absolute;
+  z-index: 30;
+  top: 0;
+  bottom: 0;
+  width: 10px;
+  padding: 0;
+  transform: translateX(-50%);
+  background: transparent;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.pane-resizer::after {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 4px;
+  width: 1px;
+  background: var(--border-control);
+  content: '';
+  transition: background 120ms ease, width 120ms ease;
+}
+
+.pane-resizer:hover::after,
+.pane-resizer:focus-visible::after,
+.pane-resizer--active::after {
+  width: 2px;
+  background: var(--accent-strong);
+}
+
+.pane-resizer:focus-visible {
+  outline: none;
+}
+
 .home-page {
   height: 100%;
   padding: calc(var(--window-drag-height) + 12px) 36px 48px;

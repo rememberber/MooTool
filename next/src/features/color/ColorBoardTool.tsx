@@ -2,6 +2,7 @@ import { ArrowLeftRight, Copy, Eye, History, Palette, Star } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { FavoriteDialog } from '@/features/favorites/FavoriteDialog'
 import { HistoryDialog } from '@/features/history/HistoryDialog'
+import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { ToolPageHeader } from '@/shared/components/ToolPage'
 import { useToolActions } from '@/shared/hooks/useToolActions'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -95,7 +96,7 @@ export function ColorBoardTool() {
           <label className="color-code-input"><span>{t('color.code')}</span><input value={code} spellCheck={false} onChange={(event) => setCode(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') applyCode() }} /></label>
           <button className="toolbar-button toolbar-button--icon" type="button" aria-label={t('common.action.copy')} onClick={() => { void actions.copy(code) }}><Copy size={14} /></button>
         </div>
-        <div className="color-board-layout">
+        <ResizableColumns className="color-board-layout" columns={2} defaultSizes={[0.34, 0.66]} minPaneWidths={[240, 420]} storageKey="color-board">
           <section className="color-current-panel">
             <div className="color-preview" style={{ background: primaryHex, color: bestTextColor(primary) }}><span>{t('color.current')}</span><strong>{primaryHex}</strong><small>{formatColor(primary, 'RGB')}</small></div>
             <div className="color-compare-row"><span>{t('color.compare')}</span><label className="color-chip color-chip--large" aria-label={t('color.compare')} style={{ background: secondaryHex }}><input type="color" value={secondaryHex} aria-label={t('color.compare')} onChange={(event) => setSecondary(parseColor(event.target.value))} /></label><code>{secondaryHex}</code><button className="dialog-button" type="button" onClick={swap}><ArrowLeftRight size={14} />{t('color.operation.swap')}</button></div>
@@ -109,7 +110,7 @@ export function ColorBoardTool() {
             <div className="standard-colors">{standardColors.map((color) => <ColorChip key={color} color={color} onSelect={(secondarySelection) => selectColor(color, secondarySelection)} />)}</div>
             <p className="color-shift-hint">{t('color.shiftHint')}</p>
           </section>
-        </div>
+        </ResizableColumns>
       </div>
       <FavoriteDialog kind="color" open={favoritesOpen} currentValue={primaryHex} onClose={() => setFavoritesOpen(false)} onApply={(value) => selectColor(value, false, t('favorite.title'))} />
       <HistoryDialog funcType="colorBoard" open={historyOpen} onClose={() => setHistoryOpen(false)} onApply={(value) => selectColor(value)} onApplyRecord={(record) => {

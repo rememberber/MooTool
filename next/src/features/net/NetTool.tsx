@@ -1,6 +1,7 @@
 import { ClipboardCopy, Globe2, Network, Play, RefreshCw, Search, Square, Trash2 } from 'lucide-react'
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ToolPageHeader } from '@/shared/components/ToolPage'
+import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import type { LocalAddressSnapshot, NetworkAction } from '@/shared/contracts/system'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { useToolActions } from '@/shared/hooks/useToolActions'
@@ -54,7 +55,7 @@ export function NetTool() {
   return (
     <section className="tool-page p5-tool net-tool-page">
       <ToolPageHeader title={t('net.title')} />
-      <div className="local-tool-shell net-workspace">
+      <ResizableColumns className="local-tool-shell net-workspace" columns={2} defaultSizes={[1.15, 0.85]} minPaneWidths={[340, 300]} storageKey="network-workspace">
         <section className="net-output-panel"><header><button className="toolbar-button" type="button" disabled={Boolean(running)} onClick={() => { void run('interfaces') }}><Network size={14} />{window.mootool.platform === 'win32' ? 'ipconfig /all' : window.mootool.platform === 'darwin' ? 'ifconfig' : 'ip address'}</button><button className="toolbar-button" type="button" disabled={Boolean(running)} onClick={() => { void run('connections') }}><Globe2 size={14} />netstat</button><span className="p4-toolbar__spacer" />{running && <button className="toolbar-button" type="button" onClick={() => { void stop() }}><Square size={13} />{t('common.stop')}</button>}<button className="icon-button" type="button" aria-label={t('common.action.copy')} disabled={!output} onClick={() => { void actions.copy(output) }}><ClipboardCopy size={14} /></button><button className="icon-button" type="button" aria-label={t('common.action.clear')} disabled={!output} onClick={() => setOutput('')}><Trash2 size={14} /></button></header><pre data-testid="net-output">{output || t('net.outputPlaceholder')}</pre></section>
         <section className="net-actions"><NetSection title={t('net.ipv4Long')}><label><span>IPv4</span><input value={ipv4} onChange={(event) => setIpv4(event.target.value)} /></label><div className="net-inline-actions"><button className="dialog-button" type="button" onClick={convertFromIp}>{t('common.convert')} ↓</button><button className="dialog-button" type="button" onClick={convertFromLong}>↑ {t('common.convert')}</button></div><label><span>Long</span><input value={longValue} onChange={(event) => setLongValue(event.target.value)} /></label></NetSection>
           <NetSection title={t('net.ping')}><CommandRow value={pingTarget} onChange={setPingTarget} buttonLabel="PING" disabled={Boolean(running)} onRun={() => run('ping', pingTarget)} /></NetSection>
@@ -63,7 +64,7 @@ export function NetTool() {
           <NetSection title={t('net.dns')}><button className="dialog-button" type="button" disabled={Boolean(running)} onClick={() => { void run('flush-dns') }}><RefreshCw size={14} />{t('net.flushDns')}</button></NetSection>
           <NetSection title={t('net.localAddresses')}><div className="local-address-columns"><label><span>IPv4</span><textarea readOnly value={addresses.ipv4.join('\n')} /></label><label><span>IPv6</span><textarea readOnly value={addresses.ipv6.join('\n')} /></label></div><button className="icon-button" type="button" aria-label={t('common.refresh')} onClick={() => { void refreshAddresses() }}><RefreshCw size={14} /></button></NetSection>
         </section>
-      </div>
+      </ResizableColumns>
     </section>
   )
 }

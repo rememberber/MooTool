@@ -1,6 +1,7 @@
 import { ArrowLeft, ArrowRight } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { HistoryDialog } from '@/features/history/HistoryDialog'
+import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { TextPane, ToolHeaderButtons, ToolPageHeader, ToolTabs } from '@/shared/components/ToolPage'
 import { useToolActions } from '@/shared/hooks/useToolActions'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -53,7 +54,7 @@ export function EncodeTool() {
           { id: 'hex', label: t('encode.tab.hex') },
           { id: 'ascii', label: t('encode.tab.ascii') }
         ]} active={tab} onChange={setTab} />
-        <div className="io-workspace">
+        <ResizableColumns className="io-workspace" columns={3} defaultSizes={[1, 0.32, 1]} minPaneWidths={[240, 120, 240]} storageKey="encode-panes">
           <TextPane label={labels.left} value={pair.left} onChange={(left) => setPair({ left })} />
           <div className="io-actions">
             <button className="io-action-button" type="button" onClick={() => convert('forward')}><ArrowRight size={15} />{labels.forward}</button>
@@ -62,7 +63,7 @@ export function EncodeTool() {
             {tab === 'ascii' && <label className="compact-select">ASCII<select value={asciiFormat} onChange={(event) => setAsciiFormat(event.target.value as AsciiFormat)}><option value="decimal">{t('encode.asciiDecimal')}</option><option value="hex">{t('encode.asciiHex')}</option></select></label>}
           </div>
           <TextPane label={labels.right} value={pair.right} onChange={(right) => setPair({ right })} />
-        </div>
+        </ResizableColumns>
       </div>
       <HistoryDialog
         funcType="encode"

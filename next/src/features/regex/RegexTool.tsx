@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { FavoriteDialog } from '@/features/favorites/FavoriteDialog'
 import { HistoryDialog } from '@/features/history/HistoryDialog'
 import { ToolPageHeader, ToolTabs } from '@/shared/components/ToolPage'
+import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { useToolActions } from '@/shared/hooks/useToolActions'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { commonRegexes, matchRegex, type RegexMatch, type RegexOptions } from './regexTools'
@@ -44,7 +45,7 @@ export function RegexTool() {
       <div className="local-tool-shell regex-workspace">
         <ToolTabs tabs={[{ id: 'test', label: t('regex.tab.test') }, { id: 'common', label: t('regex.tab.common') }]} active={tab} onChange={setTab} />
         {tab === 'test' ? (
-          <div className="regex-test-layout">
+          <ResizableColumns className="regex-test-layout" columns={2} defaultSizes={[710, 290]} minPaneWidths={[320, 220]} paneSelector=".regex-source, .regex-results" storageKey="regex-test">
             <section className="regex-controls">
               <label htmlFor="regex-expression">{t('regex.expression')}</label>
               <div className="regex-expression-row"><input id="regex-expression" value={pattern} spellCheck={false} onChange={(event) => setPattern(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') run() }} /><button className="primary-command" type="button" onClick={run}><Play size={14} />{t('regex.tab.test')}</button></div>
@@ -60,7 +61,7 @@ export function RegexTool() {
               <header className={error ? 'result-status result-status--error' : 'result-status'}>{error || t('regex.matches', { count: String(matches.length) })}</header>
               {matches.length === 0 && !error ? <p className="empty-state">{t('regex.noMatches')}</p> : matches.map((match, index) => <article key={`${match.index}-${index}`}><span>#{index + 1} · {match.index}</span><strong>{match.value || '∅'}</strong>{match.groups.length > 0 && <code>{match.groups.join(' · ')}</code>}</article>)}
             </section>
-          </div>
+          </ResizableColumns>
         ) : (
           <div className="common-pattern-list">{commonRegexes.map((item) => <button type="button" key={item.id} onClick={() => { setPattern(item.pattern); setTab('test') }}><strong>{t(item.labelKey)}</strong><code>{item.pattern}</code></button>)}</div>
         )}

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { FavoriteDialog } from '@/features/favorites/FavoriteDialog'
 import { HistoryDialog } from '@/features/history/HistoryDialog'
 import { ToolPageHeader } from '@/shared/components/ToolPage'
+import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { useToolActions } from '@/shared/hooks/useToolActions'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { buildCron, cronPresets, defaultCronFields, describeCron, nextCronRuns, splitCron, type CronFields } from './cronTools'
@@ -56,7 +57,7 @@ export function CronTool() {
   return (
     <section className="tool-page p3-tool">
       <ToolPageHeader title={t('cron.title')} actions={<><button className="toolbar-button" type="button" onClick={() => setFavoritesOpen(true)}><Star size={14} />{t('favorite.title')}</button><button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('common.action.history')}</button></>} />
-      <div className="local-tool-shell cron-workspace">
+      <ResizableColumns className="local-tool-shell cron-workspace" columns={2} defaultSizes={[660, 340]} minPaneWidths={[460, 260]} minimumWidth={900} storageKey="cron-builder">
         <section className="cron-builder">
           <h2>{t('cron.builder')}</h2>
           <div className="cron-fields">{fieldEntries.map(([key, label]) => <label key={key}><span>{label}</span><input value={fields[key]} onChange={(event) => updateField(key, event.target.value)} /></label>)}</div>
@@ -70,7 +71,7 @@ export function CronTool() {
           <output><span>{t('cron.humanReadable')}</span>{description}</output>
         </section>
         <section className="cron-runs"><h2>{t('cron.nextRuns')}</h2>{error ? <p className="result-status result-status--error">{error}</p> : runs.length === 0 ? <p className="empty-state">{t('cron.parse')}</p> : <ol>{runs.map((run) => <li key={run}><time>{run}</time></li>)}</ol>}</section>
-      </div>
+      </ResizableColumns>
       <FavoriteDialog kind="cron" open={favoritesOpen} currentValue={expression} onClose={() => setFavoritesOpen(false)} onApply={updateExpression} />
       <HistoryDialog funcType="cron" open={historyOpen} onClose={() => setHistoryOpen(false)} onApply={updateExpression} onApplyRecord={(record) => { updateExpression(record.inputText); setRuns(record.outputText.split('\n').filter(Boolean)); try { const meta = JSON.parse(record.extraData ?? '{}') as { timeZone?: string }; if (meta.timeZone) setTimeZone(meta.timeZone) } catch { /* Older history has no metadata. */ } }} />
     </section>

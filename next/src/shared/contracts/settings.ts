@@ -1,4 +1,4 @@
-export const appSettingsSchemaVersion = 3
+export const appSettingsSchemaVersion = 4
 
 export type AppLanguage = 'zh-CN' | 'en-US' | 'ja-JP'
 export type ThemePreference = 'system' | 'light' | 'dark'
@@ -36,6 +36,7 @@ export type AppSettings = {
     showSeparators: boolean
     hideNavigationTitles: boolean
     navigationStyle: NavigationStyle
+    paneSizes: Record<string, number[]>
   }
   editor: {
     sqlDialect: string
@@ -120,7 +121,8 @@ export const defaultAppSettings: AppSettings = {
     compactNavigation: false,
     showSeparators: true,
     hideNavigationTitles: false,
-    navigationStyle: 'grouped'
+    navigationStyle: 'grouped',
+    paneSizes: {}
   },
   editor: {
     sqlDialect: 'Standard SQL',
@@ -222,7 +224,8 @@ export function normalizeSettings(value: AppSettings): AppSettings {
       ...value.layout,
       navigationStyle: navigationStyles.includes(value.layout.navigationStyle)
         ? value.layout.navigationStyle
-        : defaultAppSettings.layout.navigationStyle
+        : defaultAppSettings.layout.navigationStyle,
+      paneSizes: normalizePaneSizes(value.layout.paneSizes)
     },
     editor: {
       ...value.editor,
@@ -255,6 +258,20 @@ export function normalizeSettings(value: AppSettings): AppSettings {
       translationTargetLang: normalizeLanguageCode(value.tools.translationTargetLang, defaultAppSettings.tools.translationTargetLang)
     }
   }
+}
+
+function normalizePaneSizes(value: Record<string, number[]> | undefined): Record<string, number[]> {
+  if (!value || typeof value !== 'object') return {}
+
+  return Object.fromEntries(Object.entries(value)
+    .slice(0, 64)
+    .flatMap(([key, sizes]) => {
+      if (!/^[a-z0-9-]{1,64}$/i.test(key) || !Array.isArray(sizes) || sizes.length < 2 || sizes.length > 4) return []
+      const validSizes = sizes.map(Number)
+      if (validSizes.some((size) => !Number.isFinite(size) || size <= 0)) return []
+      const total = validSizes.reduce((sum, size) => sum + size, 0)
+      return [[key, validSizes.map((size) => Number((size / total).toFixed(6)))]]
+    }))
 }
 
 function normalizeRuntimeDrafts(value: Record<RuntimeSettingsId, string> | undefined): Record<RuntimeSettingsId, string> {

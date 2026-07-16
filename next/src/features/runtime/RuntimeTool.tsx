@@ -3,6 +3,7 @@ import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { HistoryDialog } from '@/features/history/HistoryDialog'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { Dialog } from '@/shared/components/Dialog'
+import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { Tooltip } from '@/shared/components/Tooltip'
 import type { RuntimeStatus } from '@/shared/contracts/app'
 import type { CodeRuntimeId, RuntimeExecutionResult } from '@/shared/contracts/runtime'
@@ -255,7 +256,7 @@ export function RuntimeTool() {
           </div>
         )}
 
-        <div className="runtime-workspace">
+        <ResizableColumns className="runtime-workspace" columns={2} defaultSizes={[1, 1]} minPaneWidths={[300, 300]} storageKey="runtime-editor-output">
           <section className="runtime-pane runtime-code-pane">
             <header>{t('runtime.editor')}<span>{runtimeDisplayName(runtime)}</span></header>
             <div className="runtime-editor-wrap">
@@ -285,7 +286,7 @@ export function RuntimeTool() {
               </footer>
             )}
           </section>
-        </div>
+        </ResizableColumns>
       </div>
 
       <HistoryDialog

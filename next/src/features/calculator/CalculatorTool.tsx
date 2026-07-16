@@ -1,6 +1,7 @@
 import { ArrowLeftRight, Equal, History } from 'lucide-react'
 import { useState } from 'react'
 import { HistoryDialog } from '@/features/history/HistoryDialog'
+import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { ToolPageHeader } from '@/shared/components/ToolPage'
 import { useToolActions } from '@/shared/hooks/useToolActions'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -45,7 +46,7 @@ export function CalculatorTool() {
           <div><input id="calculator-expression" value={expression} onChange={(event) => setExpression(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') evaluate() }} /><button className="primary-command" type="button" onClick={evaluate}><Equal size={16} />{t('calculator.calculate')}</button></div>
           <output>{result}</output>
         </section>
-        <div className="calculator-grid">
+        <ResizableColumns className="calculator-grid" columns={3} defaultSizes={[1, 1, 0.8]} minPaneWidths={[220, 220, 200]} minimumWidth={760} storageKey="calculator-panels">
           <section className="operation-panel">
             <h2>{t('calculator.base')}</h2>
             <LabeledInput label={t('calculator.decimal')} value={decimal} onChange={setDecimal} />
@@ -63,7 +64,7 @@ export function CalculatorTool() {
             <div className="inline-command-row"><button type="button" onClick={() => run(t('calculator.permutation'), `${n}, ${m}`, () => permutation(n, m))}>{t('calculator.permutation')}</button><button type="button" onClick={() => run(t('calculator.combination'), `${n}, ${m}`, () => combination(n, m))}>{t('calculator.combination')}</button></div>
           </section>
           <section className="calculator-log"><h2>{t('calculator.history')}</h2>{log.map((item, index) => <p key={`${index}-${item}`}>{item}</p>)}</section>
-        </div>
+        </ResizableColumns>
       </div>
       <HistoryDialog funcType="calculator" open={historyOpen} onClose={() => setHistoryOpen(false)} onApply={(value) => setResult(value)} onApplyRecord={(record) => { setExpression(record.inputText); setResult(record.outputText) }} />
     </section>

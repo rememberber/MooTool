@@ -34,6 +34,7 @@ import type { LegacyMigrationPreview, LegacyMigrationWarning } from '@/shared/co
 import type { UpdateCheckResult } from '@/shared/contracts/update'
 import { Dialog } from '@/shared/components/Dialog'
 import { useToast } from '@/shared/feedback/ToastProvider'
+import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { MessageKey } from '@/shared/i18n/messages'
 import { useSettings } from './SettingsProvider'
@@ -74,7 +75,7 @@ export function SettingsWindow() {
         </button>
       </header>
 
-      <div className="settings-layout">
+      <ResizableColumns className="settings-layout" columns={2} defaultSizes={[220, 780]} minPaneWidths={[180, 420]} storageKey="settings-window">
         <nav className="settings-nav" aria-label={t('settings.title')}>
           {categories.map((item) => {
             const Icon = item.icon
@@ -106,7 +107,7 @@ export function SettingsWindow() {
             )}
           </div>
         </section>
-      </div>
+      </ResizableColumns>
     </main>
   )
 }

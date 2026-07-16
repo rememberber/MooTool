@@ -35,7 +35,7 @@ describe('mergeSettings', () => {
     expect(settings.tools.translationProvider).toBe('bing')
   })
 
-  it('fills runtime drafts and options when migrating schema v2 settings', () => {
+  it('fills runtime drafts, options and pane sizes when migrating schema v2 settings', () => {
     const settings = mergeSettings(defaultAppSettings, {
       schemaVersion: 2,
       runtime: {
@@ -46,9 +46,20 @@ describe('mergeSettings', () => {
       }
     })
 
-    expect(settings.schemaVersion).toBe(3)
+    expect(settings.schemaVersion).toBe(4)
     expect(settings.runtime.javaPath).toBe('/opt/java')
     expect(settings.runtime.drafts).toEqual(defaultAppSettings.runtime.drafts)
     expect(settings.runtime.options).toEqual(defaultAppSettings.runtime.options)
+    expect(settings.layout.paneSizes).toEqual({})
+  })
+
+  it('normalizes persisted workspace pane sizes', () => {
+    const settings = mergeSettings(defaultAppSettings, {
+      layout: { paneSizes: { json: [200, 600, 200], invalid: [0, 1], '../unsafe': [1, 1] } }
+    })
+
+    expect(settings.layout.paneSizes.json).toEqual([0.2, 0.6, 0.2])
+    expect(settings.layout.paneSizes.invalid).toBeUndefined()
+    expect(settings.layout.paneSizes['../unsafe']).toBeUndefined()
   })
 })

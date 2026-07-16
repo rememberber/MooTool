@@ -15,6 +15,7 @@ export const languageLabels: Record<Language, string> = {
 export const messages = {
   'zh-CN': {
     'common.toast.dismiss': '关闭通知',
+    'common.resizePane': '调整分栏宽度',
     'common.loading': '正在加载…',
     'common.close': '关闭',
     'common.cancel': '取消',
@@ -1070,6 +1071,7 @@ export const messages = {
   },
   'en-US': {
     'common.toast.dismiss': 'Dismiss notification',
+    'common.resizePane': 'Resize panes',
     'common.loading': 'Loading…',
     'common.close': 'Close',
     'common.cancel': 'Cancel',
@@ -2125,6 +2127,7 @@ export const messages = {
   },
   'ja-JP': {
     'common.toast.dismiss': '通知を閉じる',
+    'common.resizePane': 'ペイン幅を調整',
     'common.loading': '読み込み中…',
     'common.close': '閉じる',
     'common.cancel': 'キャンセル',

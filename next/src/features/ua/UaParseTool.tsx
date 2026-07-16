@@ -1,6 +1,7 @@
 import { ClipboardPaste, History, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { HistoryDialog } from '@/features/history/HistoryDialog'
+import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { ToolPageHeader } from '@/shared/components/ToolPage'
 import { useToolActions } from '@/shared/hooks/useToolActions'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -43,7 +44,7 @@ export function UaParseTool() {
   return (
     <section className="tool-page p3-tool">
       <ToolPageHeader title={t('ua.title')} actions={<button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('common.action.history')}</button>} />
-      <div className="local-tool-shell ua-workspace">
+      <ResizableColumns className="local-tool-shell ua-workspace" columns={2} defaultSizes={[0.9, 1.1]} minPaneWidths={[300, 300]} storageKey="ua-parser">
         <section className="ua-input-panel">
           <label htmlFor="ua-source">{t('ua.input')}</label>
           <textarea id="ua-source" value={source} spellCheck={false} onChange={(event) => setSource(event.target.value)} />
@@ -57,7 +58,7 @@ export function UaParseTool() {
         <section className="ua-result-panel" aria-label={t('common.result')}>
           {rows.map(([label, value]) => <div className="ua-result-row" key={label}><span>{label}</span><strong>{value || t('ua.unknown')}</strong></div>)}
         </section>
-      </div>
+      </ResizableColumns>
       <HistoryDialog funcType="uaParse" open={historyOpen} onClose={() => setHistoryOpen(false)} onApply={(value) => { try { setResult(JSON.parse(value) as UaResult) } catch { setSource(value) } }} onApplyRecord={(record) => { setSource(record.inputText); try { setResult(JSON.parse(record.outputText) as UaResult) } catch { setResult(null) } }} />
     </section>
   )

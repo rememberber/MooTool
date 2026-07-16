@@ -96,6 +96,24 @@ test('opens all registered tools through search and persists recent access', asy
 
 test('formats JSON and completes history and Vault workflows', async () => {
   await mainPage.locator('.tool-button').filter({ hasText: 'JSON' }).click()
+  const jsonVault = mainPage.locator('.vault-panel')
+  const initialVaultWidth = await jsonVault.evaluate((element) => element.getBoundingClientRect().width)
+  const firstDivider = mainPage.locator('.json-layout .pane-resizer').first()
+  const dividerBounds = await firstDivider.boundingBox()
+  expect(dividerBounds).not.toBeNull()
+  await mainPage.mouse.move(dividerBounds!.x + dividerBounds!.width / 2, dividerBounds!.y + 80)
+  await mainPage.mouse.down()
+  await mainPage.mouse.move(dividerBounds!.x + dividerBounds!.width / 2 + 70, dividerBounds!.y + 80)
+  await mainPage.mouse.up()
+  await expect.poll(() => jsonVault.evaluate((element) => element.getBoundingClientRect().width)).toBeGreaterThan(initialVaultWidth + 50)
+  const resizedVaultWidth = await jsonVault.evaluate((element) => element.getBoundingClientRect().width)
+  await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({
+    layout: { paneSizes: { 'json-three-pane': expect.any(Array) } }
+  })
+  await mainPage.getByRole('button', { name: '主页', exact: true }).click()
+  await mainPage.locator('.tool-button').filter({ hasText: 'JSON' }).click()
+  await expect.poll(() => jsonVault.evaluate((element) => element.getBoundingClientRect().width)).toBeCloseTo(resizedVaultWidth, 0)
+
   const editor = mainPage.locator('.json-editor .cm-content')
   await editor.fill('{"b":1,"a":2}')
   await mainPage.locator('.editor-toolbar').getByRole('button', { name: '格式化', exact: true }).click()

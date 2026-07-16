@@ -1,6 +1,7 @@
 import { Clock3, Code2, Copy, FileInput, History, Plus, Save, Search, Send, Square, Trash2, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Dialog } from '@/shared/components/Dialog'
+import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { ToolPageHeader, ToolTabs } from '@/shared/components/ToolPage'
 import { httpMethods, type HttpCookieEntry, type HttpRequestDraft, type HttpRequestHistory, type HttpResponseResult, type KeyValueEntry, type SavedHttpRequest } from '@/shared/contracts/network'
 import { useToolActions } from '@/shared/hooks/useToolActions'
@@ -84,7 +85,7 @@ export function HttpTool() {
   return (
     <section className="tool-page p5-tool http-tool-page">
       <ToolPageHeader title={t('http.title')} actions={<button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('common.action.history')}</button>} />
-      <div className="local-tool-shell http-workspace">
+      <ResizableColumns className="local-tool-shell http-workspace" columns={2} defaultSizes={[230, 770]} minPaneWidths={[180, 420]} storageKey="http-workspace">
         <aside className="http-collection">
           <header><div className="compact-search"><Search size={13} /><input value={search} aria-label={t('common.search')} placeholder={t('common.search')} onChange={(event) => setSearch(event.target.value)} /></div><button className="icon-button" type="button" aria-label={t('common.new')} onClick={() => { setRequest(emptyHttpRequest(t('http.untitled'))); setResponse(null) }}><Plus size={14} /></button></header>
           <div className="http-saved-list">{saved.length === 0 ? <div className="history-empty">{t('http.savedEmpty')}</div> : saved.map((item) => <button className={item.id === request.id ? 'http-saved-item http-saved-item--active' : 'http-saved-item'} type="button" key={item.id} onClick={() => openSaved(item)}><strong>{item.name}</strong><span><em>{item.method}</em>{item.url || t('http.noUrl')}</span></button>)}</div>
@@ -100,7 +101,7 @@ export function HttpTool() {
           </div>
           <div className="http-response-pane"><header><ToolTabs tabs={(['body', 'headers', 'cookies'] as ResponseTab[]).map((id) => ({ id, label: t(`http.response.${id}` as 'http.response.body') }))} active={responseTab} onChange={setResponseTab} /><div className={response?.ok ? 'http-status http-status--ok' : 'http-status'}>{response && <><span>{response.status || response.errorCode}</span><span>{response.durationMs} ms</span><button className="icon-button" type="button" aria-label={t('common.action.copy')} onClick={() => { void actions.copy(responseValue || '') }}><Copy size={13} /></button></>}</div></header><pre data-testid="http-response">{responseValue || t('http.responseEmpty')}</pre></div>
         </main>
-      </div>
+      </ResizableColumns>
       <HttpHistoryDialog open={historyOpen} onClose={() => setHistoryOpen(false)} onApply={(item) => { setRequest(item); setResponse({ requestId: 'history', ok: item.status.startsWith('2'), status: Number(item.status.split(' ')[0]) || 0, statusText: item.status, url: item.url, durationMs: item.costTime, body: item.responseBody, headers: item.responseHeaders, cookies: item.responseCookies }) }} />
       <Dialog title={t('http.saveName')} open={saveOpen} width={420} onClose={() => setSaveOpen(false)} footer={<><button className="dialog-button" type="button" onClick={() => setSaveOpen(false)}>{t('common.cancel')}</button><button className="dialog-button dialog-button--primary" type="button" disabled={!saveName.trim()} onClick={() => { void saveRequest() }}><Save size={14} />{t('common.save')}</button></>}><label className="vault-new-field"><span>{t('http.saveName')}</span><input autoFocus value={saveName} onChange={(event) => setSaveName(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && saveName.trim()) void saveRequest() }} /></label></Dialog>
       <Dialog title={t('http.importCurl')} open={curlOpen} width={720} onClose={() => setCurlOpen(false)} footer={<><button className="dialog-button" type="button" onClick={() => setCurlOpen(false)}>{t('common.cancel')}</button><button className="dialog-button dialog-button--primary" type="button" disabled={!curlValue.trim()} onClick={importCurl}><FileInput size={14} />{t('common.import')}</button></>}><label className="dialog-editor-label"><span>{t('http.curlPrompt')}</span><textarea autoFocus value={curlValue} spellCheck={false} onChange={(event) => setCurlValue(event.target.value)} /></label></Dialog>

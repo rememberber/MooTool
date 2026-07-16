@@ -27,6 +27,7 @@ import { useSettings } from '@/features/settings/SettingsProvider'
 import { VaultGitDialog } from '@/features/json/VaultGitDialog'
 import { formatCode } from '@/features/reformat/reformatTools'
 import { Dialog } from '@/shared/components/Dialog'
+import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { Tooltip } from '@/shared/components/Tooltip'
 import type { QuickNoteFile, QuickNoteMetadata, QuickNoteNode, QuickNoteSort } from '@/shared/contracts/quickNote'
 import { useToast } from '@/shared/feedback/ToastProvider'
@@ -457,6 +458,13 @@ export function QuickNoteTool() {
   }
 
   const currentName = state.note?.metadata.title ?? directoryLeaf(state.selectedPath)
+  const quickNoteColumns = 1 + Number(state.treeOpen) + Number(state.quickReplaceOpen)
+  const quickNoteSizes = state.treeOpen
+    ? state.quickReplaceOpen ? [220, 560, 218] : [220, 780]
+    : state.quickReplaceOpen ? [780, 218] : [1]
+  const quickNoteMinimums = state.treeOpen
+    ? state.quickReplaceOpen ? [170, 320, 170] : [170, 320]
+    : state.quickReplaceOpen ? [320, 170] : [320]
   return (
     <section className="tool-page quick-note-tool">
       <div className="tool-page__header quick-note-page-header">
@@ -471,7 +479,14 @@ export function QuickNoteTool() {
       </div>
 
       <div className={[state.treeOpen ? '' : 'quick-note-layout--tree-closed', state.quickReplaceOpen ? 'quick-note-layout--replace-open' : ''].filter(Boolean).join(' ') || undefined}>
-        <div className="quick-note-layout">
+        <ResizableColumns
+          className="quick-note-layout"
+          columns={quickNoteColumns}
+          defaultSizes={quickNoteSizes}
+          minPaneWidths={quickNoteMinimums}
+          minimumWidth={quickNoteColumns === 3 ? 820 : 620}
+          storageKey={`quick-note-${state.treeOpen ? 'tree' : 'no-tree'}-${state.quickReplaceOpen ? 'replace' : 'no-replace'}`}
+        >
           {state.treeOpen && (
             <aside className="quick-note-sidebar">
               <div className="quick-note-search">
@@ -543,7 +558,13 @@ export function QuickNoteTool() {
             )}
 
             {state.note ? (
-              <div className={`quick-note-content quick-note-content--${state.viewMode}`}>
+              <ResizableColumns
+                className={`quick-note-content quick-note-content--${state.viewMode}`}
+                columns={state.viewMode === 'split' ? 2 : 1}
+                defaultSizes={state.viewMode === 'split' ? [1, 1] : [1]}
+                minPaneWidths={state.viewMode === 'split' ? [260, 260] : [260]}
+                storageKey="quick-note-editor-preview"
+              >
                 {state.viewMode !== 'preview' && (
                   <div className="quick-note-editor-pane">
                     <pre ref={lineNumbersRef} className="quick-note-line-numbers" aria-hidden="true">{lineNumbers(state.content)}</pre>
@@ -562,7 +583,7 @@ export function QuickNoteTool() {
                 {state.viewMode !== 'editor' && (
                   <article className="quick-note-preview" dangerouslySetInnerHTML={{ __html: previewHtml }} />
                 )}
-              </div>
+              </ResizableColumns>
             ) : <div className="quick-note-select-empty">{t('quickNote.select')}</div>}
 
             <footer className="quick-note-statusbar">
@@ -580,7 +601,7 @@ export function QuickNoteTool() {
               </div>
             </aside>
           )}
-        </div>
+        </ResizableColumns>
       </div>
 
       <ActionDialog

@@ -1,6 +1,7 @@
 import { CheckCircle2, FileJson, XCircle } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { useSettings } from '@/features/settings/SettingsProvider'
+import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { useToast } from '@/shared/feedback/ToastProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { JsonCodeEditor, type JsonCodeEditorHandle } from './JsonCodeEditor'
@@ -208,7 +209,14 @@ export function JsonTool() {
         </div>
       </div>
 
-      <div className={state.inspectorOpen ? 'json-layout' : 'json-layout json-layout--editor-only'}>
+      <ResizableColumns
+        className={state.inspectorOpen ? 'json-layout' : 'json-layout json-layout--editor-only'}
+        columns={state.inspectorOpen ? 3 : 2}
+        defaultSizes={state.inspectorOpen ? [190, 520, 280] : [190, 800]}
+        minPaneWidths={state.inspectorOpen ? [150, 360, 220] : [150, 360]}
+        minimumWidth={state.inspectorOpen ? 1100 : 720}
+        storageKey={state.inspectorOpen ? 'json-three-pane' : 'json-two-pane'}
+      >
         <JsonVaultPanel content={state.content} onOpen={(content) => update({ content, notice: '' })} />
         <div className="editor-shell">
           <JsonToolbar
@@ -266,7 +274,7 @@ export function JsonTool() {
             onClose={() => update({ inspectorOpen: false })}
           />
         )}
-      </div>
+      </ResizableColumns>
 
       <JsonToolDialogs
         content={state.content}

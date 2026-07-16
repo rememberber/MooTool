@@ -1,6 +1,7 @@
 import { Copy, FileDown, FolderOpen, History, Paintbrush, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { HistoryDialog } from '@/features/history/HistoryDialog'
+import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { ToolPageHeader, ToolTabs } from '@/shared/components/ToolPage'
 import { useToolActions } from '@/shared/hooks/useToolActions'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -96,11 +97,11 @@ export function ReformatTool() {
         <ToolTabs tabs={[{ id: 'text', label: t('reformat.tab.text') }, { id: 'file', label: t('reformat.tab.file') }]} active={tab} onChange={setTab} />
         <div className="p4-toolbar">{toolbar}<span className="p4-toolbar__spacer" /><button className="toolbar-button toolbar-button--icon" type="button" aria-label={t('common.action.copy')} onClick={() => { void actions.copy(tab === 'text' ? text : fileResult) }}><Copy size={14} /></button><button className="toolbar-button toolbar-button--icon" type="button" aria-label={t('common.export')} onClick={() => { void exportResult() }}><FileDown size={14} /></button><button className="toolbar-button toolbar-button--icon" type="button" aria-label={t('common.action.clear')} onClick={() => { if (tab === 'text') setText(''); else { setFileName(''); setFileSource(''); setFileResult('') } }}><Trash2 size={14} /></button></div>
         {tab === 'text' ? <textarea className="code-editor" aria-label={t('reformat.input')} value={text} spellCheck={false} onChange={(event) => setText(event.target.value)} onKeyDown={(event) => { if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === 'f') { event.preventDefault(); void runText() } }} /> : (
-          <div className="reformat-file-layout">
+          <ResizableColumns className="reformat-file-layout" columns={2} defaultSizes={[1, 1]} minPaneWidths={[260, 260]} paneSelector=".text-pane" storageKey="reformat-file">
             <div className="file-drop-row"><button className="dialog-button" type="button" onClick={() => { void chooseFile() }}><FolderOpen size={14} />{t('reformat.chooseFile')}</button><span>{fileName || t('reformat.noFile')}</span></div>
             <label className="text-pane"><span>{t('reformat.original')}</span><textarea value={fileSource} spellCheck={false} onChange={(event) => setFileSource(event.target.value)} /></label>
             <label className="text-pane"><span>{t('reformat.result')}</span><textarea value={fileResult} spellCheck={false} readOnly /></label>
-          </div>
+          </ResizableColumns>
         )}
       </div>
       <HistoryDialog funcType="reformat" open={historyOpen} onClose={() => setHistoryOpen(false)} onApply={setText} onApplyRecord={(record) => {
