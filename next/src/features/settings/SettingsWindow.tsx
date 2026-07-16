@@ -584,6 +584,10 @@ function AboutSettings() {
       .finally(() => setChecking(false))
   }
 
+  function downloadUpdate(): void {
+    void window.mootool.downloadUpdate().catch(() => toast.error(t('settings.update.downloadFailed')))
+  }
+
   return (
     <div className="settings-about-page">
       <div className="settings-about">
@@ -606,9 +610,28 @@ function AboutSettings() {
       {result && (
         <section className="settings-update-result" aria-live="polite">
           <strong>{result.status === 'available' ? t('settings.update.available', { version: result.latestVersion }) : t('settings.update.latest')}</strong>
+          <span className="settings-update-result__target">
+            {t('settings.update.target', {
+              product: result.productName,
+              platform: result.target.platform,
+              architecture: result.target.architecture
+            })}
+          </span>
           {result.status === 'available' && (
             <>
-              <button className="settings-command" type="button" onClick={() => { void window.mootool.openReleasePage() }}><ExternalLink size={14} />{t('settings.update.openRelease')}</button>
+              <div className="settings-update-result__actions">
+                {result.download && (
+                  <button className="settings-command" type="button" onClick={downloadUpdate}>
+                    <Download size={14} />{t('settings.update.download')}
+                  </button>
+                )}
+                <button className="settings-command settings-command--quiet" type="button" onClick={() => { void window.mootool.openReleasePage() }}>
+                  <ExternalLink size={14} />{t('settings.update.openRelease')}
+                </button>
+              </div>
+              {result.download
+                ? <code className="settings-update-result__file">{result.download.fileName}</code>
+                : <span className="settings-update-result__missing">{t('settings.update.noDownload')}</span>}
               {result.releaseNotes && <pre>{result.releaseNotes}</pre>}
             </>
           )}

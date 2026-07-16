@@ -123,6 +123,7 @@ declare global {
       previewLegacyMigration: (input: LegacyMigrationInput) => Promise<LegacyMigrationPreview>
       runLegacyMigration: (input: LegacyMigrationInput) => Promise<LegacyMigrationResult>
       checkForUpdates: () => Promise<UpdateCheckResult>
+      downloadUpdate: () => Promise<void>
       openReleasePage: () => Promise<void>
       openProjectPage: () => Promise<void>
       detectRuntimes: () => Promise<RuntimeStatus[]>

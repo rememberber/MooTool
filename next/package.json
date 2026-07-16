@@ -83,9 +83,9 @@
     "vitest": "^4.1.10"
   },
   "build": {
-    "appId": "com.rememberber.mootool",
-    "productName": "MooTool",
-    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "appId": "com.rememberber.mootool.next.electron",
+    "productName": "MooTool Next Electron",
+    "artifactName": "MooTool-Next-Electron-${version}-${os}-${arch}.${ext}",
     "asar": true,
     "directories": {
       "buildResources": "resources",
@@ -115,6 +115,12 @@
         "nsis",
         "portable"
       ]
+    },
+    "nsis": {
+      "artifactName": "MooTool-Next-Electron-${version}-win-${arch}-setup.${ext}"
+    },
+    "portable": {
+      "artifactName": "MooTool-Next-Electron-${version}-win-${arch}-portable.${ext}"
     },
     "linux": {
       "icon": "resources/icon.png",

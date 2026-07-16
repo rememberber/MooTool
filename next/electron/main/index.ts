@@ -128,6 +128,7 @@ let jsonVaultWatcherGeneration = 0
 let updateStartupTimer: NodeJS.Timeout | undefined
 let updateIntervalTimer: NodeJS.Timeout | undefined
 let updateCheckPromise: Promise<UpdateCheckResult> | null = null
+let lastUpdateResult: UpdateCheckResult | null = null
 const allowedPdfPaths = new Set<string>()
 const updateService = new UpdateService(process.env.MOOTOOL_UPDATE_FEED_URL || undefined)
 
@@ -343,7 +344,12 @@ function registerIpc(): void {
   })
   ipcMain.handle('update:check', () => checkForUpdates())
   ipcMain.handle('update:open-release', async () => {
-    await shell.openExternal(defaultReleaseUrl)
+    await shell.openExternal(lastUpdateResult?.releaseUrl ?? defaultReleaseUrl)
+  })
+  ipcMain.handle('update:download', async () => {
+    const download = lastUpdateResult?.status === 'available' ? lastUpdateResult.download : null
+    if (!download) throw new Error('No compatible update download is available')
+    await shell.openExternal(download.url)
   })
   ipcMain.handle('app:open-project', async () => {
     await shell.openExternal('https://github.com/rememberber/MooTool')
@@ -1188,9 +1194,14 @@ function configureUpdateChecks(settings: AppSettings): void {
 
 function checkForUpdates(): Promise<UpdateCheckResult> {
   if (!updateCheckPromise) {
-    updateCheckPromise = updateService.check(app.getVersion()).finally(() => {
-      updateCheckPromise = null
-    })
+    updateCheckPromise = updateService.check(app.getVersion())
+      .then((result) => {
+        lastUpdateResult = result
+        return result
+      })
+      .finally(() => {
+        updateCheckPromise = null
+      })
   }
   return updateCheckPromise
 }

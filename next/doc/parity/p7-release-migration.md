@@ -13,7 +13,7 @@
 | Vault Git | 状态、Diff、历史、冲突处理、撤销、中止合并、自动提交、自动拉取 | 已完成 |
 | Quick Note | Java 兼容文件、附件、树操作、拖拽、监视、Git、自动保存 | 已完成 |
 | 旧版迁移 | SQLite、配置、Quick Note、JSON Vault、收藏、HTTP、翻译 | 已完成 |
-| 更新 | Java 版更新源、启动检查、24 小时轮询、手动检查、发布页 | 已完成 |
+| 更新 | 独立产品通道、系统/架构安装包选择、启动检查、24 小时轮询、手动检查 | 已完成 |
 | 桌面生命周期 | 托盘、隐藏/退出/询问、设置同步、菜单 | 已完成 |
 | 性能 | 启动、3 MB JSON、5 MB Quick Note、进程与 heap 内存门槛 | 已完成 |
 | macOS ARM64 包 | App、DMG、ZIP、启动、压缩与镜像完整性 | 已完成 |
@@ -83,12 +83,12 @@ JSON 编辑器已由原生 `textarea` 改为 CodeMirror 6 虚拟视口。超过 
 
 ## 5. 包与发布证据
 
-本机已验证 `dist/mac-arm64/MooTool.app`，版本字段均为 `1.7.8`，启动后工作台可见且注册入口数量为 25。
+本机已验证 `dist/mac-arm64/MooTool Next Electron.app`，Bundle ID 为 `com.rememberber.mootool.next.electron`，版本字段均为 `1.7.8`，启动后工作台可见且注册入口数量为 25。
 
 | 产物 | 大小 | SHA-256 |
 | --- | ---: | --- |
-| `MooTool-1.7.8-mac-arm64.dmg` | 128 MB | `147c6ced5ec3d62dc54e6ff102f37c2fb0e4b244d5b81a6bdd3d003bfdffc0e7` |
-| `MooTool-1.7.8-mac-arm64.zip` | 122 MB | `35a2627e33c2debbfe768cc37bcfad4b75290c457f2a11a6a0d82a5db50790ae` |
+| `MooTool-Next-Electron-1.7.8-mac-arm64.dmg` | 128 MB | `6ebe793677c3f65cee0cf721a28ca9f166c09b1379f15da9b135b53ee488841c` |
+| `MooTool-Next-Electron-1.7.8-mac-arm64.zip` | 129 MB | `7972aaa74efd0dfd8000e089ede9de1db131034c431ce3c1d6d16e27d30cdf95` |
 
 `hdiutil verify` 与 `unzip -t` 均通过。当前候选包为本地 ad-hoc/未正式签名构建，不应直接作为公开下载包。
 
@@ -104,7 +104,7 @@ JSON 编辑器已由原生 `textarea` 改为 CodeMirror 6 虚拟视口。超过 
 ## 6. 发布清单
 
 - [x] Next/Java 版本统一为 `1.7.8`。
-- [x] 更新源、项目页和 Releases 跳转接通。
+- [x] `next-electron` 独立更新源、匹配安装包、项目页和 Releases 跳转接通。
 - [x] 更新、托盘、关闭策略、设置子窗口通过 E2E。
 - [x] 旧数据只读扫描、备份、事务迁移、幂等与回滚通过。
 - [x] 性能与大文本门槛通过。

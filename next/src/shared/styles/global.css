@@ -5143,6 +5143,31 @@ h1 {
   font-weight: 600;
 }
 
+.settings-update-result__target,
+.settings-update-result__missing {
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
+.settings-update-result__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  grid-column: 1 / -1;
+}
+
+.settings-update-result__file {
+  grid-column: 1 / -1;
+  color: var(--text-secondary);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
+
+.settings-update-result__missing {
+  grid-column: 1 / -1;
+}
+
 .settings-update-result pre {
   grid-column: 1 / -1;
   max-height: 280px;

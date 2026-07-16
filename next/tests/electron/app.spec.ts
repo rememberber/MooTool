@@ -15,8 +15,32 @@ test.beforeAll(async () => {
   updateServer = createServer((_request, response) => {
     response.setHeader('content-type', 'application/json; charset=utf-8')
     response.end(JSON.stringify({
-      currentVersion: 'v9.9.9',
-      versionDetailList: [{ version: 'v9.9.9', title: 'E2E update', log: 'Update channel is working.' }]
+      schemaVersion: 1,
+      products: {
+        java: {
+          displayName: 'MooTool Java',
+          status: 'active',
+          releases: [{ version: '99.0.0', title: 'Java only', notes: '', releaseUrl: 'https://example.test/java', assets: [] }]
+        },
+        'next-electron': {
+          displayName: 'MooTool Next Electron',
+          status: 'active',
+          releases: [{
+            version: 'v9.9.9',
+            title: 'E2E update',
+            notes: 'Update channel is working.',
+            releaseUrl: 'https://example.test/next-electron-v9.9.9',
+            assets: [{
+              platform: process.platform,
+              architecture: process.arch,
+              packageType: 'test-installer',
+              priority: 10,
+              fileName: 'MooTool-Next-Electron-9.9.9-test.bin',
+              url: 'https://example.test/MooTool-Next-Electron-9.9.9-test.bin'
+            }]
+          }]
+        }
+      }
     }))
   })
   await new Promise<void>((resolve) => updateServer.listen(0, '127.0.0.1', resolve))
@@ -25,7 +49,7 @@ test.beforeAll(async () => {
   electronApp = await electron.launch({
     args: ['.', `--user-data-dir=${userDataDirectory}`],
     cwd: process.cwd(),
-    env: { ...process.env, NODE_ENV: 'test', MOOTOOL_UPDATE_FEED_URL: `http://127.0.0.1:${updateAddress.port}/version_summary.json` }
+    env: { ...process.env, NODE_ENV: 'test', MOOTOOL_UPDATE_FEED_URL: `http://127.0.0.1:${updateAddress.port}/update-manifest.json` }
   })
   mainPage = await electronApp.firstWindow()
   await mainPage.waitForLoadState('domcontentloaded')
@@ -160,6 +184,11 @@ test('opens the settings window and synchronizes appearance changes', async () =
   await expect(settingsPage.locator('.settings-about')).toContainText('版本 1.7.8')
   await settingsPage.getByRole('button', { name: '检查更新', exact: true }).click()
   await expect(settingsPage.locator('.settings-update-result')).toContainText('发现新版本 9.9.9')
+  await expect(settingsPage.locator('.settings-update-result')).toContainText('MooTool Next Electron')
+  await expect(settingsPage.getByRole('button', { name: '下载本机版本', exact: true })).toBeVisible()
+  const update = await settingsPage.evaluate(() => window.mootool.checkForUpdates())
+  expect(update).toMatchObject({ productId: 'next-electron', latestVersion: '9.9.9' })
+  expect(update.download?.fileName).toBe('MooTool-Next-Electron-9.9.9-test.bin')
 
   await settingsPage.locator('.settings-titlebar .icon-ghost').click()
 })

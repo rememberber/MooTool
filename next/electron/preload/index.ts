@@ -120,6 +120,7 @@ contextBridge.exposeInMainWorld('mootool', {
   previewLegacyMigration: (input: LegacyMigrationInput): Promise<LegacyMigrationPreview> => ipcRenderer.invoke('legacy-migration:preview', input),
   runLegacyMigration: (input: LegacyMigrationInput): Promise<LegacyMigrationResult> => ipcRenderer.invoke('legacy-migration:run', input),
   checkForUpdates: (): Promise<UpdateCheckResult> => ipcRenderer.invoke('update:check'),
+  downloadUpdate: (): Promise<void> => ipcRenderer.invoke('update:download'),
   openReleasePage: (): Promise<void> => ipcRenderer.invoke('update:open-release'),
   openProjectPage: (): Promise<void> => ipcRenderer.invoke('app:open-project'),
   detectRuntimes: (): Promise<RuntimeStatus[]> => ipcRenderer.invoke('runtime:detect'),
