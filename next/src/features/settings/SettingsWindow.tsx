@@ -506,6 +506,7 @@ function RuntimeSettings({ settings, commit }: SettingsPanelProps) {
 
   return (
     <SettingsGroup
+      className="runtime-settings-group"
       title={t('settings.group.runtimes')}
       action={(
         <button className="settings-command" type="button" disabled={detecting} onClick={detect}>
@@ -657,9 +658,9 @@ type SettingsPanelProps = {
   commit: (patch: SettingsPatch) => void
 }
 
-function SettingsGroup({ title, action, children }: { title: string; action?: ReactNode; children: ReactNode }) {
+function SettingsGroup({ title, action, className = '', children }: { title: string; action?: ReactNode; className?: string; children: ReactNode }) {
   return (
-    <section className="settings-group">
+    <section className={['settings-group', className].filter(Boolean).join(' ')}>
       <header><h2>{title}</h2>{action}</header>
       <div className="settings-group__rows">{children}</div>
     </section>

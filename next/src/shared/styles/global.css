@@ -3810,6 +3810,10 @@ button {
   min-height: 32px;
 }
 
+.runtime-settings-group > header {
+  margin-bottom: 8px;
+}
+
 .settings-group h2 {
   margin: 0;
   color: var(--text-muted);
@@ -5349,6 +5353,7 @@ button {
   align-items: center;
   gap: 24px;
   min-height: 66px;
+  padding: 0 14px;
   border-bottom: 1px solid var(--border-soft);
 }
 
@@ -6895,6 +6900,10 @@ button {
 }
 
 :root[data-interface-style='modern'] .setting-row:last-child {
+  border-bottom: 0;
+}
+
+:root[data-interface-style='modern'] .runtime-row:last-child {
   border-bottom: 0;
 }
 

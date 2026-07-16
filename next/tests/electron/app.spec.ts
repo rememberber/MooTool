@@ -257,6 +257,23 @@ test('opens the settings window and synchronizes appearance changes', async () =
   await settingsPage.getByRole('button', { name: '浅色' }).click()
   await expect(mainPage.locator('html')).toHaveAttribute('data-theme', 'light')
 
+  await settingsPage.locator('.settings-nav__item').filter({ hasText: '运行环境' }).click()
+  const runtimeGroup = settingsPage.locator('.runtime-settings-group')
+  await expect(runtimeGroup.locator('.runtime-row')).toHaveCount(4)
+  await expect.poll(() => runtimeGroup.evaluate((group) => {
+    const header = group.querySelector(':scope > header')!.getBoundingClientRect()
+    const rows = group.querySelector('.settings-group__rows')!.getBoundingClientRect()
+    const firstRow = group.querySelector('.runtime-row')!
+    const firstRowStyle = getComputedStyle(firstRow)
+    return {
+      headerGap: rows.top - header.bottom,
+      rowPaddingLeft: firstRowStyle.paddingLeft,
+      rowPaddingRight: firstRowStyle.paddingRight
+    }
+  })).toEqual({ headerGap: 8, rowPaddingLeft: '14px', rowPaddingRight: '14px' })
+  await settingsPage.getByRole('button', { name: '重新检测', exact: true }).click()
+  await expect(settingsPage.getByRole('button', { name: '重新检测', exact: true })).toBeEnabled()
+
   const initialSecretStatus = await settingsPage.evaluate(() => window.mootool.getSecretStatus('proxyPassword'))
   if (initialSecretStatus.encryptionAvailable) {
     const savedStatus = await settingsPage.evaluate(() => window.mootool.setSecret('proxyPassword', 'e2e-secret'))
