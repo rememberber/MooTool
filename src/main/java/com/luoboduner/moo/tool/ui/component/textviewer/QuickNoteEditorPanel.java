@@ -58,9 +58,15 @@ public class QuickNoteEditorPanel extends JPanel {
     }
 
     public void updatePreviewTheme() {
+        // updateUI() on JScrollPane alone does not reinstall the UI delegates of
+        // its horizontal and vertical scroll bars. Some cached note panels are
+        // also detached from the window during a global LAF update.
+        SwingUtilities.updateComponentTreeUI(editorScrollPane);
         if (markdownPreviewEnabled) {
             previewPane.refreshTheme(editorScrollPane.getTextArea().getText());
         }
+        revalidate();
+        repaint();
     }
 
     public boolean isMarkdownPreviewEnabled() {

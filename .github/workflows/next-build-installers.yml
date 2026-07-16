@@ -1,0 +1,78 @@
+name: Build MooTool Next Electron installers
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: Target(s) to build
+        required: true
+        default: all
+        type: choice
+        options:
+          - all
+          - mac-intel
+          - mac-apple-silicon
+          - windows-x64
+          - linux-x64
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    name: ${{ matrix.label }}
+    strategy:
+      fail-fast: false
+      matrix:
+        target: ${{ fromJSON(inputs.target == 'all' && '["mac-apple-silicon","mac-intel","windows-x64","linux-x64"]' || format('["{0}"]', inputs.target)) }}
+        include:
+          - target: mac-apple-silicon
+            label: macOS Apple Silicon
+            os: macos-14
+            command: npx electron-builder --mac dmg zip --arm64 --publish never
+          - target: mac-intel
+            label: macOS Intel
+            os: macos-13
+            command: npx electron-builder --mac dmg zip --x64 --publish never
+          - target: windows-x64
+            label: Windows x64
+            os: windows-latest
+            command: npx electron-builder --win nsis portable --x64 --publish never
+          - target: linux-x64
+            label: Linux x64
+            os: ubuntu-latest
+            command: npx electron-builder --linux AppImage deb --x64 --publish never
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: next
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: next/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Test and build
+        run: npm run check
+
+      - name: Package
+        run: ${{ matrix.command }}
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+
+      - name: Upload installers
+        uses: actions/upload-artifact@v4
+        with:
+          name: mootool-next-electron-${{ matrix.target }}
+          path: next/dist/*
+          if-no-files-found: error
+          retention-days: 14
