@@ -1,0 +1,209 @@
+{
+  "platform": "darwin",
+  "architecture": "arm64",
+  "packaged": true,
+  "measuredAt": "2026-07-16T06:31:20.640Z",
+  "startupMs": 622.53,
+  "baselineMemoryMb": 487.03,
+  "jsonInputMb": 2.98,
+  "jsonFormatMs": 1084.32,
+  "quickNoteInputMb": 5.26,
+  "quickNoteRoundTripMs": 177.83,
+  "peakMemoryMb": 744.61,
+  "peakMemoryIncreaseMb": 257.58,
+  "settledMemoryIncreaseMb": 96.69,
+  "memory": {
+    "baseline": {
+      "totalMb": 487.03,
+      "rendererHeap": {
+        "usedMb": 5.51,
+        "totalMb": 8.75
+      },
+      "processes": [
+        {
+          "pid": 80821,
+          "type": "Browser",
+          "serviceName": "",
+          "workingSetMb": 199.63,
+          "peakWorkingSetMb": 199.63
+        },
+        {
+          "pid": 80835,
+          "type": "Tab",
+          "serviceName": "",
+          "workingSetMb": 131.7,
+          "peakWorkingSetMb": 131.7
+        },
+        {
+          "pid": 80833,
+          "type": "GPU",
+          "serviceName": "GPU",
+          "workingSetMb": 104.31,
+          "peakWorkingSetMb": 104.31
+        },
+        {
+          "pid": 80834,
+          "type": "Utility",
+          "serviceName": "network.mojom.NetworkService",
+          "workingSetMb": 51.39,
+          "peakWorkingSetMb": 51.39
+        }
+      ]
+    },
+    "afterJson": {
+      "totalMb": 709.29,
+      "rendererHeap": {
+        "usedMb": 90.63,
+        "totalMb": 112.06
+      },
+      "processes": [
+        {
+          "pid": 80835,
+          "type": "Tab",
+          "serviceName": "",
+          "workingSetMb": 404.59,
+          "peakWorkingSetMb": 408.31
+        },
+        {
+          "pid": 80821,
+          "type": "Browser",
+          "serviceName": "",
+          "workingSetMb": 179.95,
+          "peakWorkingSetMb": 246.31
+        },
+        {
+          "pid": 80833,
+          "type": "GPU",
+          "serviceName": "GPU",
+          "workingSetMb": 85.33,
+          "peakWorkingSetMb": 106.94
+        },
+        {
+          "pid": 80834,
+          "type": "Utility",
+          "serviceName": "network.mojom.NetworkService",
+          "workingSetMb": 39.42,
+          "peakWorkingSetMb": 51.39
+        }
+      ]
+    },
+    "afterQuickNote": {
+      "totalMb": 743.83,
+      "rendererHeap": {
+        "usedMb": 111.93,
+        "totalMb": 133.35
+      },
+      "processes": [
+        {
+          "pid": 80835,
+          "type": "Tab",
+          "serviceName": "",
+          "workingSetMb": 410.53,
+          "peakWorkingSetMb": 465.25
+        },
+        {
+          "pid": 80821,
+          "type": "Browser",
+          "serviceName": "",
+          "workingSetMb": 203.31,
+          "peakWorkingSetMb": 246.31
+        },
+        {
+          "pid": 80833,
+          "type": "GPU",
+          "serviceName": "GPU",
+          "workingSetMb": 90.69,
+          "peakWorkingSetMb": 106.94
+        },
+        {
+          "pid": 80834,
+          "type": "Utility",
+          "serviceName": "network.mojom.NetworkService",
+          "workingSetMb": 39.3,
+          "peakWorkingSetMb": 51.39
+        }
+      ]
+    },
+    "beforeCollection": {
+      "totalMb": 744.61,
+      "rendererHeap": {
+        "usedMb": 112.19,
+        "totalMb": 133.6
+      },
+      "processes": [
+        {
+          "pid": 80835,
+          "type": "Tab",
+          "serviceName": "",
+          "workingSetMb": 411.41,
+          "peakWorkingSetMb": 465.25
+        },
+        {
+          "pid": 80821,
+          "type": "Browser",
+          "serviceName": "",
+          "workingSetMb": 203.34,
+          "peakWorkingSetMb": 246.31
+        },
+        {
+          "pid": 80833,
+          "type": "GPU",
+          "serviceName": "GPU",
+          "workingSetMb": 90.56,
+          "peakWorkingSetMb": 106.94
+        },
+        {
+          "pid": 80834,
+          "type": "Utility",
+          "serviceName": "network.mojom.NetworkService",
+          "workingSetMb": 39.3,
+          "peakWorkingSetMb": 51.39
+        }
+      ]
+    },
+    "settled": {
+      "totalMb": 583.72,
+      "rendererHeap": {
+        "usedMb": 9.39,
+        "totalMb": 11.88
+      },
+      "processes": [
+        {
+          "pid": 80835,
+          "type": "Tab",
+          "serviceName": "",
+          "workingSetMb": 255.52,
+          "peakWorkingSetMb": 465.25
+        },
+        {
+          "pid": 80821,
+          "type": "Browser",
+          "serviceName": "",
+          "workingSetMb": 203.38,
+          "peakWorkingSetMb": 246.31
+        },
+        {
+          "pid": 80833,
+          "type": "GPU",
+          "serviceName": "GPU",
+          "workingSetMb": 85.52,
+          "peakWorkingSetMb": 106.94
+        },
+        {
+          "pid": 80834,
+          "type": "Utility",
+          "serviceName": "network.mojom.NetworkService",
+          "workingSetMb": 39.3,
+          "peakWorkingSetMb": 51.39
+        }
+      ]
+    }
+  },
+  "thresholds": {
+    "startupMs": 8000,
+    "jsonFormatMs": 8000,
+    "quickNoteRoundTripMs": 8000,
+    "peakMemoryIncreaseMb": 400,
+    "settledMemoryIncreaseMb": 200
+  }
+}
