@@ -97,6 +97,21 @@ test('opens all registered tools through search and persists recent access', asy
 test('formats JSON and completes history and Vault workflows', async () => {
   await mainPage.locator('.tool-button').filter({ hasText: 'JSON' }).click()
   const jsonVault = mainPage.locator('.vault-panel')
+  await expect(mainPage.locator('.vault-panel__header h2')).toHaveCSS('font-size', '14px')
+  await expect(mainPage.locator('.vault-panel__options > select')).toHaveCSS('font-size', '12px')
+  await expect.poll(() => mainPage.locator('.vault-panel__options > select').evaluate((element) => element.getBoundingClientRect().height)).toBe(34)
+  await expect.poll(() => mainPage.locator('.vault-panel__actions button').first().evaluate((button) => {
+    const icon = button.querySelector('svg')
+    return {
+      button: button.getBoundingClientRect().width,
+      icon: icon?.getBoundingClientRect().width
+    }
+  })).toEqual({ button: 32, icon: 16 })
+  await expect.poll(() => mainPage.locator('.vault-panel__actions').evaluate((actions) => {
+    const actionsRect = actions.getBoundingClientRect()
+    const panelRect = actions.closest('.vault-panel')!.getBoundingClientRect()
+    return actionsRect.left >= panelRect.left && actionsRect.right <= panelRect.right
+  })).toBe(true)
   const initialVaultWidth = await jsonVault.evaluate((element) => element.getBoundingClientRect().width)
   const firstDivider = mainPage.locator('.json-layout .pane-resizer').first()
   await expect.poll(() => firstDivider.evaluate((element) => getComputedStyle(element, '::after').opacity)).toBe('0')
@@ -130,7 +145,10 @@ test('formats JSON and completes history and Vault workflows', async () => {
   await mainPage.getByRole('button', { name: '新建片段' }).click()
   await mainPage.getByLabel('文件名或相对路径').fill('e2e-sample')
   await mainPage.getByRole('button', { name: '创建', exact: true }).click()
-  await expect(mainPage.locator('.vault-node').filter({ hasText: 'e2e-sample.json' })).toBeVisible()
+  const vaultNode = mainPage.locator('.vault-node').filter({ hasText: 'e2e-sample.json' })
+  await expect(vaultNode).toBeVisible()
+  await expect(vaultNode).toHaveCSS('font-size', '13px')
+  await expect.poll(() => vaultNode.locator('svg').evaluate((icon) => icon.getBoundingClientRect().width)).toBe(16)
 
   await editor.fill('{"saved":true}')
   await mainPage.getByRole('button', { name: '保存片段' }).click()
@@ -321,6 +339,7 @@ test('runs P3 regex, Cron and text Diff workflows with persistent favorites', as
 test('runs P4 reformat, crypto, Protobuf and QR workflows', async () => {
   await openTool('格式化', '格式化')
   const reformatEditor = mainPage.locator('.reformat-workspace .code-editor')
+  await expect(reformatEditor).toHaveCSS('font-size', '13px')
   await reformatEditor.fill('server { listen 80; location / { return 200; } }')
   await mainPage.locator('.reformat-workspace').getByRole('button', { name: '格式化', exact: true }).click()
   await expect(reformatEditor).toHaveValue(/listen 80;/)
@@ -336,6 +355,7 @@ test('runs P4 reformat, crypto, Protobuf and QR workflows', async () => {
   await expect(cryptoEditors.nth(0)).toHaveValue('MooTool E2E')
 
   await openTool('Protobuf', 'Protobuf')
+  await expect(mainPage.locator('.proto-definition header')).toHaveCSS('font-size', '12px')
   const protobufBounds = await mainPage.locator('.protobuf-workspace').evaluate((element) => ({
     bottom: element.getBoundingClientRect().bottom,
     viewportHeight: window.innerHeight,
@@ -418,6 +438,8 @@ test('runs P5 HTTP requests and persists the request collection', async () => {
 
   try {
     await openTool('HTTP 请求', 'HTTP 请求')
+    await expect(mainPage.getByTestId('http-url')).toHaveCSS('font-size', '12px')
+    await expect.poll(() => mainPage.getByTestId('http-url').evaluate((element) => element.getBoundingClientRect().height)).toBe(34)
     await mainPage.getByTestId('http-url').fill(`http://127.0.0.1:${address.port}/echo?source=mootool`)
     await mainPage.getByTestId('http-send').click()
     await expect(mainPage.getByTestId('http-response')).toContainText('"ok": true')
@@ -480,6 +502,13 @@ test('runs P5 Hosts, translation records, network and system workflows', async (
 test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () => {
   await openTool('随手记', '随手记')
   await expect(mainPage.locator('.quick-note-tree__row')).not.toHaveCount(0)
+  await expect(mainPage.locator('.quick-note-search input')).toHaveCSS('font-size', '13px')
+  await expect(mainPage.locator('.quick-note-tree__row').first()).toHaveCSS('font-size', '13px')
+  await expect.poll(() => mainPage.getByLabel('语法').evaluate((element) => element.getBoundingClientRect().height)).toBe(32)
+  await expect.poll(() => mainPage.locator('.quick-note-tree-actions button').first().evaluate((element) => ({
+    button: element.getBoundingClientRect().height,
+    icon: element.querySelector('svg')?.getBoundingClientRect().width
+  }))).toEqual({ button: 32, icon: 16 })
 
   await mainPage.getByRole('button', { name: '新建笔记' }).click()
   const createDialog = mainPage.getByRole('dialog', { name: '新建笔记' })
@@ -517,6 +546,7 @@ test('runs and stops P6 Node.js code with persistent history', async () => {
   await mainPage.getByRole('tab', { name: 'Node.js' }).click()
   await expect(mainPage.locator('.runtime-toolbar')).toContainText(/node|Node/i)
   const editor = mainPage.getByLabel('代码编辑器')
+  await expect(editor).toHaveCSS('font-size', '13px')
   await editor.fill('console.log("E2E runtime", 21 * 2)')
   await mainPage.getByRole('button', { name: '运行', exact: true }).click()
   await expect(mainPage.locator('.runtime-stdout')).toContainText('E2E runtime 42')

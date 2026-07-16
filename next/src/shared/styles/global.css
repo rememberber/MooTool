@@ -6840,3 +6840,504 @@ button {
 :root[data-interface-style='modern'] .segmented__item--active {
   box-shadow: 0 1px 3px var(--shadow);
 }
+
+/* Shared tool sizing: keep dense workspaces readable without wasting space. */
+:root {
+  --tool-control-height: 34px;
+  --tool-control-font-size: 12px;
+  --tool-list-font-size: 13px;
+  --tool-meta-font-size: 11px;
+  --tool-icon-size: 16px;
+}
+
+.tool-page .toolbar-button {
+  min-height: var(--tool-control-height);
+  font-size: 13px;
+}
+
+.tool-page .icon-button {
+  width: var(--tool-control-height);
+  height: var(--tool-control-height);
+  flex-basis: var(--tool-control-height);
+}
+
+.tool-page .dialog-button,
+.tool-page .primary-command,
+.tool-page .panel-command,
+.tool-page .io-action-button,
+.tool-page .inline-command-row button,
+.tool-page .diff-toolbar > button,
+.tool-page .cron-presets button {
+  min-height: var(--tool-control-height);
+  font-size: var(--tool-control-font-size);
+}
+
+.tool-page .toolbar-button svg,
+.tool-page .icon-button svg,
+.tool-page .dialog-button svg,
+.tool-page .primary-command svg,
+.tool-page .panel-command svg,
+.tool-page .io-action-button svg,
+.runtime-toolbar button svg,
+.quick-note-icon-button svg {
+  width: var(--tool-icon-size);
+  height: var(--tool-icon-size);
+}
+
+.tool-page .tool-tab,
+.runtime-tab {
+  font-size: 13px;
+}
+
+/* Quick Note */
+.quick-note-search {
+  min-height: 40px;
+}
+
+.quick-note-search input {
+  font-size: var(--tool-list-font-size);
+}
+
+.quick-note-search > svg {
+  width: var(--tool-icon-size);
+  height: var(--tool-icon-size);
+}
+
+.quick-note-list-controls label {
+  gap: 6px;
+  font-size: var(--tool-control-font-size);
+}
+
+.quick-note-list-controls input[type='checkbox'] {
+  width: 16px;
+  height: 16px;
+}
+
+.quick-note-list-controls select,
+.quick-note-toolbar select,
+.quick-note-font-size {
+  height: 32px;
+  font-size: var(--tool-control-font-size);
+}
+
+.quick-note-tree-actions {
+  min-height: 40px;
+  gap: 3px;
+}
+
+.quick-note-tree__row {
+  grid-template-columns: 14px 17px minmax(0, 1fr);
+  min-height: 34px;
+  font-size: var(--tool-list-font-size);
+}
+
+.quick-note-tree__row > svg {
+  width: var(--tool-icon-size);
+  height: var(--tool-icon-size);
+}
+
+.quick-note-tree__chevron svg {
+  width: 14px;
+  height: 14px;
+}
+
+.quick-note-empty,
+.quick-note-select-empty {
+  font-size: var(--tool-control-font-size);
+}
+
+.quick-note-toolbar {
+  min-height: 50px;
+  gap: 5px;
+  padding: 7px 8px;
+}
+
+.quick-note-toolbar select:first-of-type {
+  width: 102px;
+  flex-basis: 102px;
+}
+
+.quick-note-toolbar select:nth-of-type(2) {
+  width: 94px;
+  flex-basis: 94px;
+}
+
+.quick-note-font-size {
+  width: 54px;
+  flex-basis: 54px;
+}
+
+.quick-note-icon-button {
+  width: 32px;
+  height: 32px;
+  flex-basis: 32px;
+}
+
+.quick-note-color {
+  width: 14px;
+  height: 14px;
+}
+
+.quick-note-find-bar input,
+.quick-note-find-bar > button:not(.icon-ghost) {
+  height: 32px;
+  font-size: var(--tool-control-font-size);
+}
+
+.quick-note-statusbar,
+.quick-replace-panel header {
+  font-size: var(--tool-meta-font-size);
+}
+
+.quick-replace-actions button {
+  min-height: 34px;
+  font-size: var(--tool-control-font-size);
+}
+
+/* Core conversion and text tools */
+.text-pane > span,
+.ua-input-panel > label,
+.regex-controls > label,
+.regex-source > span,
+.cron-expression-panel > label,
+.diff-editor-grid label > span,
+.calculator-expression > label {
+  font-size: var(--tool-control-font-size);
+}
+
+.compact-select,
+.labeled-input span,
+.ua-result-row span,
+.checkbox-row label,
+.diff-toolbar label,
+.cron-fields span,
+.cron-presets > span,
+.cron-expression-panel output span {
+  font-size: var(--tool-meta-font-size);
+}
+
+.compact-select select,
+.ua-actions select,
+.cron-expression-panel select,
+.labeled-input input,
+.cron-fields input {
+  height: var(--tool-control-height);
+  font-size: var(--tool-control-font-size);
+}
+
+.operation-panel h2,
+.calculator-log h2,
+.cron-builder h2,
+.cron-runs h2,
+.common-pattern-list strong,
+.favorite-item strong {
+  font-size: var(--tool-list-font-size);
+}
+
+.calculator-log p,
+.common-pattern-list code,
+.favorite-item code,
+.regex-results article span,
+.regex-results article code,
+.diff-summary {
+  font-size: var(--tool-meta-font-size);
+}
+
+.result-status,
+.empty-state,
+.regex-results article strong,
+.cron-expression-panel output,
+.cron-runs li,
+.diff-preview,
+.unified-diff,
+.validation-output {
+  font-size: var(--tool-control-font-size);
+}
+
+.time-current-value > span,
+.time-format-hint {
+  font-size: var(--tool-meta-font-size);
+}
+
+.time-zone-band > label,
+.time-field-group > label,
+.time-zone-button {
+  font-size: var(--tool-control-font-size);
+}
+
+.time-zone-button {
+  height: 30px;
+}
+
+/* Runtime */
+.runtime-toolbar > button:not(.segmented__item),
+.runtime-missing-banner button {
+  min-height: var(--tool-control-height);
+  font-size: var(--tool-control-font-size);
+}
+
+.runtime-toolbar > code,
+.runtime-pane > header,
+.runtime-result-footer {
+  font-size: var(--tool-meta-font-size);
+}
+
+.runtime-missing-banner,
+.runtime-output-empty,
+.runtime-running {
+  font-size: var(--tool-control-font-size);
+}
+
+.runtime-editor-wrap textarea,
+.runtime-output-scroll pre {
+  font-size: 13px;
+}
+
+/* Phase 4 tools */
+.compact-field,
+.color-native-input,
+.color-code-input,
+.p4-tool label {
+  font-size: var(--tool-control-font-size);
+}
+
+.compact-field input,
+.compact-field select,
+.color-code-input input,
+.color-toolbar select,
+.proto-definition input,
+.proto-definition select,
+.protobuf-wire-layout select,
+.random-length input,
+.pdf-table input,
+.pdf-table select,
+.image-options input:not([type='range']):not([type='radio']):not([type='checkbox']),
+.image-options select,
+.capture-crop-fields input {
+  height: var(--tool-control-height);
+  font-size: var(--tool-control-font-size);
+}
+
+.code-editor,
+.crypto-textarea textarea,
+.proto-definition textarea,
+.base64-dialog-text,
+.qrcode-input-panel textarea,
+.qrcode-result textarea {
+  font-size: 13px;
+}
+
+.field-hint,
+.selected-file-name,
+.color-shift-hint,
+.qrcode-recognize-source > span,
+.qrcode-history article small,
+.qrcode-history article p,
+.pdf-table td small,
+.pdf-output-strip,
+.image-zoom-toolbar,
+.output-mode legend,
+.capture-source,
+.capture-crop-fields label {
+  font-size: var(--tool-meta-font-size);
+}
+
+.crypto-textarea > span,
+.digest-output > span,
+.random-length,
+.color-preview span,
+.color-preview small,
+.color-compare-row,
+.color-compare-row code,
+.color-palette-panel h2,
+.qrcode-input-panel > label,
+.qrcode-options > label,
+.qrcode-result,
+.proto-definition header,
+.proto-definition > div label,
+.protobuf-copy,
+.pdf-table,
+.image-library header,
+.image-library footer,
+.image-options > p,
+.image-options > label,
+.image-option-grid label,
+.output-mode label {
+  font-size: var(--tool-control-font-size);
+}
+
+.digest-output output,
+.random-row output {
+  font-size: var(--tool-control-font-size);
+}
+
+.color-palette-panel select {
+  height: 32px;
+  font-size: var(--tool-control-font-size);
+}
+
+.pdf-table th {
+  font-size: var(--tool-meta-font-size);
+}
+
+.image-list .history-empty,
+.image-list-item small {
+  font-size: var(--tool-meta-font-size);
+}
+
+.image-list-item strong {
+  font-size: var(--tool-list-font-size);
+}
+
+/* Phase 5 network and system tools */
+.p5-tool .toolbar-button {
+  height: var(--tool-control-height);
+  font-size: 13px;
+}
+
+.p5-tool .icon-button {
+  width: var(--tool-control-height);
+  height: var(--tool-control-height);
+  flex-basis: var(--tool-control-height);
+}
+
+.p5-tool input,
+.p5-tool select {
+  height: var(--tool-control-height);
+  font-size: var(--tool-control-font-size);
+}
+
+.compact-search {
+  height: var(--tool-control-height);
+}
+
+.compact-search input {
+  height: 30px;
+}
+
+.http-saved-item strong,
+.host-profile strong,
+.http-history-list strong,
+.translation-record strong,
+.translation-history-list strong {
+  font-size: var(--tool-list-font-size);
+}
+
+.http-saved-item span,
+.host-profile span,
+.http-entry-head,
+.http-cookie-head,
+.http-status,
+.http-history-list span,
+.http-history-list p,
+.translation-toolbar label,
+.translation-result footer,
+.translation-record span,
+.translation-record-layout > main > header,
+.translation-history-list header span,
+.system-hosts-meta,
+.net-section label,
+.environment-table th,
+.environment-table td code,
+.variables-workspace > footer,
+.hardware-workspace > header > div {
+  font-size: var(--tool-meta-font-size);
+}
+
+.http-add-empty,
+.http-body-editor textarea,
+.http-response-pane pre,
+.translation-history-list p,
+.translation-record-layout > main textarea,
+.net-output-panel pre,
+.local-address-columns textarea,
+.environment-table,
+.net-section h2 {
+  font-size: var(--tool-control-font-size);
+}
+
+.host-editor > textarea,
+.system-hosts-view {
+  font-size: 13px;
+}
+
+/* JSON Vault */
+.vault-panel__header {
+  min-height: 48px;
+  padding: 7px 7px 7px 11px;
+  flex-wrap: wrap;
+}
+
+.vault-panel__header h2 {
+  font-size: 14px;
+}
+
+.vault-panel__actions {
+  gap: 2px;
+}
+
+.vault-panel__actions button {
+  width: 32px;
+  height: 32px;
+}
+
+.vault-panel__actions button svg,
+.vault-more-menu > summary svg,
+.vault-more-menu > div button svg,
+.vault-node svg {
+  width: var(--tool-icon-size);
+  height: var(--tool-icon-size);
+}
+
+.vault-panel__options {
+  min-height: 44px;
+  padding: 5px 7px;
+  gap: 6px;
+}
+
+.vault-panel__options > select {
+  height: var(--tool-control-height);
+  padding: 0 10px;
+  font-size: var(--tool-control-font-size);
+}
+
+.vault-more-menu > summary {
+  width: 32px;
+  height: 32px;
+}
+
+.vault-more-menu > div {
+  top: 40px;
+  width: 180px;
+}
+
+.vault-more-menu > div button {
+  min-height: var(--tool-control-height);
+  font-size: var(--tool-control-font-size);
+}
+
+.vault-tree {
+  padding: 7px;
+}
+
+.vault-empty {
+  font-size: var(--tool-control-font-size);
+}
+
+.vault-node {
+  min-height: 36px;
+  gap: 8px;
+  padding-top: 5px;
+  padding-right: 9px;
+  padding-bottom: 5px;
+  font-size: var(--tool-list-font-size);
+}
+
+.vault-panel__selection {
+  min-height: 34px;
+  font-size: var(--tool-meta-font-size);
+}
+
+.vault-new-field {
+  font-size: var(--tool-control-font-size);
+}
