@@ -1,5 +1,7 @@
 import DOMPurify from 'dompurify'
 import {
+  Check,
+  ChevronDown,
   CopyPlus,
   Download,
   FilePlus2,
@@ -22,7 +24,8 @@ import {
   X
 } from 'lucide-react'
 import { marked } from 'marked'
-import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { VaultGitDialog } from '@/features/json/VaultGitDialog'
 import { formatCode } from '@/features/reformat/reformatTools'
@@ -114,6 +117,103 @@ const noteColors = [
   ['purple', '#8a72b5'],
   ['red', '#c96761']
 ] as const
+
+function NoteColorPicker({ value, disabled, label, onChange }: { value?: string; disabled: boolean; label: string; onChange: (color: string) => void }) {
+  const triggerRef = useRef<HTMLButtonElement>(null)
+  const menuRef = useRef<HTMLDivElement>(null)
+  const [open, setOpen] = useState(false)
+  const [position, setPosition] = useState({ left: 0, top: 0 })
+  const current = noteColors.find(([id]) => id === value) ?? noteColors[0]
+
+  const updatePosition = useCallback(() => {
+    const trigger = triggerRef.current
+    if (!trigger) return
+    const rect = trigger.getBoundingClientRect()
+    const menuWidth = 146
+    const menuHeight = 80
+    setPosition({
+      left: Math.max(8, Math.min(rect.left, window.innerWidth - menuWidth - 8)),
+      top: rect.bottom + menuHeight + 6 <= window.innerHeight ? rect.bottom + 6 : rect.top - menuHeight - 6
+    })
+  }, [])
+
+  useEffect(() => {
+    if (!open) return
+    updatePosition()
+    const focusFrame = window.requestAnimationFrame(() => {
+      menuRef.current?.querySelector<HTMLElement>('[aria-checked="true"]')?.focus()
+    })
+    const closeOutside = (event: PointerEvent) => {
+      const target = event.target as Node
+      if (!triggerRef.current?.contains(target) && !menuRef.current?.contains(target)) setOpen(false)
+    }
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return
+      setOpen(false)
+      triggerRef.current?.focus()
+    }
+    document.addEventListener('pointerdown', closeOutside)
+    document.addEventListener('keydown', handleKeyDown)
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+    return () => {
+      window.cancelAnimationFrame(focusFrame)
+      document.removeEventListener('pointerdown', closeOutside)
+      document.removeEventListener('keydown', handleKeyDown)
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [open, updatePosition])
+
+  return (
+    <>
+      <Tooltip content={label}>
+        <button
+          ref={triggerRef}
+          className="quick-note-color-trigger"
+          type="button"
+          aria-label={label}
+          aria-haspopup="menu"
+          aria-expanded={open}
+          data-color={current[0]}
+          disabled={disabled}
+          onClick={() => setOpen((currentOpen) => !currentOpen)}
+        >
+          <span className="quick-note-color-trigger__swatch" style={{ background: current[1] }} />
+          <ChevronDown size={12} />
+        </button>
+      </Tooltip>
+      {open && createPortal(
+        <div ref={menuRef} className="quick-note-color-menu" role="menu" aria-label={label} style={position}>
+          {noteColors.map(([id, color]) => {
+            const active = current[0] === id
+            return (
+              <button
+                className={active ? 'quick-note-color-option quick-note-color-option--active' : 'quick-note-color-option'}
+                type="button"
+                role="menuitemradio"
+                aria-label={`${label} ${id}`}
+                aria-checked={active}
+                title={`${label} ${id}`}
+                key={id}
+                onClick={() => {
+                  onChange(id)
+                  setOpen(false)
+                  triggerRef.current?.focus()
+                }}
+              >
+                <span className="quick-note-color-option__swatch" style={{ background: color }}>
+                  {active && <Check size={12} strokeWidth={3} />}
+                </span>
+              </button>
+            )
+          })}
+        </div>,
+        document.body
+      )}
+    </>
+  )
+}
 
 export function QuickNoteTool() {
   const { t } = useI18n()
@@ -518,9 +618,7 @@ export function QuickNoteTool() {
           <section className="quick-note-editor-shell">
             <div className="quick-note-toolbar">
               <IconButton label={state.treeOpen ? t('quickNote.openVault') : t('quickNote.newNote')} icon={state.treeOpen ? PanelLeftClose : PanelLeftOpen} onClick={() => update({ treeOpen: !state.treeOpen })} />
-              <div className="quick-note-colors" aria-label={t('quickNote.color')}>
-                {noteColors.map(([id, color]) => <button className={state.note?.metadata.color === id ? 'quick-note-color quick-note-color--active' : 'quick-note-color'} type="button" aria-label={`${t('quickNote.color')} ${id}`} key={id} disabled={!state.note} style={{ background: color }} onClick={() => patchMetadata({ color: id })} />)}
-              </div>
+              <NoteColorPicker key={state.note?.relativePath ?? 'empty'} value={state.note?.metadata.color} disabled={!state.note} label={t('quickNote.color')} onChange={(color) => patchMetadata({ color })} />
               <select aria-label={t('quickNote.syntax')} disabled={!state.note} value={state.note?.metadata.syntax ?? 'text/plain'} onChange={(event) => patchMetadata({ syntax: event.target.value })}>
                 {syntaxOptions.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
               </select>

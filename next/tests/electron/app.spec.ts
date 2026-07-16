@@ -514,12 +514,30 @@ test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () =>
   const createDialog = mainPage.getByRole('dialog', { name: '新建笔记' })
   await createDialog.getByLabel('名称').fill('E2E Quick Note')
   await createDialog.getByRole('button', { name: '创建' }).click()
+  const colorTrigger = mainPage.getByRole('button', { name: '笔记颜色', exact: true })
+  await expect(colorTrigger).toHaveAttribute('data-color', 'default')
+  await expect.poll(() => colorTrigger.evaluate((element) => ({
+    width: element.getBoundingClientRect().width,
+    height: element.getBoundingClientRect().height
+  }))).toEqual({ width: 36, height: 32 })
+  await expect(mainPage.locator('.quick-note-color-menu')).toHaveCount(0)
+  await colorTrigger.click()
+  const colorMenu = mainPage.getByRole('menu', { name: '笔记颜色' })
+  await expect(colorMenu).toBeVisible()
+  await expect(colorMenu).toHaveCSS('position', 'fixed')
+  await expect(colorMenu.getByRole('menuitemradio')).toHaveCount(7)
+  await colorMenu.getByRole('menuitemradio', { name: '笔记颜色 yellow' }).click()
+  await expect(colorTrigger).toHaveAttribute('data-color', 'yellow')
+  await expect(colorMenu).toHaveCount(0)
   const editor = mainPage.getByLabel('笔记内容')
   await editor.fill('## E2E Markdown\n\n- Vault file\n- Git checkpoint')
   await mainPage.getByLabel('语法').selectOption('text/markdown')
   await mainPage.getByRole('button', { name: '保存', exact: true }).click()
   await expect.poll(() => mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick Note.txt'))).toEqual(
-    expect.objectContaining({ content: '## E2E Markdown\n\n- Vault file\n- Git checkpoint' })
+    expect.objectContaining({
+      content: '## E2E Markdown\n\n- Vault file\n- Git checkpoint',
+      metadata: expect.objectContaining({ color: 'yellow' })
+    })
   )
 
   await mainPage.getByRole('tab', { name: '预览' }).click()

@@ -355,30 +355,84 @@
   cursor: default;
 }
 
-.quick-note-colors {
-  display: flex;
-  flex: 0 0 auto;
+.quick-note-color-trigger {
+  display: inline-flex;
+  flex: 0 0 36px;
   align-items: center;
+  justify-content: center;
   gap: 3px;
-  padding: 0 3px;
-}
-
-.quick-note-color {
-  width: 12px;
-  height: 12px;
+  width: 36px;
+  height: 32px;
   padding: 0;
-  border: 1px solid color-mix(in srgb, var(--border-control) 78%, transparent);
-  border-radius: 50%;
+  color: var(--text-muted);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: 6px;
   cursor: pointer;
 }
 
-.quick-note-color--active {
-  box-shadow: 0 0 0 2px var(--toolbar), 0 0 0 3px var(--text-muted);
+.quick-note-color-trigger:hover:not(:disabled),
+.quick-note-color-trigger[aria-expanded='true'] {
+  color: var(--text-strong);
+  background: var(--control-hover);
+  border-color: var(--border-control-hover);
 }
 
-.quick-note-color:disabled {
+.quick-note-color-trigger:disabled {
   cursor: default;
   opacity: 0.4;
+}
+
+.quick-note-color-trigger__swatch {
+  width: 16px;
+  height: 16px;
+  border: 1px solid color-mix(in srgb, var(--border-control) 78%, transparent);
+  border-radius: 50%;
+}
+
+.quick-note-color-menu {
+  position: fixed;
+  z-index: 240;
+  display: grid;
+  width: max-content;
+  grid-template-columns: repeat(4, 28px);
+  gap: 6px;
+  padding: 8px;
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-control);
+  border-radius: 7px;
+  box-shadow: var(--shadow-popover);
+}
+
+.quick-note-color-option {
+  display: grid;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  background: transparent;
+  border-radius: 5px;
+  cursor: pointer;
+  place-items: center;
+}
+
+.quick-note-color-option:hover,
+.quick-note-color-option:focus-visible,
+.quick-note-color-option--active {
+  background: var(--control-hover);
+}
+
+.quick-note-color-option__swatch {
+  display: grid;
+  width: 20px;
+  height: 20px;
+  color: #fff;
+  border: 1px solid color-mix(in srgb, var(--border-control) 78%, transparent);
+  border-radius: 50%;
+  place-items: center;
+}
+
+.quick-note-color-option__swatch svg {
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 45%));
 }
 
 .quick-note-find-bar {
@@ -665,8 +719,7 @@
     position: relative;
   }
 
-  .quick-note-toolbar select:nth-of-type(2),
-  .quick-note-colors {
+  .quick-note-toolbar select:nth-of-type(2) {
     display: none;
   }
 }
@@ -6971,11 +7024,6 @@ button {
   width: 32px;
   height: 32px;
   flex-basis: 32px;
-}
-
-.quick-note-color {
-  width: 14px;
-  height: 14px;
 }
 
 .quick-note-find-bar input,
