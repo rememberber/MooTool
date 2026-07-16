@@ -1373,18 +1373,23 @@ button {
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 4px;
+  left: 50%;
   width: 1px;
-  background: var(--border-control);
+  transform: translateX(-50%);
+  background: var(--accent-strong);
   content: '';
-  transition: background 120ms ease, width 120ms ease;
+  opacity: 0;
+  transition: opacity 120ms ease, width 120ms ease;
 }
 
 .pane-resizer:hover::after,
-.pane-resizer:focus-visible::after,
+.pane-resizer:focus-visible::after {
+  opacity: 0.5;
+}
+
 .pane-resizer--active::after {
   width: 2px;
-  background: var(--accent-strong);
+  opacity: 0.9;
 }
 
 .pane-resizer:focus-visible {
