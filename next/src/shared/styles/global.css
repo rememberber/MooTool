@@ -1616,8 +1616,9 @@ button {
 
 .home-sponsor-copy {
   display: flex;
+  flex-direction: column;
   align-items: flex-start;
-  gap: 12px;
+  gap: 8px;
   color: var(--text-body);
 }
 
@@ -1630,6 +1631,13 @@ button {
 .home-sponsor-copy span {
   color: var(--text-muted);
   font-size: 12px;
+}
+
+.home-sponsor-copy img {
+  display: block;
+  width: 139px;
+  height: 139px;
+  border-radius: 4px;
 }
 
 .home-work-list button {

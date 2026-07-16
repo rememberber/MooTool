@@ -1,5 +1,6 @@
-import { Coffee, ExternalLink, Github, HeartHandshake, PackageOpen, Users } from 'lucide-react'
+import { ExternalLink, Github, HeartHandshake, PackageOpen, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
+import sponsorQrImage from '@/assets/wx-zanshang.jpg'
 import { BrandIcon } from '@/shared/components/BrandIcon'
 import type { ExternalPageId } from '@/shared/contracts/app'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -71,11 +72,9 @@ export function HomePage() {
         <section className="home-section home-sponsor-section">
           <h2>{t('app.home.sponsor.title')}</h2>
           <div className="home-sponsor-copy">
-            <Coffee size={19} />
-            <div>
-              <p>{t('app.home.sponsor.prompt')}</p>
-              <span>{t('app.home.sponsor.tip')}</span>
-            </div>
+            <p>{t('app.home.sponsor.prompt')}</p>
+            <img src={sponsorQrImage} alt={t('app.home.sponsor.tip')} title={t('app.home.sponsor.tip')} />
+            <span>{t('app.home.sponsor.tip')}</span>
           </div>
         </section>
 
