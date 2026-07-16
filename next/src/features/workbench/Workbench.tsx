@@ -1,4 +1,4 @@
-import { ChevronDown, Search, Settings } from 'lucide-react'
+import { ChevronDown, PanelLeftClose, PanelLeftOpen, Search, Settings } from 'lucide-react'
 import { Suspense, useEffect } from 'react'
 import { useAppStore } from '@/app/appStore'
 import { toolById, toolGroups } from '@/app/toolRegistry'
@@ -11,7 +11,7 @@ import { useSettings } from '@/features/settings/SettingsProvider'
 
 export function Workbench() {
   const { language, languageLabels, languages, setLanguage, t } = useI18n()
-  const { settings } = useSettings()
+  const { settings, updateSettings } = useSettings()
   const activeToolId = useAppStore((state) => state.activeToolId)
   const recentToolIds = useAppStore((state) => state.recentToolIds)
   const hydrate = useAppStore((state) => state.hydrate)
@@ -57,6 +57,17 @@ export function Workbench() {
         <div className="window-drag toolbar-spacer" />
 
         <div className="sidebar-actions">
+          <Tooltip content={settings.layout.hideNavigationTitles ? t('app.nav.expand') : t('app.nav.collapse')} side="bottom">
+            <button
+              className="icon-ghost"
+              type="button"
+              aria-label={settings.layout.hideNavigationTitles ? t('app.nav.expand') : t('app.nav.collapse')}
+              aria-pressed={settings.layout.hideNavigationTitles}
+              onClick={() => { void updateSettings({ layout: { hideNavigationTitles: !settings.layout.hideNavigationTitles } }).catch(() => undefined) }}
+            >
+              {settings.layout.hideNavigationTitles ? <PanelLeftOpen size={17} /> : <PanelLeftClose size={17} />}
+            </button>
+          </Tooltip>
           <Tooltip content={`${t('app.nav.search')} · ⌘K`} side="bottom">
             <button className="icon-ghost" type="button" aria-label={t('app.nav.search')} onClick={() => setSearchOpen(true)}>
               <Search size={17} />

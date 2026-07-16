@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import type { AppNavigationEvent, AppPaths, RuntimeStatus, WorkspaceState } from './src/shared/contracts/app'
+import type { AppNavigationEvent, AppPaths, ExternalPageId, RuntimeStatus, WorkspaceState } from './src/shared/contracts/app'
 import type { AppSettings, SecretKey, SecretStatus, SettingsPatch } from './src/shared/contracts/settings'
 import type { FuncHistoryRecord, HistoryQuery, SaveFuncHistoryInput } from './src/shared/contracts/history'
 import type { SaveTextFileInput, TextFileKind, TextFileResult } from './src/shared/contracts/files'
@@ -126,6 +126,7 @@ declare global {
       downloadUpdate: () => Promise<void>
       openReleasePage: () => Promise<void>
       openProjectPage: () => Promise<void>
+      openExternalPage: (pageId: ExternalPageId) => Promise<void>
       detectRuntimes: () => Promise<RuntimeStatus[]>
       runCode: (input: RuntimeExecutionInput) => Promise<RuntimeExecutionResult>
       cancelCodeRun: (requestId: string) => Promise<boolean>

@@ -1,5 +1,5 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
-import type { AppNavigationEvent, AppPaths, RuntimeStatus, WorkspaceState } from '../../src/shared/contracts/app'
+import type { AppNavigationEvent, AppPaths, ExternalPageId, RuntimeStatus, WorkspaceState } from '../../src/shared/contracts/app'
 import type { AppSettings, SecretKey, SecretStatus, SettingsPatch } from '../../src/shared/contracts/settings'
 import type { FuncHistoryRecord, HistoryQuery, SaveFuncHistoryInput } from '../../src/shared/contracts/history'
 import type { SaveTextFileInput, TextFileKind, TextFileResult } from '../../src/shared/contracts/files'
@@ -123,6 +123,7 @@ contextBridge.exposeInMainWorld('mootool', {
   downloadUpdate: (): Promise<void> => ipcRenderer.invoke('update:download'),
   openReleasePage: (): Promise<void> => ipcRenderer.invoke('update:open-release'),
   openProjectPage: (): Promise<void> => ipcRenderer.invoke('app:open-project'),
+  openExternalPage: (pageId: ExternalPageId): Promise<void> => ipcRenderer.invoke('app:open-external', pageId),
   detectRuntimes: (): Promise<RuntimeStatus[]> => ipcRenderer.invoke('runtime:detect'),
   runCode: (input: RuntimeExecutionInput): Promise<RuntimeExecutionResult> => ipcRenderer.invoke('runtime:run', input),
   cancelCodeRun: (requestId: string): Promise<boolean> => ipcRenderer.invoke('runtime:cancel', requestId),

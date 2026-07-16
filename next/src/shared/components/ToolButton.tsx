@@ -12,6 +12,7 @@ export function ToolButton({ icon: Icon, label, active = false, onClick }: ToolB
     <button
       className={active ? 'tool-button tool-button--active' : 'tool-button'}
       type="button"
+      aria-label={label}
       aria-current={active ? 'page' : undefined}
       onClick={onClick}
     >

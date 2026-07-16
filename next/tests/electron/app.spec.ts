@@ -61,10 +61,27 @@ test.afterAll(async () => {
   await rm(userDataDirectory, { recursive: true, force: true })
 })
 
+test('matches the Java home content and persists sidebar collapse state', async () => {
+  await expect(mainPage.getByRole('heading', { name: 'MooTool', exact: true })).toBeVisible()
+  await expect(mainPage.getByRole('heading', { name: '关于', exact: true })).toBeVisible()
+  await expect(mainPage.getByRole('heading', { name: '其他作品', exact: true })).toBeVisible()
+  await expect(mainPage.getByRole('heading', { name: '贡献者', exact: true })).toBeVisible()
+  await expect(mainPage.getByRole('button', { name: /CassianFlorin/ })).toBeVisible()
+
+  await mainPage.getByRole('button', { name: '收起导航栏' }).click()
+  await expect(mainPage.locator('.app-shell')).toHaveClass(/app-shell--hide-nav-titles/)
+  await expect.poll(() => mainPage.locator('.sidebar').evaluate((element) => element.getBoundingClientRect().width)).toBe(84)
+  await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ layout: { hideNavigationTitles: true } })
+
+  await mainPage.getByRole('button', { name: '展开导航栏' }).click()
+  await expect(mainPage.locator('.app-shell')).not.toHaveClass(/app-shell--hide-nav-titles/)
+  await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ layout: { hideNavigationTitles: false } })
+})
+
 test('opens all registered tools through search and persists recent access', async () => {
   await expect(mainPage.locator('.tool-button')).toHaveCount(25)
 
-  await mainPage.locator('.sidebar-actions button').click()
+  await mainPage.getByRole('button', { name: '搜索', exact: true }).click()
   const searchInput = mainPage.locator('.command-palette__search input')
   await searchInput.fill('python')
   await expect(mainPage.locator('.command-result')).toHaveCount(1)

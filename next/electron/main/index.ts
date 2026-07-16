@@ -23,8 +23,10 @@ import { chmod, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
 import {
   defaultWorkspaceState,
+  isExternalPageId,
   type AppNavigationEvent,
   type AppPaths,
+  type ExternalPageId,
   type RuntimeId,
   type RuntimeStatus,
   type WindowState,
@@ -102,6 +104,24 @@ const isDev = Boolean(process.env.ELECTRON_RENDERER_URL)
 const defaultWindowState: WindowState = {
   bounds: { width: 1440, height: 920 },
   maximized: false
+}
+
+const externalPages: Record<ExternalPageId, string> = {
+  home: 'https://mootool.luoboduner.com',
+  github: 'https://github.com/rememberber/MooTool',
+  gitee: 'https://gitee.com/zhoubochina/MooTool',
+  issues: 'https://github.com/rememberber/MooTool/issues',
+  darcula: 'https://github.com/bulenkov/Darcula',
+  hutool: 'https://hutool.cn',
+  vscodeIcons: 'https://github.com/microsoft/vscode-icons',
+  wePush: 'https://github.com/rememberber/WePush',
+  mooInfo: 'https://github.com/rememberber/MooInfo',
+  contributorCassianFlorin: 'https://github.com/CassianFlorin',
+  contributorFelixcn: 'https://github.com/felixcn',
+  contributorFelixnan168: 'https://gitee.com/felixnan168',
+  contributorLyp: 'https://gitee.com/L1yp',
+  contributorSunsence: 'https://github.com/sunsence',
+  contributorRememberber: 'https://github.com/rememberber'
 }
 
 let store: Store<PersistedStore>
@@ -352,7 +372,11 @@ function registerIpc(): void {
     await shell.openExternal(download.url)
   })
   ipcMain.handle('app:open-project', async () => {
-    await shell.openExternal('https://github.com/rememberber/MooTool')
+    await shell.openExternal(externalPages.github)
+  })
+  ipcMain.handle('app:open-external', async (_event, pageId: unknown) => {
+    if (!isExternalPageId(pageId)) throw new Error('Unknown external page')
+    await shell.openExternal(externalPages[pageId])
   })
   ipcMain.handle('secret:status', (_event, key: SecretKey): SecretStatus => {
     const normalizedKey = normalizeSecretKey(key)
