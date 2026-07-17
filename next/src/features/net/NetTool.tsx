@@ -2,6 +2,7 @@ import { ClipboardCopy, Globe2, Network, Play, RefreshCw, Search, Square, Trash2
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { ToolPageHeader } from '@/shared/components/ToolPage'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
+import { TextCodeEditor } from '@/shared/components/TextCodeEditor'
 import type { LocalAddressSnapshot, NetworkAction } from '@/shared/contracts/system'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { useToolActions } from '@/shared/hooks/useToolActions'
@@ -62,7 +63,7 @@ export function NetTool() {
           <NetSection title={t('net.resolve')}><CommandRow value={hostTarget} onChange={setHostTarget} buttonLabel={t('net.resolveAction')} disabled={Boolean(running)} testId="net-resolve" onRun={() => run('resolve', hostTarget)} /></NetSection>
           <NetSection title={t('net.whois')}><CommandRow value={whoisTarget} onChange={setWhoisTarget} buttonLabel={t('net.query')} disabled={Boolean(running)} onRun={() => run('whois', whoisTarget)} /></NetSection>
           <NetSection title={t('net.dns')}><button className="dialog-button" type="button" disabled={Boolean(running)} onClick={() => { void run('flush-dns') }}><RefreshCw size={14} />{t('net.flushDns')}</button></NetSection>
-          <NetSection title={t('net.localAddresses')}><div className="local-address-columns"><label><span>IPv4</span><textarea readOnly value={addresses.ipv4.join('\n')} /></label><label><span>IPv6</span><textarea readOnly value={addresses.ipv6.join('\n')} /></label></div><button className="icon-button" type="button" aria-label={t('common.refresh')} onClick={() => { void refreshAddresses() }}><RefreshCw size={14} /></button></NetSection>
+          <NetSection title={t('net.localAddresses')}><div className="local-address-columns"><div><span>IPv4</span><TextCodeEditor className="local-address-editor" ariaLabel="IPv4" readOnly value={addresses.ipv4.join('\n')} /></div><div><span>IPv6</span><TextCodeEditor className="local-address-editor" ariaLabel="IPv6" readOnly value={addresses.ipv6.join('\n')} /></div></div><button className="icon-button" type="button" aria-label={t('common.refresh')} onClick={() => { void refreshAddresses() }}><RefreshCw size={14} /></button></NetSection>
         </section>
       </ResizableColumns>
     </section>

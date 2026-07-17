@@ -28,10 +28,10 @@ Electron 安装包还使用独立应用 ID `com.rememberber.mootool.next.electro
       "status": "active",
       "releases": [
         {
-          "version": "1.7.8",
-          "title": "MooTool Next Electron 1.7.8",
+          "version": "1.0.0",
+          "title": "MooTool Next Electron 1.0.0",
           "notes": "Release notes",
-          "releaseUrl": "https://github.com/.../next-electron-v1.7.8",
+          "releaseUrl": "https://github.com/.../next-electron-v1.0.0",
           "assets": []
         }
       ]

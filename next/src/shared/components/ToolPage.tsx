@@ -1,5 +1,6 @@
 import { Copy, History, Trash2 } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { TextCodeEditor } from './TextCodeEditor'
 import { Tooltip } from './Tooltip'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 
@@ -59,15 +60,15 @@ export function TextPane({ label, value, placeholder, readOnly, onChange }: {
   onChange?: (value: string) => void
 }) {
   return (
-    <label className="text-pane">
+    <div className="text-pane">
       <span>{label}</span>
-      <textarea
+      <TextCodeEditor
+        ariaLabel={label}
         value={value}
         placeholder={placeholder}
         readOnly={readOnly}
-        spellCheck={false}
-        onChange={onChange ? (event) => onChange(event.target.value) : undefined}
+        onChange={onChange}
       />
-    </label>
+    </div>
   )
 }

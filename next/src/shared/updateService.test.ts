@@ -92,10 +92,10 @@ describe('UpdateService', () => {
       ok: true,
       status: 200,
       text: async () => raw
-    })).check('1.7.7')
+    })).check('0.9.9')
 
-    expect(result.latestVersion).toBe('1.7.8')
-    expect(result.download?.fileName).toBe('MooTool-Next-Electron-1.7.8-mac-arm64.dmg')
+    expect(result.latestVersion).toBe('1.0.0')
+    expect(result.download?.fileName).toBe('MooTool-Next-Electron-1.0.0-mac-arm64.dmg')
   })
 
   it('rejects invalid, insecure, oversized, and unsuccessful responses', async () => {

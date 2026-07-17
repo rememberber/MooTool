@@ -13,11 +13,12 @@ import {
   Save,
   Trash2
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { Dialog } from '@/shared/components/Dialog'
 import { Tooltip } from '@/shared/components/Tooltip'
+import { useToolActivity } from '@/shared/components/ToolActivity'
 import type { JsonVaultNode } from '@/shared/contracts/jsonVault'
 import { useToast } from '@/shared/feedback/ToastProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -33,24 +34,75 @@ type TextAction = { type: 'file' | 'folder' | 'rename'; value: string } | null
 const jsonVaultPathType = 'application/x-mootool-vault-path'
 const jsonVaultKindType = 'application/x-mootool-vault-kind'
 
+type JsonVaultSessionState = {
+  nodes: JsonVaultNode[]
+  selectedEntry: SelectedEntry | null
+  selectedPath: string
+  savedContent: string
+  expanded: Set<string>
+  gitDialogOpen: boolean
+  textAction: TextAction
+  moveOpen: boolean
+  moveTarget: string
+  contextMenu: { entry: SelectedEntry; left: number; top: number } | null
+  sort: 'name' | 'modified'
+}
+
+let jsonVaultSessionState: JsonVaultSessionState = {
+  nodes: [],
+  selectedEntry: null,
+  selectedPath: '',
+  savedContent: '',
+  expanded: new Set(),
+  gitDialogOpen: false,
+  textAction: null,
+  moveOpen: false,
+  moveTarget: '',
+  contextMenu: null,
+  sort: 'name'
+}
+let jsonVaultTreeScrollTop = 0
+
 export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
+  const toolActive = useToolActivity()
   const { t } = useI18n()
   const { settings } = useSettings()
   const toast = useToast()
-  const [nodes, setNodes] = useState<JsonVaultNode[]>([])
-  const [selectedEntry, setSelectedEntry] = useState<SelectedEntry | null>(null)
-  const [selectedPath, setSelectedPath] = useState('')
-  const [savedContent, setSavedContent] = useState('')
-  const [expanded, setExpanded] = useState(() => new Set<string>())
-  const [gitDialogOpen, setGitDialogOpen] = useState(false)
-  const [textAction, setTextAction] = useState<TextAction>(null)
-  const [moveOpen, setMoveOpen] = useState(false)
-  const [moveTarget, setMoveTarget] = useState('')
-  const [contextMenu, setContextMenu] = useState<{ entry: SelectedEntry; left: number; top: number } | null>(null)
+  const [nodes, setNodes] = useState<JsonVaultNode[]>(jsonVaultSessionState.nodes)
+  const [selectedEntry, setSelectedEntry] = useState<SelectedEntry | null>(jsonVaultSessionState.selectedEntry)
+  const [selectedPath, setSelectedPath] = useState(jsonVaultSessionState.selectedPath)
+  const [savedContent, setSavedContent] = useState(jsonVaultSessionState.savedContent)
+  const [expanded, setExpanded] = useState(() => new Set(jsonVaultSessionState.expanded))
+  const [gitDialogOpen, setGitDialogOpen] = useState(jsonVaultSessionState.gitDialogOpen)
+  const [textAction, setTextAction] = useState<TextAction>(jsonVaultSessionState.textAction)
+  const [moveOpen, setMoveOpen] = useState(jsonVaultSessionState.moveOpen)
+  const [moveTarget, setMoveTarget] = useState(jsonVaultSessionState.moveTarget)
+  const [contextMenu, setContextMenu] = useState<{ entry: SelectedEntry; left: number; top: number } | null>(jsonVaultSessionState.contextMenu)
   const contextMenuRef = useRef<HTMLDivElement>(null)
-  const [sort, setSort] = useState<'name' | 'modified'>('name')
+  const treeRef = useRef<HTMLDivElement>(null)
+  const [sort, setSort] = useState<'name' | 'modified'>(jsonVaultSessionState.sort)
   const dirty = Boolean(selectedPath) && content !== savedContent
   const directories = useMemo(() => ['', ...flattenDirectories(nodes)], [nodes])
+
+  useEffect(() => {
+    jsonVaultSessionState = {
+      nodes,
+      selectedEntry,
+      selectedPath,
+      savedContent,
+      expanded: new Set(expanded),
+      gitDialogOpen,
+      textAction,
+      moveOpen,
+      moveTarget,
+      contextMenu,
+      sort
+    }
+  }, [contextMenu, expanded, gitDialogOpen, moveOpen, moveTarget, nodes, savedContent, selectedEntry, selectedPath, sort, textAction])
+
+  useLayoutEffect(() => {
+    if (treeRef.current) treeRef.current.scrollTop = jsonVaultTreeScrollTop
+  }, [nodes])
 
   const load = useCallback(async () => {
     try {
@@ -69,7 +121,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
   }), [load])
 
   useEffect(() => {
-    if (!contextMenu) return
+    if (!contextMenu || !toolActive) return
     const focusFrame = window.requestAnimationFrame(() => contextMenuRef.current?.querySelector('button')?.focus())
     const close = () => setContextMenu(null)
     const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') close() }
@@ -82,7 +134,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
       document.removeEventListener('keydown', closeOnEscape)
       window.removeEventListener('blur', close)
     }
-  }, [contextMenu])
+  }, [contextMenu, toolActive])
 
   async function openFile(path: string): Promise<void> {
     if (dirty && path !== selectedPath && !window.confirm(t('json.vault.confirmDiscard'))) return
@@ -268,7 +320,9 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
         </details>
       </div>
       <div
+        ref={treeRef}
         className="vault-tree"
+        onScroll={(event) => { jsonVaultTreeScrollTop = event.currentTarget.scrollTop }}
         onDragOver={(event) => event.preventDefault()}
         onDrop={(event) => {
           event.preventDefault()
@@ -299,7 +353,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
           />
         ))}
       </div>
-      {contextMenu && createPortal(
+      {contextMenu && toolActive && createPortal(
         <div
           ref={contextMenuRef}
           className="vault-tree-menu"

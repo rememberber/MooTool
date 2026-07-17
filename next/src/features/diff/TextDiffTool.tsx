@@ -1,8 +1,9 @@
 import { ArrowLeftRight, ChevronDown, ChevronUp, Copy, History, Play, Trash2 } from 'lucide-react'
-import { useEffect, useMemo, useRef, useState, type UIEvent } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { HistoryDialog } from '@/features/history/HistoryDialog'
 import { ToolPageHeader, ToolTabs } from '@/shared/components/ToolPage'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
+import { TextCodeEditor, type TextCodeEditorHandle, type TextCodeEditorScroll } from '@/shared/components/TextCodeEditor'
 import { useToolActions } from '@/shared/hooks/useToolActions'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { compareText, type DiffResult } from './diffTools'
@@ -20,8 +21,8 @@ export function TextDiffTool() {
   const [result, setResult] = useState<DiffResult>(() => compareText(left, right, false))
   const [historyOpen, setHistoryOpen] = useState(false)
   const [navigationIndex, setNavigationIndex] = useState(-1)
-  const leftEditorRef = useRef<HTMLTextAreaElement>(null)
-  const rightEditorRef = useRef<HTMLTextAreaElement>(null)
+  const leftEditorRef = useRef<TextCodeEditorHandle>(null)
+  const rightEditorRef = useRef<TextCodeEditorHandle>(null)
   const syncingScroll = useRef(false)
   const changedIndices = useMemo(() => result.segments.map((segment, index) => segment.added || segment.removed ? index : -1).filter((index) => index >= 0), [result])
 
@@ -39,14 +40,10 @@ export function TextDiffTool() {
 
   function clear(): void { setLeft(''); setRight(''); setResult(compareText('', '', ignoreWhitespace)) }
 
-  function syncEditorScroll(event: UIEvent<HTMLTextAreaElement>, target: HTMLTextAreaElement | null): void {
+  function syncEditorScroll(scroll: TextCodeEditorScroll, target: TextCodeEditorHandle | null): void {
     if (!target || syncingScroll.current) return
     syncingScroll.current = true
-    const source = event.currentTarget
-    const maxSource = source.scrollHeight - source.clientHeight
-    const maxTarget = target.scrollHeight - target.clientHeight
-    target.scrollTop = maxSource > 0 ? (source.scrollTop / maxSource) * maxTarget : 0
-    target.scrollLeft = source.scrollLeft
+    target.syncScroll(scroll.verticalRatio, scroll.scrollLeft)
     window.requestAnimationFrame(() => { syncingScroll.current = false })
   }
 
@@ -74,7 +71,7 @@ export function TextDiffTool() {
           <button type="button" aria-label={t('common.action.clear')} onClick={clear}><Trash2 size={14} /></button>
         </div>
         <div className="diff-summary">{result.added || result.removed || result.changed ? t('diff.summary', { added: String(result.added), removed: String(result.removed), changed: String(result.changed) }) : t('diff.identical')}</div>
-        {mode === 'side' ? <ResizableColumns className="diff-editor-grid" columns={2} defaultSizes={[1, 1]} minPaneWidths={[240, 240]} storageKey="text-diff"><label><span>{t('diff.left')}</span><textarea ref={leftEditorRef} value={left} spellCheck={false} onScroll={(event) => syncEditorScroll(event, rightEditorRef.current)} onChange={(event) => setLeft(event.target.value)} /></label><label><span>{t('diff.right')}</span><textarea ref={rightEditorRef} value={right} spellCheck={false} onScroll={(event) => syncEditorScroll(event, leftEditorRef.current)} onChange={(event) => setRight(event.target.value)} /></label><pre className="diff-preview diff-preview--left">{result.segments.map((item, index) => item.added ? null : <mark data-diff-index={item.removed ? index : undefined} className={item.removed ? 'diff-removed' : ''} key={`${index}-${item.value}`}>{item.value}</mark>)}</pre><pre className="diff-preview diff-preview--right">{result.segments.map((item, index) => item.removed ? null : <mark data-diff-index={item.added ? index : undefined} className={item.added ? 'diff-added' : ''} key={`${index}-${item.value}`}>{item.value}</mark>)}</pre></ResizableColumns> : <pre className="unified-diff">{result.unified}</pre>}
+        {mode === 'side' ? <ResizableColumns className="diff-editor-grid" columns={2} defaultSizes={[1, 1]} minPaneWidths={[240, 240]} storageKey="text-diff"><div><span>{t('diff.left')}</span><TextCodeEditor ref={leftEditorRef} ariaLabel={t('diff.left')} value={left} onScroll={(scroll) => syncEditorScroll(scroll, rightEditorRef.current)} onChange={setLeft} /></div><div><span>{t('diff.right')}</span><TextCodeEditor ref={rightEditorRef} ariaLabel={t('diff.right')} value={right} onScroll={(scroll) => syncEditorScroll(scroll, leftEditorRef.current)} onChange={setRight} /></div><pre className="diff-preview diff-preview--left">{result.segments.map((item, index) => item.added ? null : <mark data-diff-index={item.removed ? index : undefined} className={item.removed ? 'diff-removed' : ''} key={`${index}-${item.value}`}>{item.value}</mark>)}</pre><pre className="diff-preview diff-preview--right">{result.segments.map((item, index) => item.removed ? null : <mark data-diff-index={item.added ? index : undefined} className={item.added ? 'diff-added' : ''} key={`${index}-${item.value}`}>{item.value}</mark>)}</pre></ResizableColumns> : <pre className="unified-diff">{result.unified}</pre>}
       </div>
       <HistoryDialog funcType="textDiff" open={historyOpen} onClose={() => setHistoryOpen(false)} onApply={(value) => setRight(value)} onApplyRecord={(record) => { setLeft(record.inputText); setRight(record.outputText) }} />
     </section>

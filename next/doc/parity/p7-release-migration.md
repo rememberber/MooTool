@@ -1,6 +1,6 @@
 # P7 全量对齐、迁移与发布验收
 
-> Next 版本：`1.7.8`  
+> Next 版本：`1.0.0`
 > Java 基线：当前 `github-develop-ts` 分支 Java 版 `v1.7.8`  
 > 更新日期：2026-07-16  
 > 结论：代码实现与 macOS Apple Silicon 本机候选包已通过；正式公开发布仍需远端跨平台矩阵、签名/公证和人工 Java 同尺寸截图签收。
@@ -83,7 +83,7 @@ JSON 编辑器已由原生 `textarea` 改为 CodeMirror 6 虚拟视口。超过 
 
 ## 5. 包与发布证据
 
-本机已验证 `dist/mac-arm64/MooTool Next Electron.app`，Bundle ID 为 `com.rememberber.mootool.next.electron`，版本字段均为 `1.7.8`，启动后工作台可见且注册入口数量为 25。
+版本重置前，本机已验证内部候选包 `dist/mac-arm64/MooTool Next Electron.app`，Bundle ID 为 `com.rememberber.mootool.next.electron`，版本字段均为 `1.7.8`，启动后工作台可见且注册入口数量为 25。该候选包未正式发布；`1.0.0` 需重新打包并复核版本字段与产物。
 
 | 产物 | 大小 | SHA-256 |
 | --- | ---: | --- |
@@ -103,7 +103,7 @@ JSON 编辑器已由原生 `textarea` 改为 CodeMirror 6 虚拟视口。超过 
 
 ## 6. 发布清单
 
-- [x] Next/Java 版本统一为 `1.7.8`。
+- [x] Next 首个正式版本重置为 `1.0.0`，Java 版本继续独立维护。
 - [x] `next-electron` 独立更新源、匹配安装包、项目页和 Releases 跳转接通。
 - [x] 更新、托盘、关闭策略、设置子窗口通过 E2E。
 - [x] 旧数据只读扫描、备份、事务迁移、幂等与回滚通过。
