@@ -1,5 +1,6 @@
 import {
   app,
+  BaseWindow,
   BrowserWindow,
   clipboard,
   desktopCapturer,
@@ -12,6 +13,8 @@ import {
   screen,
   shell,
   Tray,
+  type WebContents,
+  type WebContentsView,
   type MenuItemConstructorOptions,
   type OpenDialogOptions
 } from 'electron'
@@ -24,12 +27,16 @@ import { chmod, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
 import {
   defaultWorkspaceState,
+  isDetachableToolId,
   isExternalPageId,
+  isToolId,
   type AppNavigationEvent,
   type AppPaths,
   type ExternalPageId,
   type RuntimeId,
   type RuntimeStatus,
+  type ToolId,
+  type ToolWorkspaceBounds,
   type WindowState,
   type WorkspaceState
 } from '../../src/shared/contracts/app'
@@ -95,11 +102,13 @@ import { defaultReleaseUrl, UpdateService } from './updateService'
 import { UpdateManager, type UpdateAdapter } from './updateManager'
 import { VaultGitService } from './vaultGitService'
 import { VaultGitCheckpointScheduler } from './vaultGitCheckpointScheduler'
+import { ToolWindowManager } from './toolWindowManager'
 
 type PersistedStore = {
   settings: AppSettings
   workspace: WorkspaceState
   window: WindowState
+  toolWindows: Partial<Record<string, WindowState>>
   secrets: Partial<Record<SecretKey, string>>
 }
 
@@ -130,6 +139,7 @@ const externalPages: Record<ExternalPageId, string> = {
 let store: Store<PersistedStore>
 let mainWindow: BrowserWindow | null = null
 let settingsWindow: BrowserWindow | null = null
+let toolWindowManager: ToolWindowManager
 let tray: Tray | null = null
 let isQuitting = false
 let closePromptOpen = false
@@ -209,6 +219,20 @@ function loadRenderer(window: BrowserWindow, target: 'main' | 'settings'): void 
   void window.loadFile(join(__dirname, '../renderer/index.html'), target === 'settings' ? { query: { window: 'settings' } } : undefined)
 }
 
+function loadToolRenderer(view: WebContentsView, toolId: string): void {
+  if (isDev && process.env.ELECTRON_RENDERER_URL) {
+    const url = new URL(process.env.ELECTRON_RENDERER_URL)
+    url.searchParams.set('window', 'tool')
+    url.searchParams.set('toolId', toolId)
+    void view.webContents.loadURL(url.toString())
+    return
+  }
+
+  void view.webContents.loadFile(join(__dirname, '../renderer/index.html'), {
+    query: { window: 'tool', toolId }
+  })
+}
+
 function createMainWindow(): BrowserWindow {
   const savedWindow = store.get('window', defaultWindowState)
   const settings = store.get('settings')
@@ -235,14 +259,8 @@ function createMainWindow(): BrowserWindow {
   mainWindow = window
   installWindowStatePersistence(window)
 
-  window.on('focus', () => {
-    quickNoteCheckpointScheduler.setWindowActive(true)
-    jsonVaultCheckpointScheduler.setWindowActive(true)
-  })
-  window.on('blur', () => {
-    quickNoteCheckpointScheduler.setWindowActive(false)
-    jsonVaultCheckpointScheduler.setWindowActive(false)
-  })
+  window.on('focus', updateApplicationWindowActivity)
+  window.on('blur', updateApplicationWindowActivity)
 
   window.once('ready-to-show', () => {
     if (settings.general.startMaximized || savedWindow.maximized) {
@@ -463,6 +481,40 @@ function registerIpc(): void {
     store.set('workspace', state)
     return state
   })
+  ipcMain.handle('tool-window:snapshot', () => toolWindowManager.snapshot())
+  ipcMain.handle('tool-window:activate', (event, toolId: unknown) => {
+    assertMainRenderer(event.sender)
+    if (!isToolId(toolId)) throw new Error('Invalid tool id')
+    return toolWindowManager.activate(toolId)
+  })
+  ipcMain.handle('tool-window:set-workspace-bounds', (event, bounds: unknown) => {
+    assertMainRenderer(event.sender)
+    return toolWindowManager.setWorkspaceBounds(normalizeToolWorkspaceBounds(bounds))
+  })
+  ipcMain.handle('tool-window:get-state', (_event, toolId: unknown) => {
+    if (!isDetachableToolId(toolId)) throw new Error('Invalid detachable tool id')
+    return toolWindowManager.getStatus(toolId)
+  })
+  ipcMain.handle('tool-window:detach', (event, toolId: unknown) => {
+    if (!isDetachableToolId(toolId)) throw new Error('Invalid detachable tool id')
+    assertToolWindowAccess(event.sender, toolId)
+    return toolWindowManager.detach(toolId)
+  })
+  ipcMain.handle('tool-window:dock', (event, toolId: unknown) => {
+    if (!isDetachableToolId(toolId)) throw new Error('Invalid detachable tool id')
+    assertToolWindowAccess(event.sender, toolId)
+    return toolWindowManager.dock(toolId)
+  })
+  ipcMain.handle('tool-window:focus', (event, toolId: unknown) => {
+    assertMainRenderer(event.sender)
+    if (!isDetachableToolId(toolId)) throw new Error('Invalid detachable tool id')
+    return toolWindowManager.focus(toolId)
+  })
+  ipcMain.handle('tool-window:set-title', (event, toolId: unknown, title: unknown) => {
+    if (!isDetachableToolId(toolId) || !toolWindowManager.owns(toolId, event.sender)) throw new Error('Invalid tool window')
+    if (typeof title !== 'string') throw new Error('Invalid tool window title')
+    toolWindowManager.setTitle(toolId, title)
+  })
   ipcMain.handle('history:list', (_event, query: HistoryQuery) => historyRepository.list(normalizeHistoryQuery(query)))
   ipcMain.handle('history:save', (_event, input: SaveFuncHistoryInput) => {
     historyRepository.save(normalizeHistoryInput(input))
@@ -529,7 +581,7 @@ function registerIpc(): void {
   ipcMain.handle('runtime:cancel', (_event, requestId: unknown) => runtimeExecutionService.cancel(normalizeRequestId(requestId)))
   ipcMain.handle('runtime:detect', () => detectRuntimes(store.get('settings')))
   ipcMain.handle('dialog:choose-directory', async (event, initialPath?: string) => {
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const options: OpenDialogOptions = {
       defaultPath: typeof initialPath === 'string' && initialPath ? initialPath : undefined,
       properties: ['openDirectory', 'createDirectory']
@@ -541,7 +593,7 @@ function registerIpc(): void {
   })
   ipcMain.handle('files:open-text', async (event, kind: TextFileKind): Promise<TextFileResult | null> => {
     const normalizedKind = normalizeTextFileKind(kind)
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const options: OpenDialogOptions = {
       properties: ['openFile'],
       filters: [textFileFilters[normalizedKind]]
@@ -558,7 +610,7 @@ function registerIpc(): void {
       throw new Error('Invalid text file')
     }
     const kind = normalizeTextFileKind(input.kind)
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const defaultName = sanitizeDefaultFileName(input.defaultName, kind)
     const options = { defaultPath: defaultName, filters: [textFileFilters[kind]] }
     const result = owner ? await dialog.showSaveDialog(owner, options) : await dialog.showSaveDialog(options)
@@ -568,7 +620,7 @@ function registerIpc(): void {
   })
   ipcMain.handle('files:digest', async (event, algorithm: DigestAlgorithmId): Promise<DigestFileResult | null> => {
     const normalizedAlgorithm = normalizeDigestAlgorithm(algorithm)
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const options: OpenDialogOptions = { properties: ['openFile'] }
     const result = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
     if (result.canceled || !result.filePaths[0]) return null
@@ -578,7 +630,7 @@ function registerIpc(): void {
     return { path, name: basename(path), size: fileStat.size, digest }
   })
   ipcMain.handle('files:choose-image', async (event): Promise<ImageFilePayload | null> => {
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const options: OpenDialogOptions = { properties: ['openFile'], filters: [imageFileFilter] }
     const result = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
     if (result.canceled || !result.filePaths[0]) return null
@@ -586,7 +638,7 @@ function registerIpc(): void {
   })
   ipcMain.handle('files:save-binary', async (event, input: SaveBinaryFileInput): Promise<string | null> => {
     const normalized = normalizeBinaryFileInput(input)
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const options = {
       defaultPath: sanitizeBinaryFileName(normalized.defaultName, normalized.kind),
       filters: [binaryFileFilters[normalized.kind]]
@@ -609,7 +661,7 @@ function registerIpc(): void {
     clipboard.writeImage(clipboardImage)
   })
   ipcMain.handle('screen:capture', async (event): Promise<ScreenCapture[]> => {
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const wasVisible = owner?.isVisible() ?? false
     if (wasVisible) owner?.hide()
     try {
@@ -629,7 +681,7 @@ function registerIpc(): void {
   ipcMain.handle('images:list', () => createImageRepository().list())
   ipcMain.handle('images:read', (_event, name: string) => createImageRepository().read(normalizeImageName(name)))
   ipcMain.handle('images:import', async (event) => {
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const options: OpenDialogOptions = { properties: ['openFile', 'multiSelections'], filters: [imageFileFilter] }
     const result = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
     return result.canceled ? [] : createImageRepository().import(result.filePaths)
@@ -645,7 +697,7 @@ function registerIpc(): void {
   ipcMain.handle('images:delete', (_event, names: string[]) => createImageRepository().delete(normalizeImageNames(names)))
   ipcMain.handle('images:export', async (event, names: string[]): Promise<string | null> => {
     const normalizedNames = normalizeImageNames(names)
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const result = owner
       ? await dialog.showOpenDialog(owner, { properties: ['openDirectory', 'createDirectory'] })
       : await dialog.showOpenDialog({ properties: ['openDirectory', 'createDirectory'] })
@@ -658,7 +710,7 @@ function registerIpc(): void {
     if (error) throw new Error(error)
   })
   ipcMain.handle('pdf:choose-files', async (event) => {
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const options: OpenDialogOptions = { properties: ['openFile', 'multiSelections'], filters: [pdfFileFilter] }
     const result = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
     if (result.canceled) return []
@@ -672,7 +724,7 @@ function registerIpc(): void {
   })
   ipcMain.handle('pdf:merge', async (event, sources: PdfMergeSource[]) => {
     const normalizedSources = normalizePdfMergeSources(sources)
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const options = { defaultPath: join(app.getPath('desktop'), 'merge.pdf'), filters: [pdfFileFilter] }
     const result = owner ? await dialog.showSaveDialog(owner, options) : await dialog.showSaveDialog(options)
     if (result.canceled || !result.filePath) return null
@@ -792,7 +844,7 @@ function registerIpc(): void {
     quickNoteCheckpointScheduler.recordActivity('Delete Quick Note entry')
   })
   ipcMain.handle('quick-note:import-attachment', async (event) => {
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const options: OpenDialogOptions = { properties: ['openFile'], filters: [imageFileFilter] }
     const result = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
     if (result.canceled || !result.filePaths[0]) return null
@@ -831,7 +883,7 @@ function registerIpc(): void {
   ipcMain.handle('backup:info', () => createBackupService().getInfo())
   ipcMain.handle('backup:export', async (event, kind: BackupKind) => {
     if (!backupKinds.includes(kind)) throw new Error('Invalid backup kind')
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? settingsWindow ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? settingsWindow ?? mainWindow
     const options: OpenDialogOptions = {
       properties: ['openDirectory', 'createDirectory'],
       defaultPath: store.get('settings').tools.exportDirectory || app.getPath('documents')
@@ -1306,6 +1358,14 @@ function showMainWindow(): void {
   window.focus()
 }
 
+function updateApplicationWindowActivity(): void {
+  setTimeout(() => {
+    const active = Boolean(BaseWindow.getFocusedWindow())
+    quickNoteCheckpointScheduler.setWindowActive(active)
+    jsonVaultCheckpointScheduler.setWindowActive(active)
+  })
+}
+
 function navigateMainWindow(event: AppNavigationEvent): void {
   showMainWindow()
   mainWindow?.webContents.send('app:navigate', event)
@@ -1315,6 +1375,34 @@ function broadcast(channel: string, payload: unknown): void {
   for (const window of BrowserWindow.getAllWindows()) {
     window.webContents.send(channel, payload)
   }
+  toolWindowManager?.sendToAll(channel, payload)
+}
+
+function resolveOwnerWindow(sender: WebContents): BaseWindow | null {
+  return toolWindowManager?.resolveOwner(sender) ?? BrowserWindow.fromWebContents(sender)
+}
+
+function assertMainRenderer(sender: WebContents): void {
+  if (!mainWindow || mainWindow.isDestroyed() || sender.id !== mainWindow.webContents.id) {
+    throw new Error('This operation is only available from the main window')
+  }
+}
+
+function assertToolWindowAccess(sender: WebContents, toolId: Exclude<ToolId, 'mootool'>): void {
+  const fromMain = Boolean(mainWindow && !mainWindow.isDestroyed() && sender.id === mainWindow.webContents.id)
+  if (!fromMain && !toolWindowManager.owns(toolId, sender)) throw new Error('Invalid tool window access')
+}
+
+function normalizeToolWorkspaceBounds(value: unknown): ToolWorkspaceBounds {
+  if (!isRecord(value)) throw new Error('Invalid tool workspace bounds')
+  const fields = ['x', 'y', 'width', 'height'] as const
+  const normalized = Object.fromEntries(fields.map((field) => {
+    const entry = value[field]
+    if (typeof entry !== 'number' || !Number.isFinite(entry)) throw new Error('Invalid tool workspace bounds')
+    return [field, entry]
+  }))
+  if (normalized.width <= 0 || normalized.height <= 0) throw new Error('Invalid tool workspace bounds')
+  return normalized as ToolWorkspaceBounds
 }
 
 function normalizeWorkspaceState(value: WorkspaceState): WorkspaceState {
@@ -1518,6 +1606,7 @@ app.whenReady().then(async () => {
       settings: defaultAppSettings,
       workspace: defaultWorkspaceState,
       window: defaultWindowState,
+      toolWindows: {},
       secrets: {}
     }
   })
@@ -1526,6 +1615,19 @@ app.whenReady().then(async () => {
   systemService = new SystemService(app.getPath('temp'))
   runtimeExecutionService = new RuntimeExecutionService(join(app.getPath('temp'), 'mootool-runtime'))
   gitAskPassPath = await prepareGitAskPass()
+  toolWindowManager = new ToolWindowManager({
+    enabled: process.env.NODE_ENV !== 'test' || process.env.MOOTOOL_TOOL_VIEWS === '1',
+    getMainWindow: () => mainWindow,
+    loadTool: loadToolRenderer,
+    preloadPath: join(__dirname, '../preload/index.js'),
+    getWindowState: (toolId) => store.get('toolWindows')[toolId],
+    setWindowState: (toolId, state) => {
+      store.set('toolWindows', { ...store.get('toolWindows'), [toolId]: state })
+    },
+    backgroundColor: () => nativeTheme.shouldUseDarkColors ? '#171719' : '#f7f7f8',
+    icon: () => app.isPackaged ? undefined : getDevelopmentIconPath(),
+    onWindowFocusChanged: updateApplicationWindowActivity
+  })
 
   if (process.platform === 'darwin' && !app.isPackaged) {
     app.dock?.setIcon(getDevelopmentIconPath())
@@ -1536,10 +1638,12 @@ app.whenReady().then(async () => {
 
   nativeTheme.on('updated', () => {
     const systemTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
+    toolWindowManager.updateBackground(systemTheme === 'dark' ? '#171719' : '#f7f7f8')
     for (const window of BrowserWindow.getAllWindows()) {
       window.setBackgroundColor(systemTheme === 'dark' ? '#171719' : '#f7f7f8')
       window.webContents.send('theme:system-changed', systemTheme)
     }
+    toolWindowManager.sendToAll('theme:system-changed', systemTheme)
   })
 
   createMainWindow()
@@ -1549,6 +1653,7 @@ app.whenReady().then(async () => {
 
 app.on('before-quit', () => {
   isQuitting = true
+  toolWindowManager?.dispose()
   quickNoteWatcherGeneration += 1
   jsonVaultWatcherGeneration += 1
   runtimeExecutionService?.cancelAll()

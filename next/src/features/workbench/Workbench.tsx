@@ -1,5 +1,5 @@
-import { ChevronDown, Languages, PanelLeftClose, PanelLeftOpen, Search, Settings } from 'lucide-react'
-import { Suspense, useEffect, useLayoutEffect, useState } from 'react'
+import { ChevronDown, Languages, LocateFixed, PanelLeftClose, PanelLeftOpen, PanelTopClose, Search, Settings } from 'lucide-react'
+import { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useAppStore } from '@/app/appStore'
 import { toolById, toolGroups, type ToolId } from '@/app/toolRegistry'
 import { CommandPalette } from '@/features/search/CommandPalette'
@@ -7,6 +7,7 @@ import { BrandIcon } from '@/shared/components/BrandIcon'
 import { ToolButton } from '@/shared/components/ToolButton'
 import { Tooltip } from '@/shared/components/Tooltip'
 import { ToolActivityProvider } from '@/shared/components/ToolActivity'
+import type { ToolWindowSnapshot } from '@/shared/contracts/app'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { UpdateReadyAction } from './UpdateReadyAction'
@@ -17,22 +18,37 @@ export function Workbench() {
   const activeToolId = useAppStore((state) => state.activeToolId)
   const recentToolIds = useAppStore((state) => state.recentToolIds)
   const hydrate = useAppStore((state) => state.hydrate)
+  const hydrated = useAppStore((state) => state.hydrated)
   const openTool = useAppStore((state) => state.openTool)
+  const searchOpen = useAppStore((state) => state.searchOpen)
   const setSearchOpen = useAppStore((state) => state.setSearchOpen)
   const [recentCollapsed, setRecentCollapsed] = useState(false)
+  const [toolWindows, setToolWindows] = useState<ToolWindowSnapshot>({ enabled: window.mootool.toolWindowsEnabled, activeToolId: 'mootool', tools: [] })
   const [mountedToolIds, setMountedToolIds] = useState<ToolId[]>([])
+  const workspaceRef = useRef<HTMLElement>(null)
   const activeTool = toolById.get(activeToolId) ?? toolById.get('mootool')!
-  const renderedToolIds = mountedToolIds.includes(activeTool.id)
-    ? mountedToolIds
-    : [...mountedToolIds, activeTool.id]
+  const activeToolWindow = activeTool.id === 'mootool' ? undefined : toolWindows.tools.find((item) => item.toolId === activeTool.id)
+  const renderedToolIds = mountedToolIds.includes(activeTool.id) ? mountedToolIds : [...mountedToolIds, activeTool.id]
+  const dockedToolViewActive = toolWindows.enabled
+    && !searchOpen
+    && activeTool.id !== 'mootool'
+    && toolWindows.activeToolId === activeTool.id
+    && activeToolWindow?.ready === true
+    && !activeToolWindow.detached
 
   useEffect(() => {
     void hydrate()
-    return window.mootool.onNavigate((event) => {
+    const unsubscribeNavigation = window.mootool.onNavigate((event) => {
       if (event === 'focus-search') {
         setSearchOpen(true)
       }
     })
+    const unsubscribeToolWindows = window.mootool.onToolWindowSnapshotChange(setToolWindows)
+    void window.mootool.getToolWindowSnapshot().then(setToolWindows)
+    return () => {
+      unsubscribeNavigation()
+      unsubscribeToolWindows()
+    }
   }, [hydrate, setSearchOpen])
 
   useEffect(() => {
@@ -46,9 +62,38 @@ export function Workbench() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [setSearchOpen])
 
+  useEffect(() => {
+    if (!hydrated || !toolWindows.enabled) return
+    void window.mootool.activateToolView(searchOpen ? 'mootool' : activeTool.id).then(setToolWindows)
+  }, [activeTool.id, hydrated, searchOpen, toolWindows.enabled])
+
   useLayoutEffect(() => {
+    if (toolWindows.enabled) return
     setMountedToolIds((current) => current.includes(activeTool.id) ? current : [...current, activeTool.id])
-  }, [activeTool.id])
+  }, [activeTool.id, toolWindows.enabled])
+
+  useLayoutEffect(() => {
+    const workspace = workspaceRef.current
+    if (!workspace) return
+    const updateBounds = () => {
+      const bounds = workspace.getBoundingClientRect()
+      if (bounds.width <= 0 || bounds.height <= 0) return
+      void window.mootool.setToolWorkspaceBounds({
+        x: bounds.x,
+        y: bounds.y,
+        width: bounds.width,
+        height: bounds.height
+      }).then(setToolWindows)
+    }
+    updateBounds()
+    const observer = new ResizeObserver(updateBounds)
+    observer.observe(workspace)
+    window.addEventListener('resize', updateBounds)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', updateBounds)
+    }
+  }, [])
 
   const shellClassName = [
     'app-shell',
@@ -56,6 +101,7 @@ export function Workbench() {
     settings.layout.showSeparators ? 'app-shell--nav-separators' : '',
     settings.layout.hideNavigationTitles ? 'app-shell--hide-nav-titles' : '',
     settings.appearance.unifiedBackground ? 'app-shell--unified-background' : '',
+    dockedToolViewActive ? 'app-shell--tool-view-docked' : '',
     `app-shell--nav-${settings.layout.navigationStyle}`
   ].filter(Boolean).join(' ')
 
@@ -105,6 +151,7 @@ export function Workbench() {
                       icon={tool.icon}
                       label={t(tool.titleKey)}
                       active={activeToolId === tool.id}
+                      detached={toolWindows.tools.some((item) => item.toolId === tool.id && item.detached)}
                       onClick={() => openTool(tool.id)}
                     />
                   )
@@ -160,8 +207,8 @@ export function Workbench() {
         </div>
       </aside>
 
-      <section className="workspace">
-        {renderedToolIds.map((toolId) => {
+      <section className="workspace" ref={workspaceRef}>
+        {!toolWindows.enabled ? renderedToolIds.map((toolId) => {
           const definition = toolById.get(toolId)
           const ToolComponent = definition?.component
           const active = toolId === activeTool.id
@@ -170,18 +217,32 @@ export function Workbench() {
             <ToolActivityProvider active={active} key={toolId}>
               <div className="workspace-tool-session" hidden={!active}>
                 <Suspense fallback={active ? <div className="workspace-loading">{t('common.loading')}</div> : null}>
-                  {ToolComponent ? <ToolComponent /> : (
-                    <section className="placeholder-page">
-                      <definition.icon size={28} />
-                      <h1>{t(definition.titleKey)}</h1>
-                      <p>{t('app.placeholder')}</p>
-                    </section>
-                  )}
+                  {ToolComponent ? <ToolComponent /> : null}
                 </Suspense>
               </div>
             </ToolActivityProvider>
           )
-        })}
+        }) : activeTool.id === 'mootool' ? (
+          <Suspense fallback={<div className="workspace-loading">{t('common.loading')}</div>}>
+            {activeTool.component ? <activeTool.component /> : null}
+          </Suspense>
+        ) : activeToolWindow?.detached ? (
+          <section className="detached-tool-placeholder">
+            <span className="detached-tool-placeholder__icon"><activeTool.icon size={32} /><PanelTopClose size={16} /></span>
+            <h1>{t('toolWindow.detachedTitle', { tool: t(activeTool.titleKey) })}</h1>
+            <p>{t('toolWindow.detachedDescription')}</p>
+            <div className="detached-tool-placeholder__actions">
+              <button className="toolbar-button toolbar-button--primary" type="button" onClick={() => { void window.mootool.focusToolWindow(activeTool.id as Exclude<typeof activeTool.id, 'mootool'>) }}>
+                <LocateFixed size={15} />{t('toolWindow.focus')}
+              </button>
+              <button className="toolbar-button" type="button" onClick={() => { void window.mootool.dockToolWindow(activeTool.id as Exclude<typeof activeTool.id, 'mootool'>) }}>
+                <PanelTopClose size={15} />{t('toolWindow.dock')}
+              </button>
+            </div>
+          </section>
+        ) : (
+          <div className="workspace-loading">{t('common.loading')}</div>
+        )}
       </section>
 
       <CommandPalette />

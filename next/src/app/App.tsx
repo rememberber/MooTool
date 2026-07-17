@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { SettingsProvider } from '@/features/settings/SettingsProvider'
 import { SettingsWindow } from '@/features/settings/SettingsWindow'
 import { Workbench } from '@/features/workbench/Workbench'
+import { ToolWindow } from '@/features/workbench/ToolWindow'
 import { ToastProvider, useToast } from '@/shared/feedback/ToastProvider'
 import { I18nProvider, useI18n } from '@/shared/i18n/I18nProvider'
 import { useSystemTheme } from '@/shared/theme/useSystemTheme'
@@ -18,12 +19,13 @@ export function App() {
 
 function ThemedApp() {
   useSystemTheme()
-  const isSettingsWindow = new URLSearchParams(window.location.search).get('window') === 'settings'
+  const params = new URLSearchParams(window.location.search)
+  const windowType = params.get('window')
 
   return (
     <ToastProvider>
-      <UpdateNotifications />
-      {isSettingsWindow ? <SettingsWindow /> : <Workbench />}
+      {windowType !== 'tool' && <UpdateNotifications />}
+      {windowType === 'settings' ? <SettingsWindow /> : windowType === 'tool' ? <ToolWindow requestedToolId={params.get('toolId') ?? ''} /> : <Workbench />}
     </ToastProvider>
   )
 }

@@ -1,5 +1,15 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
-import type { AppNavigationEvent, AppPaths, ExternalPageId, RuntimeStatus, WorkspaceState } from '../../src/shared/contracts/app'
+import type {
+  AppNavigationEvent,
+  AppPaths,
+  ExternalPageId,
+  RuntimeStatus,
+  ToolId,
+  ToolWindowSnapshot,
+  ToolWindowStatus,
+  ToolWorkspaceBounds,
+  WorkspaceState
+} from '../../src/shared/contracts/app'
 import type { AppSettings, SecretKey, SecretStatus, SettingsPatch } from '../../src/shared/contracts/settings'
 import type { FuncHistoryRecord, HistoryQuery, SaveFuncHistoryInput } from '../../src/shared/contracts/history'
 import type { SaveTextFileInput, TextFileKind, TextFileResult } from '../../src/shared/contracts/files'
@@ -19,6 +29,7 @@ import type { UpdateCheckEvent, UpdateCheckResult, UpdateDownloadState } from '.
 
 contextBridge.exposeInMainWorld('mootool', {
   platform: process.platform,
+  toolWindowsEnabled: process.env.NODE_ENV !== 'test' || process.env.MOOTOOL_TOOL_VIEWS === '1',
   getAppVersion: (): Promise<string> => ipcRenderer.invoke('app:get-version'),
   getAppPaths: (): Promise<AppPaths> => ipcRenderer.invoke('app:get-paths'),
   getSystemTheme: (): Promise<'light' | 'dark'> => ipcRenderer.invoke('theme:get-system'),
@@ -31,6 +42,14 @@ contextBridge.exposeInMainWorld('mootool', {
   clearSecret: (key: SecretKey): Promise<SecretStatus> => ipcRenderer.invoke('secret:clear', key),
   getWorkspaceState: (): Promise<WorkspaceState> => ipcRenderer.invoke('workspace:get'),
   setWorkspaceState: (state: WorkspaceState): Promise<WorkspaceState> => ipcRenderer.invoke('workspace:set', state),
+  getToolWindowSnapshot: (): Promise<ToolWindowSnapshot> => ipcRenderer.invoke('tool-window:snapshot'),
+  activateToolView: (toolId: ToolId): Promise<ToolWindowSnapshot> => ipcRenderer.invoke('tool-window:activate', toolId),
+  setToolWorkspaceBounds: (bounds: ToolWorkspaceBounds): Promise<ToolWindowSnapshot> => ipcRenderer.invoke('tool-window:set-workspace-bounds', bounds),
+  getToolWindowState: (toolId: Exclude<ToolId, 'mootool'>): Promise<ToolWindowStatus> => ipcRenderer.invoke('tool-window:get-state', toolId),
+  detachToolWindow: (toolId: Exclude<ToolId, 'mootool'>): Promise<ToolWindowStatus> => ipcRenderer.invoke('tool-window:detach', toolId),
+  dockToolWindow: (toolId: Exclude<ToolId, 'mootool'>): Promise<ToolWindowStatus> => ipcRenderer.invoke('tool-window:dock', toolId),
+  focusToolWindow: (toolId: Exclude<ToolId, 'mootool'>): Promise<boolean> => ipcRenderer.invoke('tool-window:focus', toolId),
+  setToolWindowTitle: (toolId: Exclude<ToolId, 'mootool'>, title: string): Promise<void> => ipcRenderer.invoke('tool-window:set-title', toolId, title),
   listHistory: (query: HistoryQuery): Promise<FuncHistoryRecord[]> => ipcRenderer.invoke('history:list', query),
   saveHistory: (input: SaveFuncHistoryInput): Promise<void> => ipcRenderer.invoke('history:save', input),
   deleteHistory: (id: number): Promise<void> => ipcRenderer.invoke('history:delete', id),
@@ -134,6 +153,9 @@ contextBridge.exposeInMainWorld('mootool', {
   onSystemThemeChange: (callback: (theme: 'light' | 'dark') => void) => subscribe('theme:system-changed', callback),
   onSettingsChange: (callback: (settings: AppSettings) => void) => subscribe('settings:changed', callback),
   onNavigate: (callback: (event: AppNavigationEvent) => void) => subscribe('app:navigate', callback),
+  onToolWindowSnapshotChange: (callback: (snapshot: ToolWindowSnapshot) => void) => subscribe('tool-window:snapshot-changed', callback),
+  onToolWindowStateChange: (callback: (state: ToolWindowStatus) => void) => subscribe('tool-window:state-changed', callback),
+  onToolWindowActivityChange: (callback: (active: boolean) => void) => subscribe('tool-window:activity-changed', callback),
   onJsonVaultChange: (callback: (relativePath: string) => void) => subscribe('json-vault:changed', callback),
   onQuickNoteVaultChange: (callback: (relativePath: string) => void) => subscribe('quick-note:vault-changed', callback),
   onRuntimeOutput: (callback: (event: RuntimeOutputEvent) => void) => subscribe('runtime:output', callback),

@@ -1273,9 +1273,10 @@ button {
 }
 
 .app-shell {
+  --navigation-width: 248px;
   position: relative;
   display: grid;
-  grid-template-columns: 248px minmax(560px, 1fr);
+  grid-template-columns: var(--navigation-width) minmax(560px, 1fr);
   grid-template-rows: minmax(0, 1fr);
   width: 100%;
   height: 100%;
@@ -1289,6 +1290,11 @@ button {
   right: 0;
   left: 0;
   height: var(--window-drag-height);
+}
+
+.app-shell--tool-view-docked > .window-drag-region {
+  right: auto;
+  width: var(--navigation-width);
 }
 
 .sidebar {
@@ -1428,6 +1434,12 @@ button {
 .tool-button--active {
   background: var(--control-active);
   color: var(--text-strong);
+}
+
+.tool-button__detached {
+  flex: 0 0 auto;
+  margin-left: auto;
+  color: var(--accent);
 }
 
 .recent-section {
@@ -1577,7 +1589,7 @@ button {
 }
 
 .app-shell--hide-nav-titles {
-  grid-template-columns: 84px minmax(560px, 1fr);
+  --navigation-width: 84px;
 }
 
 .app-shell--hide-nav-titles .sidebar {
@@ -1662,6 +1674,99 @@ button {
 
 .workspace-tool-session[hidden] {
   display: none;
+}
+
+.tool-view-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  color: var(--text);
+  background: var(--workspace);
+  overflow: hidden;
+}
+
+.tool-view-shell .tool-page__header {
+  padding-right: 64px;
+}
+
+.tool-view-shell > .window-drag-region {
+  right: 64px;
+}
+
+.tool-window-toggle-slot {
+  position: fixed;
+  z-index: 210;
+  top: 18px;
+  right: 20px;
+  display: inline-flex;
+  -webkit-app-region: no-drag;
+}
+
+.tool-window-toggle-slot,
+.tool-window-toggle-slot * {
+  -webkit-app-region: no-drag;
+}
+
+.tool-window-toggle {
+  width: 32px;
+  min-width: 32px;
+  height: 32px;
+  min-height: 32px;
+  padding: 0;
+}
+
+.detached-tool-placeholder {
+  display: grid;
+  height: 100%;
+  padding: 32px;
+  place-content: center;
+  justify-items: center;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.detached-tool-placeholder__icon {
+  position: relative;
+  display: grid;
+  width: 72px;
+  height: 72px;
+  margin-bottom: 18px;
+  place-items: center;
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 11%, var(--surface-card));
+  border: 1px solid color-mix(in srgb, var(--accent) 20%, var(--border));
+  border-radius: 20px;
+}
+
+.detached-tool-placeholder__icon > svg:last-child {
+  position: absolute;
+  right: -5px;
+  bottom: -5px;
+  padding: 5px;
+  box-sizing: content-box;
+  color: var(--accent-contrast);
+  background: var(--accent-strong);
+  border: 3px solid var(--workspace);
+  border-radius: 10px;
+}
+
+.detached-tool-placeholder h1 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 23px;
+}
+
+.detached-tool-placeholder p {
+  max-width: 440px;
+  margin: 10px 0 20px;
+  line-height: 1.6;
+}
+
+.detached-tool-placeholder__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
 }
 
 .resizable-columns {

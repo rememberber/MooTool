@@ -27,37 +27,10 @@ import {
   type LucideIcon
 } from 'lucide-react'
 import { lazy, type ComponentType, type LazyExoticComponent } from 'react'
+import { toolIds, type ToolId } from '@/shared/contracts/app'
 import type { MessageKey } from '@/shared/i18n/messages'
 
-export const toolIds = [
-  'mootool',
-  'quickNote',
-  'textDiff',
-  'reformat',
-  'json',
-  'java',
-  'ymlProperties',
-  'protobuf',
-  'variables',
-  'http',
-  'host',
-  'net',
-  'uaParse',
-  'encode',
-  'crypto',
-  'regex',
-  'cron',
-  'qrCode',
-  'timeConvert',
-  'translation',
-  'calculator',
-  'colorBoard',
-  'image',
-  'pdf',
-  'hardware'
-] as const
-
-export type ToolId = (typeof toolIds)[number]
+export { toolIds, type ToolId }
 export type ToolGroupId = 'text' | 'dev' | 'network' | 'encode' | 'daily' | 'system'
 export type ToolStatus = 'placeholder' | 'in-progress' | 'parity-review' | 'complete'
 

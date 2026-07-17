@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import type { AppNavigationEvent, AppPaths, ExternalPageId, RuntimeStatus, WorkspaceState } from './src/shared/contracts/app'
+import type { AppNavigationEvent, AppPaths, ExternalPageId, RuntimeStatus, ToolId, ToolWindowSnapshot, ToolWindowStatus, ToolWorkspaceBounds, WorkspaceState } from './src/shared/contracts/app'
 import type { AppSettings, SecretKey, SecretStatus, SettingsPatch } from './src/shared/contracts/settings'
 import type { FuncHistoryRecord, HistoryQuery, SaveFuncHistoryInput } from './src/shared/contracts/history'
 import type { SaveTextFileInput, TextFileKind, TextFileResult } from './src/shared/contracts/files'
@@ -22,6 +22,7 @@ declare global {
   interface Window {
     mootool: {
       platform: string
+      toolWindowsEnabled: boolean
       getAppVersion: () => Promise<string>
       getAppPaths: () => Promise<AppPaths>
       getSystemTheme: () => Promise<'light' | 'dark'>
@@ -34,6 +35,14 @@ declare global {
       clearSecret: (key: SecretKey) => Promise<SecretStatus>
       getWorkspaceState: () => Promise<WorkspaceState>
       setWorkspaceState: (state: WorkspaceState) => Promise<WorkspaceState>
+      getToolWindowSnapshot: () => Promise<ToolWindowSnapshot>
+      activateToolView: (toolId: ToolId) => Promise<ToolWindowSnapshot>
+      setToolWorkspaceBounds: (bounds: ToolWorkspaceBounds) => Promise<ToolWindowSnapshot>
+      getToolWindowState: (toolId: Exclude<ToolId, 'mootool'>) => Promise<ToolWindowStatus>
+      detachToolWindow: (toolId: Exclude<ToolId, 'mootool'>) => Promise<ToolWindowStatus>
+      dockToolWindow: (toolId: Exclude<ToolId, 'mootool'>) => Promise<ToolWindowStatus>
+      focusToolWindow: (toolId: Exclude<ToolId, 'mootool'>) => Promise<boolean>
+      setToolWindowTitle: (toolId: Exclude<ToolId, 'mootool'>, title: string) => Promise<void>
       listHistory: (query: HistoryQuery) => Promise<FuncHistoryRecord[]>
       saveHistory: (input: SaveFuncHistoryInput) => Promise<void>
       deleteHistory: (id: number) => Promise<void>
@@ -137,6 +146,9 @@ declare global {
       onSystemThemeChange: (callback: (theme: 'light' | 'dark') => void) => () => void
       onSettingsChange: (callback: (settings: AppSettings) => void) => () => void
       onNavigate: (callback: (event: AppNavigationEvent) => void) => () => void
+      onToolWindowSnapshotChange: (callback: (snapshot: ToolWindowSnapshot) => void) => () => void
+      onToolWindowStateChange: (callback: (state: ToolWindowStatus) => void) => () => void
+      onToolWindowActivityChange: (callback: (active: boolean) => void) => () => void
       onJsonVaultChange: (callback: (relativePath: string) => void) => () => void
       onQuickNoteVaultChange: (callback: (relativePath: string) => void) => () => void
       onRuntimeOutput: (callback: (event: RuntimeOutputEvent) => void) => () => void
