@@ -1,4 +1,4 @@
-import { ChevronDown, Languages, LocateFixed, PanelLeftClose, PanelLeftOpen, PanelTopClose, Search, Settings } from 'lucide-react'
+import { ChevronDown, FolderCog, Languages, LocateFixed, PanelLeftClose, PanelLeftOpen, PanelTopClose, Search, Settings } from 'lucide-react'
 import { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useAppStore } from '@/app/appStore'
 import { toolById, toolGroups, type ToolId } from '@/app/toolRegistry'
@@ -10,6 +10,7 @@ import { ToolActivityProvider } from '@/shared/components/ToolActivity'
 import type { ToolWindowSnapshot } from '@/shared/contracts/app'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { useSettings } from '@/features/settings/SettingsProvider'
+import { CustomGroupManager } from './CustomGroupManager'
 import { UpdateReadyAction } from './UpdateReadyAction'
 
 export function Workbench() {
@@ -23,6 +24,7 @@ export function Workbench() {
   const searchOpen = useAppStore((state) => state.searchOpen)
   const setSearchOpen = useAppStore((state) => state.setSearchOpen)
   const [recentCollapsed, setRecentCollapsed] = useState(false)
+  const [groupManagerOpen, setGroupManagerOpen] = useState(false)
   const [toolWindows, setToolWindows] = useState<ToolWindowSnapshot>({ enabled: window.mootool.toolWindowsEnabled, activeToolId: 'mootool', tools: [] })
   const [mountedToolIds, setMountedToolIds] = useState<ToolId[]>([])
   const workspaceRef = useRef<HTMLElement>(null)
@@ -129,6 +131,11 @@ export function Workbench() {
               <Search size={17} />
             </button>
           </Tooltip>
+          <Tooltip content={t('app.nav.manageGroups')} side="bottom">
+            <button className="icon-ghost sidebar-group-manage" type="button" aria-label={t('app.nav.manageGroups')} onClick={() => setGroupManagerOpen(true)}>
+              <FolderCog size={17} />
+            </button>
+          </Tooltip>
         </div>
 
         <div className="sidebar-scroll">
@@ -139,6 +146,31 @@ export function Workbench() {
               active={activeToolId === 'mootool'}
               onClick={() => openTool('mootool')}
             />
+
+            {settings.layout.customGroups.map((group) => {
+              const tools = group.toolIds.flatMap((toolId) => {
+                const tool = toolById.get(toolId)
+                return tool ? [tool] : []
+              })
+              if (tools.length === 0) return null
+              return (
+                <section className="tool-group tool-group--custom" key={group.id}>
+                  <h2>{group.name}</h2>
+                  {tools.map((tool) => (
+                    <ToolButton
+                      key={tool.id}
+                      icon={tool.icon}
+                      label={t(tool.titleKey)}
+                      active={activeToolId === tool.id}
+                      detached={toolWindows.tools.some((item) => item.toolId === tool.id && item.detached)}
+                      onClick={() => openTool(tool.id)}
+                    />
+                  ))}
+                </section>
+              )
+            })}
+
+            {settings.layout.customGroups.length > 0 && <div className="tool-group-divider">{t('app.group.all')}</div>}
 
             {toolGroups.map((group) => (
               <section className="tool-group" key={group.id}>
@@ -246,6 +278,7 @@ export function Workbench() {
       </section>
 
       <CommandPalette />
+      <CustomGroupManager open={groupManagerOpen} onClose={() => setGroupManagerOpen(false)} />
     </main>
   )
 }

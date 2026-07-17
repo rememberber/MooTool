@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { defaultAppSettings, mergeSettings } from './settings'
+import { defaultAppSettings, mergeSettings, normalizeCustomGroups } from './settings'
 
 it('uses the MooTool Next visual defaults', () => {
   expect(defaultAppSettings.appearance.accentColor).toBe('blue')
@@ -63,17 +63,31 @@ describe('mergeSettings', () => {
       }
     })
 
-    expect(settings.schemaVersion).toBe(8)
+    expect(settings.schemaVersion).toBe(9)
     expect(settings.appearance.interfaceStyle).toBe('modern')
     expect(settings.runtime.javaPath).toBe('/opt/java')
     expect(settings.runtime.drafts).toEqual(defaultAppSettings.runtime.drafts)
     expect(settings.runtime.options).toEqual(defaultAppSettings.runtime.options)
     expect(settings.layout.paneSizes).toEqual({})
+    expect(settings.layout.customGroups).toEqual([])
     expect(settings.general.autoDownloadUpdates).toBe(true)
     expect(settings.vault.autoCommitIdleSeconds).toBe(30)
     expect(settings.vault.autoCommitInactiveSeconds).toBe(120)
     expect(settings.vault.quickNoteTreeExpandMode).toBe('expandAll')
     expect(settings.vault.jsonTreeExpandMode).toBe('expandAll')
+  })
+
+  it('normalizes custom navigation groups and removes invalid tool ids', () => {
+    const groups = normalizeCustomGroups([
+      { id: 'daily', name: '  My tools  ', toolIds: ['json', 'json', 'mootool', 'unknown' as 'json'] },
+      { id: 'daily', name: 'Second', toolIds: ['cron'] },
+      { id: 'empty-name', name: '   ', toolIds: ['regex'] }
+    ])
+
+    expect(groups).toEqual([
+      { id: 'daily', name: 'My tools', toolIds: ['json'] },
+      { id: 'daily-2', name: 'Second', toolIds: ['cron'] }
+    ])
   })
 
   it('persists vault tree expand modes', () => {

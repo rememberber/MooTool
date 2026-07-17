@@ -88,6 +88,40 @@ test('matches the Java home content and persists sidebar collapse state', async 
   await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ layout: { hideNavigationTitles: false } })
 })
 
+test('creates and persists custom navigation groups', async () => {
+  await mainPage.getByRole('button', { name: '管理分组', exact: true }).click()
+  const dialog = mainPage.getByRole('dialog', { name: '管理功能分组' })
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: '新建分组', exact: true }).click()
+  await dialog.getByLabel('分组名称').fill('开发常用')
+  await dialog.getByLabel('JSON', { exact: true }).check()
+  await dialog.getByLabel('HTTP 请求', { exact: true }).check()
+  await dialog.getByRole('button', { name: '保存', exact: true }).click()
+
+  const customGroup = mainPage.locator('.tool-group--custom').filter({ hasText: '开发常用' })
+  await expect(customGroup).toBeVisible()
+  await expect(customGroup.locator('.tool-button')).toHaveCount(2)
+  await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({
+    schemaVersion: 9,
+    layout: { customGroups: [{ name: '开发常用', toolIds: ['json', 'http'] }] }
+  })
+
+  await mainPage.reload()
+  await mainPage.waitForLoadState('domcontentloaded')
+  await expect(mainPage.locator('.tool-group--custom').filter({ hasText: '开发常用' })).toBeVisible()
+  await mainPage.getByRole('button', { name: '收起导航栏' }).click()
+  await expect(mainPage.locator('.tool-group--custom')).toBeHidden()
+  await mainPage.getByRole('button', { name: '展开导航栏' }).click()
+
+  await mainPage.getByRole('button', { name: '管理分组', exact: true }).click()
+  await dialog.locator('.custom-group-manager__group').filter({ hasText: '开发常用' }).click()
+  mainPage.once('dialog', (confirmation) => confirmation.accept())
+  await dialog.getByRole('button', { name: '删除分组', exact: true }).click()
+  await dialog.getByRole('button', { name: '保存', exact: true }).click()
+  await expect(mainPage.locator('.tool-group--custom')).toHaveCount(0)
+  await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ layout: { customGroups: [] } })
+})
+
 test('sizes compact controls from their localized English content', async () => {
   const workspace = await mainPage.evaluate(() => window.mootool.getWorkspaceState())
   await mainPage.evaluate(() => window.mootool.updateSettings({ general: { language: 'en-US' } }))

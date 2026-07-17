@@ -1,7 +1,8 @@
 import { normalizeTranslationLanguagePair } from './network'
+import { isToolId, type ToolId } from './app'
 import { isVaultTreeExpandMode, type VaultTreeExpandMode } from '../vaultTreeExpand'
 
-export const appSettingsSchemaVersion = 8
+export const appSettingsSchemaVersion = 9
 
 export type AppLanguage = 'zh-CN' | 'en-US' | 'ja-JP'
 export type ThemePreference = 'system' | 'light' | 'dark'
@@ -11,6 +12,7 @@ export type NavigationStyle = 'classic' | 'card' | 'grouped'
 export type SecretKey = 'proxyPassword' | 'gitToken'
 export type RuntimeSettingsId = 'java' | 'groovy' | 'python' | 'node'
 export type RuntimeRunOption = { arguments: string; workingDirectory: string }
+export type CustomToolGroup = { id: string; name: string; toolIds: ToolId[] }
 export type { VaultTreeExpandMode }
 
 export type SecretStatus = {
@@ -43,6 +45,7 @@ export type AppSettings = {
     showSeparators: boolean
     hideNavigationTitles: boolean
     navigationStyle: NavigationStyle
+    customGroups: CustomToolGroup[]
     paneSizes: Record<string, number[]>
   }
   editor: {
@@ -135,6 +138,7 @@ export const defaultAppSettings: AppSettings = {
     showSeparators: true,
     hideNavigationTitles: false,
     navigationStyle: 'classic',
+    customGroups: [],
     paneSizes: {}
   },
   editor: {
@@ -247,6 +251,7 @@ export function normalizeSettings(value: AppSettings): AppSettings {
       navigationStyle: navigationStyles.includes(value.layout.navigationStyle)
         ? value.layout.navigationStyle
         : defaultAppSettings.layout.navigationStyle,
+      customGroups: normalizeCustomGroups(value.layout.customGroups),
       paneSizes: normalizePaneSizes(value.layout.paneSizes)
     },
     editor: {
@@ -288,6 +293,30 @@ export function normalizeSettings(value: AppSettings): AppSettings {
       translationTargetLang: translationLanguages.targetLang
     }
   }
+}
+
+export function normalizeCustomGroups(value: CustomToolGroup[] | undefined): CustomToolGroup[] {
+  if (!Array.isArray(value)) return []
+
+  const ids = new Set<string>()
+  return value.slice(0, 32).flatMap((candidate, index) => {
+    if (!candidate || typeof candidate !== 'object') return []
+    const name = typeof candidate.name === 'string' ? candidate.name.trim().slice(0, 64) : ''
+    if (!name) return []
+
+    const requestedId = typeof candidate.id === 'string' && /^[a-z0-9_-]{1,80}$/i.test(candidate.id)
+      ? candidate.id
+      : `custom-${index + 1}`
+    let id = requestedId
+    let suffix = 2
+    while (ids.has(id)) id = `${requestedId}-${suffix++}`
+    ids.add(id)
+
+    const toolIds = Array.isArray(candidate.toolIds)
+      ? [...new Set(candidate.toolIds.filter((toolId): toolId is ToolId => toolId !== 'mootool' && isToolId(toolId)))]
+      : []
+    return [{ id, name, toolIds }]
+  })
 }
 
 function normalizePaneSizes(value: Record<string, number[]> | undefined): Record<string, number[]> {
