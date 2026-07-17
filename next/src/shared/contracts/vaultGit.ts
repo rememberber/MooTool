@@ -15,6 +15,7 @@ export type VaultGitStatus = {
   changes: VaultGitChange[]
   conflicts: number
   merging: boolean
+  operation: 'none' | 'merge' | 'rebase'
 }
 
 export type VaultGitCommit = {
@@ -25,7 +26,7 @@ export type VaultGitCommit = {
   message: string
 }
 
-export type VaultGitAction = 'init' | 'configure-remote' | 'commit' | 'fetch' | 'pull' | 'push' | 'discard' | 'abort-merge' | 'resolve-conflict'
+export type VaultGitAction = 'init' | 'configure-remote' | 'commit' | 'fetch' | 'pull' | 'push' | 'discard' | 'abort-merge' | 'resolve-conflict' | 'continue-operation'
 
 export type VaultGitActionInput = {
   action: VaultGitAction

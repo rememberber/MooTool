@@ -1,6 +1,6 @@
 import { normalizeTranslationLanguagePair } from './network'
 
-export const appSettingsSchemaVersion = 6
+export const appSettingsSchemaVersion = 7
 
 export type AppLanguage = 'zh-CN' | 'en-US' | 'ja-JP'
 export type ThemePreference = 'system' | 'light' | 'dark'
@@ -66,6 +66,8 @@ export type AppSettings = {
     gitRemote: string
     gitUsername: string
     autoCommit: boolean
+    autoCommitIdleSeconds: number
+    autoCommitInactiveSeconds: number
     autoPullMinutes: number
     hideGitignoredFiles: boolean
   }
@@ -153,7 +155,9 @@ export const defaultAppSettings: AppSettings = {
     jsonPath: '',
     gitRemote: '',
     gitUsername: '',
-    autoCommit: false,
+    autoCommit: true,
+    autoCommitIdleSeconds: 30,
+    autoCommitInactiveSeconds: 120,
     autoPullMinutes: 0,
     hideGitignoredFiles: true
   },
@@ -256,6 +260,8 @@ export function normalizeSettings(value: AppSettings): AppSettings {
     },
     vault: {
       ...value.vault,
+      autoCommitIdleSeconds: clampNumber(value.vault.autoCommitIdleSeconds, 5, 3600, defaultAppSettings.vault.autoCommitIdleSeconds),
+      autoCommitInactiveSeconds: clampNumber(value.vault.autoCommitInactiveSeconds, 5, 3600, defaultAppSettings.vault.autoCommitInactiveSeconds),
       autoPullMinutes: clampNumber(value.vault.autoPullMinutes, 0, 1440, defaultAppSettings.vault.autoPullMinutes)
     },
     tools: {

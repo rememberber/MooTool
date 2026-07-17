@@ -1,6 +1,8 @@
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
-import { Compartment, EditorState, type Extension } from '@codemirror/state'
+import { Compartment, EditorState, StateEffect, StateField, type Extension } from '@codemirror/state'
 import {
+  Decoration,
+  type DecorationSet,
   drawSelection,
   dropCursor,
   EditorView,
@@ -23,12 +25,19 @@ export type TextCodeEditorHandle = {
   getSelection: () => { start: number; end: number }
   getViewState: () => CodeEditorViewState | null
   selectRange: (anchor: number, head: number) => void
-  syncScroll: (verticalRatio: number, scrollLeft: number) => void
+  syncScroll: (scrollTop: number, scrollLeft: number) => void
 }
 
 export type TextCodeEditorScroll = {
-  verticalRatio: number
+  scrollTop: number
   scrollLeft: number
+}
+
+export type TextCodeEditorDecoration = {
+  from: number
+  to?: number
+  className: string
+  type: 'line' | 'mark'
 }
 
 export type TextCodeEditorProps = {
@@ -43,11 +52,39 @@ export type TextCodeEditorProps = {
   fontSize?: number
   fontFamily?: string
   searchQuery?: string
+  decorations?: readonly TextCodeEditorDecoration[]
   initialViewState?: CodeEditorViewState
   onChange?: (value: string) => void
   onKeyDown?: (event: KeyboardEvent) => void
   onScroll?: (scroll: TextCodeEditorScroll) => void
   onViewStateChange?: (state: CodeEditorViewState) => void
+}
+
+const emptyDecorations: readonly TextCodeEditorDecoration[] = []
+const replaceDecorations = StateEffect.define<DecorationSet>()
+
+const externalDecorations = StateField.define<DecorationSet>({
+  create: () => Decoration.none,
+  update: (decorations, transaction) => {
+    let next = decorations.map(transaction.changes)
+    for (const effect of transaction.effects) {
+      if (effect.is(replaceDecorations)) next = effect.value
+    }
+    return next
+  },
+  provide: (field) => EditorView.decorations.from(field)
+})
+
+function buildDecorations(decorations: readonly TextCodeEditorDecoration[], documentLength: number): DecorationSet {
+  const ranges = decorations.flatMap((decoration) => {
+    const from = Math.max(0, Math.min(decoration.from, documentLength))
+    if (decoration.type === 'line') {
+      return [Decoration.line({ attributes: { class: decoration.className } }).range(from)]
+    }
+    const to = Math.max(from, Math.min(decoration.to ?? from, documentLength))
+    return to > from ? [Decoration.mark({ class: decoration.className }).range(from, to)] : []
+  })
+  return Decoration.set(ranges, true)
 }
 
 function editorMetrics(fontFamily?: string, fontSize?: number): Extension {
@@ -93,6 +130,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
     fontSize,
     fontFamily,
     searchQuery = '',
+    decorations = emptyDecorations,
     initialViewState,
     onChange,
     onKeyDown,
@@ -143,6 +181,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
           readOnlyCompartment.of(readOnlyExtensions(initial.readOnly)),
           searchCompartment.of(codeEditorSearchHighlight(initial.searchQuery)),
           metricsCompartment.of(editorMetrics(initial.fontFamily, initial.fontSize)),
+          externalDecorations,
           EditorState.tabSize.of(4),
           EditorView.domEventHandlers({
             keydown: (event) => { onKeyDownRef.current?.(event) }
@@ -170,9 +209,8 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
     })
     const handleScroll = () => {
       const scroller = view.scrollDOM
-      const maxScrollTop = scroller.scrollHeight - scroller.clientHeight
       onScrollRef.current?.({
-        verticalRatio: maxScrollTop > 0 ? scroller.scrollTop / maxScrollTop : 0,
+        scrollTop: scroller.scrollTop,
         scrollLeft: scroller.scrollLeft
       })
       onViewStateChangeRef.current?.(readCodeEditorViewState(view))
@@ -195,6 +233,12 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
     applyingExternalValueRef.current = false
     localValueRef.current = value
   }, [value])
+
+  useEffect(() => {
+    const view = viewRef.current
+    if (!view) return
+    view.dispatch({ effects: replaceDecorations.of(buildDecorations(decorations, view.state.doc.length)) })
+  }, [decorations])
 
   useEffect(() => {
     viewRef.current?.dispatch({ effects: wrapCompartment.reconfigure(wrap ? EditorView.lineWrapping : []) })
@@ -242,10 +286,10 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
       view.dispatch({ selection: { anchor: start, head: end }, scrollIntoView: true })
       view.focus()
     },
-    syncScroll: (verticalRatio, scrollLeft) => {
+    syncScroll: (scrollTop, scrollLeft) => {
       const scroller = viewRef.current?.scrollDOM
       if (!scroller) return
-      scroller.scrollTop = verticalRatio * Math.max(0, scroller.scrollHeight - scroller.clientHeight)
+      scroller.scrollTop = scrollTop
       scroller.scrollLeft = scrollLeft
     }
   }), [])

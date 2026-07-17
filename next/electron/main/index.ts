@@ -94,6 +94,7 @@ import { SystemService } from './systemService'
 import { defaultReleaseUrl, UpdateService } from './updateService'
 import { UpdateManager, type UpdateAdapter } from './updateManager'
 import { VaultGitService } from './vaultGitService'
+import { VaultGitCheckpointScheduler } from './vaultGitCheckpointScheduler'
 
 type PersistedStore = {
   settings: AppSettings
@@ -143,10 +144,12 @@ let quickNoteWatcher: FSWatcher | null = null
 let quickNoteWatchTimer: NodeJS.Timeout | undefined
 let quickNotePullTimer: NodeJS.Timeout | undefined
 let quickNoteWatcherGeneration = 0
+let quickNoteEditorDirty = false
 let jsonVaultWatcher: FSWatcher | null = null
 let jsonVaultWatchTimer: NodeJS.Timeout | undefined
 let jsonVaultPullTimer: NodeJS.Timeout | undefined
 let jsonVaultWatcherGeneration = 0
+let jsonVaultEditorDirty = false
 let updateStartupTimer: NodeJS.Timeout | undefined
 let updateIntervalTimer: NodeJS.Timeout | undefined
 let updateCheckPromise: Promise<UpdateCheckResult> | null = null
@@ -158,6 +161,28 @@ const updateManager = new UpdateManager(
   app.isPackaged && process.env.NODE_ENV !== 'test',
   (state) => broadcast('update:state-changed', state)
 )
+const quickNoteCheckpointScheduler = new VaultGitCheckpointScheduler({
+  enabled: () => store.get('settings').vault.autoCommit,
+  hasUnsavedEditorChanges: () => quickNoteEditorDirty,
+  idleMilliseconds: () => store.get('settings').vault.autoCommitIdleSeconds * 1_000,
+  inactiveMilliseconds: () => store.get('settings').vault.autoCommitInactiveSeconds * 1_000,
+  checkpoint: async (message) => {
+    const service = createQuickNoteGitService()
+    if (!(await service.status()).repository) return { success: false, message: 'Git repository is not initialized' }
+    return service.automaticCheckpoint(message)
+  }
+})
+const jsonVaultCheckpointScheduler = new VaultGitCheckpointScheduler({
+  enabled: () => store.get('settings').vault.autoCommit,
+  hasUnsavedEditorChanges: () => jsonVaultEditorDirty,
+  idleMilliseconds: () => store.get('settings').vault.autoCommitIdleSeconds * 1_000,
+  inactiveMilliseconds: () => store.get('settings').vault.autoCommitInactiveSeconds * 1_000,
+  checkpoint: async (message) => {
+    const service = createVaultGitService()
+    if (!(await service.status()).repository) return { success: false, message: 'Git repository is not initialized' }
+    return service.automaticCheckpoint(message)
+  }
+})
 
 function getDevelopmentIconPath(): string {
   const filename = process.platform === 'darwin' ? 'icon-mac.png' : process.platform === 'win32' ? 'icon.ico' : 'icon.png'
@@ -209,6 +234,15 @@ function createMainWindow(): BrowserWindow {
 
   mainWindow = window
   installWindowStatePersistence(window)
+
+  window.on('focus', () => {
+    quickNoteCheckpointScheduler.setWindowActive(true)
+    jsonVaultCheckpointScheduler.setWindowActive(true)
+  })
+  window.on('blur', () => {
+    quickNoteCheckpointScheduler.setWindowActive(false)
+    jsonVaultCheckpointScheduler.setWindowActive(false)
+  })
 
   window.once('ready-to-show', () => {
     if (settings.general.startMaximized || savedWindow.maximized) {
@@ -652,39 +686,42 @@ function registerIpc(): void {
       throw new Error('Invalid Vault file')
     }
     const result = await createJsonVaultRepository().save({ relativePath: input.relativePath, content: input.content })
-    await maybeCommitJsonVault('Update JSON snippet')
+    jsonVaultCheckpointScheduler.recordActivity('Update JSON snippet')
     return result
   })
   ipcMain.handle('json-vault:create-folder', async (_event, relativePath: string) => {
     const result = await createJsonVaultRepository().createFolder(relativePath)
-    await maybeCommitJsonVault('Create JSON Vault folder')
+    jsonVaultCheckpointScheduler.recordActivity('Create JSON Vault folder')
     return result
   })
   ipcMain.handle('json-vault:rename', async (_event, input: RenameJsonVaultEntryInput) => {
     if (!isRecord(input) || typeof input.relativePath !== 'string' || typeof input.name !== 'string') throw new Error('Invalid JSON Vault rename')
     const result = await createJsonVaultRepository().renameEntry(input)
-    await maybeCommitJsonVault('Rename JSON Vault entry')
+    jsonVaultCheckpointScheduler.recordActivity('Rename JSON Vault entry')
     return result
   })
   ipcMain.handle('json-vault:move', async (_event, input: MoveJsonVaultEntryInput) => {
     if (!isRecord(input) || typeof input.relativePath !== 'string' || typeof input.targetDirectory !== 'string') throw new Error('Invalid JSON Vault move')
     const result = await createJsonVaultRepository().moveEntry(input)
-    await maybeCommitJsonVault('Move JSON Vault entry')
+    jsonVaultCheckpointScheduler.recordActivity('Move JSON Vault entry')
     return result
   })
   ipcMain.handle('json-vault:duplicate', async (_event, relativePath: string) => {
     const result = await createJsonVaultRepository().duplicate(relativePath)
-    await maybeCommitJsonVault('Duplicate JSON snippet')
+    jsonVaultCheckpointScheduler.recordActivity('Duplicate JSON snippet')
     return result
   })
   ipcMain.handle('json-vault:delete', async (_event, relativePath: string) => {
     await createJsonVaultRepository().delete(relativePath)
-    await maybeCommitJsonVault('Delete JSON Vault entry')
+    jsonVaultCheckpointScheduler.recordActivity('Delete JSON Vault entry')
   })
   ipcMain.handle('json-vault:open', async () => {
     await mkdir(getJsonVaultRoot(), { recursive: true })
     const error = await shell.openPath(getJsonVaultRoot())
     if (error) throw new Error(error)
+  })
+  ipcMain.handle('json-vault:set-editor-dirty', (_event, value: unknown) => {
+    jsonVaultEditorDirty = value === true
   })
   ipcMain.handle('vault-git:status', () => createVaultGitService().status())
   ipcMain.handle('vault-git:history', () => createVaultGitService().history())
@@ -717,7 +754,7 @@ function registerIpc(): void {
       fontSize: typeof input.fontSize === 'number' ? input.fontSize : undefined,
       lineWrap: typeof input.lineWrap === 'boolean' ? input.lineWrap : undefined
     })
-    await maybeCommitQuickNote('Create Quick Note')
+    quickNoteCheckpointScheduler.recordActivity('Create Quick Note')
     return note
   })
   ipcMain.handle('quick-note:save', async (_event, input: SaveQuickNoteInput) => {
@@ -725,34 +762,34 @@ function registerIpc(): void {
       throw new Error('Invalid Quick Note')
     }
     const note = await createQuickNoteRepository().save(input)
-    await maybeCommitQuickNote('Update Quick Note')
+    quickNoteCheckpointScheduler.recordActivity('Update Quick Note')
     return note
   })
   ipcMain.handle('quick-note:create-folder', async (_event, relativePath: string) => {
     const result = await createQuickNoteRepository().createFolder(relativePath)
-    await maybeCommitQuickNote('Create Quick Note folder')
+    quickNoteCheckpointScheduler.recordActivity('Create Quick Note folder')
     return result
   })
   ipcMain.handle('quick-note:rename', async (_event, input: RenameQuickNoteEntryInput) => {
     if (!isRecord(input) || typeof input.relativePath !== 'string' || typeof input.name !== 'string') throw new Error('Invalid Quick Note rename')
     const result = await createQuickNoteRepository().renameEntry(input)
-    await maybeCommitQuickNote('Rename Quick Note entry')
+    quickNoteCheckpointScheduler.recordActivity('Rename Quick Note entry')
     return result
   })
   ipcMain.handle('quick-note:move', async (_event, input: MoveQuickNoteEntryInput) => {
     if (!isRecord(input) || typeof input.relativePath !== 'string' || typeof input.targetDirectory !== 'string') throw new Error('Invalid Quick Note move')
     const result = await createQuickNoteRepository().moveEntry(input)
-    await maybeCommitQuickNote('Move Quick Note entry')
+    quickNoteCheckpointScheduler.recordActivity('Move Quick Note entry')
     return result
   })
   ipcMain.handle('quick-note:duplicate', async (_event, relativePath: string) => {
     const result = await createQuickNoteRepository().duplicate(relativePath)
-    await maybeCommitQuickNote('Duplicate Quick Note')
+    quickNoteCheckpointScheduler.recordActivity('Duplicate Quick Note')
     return result
   })
   ipcMain.handle('quick-note:delete', async (_event, relativePath: string) => {
     await createQuickNoteRepository().delete(relativePath)
-    await maybeCommitQuickNote('Delete Quick Note entry')
+    quickNoteCheckpointScheduler.recordActivity('Delete Quick Note entry')
   })
   ipcMain.handle('quick-note:import-attachment', async (event) => {
     const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
@@ -760,7 +797,7 @@ function registerIpc(): void {
     const result = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
     if (result.canceled || !result.filePaths[0]) return null
     const attachment = await createQuickNoteRepository().importAttachment(result.filePaths[0])
-    await maybeCommitQuickNote('Add Quick Note attachment')
+    quickNoteCheckpointScheduler.recordActivity('Add Quick Note attachment')
     return attachment
   })
   ipcMain.handle('quick-note:read-attachment', (_event, relativePath: string) => createQuickNoteRepository().readAttachment(relativePath))
@@ -768,6 +805,9 @@ function registerIpc(): void {
     await mkdir(getQuickNoteRoot(), { recursive: true })
     const error = await shell.openPath(getQuickNoteRoot())
     if (error) throw new Error(error)
+  })
+  ipcMain.handle('quick-note:set-editor-dirty', (_event, value: unknown) => {
+    quickNoteEditorDirty = value === true
   })
   ipcMain.handle('quick-note-git:status', () => createQuickNoteGitService().status())
   ipcMain.handle('quick-note-git:history', () => createQuickNoteGitService().history())
@@ -936,34 +976,6 @@ function getQuickNoteRoot(): string {
   return settings.vault.quickNotePath || join(dataDirectory, 'quick-notes')
 }
 
-async function maybeCommitQuickNote(message: string): Promise<void> {
-  if (!store.get('settings').vault.autoCommit) return
-  const service = createQuickNoteGitService()
-  let status = await service.status()
-  if (!status.available) return
-  if (!status.repository) {
-    const initialized = await service.action({ action: 'init' })
-    if (!initialized.success) return
-    status = await service.status()
-  }
-  if (status.changes.length === 0) return
-  await service.action({ action: 'commit', message })
-}
-
-async function maybeCommitJsonVault(message: string): Promise<void> {
-  if (!store.get('settings').vault.autoCommit) return
-  const service = createVaultGitService()
-  let status = await service.status()
-  if (!status.available) return
-  if (!status.repository) {
-    const initialized = await service.action({ action: 'init' })
-    if (!initialized.success) return
-    status = await service.status()
-  }
-  if (status.changes.length === 0) return
-  await service.action({ action: 'commit', message })
-}
-
 function normalizeJsonVaultListInput(value: unknown): JsonVaultListInput {
   if (value == null) return {}
   if (!isRecord(value)) throw new Error('Invalid JSON Vault list input')
@@ -1069,19 +1081,23 @@ function configureJsonVaultAutoPull(settings: AppSettings): void {
 }
 
 async function pullQuickNoteVault(): Promise<void> {
+  if (quickNoteEditorDirty) return
   const service = createQuickNoteGitService()
   const status = await service.status()
-  if (!status.repository || !status.remote || status.conflicts > 0 || status.changes.length > 0) return
+  if (!status.repository || !status.remote || status.merging || status.conflicts > 0 || status.changes.length > 0) return
   const result = await service.action({ action: 'pull' })
-  if (result.success) broadcast('quick-note:vault-changed', '')
+  const updatedStatus = await service.status()
+  if (result.success || updatedStatus.merging || updatedStatus.conflicts > 0) broadcast('quick-note:vault-changed', '')
 }
 
 async function pullJsonVault(): Promise<void> {
+  if (jsonVaultEditorDirty) return
   const service = createVaultGitService()
   const status = await service.status()
-  if (!status.repository || !status.remote || status.conflicts > 0 || status.changes.length > 0) return
+  if (!status.repository || !status.remote || status.merging || status.conflicts > 0 || status.changes.length > 0) return
   const result = await service.action({ action: 'pull' })
-  if (result.success) broadcast('json-vault:changed', '')
+  const updatedStatus = await service.status()
+  if (result.success || updatedStatus.merging || updatedStatus.conflicts > 0) broadcast('json-vault:changed', '')
 }
 
 function readSecret(key: SecretKey): string {
@@ -1150,6 +1166,8 @@ function applySettings(settings: AppSettings): void {
   configureQuickNoteAutoPull(settings)
   configureJsonVaultWatcher()
   configureJsonVaultAutoPull(settings)
+  quickNoteCheckpointScheduler.start()
+  jsonVaultCheckpointScheduler.start()
   configureUpdateChecks(settings)
   updateManager.setAutoDownload(settings.general.autoDownloadUpdates)
 }
@@ -1491,7 +1509,7 @@ const binaryFileFilters: Record<SaveBinaryFileInput['kind'], { name: string; ext
   binary: { name: 'Binary', extensions: ['bin', 'dat'] }
 }
 
-const vaultGitActions: VaultGitActionInput['action'][] = ['init', 'configure-remote', 'commit', 'fetch', 'pull', 'push', 'discard', 'abort-merge', 'resolve-conflict']
+const vaultGitActions: VaultGitActionInput['action'][] = ['init', 'configure-remote', 'commit', 'fetch', 'pull', 'push', 'discard', 'abort-merge', 'resolve-conflict', 'continue-operation']
 
 app.whenReady().then(async () => {
   store = new Store<PersistedStore>({
@@ -1540,6 +1558,8 @@ app.on('before-quit', () => {
   clearTimeout(jsonVaultWatchTimer)
   clearInterval(quickNotePullTimer)
   clearInterval(jsonVaultPullTimer)
+  quickNoteCheckpointScheduler.stop()
+  jsonVaultCheckpointScheduler.stop()
   clearTimeout(updateStartupTimer)
   clearInterval(updateIntervalTimer)
   closeDataRepositories()

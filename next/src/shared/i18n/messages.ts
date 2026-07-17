@@ -180,6 +180,8 @@ export const messages = {
     'settings.gitUsername': 'Git 用户名',
     'settings.gitToken': 'Git 私人令牌',
     'settings.autoCommit': '自动创建 Git 检查点',
+    'settings.autoCommitIdleSeconds': '编辑空闲提交（秒）',
+    'settings.autoCommitInactiveSeconds': '窗口失焦提交（秒）',
     'settings.autoPullMinutes': '自动拉取间隔（分钟）',
     'settings.hideGitignoredFiles': '隐藏 .gitignore 匹配文件',
     'settings.runtime.detect': '重新检测',
@@ -342,6 +344,7 @@ export const messages = {
     ,'json.git.remote': '远程仓库'
     ,'json.git.remotePlaceholder': 'https://... 或 git@host:repo.git'
     ,'json.git.saveRemote': '保存远程地址'
+    ,'json.git.removeRemote': '删除远程地址'
     ,'json.git.changes': '未提交变更'
     ,'json.git.history': '提交历史'
     ,'json.git.emptyChanges': '工作区很干净'
@@ -355,8 +358,9 @@ export const messages = {
     ,'json.git.done': 'Git 操作已完成'
     ,'json.git.discard': '丢弃变更'
     ,'json.git.confirmDiscard': '确定丢弃“{path}”的本地变更吗？此操作无法撤销。'
-    ,'json.git.abortMerge': '中止合并'
-    ,'json.git.confirmAbort': '确定中止当前合并并恢复合并前状态吗？'
+    ,'json.git.abortMerge': '中止合并 / Rebase'
+    ,'json.git.confirmAbort': '确定中止当前合并或 Rebase 并恢复操作前状态吗？'
+    ,'json.git.continueOperation': '继续合并 / Rebase'
     ,'json.git.useOurs': '使用本地版本'
     ,'json.git.useTheirs': '使用远程版本'
     ,'time.title': '时间转换'
@@ -509,18 +513,33 @@ export const messages = {
     ,'cron.weekdays': '工作日上午 9 点'
     ,'cron.invalid': '无法解析 Cron：{message}'
     ,'diff.title': '文本对比'
-    ,'diff.sideBySide': '并排视图'
-    ,'diff.unified': 'Unified 视图'
+    ,'diff.sideBySide': '并排对比'
+    ,'diff.unified': '统一差异'
     ,'diff.left': '原始文本'
     ,'diff.right': '新文本'
-    ,'diff.compare': '开始对比'
+    ,'diff.compare': '对比'
     ,'diff.ignoreWhitespace': '忽略空白差异'
     ,'diff.realtime': '实时对比'
     ,'diff.copy': '复制差异'
-    ,'diff.previous': '上一个差异'
-    ,'diff.next': '下一个差异'
+    ,'diff.previous': '上一处'
+    ,'diff.next': '下一处'
     ,'diff.summary': '新增 {added} · 删除 {removed} · 变更 {changed}'
     ,'diff.identical': '两侧文本一致'
+    ,'diff.highlightMode': '高亮模式'
+    ,'diff.highlightBoth': '双层高亮'
+    ,'diff.highlightCharacters': '仅字符'
+    ,'diff.highlightLines': '仅整行'
+    ,'diff.displayMode': '显示模式'
+    ,'diff.unifiedPanel': '统一差异格式'
+    ,'diff.status.ready': '准备就绪'
+    ,'diff.status.enterText': '请输入要对比的文本'
+    ,'diff.status.characterComplete': '字符差异 {count} 处'
+    ,'diff.status.complete': '对比完成，共发现 {count} 处差异'
+    ,'diff.status.cleared': '已清空'
+    ,'diff.status.swapped': '已交换文本'
+    ,'diff.status.copied': '差异结果已复制到剪贴板'
+    ,'diff.status.noCopy': '没有差异结果可复制'
+    ,'diff.status.navigation': '跳至第 {current}/{total} 处差异'
     ,'config.title': '配置文件转换'
     ,'config.tab.convert': 'YAML / Properties'
     ,'config.tab.validate': 'YAML 校验'
@@ -1244,6 +1263,8 @@ export const messages = {
     'settings.gitUsername': 'Git username',
     'settings.gitToken': 'Git personal token',
     'settings.autoCommit': 'Create Git checkpoints automatically',
+    'settings.autoCommitIdleSeconds': 'Checkpoint after editing idle (seconds)',
+    'settings.autoCommitInactiveSeconds': 'Checkpoint after window inactive (seconds)',
     'settings.autoPullMinutes': 'Auto-pull interval (minutes)',
     'settings.hideGitignoredFiles': 'Hide files matched by .gitignore',
     'settings.runtime.detect': 'Detect again',
@@ -1406,6 +1427,7 @@ export const messages = {
     ,'json.git.remote': 'Remote repository'
     ,'json.git.remotePlaceholder': 'https://... or git@host:repo.git'
     ,'json.git.saveRemote': 'Save remote URL'
+    ,'json.git.removeRemote': 'Remove remote'
     ,'json.git.changes': 'Working changes'
     ,'json.git.history': 'Commit history'
     ,'json.git.emptyChanges': 'Working tree is clean'
@@ -1419,8 +1441,9 @@ export const messages = {
     ,'json.git.done': 'Git operation completed'
     ,'json.git.discard': 'Discard change'
     ,'json.git.confirmDiscard': 'Discard local changes to "{path}"? This cannot be undone.'
-    ,'json.git.abortMerge': 'Abort merge'
-    ,'json.git.confirmAbort': 'Abort the current merge and restore the pre-merge state?'
+    ,'json.git.abortMerge': 'Abort merge / rebase'
+    ,'json.git.confirmAbort': 'Abort the current merge or rebase and restore the previous state?'
+    ,'json.git.continueOperation': 'Continue merge / rebase'
     ,'json.git.useOurs': 'Use ours'
     ,'json.git.useTheirs': 'Use theirs'
     ,'time.title': 'Time Converter'
@@ -1585,6 +1608,21 @@ export const messages = {
     ,'diff.next': 'Next difference'
     ,'diff.summary': 'Added {added} · removed {removed} · changed {changed}'
     ,'diff.identical': 'Both texts are identical'
+    ,'diff.highlightMode': 'Highlight mode'
+    ,'diff.highlightBoth': 'Dual highlight'
+    ,'diff.highlightCharacters': 'Character only'
+    ,'diff.highlightLines': 'Line only'
+    ,'diff.displayMode': 'Display mode'
+    ,'diff.unifiedPanel': 'Unified diff'
+    ,'diff.status.ready': 'Ready'
+    ,'diff.status.enterText': 'Enter text to compare'
+    ,'diff.status.characterComplete': '{count} character difference(s)'
+    ,'diff.status.complete': 'Compare complete, {count} difference(s) found'
+    ,'diff.status.cleared': 'Cleared'
+    ,'diff.status.swapped': 'Texts swapped'
+    ,'diff.status.copied': 'Diff copied to clipboard'
+    ,'diff.status.noCopy': 'No diff result to copy'
+    ,'diff.status.navigation': 'Jump to difference {current}/{total}'
     ,'config.title': 'Config Converter'
     ,'config.tab.convert': 'YAML / Properties'
     ,'config.tab.validate': 'YAML validation'
@@ -2308,6 +2346,8 @@ export const messages = {
     'settings.gitUsername': 'Git ユーザー名',
     'settings.gitToken': 'Git 個人トークン',
     'settings.autoCommit': 'Git チェックポイントを自動作成',
+    'settings.autoCommitIdleSeconds': '編集アイドル後に保存（秒）',
+    'settings.autoCommitInactiveSeconds': 'ウィンドウ非アクティブ後に保存（秒）',
     'settings.autoPullMinutes': '自動 pull 間隔（分）',
     'settings.hideGitignoredFiles': '.gitignore 対象ファイルを隠す',
     'settings.runtime.detect': '再検出',
@@ -2470,6 +2510,7 @@ export const messages = {
     ,'json.git.remote': 'リモートリポジトリ'
     ,'json.git.remotePlaceholder': 'https://... または git@host:repo.git'
     ,'json.git.saveRemote': 'リモート URL を保存'
+    ,'json.git.removeRemote': 'リモートを削除'
     ,'json.git.changes': '未コミットの変更'
     ,'json.git.history': 'コミット履歴'
     ,'json.git.emptyChanges': '作業ツリーはクリーンです'
@@ -2483,8 +2524,9 @@ export const messages = {
     ,'json.git.done': 'Git 操作が完了しました'
     ,'json.git.discard': '変更を破棄'
     ,'json.git.confirmDiscard': '「{path}」のローカル変更を破棄しますか？この操作は元に戻せません。'
-    ,'json.git.abortMerge': 'マージを中止'
-    ,'json.git.confirmAbort': '現在のマージを中止し、マージ前の状態に戻しますか？'
+    ,'json.git.abortMerge': 'マージ / リベースを中止'
+    ,'json.git.confirmAbort': '現在のマージまたはリベースを中止し、操作前の状態に戻しますか？'
+    ,'json.git.continueOperation': 'マージ / リベースを続行'
     ,'json.git.useOurs': 'ローカル版を使用'
     ,'json.git.useTheirs': 'リモート版を使用'
     ,'time.title': '時刻変換'
@@ -2649,6 +2691,21 @@ export const messages = {
     ,'diff.next': '次の差分'
     ,'diff.summary': '追加 {added} · 削除 {removed} · 変更 {changed}'
     ,'diff.identical': '両方のテキストは同一です'
+    ,'diff.highlightMode': 'ハイライトモード'
+    ,'diff.highlightBoth': '二重ハイライト'
+    ,'diff.highlightCharacters': '文字のみ'
+    ,'diff.highlightLines': '行のみ'
+    ,'diff.displayMode': '表示モード'
+    ,'diff.unifiedPanel': '統一差分形式'
+    ,'diff.status.ready': '準備完了'
+    ,'diff.status.enterText': '比較するテキストを入力してください'
+    ,'diff.status.characterComplete': '文字差分 {count} 件'
+    ,'diff.status.complete': '比較完了、{count} 件の差分があります'
+    ,'diff.status.cleared': 'クリアしました'
+    ,'diff.status.swapped': 'テキストを入れ替えました'
+    ,'diff.status.copied': '差分結果をクリップボードにコピーしました'
+    ,'diff.status.noCopy': 'コピーできる差分結果がありません'
+    ,'diff.status.navigation': '差分 {current}/{total} へ移動'
     ,'config.title': '設定ファイル変換'
     ,'config.tab.convert': 'YAML / Properties'
     ,'config.tab.validate': 'YAML 検証'

@@ -9,7 +9,8 @@ import { useI18n } from '@/shared/i18n/I18nProvider'
 type VaultGitDialogProps = {
   open: boolean
   onClose: () => void
-  onVaultChange: () => void
+  onVaultChange: (action: VaultGitAction) => void | Promise<void>
+  beforeWorkingTreeChange?: (action: VaultGitAction, path?: string) => boolean | Promise<boolean>
   scope?: 'json' | 'quickNote'
 }
 
@@ -28,7 +29,9 @@ function updateState(state: GitPanelState, patch: Partial<GitPanelState>): GitPa
   return { ...state, ...patch }
 }
 
-export function VaultGitDialog({ open, onClose, onVaultChange, scope = 'json' }: VaultGitDialogProps) {
+const workingTreeActions = new Set<VaultGitAction>(['pull', 'discard', 'abort-merge', 'resolve-conflict', 'continue-operation'])
+
+export function VaultGitDialog({ open, onClose, onVaultChange, beforeWorkingTreeChange, scope = 'json' }: VaultGitDialogProps) {
   const { t } = useI18n()
   const { settings, updateSettings } = useSettings()
   const toast = useToast()
@@ -64,21 +67,32 @@ export function VaultGitDialog({ open, onClose, onVaultChange, scope = 'json' }:
   async function runAction(action: VaultGitAction, extra: { message?: string; remote?: string; path?: string; strategy?: 'ours' | 'theirs' } = {}): Promise<void> {
     update({ busy: true })
     try {
+      if (workingTreeActions.has(action) && beforeWorkingTreeChange && !await beforeWorkingTreeChange(action, extra.path)) {
+        update({ busy: false })
+        return
+      }
       const result = scope === 'quickNote'
         ? await window.mootool.runQuickNoteGitAction({ action, ...extra })
         : await window.mootool.runVaultGitAction({ action, ...extra })
       if (!result.success) {
         toast.error(result.message)
-        update({ busy: false })
+        if (action === 'pull') {
+          await load()
+          await onVaultChange(action)
+        } else {
+          update({ busy: false })
+        }
         return
       }
-      if (action === 'configure-remote') await updateSettings({ vault: { gitRemote: state.remote } })
+      const configuredRemote = action === 'configure-remote' ? extra.remote?.trim() ?? '' : undefined
+      if (configuredRemote !== undefined) await updateSettings({ vault: { gitRemote: configuredRemote } })
       toast.success(t('json.git.done'))
       if (action === 'discard' || action === 'abort-merge' || action === 'resolve-conflict') {
         update({ selected: '', diff: '' })
       }
       await load()
-      if (action === 'pull' || action === 'discard' || action === 'abort-merge' || action === 'resolve-conflict') onVaultChange()
+      if (configuredRemote !== undefined) update({ remote: configuredRemote })
+      if (workingTreeActions.has(action)) await onVaultChange(action)
     } catch (error) {
       update({ busy: false })
       toast.error(error instanceof Error ? error.message : t('json.notice.failed'))
@@ -126,11 +140,12 @@ export function VaultGitDialog({ open, onClose, onVaultChange, scope = 'json' }:
             <button type="button" disabled={state.busy} onClick={() => { void load() }}><RefreshCw size={13} />{t('json.git.refresh')}</button>
             {!status?.repository && <button type="button" disabled={state.busy || status?.available === false} onClick={() => { void runAction('init') }}><GitBranch size={13} />{t('json.git.init')}</button>}
             {status?.repository && <button type="button" disabled={state.busy || !status.remote} onClick={() => { void runAction('fetch') }}><CloudDownload size={13} />{t('json.git.fetch')}</button>}
-            {status?.repository && <button type="button" disabled={state.busy || !status.remote} onClick={() => { void runAction('pull') }}>{t('json.git.pull')}</button>}
-            {status?.repository && <button type="button" disabled={state.busy || !status.remote} onClick={() => { void runAction('push') }}><CloudUpload size={13} />{t('json.git.push')}</button>}
+            {status?.repository && <button type="button" disabled={state.busy || !status.remote || status.merging} onClick={() => { void runAction('pull') }}>{t('json.git.pull')}</button>}
+            {status?.repository && <button type="button" disabled={state.busy || !status.remote || status.merging} onClick={() => { void runAction('push') }}><CloudUpload size={13} />{t('json.git.push')}</button>}
             {status?.repository && (status.merging || status.conflicts > 0) && <button className="git-danger-button" type="button" disabled={state.busy} onClick={() => {
               if (window.confirm(t('json.git.confirmAbort'))) void runAction('abort-merge')
             }}><GitMerge size={13} />{t('json.git.abortMerge')}</button>}
+            {status?.repository && status.merging && status.conflicts === 0 && <button type="button" disabled={state.busy} onClick={() => { void runAction('continue-operation') }}><GitMerge size={13} />{t('json.git.continueOperation')}</button>}
           </div>
         </header>
 
@@ -139,7 +154,7 @@ export function VaultGitDialog({ open, onClose, onVaultChange, scope = 'json' }:
             <div className="git-remote-row">
               <label htmlFor="git-remote">{t('json.git.remote')}</label>
               <input id="git-remote" value={state.remote} placeholder={t('json.git.remotePlaceholder')} onChange={(event) => update({ remote: event.target.value })} />
-              <button type="button" disabled={state.busy || !status?.repository || !state.remote.trim()} onClick={() => { void runAction('configure-remote', { remote: state.remote }) }}>{t('json.git.saveRemote')}</button>
+              <button type="button" disabled={state.busy || !status?.repository || (!state.remote.trim() && !status.remote)} onClick={() => { void runAction('configure-remote', { remote: state.remote }) }}>{state.remote.trim() ? t('json.git.saveRemote') : t('json.git.removeRemote')}</button>
             </div>
 
             <div className="git-workspace">
@@ -180,7 +195,7 @@ export function VaultGitDialog({ open, onClose, onVaultChange, scope = 'json' }:
                   <div className="git-commit-row">
                     <label htmlFor="git-message">{t('json.git.commitMessage')}</label>
                     <input id="git-message" value={state.commitMessage} onChange={(event) => update({ commitMessage: event.target.value })} />
-                    <button type="button" disabled={state.busy || !status.changes.length || !state.commitMessage.trim()} onClick={() => { void runAction('commit', { message: state.commitMessage }) }}><GitCommitHorizontal size={13} />{t('json.git.commit')}</button>
+                    <button type="button" disabled={state.busy || status.merging || status.conflicts > 0 || !status.changes.length || !state.commitMessage.trim()} onClick={() => { void runAction('commit', { message: state.commitMessage }) }}><GitCommitHorizontal size={13} />{t('json.git.commit')}</button>
                   </div>
                 )}
               </div>

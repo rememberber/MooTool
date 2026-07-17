@@ -28,6 +28,7 @@ describe('mergeSettings', () => {
       appearance: { fontSize: 200 },
       editor: { jsonFontSize: 1 },
       network: { requestTimeoutMs: 50, translationTimeoutMs: 999999 },
+      vault: { autoCommitIdleSeconds: 1, autoCommitInactiveSeconds: 999999 },
       tools: { qrCodeSize: 12, randomStringLength: 99999, translationProvider: 'bing' }
     })
 
@@ -37,6 +38,8 @@ describe('mergeSettings', () => {
     expect(settings.tools.randomStringLength).toBe(4096)
     expect(settings.network.requestTimeoutMs).toBe(1_000)
     expect(settings.network.translationTimeoutMs).toBe(120_000)
+    expect(settings.vault.autoCommitIdleSeconds).toBe(5)
+    expect(settings.vault.autoCommitInactiveSeconds).toBe(3_600)
     expect(settings.tools.translationProvider).toBe('bing')
   })
 
@@ -60,13 +63,15 @@ describe('mergeSettings', () => {
       }
     })
 
-    expect(settings.schemaVersion).toBe(6)
+    expect(settings.schemaVersion).toBe(7)
     expect(settings.appearance.interfaceStyle).toBe('modern')
     expect(settings.runtime.javaPath).toBe('/opt/java')
     expect(settings.runtime.drafts).toEqual(defaultAppSettings.runtime.drafts)
     expect(settings.runtime.options).toEqual(defaultAppSettings.runtime.options)
     expect(settings.layout.paneSizes).toEqual({})
     expect(settings.general.autoDownloadUpdates).toBe(true)
+    expect(settings.vault.autoCommitIdleSeconds).toBe(30)
+    expect(settings.vault.autoCommitInactiveSeconds).toBe(120)
   })
 
   it('normalizes persisted workspace pane sizes', () => {

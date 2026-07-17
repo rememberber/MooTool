@@ -258,20 +258,27 @@ test('restores the JSON Vault expanded folder and selected file after switching 
 })
 
 test('initializes the JSON Vault Git repository and commits a snippet', async () => {
+  await mainPage.evaluate(() => window.mootool.updateSettings({ vault: { autoCommit: false } }))
+  await mainPage.getByRole('button', { name: '打开 Git 面板' }).click()
+  const gitDialog = mainPage.getByRole('dialog', { name: 'JSON Vault Git' })
+  await expect(gitDialog).toBeVisible()
+  const initButton = gitDialog.getByRole('button', { name: '初始化 Git' })
+  await expect(initButton).toBeVisible()
+  await initButton.click()
+  await expect(gitDialog.getByText(/^分支 /)).toBeVisible()
+  await gitDialog.getByRole('button', { name: '关闭' }).click()
+
   await mainPage.getByRole('button', { name: '新建片段' }).click()
   await mainPage.getByLabel('文件名或相对路径').fill('git-sample')
   await mainPage.getByRole('button', { name: '创建', exact: true }).click()
 
   await mainPage.getByRole('button', { name: '打开 Git 面板' }).click()
-  const gitDialog = mainPage.getByRole('dialog', { name: 'JSON Vault Git' })
   await expect(gitDialog).toBeVisible()
-  await gitDialog.getByRole('button', { name: '初始化 Git' }).click()
-  await expect(gitDialog.getByText(/^分支 /)).toBeVisible()
   await expect(gitDialog.locator('.git-list-item').filter({ hasText: 'git-sample.json' })).toBeVisible()
 
   await gitDialog.getByRole('button', { name: '提交全部变更' }).click()
   await gitDialog.getByRole('tab', { name: '提交历史' }).click()
-  await expect(gitDialog.locator('.git-list-item')).toContainText('MooTool JSON checkpoint')
+  await expect(gitDialog.locator('.git-list-item').filter({ hasText: 'MooTool JSON checkpoint' }).first()).toBeVisible()
   await gitDialog.getByRole('button', { name: '关闭' }).click()
 })
 
@@ -444,10 +451,20 @@ test('runs P3 regex, Cron and text Diff workflows with persistent favorites', as
   await diffEditors.nth(0).fill('one\ntwo\n')
   await diffEditors.nth(1).fill('one\nthree\n')
   await expectTextEditorChrome(mainPage.locator('.diff-editor-grid .text-code-editor').nth(1))
-  await mainPage.getByRole('button', { name: '开始对比' }).click()
-  await mainPage.getByRole('tab', { name: 'Unified 视图' }).click()
+  await mainPage.getByRole('button', { name: '对比', exact: true }).click()
+  await expect(mainPage.locator('.diff-editor-grid .cm-diff-character-changed')).toHaveCount(2)
+  await mainPage.getByLabel('高亮模式').selectOption('characters')
+  await expect(mainPage.locator('.diff-editor-grid [class*="cm-diff-line-"]')).toHaveCount(0)
+  await expect(mainPage.locator('.diff-status')).toContainText('字符差异 1 处')
+  await mainPage.getByLabel('高亮模式').selectOption('lines')
+  await expect(mainPage.locator('.diff-editor-grid [class*="cm-diff-character-"]')).toHaveCount(0)
+  await mainPage.getByLabel('高亮模式').selectOption('both')
+  await mainPage.getByRole('button', { name: '下一处', exact: true }).click()
+  await expect(mainPage.locator('.diff-status')).toContainText('第 1/1 处差异')
+  await mainPage.getByLabel('显示模式').selectOption('unified')
   await expect(mainPage.locator('.unified-diff')).toContainText('-two')
   await expect(mainPage.locator('.unified-diff')).toContainText('+three')
+  await expect(mainPage.locator('.unified-diff .cm-diff-line-removed')).toBeVisible()
 
   await mainPage.getByRole('button', { name: '历史', exact: true }).click()
   await expect(mainPage.getByRole('dialog', { name: '历史记录' })).toBeVisible()
@@ -630,6 +647,14 @@ test('runs P5 Hosts, translation records, network and system workflows', async (
 
 test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () => {
   await openTool('随手记', '随手记')
+  await mainPage.evaluate(() => window.mootool.updateSettings({ vault: { autoCommit: false } }))
+  await mainPage.getByRole('button', { name: 'Git 同步' }).click()
+  const setupGitDialog = mainPage.getByRole('dialog', { name: '随手记 Vault Git' })
+  const setupInitButton = setupGitDialog.getByRole('button', { name: '初始化 Git' })
+  await expect(setupInitButton).toBeVisible()
+  await setupInitButton.click()
+  await expect(setupGitDialog.getByText(/^分支 /)).toBeVisible()
+  await setupGitDialog.getByRole('button', { name: '关闭' }).click()
   await mainPage.getByRole('tab', { name: '分栏' }).click()
   await expect(mainPage.getByRole('tab', { name: '分栏' })).toHaveAttribute('aria-selected', 'true')
   await mainPage.getByRole('tab', { name: '编辑' }).click()
@@ -714,7 +739,7 @@ test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () =>
   await expect(gitDialog.getByText(/^分支 /)).toBeVisible()
   await gitDialog.getByRole('button', { name: '提交全部变更' }).click()
   await gitDialog.getByRole('tab', { name: '提交历史' }).click()
-  await expect(gitDialog.locator('.git-list-item')).toContainText('MooTool 随手记检查点')
+  await expect(gitDialog.locator('.git-list-item').filter({ hasText: 'MooTool 随手记检查点' }).first()).toBeVisible()
   await gitDialog.getByRole('button', { name: '关闭' }).click()
 })
 
@@ -817,6 +842,7 @@ test('scans and migrates Java data from the Data & Backup settings page', async 
 
 test('preserves operation state across regular tools', async () => {
   await openTool('文本对比', '文本对比')
+  await mainPage.getByLabel('显示模式').selectOption('side')
   await mainPage.getByLabel('原始文本').fill('left session value')
   await mainPage.getByLabel('新文本').fill('right session value')
 

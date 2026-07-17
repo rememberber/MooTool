@@ -362,6 +362,7 @@
 }
 
 .quick-note-icon-button {
+  position: relative;
   display: inline-flex;
   flex: 0 0 28px;
   align-items: center;
@@ -2064,6 +2065,7 @@ button {
 }
 
 .vault-panel__actions button {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2084,6 +2086,26 @@ button {
 .vault-panel__actions button:disabled {
   opacity: 0.35;
   cursor: default;
+}
+
+.vault-git-badge {
+  position: absolute;
+  top: -4px;
+  right: -5px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1;
+  background: var(--accent-strong);
+  border: 1.5px solid var(--toolbar);
+  border-radius: 8px;
+  pointer-events: none;
 }
 
 .vault-panel__options {
@@ -2962,18 +2984,41 @@ button {
 
 .diff-workspace { overflow: hidden; }
 .diff-toolbar { display: flex; align-items: center; gap: 6px; min-height: 48px; padding: 5px 10px; background: var(--toolbar); border-bottom: 1px solid var(--border-soft); overflow-x: auto; }
-.diff-toolbar .tool-tabs { min-height: 38px; padding: 0; border: 0; background: transparent; }
-.diff-summary { min-height: 30px; padding: 8px 14px; color: var(--text-muted); background: var(--surface-soft); border-bottom: 1px solid var(--border-soft); font-size: 10px; }
-.diff-editor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(190px, 1.1fr) minmax(130px, 0.9fr); min-height: 0; flex: 1; }
+.diff-editor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); width: 100%; min-height: 0; flex: 1; }
 .diff-editor-grid > div { display: flex; min-width: 0; min-height: 0; flex-direction: column; gap: 6px; padding: 10px; }
 .diff-editor-grid > div:first-child { border-right: 1px solid var(--border-soft); }
-.diff-preview, .unified-diff { min-width: 0; min-height: 0; padding: 12px; margin: 0; color: var(--editor-text); background: var(--workspace); font-family: ui-monospace, Menlo, monospace; font-size: 10px; line-height: 1.55; overflow: auto; white-space: pre-wrap; }
-.diff-preview--left { border-top: 1px solid var(--border-soft); border-right: 1px solid var(--border-soft); }
-.diff-preview--right { border-top: 1px solid var(--border-soft); }
-.diff-preview mark { display: inline; color: inherit; background: transparent; white-space: pre-wrap; }
-.diff-preview .diff-removed { background: var(--error-bg); }
-.diff-preview .diff-added { background: var(--success-bg); }
-.unified-diff { flex: 1; padding: 18px; font-size: 11px; }
+.diff-toolbar select {
+  min-width: 88px;
+  height: 34px;
+  padding: 0 24px 0 8px;
+  color: var(--text-body);
+  background: var(--control);
+  border: 1px solid var(--border-control);
+  border-radius: 6px;
+  outline: none;
+  font-size: 11px;
+}
+.diff-toolbar select:focus { border-color: var(--accent); }
+.diff-status { margin-left: auto; padding: 0 4px 0 8px; color: var(--text-muted); font-size: 11px; white-space: nowrap; }
+.diff-content { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; }
+.diff-content--unified { display: grid; grid-template-rows: minmax(190px, 1.15fr) minmax(150px, 0.85fr); }
+.diff-editor-grid > .diff-editor-pane { gap: 7px; padding: 10px; }
+.diff-editor-pane > .diff-editor { flex: 1; }
+.diff-unified-pane { display: flex; min-width: 0; min-height: 0; flex-direction: column; gap: 7px; padding: 9px 10px 10px; border-top: 1px solid var(--border-soft); }
+.diff-unified-pane > span { color: var(--text-muted); font-size: 11px; font-weight: 600; }
+.unified-diff { flex: 1; padding: 0; font-size: 12px; line-height: inherit; white-space: normal; }
+.diff-editor .cm-content,
+.unified-diff .cm-content { padding: 8px 10px 18px; }
+.diff-editor .cm-line.cm-diff-line-removed,
+.unified-diff .cm-line.cm-diff-line-removed { background: color-mix(in srgb, var(--error-bg) 74%, transparent); }
+.diff-editor .cm-line.cm-diff-line-added,
+.unified-diff .cm-line.cm-diff-line-added { background: color-mix(in srgb, var(--success-bg) 74%, transparent); }
+.diff-editor .cm-line.cm-diff-line-changed,
+.unified-diff .cm-line.cm-diff-line-changed { background: color-mix(in srgb, var(--warning-text) 12%, transparent); }
+.unified-diff .cm-line.cm-diff-line-header { color: var(--text-muted); background: var(--control); }
+.cm-diff-character-removed { background: var(--error-bg); }
+.cm-diff-character-added { background: var(--success-bg); }
+.cm-diff-character-changed { background: color-mix(in srgb, var(--warning-text) 28%, transparent); }
 
 .yaml-validate-layout { display: grid; grid-template-columns: minmax(0, 1fr) 160px minmax(220px, 0.6fr); gap: 12px; flex: 1; min-height: 0; padding: 14px; }
 .validate-actions { display: flex; align-self: center; flex-direction: column; gap: 8px; }
@@ -7424,8 +7469,7 @@ button {
 .common-pattern-list code,
 .favorite-item code,
 .regex-results article span,
-.regex-results article code,
-.diff-summary {
+.regex-results article code {
   font-size: var(--tool-meta-font-size);
 }
 
@@ -7434,7 +7478,6 @@ button {
 .regex-results article strong,
 .cron-expression-panel output,
 .cron-runs li,
-.diff-preview,
 .unified-diff,
 .validation-output {
   font-size: var(--tool-control-font-size);

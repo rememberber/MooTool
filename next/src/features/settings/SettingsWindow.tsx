@@ -359,7 +359,11 @@ function LegacyMigrationSettings() {
   const [confirmOpen, setConfirmOpen] = useState(false)
 
   useEffect(() => {
-    void window.mootool.getDefaultLegacySource().then(setSourceDirectory)
+    let cancelled = false
+    void window.mootool.getDefaultLegacySource().then((path) => {
+      if (!cancelled) setSourceDirectory((current) => current || path)
+    })
+    return () => { cancelled = true }
   }, [])
 
   function scan(): void {
@@ -395,7 +399,12 @@ function LegacyMigrationSettings() {
       <div className="setting-row legacy-migration-row">
         <label>{t('settings.migration.source')}</label>
         <div className="legacy-migration-source">
-          <TextInput value={sourceDirectory} ariaLabel={t('settings.migration.source')} onCommit={(value) => { setSourceDirectory(value); setPreview(null) }} />
+          <input
+            type="text"
+            value={sourceDirectory}
+            aria-label={t('settings.migration.source')}
+            onChange={(event) => { setSourceDirectory(event.target.value); setPreview(null) }}
+          />
           <button
             className="icon-button"
             type="button"
@@ -480,6 +489,8 @@ function VaultSettings({ settings, commit }: SettingsPanelProps) {
         <SettingRow label={t('settings.autoCommit')}>
           <Toggle checked={settings.vault.autoCommit} label={t('settings.autoCommit')} onChange={(value) => commit({ vault: { autoCommit: value } })} />
         </SettingRow>
+        <NumberSetting label={t('settings.autoCommitIdleSeconds')} value={settings.vault.autoCommitIdleSeconds} min={5} max={3600} onCommit={(value) => commit({ vault: { autoCommitIdleSeconds: value } })} />
+        <NumberSetting label={t('settings.autoCommitInactiveSeconds')} value={settings.vault.autoCommitInactiveSeconds} min={5} max={3600} onCommit={(value) => commit({ vault: { autoCommitInactiveSeconds: value } })} />
         <NumberSetting label={t('settings.autoPullMinutes')} value={settings.vault.autoPullMinutes} min={0} max={1440} onCommit={(value) => commit({ vault: { autoPullMinutes: value } })} />
         <SettingRow label={t('settings.hideGitignoredFiles')}>
           <Toggle checked={settings.vault.hideGitignoredFiles} label={t('settings.hideGitignoredFiles')} onChange={(value) => commit({ vault: { hideGitignoredFiles: value } })} />

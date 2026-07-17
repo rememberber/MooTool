@@ -9,17 +9,20 @@ import {
   FolderPlus,
   GitBranch,
   MoreHorizontal,
+  Move,
+  Pencil,
   RefreshCw,
   Save,
   Trash2
 } from 'lucide-react'
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { Dialog } from '@/shared/components/Dialog'
 import { Tooltip } from '@/shared/components/Tooltip'
 import { useToolActivity } from '@/shared/components/ToolActivity'
 import type { JsonVaultNode } from '@/shared/contracts/jsonVault'
+import type { VaultGitAction } from '@/shared/contracts/vaultGit'
 import { useToast } from '@/shared/feedback/ToastProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { VaultGitDialog } from './VaultGitDialog'
@@ -74,6 +77,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
   const [savedContent, setSavedContent] = useState(jsonVaultSessionState.savedContent)
   const [expanded, setExpanded] = useState(() => new Set(jsonVaultSessionState.expanded))
   const [gitDialogOpen, setGitDialogOpen] = useState(jsonVaultSessionState.gitDialogOpen)
+  const [gitChangeCount, setGitChangeCount] = useState(0)
   const [textAction, setTextAction] = useState<TextAction>(jsonVaultSessionState.textAction)
   const [moveOpen, setMoveOpen] = useState(jsonVaultSessionState.moveOpen)
   const [moveTarget, setMoveTarget] = useState(jsonVaultSessionState.moveTarget)
@@ -81,7 +85,10 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
   const contextMenuRef = useRef<HTMLDivElement>(null)
   const treeRef = useRef<HTMLDivElement>(null)
   const [sort, setSort] = useState<'name' | 'modified'>(jsonVaultSessionState.sort)
+  const latestSelectionRef = useRef({ selectedPath, content })
+  const saveQueueRef = useRef<Promise<void>>(Promise.resolve())
   const dirty = Boolean(selectedPath) && content !== savedContent
+  latestSelectionRef.current = { selectedPath, content }
   const directories = useMemo(() => ['', ...flattenDirectories(nodes)], [nodes])
 
   useEffect(() => {
@@ -112,13 +119,63 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
     }
   }, [settings.vault.hideGitignoredFiles, sort, t, toast])
 
+  const reloadSelectedFromDisk = useCallback(async () => {
+    if (!selectedPath) return
+    try {
+      const file = await window.mootool.readJsonVaultFile(selectedPath)
+      setSelectedEntry({ path: file.relativePath, kind: 'file' })
+      setSavedContent(file.content)
+      onOpen(file.content)
+    } catch {
+      setSelectedEntry(null)
+      setSelectedPath('')
+      setSavedContent('')
+      onOpen('')
+    }
+  }, [onOpen, selectedPath])
+
+  const refreshGitChangeCount = useCallback(async () => {
+    try {
+      const status = await window.mootool.getVaultGitStatus()
+      setGitChangeCount(status.changes.length)
+    } catch {
+      setGitChangeCount(0)
+    }
+  }, [])
+
   useEffect(() => {
     void load()
-  }, [load, settings.vault.jsonPath])
+    if (!dirty) void reloadSelectedFromDisk()
+  }, [dirty, load, reloadSelectedFromDisk, settings.vault.jsonPath])
 
   useEffect(() => window.mootool.onJsonVaultChange(() => {
     void load()
-  }), [load])
+    if (!dirty) void reloadSelectedFromDisk()
+    void refreshGitChangeCount()
+  }), [dirty, load, refreshGitChangeCount, reloadSelectedFromDisk])
+
+  useEffect(() => {
+    if (!toolActive) return
+    void refreshGitChangeCount()
+    const timer = window.setInterval(() => { void refreshGitChangeCount() }, 5_000)
+    return () => window.clearInterval(timer)
+  }, [refreshGitChangeCount, toolActive])
+
+  useEffect(() => {
+    void window.mootool.setJsonVaultEditorDirty(dirty)
+  }, [dirty])
+
+  const persistSelectedOnIdle = useEffectEvent((path: string, snapshot: string) => {
+    void persistSelected(path, snapshot, false)
+  })
+
+  useEffect(() => {
+    if (!dirty || !selectedPath) return
+    const path = selectedPath
+    const snapshot = content
+    const timer = window.setTimeout(() => persistSelectedOnIdle(path, snapshot), 250)
+    return () => window.clearTimeout(timer)
+  }, [content, dirty, selectedPath])
 
   useEffect(() => {
     if (!contextMenu || !toolActive) return
@@ -137,7 +194,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
   }, [contextMenu, toolActive])
 
   async function openFile(path: string): Promise<void> {
-    if (dirty && path !== selectedPath && !window.confirm(t('json.vault.confirmDiscard'))) return
+    if (dirty && path !== selectedPath && !await saveSelected(false)) return
     try {
       const file = await window.mootool.readJsonVaultFile(path)
       setSelectedEntry({ path: file.relativePath, kind: 'file' })
@@ -149,19 +206,43 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
     }
   }
 
-  async function saveSelected(): Promise<void> {
+  async function saveSelected(showToast = true): Promise<boolean> {
     if (!selectedPath) {
       beginCreateFile()
-      return
+      return false
     }
-    try {
-      const file = await window.mootool.saveJsonVaultFile({ relativePath: selectedPath, content })
-      setSavedContent(file.content)
-      toast.success(t('json.vault.saved'))
+    return persistSelected(selectedPath, content, showToast)
+  }
+
+  async function persistSelected(path: string, snapshot: string, showToast: boolean): Promise<boolean> {
+    let saved = false
+    const operation = saveQueueRef.current.catch(() => undefined).then(async () => {
+      const file = await window.mootool.saveJsonVaultFile({ relativePath: path, content: snapshot })
+      saved = true
+      const current = latestSelectionRef.current
+      if (current.selectedPath === path) setSavedContent(file.content)
+      if (showToast) toast.success(t('json.vault.saved'))
       await load()
+      await refreshGitChangeCount()
+    })
+    saveQueueRef.current = operation.then(() => undefined, () => undefined)
+    try {
+      await operation
+      return saved
     } catch (error) {
       reportError(error)
+      return false
     }
+  }
+
+  async function prepareGitAction(action: VaultGitAction): Promise<boolean> {
+    if (!dirty) return true
+    if (action === 'pull' || action === 'continue-operation') return saveSelected()
+    return true
+  }
+
+  async function refreshAfterGitAction(): Promise<void> {
+    await Promise.all([load(), reloadSelectedFromDisk(), refreshGitChangeCount()])
   }
 
   function beginCreateFile(): void {
@@ -302,7 +383,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
           <VaultAction label={t('json.vault.newFolder')} onClick={beginCreateFolder}><FolderPlus size={14} /></VaultAction>
           <VaultAction label={t('json.vault.save')} onClick={() => { void saveSelected() }}><Save size={14} /></VaultAction>
           <VaultAction label={t('json.vault.delete')} disabled={!selectedEntry} onClick={() => { void deleteSelected() }}><Trash2 size={14} /></VaultAction>
-          <VaultAction label={t('json.git.open')} onClick={() => setGitDialogOpen(true)}><GitBranch size={14} /></VaultAction>
+          <VaultAction label={t('json.git.open')} badge={gitChangeCount} onClick={() => setGitDialogOpen(true)}><GitBranch size={14} /></VaultAction>
         </div>
       </header>
       <div className="vault-panel__options">
@@ -313,6 +394,8 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
         <details className="vault-more-menu">
           <summary aria-label={t('json.vault.more')} title={t('json.vault.more')}><MoreHorizontal size={14} /></summary>
           <div>
+            <MenuAction icon={Pencil} label={t('json.vault.rename')} disabled={!selectedEntry} onClick={() => beginRename()} />
+            <MenuAction icon={Move} label={t('json.vault.move')} disabled={!selectedEntry} onClick={() => beginMove()} />
             <MenuAction icon={Copy} label={t('json.vault.duplicate')} disabled={selectedEntry?.kind !== 'file'} onClick={() => { void duplicateSelected() }} />
             <MenuAction icon={RefreshCw} label={t('json.vault.refresh')} onClick={() => { void load() }} />
             <MenuAction icon={FolderOpen} label={t('json.vault.openFolder')} onClick={() => { void window.mootool.openJsonVault() }} />
@@ -403,7 +486,12 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
           </select>
         </label>
       </Dialog>
-      <VaultGitDialog open={gitDialogOpen} onClose={() => setGitDialogOpen(false)} onVaultChange={() => { void load() }} />
+      <VaultGitDialog
+        open={gitDialogOpen}
+        onClose={() => setGitDialogOpen(false)}
+        beforeWorkingTreeChange={prepareGitAction}
+        onVaultChange={refreshAfterGitAction}
+      />
     </aside>
   )
 }
@@ -482,8 +570,9 @@ export function canMoveJsonVaultEntry(path: string, targetDirectory: string): bo
     && !targetDirectory.startsWith(`${path}/`)
 }
 
-function VaultAction({ label, disabled = false, onClick, children }: { label: string; disabled?: boolean; onClick: () => void; children: React.ReactNode }) {
-  return <Tooltip content={label}><button type="button" aria-label={label} disabled={disabled} onClick={onClick}>{children}</button></Tooltip>
+function VaultAction({ label, disabled = false, badge = 0, onClick, children }: { label: string; disabled?: boolean; badge?: number; onClick: () => void; children: React.ReactNode }) {
+  const accessibleLabel = badge > 0 ? `${label} (${badge})` : label
+  return <Tooltip content={accessibleLabel}><button type="button" aria-label={accessibleLabel} disabled={disabled} onClick={onClick}>{children}{badge > 0 && <span className="vault-git-badge">{badge > 99 ? '99+' : badge}</span>}</button></Tooltip>
 }
 
 function MenuAction({ icon: Icon, label, disabled = false, onClick }: { icon: typeof Copy; label: string; disabled?: boolean; onClick: () => void }) {
