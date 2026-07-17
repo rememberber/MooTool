@@ -49,6 +49,8 @@
   --shadow: rgba(20, 20, 20, 0.06);
   --shadow-soft: rgba(20, 20, 20, 0.045);
   --pattern-dot: #d6d6da;
+  --sidebar-vibrancy-tint: rgba(241, 242, 244, 0.38);
+  --sidebar-vibrancy-border: rgba(80, 80, 86, 0.16);
   --window-drag-height: 52px;
   --app-font-size: 13px;
   --app-font-family: system-ui;
@@ -99,6 +101,8 @@
   --shadow: rgba(0, 0, 0, 0.32);
   --shadow-soft: rgba(0, 0, 0, 0.22);
   --pattern-dot: #34353a;
+  --sidebar-vibrancy-tint: rgba(32, 33, 36, 0.42);
+  --sidebar-vibrancy-border: rgba(255, 255, 255, 0.1);
 }
 
 /* Phase 6 Quick Note */
@@ -1317,6 +1321,21 @@ select:not([multiple]) {
   background: var(--sidebar);
   border-right: 1px solid var(--border);
   overflow: hidden;
+}
+
+/* The BrowserWindow supplies the native NSVisualEffectView on macOS. Only the
+ * main window and navigation column reveal it; content and auxiliary windows
+ * keep their normal opaque surfaces. */
+:root[data-platform='darwin'][data-window='main'],
+:root[data-platform='darwin'][data-window='main'] body,
+:root[data-platform='darwin'][data-window='main'] #root,
+:root[data-platform='darwin'][data-window='main'] .app-shell {
+  background: transparent;
+}
+
+:root[data-platform='darwin'][data-window='main'] .sidebar {
+  background: var(--sidebar-vibrancy-tint);
+  border-right-color: var(--sidebar-vibrancy-border);
 }
 
 .sidebar-scroll {

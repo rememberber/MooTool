@@ -242,11 +242,12 @@ function createMainWindow(): BrowserWindow {
     minWidth: 1080,
     minHeight: 720,
     show: false,
-    backgroundColor: dark ? '#171719' : '#f7f7f8',
+    transparent: process.platform === 'darwin',
+    backgroundColor: process.platform === 'darwin' ? '#00000000' : dark ? '#171719' : '#f7f7f8',
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 18, y: 18 },
     vibrancy: process.platform === 'darwin' ? 'sidebar' : undefined,
-    visualEffectState: process.platform === 'darwin' ? 'active' : undefined,
+    visualEffectState: process.platform === 'darwin' ? 'followWindow' : undefined,
     icon: app.isPackaged ? undefined : getDevelopmentIconPath(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -1638,10 +1639,12 @@ app.whenReady().then(async () => {
 
   nativeTheme.on('updated', () => {
     const systemTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
-    toolWindowManager.updateBackground(systemTheme === 'dark' ? '#171719' : '#f7f7f8')
-    for (const window of BrowserWindow.getAllWindows()) {
-      window.setBackgroundColor(systemTheme === 'dark' ? '#171719' : '#f7f7f8')
-      window.webContents.send('theme:system-changed', systemTheme)
+    const opaqueBackground = systemTheme === 'dark' ? '#171719' : '#f7f7f8'
+    toolWindowManager.updateBackground(opaqueBackground)
+    for (const browserWindow of BrowserWindow.getAllWindows()) {
+      const preserveMainWindowVibrancy = process.platform === 'darwin' && browserWindow === mainWindow
+      browserWindow.setBackgroundColor(preserveMainWindowVibrancy ? '#00000000' : opaqueBackground)
+      browserWindow.webContents.send('theme:system-changed', systemTheme)
     }
     toolWindowManager.sendToAll('theme:system-changed', systemTheme)
   })

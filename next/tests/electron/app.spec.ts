@@ -61,6 +61,46 @@ test.afterAll(async () => {
   await rm(userDataDirectory, { recursive: true, force: true })
 })
 
+test('uses native translucency for the macOS sidebar only', async () => {
+  const appearance = await mainPage.evaluate(() => {
+    const alpha = (selector: string) => {
+      const element = document.querySelector(selector)
+      if (!element) throw new Error(`Missing ${selector}`)
+      const canvas = document.createElement('canvas')
+      canvas.width = 1
+      canvas.height = 1
+      const context = canvas.getContext('2d')
+      if (!context) throw new Error('Canvas context is unavailable')
+      context.fillStyle = getComputedStyle(element).backgroundColor
+      context.fillRect(0, 0, 1, 1)
+      return context.getImageData(0, 0, 1, 1).data[3]
+    }
+
+    return {
+      platform: document.documentElement.dataset.platform,
+      windowType: document.documentElement.dataset.window,
+      bodyAlpha: alpha('body'),
+      shellAlpha: alpha('.app-shell'),
+      sidebarAlpha: alpha('.sidebar'),
+      workspaceAlpha: alpha('.workspace')
+    }
+  })
+
+  expect(appearance.platform).toBe(process.platform)
+  expect(appearance.windowType).toBe('main')
+  if (process.platform === 'darwin') {
+    expect(appearance.bodyAlpha).toBe(0)
+    expect(appearance.shellAlpha).toBe(0)
+    expect(appearance.sidebarAlpha).toBeGreaterThan(0)
+    expect(appearance.sidebarAlpha).toBeLessThan(255)
+    expect(appearance.workspaceAlpha).toBe(255)
+  } else {
+    expect(appearance.bodyAlpha).toBe(255)
+    expect(appearance.shellAlpha).toBe(255)
+    expect(appearance.sidebarAlpha).toBe(255)
+  }
+})
+
 test('matches the Java home content and persists sidebar collapse state', async () => {
   await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({
     appearance: { accentColor: 'blue', fontSize: 13 },
