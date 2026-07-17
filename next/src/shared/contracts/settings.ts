@@ -1,4 +1,4 @@
-export const appSettingsSchemaVersion = 5
+export const appSettingsSchemaVersion = 6
 
 export type AppLanguage = 'zh-CN' | 'en-US' | 'ja-JP'
 export type ThemePreference = 'system' | 'light' | 'dark'
@@ -20,6 +20,7 @@ export type AppSettings = {
   general: {
     language: AppLanguage
     autoCheckUpdates: boolean
+    autoDownloadUpdates: boolean
     startMaximized: boolean
     closeBehavior: CloseBehavior
     trayEnabled: boolean
@@ -107,6 +108,7 @@ export const defaultAppSettings: AppSettings = {
   general: {
     language: 'zh-CN',
     autoCheckUpdates: true,
+    autoDownloadUpdates: true,
     startMaximized: false,
     closeBehavior: 'ask',
     trayEnabled: true

@@ -16,6 +16,7 @@ import {
   type OpenDialogOptions
 } from 'electron'
 import Store from 'electron-store'
+import { autoUpdater } from 'electron-updater'
 import { execFile } from 'node:child_process'
 import { createHash, getHashes } from 'node:crypto'
 import { createReadStream, watch, type FSWatcher } from 'node:fs'
@@ -64,7 +65,7 @@ import { codeRuntimeIds, type RuntimeExecutionInput } from '../../src/shared/con
 import { favoriteKinds, type FavoriteKind, type SaveFavoriteInput } from '../../src/shared/contracts/favorites'
 import { backupKinds, type BackupKind, type BackupLocation } from '../../src/shared/contracts/backup'
 import type { LegacyMigrationInput } from '../../src/shared/contracts/migration'
-import type { UpdateCheckEvent, UpdateCheckResult } from '../../src/shared/contracts/update'
+import type { UpdateCheckEvent, UpdateCheckResult, UpdateDownloadState } from '../../src/shared/contracts/update'
 import { BackupService } from './backupService'
 import { FavoriteRepository } from './favoriteRepository'
 import { HistoryRepository } from './historyRepository'
@@ -91,6 +92,7 @@ import {
 import { inspectPdf, mergePdfs, splitPdfs } from './pdfService'
 import { SystemService } from './systemService'
 import { defaultReleaseUrl, UpdateService } from './updateService'
+import { UpdateManager, type UpdateAdapter } from './updateManager'
 import { VaultGitService } from './vaultGitService'
 
 type PersistedStore = {
@@ -151,6 +153,11 @@ let updateCheckPromise: Promise<UpdateCheckResult> | null = null
 let lastUpdateResult: UpdateCheckResult | null = null
 const allowedPdfPaths = new Set<string>()
 const updateService = new UpdateService(process.env.MOOTOOL_UPDATE_FEED_URL || undefined)
+const updateManager = new UpdateManager(
+  autoUpdater as unknown as UpdateAdapter,
+  app.isPackaged && process.env.NODE_ENV !== 'test',
+  (state) => broadcast('update:state-changed', state)
+)
 
 function getDevelopmentIconPath(): string {
   const filename = process.platform === 'darwin' ? 'icon-mac.png' : process.platform === 'win32' ? 'icon.ico' : 'icon.png'
@@ -363,13 +370,19 @@ function registerIpc(): void {
     BrowserWindow.fromWebContents(event.sender)?.close()
   })
   ipcMain.handle('update:check', () => checkForUpdates())
+  ipcMain.handle('update:get-state', (): UpdateDownloadState => updateManager.getState())
   ipcMain.handle('update:open-release', async () => {
     await shell.openExternal(lastUpdateResult?.releaseUrl ?? defaultReleaseUrl)
   })
-  ipcMain.handle('update:download', async () => {
-    const download = lastUpdateResult?.status === 'available' ? lastUpdateResult.download : null
-    if (!download) throw new Error('No compatible update download is available')
-    await shell.openExternal(download.url)
+  ipcMain.handle('update:download', () => updateManager.download())
+  ipcMain.handle('update:install', () => {
+    isQuitting = true
+    try {
+      updateManager.install()
+    } catch (error) {
+      isQuitting = false
+      throw error
+    }
   })
   ipcMain.handle('app:open-project', async () => {
     await shell.openExternal(externalPages.github)
@@ -1138,6 +1151,7 @@ function applySettings(settings: AppSettings): void {
   configureJsonVaultWatcher()
   configureJsonVaultAutoPull(settings)
   configureUpdateChecks(settings)
+  updateManager.setAutoDownload(settings.general.autoDownloadUpdates)
 }
 
 function rebuildApplicationMenu(language: AppLanguage): void {
@@ -1221,6 +1235,7 @@ function checkForUpdates(): Promise<UpdateCheckResult> {
     updateCheckPromise = updateService.check(app.getVersion())
       .then((result) => {
         lastUpdateResult = result
+        updateManager.prepare(result, store.get('settings').general.autoDownloadUpdates)
         return result
       })
       .finally(() => {

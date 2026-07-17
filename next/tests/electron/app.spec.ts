@@ -283,6 +283,11 @@ test('opens the settings window and synchronizes appearance changes', async () =
 
   await expect(settingsPage.locator('.settings-nav__item')).toHaveCount(11)
   const trayToggle = settingsPage.getByRole('switch', { name: '启用系统托盘' })
+  const autoDownloadToggle = settingsPage.getByRole('switch', { name: '自动静默下载新版' })
+  await expect(autoDownloadToggle).toHaveAttribute('aria-checked', 'true')
+  await autoDownloadToggle.click()
+  await expect.poll(() => settingsPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ general: { autoDownloadUpdates: false } })
+  await autoDownloadToggle.click()
   await expect(trayToggle).toHaveAttribute('aria-checked', 'true')
   await trayToggle.click()
   await expect.poll(() => settingsPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ general: { trayEnabled: false } })
@@ -331,12 +336,38 @@ test('opens the settings window and synchronizes appearance changes', async () =
   await settingsPage.getByRole('button', { name: '检查更新', exact: true }).click()
   await expect(settingsPage.locator('.settings-update-result')).toContainText('发现新版本 9.9.9')
   await expect(settingsPage.locator('.settings-update-result')).toContainText('MooTool Next Electron')
-  await expect(settingsPage.getByRole('button', { name: '下载本机版本', exact: true })).toBeVisible()
+  await expect(settingsPage.getByRole('button', { name: '下载更新', exact: true })).toBeVisible()
   const update = await settingsPage.evaluate(() => window.mootool.checkForUpdates())
   expect(update).toMatchObject({ productId: 'next-electron', latestVersion: '9.9.9' })
   expect(update.download?.fileName).toBe('MooTool-Next-Electron-9.9.9-test.bin')
+  await expect.poll(() => settingsPage.evaluate(() => window.mootool.getUpdateState())).toMatchObject({ status: 'available', version: '9.9.9' })
 
   await settingsPage.locator('.settings-titlebar .icon-ghost').click()
+
+  await electronApp.evaluate(({ BrowserWindow }) => {
+    BrowserWindow.getAllWindows().find((window) => !window.getParentWindow())?.webContents.send('update:state-changed', {
+      status: 'ready',
+      version: '9.9.9',
+      fileName: 'MooTool-Next-Electron-9.9.9-test.bin',
+      percent: 100,
+      transferred: 100,
+      total: 100,
+      message: null
+    })
+  })
+  await expect(mainPage.getByRole('button', { name: /安装并重启/ })).toContainText('新版本 9.9.9 已就绪')
+  await electronApp.evaluate(({ BrowserWindow }) => {
+    BrowserWindow.getAllWindows().find((window) => !window.getParentWindow())?.webContents.send('update:state-changed', {
+      status: 'idle',
+      version: null,
+      fileName: null,
+      percent: null,
+      transferred: null,
+      total: null,
+      message: null
+    })
+  })
+  await expect(mainPage.locator('.sidebar-update-action')).toHaveCount(0)
 })
 
 test('runs P3 time, encode, UA, calculator and config workflows', async () => {

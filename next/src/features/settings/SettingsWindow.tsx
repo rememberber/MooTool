@@ -32,6 +32,7 @@ import { translationLanguageCodes } from '@/shared/contracts/network'
 import type { BackupInfo, BackupKind, BackupLocation } from '@/shared/contracts/backup'
 import type { LegacyMigrationPreview, LegacyMigrationWarning } from '@/shared/contracts/migration'
 import type { UpdateCheckResult } from '@/shared/contracts/update'
+import { useUpdateState } from '@/shared/hooks/useUpdateState'
 import { Dialog } from '@/shared/components/Dialog'
 import { useToast } from '@/shared/feedback/ToastProvider'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
@@ -154,6 +155,9 @@ function GeneralSettings({ settings, commit }: SettingsPanelProps) {
       </SettingRow>
       <SettingRow label={t('settings.autoCheckUpdates')}>
         <Toggle checked={settings.general.autoCheckUpdates} label={t('settings.autoCheckUpdates')} onChange={(value) => commit({ general: { autoCheckUpdates: value } })} />
+      </SettingRow>
+      <SettingRow label={t('settings.autoDownloadUpdates')}>
+        <Toggle checked={settings.general.autoDownloadUpdates} label={t('settings.autoDownloadUpdates')} onChange={(value) => commit({ general: { autoDownloadUpdates: value } })} />
       </SettingRow>
       <SettingRow label={t('settings.startMaximized')}>
         <Toggle checked={settings.general.startMaximized} label={t('settings.startMaximized')} onChange={(value) => commit({ general: { startMaximized: value } })} />
@@ -586,6 +590,7 @@ function AboutSettings() {
   const [version, setVersion] = useState('')
   const [checking, setChecking] = useState(false)
   const [result, setResult] = useState<UpdateCheckResult | null>(null)
+  const updateState = useUpdateState()
   useEffect(() => { void window.mootool.getAppVersion().then(setVersion) }, [])
 
   function check(): void {
@@ -598,6 +603,10 @@ function AboutSettings() {
 
   function downloadUpdate(): void {
     void window.mootool.downloadUpdate().catch(() => toast.error(t('settings.update.downloadFailed')))
+  }
+
+  function installUpdate(): void {
+    void window.mootool.installUpdate().catch(() => toast.error(t('settings.update.installFailed')))
   }
 
   return (
@@ -632,9 +641,17 @@ function AboutSettings() {
           {result.status === 'available' && (
             <>
               <div className="settings-update-result__actions">
-                {result.download && (
-                  <button className="settings-command" type="button" onClick={downloadUpdate}>
-                    <Download size={14} />{t('settings.update.download')}
+                {result.download && updateState.status === 'ready' && (
+                  <button className="settings-command" type="button" onClick={installUpdate}>
+                    <RefreshCw size={14} />{t('settings.update.installRestart')}
+                  </button>
+                )}
+                {result.download && updateState.status !== 'ready' && (
+                  <button className="settings-command" type="button" disabled={updateState.status === 'downloading'} onClick={downloadUpdate}>
+                    <Download size={14} />
+                    {updateState.status === 'downloading'
+                      ? t('settings.update.downloading', { percent: String(updateState.percent ?? 0) })
+                      : t('settings.update.download')}
                   </button>
                 )}
                 <button className="settings-command settings-command--quiet" type="button" onClick={() => { void window.mootool.openReleasePage() }}>
@@ -644,6 +661,9 @@ function AboutSettings() {
               {result.download
                 ? <code className="settings-update-result__file">{result.download.fileName}</code>
                 : <span className="settings-update-result__missing">{t('settings.update.noDownload')}</span>}
+              {updateState.status === 'error' && updateState.message && (
+                <span className="settings-update-result__error">{updateState.message}</span>
+              )}
               {result.releaseNotes && <pre>{result.releaseNotes}</pre>}
             </>
           )}

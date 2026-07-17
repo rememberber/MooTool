@@ -16,7 +16,7 @@ import type { EnvironmentSnapshot, HostProfile, LocalAddressSnapshot, NetworkCom
 import type { RuntimeExecutionInput, RuntimeExecutionResult, RuntimeOutputEvent } from './src/shared/contracts/runtime'
 import type { BackupExportResult, BackupInfo, BackupKind, BackupLocation } from './src/shared/contracts/backup'
 import type { LegacyMigrationInput, LegacyMigrationPreview, LegacyMigrationResult } from './src/shared/contracts/migration'
-import type { UpdateCheckEvent, UpdateCheckResult } from './src/shared/contracts/update'
+import type { UpdateCheckEvent, UpdateCheckResult, UpdateDownloadState } from './src/shared/contracts/update'
 
 declare global {
   interface Window {
@@ -123,7 +123,9 @@ declare global {
       previewLegacyMigration: (input: LegacyMigrationInput) => Promise<LegacyMigrationPreview>
       runLegacyMigration: (input: LegacyMigrationInput) => Promise<LegacyMigrationResult>
       checkForUpdates: () => Promise<UpdateCheckResult>
-      downloadUpdate: () => Promise<void>
+      getUpdateState: () => Promise<UpdateDownloadState>
+      downloadUpdate: () => Promise<UpdateDownloadState>
+      installUpdate: () => Promise<void>
       openReleasePage: () => Promise<void>
       openProjectPage: () => Promise<void>
       openExternalPage: (pageId: ExternalPageId) => Promise<void>
@@ -137,6 +139,7 @@ declare global {
       onQuickNoteVaultChange: (callback: (relativePath: string) => void) => () => void
       onRuntimeOutput: (callback: (event: RuntimeOutputEvent) => void) => () => void
       onUpdateCheck: (callback: (event: UpdateCheckEvent) => void) => () => void
+      onUpdateStateChange: (callback: (state: UpdateDownloadState) => void) => () => void
     }
   }
 }

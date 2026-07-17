@@ -41,6 +41,7 @@
     "diff": "^9.0.0",
     "dompurify": "^3.4.12",
     "electron-store": "^10.0.0",
+    "electron-updater": "^6.8.9",
     "expr-eval": "^2.0.2",
     "fast-xml-parser": "^5.10.0",
     "hi-base32": "^0.5.1",
@@ -86,6 +87,12 @@
     "appId": "com.rememberber.mootool.next.electron",
     "productName": "MooTool Next Electron",
     "artifactName": "MooTool-Next-Electron-${version}-${os}-${arch}.${ext}",
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v${version}"
+      }
+    ],
     "asar": true,
     "directories": {
       "buildResources": "resources",

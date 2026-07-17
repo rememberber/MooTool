@@ -7,6 +7,7 @@ it('uses the MooTool Next visual defaults', () => {
   expect(defaultAppSettings.appearance.fontSize).toBe(13)
   expect(defaultAppSettings.layout.navigationStyle).toBe('classic')
   expect(defaultAppSettings.editor.quickNoteFontSize).toBe(14)
+  expect(defaultAppSettings.general.autoDownloadUpdates).toBe(true)
 })
 
 describe('mergeSettings', () => {
@@ -39,7 +40,7 @@ describe('mergeSettings', () => {
     expect(settings.tools.translationProvider).toBe('bing')
   })
 
-  it('fills the modern interface style, runtime drafts, options and pane sizes when migrating schema v2 settings', () => {
+  it('fills current defaults when migrating schema v2 settings', () => {
     const settings = mergeSettings(defaultAppSettings, {
       schemaVersion: 2,
       runtime: {
@@ -50,12 +51,13 @@ describe('mergeSettings', () => {
       }
     })
 
-    expect(settings.schemaVersion).toBe(5)
+    expect(settings.schemaVersion).toBe(6)
     expect(settings.appearance.interfaceStyle).toBe('modern')
     expect(settings.runtime.javaPath).toBe('/opt/java')
     expect(settings.runtime.drafts).toEqual(defaultAppSettings.runtime.drafts)
     expect(settings.runtime.options).toEqual(defaultAppSettings.runtime.options)
     expect(settings.layout.paneSizes).toEqual({})
+    expect(settings.general.autoDownloadUpdates).toBe(true)
   })
 
   it('normalizes persisted workspace pane sizes', () => {

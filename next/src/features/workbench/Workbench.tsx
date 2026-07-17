@@ -9,6 +9,7 @@ import { Tooltip } from '@/shared/components/Tooltip'
 import { ToolActivityProvider } from '@/shared/components/ToolActivity'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { useSettings } from '@/features/settings/SettingsProvider'
+import { UpdateReadyAction } from './UpdateReadyAction'
 
 export function Workbench() {
   const { language, languageLabels, languages, setLanguage, t } = useI18n()
@@ -135,6 +136,8 @@ export function Workbench() {
             </div>}
           </section>}
         </div>
+
+        <UpdateReadyAction />
 
         <div className="sidebar-footer">
           <div className="brand-mark">

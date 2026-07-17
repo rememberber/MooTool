@@ -15,7 +15,7 @@ import type { EnvironmentSnapshot, HostProfile, LocalAddressSnapshot, NetworkCom
 import type { RuntimeExecutionInput, RuntimeExecutionResult, RuntimeOutputEvent } from '../../src/shared/contracts/runtime'
 import type { BackupExportResult, BackupInfo, BackupKind, BackupLocation } from '../../src/shared/contracts/backup'
 import type { LegacyMigrationInput, LegacyMigrationPreview, LegacyMigrationResult } from '../../src/shared/contracts/migration'
-import type { UpdateCheckEvent, UpdateCheckResult } from '../../src/shared/contracts/update'
+import type { UpdateCheckEvent, UpdateCheckResult, UpdateDownloadState } from '../../src/shared/contracts/update'
 
 contextBridge.exposeInMainWorld('mootool', {
   platform: process.platform,
@@ -120,7 +120,9 @@ contextBridge.exposeInMainWorld('mootool', {
   previewLegacyMigration: (input: LegacyMigrationInput): Promise<LegacyMigrationPreview> => ipcRenderer.invoke('legacy-migration:preview', input),
   runLegacyMigration: (input: LegacyMigrationInput): Promise<LegacyMigrationResult> => ipcRenderer.invoke('legacy-migration:run', input),
   checkForUpdates: (): Promise<UpdateCheckResult> => ipcRenderer.invoke('update:check'),
-  downloadUpdate: (): Promise<void> => ipcRenderer.invoke('update:download'),
+  getUpdateState: (): Promise<UpdateDownloadState> => ipcRenderer.invoke('update:get-state'),
+  downloadUpdate: (): Promise<UpdateDownloadState> => ipcRenderer.invoke('update:download'),
+  installUpdate: (): Promise<void> => ipcRenderer.invoke('update:install'),
   openReleasePage: (): Promise<void> => ipcRenderer.invoke('update:open-release'),
   openProjectPage: (): Promise<void> => ipcRenderer.invoke('app:open-project'),
   openExternalPage: (pageId: ExternalPageId): Promise<void> => ipcRenderer.invoke('app:open-external', pageId),
@@ -133,7 +135,8 @@ contextBridge.exposeInMainWorld('mootool', {
   onJsonVaultChange: (callback: (relativePath: string) => void) => subscribe('json-vault:changed', callback),
   onQuickNoteVaultChange: (callback: (relativePath: string) => void) => subscribe('quick-note:vault-changed', callback),
   onRuntimeOutput: (callback: (event: RuntimeOutputEvent) => void) => subscribe('runtime:output', callback),
-  onUpdateCheck: (callback: (event: UpdateCheckEvent) => void) => subscribe('update:checked', callback)
+  onUpdateCheck: (callback: (event: UpdateCheckEvent) => void) => subscribe('update:checked', callback),
+  onUpdateStateChange: (callback: (state: UpdateDownloadState) => void) => subscribe('update:state-changed', callback)
 })
 
 function subscribe<T>(channel: string, callback: (payload: T) => void): () => void {

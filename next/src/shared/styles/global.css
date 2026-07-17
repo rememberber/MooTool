@@ -1489,6 +1489,57 @@ button {
   margin-top: auto;
 }
 
+.sidebar-update-action {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  min-height: 54px;
+  padding: 9px 10px;
+  margin: 0 0 12px;
+  color: var(--accent-contrast);
+  background: var(--accent-strong);
+  border-radius: 9px;
+  box-shadow: 0 5px 16px color-mix(in srgb, var(--accent-strong) 22%, transparent);
+  text-align: left;
+  cursor: pointer;
+}
+
+.sidebar-update-action:hover {
+  background: color-mix(in srgb, var(--accent-strong) 88%, #000);
+}
+
+.sidebar-update-action:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
+.sidebar-update-action svg {
+  flex: 0 0 auto;
+}
+
+.sidebar-update-action span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.sidebar-update-action strong,
+.sidebar-update-action small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.sidebar-update-action strong {
+  font-size: 12px;
+}
+
+.sidebar-update-action small {
+  opacity: 0.78;
+  font-size: 10px;
+}
+
 .app-shell--compact-nav .tool-button,
 .app-shell--compact-nav .recent-item {
   min-height: 30px;
@@ -1558,6 +1609,16 @@ button {
 
 .app-shell--hide-nav-titles .sidebar-footer {
   justify-content: center;
+}
+
+.app-shell--hide-nav-titles .sidebar-update-action {
+  justify-content: center;
+  min-height: 42px;
+  padding: 0;
+}
+
+.app-shell--hide-nav-titles .sidebar-update-action span {
+  display: none;
 }
 
 .app-shell--hide-nav-titles .footer-controls {
@@ -5668,6 +5729,12 @@ button {
 
 .settings-update-result__missing {
   grid-column: 1 / -1;
+}
+
+.settings-update-result__error {
+  grid-column: 1 / -1;
+  color: var(--error-text);
+  font-size: 12px;
 }
 
 .settings-update-result pre {

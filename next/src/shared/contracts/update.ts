@@ -31,3 +31,15 @@ export type UpdateCheckResult = {
 export type UpdateCheckEvent =
   | { type: 'result'; result: UpdateCheckResult }
   | { type: 'error'; message: string }
+
+export type UpdateDownloadStatus = 'idle' | 'available' | 'downloading' | 'ready' | 'error'
+
+export type UpdateDownloadState = {
+  status: UpdateDownloadStatus
+  version: string | null
+  fileName: string | null
+  percent: number | null
+  transferred: number | null
+  total: number | null
+  message: string | null
+}
