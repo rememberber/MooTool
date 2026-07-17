@@ -41,6 +41,21 @@ jobs:
         with:
           python-version: '3.11'
 
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: next/package-lock.json
+
+      - name: Install Electron dependencies
+        working-directory: next
+        run: npm ci
+
+      - name: Test Electron application
+        working-directory: next
+        run: npm run check
+
       - name: Validate tag, package version, and release notes
         id: release
         shell: bash
@@ -111,8 +126,8 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Test and build
-        run: npm run check
+      - name: Build
+        run: npm run build
 
       - name: Package
         run: ${{ matrix.command }}

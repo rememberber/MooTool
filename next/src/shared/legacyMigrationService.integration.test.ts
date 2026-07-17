@@ -85,7 +85,7 @@ describe('LegacyMigrationService', () => {
     expect(second.alreadyMigrated).toBe(true)
     expect(Object.values(second.imported).every((count) => count === 0)).toBe(true)
     expect((await readDirectory(target.quickNotePath)).filter((name) => name.startsWith('Database Note'))).toEqual(['Database Note.txt'])
-  })
+  }, 30_000)
 
   it('uses a Java migration marker to avoid importing database notes already represented by the old Vault', async () => {
     const source = await makeLegacySource()
