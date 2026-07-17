@@ -117,6 +117,10 @@ class ManageReleasesTests(unittest.TestCase):
             info = java_release_info(root, "v1.10.0")
             self.assertEqual(info.title, "MooTool Java 1.10.0")
             self.assertIn("- 修复版本比较", info.notes)
+            self.assertIn("## English", info.notes)
+            self.assertIn("- Fix version comparison", info.notes)
+            self.assertIn("## 日本語", info.notes)
+            self.assertIn("- バージョン比較を修正", info.notes)
             with self.assertRaisesRegex(ValueError, "Java tag must be"):
                 java_release_info(root, "v1.9.0")
 
@@ -126,7 +130,8 @@ class ManageReleasesTests(unittest.TestCase):
         (root / "next/package.json").write_text(json.dumps({"version": version}), encoding="utf-8")
         title = f"MooTool Next Electron {version}"
         (root / f"next/release-notes/{version}.md").write_text(
-            f"# {title}\n\n> 产品线：MooTool Next Electron\n\n## 更新内容\n\n- 独立更新。\n",
+            f"# {title}\n\n## English\n\n- Independent updates.\n\n"
+            "## 中文\n\n- 独立更新。\n\n## 日本語\n\n- 独立して更新します。\n",
             encoding="utf-8",
         )
 
@@ -163,6 +168,10 @@ class ManageReleasesTests(unittest.TestCase):
                 "version": tag,
                 "title": "维护版本",
                 "log": "● 修复版本比较\n● 更新发布说明\n",
+                "titleEn": "Maintenance release",
+                "logEn": "● Fix version comparison\n● Update release notes\n",
+                "titleJa": "メンテナンスリリース",
+                "logJa": "● バージョン比較を修正\n● リリースノートを更新\n",
             }],
         }), encoding="utf-8")
 

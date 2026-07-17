@@ -44,6 +44,7 @@ next-tauri-v1.0.0              # Tauri 1.0.0
 - Release Notes 只能比较同一产品线的前后两个 tag，不能把另一产品的最近 tag 当作上一个版本。
 - Electron 的版本说明以 `next/release-notes/{version}.md` 为唯一人工维护来源，GitHub Release 和 `update-manifest.json` 均从该文件生成。
 - Java 的版本说明继续以 `src/main/resources/version_summary.json` 为唯一人工维护来源，GitHub Release 从当前版本节点生成。
+- GitHub Release 正文必须依次包含 English、中文、日本語三部分。Java 当前版本节点必须提供 `title`/`log`、`titleEn`/`logEn`、`titleJa`/`logJa`；Electron 版本 Markdown 必须直接维护完整三语内容。
 
 建议在 Release 正文顶部使用类似说明：
 

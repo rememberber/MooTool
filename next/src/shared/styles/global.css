@@ -2448,36 +2448,6 @@ select:not([multiple]) {
   white-space: nowrap;
 }
 
-.vault-new-field {
-  display: flex;
-  flex-direction: column;
-  gap: 7px;
-  color: var(--text-muted);
-  font-size: 11px;
-}
-
-.vault-new-field input {
-  width: 100%;
-  height: 34px;
-  padding: 0 10px;
-  color: var(--text-body);
-  background: var(--workspace);
-  border: 1px solid var(--border-control);
-  border-radius: 6px;
-  outline: none;
-  font: inherit;
-}
-
-.vault-new-field select {
-  width: 100%;
-  height: 34px;
-}
-
-.vault-new-field input:focus {
-  border-color: var(--accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
-}
-
 .editor-shell {
   display: flex;
   min-width: 0;
@@ -3502,6 +3472,39 @@ select:not([multiple]) {
 .dialog__footer {
   justify-content: flex-end;
   border-top: 1px solid var(--border-soft);
+}
+
+.dialog-field,
+.vault-new-field {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.dialog-field > input,
+.dialog-field > select,
+.vault-new-field > input,
+.vault-new-field > select {
+  width: 100%;
+  min-width: 0;
+  height: 34px;
+  padding: 0 10px;
+  color: var(--text-body);
+  background: var(--workspace);
+  border: 1px solid var(--border-control);
+  border-radius: 6px;
+  outline: none;
+  font: inherit;
+}
+
+.dialog-field > input:focus,
+.dialog-field > select:focus,
+.vault-new-field > input:focus,
+.vault-new-field > select:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
 }
 
 .dialog-button {

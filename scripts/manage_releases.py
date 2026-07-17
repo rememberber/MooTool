@@ -164,6 +164,15 @@ def parse_release_notes(path: Path, expected_title: str) -> tuple[str, str]:
     return content, notes
 
 
+def validate_multilingual_release_notes(notes: str, path: Path) -> None:
+    headings = ("## English", "## 中文", "## 日本語")
+    positions = [notes.find(heading) for heading in headings]
+    if any(position < 0 for position in positions) or positions != sorted(positions):
+        raise ValueError(
+            f"Release notes must contain English, 中文, and 日本語 sections in that order: {path}"
+        )
+
+
 def electron_release_info(project_root: Path, tag: str) -> ReleaseInfo:
     package_path = project_root / "next" / "package.json"
     package = load_json(package_path)
@@ -177,6 +186,7 @@ def electron_release_info(project_root: Path, tag: str) -> ReleaseInfo:
     title = f"MooTool Next Electron {version}"
     notes_path = project_root / "next" / "release-notes" / f"{version}.md"
     _, notes = parse_release_notes(notes_path, title)
+    validate_multilingual_release_notes(notes, notes_path)
     return ReleaseInfo(version, tag, title, notes, notes_path, bool(parsed.prerelease))
 
 
@@ -215,34 +225,67 @@ def java_release_info(project_root: Path, tag: str) -> ReleaseInfo:
     if not isinstance(details, list):
         raise ValueError("version_summary.versionDetailList must be an array")
     detail = next((item for item in details if isinstance(item, dict) and item.get("version") == tag), None)
-    if detail is None or not isinstance(detail.get("title"), str) or not isinstance(detail.get("log"), str):
+    localized_fields = ("title", "log", "titleEn", "logEn", "titleJa", "logJa")
+    if detail is None or any(
+        not isinstance(detail.get(field), str) or not detail[field].strip()
+        for field in localized_fields
+    ):
         raise ValueError(f"version_summary.versionDetailList is missing complete notes for {tag}")
 
     title = f"MooTool Java {version}"
-    notes = java_release_notes(version, detail["title"], detail["log"])
+    notes = java_release_notes(
+        version,
+        detail["title"], detail["log"],
+        detail["titleEn"], detail["logEn"],
+        detail["titleJa"], detail["logJa"],
+    )
     return ReleaseInfo(version, tag, title, notes, None, False)
 
 
-def java_release_notes(version: str, title: str, log: str) -> str:
-    changes = []
+def release_changes(log: str) -> list[str]:
+    changes: list[str] = []
     for raw_line in log.splitlines():
         line = raw_line.strip()
         if not line:
             continue
         changes.append(f"- {line[1:].strip()}" if line.startswith("●") else f"- {line}")
-    if not changes:
-        raise ValueError(f"MooTool Java {version} has no release notes")
+    return changes
+
+
+def java_release_notes(
+    version: str,
+    title_zh: str, log_zh: str,
+    title_en: str, log_en: str,
+    title_ja: str, log_ja: str,
+) -> str:
+    sections = (
+        ("English", "Release notes", title_en, log_en,
+         "This release updates MooTool Java only; it does not replace or upgrade MooTool Next Electron."),
+        ("中文", "更新内容", title_zh, log_zh,
+         "本版本只更新 MooTool Java，不会替换或升级 MooTool Next Electron。"),
+        ("日本語", "更新内容", title_ja, log_ja,
+         "このリリースは MooTool Java のみを更新し、MooTool Next Electron を置き換えたり更新したりしません。"),
+    )
+    rendered: list[str] = []
+    for language, heading, title, log, notice in sections:
+        changes = release_changes(log)
+        if not changes:
+            raise ValueError(f"MooTool Java {version} has no {language} release notes")
+        rendered.extend([
+            f"## {language}",
+            "",
+            f"> Product / 产品线 / 製品ライン: MooTool Java  ",
+            f"> Version / 版本 / バージョン: {version}  ",
+            f"> {notice}",
+            "",
+            f"### {heading}: {title}",
+            "",
+            *changes,
+            "",
+        ])
     return "\n".join([
-        "> 产品线：MooTool Java",
-        f"> 版本：{version}",
-        "> 本版本只更新 MooTool Java，不会替换或升级 MooTool Next Electron。",
-        "",
-        "## 更新内容",
-        "",
-        f"### {title}",
-        "",
-        *changes,
-    ])
+        *rendered,
+    ]).rstrip()
 
 
 def validate_metadata(path: Path, version: str, expected_payload: str) -> None:
