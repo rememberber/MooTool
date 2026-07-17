@@ -12,10 +12,16 @@ import {
 } from '@codemirror/view'
 import { forwardRef, useEffect, useImperativeHandle, useRef, type CSSProperties } from 'react'
 import { codeEditorSearchHighlight } from './codeEditorSearchHighlight'
+import {
+  clampCodeEditorSelection,
+  readCodeEditorViewState,
+  type CodeEditorViewState
+} from './codeEditorViewState'
 
 export type TextCodeEditorHandle = {
   focus: () => void
   getSelection: () => { start: number; end: number }
+  getViewState: () => CodeEditorViewState | null
   selectRange: (anchor: number, head: number) => void
   syncScroll: (verticalRatio: number, scrollLeft: number) => void
 }
@@ -37,9 +43,11 @@ export type TextCodeEditorProps = {
   fontSize?: number
   fontFamily?: string
   searchQuery?: string
+  initialViewState?: CodeEditorViewState
   onChange?: (value: string) => void
   onKeyDown?: (event: KeyboardEvent) => void
   onScroll?: (scroll: TextCodeEditorScroll) => void
+  onViewStateChange?: (state: CodeEditorViewState) => void
 }
 
 function editorMetrics(fontFamily?: string, fontSize?: number): Extension {
@@ -85,9 +93,11 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
     fontSize,
     fontFamily,
     searchQuery = '',
+    initialViewState,
     onChange,
     onKeyDown,
-    onScroll
+    onScroll,
+    onViewStateChange
   },
   ref
 ) {
@@ -96,9 +106,10 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
   const onChangeRef = useRef(onChange)
   const onKeyDownRef = useRef(onKeyDown)
   const onScrollRef = useRef(onScroll)
+  const onViewStateChangeRef = useRef(onViewStateChange)
   const localValueRef = useRef(value)
   const applyingExternalValueRef = useRef(false)
-  const initialConfigRef = useRef({ ariaLabel, id, testId, placeholder, readOnly, wrap, fontFamily, fontSize, searchQuery })
+  const initialConfigRef = useRef({ ariaLabel, id, testId, placeholder, readOnly, wrap, fontFamily, fontSize, searchQuery, initialViewState })
   const wrapCompartment = useCompartment()
   const attributesCompartment = useCompartment()
   const placeholderCompartment = useCompartment()
@@ -108,6 +119,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
   onChangeRef.current = onChange
   onKeyDownRef.current = onKeyDown
   onScrollRef.current = onScroll
+  onViewStateChangeRef.current = onViewStateChange
 
   useEffect(() => {
     if (!hostRef.current) return
@@ -116,6 +128,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
       parent: hostRef.current,
       state: EditorState.create({
         doc: localValueRef.current,
+        selection: clampCodeEditorSelection(initial.initialViewState, localValueRef.current.length),
         extensions: [
           history(),
           drawSelection(),
@@ -135,13 +148,25 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
             keydown: (event) => { onKeyDownRef.current?.(event) }
           }),
           EditorView.updateListener.of((update) => {
-            if (!update.docChanged) return
-            const nextValue = update.state.doc.toString()
-            localValueRef.current = nextValue
-            if (!applyingExternalValueRef.current) onChangeRef.current?.(nextValue)
+            if (update.docChanged) {
+              const nextValue = update.state.doc.toString()
+              localValueRef.current = nextValue
+              if (!applyingExternalValueRef.current) onChangeRef.current?.(nextValue)
+            }
+            if (update.docChanged || update.selectionSet) {
+              onViewStateChangeRef.current?.(readCodeEditorViewState(update.view))
+            }
           })
         ]
       })
+    })
+    const restoreFrame = window.requestAnimationFrame(() => {
+      if (initial.initialViewState) {
+        view.scrollDOM.scrollTop = initial.initialViewState.scrollTop
+        view.scrollDOM.scrollLeft = initial.initialViewState.scrollLeft
+      }
+      view.requestMeasure()
+      onViewStateChangeRef.current?.(readCodeEditorViewState(view))
     })
     const handleScroll = () => {
       const scroller = view.scrollDOM
@@ -150,10 +175,12 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
         verticalRatio: maxScrollTop > 0 ? scroller.scrollTop / maxScrollTop : 0,
         scrollLeft: scroller.scrollLeft
       })
+      onViewStateChangeRef.current?.(readCodeEditorViewState(view))
     }
     view.scrollDOM.addEventListener('scroll', handleScroll, { passive: true })
     viewRef.current = view
     return () => {
+      window.cancelAnimationFrame(restoreFrame)
       view.scrollDOM.removeEventListener('scroll', handleScroll)
       viewRef.current = null
       view.destroy()
@@ -206,6 +233,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
       const selection = viewRef.current?.state.selection.main
       return selection ? { start: selection.from, end: selection.to } : { start: 0, end: 0 }
     },
+    getViewState: () => viewRef.current ? readCodeEditorViewState(viewRef.current) : null,
     selectRange: (anchor, head) => {
       const view = viewRef.current
       if (!view) return

@@ -2,6 +2,7 @@ import { CheckCircle2, FileJson, XCircle } from 'lucide-react'
 import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
+import type { CodeEditorViewState } from '@/shared/components/codeEditorViewState'
 import { useToast } from '@/shared/feedback/ToastProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { JsonCodeEditor, type JsonCodeEditorHandle } from './JsonCodeEditor'
@@ -56,8 +57,41 @@ type JsonUiState = {
   formatOptions: JsonFormatOptions
 }
 
+let jsonSessionState: JsonUiState | null = null
+let jsonEditorViewState: CodeEditorViewState | undefined
+let jsonFindIndex = 0
+
+function createJsonState(wrap: boolean): JsonUiState {
+  if (jsonSessionState) {
+    return {
+      ...jsonSessionState,
+      copyState: 'idle',
+      formatOptions: { ...jsonSessionState.formatOptions }
+    }
+  }
+  return {
+    content: sampleJson,
+    wrap,
+    copyState: 'idle',
+    notice: '',
+    inspectorOpen: window.matchMedia('(min-width: 1321px)').matches,
+    findOpen: false,
+    findQuery: '',
+    historyOpen: false,
+    pathPickerOpen: false,
+    jsonPath: '$',
+    inputConversion: null,
+    conversionInput: '',
+    outputDialog: null,
+    className: 'Root',
+    formatOptions: { spaces: 2, sortKeys: false, ignoreCase: false, checkDuplicateKeys: true }
+  }
+}
+
 function updateJsonState(state: JsonUiState, patch: Partial<JsonUiState>): JsonUiState {
-  return { ...state, ...patch }
+  const next = { ...state, ...patch }
+  jsonSessionState = next
+  return next
 }
 
 async function persistHistory(summary: string, input: string, output: string): Promise<void> {
@@ -73,24 +107,8 @@ export function JsonTool() {
   const { settings } = useSettings()
   const toast = useToast()
   const editorRef = useRef<JsonCodeEditorHandle>(null)
-  const findIndexRef = useRef(0)
-  const [state, update] = useReducer(updateJsonState, settings.editor.softWrap, (wrap): JsonUiState => ({
-    content: sampleJson,
-    wrap,
-    copyState: 'idle',
-    notice: '',
-    inspectorOpen: true,
-    findOpen: false,
-    findQuery: '',
-    historyOpen: false,
-    pathPickerOpen: false,
-    jsonPath: '$',
-    inputConversion: null,
-    conversionInput: '',
-    outputDialog: null,
-    className: 'Root',
-    formatOptions: { spaces: 2, sortKeys: false, ignoreCase: false, checkDuplicateKeys: true }
-  }))
+  const findIndexRef = useRef(jsonFindIndex)
+  const [state, update] = useReducer(updateJsonState, settings.editor.softWrap, createJsonState)
   const status = useMemo(() => validateJson(state.content, t), [state.content, t])
   const findMatches = useMemo(() => findAll(state.content, state.findQuery), [state.content, state.findQuery])
 
@@ -108,7 +126,6 @@ export function JsonTool() {
   useEffect(() => {
     const desktopLayout = window.matchMedia('(min-width: 1321px)')
     const syncInspector = () => update({ inspectorOpen: desktopLayout.matches })
-    syncInspector()
     desktopLayout.addEventListener('change', syncInspector)
     return () => desktopLayout.removeEventListener('change', syncInspector)
   }, [])
@@ -196,6 +213,7 @@ export function JsonTool() {
     }
     const index = findMatches[findIndexRef.current % findMatches.length]
     findIndexRef.current = (findIndexRef.current + 1) % findMatches.length
+    jsonFindIndex = findIndexRef.current
     editorRef.current?.selectRange(index, index + state.findQuery.length)
   }
 
@@ -235,7 +253,7 @@ export function JsonTool() {
             onHistory={() => update({ historyOpen: true })}
             onToggleInspector={() => update({ inspectorOpen: !state.inspectorOpen })}
             onClear={() => update({ content: '' })}
-            onFindQueryChange={(findQuery) => { findIndexRef.current = 0; update({ findQuery }) }}
+            onFindQueryChange={(findQuery) => { findIndexRef.current = 0; jsonFindIndex = 0; update({ findQuery }) }}
             onNextMatch={selectNextMatch}
             onCloseFind={() => update({ findOpen: false })}
           />
@@ -246,7 +264,9 @@ export function JsonTool() {
             fontSize={settings.editor.jsonFontSize}
             searchQuery={state.findOpen ? state.findQuery : ''}
             ariaLabel={t('json.editor.label')}
+            initialViewState={jsonEditorViewState}
             onChange={(content) => update({ content, notice: '', copyState: 'idle' })}
+            onViewStateChange={(viewState) => { jsonEditorViewState = viewState }}
           />
         </div>
 

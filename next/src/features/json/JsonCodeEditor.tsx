@@ -14,9 +14,15 @@ import {
 import { tags } from '@lezer/highlight'
 import { forwardRef, useEffect, useImperativeHandle, useRef, type CSSProperties } from 'react'
 import { codeEditorSearchHighlight } from '@/shared/components/codeEditorSearchHighlight'
+import {
+  clampCodeEditorSelection,
+  readCodeEditorViewState,
+  type CodeEditorViewState
+} from '@/shared/components/codeEditorViewState'
 
 export type JsonCodeEditorHandle = {
   focus: () => void
+  getViewState: () => CodeEditorViewState | null
   selectRange: (anchor: number, head: number) => void
 }
 
@@ -26,7 +32,9 @@ type JsonCodeEditorProps = {
   fontSize: number
   searchQuery: string
   ariaLabel: string
+  initialViewState?: CodeEditorViewState
   onChange: (value: string) => void
+  onViewStateChange?: (state: CodeEditorViewState) => void
 }
 
 const richJsonDocumentLimit = 1_000_000
@@ -54,15 +62,16 @@ function useCompartment(): Compartment {
 }
 
 export const JsonCodeEditor = forwardRef<JsonCodeEditorHandle, JsonCodeEditorProps>(function JsonCodeEditor(
-  { value, wrap, fontSize, searchQuery, ariaLabel, onChange },
+  { value, wrap, fontSize, searchQuery, ariaLabel, initialViewState, onChange, onViewStateChange },
   ref
 ) {
   const hostRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView>(null)
   const onChangeRef = useRef(onChange)
+  const onViewStateChangeRef = useRef(onViewStateChange)
   const localValueRef = useRef(value)
   const applyingExternalValueRef = useRef(false)
-  const initialConfigRef = useRef({ wrap, ariaLabel, searchQuery, fontSize })
+  const initialConfigRef = useRef({ wrap, ariaLabel, searchQuery, fontSize, initialViewState })
   const wrapCompartment = useCompartment()
   const attributesCompartment = useCompartment()
   const languageCompartment = useCompartment()
@@ -70,6 +79,7 @@ export const JsonCodeEditor = forwardRef<JsonCodeEditorHandle, JsonCodeEditorPro
   const metricsCompartment = useCompartment()
   const richLanguageEnabled = value.length <= richJsonDocumentLimit
   onChangeRef.current = onChange
+  onViewStateChangeRef.current = onViewStateChange
 
   useEffect(() => {
     if (!hostRef.current) return
@@ -78,6 +88,7 @@ export const JsonCodeEditor = forwardRef<JsonCodeEditorHandle, JsonCodeEditorPro
       parent: hostRef.current,
       state: EditorState.create({
         doc: localValueRef.current,
+        selection: clampCodeEditorSelection(initialConfig.initialViewState, localValueRef.current.length),
         extensions: [
           history(),
           drawSelection(),
@@ -94,16 +105,32 @@ export const JsonCodeEditor = forwardRef<JsonCodeEditorHandle, JsonCodeEditorPro
           searchCompartment.of(codeEditorSearchHighlight(initialConfig.searchQuery)),
           metricsCompartment.of(editorMetrics(initialConfig.fontSize)),
           EditorView.updateListener.of((update) => {
-            if (!update.docChanged) return
-            const nextValue = update.state.doc.toString()
-            localValueRef.current = nextValue
-            if (!applyingExternalValueRef.current) onChangeRef.current(nextValue)
+            if (update.docChanged) {
+              const nextValue = update.state.doc.toString()
+              localValueRef.current = nextValue
+              if (!applyingExternalValueRef.current) onChangeRef.current(nextValue)
+            }
+            if (update.docChanged || update.selectionSet) {
+              onViewStateChangeRef.current?.(readCodeEditorViewState(update.view))
+            }
           })
         ]
       })
     })
+    const restoreFrame = window.requestAnimationFrame(() => {
+      if (initialConfig.initialViewState) {
+        view.scrollDOM.scrollTop = initialConfig.initialViewState.scrollTop
+        view.scrollDOM.scrollLeft = initialConfig.initialViewState.scrollLeft
+      }
+      view.requestMeasure()
+      onViewStateChangeRef.current?.(readCodeEditorViewState(view))
+    })
+    const handleScroll = () => onViewStateChangeRef.current?.(readCodeEditorViewState(view))
+    view.scrollDOM.addEventListener('scroll', handleScroll, { passive: true })
     viewRef.current = view
     return () => {
+      window.cancelAnimationFrame(restoreFrame)
+      view.scrollDOM.removeEventListener('scroll', handleScroll)
       viewRef.current = null
       view.destroy()
     }
@@ -153,6 +180,7 @@ export const JsonCodeEditor = forwardRef<JsonCodeEditorHandle, JsonCodeEditorPro
 
   useImperativeHandle(ref, () => ({
     focus: () => viewRef.current?.focus(),
+    getViewState: () => viewRef.current ? readCodeEditorViewState(viewRef.current) : null,
     selectRange: (anchor, head) => {
       const view = viewRef.current
       if (!view) return

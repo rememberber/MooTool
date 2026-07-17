@@ -164,6 +164,20 @@ test('formats JSON and completes history and Vault workflows', async () => {
   await mainPage.locator('.editor-toolbar').getByRole('button', { name: '查找', exact: true }).click()
   await mainPage.getByLabel('在 JSON 中查找…').fill('"a"')
   await expect(mainPage.locator('.json-editor .cm-searchMatch')).toHaveCount(1)
+  await editor.focus()
+  await mainPage.keyboard.press('ControlOrMeta+End')
+  await mainPage.keyboard.press('Shift+ArrowLeft')
+
+  await mainPage.getByRole('button', { name: '主页', exact: true }).click()
+  await mainPage.locator('.tool-button').filter({ hasText: 'JSON' }).click()
+  await expect(mainPage.getByLabel('在 JSON 中查找…')).toHaveValue('"a"')
+  await editor.focus()
+  await mainPage.keyboard.type('}')
+  await expect.poll(() => editor.evaluate((element) => (element as HTMLElement).innerText)).toBe(`{
+  "b": 1,
+  "a": 2
+}`)
+  await expect(mainPage.locator('.json-editor .cm-searchMatch')).toHaveCount(1)
 
   await mainPage.evaluate(() => window.mootool.updateSettings({ editor: { jsonFontSize: 22 } }))
   await expect(mainPage.locator('.json-editor')).toHaveCSS('font-size', '22px')
@@ -224,6 +238,23 @@ test('manages JSON Vault folders, rename, duplicate, and move workflows', async 
   mainPage.once('dialog', (dialog) => dialog.accept())
   await mainPage.getByRole('button', { name: '删除片段' }).click()
   await expect(mainPage.locator('.vault-node').filter({ hasText: 'renamed Copy.json' })).toHaveCount(0)
+})
+
+test('restores the JSON Vault expanded folder and selected file after switching tools', async () => {
+  await mainPage.locator('.tool-button').filter({ hasText: 'JSON' }).click()
+  await mainPage.getByRole('button', { name: '新建文件夹' }).click()
+  await mainPage.getByLabel('文件夹相对路径').fill('session-state')
+  await mainPage.getByRole('button', { name: '创建', exact: true }).click()
+  await mainPage.getByRole('button', { name: '新建片段' }).click()
+  await mainPage.getByLabel('文件名或相对路径').fill('session-state/selected')
+  await mainPage.getByRole('button', { name: '创建', exact: true }).click()
+  await expect(mainPage.locator('.vault-node--selected').filter({ hasText: 'selected.json' })).toBeVisible()
+
+  await mainPage.getByRole('button', { name: '主页', exact: true }).click()
+  await mainPage.locator('.tool-button').filter({ hasText: 'JSON' }).click()
+
+  await expect(mainPage.locator('.vault-node--directory').filter({ hasText: 'session-state' })).toBeVisible()
+  await expect(mainPage.locator('.vault-node--selected').filter({ hasText: 'selected.json' })).toBeVisible()
 })
 
 test('initializes the JSON Vault Git repository and commits a snippet', async () => {
@@ -614,6 +645,20 @@ test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () =>
   await mainPage.getByRole('button', { name: '查找与替换' }).click()
   await mainPage.getByLabel('查找', { exact: true }).fill('Vault')
   await expect(mainPage.locator('.quick-note-code-editor .cm-searchMatch')).toHaveCount(1)
+  await editor.focus()
+  await mainPage.keyboard.press('ControlOrMeta+End')
+  await mainPage.keyboard.press('Shift+ArrowLeft')
+  await mainPage.locator('.quick-note-search input').fill('E2E Quick')
+  await openTool('JSON', 'JSON 工作台')
+  await openTool('随手记', '随手记')
+  await expect(mainPage.locator('.quick-note-search input')).toHaveValue('E2E Quick')
+  await expect(mainPage.getByLabel('查找', { exact: true })).toHaveValue('Vault')
+  await expect(mainPage.locator('.quick-note-tree__row--active')).toContainText('E2E Quick Note')
+  await editor.focus()
+  await mainPage.keyboard.type('t')
+  await expect(editor).toContainText('E2E Markdown')
+  await expect(editor).toContainText('Vault file')
+  await expect(mainPage.locator('.quick-note-code-editor .cm-searchMatch')).toHaveCount(1)
   await mainPage.getByLabel('语法').selectOption('text/markdown')
   await mainPage.getByRole('button', { name: '保存', exact: true }).click()
   await expect.poll(() => mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick Note.txt'))).toEqual(
@@ -640,6 +685,23 @@ test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () =>
   await gitDialog.getByRole('tab', { name: '提交历史' }).click()
   await expect(gitDialog.locator('.git-list-item')).toContainText('MooTool 随手记检查点')
   await gitDialog.getByRole('button', { name: '关闭' }).click()
+})
+
+test('restores the Quick Note expanded folder and selected note after switching tools', async () => {
+  await openTool('随手记', '随手记')
+  await mainPage.getByRole('button', { name: '新建文件夹' }).click()
+  await mainPage.getByRole('dialog', { name: '新建文件夹' }).getByLabel('名称').fill('E2E Quick Session')
+  await mainPage.getByRole('dialog', { name: '新建文件夹' }).getByRole('button', { name: '创建' }).click()
+  await mainPage.getByRole('button', { name: '新建笔记' }).click()
+  await mainPage.getByRole('dialog', { name: '新建笔记' }).getByLabel('名称').fill('E2E Quick Nested')
+  await mainPage.getByRole('dialog', { name: '新建笔记' }).getByRole('button', { name: '创建' }).click()
+  await expect(mainPage.locator('.quick-note-tree__row--active')).toContainText('E2E Quick Nested')
+
+  await openTool('JSON', 'JSON 工作台')
+  await openTool('随手记', '随手记')
+
+  await expect(mainPage.locator('.quick-note-tree__row').filter({ hasText: 'E2E Quick Session' })).toBeVisible()
+  await expect(mainPage.locator('.quick-note-tree__row--active')).toContainText('E2E Quick Nested')
 })
 
 test('runs and stops P6 Node.js code with persistent history', async () => {

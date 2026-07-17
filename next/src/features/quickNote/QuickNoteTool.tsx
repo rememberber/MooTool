@@ -23,7 +23,7 @@ import {
   X
 } from 'lucide-react'
 import { marked } from 'marked'
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from 'react'
+import { useCallback, useEffect, useLayoutEffect, useMemo, useReducer, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { VaultGitDialog } from '@/features/json/VaultGitDialog'
@@ -31,6 +31,7 @@ import { formatCode } from '@/features/reformat/reformatTools'
 import { Dialog } from '@/shared/components/Dialog'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { Tooltip } from '@/shared/components/Tooltip'
+import type { CodeEditorViewState } from '@/shared/components/codeEditorViewState'
 import type { QuickNoteFile, QuickNoteMetadata, QuickNoteNode, QuickNoteSort } from '@/shared/contracts/quickNote'
 import { useToast } from '@/shared/feedback/ToastProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -91,8 +92,24 @@ const initialState: QuickNoteState = {
   metadataDirty: false
 }
 
+let quickNoteSessionState: QuickNoteState | null = null
+let quickNoteEditorViewState: CodeEditorViewState | undefined
+let quickNoteTreeScrollTop = 0
+let quickNoteFindIndex = 0
+
+function createQuickNoteState(): QuickNoteState {
+  const source = quickNoteSessionState ?? initialState
+  return {
+    ...source,
+    expanded: new Set(source.expanded),
+    busy: false
+  }
+}
+
 function updateState(state: QuickNoteState, patch: Partial<QuickNoteState>): QuickNoteState {
-  return { ...state, ...patch }
+  const next = { ...state, ...patch }
+  quickNoteSessionState = { ...next, expanded: new Set(next.expanded), busy: false }
+  return next
 }
 
 const syntaxOptions = [
@@ -220,8 +237,9 @@ export function QuickNoteTool() {
   const { settings } = useSettings()
   const toast = useToast()
   const editorRef = useRef<QuickNoteCodeEditorHandle>(null)
-  const findIndexRef = useRef(0)
-  const [state, update] = useReducer(updateState, initialState)
+  const treeScrollRef = useRef<HTMLDivElement>(null)
+  const findIndexRef = useRef(quickNoteFindIndex)
+  const [state, update] = useReducer(updateState, undefined, createQuickNoteState)
   const dirty = state.note !== null && (state.content !== state.note.content || state.metadataDirty)
   const directories = useMemo(() => flattenDirectories(state.nodes), [state.nodes])
   const stats = useMemo(() => documentStats(state.content), [state.content])
@@ -232,6 +250,10 @@ export function QuickNoteTool() {
     {}
   )
   const previewHtml = useMemo(() => renderPreview(state.content, state.note?.metadata.syntax, attachmentUrls), [attachmentUrls, state.content, state.note?.metadata.syntax])
+
+  useLayoutEffect(() => {
+    if (state.treeOpen && treeScrollRef.current) treeScrollRef.current.scrollTop = quickNoteTreeScrollTop
+  }, [state.nodes, state.treeOpen])
 
   const loadTree = useCallback(async (): Promise<QuickNoteNode[]> => {
     const nodes = await window.mootool.listQuickNotes({
@@ -547,6 +569,7 @@ export function QuickNoteTool() {
       return
     }
     findIndexRef.current = index + needle.length
+    quickNoteFindIndex = findIndexRef.current
     editorRef.current?.selectRange(index, index + needle.length)
   }
 
@@ -565,6 +588,7 @@ export function QuickNoteTool() {
       const { start, end } = selection
       update({ content: `${state.content.slice(0, start)}${state.replaceText}${state.content.slice(end)}` })
       findIndexRef.current = start + state.replaceText.length
+      quickNoteFindIndex = findIndexRef.current
       requestAnimationFrame(findNext)
     } else {
       findNext()
@@ -634,7 +658,7 @@ export function QuickNoteTool() {
                 <IconButton label={t('quickNote.newNote')} icon={FilePlus2} onClick={() => openAction('createNote')} />
                 <IconButton label={t('quickNote.newFolder')} icon={FolderPlus} onClick={() => openAction('createFolder')} />
               </div>
-              <div className="quick-note-tree-scroll">
+              <div ref={treeScrollRef} className="quick-note-tree-scroll" onScroll={(event) => { quickNoteTreeScrollTop = event.currentTarget.scrollTop }}>
                 {state.nodes.length
                   ? <QuickNoteTree nodes={state.nodes} selectedPath={state.selectedPath} expanded={state.expanded} onSelect={(node) => { void selectNode(node) }} onToggle={toggleDirectory} onMove={(node, targetDirectory) => { void moveTreeEntry(node, targetDirectory) }} onRenameRequest={(node) => { void openTreeAction(node, 'rename') }} onMoveRequest={(node) => { void openTreeAction(node, 'move') }} renameLabel={t('quickNote.rename')} moveLabel={t('quickNote.move')} />
                   : <div className="quick-note-empty">{t('quickNote.empty')}</div>}
@@ -673,7 +697,7 @@ export function QuickNoteTool() {
 
             {state.findOpen && (
               <div className="quick-note-find-bar">
-                <input aria-label={t('quickNote.findPlaceholder')} placeholder={t('quickNote.findPlaceholder')} value={state.findText} onChange={(event) => { findIndexRef.current = 0; update({ findText: event.target.value }) }} onKeyDown={(event) => { if (event.key === 'Enter') findNext() }} />
+                <input aria-label={t('quickNote.findPlaceholder')} placeholder={t('quickNote.findPlaceholder')} value={state.findText} onChange={(event) => { findIndexRef.current = 0; quickNoteFindIndex = 0; update({ findText: event.target.value }) }} onKeyDown={(event) => { if (event.key === 'Enter') findNext() }} />
                 <input aria-label={t('quickNote.replacePlaceholder')} placeholder={t('quickNote.replacePlaceholder')} value={state.replaceText} onChange={(event) => update({ replaceText: event.target.value })} />
                 <button type="button" onClick={findNext}>{t('quickNote.nextMatch')}</button>
                 <button type="button" onClick={() => replaceCurrent(false)}>{t('quickNote.replace')}</button>
@@ -700,7 +724,9 @@ export function QuickNoteTool() {
                       fontSize={state.note.metadata.fontSize}
                       searchQuery={state.findOpen ? state.findText : ''}
                       ariaLabel={t('quickNote.editorLabel')}
+                      initialViewState={quickNoteEditorViewState}
                       onChange={(content) => update({ content })}
+                      onViewStateChange={(viewState) => { quickNoteEditorViewState = viewState }}
                     />
                   </div>
                 )}
