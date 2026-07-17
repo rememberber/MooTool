@@ -104,6 +104,7 @@ function QuickNoteTreeNode({ node, depth, selectedPath, expanded, onSelect, onTo
         type="button"
         role="treeitem"
         draggable
+        data-path={node.relativePath}
         aria-expanded={node.kind === 'directory' ? open : undefined}
         aria-selected={selectedPath === node.relativePath}
         style={{ paddingLeft: 7 + depth * 15 }}

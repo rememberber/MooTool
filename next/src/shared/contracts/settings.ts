@@ -1,6 +1,7 @@
 import { normalizeTranslationLanguagePair } from './network'
+import { isVaultTreeExpandMode, type VaultTreeExpandMode } from '../vaultTreeExpand'
 
-export const appSettingsSchemaVersion = 7
+export const appSettingsSchemaVersion = 8
 
 export type AppLanguage = 'zh-CN' | 'en-US' | 'ja-JP'
 export type ThemePreference = 'system' | 'light' | 'dark'
@@ -10,6 +11,7 @@ export type NavigationStyle = 'classic' | 'card' | 'grouped'
 export type SecretKey = 'proxyPassword' | 'gitToken'
 export type RuntimeSettingsId = 'java' | 'groovy' | 'python' | 'node'
 export type RuntimeRunOption = { arguments: string; workingDirectory: string }
+export type { VaultTreeExpandMode }
 
 export type SecretStatus = {
   key: SecretKey
@@ -70,6 +72,8 @@ export type AppSettings = {
     autoCommitInactiveSeconds: number
     autoPullMinutes: number
     hideGitignoredFiles: boolean
+    quickNoteTreeExpandMode: VaultTreeExpandMode
+    jsonTreeExpandMode: VaultTreeExpandMode
   }
   runtime: {
     javaPath: string
@@ -159,7 +163,9 @@ export const defaultAppSettings: AppSettings = {
     autoCommitIdleSeconds: 30,
     autoCommitInactiveSeconds: 120,
     autoPullMinutes: 0,
-    hideGitignoredFiles: true
+    hideGitignoredFiles: true,
+    quickNoteTreeExpandMode: 'expandAll',
+    jsonTreeExpandMode: 'expandAll'
   },
   runtime: {
     javaPath: '',
@@ -262,7 +268,13 @@ export function normalizeSettings(value: AppSettings): AppSettings {
       ...value.vault,
       autoCommitIdleSeconds: clampNumber(value.vault.autoCommitIdleSeconds, 5, 3600, defaultAppSettings.vault.autoCommitIdleSeconds),
       autoCommitInactiveSeconds: clampNumber(value.vault.autoCommitInactiveSeconds, 5, 3600, defaultAppSettings.vault.autoCommitInactiveSeconds),
-      autoPullMinutes: clampNumber(value.vault.autoPullMinutes, 0, 1440, defaultAppSettings.vault.autoPullMinutes)
+      autoPullMinutes: clampNumber(value.vault.autoPullMinutes, 0, 1440, defaultAppSettings.vault.autoPullMinutes),
+      quickNoteTreeExpandMode: isVaultTreeExpandMode(value.vault.quickNoteTreeExpandMode)
+        ? value.vault.quickNoteTreeExpandMode
+        : defaultAppSettings.vault.quickNoteTreeExpandMode,
+      jsonTreeExpandMode: isVaultTreeExpandMode(value.vault.jsonTreeExpandMode)
+        ? value.vault.jsonTreeExpandMode
+        : defaultAppSettings.vault.jsonTreeExpandMode
     },
     tools: {
       ...value.tools,

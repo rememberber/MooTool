@@ -7,13 +7,15 @@ import {
   Folder,
   FolderOpen,
   FolderPlus,
+  FoldVertical,
   GitBranch,
   MoreHorizontal,
   Move,
   Pencil,
   RefreshCw,
   Save,
-  Trash2
+  Trash2,
+  UnfoldVertical
 } from 'lucide-react'
 import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -25,6 +27,12 @@ import type { JsonVaultNode } from '@/shared/contracts/jsonVault'
 import type { VaultGitAction } from '@/shared/contracts/vaultGit'
 import { useToast } from '@/shared/feedback/ToastProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
+import {
+  collectDirectoryPaths,
+  ensureAncestorsExpanded,
+  resolveExpandedPaths,
+  type VaultTreeExpandMode
+} from '@/shared/vaultTreeExpand'
 import { VaultGitDialog } from './VaultGitDialog'
 
 type JsonVaultPanelProps = {
@@ -65,17 +73,21 @@ let jsonVaultSessionState: JsonVaultSessionState = {
   sort: 'name'
 }
 let jsonVaultTreeScrollTop = 0
+let jsonVaultNeedsExpandPreference = true
 
 export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
   const toolActive = useToolActivity()
   const { t } = useI18n()
-  const { settings } = useSettings()
+  const { settings, updateSettings } = useSettings()
   const toast = useToast()
   const [nodes, setNodes] = useState<JsonVaultNode[]>(jsonVaultSessionState.nodes)
   const [selectedEntry, setSelectedEntry] = useState<SelectedEntry | null>(jsonVaultSessionState.selectedEntry)
   const [selectedPath, setSelectedPath] = useState(jsonVaultSessionState.selectedPath)
   const [savedContent, setSavedContent] = useState(jsonVaultSessionState.savedContent)
-  const [expanded, setExpanded] = useState(() => new Set(jsonVaultSessionState.expanded))
+  const [expanded, setExpanded] = useState(() => {
+    jsonVaultNeedsExpandPreference = jsonVaultSessionState.nodes.length === 0 && jsonVaultSessionState.expanded.size === 0
+    return new Set(jsonVaultSessionState.expanded)
+  })
   const [gitDialogOpen, setGitDialogOpen] = useState(jsonVaultSessionState.gitDialogOpen)
   const [gitChangeCount, setGitChangeCount] = useState(0)
   const [textAction, setTextAction] = useState<TextAction>(jsonVaultSessionState.textAction)
@@ -87,9 +99,22 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
   const [sort, setSort] = useState<'name' | 'modified'>(jsonVaultSessionState.sort)
   const latestSelectionRef = useRef({ selectedPath, content })
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve())
+  const treeExpandModeRef = useRef(settings.vault.jsonTreeExpandMode)
   const dirty = Boolean(selectedPath) && content !== savedContent
   latestSelectionRef.current = { selectedPath, content }
-  const directories = useMemo(() => ['', ...flattenDirectories(nodes)], [nodes])
+  treeExpandModeRef.current = settings.vault.jsonTreeExpandMode
+  const directories = useMemo(() => ['', ...collectDirectoryPaths(nodes)], [nodes])
+
+  const scrollSelectedIntoView = useCallback((path = latestSelectionRef.current.selectedPath) => {
+    if (!path || !treeRef.current) return
+    const row = treeRef.current.querySelector(`[data-path="${CSS.escape(path)}"]`)
+    row?.scrollIntoView({ block: 'nearest' })
+    jsonVaultTreeScrollTop = treeRef.current.scrollTop
+  }, [])
+
+  const applyTreeExpandMode = useCallback((mode: VaultTreeExpandMode, tree: JsonVaultNode[], path: string) => {
+    return resolveExpandedPaths(collectDirectoryPaths(tree), mode, path)
+  }, [])
 
   useEffect(() => {
     jsonVaultSessionState = {
@@ -113,9 +138,12 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
 
   const load = useCallback(async () => {
     try {
-      setNodes(await window.mootool.listJsonVault({ hideIgnored: settings.vault.hideGitignoredFiles, sort }))
+      const nextNodes = await window.mootool.listJsonVault({ hideIgnored: settings.vault.hideGitignoredFiles, sort })
+      setNodes(nextNodes)
+      return nextNodes
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t('json.notice.failed'))
+      return [] as JsonVaultNode[]
     }
   }, [settings.vault.hideGitignoredFiles, sort, t, toast])
 
@@ -125,6 +153,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
       const file = await window.mootool.readJsonVaultFile(selectedPath)
       setSelectedEntry({ path: file.relativePath, kind: 'file' })
       setSavedContent(file.content)
+      setExpanded((current) => ensureAncestorsExpanded(current, file.relativePath))
       onOpen(file.content)
     } catch {
       setSelectedEntry(null)
@@ -144,9 +173,32 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
   }, [])
 
   useEffect(() => {
-    void load()
-    if (!dirty) void reloadSelectedFromDisk()
-  }, [dirty, load, reloadSelectedFromDisk, settings.vault.jsonPath])
+    let cancelled = false
+    void load().then((nextNodes) => {
+      if (cancelled) return
+      const path = latestSelectionRef.current.selectedPath
+      if (jsonVaultNeedsExpandPreference) {
+        jsonVaultNeedsExpandPreference = false
+        setExpanded(applyTreeExpandMode(treeExpandModeRef.current, nextNodes, path))
+      } else if (path) {
+        setExpanded((current) => ensureAncestorsExpanded(current, path))
+      }
+      if (!dirty) void reloadSelectedFromDisk()
+      window.requestAnimationFrame(() => scrollSelectedIntoView(path))
+    })
+    return () => { cancelled = true }
+  }, [applyTreeExpandMode, dirty, load, reloadSelectedFromDisk, scrollSelectedIntoView, settings.vault.jsonPath])
+
+  useEffect(() => {
+    if (!toolActive || !selectedPath) return
+    setExpanded((current) => {
+      const next = ensureAncestorsExpanded(current, selectedPath)
+      if (next.size === current.size && [...next].every((path) => current.has(path))) return current
+      return next
+    })
+    const frame = window.requestAnimationFrame(() => scrollSelectedIntoView(selectedPath))
+    return () => window.cancelAnimationFrame(frame)
+  }, [scrollSelectedIntoView, selectedPath, toolActive])
 
   useEffect(() => window.mootool.onJsonVaultChange(() => {
     void load()
@@ -200,6 +252,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
       setSelectedEntry({ path: file.relativePath, kind: 'file' })
       setSelectedPath(file.relativePath)
       setSavedContent(file.content)
+      setExpanded((current) => ensureAncestorsExpanded(current, file.relativePath))
       onOpen(file.content)
     } catch (error) {
       reportError(error)
@@ -366,6 +419,12 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
     })
   }
 
+  function setTreeExpandMode(mode: VaultTreeExpandMode): void {
+    setExpanded(applyTreeExpandMode(mode, nodes, selectedPath))
+    void updateSettings({ vault: { jsonTreeExpandMode: mode } })
+    window.requestAnimationFrame(() => scrollSelectedIntoView(selectedPath))
+  }
+
   function reportError(error: unknown): void {
     toast.error(error instanceof Error ? error.message : t('json.notice.failed'))
   }
@@ -381,6 +440,8 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
         <div className="vault-panel__actions">
           <VaultAction label={t('json.vault.new')} onClick={beginCreateFile}><FilePlus2 size={14} /></VaultAction>
           <VaultAction label={t('json.vault.newFolder')} onClick={beginCreateFolder}><FolderPlus size={14} /></VaultAction>
+          <VaultAction label={t('json.vault.expandAll')} onClick={() => setTreeExpandMode('expandAll')}><UnfoldVertical size={14} /></VaultAction>
+          <VaultAction label={t('json.vault.collapseAll')} onClick={() => setTreeExpandMode('collapseAll')}><FoldVertical size={14} /></VaultAction>
           <VaultAction label={t('json.vault.save')} onClick={() => { void saveSelected() }}><Save size={14} /></VaultAction>
           <VaultAction label={t('json.vault.delete')} disabled={!selectedEntry} onClick={() => { void deleteSelected() }}><Trash2 size={14} /></VaultAction>
           <VaultAction label={t('json.git.open')} badge={gitChangeCount} onClick={() => setGitDialogOpen(true)}><GitBranch size={14} /></VaultAction>
@@ -519,6 +580,7 @@ function VaultNode({ node, depth, expanded, selectedEntryPath, activePath, dirty
         className={`${node.kind === 'directory' ? 'vault-node vault-node--directory' : 'vault-node'}${selected ? ' vault-node--selected' : ''}`}
         type="button"
         draggable
+        data-path={node.relativePath}
         style={{ paddingLeft: (node.kind === 'directory' ? 9 : 24) + depth * 14 }}
         onClick={() => {
           onSelect(node)
@@ -577,10 +639,6 @@ function VaultAction({ label, disabled = false, badge = 0, onClick, children }: 
 
 function MenuAction({ icon: Icon, label, disabled = false, onClick }: { icon: typeof Copy; label: string; disabled?: boolean; onClick: () => void }) {
   return <button type="button" disabled={disabled} onClick={onClick}><Icon size={13} /><span>{label}</span></button>
-}
-
-function flattenDirectories(nodes: JsonVaultNode[]): string[] {
-  return nodes.flatMap((node) => node.kind === 'directory' ? [node.relativePath, ...flattenDirectories(node.children ?? [])] : [])
 }
 
 function selectedDirectory(entry: SelectedEntry | null): string {

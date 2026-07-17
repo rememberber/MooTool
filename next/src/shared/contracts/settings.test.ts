@@ -63,7 +63,7 @@ describe('mergeSettings', () => {
       }
     })
 
-    expect(settings.schemaVersion).toBe(7)
+    expect(settings.schemaVersion).toBe(8)
     expect(settings.appearance.interfaceStyle).toBe('modern')
     expect(settings.runtime.javaPath).toBe('/opt/java')
     expect(settings.runtime.drafts).toEqual(defaultAppSettings.runtime.drafts)
@@ -72,6 +72,29 @@ describe('mergeSettings', () => {
     expect(settings.general.autoDownloadUpdates).toBe(true)
     expect(settings.vault.autoCommitIdleSeconds).toBe(30)
     expect(settings.vault.autoCommitInactiveSeconds).toBe(120)
+    expect(settings.vault.quickNoteTreeExpandMode).toBe('expandAll')
+    expect(settings.vault.jsonTreeExpandMode).toBe('expandAll')
+  })
+
+  it('persists vault tree expand modes', () => {
+    const settings = mergeSettings(defaultAppSettings, {
+      vault: { quickNoteTreeExpandMode: 'collapseAll', jsonTreeExpandMode: 'collapseAll' }
+    })
+
+    expect(settings.vault.quickNoteTreeExpandMode).toBe('collapseAll')
+    expect(settings.vault.jsonTreeExpandMode).toBe('collapseAll')
+  })
+
+  it('normalizes unknown vault tree expand modes', () => {
+    const settings = mergeSettings(defaultAppSettings, {
+      vault: {
+        quickNoteTreeExpandMode: 'unknown' as 'expandAll',
+        jsonTreeExpandMode: 'unknown' as 'collapseAll'
+      }
+    })
+
+    expect(settings.vault.quickNoteTreeExpandMode).toBe('expandAll')
+    expect(settings.vault.jsonTreeExpandMode).toBe('expandAll')
   })
 
   it('normalizes persisted workspace pane sizes', () => {

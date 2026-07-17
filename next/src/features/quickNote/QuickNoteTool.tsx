@@ -7,6 +7,7 @@ import {
   FilePlus2,
   FolderOpen,
   FolderPlus,
+  FoldVertical,
   GitBranch,
   ImagePlus,
   Info,
@@ -18,6 +19,7 @@ import {
   Save,
   Search,
   Trash2,
+  UnfoldVertical,
   WandSparkles,
   WrapText,
   X
@@ -38,6 +40,12 @@ import type { VaultGitAction } from '@/shared/contracts/vaultGit'
 import { useToast } from '@/shared/feedback/ToastProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { MessageKey } from '@/shared/i18n/messages'
+import {
+  collectDirectoryPaths,
+  ensureAncestorsExpanded,
+  resolveExpandedPaths,
+  type VaultTreeExpandMode
+} from '@/shared/vaultTreeExpand'
 import { QuickNoteCodeEditor, type QuickNoteCodeEditorHandle } from './QuickNoteCodeEditor'
 import { QuickNoteTree } from './QuickNoteTree'
 import { quickReplaceActionIds, runQuickReplace, type QuickReplaceActionId } from './quickReplace'
@@ -100,9 +108,11 @@ let quickNoteSessionState: QuickNoteState | null = null
 let quickNoteEditorViewState: CodeEditorViewState | undefined
 let quickNoteTreeScrollTop = 0
 let quickNoteFindIndex = 0
+let quickNoteNeedsExpandPreference = quickNoteSessionState === null
 
 function createQuickNoteState(): QuickNoteState {
   const source = quickNoteSessionState ?? initialState
+  if (quickNoteSessionState) quickNoteNeedsExpandPreference = false
   return {
     ...source,
     expanded: new Set(source.expanded),
@@ -240,7 +250,7 @@ function NoteColorPicker({ value, disabled, label, onChange }: { value?: string;
 export function QuickNoteTool() {
   const toolActive = useToolActivity()
   const { t } = useI18n()
-  const { settings } = useSettings()
+  const { settings, updateSettings } = useSettings()
   const toast = useToast()
   const editorRef = useRef<QuickNoteCodeEditorHandle>(null)
   const treeScrollRef = useRef<HTMLDivElement>(null)
@@ -248,11 +258,13 @@ export function QuickNoteTool() {
   const [state, update] = useReducer(updateState, undefined, createQuickNoteState)
   const latestStateRef = useRef(state)
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve())
+  const treeExpandModeRef = useRef(settings.vault.quickNoteTreeExpandMode)
   const dirty = state.note !== null && (state.content !== state.note.content || state.metadataDirty)
   latestStateRef.current = state
+  treeExpandModeRef.current = settings.vault.quickNoteTreeExpandMode
   const selectedNotePath = state.note?.relativePath ?? ''
   const metadataSignature = JSON.stringify(state.note?.metadata ?? {})
-  const directories = useMemo(() => flattenDirectories(state.nodes), [state.nodes])
+  const directories = useMemo(() => collectDirectoryPaths(state.nodes), [state.nodes])
   const stats = useMemo(() => documentStats(state.content), [state.content])
   const attachmentPaths = useMemo(() => extractAttachmentPaths(state.content), [state.content])
   const attachmentKey = attachmentPaths.join('\n')
@@ -261,6 +273,17 @@ export function QuickNoteTool() {
     {}
   )
   const previewHtml = useMemo(() => renderPreview(state.content, state.note?.metadata.syntax, attachmentUrls), [attachmentUrls, state.content, state.note?.metadata.syntax])
+
+  const scrollSelectedIntoView = useCallback((path = latestStateRef.current.selectedPath) => {
+    if (!path || !treeScrollRef.current) return
+    const row = treeScrollRef.current.querySelector(`[data-path="${CSS.escape(path)}"]`)
+    row?.scrollIntoView({ block: 'nearest' })
+    quickNoteTreeScrollTop = treeScrollRef.current.scrollTop
+  }, [])
+
+  const applyTreeExpandMode = useCallback((mode: VaultTreeExpandMode, nodes: QuickNoteNode[], selectedPath: string) => {
+    return resolveExpandedPaths(collectDirectoryPaths(nodes), mode, selectedPath)
+  }, [])
 
   useLayoutEffect(() => {
     if (state.treeOpen && treeScrollRef.current) treeScrollRef.current.scrollTop = quickNoteTreeScrollTop
@@ -282,7 +305,14 @@ export function QuickNoteTool() {
     if (!path) return
     try {
       const note = await window.mootool.readQuickNote(path)
-      update({ selectedPath: note.relativePath, selectedKind: 'file', note, content: note.content, metadataDirty: false })
+      update({
+        selectedPath: note.relativePath,
+        selectedKind: 'file',
+        note,
+        content: note.content,
+        metadataDirty: false,
+        expanded: ensureAncestorsExpanded(latestStateRef.current.expanded, note.relativePath)
+      })
     } catch {
       update({ selectedPath: '', selectedKind: '', note: null, content: '', metadataDirty: false })
     }
@@ -301,17 +331,50 @@ export function QuickNoteTool() {
     let cancelled = false
     void loadTree().then(async (nodes) => {
       if (cancelled) return
-      if (state.selectedPath) {
+      let selectedPath = latestStateRef.current.selectedPath
+      if (selectedPath) {
         if (!dirty) await reloadCurrentNoteFromDisk()
-        return
+        selectedPath = latestStateRef.current.selectedPath
+      } else {
+        const first = firstFile(nodes)
+        if (!first) {
+          if (quickNoteNeedsExpandPreference) {
+            quickNoteNeedsExpandPreference = false
+            update({ expanded: applyTreeExpandMode(treeExpandModeRef.current, nodes, '') })
+          }
+          return
+        }
+        const note = await window.mootool.readQuickNote(first.relativePath)
+        if (cancelled) return
+        selectedPath = note.relativePath
+        update({ selectedPath: note.relativePath, selectedKind: 'file', note, content: note.content, metadataDirty: false })
       }
-      const first = firstFile(nodes)
-      if (!first) return
-      const note = await window.mootool.readQuickNote(first.relativePath)
-      if (!cancelled) update({ selectedPath: note.relativePath, selectedKind: 'file', note, content: note.content, metadataDirty: false })
+      if (cancelled) return
+      if (quickNoteNeedsExpandPreference) {
+        quickNoteNeedsExpandPreference = false
+        update({ expanded: applyTreeExpandMode(treeExpandModeRef.current, nodes, selectedPath) })
+      } else {
+        const nextExpanded = ensureAncestorsExpanded(latestStateRef.current.expanded, selectedPath)
+        if (nextExpanded.size !== latestStateRef.current.expanded.size
+          || [...nextExpanded].some((path) => !latestStateRef.current.expanded.has(path))) {
+          update({ expanded: nextExpanded })
+        }
+      }
+      window.requestAnimationFrame(() => scrollSelectedIntoView(selectedPath))
     }).catch((error) => toast.error(errorMessage(error)))
     return () => { cancelled = true }
-  }, [dirty, loadTree, reloadCurrentNoteFromDisk, state.selectedPath, toast])
+  }, [applyTreeExpandMode, dirty, loadTree, reloadCurrentNoteFromDisk, scrollSelectedIntoView, toast])
+
+  useEffect(() => {
+    if (!toolActive || !state.treeOpen || !state.selectedPath) return
+    const nextExpanded = ensureAncestorsExpanded(latestStateRef.current.expanded, state.selectedPath)
+    if (nextExpanded.size !== latestStateRef.current.expanded.size
+      || [...nextExpanded].some((path) => !latestStateRef.current.expanded.has(path))) {
+      update({ expanded: nextExpanded })
+    }
+    const frame = window.requestAnimationFrame(() => scrollSelectedIntoView(state.selectedPath))
+    return () => window.cancelAnimationFrame(frame)
+  }, [scrollSelectedIntoView, state.selectedPath, state.treeOpen, toolActive])
 
   useEffect(() => window.mootool.onQuickNoteVaultChange(() => {
     void loadTree()
@@ -456,6 +519,13 @@ export function QuickNoteTool() {
     if (expanded.has(path)) expanded.delete(path)
     else expanded.add(path)
     update({ expanded })
+  }
+
+  function setTreeExpandMode(mode: VaultTreeExpandMode): void {
+    const expanded = applyTreeExpandMode(mode, state.nodes, state.selectedPath)
+    update({ expanded })
+    void updateSettings({ vault: { quickNoteTreeExpandMode: mode } })
+    window.requestAnimationFrame(() => scrollSelectedIntoView(state.selectedPath))
   }
 
   function openAction(mode: Exclude<ActionDialogMode, null>): void {
@@ -757,6 +827,8 @@ export function QuickNoteTool() {
               <div className="quick-note-tree-actions">
                 <IconButton label={t('quickNote.newNote')} icon={FilePlus2} onClick={() => openAction('createNote')} />
                 <IconButton label={t('quickNote.newFolder')} icon={FolderPlus} onClick={() => openAction('createFolder')} />
+                <IconButton label={t('quickNote.expandAll')} icon={UnfoldVertical} active={settings.vault.quickNoteTreeExpandMode === 'expandAll'} onClick={() => setTreeExpandMode('expandAll')} />
+                <IconButton label={t('quickNote.collapseAll')} icon={FoldVertical} active={settings.vault.quickNoteTreeExpandMode === 'collapseAll'} onClick={() => setTreeExpandMode('collapseAll')} />
               </div>
               <div ref={treeScrollRef} className="quick-note-tree-scroll" onScroll={(event) => { quickNoteTreeScrollTop = event.currentTarget.scrollTop }}>
                 {state.nodes.length
@@ -976,10 +1048,6 @@ function firstFile(nodes: QuickNoteNode[]): QuickNoteNode | null {
     if (nested) return nested
   }
   return null
-}
-
-function flattenDirectories(nodes: QuickNoteNode[]): string[] {
-  return nodes.flatMap((node) => node.kind === 'directory' ? [node.relativePath, ...flattenDirectories(node.children ?? [])] : [])
 }
 
 function selectedDirectory(path: string, kind: EntryKind): string {
