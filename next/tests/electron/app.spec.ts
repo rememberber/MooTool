@@ -102,7 +102,7 @@ test('creates and persists custom navigation groups', async () => {
   await expect(customGroup).toBeVisible()
   await expect(customGroup.locator('.tool-button')).toHaveCount(2)
   await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({
-    schemaVersion: 9,
+    schemaVersion: 10,
     layout: { customGroups: [{ name: '开发常用', toolIds: ['json', 'http'] }] }
   })
 
@@ -380,6 +380,13 @@ test('opens the settings window and synchronizes appearance changes', async () =
   await settingsPage.getByRole('button', { name: '浅色' }).click()
   await expect(mainPage.locator('html')).toHaveAttribute('data-theme', 'light')
 
+  await settingsPage.locator('.settings-nav__item').filter({ hasText: '布局与习惯' }).click()
+  const jsonNavigationToggle = settingsPage.getByRole('checkbox', { name: 'JSON', exact: true })
+  await expect(jsonNavigationToggle).toBeChecked()
+  await jsonNavigationToggle.uncheck()
+  await expect.poll(() => settingsPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ layout: { hiddenNavigationToolIds: ['json'] } })
+  await expect(mainPage.getByRole('button', { name: 'JSON', exact: true })).toHaveCount(0)
+
   await settingsPage.locator('.settings-nav__item').filter({ hasText: '运行环境' }).click()
   const runtimeGroup = settingsPage.locator('.runtime-settings-group')
   await expect(runtimeGroup.locator('.runtime-row')).toHaveCount(4)
@@ -417,6 +424,13 @@ test('opens the settings window and synchronizes appearance changes', async () =
   await expect.poll(() => settingsPage.evaluate(() => window.mootool.getUpdateState())).toMatchObject({ status: 'available', version: '9.9.9' })
 
   await settingsPage.locator('.settings-titlebar .icon-ghost').click()
+
+  await mainPage.getByRole('button', { name: '搜索', exact: true }).click()
+  await mainPage.locator('.command-palette__search input').fill('json')
+  await expect(mainPage.locator('.command-result')).toContainText('JSON')
+  await mainPage.getByRole('button', { name: '关闭搜索', exact: true }).click()
+  await mainPage.evaluate(() => window.mootool.updateSettings({ layout: { hiddenNavigationToolIds: [] } }))
+  await expect(mainPage.getByRole('button', { name: 'JSON', exact: true })).toBeVisible()
 
   await electronApp.evaluate(({ BrowserWindow }) => {
     BrowserWindow.getAllWindows().find((window) => !window.getParentWindow())?.webContents.send('update:state-changed', {

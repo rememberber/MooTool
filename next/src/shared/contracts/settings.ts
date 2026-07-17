@@ -2,7 +2,7 @@ import { normalizeTranslationLanguagePair } from './network'
 import { isToolId, type ToolId } from './app'
 import { isVaultTreeExpandMode, type VaultTreeExpandMode } from '../vaultTreeExpand'
 
-export const appSettingsSchemaVersion = 9
+export const appSettingsSchemaVersion = 10
 
 export type AppLanguage = 'zh-CN' | 'en-US' | 'ja-JP'
 export type ThemePreference = 'system' | 'light' | 'dark'
@@ -46,6 +46,7 @@ export type AppSettings = {
     hideNavigationTitles: boolean
     navigationStyle: NavigationStyle
     customGroups: CustomToolGroup[]
+    hiddenNavigationToolIds: ToolId[]
     paneSizes: Record<string, number[]>
   }
   editor: {
@@ -139,6 +140,7 @@ export const defaultAppSettings: AppSettings = {
     hideNavigationTitles: false,
     navigationStyle: 'classic',
     customGroups: [],
+    hiddenNavigationToolIds: [],
     paneSizes: {}
   },
   editor: {
@@ -252,6 +254,7 @@ export function normalizeSettings(value: AppSettings): AppSettings {
         ? value.layout.navigationStyle
         : defaultAppSettings.layout.navigationStyle,
       customGroups: normalizeCustomGroups(value.layout.customGroups),
+      hiddenNavigationToolIds: normalizeNavigationToolIds(value.layout.hiddenNavigationToolIds),
       paneSizes: normalizePaneSizes(value.layout.paneSizes)
     },
     editor: {
@@ -293,6 +296,11 @@ export function normalizeSettings(value: AppSettings): AppSettings {
       translationTargetLang: translationLanguages.targetLang
     }
   }
+}
+
+function normalizeNavigationToolIds(value: ToolId[] | undefined): ToolId[] {
+  if (!Array.isArray(value)) return []
+  return [...new Set(value.filter((toolId): toolId is ToolId => toolId !== 'mootool' && isToolId(toolId)))]
 }
 
 export function normalizeCustomGroups(value: CustomToolGroup[] | undefined): CustomToolGroup[] {

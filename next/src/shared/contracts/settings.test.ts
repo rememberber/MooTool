@@ -63,13 +63,14 @@ describe('mergeSettings', () => {
       }
     })
 
-    expect(settings.schemaVersion).toBe(9)
+    expect(settings.schemaVersion).toBe(10)
     expect(settings.appearance.interfaceStyle).toBe('modern')
     expect(settings.runtime.javaPath).toBe('/opt/java')
     expect(settings.runtime.drafts).toEqual(defaultAppSettings.runtime.drafts)
     expect(settings.runtime.options).toEqual(defaultAppSettings.runtime.options)
     expect(settings.layout.paneSizes).toEqual({})
     expect(settings.layout.customGroups).toEqual([])
+    expect(settings.layout.hiddenNavigationToolIds).toEqual([])
     expect(settings.general.autoDownloadUpdates).toBe(true)
     expect(settings.vault.autoCommitIdleSeconds).toBe(30)
     expect(settings.vault.autoCommitInactiveSeconds).toBe(120)
@@ -88,6 +89,14 @@ describe('mergeSettings', () => {
       { id: 'daily', name: 'My tools', toolIds: ['json'] },
       { id: 'daily-2', name: 'Second', toolIds: ['cron'] }
     ])
+  })
+
+  it('normalizes hidden navigation tools without allowing the home item', () => {
+    const settings = mergeSettings(defaultAppSettings, {
+      layout: { hiddenNavigationToolIds: ['json', 'json', 'mootool', 'unknown' as 'json'] }
+    })
+
+    expect(settings.layout.hiddenNavigationToolIds).toEqual(['json'])
   })
 
   it('persists vault tree expand modes', () => {

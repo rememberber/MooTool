@@ -31,6 +31,8 @@ export function Workbench() {
   const activeTool = toolById.get(activeToolId) ?? toolById.get('mootool')!
   const activeToolWindow = activeTool.id === 'mootool' ? undefined : toolWindows.tools.find((item) => item.toolId === activeTool.id)
   const renderedToolIds = mountedToolIds.includes(activeTool.id) ? mountedToolIds : [...mountedToolIds, activeTool.id]
+  const hiddenNavigationToolIds = new Set(settings.layout.hiddenNavigationToolIds)
+  const visibleBuiltinToolCount = toolGroups.reduce((count, group) => count + group.toolIds.filter((toolId) => !hiddenNavigationToolIds.has(toolId)).length, 0)
   const workspaceOverlayOpen = searchOpen || groupManagerOpen
   const workspaceOverlayReady = !toolWindows.enabled || toolWindows.activeToolId === 'mootool'
   const dockedToolViewActive = toolWindows.enabled
@@ -172,26 +174,30 @@ export function Workbench() {
               )
             })}
 
-            {settings.layout.customGroups.length > 0 && <div className="tool-group-divider">{t('app.group.all')}</div>}
+            {settings.layout.customGroups.length > 0 && visibleBuiltinToolCount > 0 && <div className="tool-group-divider">{t('app.group.all')}</div>}
 
-            {toolGroups.map((group) => (
-              <section className="tool-group" key={group.id}>
-                <h2>{t(group.titleKey)}</h2>
-                {group.toolIds.map((toolId) => {
-                  const tool = toolById.get(toolId)!
-                  return (
-                    <ToolButton
-                      key={tool.id}
-                      icon={tool.icon}
-                      label={t(tool.titleKey)}
-                      active={activeToolId === tool.id}
-                      detached={toolWindows.tools.some((item) => item.toolId === tool.id && item.detached)}
-                      onClick={() => openTool(tool.id)}
-                    />
-                  )
-                })}
-              </section>
-            ))}
+            {toolGroups.map((group) => {
+              const visibleToolIds = group.toolIds.filter((toolId) => !hiddenNavigationToolIds.has(toolId))
+              if (visibleToolIds.length === 0) return null
+              return (
+                <section className="tool-group" key={group.id}>
+                  <h2>{t(group.titleKey)}</h2>
+                  {visibleToolIds.map((toolId) => {
+                    const tool = toolById.get(toolId)!
+                    return (
+                      <ToolButton
+                        key={tool.id}
+                        icon={tool.icon}
+                        label={t(tool.titleKey)}
+                        active={activeToolId === tool.id}
+                        detached={toolWindows.tools.some((item) => item.toolId === tool.id && item.detached)}
+                        onClick={() => openTool(tool.id)}
+                      />
+                    )
+                  })}
+                </section>
+              )
+            })}
           </nav>
 
           {settings.layout.showRecent && <section className="recent-section">

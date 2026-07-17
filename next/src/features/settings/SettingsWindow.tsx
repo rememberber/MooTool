@@ -19,6 +19,7 @@ import {
   type LucideIcon
 } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
+import { toolById, toolGroups, type ToolId } from '@/app/toolRegistry'
 import { BrandIcon } from '@/shared/components/BrandIcon'
 import {
   accentColorPresets,
@@ -242,32 +243,78 @@ function AppearanceSettings({ settings, commit }: SettingsPanelProps) {
 
 function LayoutSettings({ settings, commit }: SettingsPanelProps) {
   const { t } = useI18n()
+  const hiddenToolIds = new Set(settings.layout.hiddenNavigationToolIds)
+  const navigationToolIds = toolGroups.flatMap((group) => group.toolIds)
+
+  function setToolVisible(toolId: ToolId, visible: boolean): void {
+    const nextHiddenToolIds = visible
+      ? settings.layout.hiddenNavigationToolIds.filter((id) => id !== toolId)
+      : navigationToolIds.filter((id) => id === toolId || hiddenToolIds.has(id))
+    commit({ layout: { hiddenNavigationToolIds: nextHiddenToolIds } })
+  }
+
   return (
-    <SettingsGroup title={t('settings.group.navigation')}>
-      <SettingRow label={t('settings.navigationStyle')}>
-        <Segmented
-          value={settings.layout.navigationStyle}
-          options={[
-            { value: 'classic', label: t('settings.navigation.classic') },
-            { value: 'card', label: t('settings.navigation.card') },
-            { value: 'grouped', label: t('settings.navigation.grouped') }
-          ]}
-          onChange={(value) => commit({ layout: { navigationStyle: value } })}
-        />
-      </SettingRow>
-      <SettingRow label={t('settings.showRecent')}>
-        <Toggle checked={settings.layout.showRecent} label={t('settings.showRecent')} onChange={(value) => commit({ layout: { showRecent: value } })} />
-      </SettingRow>
-      <SettingRow label={t('settings.compactNavigation')}>
-        <Toggle checked={settings.layout.compactNavigation} label={t('settings.compactNavigation')} onChange={(value) => commit({ layout: { compactNavigation: value } })} />
-      </SettingRow>
-      <SettingRow label={t('settings.showSeparators')}>
-        <Toggle checked={settings.layout.showSeparators} label={t('settings.showSeparators')} onChange={(value) => commit({ layout: { showSeparators: value } })} />
-      </SettingRow>
-      <SettingRow label={t('settings.hideNavigationTitles')}>
-        <Toggle checked={settings.layout.hideNavigationTitles} label={t('settings.hideNavigationTitles')} onChange={(value) => commit({ layout: { hideNavigationTitles: value } })} />
-      </SettingRow>
-    </SettingsGroup>
+    <>
+      <SettingsGroup title={t('settings.group.navigation')}>
+        <SettingRow label={t('settings.navigationStyle')}>
+          <Segmented
+            value={settings.layout.navigationStyle}
+            options={[
+              { value: 'classic', label: t('settings.navigation.classic') },
+              { value: 'card', label: t('settings.navigation.card') },
+              { value: 'grouped', label: t('settings.navigation.grouped') }
+            ]}
+            onChange={(value) => commit({ layout: { navigationStyle: value } })}
+          />
+        </SettingRow>
+        <SettingRow label={t('settings.showRecent')}>
+          <Toggle checked={settings.layout.showRecent} label={t('settings.showRecent')} onChange={(value) => commit({ layout: { showRecent: value } })} />
+        </SettingRow>
+        <SettingRow label={t('settings.compactNavigation')}>
+          <Toggle checked={settings.layout.compactNavigation} label={t('settings.compactNavigation')} onChange={(value) => commit({ layout: { compactNavigation: value } })} />
+        </SettingRow>
+        <SettingRow label={t('settings.showSeparators')}>
+          <Toggle checked={settings.layout.showSeparators} label={t('settings.showSeparators')} onChange={(value) => commit({ layout: { showSeparators: value } })} />
+        </SettingRow>
+        <SettingRow label={t('settings.hideNavigationTitles')}>
+          <Toggle checked={settings.layout.hideNavigationTitles} label={t('settings.hideNavigationTitles')} onChange={(value) => commit({ layout: { hideNavigationTitles: value } })} />
+        </SettingRow>
+      </SettingsGroup>
+
+      <SettingsGroup title={t('settings.navigation.toolsTitle')}>
+        <div className="navigation-tool-visibility">
+          <div className="navigation-tool-visibility__intro">
+            <p>{t('settings.navigation.toolsDescription')}</p>
+            <div>
+              <button className="settings-command settings-command--quiet" type="button" disabled={hiddenToolIds.size === 0} onClick={() => commit({ layout: { hiddenNavigationToolIds: [] } })}>
+                {t('settings.navigation.showAll')}
+              </button>
+              <button className="settings-command settings-command--quiet" type="button" disabled={hiddenToolIds.size === navigationToolIds.length} onClick={() => commit({ layout: { hiddenNavigationToolIds: navigationToolIds } })}>
+                {t('settings.navigation.hideAll')}
+              </button>
+            </div>
+          </div>
+          <div className="navigation-tool-visibility__groups">
+            {toolGroups.map((group) => (
+              <section key={group.id}>
+                <h3>{t(group.titleKey)}</h3>
+                {group.toolIds.map((toolId) => {
+                  const tool = toolById.get(toolId)!
+                  const Icon = tool.icon
+                  return (
+                    <label key={toolId}>
+                      <input type="checkbox" checked={!hiddenToolIds.has(toolId)} onChange={(event) => setToolVisible(toolId, event.target.checked)} />
+                      <Icon size={15} />
+                      <span>{t(tool.titleKey)}</span>
+                    </label>
+                  )
+                })}
+              </section>
+            ))}
+          </div>
+        </div>
+      </SettingsGroup>
+    </>
   )
 }
 
