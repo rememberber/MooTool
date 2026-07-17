@@ -1,7 +1,7 @@
 import { createServer } from 'node:http'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { NetworkService, buildRequestUrl, splitTranslationText } from '../../electron/main/networkService'
-import type { HttpRequestDraft } from './contracts/network'
+import { NetworkService, bingLanguage, buildRequestUrl, googleLanguage, splitTranslationText } from '../../electron/main/networkService'
+import { normalizeTranslationLanguageCode, normalizeTranslationLanguagePair, type HttpRequestDraft } from './contracts/network'
 
 let baseUrl = ''
 const server = createServer((request, response) => {
@@ -60,8 +60,45 @@ describe('network helpers', () => {
   })
 
   it('splits long translation text without losing content', () => {
+    expect(() => splitTranslationText('text', 1)).toThrow('Invalid translation chunk size')
     const text = `${'a'.repeat(8)}\n${'b'.repeat(8)}`
     expect(splitTranslationText(text, 10).join('')).toBe(text)
     expect(splitTranslationText(text, 10).every((chunk) => chunk.length <= 10)).toBe(true)
+
+    const words = 'hello '.repeat(10)
+    const wordChunks = splitTranslationText(words, 20)
+    expect(wordChunks.join('')).toBe(words)
+    expect(wordChunks.slice(0, -1).every((chunk) => /\s$/u.test(chunk))).toBe(true)
+
+    const emoji = `${'a'.repeat(9)}😀${'b'.repeat(9)}`
+    const emojiChunks = splitTranslationText(emoji, 10)
+    expect(emojiChunks.join('')).toBe(emoji)
+    expect(emojiChunks.every((chunk) => chunk.length <= 10)).toBe(true)
+    expect(emojiChunks[0]).toBe('a'.repeat(9))
+    expect(emojiChunks[1].startsWith('😀')).toBe(true)
+  })
+
+  it('converts legacy language codes for Google and Bing', () => {
+    const commonMappings = {
+      wyw: 'lzh', jp: 'ja', kor: 'ko', fra: 'fr', spa: 'es', ara: 'ar', bul: 'bg', est: 'et',
+      dan: 'da', fin: 'fi', rom: 'ro', slo: 'sl', swe: 'sv', vie: 'vi'
+    }
+    for (const [legacyCode, providerCode] of Object.entries(commonMappings)) {
+      expect(googleLanguage(legacyCode)).toBe(providerCode)
+      expect(bingLanguage(legacyCode, false)).toBe(providerCode)
+    }
+    expect(googleLanguage('cht')).toBe('zh-TW')
+    expect(bingLanguage('cht', false)).toBe('zh-Hant')
+    expect(bingLanguage('zh-CN', false)).toBe('zh-Hans')
+    expect(bingLanguage('auto', true)).toBe('auto-detect')
+  })
+
+  it('normalizes persisted localized language names', () => {
+    expect(normalizeTranslationLanguageCode('English', 'auto')).toBe('en')
+    expect(normalizeTranslationLanguageCode('英语', 'auto')).toBe('en')
+    expect(normalizeTranslationLanguageCode('英語', 'auto')).toBe('en')
+    expect(normalizeTranslationLanguageCode('Romanian', 'auto')).toBe('rom')
+    expect(normalizeTranslationLanguageCode('auto', 'zh-CN', false)).toBe('zh-CN')
+    expect(normalizeTranslationLanguagePair('English', 'en')).toEqual({ sourceLang: 'auto', targetLang: 'en' })
   })
 })

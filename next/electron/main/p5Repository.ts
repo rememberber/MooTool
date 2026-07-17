@@ -13,6 +13,7 @@ import type {
   TranslationHistory,
   TranslationWord
 } from '../../src/shared/contracts/network'
+import { normalizeTranslationLanguagePair } from '../../src/shared/contracts/network'
 import type { HostProfile, SaveHostProfileInput } from '../../src/shared/contracts/system'
 
 export class P5Repository {
@@ -310,11 +311,13 @@ function mapHost(row: Record<string, unknown>): HostProfile {
 }
 
 function mapWord(row: Record<string, unknown>): TranslationWord {
-  return { id: Number(row.id), sourceText: String(row.source_text ?? ''), targetText: String(row.target_text ?? ''), sourceLang: String(row.source_lang ?? 'auto'), targetLang: String(row.target_lang ?? 'zh-CN'), remark: String(row.remark ?? ''), createTime: String(row.create_time ?? ''), modifiedTime: String(row.modified_time ?? '') }
+  const languages = normalizeTranslationLanguagePair(row.source_lang, row.target_lang)
+  return { id: Number(row.id), sourceText: String(row.source_text ?? ''), targetText: String(row.target_text ?? ''), sourceLang: languages.sourceLang, targetLang: languages.targetLang, remark: String(row.remark ?? ''), createTime: String(row.create_time ?? ''), modifiedTime: String(row.modified_time ?? '') }
 }
 
 function mapTranslationHistory(row: Record<string, unknown>): TranslationHistory {
-  return { id: Number(row.id), sourceText: String(row.source_text ?? ''), targetText: String(row.target_text ?? ''), sourceLang: String(row.source_lang ?? 'auto'), targetLang: String(row.target_lang ?? 'zh-CN'), translatorType: String(row.translator_type ?? 'google').toLowerCase() === 'bing' ? 'bing' : 'google', createTime: String(row.create_time ?? '') }
+  const languages = normalizeTranslationLanguagePair(row.source_lang, row.target_lang)
+  return { id: Number(row.id), sourceText: String(row.source_text ?? ''), targetText: String(row.target_text ?? ''), sourceLang: languages.sourceLang, targetLang: languages.targetLang, translatorType: String(row.translator_type ?? 'google').toLowerCase() === 'bing' ? 'bing' : 'google', createTime: String(row.create_time ?? '') }
 }
 
 function serialize(value: unknown): string {

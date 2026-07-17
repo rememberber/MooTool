@@ -40,6 +40,15 @@ describe('mergeSettings', () => {
     expect(settings.tools.translationProvider).toBe('bing')
   })
 
+  it('migrates legacy localized translation language names to language codes', () => {
+    const settings = mergeSettings(defaultAppSettings, {
+      tools: { translationSourceLang: 'English', translationTargetLang: '英语' }
+    })
+
+    expect(settings.tools.translationSourceLang).toBe('auto')
+    expect(settings.tools.translationTargetLang).toBe('en')
+  })
+
   it('fills current defaults when migrating schema v2 settings', () => {
     const settings = mergeSettings(defaultAppSettings, {
       schemaVersion: 2,

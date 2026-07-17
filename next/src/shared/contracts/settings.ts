@@ -1,3 +1,5 @@
+import { normalizeTranslationLanguagePair } from './network'
+
 export const appSettingsSchemaVersion = 6
 
 export type AppLanguage = 'zh-CN' | 'en-US' | 'ja-JP'
@@ -209,6 +211,7 @@ export function normalizeSettings(value: AppSettings): AppSettings {
   const navigationStyles: NavigationStyle[] = ['classic', 'card', 'grouped']
   const corrections: AppSettings['tools']['qrErrorCorrection'][] = ['L', 'M', 'Q', 'H']
   const translationProviders: AppSettings['tools']['translationProvider'][] = ['google', 'bing']
+  const translationLanguages = normalizeTranslationLanguagePair(value.tools.translationSourceLang, value.tools.translationTargetLang)
 
   return {
     ...value,
@@ -263,8 +266,8 @@ export function normalizeSettings(value: AppSettings): AppSettings {
         : defaultAppSettings.tools.qrErrorCorrection,
       randomStringLength: clampNumber(value.tools.randomStringLength, 1, 4096, defaultAppSettings.tools.randomStringLength),
       translationProvider: translationProviders.includes(value.tools.translationProvider) ? value.tools.translationProvider : defaultAppSettings.tools.translationProvider,
-      translationSourceLang: normalizeLanguageCode(value.tools.translationSourceLang, defaultAppSettings.tools.translationSourceLang),
-      translationTargetLang: normalizeLanguageCode(value.tools.translationTargetLang, defaultAppSettings.tools.translationTargetLang)
+      translationSourceLang: translationLanguages.sourceLang,
+      translationTargetLang: translationLanguages.targetLang
     }
   }
 }
@@ -295,10 +298,6 @@ function normalizeRuntimeOptions(value: Record<RuntimeSettingsId, RuntimeRunOpti
     arguments: typeof value?.[id]?.arguments === 'string' ? value[id].arguments.slice(0, 2000) : '',
     workingDirectory: typeof value?.[id]?.workingDirectory === 'string' ? value[id].workingDirectory.slice(0, 1000) : ''
   }])) as Record<RuntimeSettingsId, RuntimeRunOption>
-}
-
-function normalizeLanguageCode(value: string, fallback: string): string {
-  return typeof value === 'string' && /^[a-zA-Z-]{2,12}$/.test(value) ? value : fallback
 }
 
 function clampNumber(value: number, minimum: number, maximum: number, fallback: number): number {

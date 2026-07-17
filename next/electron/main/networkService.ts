@@ -138,32 +138,36 @@ export class NetworkService {
 
   private async translateBing(text: string, sourceLang: string, targetLang: string, signal: AbortSignal, dispatcher?: Dispatcher): Promise<string> {
     const session = await this.getBingSession(signal, dispatcher)
-    session.requestCount += 2
-    const body = new URLSearchParams({
-      fromLang: bingLanguage(sourceLang, true),
-      to: bingLanguage(targetLang, false),
-      text,
-      token: session.token,
-      key: session.key,
-      tryFetchingGenderDebiasedTranslations: 'true'
-    })
-    const response = await fetch(`https://cn.bing.com/ttranslatev3?isVertical=1&IG=${encodeURIComponent(session.ig)}&IID=translator.5026.${session.requestCount}`, {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/x-www-form-urlencoded',
-        origin: 'https://cn.bing.com',
-        referer: 'https://cn.bing.com/translator',
-        'user-agent': userAgent
-      },
-      body: body.toString(),
-      signal,
-      dispatcher
-    })
-    if (!response.ok) throw new Error(`Bing HTTP ${response.status}`)
-    const payload = await response.json() as Array<{ translations?: Array<{ text?: string }> }>
-    const translated = payload[0]?.translations?.[0]?.text
-    if (!translated) throw new Error('Bing returned no translation')
-    return translated
+    const results: string[] = []
+    for (const chunk of splitTranslationText(text, 1_000)) {
+      session.requestCount += 2
+      const body = new URLSearchParams({
+        fromLang: bingLanguage(sourceLang, true),
+        to: bingLanguage(targetLang, false),
+        text: chunk,
+        token: session.token,
+        key: session.key,
+        tryFetchingGenderDebiasedTranslations: 'true'
+      })
+      const response = await fetch(`https://cn.bing.com/ttranslatev3?isVertical=1&IG=${encodeURIComponent(session.ig)}&IID=translator.5026.${session.requestCount}`, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/x-www-form-urlencoded',
+          origin: 'https://cn.bing.com',
+          referer: 'https://cn.bing.com/translator',
+          'user-agent': userAgent
+        },
+        body: body.toString(),
+        signal,
+        dispatcher
+      })
+      if (!response.ok) throw new Error(`Bing HTTP ${response.status}`)
+      const payload = await response.json() as Array<{ translations?: Array<{ text?: string }> }>
+      const translated = payload[0]?.translations?.[0]?.text
+      if (!translated) throw new Error('Bing returned no translation')
+      results.push(translated)
+    }
+    return results.join('')
   }
 
   private async getBingSession(signal: AbortSignal, dispatcher?: Dispatcher): Promise<BingSession> {
@@ -223,23 +227,29 @@ async function translateGoogle(text: string, sourceLang: string, targetLang: str
 }
 
 export function splitTranslationText(text: string, maxLength: number): string[] {
+  if (!Number.isInteger(maxLength) || maxLength < 2) throw new Error('Invalid translation chunk size')
   if (text.length <= maxLength) return [text]
   const chunks: string[] = []
-  let current = ''
-  for (const paragraph of text.split(/(\n)/)) {
-    if (current.length + paragraph.length <= maxLength) {
-      current += paragraph
-      continue
+  let offset = 0
+  while (offset < text.length) {
+    let end = Math.min(offset + maxLength, text.length)
+    if (end < text.length) {
+      const minimumNaturalBreak = offset + Math.floor(maxLength / 2)
+      for (let cursor = end; cursor > minimumNaturalBreak; cursor -= 1) {
+        if (/[\s.!?。！？,，;；:：]/u.test(text[cursor - 1])) {
+          end = cursor
+          break
+        }
+      }
+      const previousCodeUnit = text.charCodeAt(end - 1)
+      const nextCodeUnit = text.charCodeAt(end)
+      if (previousCodeUnit >= 0xD800 && previousCodeUnit <= 0xDBFF && nextCodeUnit >= 0xDC00 && nextCodeUnit <= 0xDFFF) {
+        end -= 1
+      }
     }
-    if (current) chunks.push(current)
-    current = ''
-    for (let offset = 0; offset < paragraph.length; offset += maxLength) {
-      const part = paragraph.slice(offset, offset + maxLength)
-      if (part.length === maxLength) chunks.push(part)
-      else current = part
-    }
+    chunks.push(text.slice(offset, end))
+    offset = end
   }
-  if (current) chunks.push(current)
   return chunks
 }
 
@@ -300,11 +310,44 @@ function errorMessage(error: unknown): string {
   return String(error)
 }
 
-function googleLanguage(code: string): string {
-  return ({ jp: 'ja', kor: 'ko', fra: 'fr', spa: 'es', ara: 'ar', cht: 'zh-TW', vie: 'vi' } as Record<string, string>)[code] || code || 'auto'
+export function googleLanguage(code: string): string {
+  return ({
+    wyw: 'lzh',
+    jp: 'ja',
+    kor: 'ko',
+    fra: 'fr',
+    spa: 'es',
+    ara: 'ar',
+    bul: 'bg',
+    est: 'et',
+    dan: 'da',
+    fin: 'fi',
+    rom: 'ro',
+    slo: 'sl',
+    swe: 'sv',
+    cht: 'zh-TW',
+    vie: 'vi'
+  } as Record<string, string>)[code] || code || 'auto'
 }
 
-function bingLanguage(code: string, source: boolean): string {
+export function bingLanguage(code: string, source: boolean): string {
   if (!code || code === 'auto') return source ? 'auto-detect' : 'zh-Hans'
-  return ({ 'zh-CN': 'zh-Hans', cht: 'zh-Hant', jp: 'ja', kor: 'ko', fra: 'fr', spa: 'es', ara: 'ar', swe: 'sv', vie: 'vi' } as Record<string, string>)[code] || code
+  return ({
+    'zh-CN': 'zh-Hans',
+    cht: 'zh-Hant',
+    wyw: 'lzh',
+    jp: 'ja',
+    kor: 'ko',
+    fra: 'fr',
+    spa: 'es',
+    ara: 'ar',
+    bul: 'bg',
+    est: 'et',
+    dan: 'da',
+    fin: 'fi',
+    rom: 'ro',
+    slo: 'sl',
+    swe: 'sv',
+    vie: 'vi'
+  } as Record<string, string>)[code] || code
 }

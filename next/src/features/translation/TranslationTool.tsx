@@ -22,37 +22,67 @@ export function TranslationTool() {
   const [fallbackUsed, setFallbackUsed] = useState(false)
   const [translating, setTranslating] = useState(false)
   const requestId = useRef('')
+  const requestSequence = useRef(0)
   const restoredSource = useRef<string | null>(null)
   const reportError = useRef(actions.reportError)
   reportError.current = actions.reportError
 
+  const cancelActiveTranslation = useCallback(() => {
+    requestSequence.current += 1
+    const activeRequestId = requestId.current
+    requestId.current = ''
+    if (activeRequestId) void window.mootool.cancelNetworkRequest(activeRequestId)
+  }, [])
+
   const translate = useCallback(async (text: string) => {
-    if (!text.trim()) { setTarget(''); setProviderUsed(null); return }
-    if (requestId.current) await window.mootool.cancelNetworkRequest(requestId.current)
-    requestId.current = `translation-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    const sequence = ++requestSequence.current
+    const previousRequestId = requestId.current
+    requestId.current = ''
+    if (!text.trim()) {
+      if (previousRequestId) void window.mootool.cancelNetworkRequest(previousRequestId)
+      setTarget('')
+      setProviderUsed(null)
+      setFallbackUsed(false)
+      setTranslating(false)
+      return
+    }
+    if (previousRequestId) await window.mootool.cancelNetworkRequest(previousRequestId)
+    if (sequence !== requestSequence.current) return
+    const currentRequestId = `translation-${Date.now()}-${Math.random().toString(36).slice(2)}`
+    requestId.current = currentRequestId
     setTranslating(true)
     try {
       const result = await window.mootool.translate({
-        requestId: requestId.current,
+        requestId: currentRequestId,
         text,
         sourceLang: settings.tools.translationSourceLang,
         targetLang: settings.tools.translationTargetLang,
         preferredProvider: settings.tools.translationProvider,
         timeoutMs: settings.network.translationTimeoutMs
       })
-      setTarget(result.text)
-      setProviderUsed(result.provider)
-      setFallbackUsed(result.fallbackUsed)
+      if (sequence === requestSequence.current && requestId.current === currentRequestId) {
+        setTarget(result.text)
+        setProviderUsed(result.provider)
+        setFallbackUsed(result.fallbackUsed)
+      }
     } catch (error) {
-      if (!String(error).includes('ABORTED')) reportError.current(error)
-    } finally { setTranslating(false) }
+      if (sequence === requestSequence.current && !String(error).includes('ABORTED')) reportError.current(error)
+    } finally {
+      if (sequence === requestSequence.current && requestId.current === currentRequestId) {
+        requestId.current = ''
+        setTranslating(false)
+      }
+    }
   }, [settings.network.translationTimeoutMs, settings.tools.translationProvider, settings.tools.translationSourceLang, settings.tools.translationTargetLang])
 
   useEffect(() => {
     if (restoredSource.current === source) return
     const timer = window.setTimeout(() => { void translate(source) }, 500)
-    return () => window.clearTimeout(timer)
-  }, [source, translate])
+    return () => {
+      window.clearTimeout(timer)
+      cancelActiveTranslation()
+    }
+  }, [cancelActiveTranslation, source, translate])
 
   async function saveWord(): Promise<void> {
     if (!source.trim()) return
@@ -62,9 +92,49 @@ export function TranslationTool() {
     } catch (error) { actions.reportError(error) }
   }
 
+  function prepareForRetranslation(): void {
+    restoredSource.current = null
+    cancelActiveTranslation()
+    setTranslating(false)
+  }
+
+  function changeSourceLanguage(value: string): void {
+    prepareForRetranslation()
+    const targetLang = value !== 'auto' && value === settings.tools.translationTargetLang
+      ? alternateTargetLanguage(value)
+      : settings.tools.translationTargetLang
+    void updateSettings({ tools: { translationSourceLang: value, translationTargetLang: targetLang } })
+  }
+
+  function changeTargetLanguage(value: string): void {
+    prepareForRetranslation()
+    const targetLang = value === settings.tools.translationSourceLang ? alternateTargetLanguage(value) : value
+    void updateSettings({ tools: { translationTargetLang: targetLang } })
+  }
+
+  function changeProvider(value: TranslationProvider): void {
+    prepareForRetranslation()
+    void updateSettings({ tools: { translationProvider: value } })
+  }
+
+  function changeSource(value: string): void {
+    prepareForRetranslation()
+    setSource(value)
+  }
+
+  function clear(): void {
+    prepareForRetranslation()
+    setSource('')
+    setTarget('')
+    setProviderUsed(null)
+    setFallbackUsed(false)
+  }
+
   function exchange(): void {
     const sourceCode = settings.tools.translationSourceLang
     const targetCode = settings.tools.translationTargetLang
+    cancelActiveTranslation()
+    setTranslating(false)
     void updateSettings({ tools: { translationSourceLang: targetCode, translationTargetLang: sourceCode === 'auto' ? 'en' : sourceCode } })
     restoredSource.current = null
     setSource(target)
@@ -72,6 +142,8 @@ export function TranslationTool() {
   }
 
   function restore(sourceText: string, targetText: string): void {
+    cancelActiveTranslation()
+    setTranslating(false)
     restoredSource.current = sourceText
     setSource(sourceText)
     setTarget(targetText)
@@ -83,8 +155,8 @@ export function TranslationTool() {
       <div className="local-tool-shell translation-workspace">
         <ToolTabs tabs={(['translate', 'words', 'history'] as TranslationTab[]).map((id) => ({ id, label: t(`translation.tab.${id}` as 'translation.tab.translate') }))} active={tab} onChange={setTab} />
         {tab === 'translate' && <div className="translation-main">
-          <div className="translation-toolbar"><LanguageSelect value={settings.tools.translationSourceLang} includeAuto onChange={(value) => { void updateSettings({ tools: { translationSourceLang: value } }) }} /><button className="icon-button" type="button" aria-label={t('translation.exchange')} onClick={exchange}><ArrowLeftRight size={14} /></button><LanguageSelect value={settings.tools.translationTargetLang} onChange={(value) => { void updateSettings({ tools: { translationTargetLang: value } }) }} /><span className="p4-toolbar__spacer" /><label>{t('translation.provider')}<select value={settings.tools.translationProvider} onChange={(event) => { void updateSettings({ tools: { translationProvider: event.target.value as TranslationProvider } }) }}><option value="google">Google</option><option value="bing">Bing</option></select></label><button className="icon-button" type="button" aria-label={t('translation.copy')} disabled={!target} onClick={() => { void actions.copy(target) }}><Copy size={14} /></button><button className="icon-button" type="button" aria-label={t('translation.saveWord')} disabled={!source} onClick={() => { void saveWord() }}><Star size={14} /></button><button className="icon-button" type="button" aria-label={t('common.action.clear')} onClick={() => { setSource(''); setTarget('') }}><X size={14} /></button></div>
-          <ResizableColumns className="translation-editor-grid" columns={2} defaultSizes={[1, 1]} minPaneWidths={[280, 280]} storageKey="translation-editor"><TextCodeEditor className="translation-source-editor" testId="translation-source" ariaLabel={t('translation.sourcePlaceholder')} value={source} placeholder={t('translation.sourcePlaceholder')} onChange={(value) => { restoredSource.current = null; setSource(value) }} /><div className="translation-result"><TextCodeEditor className="translation-target-editor" testId="translation-result" ariaLabel={t('translation.targetPlaceholder')} value={translating ? t('translation.translating') : target} readOnly /><footer>{providerUsed && <span><Languages size={13} />{providerUsed === 'google' ? 'Google' : 'Bing'}{fallbackUsed ? ` · ${t('translation.fallback')}` : ''}</span>}<span>{source.length} / 50000</span></footer></div></ResizableColumns>
+          <div className="translation-toolbar"><LanguageSelect value={settings.tools.translationSourceLang} includeAuto onChange={changeSourceLanguage} /><button className="icon-button" type="button" aria-label={t('translation.exchange')} onClick={exchange}><ArrowLeftRight size={14} /></button><LanguageSelect value={settings.tools.translationTargetLang} onChange={changeTargetLanguage} /><span className="p4-toolbar__spacer" /><label>{t('translation.provider')}<select value={settings.tools.translationProvider} onChange={(event) => changeProvider(event.target.value as TranslationProvider)}><option value="google">Google</option><option value="bing">Bing</option></select></label><button className="icon-button" type="button" aria-label={t('translation.copy')} disabled={!target} onClick={() => { void actions.copy(target) }}><Copy size={14} /></button><button className="icon-button" type="button" aria-label={t('translation.saveWord')} disabled={!source} onClick={() => { void saveWord() }}><Star size={14} /></button><button className="icon-button" type="button" aria-label={t('common.action.clear')} onClick={clear}><X size={14} /></button></div>
+          <ResizableColumns className="translation-editor-grid" columns={2} defaultSizes={[1, 1]} minPaneWidths={[280, 280]} storageKey="translation-editor"><TextCodeEditor className="translation-source-editor" testId="translation-source" ariaLabel={t('translation.sourcePlaceholder')} value={source} placeholder={t('translation.sourcePlaceholder')} onChange={changeSource} /><div className="translation-result"><TextCodeEditor className="translation-target-editor" testId="translation-result" ariaLabel={t('translation.targetPlaceholder')} value={translating ? t('translation.translating') : target} readOnly /><footer>{providerUsed && <span><Languages size={13} />{providerUsed === 'google' ? 'Google' : 'Bing'}{fallbackUsed ? ` · ${t('translation.fallback')}` : ''}</span>}<span>{source.length} / 50000</span></footer></div></ResizableColumns>
         </div>}
         {tab === 'words' && <WordBook onApply={(word) => { restore(word.sourceText, word.targetText); void updateSettings({ tools: { translationSourceLang: word.sourceLang, translationTargetLang: word.targetLang } }); setTab('translate') }} onRetranslate={(word) => translateWord(word, settings, actions.reportError)} />}
         {tab === 'history' && <TranslationHistoryPanel onApply={(item) => { restore(item.sourceText, item.targetText); void updateSettings({ tools: { translationSourceLang: item.sourceLang, translationTargetLang: item.targetLang } }); setTab('translate') }} />}
@@ -95,7 +167,7 @@ export function TranslationTool() {
 
 function LanguageSelect({ value, includeAuto = false, onChange }: { value: string; includeAuto?: boolean; onChange: (value: string) => void }) {
   const { t } = useI18n()
-  return <select aria-label={includeAuto ? t('translation.sourceLanguage') : t('translation.targetLanguage')} value={value} onChange={(event) => onChange(event.target.value)}>{translationLanguageCodes.filter((code) => includeAuto || code !== 'auto').map((code) => <option value={code} key={code}>{t(`translation.lang.${code}` as MessageKey)}</option>)}</select>
+  return <select aria-label={includeAuto ? t('translation.sourceLanguage') : t('translation.targetLanguage')} value={value} onChange={(event) => onChange(event.target.value)}>{translationLanguageCodes.map((code) => includeAuto || code !== 'auto' ? <option value={code} key={code}>{t(`translation.lang.${code}` as MessageKey)}</option> : null)}</select>
 }
 
 function WordBook({ onApply, onRetranslate }: { onApply: (word: TranslationWord) => void; onRetranslate: (word: TranslationWord) => Promise<TranslationWord> }) {
@@ -117,7 +189,7 @@ function TranslationHistoryPanel({ onApply }: { onApply: (item: TranslationHisto
   const [items, setItems] = useState<TranslationHistory[]>([])
   const load = useCallback(async () => setItems(await window.mootool.listTranslationHistory(query)), [query])
   useEffect(() => { const timer = window.setTimeout(() => { void load() }, 100); return () => clearTimeout(timer) }, [load])
-  return <div className="translation-history"><div className="compact-search"><Search size={13} /><input value={query} placeholder={t('translation.searchHistory')} onChange={(event) => setQuery(event.target.value)} /></div><div className="translation-history-list">{items.length === 0 ? <div className="history-empty">{t('history.empty')}</div> : items.map((item) => <article key={item.id}><button type="button" onClick={() => onApply(item)}><header><strong>{languageLabel(item.sourceLang, t)} → {languageLabel(item.targetLang, t)}</strong><span>{item.translatorType} · {item.createTime}</span></header><p>{item.sourceText}</p><p>{item.targetText}</p></button><button className="icon-button" type="button" aria-label={t('history.delete')} onClick={() => { void window.mootool.deleteTranslationHistory(item.id).then(load) }}><Trash2 size={13} /></button></article>)}</div><footer><button className="dialog-button dialog-button--danger" type="button" disabled={!items.length} onClick={() => { if (window.confirm(t('history.confirmClear'))) void window.mootool.clearTranslationHistory().then(load) }}><Trash2 size={14} />{t('history.clearAll')}</button></footer></div>
+  return <div className="translation-history"><div className="compact-search"><Search size={13} /><input aria-label={t('translation.searchHistory')} value={query} placeholder={t('translation.searchHistory')} onChange={(event) => setQuery(event.target.value)} /></div><div className="translation-history-list">{items.length === 0 ? <div className="history-empty">{t('history.empty')}</div> : items.map((item) => <article key={item.id}><button type="button" onClick={() => onApply(item)}><header><strong>{languageLabel(item.sourceLang, t)} → {languageLabel(item.targetLang, t)}</strong><span>{item.translatorType} · {item.createTime}</span></header><p>{item.sourceText}</p><p>{item.targetText}</p></button><button className="icon-button" type="button" aria-label={t('history.delete')} onClick={() => { void window.mootool.deleteTranslationHistory(item.id).then(load) }}><Trash2 size={13} /></button></article>)}</div><footer><button className="dialog-button dialog-button--danger" type="button" disabled={!items.length} onClick={() => { if (window.confirm(t('history.confirmClear'))) void window.mootool.clearTranslationHistory().then(load) }}><Trash2 size={14} />{t('history.clearAll')}</button></footer></div>
 }
 
 async function translateWord(word: TranslationWord, settings: ReturnType<typeof useSettings>['settings'], reportError: (error: unknown) => void): Promise<TranslationWord> {
@@ -129,4 +201,8 @@ async function translateWord(word: TranslationWord, settings: ReturnType<typeof 
 
 function languageLabel(code: string, t: (key: MessageKey) => string): string {
   return t(`translation.lang.${code}` as MessageKey)
+}
+
+function alternateTargetLanguage(code: string): string {
+  return code === 'zh-CN' ? 'en' : 'zh-CN'
 }
