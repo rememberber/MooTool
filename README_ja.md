@@ -334,6 +334,9 @@ MooTool
 [iconfont](https://www.iconfont.cn/)
 
 ## 開発者向けメモ
+
+複数製品のバージョン、Git tag、GitHub Release、`Latest`、CI 分離ルールについては、[複数製品のリリース規約](RELEASE_CONVENTIONS.md)を参照してください。
+
 最低 JDK：**21**  
 開発を始める前に、**下図のとおり IntelliJ IDEA を設定**し、**maven clean** を実行してください：
 ![considerations](assets/material/gui_build.png)

@@ -19,6 +19,7 @@ export function App() {
 
 function ThemedApp() {
   useSystemTheme()
+  useEscapeToDismissWindow()
   const params = new URLSearchParams(window.location.search)
   const windowType = params.get('window')
 
@@ -28,6 +29,25 @@ function ThemedApp() {
       {windowType === 'settings' ? <SettingsWindow /> : windowType === 'tool' ? <ToolWindow requestedToolId={params.get('toolId') ?? ''} /> : <Workbench />}
     </ToastProvider>
   )
+}
+
+function useEscapeToDismissWindow(): void {
+  useEffect(() => {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape' || event.repeat || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return
+
+      // Dialogs, menus and other transient UI own the first Escape press. Their
+      // handlers run during the same dispatch and may also call preventDefault.
+      const transientUiOpen = document.querySelector('[role="dialog"], [role="menu"], [aria-modal="true"]') !== null
+      if (transientUiOpen) return
+
+      window.setTimeout(() => {
+        if (!event.defaultPrevented) void window.mootool.dismissWindow()
+      }, 0)
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [])
 }
 
 function UpdateNotifications() {

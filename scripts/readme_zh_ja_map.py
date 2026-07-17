@@ -237,6 +237,8 @@ ZH_JA_MAP: list[tuple[str, str]] = [
     ("- 全局字体与字号", "- 全体フォントとサイズ"),
     ("## 特别感谢", "## 謝辞"),
     ("## 开发温馨提示", "## 開発者向けメモ"),
+    ("多产品的版本号、Git tag、GitHub Release、`Latest` 标记及 CI 隔离规则统一见[多产品发布约定](RELEASE_CONVENTIONS.md)。",
+     "複数製品のバージョン、Git tag、GitHub Release、`Latest`、CI 分離ルールについては、[複数製品のリリース規約](RELEASE_CONVENTIONS.md)を参照してください。"),
     ("最低JDK版本要求：**21**", "最低 JDK：**21**"),
     ("在你开始开发之前, **请按下图设置IntelliJ IDEA**, 然后 **maven clean**:",
      "開発を始める前に、**下図のとおり IntelliJ IDEA を設定**し、**maven clean** を実行してください："),

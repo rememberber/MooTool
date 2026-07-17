@@ -195,6 +195,13 @@ export class ToolWindowManager {
     return record?.window ?? (record ? this.options.getMainWindow() : null)
   }
 
+  dismissOwner(sender: WebContents): boolean {
+    const record = [...this.records.values()].find((item) => item.view.webContents.id === sender.id)
+    if (!record?.window || record.window.isDestroyed()) return false
+    this.dock(record.toolId)
+    return true
+  }
+
   sendToAll(channel: string, payload: unknown): void {
     for (const record of this.records.values()) {
       if (!record.view.webContents.isDestroyed()) record.view.webContents.send(channel, payload)

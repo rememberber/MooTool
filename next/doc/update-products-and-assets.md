@@ -1,5 +1,7 @@
 # MooTool 多产品更新与安装包选择
 
+> 仓库级版本号、Git tag、GitHub Release、`Latest` 和 CI 隔离规则以 [`RELEASE_CONVENTIONS.md`](../../RELEASE_CONVENTIONS.md) 为准；本文只说明客户端更新清单和安装包选择的实现细节。
+
 ## 1. 产品边界
 
 MooTool 的各实现使用固定产品 ID，版本号、发布节奏、发布页和安装包互不影响：

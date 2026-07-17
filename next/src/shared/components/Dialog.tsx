@@ -19,7 +19,10 @@ export function Dialog({ title, open, onClose, children, footer, width = 640 }: 
   useEffect(() => {
     if (!visible) return
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onClose()
+      }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)

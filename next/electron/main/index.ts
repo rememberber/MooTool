@@ -422,6 +422,17 @@ function registerIpc(): void {
   ipcMain.handle('settings:close', (event) => {
     BrowserWindow.fromWebContents(event.sender)?.close()
   })
+  ipcMain.handle('window:dismiss', (event) => {
+    if (toolWindowManager.dismissOwner(event.sender)) return
+
+    const window = BrowserWindow.fromWebContents(event.sender)
+    if (!window || window.isDestroyed()) return
+    if (window === settingsWindow) {
+      window.close()
+      return
+    }
+    window.hide()
+  })
   ipcMain.handle('update:check', () => checkForUpdates())
   ipcMain.handle('update:get-state', (): UpdateDownloadState => updateManager.getState())
   ipcMain.handle('update:open-release', async () => {

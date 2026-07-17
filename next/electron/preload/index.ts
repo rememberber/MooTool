@@ -37,6 +37,7 @@ contextBridge.exposeInMainWorld('mootool', {
   updateSettings: (patch: SettingsPatch): Promise<AppSettings> => ipcRenderer.invoke('settings:update', patch),
   openSettings: (): Promise<void> => ipcRenderer.invoke('settings:open'),
   closeSettings: (): Promise<void> => ipcRenderer.invoke('settings:close'),
+  dismissWindow: (): Promise<void> => ipcRenderer.invoke('window:dismiss'),
   getSecretStatus: (key: SecretKey): Promise<SecretStatus> => ipcRenderer.invoke('secret:status', key),
   setSecret: (key: SecretKey, value: string): Promise<SecretStatus> => ipcRenderer.invoke('secret:set', key, value),
   clearSecret: (key: SecretKey): Promise<SecretStatus> => ipcRenderer.invoke('secret:clear', key),

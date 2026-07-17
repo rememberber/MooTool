@@ -82,6 +82,8 @@ EN_MAP = [
     ("**如果MooTool项目对您有所帮助或带来便利，  \n欢迎对我每天下班和周末时光的努力进行肯定，  \n您的赞赏将会给我带来更多动力**",
      "**If MooTool helps you, consider supporting the evenings and weekends spent building it — your appreciation keeps me motivated.**"),
     ("# MooTool全功能地图", "# MooTool feature map"),
+    ("多产品的版本号、Git tag、GitHub Release、`Latest` 标记及 CI 隔离规则统一见[多产品发布约定](RELEASE_CONVENTIONS.md)。",
+     "See the [multi-product release conventions](RELEASE_CONVENTIONS.md) for version, Git tag, GitHub Release, `Latest`, and CI isolation rules."),
     ("> 多个工具模块提供统一的「历史记录」子 Tab，支持搜索、应用、复制输入/输出、删除与清空。",
      "> Many modules include a **History** sub-tab: search, apply, copy input/output, delete, and clear all."),
     ("## 随手记", "## Quick Note"),

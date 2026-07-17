@@ -30,6 +30,7 @@ declare global {
       updateSettings: (patch: SettingsPatch) => Promise<AppSettings>
       openSettings: () => Promise<void>
       closeSettings: () => Promise<void>
+      dismissWindow: () => Promise<void>
       getSecretStatus: (key: SecretKey) => Promise<SecretStatus>
       setSecret: (key: SecretKey, value: string) => Promise<SecretStatus>
       clearSecret: (key: SecretKey) => Promise<SecretStatus>
