@@ -9,7 +9,77 @@
     "next-electron": {
       "displayName": "MooTool Next Electron",
       "status": "active",
-      "releases": []
+      "releases": [
+        {
+          "version": "1.0.0",
+          "title": "MooTool Next Electron 1.0.0",
+          "notes": "> 产品线：MooTool Next Electron  \n> 版本：1.0.0  \n> 本版本与 MooTool Java 独立安装、独立更新，不会覆盖 Java 版本。\n\n## 首个正式版本\n\n- 使用 Electron、Vite、React 和 TypeScript 重写桌面客户端。\n- 覆盖 MooTool Java 的主要开发者工具，并采用新的多窗口和工作区体验。\n- 支持 macOS Apple Silicon、macOS Intel、Windows x64 和 Linux x64 安装包。\n- 使用独立应用 ID、产品名称、用户数据和更新通道，可与 MooTool Java 同时安装。\n- 更新检查只读取 `next-electron` 产品清单，并自动选择当前系统与架构对应的安装包。\n- 本版本安装包暂未进行代码签名；macOS 可在后台下载并校验新版 DMG，完成后会提示打开 DMG，由用户将应用拖入“应用程序”完成安装。\n\n## 更新说明\n\n- 这是 MooTool Next Electron 产品线的起始版本，后续版本号从 `1.0.0` 独立演进。\n- Java 产品线继续使用 `v*` tag 和原有更新清单，不受本次发布影响。",
+          "prerelease": false,
+          "releaseUrl": "https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.0.0",
+          "assets": [
+            {
+              "platform": "darwin",
+              "architecture": "arm64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.0.0-mac-arm64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.0/MooTool-Next-Electron-1.0.0-mac-arm64.dmg",
+              "sha512": "FuRi5IIOoFuftDUZDptE3Q0ZCSXdW0iTf8APQOGCHs7l4MF9PpqruP6gaHuc6/itHv0pEYtf+8x8FqpJx3POYQ==",
+              "size": 145734881
+            },
+            {
+              "platform": "darwin",
+              "architecture": "x64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.0.0-mac-x64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.0/MooTool-Next-Electron-1.0.0-mac-x64.dmg",
+              "sha512": "57EE87gELa6WFJNI+qExXqWpnGP2S62fxWRpbUH5Fmd37C9N41Zjnvw17ENSfMbyPK50Ez5ILzBAhvOecpEslg==",
+              "size": 147476163
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "nsis",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.0.0-win-x64-setup.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.0/MooTool-Next-Electron-1.0.0-win-x64-setup.exe",
+              "sha512": "Y1FrVpsxqj/gM1KhXN2LkLhk8cuyQeCjvUQd1VriwnhHDi8kVDBr7vzu+55n4Zmi01r7fM7UzbhQT9KKZiI2eQ==",
+              "size": 117814813
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "portable",
+              "priority": 20,
+              "fileName": "MooTool-Next-Electron-1.0.0-win-x64-portable.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.0/MooTool-Next-Electron-1.0.0-win-x64-portable.exe",
+              "sha512": "yM0q/eIDlb9NZtxkeFgNfl/Oa6lqS5aZJwPSn3Z3k2z7yweoAP2CZOB9nrp/9sOgy9BfpTKOxBh2qnLUVjyTCw==",
+              "size": 117645066
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "appimage",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.0.0-linux-x64.AppImage",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.0/MooTool-Next-Electron-1.0.0-linux-x64.AppImage",
+              "sha512": "EgYIimsCXbHdZMPme48q9MEqVv4AgM9dUzB2nZSEBhN6PK6xZHBuqMks9RhOZ1bLT5Lg8g2zsfCI64OhSHMt8A==",
+              "size": 153043923
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "deb",
+              "priority": 20,
+              "fileName": "MooTool-Next-Electron-1.0.0-linux-x64.deb",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.0/MooTool-Next-Electron-1.0.0-linux-x64.deb",
+              "sha512": "++Bknk+vpKH6pmXk5sPmbI8TbQ69HwfoBSx1iZsnO3XRn7ANDZrn+amKmR4wLOKuHS/a4Qt8UGN+xedkdsmw8Q==",
+              "size": 97813498
+            }
+          ]
+        }
+      ]
     },
     "next-tauri": {
       "displayName": "MooTool Next Tauri",
