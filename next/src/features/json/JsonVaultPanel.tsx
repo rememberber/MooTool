@@ -440,8 +440,12 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
         <div className="vault-panel__actions">
           <VaultAction label={t('json.vault.new')} onClick={beginCreateFile}><FilePlus2 size={14} /></VaultAction>
           <VaultAction label={t('json.vault.newFolder')} onClick={beginCreateFolder}><FolderPlus size={14} /></VaultAction>
-          <VaultAction label={t('json.vault.expandAll')} onClick={() => setTreeExpandMode('expandAll')}><UnfoldVertical size={14} /></VaultAction>
-          <VaultAction label={t('json.vault.collapseAll')} onClick={() => setTreeExpandMode('collapseAll')}><FoldVertical size={14} /></VaultAction>
+          <VaultAction
+            label={settings.vault.jsonTreeExpandMode === 'expandAll' ? t('json.vault.collapseAll') : t('json.vault.expandAll')}
+            onClick={() => setTreeExpandMode(settings.vault.jsonTreeExpandMode === 'expandAll' ? 'collapseAll' : 'expandAll')}
+          >
+            {settings.vault.jsonTreeExpandMode === 'expandAll' ? <FoldVertical size={14} /> : <UnfoldVertical size={14} />}
+          </VaultAction>
           <VaultAction label={t('json.vault.save')} onClick={() => { void saveSelected() }}><Save size={14} /></VaultAction>
           <VaultAction label={t('json.vault.delete')} disabled={!selectedEntry} onClick={() => { void deleteSelected() }}><Trash2 size={14} /></VaultAction>
           <VaultAction label={t('json.git.open')} badge={gitChangeCount} onClick={() => setGitDialogOpen(true)}><GitBranch size={14} /></VaultAction>

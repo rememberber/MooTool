@@ -56,6 +56,11 @@ test('moves one live tool view into a separate window and restores it without lo
   await expect(mainPage.getByRole('heading', { name: '计算器 已在独立窗口中打开' })).toBeVisible()
   await expect.poll(() => getToolSnapshot('calculator')).toMatchObject({ detached: true, ready: true })
   await expect.poll(() => getBaseWindowCount()).toBe(2)
+  await expect.poll(() => getDetachedWindowChrome()).toMatchObject({
+    contentInsetTop: 0,
+    contentInsetHeight: 0,
+    ...(process.platform === 'darwin' ? { windowButtonPosition: { x: 18, y: 18 } } : {})
+  })
 
   const detached = await evaluateTool<string>('calculator', `document.querySelector('#calculator-expression').value`)
   expect(detached.id).toBe(initial.id)
@@ -81,6 +86,34 @@ test('keeps multiple detached tools independent and returns each one to its dock
   await waitForToolSelector('json', '.json-tool')
   await evaluateTool('json', `document.querySelector('.tool-window-toggle').click()`)
   await expect.poll(() => getToolSnapshot('json')).toMatchObject({ detached: true, ready: true })
+  await expect.poll(async () => (await evaluateTool('json', `(() => {
+    const logo = document.querySelector('.tool-window-brand')
+    const title = document.querySelector('.tool-page__header h1')
+    if (!logo || !title) return null
+    const logoBounds = logo.getBoundingClientRect()
+    const titleBounds = title.getBoundingClientRect()
+    return {
+      title: title.textContent,
+      logoBeforeTitle: logoBounds.right < titleBounds.left,
+      logoVisible: logoBounds.width > 0 && logoBounds.height > 0,
+      logoLoaded: logo instanceof HTMLImageElement && logo.complete && logo.naturalWidth > 0,
+      logoLeft: Math.round(logoBounds.left),
+      titleLeft: Math.round(titleBounds.left),
+      sameRow: Math.abs((logoBounds.top + logoBounds.height / 2) - (titleBounds.top + titleBounds.height / 2)) < 2,
+      headerTop: Math.round(title.closest('.tool-page__header').getBoundingClientRect().top),
+      brandClearsWindowControls: window.mootool.platform !== 'darwin' || logoBounds.left >= 88
+    }
+  })()`)).value).toEqual({
+    title: 'JSON 工作台',
+    logoBeforeTitle: true,
+    logoVisible: true,
+    logoLoaded: true,
+    logoLeft: process.platform === 'darwin' ? 88 : 20,
+    titleLeft: process.platform === 'darwin' ? 122 : 54,
+    sameRow: true,
+    headerTop: 18,
+    brandClearsWindowControls: true
+  })
 
   await mainPage.getByRole('button', { name: 'HTTP 请求', exact: true }).click()
   await waitForToolSelector('http', '.http-tool-page')
@@ -96,6 +129,42 @@ test('keeps multiple detached tools independent and returns each one to its dock
   await expect.poll(() => getToolSnapshot('json')).toMatchObject({ detached: false, ready: true })
   await expect.poll(() => getToolSnapshot('http')).toMatchObject({ detached: false, ready: true })
   await expect.poll(() => getBaseWindowCount()).toBe(1)
+})
+
+test('aligns detached tool branding, header controls, and dock action in one top row', async () => {
+  await mainPage.getByRole('button', { name: '随手记', exact: true }).click()
+  await waitForToolSelector('quickNote', '.quick-note-tool')
+  await evaluateTool('quickNote', `document.querySelector('.tool-window-toggle').click()`)
+  await expect.poll(() => getToolSnapshot('quickNote')).toMatchObject({ detached: true, ready: true })
+
+  await expect.poll(async () => (await evaluateTool('quickNote', `(() => {
+    const bounds = (selector) => document.querySelector(selector)?.getBoundingClientRect()
+    const header = bounds('.quick-note-page-header')
+    const logo = bounds('.tool-window-brand')
+    const title = bounds('.quick-note-page-header h1')
+    const switcher = bounds('.quick-note-view-switch')
+    const dock = bounds('.tool-window-toggle')
+    if (!header || !logo || !title || !switcher || !dock) return null
+    const centerY = (rect) => rect.top + rect.height / 2
+    return {
+      headerTop: Math.round(header.top),
+      dockTop: Math.round(dock.top),
+      logoAligned: Math.abs(centerY(logo) - centerY(dock)) <= 2,
+      titleAligned: Math.abs(centerY(title) - centerY(dock)) <= 2,
+      switcherAligned: Math.abs(centerY(switcher) - centerY(dock)) <= 2,
+      brandClearsWindowControls: window.mootool.platform !== 'darwin' || logo.left >= 88
+    }
+  })()`)).value).toMatchObject({
+    headerTop: 18,
+    dockTop: 18,
+    logoAligned: true,
+    titleAligned: true,
+    switcherAligned: true,
+    brandClearsWindowControls: true
+  })
+
+  await closeDetachedBaseWindow()
+  await expect.poll(() => getToolSnapshot('quickNote')).toMatchObject({ detached: false, ready: true })
 })
 
 test('temporarily reveals the main overlay when search is opened above a docked tool', async () => {
@@ -170,6 +239,25 @@ async function getToolSnapshot(toolId: string): Promise<unknown> {
 
 async function getBaseWindowCount(): Promise<number> {
   return electronApp.evaluate(({ BaseWindow }) => BaseWindow.getAllWindows().length)
+}
+
+async function getDetachedWindowChrome(): Promise<{
+  contentInsetTop: number
+  contentInsetHeight: number
+  windowButtonPosition: { x: number; y: number } | null
+}> {
+  return electronApp.evaluate(({ BaseWindow, BrowserWindow }) => {
+    const browserWindowIds = new Set(BrowserWindow.getAllWindows().map((window) => window.id))
+    const window = BaseWindow.getAllWindows().find((item) => !browserWindowIds.has(item.id))
+    if (!window) throw new Error('Detached tool window not found')
+    const bounds = window.getBounds()
+    const contentBounds = window.getContentBounds()
+    return {
+      contentInsetTop: contentBounds.y - bounds.y,
+      contentInsetHeight: bounds.height - contentBounds.height,
+      windowButtonPosition: window.getWindowButtonPosition()
+    }
+  })
 }
 
 async function getMainChildViewCount(): Promise<number> {

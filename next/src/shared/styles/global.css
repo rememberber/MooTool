@@ -1689,8 +1689,32 @@ button {
   padding-right: 64px;
 }
 
+.tool-view-shell--detached .tool-page__header {
+  padding-left: 34px;
+}
+
+.tool-view-shell--detached .tool-page {
+  padding-top: 18px;
+}
+
+.tool-view-shell--detached.tool-view-shell--macos .tool-page__header {
+  padding-left: 102px;
+}
+
 .tool-view-shell > .window-drag-region {
   right: 64px;
+}
+
+.tool-window-brand {
+  position: fixed;
+  z-index: 210;
+  top: 21px;
+  left: 20px;
+  pointer-events: none;
+}
+
+.tool-view-shell--macos .tool-window-brand {
+  left: 88px;
 }
 
 .tool-window-toggle-slot {

@@ -81,6 +81,8 @@ export class ToolWindowManager {
       minHeight: 560,
       show: false,
       title: record.title,
+      titleBarStyle: 'hiddenInset',
+      trafficLightPosition: { x: 18, y: 18 },
       backgroundColor: this.options.backgroundColor(),
       icon: this.options.icon()
     })

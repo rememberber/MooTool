@@ -827,8 +827,11 @@ export function QuickNoteTool() {
               <div className="quick-note-tree-actions">
                 <IconButton label={t('quickNote.newNote')} icon={FilePlus2} onClick={() => openAction('createNote')} />
                 <IconButton label={t('quickNote.newFolder')} icon={FolderPlus} onClick={() => openAction('createFolder')} />
-                <IconButton label={t('quickNote.expandAll')} icon={UnfoldVertical} active={settings.vault.quickNoteTreeExpandMode === 'expandAll'} onClick={() => setTreeExpandMode('expandAll')} />
-                <IconButton label={t('quickNote.collapseAll')} icon={FoldVertical} active={settings.vault.quickNoteTreeExpandMode === 'collapseAll'} onClick={() => setTreeExpandMode('collapseAll')} />
+                <IconButton
+                  label={settings.vault.quickNoteTreeExpandMode === 'expandAll' ? t('quickNote.collapseAll') : t('quickNote.expandAll')}
+                  icon={settings.vault.quickNoteTreeExpandMode === 'expandAll' ? FoldVertical : UnfoldVertical}
+                  onClick={() => setTreeExpandMode(settings.vault.quickNoteTreeExpandMode === 'expandAll' ? 'collapseAll' : 'expandAll')}
+                />
               </div>
               <div ref={treeScrollRef} className="quick-note-tree-scroll" onScroll={(event) => { quickNoteTreeScrollTop = event.currentTarget.scrollTop }}>
                 {state.nodes.length

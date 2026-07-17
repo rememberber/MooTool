@@ -1,6 +1,7 @@
 import { PanelTopClose, PanelTopOpen } from 'lucide-react'
 import { Suspense, useEffect, useState } from 'react'
 import { toolById } from '@/app/toolRegistry'
+import { BrandIcon } from '@/shared/components/BrandIcon'
 import { ToolActivityProvider } from '@/shared/components/ToolActivity'
 import { Tooltip } from '@/shared/components/Tooltip'
 import { isDetachableToolId, type ToolWindowStatus } from '@/shared/contracts/app'
@@ -33,9 +34,15 @@ export function ToolWindow({ requestedToolId }: { requestedToolId: string }) {
   }
 
   const detached = status?.detached ?? false
+  const shellClassName = [
+    'tool-view-shell',
+    detached ? 'tool-view-shell--detached' : '',
+    window.mootool.platform === 'darwin' ? 'tool-view-shell--macos' : ''
+  ].filter(Boolean).join(' ')
   return (
-    <main className={detached ? 'tool-view-shell tool-view-shell--detached' : 'tool-view-shell'}>
+    <main className={shellClassName}>
       <div className="window-drag window-drag-region" aria-hidden="true" />
+      {detached && <BrandIcon className="tool-window-brand" size={26} />}
       <div className="tool-window-toggle-slot">
         <Tooltip content={detached ? t('toolWindow.dock') : t('toolWindow.detach')} side="bottom">
           <button
