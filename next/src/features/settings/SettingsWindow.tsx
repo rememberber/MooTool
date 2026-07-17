@@ -18,7 +18,9 @@ import {
   X,
   type LucideIcon
 } from 'lucide-react'
-import { useEffect, useState, type ReactNode } from 'react'
+import DOMPurify from 'dompurify'
+import { marked } from 'marked'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { toolById, toolGroups, type ToolId } from '@/app/toolRegistry'
 import { BrandIcon } from '@/shared/components/BrandIcon'
 import {
@@ -649,6 +651,9 @@ function AboutSettings() {
   const [checking, setChecking] = useState(false)
   const [result, setResult] = useState<UpdateCheckResult | null>(null)
   const updateState = useUpdateState()
+  const releaseNotesHtml = useMemo(() => result?.releaseNotes
+    ? DOMPurify.sanitize(marked.parse(result.releaseNotes, { async: false }) as string)
+    : '', [result?.releaseNotes])
   useEffect(() => { void window.mootool.getAppVersion().then(setVersion) }, [])
 
   function check(): void {
@@ -722,7 +727,12 @@ function AboutSettings() {
               {updateState.status === 'error' && updateState.message && (
                 <span className="settings-update-result__error">{updateState.message}</span>
               )}
-              {result.releaseNotes && <pre>{result.releaseNotes}</pre>}
+              {releaseNotesHtml && (
+                <article
+                  className="settings-update-result__notes"
+                  dangerouslySetInnerHTML={{ __html: releaseNotesHtml }}
+                />
+              )}
             </>
           )}
         </section>

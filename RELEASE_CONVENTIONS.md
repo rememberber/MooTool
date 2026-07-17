@@ -42,6 +42,8 @@ next-tauri-v1.0.0              # Tauri 1.0.0
 - 安装包文件名必须包含产品名、版本、操作系统和架构；同一平台存在多种包型时还必须包含包型。
 - GitHub 自动生成的源码压缩包包含整个仓库，这是 monorepo 的预期行为；面向普通用户的下载入口应指向 Release 安装包。
 - Release Notes 只能比较同一产品线的前后两个 tag，不能把另一产品的最近 tag 当作上一个版本。
+- Electron 的版本说明以 `next/release-notes/{version}.md` 为唯一人工维护来源，GitHub Release 和 `update-manifest.json` 均从该文件生成。
+- Java 的版本说明继续以 `src/main/resources/version_summary.json` 为唯一人工维护来源，GitHub Release 从当前版本节点生成。
 
 建议在 Release 正文顶部使用类似说明：
 
@@ -62,6 +64,8 @@ GitHub 仓库只有一个全局 `Latest` Release，不能分别设置 `Latest Ja
 3. Java 独立维护版本及其他非主力产品发布时不得覆盖全局 `Latest`；自动化中应显式使用等价于 `make_latest: false` 的设置。
 4. beta、rc 等测试版本必须标记为 pre-release，不得设为 `Latest`。
 5. README 和官网应分别提供各产品的“最新版本”入口，不以仓库级 `/releases/latest` 代替产品更新清单。
+
+Java 的历史更新协议没有预发布通道，因此 Java 发布工具只接受稳定版 `v{major}.{minor}.{patch}`。需要测试 Java 安装包时使用手动 CI 工件，不创建会被稳定客户端发现的预发布版本。Electron 支持 SemVer 预发布版本，并由客户端自动隔离稳定与预发布更新。
 
 如果未来主力实现发生变化，应先修改本文件和下载入口，再调整哪个产品可以更新全局 `Latest`。
 
@@ -90,7 +94,7 @@ GitHub 仓库只有一个全局 `Latest` Release，不能分别设置 `Latest Ja
 3. 只构建、测试和收集当前产品目录的产物。
 4. 校验产物文件名、操作系统、架构和包型没有冲突或缺失。
 5. 创建或更新当前 tag 对应的 Release，并按本文件规则处理 pre-release 和 `Latest`。
-6. 生成 Release Notes 时显式选择同产品线的上一个 tag。
+6. 从当前产品的版本说明来源生成 Release Notes，不调用可能跨产品比较 tag 的默认自动说明。
 
 普通提交或 Pull Request 可以使用目录过滤减少无关构建；正式发布必须以 tag 前缀作为最终产品边界。
 
@@ -101,6 +105,8 @@ GitHub 仓库只有一个全局 `Latest` Release，不能分别设置 `Latest Ja
 - 未来产品必须在 `update-manifest.json` 使用自己的产品 ID，不得读取或写入其他产品节点。
 - 各客户端只能比较自身产品节点中的版本，不能用 GitHub 仓库的全局 `Latest` 判断更新。
 - 应用 ID、产品名和用户数据目录也应按产品隔离，保证不同实现可以同时安装。
+- Electron 稳定版客户端忽略 `prerelease` 版本；beta/rc 客户端可以继续接收后续预发布版本，并在正式版发布后升级到正式版。
+- Java 使用 `versionIndex` 判断版本先后及汇总中间版本说明，不使用字符串比较版本号。
 
 Electron 的清单格式、资产选择和自动下载细节见 [`next/doc/update-products-and-assets.md`](next/doc/update-products-and-assets.md)。
 
@@ -110,13 +116,14 @@ Electron 的清单格式、资产选择和自动下载细节见 [`next/doc/updat
 
 1. 更新目标产品的版本来源、变更说明和必要文档，并完成测试。
 2. 创建符合本文件命名规则的 tag；CI 校验版本一致性。
-3. 构建安装包和自动更新元数据，先上传到 Draft Release。
-4. 核对安装包的平台、架构、签名、文件名和更新元数据。
-5. 发布 Release，并按产品角色设置 pre-release 和 `Latest`。
-6. Release 资产可访问后，再更新并启用该产品的更新清单。
-7. 验证 README 下载入口、客户端更新检查和安装流程。
+3. 构建安装包和自动更新元数据，由流水线核对平台、架构、签名、文件名和更新元数据。
+4. 所有目标校验通过后发布 Release，并按产品角色设置 pre-release 和 `Latest`。
+5. Release 资产可访问后，再更新并启用该产品的更新清单。
+6. 验证 README 下载入口、客户端更新检查和安装流程。
 
 不要在 Release 资产尚未可用时提前向已发布客户端暴露新版本，以免客户端发现版本后无法下载。
+
+Electron 正式 tag 流水线必须验证 macOS Developer ID 签名和 Apple 公证配置，并在打包后再次校验应用签名；缺少凭据时应阻止 Release。Windows 正式包也应签名，当前未配置证书时由流水线明确警告。所需 GitHub Actions secrets 和实现细节见 [`next/doc/update-products-and-assets.md`](next/doc/update-products-and-assets.md#6-正式发布签名)。
 
 ## 9. Electron 首个正式版本
 

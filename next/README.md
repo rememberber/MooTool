@@ -22,4 +22,11 @@ npm run typecheck
 npm run build
 ```
 
+## Releases
+
+- Release convention: [`RELEASE_CONVENTIONS.md`](../RELEASE_CONVENTIONS.md)
+- Update manifest and asset selection: [`doc/update-products-and-assets.md`](doc/update-products-and-assets.md)
+- Write one source file per version under `release-notes/{version}.md` before pushing `next-electron-v{version}`.
+- `.github/workflows/next-build-installers.yml` validates the tag, package version, release notes, installers, and updater metadata before publishing.
+
 The first implementation is a visual and architectural scaffold. Tool features should be migrated one by one under `src/features/*`, while filesystem, storage, shell, and OS integrations should be exposed through `electron/preload`.

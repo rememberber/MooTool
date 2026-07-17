@@ -11,7 +11,7 @@ export type UpdateAdapter = {
   autoDownload: boolean
   autoInstallOnAppQuit: boolean
   allowDowngrade: boolean
-  setFeedURL: (options: { provider: 'generic'; url: string }) => void
+  setFeedURL: (options: { provider: 'generic'; url: string; channel: string }) => void
   checkForUpdates: () => Promise<unknown>
   downloadUpdate: () => Promise<string[]>
   quitAndInstall: (isSilent?: boolean, isForceRunAfter?: boolean) => void
@@ -84,7 +84,11 @@ export class UpdateManager {
 
     if (!this.enabled) return
 
-    this.updater.setFeedURL({ provider: 'generic', url: updateFeedDirectory(result.download.url) })
+    this.updater.setFeedURL({
+      provider: 'generic',
+      url: updateFeedDirectory(result.download.url),
+      channel: updateMetadataChannel(result.target.architecture)
+    })
     this.checkPromise = this.updater.checkForUpdates()
       .then((value) => {
         this.metadataReady = true
@@ -182,6 +186,13 @@ export function updateFeedDirectory(downloadUrl: string): string {
   url.search = ''
   url.hash = ''
   return url.toString()
+}
+
+export function updateMetadataChannel(architecture: string): string {
+  const normalized = architecture.trim().toLowerCase()
+  const channel = normalized === 'aarch64' ? 'arm64' : normalized === 'amd64' ? 'x64' : normalized
+  if (!/^[a-z0-9-]+$/.test(channel)) throw new Error(`Invalid update architecture: ${architecture}`)
+  return channel
 }
 
 function clampProgress(value: number | undefined): number | null {

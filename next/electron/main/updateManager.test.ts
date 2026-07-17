@@ -2,7 +2,7 @@
 import { EventEmitter } from 'node:events'
 import { describe, expect, it, vi } from 'vitest'
 import type { UpdateCheckResult, UpdateDownloadState } from '../../src/shared/contracts/update'
-import { UpdateManager, updateFeedDirectory, type UpdateAdapter } from './updateManager'
+import { UpdateManager, updateFeedDirectory, updateMetadataChannel, type UpdateAdapter } from './updateManager'
 
 describe('UpdateManager', () => {
   it('silently downloads by default and publishes a ready state', async () => {
@@ -15,6 +15,7 @@ describe('UpdateManager', () => {
 
     expect(adapter.autoDownload).toBe(true)
     expect(adapter.feedUrl).toBe('https://github.com/rememberber/MooTool/releases/download/next-electron-v1.1.0/')
+    expect(adapter.feedChannel).toBe('arm64')
     expect(states.map((state) => state.status)).toEqual(expect.arrayContaining(['available', 'downloading', 'ready']))
     expect(manager.getState()).toMatchObject({ status: 'ready', version: '1.1.0', percent: 100 })
   })
@@ -50,18 +51,26 @@ it('derives a generic updater directory from the selected release asset', () => 
   expect(updateFeedDirectory('https://example.test/releases/v1/MooTool-1.1.0.dmg?token=ignored')).toBe('https://example.test/releases/v1/')
 })
 
+it('derives architecture-specific metadata channels', () => {
+  expect(updateMetadataChannel('aarch64')).toBe('arm64')
+  expect(updateMetadataChannel('amd64')).toBe('x64')
+  expect(() => updateMetadataChannel('../x64')).toThrow('Invalid update architecture')
+})
+
 class FakeUpdater extends EventEmitter {
   autoDownload = true
   autoInstallOnAppQuit = true
   allowDowngrade = true
   feedUrl = ''
+  feedChannel = ''
   downloadCalls = 0
   checked: Promise<void> = Promise.resolve()
   finished: Promise<void> = Promise.resolve()
   quitAndInstall = vi.fn()
 
-  setFeedURL(options: { provider: 'generic'; url: string }): void {
+  setFeedURL(options: { provider: 'generic'; url: string; channel: string }): void {
     this.feedUrl = options.url
+    this.feedChannel = options.channel
   }
 
   checkForUpdates(): Promise<void> {

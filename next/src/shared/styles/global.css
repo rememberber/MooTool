@@ -6248,7 +6248,7 @@ select:not([multiple]) {
   font-size: 12px;
 }
 
-.settings-update-result pre {
+.settings-update-result__notes {
   grid-column: 1 / -1;
   max-height: 280px;
   padding: 12px;
@@ -6256,11 +6256,40 @@ select:not([multiple]) {
   color: var(--text-body);
   background: var(--surface-soft);
   border-radius: 6px;
-  font: inherit;
   font-size: 11px;
   line-height: 1.6;
   overflow: auto;
-  white-space: pre-wrap;
+}
+
+.settings-update-result__notes :first-child {
+  margin-top: 0;
+}
+
+.settings-update-result__notes :last-child {
+  margin-bottom: 0;
+}
+
+.settings-update-result__notes h1,
+.settings-update-result__notes h2,
+.settings-update-result__notes h3 {
+  margin: 14px 0 6px;
+  font-size: 12px;
+}
+
+.settings-update-result__notes p,
+.settings-update-result__notes blockquote,
+.settings-update-result__notes ul {
+  margin: 6px 0;
+}
+
+.settings-update-result__notes blockquote {
+  padding-left: 10px;
+  color: var(--text-secondary);
+  border-left: 2px solid var(--border-strong);
+}
+
+.settings-update-result__notes ul {
+  padding-left: 20px;
 }
 
 .settings-about h2,

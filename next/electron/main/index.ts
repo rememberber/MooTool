@@ -22,7 +22,7 @@ import Store from 'electron-store'
 import { autoUpdater } from 'electron-updater'
 import { execFile } from 'node:child_process'
 import { createHash, getHashes } from 'node:crypto'
-import { createReadStream, watch, type FSWatcher } from 'node:fs'
+import { createReadStream, readFileSync, watch, type FSWatcher } from 'node:fs'
 import { chmod, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
 import {
@@ -98,7 +98,7 @@ import {
 } from './p5Validation'
 import { inspectPdf, mergePdfs, splitPdfs } from './pdfService'
 import { SystemService } from './systemService'
-import { defaultReleaseUrl, UpdateService } from './updateService'
+import { currentUpdateProductId, defaultReleaseUrl, UpdateService } from './updateService'
 import { UpdateManager, type UpdateAdapter } from './updateManager'
 import { VaultGitService } from './vaultGitService'
 import { VaultGitCheckpointScheduler } from './vaultGitCheckpointScheduler'
@@ -165,7 +165,12 @@ let updateIntervalTimer: NodeJS.Timeout | undefined
 let updateCheckPromise: Promise<UpdateCheckResult> | null = null
 let lastUpdateResult: UpdateCheckResult | null = null
 const allowedPdfPaths = new Set<string>()
-const updateService = new UpdateService(process.env.MOOTOOL_UPDATE_FEED_URL || undefined)
+const updateService = new UpdateService(process.env.MOOTOOL_UPDATE_FEED_URL || undefined, {
+  productId: currentUpdateProductId,
+  platform: process.platform,
+  architecture: process.arch,
+  packageType: detectUpdatePackageType()
+})
 const updateManager = new UpdateManager(
   autoUpdater as unknown as UpdateAdapter,
   app.isPackaged && process.env.NODE_ENV !== 'test',
@@ -197,6 +202,17 @@ const jsonVaultCheckpointScheduler = new VaultGitCheckpointScheduler({
 function getDevelopmentIconPath(): string {
   const filename = process.platform === 'darwin' ? 'icon-mac.png' : process.platform === 'win32' ? 'icon.ico' : 'icon.png'
   return join(__dirname, '../../resources', filename)
+}
+
+function detectUpdatePackageType(): string | undefined {
+  if (process.platform !== 'linux') return undefined
+  if (process.env.APPIMAGE) return 'appimage'
+  try {
+    const packageType = readFileSync(join(process.resourcesPath, 'package-type'), 'utf8').trim().toLowerCase()
+    return ['deb', 'rpm', 'pacman'].includes(packageType) ? packageType : undefined
+  } catch {
+    return undefined
+  }
 }
 
 function getIconPath(): string {

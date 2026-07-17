@@ -14,26 +14,102 @@ on:
           - mac-apple-silicon
           - windows-x64
           - linux-x64
+  push:
+    tags:
+      - 'next-electron-v*'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
+  prepare:
+    name: Validate Electron release metadata
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      title: ${{ steps.release.outputs.title }}
+      prerelease: ${{ steps.release.outputs.prerelease }}
+      make_latest: ${{ steps.release.outputs.make_latest }}
+      notes_path: ${{ steps.release.outputs.notes_path }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate tag, package version, and release notes
+        id: release
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            tag="${{ github.ref_name }}"
+          else
+            version="$(python -c 'import json; print(json.load(open("next/package.json"))["version"])')"
+            tag="next-electron-v${version}"
+          fi
+          python -u scripts/manage_releases.py validate-electron \
+            --project-root . \
+            --tag "$tag" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Test release tooling
+        run: python -m unittest scripts.test_manage_releases
+
+      - name: Verify production macOS signing and notarization configuration
+        if: github.event_name == 'push'
+        shell: bash
+        env:
+          CSC_LINK: ${{ secrets.CSC_LINK }}
+          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          missing=()
+          for name in CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID; do
+            if [ -z "${!name}" ]; then
+              missing+=("$name")
+            fi
+          done
+          if [ "${#missing[@]}" -ne 0 ]; then
+            echo "Missing required GitHub Actions secrets for a production Electron release: ${missing[*]}" >&2
+            echo "See next/doc/update-products-and-assets.md for the signing setup." >&2
+            exit 1
+          fi
+
+      - name: Report optional Windows signing configuration
+        if: github.event_name == 'push'
+        shell: bash
+        env:
+          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
+          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
+        run: |
+          if [ -z "$WIN_CSC_LINK" ] || [ -z "$WIN_CSC_KEY_PASSWORD" ]; then
+            echo "::warning::WIN_CSC_LINK/WIN_CSC_KEY_PASSWORD are not both configured; Windows packages will be unsigned."
+          fi
+
   package:
     name: ${{ matrix.label }}
+    needs: prepare
     strategy:
       fail-fast: false
       matrix:
-        target: ${{ fromJSON(inputs.target == 'all' && '["mac-apple-silicon","mac-intel","windows-x64","linux-x64"]' || format('["{0}"]', inputs.target)) }}
+        target: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.target != 'all' && format('["{0}"]', inputs.target) || '["mac-apple-silicon","mac-intel","windows-x64","linux-x64"]') }}
         include:
           - target: mac-apple-silicon
             label: macOS Apple Silicon
-            os: macos-14
+            os: macos-26
             command: npx electron-builder --mac dmg zip --arm64 --publish never
+            app_path: dist/mac-arm64/MooTool Next Electron.app
           - target: mac-intel
             label: macOS Intel
-            os: macos-13
+            os: macos-26-intel
             command: npx electron-builder --mac dmg zip --x64 --publish never
+            app_path: dist/mac/MooTool Next Electron.app
           - target: windows-x64
             label: Windows x64
             os: windows-latest
@@ -58,6 +134,11 @@ jobs:
           cache: npm
           cache-dependency-path: next/package-lock.json
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Install dependencies
         run: npm ci
 
@@ -67,12 +148,125 @@ jobs:
       - name: Package
         run: ${{ matrix.command }}
         env:
-          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          CSC_IDENTITY_AUTO_DISCOVERY: ${{ github.event_name == 'push' && 'true' || 'false' }}
+          CSC_LINK: ${{ startsWith(matrix.target, 'mac-') && secrets.CSC_LINK || '' }}
+          CSC_KEY_PASSWORD: ${{ startsWith(matrix.target, 'mac-') && secrets.CSC_KEY_PASSWORD || '' }}
+          APPLE_ID: ${{ startsWith(matrix.target, 'mac-') && secrets.APPLE_ID || '' }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ startsWith(matrix.target, 'mac-') && secrets.APPLE_APP_SPECIFIC_PASSWORD || '' }}
+          APPLE_TEAM_ID: ${{ startsWith(matrix.target, 'mac-') && secrets.APPLE_TEAM_ID || '' }}
+          WIN_CSC_LINK: ${{ matrix.target == 'windows-x64' && secrets.WIN_CSC_LINK || '' }}
+          WIN_CSC_KEY_PASSWORD: ${{ matrix.target == 'windows-x64' && secrets.WIN_CSC_KEY_PASSWORD || '' }}
 
-      - name: Upload installers
+      - name: Verify production macOS code signature
+        if: github.event_name == 'push' && startsWith(matrix.target, 'mac-')
+        shell: bash
+        run: |
+          codesign --verify --deep --strict "${{ matrix.app_path }}"
+          codesign --display --verbose=2 "${{ matrix.app_path }}"
+
+      - name: Stage installers and architecture-specific update metadata
+        shell: bash
+        run: |
+          python -u ../scripts/manage_releases.py stage-electron \
+            --source-dir dist \
+            --output-dir release-assets \
+            --target "${{ matrix.target }}" \
+            --version "${{ needs.prepare.outputs.version }}"
+
+      - name: Upload release assets
         uses: actions/upload-artifact@v4
         with:
           name: mootool-next-electron-${{ matrix.target }}
-          path: next/dist/*
+          path: next/release-assets/*
           if-no-files-found: error
           retention-days: 14
+
+  release:
+    name: Publish MooTool Next Electron Release
+    if: github.event_name == 'push'
+    needs:
+      - prepare
+      - package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Download packaged assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: mootool-next-electron-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Validate complete release assets
+        run: >-
+          python -u scripts/manage_releases.py validate-electron-assets
+          --project-root .
+          --assets-dir release-assets
+          --tag "${{ github.ref_name }}"
+
+      - name: Publish release and assets
+        uses: softprops/action-gh-release@v3
+        with:
+          name: ${{ needs.prepare.outputs.title }}
+          body_path: ${{ needs.prepare.outputs.notes_path }}
+          prerelease: ${{ needs.prepare.outputs.prerelease }}
+          make_latest: ${{ needs.prepare.outputs.make_latest }}
+          fail_on_unmatched_files: true
+          files: release-assets/*
+
+  publish-update-manifest:
+    name: Update next-electron manifest on master
+    if: github.event_name == 'push'
+    needs:
+      - prepare
+      - release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Download packaged assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: mootool-next-electron-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Update Electron release in product manifest
+        run: >-
+          python -u scripts/manage_releases.py update-electron-manifest
+          --project-root .
+          --manifest update-manifest.json
+          --assets-dir release-assets
+          --tag "${{ github.ref_name }}"
+
+      - name: Commit and push update manifest
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add update-manifest.json
+          if git diff --staged --quiet; then
+            echo "update-manifest.json is already up to date"
+            exit 0
+          fi
+          git commit -m "chore: publish next-electron ${{ needs.prepare.outputs.version }} update manifest"
+          git pull --rebase origin master
+          git push origin master
