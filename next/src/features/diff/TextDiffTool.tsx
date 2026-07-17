@@ -184,6 +184,10 @@ export function TextDiffTool() {
     if (left || right) applyComparison(compareText(left, right, ignoreWhitespace))
   }
 
+  function comparePastedText(nextLeft: string, nextRight: string): void {
+    if (realtime) applyComparison(compareText(nextLeft, nextRight, ignoreWhitespace))
+  }
+
   const editors = (
     <ResizableColumns
       className="diff-editor-grid"
@@ -203,6 +207,7 @@ export function TextDiffTool() {
           wrap={false}
           onScroll={(scroll) => syncEditorScroll(scroll, rightEditorRef.current)}
           onChange={setLeft}
+          onPasteText={(nextLeft) => comparePastedText(nextLeft, right)}
         />
       </div>
       <div className="diff-editor-pane">
@@ -216,6 +221,7 @@ export function TextDiffTool() {
           wrap={false}
           onScroll={(scroll) => syncEditorScroll(scroll, leftEditorRef.current)}
           onChange={setRight}
+          onPasteText={(nextRight) => comparePastedText(left, nextRight)}
         />
       </div>
     </ResizableColumns>

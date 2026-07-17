@@ -55,6 +55,7 @@ export type TextCodeEditorProps = {
   decorations?: readonly TextCodeEditorDecoration[]
   initialViewState?: CodeEditorViewState
   onChange?: (value: string) => void
+  onPasteText?: (value: string) => void
   onKeyDown?: (event: KeyboardEvent) => void
   onScroll?: (scroll: TextCodeEditorScroll) => void
   onViewStateChange?: (state: CodeEditorViewState) => void
@@ -133,6 +134,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
     decorations = emptyDecorations,
     initialViewState,
     onChange,
+    onPasteText,
     onKeyDown,
     onScroll,
     onViewStateChange
@@ -142,6 +144,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
   const hostRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView>(null)
   const onChangeRef = useRef(onChange)
+  const onPasteTextRef = useRef(onPasteText)
   const onKeyDownRef = useRef(onKeyDown)
   const onScrollRef = useRef(onScroll)
   const onViewStateChangeRef = useRef(onViewStateChange)
@@ -155,6 +158,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
   const searchCompartment = useCompartment()
   const metricsCompartment = useCompartment()
   onChangeRef.current = onChange
+  onPasteTextRef.current = onPasteText
   onKeyDownRef.current = onKeyDown
   onScrollRef.current = onScroll
   onViewStateChangeRef.current = onViewStateChange
@@ -190,7 +194,12 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
             if (update.docChanged) {
               const nextValue = update.state.doc.toString()
               localValueRef.current = nextValue
-              if (!applyingExternalValueRef.current) onChangeRef.current?.(nextValue)
+              if (!applyingExternalValueRef.current) {
+                onChangeRef.current?.(nextValue)
+                if (update.transactions.some((transaction) => transaction.isUserEvent('input.paste'))) {
+                  onPasteTextRef.current?.(nextValue)
+                }
+              }
             }
             if (update.docChanged || update.selectionSet) {
               onViewStateChangeRef.current?.(readCodeEditorViewState(update.view))
