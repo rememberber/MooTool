@@ -3,6 +3,7 @@ import { useState } from 'react'
 import { HistoryDialog } from '@/features/history/HistoryDialog'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { ToolPageHeader } from '@/shared/components/ToolPage'
+import { TextCodeEditor } from '@/shared/components/TextCodeEditor'
 import { useToolActions } from '@/shared/hooks/useToolActions'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { parseUserAgent, uaPresets, type UaResult } from './uaTools'
@@ -47,7 +48,7 @@ export function UaParseTool() {
       <ResizableColumns className="local-tool-shell ua-workspace" columns={2} defaultSizes={[0.9, 1.1]} minPaneWidths={[300, 300]} storageKey="ua-parser">
         <section className="ua-input-panel">
           <label htmlFor="ua-source">{t('ua.input')}</label>
-          <textarea id="ua-source" value={source} spellCheck={false} onChange={(event) => setSource(event.target.value)} />
+          <TextCodeEditor id="ua-source" ariaLabel={t('ua.input')} value={source} onChange={setSource} />
           <div className="ua-actions">
             <select aria-label={t('ua.preset')} defaultValue="" onChange={(event) => { if (event.target.value) setSource(event.target.value) }}><option value="">{t('ua.preset')}</option>{uaPresets.map(([name, value]) => <option value={value} key={name}>{name}</option>)}</select>
             <button className="panel-command" type="button" onClick={() => { void paste() }}><ClipboardPaste size={14} />{t('common.action.paste')}</button>

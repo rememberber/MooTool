@@ -4,6 +4,7 @@ import { HistoryDialog } from '@/features/history/HistoryDialog'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { Dialog } from '@/shared/components/Dialog'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
+import { TextCodeEditor } from '@/shared/components/TextCodeEditor'
 import { Tooltip } from '@/shared/components/Tooltip'
 import type { RuntimeStatus } from '@/shared/contracts/app'
 import type { CodeRuntimeId, RuntimeExecutionResult } from '@/shared/contracts/runtime'
@@ -87,7 +88,6 @@ export function RuntimeTool() {
   const requestIdRef = useRef('')
   const stdoutRef = useRef('')
   const stderrRef = useRef('')
-  const lineNumbersRef = useRef<HTMLPreElement>(null)
   const runtime: CodeRuntimeId = state.activeTab === 'java' ? state.javaMode : state.activeTab
   const code = state.codes[runtime]
   const status = state.statuses.find((item) => item.id === runtime)
@@ -260,13 +260,12 @@ export function RuntimeTool() {
           <section className="runtime-pane runtime-code-pane">
             <header>{t('runtime.editor')}<span>{runtimeDisplayName(runtime)}</span></header>
             <div className="runtime-editor-wrap">
-              <pre ref={lineNumbersRef} className="runtime-line-numbers" aria-hidden="true">{lineNumbers(code)}</pre>
-              <textarea
-                aria-label={t('runtime.editor')}
-                spellCheck={false}
+              <TextCodeEditor
+                className="runtime-code-editor"
+                ariaLabel={t('runtime.editor')}
                 value={code}
-                onChange={(event) => setCode(event.target.value)}
-                onScroll={(event) => { if (lineNumbersRef.current) lineNumbersRef.current.scrollTop = event.currentTarget.scrollTop }}
+                wrap={false}
+                onChange={setCode}
               />
             </div>
           </section>
@@ -332,10 +331,6 @@ function runtimeResultLabel(
   if (result.cancelled) return { label: t('runtime.cancelled'), tone: 'error' }
   if (result.exitCode === 0) return { label: t('runtime.completed'), tone: 'success' }
   return { label: t('runtime.failed'), tone: 'error' }
-}
-
-function lineNumbers(code: string): string {
-  return Array.from({ length: Math.max(1, code.split(/\r?\n/).length) }, (_value, index) => String(index + 1)).join('\n')
 }
 
 function errorMessage(error: unknown): string {

@@ -4,6 +4,7 @@ import { HistoryDialog } from '@/features/history/HistoryDialog'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { ToolPageHeader, ToolTabs } from '@/shared/components/ToolPage'
+import { TextCodeEditor } from '@/shared/components/TextCodeEditor'
 import type { FuncHistoryRecord } from '@/shared/contracts/history'
 import { useToolActions } from '@/shared/hooks/useToolActions'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -269,5 +270,5 @@ function RandomPanel(props: { length: number; setLength: (value: number) => void
 }
 
 function CryptoTextArea({ label, value, onChange, onCopy }: { label: string; value: string; onChange: (value: string) => void; onCopy?: () => void }) {
-  return <label className="crypto-textarea"><span>{label}{onCopy && <button type="button" aria-label={`Copy ${label}`} onClick={onCopy}><Copy size={13} /></button>}</span><textarea value={value} spellCheck={false} onChange={(event) => onChange(event.target.value)} /></label>
+  return <div className="crypto-textarea"><span>{label}{onCopy && <button type="button" aria-label={`Copy ${label}`} onClick={onCopy}><Copy size={13} /></button>}</span><TextCodeEditor ariaLabel={label} value={value} onChange={onChange} /></div>
 }

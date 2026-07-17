@@ -244,6 +244,7 @@ export function JsonTool() {
             value={state.content}
             wrap={state.wrap}
             fontSize={settings.editor.jsonFontSize}
+            searchQuery={state.findOpen ? state.findQuery : ''}
             ariaLabel={t('json.editor.label')}
             onChange={(content) => update({ content, notice: '', copyState: 'idle' })}
           />

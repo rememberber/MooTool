@@ -1,4 +1,4 @@
-import { _electron as electron, expect, test, type ElectronApplication, type Page } from '@playwright/test'
+import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
 import { mkdtemp, mkdir, readdir, rm, writeFile } from 'node:fs/promises'
 import { createServer, type Server } from 'node:http'
 import { tmpdir } from 'node:os'
@@ -158,6 +158,19 @@ test('formats JSON and completes history and Vault workflows', async () => {
   await editor.fill('{"b":1,"a":2}')
   await mainPage.locator('.editor-toolbar').getByRole('button', { name: '格式化', exact: true }).click()
   await expect.poll(() => editor.evaluate((element) => (element as HTMLElement).innerText)).toBe('{\n  "b": 1,\n  "a": 2\n}')
+  await expect(mainPage.locator('.json-editor .cm-activeLine')).toHaveCount(1)
+  await expect(mainPage.locator('.json-editor .cm-activeLineGutter')).toHaveCount(1)
+
+  await mainPage.locator('.editor-toolbar').getByRole('button', { name: '查找', exact: true }).click()
+  await mainPage.getByLabel('在 JSON 中查找…').fill('"a"')
+  await expect(mainPage.locator('.json-editor .cm-searchMatch')).toHaveCount(1)
+
+  await mainPage.evaluate(() => window.mootool.updateSettings({ editor: { jsonFontSize: 22 } }))
+  await expect(mainPage.locator('.json-editor')).toHaveCSS('font-size', '22px')
+  const jsonLineOffsets = await editorLineTopOffsets(mainPage, '.json-editor')
+  expect(jsonLineOffsets).toEqual(expect.arrayContaining([expect.any(Number)]))
+  expect(Math.max(...jsonLineOffsets)).toBeLessThan(1.5)
+  await mainPage.evaluate(() => window.mootool.updateSettings({ editor: { jsonFontSize: 14 } }))
 
   await mainPage.getByRole('button', { name: '历史', exact: true }).click()
   await expect(mainPage.getByRole('dialog', { name: '历史记录' })).toBeVisible()
@@ -306,16 +319,18 @@ test('runs P3 time, encode, UA, calculator and config workflows', async () => {
   await mainPage.getByRole('button', { name: '退出大屏时钟' }).click()
 
   await openTool('编码解码', '编码解码')
-  const encodePanes = mainPage.locator('.io-workspace textarea')
+  const encodePanes = mainPage.locator('.io-workspace .cm-content')
   await encodePanes.nth(0).fill('Moo 工具')
+  await expectTextEditorChrome(mainPage.locator('.io-workspace .text-code-editor').nth(0))
   await mainPage.getByRole('button', { name: '转为 Unicode' }).click()
-  await expect(encodePanes.nth(1)).toHaveValue('Moo \\u5de5\\u5177')
+  await expect(encodePanes.nth(1)).toHaveText('Moo \\u5de5\\u5177')
   await mainPage.getByRole('tab', { name: 'URL 转码' }).click()
   await encodePanes.nth(0).fill('你好 a/b')
   await mainPage.getByRole('button', { name: 'URL 编码' }).click()
-  await expect(encodePanes.nth(1)).toHaveValue('%E4%BD%A0%E5%A5%BD%20a%2Fb')
+  await expect(encodePanes.nth(1)).toHaveText('%E4%BD%A0%E5%A5%BD%20a%2Fb')
 
   await openTool('UA 分析', 'UA 分析')
+  await expectTextEditorChrome(mainPage.locator('.ua-input-panel .text-code-editor'))
   await mainPage.getByRole('button', { name: '解析', exact: true }).click()
   await expect(mainPage.locator('.ua-result-row').filter({ hasText: '浏览器' }).first()).toContainText('Chrome')
 
@@ -327,8 +342,9 @@ test('runs P3 time, encode, UA, calculator and config workflows', async () => {
   await expect(mainPage.locator('.calculator-expression output')).toHaveText('6')
 
   await openTool('配置文件转换', '配置文件转换')
-  const configPanes = mainPage.locator('.io-workspace textarea')
+  const configPanes = mainPage.locator('.io-workspace .cm-content')
   await configPanes.nth(0).fill('server.port=8080\napp.name=MooTool')
+  await expectTextEditorChrome(mainPage.locator('.io-workspace .text-code-editor').nth(0))
   await mainPage.getByRole('button', { name: '转为 YAML' }).click()
   await expect(configPanes.nth(1)).toContainText('server:')
   await mainPage.getByRole('tab', { name: 'YAML 校验' }).click()
@@ -339,7 +355,8 @@ test('runs P3 time, encode, UA, calculator and config workflows', async () => {
 test('runs P3 regex, Cron and text Diff workflows with persistent favorites', async () => {
   await openTool('正则', '正则表达式')
   await mainPage.locator('#regex-expression').fill('(moo)(\\d+)')
-  await mainPage.locator('.regex-source textarea').fill('moo1 moo22')
+  await mainPage.locator('.regex-source .cm-content').fill('moo1 moo22')
+  await expectTextEditorChrome(mainPage.locator('.regex-source .text-code-editor'))
   await mainPage.getByRole('button', { name: '匹配测试', exact: true }).click()
   await expect(mainPage.locator('.regex-results article')).toHaveCount(2)
   await mainPage.getByRole('button', { name: '收藏夹' }).click()
@@ -361,9 +378,10 @@ test('runs P3 regex, Cron and text Diff workflows with persistent favorites', as
   await cronFavorites.getByRole('button', { name: '关闭' }).click()
 
   await openTool('文本对比', '文本对比')
-  const diffEditors = mainPage.locator('.diff-editor-grid textarea')
+  const diffEditors = mainPage.locator('.diff-editor-grid .cm-content')
   await diffEditors.nth(0).fill('one\ntwo\n')
   await diffEditors.nth(1).fill('one\nthree\n')
+  await expectTextEditorChrome(mainPage.locator('.diff-editor-grid .text-code-editor').nth(1))
   await mainPage.getByRole('button', { name: '开始对比' }).click()
   await mainPage.getByRole('tab', { name: 'Unified 视图' }).click()
   await expect(mainPage.locator('.unified-diff')).toContainText('-two')
@@ -377,21 +395,23 @@ test('runs P3 regex, Cron and text Diff workflows with persistent favorites', as
 
 test('runs P4 reformat, crypto, Protobuf and QR workflows', async () => {
   await openTool('格式化', '格式化')
-  const reformatEditor = mainPage.locator('.reformat-workspace .code-editor')
+  const reformatEditor = mainPage.locator('.reformat-workspace .code-editor .cm-content')
   await expect(reformatEditor).toHaveCSS('font-size', '13px')
   await reformatEditor.fill('server { listen 80; location / { return 200; } }')
+  await expectTextEditorChrome(mainPage.locator('.reformat-workspace .code-editor'))
   await mainPage.locator('.reformat-workspace').getByRole('button', { name: '格式化', exact: true }).click()
-  await expect(reformatEditor).toHaveValue(/listen 80;/)
-  await expect(reformatEditor).toHaveValue(/\n/)
+  await expect(reformatEditor).toContainText('listen 80;')
+  await expect(reformatEditor).toContainText('\n')
 
   await openTool('加解密/随机', '加解密 / 随机')
-  const cryptoEditors = mainPage.locator('.crypto-io-grid textarea')
+  const cryptoEditors = mainPage.locator('.crypto-io-grid .cm-content')
   await cryptoEditors.nth(0).fill('MooTool E2E')
+  await expectTextEditorChrome(mainPage.locator('.crypto-io-grid .text-code-editor').nth(0))
   await mainPage.getByRole('button', { name: '加密', exact: true }).click()
-  const cipherText = await cryptoEditors.nth(1).inputValue()
+  const cipherText = await cryptoEditors.nth(1).innerText()
   expect(cipherText).not.toBe('')
   await mainPage.getByRole('button', { name: '解密', exact: true }).click()
-  await expect(cryptoEditors.nth(0)).toHaveValue('MooTool E2E')
+  await expect(cryptoEditors.nth(0)).toHaveText('MooTool E2E')
 
   await openTool('Protobuf', 'Protobuf')
   await expect(mainPage.locator('.proto-definition header')).toHaveCSS('font-size', '12px')
@@ -403,14 +423,16 @@ test('runs P4 reformat, crypto, Protobuf and QR workflows', async () => {
   }))
   expect(protobufBounds.bottom).toBeLessThanOrEqual(protobufBounds.viewportHeight)
   expect(protobufBounds.scrollHeight).toBe(protobufBounds.clientHeight)
-  const protobufPanes = mainPage.locator('.protobuf-convert-grid textarea')
+  const protobufPanes = mainPage.locator('.protobuf-convert-grid .cm-content')
+  await expectTextEditorChrome(mainPage.locator('.protobuf-convert-grid .text-code-editor').nth(0))
   await mainPage.getByRole('button', { name: '转为 Binary' }).click()
-  await expect(protobufPanes.nth(1)).not.toHaveValue('')
+  await expect(protobufPanes.nth(1)).not.toHaveText('')
   await protobufPanes.nth(0).fill('{}')
   await mainPage.getByRole('button', { name: '转为 JSON' }).click()
   await expect(protobufPanes.nth(0)).toContainText('MooTool')
 
   await openTool('二维码', '二维码')
+  await expectTextEditorChrome(mainPage.locator('.qrcode-content-editor'))
   await mainPage.getByRole('button', { name: '生成二维码' }).click()
   const qrImage = mainPage.locator('.qrcode-preview-panel > img')
   await expect(qrImage).toBeVisible()
@@ -420,7 +442,7 @@ test('runs P4 reformat, crypto, Protobuf and QR workflows', async () => {
   await mainPage.getByRole('tab', { name: '识别' }).click()
   await mainPage.getByRole('button', { name: '从剪贴板读取' }).click()
   const qrOutcome = await mainPage.waitForFunction(() => {
-    const value = (document.querySelector('.qrcode-result textarea') as HTMLTextAreaElement | null)?.value
+    const value = document.querySelector('[data-testid="qrcode-result-text"]')?.textContent
     const error = document.querySelector('.toast--error .toast__message')?.textContent
     return value ? { value } : error ? { error } : null
   }).then((handle) => handle.jsonValue())
@@ -479,6 +501,8 @@ test('runs P5 HTTP requests and persists the request collection', async () => {
     await openTool('HTTP 请求', 'HTTP 请求')
     await expect(mainPage.getByTestId('http-url')).toHaveCSS('font-size', '12px')
     await expect.poll(() => mainPage.getByTestId('http-url').evaluate((element) => element.getBoundingClientRect().height)).toBe(34)
+    await mainPage.getByRole('tab', { name: 'Body', exact: true }).first().click()
+    await expectTextEditorChrome(mainPage.locator('.http-body-code-editor'))
     await mainPage.getByTestId('http-url').fill(`http://127.0.0.1:${address.port}/echo?source=mootool`)
     await mainPage.getByTestId('http-send').click()
     await expect(mainPage.getByTestId('http-response')).toContainText('"ok": true')
@@ -508,6 +532,7 @@ test('runs P5 Hosts, translation records, network and system workflows', async (
   await mainPage.getByRole('button', { name: '新建', exact: true }).click()
   await mainPage.getByLabel('方案名称').fill('E2E development')
   await mainPage.getByTestId('host-content').fill('# E2E profile\n127.0.0.1 e2e.mootool.local\n')
+  await expectTextEditorChrome(mainPage.locator('.host-content-editor'))
   await mainPage.getByRole('button', { name: '保存', exact: true }).click()
   await expect(mainPage.locator('.host-profile').filter({ hasText: 'E2E development' })).toBeVisible()
 
@@ -519,11 +544,14 @@ test('runs P5 Hosts, translation records, network and system workflows', async (
     remark: 'E2E'
   }))
   await openTool('翻译', '翻译')
+  await expectTextEditorChrome(mainPage.locator('.translation-editor-grid .text-code-editor').nth(0))
   await mainPage.getByRole('tab', { name: '单词本' }).click()
   await expect(mainPage.locator('.translation-record').filter({ hasText: 'MooTool parity' })).toBeVisible()
   await expect(mainPage.locator('.translation-record-layout main')).toContainText('英语 → 中文（简体）')
+  await expectTextEditorChrome(mainPage.locator('.translation-record-editor').nth(0))
 
   await openTool('网络/IP', '网络/IP')
+  await expectTextEditorChrome(mainPage.locator('.local-address-editor').nth(0))
   await mainPage.getByTestId('net-resolve').click()
   await expect(mainPage.getByTestId('net-output')).toContainText(/127\.0\.0\.1|::1/)
 
@@ -576,6 +604,16 @@ test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () =>
   await expect(colorMenu).toHaveCount(0)
   const editor = mainPage.getByLabel('笔记内容')
   await editor.fill('## E2E Markdown\n\n- Vault file\n- Git checkpoint')
+  await expect(mainPage.locator('.quick-note-code-editor .cm-activeLine')).toHaveCount(1)
+  await expect(mainPage.locator('.quick-note-code-editor .cm-activeLineGutter')).toHaveCount(1)
+  await mainPage.getByLabel('字号').fill('24')
+  await expect(mainPage.locator('.quick-note-code-editor')).toHaveCSS('font-size', '24px')
+  const quickNoteLineOffsets = await editorLineTopOffsets(mainPage, '.quick-note-code-editor')
+  expect(quickNoteLineOffsets).toEqual(expect.arrayContaining([expect.any(Number)]))
+  expect(Math.max(...quickNoteLineOffsets)).toBeLessThan(1.5)
+  await mainPage.getByRole('button', { name: '查找与替换' }).click()
+  await mainPage.getByLabel('查找', { exact: true }).fill('Vault')
+  await expect(mainPage.locator('.quick-note-code-editor .cm-searchMatch')).toHaveCount(1)
   await mainPage.getByLabel('语法').selectOption('text/markdown')
   await mainPage.getByRole('button', { name: '保存', exact: true }).click()
   await expect.poll(() => mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick Note.txt'))).toEqual(
@@ -611,6 +649,7 @@ test('runs and stops P6 Node.js code with persistent history', async () => {
   const editor = mainPage.getByLabel('代码编辑器')
   await expect(editor).toHaveCSS('font-size', '13px')
   await editor.fill('console.log("E2E runtime", 21 * 2)')
+  await expectTextEditorChrome(mainPage.locator('.runtime-code-editor'))
   await mainPage.getByRole('button', { name: '运行', exact: true }).click()
   await expect(mainPage.locator('.runtime-stdout')).toContainText('E2E runtime 42')
   await expect(mainPage.locator('.runtime-output-state')).toHaveText('运行完成')
@@ -699,6 +738,24 @@ test('keeps the application alive when the close behavior is set to hide', async
   await expect.poll(() => mainPage.evaluate(() => document.visibilityState)).toBe('visible')
   await mainPage.evaluate(() => window.mootool.updateSettings({ general: { closeBehavior: 'ask' } }))
 })
+
+async function editorLineTopOffsets(page: Page, rootSelector: string): Promise<number[]> {
+  return page.locator(rootSelector).evaluate((root) => {
+    const lines = [...root.querySelectorAll<HTMLElement>('.cm-line')]
+    const numbers = [...root.querySelectorAll<HTMLElement>('.cm-lineNumbers .cm-gutterElement')]
+    return numbers.flatMap((number) => {
+      const lineNumber = Number(number.textContent)
+      const line = Number.isInteger(lineNumber) ? lines[lineNumber - 1] : undefined
+      return line ? [Math.abs(line.getBoundingClientRect().top - number.getBoundingClientRect().top)] : []
+    })
+  })
+}
+
+async function expectTextEditorChrome(editor: Locator): Promise<void> {
+  await expect(editor.locator('.cm-lineNumbers')).toHaveCount(1)
+  await expect(editor.locator('.cm-activeLine')).toHaveCount(1)
+  await expect(editor.locator('.cm-activeLineGutter')).toHaveCount(1)
+}
 
 async function openTool(label: string, title: string): Promise<void> {
   const button = mainPage.locator('.tool-button').filter({ hasText: label }).first()

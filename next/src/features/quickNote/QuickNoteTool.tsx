@@ -35,6 +35,7 @@ import type { QuickNoteFile, QuickNoteMetadata, QuickNoteNode, QuickNoteSort } f
 import { useToast } from '@/shared/feedback/ToastProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { MessageKey } from '@/shared/i18n/messages'
+import { QuickNoteCodeEditor, type QuickNoteCodeEditorHandle } from './QuickNoteCodeEditor'
 import { QuickNoteTree } from './QuickNoteTree'
 import { quickReplaceActionIds, runQuickReplace, type QuickReplaceActionId } from './quickReplace'
 
@@ -218,8 +219,7 @@ export function QuickNoteTool() {
   const { t } = useI18n()
   const { settings } = useSettings()
   const toast = useToast()
-  const editorRef = useRef<HTMLTextAreaElement>(null)
-  const lineNumbersRef = useRef<HTMLPreElement>(null)
+  const editorRef = useRef<QuickNoteCodeEditorHandle>(null)
   const findIndexRef = useRef(0)
   const [state, update] = useReducer(updateState, initialState)
   const dirty = state.note !== null && (state.content !== state.note.content || state.metadataDirty)
@@ -494,19 +494,20 @@ export function QuickNoteTool() {
 
   function insertText(text: string): void {
     const editor = editorRef.current
-    const start = editor?.selectionStart ?? state.content.length
-    const end = editor?.selectionEnd ?? start
+    const selection = editor?.getSelection()
+    const start = selection?.start ?? state.content.length
+    const end = selection?.end ?? start
     update({ content: `${state.content.slice(0, start)}${text}${state.content.slice(end)}` })
     requestAnimationFrame(() => {
-      editorRef.current?.focus()
-      editorRef.current?.setSelectionRange(start + text.length, start + text.length)
+      editorRef.current?.selectRange(start + text.length, start + text.length)
     })
   }
 
   function prefixSelectedLines(prefix: 'bullet' | 'numbered'): void {
     const editor = editorRef.current
-    const start = editor?.selectionStart ?? 0
-    const end = editor?.selectionEnd ?? state.content.length
+    const selection = editor?.getSelection()
+    const start = selection?.start ?? 0
+    const end = selection?.end ?? state.content.length
     const lineStart = state.content.lastIndexOf('\n', Math.max(0, start - 1)) + 1
     const nextLine = state.content.indexOf('\n', end)
     const lineEnd = nextLine < 0 ? state.content.length : nextLine
@@ -546,8 +547,7 @@ export function QuickNoteTool() {
       return
     }
     findIndexRef.current = index + needle.length
-    editorRef.current?.focus()
-    editorRef.current?.setSelectionRange(index, index + needle.length)
+    editorRef.current?.selectRange(index, index + needle.length)
   }
 
   function replaceCurrent(all: boolean): void {
@@ -560,9 +560,9 @@ export function QuickNoteTool() {
       return
     }
     const editor = editorRef.current
-    if (editor && state.content.slice(editor.selectionStart, editor.selectionEnd).toLocaleLowerCase() === state.findText.toLocaleLowerCase()) {
-      const start = editor.selectionStart
-      const end = editor.selectionEnd
+    const selection = editor?.getSelection()
+    if (selection && state.content.slice(selection.start, selection.end).toLocaleLowerCase() === state.findText.toLocaleLowerCase()) {
+      const { start, end } = selection
       update({ content: `${state.content.slice(0, start)}${state.replaceText}${state.content.slice(end)}` })
       findIndexRef.current = start + state.replaceText.length
       requestAnimationFrame(findNext)
@@ -573,8 +573,9 @@ export function QuickNoteTool() {
 
   function applyQuickReplace(action: QuickReplaceActionId): void {
     const editor = editorRef.current
-    const start = editor?.selectionStart ?? 0
-    const end = editor?.selectionEnd ?? 0
+    const selection = editor?.getSelection()
+    const start = selection?.start ?? 0
+    const end = selection?.end ?? 0
     const hasSelection = end > start
     const source = hasSelection ? state.content.slice(start, end) : state.content
     try {
@@ -691,16 +692,15 @@ export function QuickNoteTool() {
               >
                 {state.viewMode !== 'preview' && (
                   <div className="quick-note-editor-pane">
-                    <pre ref={lineNumbersRef} className="quick-note-line-numbers" aria-hidden="true">{lineNumbers(state.content)}</pre>
-                    <textarea
+                    <QuickNoteCodeEditor
                       ref={editorRef}
-                      className={state.note.metadata.lineWrap ? 'quick-note-editor' : 'quick-note-editor quick-note-editor--nowrap'}
-                      aria-label={t('quickNote.editorLabel')}
-                      spellCheck={false}
                       value={state.content}
-                      style={{ fontFamily: editorFont(state.note.metadata.fontName), fontSize: state.note.metadata.fontSize }}
-                      onChange={(event) => update({ content: event.target.value })}
-                      onScroll={(event) => { if (lineNumbersRef.current) lineNumbersRef.current.scrollTop = event.currentTarget.scrollTop }}
+                      wrap={state.note.metadata.lineWrap}
+                      fontFamily={editorFont(state.note.metadata.fontName)}
+                      fontSize={state.note.metadata.fontSize}
+                      searchQuery={state.findOpen ? state.findText : ''}
+                      ariaLabel={t('quickNote.editorLabel')}
+                      onChange={(content) => update({ content })}
                     />
                   </div>
                 )}
@@ -868,11 +868,6 @@ function documentStats(content: string): { lines: number; words: number; charact
     words: trimmed ? trimmed.split(/\s+/).length : 0,
     characters: content.length
   }
-}
-
-function lineNumbers(content: string): string {
-  const count = Math.max(1, content.split(/\r?\n/).length)
-  return Array.from({ length: count }, (_value, index) => String(index + 1)).join('\n')
 }
 
 function extractAttachmentPaths(content: string): string[] {
