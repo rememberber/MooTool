@@ -1,5 +1,5 @@
 import { basename } from 'node:path'
-import type { UpdateCheckResult, UpdateDownloadState } from '../../src/shared/contracts/update'
+import type { UpdateCheckResult, UpdateDownload, UpdateDownloadState, UpdateInstallMode } from '../../src/shared/contracts/update'
 
 type UpdateProgress = {
   percent?: number
@@ -18,28 +18,46 @@ export type UpdateAdapter = {
   on: (event: string, listener: (payload: unknown) => void) => unknown
 }
 
-const idleState: UpdateDownloadState = {
-  status: 'idle',
-  version: null,
-  fileName: null,
-  percent: null,
-  transferred: null,
-  total: null,
-  message: null
+export type UpdateManagerOptions = {
+  installMode?: UpdateInstallMode
+  downloadFile?: (download: UpdateDownload, onProgress: (progress: UpdateProgress) => void) => Promise<string>
+  openDownloadedFile?: (filePath: string) => Promise<void> | void
+}
+
+function idleState(installMode: UpdateInstallMode): UpdateDownloadState {
+  return {
+    status: 'idle',
+    installMode,
+    version: null,
+    fileName: null,
+    percent: null,
+    transferred: null,
+    total: null,
+    message: null
+  }
 }
 
 export class UpdateManager {
-  private state: UpdateDownloadState = idleState
+  private state: UpdateDownloadState
   private activeResult: UpdateCheckResult | null = null
   private checkPromise: Promise<unknown> | null = null
   private downloadPromise: Promise<UpdateDownloadState> | null = null
   private metadataReady = false
+  private downloadedFilePath: string | null = null
+  private readonly installMode: UpdateInstallMode
+  private readonly downloadFile: UpdateManagerOptions['downloadFile']
+  private readonly openDownloadedFile: UpdateManagerOptions['openDownloadedFile']
 
   constructor(
     private readonly updater: UpdateAdapter,
     private readonly enabled: boolean,
-    private readonly onStateChange: (state: UpdateDownloadState) => void
+    private readonly onStateChange: (state: UpdateDownloadState) => void,
+    options: UpdateManagerOptions = {}
   ) {
+    this.installMode = options.installMode ?? 'automatic'
+    this.downloadFile = options.downloadFile
+    this.openDownloadedFile = options.openDownloadedFile
+    this.state = idleState(this.installMode)
     updater.autoInstallOnAppQuit = false
     updater.allowDowngrade = false
     this.registerEvents()
@@ -52,7 +70,7 @@ export class UpdateManager {
   setAutoDownload(enabled: boolean): void {
     this.updater.autoDownload = enabled
     if (enabled && this.enabled && this.activeResult && this.state.status === 'available' && this.metadataReady) {
-      void this.download().catch((error) => this.fail(error))
+      void this.download().catch(() => undefined)
     }
   }
 
@@ -61,7 +79,8 @@ export class UpdateManager {
     if (result.status !== 'available' || !result.download) {
       this.activeResult = null
       this.metadataReady = false
-      this.publish(idleState)
+      this.downloadedFilePath = null
+      this.publish(idleState(this.installMode))
       return
     }
 
@@ -72,8 +91,10 @@ export class UpdateManager {
 
     this.activeResult = result
     this.metadataReady = false
+    this.downloadedFilePath = null
     this.publish({
       status: 'available',
+      installMode: this.installMode,
       version: result.latestVersion,
       fileName: result.download.fileName,
       percent: null,
@@ -83,6 +104,12 @@ export class UpdateManager {
     })
 
     if (!this.enabled) return
+
+    if (this.installMode === 'manual') {
+      this.metadataReady = true
+      if (autoDownload) void this.download().catch(() => undefined)
+      return
+    }
 
     this.updater.setFeedURL({
       provider: 'generic',
@@ -103,9 +130,14 @@ export class UpdateManager {
 
   async download(): Promise<UpdateDownloadState> {
     if (this.downloadPromise) return this.downloadPromise
-    this.downloadPromise = this.performDownload().finally(() => {
-      this.downloadPromise = null
-    })
+    this.downloadPromise = this.performDownload()
+      .catch((error) => {
+        this.fail(error)
+        throw error
+      })
+      .finally(() => {
+        this.downloadPromise = null
+      })
     return this.downloadPromise
   }
 
@@ -117,13 +149,41 @@ export class UpdateManager {
     if (['downloading', 'ready'].includes(this.getState().status)) return this.getState()
 
     this.publish({ ...this.state, status: 'downloading', percent: this.state.percent ?? 0, message: null })
-    await this.updater.downloadUpdate()
+    if (this.installMode === 'manual') {
+      if (!this.downloadFile) throw new Error('Downloading a manual update is unavailable')
+      const downloadedFilePath = await this.downloadFile(this.activeResult.download, (progress) => {
+        this.publish({
+          ...this.state,
+          status: 'downloading',
+          percent: clampProgress(progress.percent),
+          transferred: validByteCount(progress.transferred),
+          total: validByteCount(progress.total),
+          message: null
+        })
+      })
+      this.downloadedFilePath = downloadedFilePath
+      this.publish({
+        ...this.state,
+        status: 'ready',
+        fileName: basename(downloadedFilePath),
+        percent: 100,
+        message: null
+      })
+    } else {
+      await this.updater.downloadUpdate()
+    }
     return this.getState()
   }
 
-  install(): void {
+  async install(): Promise<void> {
     if (!this.enabled) throw new Error('Updates can only be installed by a packaged application')
     if (this.state.status !== 'ready') throw new Error('The update installer is not ready')
+    if (this.installMode === 'manual') {
+      if (!this.downloadedFilePath) throw new Error('The downloaded update file is unavailable')
+      if (!this.openDownloadedFile) throw new Error('Opening the downloaded update is unavailable')
+      await this.openDownloadedFile(this.downloadedFilePath)
+      return
+    }
     this.updater.quitAndInstall(true, true)
   }
 
@@ -150,9 +210,11 @@ export class UpdateManager {
     })
     this.updater.on('update-downloaded', (payload) => {
       if (!this.activeResult) return
-      const downloadedFile = isRecord(payload) && typeof payload.downloadedFile === 'string'
-        ? basename(payload.downloadedFile)
-        : this.state.fileName
+      const downloadedFilePath = isRecord(payload) && typeof payload.downloadedFile === 'string'
+        ? payload.downloadedFile
+        : null
+      this.downloadedFilePath = downloadedFilePath
+      const downloadedFile = downloadedFilePath ? basename(downloadedFilePath) : this.state.fileName
       this.publish({
         ...this.state,
         status: 'ready',

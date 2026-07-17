@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import hashlib
 import json
 import re
 import shutil
@@ -57,16 +59,14 @@ class ElectronAssetRule:
 @dataclass(frozen=True)
 class ElectronTargetRule:
     asset_templates: tuple[str, ...]
-    metadata_source: str
-    metadata_destination: str
-    metadata_payload_template: str
+    metadata_source: str | None
+    metadata_destination: str | None
+    metadata_payload_template: str | None
 
 
 ELECTRON_ASSETS = (
-    ElectronAssetRule("darwin", "arm64", "zip", 10, "MooTool-Next-Electron-{version}-mac-arm64.zip"),
-    ElectronAssetRule("darwin", "arm64", "dmg", 20, "MooTool-Next-Electron-{version}-mac-arm64.dmg"),
-    ElectronAssetRule("darwin", "x64", "zip", 10, "MooTool-Next-Electron-{version}-mac-x64.zip"),
-    ElectronAssetRule("darwin", "x64", "dmg", 20, "MooTool-Next-Electron-{version}-mac-x64.dmg"),
+    ElectronAssetRule("darwin", "arm64", "dmg", 10, "MooTool-Next-Electron-{version}-mac-arm64.dmg"),
+    ElectronAssetRule("darwin", "x64", "dmg", 10, "MooTool-Next-Electron-{version}-mac-x64.dmg"),
     ElectronAssetRule("win32", "x64", "nsis", 10, "MooTool-Next-Electron-{version}-win-x64-setup.exe"),
     ElectronAssetRule("win32", "x64", "portable", 20, "MooTool-Next-Electron-{version}-win-x64-portable.exe"),
     ElectronAssetRule("linux", "x64", "appimage", 10, "MooTool-Next-Electron-{version}-linux-x64.AppImage"),
@@ -75,22 +75,16 @@ ELECTRON_ASSETS = (
 
 ELECTRON_TARGETS = {
     "mac-apple-silicon": ElectronTargetRule(
-        (
-            "MooTool-Next-Electron-{version}-mac-arm64.dmg",
-            "MooTool-Next-Electron-{version}-mac-arm64.zip",
-        ),
-        "latest-mac.yml",
-        "arm64-mac.yml",
-        "MooTool-Next-Electron-{version}-mac-arm64.zip",
+        ("MooTool-Next-Electron-{version}-mac-arm64.dmg",),
+        None,
+        None,
+        None,
     ),
     "mac-intel": ElectronTargetRule(
-        (
-            "MooTool-Next-Electron-{version}-mac-x64.dmg",
-            "MooTool-Next-Electron-{version}-mac-x64.zip",
-        ),
-        "latest-mac.yml",
-        "x64-mac.yml",
-        "MooTool-Next-Electron-{version}-mac-x64.zip",
+        ("MooTool-Next-Electron-{version}-mac-x64.dmg",),
+        None,
+        None,
+        None,
     ),
     "windows-x64": ElectronTargetRule(
         (
@@ -285,12 +279,13 @@ def stage_electron_assets(source_dir: Path, output_dir: Path, target: str, versi
             shutil.copy2(blockmap, blockmap_destination)
             staged.append(blockmap_destination)
 
-    metadata_source = source_dir / rule.metadata_source
-    expected_payload = rule.metadata_payload_template.format(version=version)
-    validate_metadata(metadata_source, version, expected_payload)
-    metadata_destination = output_dir / rule.metadata_destination
-    shutil.copy2(metadata_source, metadata_destination)
-    staged.append(metadata_destination)
+    if rule.metadata_source and rule.metadata_destination and rule.metadata_payload_template:
+        metadata_source = source_dir / rule.metadata_source
+        expected_payload = rule.metadata_payload_template.format(version=version)
+        validate_metadata(metadata_source, version, expected_payload)
+        metadata_destination = output_dir / rule.metadata_destination
+        shutil.copy2(metadata_source, metadata_destination)
+        staged.append(metadata_destination)
     return staged
 
 
@@ -298,11 +293,20 @@ def release_asset_url(repo: str, tag: str, file_name: str) -> str:
     return f"https://github.com/{repo}/releases/download/{tag}/{file_name}"
 
 
+def file_sha512(path: Path) -> str:
+    digest = hashlib.sha512()
+    with path.open("rb") as source:
+        for chunk in iter(lambda: source.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return base64.b64encode(digest.digest()).decode("ascii")
+
+
 def build_electron_manifest_release(info: ReleaseInfo, assets_dir: Path, repo: str) -> dict[str, object]:
     assets: list[dict[str, object]] = []
     for rule in ELECTRON_ASSETS:
         file_name = rule.file_name(info.version)
-        if not (assets_dir / file_name).is_file():
+        asset_path = assets_dir / file_name
+        if not asset_path.is_file():
             raise ValueError(f"Missing Electron release asset: {file_name}")
         assets.append({
             "platform": rule.platform,
@@ -311,11 +315,14 @@ def build_electron_manifest_release(info: ReleaseInfo, assets_dir: Path, repo: s
             "priority": rule.priority,
             "fileName": file_name,
             "url": release_asset_url(repo, info.tag, file_name),
+            "sha512": file_sha512(asset_path),
+            "size": asset_path.stat().st_size,
         })
 
     for target_rule in ELECTRON_TARGETS.values():
-        payload = target_rule.metadata_payload_template.format(version=info.version)
-        validate_metadata(assets_dir / target_rule.metadata_destination, info.version, payload)
+        if target_rule.metadata_destination and target_rule.metadata_payload_template:
+            payload = target_rule.metadata_payload_template.format(version=info.version)
+            validate_metadata(assets_dir / target_rule.metadata_destination, info.version, payload)
 
     return {
         "version": info.version,

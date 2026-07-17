@@ -706,7 +706,8 @@ function AboutSettings() {
               <div className="settings-update-result__actions">
                 {result.download && updateState.status === 'ready' && (
                   <button className="settings-command" type="button" onClick={installUpdate}>
-                    <RefreshCw size={14} />{t('settings.update.installRestart')}
+                    {updateState.installMode === 'manual' ? <FolderOpen size={14} /> : <RefreshCw size={14} />}
+                    {t(updateState.installMode === 'manual' ? 'settings.update.openDownloaded' : 'settings.update.installRestart')}
                   </button>
                 )}
                 {result.download && updateState.status !== 'ready' && (

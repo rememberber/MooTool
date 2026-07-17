@@ -127,6 +127,15 @@ describe('UpdateService', () => {
     expect(result.releaseUrl).toBe('https://github.com/rememberber/MooTool/releases/tag/next-electron-v2.0.0')
   })
 
+  it('does not offer a ZIP as a macOS update', async () => {
+    const result = await new UpdateService('https://feed.test', macArmIdentity, async () => response(manifest([
+      release('2.0.0', 'ZIP only', '', [asset('darwin', 'arm64', 'zip', 'MooTool.zip', 1)])
+    ]))).check('1.0.0')
+
+    expect(result.status).toBe('available')
+    expect(result.download).toBeNull()
+  })
+
   it('keeps the repository manifest structurally ready before or after release publication', async () => {
     const raw = await readFile(new URL('../../../update-manifest.json', import.meta.url), 'utf8')
     const repositoryManifest = JSON.parse(raw) as Record<string, unknown>
@@ -144,6 +153,12 @@ describe('UpdateService', () => {
     await expect(new UpdateService('', macArmIdentity, async () => response(manifest([
       release('2.0.0', 'Unsafe', '', [{ ...asset('darwin', 'arm64', 'dmg', 'Unsafe.dmg', 1), url: 'http://example.test/Unsafe.dmg' }])
     ]))).check('1.0.0')).rejects.toThrow('must use HTTPS')
+    await expect(new UpdateService('', macArmIdentity, async () => response(manifest([
+      release('2.0.0', 'Bad checksum', '', [{ ...asset('darwin', 'arm64', 'dmg', 'Bad.dmg', 1), sha512: 'invalid' }])
+    ]))).check('1.0.0')).rejects.toThrow('Invalid update asset SHA-512')
+    await expect(new UpdateService('', macArmIdentity, async () => response(manifest([
+      release('2.0.0', 'Bad size', '', [{ ...asset('darwin', 'arm64', 'dmg', 'Bad.dmg', 1), size: 0 }])
+    ]))).check('1.0.0')).rejects.toThrow('Invalid update asset size')
     await expect(new UpdateService('', macArmIdentity, async () => response(manifest([
       release('1.0.0', 'Duplicate', ''),
       release('1.0.0', 'Duplicate', '')
@@ -198,7 +213,9 @@ function asset(platform: string, architecture: string, packageType: string, file
     packageType,
     priority,
     fileName,
-    url: `https://downloads.example.test/${fileName}`
+    url: `https://downloads.example.test/${fileName}`,
+    sha512: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==',
+    size: 100
   }
 }
 

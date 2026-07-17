@@ -3,6 +3,7 @@ import type { UpdateDownloadState } from '@/shared/contracts/update'
 
 const initialState: UpdateDownloadState = {
   status: 'idle',
+  installMode: 'automatic',
   version: null,
   fileName: null,
   percent: null,

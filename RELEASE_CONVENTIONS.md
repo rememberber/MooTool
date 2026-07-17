@@ -116,14 +116,14 @@ Electron 的清单格式、资产选择和自动下载细节见 [`next/doc/updat
 
 1. 更新目标产品的版本来源、变更说明和必要文档，并完成测试。
 2. 创建符合本文件命名规则的 tag；CI 校验版本一致性。
-3. 构建安装包和自动更新元数据，由流水线核对平台、架构、签名、文件名和更新元数据。
+3. 构建安装包和自动更新元数据，由流水线核对平台、架构、签名状态、文件名和更新元数据。
 4. 所有目标校验通过后发布 Release，并按产品角色设置 pre-release 和 `Latest`。
 5. Release 资产可访问后，再更新并启用该产品的更新清单。
 6. 验证 README 下载入口、客户端更新检查和安装流程。
 
 不要在 Release 资产尚未可用时提前向已发布客户端暴露新版本，以免客户端发现版本后无法下载。
 
-Electron 正式 tag 流水线必须验证 macOS Developer ID 签名和 Apple 公证配置，并在打包后再次校验应用签名；缺少凭据时应阻止 Release。Windows 正式包也应签名，当前未配置证书时由流水线明确警告。所需 GitHub Actions secrets 和实现细节见 [`next/doc/update-products-and-assets.md`](next/doc/update-products-and-assets.md#6-正式发布签名)。
+当前 Electron 产品线明确允许未签名发布，流水线必须标注这一状态但不得因缺少证书而阻止 Release。未签名 macOS 客户端可以在后台下载并校验 DMG，完成后提示用户打开 DMG 并按常规方式拖入“应用程序”，但不得调用应用内自动安装；具体限制见 [`next/doc/update-products-and-assets.md`](next/doc/update-products-and-assets.md#6-未签名发布策略)。
 
 ## 9. Electron 首个正式版本
 

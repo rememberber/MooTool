@@ -15,7 +15,7 @@ describe('UpdateManager', () => {
 
     expect(adapter.autoDownload).toBe(true)
     expect(adapter.feedUrl).toBe('https://github.com/rememberber/MooTool/releases/download/next-electron-v1.1.0/')
-    expect(adapter.feedChannel).toBe('arm64')
+    expect(adapter.feedChannel).toBe('x64')
     expect(states.map((state) => state.status)).toEqual(expect.arrayContaining(['available', 'downloading', 'ready']))
     expect(manager.getState()).toMatchObject({ status: 'ready', version: '1.1.0', percent: 100 })
   })
@@ -37,13 +37,37 @@ describe('UpdateManager', () => {
   it('only installs a fully downloaded update', async () => {
     const adapter = new FakeUpdater()
     const manager = new UpdateManager(adapter.asAdapter(), true, () => undefined)
-    expect(() => manager.install()).toThrow('not ready')
+    await expect(manager.install()).rejects.toThrow('not ready')
 
     manager.prepare(updateResult(), true)
     await adapter.finished
-    manager.install()
+    await manager.install()
 
     expect(adapter.quitAndInstall).toHaveBeenCalledWith(true, true)
+  })
+
+  it('silently downloads an unsigned macOS update and reveals it for manual installation', async () => {
+    const adapter = new FakeUpdater()
+    const openDownloadedFile = vi.fn(async () => undefined)
+    const downloadFile = vi.fn(async (_download, onProgress) => {
+      onProgress({ percent: 52, transferred: 52, total: 100 })
+      return '/tmp/MooTool-1.1.0.dmg'
+    })
+    const manager = new UpdateManager(adapter.asAdapter(), true, () => undefined, {
+      installMode: 'manual',
+      downloadFile,
+      openDownloadedFile
+    })
+
+    manager.prepare(macUpdateResult(), true)
+    await manager.download()
+
+    expect(manager.getState()).toMatchObject({ status: 'ready', installMode: 'manual' })
+    await manager.install()
+    expect(downloadFile).toHaveBeenCalledOnce()
+    expect(adapter.downloadCalls).toBe(0)
+    expect(openDownloadedFile).toHaveBeenCalledWith('/tmp/MooTool-1.1.0.dmg')
+    expect(adapter.quitAndInstall).not.toHaveBeenCalled()
   })
 })
 
@@ -84,8 +108,8 @@ class FakeUpdater extends EventEmitter {
   async downloadUpdate(): Promise<string[]> {
     this.downloadCalls += 1
     this.emit('download-progress', { percent: 47.25, transferred: 47, total: 100 })
-    this.emit('update-downloaded', { downloadedFile: '/tmp/MooTool-1.1.0.zip' })
-    return ['/tmp/MooTool-1.1.0.zip']
+    this.emit('update-downloaded', { downloadedFile: '/tmp/MooTool-1.1.0-setup.exe' })
+    return ['/tmp/MooTool-1.1.0-setup.exe']
   }
 
   asAdapter(): UpdateAdapter {
@@ -102,12 +126,28 @@ function updateResult(): UpdateCheckResult {
     latestVersion: '1.1.0',
     releaseUrl: 'https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.0',
     releaseNotes: 'Update',
+    target: { platform: 'win32', architecture: 'x64' },
+    download: {
+      fileName: 'MooTool-Next-Electron-1.1.0-win-x64-setup.exe',
+      packageType: 'nsis',
+      url: 'https://github.com/rememberber/MooTool/releases/download/next-electron-v1.1.0/MooTool-Next-Electron-1.1.0-win-x64-setup.exe',
+      sha512: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==',
+      size: 100
+    },
+    checkedAt: '2026-07-17T00:00:00.000Z'
+  }
+}
+
+function macUpdateResult(): UpdateCheckResult {
+  return {
+    ...updateResult(),
     target: { platform: 'darwin', architecture: 'arm64' },
     download: {
       fileName: 'MooTool-Next-Electron-1.1.0-mac-arm64.dmg',
       packageType: 'dmg',
-      url: 'https://github.com/rememberber/MooTool/releases/download/next-electron-v1.1.0/MooTool-Next-Electron-1.1.0-mac-arm64.dmg'
-    },
-    checkedAt: '2026-07-17T00:00:00.000Z'
+      url: 'https://github.com/rememberber/MooTool/releases/download/next-electron-v1.1.0/MooTool-Next-Electron-1.1.0-mac-arm64.dmg',
+      sha512: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==',
+      size: 100
+    }
   }
 }

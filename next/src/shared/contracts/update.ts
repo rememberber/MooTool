@@ -13,6 +13,8 @@ export type UpdateDownload = {
   fileName: string
   packageType: string
   url: string
+  sha512: string
+  size: number
 }
 
 export type UpdateCheckResult = {
@@ -34,8 +36,11 @@ export type UpdateCheckEvent =
 
 export type UpdateDownloadStatus = 'idle' | 'available' | 'downloading' | 'ready' | 'error'
 
+export type UpdateInstallMode = 'automatic' | 'manual'
+
 export type UpdateDownloadState = {
   status: UpdateDownloadStatus
+  installMode: UpdateInstallMode
   version: string | null
   fileName: string | null
   percent: number | null

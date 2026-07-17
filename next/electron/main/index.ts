@@ -9,6 +9,7 @@ import {
   Menu,
   nativeImage,
   nativeTheme,
+  net,
   safeStorage,
   screen,
   shell,
@@ -100,6 +101,7 @@ import { inspectPdf, mergePdfs, splitPdfs } from './pdfService'
 import { SystemService } from './systemService'
 import { currentUpdateProductId, defaultReleaseUrl, UpdateService } from './updateService'
 import { UpdateManager, type UpdateAdapter } from './updateManager'
+import { downloadUpdateFile } from './updateDownloader'
 import { VaultGitService } from './vaultGitService'
 import { VaultGitCheckpointScheduler } from './vaultGitCheckpointScheduler'
 import { ToolWindowManager } from './toolWindowManager'
@@ -174,7 +176,22 @@ const updateService = new UpdateService(process.env.MOOTOOL_UPDATE_FEED_URL || u
 const updateManager = new UpdateManager(
   autoUpdater as unknown as UpdateAdapter,
   app.isPackaged && process.env.NODE_ENV !== 'test',
-  (state) => broadcast('update:state-changed', state)
+  (state) => broadcast('update:state-changed', state),
+  {
+    installMode: process.platform === 'darwin' ? 'manual' : 'automatic',
+    downloadFile: process.platform === 'darwin'
+      ? (download, onProgress) => downloadUpdateFile(
+          download,
+          join(app.getPath('userData'), 'pending-updates'),
+          onProgress,
+          (url, init) => net.fetch(url, init)
+        )
+      : undefined,
+    openDownloadedFile: async (filePath) => {
+      const error = await shell.openPath(filePath)
+      if (error) throw new Error(error)
+    }
+  }
 )
 const quickNoteCheckpointScheduler = new VaultGitCheckpointScheduler({
   enabled: () => store.get('settings').vault.autoCommit,
@@ -455,12 +472,13 @@ function registerIpc(): void {
     await shell.openExternal(lastUpdateResult?.releaseUrl ?? defaultReleaseUrl)
   })
   ipcMain.handle('update:download', () => updateManager.download())
-  ipcMain.handle('update:install', () => {
-    isQuitting = true
+  ipcMain.handle('update:install', async () => {
+    const automaticInstall = updateManager.getState().installMode === 'automatic'
+    if (automaticInstall) isQuitting = true
     try {
-      updateManager.install()
+      await updateManager.install()
     } catch (error) {
-      isQuitting = false
+      if (automaticInstall) isQuitting = false
       throw error
     }
   })

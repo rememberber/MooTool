@@ -35,7 +35,7 @@ class ManageReleasesTests(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "Electron tag must be"):
                 electron_release_info(root, "v1.2.0-beta.1")
 
-    def test_staging_renames_architecture_specific_update_metadata(self) -> None:
+    def test_staging_mac_only_publishes_the_dmg(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
             root = Path(tmp_dir)
             source = root / "dist"
@@ -45,15 +45,10 @@ class ManageReleasesTests(unittest.TestCase):
             target = ELECTRON_TARGETS["mac-apple-silicon"]
             for template in target.asset_templates:
                 (source / template.format(version=version)).write_text("asset", encoding="utf-8")
-            payload = target.metadata_payload_template.format(version=version)
-            (source / target.metadata_source).write_text(
-                f"version: {version}\nfiles:\n  - url: {payload}\n    sha512: checksum\n",
-                encoding="utf-8",
-            )
 
             staged = stage_electron_assets(source, output, "mac-apple-silicon", version)
-            self.assertIn(output / "arm64-mac.yml", staged)
-            self.assertFalse((output / "latest-mac.yml").exists())
+            self.assertEqual(staged, [output / "MooTool-Next-Electron-1.0.0-mac-arm64.dmg"])
+            self.assertEqual([path.name for path in output.iterdir()], ["MooTool-Next-Electron-1.0.0-mac-arm64.dmg"])
 
     def test_manifest_update_preserves_products_and_replaces_same_version(self) -> None:
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -83,8 +78,12 @@ class ManageReleasesTests(unittest.TestCase):
             )
             updated = json.loads(manifest_path.read_text(encoding="utf-8"))
             self.assertFalse(release["prerelease"])
-            mac_zip = next(asset for asset in release["assets"] if asset["packageType"] == "zip")
-            self.assertEqual(mac_zip["priority"], 10)
+            mac_assets = [asset for asset in release["assets"] if asset["platform"] == "darwin"]
+            self.assertEqual(len(mac_assets), 2)
+            self.assertTrue(all(asset["packageType"] == "dmg" for asset in mac_assets))
+            self.assertTrue(all(asset["priority"] == 10 for asset in mac_assets))
+            self.assertTrue(all(len(asset["sha512"]) == 88 for asset in mac_assets))
+            self.assertTrue(all(asset["size"] == 5 for asset in mac_assets))
             self.assertEqual(updated["products"]["java"]["status"], "legacy")
             self.assertEqual(len(updated["products"]["next-electron"]["releases"]), 1)
             self.assertIn("独立更新", updated["products"]["next-electron"]["releases"][0]["notes"])
@@ -136,11 +135,12 @@ class ManageReleasesTests(unittest.TestCase):
         for target in ELECTRON_TARGETS.values():
             for template in target.asset_templates:
                 (root / template.format(version=version)).write_text("asset", encoding="utf-8")
-            payload = target.metadata_payload_template.format(version=version)
-            (root / target.metadata_destination).write_text(
-                f"version: {version}\nfiles:\n  - url: {payload}\n    sha512: checksum\n",
-                encoding="utf-8",
-            )
+            if target.metadata_destination and target.metadata_payload_template:
+                payload = target.metadata_payload_template.format(version=version)
+                (root / target.metadata_destination).write_text(
+                    f"version: {version}\nfiles:\n  - url: {payload}\n    sha512: checksum\n",
+                    encoding="utf-8",
+                )
 
     @staticmethod
     def write_java_project(root: Path, version: str) -> None:

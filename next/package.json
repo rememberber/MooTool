@@ -15,7 +15,7 @@
     "dev": "electron-vite dev",
     "build": "tsc --noEmit && electron-vite build",
     "package": "npm run build && electron-builder",
-    "package:mac": "npm run build && electron-builder --mac dmg zip --publish never",
+    "package:mac": "npm run build && electron-builder --mac dmg --publish never",
     "package:win": "npm run build && electron-builder --win nsis portable --publish never",
     "package:linux": "npm run build && electron-builder --linux AppImage deb --publish never",
     "preview": "electron-vite preview",
@@ -112,8 +112,7 @@
       "icon": "resources/icon.icns",
       "category": "public.app-category.developer-tools",
       "target": [
-        "dmg",
-        "zip"
+        "dmg"
       ]
     },
     "win": {

@@ -59,38 +59,9 @@ jobs:
       - name: Test release tooling
         run: python -m unittest scripts.test_manage_releases
 
-      - name: Verify production macOS signing and notarization configuration
+      - name: Report unsigned release mode
         if: github.event_name == 'push'
-        shell: bash
-        env:
-          CSC_LINK: ${{ secrets.CSC_LINK }}
-          CSC_KEY_PASSWORD: ${{ secrets.CSC_KEY_PASSWORD }}
-          APPLE_ID: ${{ secrets.APPLE_ID }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
-          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
-        run: |
-          missing=()
-          for name in CSC_LINK CSC_KEY_PASSWORD APPLE_ID APPLE_APP_SPECIFIC_PASSWORD APPLE_TEAM_ID; do
-            if [ -z "${!name}" ]; then
-              missing+=("$name")
-            fi
-          done
-          if [ "${#missing[@]}" -ne 0 ]; then
-            echo "Missing required GitHub Actions secrets for a production Electron release: ${missing[*]}" >&2
-            echo "See next/doc/update-products-and-assets.md for the signing setup." >&2
-            exit 1
-          fi
-
-      - name: Report optional Windows signing configuration
-        if: github.event_name == 'push'
-        shell: bash
-        env:
-          WIN_CSC_LINK: ${{ secrets.WIN_CSC_LINK }}
-          WIN_CSC_KEY_PASSWORD: ${{ secrets.WIN_CSC_KEY_PASSWORD }}
-        run: |
-          if [ -z "$WIN_CSC_LINK" ] || [ -z "$WIN_CSC_KEY_PASSWORD" ]; then
-            echo "::warning::WIN_CSC_LINK/WIN_CSC_KEY_PASSWORD are not both configured; Windows packages will be unsigned."
-          fi
+        run: echo "::warning::This workflow intentionally publishes unsigned Electron packages. macOS updates download a verified DMG in the background, then require manual installation."
 
   package:
     name: ${{ matrix.label }}
@@ -103,13 +74,11 @@ jobs:
           - target: mac-apple-silicon
             label: macOS Apple Silicon
             os: macos-26
-            command: npx electron-builder --mac dmg zip --arm64 --publish never
-            app_path: dist/mac-arm64/MooTool Next Electron.app
+            command: npx electron-builder --mac dmg --arm64 --publish never
           - target: mac-intel
             label: macOS Intel
             os: macos-26-intel
-            command: npx electron-builder --mac dmg zip --x64 --publish never
-            app_path: dist/mac/MooTool Next Electron.app
+            command: npx electron-builder --mac dmg --x64 --publish never
           - target: windows-x64
             label: Windows x64
             os: windows-latest
@@ -148,21 +117,7 @@ jobs:
       - name: Package
         run: ${{ matrix.command }}
         env:
-          CSC_IDENTITY_AUTO_DISCOVERY: ${{ github.event_name == 'push' && 'true' || 'false' }}
-          CSC_LINK: ${{ startsWith(matrix.target, 'mac-') && secrets.CSC_LINK || '' }}
-          CSC_KEY_PASSWORD: ${{ startsWith(matrix.target, 'mac-') && secrets.CSC_KEY_PASSWORD || '' }}
-          APPLE_ID: ${{ startsWith(matrix.target, 'mac-') && secrets.APPLE_ID || '' }}
-          APPLE_APP_SPECIFIC_PASSWORD: ${{ startsWith(matrix.target, 'mac-') && secrets.APPLE_APP_SPECIFIC_PASSWORD || '' }}
-          APPLE_TEAM_ID: ${{ startsWith(matrix.target, 'mac-') && secrets.APPLE_TEAM_ID || '' }}
-          WIN_CSC_LINK: ${{ matrix.target == 'windows-x64' && secrets.WIN_CSC_LINK || '' }}
-          WIN_CSC_KEY_PASSWORD: ${{ matrix.target == 'windows-x64' && secrets.WIN_CSC_KEY_PASSWORD || '' }}
-
-      - name: Verify production macOS code signature
-        if: github.event_name == 'push' && startsWith(matrix.target, 'mac-')
-        shell: bash
-        run: |
-          codesign --verify --deep --strict "${{ matrix.app_path }}"
-          codesign --display --verbose=2 "${{ matrix.app_path }}"
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
       - name: Stage installers and architecture-specific update metadata
         shell: bash

@@ -36,7 +36,9 @@ test.beforeAll(async () => {
               packageType: 'test-installer',
               priority: 10,
               fileName: 'MooTool-Next-Electron-9.9.9-test.bin',
-              url: 'https://example.test/MooTool-Next-Electron-9.9.9-test.bin'
+              url: 'https://example.test/MooTool-Next-Electron-9.9.9-test.bin',
+              sha512: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==',
+              size: 100
             }]
           }]
         }
@@ -475,6 +477,7 @@ test('opens the settings window and synchronizes appearance changes', async () =
   await electronApp.evaluate(({ BrowserWindow }) => {
     BrowserWindow.getAllWindows().find((window) => !window.getParentWindow())?.webContents.send('update:state-changed', {
       status: 'ready',
+      installMode: 'automatic',
       version: '9.9.9',
       fileName: 'MooTool-Next-Electron-9.9.9-test.bin',
       percent: 100,
@@ -486,7 +489,21 @@ test('opens the settings window and synchronizes appearance changes', async () =
   await expect(mainPage.getByRole('button', { name: /安装并重启/ })).toContainText('新版本 9.9.9 已就绪')
   await electronApp.evaluate(({ BrowserWindow }) => {
     BrowserWindow.getAllWindows().find((window) => !window.getParentWindow())?.webContents.send('update:state-changed', {
+      status: 'ready',
+      installMode: 'manual',
+      version: '9.9.9',
+      fileName: 'MooTool-Next-Electron-9.9.9-mac-arm64.dmg',
+      percent: 100,
+      transferred: 100,
+      total: 100,
+      message: null
+    })
+  })
+  await expect(mainPage.getByRole('button', { name: /更新已下载，打开 DMG 安装/ })).toContainText('新版本 9.9.9 已就绪')
+  await electronApp.evaluate(({ BrowserWindow }) => {
+    BrowserWindow.getAllWindows().find((window) => !window.getParentWindow())?.webContents.send('update:state-changed', {
       status: 'idle',
+      installMode: 'automatic',
       version: null,
       fileName: null,
       percent: null,

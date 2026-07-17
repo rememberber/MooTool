@@ -162,17 +162,24 @@ function parseAsset(value: unknown): UpdateAsset {
     || typeof value.architecture !== 'string'
     || typeof value.packageType !== 'string'
     || typeof value.fileName !== 'string'
-    || typeof value.url !== 'string') {
+    || typeof value.url !== 'string'
+    || typeof value.sha512 !== 'string'
+    || typeof value.size !== 'number') {
     throw new Error('Invalid asset in update manifest')
   }
   const fileName = value.fileName.trim()
   if (!fileName || fileName.length > 240 || /[/\\]/.test(fileName)) throw new Error('Invalid update asset file name')
+  const sha512 = value.sha512.trim()
+  if (!/^[A-Za-z0-9+/]{86}==$/.test(sha512)) throw new Error('Invalid update asset SHA-512')
+  if (!Number.isSafeInteger(value.size) || value.size <= 0) throw new Error('Invalid update asset size')
   return {
     platform: value.platform.trim().toLowerCase(),
     architecture: normalizeArchitecture(value.architecture),
     packageType: value.packageType.trim().toLowerCase().slice(0, 40),
     fileName,
     url: normalizeHttpsUrl(value.url, 'asset'),
+    sha512,
+    size: value.size,
     priority: typeof value.priority === 'number' && Number.isSafeInteger(value.priority) ? value.priority : 100
   }
 }
@@ -182,7 +189,9 @@ function selectUpdateAsset(assets: UpdateAsset[], target: UpdateTarget & { packa
   const architecture = normalizeArchitecture(target.architecture)
   const packageType = target.packageType?.trim().toLowerCase()
   const match = assets
-    .filter((asset) => asset.platform === platform && (asset.architecture === architecture || asset.architecture === 'universal'))
+    .filter((asset) => asset.platform === platform
+      && (asset.architecture === architecture || asset.architecture === 'universal')
+      && (platform !== 'darwin' || asset.packageType === 'dmg'))
     .sort((left, right) => {
       const architectureOrder = Number(left.architecture !== architecture) - Number(right.architecture !== architecture)
       if (architectureOrder !== 0) return architectureOrder
@@ -192,7 +201,9 @@ function selectUpdateAsset(assets: UpdateAsset[], target: UpdateTarget & { packa
       if (left.priority !== right.priority) return left.priority - right.priority
       return packagePreference(platform, left.packageType) - packagePreference(platform, right.packageType)
     })[0]
-  return match ? { fileName: match.fileName, packageType: match.packageType, url: match.url } : null
+  return match
+    ? { fileName: match.fileName, packageType: match.packageType, url: match.url, sha512: match.sha512, size: match.size }
+    : null
 }
 
 function releaseNotesAfter(releases: ProductRelease[], currentVersion: string): string {
@@ -218,7 +229,7 @@ function releaseNotesAfter(releases: ProductRelease[], currentVersion: string): 
 
 function packagePreference(platform: string, packageType: string): number {
   const preferences: Record<string, string[]> = {
-    darwin: ['zip', 'dmg', 'pkg'],
+    darwin: ['dmg', 'pkg'],
     win32: ['nsis', 'msi', 'portable', 'zip'],
     linux: ['appimage', 'deb', 'rpm', 'tar.gz']
   }
