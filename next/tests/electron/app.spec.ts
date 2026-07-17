@@ -114,7 +114,7 @@ test('opens all registered tools through search and persists recent access', asy
 
 test('formats JSON and completes history and Vault workflows', async () => {
   await mainPage.locator('.tool-button').filter({ hasText: 'JSON' }).click()
-  await expect.poll(() => mainPage.locator('.tool-page').evaluate((element) => {
+  await expect.poll(() => mainPage.locator('.workspace-tool-session:not([hidden]) .tool-page').evaluate((element) => {
     const style = getComputedStyle(element)
     return { top: style.paddingTop, bottom: style.paddingBottom }
   })).toEqual({ top: '20px', bottom: '20px' })
@@ -327,7 +327,7 @@ test('opens the settings window and synchronizes appearance changes', async () =
   }
 
   await settingsPage.locator('.settings-nav__item').filter({ hasText: '关于与更新' }).click()
-  await expect(settingsPage.locator('.settings-about')).toContainText('版本 1.7.8')
+  await expect(settingsPage.locator('.settings-about')).toContainText('版本 1.0.0')
   await settingsPage.getByRole('button', { name: '检查更新', exact: true }).click()
   await expect(settingsPage.locator('.settings-update-result')).toContainText('发现新版本 9.9.9')
   await expect(settingsPage.locator('.settings-update-result')).toContainText('MooTool Next Electron')
@@ -350,9 +350,9 @@ test('runs P3 time, encode, UA, calculator and config workflows', async () => {
   await mainPage.getByRole('button', { name: '退出大屏时钟' }).click()
 
   await openTool('编码解码', '编码解码')
-  const encodePanes = mainPage.locator('.io-workspace .cm-content')
+  const encodePanes = mainPage.locator('.workspace-tool-session:not([hidden]) .io-workspace .cm-content')
   await encodePanes.nth(0).fill('Moo 工具')
-  await expectTextEditorChrome(mainPage.locator('.io-workspace .text-code-editor').nth(0))
+  await expectTextEditorChrome(mainPage.locator('.workspace-tool-session:not([hidden]) .io-workspace .text-code-editor').nth(0))
   await mainPage.getByRole('button', { name: '转为 Unicode' }).click()
   await expect(encodePanes.nth(1)).toHaveText('Moo \\u5de5\\u5177')
   await mainPage.getByRole('tab', { name: 'URL 转码' }).click()
@@ -373,9 +373,9 @@ test('runs P3 time, encode, UA, calculator and config workflows', async () => {
   await expect(mainPage.locator('.calculator-expression output')).toHaveText('6')
 
   await openTool('配置文件转换', '配置文件转换')
-  const configPanes = mainPage.locator('.io-workspace .cm-content')
+  const configPanes = mainPage.locator('.workspace-tool-session:not([hidden]) .io-workspace .cm-content')
   await configPanes.nth(0).fill('server.port=8080\napp.name=MooTool')
-  await expectTextEditorChrome(mainPage.locator('.io-workspace .text-code-editor').nth(0))
+  await expectTextEditorChrome(mainPage.locator('.workspace-tool-session:not([hidden]) .io-workspace .text-code-editor').nth(0))
   await mainPage.getByRole('button', { name: '转为 YAML' }).click()
   await expect(configPanes.nth(1)).toContainText('server:')
   await mainPage.getByRole('tab', { name: 'YAML 校验' }).click()
@@ -643,7 +643,7 @@ test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () =>
   expect(quickNoteLineOffsets).toEqual(expect.arrayContaining([expect.any(Number)]))
   expect(Math.max(...quickNoteLineOffsets)).toBeLessThan(1.5)
   await mainPage.getByRole('button', { name: '查找与替换' }).click()
-  await mainPage.getByLabel('查找', { exact: true }).fill('Vault')
+  await mainPage.getByRole('textbox', { name: '查找', exact: true }).fill('Vault')
   await expect(mainPage.locator('.quick-note-code-editor .cm-searchMatch')).toHaveCount(1)
   await editor.focus()
   await mainPage.keyboard.press('ControlOrMeta+End')
@@ -652,7 +652,7 @@ test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () =>
   await openTool('JSON', 'JSON 工作台')
   await openTool('随手记', '随手记')
   await expect(mainPage.locator('.quick-note-search input')).toHaveValue('E2E Quick')
-  await expect(mainPage.getByLabel('查找', { exact: true })).toHaveValue('Vault')
+  await expect(mainPage.getByRole('textbox', { name: '查找', exact: true })).toHaveValue('Vault')
   await expect(mainPage.locator('.quick-note-tree__row--active')).toContainText('E2E Quick Note')
   await editor.focus()
   await mainPage.keyboard.type('t')
@@ -784,6 +784,30 @@ test('scans and migrates Java data from the Data & Backup settings page', async 
   }
 })
 
+test('preserves operation state across regular tools', async () => {
+  await openTool('文本对比', '文本对比')
+  await mainPage.getByLabel('原始文本').fill('left session value')
+  await mainPage.getByLabel('新文本').fill('right session value')
+
+  await openTool('计算器', '计算器')
+  await mainPage.locator('#calculator-expression').fill('123 * 456')
+
+  await openTool('编码解码', '编码解码')
+  await mainPage.getByRole('tab', { name: 'URL 转码' }).click()
+  await mainPage.getByLabel('URL 原文').fill('https://example.test/session?q=状态')
+
+  await openTool('文本对比', '文本对比')
+  await expect(mainPage.getByLabel('原始文本')).toContainText('left session value')
+  await expect(mainPage.getByLabel('新文本')).toContainText('right session value')
+
+  await openTool('计算器', '计算器')
+  await expect(mainPage.locator('#calculator-expression')).toHaveValue('123 * 456')
+
+  await openTool('编码解码', '编码解码')
+  await expect(mainPage.getByRole('tab', { name: 'URL 转码' })).toHaveAttribute('aria-selected', 'true')
+  await expect(mainPage.getByLabel('URL 原文')).toContainText('https://example.test/session?q=状态')
+})
+
 test('keeps the application alive when the close behavior is set to hide', async () => {
   await mainPage.evaluate(() => window.mootool.updateSettings({ general: { closeBehavior: 'hide', trayEnabled: true } }))
   await electronApp.evaluate(({ BrowserWindow }) => {
@@ -823,5 +847,5 @@ async function openTool(label: string, title: string): Promise<void> {
   const button = mainPage.locator('.tool-button').filter({ hasText: label }).first()
   await button.scrollIntoViewIfNeeded()
   await button.click()
-  await expect(mainPage.locator('.tool-page h1')).toHaveText(title)
+  await expect(mainPage.locator('.workspace-tool-session:not([hidden]) .tool-page h1')).toHaveText(title)
 }

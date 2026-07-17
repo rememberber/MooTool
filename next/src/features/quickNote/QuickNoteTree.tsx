@@ -2,6 +2,7 @@ import { ChevronDown, ChevronRight, FileText, Folder, FolderOpen } from 'lucide-
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import type { QuickNoteNode } from '@/shared/contracts/quickNote'
+import { useToolActivity } from '@/shared/components/ToolActivity'
 
 type QuickNoteTreeProps = {
   nodes: QuickNoteNode[]
@@ -20,11 +21,12 @@ const quickNotePathType = 'application/x-mootool-quick-note-path'
 const quickNoteKindType = 'application/x-mootool-quick-note-kind'
 
 export function QuickNoteTree({ nodes, selectedPath, expanded, onSelect, onToggle, onMove, onRenameRequest, onMoveRequest, renameLabel, moveLabel }: QuickNoteTreeProps) {
+  const toolActive = useToolActivity()
   const menuRef = useRef<HTMLDivElement>(null)
   const [contextMenu, setContextMenu] = useState<{ node: QuickNoteNode; left: number; top: number } | null>(null)
 
   useEffect(() => {
-    if (!contextMenu) return
+    if (!contextMenu || !toolActive) return
     const focusFrame = window.requestAnimationFrame(() => menuRef.current?.querySelector('button')?.focus())
     const close = () => setContextMenu(null)
     const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') close() }
@@ -37,7 +39,7 @@ export function QuickNoteTree({ nodes, selectedPath, expanded, onSelect, onToggl
       document.removeEventListener('keydown', closeOnEscape)
       window.removeEventListener('blur', close)
     }
-  }, [contextMenu])
+  }, [contextMenu, toolActive])
 
   return (
     <>
@@ -69,7 +71,7 @@ export function QuickNoteTree({ nodes, selectedPath, expanded, onSelect, onToggl
           />
         ))}
       </div>
-      {contextMenu && createPortal(
+      {contextMenu && toolActive && createPortal(
         <div
           ref={menuRef}
           className="quick-note-tree-menu"

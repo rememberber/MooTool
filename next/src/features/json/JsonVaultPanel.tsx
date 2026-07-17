@@ -18,6 +18,7 @@ import { createPortal } from 'react-dom'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { Dialog } from '@/shared/components/Dialog'
 import { Tooltip } from '@/shared/components/Tooltip'
+import { useToolActivity } from '@/shared/components/ToolActivity'
 import type { JsonVaultNode } from '@/shared/contracts/jsonVault'
 import { useToast } from '@/shared/feedback/ToastProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -63,6 +64,7 @@ let jsonVaultSessionState: JsonVaultSessionState = {
 let jsonVaultTreeScrollTop = 0
 
 export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
+  const toolActive = useToolActivity()
   const { t } = useI18n()
   const { settings } = useSettings()
   const toast = useToast()
@@ -119,7 +121,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
   }), [load])
 
   useEffect(() => {
-    if (!contextMenu) return
+    if (!contextMenu || !toolActive) return
     const focusFrame = window.requestAnimationFrame(() => contextMenuRef.current?.querySelector('button')?.focus())
     const close = () => setContextMenu(null)
     const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') close() }
@@ -132,7 +134,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
       document.removeEventListener('keydown', closeOnEscape)
       window.removeEventListener('blur', close)
     }
-  }, [contextMenu])
+  }, [contextMenu, toolActive])
 
   async function openFile(path: string): Promise<void> {
     if (dirty && path !== selectedPath && !window.confirm(t('json.vault.confirmDiscard'))) return
@@ -351,7 +353,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
           />
         ))}
       </div>
-      {contextMenu && createPortal(
+      {contextMenu && toolActive && createPortal(
         <div
           ref={contextMenuRef}
           className="vault-tree-menu"

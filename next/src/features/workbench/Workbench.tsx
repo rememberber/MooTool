@@ -1,11 +1,12 @@
 import { ChevronDown, Languages, PanelLeftClose, PanelLeftOpen, Search, Settings } from 'lucide-react'
-import { Suspense, useEffect, useState } from 'react'
+import { Suspense, useEffect, useLayoutEffect, useState } from 'react'
 import { useAppStore } from '@/app/appStore'
-import { toolById, toolGroups } from '@/app/toolRegistry'
+import { toolById, toolGroups, type ToolId } from '@/app/toolRegistry'
 import { CommandPalette } from '@/features/search/CommandPalette'
 import { BrandIcon } from '@/shared/components/BrandIcon'
 import { ToolButton } from '@/shared/components/ToolButton'
 import { Tooltip } from '@/shared/components/Tooltip'
+import { ToolActivityProvider } from '@/shared/components/ToolActivity'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { useSettings } from '@/features/settings/SettingsProvider'
 
@@ -18,8 +19,11 @@ export function Workbench() {
   const openTool = useAppStore((state) => state.openTool)
   const setSearchOpen = useAppStore((state) => state.setSearchOpen)
   const [recentCollapsed, setRecentCollapsed] = useState(false)
+  const [mountedToolIds, setMountedToolIds] = useState<ToolId[]>([])
   const activeTool = toolById.get(activeToolId) ?? toolById.get('mootool')!
-  const ActiveComponent = activeTool.component
+  const renderedToolIds = mountedToolIds.includes(activeTool.id)
+    ? mountedToolIds
+    : [...mountedToolIds, activeTool.id]
 
   useEffect(() => {
     void hydrate()
@@ -40,6 +44,10 @@ export function Workbench() {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [setSearchOpen])
+
+  useLayoutEffect(() => {
+    setMountedToolIds((current) => current.includes(activeTool.id) ? current : [...current, activeTool.id])
+  }, [activeTool.id])
 
   const shellClassName = [
     'app-shell',
@@ -150,15 +158,27 @@ export function Workbench() {
       </aside>
 
       <section className="workspace">
-        <Suspense fallback={<div className="workspace-loading">{t('common.loading')}</div>}>
-          {ActiveComponent ? <ActiveComponent /> : (
-            <section className="placeholder-page">
-              <activeTool.icon size={28} />
-              <h1>{t(activeTool.titleKey)}</h1>
-              <p>{t('app.placeholder')}</p>
-            </section>
-          )}
-        </Suspense>
+        {renderedToolIds.map((toolId) => {
+          const definition = toolById.get(toolId)
+          const ToolComponent = definition?.component
+          const active = toolId === activeTool.id
+          if (!definition) return null
+          return (
+            <ToolActivityProvider active={active} key={toolId}>
+              <div className="workspace-tool-session" hidden={!active}>
+                <Suspense fallback={active ? <div className="workspace-loading">{t('common.loading')}</div> : null}>
+                  {ToolComponent ? <ToolComponent /> : (
+                    <section className="placeholder-page">
+                      <definition.icon size={28} />
+                      <h1>{t(definition.titleKey)}</h1>
+                      <p>{t('app.placeholder')}</p>
+                    </section>
+                  )}
+                </Suspense>
+              </div>
+            </ToolActivityProvider>
+          )
+        })}
       </section>
 
       <CommandPalette />

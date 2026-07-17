@@ -11,6 +11,7 @@ import type { CodeRuntimeId, RuntimeExecutionResult } from '@/shared/contracts/r
 import type { RuntimeRunOption } from '@/shared/contracts/settings'
 import { useToast } from '@/shared/feedback/ToastProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
+import { useToolActivity } from '@/shared/components/ToolActivity'
 import type { MessageKey } from '@/shared/i18n/messages'
 import { formatRuntimeSource, parseRuntimeArguments, runtimeDisplayName } from './runtimeTools'
 
@@ -77,6 +78,7 @@ function updateState(state: RuntimeUiState, patch: Partial<RuntimeUiState>): Run
 }
 
 export function RuntimeTool() {
+  const toolActive = useToolActivity()
   const { t } = useI18n()
   const { settings, updateSettings } = useSettings()
   const toast = useToast()
@@ -118,6 +120,7 @@ export function RuntimeTool() {
   }), [])
 
   useEffect(() => {
+    if (!toolActive) return
     const handleShortcut = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key === 'Enter') {
         event.preventDefault()

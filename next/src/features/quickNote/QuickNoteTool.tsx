@@ -32,6 +32,7 @@ import { Dialog } from '@/shared/components/Dialog'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { Tooltip } from '@/shared/components/Tooltip'
 import type { CodeEditorViewState } from '@/shared/components/codeEditorViewState'
+import { useToolActivity } from '@/shared/components/ToolActivity'
 import type { QuickNoteFile, QuickNoteMetadata, QuickNoteNode, QuickNoteSort } from '@/shared/contracts/quickNote'
 import { useToast } from '@/shared/feedback/ToastProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -136,6 +137,7 @@ const noteColors = [
 ] as const
 
 function NoteColorPicker({ value, disabled, label, onChange }: { value?: string; disabled: boolean; label: string; onChange: (color: string) => void }) {
+  const toolActive = useToolActivity()
   const triggerRef = useRef<HTMLButtonElement>(null)
   const menuRef = useRef<HTMLDivElement>(null)
   const [open, setOpen] = useState(false)
@@ -155,7 +157,7 @@ function NoteColorPicker({ value, disabled, label, onChange }: { value?: string;
   }, [])
 
   useEffect(() => {
-    if (!open) return
+    if (!open || !toolActive) return
     updatePosition()
     const focusFrame = window.requestAnimationFrame(() => {
       menuRef.current?.querySelector<HTMLElement>('[aria-checked="true"]')?.focus()
@@ -180,7 +182,7 @@ function NoteColorPicker({ value, disabled, label, onChange }: { value?: string;
       window.removeEventListener('resize', updatePosition)
       window.removeEventListener('scroll', updatePosition, true)
     }
-  }, [open, updatePosition])
+  }, [open, toolActive, updatePosition])
 
   return (
     <>
@@ -200,7 +202,7 @@ function NoteColorPicker({ value, disabled, label, onChange }: { value?: string;
           <ChevronDown size={12} />
         </button>
       </Tooltip>
-      {open && createPortal(
+      {open && toolActive && createPortal(
         <div ref={menuRef} className="quick-note-color-menu" role="menu" aria-label={label} style={position}>
           {noteColors.map(([id, color]) => {
             const active = current[0] === id
@@ -233,6 +235,7 @@ function NoteColorPicker({ value, disabled, label, onChange }: { value?: string;
 }
 
 export function QuickNoteTool() {
+  const toolActive = useToolActivity()
   const { t } = useI18n()
   const { settings } = useSettings()
   const toast = useToast()
@@ -299,6 +302,7 @@ export function QuickNoteTool() {
   }, [attachmentKey, attachmentPaths, attachmentUrls])
 
   useEffect(() => {
+    if (!toolActive) return
     const handleShortcut = (event: KeyboardEvent) => {
       if (!(event.metaKey || event.ctrlKey)) return
       if (event.key.toLocaleLowerCase() === 's') {

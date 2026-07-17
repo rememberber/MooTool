@@ -3,6 +3,7 @@ import { useEffect, useMemo, useReducer, useRef } from 'react'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import type { CodeEditorViewState } from '@/shared/components/codeEditorViewState'
+import { useToolActivity } from '@/shared/components/ToolActivity'
 import { useToast } from '@/shared/feedback/ToastProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { JsonCodeEditor, type JsonCodeEditorHandle } from './JsonCodeEditor'
@@ -103,6 +104,7 @@ async function persistHistory(summary: string, input: string, output: string): P
 }
 
 export function JsonTool() {
+  const toolActive = useToolActivity()
   const { t } = useI18n()
   const { settings } = useSettings()
   const toast = useToast()
@@ -113,6 +115,7 @@ export function JsonTool() {
   const findMatches = useMemo(() => findAll(state.content, state.findQuery), [state.content, state.findQuery])
 
   useEffect(() => {
+    if (!toolActive) return
     const handleFindShortcut = (event: KeyboardEvent) => {
       if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f') {
         event.preventDefault()
@@ -121,7 +124,7 @@ export function JsonTool() {
     }
     window.addEventListener('keydown', handleFindShortcut)
     return () => window.removeEventListener('keydown', handleFindShortcut)
-  }, [])
+  }, [toolActive])
 
   useEffect(() => {
     const desktopLayout = window.matchMedia('(min-width: 1321px)')

@@ -11,74 +11,74 @@
       "status": "active",
       "releases": [
         {
-          "version": "1.7.8",
-          "title": "MooTool Next Electron 1.7.8",
+          "version": "1.0.0",
+          "title": "MooTool Next Electron 1.0.0",
           "notes": "Electron、Vite、React 与 TypeScript 重写版本。",
-          "releaseUrl": "https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.7.8",
+          "releaseUrl": "https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.0.0",
           "assets": [
             {
               "platform": "darwin",
               "architecture": "arm64",
               "packageType": "dmg",
               "priority": 10,
-              "fileName": "MooTool-Next-Electron-1.7.8-mac-arm64.dmg",
-              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.7.8/MooTool-Next-Electron-1.7.8-mac-arm64.dmg"
+              "fileName": "MooTool-Next-Electron-1.0.0-mac-arm64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.0/MooTool-Next-Electron-1.0.0-mac-arm64.dmg"
             },
             {
               "platform": "darwin",
               "architecture": "arm64",
               "packageType": "zip",
               "priority": 20,
-              "fileName": "MooTool-Next-Electron-1.7.8-mac-arm64.zip",
-              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.7.8/MooTool-Next-Electron-1.7.8-mac-arm64.zip"
+              "fileName": "MooTool-Next-Electron-1.0.0-mac-arm64.zip",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.0/MooTool-Next-Electron-1.0.0-mac-arm64.zip"
             },
             {
               "platform": "darwin",
               "architecture": "x64",
               "packageType": "dmg",
               "priority": 10,
-              "fileName": "MooTool-Next-Electron-1.7.8-mac-x64.dmg",
-              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.7.8/MooTool-Next-Electron-1.7.8-mac-x64.dmg"
+              "fileName": "MooTool-Next-Electron-1.0.0-mac-x64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.0/MooTool-Next-Electron-1.0.0-mac-x64.dmg"
             },
             {
               "platform": "darwin",
               "architecture": "x64",
               "packageType": "zip",
               "priority": 20,
-              "fileName": "MooTool-Next-Electron-1.7.8-mac-x64.zip",
-              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.7.8/MooTool-Next-Electron-1.7.8-mac-x64.zip"
+              "fileName": "MooTool-Next-Electron-1.0.0-mac-x64.zip",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.0/MooTool-Next-Electron-1.0.0-mac-x64.zip"
             },
             {
               "platform": "win32",
               "architecture": "x64",
               "packageType": "nsis",
               "priority": 10,
-              "fileName": "MooTool-Next-Electron-1.7.8-win-x64-setup.exe",
-              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.7.8/MooTool-Next-Electron-1.7.8-win-x64-setup.exe"
+              "fileName": "MooTool-Next-Electron-1.0.0-win-x64-setup.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.0/MooTool-Next-Electron-1.0.0-win-x64-setup.exe"
             },
             {
               "platform": "win32",
               "architecture": "x64",
               "packageType": "portable",
               "priority": 20,
-              "fileName": "MooTool-Next-Electron-1.7.8-win-x64-portable.exe",
-              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.7.8/MooTool-Next-Electron-1.7.8-win-x64-portable.exe"
+              "fileName": "MooTool-Next-Electron-1.0.0-win-x64-portable.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.0/MooTool-Next-Electron-1.0.0-win-x64-portable.exe"
             },
             {
               "platform": "linux",
               "architecture": "x64",
               "packageType": "appimage",
               "priority": 10,
-              "fileName": "MooTool-Next-Electron-1.7.8-linux-x64.AppImage",
-              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.7.8/MooTool-Next-Electron-1.7.8-linux-x64.AppImage"
+              "fileName": "MooTool-Next-Electron-1.0.0-linux-x64.AppImage",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.0/MooTool-Next-Electron-1.0.0-linux-x64.AppImage"
             },
             {
               "platform": "linux",
               "architecture": "x64",
               "packageType": "deb",
               "priority": 20,
-              "fileName": "MooTool-Next-Electron-1.7.8-linux-x64.deb",
-              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.7.8/MooTool-Next-Electron-1.7.8-linux-x64.deb"
+              "fileName": "MooTool-Next-Electron-1.0.0-linux-x64.deb",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.0/MooTool-Next-Electron-1.0.0-linux-x64.deb"
             }
           ]
         }

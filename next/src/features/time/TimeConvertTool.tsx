@@ -1,6 +1,7 @@
 import { ArrowDown, ArrowUp, Clock3, Copy, Expand, History, X } from 'lucide-react'
 import { useEffect, useMemo, useReducer } from 'react'
 import { createPortal } from 'react-dom'
+import { useToolActivity } from '@/shared/components/ToolActivity'
 import { HistoryDialog } from '@/features/history/HistoryDialog'
 import { Tooltip } from '@/shared/components/Tooltip'
 import { useToast } from '@/shared/feedback/ToastProvider'
@@ -177,14 +178,17 @@ function TimeValue({ label, value, onCopy }: { label: string; value: string; onC
 }
 
 function ClockOverlay({ now, zone, onClose }: { now: number; zone: string; onClose: () => void }) {
+  const toolActive = useToolActivity()
   const { t } = useI18n()
   const value = formatLocalTime(now, zone)
   const [date, time] = value.split(' ')
   useEffect(() => {
+    if (!toolActive) return
     const closeOnEscape = (event: KeyboardEvent) => { if (event.key === 'Escape') onClose() }
     window.addEventListener('keydown', closeOnEscape)
     return () => window.removeEventListener('keydown', closeOnEscape)
-  }, [onClose])
+  }, [onClose, toolActive])
+  if (!toolActive) return null
   return createPortal(
     <div className="clock-overlay">
       <button type="button" aria-label={t('time.clock.close')} onClick={onClose}><X size={18} /></button>
