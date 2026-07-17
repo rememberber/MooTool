@@ -89,9 +89,12 @@ test('keeps multiple detached tools independent and returns each one to its dock
   await expect.poll(async () => (await evaluateTool('json', `(() => {
     const logo = document.querySelector('.tool-window-brand')
     const title = document.querySelector('.tool-page__header h1')
-    if (!logo || !title) return null
+    const zone = document.querySelector('.tool-window-brand-zone')
+    if (!logo || !title || !zone) return null
     const logoBounds = logo.getBoundingClientRect()
     const titleBounds = title.getBoundingClientRect()
+    const zoneBounds = zone.getBoundingClientRect()
+    const zoneStyle = getComputedStyle(zone)
     return {
       title: title.textContent,
       logoBeforeTitle: logoBounds.right < titleBounds.left,
@@ -100,19 +103,23 @@ test('keeps multiple detached tools independent and returns each one to its dock
       logoLeft: Math.round(logoBounds.left),
       titleLeft: Math.round(titleBounds.left),
       sameRow: Math.abs((logoBounds.top + logoBounds.height / 2) - (titleBounds.top + titleBounds.height / 2)) < 2,
-      headerTop: Math.round(title.closest('.tool-page__header').getBoundingClientRect().top),
-      brandClearsWindowControls: window.mootool.platform !== 'darwin' || logoBounds.left >= 88
+      headerTop: Math.round(zoneBounds.top),
+      controlsHidden: zone.getAttribute('data-window-controls-visible') === 'false',
+      hasVisualOverlay: zoneStyle.backgroundImage !== 'none'
+        || zoneStyle.boxShadow !== 'none'
+        || String(zoneStyle.backdropFilter || zoneStyle.getPropertyValue('-webkit-backdrop-filter')) !== 'none'
     }
   })()`)).value).toEqual({
     title: 'JSON 工作台',
     logoBeforeTitle: true,
     logoVisible: true,
     logoLoaded: true,
-    logoLeft: process.platform === 'darwin' ? 88 : 20,
-    titleLeft: process.platform === 'darwin' ? 122 : 54,
+    logoLeft: 20,
+    titleLeft: 54,
     sameRow: true,
     headerTop: 18,
-    brandClearsWindowControls: true
+    controlsHidden: true,
+    hasVisualOverlay: false
   })
 
   await mainPage.getByRole('button', { name: 'HTTP 请求', exact: true }).click()
@@ -140,28 +147,61 @@ test('aligns detached tool branding, header controls, and dock action in one top
   await expect.poll(async () => (await evaluateTool('quickNote', `(() => {
     const bounds = (selector) => document.querySelector(selector)?.getBoundingClientRect()
     const header = bounds('.quick-note-page-header')
+    const zone = bounds('.tool-window-brand-zone')
     const logo = bounds('.tool-window-brand')
     const title = bounds('.quick-note-page-header h1')
     const switcher = bounds('.quick-note-view-switch')
     const dock = bounds('.tool-window-toggle')
-    if (!header || !logo || !title || !switcher || !dock) return null
+    if (!header || !zone || !logo || !title || !switcher || !dock) return null
     const centerY = (rect) => rect.top + rect.height / 2
     return {
       headerTop: Math.round(header.top),
+      brandTop: Math.round(zone.top),
       dockTop: Math.round(dock.top),
       logoAligned: Math.abs(centerY(logo) - centerY(dock)) <= 2,
       titleAligned: Math.abs(centerY(title) - centerY(dock)) <= 2,
       switcherAligned: Math.abs(centerY(switcher) - centerY(dock)) <= 2,
-      brandClearsWindowControls: window.mootool.platform !== 'darwin' || logo.left >= 88
+      controlsHidden: document.querySelector('.tool-window-brand-zone').getAttribute('data-window-controls-visible') === 'false',
+      logoLeft: Math.round(logo.left),
+      brandDraggable: getComputedStyle(document.querySelector('.tool-window-brand-zone')).getPropertyValue('-webkit-app-region') === 'drag'
     }
   })()`)).value).toMatchObject({
     headerTop: 18,
+    brandTop: 18,
     dockTop: 18,
     logoAligned: true,
     titleAligned: true,
     switcherAligned: true,
-    brandClearsWindowControls: true
+    controlsHidden: true,
+    logoLeft: 20,
+    brandDraggable: true
   })
+
+  await sendToolWindowControlsVisibility('quickNote', true)
+  await expect.poll(async () => (await evaluateTool('quickNote', `(() => {
+    const zone = document.querySelector('.tool-window-brand-zone')
+    const logo = document.querySelector('.tool-window-brand').getBoundingClientRect()
+    const title = document.querySelector('.quick-note-page-header h1').getBoundingClientRect()
+    return {
+      controlsVisible: zone.getAttribute('data-window-controls-visible') === 'true',
+      logoLeft: Math.round(logo.left),
+      titleLeft: Math.round(title.left)
+    }
+  })()`)).value).toEqual({
+    controlsVisible: process.platform === 'darwin',
+    logoLeft: process.platform === 'darwin' ? 88 : 20,
+    titleLeft: process.platform === 'darwin' ? 122 : 54
+  })
+
+  await sendToolWindowControlsVisibility('quickNote', false)
+  await expect.poll(async () => (await evaluateTool('quickNote', `(() => {
+    const zone = document.querySelector('.tool-window-brand-zone')
+    const logo = document.querySelector('.tool-window-brand').getBoundingClientRect()
+    return {
+      controlsHidden: zone.getAttribute('data-window-controls-visible') === 'false',
+      logoLeft: Math.round(logo.left)
+    }
+  })()`)).value).toEqual({ controlsHidden: true, logoLeft: 20 })
 
   await closeDetachedBaseWindow()
   await expect.poll(() => getToolSnapshot('quickNote')).toMatchObject({ detached: false, ready: true })
@@ -171,6 +211,7 @@ test('temporarily reveals the main overlay when search is opened above a docked 
   await mainPage.locator('.tool-button').filter({ hasText: '计算器' }).click()
   await waitForToolSelector('calculator', '.calculator-workspace')
   await expect.poll(() => getMainChildViewCount()).toBe(1)
+  const beforeSearch = await evaluateTool<string>('calculator', `document.querySelector('#calculator-expression').value`)
 
   await mainPage.getByRole('button', { name: '搜索', exact: true }).click()
   await expect(mainPage.locator('.command-palette')).toBeVisible()
@@ -179,7 +220,7 @@ test('temporarily reveals the main overlay when search is opened above a docked 
   await mainPage.getByRole('button', { name: '关闭搜索', exact: true }).click()
   await expect.poll(() => getMainChildViewCount()).toBe(1)
   const restored = await evaluateTool<string>('calculator', `document.querySelector('#calculator-expression').value`)
-  expect(restored.value).toBe('40 + 2')
+  expect(restored.value).toBe(beforeSearch.value)
 })
 
 async function waitForTool(toolId: string): Promise<{ id: number; value: string }> {
@@ -228,6 +269,17 @@ async function clickToolWindowToggle(toolId: string): Promise<void> {
     contents.sendInputEvent({ type: 'mouseDown', x: point.x, y: point.y, button: 'left', clickCount: 1 })
     contents.sendInputEvent({ type: 'mouseUp', x: point.x, y: point.y, button: 'left', clickCount: 1 })
   }, toolId)
+}
+
+async function sendToolWindowControlsVisibility(toolId: string, visible: boolean): Promise<void> {
+  await electronApp.evaluate(({ webContents }, input) => {
+    const contents = webContents.getAllWebContents().find((item) => {
+      const url = new URL(item.getURL())
+      return url.searchParams.get('window') === 'tool' && url.searchParams.get('toolId') === input.toolId
+    })
+    if (!contents) throw new Error(`Tool webContents not found: ${input.toolId}`)
+    contents.send('tool-window:controls-visibility-changed', input.visible)
+  }, { toolId, visible })
 }
 
 async function getToolSnapshot(toolId: string): Promise<unknown> {

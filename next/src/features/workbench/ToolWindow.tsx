@@ -11,6 +11,7 @@ export function ToolWindow({ requestedToolId }: { requestedToolId: string }) {
   const { t } = useI18n()
   const [active, setActive] = useState(true)
   const [status, setStatus] = useState<ToolWindowStatus | null>(null)
+  const [windowControlsVisible, setWindowControlsVisible] = useState(false)
   const toolId = isDetachableToolId(requestedToolId) ? requestedToolId : null
   const tool = toolId ? toolById.get(toolId) : undefined
   const ToolComponent = tool?.component
@@ -18,14 +19,19 @@ export function ToolWindow({ requestedToolId }: { requestedToolId: string }) {
   useEffect(() => {
     if (!toolId || !tool) return
     const unsubscribeState = window.mootool.onToolWindowStateChange((nextStatus) => {
-      if (nextStatus.toolId === toolId) setStatus(nextStatus)
+      if (nextStatus.toolId === toolId) {
+        setStatus(nextStatus)
+        if (!nextStatus.detached) setWindowControlsVisible(false)
+      }
     })
     const unsubscribeActivity = window.mootool.onToolWindowActivityChange(setActive)
+    const unsubscribeWindowControls = window.mootool.onToolWindowControlsVisibilityChange(setWindowControlsVisible)
     void window.mootool.getToolWindowState(toolId).then(setStatus)
     void window.mootool.setToolWindowTitle(toolId, t(tool.titleKey))
     return () => {
       unsubscribeState()
       unsubscribeActivity()
+      unsubscribeWindowControls()
     }
   }, [t, tool, toolId])
 
@@ -37,12 +43,20 @@ export function ToolWindow({ requestedToolId }: { requestedToolId: string }) {
   const shellClassName = [
     'tool-view-shell',
     detached ? 'tool-view-shell--detached' : '',
-    window.mootool.platform === 'darwin' ? 'tool-view-shell--macos' : ''
+    window.mootool.platform === 'darwin' ? 'tool-view-shell--macos' : '',
+    windowControlsVisible ? 'tool-view-shell--window-controls-visible' : ''
   ].filter(Boolean).join(' ')
   return (
     <main className={shellClassName}>
       <div className="window-drag window-drag-region" aria-hidden="true" />
-      {detached && <BrandIcon className="tool-window-brand" size={26} />}
+      {detached && (
+        <div
+          className={windowControlsVisible ? 'tool-window-brand-zone tool-window-brand-zone--controls-visible' : 'tool-window-brand-zone'}
+          data-window-controls-visible={windowControlsVisible}
+        >
+          <BrandIcon className="tool-window-brand" size={26} />
+        </div>
+      )}
       <div className="tool-window-toggle-slot">
         <Tooltip content={detached ? t('toolWindow.dock') : t('toolWindow.detach')} side="bottom">
           <button
@@ -50,7 +64,9 @@ export function ToolWindow({ requestedToolId }: { requestedToolId: string }) {
             type="button"
             aria-label={detached ? t('toolWindow.dock') : t('toolWindow.detach')}
             onClick={() => {
-              if (detached) void window.mootool.dockToolWindow(toolId)
+              if (detached) {
+                void window.mootool.dockToolWindow(toolId)
+              }
               else void window.mootool.detachToolWindow(toolId)
             }}
           >

@@ -88,6 +88,39 @@ test('matches the Java home content and persists sidebar collapse state', async 
   await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ layout: { hideNavigationTitles: false } })
 })
 
+test('sizes compact controls from their localized English content', async () => {
+  const workspace = await mainPage.evaluate(() => window.mootool.getWorkspaceState())
+  await mainPage.evaluate(() => window.mootool.updateSettings({ general: { language: 'en-US' } }))
+
+  try {
+    const languageSelect = mainPage.locator('.language-menu select')
+    await expect(languageSelect).toHaveValue('en-US')
+    await expectSelectedOptionToFit(languageSelect)
+
+    await openTool('Quick Note', 'Quick Note')
+    const sortSelect = mainPage.getByLabel('Sort')
+    await expect(sortSelect).toHaveValue('modified')
+    await expectSelectedOptionToFit(sortSelect)
+
+    const viewTabs = mainPage.locator('.quick-note-view-switch .segmented__item')
+    await expect(viewTabs).toHaveCount(3)
+    await expect.poll(() => viewTabs.evaluateAll((tabs) => tabs.every((tab) => tab.scrollWidth <= tab.clientWidth))).toBe(true)
+
+    await openTool('Translation', 'Translation')
+    const sourceLanguage = mainPage.getByLabel('Source language')
+    await sourceLanguage.selectOption('zh-CN')
+    await expectSelectedOptionToFit(sourceLanguage)
+  } finally {
+    await mainPage.evaluate(async (previousWorkspace) => {
+      await window.mootool.updateSettings({ general: { language: 'zh-CN' } })
+      await window.mootool.setWorkspaceState(previousWorkspace)
+    }, workspace)
+    await mainPage.reload()
+    await mainPage.waitForLoadState('domcontentloaded')
+    await expect(mainPage.locator('.language-menu select')).toHaveValue('zh-CN')
+  }
+})
+
 test('opens all registered tools through search and persists recent access', async () => {
   await expect(mainPage.locator('.tool-button')).toHaveCount(25)
 
@@ -919,6 +952,36 @@ async function expectTextEditorChrome(editor: Locator): Promise<void> {
   await expect(editor.locator('.cm-lineNumbers')).toHaveCount(1)
   await expect(editor.locator('.cm-activeLine')).toHaveCount(1)
   await expect(editor.locator('.cm-activeLineGutter')).toHaveCount(1)
+}
+
+async function expectSelectedOptionToFit(select: Locator): Promise<void> {
+  await expect.poll(() => select.evaluate((element) => {
+    const control = element as HTMLSelectElement
+    const style = getComputedStyle(control)
+    const probe = document.createElement('span')
+    probe.textContent = control.selectedOptions[0]?.textContent ?? ''
+    Object.assign(probe.style, {
+      position: 'fixed',
+      visibility: 'hidden',
+      whiteSpace: 'pre',
+      fontFamily: style.fontFamily,
+      fontSize: style.fontSize,
+      fontStyle: style.fontStyle,
+      fontWeight: style.fontWeight,
+      letterSpacing: style.letterSpacing
+    })
+    document.body.append(probe)
+    const textWidth = probe.getBoundingClientRect().width
+    probe.remove()
+
+    const horizontalChrome = Number.parseFloat(style.paddingLeft)
+      + Number.parseFloat(style.paddingRight)
+      + Number.parseFloat(style.borderLeftWidth)
+      + Number.parseFloat(style.borderRightWidth)
+      + 16
+    return style.getPropertyValue('field-sizing') === 'content'
+      && control.getBoundingClientRect().width + 0.5 >= textWidth + horizontalChrome
+  })).toBe(true)
 }
 
 async function openTool(label: string, title: string): Promise<void> {

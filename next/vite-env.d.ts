@@ -149,6 +149,7 @@ declare global {
       onToolWindowSnapshotChange: (callback: (snapshot: ToolWindowSnapshot) => void) => () => void
       onToolWindowStateChange: (callback: (state: ToolWindowStatus) => void) => () => void
       onToolWindowActivityChange: (callback: (active: boolean) => void) => () => void
+      onToolWindowControlsVisibilityChange: (callback: (visible: boolean) => void) => () => void
       onJsonVaultChange: (callback: (relativePath: string) => void) => () => void
       onQuickNoteVaultChange: (callback: (relativePath: string) => void) => () => void
       onRuntimeOutput: (callback: (event: RuntimeOutputEvent) => void) => () => void

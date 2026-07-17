@@ -1,6 +1,7 @@
 import {
   BaseWindow,
   BrowserWindow,
+  screen,
   WebContentsView,
   type WebContents
 } from 'electron'
@@ -22,6 +23,7 @@ type ToolViewRecord = {
   window: BaseWindow | null
   ready: boolean
   title: string
+  windowControlsVisible: boolean
   saveTimer?: NodeJS.Timeout
 }
 
@@ -42,10 +44,14 @@ const defaultDetachedWindow: WindowState = {
   maximized: false
 }
 
+const windowControlsPollInterval = 80
+const brandRegionInset = { top: 18, left: 20, height: 32, maximumWidth: 420, reservedRight: 360 }
+
 export class ToolWindowManager {
   private readonly records = new Map<DetachableToolId, ToolViewRecord>()
   private activeToolId: ToolId = 'mootool'
   private workspaceBounds: ToolWorkspaceBounds | null = null
+  private windowControlsTimer?: NodeJS.Timeout
   private quitting = false
 
   constructor(private readonly options: ToolWindowManagerOptions) {}
@@ -70,6 +76,7 @@ export class ToolWindowManager {
     if (record.window && !record.window.isDestroyed()) {
       record.window.show()
       record.window.focus()
+      this.ensureWindowControlsTracking()
       return this.status(record)
     }
 
@@ -86,6 +93,8 @@ export class ToolWindowManager {
       backgroundColor: this.options.backgroundColor(),
       icon: this.options.icon()
     })
+    if (process.platform === 'darwin') window.setWindowButtonVisibility(false)
+    record.windowControlsVisible = false
     record.window = window
     record.host = 'detached'
     window.contentView.addChildView(record.view)
@@ -111,6 +120,8 @@ export class ToolWindowManager {
       if (record.window === window) {
         record.window = null
         record.host = 'none'
+        this.updateWindowControls(record, false)
+        this.stopWindowControlsTrackingIfIdle()
         if (!this.quitting) {
           this.syncMainHost()
           this.notify()
@@ -122,6 +133,7 @@ export class ToolWindowManager {
     if (saved.maximized) window.maximize()
     window.show()
     window.focus()
+    this.ensureWindowControlsTracking()
     this.sendActivity(record)
     this.notify()
     return this.status(record)
@@ -131,6 +143,7 @@ export class ToolWindowManager {
     if (!this.options.enabled) throw new Error('Tool windows are disabled')
     const record = this.getOrCreate(toolId)
     const window = record.window
+    this.updateWindowControls(record, false)
     if (window && !window.isDestroyed()) {
       this.saveWindowState(record)
       window.contentView.removeChildView(record.view)
@@ -138,6 +151,7 @@ export class ToolWindowManager {
     record.window = null
     record.host = 'none'
     if (window && !window.isDestroyed()) window.destroy()
+    this.stopWindowControlsTrackingIfIdle()
     this.syncMainHost()
     this.sendActivity(record)
     this.notify()
@@ -196,6 +210,8 @@ export class ToolWindowManager {
 
   dispose(): void {
     this.quitting = true
+    clearInterval(this.windowControlsTimer)
+    this.windowControlsTimer = undefined
     for (const record of this.records.values()) {
       clearTimeout(record.saveTimer)
       this.saveWindowState(record)
@@ -225,7 +241,8 @@ export class ToolWindowManager {
       host: 'none',
       window: null,
       ready: false,
-      title: `MooTool — ${toolId}`
+      title: `MooTool — ${toolId}`,
+      windowControlsVisible: false
     }
     this.records.set(toolId, record)
     view.setBackgroundColor(this.options.backgroundColor())
@@ -294,6 +311,45 @@ export class ToolWindowManager {
       bounds: window.isMaximized() ? window.getNormalBounds() : window.getBounds(),
       maximized: window.isMaximized()
     })
+  }
+
+  private ensureWindowControlsTracking(): void {
+    if (process.platform !== 'darwin' || this.windowControlsTimer) return
+    this.windowControlsTimer = setInterval(() => this.syncWindowControlsWithCursor(), windowControlsPollInterval)
+    this.windowControlsTimer.unref()
+    this.syncWindowControlsWithCursor()
+  }
+
+  private stopWindowControlsTrackingIfIdle(): void {
+    if ([...this.records.values()].some((record) => record.window && !record.window.isDestroyed())) return
+    clearInterval(this.windowControlsTimer)
+    this.windowControlsTimer = undefined
+  }
+
+  private syncWindowControlsWithCursor(): void {
+    if (process.platform !== 'darwin') return
+    const cursor = screen.getCursorScreenPoint()
+    for (const record of this.records.values()) {
+      const window = record.window
+      if (!window || window.isDestroyed()) continue
+      const bounds = window.getContentBounds()
+      const width = Math.min(brandRegionInset.maximumWidth, Math.max(0, bounds.width - brandRegionInset.reservedRight))
+      const hovered = window.isVisible()
+        && cursor.x >= bounds.x + brandRegionInset.left
+        && cursor.x <= bounds.x + brandRegionInset.left + width
+        && cursor.y >= bounds.y + brandRegionInset.top
+        && cursor.y <= bounds.y + brandRegionInset.top + brandRegionInset.height
+      this.updateWindowControls(record, hovered)
+    }
+  }
+
+  private updateWindowControls(record: ToolViewRecord, visible: boolean): void {
+    if (process.platform !== 'darwin' || record.windowControlsVisible === visible) return
+    record.windowControlsVisible = visible
+    if (record.window && !record.window.isDestroyed()) record.window.setWindowButtonVisibility(visible)
+    if (!record.view.webContents.isDestroyed()) {
+      record.view.webContents.send('tool-window:controls-visibility-changed', visible)
+    }
   }
 
   private status(record: ToolViewRecord): ToolWindowStatus {

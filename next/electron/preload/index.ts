@@ -156,6 +156,7 @@ contextBridge.exposeInMainWorld('mootool', {
   onToolWindowSnapshotChange: (callback: (snapshot: ToolWindowSnapshot) => void) => subscribe('tool-window:snapshot-changed', callback),
   onToolWindowStateChange: (callback: (state: ToolWindowStatus) => void) => subscribe('tool-window:state-changed', callback),
   onToolWindowActivityChange: (callback: (active: boolean) => void) => subscribe('tool-window:activity-changed', callback),
+  onToolWindowControlsVisibilityChange: (callback: (visible: boolean) => void) => subscribe('tool-window:controls-visibility-changed', callback),
   onJsonVaultChange: (callback: (relativePath: string) => void) => subscribe('json-vault:changed', callback),
   onQuickNoteVaultChange: (callback: (relativePath: string) => void) => subscribe('quick-note:vault-changed', callback),
   onRuntimeOutput: (callback: (event: RuntimeOutputEvent) => void) => subscribe('runtime:output', callback),
