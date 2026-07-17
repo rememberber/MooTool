@@ -207,7 +207,7 @@ test('aligns detached tool branding, header controls, and dock action in one top
   await expect.poll(() => getToolSnapshot('quickNote')).toMatchObject({ detached: false, ready: true })
 })
 
-test('temporarily reveals the main overlay when search is opened above a docked tool', async () => {
+test('temporarily reveals main overlays above a docked tool', async () => {
   await mainPage.locator('.tool-button').filter({ hasText: '计算器' }).click()
   await waitForToolSelector('calculator', '.calculator-workspace')
   await expect.poll(() => getMainChildViewCount()).toBe(1)
@@ -221,6 +221,16 @@ test('temporarily reveals the main overlay when search is opened above a docked 
   await expect.poll(() => getMainChildViewCount()).toBe(1)
   const restored = await evaluateTool<string>('calculator', `document.querySelector('#calculator-expression').value`)
   expect(restored.value).toBe(beforeSearch.value)
+
+  await mainPage.getByRole('button', { name: '管理分组', exact: true }).click()
+  const groupDialog = mainPage.getByRole('dialog', { name: '管理功能分组' })
+  await expect(groupDialog).toBeVisible()
+  await expect.poll(() => getMainChildViewCount()).toBe(0)
+
+  await groupDialog.getByRole('button', { name: '取消', exact: true }).click()
+  await expect.poll(() => getMainChildViewCount()).toBe(1)
+  const restoredAfterGroups = await evaluateTool<string>('calculator', `document.querySelector('#calculator-expression').value`)
+  expect(restoredAfterGroups.value).toBe(beforeSearch.value)
 })
 
 async function waitForTool(toolId: string): Promise<{ id: number; value: string }> {

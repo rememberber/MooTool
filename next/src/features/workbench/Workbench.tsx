@@ -31,8 +31,10 @@ export function Workbench() {
   const activeTool = toolById.get(activeToolId) ?? toolById.get('mootool')!
   const activeToolWindow = activeTool.id === 'mootool' ? undefined : toolWindows.tools.find((item) => item.toolId === activeTool.id)
   const renderedToolIds = mountedToolIds.includes(activeTool.id) ? mountedToolIds : [...mountedToolIds, activeTool.id]
+  const workspaceOverlayOpen = searchOpen || groupManagerOpen
+  const workspaceOverlayReady = !toolWindows.enabled || toolWindows.activeToolId === 'mootool'
   const dockedToolViewActive = toolWindows.enabled
-    && !searchOpen
+    && !workspaceOverlayOpen
     && activeTool.id !== 'mootool'
     && toolWindows.activeToolId === activeTool.id
     && activeToolWindow?.ready === true
@@ -66,8 +68,8 @@ export function Workbench() {
 
   useEffect(() => {
     if (!hydrated || !toolWindows.enabled) return
-    void window.mootool.activateToolView(searchOpen ? 'mootool' : activeTool.id).then(setToolWindows)
-  }, [activeTool.id, hydrated, searchOpen, toolWindows.enabled])
+    void window.mootool.activateToolView(workspaceOverlayOpen ? 'mootool' : activeTool.id).then(setToolWindows)
+  }, [activeTool.id, hydrated, toolWindows.enabled, workspaceOverlayOpen])
 
   useLayoutEffect(() => {
     if (toolWindows.enabled) return
@@ -278,7 +280,7 @@ export function Workbench() {
       </section>
 
       <CommandPalette />
-      <CustomGroupManager open={groupManagerOpen} onClose={() => setGroupManagerOpen(false)} />
+      <CustomGroupManager open={groupManagerOpen && workspaceOverlayReady} onClose={() => setGroupManagerOpen(false)} />
     </main>
   )
 }
