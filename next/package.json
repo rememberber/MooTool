@@ -4,7 +4,10 @@
   "private": true,
   "description": "MooTool rewritten with Electron, Vite, React, and TypeScript.",
   "license": "MIT",
-  "author": "Zhou Bo",
+  "author": {
+    "name": "Zhou Bo",
+    "email": "rememberber@163.com"
+  },
   "homepage": "https://github.com/rememberber/MooTool",
   "repository": {
     "type": "git",
@@ -135,6 +138,12 @@
         "AppImage",
         "deb"
       ]
+    },
+    "appImage": {
+      "artifactName": "MooTool-Next-Electron-${version}-linux-x64.${ext}"
+    },
+    "deb": {
+      "artifactName": "MooTool-Next-Electron-${version}-linux-x64.${ext}"
     }
   }
 }
