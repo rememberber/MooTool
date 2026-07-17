@@ -146,6 +146,7 @@ declare global {
       cancelCodeRun: (requestId: string) => Promise<boolean>
       onSystemThemeChange: (callback: (theme: 'light' | 'dark') => void) => () => void
       onSettingsChange: (callback: (settings: AppSettings) => void) => () => void
+      onSettingsNavigate: (callback: (category: string) => void) => () => void
       onNavigate: (callback: (event: AppNavigationEvent) => void) => () => void
       onToolWindowSnapshotChange: (callback: (snapshot: ToolWindowSnapshot) => void) => () => void
       onToolWindowStateChange: (callback: (state: ToolWindowStatus) => void) => () => void

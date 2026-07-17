@@ -239,17 +239,20 @@ function getIconPath(): string {
   return join(process.resourcesPath, 'tray-icon.png')
 }
 
-function loadRenderer(window: BrowserWindow, target: 'main' | 'settings'): void {
+function loadRenderer(window: BrowserWindow, target: 'main' | 'settings', settingsCategory?: string): void {
   if (isDev && process.env.ELECTRON_RENDERER_URL) {
     const url = new URL(process.env.ELECTRON_RENDERER_URL)
     if (target === 'settings') {
       url.searchParams.set('window', 'settings')
+      if (settingsCategory) url.searchParams.set('category', settingsCategory)
     }
     void window.loadURL(url.toString())
     return
   }
 
-  void window.loadFile(join(__dirname, '../renderer/index.html'), target === 'settings' ? { query: { window: 'settings' } } : undefined)
+  void window.loadFile(join(__dirname, '../renderer/index.html'), target === 'settings'
+    ? { query: { window: 'settings', ...(settingsCategory ? { category: settingsCategory } : {}) } }
+    : undefined)
 }
 
 function loadToolRenderer(view: WebContentsView, toolId: string): void {
@@ -332,10 +335,11 @@ function createMainWindow(): BrowserWindow {
   return window
 }
 
-function createSettingsWindow(): BrowserWindow {
+function createSettingsWindow(category?: string): BrowserWindow {
   if (settingsWindow && !settingsWindow.isDestroyed()) {
     settingsWindow.show()
     settingsWindow.focus()
+    if (category) settingsWindow.webContents.send('settings:navigate', category)
     return settingsWindow
   }
 
@@ -368,7 +372,7 @@ function createSettingsWindow(): BrowserWindow {
   window.on('closed', () => {
     settingsWindow = null
   })
-  loadRenderer(window, 'settings')
+  loadRenderer(window, 'settings', category)
   return window
 }
 
@@ -1284,38 +1288,47 @@ function rebuildApplicationMenu(language: AppLanguage): void {
   }
   const updateItem: MenuItemConstructorOptions = {
     label: labels.checkUpdates,
-    click: () => { void checkForUpdatesAndBroadcast() }
+    click: () => {
+      createSettingsWindow('about')
+      void checkForUpdatesAndBroadcast()
+    }
   }
+  const settingsLink = (label: string, category: string): MenuItemConstructorOptions => ({
+    label,
+    click: () => createSettingsWindow(category)
+  })
 
   const template: MenuItemConstructorOptions[] = [
     ...(process.platform === 'darwin' ? [{
       label: app.name,
       submenu: [
-        { role: 'about' as const },
+        settingsLink(labels.about, 'about'),
         updateItem,
         { type: 'separator' as const },
         settingsItem,
+        settingsLink(labels.backup, 'data'),
+        settingsLink(labels.shortcuts, 'shortcuts'),
         { type: 'separator' as const },
-        { role: 'hide' as const },
-        { role: 'hideOthers' as const },
-        { role: 'unhide' as const },
+        { role: 'hide' as const, label: labels.hide },
+        { role: 'hideOthers' as const, label: labels.hideOthers },
+        { role: 'unhide' as const, label: labels.showAll },
         { type: 'separator' as const },
-        { role: 'quit' as const }
+        { role: 'quit' as const, label: labels.quit }
       ]
     }] : [{
       label: labels.file,
-      submenu: [settingsItem, updateItem, { type: 'separator' as const }, { role: 'quit' as const }]
+      submenu: [settingsItem, settingsLink(labels.backup, 'data'), settingsLink(labels.shortcuts, 'shortcuts'), updateItem, { type: 'separator' as const }, { role: 'quit' as const, label: labels.quit }]
     }]),
     {
       label: labels.edit,
       submenu: [
-        { role: 'undo' },
-        { role: 'redo' },
+        { role: 'undo', label: labels.undo },
+        { role: 'redo', label: labels.redo },
         { type: 'separator' },
-        { role: 'cut' },
-        { role: 'copy' },
-        { role: 'paste' },
-        { role: 'selectAll' },
+        { role: 'cut', label: labels.cut },
+        { role: 'copy', label: labels.copy },
+        { role: 'paste', label: labels.paste },
+        { role: 'selectAll', label: labels.selectAll },
         { type: 'separator' },
         searchItem
       ]
@@ -1323,15 +1336,35 @@ function rebuildApplicationMenu(language: AppLanguage): void {
     {
       label: labels.view,
       submenu: [
-        { role: 'resetZoom' },
-        { role: 'zoomIn' },
-        { role: 'zoomOut' },
+        { role: 'resetZoom', label: labels.actualSize },
+        { role: 'zoomIn', label: labels.zoomIn },
+        { role: 'zoomOut', label: labels.zoomOut },
         { type: 'separator' },
-        { role: 'togglefullscreen' },
+        { role: 'togglefullscreen', label: labels.fullscreen },
+        { type: 'separator' },
+        settingsLink(labels.appearance, 'appearance'),
+        settingsLink(labels.layout, 'layout'),
         ...(isDev ? [{ type: 'separator' as const }, { role: 'reload' as const }, { role: 'toggleDevTools' as const }] : [])
       ]
     },
-    { role: 'windowMenu' }
+    {
+      label: labels.window,
+      submenu: [
+        { role: 'minimize', label: labels.minimize },
+        { role: 'zoom', label: labels.zoom },
+        { type: 'separator' },
+        { role: 'front', label: labels.bringAllToFront }
+      ]
+    },
+    {
+      label: labels.tools,
+      submenu: [
+        searchItem,
+        { type: 'separator' },
+        settingsLink(labels.runtime, 'runtime'),
+        settingsLink(labels.toolDefaults, 'tools')
+      ]
+    }
   ]
   Menu.setApplicationMenu(Menu.buildFromTemplate(template))
 }
@@ -1616,10 +1649,33 @@ function normalizeSecretKey(value: unknown): SecretKey {
   throw new Error('Unsupported secret key')
 }
 
-const menuLabels: Record<AppLanguage, { file: string; edit: string; view: string; search: string; settings: string; checkUpdates: string; open: string; quit: string }> = {
-  'zh-CN': { file: '文件', edit: '编辑', view: '显示', search: '搜索工具', settings: '设置…', checkUpdates: '检查更新…', open: '打开 MooTool', quit: '退出' },
-  'en-US': { file: 'File', edit: 'Edit', view: 'View', search: 'Search Tools', settings: 'Settings…', checkUpdates: 'Check for Updates…', open: 'Open MooTool', quit: 'Quit' },
-  'ja-JP': { file: 'ファイル', edit: '編集', view: '表示', search: 'ツールを検索', settings: '設定…', checkUpdates: 'アップデートを確認…', open: 'MooTool を開く', quit: '終了' }
+type MenuLabels = Record<'file' | 'edit' | 'view' | 'window' | 'tools' | 'search' | 'settings' | 'checkUpdates' | 'open' | 'quit' |
+  'about' | 'backup' | 'shortcuts' | 'appearance' | 'layout' | 'runtime' | 'toolDefaults' | 'undo' | 'redo' | 'cut' | 'copy' |
+  'paste' | 'selectAll' | 'actualSize' | 'zoomIn' | 'zoomOut' | 'fullscreen' | 'minimize' | 'zoom' | 'bringAllToFront' |
+  'hide' | 'hideOthers' | 'showAll', string>
+
+const menuLabels: Record<AppLanguage, MenuLabels> = {
+  'zh-CN': {
+    file: '文件', edit: '编辑', view: '显示', window: '窗口', tools: '工具', search: '搜索工具', settings: '设置…', checkUpdates: '检查更新…',
+    open: '打开 MooTool', quit: '退出 MooTool', about: '关于 MooTool', backup: '同步与备份…', shortcuts: '快捷键…', appearance: '外观…',
+    layout: '布局与习惯…', runtime: '运行环境…', toolDefaults: '工具默认值…', undo: '撤销', redo: '重做', cut: '剪切', copy: '复制',
+    paste: '粘贴', selectAll: '全选', actualSize: '实际大小', zoomIn: '放大', zoomOut: '缩小', fullscreen: '进入全屏幕', minimize: '最小化',
+    zoom: '缩放', bringAllToFront: '前置全部窗口', hide: '隐藏 MooTool', hideOthers: '隐藏其他', showAll: '全部显示'
+  },
+  'en-US': {
+    file: 'File', edit: 'Edit', view: 'View', window: 'Window', tools: 'Tools', search: 'Search Tools', settings: 'Settings…', checkUpdates: 'Check for Updates…',
+    open: 'Open MooTool', quit: 'Quit MooTool', about: 'About MooTool', backup: 'Sync and Backup…', shortcuts: 'Keyboard Shortcuts…', appearance: 'Appearance…',
+    layout: 'Layout and Behavior…', runtime: 'Runtimes…', toolDefaults: 'Tool Defaults…', undo: 'Undo', redo: 'Redo', cut: 'Cut', copy: 'Copy',
+    paste: 'Paste', selectAll: 'Select All', actualSize: 'Actual Size', zoomIn: 'Zoom In', zoomOut: 'Zoom Out', fullscreen: 'Enter Full Screen', minimize: 'Minimize',
+    zoom: 'Zoom', bringAllToFront: 'Bring All to Front', hide: 'Hide MooTool', hideOthers: 'Hide Others', showAll: 'Show All'
+  },
+  'ja-JP': {
+    file: 'ファイル', edit: '編集', view: '表示', window: 'ウインドウ', tools: 'ツール', search: 'ツールを検索', settings: '設定…', checkUpdates: 'アップデートを確認…',
+    open: 'MooTool を開く', quit: 'MooTool を終了', about: 'MooTool について', backup: '同期とバックアップ…', shortcuts: 'キーボードショートカット…', appearance: '外観…',
+    layout: 'レイアウトと操作…', runtime: '実行環境…', toolDefaults: 'ツールのデフォルト…', undo: '取り消す', redo: 'やり直す', cut: 'カット', copy: 'コピー',
+    paste: 'ペースト', selectAll: 'すべてを選択', actualSize: '実際のサイズ', zoomIn: '拡大', zoomOut: '縮小', fullscreen: 'フルスクリーンにする', minimize: 'しまう',
+    zoom: '拡大／縮小', bringAllToFront: 'すべてを手前に移動', hide: 'MooTool を隠す', hideOthers: 'ほかを隠す', showAll: 'すべてを表示'
+  }
 }
 
 const closeDialogLabels: Record<AppLanguage, { message: string; hide: string; quit: string; cancel: string }> = {

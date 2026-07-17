@@ -153,6 +153,7 @@ contextBridge.exposeInMainWorld('mootool', {
   cancelCodeRun: (requestId: string): Promise<boolean> => ipcRenderer.invoke('runtime:cancel', requestId),
   onSystemThemeChange: (callback: (theme: 'light' | 'dark') => void) => subscribe('theme:system-changed', callback),
   onSettingsChange: (callback: (settings: AppSettings) => void) => subscribe('settings:changed', callback),
+  onSettingsNavigate: (callback: (category: string) => void) => subscribe('settings:navigate', callback),
   onNavigate: (callback: (event: AppNavigationEvent) => void) => subscribe('app:navigate', callback),
   onToolWindowSnapshotChange: (callback: (snapshot: ToolWindowSnapshot) => void) => subscribe('tool-window:snapshot-changed', callback),
   onToolWindowStateChange: (callback: (state: ToolWindowStatus) => void) => subscribe('tool-window:state-changed', callback),

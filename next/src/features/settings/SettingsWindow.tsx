@@ -45,6 +45,10 @@ import { useSettings } from './SettingsProvider'
 
 type SettingsCategory = 'general' | 'appearance' | 'layout' | 'editor' | 'network' | 'data' | 'vault' | 'runtime' | 'tools' | 'shortcuts' | 'about'
 
+function isSettingsCategory(value: string | null): value is SettingsCategory {
+  return categories.some((category) => category.id === value)
+}
+
 const categories: Array<{ id: SettingsCategory; labelKey: MessageKey; icon: LucideIcon }> = [
   { id: 'general', labelKey: 'settings.category.general', icon: Settings2 },
   { id: 'appearance', labelKey: 'settings.category.appearance', icon: SunMedium },
@@ -63,8 +67,13 @@ export function SettingsWindow() {
   const { settings, ready, updateSettings } = useSettings()
   const { t } = useI18n()
   const toast = useToast()
-  const [activeCategory, setActiveCategory] = useState<SettingsCategory>('general')
+  const requestedCategory = new URLSearchParams(window.location.search).get('category')
+  const [activeCategory, setActiveCategory] = useState<SettingsCategory>(() => isSettingsCategory(requestedCategory) ? requestedCategory : 'general')
   const category = categories.find((item) => item.id === activeCategory) ?? categories[0]
+
+  useEffect(() => window.mootool.onSettingsNavigate((nextCategory) => {
+    if (isSettingsCategory(nextCategory)) setActiveCategory(nextCategory)
+  }), [])
 
   function commit(patch: SettingsPatch): void {
     void updateSettings(patch).catch(() => toast.error(t('settings.saveFailed')))
@@ -655,6 +664,9 @@ function AboutSettings() {
     ? DOMPurify.sanitize(marked.parse(result.releaseNotes, { async: false }) as string)
     : '', [result?.releaseNotes])
   useEffect(() => { void window.mootool.getAppVersion().then(setVersion) }, [])
+  useEffect(() => window.mootool.onUpdateCheck((event) => {
+    if (event.type === 'result') setResult(event.result)
+  }), [])
 
   function check(): void {
     setChecking(true)
