@@ -1,5 +1,6 @@
 import {
   app,
+  BaseWindow,
   BrowserWindow,
   clipboard,
   desktopCapturer,
@@ -12,10 +13,13 @@ import {
   screen,
   shell,
   Tray,
+  type WebContents,
+  type WebContentsView,
   type MenuItemConstructorOptions,
   type OpenDialogOptions
 } from 'electron'
 import Store from 'electron-store'
+import { autoUpdater } from 'electron-updater'
 import { execFile } from 'node:child_process'
 import { createHash, getHashes } from 'node:crypto'
 import { createReadStream, watch, type FSWatcher } from 'node:fs'
@@ -23,12 +27,16 @@ import { chmod, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
 import {
   defaultWorkspaceState,
+  isDetachableToolId,
   isExternalPageId,
+  isToolId,
   type AppNavigationEvent,
   type AppPaths,
   type ExternalPageId,
   type RuntimeId,
   type RuntimeStatus,
+  type ToolId,
+  type ToolWorkspaceBounds,
   type WindowState,
   type WorkspaceState
 } from '../../src/shared/contracts/app'
@@ -64,7 +72,7 @@ import { codeRuntimeIds, type RuntimeExecutionInput } from '../../src/shared/con
 import { favoriteKinds, type FavoriteKind, type SaveFavoriteInput } from '../../src/shared/contracts/favorites'
 import { backupKinds, type BackupKind, type BackupLocation } from '../../src/shared/contracts/backup'
 import type { LegacyMigrationInput } from '../../src/shared/contracts/migration'
-import type { UpdateCheckEvent, UpdateCheckResult } from '../../src/shared/contracts/update'
+import type { UpdateCheckEvent, UpdateCheckResult, UpdateDownloadState } from '../../src/shared/contracts/update'
 import { BackupService } from './backupService'
 import { FavoriteRepository } from './favoriteRepository'
 import { HistoryRepository } from './historyRepository'
@@ -91,12 +99,16 @@ import {
 import { inspectPdf, mergePdfs, splitPdfs } from './pdfService'
 import { SystemService } from './systemService'
 import { defaultReleaseUrl, UpdateService } from './updateService'
+import { UpdateManager, type UpdateAdapter } from './updateManager'
 import { VaultGitService } from './vaultGitService'
+import { VaultGitCheckpointScheduler } from './vaultGitCheckpointScheduler'
+import { ToolWindowManager } from './toolWindowManager'
 
 type PersistedStore = {
   settings: AppSettings
   workspace: WorkspaceState
   window: WindowState
+  toolWindows: Partial<Record<string, WindowState>>
   secrets: Partial<Record<SecretKey, string>>
 }
 
@@ -127,6 +139,7 @@ const externalPages: Record<ExternalPageId, string> = {
 let store: Store<PersistedStore>
 let mainWindow: BrowserWindow | null = null
 let settingsWindow: BrowserWindow | null = null
+let toolWindowManager: ToolWindowManager
 let tray: Tray | null = null
 let isQuitting = false
 let closePromptOpen = false
@@ -141,16 +154,45 @@ let quickNoteWatcher: FSWatcher | null = null
 let quickNoteWatchTimer: NodeJS.Timeout | undefined
 let quickNotePullTimer: NodeJS.Timeout | undefined
 let quickNoteWatcherGeneration = 0
+let quickNoteEditorDirty = false
 let jsonVaultWatcher: FSWatcher | null = null
 let jsonVaultWatchTimer: NodeJS.Timeout | undefined
 let jsonVaultPullTimer: NodeJS.Timeout | undefined
 let jsonVaultWatcherGeneration = 0
+let jsonVaultEditorDirty = false
 let updateStartupTimer: NodeJS.Timeout | undefined
 let updateIntervalTimer: NodeJS.Timeout | undefined
 let updateCheckPromise: Promise<UpdateCheckResult> | null = null
 let lastUpdateResult: UpdateCheckResult | null = null
 const allowedPdfPaths = new Set<string>()
 const updateService = new UpdateService(process.env.MOOTOOL_UPDATE_FEED_URL || undefined)
+const updateManager = new UpdateManager(
+  autoUpdater as unknown as UpdateAdapter,
+  app.isPackaged && process.env.NODE_ENV !== 'test',
+  (state) => broadcast('update:state-changed', state)
+)
+const quickNoteCheckpointScheduler = new VaultGitCheckpointScheduler({
+  enabled: () => store.get('settings').vault.autoCommit,
+  hasUnsavedEditorChanges: () => quickNoteEditorDirty,
+  idleMilliseconds: () => store.get('settings').vault.autoCommitIdleSeconds * 1_000,
+  inactiveMilliseconds: () => store.get('settings').vault.autoCommitInactiveSeconds * 1_000,
+  checkpoint: async (message) => {
+    const service = createQuickNoteGitService()
+    if (!(await service.status()).repository) return { success: false, message: 'Git repository is not initialized' }
+    return service.automaticCheckpoint(message)
+  }
+})
+const jsonVaultCheckpointScheduler = new VaultGitCheckpointScheduler({
+  enabled: () => store.get('settings').vault.autoCommit,
+  hasUnsavedEditorChanges: () => jsonVaultEditorDirty,
+  idleMilliseconds: () => store.get('settings').vault.autoCommitIdleSeconds * 1_000,
+  inactiveMilliseconds: () => store.get('settings').vault.autoCommitInactiveSeconds * 1_000,
+  checkpoint: async (message) => {
+    const service = createVaultGitService()
+    if (!(await service.status()).repository) return { success: false, message: 'Git repository is not initialized' }
+    return service.automaticCheckpoint(message)
+  }
+})
 
 function getDevelopmentIconPath(): string {
   const filename = process.platform === 'darwin' ? 'icon-mac.png' : process.platform === 'win32' ? 'icon.ico' : 'icon.png'
@@ -177,6 +219,20 @@ function loadRenderer(window: BrowserWindow, target: 'main' | 'settings'): void 
   void window.loadFile(join(__dirname, '../renderer/index.html'), target === 'settings' ? { query: { window: 'settings' } } : undefined)
 }
 
+function loadToolRenderer(view: WebContentsView, toolId: string): void {
+  if (isDev && process.env.ELECTRON_RENDERER_URL) {
+    const url = new URL(process.env.ELECTRON_RENDERER_URL)
+    url.searchParams.set('window', 'tool')
+    url.searchParams.set('toolId', toolId)
+    void view.webContents.loadURL(url.toString())
+    return
+  }
+
+  void view.webContents.loadFile(join(__dirname, '../renderer/index.html'), {
+    query: { window: 'tool', toolId }
+  })
+}
+
 function createMainWindow(): BrowserWindow {
   const savedWindow = store.get('window', defaultWindowState)
   const settings = store.get('settings')
@@ -186,11 +242,12 @@ function createMainWindow(): BrowserWindow {
     minWidth: 1080,
     minHeight: 720,
     show: false,
-    backgroundColor: dark ? '#171719' : '#f7f7f8',
+    transparent: process.platform === 'darwin',
+    backgroundColor: process.platform === 'darwin' ? '#00000000' : dark ? '#171719' : '#f7f7f8',
     titleBarStyle: 'hiddenInset',
     trafficLightPosition: { x: 18, y: 18 },
     vibrancy: process.platform === 'darwin' ? 'sidebar' : undefined,
-    visualEffectState: process.platform === 'darwin' ? 'active' : undefined,
+    visualEffectState: process.platform === 'darwin' ? 'followWindow' : undefined,
     icon: app.isPackaged ? undefined : getDevelopmentIconPath(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
@@ -202,6 +259,9 @@ function createMainWindow(): BrowserWindow {
 
   mainWindow = window
   installWindowStatePersistence(window)
+
+  window.on('focus', updateApplicationWindowActivity)
+  window.on('blur', updateApplicationWindowActivity)
 
   window.once('ready-to-show', () => {
     if (settings.general.startMaximized || savedWindow.maximized) {
@@ -362,14 +422,31 @@ function registerIpc(): void {
   ipcMain.handle('settings:close', (event) => {
     BrowserWindow.fromWebContents(event.sender)?.close()
   })
+  ipcMain.handle('window:dismiss', (event) => {
+    if (toolWindowManager.dismissOwner(event.sender)) return
+
+    const window = BrowserWindow.fromWebContents(event.sender)
+    if (!window || window.isDestroyed()) return
+    if (window === settingsWindow) {
+      window.close()
+      return
+    }
+    window.hide()
+  })
   ipcMain.handle('update:check', () => checkForUpdates())
+  ipcMain.handle('update:get-state', (): UpdateDownloadState => updateManager.getState())
   ipcMain.handle('update:open-release', async () => {
     await shell.openExternal(lastUpdateResult?.releaseUrl ?? defaultReleaseUrl)
   })
-  ipcMain.handle('update:download', async () => {
-    const download = lastUpdateResult?.status === 'available' ? lastUpdateResult.download : null
-    if (!download) throw new Error('No compatible update download is available')
-    await shell.openExternal(download.url)
+  ipcMain.handle('update:download', () => updateManager.download())
+  ipcMain.handle('update:install', () => {
+    isQuitting = true
+    try {
+      updateManager.install()
+    } catch (error) {
+      isQuitting = false
+      throw error
+    }
   })
   ipcMain.handle('app:open-project', async () => {
     await shell.openExternal(externalPages.github)
@@ -415,6 +492,40 @@ function registerIpc(): void {
     const state = normalizeWorkspaceState(nextState)
     store.set('workspace', state)
     return state
+  })
+  ipcMain.handle('tool-window:snapshot', () => toolWindowManager.snapshot())
+  ipcMain.handle('tool-window:activate', (event, toolId: unknown) => {
+    assertMainRenderer(event.sender)
+    if (!isToolId(toolId)) throw new Error('Invalid tool id')
+    return toolWindowManager.activate(toolId)
+  })
+  ipcMain.handle('tool-window:set-workspace-bounds', (event, bounds: unknown) => {
+    assertMainRenderer(event.sender)
+    return toolWindowManager.setWorkspaceBounds(normalizeToolWorkspaceBounds(bounds))
+  })
+  ipcMain.handle('tool-window:get-state', (_event, toolId: unknown) => {
+    if (!isDetachableToolId(toolId)) throw new Error('Invalid detachable tool id')
+    return toolWindowManager.getStatus(toolId)
+  })
+  ipcMain.handle('tool-window:detach', (event, toolId: unknown) => {
+    if (!isDetachableToolId(toolId)) throw new Error('Invalid detachable tool id')
+    assertToolWindowAccess(event.sender, toolId)
+    return toolWindowManager.detach(toolId)
+  })
+  ipcMain.handle('tool-window:dock', (event, toolId: unknown) => {
+    if (!isDetachableToolId(toolId)) throw new Error('Invalid detachable tool id')
+    assertToolWindowAccess(event.sender, toolId)
+    return toolWindowManager.dock(toolId)
+  })
+  ipcMain.handle('tool-window:focus', (event, toolId: unknown) => {
+    assertMainRenderer(event.sender)
+    if (!isDetachableToolId(toolId)) throw new Error('Invalid detachable tool id')
+    return toolWindowManager.focus(toolId)
+  })
+  ipcMain.handle('tool-window:set-title', (event, toolId: unknown, title: unknown) => {
+    if (!isDetachableToolId(toolId) || !toolWindowManager.owns(toolId, event.sender)) throw new Error('Invalid tool window')
+    if (typeof title !== 'string') throw new Error('Invalid tool window title')
+    toolWindowManager.setTitle(toolId, title)
   })
   ipcMain.handle('history:list', (_event, query: HistoryQuery) => historyRepository.list(normalizeHistoryQuery(query)))
   ipcMain.handle('history:save', (_event, input: SaveFuncHistoryInput) => {
@@ -482,7 +593,7 @@ function registerIpc(): void {
   ipcMain.handle('runtime:cancel', (_event, requestId: unknown) => runtimeExecutionService.cancel(normalizeRequestId(requestId)))
   ipcMain.handle('runtime:detect', () => detectRuntimes(store.get('settings')))
   ipcMain.handle('dialog:choose-directory', async (event, initialPath?: string) => {
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const options: OpenDialogOptions = {
       defaultPath: typeof initialPath === 'string' && initialPath ? initialPath : undefined,
       properties: ['openDirectory', 'createDirectory']
@@ -494,7 +605,7 @@ function registerIpc(): void {
   })
   ipcMain.handle('files:open-text', async (event, kind: TextFileKind): Promise<TextFileResult | null> => {
     const normalizedKind = normalizeTextFileKind(kind)
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const options: OpenDialogOptions = {
       properties: ['openFile'],
       filters: [textFileFilters[normalizedKind]]
@@ -511,7 +622,7 @@ function registerIpc(): void {
       throw new Error('Invalid text file')
     }
     const kind = normalizeTextFileKind(input.kind)
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const defaultName = sanitizeDefaultFileName(input.defaultName, kind)
     const options = { defaultPath: defaultName, filters: [textFileFilters[kind]] }
     const result = owner ? await dialog.showSaveDialog(owner, options) : await dialog.showSaveDialog(options)
@@ -521,7 +632,7 @@ function registerIpc(): void {
   })
   ipcMain.handle('files:digest', async (event, algorithm: DigestAlgorithmId): Promise<DigestFileResult | null> => {
     const normalizedAlgorithm = normalizeDigestAlgorithm(algorithm)
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const options: OpenDialogOptions = { properties: ['openFile'] }
     const result = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
     if (result.canceled || !result.filePaths[0]) return null
@@ -531,7 +642,7 @@ function registerIpc(): void {
     return { path, name: basename(path), size: fileStat.size, digest }
   })
   ipcMain.handle('files:choose-image', async (event): Promise<ImageFilePayload | null> => {
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const options: OpenDialogOptions = { properties: ['openFile'], filters: [imageFileFilter] }
     const result = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
     if (result.canceled || !result.filePaths[0]) return null
@@ -539,7 +650,7 @@ function registerIpc(): void {
   })
   ipcMain.handle('files:save-binary', async (event, input: SaveBinaryFileInput): Promise<string | null> => {
     const normalized = normalizeBinaryFileInput(input)
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const options = {
       defaultPath: sanitizeBinaryFileName(normalized.defaultName, normalized.kind),
       filters: [binaryFileFilters[normalized.kind]]
@@ -562,7 +673,7 @@ function registerIpc(): void {
     clipboard.writeImage(clipboardImage)
   })
   ipcMain.handle('screen:capture', async (event): Promise<ScreenCapture[]> => {
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const wasVisible = owner?.isVisible() ?? false
     if (wasVisible) owner?.hide()
     try {
@@ -582,7 +693,7 @@ function registerIpc(): void {
   ipcMain.handle('images:list', () => createImageRepository().list())
   ipcMain.handle('images:read', (_event, name: string) => createImageRepository().read(normalizeImageName(name)))
   ipcMain.handle('images:import', async (event) => {
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const options: OpenDialogOptions = { properties: ['openFile', 'multiSelections'], filters: [imageFileFilter] }
     const result = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
     return result.canceled ? [] : createImageRepository().import(result.filePaths)
@@ -598,7 +709,7 @@ function registerIpc(): void {
   ipcMain.handle('images:delete', (_event, names: string[]) => createImageRepository().delete(normalizeImageNames(names)))
   ipcMain.handle('images:export', async (event, names: string[]): Promise<string | null> => {
     const normalizedNames = normalizeImageNames(names)
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const result = owner
       ? await dialog.showOpenDialog(owner, { properties: ['openDirectory', 'createDirectory'] })
       : await dialog.showOpenDialog({ properties: ['openDirectory', 'createDirectory'] })
@@ -611,7 +722,7 @@ function registerIpc(): void {
     if (error) throw new Error(error)
   })
   ipcMain.handle('pdf:choose-files', async (event) => {
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const options: OpenDialogOptions = { properties: ['openFile', 'multiSelections'], filters: [pdfFileFilter] }
     const result = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
     if (result.canceled) return []
@@ -625,7 +736,7 @@ function registerIpc(): void {
   })
   ipcMain.handle('pdf:merge', async (event, sources: PdfMergeSource[]) => {
     const normalizedSources = normalizePdfMergeSources(sources)
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const options = { defaultPath: join(app.getPath('desktop'), 'merge.pdf'), filters: [pdfFileFilter] }
     const result = owner ? await dialog.showSaveDialog(owner, options) : await dialog.showSaveDialog(options)
     if (result.canceled || !result.filePath) return null
@@ -639,39 +750,42 @@ function registerIpc(): void {
       throw new Error('Invalid Vault file')
     }
     const result = await createJsonVaultRepository().save({ relativePath: input.relativePath, content: input.content })
-    await maybeCommitJsonVault('Update JSON snippet')
+    jsonVaultCheckpointScheduler.recordActivity('Update JSON snippet')
     return result
   })
   ipcMain.handle('json-vault:create-folder', async (_event, relativePath: string) => {
     const result = await createJsonVaultRepository().createFolder(relativePath)
-    await maybeCommitJsonVault('Create JSON Vault folder')
+    jsonVaultCheckpointScheduler.recordActivity('Create JSON Vault folder')
     return result
   })
   ipcMain.handle('json-vault:rename', async (_event, input: RenameJsonVaultEntryInput) => {
     if (!isRecord(input) || typeof input.relativePath !== 'string' || typeof input.name !== 'string') throw new Error('Invalid JSON Vault rename')
     const result = await createJsonVaultRepository().renameEntry(input)
-    await maybeCommitJsonVault('Rename JSON Vault entry')
+    jsonVaultCheckpointScheduler.recordActivity('Rename JSON Vault entry')
     return result
   })
   ipcMain.handle('json-vault:move', async (_event, input: MoveJsonVaultEntryInput) => {
     if (!isRecord(input) || typeof input.relativePath !== 'string' || typeof input.targetDirectory !== 'string') throw new Error('Invalid JSON Vault move')
     const result = await createJsonVaultRepository().moveEntry(input)
-    await maybeCommitJsonVault('Move JSON Vault entry')
+    jsonVaultCheckpointScheduler.recordActivity('Move JSON Vault entry')
     return result
   })
   ipcMain.handle('json-vault:duplicate', async (_event, relativePath: string) => {
     const result = await createJsonVaultRepository().duplicate(relativePath)
-    await maybeCommitJsonVault('Duplicate JSON snippet')
+    jsonVaultCheckpointScheduler.recordActivity('Duplicate JSON snippet')
     return result
   })
   ipcMain.handle('json-vault:delete', async (_event, relativePath: string) => {
     await createJsonVaultRepository().delete(relativePath)
-    await maybeCommitJsonVault('Delete JSON Vault entry')
+    jsonVaultCheckpointScheduler.recordActivity('Delete JSON Vault entry')
   })
   ipcMain.handle('json-vault:open', async () => {
     await mkdir(getJsonVaultRoot(), { recursive: true })
     const error = await shell.openPath(getJsonVaultRoot())
     if (error) throw new Error(error)
+  })
+  ipcMain.handle('json-vault:set-editor-dirty', (_event, value: unknown) => {
+    jsonVaultEditorDirty = value === true
   })
   ipcMain.handle('vault-git:status', () => createVaultGitService().status())
   ipcMain.handle('vault-git:history', () => createVaultGitService().history())
@@ -704,7 +818,7 @@ function registerIpc(): void {
       fontSize: typeof input.fontSize === 'number' ? input.fontSize : undefined,
       lineWrap: typeof input.lineWrap === 'boolean' ? input.lineWrap : undefined
     })
-    await maybeCommitQuickNote('Create Quick Note')
+    quickNoteCheckpointScheduler.recordActivity('Create Quick Note')
     return note
   })
   ipcMain.handle('quick-note:save', async (_event, input: SaveQuickNoteInput) => {
@@ -712,42 +826,42 @@ function registerIpc(): void {
       throw new Error('Invalid Quick Note')
     }
     const note = await createQuickNoteRepository().save(input)
-    await maybeCommitQuickNote('Update Quick Note')
+    quickNoteCheckpointScheduler.recordActivity('Update Quick Note')
     return note
   })
   ipcMain.handle('quick-note:create-folder', async (_event, relativePath: string) => {
     const result = await createQuickNoteRepository().createFolder(relativePath)
-    await maybeCommitQuickNote('Create Quick Note folder')
+    quickNoteCheckpointScheduler.recordActivity('Create Quick Note folder')
     return result
   })
   ipcMain.handle('quick-note:rename', async (_event, input: RenameQuickNoteEntryInput) => {
     if (!isRecord(input) || typeof input.relativePath !== 'string' || typeof input.name !== 'string') throw new Error('Invalid Quick Note rename')
     const result = await createQuickNoteRepository().renameEntry(input)
-    await maybeCommitQuickNote('Rename Quick Note entry')
+    quickNoteCheckpointScheduler.recordActivity('Rename Quick Note entry')
     return result
   })
   ipcMain.handle('quick-note:move', async (_event, input: MoveQuickNoteEntryInput) => {
     if (!isRecord(input) || typeof input.relativePath !== 'string' || typeof input.targetDirectory !== 'string') throw new Error('Invalid Quick Note move')
     const result = await createQuickNoteRepository().moveEntry(input)
-    await maybeCommitQuickNote('Move Quick Note entry')
+    quickNoteCheckpointScheduler.recordActivity('Move Quick Note entry')
     return result
   })
   ipcMain.handle('quick-note:duplicate', async (_event, relativePath: string) => {
     const result = await createQuickNoteRepository().duplicate(relativePath)
-    await maybeCommitQuickNote('Duplicate Quick Note')
+    quickNoteCheckpointScheduler.recordActivity('Duplicate Quick Note')
     return result
   })
   ipcMain.handle('quick-note:delete', async (_event, relativePath: string) => {
     await createQuickNoteRepository().delete(relativePath)
-    await maybeCommitQuickNote('Delete Quick Note entry')
+    quickNoteCheckpointScheduler.recordActivity('Delete Quick Note entry')
   })
   ipcMain.handle('quick-note:import-attachment', async (event) => {
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const options: OpenDialogOptions = { properties: ['openFile'], filters: [imageFileFilter] }
     const result = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
     if (result.canceled || !result.filePaths[0]) return null
     const attachment = await createQuickNoteRepository().importAttachment(result.filePaths[0])
-    await maybeCommitQuickNote('Add Quick Note attachment')
+    quickNoteCheckpointScheduler.recordActivity('Add Quick Note attachment')
     return attachment
   })
   ipcMain.handle('quick-note:read-attachment', (_event, relativePath: string) => createQuickNoteRepository().readAttachment(relativePath))
@@ -755,6 +869,9 @@ function registerIpc(): void {
     await mkdir(getQuickNoteRoot(), { recursive: true })
     const error = await shell.openPath(getQuickNoteRoot())
     if (error) throw new Error(error)
+  })
+  ipcMain.handle('quick-note:set-editor-dirty', (_event, value: unknown) => {
+    quickNoteEditorDirty = value === true
   })
   ipcMain.handle('quick-note-git:status', () => createQuickNoteGitService().status())
   ipcMain.handle('quick-note-git:history', () => createQuickNoteGitService().history())
@@ -778,7 +895,7 @@ function registerIpc(): void {
   ipcMain.handle('backup:info', () => createBackupService().getInfo())
   ipcMain.handle('backup:export', async (event, kind: BackupKind) => {
     if (!backupKinds.includes(kind)) throw new Error('Invalid backup kind')
-    const owner = BrowserWindow.fromWebContents(event.sender) ?? settingsWindow ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? settingsWindow ?? mainWindow
     const options: OpenDialogOptions = {
       properties: ['openDirectory', 'createDirectory'],
       defaultPath: store.get('settings').tools.exportDirectory || app.getPath('documents')
@@ -923,34 +1040,6 @@ function getQuickNoteRoot(): string {
   return settings.vault.quickNotePath || join(dataDirectory, 'quick-notes')
 }
 
-async function maybeCommitQuickNote(message: string): Promise<void> {
-  if (!store.get('settings').vault.autoCommit) return
-  const service = createQuickNoteGitService()
-  let status = await service.status()
-  if (!status.available) return
-  if (!status.repository) {
-    const initialized = await service.action({ action: 'init' })
-    if (!initialized.success) return
-    status = await service.status()
-  }
-  if (status.changes.length === 0) return
-  await service.action({ action: 'commit', message })
-}
-
-async function maybeCommitJsonVault(message: string): Promise<void> {
-  if (!store.get('settings').vault.autoCommit) return
-  const service = createVaultGitService()
-  let status = await service.status()
-  if (!status.available) return
-  if (!status.repository) {
-    const initialized = await service.action({ action: 'init' })
-    if (!initialized.success) return
-    status = await service.status()
-  }
-  if (status.changes.length === 0) return
-  await service.action({ action: 'commit', message })
-}
-
 function normalizeJsonVaultListInput(value: unknown): JsonVaultListInput {
   if (value == null) return {}
   if (!isRecord(value)) throw new Error('Invalid JSON Vault list input')
@@ -1056,19 +1145,23 @@ function configureJsonVaultAutoPull(settings: AppSettings): void {
 }
 
 async function pullQuickNoteVault(): Promise<void> {
+  if (quickNoteEditorDirty) return
   const service = createQuickNoteGitService()
   const status = await service.status()
-  if (!status.repository || !status.remote || status.conflicts > 0 || status.changes.length > 0) return
+  if (!status.repository || !status.remote || status.merging || status.conflicts > 0 || status.changes.length > 0) return
   const result = await service.action({ action: 'pull' })
-  if (result.success) broadcast('quick-note:vault-changed', '')
+  const updatedStatus = await service.status()
+  if (result.success || updatedStatus.merging || updatedStatus.conflicts > 0) broadcast('quick-note:vault-changed', '')
 }
 
 async function pullJsonVault(): Promise<void> {
+  if (jsonVaultEditorDirty) return
   const service = createVaultGitService()
   const status = await service.status()
-  if (!status.repository || !status.remote || status.conflicts > 0 || status.changes.length > 0) return
+  if (!status.repository || !status.remote || status.merging || status.conflicts > 0 || status.changes.length > 0) return
   const result = await service.action({ action: 'pull' })
-  if (result.success) broadcast('json-vault:changed', '')
+  const updatedStatus = await service.status()
+  if (result.success || updatedStatus.merging || updatedStatus.conflicts > 0) broadcast('json-vault:changed', '')
 }
 
 function readSecret(key: SecretKey): string {
@@ -1137,7 +1230,10 @@ function applySettings(settings: AppSettings): void {
   configureQuickNoteAutoPull(settings)
   configureJsonVaultWatcher()
   configureJsonVaultAutoPull(settings)
+  quickNoteCheckpointScheduler.start()
+  jsonVaultCheckpointScheduler.start()
   configureUpdateChecks(settings)
+  updateManager.setAutoDownload(settings.general.autoDownloadUpdates)
 }
 
 function rebuildApplicationMenu(language: AppLanguage): void {
@@ -1221,6 +1317,7 @@ function checkForUpdates(): Promise<UpdateCheckResult> {
     updateCheckPromise = updateService.check(app.getVersion())
       .then((result) => {
         lastUpdateResult = result
+        updateManager.prepare(result, store.get('settings').general.autoDownloadUpdates)
         return result
       })
       .finally(() => {
@@ -1273,6 +1370,14 @@ function showMainWindow(): void {
   window.focus()
 }
 
+function updateApplicationWindowActivity(): void {
+  setTimeout(() => {
+    const active = Boolean(BaseWindow.getFocusedWindow())
+    quickNoteCheckpointScheduler.setWindowActive(active)
+    jsonVaultCheckpointScheduler.setWindowActive(active)
+  })
+}
+
 function navigateMainWindow(event: AppNavigationEvent): void {
   showMainWindow()
   mainWindow?.webContents.send('app:navigate', event)
@@ -1282,6 +1387,34 @@ function broadcast(channel: string, payload: unknown): void {
   for (const window of BrowserWindow.getAllWindows()) {
     window.webContents.send(channel, payload)
   }
+  toolWindowManager?.sendToAll(channel, payload)
+}
+
+function resolveOwnerWindow(sender: WebContents): BaseWindow | null {
+  return toolWindowManager?.resolveOwner(sender) ?? BrowserWindow.fromWebContents(sender)
+}
+
+function assertMainRenderer(sender: WebContents): void {
+  if (!mainWindow || mainWindow.isDestroyed() || sender.id !== mainWindow.webContents.id) {
+    throw new Error('This operation is only available from the main window')
+  }
+}
+
+function assertToolWindowAccess(sender: WebContents, toolId: Exclude<ToolId, 'mootool'>): void {
+  const fromMain = Boolean(mainWindow && !mainWindow.isDestroyed() && sender.id === mainWindow.webContents.id)
+  if (!fromMain && !toolWindowManager.owns(toolId, sender)) throw new Error('Invalid tool window access')
+}
+
+function normalizeToolWorkspaceBounds(value: unknown): ToolWorkspaceBounds {
+  if (!isRecord(value)) throw new Error('Invalid tool workspace bounds')
+  const fields = ['x', 'y', 'width', 'height'] as const
+  const normalized = Object.fromEntries(fields.map((field) => {
+    const entry = value[field]
+    if (typeof entry !== 'number' || !Number.isFinite(entry)) throw new Error('Invalid tool workspace bounds')
+    return [field, entry]
+  }))
+  if (normalized.width <= 0 || normalized.height <= 0) throw new Error('Invalid tool workspace bounds')
+  return normalized as ToolWorkspaceBounds
 }
 
 function normalizeWorkspaceState(value: WorkspaceState): WorkspaceState {
@@ -1476,7 +1609,7 @@ const binaryFileFilters: Record<SaveBinaryFileInput['kind'], { name: string; ext
   binary: { name: 'Binary', extensions: ['bin', 'dat'] }
 }
 
-const vaultGitActions: VaultGitActionInput['action'][] = ['init', 'configure-remote', 'commit', 'fetch', 'pull', 'push', 'discard', 'abort-merge', 'resolve-conflict']
+const vaultGitActions: VaultGitActionInput['action'][] = ['init', 'configure-remote', 'commit', 'fetch', 'pull', 'push', 'discard', 'abort-merge', 'resolve-conflict', 'continue-operation']
 
 app.whenReady().then(async () => {
   store = new Store<PersistedStore>({
@@ -1485,6 +1618,7 @@ app.whenReady().then(async () => {
       settings: defaultAppSettings,
       workspace: defaultWorkspaceState,
       window: defaultWindowState,
+      toolWindows: {},
       secrets: {}
     }
   })
@@ -1493,6 +1627,19 @@ app.whenReady().then(async () => {
   systemService = new SystemService(app.getPath('temp'))
   runtimeExecutionService = new RuntimeExecutionService(join(app.getPath('temp'), 'mootool-runtime'))
   gitAskPassPath = await prepareGitAskPass()
+  toolWindowManager = new ToolWindowManager({
+    enabled: process.env.NODE_ENV !== 'test' || process.env.MOOTOOL_TOOL_VIEWS === '1',
+    getMainWindow: () => mainWindow,
+    loadTool: loadToolRenderer,
+    preloadPath: join(__dirname, '../preload/index.js'),
+    getWindowState: (toolId) => store.get('toolWindows')[toolId],
+    setWindowState: (toolId, state) => {
+      store.set('toolWindows', { ...store.get('toolWindows'), [toolId]: state })
+    },
+    backgroundColor: () => nativeTheme.shouldUseDarkColors ? '#171719' : '#f7f7f8',
+    icon: () => app.isPackaged ? undefined : getDevelopmentIconPath(),
+    onWindowFocusChanged: updateApplicationWindowActivity
+  })
 
   if (process.platform === 'darwin' && !app.isPackaged) {
     app.dock?.setIcon(getDevelopmentIconPath())
@@ -1503,10 +1650,14 @@ app.whenReady().then(async () => {
 
   nativeTheme.on('updated', () => {
     const systemTheme = nativeTheme.shouldUseDarkColors ? 'dark' : 'light'
-    for (const window of BrowserWindow.getAllWindows()) {
-      window.setBackgroundColor(systemTheme === 'dark' ? '#171719' : '#f7f7f8')
-      window.webContents.send('theme:system-changed', systemTheme)
+    const opaqueBackground = systemTheme === 'dark' ? '#171719' : '#f7f7f8'
+    toolWindowManager.updateBackground(opaqueBackground)
+    for (const browserWindow of BrowserWindow.getAllWindows()) {
+      const preserveMainWindowVibrancy = process.platform === 'darwin' && browserWindow === mainWindow
+      browserWindow.setBackgroundColor(preserveMainWindowVibrancy ? '#00000000' : opaqueBackground)
+      browserWindow.webContents.send('theme:system-changed', systemTheme)
     }
+    toolWindowManager.sendToAll('theme:system-changed', systemTheme)
   })
 
   createMainWindow()
@@ -1516,6 +1667,7 @@ app.whenReady().then(async () => {
 
 app.on('before-quit', () => {
   isQuitting = true
+  toolWindowManager?.dispose()
   quickNoteWatcherGeneration += 1
   jsonVaultWatcherGeneration += 1
   runtimeExecutionService?.cancelAll()
@@ -1525,6 +1677,8 @@ app.on('before-quit', () => {
   clearTimeout(jsonVaultWatchTimer)
   clearInterval(quickNotePullTimer)
   clearInterval(jsonVaultPullTimer)
+  quickNoteCheckpointScheduler.stop()
+  jsonVaultCheckpointScheduler.stop()
   clearTimeout(updateStartupTimer)
   clearInterval(updateIntervalTimer)
   closeDataRepositories()

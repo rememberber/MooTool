@@ -334,6 +334,9 @@ MooTool
 [iconfont](https://www.iconfont.cn/)
 
 ## Developer notes
+
+See the [multi-product release conventions](RELEASE_CONVENTIONS.md) for version, Git tag, GitHub Release, `Latest`, and CI isolation rules.
+
 Minimum JDK: **21**  
 Before you start, **configure IntelliJ IDEA as shown below**, then run **maven clean**:
 ![considerations](assets/material/gui_build.png)

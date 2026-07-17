@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { defaultAppSettings, mergeSettings } from './settings'
+import { defaultAppSettings, mergeSettings, normalizeCustomGroups } from './settings'
 
 it('uses the MooTool Next visual defaults', () => {
   expect(defaultAppSettings.appearance.accentColor).toBe('blue')
@@ -7,6 +7,7 @@ it('uses the MooTool Next visual defaults', () => {
   expect(defaultAppSettings.appearance.fontSize).toBe(13)
   expect(defaultAppSettings.layout.navigationStyle).toBe('classic')
   expect(defaultAppSettings.editor.quickNoteFontSize).toBe(14)
+  expect(defaultAppSettings.general.autoDownloadUpdates).toBe(true)
 })
 
 describe('mergeSettings', () => {
@@ -27,6 +28,7 @@ describe('mergeSettings', () => {
       appearance: { fontSize: 200 },
       editor: { jsonFontSize: 1 },
       network: { requestTimeoutMs: 50, translationTimeoutMs: 999999 },
+      vault: { autoCommitIdleSeconds: 1, autoCommitInactiveSeconds: 999999 },
       tools: { qrCodeSize: 12, randomStringLength: 99999, translationProvider: 'bing' }
     })
 
@@ -36,10 +38,21 @@ describe('mergeSettings', () => {
     expect(settings.tools.randomStringLength).toBe(4096)
     expect(settings.network.requestTimeoutMs).toBe(1_000)
     expect(settings.network.translationTimeoutMs).toBe(120_000)
+    expect(settings.vault.autoCommitIdleSeconds).toBe(5)
+    expect(settings.vault.autoCommitInactiveSeconds).toBe(3_600)
     expect(settings.tools.translationProvider).toBe('bing')
   })
 
-  it('fills the modern interface style, runtime drafts, options and pane sizes when migrating schema v2 settings', () => {
+  it('migrates legacy localized translation language names to language codes', () => {
+    const settings = mergeSettings(defaultAppSettings, {
+      tools: { translationSourceLang: 'English', translationTargetLang: '英语' }
+    })
+
+    expect(settings.tools.translationSourceLang).toBe('auto')
+    expect(settings.tools.translationTargetLang).toBe('en')
+  })
+
+  it('fills current defaults when migrating schema v2 settings', () => {
     const settings = mergeSettings(defaultAppSettings, {
       schemaVersion: 2,
       runtime: {
@@ -50,12 +63,61 @@ describe('mergeSettings', () => {
       }
     })
 
-    expect(settings.schemaVersion).toBe(5)
+    expect(settings.schemaVersion).toBe(10)
     expect(settings.appearance.interfaceStyle).toBe('modern')
     expect(settings.runtime.javaPath).toBe('/opt/java')
     expect(settings.runtime.drafts).toEqual(defaultAppSettings.runtime.drafts)
     expect(settings.runtime.options).toEqual(defaultAppSettings.runtime.options)
     expect(settings.layout.paneSizes).toEqual({})
+    expect(settings.layout.customGroups).toEqual([])
+    expect(settings.layout.hiddenNavigationToolIds).toEqual([])
+    expect(settings.general.autoDownloadUpdates).toBe(true)
+    expect(settings.vault.autoCommitIdleSeconds).toBe(30)
+    expect(settings.vault.autoCommitInactiveSeconds).toBe(120)
+    expect(settings.vault.quickNoteTreeExpandMode).toBe('expandAll')
+    expect(settings.vault.jsonTreeExpandMode).toBe('expandAll')
+  })
+
+  it('normalizes custom navigation groups and removes invalid tool ids', () => {
+    const groups = normalizeCustomGroups([
+      { id: 'daily', name: '  My tools  ', toolIds: ['json', 'json', 'mootool', 'unknown' as 'json'] },
+      { id: 'daily', name: 'Second', toolIds: ['cron'] },
+      { id: 'empty-name', name: '   ', toolIds: ['regex'] }
+    ])
+
+    expect(groups).toEqual([
+      { id: 'daily', name: 'My tools', toolIds: ['json'] },
+      { id: 'daily-2', name: 'Second', toolIds: ['cron'] }
+    ])
+  })
+
+  it('normalizes hidden navigation tools without allowing the home item', () => {
+    const settings = mergeSettings(defaultAppSettings, {
+      layout: { hiddenNavigationToolIds: ['json', 'json', 'mootool', 'unknown' as 'json'] }
+    })
+
+    expect(settings.layout.hiddenNavigationToolIds).toEqual(['json'])
+  })
+
+  it('persists vault tree expand modes', () => {
+    const settings = mergeSettings(defaultAppSettings, {
+      vault: { quickNoteTreeExpandMode: 'collapseAll', jsonTreeExpandMode: 'collapseAll' }
+    })
+
+    expect(settings.vault.quickNoteTreeExpandMode).toBe('collapseAll')
+    expect(settings.vault.jsonTreeExpandMode).toBe('collapseAll')
+  })
+
+  it('normalizes unknown vault tree expand modes', () => {
+    const settings = mergeSettings(defaultAppSettings, {
+      vault: {
+        quickNoteTreeExpandMode: 'unknown' as 'expandAll',
+        jsonTreeExpandMode: 'unknown' as 'collapseAll'
+      }
+    })
+
+    expect(settings.vault.quickNoteTreeExpandMode).toBe('expandAll')
+    expect(settings.vault.jsonTreeExpandMode).toBe('expandAll')
   })
 
   it('normalizes persisted workspace pane sizes', () => {

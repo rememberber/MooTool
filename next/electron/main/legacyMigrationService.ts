@@ -528,6 +528,16 @@ function legacySettingsPatch(config: LegacySetting): SettingsPatch {
     vault.autoCommit = booleanValue(settingValue(config, 'func.quickNote', 'quickNoteAutoGitCommit'), false)
       || booleanValue(settingValue(config, 'func.jsonBeauty', 'jsonBeautyAutoGitCommit'), false)
   }
+  const idleSeconds = [
+    numberValue(settingValue(config, 'func.quickNote', 'quickNoteAutoGitIdleSeconds'), 0),
+    numberValue(settingValue(config, 'func.jsonBeauty', 'jsonBeautyAutoGitIdleSeconds'), 0)
+  ].filter((value) => value > 0)
+  if (idleSeconds.length) vault.autoCommitIdleSeconds = Math.min(...idleSeconds)
+  const inactiveSeconds = [
+    numberValue(settingValue(config, 'func.quickNote', 'quickNoteAutoGitInactiveSeconds'), 0),
+    numberValue(settingValue(config, 'func.jsonBeauty', 'jsonBeautyAutoGitInactiveSeconds'), 0)
+  ].filter((value) => value > 0)
+  if (inactiveSeconds.length) vault.autoCommitInactiveSeconds = Math.min(...inactiveSeconds)
   if (hasSetting(config, 'func.quickNote', 'quickNoteAutoPullIntervalMinutes') || hasSetting(config, 'func.jsonBeauty', 'jsonBeautyAutoPullIntervalMinutes')) {
     vault.autoPullMinutes = positivePullIntervals.length ? Math.min(...positivePullIntervals) : 0
   }

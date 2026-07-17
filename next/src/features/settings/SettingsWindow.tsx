@@ -19,6 +19,7 @@ import {
   type LucideIcon
 } from 'lucide-react'
 import { useEffect, useState, type ReactNode } from 'react'
+import { toolById, toolGroups, type ToolId } from '@/app/toolRegistry'
 import { BrandIcon } from '@/shared/components/BrandIcon'
 import {
   accentColorPresets,
@@ -32,6 +33,7 @@ import { translationLanguageCodes } from '@/shared/contracts/network'
 import type { BackupInfo, BackupKind, BackupLocation } from '@/shared/contracts/backup'
 import type { LegacyMigrationPreview, LegacyMigrationWarning } from '@/shared/contracts/migration'
 import type { UpdateCheckResult } from '@/shared/contracts/update'
+import { useUpdateState } from '@/shared/hooks/useUpdateState'
 import { Dialog } from '@/shared/components/Dialog'
 import { useToast } from '@/shared/feedback/ToastProvider'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
@@ -155,6 +157,9 @@ function GeneralSettings({ settings, commit }: SettingsPanelProps) {
       <SettingRow label={t('settings.autoCheckUpdates')}>
         <Toggle checked={settings.general.autoCheckUpdates} label={t('settings.autoCheckUpdates')} onChange={(value) => commit({ general: { autoCheckUpdates: value } })} />
       </SettingRow>
+      <SettingRow label={t('settings.autoDownloadUpdates')}>
+        <Toggle checked={settings.general.autoDownloadUpdates} label={t('settings.autoDownloadUpdates')} onChange={(value) => commit({ general: { autoDownloadUpdates: value } })} />
+      </SettingRow>
       <SettingRow label={t('settings.startMaximized')}>
         <Toggle checked={settings.general.startMaximized} label={t('settings.startMaximized')} onChange={(value) => commit({ general: { startMaximized: value } })} />
       </SettingRow>
@@ -238,32 +243,78 @@ function AppearanceSettings({ settings, commit }: SettingsPanelProps) {
 
 function LayoutSettings({ settings, commit }: SettingsPanelProps) {
   const { t } = useI18n()
+  const hiddenToolIds = new Set(settings.layout.hiddenNavigationToolIds)
+  const navigationToolIds = toolGroups.flatMap((group) => group.toolIds)
+
+  function setToolVisible(toolId: ToolId, visible: boolean): void {
+    const nextHiddenToolIds = visible
+      ? settings.layout.hiddenNavigationToolIds.filter((id) => id !== toolId)
+      : navigationToolIds.filter((id) => id === toolId || hiddenToolIds.has(id))
+    commit({ layout: { hiddenNavigationToolIds: nextHiddenToolIds } })
+  }
+
   return (
-    <SettingsGroup title={t('settings.group.navigation')}>
-      <SettingRow label={t('settings.navigationStyle')}>
-        <Segmented
-          value={settings.layout.navigationStyle}
-          options={[
-            { value: 'classic', label: t('settings.navigation.classic') },
-            { value: 'card', label: t('settings.navigation.card') },
-            { value: 'grouped', label: t('settings.navigation.grouped') }
-          ]}
-          onChange={(value) => commit({ layout: { navigationStyle: value } })}
-        />
-      </SettingRow>
-      <SettingRow label={t('settings.showRecent')}>
-        <Toggle checked={settings.layout.showRecent} label={t('settings.showRecent')} onChange={(value) => commit({ layout: { showRecent: value } })} />
-      </SettingRow>
-      <SettingRow label={t('settings.compactNavigation')}>
-        <Toggle checked={settings.layout.compactNavigation} label={t('settings.compactNavigation')} onChange={(value) => commit({ layout: { compactNavigation: value } })} />
-      </SettingRow>
-      <SettingRow label={t('settings.showSeparators')}>
-        <Toggle checked={settings.layout.showSeparators} label={t('settings.showSeparators')} onChange={(value) => commit({ layout: { showSeparators: value } })} />
-      </SettingRow>
-      <SettingRow label={t('settings.hideNavigationTitles')}>
-        <Toggle checked={settings.layout.hideNavigationTitles} label={t('settings.hideNavigationTitles')} onChange={(value) => commit({ layout: { hideNavigationTitles: value } })} />
-      </SettingRow>
-    </SettingsGroup>
+    <>
+      <SettingsGroup title={t('settings.group.navigation')}>
+        <SettingRow label={t('settings.navigationStyle')}>
+          <Segmented
+            value={settings.layout.navigationStyle}
+            options={[
+              { value: 'classic', label: t('settings.navigation.classic') },
+              { value: 'card', label: t('settings.navigation.card') },
+              { value: 'grouped', label: t('settings.navigation.grouped') }
+            ]}
+            onChange={(value) => commit({ layout: { navigationStyle: value } })}
+          />
+        </SettingRow>
+        <SettingRow label={t('settings.showRecent')}>
+          <Toggle checked={settings.layout.showRecent} label={t('settings.showRecent')} onChange={(value) => commit({ layout: { showRecent: value } })} />
+        </SettingRow>
+        <SettingRow label={t('settings.compactNavigation')}>
+          <Toggle checked={settings.layout.compactNavigation} label={t('settings.compactNavigation')} onChange={(value) => commit({ layout: { compactNavigation: value } })} />
+        </SettingRow>
+        <SettingRow label={t('settings.showSeparators')}>
+          <Toggle checked={settings.layout.showSeparators} label={t('settings.showSeparators')} onChange={(value) => commit({ layout: { showSeparators: value } })} />
+        </SettingRow>
+        <SettingRow label={t('settings.hideNavigationTitles')}>
+          <Toggle checked={settings.layout.hideNavigationTitles} label={t('settings.hideNavigationTitles')} onChange={(value) => commit({ layout: { hideNavigationTitles: value } })} />
+        </SettingRow>
+      </SettingsGroup>
+
+      <SettingsGroup title={t('settings.navigation.toolsTitle')}>
+        <div className="navigation-tool-visibility">
+          <div className="navigation-tool-visibility__intro">
+            <p>{t('settings.navigation.toolsDescription')}</p>
+            <div>
+              <button className="settings-command settings-command--quiet" type="button" disabled={hiddenToolIds.size === 0} onClick={() => commit({ layout: { hiddenNavigationToolIds: [] } })}>
+                {t('settings.navigation.showAll')}
+              </button>
+              <button className="settings-command settings-command--quiet" type="button" disabled={hiddenToolIds.size === navigationToolIds.length} onClick={() => commit({ layout: { hiddenNavigationToolIds: navigationToolIds } })}>
+                {t('settings.navigation.hideAll')}
+              </button>
+            </div>
+          </div>
+          <div className="navigation-tool-visibility__groups">
+            {toolGroups.map((group) => (
+              <section key={group.id}>
+                <h3>{t(group.titleKey)}</h3>
+                {group.toolIds.map((toolId) => {
+                  const tool = toolById.get(toolId)!
+                  const Icon = tool.icon
+                  return (
+                    <label key={toolId}>
+                      <input type="checkbox" checked={!hiddenToolIds.has(toolId)} onChange={(event) => setToolVisible(toolId, event.target.checked)} />
+                      <Icon size={15} />
+                      <span>{t(tool.titleKey)}</span>
+                    </label>
+                  )
+                })}
+              </section>
+            ))}
+          </div>
+        </div>
+      </SettingsGroup>
+    </>
   )
 }
 
@@ -355,7 +406,11 @@ function LegacyMigrationSettings() {
   const [confirmOpen, setConfirmOpen] = useState(false)
 
   useEffect(() => {
-    void window.mootool.getDefaultLegacySource().then(setSourceDirectory)
+    let cancelled = false
+    void window.mootool.getDefaultLegacySource().then((path) => {
+      if (!cancelled) setSourceDirectory((current) => current || path)
+    })
+    return () => { cancelled = true }
   }, [])
 
   function scan(): void {
@@ -391,7 +446,12 @@ function LegacyMigrationSettings() {
       <div className="setting-row legacy-migration-row">
         <label>{t('settings.migration.source')}</label>
         <div className="legacy-migration-source">
-          <TextInput value={sourceDirectory} ariaLabel={t('settings.migration.source')} onCommit={(value) => { setSourceDirectory(value); setPreview(null) }} />
+          <input
+            type="text"
+            value={sourceDirectory}
+            aria-label={t('settings.migration.source')}
+            onChange={(event) => { setSourceDirectory(event.target.value); setPreview(null) }}
+          />
           <button
             className="icon-button"
             type="button"
@@ -476,6 +536,8 @@ function VaultSettings({ settings, commit }: SettingsPanelProps) {
         <SettingRow label={t('settings.autoCommit')}>
           <Toggle checked={settings.vault.autoCommit} label={t('settings.autoCommit')} onChange={(value) => commit({ vault: { autoCommit: value } })} />
         </SettingRow>
+        <NumberSetting label={t('settings.autoCommitIdleSeconds')} value={settings.vault.autoCommitIdleSeconds} min={5} max={3600} onCommit={(value) => commit({ vault: { autoCommitIdleSeconds: value } })} />
+        <NumberSetting label={t('settings.autoCommitInactiveSeconds')} value={settings.vault.autoCommitInactiveSeconds} min={5} max={3600} onCommit={(value) => commit({ vault: { autoCommitInactiveSeconds: value } })} />
         <NumberSetting label={t('settings.autoPullMinutes')} value={settings.vault.autoPullMinutes} min={0} max={1440} onCommit={(value) => commit({ vault: { autoPullMinutes: value } })} />
         <SettingRow label={t('settings.hideGitignoredFiles')}>
           <Toggle checked={settings.vault.hideGitignoredFiles} label={t('settings.hideGitignoredFiles')} onChange={(value) => commit({ vault: { hideGitignoredFiles: value } })} />
@@ -586,6 +648,7 @@ function AboutSettings() {
   const [version, setVersion] = useState('')
   const [checking, setChecking] = useState(false)
   const [result, setResult] = useState<UpdateCheckResult | null>(null)
+  const updateState = useUpdateState()
   useEffect(() => { void window.mootool.getAppVersion().then(setVersion) }, [])
 
   function check(): void {
@@ -598,6 +661,10 @@ function AboutSettings() {
 
   function downloadUpdate(): void {
     void window.mootool.downloadUpdate().catch(() => toast.error(t('settings.update.downloadFailed')))
+  }
+
+  function installUpdate(): void {
+    void window.mootool.installUpdate().catch(() => toast.error(t('settings.update.installFailed')))
   }
 
   return (
@@ -632,9 +699,17 @@ function AboutSettings() {
           {result.status === 'available' && (
             <>
               <div className="settings-update-result__actions">
-                {result.download && (
-                  <button className="settings-command" type="button" onClick={downloadUpdate}>
-                    <Download size={14} />{t('settings.update.download')}
+                {result.download && updateState.status === 'ready' && (
+                  <button className="settings-command" type="button" onClick={installUpdate}>
+                    <RefreshCw size={14} />{t('settings.update.installRestart')}
+                  </button>
+                )}
+                {result.download && updateState.status !== 'ready' && (
+                  <button className="settings-command" type="button" disabled={updateState.status === 'downloading'} onClick={downloadUpdate}>
+                    <Download size={14} />
+                    {updateState.status === 'downloading'
+                      ? t('settings.update.downloading', { percent: String(updateState.percent ?? 0) })
+                      : t('settings.update.download')}
                   </button>
                 )}
                 <button className="settings-command settings-command--quiet" type="button" onClick={() => { void window.mootool.openReleasePage() }}>
@@ -644,6 +719,9 @@ function AboutSettings() {
               {result.download
                 ? <code className="settings-update-result__file">{result.download.fileName}</code>
                 : <span className="settings-update-result__missing">{t('settings.update.noDownload')}</span>}
+              {updateState.status === 'error' && updateState.message && (
+                <span className="settings-update-result__error">{updateState.message}</span>
+              )}
               {result.releaseNotes && <pre>{result.releaseNotes}</pre>}
             </>
           )}

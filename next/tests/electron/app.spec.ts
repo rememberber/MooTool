@@ -61,6 +61,46 @@ test.afterAll(async () => {
   await rm(userDataDirectory, { recursive: true, force: true })
 })
 
+test('uses native translucency for the macOS sidebar only', async () => {
+  const appearance = await mainPage.evaluate(() => {
+    const alpha = (selector: string) => {
+      const element = document.querySelector(selector)
+      if (!element) throw new Error(`Missing ${selector}`)
+      const canvas = document.createElement('canvas')
+      canvas.width = 1
+      canvas.height = 1
+      const context = canvas.getContext('2d')
+      if (!context) throw new Error('Canvas context is unavailable')
+      context.fillStyle = getComputedStyle(element).backgroundColor
+      context.fillRect(0, 0, 1, 1)
+      return context.getImageData(0, 0, 1, 1).data[3]
+    }
+
+    return {
+      platform: document.documentElement.dataset.platform,
+      windowType: document.documentElement.dataset.window,
+      bodyAlpha: alpha('body'),
+      shellAlpha: alpha('.app-shell'),
+      sidebarAlpha: alpha('.sidebar'),
+      workspaceAlpha: alpha('.workspace')
+    }
+  })
+
+  expect(appearance.platform).toBe(process.platform)
+  expect(appearance.windowType).toBe('main')
+  if (process.platform === 'darwin') {
+    expect(appearance.bodyAlpha).toBe(0)
+    expect(appearance.shellAlpha).toBe(0)
+    expect(appearance.sidebarAlpha).toBeGreaterThan(0)
+    expect(appearance.sidebarAlpha).toBeLessThan(255)
+    expect(appearance.workspaceAlpha).toBe(255)
+  } else {
+    expect(appearance.bodyAlpha).toBe(255)
+    expect(appearance.shellAlpha).toBe(255)
+    expect(appearance.sidebarAlpha).toBe(255)
+  }
+})
+
 test('matches the Java home content and persists sidebar collapse state', async () => {
   await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({
     appearance: { accentColor: 'blue', fontSize: 13 },
@@ -86,6 +126,73 @@ test('matches the Java home content and persists sidebar collapse state', async 
   await mainPage.getByRole('button', { name: '展开导航栏' }).click()
   await expect(mainPage.locator('.app-shell')).not.toHaveClass(/app-shell--hide-nav-titles/)
   await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ layout: { hideNavigationTitles: false } })
+})
+
+test('creates and persists custom navigation groups', async () => {
+  await mainPage.getByRole('button', { name: '管理分组', exact: true }).click()
+  const dialog = mainPage.getByRole('dialog', { name: '管理功能分组' })
+  await expect(dialog).toBeVisible()
+  await dialog.getByRole('button', { name: '新建分组', exact: true }).click()
+  await dialog.getByLabel('分组名称').fill('开发常用')
+  await dialog.getByLabel('JSON', { exact: true }).check()
+  await dialog.getByLabel('HTTP 请求', { exact: true }).check()
+  await dialog.getByRole('button', { name: '保存', exact: true }).click()
+
+  const customGroup = mainPage.locator('.tool-group--custom').filter({ hasText: '开发常用' })
+  await expect(customGroup).toBeVisible()
+  await expect(customGroup.locator('.tool-button')).toHaveCount(2)
+  await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({
+    schemaVersion: 10,
+    layout: { customGroups: [{ name: '开发常用', toolIds: ['json', 'http'] }] }
+  })
+
+  await mainPage.reload()
+  await mainPage.waitForLoadState('domcontentloaded')
+  await expect(mainPage.locator('.tool-group--custom').filter({ hasText: '开发常用' })).toBeVisible()
+  await mainPage.getByRole('button', { name: '收起导航栏' }).click()
+  await expect(mainPage.locator('.tool-group--custom')).toBeHidden()
+  await mainPage.getByRole('button', { name: '展开导航栏' }).click()
+
+  await mainPage.getByRole('button', { name: '管理分组', exact: true }).click()
+  await dialog.locator('.custom-group-manager__group').filter({ hasText: '开发常用' }).click()
+  mainPage.once('dialog', (confirmation) => confirmation.accept())
+  await dialog.getByRole('button', { name: '删除分组', exact: true }).click()
+  await dialog.getByRole('button', { name: '保存', exact: true }).click()
+  await expect(mainPage.locator('.tool-group--custom')).toHaveCount(0)
+  await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ layout: { customGroups: [] } })
+})
+
+test('sizes compact controls from their localized English content', async () => {
+  const workspace = await mainPage.evaluate(() => window.mootool.getWorkspaceState())
+  await mainPage.evaluate(() => window.mootool.updateSettings({ general: { language: 'en-US' } }))
+
+  try {
+    const languageSelect = mainPage.locator('.language-menu select')
+    await expect(languageSelect).toHaveValue('en-US')
+    await expectSelectedOptionToFit(languageSelect)
+
+    await openTool('Quick Note', 'Quick Note')
+    const sortSelect = mainPage.getByLabel('Sort')
+    await expect(sortSelect).toHaveValue('modified')
+    await expectSelectedOptionToFit(sortSelect)
+
+    const viewTabs = mainPage.locator('.quick-note-view-switch .segmented__item')
+    await expect(viewTabs).toHaveCount(3)
+    await expect.poll(() => viewTabs.evaluateAll((tabs) => tabs.every((tab) => tab.scrollWidth <= tab.clientWidth))).toBe(true)
+
+    await openTool('Translation', 'Translation')
+    const sourceLanguage = mainPage.getByLabel('Source language')
+    await sourceLanguage.selectOption('zh-CN')
+    await expectSelectedOptionToFit(sourceLanguage)
+  } finally {
+    await mainPage.evaluate(async (previousWorkspace) => {
+      await window.mootool.updateSettings({ general: { language: 'zh-CN' } })
+      await window.mootool.setWorkspaceState(previousWorkspace)
+    }, workspace)
+    await mainPage.reload()
+    await mainPage.waitForLoadState('domcontentloaded')
+    await expect(mainPage.locator('.language-menu select')).toHaveValue('zh-CN')
+  }
 })
 
 test('opens all registered tools through search and persists recent access', async () => {
@@ -258,20 +365,27 @@ test('restores the JSON Vault expanded folder and selected file after switching 
 })
 
 test('initializes the JSON Vault Git repository and commits a snippet', async () => {
+  await mainPage.evaluate(() => window.mootool.updateSettings({ vault: { autoCommit: false } }))
+  await mainPage.getByRole('button', { name: '打开 Git 面板' }).click()
+  const gitDialog = mainPage.getByRole('dialog', { name: 'JSON Vault Git' })
+  await expect(gitDialog).toBeVisible()
+  const initButton = gitDialog.getByRole('button', { name: '初始化 Git' })
+  await expect(initButton).toBeVisible()
+  await initButton.click()
+  await expect(gitDialog.getByText(/^分支 /)).toBeVisible()
+  await gitDialog.getByRole('button', { name: '关闭' }).click()
+
   await mainPage.getByRole('button', { name: '新建片段' }).click()
   await mainPage.getByLabel('文件名或相对路径').fill('git-sample')
   await mainPage.getByRole('button', { name: '创建', exact: true }).click()
 
   await mainPage.getByRole('button', { name: '打开 Git 面板' }).click()
-  const gitDialog = mainPage.getByRole('dialog', { name: 'JSON Vault Git' })
   await expect(gitDialog).toBeVisible()
-  await gitDialog.getByRole('button', { name: '初始化 Git' }).click()
-  await expect(gitDialog.getByText(/^分支 /)).toBeVisible()
   await expect(gitDialog.locator('.git-list-item').filter({ hasText: 'git-sample.json' })).toBeVisible()
 
   await gitDialog.getByRole('button', { name: '提交全部变更' }).click()
   await gitDialog.getByRole('tab', { name: '提交历史' }).click()
-  await expect(gitDialog.locator('.git-list-item')).toContainText('MooTool JSON checkpoint')
+  await expect(gitDialog.locator('.git-list-item').filter({ hasText: 'MooTool JSON checkpoint' }).first()).toBeVisible()
   await gitDialog.getByRole('button', { name: '关闭' }).click()
 })
 
@@ -283,6 +397,11 @@ test('opens the settings window and synchronizes appearance changes', async () =
 
   await expect(settingsPage.locator('.settings-nav__item')).toHaveCount(11)
   const trayToggle = settingsPage.getByRole('switch', { name: '启用系统托盘' })
+  const autoDownloadToggle = settingsPage.getByRole('switch', { name: '自动静默下载新版' })
+  await expect(autoDownloadToggle).toHaveAttribute('aria-checked', 'true')
+  await autoDownloadToggle.click()
+  await expect.poll(() => settingsPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ general: { autoDownloadUpdates: false } })
+  await autoDownloadToggle.click()
   await expect(trayToggle).toHaveAttribute('aria-checked', 'true')
   await trayToggle.click()
   await expect.poll(() => settingsPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ general: { trayEnabled: false } })
@@ -300,6 +419,13 @@ test('opens the settings window and synchronizes appearance changes', async () =
   await expect(mainPage.locator('html')).toHaveAttribute('data-interface-style', 'modern')
   await settingsPage.getByRole('button', { name: '浅色' }).click()
   await expect(mainPage.locator('html')).toHaveAttribute('data-theme', 'light')
+
+  await settingsPage.locator('.settings-nav__item').filter({ hasText: '布局与习惯' }).click()
+  const jsonNavigationToggle = settingsPage.getByRole('checkbox', { name: 'JSON', exact: true })
+  await expect(jsonNavigationToggle).toBeChecked()
+  await jsonNavigationToggle.uncheck()
+  await expect.poll(() => settingsPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ layout: { hiddenNavigationToolIds: ['json'] } })
+  await expect(mainPage.getByRole('button', { name: 'JSON', exact: true })).toHaveCount(0)
 
   await settingsPage.locator('.settings-nav__item').filter({ hasText: '运行环境' }).click()
   const runtimeGroup = settingsPage.locator('.runtime-settings-group')
@@ -331,12 +457,45 @@ test('opens the settings window and synchronizes appearance changes', async () =
   await settingsPage.getByRole('button', { name: '检查更新', exact: true }).click()
   await expect(settingsPage.locator('.settings-update-result')).toContainText('发现新版本 9.9.9')
   await expect(settingsPage.locator('.settings-update-result')).toContainText('MooTool Next Electron')
-  await expect(settingsPage.getByRole('button', { name: '下载本机版本', exact: true })).toBeVisible()
+  await expect(settingsPage.getByRole('button', { name: '下载更新', exact: true })).toBeVisible()
   const update = await settingsPage.evaluate(() => window.mootool.checkForUpdates())
   expect(update).toMatchObject({ productId: 'next-electron', latestVersion: '9.9.9' })
   expect(update.download?.fileName).toBe('MooTool-Next-Electron-9.9.9-test.bin')
+  await expect.poll(() => settingsPage.evaluate(() => window.mootool.getUpdateState())).toMatchObject({ status: 'available', version: '9.9.9' })
 
   await settingsPage.locator('.settings-titlebar .icon-ghost').click()
+
+  await mainPage.getByRole('button', { name: '搜索', exact: true }).click()
+  await mainPage.locator('.command-palette__search input').fill('json')
+  await expect(mainPage.locator('.command-result')).toContainText('JSON')
+  await mainPage.getByRole('button', { name: '关闭搜索', exact: true }).click()
+  await mainPage.evaluate(() => window.mootool.updateSettings({ layout: { hiddenNavigationToolIds: [] } }))
+  await expect(mainPage.getByRole('button', { name: 'JSON', exact: true })).toBeVisible()
+
+  await electronApp.evaluate(({ BrowserWindow }) => {
+    BrowserWindow.getAllWindows().find((window) => !window.getParentWindow())?.webContents.send('update:state-changed', {
+      status: 'ready',
+      version: '9.9.9',
+      fileName: 'MooTool-Next-Electron-9.9.9-test.bin',
+      percent: 100,
+      transferred: 100,
+      total: 100,
+      message: null
+    })
+  })
+  await expect(mainPage.getByRole('button', { name: /安装并重启/ })).toContainText('新版本 9.9.9 已就绪')
+  await electronApp.evaluate(({ BrowserWindow }) => {
+    BrowserWindow.getAllWindows().find((window) => !window.getParentWindow())?.webContents.send('update:state-changed', {
+      status: 'idle',
+      version: null,
+      fileName: null,
+      percent: null,
+      transferred: null,
+      total: null,
+      message: null
+    })
+  })
+  await expect(mainPage.locator('.sidebar-update-action')).toHaveCount(0)
 })
 
 test('runs P3 time, encode, UA, calculator and config workflows', async () => {
@@ -413,10 +572,41 @@ test('runs P3 regex, Cron and text Diff workflows with persistent favorites', as
   await diffEditors.nth(0).fill('one\ntwo\n')
   await diffEditors.nth(1).fill('one\nthree\n')
   await expectTextEditorChrome(mainPage.locator('.diff-editor-grid .text-code-editor').nth(1))
-  await mainPage.getByRole('button', { name: '开始对比' }).click()
-  await mainPage.getByRole('tab', { name: 'Unified 视图' }).click()
+  await mainPage.getByRole('button', { name: '对比', exact: true }).click()
+  await expect(mainPage.locator('.diff-editor-grid .cm-diff-character-changed')).toHaveCount(2)
+  await diffEditors.nth(1).focus()
+  await mainPage.keyboard.press('ControlOrMeta+A')
+  await diffEditors.nth(1).evaluate((element) => {
+    const clipboard = new DataTransfer()
+    clipboard.setData('text/plain', 'one\ntwo\n')
+    element.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: clipboard }))
+  })
+  await mainPage.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())))
+  expect(await mainPage.locator('.diff-status').textContent()).toContain('共发现 0 处差异')
+  await expect(mainPage.locator('.diff-status')).toContainText('共发现 0 处差异')
+  await expect(mainPage.locator('.diff-editor-grid [class*="cm-diff-"]')).toHaveCount(0)
+  await diffEditors.nth(1).focus()
+  await mainPage.keyboard.press('ControlOrMeta+A')
+  await diffEditors.nth(1).evaluate((element) => {
+    const clipboard = new DataTransfer()
+    clipboard.setData('text/plain', 'one\nthree\n')
+    element.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: clipboard }))
+  })
+  await mainPage.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())))
+  expect(await mainPage.locator('.diff-status').textContent()).toContain('共发现 1 处差异')
+  await expect(mainPage.locator('.diff-editor-grid .cm-diff-character-changed')).toHaveCount(2)
+  await mainPage.getByLabel('高亮模式').selectOption('characters')
+  await expect(mainPage.locator('.diff-editor-grid [class*="cm-diff-line-"]')).toHaveCount(0)
+  await expect(mainPage.locator('.diff-status')).toContainText('字符差异 1 处')
+  await mainPage.getByLabel('高亮模式').selectOption('lines')
+  await expect(mainPage.locator('.diff-editor-grid [class*="cm-diff-character-"]')).toHaveCount(0)
+  await mainPage.getByLabel('高亮模式').selectOption('both')
+  await mainPage.getByRole('button', { name: '下一处', exact: true }).click()
+  await expect(mainPage.locator('.diff-status')).toContainText('第 1/1 处差异')
+  await mainPage.getByLabel('显示模式').selectOption('unified')
   await expect(mainPage.locator('.unified-diff')).toContainText('-two')
   await expect(mainPage.locator('.unified-diff')).toContainText('+three')
+  await expect(mainPage.locator('.unified-diff .cm-diff-line-removed')).toBeVisible()
 
   await mainPage.getByRole('button', { name: '历史', exact: true }).click()
   await expect(mainPage.getByRole('dialog', { name: '历史记录' })).toBeVisible()
@@ -599,6 +789,14 @@ test('runs P5 Hosts, translation records, network and system workflows', async (
 
 test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () => {
   await openTool('随手记', '随手记')
+  await mainPage.evaluate(() => window.mootool.updateSettings({ vault: { autoCommit: false } }))
+  await mainPage.getByRole('button', { name: 'Git 同步' }).click()
+  const setupGitDialog = mainPage.getByRole('dialog', { name: '随手记 Vault Git' })
+  const setupInitButton = setupGitDialog.getByRole('button', { name: '初始化 Git' })
+  await expect(setupInitButton).toBeVisible()
+  await setupInitButton.click()
+  await expect(setupGitDialog.getByText(/^分支 /)).toBeVisible()
+  await setupGitDialog.getByRole('button', { name: '关闭' }).click()
   await mainPage.getByRole('tab', { name: '分栏' }).click()
   await expect(mainPage.getByRole('tab', { name: '分栏' })).toHaveAttribute('aria-selected', 'true')
   await mainPage.getByRole('tab', { name: '编辑' }).click()
@@ -683,7 +881,7 @@ test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () =>
   await expect(gitDialog.getByText(/^分支 /)).toBeVisible()
   await gitDialog.getByRole('button', { name: '提交全部变更' }).click()
   await gitDialog.getByRole('tab', { name: '提交历史' }).click()
-  await expect(gitDialog.locator('.git-list-item')).toContainText('MooTool 随手记检查点')
+  await expect(gitDialog.locator('.git-list-item').filter({ hasText: 'MooTool 随手记检查点' }).first()).toBeVisible()
   await gitDialog.getByRole('button', { name: '关闭' }).click()
 })
 
@@ -786,6 +984,7 @@ test('scans and migrates Java data from the Data & Backup settings page', async 
 
 test('preserves operation state across regular tools', async () => {
   await openTool('文本对比', '文本对比')
+  await mainPage.getByLabel('显示模式').selectOption('side')
   await mainPage.getByLabel('原始文本').fill('left session value')
   await mainPage.getByLabel('新文本').fill('right session value')
 
@@ -841,6 +1040,36 @@ async function expectTextEditorChrome(editor: Locator): Promise<void> {
   await expect(editor.locator('.cm-lineNumbers')).toHaveCount(1)
   await expect(editor.locator('.cm-activeLine')).toHaveCount(1)
   await expect(editor.locator('.cm-activeLineGutter')).toHaveCount(1)
+}
+
+async function expectSelectedOptionToFit(select: Locator): Promise<void> {
+  await expect.poll(() => select.evaluate((element) => {
+    const control = element as HTMLSelectElement
+    const style = getComputedStyle(control)
+    const probe = document.createElement('span')
+    probe.textContent = control.selectedOptions[0]?.textContent ?? ''
+    Object.assign(probe.style, {
+      position: 'fixed',
+      visibility: 'hidden',
+      whiteSpace: 'pre',
+      fontFamily: style.fontFamily,
+      fontSize: style.fontSize,
+      fontStyle: style.fontStyle,
+      fontWeight: style.fontWeight,
+      letterSpacing: style.letterSpacing
+    })
+    document.body.append(probe)
+    const textWidth = probe.getBoundingClientRect().width
+    probe.remove()
+
+    const horizontalChrome = Number.parseFloat(style.paddingLeft)
+      + Number.parseFloat(style.paddingRight)
+      + Number.parseFloat(style.borderLeftWidth)
+      + Number.parseFloat(style.borderRightWidth)
+      + 16
+    return style.getPropertyValue('field-sizing') === 'content'
+      && control.getBoundingClientRect().width + 0.5 >= textWidth + horizontalChrome
+  })).toBe(true)
 }
 
 async function openTool(label: string, title: string): Promise<void> {

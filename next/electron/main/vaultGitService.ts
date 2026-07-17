@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process'
-import { mkdir } from 'node:fs/promises'
+import { access, mkdir, realpath, writeFile } from 'node:fs/promises'
+import { join, resolve } from 'node:path'
 import type {
   VaultGitActionInput,
   VaultGitActionResult,
@@ -21,6 +22,13 @@ type CommandResult = {
   exitCode: number
 }
 
+const defaultGitignore = `.DS_Store
+.idea/
+.vscode/
+*.tmp
+.migrated-from-db
+`
+
 export class VaultGitService {
   constructor(private readonly rootDirectory: string, private readonly credentials: GitCredentials = {}) {}
 
@@ -28,17 +36,30 @@ export class VaultGitService {
     await mkdir(this.rootDirectory, { recursive: true })
     const available = (await this.run(['--version'], { cwd: undefined })).exitCode === 0
     if (!available) return emptyStatus(false)
-    if ((await this.run(['rev-parse', '--is-inside-work-tree'])).exitCode !== 0) return emptyStatus(true)
+    const topLevelResult = await this.run(['rev-parse', '--show-toplevel'])
+    if (topLevelResult.exitCode !== 0) return emptyStatus(true)
+    const [rootDirectory, topLevel] = await Promise.all([
+      realpath(this.rootDirectory),
+      realpath(topLevelResult.stdout.trim())
+    ])
+    if (!sameFilesystemPath(rootDirectory, topLevel)) return emptyStatus(true)
 
-    const porcelain = await this.run(['status', '--porcelain=v1', '--branch'])
-    const lines = porcelain.stdout.split(/\r?\n/).filter(Boolean)
-    const branchLine = lines.shift() ?? ''
+    const porcelain = await this.run(['status', '--porcelain=v1', '-z', '--branch', '--untracked-files=all'])
+    const { branchLine, changes } = parsePorcelainStatus(porcelain.stdout)
     const branch = parseBranch(branchLine)
     const ahead = Number(/ahead (\d+)/.exec(branchLine)?.[1] ?? 0)
     const behind = Number(/behind (\d+)/.exec(branchLine)?.[1] ?? 0)
-    const changes = lines.map(parseChangeLine).filter((change): change is VaultGitChange => change !== null)
     const remoteResult = await this.run(['remote', 'get-url', 'origin'])
-    const merging = (await this.run(['rev-parse', '-q', '--verify', 'MERGE_HEAD'])).exitCode === 0
+    const [mergeResult, rebaseMergePath, rebaseApplyPath] = await Promise.all([
+      this.run(['rev-parse', '-q', '--verify', 'MERGE_HEAD']),
+      this.run(['rev-parse', '--git-path', 'rebase-merge']),
+      this.run(['rev-parse', '--git-path', 'rebase-apply'])
+    ])
+    const rebasePaths = [rebaseMergePath, rebaseApplyPath]
+      .filter((result) => result.exitCode === 0 && result.stdout.trim())
+      .map((result) => resolve(this.rootDirectory, result.stdout.trim()))
+    const rebaseInProgress = (await Promise.all(rebasePaths.map(pathExists))).some(Boolean)
+    const operation = rebaseInProgress ? 'rebase' : mergeResult.exitCode === 0 ? 'merge' : 'none'
     return {
       available: true,
       repository: true,
@@ -48,7 +69,8 @@ export class VaultGitService {
       behind,
       changes,
       conflicts: changes.filter((change) => change.conflict).length,
-      merging
+      merging: operation !== 'none',
+      operation
     }
   }
 
@@ -64,22 +86,28 @@ export class VaultGitService {
   }
 
   async diff(input: VaultGitDiffInput): Promise<string> {
+    if (!(await this.status()).repository) throw new Error('Git repository is not initialized in the Vault root')
     const path = normalizeGitPath(input.path)
     if (input.commit) {
       if (!/^[0-9a-f]{7,40}$/i.test(input.commit)) throw new Error('Invalid Git commit')
       return this.requireSuccess(['show', '--format=fuller', '--stat', '--patch', input.commit, ...(path ? ['--', path] : [])])
     }
     const args = path ? ['--', path] : []
-    const working = await this.requireSuccess(['diff', '--no-ext-diff', ...args])
-    const staged = await this.requireSuccess(['diff', '--cached', '--no-ext-diff', ...args])
+    const [working, staged] = await Promise.all([
+      this.requireSuccess(['diff', '--no-ext-diff', ...args]),
+      this.requireSuccess(['diff', '--cached', '--no-ext-diff', ...args])
+    ])
     return [staged, working].filter(Boolean).join('\n\n')
   }
 
   async action(input: VaultGitActionInput): Promise<VaultGitActionResult> {
     await mkdir(this.rootDirectory, { recursive: true })
+    if (input.action !== 'init' && !(await this.status()).repository) {
+      return { success: false, message: 'Git repository is not initialized in the Vault root' }
+    }
     switch (input.action) {
       case 'init':
-        return this.result(['init'])
+        return this.initialize()
       case 'configure-remote':
         return this.configureRemote(input.remote)
       case 'commit':
@@ -87,7 +115,7 @@ export class VaultGitService {
       case 'fetch':
         return this.result(['fetch', '--prune', 'origin'], true)
       case 'pull':
-        return this.result(['pull', '--no-rebase', 'origin'], true)
+        return this.pull()
       case 'push':
         return this.result(['push', '-u', 'origin', 'HEAD'], true)
       case 'discard':
@@ -96,7 +124,41 @@ export class VaultGitService {
         return this.abortMerge()
       case 'resolve-conflict':
         return this.resolveConflict(input.path, input.strategy)
+      case 'continue-operation':
+        return this.continueOperation()
     }
+  }
+
+  async automaticCheckpoint(message: string): Promise<VaultGitActionResult> {
+    let status = await this.status()
+    if (!status.available) return { success: true, message: 'Git is unavailable; checkpoint skipped' }
+    if (!status.repository) {
+      const initialized = await this.initialize()
+      if (!initialized.success) return initialized
+      status = await this.status()
+    }
+    if (status.merging || status.conflicts > 0) return { success: true, message: 'Merge/rebase in progress; checkpoint skipped' }
+    let result: VaultGitActionResult = { success: true, message: 'No changes to commit' }
+    if (status.changes.length > 0) {
+      result = await this.commit(message)
+      if (!result.success) return result
+    }
+    if (status.remote && (status.changes.length > 0 || status.ahead > 0)) return this.result(['push', '-u', 'origin', 'HEAD'], true)
+    return result
+  }
+
+  private async initialize(): Promise<VaultGitActionResult> {
+    if ((await this.status()).repository) return { success: true, message: 'Git repository is already initialized' }
+    const initialized = await this.run(['init'])
+    if (initialized.exitCode !== 0) return commandFailure(initialized)
+    try {
+      await writeFile(join(this.rootDirectory, '.gitignore'), defaultGitignore, { encoding: 'utf8', flag: 'wx' })
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error
+    }
+    const status = await this.status()
+    if (!status.changes.length) return { success: true, message: initialized.stdout.trim() || 'Done' }
+    return this.commit('Initial MooTool Vault setup')
   }
 
   private async discard(value: string | undefined): Promise<VaultGitActionResult> {
@@ -124,7 +186,23 @@ export class VaultGitService {
     const merge = await this.run(['merge', '--abort'])
     if (merge.exitCode === 0) return { success: true, message: merge.stdout.trim() || 'Done' }
     const rebase = await this.run(['rebase', '--abort'])
-    return rebase.exitCode === 0 ? { success: true, message: rebase.stdout.trim() || 'Done' } : commandFailure(merge)
+    return rebase.exitCode === 0 ? { success: true, message: rebase.stdout.trim() || 'Done' } : commandFailure(rebase)
+  }
+
+  private async pull(): Promise<VaultGitActionResult> {
+    const status = await this.status()
+    if (status.merging) return { success: false, message: 'Finish or abort the current merge/rebase before pulling' }
+    return this.result(['pull', '--no-rebase', 'origin'], true)
+  }
+
+  private async continueOperation(): Promise<VaultGitActionResult> {
+    const status = await this.status()
+    if (!status.repository || status.operation === 'none') return { success: false, message: 'No merge or rebase is in progress' }
+    if (status.conflicts > 0) return { success: false, message: 'Resolve all conflicts before continuing' }
+    await this.ensureIdentity()
+    return status.operation === 'rebase'
+      ? this.result(['-c', 'core.editor=true', '-c', 'commit.gpgsign=false', 'rebase', '--continue'])
+      : this.result(['-c', 'commit.gpgsign=false', 'commit', '--no-edit'])
   }
 
   private async resolveConflict(value: string | undefined, strategy: 'ours' | 'theirs' | undefined): Promise<VaultGitActionResult> {
@@ -143,6 +221,7 @@ export class VaultGitService {
   private async configureRemote(value: string | undefined): Promise<VaultGitActionResult> {
     const remote = normalizeRemote(value)
     const exists = (await this.run(['remote', 'get-url', 'origin'])).exitCode === 0
+    if (!remote) return exists ? this.result(['remote', 'remove', 'origin']) : { success: true, message: 'Remote is already removed' }
     return this.result(exists ? ['remote', 'set-url', 'origin', remote] : ['remote', 'add', 'origin', remote])
   }
 
@@ -151,6 +230,7 @@ export class VaultGitService {
     if (!normalizedMessage) throw new Error('Commit message is required')
     const currentStatus = await this.status()
     if (!currentStatus.repository) throw new Error('Git repository is not initialized')
+    if (currentStatus.merging || currentStatus.conflicts > 0) return { success: false, message: 'Finish or abort the current merge/rebase before creating a checkpoint' }
     if (currentStatus.changes.length === 0) return { success: true, message: 'No changes to commit' }
     await this.ensureIdentity()
     const add = await this.run(['add', '--all'])
@@ -205,16 +285,24 @@ export class VaultGitService {
 }
 
 function emptyStatus(available: boolean): VaultGitStatus {
-  return { available, repository: false, branch: '', remote: '', ahead: 0, behind: 0, changes: [], conflicts: 0, merging: false }
+  return { available, repository: false, branch: '', remote: '', ahead: 0, behind: 0, changes: [], conflicts: 0, merging: false, operation: 'none' }
 }
 
-function parseChangeLine(line: string): VaultGitChange | null {
-  if (line.length < 4) return null
-  const status = line.slice(0, 2)
-  const rawPath = line.slice(3).trim()
-  const [originalPath, path] = rawPath.includes(' -> ') ? rawPath.split(' -> ', 2) : [undefined, rawPath]
-  const conflict = status.includes('U') || status === 'AA' || status === 'DD'
-  return { path: unquoteGitPath(path), originalPath: originalPath ? unquoteGitPath(originalPath) : undefined, status, conflict }
+function parsePorcelainStatus(output: string): { branchLine: string; changes: VaultGitChange[] } {
+  const records = output.split('\0')
+  const branchLine = records.shift() ?? ''
+  const changes: VaultGitChange[] = []
+  for (let index = 0; index < records.length; index += 1) {
+    const record = records[index]
+    if (!record || record.length < 4) continue
+    const status = record.slice(0, 2)
+    const path = record.slice(3)
+    const renamed = status.includes('R') || status.includes('C')
+    const originalPath = renamed ? records[++index] : undefined
+    const conflict = status.includes('U') || status === 'AA' || status === 'DD'
+    changes.push({ path, originalPath: originalPath || undefined, status, conflict })
+  }
+  return { branchLine, changes }
 }
 
 function parseBranch(line: string): string {
@@ -238,18 +326,27 @@ function normalizeGitPath(value: unknown): string | undefined {
 function normalizeRemote(value: unknown): string {
   if (typeof value !== 'string') throw new Error('Invalid Git remote')
   const remote = value.trim()
+  if (!remote) return ''
   if (remote.length > 2048 || /[\r\n\0]/.test(remote) || !/^(https?:\/\/|ssh:\/\/|git:\/\/|git@|file:\/\/)/i.test(remote)) {
     throw new Error('Invalid Git remote')
   }
   return remote
 }
 
-function unquoteGitPath(value: string): string {
-  if (!value.startsWith('"')) return value
+function sameFilesystemPath(left: string, right: string): boolean {
+  const normalizedLeft = resolve(left)
+  const normalizedRight = resolve(right)
+  return process.platform === 'win32'
+    ? normalizedLeft.toLocaleLowerCase() === normalizedRight.toLocaleLowerCase()
+    : normalizedLeft === normalizedRight
+}
+
+async function pathExists(path: string): Promise<boolean> {
   try {
-    return JSON.parse(value) as string
+    await access(path)
+    return true
   } catch {
-    return value
+    return false
   }
 }
 

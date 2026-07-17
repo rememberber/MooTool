@@ -1,5 +1,5 @@
 import { CheckCircle2, FileJson, XCircle } from 'lucide-react'
-import { useEffect, useMemo, useReducer, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import type { CodeEditorViewState } from '@/shared/components/codeEditorViewState'
@@ -113,6 +113,7 @@ export function JsonTool() {
   const [state, update] = useReducer(updateJsonState, settings.editor.softWrap, createJsonState)
   const status = useMemo(() => validateJson(state.content, t), [state.content, t])
   const findMatches = useMemo(() => findAll(state.content, state.findQuery), [state.content, state.findQuery])
+  const openVaultContent = useCallback((content: string) => update({ content, notice: '' }), [])
 
   useEffect(() => {
     if (!toolActive) return
@@ -238,7 +239,7 @@ export function JsonTool() {
         minimumWidth={state.inspectorOpen ? 1100 : 720}
         storageKey={state.inspectorOpen ? 'json-three-pane' : 'json-two-pane'}
       >
-        <JsonVaultPanel content={state.content} onOpen={(content) => update({ content, notice: '' })} />
+        <JsonVaultPanel content={state.content} onOpen={openVaultContent} />
         <div className="editor-shell">
           <JsonToolbar
             wrap={state.wrap}

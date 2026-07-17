@@ -1,5 +1,15 @@
 import { contextBridge, ipcRenderer, type IpcRendererEvent } from 'electron'
-import type { AppNavigationEvent, AppPaths, ExternalPageId, RuntimeStatus, WorkspaceState } from '../../src/shared/contracts/app'
+import type {
+  AppNavigationEvent,
+  AppPaths,
+  ExternalPageId,
+  RuntimeStatus,
+  ToolId,
+  ToolWindowSnapshot,
+  ToolWindowStatus,
+  ToolWorkspaceBounds,
+  WorkspaceState
+} from '../../src/shared/contracts/app'
 import type { AppSettings, SecretKey, SecretStatus, SettingsPatch } from '../../src/shared/contracts/settings'
 import type { FuncHistoryRecord, HistoryQuery, SaveFuncHistoryInput } from '../../src/shared/contracts/history'
 import type { SaveTextFileInput, TextFileKind, TextFileResult } from '../../src/shared/contracts/files'
@@ -15,10 +25,11 @@ import type { EnvironmentSnapshot, HostProfile, LocalAddressSnapshot, NetworkCom
 import type { RuntimeExecutionInput, RuntimeExecutionResult, RuntimeOutputEvent } from '../../src/shared/contracts/runtime'
 import type { BackupExportResult, BackupInfo, BackupKind, BackupLocation } from '../../src/shared/contracts/backup'
 import type { LegacyMigrationInput, LegacyMigrationPreview, LegacyMigrationResult } from '../../src/shared/contracts/migration'
-import type { UpdateCheckEvent, UpdateCheckResult } from '../../src/shared/contracts/update'
+import type { UpdateCheckEvent, UpdateCheckResult, UpdateDownloadState } from '../../src/shared/contracts/update'
 
 contextBridge.exposeInMainWorld('mootool', {
   platform: process.platform,
+  toolWindowsEnabled: process.env.NODE_ENV !== 'test' || process.env.MOOTOOL_TOOL_VIEWS === '1',
   getAppVersion: (): Promise<string> => ipcRenderer.invoke('app:get-version'),
   getAppPaths: (): Promise<AppPaths> => ipcRenderer.invoke('app:get-paths'),
   getSystemTheme: (): Promise<'light' | 'dark'> => ipcRenderer.invoke('theme:get-system'),
@@ -26,11 +37,20 @@ contextBridge.exposeInMainWorld('mootool', {
   updateSettings: (patch: SettingsPatch): Promise<AppSettings> => ipcRenderer.invoke('settings:update', patch),
   openSettings: (): Promise<void> => ipcRenderer.invoke('settings:open'),
   closeSettings: (): Promise<void> => ipcRenderer.invoke('settings:close'),
+  dismissWindow: (): Promise<void> => ipcRenderer.invoke('window:dismiss'),
   getSecretStatus: (key: SecretKey): Promise<SecretStatus> => ipcRenderer.invoke('secret:status', key),
   setSecret: (key: SecretKey, value: string): Promise<SecretStatus> => ipcRenderer.invoke('secret:set', key, value),
   clearSecret: (key: SecretKey): Promise<SecretStatus> => ipcRenderer.invoke('secret:clear', key),
   getWorkspaceState: (): Promise<WorkspaceState> => ipcRenderer.invoke('workspace:get'),
   setWorkspaceState: (state: WorkspaceState): Promise<WorkspaceState> => ipcRenderer.invoke('workspace:set', state),
+  getToolWindowSnapshot: (): Promise<ToolWindowSnapshot> => ipcRenderer.invoke('tool-window:snapshot'),
+  activateToolView: (toolId: ToolId): Promise<ToolWindowSnapshot> => ipcRenderer.invoke('tool-window:activate', toolId),
+  setToolWorkspaceBounds: (bounds: ToolWorkspaceBounds): Promise<ToolWindowSnapshot> => ipcRenderer.invoke('tool-window:set-workspace-bounds', bounds),
+  getToolWindowState: (toolId: Exclude<ToolId, 'mootool'>): Promise<ToolWindowStatus> => ipcRenderer.invoke('tool-window:get-state', toolId),
+  detachToolWindow: (toolId: Exclude<ToolId, 'mootool'>): Promise<ToolWindowStatus> => ipcRenderer.invoke('tool-window:detach', toolId),
+  dockToolWindow: (toolId: Exclude<ToolId, 'mootool'>): Promise<ToolWindowStatus> => ipcRenderer.invoke('tool-window:dock', toolId),
+  focusToolWindow: (toolId: Exclude<ToolId, 'mootool'>): Promise<boolean> => ipcRenderer.invoke('tool-window:focus', toolId),
+  setToolWindowTitle: (toolId: Exclude<ToolId, 'mootool'>, title: string): Promise<void> => ipcRenderer.invoke('tool-window:set-title', toolId, title),
   listHistory: (query: HistoryQuery): Promise<FuncHistoryRecord[]> => ipcRenderer.invoke('history:list', query),
   saveHistory: (input: SaveFuncHistoryInput): Promise<void> => ipcRenderer.invoke('history:save', input),
   deleteHistory: (id: number): Promise<void> => ipcRenderer.invoke('history:delete', id),
@@ -93,6 +113,7 @@ contextBridge.exposeInMainWorld('mootool', {
   duplicateJsonVaultFile: (relativePath: string): Promise<JsonVaultFile> => ipcRenderer.invoke('json-vault:duplicate', relativePath),
   deleteJsonVaultFile: (relativePath: string): Promise<void> => ipcRenderer.invoke('json-vault:delete', relativePath),
   openJsonVault: (): Promise<void> => ipcRenderer.invoke('json-vault:open'),
+  setJsonVaultEditorDirty: (dirty: boolean): Promise<void> => ipcRenderer.invoke('json-vault:set-editor-dirty', dirty),
   getVaultGitStatus: (): Promise<VaultGitStatus> => ipcRenderer.invoke('vault-git:status'),
   listVaultGitHistory: (): Promise<VaultGitCommit[]> => ipcRenderer.invoke('vault-git:history'),
   getVaultGitDiff: (input: VaultGitDiffInput): Promise<string> => ipcRenderer.invoke('vault-git:diff', input),
@@ -109,6 +130,7 @@ contextBridge.exposeInMainWorld('mootool', {
   importQuickNoteAttachment: (): Promise<QuickNoteAttachment | null> => ipcRenderer.invoke('quick-note:import-attachment'),
   readQuickNoteAttachment: (relativePath: string): Promise<string> => ipcRenderer.invoke('quick-note:read-attachment', relativePath),
   openQuickNoteVault: (): Promise<void> => ipcRenderer.invoke('quick-note:open-vault'),
+  setQuickNoteEditorDirty: (dirty: boolean): Promise<void> => ipcRenderer.invoke('quick-note:set-editor-dirty', dirty),
   getQuickNoteGitStatus: (): Promise<VaultGitStatus> => ipcRenderer.invoke('quick-note-git:status'),
   listQuickNoteGitHistory: (): Promise<VaultGitCommit[]> => ipcRenderer.invoke('quick-note-git:history'),
   getQuickNoteGitDiff: (input: VaultGitDiffInput): Promise<string> => ipcRenderer.invoke('quick-note-git:diff', input),
@@ -120,7 +142,9 @@ contextBridge.exposeInMainWorld('mootool', {
   previewLegacyMigration: (input: LegacyMigrationInput): Promise<LegacyMigrationPreview> => ipcRenderer.invoke('legacy-migration:preview', input),
   runLegacyMigration: (input: LegacyMigrationInput): Promise<LegacyMigrationResult> => ipcRenderer.invoke('legacy-migration:run', input),
   checkForUpdates: (): Promise<UpdateCheckResult> => ipcRenderer.invoke('update:check'),
-  downloadUpdate: (): Promise<void> => ipcRenderer.invoke('update:download'),
+  getUpdateState: (): Promise<UpdateDownloadState> => ipcRenderer.invoke('update:get-state'),
+  downloadUpdate: (): Promise<UpdateDownloadState> => ipcRenderer.invoke('update:download'),
+  installUpdate: (): Promise<void> => ipcRenderer.invoke('update:install'),
   openReleasePage: (): Promise<void> => ipcRenderer.invoke('update:open-release'),
   openProjectPage: (): Promise<void> => ipcRenderer.invoke('app:open-project'),
   openExternalPage: (pageId: ExternalPageId): Promise<void> => ipcRenderer.invoke('app:open-external', pageId),
@@ -130,10 +154,15 @@ contextBridge.exposeInMainWorld('mootool', {
   onSystemThemeChange: (callback: (theme: 'light' | 'dark') => void) => subscribe('theme:system-changed', callback),
   onSettingsChange: (callback: (settings: AppSettings) => void) => subscribe('settings:changed', callback),
   onNavigate: (callback: (event: AppNavigationEvent) => void) => subscribe('app:navigate', callback),
+  onToolWindowSnapshotChange: (callback: (snapshot: ToolWindowSnapshot) => void) => subscribe('tool-window:snapshot-changed', callback),
+  onToolWindowStateChange: (callback: (state: ToolWindowStatus) => void) => subscribe('tool-window:state-changed', callback),
+  onToolWindowActivityChange: (callback: (active: boolean) => void) => subscribe('tool-window:activity-changed', callback),
+  onToolWindowControlsVisibilityChange: (callback: (visible: boolean) => void) => subscribe('tool-window:controls-visibility-changed', callback),
   onJsonVaultChange: (callback: (relativePath: string) => void) => subscribe('json-vault:changed', callback),
   onQuickNoteVaultChange: (callback: (relativePath: string) => void) => subscribe('quick-note:vault-changed', callback),
   onRuntimeOutput: (callback: (event: RuntimeOutputEvent) => void) => subscribe('runtime:output', callback),
-  onUpdateCheck: (callback: (event: UpdateCheckEvent) => void) => subscribe('update:checked', callback)
+  onUpdateCheck: (callback: (event: UpdateCheckEvent) => void) => subscribe('update:checked', callback),
+  onUpdateStateChange: (callback: (state: UpdateDownloadState) => void) => subscribe('update:state-changed', callback)
 })
 
 function subscribe<T>(channel: string, callback: (payload: T) => void): () => void {

@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import type { AppNavigationEvent, AppPaths, ExternalPageId, RuntimeStatus, WorkspaceState } from './src/shared/contracts/app'
+import type { AppNavigationEvent, AppPaths, ExternalPageId, RuntimeStatus, ToolId, ToolWindowSnapshot, ToolWindowStatus, ToolWorkspaceBounds, WorkspaceState } from './src/shared/contracts/app'
 import type { AppSettings, SecretKey, SecretStatus, SettingsPatch } from './src/shared/contracts/settings'
 import type { FuncHistoryRecord, HistoryQuery, SaveFuncHistoryInput } from './src/shared/contracts/history'
 import type { SaveTextFileInput, TextFileKind, TextFileResult } from './src/shared/contracts/files'
@@ -16,12 +16,13 @@ import type { EnvironmentSnapshot, HostProfile, LocalAddressSnapshot, NetworkCom
 import type { RuntimeExecutionInput, RuntimeExecutionResult, RuntimeOutputEvent } from './src/shared/contracts/runtime'
 import type { BackupExportResult, BackupInfo, BackupKind, BackupLocation } from './src/shared/contracts/backup'
 import type { LegacyMigrationInput, LegacyMigrationPreview, LegacyMigrationResult } from './src/shared/contracts/migration'
-import type { UpdateCheckEvent, UpdateCheckResult } from './src/shared/contracts/update'
+import type { UpdateCheckEvent, UpdateCheckResult, UpdateDownloadState } from './src/shared/contracts/update'
 
 declare global {
   interface Window {
     mootool: {
       platform: string
+      toolWindowsEnabled: boolean
       getAppVersion: () => Promise<string>
       getAppPaths: () => Promise<AppPaths>
       getSystemTheme: () => Promise<'light' | 'dark'>
@@ -29,11 +30,20 @@ declare global {
       updateSettings: (patch: SettingsPatch) => Promise<AppSettings>
       openSettings: () => Promise<void>
       closeSettings: () => Promise<void>
+      dismissWindow: () => Promise<void>
       getSecretStatus: (key: SecretKey) => Promise<SecretStatus>
       setSecret: (key: SecretKey, value: string) => Promise<SecretStatus>
       clearSecret: (key: SecretKey) => Promise<SecretStatus>
       getWorkspaceState: () => Promise<WorkspaceState>
       setWorkspaceState: (state: WorkspaceState) => Promise<WorkspaceState>
+      getToolWindowSnapshot: () => Promise<ToolWindowSnapshot>
+      activateToolView: (toolId: ToolId) => Promise<ToolWindowSnapshot>
+      setToolWorkspaceBounds: (bounds: ToolWorkspaceBounds) => Promise<ToolWindowSnapshot>
+      getToolWindowState: (toolId: Exclude<ToolId, 'mootool'>) => Promise<ToolWindowStatus>
+      detachToolWindow: (toolId: Exclude<ToolId, 'mootool'>) => Promise<ToolWindowStatus>
+      dockToolWindow: (toolId: Exclude<ToolId, 'mootool'>) => Promise<ToolWindowStatus>
+      focusToolWindow: (toolId: Exclude<ToolId, 'mootool'>) => Promise<boolean>
+      setToolWindowTitle: (toolId: Exclude<ToolId, 'mootool'>, title: string) => Promise<void>
       listHistory: (query: HistoryQuery) => Promise<FuncHistoryRecord[]>
       saveHistory: (input: SaveFuncHistoryInput) => Promise<void>
       deleteHistory: (id: number) => Promise<void>
@@ -96,6 +106,7 @@ declare global {
       duplicateJsonVaultFile: (relativePath: string) => Promise<JsonVaultFile>
       deleteJsonVaultFile: (relativePath: string) => Promise<void>
       openJsonVault: () => Promise<void>
+      setJsonVaultEditorDirty: (dirty: boolean) => Promise<void>
       getVaultGitStatus: () => Promise<VaultGitStatus>
       listVaultGitHistory: () => Promise<VaultGitCommit[]>
       getVaultGitDiff: (input: VaultGitDiffInput) => Promise<string>
@@ -112,6 +123,7 @@ declare global {
       importQuickNoteAttachment: () => Promise<QuickNoteAttachment | null>
       readQuickNoteAttachment: (relativePath: string) => Promise<string>
       openQuickNoteVault: () => Promise<void>
+      setQuickNoteEditorDirty: (dirty: boolean) => Promise<void>
       getQuickNoteGitStatus: () => Promise<VaultGitStatus>
       listQuickNoteGitHistory: () => Promise<VaultGitCommit[]>
       getQuickNoteGitDiff: (input: VaultGitDiffInput) => Promise<string>
@@ -123,7 +135,9 @@ declare global {
       previewLegacyMigration: (input: LegacyMigrationInput) => Promise<LegacyMigrationPreview>
       runLegacyMigration: (input: LegacyMigrationInput) => Promise<LegacyMigrationResult>
       checkForUpdates: () => Promise<UpdateCheckResult>
-      downloadUpdate: () => Promise<void>
+      getUpdateState: () => Promise<UpdateDownloadState>
+      downloadUpdate: () => Promise<UpdateDownloadState>
+      installUpdate: () => Promise<void>
       openReleasePage: () => Promise<void>
       openProjectPage: () => Promise<void>
       openExternalPage: (pageId: ExternalPageId) => Promise<void>
@@ -133,10 +147,15 @@ declare global {
       onSystemThemeChange: (callback: (theme: 'light' | 'dark') => void) => () => void
       onSettingsChange: (callback: (settings: AppSettings) => void) => () => void
       onNavigate: (callback: (event: AppNavigationEvent) => void) => () => void
+      onToolWindowSnapshotChange: (callback: (snapshot: ToolWindowSnapshot) => void) => () => void
+      onToolWindowStateChange: (callback: (state: ToolWindowStatus) => void) => () => void
+      onToolWindowActivityChange: (callback: (active: boolean) => void) => () => void
+      onToolWindowControlsVisibilityChange: (callback: (visible: boolean) => void) => () => void
       onJsonVaultChange: (callback: (relativePath: string) => void) => () => void
       onQuickNoteVaultChange: (callback: (relativePath: string) => void) => () => void
       onRuntimeOutput: (callback: (event: RuntimeOutputEvent) => void) => () => void
       onUpdateCheck: (callback: (event: UpdateCheckEvent) => void) => () => void
+      onUpdateStateChange: (callback: (state: UpdateDownloadState) => void) => () => void
     }
   }
 }

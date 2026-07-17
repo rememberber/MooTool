@@ -53,7 +53,7 @@ describe('LegacyMigrationService', () => {
       network: { proxyEnabled: true, proxyHost: '127.0.0.1', proxyPort: '7890', proxyUsername: 'moo' },
       layout: { compactNavigation: true },
       editor: { sqlDialect: 'MySQL', quickNoteFontSize: 16, jsonFontSize: 15 },
-      vault: { gitUsername: 'zhoubo', autoCommit: true, autoPullMinutes: 5 },
+      vault: { gitUsername: 'zhoubo', autoCommit: true, autoCommitIdleSeconds: 25, autoCommitInactiveSeconds: 90, autoPullMinutes: 5 },
       tools: { qrCodeSize: 480, qrErrorCorrection: 'H', randomStringLength: 24, translationProvider: 'bing' }
     })
     expect(result.settingsPatch.layout).not.toHaveProperty('navigationStyle')
@@ -190,11 +190,15 @@ sqlDialect = MySQL
 quickNoteFontSize = 16
 quickNoteGitRemoteUrl = https://example.com/quick.git
 quickNoteAutoGitCommit = true
+quickNoteAutoGitIdleSeconds = 30
+quickNoteAutoGitInactiveSeconds = 120
 quickNoteAutoPullIntervalMinutes = 5
 
 [func.jsonBeauty]
 jsonBeautyFontSize = 15
 jsonBeautyGitRemoteUrl = https://example.com/json.git
+jsonBeautyAutoGitIdleSeconds = 25
+jsonBeautyAutoGitInactiveSeconds = 90
 jsonBeautyAutoPullIntervalMinutes = 10
 
 [func.vaultGit]
