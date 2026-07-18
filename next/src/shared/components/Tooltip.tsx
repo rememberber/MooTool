@@ -7,6 +7,7 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type FocusEvent,
   type ReactElement,
   type ReactNode
 } from 'react'
@@ -67,10 +68,16 @@ export function Tooltip({ children, content, side = 'top', delay = 400 }: Toolti
     }, delay)
   }
 
-  function hideTooltip(): void {
+  function showFocusTooltip(event: FocusEvent<HTMLSpanElement>): void {
+    if (event.target instanceof HTMLElement && event.target.matches(':focus-visible')) {
+      showTooltip()
+    }
+  }
+
+  const hideTooltip = useCallback((): void => {
     clearTimer()
     setOpen(false)
-  }
+  }, [clearTimer])
 
   const repositionTooltip = useEffectEvent(updatePosition)
 
@@ -91,8 +98,13 @@ export function Tooltip({ children, content, side = 'top', delay = 400 }: Toolti
   useEffect(() => () => clearTimer(), [clearTimer])
 
   useEffect(() => {
+    window.addEventListener('blur', hideTooltip)
+    return () => window.removeEventListener('blur', hideTooltip)
+  }, [hideTooltip])
+
+  useEffect(() => {
     if (!toolActive) hideTooltip()
-  }, [toolActive])
+  }, [hideTooltip, toolActive])
 
   const describedBy = [children.props['aria-describedby'], id].filter(Boolean).join(' ')
 
@@ -102,7 +114,7 @@ export function Tooltip({ children, content, side = 'top', delay = 400 }: Toolti
       ref={triggerRef}
       onMouseEnter={showTooltip}
       onMouseLeave={hideTooltip}
-      onFocusCapture={showTooltip}
+      onFocusCapture={showFocusTooltip}
       onBlurCapture={hideTooltip}
     >
       {cloneElement(children, { 'aria-describedby': describedBy })}
