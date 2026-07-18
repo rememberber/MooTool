@@ -26,6 +26,23 @@ import type { RuntimeExecutionInput, RuntimeExecutionResult, RuntimeOutputEvent 
 import type { BackupExportResult, BackupInfo, BackupKind, BackupLocation } from '../../src/shared/contracts/backup'
 import type { LegacyMigrationInput, LegacyMigrationPreview, LegacyMigrationResult } from '../../src/shared/contracts/migration'
 import type { UpdateCheckEvent, UpdateCheckResult, UpdateDownloadState } from '../../src/shared/contracts/update'
+import type { AiDiscoveryInput, AiDoctorSnapshot } from '../../src/shared/contracts/ai'
+import type { AiChangeApplyResult, AiChangePlan, AiChangeRollbackResult } from '../../src/shared/contracts/aiChanges'
+import type { AiSkillInstallApplyInput, AiSkillInstallApplyResult, AiSkillInstallInput, AiSkillInstallPreview, AiSkillInstallRollbackResult } from '../../src/shared/contracts/aiSkills'
+import type { AiInstructionPreview, AiInstructionPreviewInput } from '../../src/shared/contracts/aiInstructions'
+import type { AiMcpCopyInput, AiMcpCopyPreview, AiMcpInventory, AiMcpInventoryInput, AiMcpProbeInput, AiMcpProbeResult } from '../../src/shared/contracts/aiMcp'
+import type { AiMemory, AiMemoryCandidate, AiMemoryCandidateReviewInput, AiMemoryCandidateSaveInput, AiMemoryListInput, AiMemoryPreview, AiMemoryPreviewInput, AiMemorySaveInput, AiMemorySnapshot } from '../../src/shared/contracts/aiMemory'
+import type { AiModelRuntimeDetailInput, AiModelRuntimeModelDetail, AiModelRuntimeSnapshot } from '../../src/shared/contracts/aiModelRuntime'
+import type { AiUsageBudget, AiUsageBudgetInput, AiUsageDashboard, AiUsageDashboardInput, AiUsageExportInput, AiUsageExportResult, AiUsageImportPreview, AiUsageImportPreviewInput, AiUsageImportResult, AiUsageProviderSyncInput, AiUsageProviderSyncResult } from '../../src/shared/contracts/aiUsage'
+import type { AiAgentLaunchPlan, AiAgentManagerInput, AiAgentManagerSnapshot, AiAgentProfile, AiAgentProfileSaveInput } from '../../src/shared/contracts/aiAgents'
+import type { AiContextInspectorInput, AiContextInspectorSnapshot } from '../../src/shared/contracts/aiContext'
+import type { AiPromptLabRunInput, AiPromptLabRunResult, AiPromptLabSuite, AiPromptLabSuiteSaveInput } from '../../src/shared/contracts/aiPromptLab'
+import type { AiAgentProfileShareDocument } from '../../src/shared/contracts/aiAgentShare'
+import type { AiProjectStarterPreview, AiProjectStarterPreviewInput } from '../../src/shared/contracts/aiProjectStarter'
+import type { AiAgentTaskOutputEvent, AiAgentTaskResult, AiAgentTaskStartInput } from '../../src/shared/contracts/aiAgentTasks'
+import type { AiModelRuntimeActionExecuteInput, AiModelRuntimeActionPlan, AiModelRuntimeActionPlanInput, AiModelRuntimeActionProgressEvent, AiModelRuntimeActionResult } from '../../src/shared/contracts/aiModelRuntimeActions'
+import type { AiNativeMemorySnapshot } from '../../src/shared/contracts/aiNativeMemory'
+import type { AiMemoryEmbeddingProgressEvent, AiMemoryEmbeddingRebuildInput, AiMemoryEmbeddingRebuildResult, AiMemoryEmbeddingStatus, AiMemorySemanticPreview, AiMemorySemanticPreviewInput } from '../../src/shared/contracts/aiMemoryEmbedding'
 
 contextBridge.exposeInMainWorld('mootool', {
   platform: process.platform,
@@ -151,6 +168,63 @@ contextBridge.exposeInMainWorld('mootool', {
   detectRuntimes: (): Promise<RuntimeStatus[]> => ipcRenderer.invoke('runtime:detect'),
   runCode: (input: RuntimeExecutionInput): Promise<RuntimeExecutionResult> => ipcRenderer.invoke('runtime:run', input),
   cancelCodeRun: (requestId: string): Promise<boolean> => ipcRenderer.invoke('runtime:cancel', requestId),
+  scanAiEnvironment: (input?: AiDiscoveryInput): Promise<AiDoctorSnapshot> => ipcRenderer.invoke('ai:scan', input),
+  getAiModelRuntimeSnapshot: (): Promise<AiModelRuntimeSnapshot> => ipcRenderer.invoke('ai:model-runtime:snapshot'),
+  inspectAiModelRuntimeModel: (input: AiModelRuntimeDetailInput): Promise<AiModelRuntimeModelDetail> => ipcRenderer.invoke('ai:model-runtime:inspect-model', input),
+  planAiModelRuntimeAction: (input: AiModelRuntimeActionPlanInput): Promise<AiModelRuntimeActionPlan> => ipcRenderer.invoke('ai:model-runtime:plan-action', input),
+  executeAiModelRuntimeAction: (input: AiModelRuntimeActionExecuteInput): Promise<AiModelRuntimeActionResult> => ipcRenderer.invoke('ai:model-runtime:execute-action', input),
+  cancelAiModelRuntimeAction: (requestId: string): Promise<boolean> => ipcRenderer.invoke('ai:model-runtime:cancel-action', requestId),
+  listAiPromptLabSuites: (): Promise<AiPromptLabSuite[]> => ipcRenderer.invoke('ai:prompt-lab:list'),
+  saveAiPromptLabSuite: (input: AiPromptLabSuiteSaveInput): Promise<AiPromptLabSuite> => ipcRenderer.invoke('ai:prompt-lab:save', input),
+  deleteAiPromptLabSuite: (id: string): Promise<void> => ipcRenderer.invoke('ai:prompt-lab:delete', id),
+  runAiPromptLab: (input: AiPromptLabRunInput): Promise<AiPromptLabRunResult> => ipcRenderer.invoke('ai:prompt-lab:run', input),
+  cancelAiPromptLab: (requestId: string): Promise<boolean> => ipcRenderer.invoke('ai:prompt-lab:cancel', requestId),
+  previewAiProjectStarter: (input: AiProjectStarterPreviewInput): Promise<AiProjectStarterPreview> => ipcRenderer.invoke('ai:project-starter:preview', input),
+  applyAiProjectStarter: (planId: string): Promise<AiChangeApplyResult> => ipcRenderer.invoke('ai:project-starter:apply', planId),
+  rollbackAiProjectStarter: (snapshotId: string): Promise<AiChangeRollbackResult> => ipcRenderer.invoke('ai:project-starter:rollback', snapshotId),
+  getAiUsageDashboard: (input: AiUsageDashboardInput): Promise<AiUsageDashboard> => ipcRenderer.invoke('ai:usage:dashboard', input),
+  chooseAiUsageFiles: (): Promise<string[]> => ipcRenderer.invoke('ai:usage:choose-files'),
+  previewAiUsageImport: (input: AiUsageImportPreviewInput): Promise<AiUsageImportPreview> => ipcRenderer.invoke('ai:usage:preview-import', input),
+  applyAiUsageImport: (planId: string, timezoneOffsetMinutes: number): Promise<AiUsageImportResult> => ipcRenderer.invoke('ai:usage:apply-import', planId, timezoneOffsetMinutes),
+  saveAiUsageBudget: (input: AiUsageBudgetInput): Promise<AiUsageBudget> => ipcRenderer.invoke('ai:usage:save-budget', input),
+  syncAiUsageProvider: (input: AiUsageProviderSyncInput): Promise<AiUsageProviderSyncResult> => ipcRenderer.invoke('ai:usage:sync-provider', input),
+  clearAiUsage: (): Promise<number> => ipcRenderer.invoke('ai:usage:clear'),
+  exportAiUsage: (input: AiUsageExportInput): Promise<AiUsageExportResult | null> => ipcRenderer.invoke('ai:usage:export', input),
+  getAiAgentManagerSnapshot: (input?: AiAgentManagerInput): Promise<AiAgentManagerSnapshot> => ipcRenderer.invoke('ai:agents:snapshot', input),
+  saveAiAgentProfile: (input: AiAgentProfileSaveInput): Promise<AiAgentProfile> => ipcRenderer.invoke('ai:agents:save-profile', input),
+  deleteAiAgentProfile: (id: string): Promise<void> => ipcRenderer.invoke('ai:agents:delete-profile', id),
+  getAiAgentLaunchPlan: (id: string): Promise<AiAgentLaunchPlan> => ipcRenderer.invoke('ai:agents:launch-plan', id),
+  runAiAgentTask: (input: AiAgentTaskStartInput): Promise<AiAgentTaskResult> => ipcRenderer.invoke('ai:agents:run-task', input),
+  cancelAiAgentTask: (requestId: string): Promise<boolean> => ipcRenderer.invoke('ai:agents:cancel-task', requestId),
+  exportAiAgentProfile: (id: string): Promise<string | null> => ipcRenderer.invoke('ai:agents:export-profile', id),
+  importAiAgentProfile: (): Promise<AiAgentProfileShareDocument | null> => ipcRenderer.invoke('ai:agents:import-profile'),
+  inspectAiContext: (input: AiContextInspectorInput): Promise<AiContextInspectorSnapshot> => ipcRenderer.invoke('ai:context:inspect', input),
+  previewClaudeCompatibilityEntry: (projectRoot: string): Promise<AiChangePlan> => ipcRenderer.invoke('ai:instructions:preview-claude-entry', projectRoot),
+  applyClaudeCompatibilityEntry: (planId: string): Promise<AiChangeApplyResult> => ipcRenderer.invoke('ai:instructions:apply-claude-entry', planId),
+  rollbackClaudeCompatibilityEntry: (snapshotId: string): Promise<AiChangeRollbackResult> => ipcRenderer.invoke('ai:instructions:rollback-claude-entry', snapshotId),
+  previewEffectiveInstructions: (input: AiInstructionPreviewInput): Promise<AiInstructionPreview> => ipcRenderer.invoke('ai:instructions:preview-effective', input),
+  previewSkillInstall: (input: AiSkillInstallInput): Promise<AiSkillInstallPreview> => ipcRenderer.invoke('ai:skills:preview-install', input),
+  applySkillInstall: (input: AiSkillInstallApplyInput): Promise<AiSkillInstallApplyResult> => ipcRenderer.invoke('ai:skills:apply-install', input),
+  rollbackSkillInstall: (snapshotId: string): Promise<AiSkillInstallRollbackResult> => ipcRenderer.invoke('ai:skills:rollback-install', snapshotId),
+  getMcpInventory: (input?: AiMcpInventoryInput): Promise<AiMcpInventory> => ipcRenderer.invoke('ai:mcp:inventory', input),
+  previewMcpCopy: (input: AiMcpCopyInput): Promise<AiMcpCopyPreview> => ipcRenderer.invoke('ai:mcp:preview-copy', input),
+  applyMcpCopy: (planId: string): Promise<AiChangeApplyResult> => ipcRenderer.invoke('ai:mcp:apply-copy', planId),
+  rollbackMcpCopy: (snapshotId: string): Promise<AiChangeRollbackResult> => ipcRenderer.invoke('ai:mcp:rollback-copy', snapshotId),
+  probeMcpServer: (input: AiMcpProbeInput): Promise<AiMcpProbeResult> => ipcRenderer.invoke('ai:mcp:probe', input),
+  cancelMcpProbe: (requestId: string): Promise<boolean> => ipcRenderer.invoke('ai:mcp:cancel-probe', requestId),
+  getAiMemorySnapshot: (input?: AiMemoryListInput): Promise<AiMemorySnapshot> => ipcRenderer.invoke('ai:memory:snapshot', input),
+  getAiNativeMemorySnapshot: (): Promise<AiNativeMemorySnapshot> => ipcRenderer.invoke('ai:memory:native-snapshot'),
+  getAiMemoryEmbeddingStatus: (): Promise<AiMemoryEmbeddingStatus> => ipcRenderer.invoke('ai:memory:embedding-status'),
+  rebuildAiMemoryEmbeddings: (input: AiMemoryEmbeddingRebuildInput): Promise<AiMemoryEmbeddingRebuildResult> => ipcRenderer.invoke('ai:memory:rebuild-embeddings', input),
+  previewAiMemoriesSemantic: (input: AiMemorySemanticPreviewInput): Promise<AiMemorySemanticPreview> => ipcRenderer.invoke('ai:memory:semantic-preview', input),
+  cancelAiMemoryEmbedding: (requestId: string): Promise<boolean> => ipcRenderer.invoke('ai:memory:cancel-embedding', requestId),
+  saveAiMemory: (input: AiMemorySaveInput): Promise<AiMemory> => ipcRenderer.invoke('ai:memory:save', input),
+  archiveAiMemory: (id: string): Promise<AiMemory> => ipcRenderer.invoke('ai:memory:archive', id),
+  restoreAiMemory: (id: string): Promise<AiMemory> => ipcRenderer.invoke('ai:memory:restore', id),
+  deleteAiMemory: (id: string): Promise<void> => ipcRenderer.invoke('ai:memory:delete', id),
+  createAiMemoryCandidate: (input: AiMemoryCandidateSaveInput): Promise<AiMemoryCandidate> => ipcRenderer.invoke('ai:memory:create-candidate', input),
+  reviewAiMemoryCandidate: (input: AiMemoryCandidateReviewInput): Promise<AiMemoryCandidate> => ipcRenderer.invoke('ai:memory:review-candidate', input),
+  previewAiMemories: (input: AiMemoryPreviewInput): Promise<AiMemoryPreview> => ipcRenderer.invoke('ai:memory:preview', input),
   onSystemThemeChange: (callback: (theme: 'light' | 'dark') => void) => subscribe('theme:system-changed', callback),
   onSettingsChange: (callback: (settings: AppSettings) => void) => subscribe('settings:changed', callback),
   onSettingsNavigate: (callback: (category: string) => void) => subscribe('settings:navigate', callback),
@@ -162,6 +236,9 @@ contextBridge.exposeInMainWorld('mootool', {
   onJsonVaultChange: (callback: (relativePath: string) => void) => subscribe('json-vault:changed', callback),
   onQuickNoteVaultChange: (callback: (relativePath: string) => void) => subscribe('quick-note:vault-changed', callback),
   onRuntimeOutput: (callback: (event: RuntimeOutputEvent) => void) => subscribe('runtime:output', callback),
+  onAiAgentTaskOutput: (callback: (event: AiAgentTaskOutputEvent) => void) => subscribe('ai:agents:task-output', callback),
+  onAiModelRuntimeActionProgress: (callback: (event: AiModelRuntimeActionProgressEvent) => void) => subscribe('ai:model-runtime:action-progress', callback),
+  onAiMemoryEmbeddingProgress: (callback: (event: AiMemoryEmbeddingProgressEvent) => void) => subscribe('ai:memory:embedding-progress', callback),
   onUpdateCheck: (callback: (event: UpdateCheckEvent) => void) => subscribe('update:checked', callback),
   onUpdateStateChange: (callback: (state: UpdateDownloadState) => void) => subscribe('update:state-changed', callback)
 })

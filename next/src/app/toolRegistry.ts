@@ -1,15 +1,23 @@
 import {
   ArrowRightLeft,
   Binary,
+  Bot,
+  Boxes,
   Braces,
+  BrainCircuit,
+  BookOpenCheck,
+  Cable,
   Calculator,
   CalendarClock,
+  ChartColumn,
   Clock3,
   CodeXml,
   Columns2,
   Cpu,
+  Database,
   FileCog,
   FileText,
+  FlaskConical,
   Globe2,
   Home,
   Image,
@@ -17,12 +25,15 @@ import {
   LockKeyhole,
   Network,
   NotebookPen,
+  PackagePlus,
   Palette,
   Paintbrush,
   QrCode,
   Regex,
   ServerCog,
+  ScanSearch,
   SquareTerminal,
+  Sparkles,
   Variable,
   type LucideIcon
 } from 'lucide-react'
@@ -31,7 +42,7 @@ import { toolIds, type ToolId } from '@/shared/contracts/app'
 import type { MessageKey } from '@/shared/i18n/messages'
 
 export { toolIds, type ToolId }
-export type ToolGroupId = 'text' | 'dev' | 'network' | 'encode' | 'daily' | 'system'
+export type ToolGroupId = 'ai' | 'text' | 'dev' | 'network' | 'encode' | 'daily' | 'system'
 export type ToolStatus = 'placeholder' | 'in-progress' | 'parity-review' | 'complete'
 
 export type ToolDefinition = {
@@ -54,6 +65,17 @@ export type ToolGroupDefinition = {
 }
 
 const HomePage = lazy(() => import('@/features/home/HomePage').then((module) => ({ default: module.HomePage })))
+const AiOverviewTool = lazy(() => import('@/features/ai/AiOverviewTool').then((module) => ({ default: module.AiOverviewTool })))
+const SkillManagerTool = lazy(() => import('@/features/ai/SkillManagerTool').then((module) => ({ default: module.SkillManagerTool })))
+const InstructionManagerTool = lazy(() => import('@/features/ai/InstructionManagerTool').then((module) => ({ default: module.InstructionManagerTool })))
+const McpManagerTool = lazy(() => import('@/features/ai/McpManagerTool').then((module) => ({ default: module.McpManagerTool })))
+const AgentMemoryManagerTool = lazy(() => import('@/features/ai/AgentMemoryManagerTool').then((module) => ({ default: module.AgentMemoryManagerTool })))
+const ModelRuntimeManagerTool = lazy(() => import('@/features/ai/ModelRuntimeManagerTool').then((module) => ({ default: module.ModelRuntimeManagerTool })))
+const PromptLabTool = lazy(() => import('@/features/ai/PromptLabTool').then((module) => ({ default: module.PromptLabTool })))
+const ProjectStarterTool = lazy(() => import('@/features/ai/ProjectStarterTool').then((module) => ({ default: module.ProjectStarterTool })))
+const UsageDashboardTool = lazy(() => import('@/features/ai/UsageDashboardTool').then((module) => ({ default: module.UsageDashboardTool })))
+const AgentManagerTool = lazy(() => import('@/features/ai/AgentManagerTool').then((module) => ({ default: module.AgentManagerTool })))
+const ContextInspectorTool = lazy(() => import('@/features/ai/ContextInspectorTool').then((module) => ({ default: module.ContextInspectorTool })))
 const JsonTool = lazy(() => import('@/features/json/JsonTool').then((module) => ({ default: module.JsonTool })))
 const TimeConvertTool = lazy(() => import('@/features/time/TimeConvertTool').then((module) => ({ default: module.TimeConvertTool })))
 const EncodeTool = lazy(() => import('@/features/encode/EncodeTool').then((module) => ({ default: module.EncodeTool })))
@@ -81,6 +103,17 @@ const RuntimeTool = lazy(() => import('@/features/runtime/RuntimeTool').then((mo
 
 export const toolRegistry: ToolDefinition[] = [
   tool('mootool', 'home', 'app.nav.home', Home, ['home', 'about', '首页', '主页', '关于'], HomePage, 'in-progress'),
+  tool('aiOverview', 'ai', 'app.nav.aiOverview', BrainCircuit, ['ai', 'agent', 'skill', 'mcp', 'ollama', 'codex', 'claude', '模型', '智能体'], AiOverviewTool, 'in-progress'),
+  tool('skillManager', 'ai', 'app.nav.skillManager', Sparkles, ['skill', 'workflow', 'codex', 'claude', '技能', '工作流'], SkillManagerTool, 'in-progress'),
+  tool('instructionManager', 'ai', 'app.nav.instructionManager', BookOpenCheck, ['agents.md', 'claude.md', 'rules', 'instruction', '规约', '指令'], InstructionManagerTool, 'in-progress'),
+  tool('mcpManager', 'ai', 'app.nav.mcpManager', Cable, ['mcp', 'server', 'stdio', 'streamable http', '工具', '服务器'], McpManagerTool, 'in-progress'),
+  tool('agentMemoryManager', 'ai', 'app.nav.agentMemoryManager', Database, ['agent', 'memory', 'fts', '记忆', '上下文', '审核'], AgentMemoryManagerTool, 'in-progress'),
+  tool('modelRuntimeManager', 'ai', 'app.nav.modelRuntimeManager', Boxes, ['ollama', 'model', 'runtime', 'local llm', '模型', '运行时'], ModelRuntimeManagerTool, 'in-progress'),
+  tool('promptLab', 'ai', 'app.nav.promptLab', FlaskConical, ['prompt', 'evaluation', 'test set', 'benchmark', '提示词', '评测', '测试集'], PromptLabTool, 'in-progress'),
+  tool('projectStarter', 'ai', 'app.nav.projectStarter', PackagePlus, ['starter', 'bootstrap', 'agents.md', 'skill', 'mcp', '项目初始化', '脚手架'], ProjectStarterTool, 'in-progress'),
+  tool('usageDashboard', 'ai', 'app.nav.usageDashboard', ChartColumn, ['token', 'usage', 'cost', 'budget', '用量', '成本', '预算'], UsageDashboardTool, 'in-progress'),
+  tool('agentManager', 'ai', 'app.nav.agentManager', Bot, ['agent', 'profile', 'codex', 'claude', '智能体', '配置档'], AgentManagerTool, 'in-progress'),
+  tool('contextInspector', 'ai', 'app.nav.contextInspector', ScanSearch, ['context', 'token', 'instructions', 'skills', 'memory', 'mcp', '上下文', '占用'], ContextInspectorTool, 'in-progress'),
   tool('quickNote', 'text', 'app.nav.quickNote', NotebookPen, ['note', 'memo', 'markdown', '随手记', '笔记', '记事'], QuickNoteTool, 'in-progress'),
   tool('textDiff', 'text', 'app.nav.textDiff', Columns2, ['diff', 'compare', 'text', '对比', '比较'], TextDiffTool, 'parity-review'),
   tool('reformat', 'text', 'app.nav.reformat', Paintbrush, ['format', 'java', 'xml', 'html', 'nginx', '格式化'], ReformatTool, 'parity-review'),
@@ -108,6 +141,7 @@ export const toolRegistry: ToolDefinition[] = [
 ]
 
 export const toolGroups: ToolGroupDefinition[] = [
+  group('ai', 'app.group.ai'),
   group('text', 'app.group.text'),
   group('dev', 'app.group.dev'),
   group('network', 'app.group.network'),
@@ -139,7 +173,7 @@ function tool(
     icon,
     component,
     status,
-    supportsHistory: id !== 'mootool' && id !== 'hardware',
+    supportsHistory: !['mootool', 'aiOverview', 'skillManager', 'instructionManager', 'mcpManager', 'agentMemoryManager', 'modelRuntimeManager', 'promptLab', 'projectStarter', 'usageDashboard', 'agentManager', 'contextInspector', 'hardware'].includes(id),
     supportsFavorites: ['regex', 'cron', 'colorBoard'].includes(id)
   }
 }

@@ -17,6 +17,23 @@ import type { RuntimeExecutionInput, RuntimeExecutionResult, RuntimeOutputEvent 
 import type { BackupExportResult, BackupInfo, BackupKind, BackupLocation } from './src/shared/contracts/backup'
 import type { LegacyMigrationInput, LegacyMigrationPreview, LegacyMigrationResult } from './src/shared/contracts/migration'
 import type { UpdateCheckEvent, UpdateCheckResult, UpdateDownloadState } from './src/shared/contracts/update'
+import type { AiDiscoveryInput, AiDoctorSnapshot } from './src/shared/contracts/ai'
+import type { AiChangeApplyResult, AiChangePlan, AiChangeRollbackResult } from './src/shared/contracts/aiChanges'
+import type { AiSkillInstallApplyInput, AiSkillInstallApplyResult, AiSkillInstallInput, AiSkillInstallPreview, AiSkillInstallRollbackResult } from './src/shared/contracts/aiSkills'
+import type { AiInstructionPreview, AiInstructionPreviewInput } from './src/shared/contracts/aiInstructions'
+import type { AiMcpCopyInput, AiMcpCopyPreview, AiMcpInventory, AiMcpInventoryInput, AiMcpProbeInput, AiMcpProbeResult } from './src/shared/contracts/aiMcp'
+import type { AiMemory, AiMemoryCandidate, AiMemoryCandidateReviewInput, AiMemoryCandidateSaveInput, AiMemoryListInput, AiMemoryPreview, AiMemoryPreviewInput, AiMemorySaveInput, AiMemorySnapshot } from './src/shared/contracts/aiMemory'
+import type { AiModelRuntimeDetailInput, AiModelRuntimeModelDetail, AiModelRuntimeSnapshot } from './src/shared/contracts/aiModelRuntime'
+import type { AiUsageBudget, AiUsageBudgetInput, AiUsageDashboard, AiUsageDashboardInput, AiUsageExportInput, AiUsageExportResult, AiUsageImportPreview, AiUsageImportPreviewInput, AiUsageImportResult, AiUsageProviderSyncInput, AiUsageProviderSyncResult } from './src/shared/contracts/aiUsage'
+import type { AiAgentLaunchPlan, AiAgentManagerInput, AiAgentManagerSnapshot, AiAgentProfile, AiAgentProfileSaveInput } from './src/shared/contracts/aiAgents'
+import type { AiContextInspectorInput, AiContextInspectorSnapshot } from './src/shared/contracts/aiContext'
+import type { AiPromptLabRunInput, AiPromptLabRunResult, AiPromptLabSuite, AiPromptLabSuiteSaveInput } from './src/shared/contracts/aiPromptLab'
+import type { AiAgentProfileShareDocument } from './src/shared/contracts/aiAgentShare'
+import type { AiProjectStarterPreview, AiProjectStarterPreviewInput } from './src/shared/contracts/aiProjectStarter'
+import type { AiAgentTaskOutputEvent, AiAgentTaskResult, AiAgentTaskStartInput } from './src/shared/contracts/aiAgentTasks'
+import type { AiModelRuntimeActionExecuteInput, AiModelRuntimeActionPlan, AiModelRuntimeActionPlanInput, AiModelRuntimeActionProgressEvent, AiModelRuntimeActionResult } from './src/shared/contracts/aiModelRuntimeActions'
+import type { AiNativeMemorySnapshot } from './src/shared/contracts/aiNativeMemory'
+import type { AiMemoryEmbeddingProgressEvent, AiMemoryEmbeddingRebuildInput, AiMemoryEmbeddingRebuildResult, AiMemoryEmbeddingStatus, AiMemorySemanticPreview, AiMemorySemanticPreviewInput } from './src/shared/contracts/aiMemoryEmbedding'
 
 declare global {
   interface Window {
@@ -144,6 +161,63 @@ declare global {
       detectRuntimes: () => Promise<RuntimeStatus[]>
       runCode: (input: RuntimeExecutionInput) => Promise<RuntimeExecutionResult>
       cancelCodeRun: (requestId: string) => Promise<boolean>
+      scanAiEnvironment: (input?: AiDiscoveryInput) => Promise<AiDoctorSnapshot>
+      getAiModelRuntimeSnapshot: () => Promise<AiModelRuntimeSnapshot>
+      inspectAiModelRuntimeModel: (input: AiModelRuntimeDetailInput) => Promise<AiModelRuntimeModelDetail>
+      planAiModelRuntimeAction: (input: AiModelRuntimeActionPlanInput) => Promise<AiModelRuntimeActionPlan>
+      executeAiModelRuntimeAction: (input: AiModelRuntimeActionExecuteInput) => Promise<AiModelRuntimeActionResult>
+      cancelAiModelRuntimeAction: (requestId: string) => Promise<boolean>
+      listAiPromptLabSuites: () => Promise<AiPromptLabSuite[]>
+      saveAiPromptLabSuite: (input: AiPromptLabSuiteSaveInput) => Promise<AiPromptLabSuite>
+      deleteAiPromptLabSuite: (id: string) => Promise<void>
+      runAiPromptLab: (input: AiPromptLabRunInput) => Promise<AiPromptLabRunResult>
+      cancelAiPromptLab: (requestId: string) => Promise<boolean>
+      previewAiProjectStarter: (input: AiProjectStarterPreviewInput) => Promise<AiProjectStarterPreview>
+      applyAiProjectStarter: (planId: string) => Promise<AiChangeApplyResult>
+      rollbackAiProjectStarter: (snapshotId: string) => Promise<AiChangeRollbackResult>
+      getAiUsageDashboard: (input: AiUsageDashboardInput) => Promise<AiUsageDashboard>
+      chooseAiUsageFiles: () => Promise<string[]>
+      previewAiUsageImport: (input: AiUsageImportPreviewInput) => Promise<AiUsageImportPreview>
+      applyAiUsageImport: (planId: string, timezoneOffsetMinutes: number) => Promise<AiUsageImportResult>
+      saveAiUsageBudget: (input: AiUsageBudgetInput) => Promise<AiUsageBudget>
+      syncAiUsageProvider: (input: AiUsageProviderSyncInput) => Promise<AiUsageProviderSyncResult>
+      clearAiUsage: () => Promise<number>
+      exportAiUsage: (input: AiUsageExportInput) => Promise<AiUsageExportResult | null>
+      getAiAgentManagerSnapshot: (input?: AiAgentManagerInput) => Promise<AiAgentManagerSnapshot>
+      saveAiAgentProfile: (input: AiAgentProfileSaveInput) => Promise<AiAgentProfile>
+      deleteAiAgentProfile: (id: string) => Promise<void>
+      getAiAgentLaunchPlan: (id: string) => Promise<AiAgentLaunchPlan>
+      runAiAgentTask: (input: AiAgentTaskStartInput) => Promise<AiAgentTaskResult>
+      cancelAiAgentTask: (requestId: string) => Promise<boolean>
+      exportAiAgentProfile: (id: string) => Promise<string | null>
+      importAiAgentProfile: () => Promise<AiAgentProfileShareDocument | null>
+      inspectAiContext: (input: AiContextInspectorInput) => Promise<AiContextInspectorSnapshot>
+      previewClaudeCompatibilityEntry: (projectRoot: string) => Promise<AiChangePlan>
+      applyClaudeCompatibilityEntry: (planId: string) => Promise<AiChangeApplyResult>
+      rollbackClaudeCompatibilityEntry: (snapshotId: string) => Promise<AiChangeRollbackResult>
+      previewEffectiveInstructions: (input: AiInstructionPreviewInput) => Promise<AiInstructionPreview>
+      previewSkillInstall: (input: AiSkillInstallInput) => Promise<AiSkillInstallPreview>
+      applySkillInstall: (input: AiSkillInstallApplyInput) => Promise<AiSkillInstallApplyResult>
+      rollbackSkillInstall: (snapshotId: string) => Promise<AiSkillInstallRollbackResult>
+      getMcpInventory: (input?: AiMcpInventoryInput) => Promise<AiMcpInventory>
+      previewMcpCopy: (input: AiMcpCopyInput) => Promise<AiMcpCopyPreview>
+      applyMcpCopy: (planId: string) => Promise<AiChangeApplyResult>
+      rollbackMcpCopy: (snapshotId: string) => Promise<AiChangeRollbackResult>
+      probeMcpServer: (input: AiMcpProbeInput) => Promise<AiMcpProbeResult>
+      cancelMcpProbe: (requestId: string) => Promise<boolean>
+      getAiMemorySnapshot: (input?: AiMemoryListInput) => Promise<AiMemorySnapshot>
+      getAiNativeMemorySnapshot: () => Promise<AiNativeMemorySnapshot>
+      getAiMemoryEmbeddingStatus: () => Promise<AiMemoryEmbeddingStatus>
+      rebuildAiMemoryEmbeddings: (input: AiMemoryEmbeddingRebuildInput) => Promise<AiMemoryEmbeddingRebuildResult>
+      previewAiMemoriesSemantic: (input: AiMemorySemanticPreviewInput) => Promise<AiMemorySemanticPreview>
+      cancelAiMemoryEmbedding: (requestId: string) => Promise<boolean>
+      saveAiMemory: (input: AiMemorySaveInput) => Promise<AiMemory>
+      archiveAiMemory: (id: string) => Promise<AiMemory>
+      restoreAiMemory: (id: string) => Promise<AiMemory>
+      deleteAiMemory: (id: string) => Promise<void>
+      createAiMemoryCandidate: (input: AiMemoryCandidateSaveInput) => Promise<AiMemoryCandidate>
+      reviewAiMemoryCandidate: (input: AiMemoryCandidateReviewInput) => Promise<AiMemoryCandidate>
+      previewAiMemories: (input: AiMemoryPreviewInput) => Promise<AiMemoryPreview>
       onSystemThemeChange: (callback: (theme: 'light' | 'dark') => void) => () => void
       onSettingsChange: (callback: (settings: AppSettings) => void) => () => void
       onSettingsNavigate: (callback: (category: string) => void) => () => void
@@ -155,6 +229,9 @@ declare global {
       onJsonVaultChange: (callback: (relativePath: string) => void) => () => void
       onQuickNoteVaultChange: (callback: (relativePath: string) => void) => () => void
       onRuntimeOutput: (callback: (event: RuntimeOutputEvent) => void) => () => void
+      onAiAgentTaskOutput: (callback: (event: AiAgentTaskOutputEvent) => void) => () => void
+      onAiModelRuntimeActionProgress: (callback: (event: AiModelRuntimeActionProgressEvent) => void) => () => void
+      onAiMemoryEmbeddingProgress: (callback: (event: AiMemoryEmbeddingProgressEvent) => void) => () => void
       onUpdateCheck: (callback: (event: UpdateCheckEvent) => void) => () => void
       onUpdateStateChange: (callback: (state: UpdateDownloadState) => void) => () => void
     }

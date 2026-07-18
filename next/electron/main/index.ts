@@ -10,6 +10,7 @@ import {
   nativeImage,
   nativeTheme,
   net,
+  Notification,
   safeStorage,
   screen,
   shell,
@@ -74,6 +75,52 @@ import { favoriteKinds, type FavoriteKind, type SaveFavoriteInput } from '../../
 import { backupKinds, type BackupKind, type BackupLocation } from '../../src/shared/contracts/backup'
 import type { LegacyMigrationInput } from '../../src/shared/contracts/migration'
 import type { UpdateCheckEvent, UpdateCheckResult, UpdateDownloadState } from '../../src/shared/contracts/update'
+import { isAiDiscoveryInput, type AiDoctorSnapshot } from '../../src/shared/contracts/ai'
+import { AiDiscoveryService } from './ai/discoveryService'
+import { ConfigChangeService } from './ai/configChangeService'
+import { SafeStorageSnapshotProtector } from './ai/safeStorageSnapshotProtector'
+import { InstructionChangeService } from './ai/instructionChangeService'
+import { InstructionScopeService } from './ai/instructionScopeService'
+import { SkillInstallService } from './ai/skillInstallService'
+import { McpService } from './ai/mcpService'
+import { AiMemoryRepository } from './ai/memoryRepository'
+import { ModelRuntimeService } from './ai/modelRuntimeService'
+import { AiUsageRepository } from './ai/usageRepository'
+import { UsageImportService } from './ai/usageImportService'
+import { UsageExportService } from './ai/usageExportService'
+import { UsageBudgetNotificationService, type AiUsageBudgetNotification } from './ai/usageBudgetNotificationService'
+import { OpenAiUsageSyncService } from './ai/openAiUsageSyncService'
+import { AiAgentProfileRepository } from './ai/agentProfileRepository'
+import { AgentManagerService } from './ai/agentManagerService'
+import { ContextInspectorService } from './ai/contextInspectorService'
+import { AiPromptLabRepository } from './ai/promptLabRepository'
+import { PromptLabService } from './ai/promptLabService'
+import { ProjectStarterService } from './ai/projectStarterService'
+import { AgentTaskService } from './ai/agentTaskService'
+import { ModelRuntimeActionService } from './ai/modelRuntimeActionService'
+import { NativeMemoryService } from './ai/nativeMemoryService'
+import { MemoryEmbeddingService } from './ai/memoryEmbeddingService'
+import { isAiInstructionPreviewInput } from '../../src/shared/contracts/aiInstructions'
+import { isAiMcpCopyInput, isAiMcpInventoryInput, isAiMcpProbeInput } from '../../src/shared/contracts/aiMcp'
+import {
+  isAiMemoryCandidateReviewInput,
+  isAiMemoryCandidateSaveInput,
+  isAiMemoryId,
+  isAiMemoryListInput,
+  isAiMemoryPreviewInput,
+  isAiMemorySaveInput
+} from '../../src/shared/contracts/aiMemory'
+import { isAiModelRuntimeDetailInput } from '../../src/shared/contracts/aiModelRuntime'
+import { isAiUsageBudgetInput, isAiUsageDashboardInput, isAiUsageExportInput, isAiUsageImportPreviewInput, isAiUsagePlanId, isAiUsageProviderSyncInput } from '../../src/shared/contracts/aiUsage'
+import { isAiAgentManagerInput, isAiAgentProfileId, isAiAgentProfileSaveInput } from '../../src/shared/contracts/aiAgents'
+import { isAiContextInspectorInput } from '../../src/shared/contracts/aiContext'
+import { isAiPromptLabRunInput, isAiPromptLabSuiteId, isAiPromptLabSuiteSaveInput } from '../../src/shared/contracts/aiPromptLab'
+import { createAiAgentProfileShareDocument, isAiAgentProfileShareDocument } from '../../src/shared/contracts/aiAgentShare'
+import { isAiProjectStarterPreviewInput } from '../../src/shared/contracts/aiProjectStarter'
+import { isAiAgentTaskRequestId, isAiAgentTaskStartInput } from '../../src/shared/contracts/aiAgentTasks'
+import { isAiModelRuntimeActionExecuteInput, isAiModelRuntimeActionPlanInput, isAiModelRuntimeActionRequestId } from '../../src/shared/contracts/aiModelRuntimeActions'
+import { isAiMemoryEmbeddingRebuildInput, isAiMemoryEmbeddingRequestId, isAiMemorySemanticPreviewInput } from '../../src/shared/contracts/aiMemoryEmbedding'
+import { isAiSkillInstallApplyInput, isAiSkillInstallInput } from '../../src/shared/contracts/aiSkills'
 import { BackupService } from './backupService'
 import { FavoriteRepository } from './favoriteRepository'
 import { HistoryRepository } from './historyRepository'
@@ -151,6 +198,29 @@ let p5Repository: P5Repository
 const networkService = new NetworkService()
 let systemService: SystemService
 let runtimeExecutionService: RuntimeExecutionService
+let aiDiscoveryService: AiDiscoveryService
+let aiConfigChangeService: ConfigChangeService
+let aiInstructionChangeService: InstructionChangeService
+let aiInstructionScopeService: InstructionScopeService
+let aiSkillInstallService: SkillInstallService
+let aiMcpService: McpService
+let aiMemoryRepository: AiMemoryRepository
+let aiModelRuntimeService: ModelRuntimeService
+let aiUsageRepository: AiUsageRepository
+let aiUsageImportService: UsageImportService
+let aiUsageExportService: UsageExportService
+let aiUsageBudgetNotificationService: UsageBudgetNotificationService
+let aiOpenAiUsageSyncService: OpenAiUsageSyncService
+let aiAgentProfileRepository: AiAgentProfileRepository
+let aiAgentManagerService: AgentManagerService
+let aiContextInspectorService: ContextInspectorService
+let aiPromptLabRepository: AiPromptLabRepository
+let aiPromptLabService: PromptLabService
+let aiProjectStarterService: ProjectStarterService
+let aiAgentTaskService: AgentTaskService
+let aiModelRuntimeActionService: ModelRuntimeActionService
+let aiNativeMemoryService: NativeMemoryService
+let aiMemoryEmbeddingService: MemoryEmbeddingService
 let gitAskPassPath = ''
 let quickNoteWatcher: FSWatcher | null = null
 let quickNoteWatchTimer: NodeJS.Timeout | undefined
@@ -630,6 +700,260 @@ function registerIpc(): void {
   })
   ipcMain.handle('runtime:cancel', (_event, requestId: unknown) => runtimeExecutionService.cancel(normalizeRequestId(requestId)))
   ipcMain.handle('runtime:detect', () => detectRuntimes(store.get('settings')))
+  ipcMain.handle('ai:scan', (_event, value: unknown): Promise<AiDoctorSnapshot> => {
+    if (!isAiDiscoveryInput(value)) throw new Error('Invalid AI discovery input')
+    return aiDiscoveryService.scan(value ?? {})
+  })
+  ipcMain.handle('ai:model-runtime:snapshot', () => aiModelRuntimeService.scan())
+  ipcMain.handle('ai:model-runtime:inspect-model', (_event, value: unknown) => {
+    if (!isAiModelRuntimeDetailInput(value)) throw new Error('Invalid model runtime detail input')
+    return aiModelRuntimeService.inspectModel(value)
+  })
+  ipcMain.handle('ai:model-runtime:plan-action', (_event, value: unknown) => {
+    if (!isAiModelRuntimeActionPlanInput(value)) throw new Error('Invalid model runtime action plan input')
+    return aiModelRuntimeActionService.plan(value)
+  })
+  ipcMain.handle('ai:model-runtime:execute-action', (event, value: unknown) => {
+    if (!isAiModelRuntimeActionExecuteInput(value)) throw new Error('Invalid model runtime action approval')
+    return aiModelRuntimeActionService.execute(value, (progress) => {
+      if (!event.sender.isDestroyed()) event.sender.send('ai:model-runtime:action-progress', progress)
+    })
+  })
+  ipcMain.handle('ai:model-runtime:cancel-action', (_event, value: unknown) => {
+    if (!isAiModelRuntimeActionRequestId(value)) throw new Error('Invalid model runtime action request id')
+    return aiModelRuntimeActionService.cancel(value)
+  })
+  ipcMain.handle('ai:prompt-lab:list', () => aiPromptLabRepository.list())
+  ipcMain.handle('ai:prompt-lab:save', (_event, value: unknown) => {
+    if (!isAiPromptLabSuiteSaveInput(value)) throw new Error('Invalid Prompt Lab suite input')
+    return aiPromptLabRepository.save(value)
+  })
+  ipcMain.handle('ai:prompt-lab:delete', (_event, value: unknown) => {
+    if (!isAiPromptLabSuiteId(value)) throw new Error('Invalid Prompt Lab suite id')
+    return aiPromptLabRepository.delete(value)
+  })
+  ipcMain.handle('ai:prompt-lab:run', (_event, value: unknown) => {
+    if (!isAiPromptLabRunInput(value)) throw new Error('Invalid Prompt Lab run input')
+    return aiPromptLabService.run(value)
+  })
+  ipcMain.handle('ai:prompt-lab:cancel', (_event, value: unknown) => {
+    if (!isAiPromptLabSuiteId(value)) throw new Error('Invalid Prompt Lab request id')
+    return aiPromptLabService.cancel(value)
+  })
+  ipcMain.handle('ai:project-starter:preview', (_event, value: unknown) => {
+    if (!isAiProjectStarterPreviewInput(value)) throw new Error('Invalid Project Starter input')
+    return aiProjectStarterService.preview(value)
+  })
+  ipcMain.handle('ai:project-starter:apply', (_event, value: unknown) => {
+    if (!isUuid(value)) throw new Error('Invalid Project Starter plan id')
+    return aiProjectStarterService.apply(value)
+  })
+  ipcMain.handle('ai:project-starter:rollback', (_event, value: unknown) => {
+    if (!isUuid(value)) throw new Error('Invalid Project Starter snapshot id')
+    return aiProjectStarterService.rollback(value)
+  })
+  ipcMain.handle('ai:usage:dashboard', (_event, value: unknown) => {
+    if (!isAiUsageDashboardInput(value)) throw new Error('Invalid Usage dashboard input')
+    const dashboard = aiUsageRepository.dashboard(value)
+    aiUsageBudgetNotificationService.evaluate(dashboard, value.timezoneOffsetMinutes)
+    return dashboard
+  })
+  ipcMain.handle('ai:usage:choose-files', async (event) => {
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
+    const options: OpenDialogOptions = {
+      properties: ['openFile', 'multiSelections'],
+      filters: [{ name: 'Usage metadata', extensions: ['json', 'jsonl', 'log'] }]
+    }
+    const result = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
+    return result.canceled ? [] : result.filePaths
+  })
+  ipcMain.handle('ai:usage:preview-import', (_event, value: unknown) => {
+    if (!isAiUsageImportPreviewInput(value)) throw new Error('Invalid Usage import input')
+    return aiUsageImportService.preview(value)
+  })
+  ipcMain.handle('ai:usage:apply-import', (_event, planId: unknown, timezoneOffsetMinutes: unknown) => {
+    if (!isAiUsagePlanId(planId) || typeof timezoneOffsetMinutes !== 'number' || !Number.isInteger(timezoneOffsetMinutes) || timezoneOffsetMinutes < -840 || timezoneOffsetMinutes > 840) throw new Error('Invalid Usage import approval')
+    return aiUsageImportService.apply(planId, timezoneOffsetMinutes)
+  })
+  ipcMain.handle('ai:usage:save-budget', (_event, value: unknown) => {
+    if (!isAiUsageBudgetInput(value)) throw new Error('Invalid Usage budget input')
+    return aiUsageRepository.saveBudget(value)
+  })
+  ipcMain.handle('ai:usage:sync-provider', (_event, value: unknown) => {
+    if (!isAiUsageProviderSyncInput(value)) throw new Error('Invalid Usage Provider sync input')
+    return aiOpenAiUsageSyncService.sync(value)
+  })
+  ipcMain.handle('ai:usage:clear', () => aiUsageRepository.clear())
+  ipcMain.handle('ai:usage:export', async (event, value: unknown) => {
+    if (!isAiUsageExportInput(value)) throw new Error('Invalid Usage export input')
+    const document = aiUsageExportService.create(value)
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
+    const options = {
+      defaultPath: join(store.get('settings').tools.exportDirectory || app.getPath('documents'), `mootool-usage-${new Date().toISOString().slice(0, 10)}.${document.extension}`),
+      filters: [{ name: value.format === 'json' ? 'JSON' : 'CSV', extensions: [document.extension] }]
+    }
+    const result = owner ? await dialog.showSaveDialog(owner, options) : await dialog.showSaveDialog(options)
+    if (result.canceled || !result.filePath) return null
+    await writeFile(result.filePath, document.content, 'utf8')
+    return { path: result.filePath, format: document.format, events: document.events }
+  })
+  ipcMain.handle('ai:agents:snapshot', (_event, value: unknown) => {
+    if (!isAiAgentManagerInput(value)) throw new Error('Invalid Agent Manager input')
+    return aiAgentManagerService.snapshot(value ?? {})
+  })
+  ipcMain.handle('ai:agents:save-profile', (_event, value: unknown) => {
+    if (!isAiAgentProfileSaveInput(value)) throw new Error('Invalid Agent Profile input')
+    return aiAgentProfileRepository.save(value)
+  })
+  ipcMain.handle('ai:agents:delete-profile', (_event, value: unknown) => {
+    if (!isAiAgentProfileId(value)) throw new Error('Invalid Agent Profile id')
+    return aiAgentProfileRepository.delete(value)
+  })
+  ipcMain.handle('ai:agents:launch-plan', (_event, value: unknown) => {
+    if (!isAiAgentProfileId(value)) throw new Error('Invalid Agent Profile id')
+    return aiAgentManagerService.launchPlan(value)
+  })
+  ipcMain.handle('ai:agents:run-task', (event, value: unknown) => {
+    if (!isAiAgentTaskStartInput(value)) throw new Error('Invalid Agent task input')
+    return aiAgentTaskService.run(value, (output) => {
+      if (!event.sender.isDestroyed()) event.sender.send('ai:agents:task-output', output)
+    })
+  })
+  ipcMain.handle('ai:agents:cancel-task', (_event, value: unknown) => {
+    if (!isAiAgentTaskRequestId(value)) throw new Error('Invalid Agent task request id')
+    return aiAgentTaskService.cancel(value)
+  })
+  ipcMain.handle('ai:agents:export-profile', async (event, value: unknown) => {
+    if (!isAiAgentProfileId(value)) throw new Error('Invalid Agent Profile id')
+    const profile = aiAgentProfileRepository.getRequired(value)
+    const document = createAiAgentProfileShareDocument(profile)
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
+    const options = {
+      defaultPath: join(store.get('settings').tools.exportDirectory || app.getPath('documents'), `${profile.name.replace(/[^a-z0-9._-]+/gi, '-').replace(/^-|-$/g, '') || 'agent-profile'}.mootool-agent.json`),
+      filters: [{ name: 'MooTool Agent Profile', extensions: ['json'] }]
+    }
+    const result = owner ? await dialog.showSaveDialog(owner, options) : await dialog.showSaveDialog(options)
+    if (result.canceled || !result.filePath) return null
+    await writeFile(result.filePath, `${JSON.stringify(document, null, 2)}\n`, 'utf8')
+    return result.filePath
+  })
+  ipcMain.handle('ai:agents:import-profile', async (event) => {
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
+    const options: OpenDialogOptions = { properties: ['openFile'], filters: [{ name: 'MooTool Agent Profile', extensions: ['json'] }] }
+    const result = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
+    if (result.canceled || !result.filePaths[0]) return null
+    const path = result.filePaths[0]
+    const info = await stat(path)
+    if (!info.isFile() || info.size > 1024 * 1024) throw new Error('Agent Profile share file exceeds the 1 MB limit')
+    let parsed: unknown
+    try { parsed = JSON.parse(await readFile(path, 'utf8')) as unknown } catch { throw new Error('Agent Profile share file is not valid JSON') }
+    if (!isAiAgentProfileShareDocument(parsed)) throw new Error('Agent Profile share document is invalid or unsupported')
+    return parsed
+  })
+  ipcMain.handle('ai:context:inspect', (_event, value: unknown) => {
+    if (!isAiContextInspectorInput(value)) throw new Error('Invalid Context Inspector input')
+    return aiContextInspectorService.inspect(value)
+  })
+  ipcMain.handle('ai:instructions:preview-claude-entry', (_event, projectRoot: unknown) => {
+    if (typeof projectRoot !== 'string' || !projectRoot.trim() || projectRoot.length > 4096) throw new Error('Invalid AI project root')
+    return aiInstructionChangeService.previewClaudeCompatibilityEntry(projectRoot)
+  })
+  ipcMain.handle('ai:instructions:apply-claude-entry', (_event, planId: unknown) => {
+    if (!isUuid(planId)) throw new Error('Invalid AI change plan id')
+    return aiInstructionChangeService.applyClaudeCompatibilityEntry(planId)
+  })
+  ipcMain.handle('ai:instructions:rollback-claude-entry', (_event, snapshotId: unknown) => {
+    if (!isUuid(snapshotId)) throw new Error('Invalid AI snapshot id')
+    return aiInstructionChangeService.rollbackClaudeCompatibilityEntry(snapshotId)
+  })
+  ipcMain.handle('ai:instructions:preview-effective', (_event, value: unknown) => {
+    if (!isAiInstructionPreviewInput(value)) throw new Error('Invalid instruction preview input')
+    return aiInstructionScopeService.preview(value)
+  })
+  ipcMain.handle('ai:skills:preview-install', (_event, value: unknown) => {
+    if (!isAiSkillInstallInput(value)) throw new Error('Invalid Skill install input')
+    return aiSkillInstallService.preview(value)
+  })
+  ipcMain.handle('ai:skills:apply-install', (_event, value: unknown) => {
+    if (!isAiSkillInstallApplyInput(value) || !isUuid(value.planId)) throw new Error('Invalid Skill install approval')
+    return aiSkillInstallService.apply(value.planId, value.confirmRisks)
+  })
+  ipcMain.handle('ai:skills:rollback-install', (_event, snapshotId: unknown) => {
+    if (!isUuid(snapshotId)) throw new Error('Invalid Skill install snapshot id')
+    return aiSkillInstallService.rollback(snapshotId)
+  })
+  ipcMain.handle('ai:mcp:inventory', (_event, value: unknown) => {
+    if (!isAiMcpInventoryInput(value)) throw new Error('Invalid MCP inventory input')
+    return aiMcpService.inventory(value ?? {})
+  })
+  ipcMain.handle('ai:mcp:preview-copy', (_event, value: unknown) => {
+    if (!isAiMcpCopyInput(value)) throw new Error('Invalid MCP copy input')
+    return aiMcpService.previewCopy(value)
+  })
+  ipcMain.handle('ai:mcp:apply-copy', (_event, planId: unknown) => {
+    if (!isUuid(planId)) throw new Error('Invalid MCP copy plan id')
+    return aiMcpService.applyCopy(planId)
+  })
+  ipcMain.handle('ai:mcp:rollback-copy', (_event, snapshotId: unknown) => {
+    if (!isUuid(snapshotId)) throw new Error('Invalid MCP copy snapshot id')
+    return aiMcpService.rollbackCopy(snapshotId)
+  })
+  ipcMain.handle('ai:mcp:probe', (_event, value: unknown) => {
+    if (!isAiMcpProbeInput(value)) throw new Error('Invalid MCP probe input')
+    return aiMcpService.probe(value)
+  })
+  ipcMain.handle('ai:mcp:cancel-probe', (_event, requestId: unknown) => {
+    if (!isUuid(requestId)) throw new Error('Invalid MCP probe request id')
+    return aiMcpService.cancelProbe(requestId)
+  })
+  ipcMain.handle('ai:memory:snapshot', (_event, value: unknown) => {
+    if (!isAiMemoryListInput(value)) throw new Error('Invalid Agent Memory query')
+    return aiMemoryRepository.snapshot(value ?? {})
+  })
+  ipcMain.handle('ai:memory:native-snapshot', () => aiNativeMemoryService.scan())
+  ipcMain.handle('ai:memory:embedding-status', () => aiMemoryEmbeddingService.status())
+  ipcMain.handle('ai:memory:rebuild-embeddings', (event, value: unknown) => {
+    if (!isAiMemoryEmbeddingRebuildInput(value)) throw new Error('Invalid memory embedding rebuild input')
+    return aiMemoryEmbeddingService.rebuild(value, (progress) => {
+      if (!event.sender.isDestroyed()) event.sender.send('ai:memory:embedding-progress', progress)
+    })
+  })
+  ipcMain.handle('ai:memory:semantic-preview', (_event, value: unknown) => {
+    if (!isAiMemorySemanticPreviewInput(value)) throw new Error('Invalid semantic memory preview input')
+    return aiMemoryEmbeddingService.semanticPreview(value)
+  })
+  ipcMain.handle('ai:memory:cancel-embedding', (_event, value: unknown) => {
+    if (!isAiMemoryEmbeddingRequestId(value)) throw new Error('Invalid memory embedding request id')
+    return aiMemoryEmbeddingService.cancel(value)
+  })
+  ipcMain.handle('ai:memory:save', (_event, value: unknown) => {
+    if (!isAiMemorySaveInput(value)) throw new Error('Invalid Agent Memory input')
+    return aiMemoryRepository.save(value)
+  })
+  ipcMain.handle('ai:memory:archive', (_event, id: unknown) => {
+    if (!isAiMemoryId(id)) throw new Error('Invalid Agent Memory id')
+    return aiMemoryRepository.archive(id)
+  })
+  ipcMain.handle('ai:memory:restore', (_event, id: unknown) => {
+    if (!isAiMemoryId(id)) throw new Error('Invalid Agent Memory id')
+    return aiMemoryRepository.restore(id)
+  })
+  ipcMain.handle('ai:memory:delete', (_event, id: unknown) => {
+    if (!isAiMemoryId(id)) throw new Error('Invalid Agent Memory id')
+    aiMemoryRepository.delete(id)
+  })
+  ipcMain.handle('ai:memory:create-candidate', (_event, value: unknown) => {
+    if (!isAiMemoryCandidateSaveInput(value)) throw new Error('Invalid Agent Memory candidate')
+    return aiMemoryRepository.createCandidate(value)
+  })
+  ipcMain.handle('ai:memory:review-candidate', (_event, value: unknown) => {
+    if (!isAiMemoryCandidateReviewInput(value)) throw new Error('Invalid Agent Memory review')
+    return aiMemoryRepository.reviewCandidate(value)
+  })
+  ipcMain.handle('ai:memory:preview', (_event, value: unknown) => {
+    if (!isAiMemoryPreviewInput(value)) throw new Error('Invalid Agent Memory preview')
+    return aiMemoryRepository.preview(value)
+  })
   ipcMain.handle('dialog:choose-directory', async (event, initialPath?: string) => {
     const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const options: OpenDialogOptions = {
@@ -1040,12 +1364,43 @@ function openDataRepositories(settings: AppSettings = store.get('settings')): vo
   historyRepository = new HistoryRepository(databasePath)
   favoriteRepository = new FavoriteRepository(databasePath)
   p5Repository = new P5Repository(databasePath)
+  aiMemoryRepository = new AiMemoryRepository(databasePath)
+  aiUsageRepository = new AiUsageRepository(databasePath)
+  aiUsageImportService = new UsageImportService({ repository: aiUsageRepository })
+  aiUsageExportService = new UsageExportService(aiUsageRepository)
+  aiUsageBudgetNotificationService = new UsageBudgetNotificationService({
+    repository: aiUsageRepository,
+    notify: (notification) => showUsageBudgetNotification(notification)
+  })
+  aiOpenAiUsageSyncService = new OpenAiUsageSyncService({
+    repository: aiUsageRepository,
+    credentialProvider: () => readSecret('openAiAdminApiKey'),
+    ...(process.env.NODE_ENV === 'test' && process.env.MOOTOOL_OPENAI_USAGE_BASE_URL ? { baseUrl: process.env.MOOTOOL_OPENAI_USAGE_BASE_URL } : {})
+  })
+  aiAgentProfileRepository = new AiAgentProfileRepository(databasePath)
+  aiPromptLabRepository = new AiPromptLabRepository(databasePath)
+  aiAgentManagerService = new AgentManagerService({ discovery: aiDiscoveryService, repository: aiAgentProfileRepository })
+  if (aiInstructionScopeService && aiMcpService) createContextInspectorService()
 }
 
 function closeDataRepositories(): void {
   historyRepository?.close()
   favoriteRepository?.close()
   p5Repository?.close()
+  aiMemoryRepository?.close()
+  aiUsageRepository?.close()
+  aiAgentProfileRepository?.close()
+  aiPromptLabRepository?.close()
+}
+
+function createContextInspectorService(): void {
+  aiContextInspectorService = new ContextInspectorService({
+    discovery: aiDiscoveryService,
+    instructions: aiInstructionScopeService,
+    memories: aiMemoryRepository,
+    mcp: aiMcpService,
+    profiles: aiAgentProfileRepository
+  })
 }
 
 function createVaultGitService(): VaultGitService {
@@ -1272,6 +1627,35 @@ function applySettings(settings: AppSettings): void {
   jsonVaultCheckpointScheduler.start()
   configureUpdateChecks(settings)
   updateManager.setAutoDownload(settings.general.autoDownloadUpdates)
+}
+
+function showUsageBudgetNotification(notification: AiUsageBudgetNotification): void {
+  if (process.env.NODE_ENV === 'test' || !Notification.isSupported()) return
+  const language = store.get('settings').general.language
+  const text = usageBudgetNotificationText(notification, language)
+  const nativeNotification = new Notification({ title: text.title, body: text.body })
+  nativeNotification.on('click', () => {
+    mainWindow?.show()
+    mainWindow?.focus()
+  })
+  nativeNotification.show()
+}
+
+function usageBudgetNotificationText(notification: AiUsageBudgetNotification, language: AppLanguage): { title: string; body: string } {
+  const ratios = [
+    notification.tokenRatio === undefined ? '' : `Token ${Math.round(notification.tokenRatio * 100)}%`,
+    notification.costRatio === undefined ? '' : `${language === 'zh-CN' ? '成本' : language === 'ja-JP' ? 'コスト' : 'Cost'} ${Math.round(notification.costRatio * 100)}%`
+  ].filter(Boolean).join(' · ')
+  if (language === 'zh-CN') {
+    const period = { daily: '每日', weekly: '每周', monthly: '每月' }[notification.period]
+    return { title: `AI 用量预算已达 ${notification.threshold}%`, body: `${period}预算：${ratios}` }
+  }
+  if (language === 'ja-JP') {
+    const period = { daily: '日次', weekly: '週次', monthly: '月次' }[notification.period]
+    return { title: `AI 使用量予算が ${notification.threshold}% に到達`, body: `${period}予算：${ratios}` }
+  }
+  const period = { daily: 'Daily', weekly: 'Weekly', monthly: 'Monthly' }[notification.period]
+  return { title: `AI usage budget reached ${notification.threshold}%`, body: `${period} budget: ${ratios}` }
 }
 
 function rebuildApplicationMenu(language: AppLanguage): void {
@@ -1642,8 +2026,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
 }
 
+function isUuid(value: unknown): value is string {
+  return typeof value === 'string' && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value)
+}
+
 function normalizeSecretKey(value: unknown): SecretKey {
-  if (value === 'proxyPassword' || value === 'gitToken') {
+  if (value === 'proxyPassword' || value === 'gitToken' || value === 'openAiAdminApiKey' || value === 'lmStudioApiToken') {
     return value
   }
   throw new Error('Unsupported secret key')
@@ -1713,9 +2101,40 @@ app.whenReady().then(async () => {
     }
   })
   store.set('settings', mergeSettings(defaultAppSettings, store.get('settings') as SettingsPatch))
+  aiDiscoveryService = new AiDiscoveryService({ homeDirectory: app.getPath('home') })
+  aiNativeMemoryService = new NativeMemoryService({ homeDirectory: app.getPath('home') })
   openDataRepositories()
   systemService = new SystemService(app.getPath('temp'))
   runtimeExecutionService = new RuntimeExecutionService(join(app.getPath('temp'), 'mootool-runtime'))
+  aiModelRuntimeService = new ModelRuntimeService({
+    homeDirectory: app.getPath('home'),
+    credentialProvider: (runtimeId) => runtimeId === 'lmStudio' ? readSecret('lmStudioApiToken') : ''
+  })
+  aiMemoryEmbeddingService = new MemoryEmbeddingService({
+    runtimes: aiModelRuntimeService,
+    repository: () => aiMemoryRepository,
+    credentialProvider: (runtimeId) => runtimeId === 'lmStudio' ? readSecret('lmStudioApiToken') : ''
+  })
+  aiPromptLabService = new PromptLabService({
+    runtimes: aiModelRuntimeService,
+    credentialProvider: (runtimeId) => runtimeId === 'lmStudio' ? readSecret('lmStudioApiToken') : ''
+  })
+  aiModelRuntimeActionService = new ModelRuntimeActionService({
+    runtimes: aiModelRuntimeService,
+    profiles: aiAgentProfileRepository,
+    credentialProvider: (runtimeId) => runtimeId === 'lmStudio' ? readSecret('lmStudioApiToken') : ''
+  })
+  aiAgentTaskService = new AgentTaskService({ manager: aiAgentManagerService, repository: aiAgentProfileRepository })
+  aiConfigChangeService = new ConfigChangeService({
+    snapshotDirectory: join(app.getPath('userData'), 'ai-snapshots'),
+    protector: new SafeStorageSnapshotProtector(safeStorage)
+  })
+  aiProjectStarterService = new ProjectStarterService(aiConfigChangeService)
+  aiInstructionChangeService = new InstructionChangeService(aiConfigChangeService)
+  aiInstructionScopeService = new InstructionScopeService(aiDiscoveryService)
+  aiSkillInstallService = new SkillInstallService({ homeDirectory: app.getPath('home'), changes: aiConfigChangeService })
+  aiMcpService = new McpService({ homeDirectory: app.getPath('home'), changes: aiConfigChangeService })
+  createContextInspectorService()
   gitAskPassPath = await prepareGitAskPass()
   toolWindowManager = new ToolWindowManager({
     enabled: process.env.NODE_ENV !== 'test' || process.env.MOOTOOL_TOOL_VIEWS === '1',
@@ -1761,6 +2180,9 @@ app.on('before-quit', () => {
   quickNoteWatcherGeneration += 1
   jsonVaultWatcherGeneration += 1
   runtimeExecutionService?.cancelAll()
+  aiAgentTaskService?.cancelAll()
+  aiModelRuntimeActionService?.cancelAll()
+  aiMemoryEmbeddingService?.cancelAll()
   quickNoteWatcher?.close()
   jsonVaultWatcher?.close()
   clearTimeout(quickNoteWatchTimer)

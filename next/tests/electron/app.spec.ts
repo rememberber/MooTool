@@ -1,5 +1,5 @@
 import { _electron as electron, expect, test, type ElectronApplication, type Locator, type Page } from '@playwright/test'
-import { mkdtemp, mkdir, readdir, rm, writeFile } from 'node:fs/promises'
+import { chmod, mkdtemp, mkdir, readFile, readdir, realpath, rm, writeFile } from 'node:fs/promises'
 import { createServer, type Server } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -9,6 +9,9 @@ let electronApp: ElectronApplication
 let mainPage: Page
 let userDataDirectory: string
 let updateServer: Server
+let ollamaServer: Server
+const ollamaRequests: string[] = []
+const openAiUsageRequests: Array<{ path: string; authorization: string }> = []
 
 test.beforeAll(async () => {
   userDataDirectory = await mkdtemp(join(tmpdir(), 'mootool-next-e2e-'))
@@ -33,7 +36,7 @@ test.beforeAll(async () => {
             assets: [{
               platform: process.platform,
               architecture: process.arch,
-              packageType: 'test-installer',
+              packageType: process.platform === 'darwin' ? 'dmg' : 'test-installer',
               priority: 10,
               fileName: 'MooTool-Next-Electron-9.9.9-test.bin',
               url: 'https://example.test/MooTool-Next-Electron-9.9.9-test.bin',
@@ -48,10 +51,69 @@ test.beforeAll(async () => {
   await new Promise<void>((resolve) => updateServer.listen(0, '127.0.0.1', resolve))
   const updateAddress = updateServer.address()
   if (!updateAddress || typeof updateAddress === 'string') throw new Error('Update test server did not expose a port')
+  ollamaServer = createServer((request, response) => {
+    ollamaRequests.push(`${request.method} ${request.url}`)
+    let source = ''
+    request.setEncoding('utf8')
+    request.on('data', (chunk) => { source += chunk })
+    request.on('end', () => {
+      response.setHeader('content-type', 'application/json')
+      if (request.url?.startsWith('/v1/organization/usage/completions')) {
+        openAiUsageRequests.push({ path: request.url, authorization: String(request.headers.authorization ?? '') })
+        const startTime = Math.floor(Date.now() / 1000) - 3600
+        response.end(JSON.stringify({ data: [{ start_time: startTime, end_time: startTime + 3600, results: [{ input_tokens: 120, output_tokens: 30, input_cached_tokens: 50, num_model_requests: 2, project_id: 'proj-provider-e2e', model: 'gpt-provider-e2e' }] }], has_more: false, next_page: null }))
+      } else if (request.url?.startsWith('/v1/organization/costs')) {
+        openAiUsageRequests.push({ path: request.url, authorization: String(request.headers.authorization ?? '') })
+        const startTime = Math.floor(Date.now() / 1000) - 3600
+        response.end(JSON.stringify({ data: [{ start_time: startTime, end_time: startTime + 3600, results: [{ amount: { value: 1.25, currency: 'usd' }, line_item: 'Text models', project_id: 'proj-provider-e2e' }] }], has_more: false, next_page: null }))
+      } else if (request.url === '/api/version') response.end(JSON.stringify({ version: '0.13.3-e2e' }))
+      else if (request.url === '/api/tags') response.end(JSON.stringify({ models: [{
+        name: 'qwen3:8b-e2e', model: 'qwen3:8b-e2e', digest: 'sha256:e2e-model-digest', size: 4_294_967_296,
+        modified_at: '2026-07-17T12:00:00.000Z', details: { format: 'gguf', family: 'qwen3', parameter_size: '8B', quantization_level: 'Q4_K_M' }
+      }] }))
+      else if (request.url === '/api/ps') response.end(JSON.stringify({ models: [{
+        name: 'qwen3:8b-e2e', digest: 'sha256:e2e-model-digest', size: 5_368_709_120, size_vram: 0,
+        context_length: 32768, expires_at: '2026-07-18T18:00:00.000Z'
+      }] }))
+      else if (request.url === '/api/show' && request.method === 'POST') {
+        const body = JSON.parse(source) as { model?: string; verbose?: boolean }
+        if (body.model !== 'qwen3:8b-e2e' || body.verbose !== false) { response.statusCode = 400; response.end('{}'); return }
+        response.end(JSON.stringify({
+          modified_at: '2026-07-17T12:00:00.000Z', capabilities: ['completion', 'tools'], parameters: 'temperature 0.7', license: 'E2E model license',
+          template: 'THIS TEMPLATE MUST NOT BE RENDERED', details: { format: 'gguf', family: 'qwen3', parameter_size: '8B', quantization_level: 'Q4_K_M' },
+          model_info: { 'qwen3.context_length': 131072 }
+        }))
+      } else if (request.url === '/api/embed' && request.method === 'POST') {
+        const body = JSON.parse(source) as { model?: string; input?: string | string[] }
+        if (body.model !== 'qwen3:8b-e2e') { response.statusCode = 400; response.end('{}'); return }
+        const inputs = Array.isArray(body.input) ? body.input : [body.input ?? '']
+        response.end(JSON.stringify({ model: body.model, embeddings: inputs.map((text) => text.includes('SQLite') || text.includes('database') ? [1, 0] : [0.8, 0.2]) }))
+      } else { response.statusCode = 404; response.end('{}') }
+    })
+  })
+  await new Promise<void>((resolve) => ollamaServer.listen(0, '127.0.0.1', resolve))
+  const ollamaAddress = ollamaServer.address()
+  if (!ollamaAddress || typeof ollamaAddress === 'string') throw new Error('Ollama E2E server did not expose a port')
+  const ollamaModelDirectory = join(userDataDirectory, 'ollama-models')
+  const agentBinaryDirectory = join(userDataDirectory, 'agent-bin')
+  await Promise.all([mkdir(ollamaModelDirectory, { recursive: true }), mkdir(agentBinaryDirectory, { recursive: true })])
+  const codexBinary = join(agentBinaryDirectory, 'codex')
+  const claudeBinary = join(agentBinaryDirectory, 'claude')
+  await Promise.all([writeFile(codexBinary, '#!/bin/sh\nexit 0\n'), writeFile(claudeBinary, '#!/bin/sh\nexit 0\n')])
+  await Promise.all([chmod(codexBinary, 0o755), chmod(claudeBinary, 0o755)])
   electronApp = await electron.launch({
     args: ['.', `--user-data-dir=${userDataDirectory}`],
     cwd: process.cwd(),
-    env: { ...process.env, NODE_ENV: 'test', MOOTOOL_UPDATE_FEED_URL: `http://127.0.0.1:${updateAddress.port}/update-manifest.json` }
+    env: {
+      ...process.env,
+      NODE_ENV: 'test',
+      MOOTOOL_UPDATE_FEED_URL: `http://127.0.0.1:${updateAddress.port}/update-manifest.json`,
+      OLLAMA_HOST: `http://127.0.0.1:${ollamaAddress.port}`,
+      OLLAMA_MODELS: ollamaModelDirectory,
+      MOOTOOL_OPENAI_USAGE_BASE_URL: `http://127.0.0.1:${ollamaAddress.port}`,
+      PATH: `${agentBinaryDirectory}:${process.env.PATH ?? ''}`,
+      E2E_AGENT_SECRET: 'super-secret-value-that-must-not-cross-ipc'
+    }
   })
   mainPage = await electronApp.firstWindow()
   await mainPage.waitForLoadState('domcontentloaded')
@@ -60,6 +122,7 @@ test.beforeAll(async () => {
 test.afterAll(async () => {
   await electronApp.close()
   await new Promise<void>((resolve, reject) => updateServer.close((error) => error ? reject(error) : resolve()))
+  await new Promise<void>((resolve, reject) => ollamaServer.close((error) => error ? reject(error) : resolve()))
   await rm(userDataDirectory, { recursive: true, force: true })
 })
 
@@ -198,7 +261,7 @@ test('sizes compact controls from their localized English content', async () => 
 })
 
 test('opens all registered tools through search and persists recent access', async () => {
-  await expect(mainPage.locator('.tool-button')).toHaveCount(25)
+  await expect(mainPage.locator('.tool-button')).toHaveCount(36)
 
   await mainPage.getByRole('button', { name: '搜索', exact: true }).click()
   const searchInput = mainPage.locator('.command-palette__search input')
@@ -219,6 +282,498 @@ test('opens all registered tools through search and persists recent access', asy
   await expect(mainPage.locator('.recent-item').first()).toContainText('代码运行')
   const workspace = await mainPage.evaluate(() => window.mootool.getWorkspaceState())
   expect(workspace).toEqual({ activeToolId: 'java', recentToolIds: ['java'] })
+})
+
+test('runs the AI Doctor through the read-only Electron bridge', async () => {
+  await openTool('AI 工作台', 'AI 工作台')
+  await expect(mainPage.getByText('只读扫描', { exact: true })).toBeVisible()
+  await expect(mainPage.locator('.ai-summary-card')).toHaveCount(4)
+  await expect.poll(() => mainPage.locator('.ai-entity-row').count()).toBeGreaterThanOrEqual(3)
+
+  const snapshot = await mainPage.evaluate((projectRoot) => window.mootool.scanAiEnvironment({ projectRoot }), process.cwd())
+  expect(snapshot).toMatchObject({ readOnly: true, projectRoot: process.cwd() })
+  expect(snapshot.clients).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'codex' }), expect.objectContaining({ id: 'claudeCode' })]))
+  expect(snapshot.runtimes).toEqual(expect.arrayContaining([expect.objectContaining({ id: 'ollama', endpoint: 'http://127.0.0.1:11434' })]))
+  expect(JSON.stringify(snapshot)).not.toContain('api_key')
+
+  await expect.poll(() => mainPage.locator('.ai-doctor-shell').evaluate((shell) => shell.scrollWidth <= shell.clientWidth)).toBe(true)
+})
+
+test('opens the Skill and Instruction managers and completes a verified Claude compatibility change', async () => {
+  await openTool('Skill 管理', 'Skill 管理')
+  await expect(mainPage.locator('.workspace-tool-session:not([hidden]) .ai-manager-metric')).toHaveCount(4)
+  await expect(mainPage.locator('.workspace-tool-session:not([hidden]) .ai-readonly-badge')).toHaveText('只读扫描')
+
+  await openTool('编码规约', '编码规约管理')
+  await expect(mainPage.locator('.workspace-tool-session:not([hidden]) .ai-manager-metric')).toHaveCount(4)
+
+  const projectRoot = await mkdtemp(join(tmpdir(), 'mootool-ai-change-e2e-'))
+  try {
+    const targetPath = join(projectRoot, 'src', 'components')
+    await Promise.all([
+      mkdir(targetPath, { recursive: true }),
+      mkdir(join(projectRoot, '.claude', 'rules'), { recursive: true })
+    ])
+    await writeFile(join(projectRoot, 'AGENTS.md'), '# Shared project rules\n')
+    await writeFile(join(projectRoot, 'src', 'AGENTS.md'), '# Source tree rules\n')
+    await writeFile(join(projectRoot, '.claude', 'rules', 'source.md'), '---\npaths:\n  - src/**\n---\n# Claude source rule\n')
+    await electronApp.evaluate(({ dialog }, root) => {
+      dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [root] })
+    }, projectRoot)
+    const activeTool = mainPage.locator('.workspace-tool-session:not([hidden])')
+    const chooseProject = activeTool.getByRole('button', { name: '选择项目', exact: true })
+    await expect(chooseProject).toBeEnabled()
+    await chooseProject.click()
+    await expect(activeTool.locator('.ai-manager-scope strong')).toHaveText(await realpath(projectRoot))
+
+    await electronApp.evaluate(({ dialog }, target) => {
+      dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [target] })
+    }, targetPath)
+    await activeTool.getByRole('button', { name: '选择目录并预览', exact: true }).click()
+    const effectiveDialog = mainPage.getByRole('dialog', { name: '最终生效规约' })
+    await expect(effectiveDialog).toBeVisible()
+    await expect(effectiveDialog).toContainText('src/AGENTS.md')
+    await expect(effectiveDialog).toContainText('.claude/rules/source.md')
+    await expect(effectiveDialog).toContainText('目录祖先')
+    await expect(effectiveDialog).toContainText('路径匹配')
+    await effectiveDialog.getByRole('button', { name: '关闭', exact: true }).click()
+
+    const preview = activeTool.getByRole('button', { name: '预览变更', exact: true })
+    await expect(preview).toBeEnabled()
+    await preview.click()
+    const dialog = mainPage.getByRole('dialog', { name: '审查 Claude 兼容入口' })
+    await expect(dialog.locator('pre')).toContainText('@AGENTS.md')
+    await dialog.getByRole('button', { name: '批准并应用', exact: true }).click()
+    await expect(dialog.getByText('变更已验证通过。你可以关闭窗口，或立即回滚。')).toBeVisible()
+    expect(await readFile(join(projectRoot, 'CLAUDE.md'), 'utf8')).toContain('@AGENTS.md')
+
+    await dialog.getByRole('button', { name: '回滚变更', exact: true }).click()
+    await expect(dialog).toHaveCount(0)
+    await expect(readFile(join(projectRoot, 'CLAUDE.md'))).rejects.toMatchObject({ code: 'ENOENT' })
+  } finally {
+    await rm(projectRoot, { recursive: true, force: true })
+  }
+})
+
+test('discovers and safely copies an MCP server across clients with rollback', async () => {
+  const projectRoot = await mkdtemp(join(tmpdir(), 'mootool-ai-mcp-e2e-'))
+  const mcpServer = createServer((request, response) => {
+    let source = ''
+    request.setEncoding('utf8')
+    request.on('data', (chunk) => { source += chunk })
+    request.on('end', () => {
+      const payload = JSON.parse(source) as { id?: number; method: string }
+      if (payload.id === undefined) { response.statusCode = 202; response.end(); return }
+      const result = payload.method === 'initialize'
+        ? { protocolVersion: '2025-11-25', capabilities: {} }
+        : payload.method === 'tools/list'
+          ? { tools: [{ name: 'e2e-tool' }] }
+          : payload.method === 'resources/list'
+            ? { resources: [{ uri: 'e2e://resource' }] }
+            : { prompts: [] }
+      response.setHeader('content-type', 'application/json')
+      response.end(JSON.stringify({ jsonrpc: '2.0', id: payload.id, result }))
+    })
+  })
+  try {
+    await new Promise<void>((resolve) => mcpServer.listen(0, '127.0.0.1', resolve))
+    const mcpAddress = mcpServer.address()
+    if (!mcpAddress || typeof mcpAddress === 'string') throw new Error('MCP E2E server has no port')
+    await writeFile(join(projectRoot, '.mcp.json'), JSON.stringify({
+      futureField: { keep: true },
+      mcpServers: {
+        'mootool-e2e-remote': {
+          type: 'http',
+          url: `http://127.0.0.1:${mcpAddress.port}/mcp`,
+          headers: { Authorization: 'Bearer ${E2E_MCP_TOKEN}' }
+        }
+      }
+    }, null, 2))
+    await electronApp.evaluate(({ dialog }, root) => {
+      dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [root] })
+    }, projectRoot)
+    await electronApp.evaluate(() => { process.env.E2E_MCP_TOKEN = 'e2e-probe-token' })
+
+    await openTool('MCP 管理', 'MCP 管理')
+    const activeTool = mainPage.locator('.workspace-tool-session:not([hidden])')
+    await activeTool.locator('.tool-header-actions').getByRole('button', { name: '选择项目', exact: true }).click()
+    await expect(activeTool.locator('.ai-manager-scope strong')).toHaveText(await realpath(projectRoot))
+    const serverCard = activeTool.locator('.ai-mcp-card').filter({ hasText: 'mootool-e2e-remote' }).filter({ hasText: 'Claude Code' })
+    await expect(serverCard).toContainText('Streamable HTTP')
+    await serverCard.getByRole('button', { name: '测试连接', exact: true }).click()
+    const probeDialog = mainPage.getByRole('dialog', { name: 'MCP 连接与能力检查' })
+    await probeDialog.getByRole('button', { name: '确认并开始检查', exact: true }).click()
+    await expect(probeDialog).toContainText('连接正常')
+    await expect(probeDialog.locator('.ai-mcp-capabilities')).toContainText('1')
+    await probeDialog.getByRole('button', { name: '关闭', exact: true }).click()
+    await serverCard.getByRole('button', { name: '复制', exact: true }).click()
+
+    const dialog = mainPage.getByRole('dialog', { name: '跨客户端复制 MCP Server' })
+    await expect(dialog).toBeVisible()
+    await dialog.getByRole('button', { name: '生成安全预览', exact: true }).click()
+    await expect(dialog).toContainText('E2E_MCP_TOKEN')
+    await expect(dialog.locator('pre')).toContainText('bearer_token_env_var = "E2E_MCP_TOKEN"')
+    await dialog.getByText('我了解目标客户端启动前需要设置以上环境变量。', { exact: true }).click()
+    await dialog.getByRole('button', { name: '批准并复制', exact: true }).click()
+    await expect(dialog).toContainText('MCP Server 已写入并重新解析验证通过。')
+    expect(await readFile(join(projectRoot, '.codex', 'config.toml'), 'utf8')).toContain('bearer_token_env_var = "E2E_MCP_TOKEN"')
+
+    await dialog.getByRole('button', { name: '回滚复制', exact: true }).click()
+    await expect(dialog).toHaveCount(0)
+    await expect(readFile(join(projectRoot, '.codex', 'config.toml'))).rejects.toMatchObject({ code: 'ENOENT' })
+  } finally {
+    await electronApp.evaluate(() => { delete process.env.E2E_MCP_TOKEN })
+    await new Promise<void>((resolve, reject) => mcpServer.close((error) => error ? reject(error) : resolve()))
+    await rm(projectRoot, { recursive: true, force: true })
+  }
+})
+
+test('reviews, scopes, previews, archives, and deletes Agent memories', async () => {
+  const projectRoot = await mkdtemp(join(tmpdir(), 'mootool-ai-memory-e2e-'))
+  const targetPath = join(projectRoot, 'src', 'feature')
+  const suffix = Date.now().toString(36)
+  const candidateContent = `Candidate ${suffix}: keep architecture decisions in ADR files.`
+  const manualContent = `OrbitMemory ${suffix}: MooTool stores local state in SQLite.`
+  try {
+    await mkdir(targetPath, { recursive: true })
+    await mainPage.evaluate(({ root, content }) => window.mootool.createAiMemoryCandidate({
+      kind: 'technicalDecision',
+      proposedScope: 'project',
+      proposedScopeValue: root,
+      content,
+      sourceKind: 'taskSummary',
+      sourceRef: `e2e-task-${Date.now()}`,
+      evidenceSummary: 'The decision was repeated in the completed task summary.',
+      confidence: 0.91,
+      sensitivity: 'internal'
+    }), { root: projectRoot, content: candidateContent })
+
+    await electronApp.evaluate(({ dialog }, root) => {
+      dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [root] })
+    }, projectRoot)
+    await openTool('Agent 记忆', 'Agent 记忆管理')
+    const activeTool = mainPage.locator('.workspace-tool-session:not([hidden])')
+    await activeTool.getByRole('button', { name: '选择项目', exact: true }).click()
+    await expect(activeTool.locator('.ai-manager-scope strong')).toHaveText(projectRoot)
+
+    const candidate = activeTool.locator('.ai-memory-inbox > article').filter({ hasText: candidateContent })
+    await expect(candidate).toContainText('技术决策')
+    await candidate.getByRole('button', { name: '批准并保存', exact: true }).click()
+    await expect(candidate).toHaveCount(0)
+    await expect(activeTool.locator('.ai-memory-card').filter({ hasText: candidateContent })).toBeVisible()
+
+    await activeTool.getByRole('button', { name: '新建记忆', exact: true }).click()
+    const editor = mainPage.getByRole('dialog', { name: '新建记忆' })
+    await expect(editor.getByLabel('作用域目标')).toHaveValue(projectRoot)
+    await editor.getByLabel('记忆内容').fill(manualContent)
+    await editor.getByLabel('来源说明').fill('Electron E2E')
+    await editor.getByRole('button', { name: '保存', exact: true }).click()
+    await expect(editor).toHaveCount(0)
+
+    const manualCard = activeTool.locator('.ai-memory-card').filter({ hasText: manualContent })
+    await expect(manualCard).toContainText('项目事实')
+    await activeTool.getByLabel('搜索记忆内容').fill('OrbitMemory')
+    await expect(activeTool.locator('.ai-memory-card')).toHaveCount(1)
+    await expect(manualCard).toBeVisible()
+    await activeTool.getByLabel('搜索记忆内容').fill('')
+
+    await manualCard.getByRole('button', { name: '归档记忆', exact: true }).click()
+    await expect(manualCard).toHaveCount(0)
+    await activeTool.getByText('显示已归档', { exact: true }).click()
+    const archivedCard = activeTool.locator('.ai-memory-card--archived').filter({ hasText: manualContent })
+    await expect(archivedCard).toBeVisible()
+    await archivedCard.getByRole('button', { name: '恢复记忆', exact: true }).click()
+    await expect(activeTool.locator('.ai-memory-card:not(.ai-memory-card--archived)').filter({ hasText: manualContent })).toBeVisible()
+    await activeTool.getByText('显示已归档', { exact: true }).click()
+
+    await electronApp.evaluate(({ dialog }, target) => {
+      dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [target] })
+    }, targetPath)
+    await activeTool.getByRole('button', { name: '生效预览', exact: true }).click()
+    const preview = mainPage.getByRole('dialog', { name: 'Agent 记忆注入预览' })
+    await expect(preview).toContainText(candidateContent)
+    await expect(preview).toContainText(manualContent)
+    await expect(preview).toContainText('项目级')
+    await preview.getByLabel('Token 预算').fill('1')
+    await preview.getByRole('button', { name: '刷新', exact: true }).click()
+    await expect(preview).toContainText('预算省略 2 条')
+    await expect(preview).toContainText('没有可注入的记忆')
+    await preview.getByRole('button', { name: '关闭', exact: true }).click()
+
+    await activeTool.getByRole('button', { name: '本地语义索引', exact: true }).click()
+    const embedding = mainPage.getByRole('dialog', { name: 'Agent 记忆本地 Embedding' })
+    await expect(embedding).toBeVisible()
+    await embedding.getByText('我确认将公开/内部记忆发送给所选的本机模型进程处理。', { exact: true }).click()
+    await embedding.getByRole('button', { name: '重建本地索引', exact: true }).click()
+    await expect(embedding.locator('.ai-memory-embedding-metrics')).toContainText('100%')
+    await embedding.getByPlaceholder('输入自然语言查询').fill('local state database')
+    await embedding.getByRole('button', { name: '语义检索', exact: true }).click()
+    await expect(embedding).toContainText(manualContent)
+    await expect(embedding).toContainText(candidateContent)
+    await embedding.getByRole('button', { name: '关闭', exact: true }).click()
+
+    const restoredCard = activeTool.locator('.ai-memory-card').filter({ hasText: manualContent })
+    mainPage.once('dialog', (confirmation) => confirmation.accept())
+    await restoredCard.getByRole('button', { name: '删除', exact: true }).click()
+    await expect(restoredCard).toHaveCount(0)
+
+    const snapshot = await mainPage.evaluate(() => window.mootool.getAiMemorySnapshot({ includeArchived: true }))
+    expect(snapshot.memories.some((memory) => memory.content === manualContent)).toBe(false)
+    expect(snapshot.memories.some((memory) => memory.content === candidateContent && memory.createdBy === 'agentCandidate')).toBe(true)
+  } finally {
+    const snapshot = await mainPage.evaluate(() => window.mootool.getAiMemorySnapshot({ includeArchived: true }))
+    const cleanupIds = snapshot.memories.filter((memory) => memory.content === candidateContent || memory.content === manualContent).map((memory) => memory.id)
+    for (const id of cleanupIds) await mainPage.evaluate((memoryId) => window.mootool.deleteAiMemory(memoryId), id)
+    await rm(projectRoot, { recursive: true, force: true })
+  }
+})
+
+test('inspects Ollama models and machine resources without running inference', async () => {
+  ollamaRequests.length = 0
+  await openTool('模型与运行时', '模型与运行时管理')
+  const activeTool = mainPage.locator('.workspace-tool-session:not([hidden])')
+  await expect(activeTool.locator('.ai-runtime-overview')).toContainText('Ollama 0.13.3-e2e')
+  await expect(activeTool.locator('.ai-runtime-overview')).toContainText('运行正常')
+  await expect(activeTool.locator('.ai-manager-metric')).toHaveCount(4)
+  await expect(activeTool.locator('.ai-manager-metric').first()).toContainText('1')
+
+  const modelCard = activeTool.locator('.ai-runtime-model-card').filter({ hasText: 'qwen3:8b-e2e' })
+  await expect(modelCard).toContainText('8B')
+  await expect(modelCard).toContainText('Q4_K_M')
+  await expect(modelCard).toContainText('已加载')
+  await modelCard.getByRole('button', { name: '查看 qwen3:8b-e2e 元数据', exact: true }).click()
+
+  const detail = mainPage.getByRole('dialog', { name: 'qwen3:8b-e2e 模型元数据' })
+  await expect(detail).toContainText('131,072')
+  await expect(detail).toContainText('completion')
+  await expect(detail).toContainText('tools')
+  await expect(detail).toContainText('E2E model license')
+  await expect(detail).not.toContainText('THIS TEMPLATE MUST NOT BE RENDERED')
+  await detail.getByRole('button', { name: '关闭', exact: true }).click()
+
+  expect(ollamaRequests).toEqual(expect.arrayContaining(['GET /api/version', 'GET /api/tags', 'GET /api/ps', 'POST /api/show']))
+  expect(ollamaRequests.some((request) => /generate|chat|completions|responses/.test(request))).toBe(false)
+})
+
+test('previews, imports, budgets, and clears Usage metadata without retaining prompts', async () => {
+  const directory = await mkdtemp(join(tmpdir(), 'mootool-ai-usage-e2e-'))
+  const usagePath = join(directory, 'usage.json')
+  const adminKey = 'sk-admin-e2e-must-stay-in-main-process'
+  try {
+    await writeFile(usagePath, JSON.stringify({ events: [{
+      source: 'providerApi',
+      provider: 'openai',
+      clientId: 'codex',
+      projectId: '/e2e/project',
+      sessionId: 'e2e-usage-session',
+      model: 'gpt-e2e',
+      startedAt: new Date().toISOString(),
+      inputTokens: 3000,
+      outputTokens: 750,
+      cachedInputTokens: 1200,
+      reasoningTokens: 125,
+      requestCount: 3,
+      billedCost: { currency: 'USD', micros: 500000 },
+      sourceFingerprint: 'e2e-usage-event',
+      prompt: 'SECRET E2E PROMPT MUST NOT APPEAR'
+    }] }))
+    await electronApp.evaluate(({ dialog }, path) => {
+      dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [path] })
+    }, usagePath)
+
+    await openTool('Token 与成本', 'Token 与成本')
+    const activeTool = mainPage.locator('.workspace-tool-session:not([hidden])')
+    await expect(activeTool).toContainText('还没有 Usage 数据')
+    await activeTool.getByRole('button', { name: '导入本地日志', exact: true }).click()
+
+    const preview = mainPage.getByRole('dialog', { name: '审查 Usage 导入' })
+    await expect(preview).toContainText('gpt-e2e')
+    await expect(preview).toContainText('inputTokens')
+    await expect(preview).toContainText('billedCost')
+    await expect(preview).not.toContainText('SECRET E2E PROMPT')
+    await preview.getByRole('button', { name: '批准并导入', exact: true }).click()
+    await expect(preview).toHaveCount(0)
+
+    await expect(activeTool.locator('.ai-manager-metric').first()).toContainText('3,750')
+    await expect(activeTool.locator('.ai-manager-metric').nth(3)).toContainText('$0.50')
+    await expect(activeTool.locator('.ai-usage-breakdowns')).toContainText('gpt-e2e')
+    await expect(activeTool.locator('.ai-usage-token-split')).toContainText('1,200')
+
+    await activeTool.getByRole('button', { name: '预算', exact: true }).click()
+    const budget = mainPage.getByRole('dialog', { name: '本地软预算' })
+    await budget.getByLabel('Token 上限').fill('4000')
+    await budget.getByLabel('成本上限（USD）').fill('1')
+    await budget.getByRole('button', { name: '保存', exact: true }).click()
+    await expect(budget).toHaveCount(0)
+    await expect(activeTool.locator('.ai-usage-budgets')).toContainText('94%')
+    await expect(activeTool.locator('.ai-usage-budgets')).toContainText('50%')
+
+    const exportPath = join(directory, 'usage-export.json')
+    await electronApp.evaluate(({ dialog }, path) => {
+      dialog.showSaveDialog = async () => ({ canceled: false, filePath: path })
+    }, exportPath)
+    await activeTool.getByRole('button', { name: '导出', exact: true }).click()
+    await expect(activeTool.locator('.ai-usage-export-message')).toContainText('已导出 1 条 Usage 元数据')
+    const exported = await readFile(exportPath, 'utf8')
+    expect(exported).toContain('"model": "gpt-e2e"')
+    expect(exported).toContain('"billedCost"')
+    expect(exported).not.toContain('SECRET E2E PROMPT')
+
+    openAiUsageRequests.length = 0
+    await activeTool.getByRole('button', { name: 'Provider API', exact: true }).click()
+    const provider = mainPage.getByRole('dialog', { name: 'Provider 用量数据源' })
+    await provider.getByLabel('OpenAI Admin Key').fill(adminKey)
+    await provider.getByRole('button', { name: '安全保存', exact: true }).click()
+    await expect(provider).toContainText('Admin Key 已存入系统安全存储')
+    await provider.getByRole('button', { name: '立即同步', exact: true }).click()
+    await expect(provider).toContainText('同步完成：1 条 Token 用量、1 条账单成本')
+    await provider.getByRole('button', { name: '关闭', exact: true }).click()
+    await expect(activeTool.locator('.ai-usage-breakdowns')).toContainText('gpt-provider-e2e')
+    await expect(activeTool.locator('.ai-manager-metric').nth(3)).toContainText('$1.75')
+    expect(openAiUsageRequests).toHaveLength(2)
+    expect(openAiUsageRequests.every((request) => request.authorization === `Bearer ${adminKey}`)).toBe(true)
+    const providerDashboard = await mainPage.evaluate(() => window.mootool.getAiUsageDashboard({ rangeDays: 30, timezoneOffsetMinutes: new Date().getTimezoneOffset() }))
+    expect(JSON.stringify(providerDashboard)).not.toContain(adminKey)
+
+    mainPage.once('dialog', (confirmation) => confirmation.accept())
+    await activeTool.getByRole('button', { name: '清空 Usage 统计', exact: true }).click()
+    await expect(activeTool).toContainText('还没有 Usage 数据')
+    await expect.poll(() => mainPage.evaluate(() => window.mootool.getAiUsageDashboard({ rangeDays: 30, timezoneOffsetMinutes: new Date().getTimezoneOffset() }))).toMatchObject({ totals: { events: 0 } })
+  } finally {
+    await mainPage.evaluate(() => window.mootool.clearAiUsage())
+    await mainPage.evaluate(() => window.mootool.clearSecret('openAiAdminApiKey'))
+    await rm(directory, { recursive: true, force: true })
+  }
+})
+
+test('creates an Agent profile and generates a shell-safe credential-free launch plan without executing it', async () => {
+  const projectRoot = await mkdtemp(join(tmpdir(), 'mootool-agent-manager-e2e-'))
+  const profileName = `E2E Agent ${Date.now()}`
+  try {
+    await electronApp.evaluate(({ dialog }, root) => {
+      dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [root] })
+    }, projectRoot)
+    await openTool('Agent 管理', 'Agent 管理')
+    const activeTool = mainPage.locator('.workspace-tool-session:not([hidden])')
+    await expect.poll(() => activeTool.locator('.ai-agent-client--healthy').count()).toBeGreaterThanOrEqual(2)
+    await expect(activeTool.locator('.ai-agent-client--healthy').filter({ hasText: 'Codex' })).toHaveCount(1)
+    await expect(activeTool.locator('.ai-agent-client--healthy').filter({ hasText: 'Claude Code' })).toHaveCount(1)
+    await activeTool.getByRole('button', { name: '选择项目', exact: true }).click()
+    await expect(activeTool.locator('.ai-agent-safety code')).toHaveText(await realpath(projectRoot))
+
+    await activeTool.locator('.tool-header-actions').getByRole('button', { name: '新建 Profile', exact: true }).click()
+    const editor = mainPage.getByRole('dialog', { name: '新建 Agent Profile' })
+    await editor.getByLabel('Profile 名称').fill(profileName)
+    await editor.getByLabel('模型运行时').selectOption('ollama')
+    await expect(editor.getByRole('combobox', { name: '模型', exact: true })).toHaveValue('qwen3:8b-e2e')
+    await editor.getByLabel('权限模式').selectOption('workspaceWrite')
+    await editor.getByLabel('Codex 配置 Profile').fill('work')
+    await editor.getByLabel('Skill 依赖').fill('testing')
+    await editor.getByLabel('MCP Server 依赖').fill('docs')
+    await editor.getByLabel('环境变量引用').fill('E2E_AGENT_SECRET')
+    await editor.getByLabel('--search').check()
+    await editor.getByRole('button', { name: '保存', exact: true }).click()
+    await expect(editor).toHaveCount(0)
+
+    const profile = activeTool.locator('.ai-agent-profile').filter({ hasText: profileName })
+    await expect(profile).toContainText('qwen3:8b-e2e')
+    await expect(profile).toContainText('Ollama')
+    await writeFile(join(projectRoot, 'AGENTS.md'), 'Run the focused E2E checks.\n')
+    await activeTool.getByRole('button', { name: '刷新', exact: true }).click()
+    await expect(activeTool.locator('.ai-agent-client').filter({ hasText: 'Codex' })).toContainText('配置文件元数据自上次扫描后已变化')
+    await profile.getByRole('button', { name: '生成启动计划', exact: true }).click()
+    const plan = mainPage.getByRole('dialog', { name: '安全启动计划' })
+    await expect(plan).toContainText('agent-bin/codex')
+    await expect(plan.locator('pre')).toContainText("--model' 'qwen3:8b-e2e")
+    await expect(plan.locator('pre')).toContainText("--sandbox' 'workspace-write")
+    await expect(plan).toContainText('E2E_AGENT_SECRET')
+    await expect(plan).toContainText('model runtime binding is declarative')
+    await expect(plan).not.toContainText('super-secret-value-that-must-not-cross-ipc')
+    await plan.getByRole('button', { name: '关闭', exact: true }).click()
+
+    mainPage.once('dialog', (confirmation) => confirmation.accept())
+    await profile.getByRole('button', { name: '删除 Profile', exact: true }).click()
+    await expect(profile).toHaveCount(0)
+  } finally {
+    const snapshot = await mainPage.evaluate(() => window.mootool.getAiAgentManagerSnapshot())
+    const cleanupIds = snapshot.profiles.filter((profile) => profile.name === profileName).map((profile) => profile.id)
+    for (const id of cleanupIds) await mainPage.evaluate((profileId) => window.mootool.deleteAiAgentProfile(profileId), id)
+    await rm(projectRoot, { recursive: true, force: true })
+  }
+})
+
+test('connects instructions, Skills, scoped memory, and explicitly probed MCP Schema in Context Inspector', async () => {
+  const projectRoot = await mkdtemp(join(tmpdir(), 'mootool-context-inspector-e2e-'))
+  const skillDirectory = join(projectRoot, '.agents', 'skills', 'context-e2e')
+  const memoryContent = `Context E2E ${Date.now()}: use SQLite for local state.`
+  let memoryId = ''
+  let profileId = ''
+  const mcpServer = createServer((request, response) => {
+    let source = ''
+    request.setEncoding('utf8')
+    request.on('data', (chunk) => { source += chunk })
+    request.on('end', () => {
+      const payload = JSON.parse(source) as { id?: number; method: string }
+      if (payload.id === undefined) { response.statusCode = 202; response.end(); return }
+      const result = payload.method === 'initialize'
+        ? { protocolVersion: '2025-11-25', capabilities: {} }
+        : payload.method === 'tools/list'
+          ? { tools: [{ name: 'context_read', description: 'Read context fixture data', inputSchema: { type: 'object', properties: { path: { type: 'string' } } } }] }
+          : payload.method === 'resources/list' ? { resources: [] } : { prompts: [] }
+      response.setHeader('content-type', 'application/json')
+      response.end(JSON.stringify({ jsonrpc: '2.0', id: payload.id, result }))
+    })
+  })
+  try {
+    await new Promise<void>((resolve) => mcpServer.listen(0, '127.0.0.1', resolve))
+    const address = mcpServer.address()
+    if (!address || typeof address === 'string') throw new Error('Context MCP E2E server has no port')
+    await Promise.all([mkdir(skillDirectory, { recursive: true }), mkdir(join(projectRoot, '.codex'), { recursive: true })])
+    await Promise.all([
+      writeFile(join(projectRoot, 'AGENTS.md'), 'Always run the focused tests before finishing.\n'),
+      writeFile(join(skillDirectory, 'SKILL.md'), '---\nname: context-e2e\ndescription: Inspect context composition.\n---\n\nLoad this body only when selected.\n'),
+      writeFile(join(projectRoot, '.codex', 'config.toml'), `[mcp_servers.context-e2e]\nurl = "http://127.0.0.1:${address.port}/mcp"\n`)
+    ])
+    const created = await mainPage.evaluate(({ root, content }) => window.mootool.saveAiMemory({
+      kind: 'projectFact', scope: 'project', scopeValue: root, content, sourceKind: 'user', confidence: 1, sensitivity: 'internal'
+    }), { root: projectRoot, content: memoryContent })
+    memoryId = created.id
+    const profile = await mainPage.evaluate((root) => window.mootool.saveAiAgentProfile({
+      name: 'Context E2E profile', clientId: 'codex', workingDirectory: root, permissionMode: 'readOnly',
+      mcpServerNames: ['context-e2e'], skillNames: ['context-e2e'], environmentVariableRefs: [], optionalFlags: []
+    }), projectRoot)
+    profileId = profile.id
+    const inventory = await mainPage.evaluate((root) => window.mootool.getMcpInventory({ projectRoot: root }), projectRoot)
+    const server = inventory.servers.find((candidate) => candidate.name === 'context-e2e')
+    expect(server).toBeTruthy()
+    const probe = await mainPage.evaluate(({ root, serverId }) => window.mootool.probeMcpServer({
+      requestId: window.crypto.randomUUID(), sourceServerId: serverId, projectRoot: root, confirmCommand: false
+    }), { root: projectRoot, serverId: server!.id })
+    expect(probe).toMatchObject({ status: 'healthy', toolSchemas: [{ name: 'context_read', estimatedTokens: expect.any(Number) }] })
+
+    await electronApp.evaluate(({ dialog }, root) => {
+      dialog.showOpenDialog = async () => ({ canceled: false, filePaths: [root] })
+    }, projectRoot)
+    await openTool('上下文检查', '上下文检查')
+    const activeTool = mainPage.locator('.workspace-tool-session:not([hidden])')
+    await activeTool.locator('.tool-header-actions').getByRole('button', { name: '选择项目', exact: true }).click()
+    await expect(activeTool.locator('.ai-context-estimate')).toBeVisible()
+    await expect(activeTool.locator('.ai-manager-metric')).toHaveCount(4)
+    await activeTool.getByLabel('Agent Profile').selectOption(profileId)
+    await expect(activeTool.getByLabel('context-e2e')).toBeChecked()
+    await expect(activeTool.locator('.ai-context-breakdown')).toContainText('规约')
+    await expect(activeTool.locator('.ai-context-breakdown')).toContainText('Skill 正文')
+    await expect(activeTool.locator('.ai-context-breakdown')).toContainText('Agent 记忆')
+    await expect(activeTool.locator('.ai-context-breakdown')).toContainText('MCP Schema')
+    await expect(activeTool.locator('.ai-context-top')).toContainText('context_read')
+    await expect(activeTool.locator('.ai-context-top')).toContainText(memoryContent)
+    await expect(activeTool.locator('.ai-context-top')).toContainText('AGENTS.md')
+  } finally {
+    if (memoryId) await mainPage.evaluate((id) => window.mootool.deleteAiMemory(id), memoryId).catch(() => undefined)
+    if (profileId) await mainPage.evaluate((id) => window.mootool.deleteAiAgentProfile(id), profileId).catch(() => undefined)
+    await new Promise<void>((resolve, reject) => mcpServer.close((error) => error ? reject(error) : resolve()))
+    await rm(projectRoot, { recursive: true, force: true })
+  }
 })
 
 test('formats JSON and completes history and Vault workflows', async () => {
@@ -290,9 +845,10 @@ test('formats JSON and completes history and Vault workflows', async () => {
 
   await mainPage.evaluate(() => window.mootool.updateSettings({ editor: { jsonFontSize: 22 } }))
   await expect(mainPage.locator('.json-editor')).toHaveCSS('font-size', '22px')
-  const jsonLineOffsets = await editorLineTopOffsets(mainPage, '.json-editor')
-  expect(jsonLineOffsets).toEqual(expect.arrayContaining([expect.any(Number)]))
-  expect(Math.max(...jsonLineOffsets)).toBeLessThan(1.5)
+  await expect.poll(async () => {
+    const offsets = await editorLineTopOffsets(mainPage, '.json-editor')
+    return offsets.length > 0 ? Math.max(...offsets) : Number.POSITIVE_INFINITY
+  }).toBeLessThan(1.5)
   await mainPage.evaluate(() => window.mootool.updateSettings({ editor: { jsonFontSize: 14 } }))
 
   await mainPage.getByRole('button', { name: '历史', exact: true }).click()
@@ -424,10 +980,11 @@ test('opens the settings window and synchronizes appearance changes', async () =
 
   await settingsPage.locator('.settings-nav__item').filter({ hasText: '布局与习惯' }).click()
   const jsonNavigationToggle = settingsPage.getByRole('checkbox', { name: 'JSON', exact: true })
+  const jsonBuiltInNavigation = mainPage.locator('.tool-nav > .tool-group:not(.tool-group--custom)').getByRole('button', { name: 'JSON', exact: true })
   await expect(jsonNavigationToggle).toBeChecked()
   await jsonNavigationToggle.uncheck()
   await expect.poll(() => settingsPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ layout: { hiddenNavigationToolIds: ['json'] } })
-  await expect(mainPage.getByRole('button', { name: 'JSON', exact: true })).toHaveCount(0)
+  await expect(jsonBuiltInNavigation).toHaveCount(0)
 
   await settingsPage.locator('.settings-nav__item').filter({ hasText: '运行环境' }).click()
   const runtimeGroup = settingsPage.locator('.runtime-settings-group')
@@ -455,7 +1012,7 @@ test('opens the settings window and synchronizes appearance changes', async () =
   }
 
   await settingsPage.locator('.settings-nav__item').filter({ hasText: '关于与更新' }).click()
-  await expect(settingsPage.locator('.settings-about')).toContainText('版本 1.0.0')
+  await expect(settingsPage.locator('.settings-about')).toContainText('版本 1.0.1')
   await settingsPage.getByRole('button', { name: '检查更新', exact: true }).click()
   await expect(settingsPage.locator('.settings-update-result')).toContainText('发现新版本 9.9.9')
   await expect(settingsPage.locator('.settings-update-result')).toContainText('MooTool Next Electron')
@@ -472,7 +1029,7 @@ test('opens the settings window and synchronizes appearance changes', async () =
   await expect(mainPage.locator('.command-result')).toContainText('JSON')
   await mainPage.getByRole('button', { name: '关闭搜索', exact: true }).click()
   await mainPage.evaluate(() => window.mootool.updateSettings({ layout: { hiddenNavigationToolIds: [] } }))
-  await expect(mainPage.getByRole('button', { name: 'JSON', exact: true })).toBeVisible()
+  await expect(jsonBuiltInNavigation).toBeVisible()
 
   await electronApp.evaluate(({ BrowserWindow }) => {
     BrowserWindow.getAllWindows().find((window) => !window.getParentWindow())?.webContents.send('update:state-changed', {
@@ -854,9 +1411,10 @@ test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () =>
   await expect(mainPage.locator('.quick-note-code-editor .cm-activeLineGutter')).toHaveCount(1)
   await mainPage.getByLabel('字号').fill('24')
   await expect(mainPage.locator('.quick-note-code-editor')).toHaveCSS('font-size', '24px')
-  const quickNoteLineOffsets = await editorLineTopOffsets(mainPage, '.quick-note-code-editor')
-  expect(quickNoteLineOffsets).toEqual(expect.arrayContaining([expect.any(Number)]))
-  expect(Math.max(...quickNoteLineOffsets)).toBeLessThan(1.5)
+  await expect.poll(async () => {
+    const offsets = await editorLineTopOffsets(mainPage, '.quick-note-code-editor')
+    return offsets.length > 0 ? Math.max(...offsets) : Number.POSITIVE_INFINITY
+  }).toBeLessThan(1.5)
   await mainPage.getByRole('button', { name: '查找与替换' }).click()
   await mainPage.getByRole('textbox', { name: '查找', exact: true }).fill('Vault')
   await expect(mainPage.locator('.quick-note-code-editor .cm-searchMatch')).toHaveCount(1)
@@ -874,7 +1432,9 @@ test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () =>
   await expect(editor).toContainText('E2E Markdown')
   await expect(editor).toContainText('Vault file')
   await expect(mainPage.locator('.quick-note-code-editor .cm-searchMatch')).toHaveCount(1)
-  await mainPage.getByLabel('语法').selectOption('text/markdown')
+  const syntaxSelect = mainPage.getByLabel('语法')
+  await syntaxSelect.selectOption('text/markdown')
+  await expect(syntaxSelect).toHaveValue('text/markdown')
   await mainPage.getByRole('button', { name: '保存', exact: true }).click()
   await expect.poll(() => mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick Note.txt'))).toEqual(
     expect.objectContaining({
