@@ -3,6 +3,14 @@ import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import type { CodeEditorViewState } from '@/shared/components/codeEditorViewState'
+import {
+  defaultFindReplaceOptions,
+  findAllMatches,
+  findNextMatch,
+  replaceAllMatches,
+  replaceCurrentMatch,
+  type FindReplaceOptions
+} from '@/shared/components/findReplace'
 import { useToolActivity } from '@/shared/components/ToolActivity'
 import { useToast } from '@/shared/feedback/ToastProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -48,6 +56,9 @@ type JsonUiState = {
   inspectorOpen: boolean
   findOpen: boolean
   findQuery: string
+  replaceText: string
+  findOptions: FindReplaceOptions
+  replacedCount: number
   historyOpen: boolean
   pathPickerOpen: boolean
   jsonPath: string
@@ -66,6 +77,9 @@ function createJsonState(wrap: boolean): JsonUiState {
   if (jsonSessionState) {
     return {
       ...jsonSessionState,
+      replaceText: jsonSessionState.replaceText ?? '',
+      findOptions: jsonSessionState.findOptions ?? defaultFindReplaceOptions,
+      replacedCount: jsonSessionState.replacedCount ?? 0,
       copyState: 'idle',
       formatOptions: { ...jsonSessionState.formatOptions }
     }
@@ -78,6 +92,9 @@ function createJsonState(wrap: boolean): JsonUiState {
     inspectorOpen: window.matchMedia('(min-width: 1321px)').matches,
     findOpen: false,
     findQuery: '',
+    replaceText: '',
+    findOptions: defaultFindReplaceOptions,
+    replacedCount: 0,
     historyOpen: false,
     pathPickerOpen: false,
     jsonPath: '$',
@@ -112,20 +129,24 @@ export function JsonTool() {
   const findIndexRef = useRef(jsonFindIndex)
   const [state, update] = useReducer(updateJsonState, settings.editor.softWrap, createJsonState)
   const status = useMemo(() => validateJson(state.content, t), [state.content, t])
-  const findMatches = useMemo(() => findAll(state.content, state.findQuery), [state.content, state.findQuery])
+  const findMatches = useMemo(
+    () => findAllMatches(state.content, state.findQuery, state.findOptions),
+    [state.content, state.findOptions, state.findQuery]
+  )
   const openVaultContent = useCallback((content: string) => update({ content, notice: '' }), [])
 
   useEffect(() => {
     if (!toolActive) return
     const handleFindShortcut = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'f') {
+      if (!(event.metaKey || event.ctrlKey)) return
+      if (event.key.toLowerCase() === 'f' || event.key.toLowerCase() === 'r') {
         event.preventDefault()
-        update({ findOpen: true })
+        openFindReplace()
       }
     }
     window.addEventListener('keydown', handleFindShortcut)
     return () => window.removeEventListener('keydown', handleFindShortcut)
-  }, [toolActive])
+  })
 
   useEffect(() => {
     const desktopLayout = window.matchMedia('(min-width: 1321px)')
@@ -210,15 +231,68 @@ export function JsonTool() {
     }
   }
 
-  function selectNextMatch(): void {
-    if (findMatches.length === 0) {
-      toast.info(t('json.notice.noMatches'))
+  function openFindReplace(): void {
+    const selection = editorRef.current?.getSelection()
+    const selected = selection && selection.end > selection.start
+      ? state.content.slice(selection.start, selection.end)
+      : undefined
+    findIndexRef.current = 0
+    jsonFindIndex = 0
+    update({
+      findOpen: true,
+      replacedCount: 0,
+      ...(selected !== undefined ? { findQuery: selected } : {})
+    })
+  }
+
+  function findAround(forward: boolean): void {
+    if (!state.findQuery) return
+    const selection = editorRef.current?.getSelection()
+    const fromIndex = forward
+      ? (selection?.end ?? 0)
+      : (selection?.start ?? 0)
+    const match = findNextMatch(state.content, state.findQuery, state.findOptions, fromIndex, forward)
+    if (!match) {
+      toast.info(t('findReplace.noMatches'))
       return
     }
-    const index = findMatches[findIndexRef.current % findMatches.length]
-    findIndexRef.current = (findIndexRef.current + 1) % findMatches.length
+    findIndexRef.current = forward ? match.end : match.start
     jsonFindIndex = findIndexRef.current
-    editorRef.current?.selectRange(index, index + state.findQuery.length)
+    editorRef.current?.selectRange(match.start, match.end)
+  }
+
+  function replaceCurrent(all: boolean): void {
+    if (!state.findQuery) return
+    if (all) {
+      const result = replaceAllMatches(state.content, state.findQuery, state.replaceText, state.findOptions)
+      if (result.count === 0) toast.info(t('findReplace.noMatches'))
+      else update({ content: result.content, replacedCount: result.count, notice: '', copyState: 'idle' })
+      return
+    }
+    const result = replaceCurrentMatch(
+      state.content,
+      state.findQuery,
+      state.replaceText,
+      state.findOptions,
+      editorRef.current?.getSelection() ?? null
+    )
+    if (!result.replaced) {
+      toast.info(t('findReplace.noMatches'))
+      return
+    }
+    update({ content: result.content, replacedCount: state.replacedCount + 1, notice: '', copyState: 'idle' })
+    findIndexRef.current = result.nextFrom
+    jsonFindIndex = result.nextFrom
+    const findQuery = state.findQuery
+    const findOptions = state.findOptions
+    requestAnimationFrame(() => {
+      const match = findNextMatch(result.content, findQuery, findOptions, result.nextFrom, true)
+      if (match) {
+        findIndexRef.current = match.end
+        jsonFindIndex = match.end
+        editorRef.current?.selectRange(match.start, match.end)
+      }
+    })
   }
 
   return (
@@ -245,21 +319,30 @@ export function JsonTool() {
             wrap={state.wrap}
             copied={state.copyState === 'copied'}
             findOpen={state.findOpen}
-            findQuery={state.findQuery}
-            findMatchCount={findMatches.length}
+            findText={state.findQuery}
+            replaceText={state.replaceText}
+            findOptions={state.findOptions}
+            matchCount={findMatches.length}
+            replacedCount={state.replacedCount}
             onFormat={() => { void runTransform((value) => formatJson(value, t, 2), t('json.notice.formatted'), t('json.action.format')) }}
             onCompress={() => { void runTransform((value) => compressJson(value, t), t('json.notice.compressed'), t('json.action.compress')) }}
             onToggleWrap={() => update({ wrap: !state.wrap })}
             onCopy={() => { void copyValue(state.content) }}
-            onToggleFind={() => update({ findOpen: !state.findOpen })}
+            onToggleFind={() => { if (state.findOpen) update({ findOpen: false }); else openFindReplace() }}
             onImport={() => { void importFile() }}
             onExport={() => { void exportFile() }}
             onHistory={() => update({ historyOpen: true })}
             onToggleInspector={() => update({ inspectorOpen: !state.inspectorOpen })}
             onClear={() => update({ content: '' })}
-            onFindQueryChange={(findQuery) => { findIndexRef.current = 0; jsonFindIndex = 0; update({ findQuery }) }}
-            onNextMatch={selectNextMatch}
-            onCloseFind={() => update({ findOpen: false })}
+            onFindTextChange={(findQuery) => { findIndexRef.current = 0; jsonFindIndex = 0; update({ findQuery, replacedCount: 0 }) }}
+            onReplaceTextChange={(replaceText) => update({ replaceText })}
+            onFindOptionsChange={(findOptions) => { findIndexRef.current = 0; jsonFindIndex = 0; update({ findOptions, replacedCount: 0 }) }}
+            onFind={() => findAround(true)}
+            onFindPrevious={() => findAround(false)}
+            onFindNext={() => findAround(true)}
+            onReplace={() => replaceCurrent(false)}
+            onReplaceAll={() => replaceCurrent(true)}
+            onCloseFind={() => update({ findOpen: false, replacedCount: 0 })}
           />
           <JsonCodeEditor
             ref={editorRef}
@@ -267,6 +350,7 @@ export function JsonTool() {
             wrap={state.wrap}
             fontSize={settings.editor.jsonFontSize}
             searchQuery={state.findOpen ? state.findQuery : ''}
+            searchOptions={state.findOptions}
             ariaLabel={t('json.editor.label')}
             initialViewState={jsonEditorViewState}
             onChange={(content) => update({ content, notice: '', copyState: 'idle' })}
@@ -321,10 +405,4 @@ export function JsonTool() {
       />
     </section>
   )
-}
-
-function findAll(content: string, query: string): number[] {
-  if (!query) return []
-  const escapedQuery = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-  return Array.from(content.matchAll(new RegExp(escapedQuery, 'giu')), (match) => match.index)
 }

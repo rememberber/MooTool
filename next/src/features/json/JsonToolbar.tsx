@@ -1,14 +1,19 @@
-import { Copy, Download, Eraser, FolderOpen, History, Minimize2, MoreHorizontal, Search, Sparkles, WrapText, X } from 'lucide-react'
+import { Copy, Download, Eraser, FolderOpen, History, Minimize2, MoreHorizontal, Search, Sparkles, WrapText } from 'lucide-react'
 import type { ReactNode } from 'react'
+import { FindReplaceBar } from '@/shared/components/FindReplaceBar'
 import { Tooltip } from '@/shared/components/Tooltip'
+import type { FindReplaceOptions } from '@/shared/components/findReplace'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 
 type JsonToolbarProps = {
   wrap: boolean
   copied: boolean
   findOpen: boolean
-  findQuery: string
-  findMatchCount: number
+  findText: string
+  replaceText: string
+  findOptions: FindReplaceOptions
+  matchCount: number
+  replacedCount: number
   onFormat: () => void
   onCompress: () => void
   onToggleWrap: () => void
@@ -19,8 +24,14 @@ type JsonToolbarProps = {
   onHistory: () => void
   onToggleInspector: () => void
   onClear: () => void
-  onFindQueryChange: (value: string) => void
-  onNextMatch: () => void
+  onFindTextChange: (value: string) => void
+  onReplaceTextChange: (value: string) => void
+  onFindOptionsChange: (options: FindReplaceOptions) => void
+  onFind: () => void
+  onFindPrevious: () => void
+  onFindNext: () => void
+  onReplace: () => void
+  onReplaceAll: () => void
   onCloseFind: () => void
 }
 
@@ -28,8 +39,11 @@ export function JsonToolbar({
   wrap,
   copied,
   findOpen,
-  findQuery,
-  findMatchCount,
+  findText,
+  replaceText,
+  findOptions,
+  matchCount,
+  replacedCount,
   onFormat,
   onCompress,
   onToggleWrap,
@@ -40,8 +54,14 @@ export function JsonToolbar({
   onHistory,
   onToggleInspector,
   onClear,
-  onFindQueryChange,
-  onNextMatch,
+  onFindTextChange,
+  onReplaceTextChange,
+  onFindOptionsChange,
+  onFind,
+  onFindPrevious,
+  onFindNext,
+  onReplace,
+  onReplaceAll,
   onCloseFind
 }: JsonToolbarProps) {
   const { t } = useI18n()
@@ -61,19 +81,23 @@ export function JsonToolbar({
         <IconAction className="toolbar-button--quiet" label={t('json.action.clear')} onClick={onClear}><Eraser size={14} /></IconAction>
       </div>
       {findOpen && (
-        <div className="json-findbar">
-          <Search size={14} />
-          <input
-            aria-label={t('json.find.placeholder')}
-            placeholder={t('json.find.placeholder')}
-            value={findQuery}
-            onChange={(event) => onFindQueryChange(event.target.value)}
-            onKeyDown={(event) => { if (event.key === 'Enter') onNextMatch() }}
-          />
-          <span>{t('json.find.matches', { count: String(findMatchCount) })}</span>
-          <Tooltip content={t('json.find.next')}><button className="icon-ghost" type="button" aria-label={t('json.find.next')} onClick={onNextMatch}><Search size={14} /></button></Tooltip>
-          <Tooltip content={t('json.find.close')}><button className="icon-ghost" type="button" aria-label={t('json.find.close')} onClick={onCloseFind}><X size={14} /></button></Tooltip>
-        </div>
+        <FindReplaceBar
+          className="json-findbar"
+          findText={findText}
+          replaceText={replaceText}
+          options={findOptions}
+          matchCount={matchCount}
+          replacedCount={replacedCount}
+          onFindTextChange={onFindTextChange}
+          onReplaceTextChange={onReplaceTextChange}
+          onOptionsChange={onFindOptionsChange}
+          onFind={onFind}
+          onFindPrevious={onFindPrevious}
+          onFindNext={onFindNext}
+          onReplace={onReplace}
+          onReplaceAll={onReplaceAll}
+          onClose={onCloseFind}
+        />
       )}
     </>
   )

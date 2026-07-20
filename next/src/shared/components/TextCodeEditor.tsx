@@ -19,6 +19,7 @@ import {
   readCodeEditorViewState,
   type CodeEditorViewState
 } from './codeEditorViewState'
+import { defaultFindReplaceOptions, type FindReplaceOptions } from './findReplace'
 
 export type TextCodeEditorHandle = {
   focus: () => void
@@ -52,6 +53,7 @@ export type TextCodeEditorProps = {
   fontSize?: number
   fontFamily?: string
   searchQuery?: string
+  searchOptions?: FindReplaceOptions
   decorations?: readonly TextCodeEditorDecoration[]
   initialViewState?: CodeEditorViewState
   onChange?: (value: string) => void
@@ -131,6 +133,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
     fontSize,
     fontFamily,
     searchQuery = '',
+    searchOptions = defaultFindReplaceOptions,
     decorations = emptyDecorations,
     initialViewState,
     onChange,
@@ -150,7 +153,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
   const onViewStateChangeRef = useRef(onViewStateChange)
   const localValueRef = useRef(value)
   const applyingExternalValueRef = useRef(false)
-  const initialConfigRef = useRef({ ariaLabel, id, testId, placeholder, readOnly, wrap, fontFamily, fontSize, searchQuery, initialViewState })
+  const initialConfigRef = useRef({ ariaLabel, id, testId, placeholder, readOnly, wrap, fontFamily, fontSize, searchQuery, searchOptions, initialViewState })
   const wrapCompartment = useCompartment()
   const attributesCompartment = useCompartment()
   const placeholderCompartment = useCompartment()
@@ -183,7 +186,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
           attributesCompartment.of(EditorView.contentAttributes.of(editorAttributes(initial.ariaLabel, initial.id, initial.testId))),
           placeholderCompartment.of(initial.placeholder ? editorPlaceholder(initial.placeholder) : []),
           readOnlyCompartment.of(readOnlyExtensions(initial.readOnly)),
-          searchCompartment.of(codeEditorSearchHighlight(initial.searchQuery)),
+          searchCompartment.of(codeEditorSearchHighlight(initial.searchQuery, initial.searchOptions)),
           metricsCompartment.of(editorMetrics(initial.fontFamily, initial.fontSize)),
           externalDecorations,
           EditorState.tabSize.of(4),
@@ -270,8 +273,8 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
   }, [readOnly, readOnlyCompartment])
 
   useEffect(() => {
-    viewRef.current?.dispatch({ effects: searchCompartment.reconfigure(codeEditorSearchHighlight(searchQuery)) })
-  }, [searchCompartment, searchQuery])
+    viewRef.current?.dispatch({ effects: searchCompartment.reconfigure(codeEditorSearchHighlight(searchQuery, searchOptions)) })
+  }, [searchCompartment, searchOptions, searchQuery])
 
   useEffect(() => {
     const view = viewRef.current

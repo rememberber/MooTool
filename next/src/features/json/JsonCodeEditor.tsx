@@ -19,9 +19,11 @@ import {
   readCodeEditorViewState,
   type CodeEditorViewState
 } from '@/shared/components/codeEditorViewState'
+import { defaultFindReplaceOptions, type FindReplaceOptions } from '@/shared/components/findReplace'
 
 export type JsonCodeEditorHandle = {
   focus: () => void
+  getSelection: () => { start: number; end: number }
   getViewState: () => CodeEditorViewState | null
   selectRange: (anchor: number, head: number) => void
 }
@@ -31,6 +33,7 @@ type JsonCodeEditorProps = {
   wrap: boolean
   fontSize: number
   searchQuery: string
+  searchOptions?: FindReplaceOptions
   ariaLabel: string
   initialViewState?: CodeEditorViewState
   onChange: (value: string) => void
@@ -62,7 +65,7 @@ function useCompartment(): Compartment {
 }
 
 export const JsonCodeEditor = forwardRef<JsonCodeEditorHandle, JsonCodeEditorProps>(function JsonCodeEditor(
-  { value, wrap, fontSize, searchQuery, ariaLabel, initialViewState, onChange, onViewStateChange },
+  { value, wrap, fontSize, searchQuery, searchOptions = defaultFindReplaceOptions, ariaLabel, initialViewState, onChange, onViewStateChange },
   ref
 ) {
   const hostRef = useRef<HTMLDivElement>(null)
@@ -71,7 +74,7 @@ export const JsonCodeEditor = forwardRef<JsonCodeEditorHandle, JsonCodeEditorPro
   const onViewStateChangeRef = useRef(onViewStateChange)
   const localValueRef = useRef(value)
   const applyingExternalValueRef = useRef(false)
-  const initialConfigRef = useRef({ wrap, ariaLabel, searchQuery, fontSize, initialViewState })
+  const initialConfigRef = useRef({ wrap, ariaLabel, searchQuery, searchOptions, fontSize, initialViewState })
   const wrapCompartment = useCompartment()
   const attributesCompartment = useCompartment()
   const languageCompartment = useCompartment()
@@ -102,7 +105,7 @@ export const JsonCodeEditor = forwardRef<JsonCodeEditorHandle, JsonCodeEditorPro
           languageCompartment.of(jsonLanguageExtensions(localValueRef.current.length <= richJsonDocumentLimit)),
           wrapCompartment.of(initialConfig.wrap ? EditorView.lineWrapping : []),
           attributesCompartment.of(EditorView.contentAttributes.of({ 'aria-label': initialConfig.ariaLabel, spellcheck: 'false' })),
-          searchCompartment.of(codeEditorSearchHighlight(initialConfig.searchQuery)),
+          searchCompartment.of(codeEditorSearchHighlight(initialConfig.searchQuery, initialConfig.searchOptions)),
           metricsCompartment.of(editorMetrics(initialConfig.fontSize)),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) {
@@ -167,9 +170,9 @@ export const JsonCodeEditor = forwardRef<JsonCodeEditorHandle, JsonCodeEditorPro
 
   useEffect(() => {
     viewRef.current?.dispatch({
-      effects: searchCompartment.reconfigure(codeEditorSearchHighlight(searchQuery))
+      effects: searchCompartment.reconfigure(codeEditorSearchHighlight(searchQuery, searchOptions))
     })
-  }, [searchCompartment, searchQuery])
+  }, [searchCompartment, searchOptions, searchQuery])
 
   useEffect(() => {
     const view = viewRef.current
@@ -180,6 +183,10 @@ export const JsonCodeEditor = forwardRef<JsonCodeEditorHandle, JsonCodeEditorPro
 
   useImperativeHandle(ref, () => ({
     focus: () => viewRef.current?.focus(),
+    getSelection: () => {
+      const selection = viewRef.current?.state.selection.main
+      return selection ? { start: selection.from, end: selection.to } : { start: 0, end: 0 }
+    },
     getViewState: () => viewRef.current ? readCodeEditorViewState(viewRef.current) : null,
     selectRange: (anchor, head) => {
       const view = viewRef.current
