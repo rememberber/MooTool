@@ -64,8 +64,10 @@ Windows • Linux • macOS
 
 ## 下载
 
-[https://github.com/rememberber/MooTool/releases](https://github.com/rememberber/MooTool/releases)  
-[https://gitee.com/zhoubochina/MooTool/releases](https://gitee.com/zhoubochina/MooTool/releases)
+- [MooTool Next Electron 1.0.0（推荐）](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.0.0)
+- [MooTool Java 1.7.9](https://github.com/rememberber/MooTool/releases/tag/v1.7.9)
+- [全部 GitHub Releases](https://github.com/rememberber/MooTool/releases)
+- [MooTool Java Gitee Releases](https://gitee.com/zhoubochina/MooTool/releases)
 
 ## 鼓励/赞赏
 
@@ -336,6 +338,9 @@ MooTool
 [iconfont](https://www.iconfont.cn/)
 
 ## 开发温馨提示
+
+多产品的版本号、Git tag、GitHub Release、`Latest` 标记及 CI 隔离规则统一见[多产品发布约定](RELEASE_CONVENTIONS.md)。
+
 最低JDK版本要求：**21**  
 在你开始开发之前, **请按下图设置IntelliJ IDEA**, 然后 **maven clean**:
 ![considerations](assets/material/gui_build.png)

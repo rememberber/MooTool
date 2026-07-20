@@ -9,19 +9,19 @@ from scripts.collect_release_assets import collect_assets, extra_label, normaliz
 
 class CollectReleaseAssetsTests(unittest.TestCase):
     def setUp(self) -> None:
-        self.project_root = Path("/Users/zhoubo/IdeaProjectsCE/MooTool")
+        self.project_root = Path(__file__).resolve().parents[1]
         self.project = parse_project_info(self.project_root / "pom.xml")
 
     def test_normalized_name_for_macos_installer(self) -> None:
-        actual = normalized_name("MooTool_1.7.0.pkg", self.project, "mac-apple-silicon")
-        self.assertEqual(actual, "MooTool-1.7.0-mac-apple-silicon.pkg")
+        actual = normalized_name(f"MooTool_{self.project.version}.pkg", self.project, "mac-apple-silicon")
+        self.assertEqual(actual, f"MooTool-{self.project.version}-mac-apple-silicon.pkg")
 
     def test_normalized_name_preserves_runnable_extra_label(self) -> None:
-        actual = normalized_name("MooTool-1.7.0-runnable.jar", self.project, "mac-intel")
-        self.assertEqual(actual, "MooTool-1.7.0-mac-intel-runnable.jar")
+        actual = normalized_name(f"MooTool-{self.project.version}-runnable.jar", self.project, "mac-intel")
+        self.assertEqual(actual, f"MooTool-{self.project.version}-mac-intel-runnable.jar")
 
     def test_extra_label_removes_platform_noise(self) -> None:
-        actual = extra_label("MooTool-1.7.0-mac.tar.gz", self.project)
+        actual = extra_label(f"MooTool-{self.project.version}-mac.tar.gz", self.project)
         self.assertEqual(actual, "")
 
     def test_collect_assets_renames_supported_files(self) -> None:
@@ -30,18 +30,17 @@ class CollectReleaseAssetsTests(unittest.TestCase):
             source = root / "source"
             output = root / "out"
             source.mkdir()
-            (source / "MooTool_1.7.0.dmg").write_text("dmg", encoding="utf-8")
-            (source / "MooTool-1.7.0-runnable.jar").write_text("jar", encoding="utf-8")
+            (source / f"MooTool_{self.project.version}.dmg").write_text("dmg", encoding="utf-8")
+            (source / f"MooTool-{self.project.version}-runnable.jar").write_text("jar", encoding="utf-8")
             collected = collect_assets(self.project_root, source, output, "mac-intel")
             self.assertCountEqual([item.destination.name for item in collected], [
-                "MooTool-1.7.0-mac-intel.dmg",
-                "MooTool-1.7.0-mac-intel-runnable.jar",
+                f"MooTool-{self.project.version}-mac-intel.dmg",
+                f"MooTool-{self.project.version}-mac-intel-runnable.jar",
             ])
 
 
 if __name__ == "__main__":
     unittest.main()
-
 
 
 

@@ -7,10 +7,12 @@ import {
   useRef,
   useState,
   type CSSProperties,
+  type FocusEvent,
   type ReactElement,
   type ReactNode
 } from 'react'
 import { createPortal } from 'react-dom'
+import { useToolActivity } from './ToolActivity'
 
 type TooltipSide = 'top' | 'right' | 'bottom' | 'left'
 
@@ -24,6 +26,7 @@ type TooltipProps = {
 const tooltipGap = 8
 
 export function Tooltip({ children, content, side = 'top', delay = 400 }: TooltipProps) {
+  const toolActive = useToolActivity()
   const id = useId()
   const triggerRef = useRef<HTMLSpanElement>(null)
   const timerRef = useRef<number | null>(null)
@@ -56,6 +59,7 @@ export function Tooltip({ children, content, side = 'top', delay = 400 }: Toolti
   }, [side])
 
   function showTooltip(): void {
+    if (!toolActive) return
     clearTimer()
     timerRef.current = window.setTimeout(() => {
       updatePosition()
@@ -64,10 +68,16 @@ export function Tooltip({ children, content, side = 'top', delay = 400 }: Toolti
     }, delay)
   }
 
-  function hideTooltip(): void {
+  function showFocusTooltip(event: FocusEvent<HTMLSpanElement>): void {
+    if (event.target instanceof HTMLElement && event.target.matches(':focus-visible')) {
+      showTooltip()
+    }
+  }
+
+  const hideTooltip = useCallback((): void => {
     clearTimer()
     setOpen(false)
-  }
+  }, [clearTimer])
 
   const repositionTooltip = useEffectEvent(updatePosition)
 
@@ -87,6 +97,15 @@ export function Tooltip({ children, content, side = 'top', delay = 400 }: Toolti
 
   useEffect(() => () => clearTimer(), [clearTimer])
 
+  useEffect(() => {
+    window.addEventListener('blur', hideTooltip)
+    return () => window.removeEventListener('blur', hideTooltip)
+  }, [hideTooltip])
+
+  useEffect(() => {
+    if (!toolActive) hideTooltip()
+  }, [hideTooltip, toolActive])
+
   const describedBy = [children.props['aria-describedby'], id].filter(Boolean).join(' ')
 
   return (
@@ -95,11 +114,11 @@ export function Tooltip({ children, content, side = 'top', delay = 400 }: Toolti
       ref={triggerRef}
       onMouseEnter={showTooltip}
       onMouseLeave={hideTooltip}
-      onFocusCapture={showTooltip}
+      onFocusCapture={showFocusTooltip}
       onBlurCapture={hideTooltip}
     >
       {cloneElement(children, { 'aria-describedby': describedBy })}
-      {open && createPortal(
+      {open && toolActive && createPortal(
         <span className={`tooltip tooltip--${side}`} id={id} role="tooltip" style={position}>
           {content}
         </span>,

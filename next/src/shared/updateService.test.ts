@@ -37,8 +37,8 @@ describe('UpdateService', () => {
       target: { platform: 'darwin', architecture: 'arm64' },
       download: { fileName: 'MooTool-arm64.dmg', packageType: 'dmg' }
     })
-    expect(result.releaseNotes).toContain('1.7.9\nPatch\nfixed')
-    expect(result.releaseNotes).toContain('1.8.0\nNext\nrewritten')
+    expect(result.releaseNotes).toContain('1.7.9 — Patch\nfixed')
+    expect(result.releaseNotes).toContain('1.8.0 — Next\nrewritten')
     expect(result.releaseNotes).not.toContain('Current')
     expect(result.releaseNotes).not.toContain('Java only')
   })
@@ -54,6 +54,31 @@ describe('UpdateService', () => {
     expect(result.latestVersion).toBe('1.7.8')
     expect(result.releaseNotes).toBe('')
     expect(result.download).toBeNull()
+  })
+
+  it('keeps stable clients on stable releases and excludes prerelease notes', async () => {
+    const result = await new UpdateService('https://feed.test', macArmIdentity, async () => response(manifest([
+      release('1.0.0', 'Current stable', ''),
+      release('1.1.0', 'Next stable', 'stable changes'),
+      release('2.0.0-beta.1', 'Future beta', 'beta changes')
+    ]))).check('1.0.0')
+
+    expect(result.status).toBe('available')
+    expect(result.latestVersion).toBe('1.1.0')
+    expect(result.releaseNotes).toContain('stable changes')
+    expect(result.releaseNotes).not.toContain('beta changes')
+  })
+
+  it('allows prerelease clients to advance through prereleases and into stable', async () => {
+    const result = await new UpdateService('https://feed.test', macArmIdentity, async () => response(manifest([
+      release('2.0.0-beta.1', 'Current beta', ''),
+      release('2.0.0-beta.2', 'Next beta', 'beta fixes'),
+      release('2.0.0', 'Stable', 'stable release')
+    ]))).check('2.0.0-beta.1')
+
+    expect(result.latestVersion).toBe('2.0.0')
+    expect(result.releaseNotes).toContain('beta fixes')
+    expect(result.releaseNotes).toContain('stable release')
   })
 
   it('normalizes architecture aliases and prefers the Windows installer', async () => {
@@ -72,6 +97,22 @@ describe('UpdateService', () => {
     expect(result.download?.fileName).toBe('MooTool-setup.exe')
   })
 
+  it('prefers the installed Linux package type', async () => {
+    const result = await new UpdateService('https://feed.test', {
+      productId: 'next-electron',
+      platform: 'linux',
+      architecture: 'x64',
+      packageType: 'deb'
+    }, async () => response(manifest([
+      release('2.0.0', 'Linux', '', [
+        asset('linux', 'x64', 'appimage', 'MooTool.AppImage', 10),
+        asset('linux', 'x64', 'deb', 'MooTool.deb', 20)
+      ])
+    ]))).check('1.0.0')
+
+    expect(result.download?.fileName).toBe('MooTool.deb')
+  })
+
   it('returns the product release page when no package matches the device', async () => {
     const result = await new UpdateService('https://feed.test', {
       productId: 'next-electron',
@@ -86,16 +127,22 @@ describe('UpdateService', () => {
     expect(result.releaseUrl).toBe('https://github.com/rememberber/MooTool/releases/tag/next-electron-v2.0.0')
   })
 
-  it('accepts the repository update manifest for the current Electron channel', async () => {
-    const raw = await readFile(new URL('../../../update-manifest.json', import.meta.url), 'utf8')
-    const result = await new UpdateService('https://feed.test', macArmIdentity, async () => ({
-      ok: true,
-      status: 200,
-      text: async () => raw
-    })).check('1.7.7')
+  it('does not offer a ZIP as a macOS update', async () => {
+    const result = await new UpdateService('https://feed.test', macArmIdentity, async () => response(manifest([
+      release('2.0.0', 'ZIP only', '', [asset('darwin', 'arm64', 'zip', 'MooTool.zip', 1)])
+    ]))).check('1.0.0')
 
-    expect(result.latestVersion).toBe('1.7.8')
-    expect(result.download?.fileName).toBe('MooTool-Next-Electron-1.7.8-mac-arm64.dmg')
+    expect(result.status).toBe('available')
+    expect(result.download).toBeNull()
+  })
+
+  it('keeps the repository manifest structurally ready before or after release publication', async () => {
+    const raw = await readFile(new URL('../../../update-manifest.json', import.meta.url), 'utf8')
+    const repositoryManifest = JSON.parse(raw) as Record<string, unknown>
+    const products = repositoryManifest.products as Record<string, Record<string, unknown>>
+    expect(repositoryManifest.schemaVersion).toBe(1)
+    expect(products['next-electron'].status).toBe('active')
+    expect(products['next-electron'].releases).toBeInstanceOf(Array)
   })
 
   it('rejects invalid, insecure, oversized, and unsuccessful responses', async () => {
@@ -106,6 +153,19 @@ describe('UpdateService', () => {
     await expect(new UpdateService('', macArmIdentity, async () => response(manifest([
       release('2.0.0', 'Unsafe', '', [{ ...asset('darwin', 'arm64', 'dmg', 'Unsafe.dmg', 1), url: 'http://example.test/Unsafe.dmg' }])
     ]))).check('1.0.0')).rejects.toThrow('must use HTTPS')
+    await expect(new UpdateService('', macArmIdentity, async () => response(manifest([
+      release('2.0.0', 'Bad checksum', '', [{ ...asset('darwin', 'arm64', 'dmg', 'Bad.dmg', 1), sha512: 'invalid' }])
+    ]))).check('1.0.0')).rejects.toThrow('Invalid update asset SHA-512')
+    await expect(new UpdateService('', macArmIdentity, async () => response(manifest([
+      release('2.0.0', 'Bad size', '', [{ ...asset('darwin', 'arm64', 'dmg', 'Bad.dmg', 1), size: 0 }])
+    ]))).check('1.0.0')).rejects.toThrow('Invalid update asset size')
+    await expect(new UpdateService('', macArmIdentity, async () => response(manifest([
+      release('1.0.0', 'Duplicate', ''),
+      release('1.0.0', 'Duplicate', '')
+    ]))).check('1.0.0')).rejects.toThrow('duplicate release versions')
+    await expect(new UpdateService('', macArmIdentity, async () => response(manifest([
+      { ...release('2.0.0-beta.1', 'Beta', ''), prerelease: false }
+    ]))).check('1.0.0')).rejects.toThrow('Prerelease flag does not match')
   })
 })
 
@@ -113,8 +173,11 @@ describe('compareVersions', () => {
   it('compares semantic versions and prereleases', () => {
     expect(compareVersions('1.7.9', '1.7.8')).toBe(1)
     expect(compareVersions('2.0.0-beta.2', '2.0.0-beta.1')).toBe(1)
+    expect(compareVersions('2.0.0-beta.10', '2.0.0-beta.2')).toBe(1)
     expect(compareVersions('2.0.0', '2.0.0-beta.2')).toBe(1)
+    expect(compareVersions('2.0.0+build.2', '2.0.0+build.1')).toBe(0)
     expect(compareVersions('v1.7', '1.7.0')).toBe(0)
+    expect(() => compareVersions('2.0.0-beta.01', '2.0.0-beta.1')).toThrow('Invalid version')
   })
 })
 
@@ -132,11 +195,12 @@ function manifest(releases: unknown[], additionalProducts: Record<string, unknow
   }
 }
 
-function release(version: string, title: string, notes: string, assets: unknown[] = []): unknown {
+function release(version: string, title: string, notes: string, assets: unknown[] = []): Record<string, unknown> {
   return {
     version,
     title,
     notes,
+    prerelease: version.includes('-'),
     releaseUrl: `https://github.com/rememberber/MooTool/releases/tag/next-electron-v${version.replace(/^v/, '')}`,
     assets
   }
@@ -149,7 +213,9 @@ function asset(platform: string, architecture: string, packageType: string, file
     packageType,
     priority,
     fileName,
-    url: `https://downloads.example.test/${fileName}`
+    url: `https://downloads.example.test/${fileName}`,
+    sha512: 'AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==',
+    size: 100
   }
 }
 

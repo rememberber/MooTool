@@ -14,26 +14,86 @@ on:
           - mac-apple-silicon
           - windows-x64
           - linux-x64
+  push:
+    tags:
+      - 'next-electron-v*'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
+  prepare:
+    name: Validate Electron release metadata
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      title: ${{ steps.release.outputs.title }}
+      prerelease: ${{ steps.release.outputs.prerelease }}
+      make_latest: ${{ steps.release.outputs.make_latest }}
+      notes_path: ${{ steps.release.outputs.notes_path }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: next/package-lock.json
+
+      - name: Install Electron dependencies
+        working-directory: next
+        run: npm ci
+
+      - name: Test Electron application
+        working-directory: next
+        run: npm run check
+
+      - name: Validate tag, package version, and release notes
+        id: release
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            tag="${{ github.ref_name }}"
+          else
+            version="$(python -c 'import json; print(json.load(open("next/package.json"))["version"])')"
+            tag="next-electron-v${version}"
+          fi
+          python -u scripts/manage_releases.py validate-electron \
+            --project-root . \
+            --tag "$tag" \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Test release tooling
+        run: python -m unittest scripts.test_manage_releases
+
+      - name: Report unsigned release mode
+        if: github.event_name == 'push'
+        run: echo "::warning::This workflow intentionally publishes unsigned Electron packages. macOS updates download a verified DMG in the background, then require manual installation."
+
   package:
     name: ${{ matrix.label }}
+    needs: prepare
     strategy:
       fail-fast: false
       matrix:
-        target: ${{ fromJSON(inputs.target == 'all' && '["mac-apple-silicon","mac-intel","windows-x64","linux-x64"]' || format('["{0}"]', inputs.target)) }}
+        target: ${{ fromJSON(github.event_name == 'workflow_dispatch' && inputs.target != 'all' && format('["{0}"]', inputs.target) || '["mac-apple-silicon","mac-intel","windows-x64","linux-x64"]') }}
         include:
           - target: mac-apple-silicon
             label: macOS Apple Silicon
-            os: macos-14
-            command: npx electron-builder --mac dmg zip --arm64 --publish never
+            os: macos-26
+            command: npx electron-builder --mac dmg --arm64 --publish never
           - target: mac-intel
             label: macOS Intel
-            os: macos-13
-            command: npx electron-builder --mac dmg zip --x64 --publish never
+            os: macos-26-intel
+            command: npx electron-builder --mac dmg --x64 --publish never
           - target: windows-x64
             label: Windows x64
             os: windows-latest
@@ -58,21 +118,125 @@ jobs:
           cache: npm
           cache-dependency-path: next/package-lock.json
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
       - name: Install dependencies
         run: npm ci
 
-      - name: Test and build
-        run: npm run check
+      - name: Build
+        run: npm run build
 
       - name: Package
         run: ${{ matrix.command }}
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
 
-      - name: Upload installers
+      - name: Stage installers and architecture-specific update metadata
+        shell: bash
+        run: |
+          python -u ../scripts/manage_releases.py stage-electron \
+            --source-dir dist \
+            --output-dir release-assets \
+            --target "${{ matrix.target }}" \
+            --version "${{ needs.prepare.outputs.version }}"
+
+      - name: Upload release assets
         uses: actions/upload-artifact@v4
         with:
           name: mootool-next-electron-${{ matrix.target }}
-          path: next/dist/*
+          path: next/release-assets/*
           if-no-files-found: error
           retention-days: 14
+
+  release:
+    name: Publish MooTool Next Electron Release
+    if: github.event_name == 'push'
+    needs:
+      - prepare
+      - package
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Download packaged assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: mootool-next-electron-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Validate complete release assets
+        run: >-
+          python -u scripts/manage_releases.py validate-electron-assets
+          --project-root .
+          --assets-dir release-assets
+          --tag "${{ github.ref_name }}"
+
+      - name: Publish release and assets
+        uses: softprops/action-gh-release@v3
+        with:
+          name: ${{ needs.prepare.outputs.title }}
+          body_path: ${{ needs.prepare.outputs.notes_path }}
+          prerelease: ${{ needs.prepare.outputs.prerelease }}
+          make_latest: ${{ needs.prepare.outputs.make_latest }}
+          fail_on_unmatched_files: true
+          files: release-assets/*
+
+  publish-update-manifest:
+    name: Update next-electron manifest on master
+    if: github.event_name == 'push'
+    needs:
+      - prepare
+      - release
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout master
+        uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Download packaged assets
+        uses: actions/download-artifact@v4
+        with:
+          pattern: mootool-next-electron-*
+          path: release-assets
+          merge-multiple: true
+
+      - name: Update Electron release in product manifest
+        run: >-
+          python -u scripts/manage_releases.py update-electron-manifest
+          --project-root .
+          --manifest update-manifest.json
+          --assets-dir release-assets
+          --tag "${{ github.ref_name }}"
+
+      - name: Commit and push update manifest
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add update-manifest.json
+          if git diff --staged --quiet; then
+            echo "update-manifest.json is already up to date"
+            exit 0
+          fi
+          git commit -m "chore: publish next-electron ${{ needs.prepare.outputs.version }} update manifest"
+          git pull --rebase origin master
+          git push origin master

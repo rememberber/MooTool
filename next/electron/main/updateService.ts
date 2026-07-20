@@ -14,6 +14,7 @@ type ProductRelease = {
   version: string
   title: string
   notes: string
+  prerelease: boolean
   releaseUrl: string
   assets: UpdateAsset[]
 }
@@ -31,6 +32,7 @@ type UpdateAsset = UpdateDownload & {
 
 export type UpdateClientIdentity = UpdateTarget & {
   productId: UpdateProductId
+  packageType?: string
 }
 
 type UpdateFetch = (url: string, init: RequestInit) => Promise<Pick<Response, 'ok' | 'status' | 'text'>>
@@ -60,7 +62,10 @@ export class UpdateService {
     if (!raw || raw.length > 2 * 1024 * 1024) throw new Error('Invalid update response')
     const product = parseManifest(raw, this.identity.productId)
     const normalizedCurrent = normalizeVersion(currentVersion)
-    const latestRelease = product.releases.reduce((latest, release) => (
+    const allowPrerelease = parseVersion(normalizedCurrent).prerelease.length > 0
+    const eligibleReleases = product.releases.filter((release) => allowPrerelease || !release.prerelease)
+    if (eligibleReleases.length === 0) throw new Error(`Update product has no eligible releases: ${this.identity.productId}`)
+    const latestRelease = eligibleReleases.reduce((latest, release) => (
       compareVersions(release.version, latest.version) > 0 ? release : latest
     ))
     const normalizedLatest = latestRelease.version
@@ -72,7 +77,7 @@ export class UpdateService {
       currentVersion: normalizedCurrent,
       latestVersion: normalizedLatest,
       releaseUrl: latestRelease.releaseUrl,
-      releaseNotes: available ? releaseNotesAfter(product.releases, normalizedCurrent) : '',
+      releaseNotes: available ? releaseNotesAfter(eligibleReleases, normalizedCurrent) : '',
       target: {
         platform: this.identity.platform,
         architecture: normalizeArchitecture(this.identity.architecture)
@@ -89,10 +94,22 @@ export function compareVersions(left: string, right: string): number {
   for (let index = 0; index < 3; index += 1) {
     if (a.numbers[index] !== b.numbers[index]) return a.numbers[index] > b.numbers[index] ? 1 : -1
   }
-  if (!a.prerelease && !b.prerelease) return 0
-  if (!a.prerelease) return 1
-  if (!b.prerelease) return -1
-  return a.prerelease.localeCompare(b.prerelease, undefined, { numeric: true })
+  if (a.prerelease.length === 0 && b.prerelease.length === 0) return 0
+  if (a.prerelease.length === 0) return 1
+  if (b.prerelease.length === 0) return -1
+  for (let index = 0; index < Math.max(a.prerelease.length, b.prerelease.length); index += 1) {
+    const leftPart = a.prerelease[index]
+    const rightPart = b.prerelease[index]
+    if (leftPart === undefined) return -1
+    if (rightPart === undefined) return 1
+    if (leftPart === rightPart) continue
+    const leftNumeric = /^\d+$/.test(leftPart)
+    const rightNumeric = /^\d+$/.test(rightPart)
+    if (leftNumeric && rightNumeric) return Number(leftPart) > Number(rightPart) ? 1 : -1
+    if (leftNumeric !== rightNumeric) return leftNumeric ? -1 : 1
+    return leftPart > rightPart ? 1 : -1
+  }
+  return 0
 }
 
 function parseManifest(raw: string, productId: UpdateProductId): UpdateProduct {
@@ -111,6 +128,9 @@ function parseManifest(raw: string, productId: UpdateProductId): UpdateProduct {
   }
   const releases = productValue.releases.map(parseRelease)
   if (releases.length === 0) throw new Error(`Update product has no releases: ${productId}`)
+  if (new Set(releases.map((release) => release.version)).size !== releases.length) {
+    throw new Error(`Update product has duplicate release versions: ${productId}`)
+  }
   return { displayName: productValue.displayName.slice(0, 120), releases }
 }
 
@@ -118,10 +138,19 @@ function parseRelease(value: unknown): ProductRelease {
   if (!isRecord(value) || typeof value.version !== 'string' || typeof value.releaseUrl !== 'string') {
     throw new Error('Invalid release in update manifest')
   }
+  const version = normalizeVersion(value.version)
+  const prerelease = parseVersion(version).prerelease.length > 0
+  if (value.prerelease !== undefined && typeof value.prerelease !== 'boolean') {
+    throw new Error(`Invalid prerelease flag for version ${version}`)
+  }
+  if (typeof value.prerelease === 'boolean' && value.prerelease !== prerelease) {
+    throw new Error(`Prerelease flag does not match version ${version}`)
+  }
   return {
-    version: normalizeVersion(value.version),
+    version,
     title: typeof value.title === 'string' ? value.title.slice(0, 300) : '',
     notes: typeof value.notes === 'string' ? value.notes.slice(0, 5000) : '',
+    prerelease,
     releaseUrl: normalizeHttpsUrl(value.releaseUrl, 'release'),
     assets: Array.isArray(value.assets) ? value.assets.map(parseAsset) : []
   }
@@ -133,47 +162,74 @@ function parseAsset(value: unknown): UpdateAsset {
     || typeof value.architecture !== 'string'
     || typeof value.packageType !== 'string'
     || typeof value.fileName !== 'string'
-    || typeof value.url !== 'string') {
+    || typeof value.url !== 'string'
+    || typeof value.sha512 !== 'string'
+    || typeof value.size !== 'number') {
     throw new Error('Invalid asset in update manifest')
   }
   const fileName = value.fileName.trim()
   if (!fileName || fileName.length > 240 || /[/\\]/.test(fileName)) throw new Error('Invalid update asset file name')
+  const sha512 = value.sha512.trim()
+  if (!/^[A-Za-z0-9+/]{86}==$/.test(sha512)) throw new Error('Invalid update asset SHA-512')
+  if (!Number.isSafeInteger(value.size) || value.size <= 0) throw new Error('Invalid update asset size')
   return {
     platform: value.platform.trim().toLowerCase(),
     architecture: normalizeArchitecture(value.architecture),
     packageType: value.packageType.trim().toLowerCase().slice(0, 40),
     fileName,
     url: normalizeHttpsUrl(value.url, 'asset'),
+    sha512,
+    size: value.size,
     priority: typeof value.priority === 'number' && Number.isSafeInteger(value.priority) ? value.priority : 100
   }
 }
 
-function selectUpdateAsset(assets: UpdateAsset[], target: UpdateTarget): UpdateDownload | null {
+function selectUpdateAsset(assets: UpdateAsset[], target: UpdateTarget & { packageType?: string }): UpdateDownload | null {
   const platform = target.platform.trim().toLowerCase()
   const architecture = normalizeArchitecture(target.architecture)
+  const packageType = target.packageType?.trim().toLowerCase()
   const match = assets
-    .filter((asset) => asset.platform === platform && (asset.architecture === architecture || asset.architecture === 'universal'))
+    .filter((asset) => asset.platform === platform
+      && (asset.architecture === architecture || asset.architecture === 'universal')
+      && (platform !== 'darwin' || asset.packageType === 'dmg'))
     .sort((left, right) => {
       const architectureOrder = Number(left.architecture !== architecture) - Number(right.architecture !== architecture)
       if (architectureOrder !== 0) return architectureOrder
+      const packageTypeOrder = Number(Boolean(packageType) && left.packageType !== packageType)
+        - Number(Boolean(packageType) && right.packageType !== packageType)
+      if (packageTypeOrder !== 0) return packageTypeOrder
       if (left.priority !== right.priority) return left.priority - right.priority
       return packagePreference(platform, left.packageType) - packagePreference(platform, right.packageType)
     })[0]
-  return match ? { fileName: match.fileName, packageType: match.packageType, url: match.url } : null
+  return match
+    ? { fileName: match.fileName, packageType: match.packageType, url: match.url, sha512: match.sha512, size: match.size }
+    : null
 }
 
 function releaseNotesAfter(releases: ProductRelease[], currentVersion: string): string {
-  return releases
+  const sections = releases
     .filter((release) => compareVersions(release.version, currentVersion) > 0)
-    .sort((left, right) => compareVersions(left.version, right.version))
-    .map((release) => [release.version, release.title, release.notes].filter(Boolean).join('\n'))
-    .join('\n\n')
-    .slice(0, 12_000)
+    .sort((left, right) => compareVersions(right.version, left.version))
+    .map((release) => {
+      const heading = release.title.includes(release.version)
+        ? release.title
+        : [release.version, release.title].filter(Boolean).join(' — ')
+      return [heading, release.notes].filter(Boolean).join('\n')
+    })
+  const selected: string[] = []
+  let length = 0
+  for (const section of sections) {
+    const addedLength = section.length + (selected.length > 0 ? 2 : 0)
+    if (selected.length > 0 && length + addedLength > 12_000) break
+    selected.unshift(section.slice(0, 12_000))
+    length += addedLength
+  }
+  return selected.join('\n\n')
 }
 
 function packagePreference(platform: string, packageType: string): number {
   const preferences: Record<string, string[]> = {
-    darwin: ['dmg', 'pkg', 'zip'],
+    darwin: ['dmg', 'pkg'],
     win32: ['nsis', 'msi', 'portable', 'zip'],
     linux: ['appimage', 'deb', 'rpm', 'tar.gz']
   }
@@ -209,11 +265,13 @@ function normalizeVersion(value: string): string {
   return normalized
 }
 
-function parseVersion(value: string): { numbers: [number, number, number]; prerelease: string } {
-  const match = /^(\d+)(?:\.(\d+))?(?:\.(\d+))?(?:-([0-9A-Za-z.-]+))?$/.exec(value.trim().replace(/^v/i, ''))
+function parseVersion(value: string): { numbers: [number, number, number]; prerelease: string[] } {
+  const match = /^(0|[1-9]\d*)(?:\.(0|[1-9]\d*))?(?:\.(0|[1-9]\d*))?(?:-([0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*))?(?:\+[0-9A-Za-z-]+(?:\.[0-9A-Za-z-]+)*)?$/.exec(value.trim().replace(/^v/i, ''))
   if (!match) throw new Error(`Invalid version: ${value}`)
+  const prerelease = match[4]?.split('.') ?? []
+  if (prerelease.some((part) => /^0\d+$/.test(part))) throw new Error(`Invalid version: ${value}`)
   return {
     numbers: [Number(match[1]), Number(match[2] ?? 0), Number(match[3] ?? 0)],
-    prerelease: match[4] ?? ''
+    prerelease
   }
 }

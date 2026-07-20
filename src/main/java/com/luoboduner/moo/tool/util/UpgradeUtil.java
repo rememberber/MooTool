@@ -20,6 +20,8 @@ import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
 import javax.swing.*;
 import java.net.URL;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 
@@ -45,6 +47,32 @@ public class UpgradeUtil {
         return Integer.parseInt(index);
     }
 
+    static List<VersionSummary.Version> versionChangesAfter(VersionSummary versionSummary, String currentVersion) {
+        Map<String, String> versionIndexMap = JSON.parseObject(versionSummary.getVersionIndex(), Map.class);
+        int currentVersionIndex = parseVersionIndex(versionIndexMap, currentVersion);
+        int latestVersionIndex = parseVersionIndex(versionIndexMap, versionSummary.getCurrentVersion());
+        if (latestVersionIndex <= currentVersionIndex) {
+            return List.of();
+        }
+
+        List<VersionSummary.Version> versionDetailList = versionSummary.getVersionDetailList();
+        if (versionDetailList == null) {
+            throw new IllegalStateException("版本明细列表缺失");
+        }
+        List<VersionSummary.Version> changes = new ArrayList<>();
+        for (VersionSummary.Version version : versionDetailList) {
+            int versionIndex = parseVersionIndex(versionIndexMap, version.getVersion());
+            if (versionIndex > currentVersionIndex && versionIndex <= latestVersionIndex) {
+                changes.add(version);
+            }
+        }
+        if (changes.size() != latestVersionIndex - currentVersionIndex) {
+            throw new IllegalStateException("版本更新说明不完整：" + currentVersion + " -> " + versionSummary.getCurrentVersion());
+        }
+        changes.sort(Comparator.comparingInt(version -> parseVersionIndex(versionIndexMap, version.getVersion())));
+        return changes;
+    }
+
     public static void checkUpdate(boolean initCheck) {
         // 当前版本
         String currentVersion = UiConsts.APP_VERSION;
@@ -61,30 +89,22 @@ public class UpgradeUtil {
         versionSummaryJsonContent = versionSummaryJsonContent.replace("\n", "");
 
         VersionSummary versionSummary = JSON.parseObject(versionSummaryJsonContent, VersionSummary.class);
-        // 最新版本
         String newVersion = versionSummary.getCurrentVersion();
-        String versionIndexJsonContent = versionSummary.getVersionIndex();
-        // 版本索引
-        Map<String, String> versionIndexMap = JSON.parseObject(versionIndexJsonContent, Map.class);
-        // 版本明细列表
-        List<VersionSummary.Version> versionDetailList = versionSummary.getVersionDetailList();
+        List<VersionSummary.Version> versionChanges;
+        try {
+            versionChanges = versionChangesAfter(versionSummary, currentVersion);
+        } catch (IllegalStateException | NumberFormatException e) {
+            log.error("检查更新时版本配置异常", e);
+            return;
+        }
 
-        if (newVersion.compareTo(currentVersion) > 0) {
-            int currentVersionIndex;
-            try {
-                currentVersionIndex = parseVersionIndex(versionIndexMap, currentVersion);
-            } catch (IllegalStateException e) {
-                log.error("检查更新时版本索引配置异常", e);
-                return;
-            }
+        if (!versionChanges.isEmpty()) {
             // 当前版本索引
             // 版本更新日志：
             StringBuilder versionLogBuilder = new StringBuilder("<h1>")
                     .append(I18n.get("msg.upgradeNewVersion"))
                     .append("</h1>");
-            VersionSummary.Version version;
-            for (int i = currentVersionIndex + 1; i < versionDetailList.size(); i++) {
-                version = versionDetailList.get(i);
+            for (VersionSummary.Version version : versionChanges) {
                 versionLogBuilder.append("<h2>").append(version.getVersion()).append("</h2>");
                 versionLogBuilder.append("<b>").append(version.getTitle()).append("</b><br/>");
                 versionLogBuilder.append("<p>").append(version.getLog().replaceAll("\\n", "</p><p>")).append("</p>");
@@ -114,7 +134,22 @@ public class UpgradeUtil {
         // 取得升级前版本
         String beforeVersion = App.config.getBeforeVersion();
 
-        if (currentVersion.compareTo(beforeVersion) <= 0) {
+        String versionSummaryJsonContent = FileUtil.readString(UiConsts.class.getResource("/version_summary.json"), CharsetUtil.UTF_8);
+        versionSummaryJsonContent = versionSummaryJsonContent.replace("\n", "");
+        VersionSummary versionSummary = JSON.parseObject(versionSummaryJsonContent, VersionSummary.class);
+        String versionIndex = versionSummary.getVersionIndex();
+        Map<String, String> versionIndexMap = JSON.parseObject(versionIndex, Map.class);
+        int currentVersionIndex;
+        int beforeVersionIndex;
+        try {
+            currentVersionIndex = parseVersionIndex(versionIndexMap, currentVersion);
+            beforeVersionIndex = parseVersionIndex(versionIndexMap, beforeVersion);
+        } catch (IllegalStateException | NumberFormatException e) {
+            log.error("平滑升级时版本索引配置异常", e);
+            return;
+        }
+
+        if (currentVersionIndex <= beforeVersionIndex) {
             // 如果两者一致则不执行任何升级操作
             return;
         } else {
@@ -127,21 +162,6 @@ public class UpgradeUtil {
                 return;
             }
 
-            // 然后取两个版本对应的索引
-            String versionSummaryJsonContent = FileUtil.readString(UiConsts.class.getResource("/version_summary.json"), CharsetUtil.UTF_8);
-            versionSummaryJsonContent = versionSummaryJsonContent.replace("\n", "");
-            VersionSummary versionSummary = JSON.parseObject(versionSummaryJsonContent, VersionSummary.class);
-            String versionIndex = versionSummary.getVersionIndex();
-            Map<String, String> versionIndexMap = JSON.parseObject(versionIndex, Map.class);
-            int currentVersionIndex;
-            int beforeVersionIndex;
-            try {
-                currentVersionIndex = parseVersionIndex(versionIndexMap, currentVersion);
-                beforeVersionIndex = parseVersionIndex(versionIndexMap, beforeVersion);
-            } catch (IllegalStateException e) {
-                log.error("平滑升级时版本索引配置异常", e);
-                return;
-            }
             log.info("旧版本{}", beforeVersion);
             log.info("当前版本{}", currentVersion);
             // 遍历索引范围

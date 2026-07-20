@@ -27,7 +27,45 @@ permissions:
   contents: write
 
 jobs:
+  validate-release:
+    name: Validate Java release metadata
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      title: ${{ steps.release.outputs.title }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Validate tag and all Java version sources
+        id: release
+        shell: bash
+        run: |
+          if [ "${{ github.event_name }}" = "push" ]; then
+            tag="${{ github.ref_name }}"
+          elif [ -n "${{ inputs.release_tag }}" ]; then
+            tag="${{ inputs.release_tag }}"
+          else
+            version="$(python -c 'import xml.etree.ElementTree as ET; root=ET.parse("pom.xml").getroot(); print(root.find("{http://maven.apache.org/POM/4.0.0}version").text.strip())')"
+            tag="v${version}"
+          fi
+          python -u scripts/manage_releases.py validate-java \
+            --project-root . \
+            --tag "$tag" \
+            --body-output release-notes/java.md \
+            --github-output "$GITHUB_OUTPUT"
+
+      - name: Test release tooling
+        run: python -m unittest scripts.test_manage_releases
+
   package-mac-apple-silicon:
+    needs: validate-release
     if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'mac-apple-silicon'
     name: macOS Apple Silicon
     runs-on: macos-14
@@ -79,6 +117,7 @@ jobs:
           retention-days: 14
 
   package-windows-x64:
+    needs: validate-release
     if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'windows-x64'
     name: Windows x64
     runs-on: windows-latest
@@ -131,6 +170,7 @@ jobs:
           retention-days: 14
 
   package-linux-x64:
+    needs: validate-release
     if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'linux-x64'
     name: Linux x64
     runs-on: ubuntu-latest
@@ -182,6 +222,7 @@ jobs:
           retention-days: 14
 
   package-mac-intel-self-hosted:
+    needs: validate-release
     if: github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'mac-intel')
     name: macOS Intel (self-hosted)
     runs-on:
@@ -237,12 +278,28 @@ jobs:
     name: Publish GitHub Release
     if: startsWith(github.ref, 'refs/tags/v')
     needs:
+      - validate-release
       - package-mac-apple-silicon
       - package-windows-x64
       - package-linux-x64
     runs-on: ubuntu-latest
 
     steps:
+      - name: Checkout release tag
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Render Java release notes
+        run: >-
+          python -u scripts/manage_releases.py validate-java
+          --project-root .
+          --tag "${{ github.ref_name }}"
+          --body-output release-notes/java.md
+
       - name: Download packaged artifacts
         uses: actions/download-artifact@v4
         with:
@@ -265,9 +322,12 @@ jobs:
           fi
 
       - name: Publish release assets
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
-          generate_release_notes: true
+          name: ${{ needs.validate-release.outputs.title }}
+          body_path: release-notes/java.md
+          prerelease: false
+          make_latest: false
           fail_on_unmatched_files: true
           files: release-upload/**/*
 
@@ -275,6 +335,7 @@ jobs:
     name: Append assets to existing GitHub Release
     if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && (needs.package-mac-apple-silicon.result == 'success' || needs.package-windows-x64.result == 'success' || needs.package-linux-x64.result == 'success' || needs.package-mac-intel-self-hosted.result == 'success') }}
     needs:
+      - validate-release
       - package-mac-apple-silicon
       - package-windows-x64
       - package-linux-x64
@@ -304,7 +365,7 @@ jobs:
           fi
 
       - name: Append assets to release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ inputs.release_tag }}
           fail_on_unmatched_files: true
@@ -320,6 +381,7 @@ jobs:
         )
       }}
     needs:
+      - validate-release
       - package-mac-apple-silicon
       - package-windows-x64
       - package-linux-x64
@@ -372,5 +434,4 @@ jobs:
           fi
           git commit -m "chore: update download_links.json for ${{ steps.release.outputs.tag }}"
           git push
-
 

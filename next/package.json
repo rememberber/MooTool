@@ -1,10 +1,13 @@
 {
   "name": "mootool-next",
-  "version": "1.7.8",
+  "version": "1.0.1",
   "private": true,
   "description": "MooTool rewritten with Electron, Vite, React, and TypeScript.",
   "license": "MIT",
-  "author": "Zhou Bo",
+  "author": {
+    "name": "Zhou Bo",
+    "email": "rememberber@163.com"
+  },
   "homepage": "https://github.com/rememberber/MooTool",
   "repository": {
     "type": "git",
@@ -15,7 +18,7 @@
     "dev": "electron-vite dev",
     "build": "tsc --noEmit && electron-vite build",
     "package": "npm run build && electron-builder",
-    "package:mac": "npm run build && electron-builder --mac dmg zip --publish never",
+    "package:mac": "npm run build && electron-builder --mac dmg --publish never",
     "package:win": "npm run build && electron-builder --win nsis portable --publish never",
     "package:linux": "npm run build && electron-builder --linux AppImage deb --publish never",
     "preview": "electron-vite preview",
@@ -41,6 +44,7 @@
     "diff": "^9.0.0",
     "dompurify": "^3.4.12",
     "electron-store": "^10.0.0",
+    "electron-updater": "^6.8.9",
     "expr-eval": "^2.0.2",
     "fast-xml-parser": "^5.10.0",
     "hi-base32": "^0.5.1",
@@ -75,7 +79,7 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^4.7.0",
-    "electron": "^37.0.0",
+    "electron": "^43.1.1",
     "electron-builder": "^25.0.0",
     "electron-vite": "^3.0.0",
     "typescript": "^5.8.0",
@@ -86,6 +90,12 @@
     "appId": "com.rememberber.mootool.next.electron",
     "productName": "MooTool Next Electron",
     "artifactName": "MooTool-Next-Electron-${version}-${os}-${arch}.${ext}",
+    "publish": [
+      {
+        "provider": "generic",
+        "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v${version}"
+      }
+    ],
     "asar": true,
     "directories": {
       "buildResources": "resources",
@@ -105,12 +115,11 @@
       "icon": "resources/icon.icns",
       "category": "public.app-category.developer-tools",
       "target": [
-        "dmg",
-        "zip"
+        "dmg"
       ]
     },
     "win": {
-      "icon": "resources/icon.ico",
+      "icon": "resources/icon.png",
       "target": [
         "nsis",
         "portable"
@@ -129,6 +138,12 @@
         "AppImage",
         "deb"
       ]
+    },
+    "appImage": {
+      "artifactName": "MooTool-Next-Electron-${version}-linux-x64.${ext}"
+    },
+    "deb": {
+      "artifactName": "MooTool-Next-Electron-${version}-linux-x64.${ext}"
     }
   }
 }

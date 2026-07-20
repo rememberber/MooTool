@@ -1,6 +1,7 @@
 import { X } from 'lucide-react'
 import { useEffect, useId, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
+import { useToolActivity } from './ToolActivity'
 
 type DialogProps = {
   title: string
@@ -13,16 +14,21 @@ type DialogProps = {
 
 export function Dialog({ title, open, onClose, children, footer, width = 640 }: DialogProps) {
   const titleId = useId()
+  const toolActive = useToolActivity()
+  const visible = open && toolActive
   useEffect(() => {
-    if (!open) return
+    if (!visible) return
     const handleKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose()
+      if (event.key === 'Escape') {
+        event.preventDefault()
+        onClose()
+      }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [onClose, open])
+  }, [onClose, visible])
 
-  if (!open) return null
+  if (!visible) return null
 
   return createPortal(
     <div className="dialog-backdrop" role="presentation" onMouseDown={onClose}>

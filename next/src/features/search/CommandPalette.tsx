@@ -70,6 +70,7 @@ export function CommandPalette() {
             }}
             onKeyDown={(event) => {
               if (event.key === 'Escape') {
+                event.preventDefault()
                 setOpen(false)
               } else if (event.key === 'ArrowDown') {
                 event.preventDefault()

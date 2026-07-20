@@ -301,7 +301,11 @@
     {
       "version": "v1.7.9",
       "title": "界面与交互问题修复",
-      "log": "● fix：【图片助手】修复右侧预览区下方工具按钮面板高度异常撑开的问题\n● fix：【随手记】修复 Markdown 预览面板在系统明暗模式自动切换时滚动条样式未及时刷新的问题\n● fix：【随手记】修复列表切换文件时偶发需要点击两次才能正常切换的问题\n\n"
+      "log": "● fix：【图片助手】修复右侧预览区下方工具按钮面板高度异常撑开的问题\n● fix：【随手记】修复 Markdown 预览面板在系统明暗模式自动切换时滚动条样式未及时刷新的问题\n● fix：【随手记】修复列表切换文件时偶发需要点击两次才能正常切换的问题\n\n",
+      "titleEn": "UI and interaction fixes",
+      "logEn": "● fix: [Image Assistant] Fixed the tool button panel below the right preview area expanding to an incorrect height\n● fix: [Quick Notes] Fixed the scrollbar style in the Markdown preview not refreshing promptly when the system automatically switches between light and dark modes\n● fix: [Quick Notes] Fixed an intermittent issue where switching files in the list required two clicks\n\n",
+      "titleJa": "UI と操作性の問題を修正",
+      "logJa": "● fix: 【画像アシスタント】右側プレビュー領域下部のツールボタンパネルが異常な高さまで広がる問題を修正\n● fix: 【クイックノート】システムのライト／ダークモード自動切り替え時に Markdown プレビューのスクロールバースタイルがすぐ更新されない問題を修正\n● fix: 【クイックノート】リストでファイルを切り替える際、まれに 2 回クリックしないと切り替わらない問題を修正\n\n"
     }
   ]
 }

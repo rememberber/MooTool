@@ -1,4 +1,4 @@
-import { httpMethods, type HttpCookieEntry, type HttpRequestDraft, type HttpResponseResult, type HttpSendInput, type KeyValueEntry, type SaveTranslationHistoryInput, type SaveTranslationWordInput, type TranslationInput } from '../../src/shared/contracts/network'
+import { httpMethods, normalizeTranslationLanguagePair, type HttpCookieEntry, type HttpRequestDraft, type HttpResponseResult, type HttpSendInput, type KeyValueEntry, type SaveTranslationHistoryInput, type SaveTranslationWordInput, type TranslationInput } from '../../src/shared/contracts/network'
 import type { NetworkCommandInput, SaveHostProfileInput } from '../../src/shared/contracts/system'
 
 const networkActions = ['interfaces', 'connections', 'ping', 'flush-dns', 'resolve', 'whois'] as const
@@ -39,11 +39,12 @@ export function normalizeHttpResponse(value: unknown): HttpResponseResult {
 export function normalizeTranslationInput(value: unknown): TranslationInput {
   const record = objectValue(value, 'Invalid translation input')
   const provider = record.preferredProvider === 'bing' ? 'bing' : 'google'
+  const languages = normalizeTranslationLanguagePair(record.sourceLang, record.targetLang)
   return {
     requestId: requestId(record.requestId),
     text: stringValue(record.text, 50_000),
-    sourceLang: languageCode(record.sourceLang, 'auto'),
-    targetLang: languageCode(record.targetLang, 'zh-CN'),
+    sourceLang: languages.sourceLang,
+    targetLang: languages.targetLang,
     preferredProvider: provider,
     timeoutMs: timeout(record.timeoutMs)
   }
@@ -53,9 +54,10 @@ export function normalizeTranslationWordInput(value: unknown): SaveTranslationWo
   const record = objectValue(value, 'Invalid word')
   const sourceText = stringValue(record.sourceText, 50_000).trim()
   if (!sourceText) throw new Error('Source text is required')
+  const languages = normalizeTranslationLanguagePair(record.sourceLang, record.targetLang)
   return {
     id: optionalId(record.id), sourceText, targetText: stringValue(record.targetText, 50_000),
-    sourceLang: languageCode(record.sourceLang, 'auto'), targetLang: languageCode(record.targetLang, 'zh-CN'),
+    sourceLang: languages.sourceLang, targetLang: languages.targetLang,
     remark: stringValue(record.remark, 2_000)
   }
 }
@@ -126,10 +128,6 @@ function requestId(value: unknown): string {
   const id = stringValue(value, 100)
   if (!/^[a-zA-Z0-9._:-]+$/.test(id)) throw new Error('Invalid request id')
   return id
-}
-
-function languageCode(value: unknown, fallback: string): string {
-  return typeof value === 'string' && /^[a-zA-Z-]{2,12}$/.test(value) ? value : fallback
 }
 
 function optionalId(value: unknown): number | undefined {

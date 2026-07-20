@@ -1,4 +1,8 @@
-export const appSettingsSchemaVersion = 5
+import { normalizeTranslationLanguagePair } from './network'
+import { isToolId, type ToolId } from './app'
+import { isVaultTreeExpandMode, type VaultTreeExpandMode } from '../vaultTreeExpand'
+
+export const appSettingsSchemaVersion = 10
 
 export type AppLanguage = 'zh-CN' | 'en-US' | 'ja-JP'
 export type ThemePreference = 'system' | 'light' | 'dark'
@@ -8,6 +12,8 @@ export type NavigationStyle = 'classic' | 'card' | 'grouped'
 export type SecretKey = 'proxyPassword' | 'gitToken'
 export type RuntimeSettingsId = 'java' | 'groovy' | 'python' | 'node'
 export type RuntimeRunOption = { arguments: string; workingDirectory: string }
+export type CustomToolGroup = { id: string; name: string; toolIds: ToolId[] }
+export type { VaultTreeExpandMode }
 
 export type SecretStatus = {
   key: SecretKey
@@ -20,6 +26,7 @@ export type AppSettings = {
   general: {
     language: AppLanguage
     autoCheckUpdates: boolean
+    autoDownloadUpdates: boolean
     startMaximized: boolean
     closeBehavior: CloseBehavior
     trayEnabled: boolean
@@ -38,6 +45,8 @@ export type AppSettings = {
     showSeparators: boolean
     hideNavigationTitles: boolean
     navigationStyle: NavigationStyle
+    customGroups: CustomToolGroup[]
+    hiddenNavigationToolIds: ToolId[]
     paneSizes: Record<string, number[]>
   }
   editor: {
@@ -63,8 +72,12 @@ export type AppSettings = {
     gitRemote: string
     gitUsername: string
     autoCommit: boolean
+    autoCommitIdleSeconds: number
+    autoCommitInactiveSeconds: number
     autoPullMinutes: number
     hideGitignoredFiles: boolean
+    quickNoteTreeExpandMode: VaultTreeExpandMode
+    jsonTreeExpandMode: VaultTreeExpandMode
   }
   runtime: {
     javaPath: string
@@ -107,6 +120,7 @@ export const defaultAppSettings: AppSettings = {
   general: {
     language: 'zh-CN',
     autoCheckUpdates: true,
+    autoDownloadUpdates: true,
     startMaximized: false,
     closeBehavior: 'ask',
     trayEnabled: true
@@ -125,6 +139,8 @@ export const defaultAppSettings: AppSettings = {
     showSeparators: true,
     hideNavigationTitles: false,
     navigationStyle: 'classic',
+    customGroups: [],
+    hiddenNavigationToolIds: [],
     paneSizes: {}
   },
   editor: {
@@ -149,9 +165,13 @@ export const defaultAppSettings: AppSettings = {
     jsonPath: '',
     gitRemote: '',
     gitUsername: '',
-    autoCommit: false,
+    autoCommit: true,
+    autoCommitIdleSeconds: 30,
+    autoCommitInactiveSeconds: 120,
     autoPullMinutes: 0,
-    hideGitignoredFiles: true
+    hideGitignoredFiles: true,
+    quickNoteTreeExpandMode: 'expandAll',
+    jsonTreeExpandMode: 'expandAll'
   },
   runtime: {
     javaPath: '',
@@ -207,6 +227,7 @@ export function normalizeSettings(value: AppSettings): AppSettings {
   const navigationStyles: NavigationStyle[] = ['classic', 'card', 'grouped']
   const corrections: AppSettings['tools']['qrErrorCorrection'][] = ['L', 'M', 'Q', 'H']
   const translationProviders: AppSettings['tools']['translationProvider'][] = ['google', 'bing']
+  const translationLanguages = normalizeTranslationLanguagePair(value.tools.translationSourceLang, value.tools.translationTargetLang)
 
   return {
     ...value,
@@ -232,6 +253,8 @@ export function normalizeSettings(value: AppSettings): AppSettings {
       navigationStyle: navigationStyles.includes(value.layout.navigationStyle)
         ? value.layout.navigationStyle
         : defaultAppSettings.layout.navigationStyle,
+      customGroups: normalizeCustomGroups(value.layout.customGroups),
+      hiddenNavigationToolIds: normalizeNavigationToolIds(value.layout.hiddenNavigationToolIds),
       paneSizes: normalizePaneSizes(value.layout.paneSizes)
     },
     editor: {
@@ -251,7 +274,15 @@ export function normalizeSettings(value: AppSettings): AppSettings {
     },
     vault: {
       ...value.vault,
-      autoPullMinutes: clampNumber(value.vault.autoPullMinutes, 0, 1440, defaultAppSettings.vault.autoPullMinutes)
+      autoCommitIdleSeconds: clampNumber(value.vault.autoCommitIdleSeconds, 5, 3600, defaultAppSettings.vault.autoCommitIdleSeconds),
+      autoCommitInactiveSeconds: clampNumber(value.vault.autoCommitInactiveSeconds, 5, 3600, defaultAppSettings.vault.autoCommitInactiveSeconds),
+      autoPullMinutes: clampNumber(value.vault.autoPullMinutes, 0, 1440, defaultAppSettings.vault.autoPullMinutes),
+      quickNoteTreeExpandMode: isVaultTreeExpandMode(value.vault.quickNoteTreeExpandMode)
+        ? value.vault.quickNoteTreeExpandMode
+        : defaultAppSettings.vault.quickNoteTreeExpandMode,
+      jsonTreeExpandMode: isVaultTreeExpandMode(value.vault.jsonTreeExpandMode)
+        ? value.vault.jsonTreeExpandMode
+        : defaultAppSettings.vault.jsonTreeExpandMode
     },
     tools: {
       ...value.tools,
@@ -261,10 +292,39 @@ export function normalizeSettings(value: AppSettings): AppSettings {
         : defaultAppSettings.tools.qrErrorCorrection,
       randomStringLength: clampNumber(value.tools.randomStringLength, 1, 4096, defaultAppSettings.tools.randomStringLength),
       translationProvider: translationProviders.includes(value.tools.translationProvider) ? value.tools.translationProvider : defaultAppSettings.tools.translationProvider,
-      translationSourceLang: normalizeLanguageCode(value.tools.translationSourceLang, defaultAppSettings.tools.translationSourceLang),
-      translationTargetLang: normalizeLanguageCode(value.tools.translationTargetLang, defaultAppSettings.tools.translationTargetLang)
+      translationSourceLang: translationLanguages.sourceLang,
+      translationTargetLang: translationLanguages.targetLang
     }
   }
+}
+
+function normalizeNavigationToolIds(value: ToolId[] | undefined): ToolId[] {
+  if (!Array.isArray(value)) return []
+  return [...new Set(value.filter((toolId): toolId is ToolId => toolId !== 'mootool' && isToolId(toolId)))]
+}
+
+export function normalizeCustomGroups(value: CustomToolGroup[] | undefined): CustomToolGroup[] {
+  if (!Array.isArray(value)) return []
+
+  const ids = new Set<string>()
+  return value.slice(0, 32).flatMap((candidate, index) => {
+    if (!candidate || typeof candidate !== 'object') return []
+    const name = typeof candidate.name === 'string' ? candidate.name.trim().slice(0, 64) : ''
+    if (!name) return []
+
+    const requestedId = typeof candidate.id === 'string' && /^[a-z0-9_-]{1,80}$/i.test(candidate.id)
+      ? candidate.id
+      : `custom-${index + 1}`
+    let id = requestedId
+    let suffix = 2
+    while (ids.has(id)) id = `${requestedId}-${suffix++}`
+    ids.add(id)
+
+    const toolIds = Array.isArray(candidate.toolIds)
+      ? [...new Set(candidate.toolIds.filter((toolId): toolId is ToolId => toolId !== 'mootool' && isToolId(toolId)))]
+      : []
+    return [{ id, name, toolIds }]
+  })
 }
 
 function normalizePaneSizes(value: Record<string, number[]> | undefined): Record<string, number[]> {
@@ -293,10 +353,6 @@ function normalizeRuntimeOptions(value: Record<RuntimeSettingsId, RuntimeRunOpti
     arguments: typeof value?.[id]?.arguments === 'string' ? value[id].arguments.slice(0, 2000) : '',
     workingDirectory: typeof value?.[id]?.workingDirectory === 'string' ? value[id].workingDirectory.slice(0, 1000) : ''
   }])) as Record<RuntimeSettingsId, RuntimeRunOption>
-}
-
-function normalizeLanguageCode(value: string, fallback: string): string {
-  return typeof value === 'string' && /^[a-zA-Z-]{2,12}$/.test(value) ? value : fallback
 }
 
 function clampNumber(value: number, minimum: number, maximum: number, fallback: number): number {

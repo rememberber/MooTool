@@ -88,7 +88,7 @@ MooTool Next 不再以“精选 MVP”作为当前阶段目标，而是以 Java 
 - P6 已在设置中接入本地完整/分类备份、存储位置和运行时路径，完成 schema v3 迁移、三语言、明暗主题与最小窗口验证。
 - P7 已补齐 JSON Vault/Quick Note 高级树操作、文件监视及 Git 冲突、撤销、中止合并和自动化。
 - P7 已完成 Java SQLite、配置、Quick Note、JSON Vault、收藏、HTTP 和翻译数据的只读扫描、备份、事务迁移、幂等与回滚。
-- P7 已完成更新检查、关于页面、托盘和关闭行为验收，版本与 Java 基线统一为 `1.7.8`。
+- P7 已完成更新检查、关于页面、托盘和关闭行为验收；Next 首个正式版本重置为 `1.0.0`，Java 基线仍为 `1.7.8`。
 - P7 已完成 CodeMirror 大 JSON 优化、打包 App 性能门槛、macOS ARM64 DMG/ZIP 生成与启动验证。
 - P7 已建立 macOS Apple Silicon/Intel、Windows x64、Linux x64 手动 CI 安装包矩阵。
 

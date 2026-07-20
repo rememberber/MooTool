@@ -64,8 +64,10 @@ Windows • Linux • macOS
 
 ## ダウンロード
 
-[https://github.com/rememberber/MooTool/releases](https://github.com/rememberber/MooTool/releases)  
-[https://gitee.com/zhoubochina/MooTool/releases](https://gitee.com/zhoubochina/MooTool/releases)
+- [MooTool Next Electron 1.0.0（推奨）](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.0.0)
+- [MooTool Java 1.7.9](https://github.com/rememberber/MooTool/releases/tag/v1.7.9)
+- [GitHub Releases 一覧](https://github.com/rememberber/MooTool/releases)
+- [Gitee の MooTool Java Releases](https://gitee.com/zhoubochina/MooTool/releases)
 
 ## 支援 / スポンサー
 
@@ -334,6 +336,9 @@ MooTool
 [iconfont](https://www.iconfont.cn/)
 
 ## 開発者向けメモ
+
+複数製品のバージョン、Git tag、GitHub Release、`Latest`、CI 分離ルールについては、[複数製品のリリース規約](RELEASE_CONVENTIONS.md)を参照してください。
+
 最低 JDK：**21**  
 開発を始める前に、**下図のとおり IntelliJ IDEA を設定**し、**maven clean** を実行してください：
 ![considerations](assets/material/gui_build.png)

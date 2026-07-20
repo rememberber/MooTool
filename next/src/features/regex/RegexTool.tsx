@@ -4,6 +4,7 @@ import { FavoriteDialog } from '@/features/favorites/FavoriteDialog'
 import { HistoryDialog } from '@/features/history/HistoryDialog'
 import { ToolPageHeader, ToolTabs } from '@/shared/components/ToolPage'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
+import { TextCodeEditor } from '@/shared/components/TextCodeEditor'
 import { useToolActions } from '@/shared/hooks/useToolActions'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { commonRegexes, matchRegex, type RegexMatch, type RegexOptions } from './regexTools'
@@ -56,7 +57,7 @@ export function RegexTool() {
                 <Check label={t('regex.flag.dotAll')} checked={options.dotAll} onChange={(value) => setOption('dotAll', value)} />
               </div>
             </section>
-            <label className="regex-source"><span>{t('regex.source')}</span><textarea value={source} spellCheck={false} onChange={(event) => setSource(event.target.value)} /></label>
+            <div className="regex-source"><span>{t('regex.source')}</span><TextCodeEditor ariaLabel={t('regex.source')} value={source} onChange={setSource} /></div>
             <section className="regex-results">
               <header className={error ? 'result-status result-status--error' : 'result-status'}>{error || t('regex.matches', { count: String(matches.length) })}</header>
               {matches.length === 0 && !error ? <p className="empty-state">{t('regex.noMatches')}</p> : matches.map((match, index) => <article key={`${match.index}-${index}`}><span>#{index + 1} · {match.index}</span><strong>{match.value || '∅'}</strong>{match.groups.length > 0 && <code>{match.groups.join(' · ')}</code>}</article>)}
