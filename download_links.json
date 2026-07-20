@@ -1,6 +1,6 @@
 {
   "windows": "https://github.com/rememberber/MooTool/releases/download/v1.8.0/MooTool-1.8.0-windows-x64.exe",
   "macSilicon": "https://github.com/rememberber/MooTool/releases/download/v1.8.0/MooTool-1.8.0-mac-apple-silicon.dmg",
-  "mac": "https://github.com/rememberber/MooTool/releases/download/v1.7.9/MooTool-1.7.9-mac-intel.dmg",
+  "mac": "https://github.com/rememberber/MooTool/releases/download/v1.8.0/MooTool-1.8.0-mac-intel.dmg",
   "linux": "https://github.com/rememberber/MooTool/releases/download/v1.8.0/MooTool-1.8.0-linux-x64.deb"
 }
