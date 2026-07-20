@@ -103,6 +103,12 @@ public class UiConsts {
     public static final String DOWNLOAD_LINK_INFO_URL = GITHUB_RAW_MASTER_URL + "download_links.json";
 
     /**
+     * MooTool Next Electron download page recommended to Java users.
+     */
+    public static final String NEXT_EDITION_RELEASE_URL =
+            "https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.0.1";
+
+    /**
      * Grace信息url
      */
     public static final String GRACE_INFO_URL = GITHUB_RAW_MASTER_URL + "grace.json";

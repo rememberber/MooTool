@@ -13,6 +13,7 @@ import com.luoboduner.moo.tool.bean.Dau;
 import com.luoboduner.moo.tool.bean.Grace;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.ImagePreviewComponent;
+import com.luoboduner.moo.tool.ui.component.NextEditionRecommendationPanel;
 import com.luoboduner.moo.tool.ui.listener.AboutListener;
 import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.I18nUiUtil;
@@ -90,6 +91,7 @@ public class AboutForm {
     private JPanel otherWorksSectionPanel;
     private JPanel sponsorSectionPanel;
     private JPanel mooToolHeaderPanel;
+    private NextEditionRecommendationPanel nextEditionPanel;
 
     private ImagePreviewComponent logoPreview;
     private ImagePreviewComponent gracePreview;
@@ -115,6 +117,7 @@ public class AboutForm {
 
         ScrollUtil.smoothPane(aboutForm.getScrollPane());
         aboutForm.installStaticImages();
+        aboutForm.installNextEditionRecommendation();
         aboutForm.getAboutPanel().updateUI();
 
         aboutForm.getMooInfoPanel().addMouseListener(new MouseAdapter() {
@@ -460,6 +463,20 @@ public class AboutForm {
         if (sponsorQrPreview != null) {
             I18nUiUtil.setToolTip(sponsorQrPreview, "about.sponsor.tip");
         }
+        if (nextEditionPanel != null) {
+            nextEditionPanel.applyI18n();
+        }
+    }
+
+    private void installNextEditionRecommendation() {
+        if (nextEditionPanel != null) {
+            return;
+        }
+        nextEditionPanel = new NextEditionRecommendationPanel();
+        aboutPanel.add(nextEditionPanel, new GridConstraints(1, 0, 1, 1,
+                GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL,
+                GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW,
+                GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
     }
 
     private void installStaticImages() {
