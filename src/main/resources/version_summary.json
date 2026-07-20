@@ -1,5 +1,5 @@
 {
-  "currentVersion": "v1.7.9",
+  "currentVersion": "v1.8.0",
   "versionIndex": {
     "v0.0.0": "0",
     "v1.0.0": "1",
@@ -51,7 +51,7 @@
     "v1.7.7": "47",
     "v1.7.8": "48",
     "v1.7.9": "49",
-    "v1.7.10": "50"
+    "v1.8.0": "50"
   },
   "versionDetailList": [
     {
@@ -309,13 +309,13 @@
       "logJa": "● fix: 【画像アシスタント】右側プレビュー領域下部のツールボタンパネルが異常な高さまで広がる問題を修正\n● fix: 【クイックノート】システムのライト／ダークモード自動切り替え時に Markdown プレビューのスクロールバースタイルがすぐ更新されない問題を修正\n● fix: 【クイックノート】リストでファイルを切り替える際、まれに 2 回クリックしないと切り替わらない問題を修正\n\n"
     },
     {
-      "version": "v1.7.10",
+      "version": "v1.8.0",
       "title": "推荐使用全新 MooTool Next",
-      "log": "● feat：【首页/关于】新增 MooTool Next Electron 介绍和推荐下载入口\n● MooTool Next 使用 Electron、React 和 TypeScript 全新重写，拥有更现代的界面与多窗口体验，推荐新用户优先使用\n● 支持 macOS、Windows 和 Linux，可与 MooTool Java 独立安装、同时使用\n\n",
+      "log": "● feat：【首页/关于】新增 MooTool Next Electron 介绍和推荐下载入口\n● MooTool Next 使用 Electron、React 和 TypeScript 全新重写，拥有更现代的界面与多窗口体验，推荐新用户优先使用\n● 支持 macOS、Windows 和 Linux，可与 MooTool Java 独立安装、同时使用\n● chore：【编辑器】升级 RSyntaxTextArea 至 4.0.0\n\n",
       "titleEn": "Introducing the recommended MooTool Next",
-      "logEn": "● feat: [Home/About] Added an introduction and recommended download link for MooTool Next Electron\n● MooTool Next is rebuilt with Electron, React, and TypeScript for a modern UI and multi-window experience, and is recommended for new users\n● Supports macOS, Windows, and Linux, and can be installed and used alongside MooTool Java\n\n",
+      "logEn": "● feat: [Home/About] Added an introduction and recommended download link for MooTool Next Electron\n● MooTool Next is rebuilt with Electron, React, and TypeScript for a modern UI and multi-window experience, and is recommended for new users\n● Supports macOS, Windows, and Linux, and can be installed and used alongside MooTool Java\n● chore: [Editor] Upgraded RSyntaxTextArea to 4.0.0\n\n",
       "titleJa": "おすすめの MooTool Next を紹介",
-      "logJa": "● feat: 【ホーム／MooTool について】MooTool Next Electron の紹介とおすすめダウンロードリンクを追加\n● MooTool Next は Electron、React、TypeScript で全面的に再構築され、モダンな UI とマルチウインドウ体験を提供します。新規ユーザーにはこちらをおすすめします\n● macOS、Windows、Linux に対応し、MooTool Java と同時にインストールして利用できます\n\n"
+      "logJa": "● feat: 【ホーム／MooTool について】MooTool Next Electron の紹介とおすすめダウンロードリンクを追加\n● MooTool Next は Electron、React、TypeScript で全面的に再構築され、モダンな UI とマルチウインドウ体験を提供します。新規ユーザーにはこちらをおすすめします\n● macOS、Windows、Linux に対応し、MooTool Java と同時にインストールして利用できます\n● chore: 【エディター】RSyntaxTextArea を 4.0.0 に更新\n\n"
     }
   ]
 }

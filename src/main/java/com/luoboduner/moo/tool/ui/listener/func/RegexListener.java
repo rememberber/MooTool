@@ -8,7 +8,7 @@ import com.luoboduner.moo.tool.ui.frame.FavoriteRegexFrame;
 import com.luoboduner.moo.tool.util.FuncHistoryUtil;
 import com.luoboduner.moo.tool.util.I18n;
 import org.apache.commons.lang3.StringUtils;
-import org.fife.ui.rsyntaxtextarea.DocumentRange;
+import org.fife.ui.rtextarea.DocumentRange;
 import org.fife.ui.rsyntaxtextarea.RSyntaxUtilities;
 import org.fife.ui.rtextarea.RTextAreaHighlighter;
 import org.fife.ui.rtextarea.SearchContext;

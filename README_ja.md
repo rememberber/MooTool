@@ -65,7 +65,7 @@ Windows • Linux • macOS
 ## ダウンロード
 
 - [MooTool Next Electron 1.0.0（推奨）](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.0.0)
-- [MooTool Java 1.7.9](https://github.com/rememberber/MooTool/releases/tag/v1.7.9)
+- [MooTool Java 1.8.0](https://github.com/rememberber/MooTool/releases/tag/v1.8.0)
 - [GitHub Releases 一覧](https://github.com/rememberber/MooTool/releases)
 - [Gitee の MooTool Java Releases](https://gitee.com/zhoubochina/MooTool/releases)
 
