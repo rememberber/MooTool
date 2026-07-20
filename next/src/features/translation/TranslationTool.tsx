@@ -46,7 +46,7 @@ export function TranslationTool() {
       setTranslating(false)
       return
     }
-    if (previousRequestId) await window.mootool.cancelNetworkRequest(previousRequestId)
+    if (previousRequestId) void window.mootool.cancelNetworkRequest(previousRequestId)
     if (sequence !== requestSequence.current) return
     const currentRequestId = `translation-${Date.now()}-${Math.random().toString(36).slice(2)}`
     requestId.current = currentRequestId

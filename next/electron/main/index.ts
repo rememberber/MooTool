@@ -12,6 +12,7 @@ import {
   net,
   safeStorage,
   screen,
+  session,
   shell,
   Tray,
   type WebContents,
@@ -80,7 +81,7 @@ import { HistoryRepository } from './historyRepository'
 import { ImageRepository } from './imageRepository'
 import { JsonVaultRepository } from './jsonVaultRepository'
 import { LegacyMigrationService } from './legacyMigrationService'
-import { NetworkService, type ProxyConfiguration } from './networkService'
+import { NetworkService, parseChromiumProxyDirective, type ProxyConfiguration } from './networkService'
 import { P5Repository } from './p5Repository'
 import { QuickNoteVaultRepository } from './quickNoteVaultRepository'
 import { RuntimeExecutionService } from './runtimeExecutionService'
@@ -595,8 +596,15 @@ function registerIpc(): void {
   ipcMain.handle('network:cancel', (_event, requestId: unknown) => networkService.cancel(normalizeRequestId(requestId)))
   ipcMain.handle('translation:send', async (_event, value: unknown) => {
     const input = normalizeTranslationInput(value)
-    const result = await networkService.translate(input, getProxyConfiguration())
-    p5Repository.saveTranslationHistory({ sourceText: input.text, targetText: result.text, sourceLang: input.sourceLang, targetLang: input.targetLang, translatorType: result.provider })
+    const result = await networkService.translate(input, await getTranslationProxyConfiguration())
+    // Return first; SQLite write should not delay the renderer.
+    setImmediate(() => {
+      try {
+        p5Repository.saveTranslationHistory({ sourceText: input.text, targetText: result.text, sourceLang: input.sourceLang, targetLang: input.targetLang, translatorType: result.provider })
+      } catch (error) {
+        console.error('Failed to save translation history', error)
+      }
+    })
     return result
   })
   ipcMain.handle('translation:words-list', (_event, keyword?: string) => p5Repository.listTranslationWords(normalizeKeyword(keyword)))
@@ -1220,6 +1228,26 @@ function getProxyConfiguration(): ProxyConfiguration {
     port: network.proxyPort,
     username: network.proxyUsername,
     password: readSecret('proxyPassword')
+  }
+}
+
+/** Match Java: JVM picks up OS proxy; undici does not, so resolve Chromium/system proxy when app proxy is off. */
+async function getTranslationProxyConfiguration(): Promise<ProxyConfiguration> {
+  const configured = getProxyConfiguration()
+  if (configured.enabled) return configured
+  try {
+    const resolved = await session.defaultSession.resolveProxy('https://translate.googleapis.com/')
+    const parsed = parseChromiumProxyDirective(resolved)
+    if (!parsed) return configured
+    return {
+      enabled: true,
+      host: parsed.host,
+      port: String(parsed.port),
+      username: '',
+      password: ''
+    }
+  } catch {
+    return configured
   }
 }
 
