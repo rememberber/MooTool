@@ -1,6 +1,6 @@
 import { createServer } from 'node:http'
 import { afterAll, beforeAll, describe, expect, it } from 'vitest'
-import { NetworkService, bingLanguage, buildRequestUrl, googleLanguage, splitTranslationText } from '../../electron/main/networkService'
+import { NetworkService, bingLanguage, buildRequestUrl, googleLanguage, parseChromiumProxyDirective, splitTranslationText, translationProviderOrder } from '../../electron/main/networkService'
 import { normalizeTranslationLanguageCode, normalizeTranslationLanguagePair, type HttpRequestDraft } from './contracts/network'
 
 let baseUrl = ''
@@ -100,5 +100,20 @@ describe('network helpers', () => {
     expect(normalizeTranslationLanguageCode('Romanian', 'auto')).toBe('rom')
     expect(normalizeTranslationLanguageCode('auto', 'zh-CN', false)).toBe('zh-CN')
     expect(normalizeTranslationLanguagePair('English', 'en')).toEqual({ sourceLang: 'auto', targetLang: 'en' })
+  })
+
+  it('orders translation providers with sticky skip for an unreachable preferred engine', () => {
+    expect(translationProviderOrder('google', false)).toEqual(['google', 'bing'])
+    expect(translationProviderOrder('google', true)).toEqual(['bing', 'google'])
+    expect(translationProviderOrder('bing', false)).toEqual(['bing', 'google'])
+    expect(translationProviderOrder('bing', true)).toEqual(['google', 'bing'])
+  })
+
+  it('parses Chromium resolveProxy directives for HTTP CONNECT proxies', () => {
+    expect(parseChromiumProxyDirective('DIRECT')).toBeNull()
+    expect(parseChromiumProxyDirective('PROXY 127.0.0.1:9674')).toEqual({ host: '127.0.0.1', port: 9674 })
+    expect(parseChromiumProxyDirective('HTTPS 127.0.0.1:9674; SOCKS 127.0.0.1:9674')).toEqual({ host: '127.0.0.1', port: 9674 })
+    expect(parseChromiumProxyDirective('SOCKS5 127.0.0.1:9674')).toBeNull()
+    expect(parseChromiumProxyDirective('PROXY proxy.example:8080; PROXY backup:8080')).toEqual({ host: 'proxy.example', port: 8080 })
   })
 })

@@ -31,13 +31,23 @@ import { useSettings } from '@/features/settings/SettingsProvider'
 import { VaultGitDialog } from '@/features/json/VaultGitDialog'
 import { formatCode } from '@/features/reformat/reformatTools'
 import { Dialog } from '@/shared/components/Dialog'
+import { FindReplaceBar } from '@/shared/components/FindReplaceBar'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { Tooltip } from '@/shared/components/Tooltip'
 import type { CodeEditorViewState } from '@/shared/components/codeEditorViewState'
+import {
+  defaultFindReplaceOptions,
+  findAllMatches,
+  findNextMatch,
+  replaceAllMatches,
+  replaceCurrentMatch,
+  type FindReplaceOptions
+} from '@/shared/components/findReplace'
 import { useToolActivity } from '@/shared/components/ToolActivity'
 import type { QuickNoteFile, QuickNoteMetadata, QuickNoteNode, QuickNoteSort } from '@/shared/contracts/quickNote'
 import type { VaultGitAction } from '@/shared/contracts/vaultGit'
 import { useToast } from '@/shared/feedback/ToastProvider'
+import { useFocusOnWindowActivate } from '@/shared/hooks/useFocusOnWindowActivate'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { MessageKey } from '@/shared/i18n/messages'
 import {
@@ -69,6 +79,8 @@ type QuickNoteState = {
   findOpen: boolean
   findText: string
   replaceText: string
+  findOptions: FindReplaceOptions
+  replacedCount: number
   viewMode: ViewMode
   actionMode: ActionDialogMode
   actionValue: string
@@ -94,6 +106,8 @@ const initialState: QuickNoteState = {
   findOpen: false,
   findText: '',
   replaceText: '',
+  findOptions: defaultFindReplaceOptions,
+  replacedCount: 0,
   viewMode: 'editor',
   actionMode: null,
   actionValue: '',
@@ -115,6 +129,8 @@ function createQuickNoteState(): QuickNoteState {
   if (quickNoteSessionState) quickNoteNeedsExpandPreference = false
   return {
     ...source,
+    findOptions: source.findOptions ?? defaultFindReplaceOptions,
+    replacedCount: source.replacedCount ?? 0,
     expanded: new Set(source.expanded),
     busy: false
   }
@@ -274,6 +290,17 @@ export function QuickNoteTool() {
   )
   const previewHtml = useMemo(() => renderPreview(state.content, state.note?.metadata.syntax, attachmentUrls), [attachmentUrls, state.content, state.note?.metadata.syntax])
 
+  useFocusOnWindowActivate(
+    () => editorRef.current?.focus(),
+    toolActive
+      && Boolean(state.note)
+      && state.viewMode !== 'preview'
+      && !state.findOpen
+      && !state.actionMode
+      && !state.infoOpen
+      && !state.gitOpen
+  )
+
   const scrollSelectedIntoView = useCallback((path = latestStateRef.current.selectedPath) => {
     if (!path || !treeScrollRef.current) return
     const row = treeScrollRef.current.querySelector(`[data-path="${CSS.escape(path)}"]`)
@@ -427,9 +454,9 @@ export function QuickNoteTool() {
       if (event.key.toLocaleLowerCase() === 's') {
         event.preventDefault()
         void saveCurrent()
-      } else if (event.key.toLocaleLowerCase() === 'f') {
+      } else if (event.key.toLocaleLowerCase() === 'f' || event.key.toLocaleLowerCase() === 'r') {
         event.preventDefault()
-        update({ findOpen: true })
+        openFindReplace()
       }
     }
     window.addEventListener('keydown', handleShortcut)
@@ -728,41 +755,69 @@ export function QuickNoteTool() {
     update({ note: { ...state.note, metadata: { ...state.note.metadata, ...patch } }, metadataDirty: true })
   }
 
-  function findNext(): void {
+  function openFindReplace(): void {
+    if (!state.note) return
+    const selection = editorRef.current?.getSelection()
+    const selected = selection && selection.end > selection.start
+      ? state.content.slice(selection.start, selection.end)
+      : undefined
+    findIndexRef.current = 0
+    quickNoteFindIndex = 0
+    update({
+      findOpen: true,
+      replacedCount: 0,
+      ...(selected !== undefined ? { findText: selected } : {})
+    })
+  }
+
+  function findAround(forward: boolean): void {
     if (!state.findText) return
-    const haystack = state.content.toLocaleLowerCase()
-    const needle = state.findText.toLocaleLowerCase()
-    let index = haystack.indexOf(needle, findIndexRef.current)
-    if (index < 0) index = haystack.indexOf(needle)
-    if (index < 0) {
-      toast.info(t('quickNote.noMatches'))
+    const selection = editorRef.current?.getSelection()
+    const fromIndex = forward
+      ? (selection?.end ?? findIndexRef.current)
+      : (selection?.start ?? findIndexRef.current)
+    const match = findNextMatch(state.content, state.findText, state.findOptions, fromIndex, forward)
+    if (!match) {
+      toast.info(t('findReplace.noMatches'))
       return
     }
-    findIndexRef.current = index + needle.length
+    findIndexRef.current = forward ? match.end : match.start
     quickNoteFindIndex = findIndexRef.current
-    editorRef.current?.selectRange(index, index + needle.length)
+    editorRef.current?.selectRange(match.start, match.end)
   }
 
   function replaceCurrent(all: boolean): void {
     if (!state.findText) return
     if (all) {
-      const expression = new RegExp(escapeRegExp(state.findText), 'gi')
-      const next = state.content.replace(expression, state.replaceText)
-      if (next === state.content) toast.info(t('quickNote.noMatches'))
-      else update({ content: next })
+      const result = replaceAllMatches(state.content, state.findText, state.replaceText, state.findOptions)
+      if (result.count === 0) toast.info(t('findReplace.noMatches'))
+      else update({ content: result.content, replacedCount: result.count })
       return
     }
-    const editor = editorRef.current
-    const selection = editor?.getSelection()
-    if (selection && state.content.slice(selection.start, selection.end).toLocaleLowerCase() === state.findText.toLocaleLowerCase()) {
-      const { start, end } = selection
-      update({ content: `${state.content.slice(0, start)}${state.replaceText}${state.content.slice(end)}` })
-      findIndexRef.current = start + state.replaceText.length
-      quickNoteFindIndex = findIndexRef.current
-      requestAnimationFrame(findNext)
-    } else {
-      findNext()
+    const result = replaceCurrentMatch(
+      state.content,
+      state.findText,
+      state.replaceText,
+      state.findOptions,
+      editorRef.current?.getSelection() ?? null
+    )
+    if (!result.replaced) {
+      toast.info(t('findReplace.noMatches'))
+      return
     }
+    update({ content: result.content, replacedCount: state.replacedCount + 1 })
+    findIndexRef.current = result.nextFrom
+    quickNoteFindIndex = result.nextFrom
+    const findText = state.findText
+    const findOptions = state.findOptions
+    requestAnimationFrame(() => {
+      const match = findNextMatch(result.content, findText, findOptions, result.nextFrom, true)
+      if (match) {
+        findIndexRef.current = match.end
+        quickNoteFindIndex = match.end
+        editorRef.current?.selectRange(match.start, match.end)
+      }
+    })
   }
 
   function applyQuickReplace(action: QuickReplaceActionId): void {
@@ -858,7 +913,7 @@ export function QuickNoteTool() {
               <IconButton label={t('quickNote.bulletList')} icon={List} disabled={!state.note} onClick={() => prefixSelectedLines('bullet')} />
               <IconButton label={t('quickNote.numberedList')} icon={ListOrdered} disabled={!state.note} onClick={() => prefixSelectedLines('numbered')} />
               <span className="quick-note-toolbar__spacer" />
-              <IconButton label={t('quickNote.find')} icon={Search} disabled={!state.note} active={state.findOpen} onClick={() => update({ findOpen: !state.findOpen })} />
+              <IconButton label={t('quickNote.find')} icon={Search} disabled={!state.note} active={state.findOpen} onClick={() => { if (state.findOpen) update({ findOpen: false }); else openFindReplace() }} />
               <IconButton label={t('quickNote.save')} icon={Save} disabled={!state.note || state.busy} active={dirty} onClick={() => { void saveCurrent() }} />
               <IconButton label={t('quickNote.duplicate')} icon={CopyPlus} disabled={!state.note} onClick={() => { void duplicateNote() }} />
               <IconButton label={t('quickNote.attachment')} icon={ImagePlus} disabled={!state.note} onClick={() => { void importAttachment() }} />
@@ -871,14 +926,23 @@ export function QuickNoteTool() {
             </div>
 
             {state.findOpen && (
-              <div className="quick-note-find-bar">
-                <input aria-label={t('quickNote.findPlaceholder')} placeholder={t('quickNote.findPlaceholder')} value={state.findText} onChange={(event) => { findIndexRef.current = 0; quickNoteFindIndex = 0; update({ findText: event.target.value }) }} onKeyDown={(event) => { if (event.key === 'Enter') findNext() }} />
-                <input aria-label={t('quickNote.replacePlaceholder')} placeholder={t('quickNote.replacePlaceholder')} value={state.replaceText} onChange={(event) => update({ replaceText: event.target.value })} />
-                <button type="button" onClick={findNext}>{t('quickNote.nextMatch')}</button>
-                <button type="button" onClick={() => replaceCurrent(false)}>{t('quickNote.replace')}</button>
-                <button type="button" onClick={() => replaceCurrent(true)}>{t('quickNote.replaceAll')}</button>
-                <button className="icon-ghost" type="button" aria-label={t('common.close')} onClick={() => update({ findOpen: false })}><X size={14} /></button>
-              </div>
+              <FindReplaceBar
+                className="quick-note-find-bar"
+                findText={state.findText}
+                replaceText={state.replaceText}
+                options={state.findOptions}
+                matchCount={findAllMatches(state.content, state.findText, state.findOptions).length}
+                replacedCount={state.replacedCount}
+                onFindTextChange={(findText) => { findIndexRef.current = 0; quickNoteFindIndex = 0; update({ findText, replacedCount: 0 }) }}
+                onReplaceTextChange={(replaceText) => update({ replaceText })}
+                onOptionsChange={(findOptions) => { findIndexRef.current = 0; quickNoteFindIndex = 0; update({ findOptions, replacedCount: 0 }) }}
+                onFind={() => findAround(true)}
+                onFindPrevious={() => findAround(false)}
+                onFindNext={() => findAround(true)}
+                onReplace={() => replaceCurrent(false)}
+                onReplaceAll={() => replaceCurrent(true)}
+                onClose={() => update({ findOpen: false, replacedCount: 0 })}
+              />
             )}
 
             {state.note ? (
@@ -898,6 +962,7 @@ export function QuickNoteTool() {
                       fontFamily={editorFont(state.note.metadata.fontName)}
                       fontSize={state.note.metadata.fontSize}
                       searchQuery={state.findOpen ? state.findText : ''}
+                      searchOptions={state.findOptions}
                       ariaLabel={t('quickNote.editorLabel')}
                       initialViewState={quickNoteEditorViewState}
                       onChange={(content) => update({ content })}
@@ -1098,10 +1163,6 @@ function editorFont(value: string): string {
 function formatDate(value: string): string {
   const date = new Date(value)
   return Number.isNaN(date.getTime()) ? value : date.toLocaleString()
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
 
 function escapeHtml(value: string): string {
