@@ -47,6 +47,7 @@ import { useToolActivity } from '@/shared/components/ToolActivity'
 import type { QuickNoteFile, QuickNoteMetadata, QuickNoteNode, QuickNoteSort } from '@/shared/contracts/quickNote'
 import type { VaultGitAction } from '@/shared/contracts/vaultGit'
 import { useToast } from '@/shared/feedback/ToastProvider'
+import { useFocusOnWindowActivate } from '@/shared/hooks/useFocusOnWindowActivate'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { MessageKey } from '@/shared/i18n/messages'
 import {
@@ -288,6 +289,17 @@ export function QuickNoteTool() {
     {}
   )
   const previewHtml = useMemo(() => renderPreview(state.content, state.note?.metadata.syntax, attachmentUrls), [attachmentUrls, state.content, state.note?.metadata.syntax])
+
+  useFocusOnWindowActivate(
+    () => editorRef.current?.focus(),
+    toolActive
+      && Boolean(state.note)
+      && state.viewMode !== 'preview'
+      && !state.findOpen
+      && !state.actionMode
+      && !state.infoOpen
+      && !state.gitOpen
+  )
 
   const scrollSelectedIntoView = useCallback((path = latestStateRef.current.selectedPath) => {
     if (!path || !treeScrollRef.current) return

@@ -13,6 +13,7 @@ import {
 } from '@/shared/components/findReplace'
 import { useToolActivity } from '@/shared/components/ToolActivity'
 import { useToast } from '@/shared/feedback/ToastProvider'
+import { useFocusOnWindowActivate } from '@/shared/hooks/useFocusOnWindowActivate'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { JsonCodeEditor, type JsonCodeEditorHandle } from './JsonCodeEditor'
 import { JsonInspector } from './JsonInspector'
@@ -134,6 +135,16 @@ export function JsonTool() {
     [state.content, state.findOptions, state.findQuery]
   )
   const openVaultContent = useCallback((content: string) => update({ content, notice: '' }), [])
+
+  useFocusOnWindowActivate(
+    () => editorRef.current?.focus(),
+    toolActive
+      && !state.findOpen
+      && !state.historyOpen
+      && !state.pathPickerOpen
+      && !state.inputConversion
+      && !state.outputDialog
+  )
 
   useEffect(() => {
     if (!toolActive) return

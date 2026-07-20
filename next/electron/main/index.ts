@@ -297,7 +297,11 @@ function createMainWindow(): BrowserWindow {
   mainWindow = window
   installWindowStatePersistence(window)
 
-  window.on('focus', updateApplicationWindowActivity)
+  window.on('focus', () => {
+    updateApplicationWindowActivity()
+    // Defer so this wins over Chromium restoring focus into the sidebar shell.
+    setTimeout(() => toolWindowManager?.focusActiveDockedView())
+  })
   window.on('blur', updateApplicationWindowActivity)
 
   window.once('ready-to-show', () => {
