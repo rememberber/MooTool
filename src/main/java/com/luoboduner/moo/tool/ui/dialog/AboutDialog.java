@@ -336,10 +336,17 @@ public class AboutDialog extends JDialog {
 
     private void installNextEditionRecommendation() {
         nextEditionPanel = new NextEditionRecommendationPanel();
+        JComponent recommendationContent = nextEditionPanel;
+        if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
+            JPanel macTitleBarSafeArea = new JPanel(new BorderLayout());
+            macTitleBarSafeArea.setBorder(BorderFactory.createEmptyBorder(36, 0, 0, 0));
+            macTitleBarSafeArea.add(nextEditionPanel, BorderLayout.CENTER);
+            recommendationContent = macTitleBarSafeArea;
+        }
         Component aboutContent = contentPane.getComponent(0);
         contentPane.removeAll();
         contentPane.setLayout(new BorderLayout());
-        contentPane.add(nextEditionPanel, BorderLayout.NORTH);
+        contentPane.add(recommendationContent, BorderLayout.NORTH);
         contentPane.add(aboutContent, BorderLayout.CENTER);
     }
 
