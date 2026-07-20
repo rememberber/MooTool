@@ -9,6 +9,7 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.ImagePreviewComponent;
+import com.luoboduner.moo.tool.ui.component.NextEditionRecommendationPanel;
 import com.luoboduner.moo.tool.util.ComponentUtil;
 import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.ImageDisplayUtil;
@@ -45,6 +46,7 @@ public class AboutDialog extends JDialog {
     private JLabel mooInfoLinkLabel;
     private JLabel mooInfoIconLabel;
     private ImagePreviewComponent logoPreview;
+    private NextEditionRecommendationPanel nextEditionPanel;
 
     public AboutDialog() {
 
@@ -61,6 +63,8 @@ public class AboutDialog extends JDialog {
             GridLayoutManager gridLayoutManager = (GridLayoutManager) contentPane.getLayout();
             gridLayoutManager.setMargin(new Insets(28, 0, 0, 0));
         }
+
+        installNextEditionRecommendation();
 
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
         addWindowListener(new WindowAdapter() {
@@ -328,6 +332,22 @@ public class AboutDialog extends JDialog {
                 e.getComponent().setCursor(new Cursor(Cursor.HAND_CURSOR));
             }
         });
+    }
+
+    private void installNextEditionRecommendation() {
+        nextEditionPanel = new NextEditionRecommendationPanel();
+        JComponent recommendationContent = nextEditionPanel;
+        if (SystemUtil.isMacOs() && SystemInfo.isMacFullWindowContentSupported) {
+            JPanel macTitleBarSafeArea = new JPanel(new BorderLayout());
+            macTitleBarSafeArea.setBorder(BorderFactory.createEmptyBorder(36, 0, 0, 0));
+            macTitleBarSafeArea.add(nextEditionPanel, BorderLayout.CENTER);
+            recommendationContent = macTitleBarSafeArea;
+        }
+        Component aboutContent = contentPane.getComponent(0);
+        contentPane.removeAll();
+        contentPane.setLayout(new BorderLayout());
+        contentPane.add(recommendationContent, BorderLayout.NORTH);
+        contentPane.add(aboutContent, BorderLayout.CENTER);
     }
 
     private void installStaticImages() {

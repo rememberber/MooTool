@@ -19,7 +19,7 @@ public class UiConsts {
      * 软件名称,版本
      */
     public static final String APP_NAME = "MooTool";
-    public static final String APP_VERSION = "v1.7.9";
+    public static final String APP_VERSION = "v1.8.0";
 
     public static final int TABLE_ROW_HEIGHT = 30;
 
@@ -101,6 +101,12 @@ public class UiConsts {
      * 软件下载链接信息url
      */
     public static final String DOWNLOAD_LINK_INFO_URL = GITHUB_RAW_MASTER_URL + "download_links.json";
+
+    /**
+     * MooTool Next Electron download page recommended to Java users.
+     */
+    public static final String NEXT_EDITION_RELEASE_URL =
+            "https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.0.1";
 
     /**
      * Grace信息url
