@@ -458,8 +458,8 @@ function registerIpc(): void {
     broadcast('settings:changed', settings)
     return settings
   })
-  ipcMain.handle('settings:open', () => {
-    createSettingsWindow()
+  ipcMain.handle('settings:open', (_event, category?: unknown) => {
+    createSettingsWindow(typeof category === 'string' ? category : undefined)
   })
   ipcMain.handle('settings:close', (event) => {
     BrowserWindow.fromWebContents(event.sender)?.close()
@@ -1408,7 +1408,7 @@ function configureUpdateChecks(settings: AppSettings): void {
   updateIntervalTimer = undefined
   if (!settings.general.autoCheckUpdates || process.env.NODE_ENV === 'test') return
   updateStartupTimer = setTimeout(() => { void checkForUpdatesAndBroadcast(true) }, 2500)
-  updateIntervalTimer = setInterval(() => { void checkForUpdatesAndBroadcast(true) }, 24 * 60 * 60 * 1000)
+  updateIntervalTimer = setInterval(() => { void checkForUpdatesAndBroadcast(true) }, 60 * 60 * 1000)
 }
 
 function checkForUpdates(): Promise<UpdateCheckResult> {
@@ -1737,7 +1737,9 @@ app.whenReady().then(async () => {
   store = new Store<PersistedStore>({
     name: 'mootool-next',
     defaults: {
-      settings: defaultAppSettings,
+      settings: process.env.NODE_ENV === 'test'
+        ? mergeSettings(defaultAppSettings, { general: { legacyMigrationHintDismissed: true } })
+        : defaultAppSettings,
       workspace: defaultWorkspaceState,
       window: defaultWindowState,
       toolWindows: {},

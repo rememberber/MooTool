@@ -130,6 +130,26 @@ test('matches the Java home content and persists sidebar collapse state', async 
   await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ layout: { hideNavigationTitles: false } })
 })
 
+test('shows a first-run tip for migrating Java data without modifying the source', async () => {
+  await mainPage.evaluate(() => window.mootool.updateSettings({ general: { legacyMigrationHintDismissed: false } }))
+  const dialog = mainPage.getByRole('dialog', { name: '迁移 Java 版数据' })
+  await expect(dialog).toBeVisible()
+  await expect(dialog.getByText(/不会修改或删除 Java 版原始数据/)).toBeVisible()
+
+  const settingsWindowPromise = electronApp.waitForEvent('window')
+  await dialog.getByRole('button', { name: '打开设置' }).click()
+  const settingsPage = await settingsWindowPromise
+  await settingsPage.waitForLoadState('domcontentloaded')
+  await expect(settingsPage.locator('.settings-nav__item').filter({ hasText: '数据与备份' })).toHaveAttribute('aria-current', 'page')
+  await expect(settingsPage.getByRole('heading', { name: '旧版数据迁移', exact: true })).toBeVisible()
+  await settingsPage.locator('.settings-titlebar .icon-ghost').click()
+
+  await expect(dialog).toBeHidden()
+  await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({
+    general: { legacyMigrationHintDismissed: true }
+  })
+})
+
 test('creates and persists custom navigation groups', async () => {
   await mainPage.getByRole('button', { name: '管理分组', exact: true }).click()
   const dialog = mainPage.getByRole('dialog', { name: '管理功能分组' })
@@ -144,7 +164,7 @@ test('creates and persists custom navigation groups', async () => {
   await expect(customGroup).toBeVisible()
   await expect(customGroup.locator('.tool-button')).toHaveCount(2)
   await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 11,
     layout: { customGroups: [{ name: '开发常用', toolIds: ['json', 'http'] }] }
   })
 
@@ -485,10 +505,14 @@ test('opens the settings window and synchronizes appearance changes', async () =
       percent: 100,
       transferred: 100,
       total: 100,
-      message: null
+      message: null,
+      releaseNotes: '## 9.9.9\n- hover notes'
     })
   })
   await expect(mainPage.getByRole('button', { name: /安装并重启/ })).toContainText('新版本 9.9.9 已就绪')
+  await mainPage.locator('.sidebar-update-action').hover()
+  await expect(mainPage.locator('.sidebar-update-notes')).toContainText('更新内容')
+  await expect(mainPage.locator('.sidebar-update-notes')).toContainText('hover notes')
   await electronApp.evaluate(({ BrowserWindow }) => {
     BrowserWindow.getAllWindows().find((window) => !window.getParentWindow())?.webContents.send('update:state-changed', {
       status: 'ready',
@@ -498,7 +522,8 @@ test('opens the settings window and synchronizes appearance changes', async () =
       percent: 100,
       transferred: 100,
       total: 100,
-      message: null
+      message: null,
+      releaseNotes: null
     })
   })
   await expect(mainPage.getByRole('button', { name: /更新已下载，打开 DMG 安装/ })).toContainText('新版本 9.9.9 已就绪')
@@ -511,7 +536,8 @@ test('opens the settings window and synchronizes appearance changes', async () =
       percent: null,
       transferred: null,
       total: null,
-      message: null
+      message: null,
+      releaseNotes: null
     })
   })
   await expect(mainPage.locator('.sidebar-update-action')).toHaveCount(0)

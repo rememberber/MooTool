@@ -6,9 +6,15 @@ import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.UpdateDownloadManager;
 import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
+import javax.swing.text.html.HTMLEditorKit;
+import javax.swing.text.html.StyleSheet;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -25,6 +31,8 @@ public class UpdateInstallPromptPanel extends JPanel {
     private final JLabel titleLabel = new JLabel();
     private final JLabel versionLabel = new JLabel();
     private boolean installing;
+    private Popup notesPopup;
+    private Timer hideNotesTimer;
 
     public UpdateInstallPromptPanel() {
         INSTANCES.add(this);
@@ -53,6 +61,17 @@ public class UpdateInstallPromptPanel extends JPanel {
         add(actionButton, BorderLayout.CENTER);
 
         actionButton.addActionListener(e -> install());
+        actionButton.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                showNotesPopup();
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                scheduleHideNotesPopup();
+            }
+        });
         applyAccentStyle();
         applyI18n();
 
@@ -81,6 +100,9 @@ public class UpdateInstallPromptPanel extends JPanel {
                 && manager.getDownloadedFile() != null
                 && manager.getDownloadedFile().exists();
         setVisible(ready);
+        if (!ready) {
+            hideNotesPopupNow();
+        }
         if (ready) {
             applyI18n();
             actionButton.setEnabled(!installing);
@@ -100,7 +122,7 @@ public class UpdateInstallPromptPanel extends JPanel {
         if (version != null) {
             versionLabel.setText(I18n.format("update.sidebar.ready", version));
         }
-        actionButton.setToolTipText(titleLabel.getText());
+        actionButton.setToolTipText(null);
     }
 
     private void applyAccentStyle() {
@@ -128,12 +150,148 @@ public class UpdateInstallPromptPanel extends JPanel {
         actionButton.setContentAreaFilled(true);
     }
 
+    private void showNotesPopup() {
+        cancelHideNotesPopup();
+        String html = UpdateDownloadManager.getInstance().getReleaseNotesHtml();
+        if (StringUtils.isBlank(html) || !isShowing()) {
+            return;
+        }
+        if (notesPopup != null) {
+            return;
+        }
+
+        String version = UpdateDownloadManager.getInstance().getVersion();
+        JPanel card = new JPanel(new BorderLayout());
+        card.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(UIManager.getColor("Component.borderColor") != null
+                        ? UIManager.getColor("Component.borderColor")
+                        : new Color(0xD0D0D4), 1),
+                new EmptyBorder(0, 0, 0, 0)));
+        card.setBackground(UIManager.getColor("Panel.background"));
+
+        JPanel header = new JPanel();
+        header.setLayout(new BoxLayout(header, BoxLayout.Y_AXIS));
+        header.setBorder(new EmptyBorder(10, 12, 8, 12));
+        header.setOpaque(true);
+        Color headerBg = UIManager.getColor("Panel.background");
+        if (UIManager.getColor("PopupMenu.background") != null) {
+            headerBg = UIManager.getColor("PopupMenu.background");
+        }
+        header.setBackground(headerBg);
+        JLabel heading = new JLabel(I18n.get("update.sidebar.whatsNew"));
+        heading.setFont(heading.getFont().deriveFont(Font.BOLD, heading.getFont().getSize2D() + 0.5f));
+        heading.setAlignmentX(Component.LEFT_ALIGNMENT);
+        header.add(heading);
+        if (version != null) {
+            header.add(Box.createVerticalStrut(2));
+            JLabel ready = new JLabel(I18n.format("update.sidebar.ready", version));
+            ready.setForeground(UIManager.getColor("Label.disabledForeground") != null
+                    ? UIManager.getColor("Label.disabledForeground")
+                    : Color.GRAY);
+            ready.setFont(ready.getFont().deriveFont(Math.max(10f, ready.getFont().getSize2D() - 1f)));
+            ready.setAlignmentX(Component.LEFT_ALIGNMENT);
+            header.add(ready);
+        }
+        card.add(header, BorderLayout.NORTH);
+
+        JEditorPane notesPane = new JEditorPane();
+        notesPane.setEditable(false);
+        notesPane.setOpaque(false);
+        notesPane.setBorder(new EmptyBorder(8, 12, 12, 12));
+        notesPane.setContentType("text/html; charset=utf-8");
+        HTMLEditorKit kit = new HTMLEditorKit();
+        notesPane.setEditorKit(kit);
+        StyleSheet styleSheet = kit.getStyleSheet();
+        Font font = actionButton.getFont();
+        Color fg = UIManager.getColor("Label.foreground");
+        if (fg == null) {
+            fg = Color.DARK_GRAY;
+        }
+        Color muted = UIManager.getColor("Label.disabledForeground");
+        if (muted == null) {
+            muted = Color.GRAY;
+        }
+        Color accent = UIManager.getColor("Component.accentColor");
+        if (accent == null) {
+            accent = new Color(0xC48A3A);
+        }
+        styleSheet.addRule("body{font-family:" + font.getFamily() + ";font-size:" + Math.max(11, font.getSize() - 1)
+                + "pt;margin:0;color:" + toCssColor(fg) + ";}");
+        styleSheet.addRule("h2{color:" + toCssColor(accent) + ";font-size:12pt;margin:10px 0 4px 0;}");
+        styleSheet.addRule("h2:first-child{margin-top:0;}");
+        styleSheet.addRule("p{margin:4px 0;color:" + toCssColor(muted) + ";}");
+        styleSheet.addRule("b{color:" + toCssColor(fg) + ";}");
+        notesPane.setText(html);
+        notesPane.setCaretPosition(0);
+
+        JScrollPane scrollPane = new JScrollPane(notesPane);
+        scrollPane.setBorder(BorderFactory.createEmptyBorder());
+        scrollPane.setPreferredSize(new Dimension(360, 280));
+        scrollPane.getVerticalScrollBar().setUnitIncrement(16);
+        card.add(scrollPane, BorderLayout.CENTER);
+
+        MouseAdapter keepOpen = new MouseAdapter() {
+            @Override
+            public void mouseEntered(MouseEvent e) {
+                cancelHideNotesPopup();
+            }
+
+            @Override
+            public void mouseExited(MouseEvent e) {
+                scheduleHideNotesPopup();
+            }
+        };
+        card.addMouseListener(keepOpen);
+        notesPane.addMouseListener(keepOpen);
+        scrollPane.addMouseListener(keepOpen);
+
+        Point location = actionButton.getLocationOnScreen();
+        Dimension screen = Toolkit.getDefaultToolkit().getScreenSize();
+        int popupWidth = 360;
+        int popupHeight = 300;
+        int x = location.x + actionButton.getWidth() + 12;
+        if (x + popupWidth > screen.width - 16) {
+            x = Math.max(16, location.x - popupWidth - 12);
+        }
+        int y = location.y + actionButton.getHeight() - popupHeight;
+        y = Math.max(16, Math.min(y, screen.height - popupHeight - 16));
+        notesPopup = PopupFactory.getSharedInstance().getPopup(actionButton, card, x, y);
+        notesPopup.show();
+    }
+
+    private static String toCssColor(Color color) {
+        return String.format("#%02x%02x%02x", color.getRed(), color.getGreen(), color.getBlue());
+    }
+
+    private void scheduleHideNotesPopup() {
+        cancelHideNotesPopup();
+        hideNotesTimer = new Timer(140, e -> hideNotesPopupNow());
+        hideNotesTimer.setRepeats(false);
+        hideNotesTimer.start();
+    }
+
+    private void cancelHideNotesPopup() {
+        if (hideNotesTimer != null) {
+            hideNotesTimer.stop();
+            hideNotesTimer = null;
+        }
+    }
+
+    private void hideNotesPopupNow() {
+        cancelHideNotesPopup();
+        if (notesPopup != null) {
+            notesPopup.hide();
+            notesPopup = null;
+        }
+    }
+
     private void install() {
         if (installing) {
             return;
         }
         installing = true;
         actionButton.setEnabled(false);
+        hideNotesPopupNow();
         try {
             UpdateDownloadManager.getInstance().installAndExit();
         } catch (Exception e) {

@@ -48,6 +48,9 @@ public class UpdateDownloadManager {
     @Getter
     private volatile int percent;
 
+    @Getter
+    private volatile String releaseNotesHtml;
+
     private volatile String downloadingVersion;
 
     public static UpdateDownloadManager getInstance() {
@@ -69,7 +72,7 @@ public class UpdateDownloadManager {
     /**
      * 若尚未就绪则后台静默下载安装包；已就绪则仅通知监听者刷新提示。
      */
-    public void startSilentDownload(String newVersion) {
+    public void startSilentDownload(String newVersion, String releaseNotesHtml) {
         if (StringUtils.isBlank(newVersion)) {
             return;
         }
@@ -78,15 +81,22 @@ public class UpdateDownloadManager {
                     && newVersion.equals(version)
                     && downloadedFile != null
                     && downloadedFile.exists()) {
+                if (StringUtils.isNotBlank(releaseNotesHtml)) {
+                    this.releaseNotesHtml = releaseNotesHtml;
+                }
                 notifyListeners();
                 return;
             }
             if (status == Status.DOWNLOADING && newVersion.equals(downloadingVersion)) {
+                if (StringUtils.isNotBlank(releaseNotesHtml)) {
+                    this.releaseNotesHtml = releaseNotesHtml;
+                }
                 return;
             }
             status = Status.DOWNLOADING;
             downloadingVersion = newVersion;
             version = newVersion;
+            this.releaseNotesHtml = releaseNotesHtml;
             percent = 0;
             downloadedFile = null;
         }

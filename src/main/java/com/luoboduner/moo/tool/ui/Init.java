@@ -269,7 +269,7 @@ public class Init {
         // 检查新版版
         if (App.config.isAutoCheckUpdate()) {
             ScheduledThreadPoolExecutor threadPoolExecutor = new ScheduledThreadPoolExecutor(1);
-            threadPoolExecutor.scheduleAtFixedRate(() -> UpgradeUtil.checkUpdate(true), 0, 24, TimeUnit.HOURS);
+            threadPoolExecutor.scheduleAtFixedRate(() -> UpgradeUtil.checkUpdate(true), 0, 1, TimeUnit.HOURS);
         }
     }
 

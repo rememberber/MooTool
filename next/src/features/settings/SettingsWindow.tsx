@@ -335,7 +335,18 @@ function EditorSettings({ settings, commit }: SettingsPanelProps) {
     <SettingsGroup title={t('settings.group.editor')}>
       <SettingRow label={t('settings.sqlDialect')}>
         <select value={settings.editor.sqlDialect} onChange={(event) => commit({ editor: { sqlDialect: event.target.value } })}>
-          {['Standard SQL', 'MySQL', 'PostgreSQL', 'Oracle PL/SQL', 'SQL Server Transact-SQL'].map((dialect) => <option key={dialect}>{dialect}</option>)}
+          {[
+            'Standard SQL',
+            'MySQL',
+            'MariaDB',
+            'PostgreSQL',
+            'Oracle PL/SQL',
+            'SQL Server Transact-SQL',
+            'IBM DB2',
+            'Couchbase N1QL',
+            'Amazon Redshift',
+            'Spark'
+          ].map((dialect) => <option key={dialect}>{dialect}</option>)}
         </select>
       </SettingRow>
       <RangeSetting label={t('settings.jsonFontSize')} value={settings.editor.jsonFontSize} onChange={(value) => commit({ editor: { jsonFontSize: value } })} />

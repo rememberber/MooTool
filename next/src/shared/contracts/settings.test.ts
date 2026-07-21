@@ -63,7 +63,7 @@ describe('mergeSettings', () => {
       }
     })
 
-    expect(settings.schemaVersion).toBe(10)
+    expect(settings.schemaVersion).toBe(11)
     expect(settings.appearance.interfaceStyle).toBe('modern')
     expect(settings.runtime.javaPath).toBe('/opt/java')
     expect(settings.runtime.drafts).toEqual(defaultAppSettings.runtime.drafts)
@@ -72,10 +72,33 @@ describe('mergeSettings', () => {
     expect(settings.layout.customGroups).toEqual([])
     expect(settings.layout.hiddenNavigationToolIds).toEqual([])
     expect(settings.general.autoDownloadUpdates).toBe(true)
+    expect(settings.general.legacyMigrationHintDismissed).toBe(true)
     expect(settings.vault.autoCommitIdleSeconds).toBe(30)
     expect(settings.vault.autoCommitInactiveSeconds).toBe(120)
     expect(settings.vault.quickNoteTreeExpandMode).toBe('expandAll')
     expect(settings.vault.jsonTreeExpandMode).toBe('expandAll')
+  })
+
+  it('keeps the Java migration tip for fresh installs', () => {
+    const settings = mergeSettings(defaultAppSettings, defaultAppSettings)
+    expect(settings.general.legacyMigrationHintDismissed).toBe(false)
+  })
+
+  it('dismisses the Java migration tip when upgrading existing Next settings', () => {
+    const settings = mergeSettings(defaultAppSettings, {
+      schemaVersion: 10,
+      general: { language: 'en-US' }
+    })
+    expect(settings.general.legacyMigrationHintDismissed).toBe(true)
+    expect(settings.general.language).toBe('en-US')
+  })
+
+  it('preserves an explicit Java migration tip dismissal flag', () => {
+    const settings = mergeSettings(defaultAppSettings, {
+      schemaVersion: 10,
+      general: { legacyMigrationHintDismissed: false }
+    })
+    expect(settings.general.legacyMigrationHintDismissed).toBe(false)
   })
 
   it('normalizes custom navigation groups and removes invalid tool ids', () => {
