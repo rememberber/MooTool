@@ -1531,7 +1531,7 @@ select:not([multiple]) {
 
 .tool-group--custom h2 {
   color: var(--text-muted);
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .tool-group-divider {
@@ -2349,8 +2349,10 @@ select:not([multiple]) {
 .tool-page h1,
 .placeholder-page h1 {
   margin: 0;
-  font-size: 29px;
-  line-height: 1.2;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.25;
+  letter-spacing: -0.025em;
 }
 
 .status-pill {
@@ -2418,7 +2420,7 @@ select:not([multiple]) {
 .vault-panel__header h2 {
   margin: 0;
   font-size: 12px;
-  font-weight: 650;
+  font-weight: 600;
   white-space: nowrap;
 }
 
@@ -3627,7 +3629,7 @@ select:not([multiple]) {
 .dialog__header h2 {
   margin: 0;
   font-size: 15px;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .dialog__body {
@@ -3894,7 +3896,7 @@ select:not([multiple]) {
   margin: 2px 5px 5px;
   color: var(--text-faint);
   font-size: 11px;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .custom-group-manager__tools label {
@@ -4758,7 +4760,7 @@ select:not([multiple]) {
   margin: 0 6px 5px;
   color: var(--text-faint);
   font-size: 11px;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .navigation-tool-visibility__groups label {
@@ -6863,7 +6865,7 @@ select:not([multiple]) {
 .http-saved-item em {
   color: var(--accent-strong);
   font-style: normal;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .http-editor {
@@ -7477,7 +7479,7 @@ select:not([multiple]) {
   margin: 0;
   color: var(--text-muted);
   font-size: 11px;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .net-section label {
@@ -7634,7 +7636,7 @@ select:not([multiple]) {
   margin: 0 0 10px;
   color: var(--text-strong);
   font-size: 12px;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 .hardware-group dl {
@@ -7816,20 +7818,21 @@ select:not([multiple]) {
 :root[data-interface-style='modern'] .recent-item,
 :root[data-interface-style='modern'] .settings-nav__item {
   border-radius: 7px;
-  font-weight: 450;
+  font-weight: 400;
 }
 
 :root[data-interface-style='modern'] .tool-button--active,
 :root[data-interface-style='modern'] .settings-nav__item--active {
   color: var(--text-strong);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 :root[data-interface-style='modern'] .tool-page h1,
 :root[data-interface-style='modern'] .placeholder-page h1 {
   color: var(--text-strong);
-  font-size: 26px;
-  font-weight: 650;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.025em;
 }
 
 :root[data-interface-style='modern'] .tool-page__header {
@@ -7878,11 +7881,11 @@ select:not([multiple]) {
 :root[data-interface-style='modern'] .primary-command,
 :root[data-interface-style='modern'] textarea,
 :root[data-interface-style='modern'] select {
-  border-radius: 7px;
+  border-radius: var(--desktop-control-radius, 9px);
 }
 
 :root[data-interface-style='modern'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']) {
-  border-radius: 7px;
+  border-radius: var(--desktop-control-radius, 9px);
 }
 
 :root[data-interface-style='modern'] .icon-button,
@@ -7911,7 +7914,7 @@ select:not([multiple]) {
 :root[data-interface-style='modern'] .settings-content__header h1 {
   color: var(--text-strong);
   font-size: 18px;
-  font-weight: 650;
+  font-weight: 600;
 }
 
 :root[data-interface-style='modern'] .settings-group h2 {
@@ -8445,4 +8448,370 @@ select:not([multiple]) {
 
 .vault-new-field {
   font-size: var(--tool-control-font-size);
+}
+
+/*
+ * Desktop control system
+ *
+ * Keep actions quiet and tactile across tools.  Individual workspaces still
+ * own their layout, while buttons, selects and form focus states share the
+ * same client-style surface, radius and interaction feedback.
+ */
+:root {
+  --desktop-font-size-body: 13px;
+  --desktop-font-size-control: 12px;
+  --desktop-font-size-meta: 11px;
+  --desktop-font-size-title: 22px;
+  --desktop-font-weight-regular: 400;
+  --desktop-font-weight-medium: 500;
+  --desktop-font-weight-semibold: 600;
+  --desktop-control-height: 34px;
+  --desktop-control-radius: 9px;
+  --desktop-control-bg: var(--surface);
+  --desktop-control-border: color-mix(in srgb, var(--border-control) 92%, transparent);
+  --desktop-control-border-hover: color-mix(in srgb, var(--border-control-hover) 94%, transparent);
+  --desktop-control-shadow: 0 1px 2px rgba(20, 20, 24, 0.045);
+  --desktop-control-shadow-hover: 0 1px 3px rgba(20, 20, 24, 0.075);
+  --desktop-control-focus: color-mix(in srgb, var(--accent) 20%, transparent);
+  --desktop-button-hover: color-mix(in srgb, var(--surface) 86%, var(--control));
+  --desktop-button-pressed: color-mix(in srgb, var(--surface) 72%, var(--control-active));
+  --desktop-button-prominent: #303135;
+  --desktop-button-prominent-hover: #222327;
+  --desktop-button-prominent-text: #ffffff;
+  --desktop-danger-bg: color-mix(in srgb, var(--error-bg) 82%, var(--surface));
+  --desktop-danger-border: color-mix(in srgb, var(--error-text) 20%, var(--border-control));
+}
+
+:root[data-theme='dark'] {
+  --desktop-control-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --desktop-control-shadow-hover: 0 2px 5px rgba(0, 0, 0, 0.26);
+  --desktop-button-prominent: #eeeeef;
+  --desktop-button-prominent-hover: #ffffff;
+  --desktop-button-prominent-text: #242426;
+}
+
+body {
+  font-weight: var(--desktop-font-weight-regular);
+  letter-spacing: -0.005em;
+}
+
+button,
+select,
+input,
+textarea {
+  font-family: inherit;
+  letter-spacing: -0.005em;
+}
+
+button,
+select {
+  font-weight: var(--desktop-font-weight-medium);
+}
+
+.tool-page h1,
+.placeholder-page h1 {
+  font-size: var(--desktop-font-size-title);
+  font-weight: var(--desktop-font-weight-semibold);
+  line-height: 1.25;
+  letter-spacing: -0.025em;
+}
+
+.settings-content__header h1 {
+  line-height: 1.25;
+  letter-spacing: -0.015em;
+}
+
+.settings-group h2,
+.tool-group h2,
+.section-title {
+  font-weight: var(--desktop-font-weight-medium);
+  letter-spacing: 0.01em;
+}
+
+.setting-row > label,
+.settings-nav__item,
+.tool-button,
+.recent-item {
+  line-height: 1.35;
+}
+
+.setting-row > label {
+  font-weight: var(--desktop-font-weight-regular);
+}
+
+.status-pill {
+  font-size: var(--desktop-font-size-control);
+  font-weight: var(--desktop-font-weight-medium);
+}
+
+button,
+select,
+input,
+textarea {
+  transition:
+    color 120ms ease,
+    background-color 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease,
+    opacity 120ms ease;
+}
+
+button:focus-visible,
+select:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+[role='button']:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--desktop-control-focus);
+  outline-offset: 2px;
+}
+
+/* Native selects keep their platform menu, with a consistent closed state. */
+select:not([multiple]) {
+  min-height: 32px;
+  padding-right: 10px;
+  color: var(--text-body);
+  background-color: var(--desktop-control-bg);
+  border-color: var(--desktop-control-border);
+  border-radius: var(--desktop-control-radius);
+  box-shadow: var(--desktop-control-shadow);
+  cursor: pointer;
+  font-size: var(--desktop-font-size-control);
+  font-weight: var(--desktop-font-weight-medium);
+  line-height: 1.2;
+  appearance: auto;
+}
+
+select:not([multiple]):hover:not(:disabled) {
+  background-color: var(--desktop-button-hover);
+  border-color: var(--desktop-control-border-hover);
+  box-shadow: var(--desktop-control-shadow-hover);
+}
+
+select:not([multiple]):focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--desktop-control-focus);
+  outline: 0;
+}
+
+select:disabled,
+button:disabled {
+  cursor: default;
+  opacity: 0.42;
+}
+
+/* Secondary actions: white surface, hairline border and minimal elevation. */
+.dialog-button,
+.settings-command,
+.panel-command,
+.io-action-button,
+.inspector-action,
+.quick-replace-actions button,
+.git-panel__actions button,
+.git-remote-row button,
+.git-commit-row button,
+.git-change-actions button,
+.protobuf-copy,
+.runtime-toolbar > button:not(.segmented__item),
+.runtime-missing-banner button,
+.find-replace-bar__controls > button:not(.icon-ghost),
+.find-replace-bar > .find-replace-bar__row > button:not(.icon-ghost),
+.diff-toolbar > button,
+.cron-presets button {
+  min-height: var(--desktop-control-height);
+  color: var(--text-body);
+  background: var(--desktop-control-bg);
+  border: 1px solid var(--desktop-control-border);
+  border-radius: var(--desktop-control-radius);
+  box-shadow: var(--desktop-control-shadow);
+  font-size: var(--desktop-font-size-control);
+  font-weight: 500;
+  line-height: 1.25;
+}
+
+.dialog-button:hover:not(:disabled),
+.settings-command:hover:not(:disabled),
+.panel-command:hover:not(:disabled),
+.io-action-button:hover:not(:disabled),
+.inspector-action:hover:not(:disabled),
+.quick-replace-actions button:hover:not(:disabled),
+.git-panel__actions button:hover:not(:disabled),
+.git-remote-row button:hover:not(:disabled),
+.git-commit-row button:hover:not(:disabled),
+.git-change-actions button:hover:not(:disabled),
+.protobuf-copy:hover:not(:disabled),
+.runtime-toolbar > button:hover:not(:disabled),
+.runtime-missing-banner button:hover:not(:disabled),
+.find-replace-bar__controls > button:hover:not(:disabled),
+.find-replace-bar > .find-replace-bar__row > button:hover:not(:disabled),
+.diff-toolbar > button:hover:not(:disabled),
+.cron-presets button:hover:not(:disabled) {
+  color: var(--text-strong);
+  background: var(--desktop-button-hover);
+  border-color: var(--desktop-control-border-hover);
+  box-shadow: var(--desktop-control-shadow-hover);
+}
+
+.dialog-button:active:not(:disabled),
+.settings-command:active:not(:disabled),
+.panel-command:active:not(:disabled),
+.io-action-button:active:not(:disabled),
+.inspector-action:active:not(:disabled),
+.runtime-toolbar > button:active:not(:disabled),
+.diff-toolbar > button:active:not(:disabled),
+.cron-presets button:active:not(:disabled) {
+  background: var(--desktop-button-pressed);
+  box-shadow: none;
+}
+
+/* Prominent actions use a neutral desktop-app treatment; accent stays on
+ * toggles and focus states instead of making every command look like a CTA. */
+.primary-command,
+.dialog-button--primary,
+.runtime-toolbar > button.runtime-run-button {
+  color: var(--desktop-button-prominent-text);
+  background: var(--desktop-button-prominent);
+  border: 1px solid var(--desktop-button-prominent);
+  border-radius: var(--desktop-control-radius);
+  box-shadow: var(--desktop-control-shadow);
+  font-size: var(--desktop-font-size-control);
+  font-weight: 600;
+  line-height: 1.25;
+}
+
+.primary-command:hover:not(:disabled),
+.dialog-button--primary:hover:not(:disabled),
+.runtime-toolbar > button.runtime-run-button:hover:not(:disabled) {
+  color: var(--desktop-button-prominent-text);
+  background: var(--desktop-button-prominent-hover);
+  border-color: var(--desktop-button-prominent-hover);
+  box-shadow: var(--desktop-control-shadow-hover);
+  filter: none;
+}
+
+/* Icon and toolbar controls stay visually lighter than labeled commands. */
+.toolbar-button {
+  border: 1px solid transparent;
+  border-radius: var(--desktop-control-radius);
+  box-shadow: none;
+  font-weight: 500;
+}
+
+.toolbar-button:hover:not(:disabled) {
+  color: var(--text-strong);
+  background: var(--control-hover);
+}
+
+.toolbar-button--primary {
+  color: var(--text-strong);
+  background: var(--control);
+  border-color: var(--border-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--surface) 35%, transparent);
+}
+
+.icon-button,
+.settings-command--quiet {
+  color: var(--text-muted);
+  background: var(--control);
+  border: 1px solid transparent;
+  border-radius: var(--desktop-control-radius);
+  box-shadow: none;
+}
+
+.icon-button:hover:not(:disabled),
+.settings-command--quiet:hover:not(:disabled),
+.icon-ghost:hover:not(:disabled) {
+  color: var(--text-strong);
+  background: var(--control-active);
+}
+
+.icon-ghost,
+.quick-note-icon-button,
+.vault-panel__actions button,
+.vault-more-menu > summary,
+.toast__dismiss {
+  border-radius: 8px;
+}
+
+.dialog-button--danger,
+.git-panel__actions .git-danger-button,
+.git-change-actions button:first-child,
+.icon-button--danger {
+  color: var(--error-text);
+  background: var(--desktop-danger-bg);
+  border-color: var(--desktop-danger-border);
+  box-shadow: none;
+}
+
+.dialog-button--danger:hover:not(:disabled),
+.git-panel__actions .git-danger-button:hover:not(:disabled),
+.git-change-actions button:first-child:hover:not(:disabled),
+.icon-button--danger:hover:not(:disabled) {
+  color: var(--error-text);
+  background: color-mix(in srgb, var(--error-bg) 94%, var(--surface));
+  border-color: color-mix(in srgb, var(--error-text) 30%, var(--border-control));
+}
+
+/* Text fields share the same focus language without changing editor surfaces. */
+input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+textarea {
+  border-radius: var(--desktop-control-radius);
+}
+
+input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):hover:not(:disabled):not(:focus),
+textarea:hover:not(:disabled):not(:focus) {
+  border-color: var(--desktop-control-border-hover);
+}
+
+input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):focus,
+textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--desktop-control-focus);
+  outline: 0;
+}
+
+.segmented {
+  padding: 3px;
+  background: var(--control);
+  border: 1px solid var(--border-soft);
+  border-radius: 10px;
+  box-shadow: inset 0 1px 1px color-mix(in srgb, var(--shadow) 28%, transparent);
+}
+
+.segmented__item {
+  border-radius: 7px;
+  font-weight: 500;
+}
+
+.segmented__item--active {
+  background: var(--surface);
+  box-shadow: var(--desktop-control-shadow-hover);
+}
+
+.toggle {
+  border: 1px solid color-mix(in srgb, var(--border-control) 70%, transparent);
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--shadow) 44%, transparent);
+}
+
+.toggle--checked {
+  border-color: color-mix(in srgb, var(--accent) 76%, var(--border-control));
+}
+
+.quick-note-tree-menu,
+.vault-tree-menu,
+.vault-more-menu > div {
+  padding: 6px;
+  background: var(--surface-elevated);
+  border-color: var(--desktop-control-border);
+  border-radius: 10px;
+  box-shadow: 0 12px 30px var(--shadow);
+  backdrop-filter: blur(18px);
+}
+
+.quick-note-tree-menu button,
+.vault-tree-menu button,
+.vault-more-menu > div button {
+  font-size: var(--desktop-font-size-control);
+  font-weight: var(--desktop-font-weight-regular);
+  line-height: 1.3;
 }
