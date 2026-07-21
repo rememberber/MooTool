@@ -221,21 +221,20 @@ jobs:
           if-no-files-found: error
           retention-days: 14
 
-  package-mac-intel-self-hosted:
+  package-mac-intel:
     needs: validate-release
-    if: github.event_name == 'workflow_dispatch' && (inputs.target == 'all' || inputs.target == 'mac-intel')
-    name: macOS Intel (self-hosted)
-    runs-on:
-      - self-hosted
-      - macOS
-      - X64
+    if: github.event_name != 'workflow_dispatch' || inputs.target == 'all' || inputs.target == 'mac-intel'
+    name: macOS Intel
+    runs-on: macos-26-intel
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Verify system Python
-        run: python3 --version
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
 
       - name: Set up Maven JDK
         uses: actions/setup-java@v4
@@ -253,14 +252,14 @@ jobs:
           key: ${{ runner.os }}-${{ runner.arch }}-jdks-v1-${{ hashFiles('scripts/prepare_jdks.py') }}
 
       - name: Prepare packaging JDK
-        run: python3 -u scripts/prepare_jdks.py --targets mac-x64 --java-home "$JAVA_HOME"
+        run: python -u scripts/prepare_jdks.py --targets mac-x64
 
       - name: Build installer
         run: mvn --batch-mode --no-transfer-progress clean package -Pmac-intel -Dmaven.test.skip=true
 
       - name: Stage release assets
         run: >-
-          python3 -u scripts/collect_release_assets.py
+          python -u scripts/collect_release_assets.py
           --source-dir target/mac-intel
           --output-dir dist/mac-intel
           --target-label mac-intel
@@ -280,6 +279,7 @@ jobs:
     needs:
       - validate-release
       - package-mac-apple-silicon
+      - package-mac-intel
       - package-windows-x64
       - package-linux-x64
     runs-on: ubuntu-latest
@@ -333,13 +333,13 @@ jobs:
 
   release-manual-assets:
     name: Append assets to existing GitHub Release
-    if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && (needs.package-mac-apple-silicon.result == 'success' || needs.package-windows-x64.result == 'success' || needs.package-linux-x64.result == 'success' || needs.package-mac-intel-self-hosted.result == 'success') }}
+    if: ${{ always() && github.event_name == 'workflow_dispatch' && inputs.release_tag != '' && (needs.package-mac-apple-silicon.result == 'success' || needs.package-mac-intel.result == 'success' || needs.package-windows-x64.result == 'success' || needs.package-linux-x64.result == 'success') }}
     needs:
       - validate-release
       - package-mac-apple-silicon
+      - package-mac-intel
       - package-windows-x64
       - package-linux-x64
-      - package-mac-intel-self-hosted
     runs-on: ubuntu-latest
 
     steps:
@@ -383,9 +383,9 @@ jobs:
     needs:
       - validate-release
       - package-mac-apple-silicon
+      - package-mac-intel
       - package-windows-x64
       - package-linux-x64
-      - package-mac-intel-self-hosted
       - release
       - release-manual-assets
     runs-on: ubuntu-latest
@@ -434,4 +434,3 @@ jobs:
           fi
           git commit -m "chore: update download_links.json for ${{ steps.release.outputs.tag }}"
           git push
-

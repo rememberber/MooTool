@@ -36,10 +36,6 @@ If `swift test` fails because the active developer directory points to Command L
 
 The preview currently launches as a Swift Package executable. It is not a signed `.app` bundle and is not part of the release DMG pipeline.
 
-## GitHub Actions
-
-The `macOS native preview` workflow builds and tests this Swift Package on `macos-14`. It is intentionally separate from `Build installers`, so the existing Java-based Windows, Linux, and macOS installer jobs remain unchanged.
-
 ## Migration Direction
 
 - Keep Windows and Linux on the existing Java build.

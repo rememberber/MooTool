@@ -267,8 +267,15 @@ export function RuntimeTool() {
                 className="runtime-code-editor"
                 ariaLabel={t('runtime.editor')}
                 value={code}
+                language={runtime === 'python' ? 'python' : runtime === 'node' ? 'javascript' : 'java'}
                 wrap={false}
                 onChange={setCode}
+                onKeyDown={(event) => {
+                  if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLocaleLowerCase() === 'f') {
+                    event.preventDefault()
+                    void formatSource()
+                  }
+                }}
               />
             </div>
           </section>

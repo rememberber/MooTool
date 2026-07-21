@@ -1,4 +1,4 @@
-import { fetch, ProxyAgent, type Dispatcher, type RequestInit } from 'undici'
+import { fetch, Agent, ProxyAgent, type Dispatcher } from 'undici'
 import type {
   HttpCookieEntry,
   HttpResponseResult,
@@ -27,27 +27,34 @@ type BingSession = {
 
 const maxResponseBytes = 10 * 1024 * 1024
 const userAgent = 'Mozilla/5.0 (MooTool Next) AppleWebKit/537.36 Chrome/138 Safari/537.36'
+/** Align with Java GoogleTranslatorUtil connect timeout — fail fast when Google is unreachable. */
+const translationConnectTimeoutMs = 5_000
+const translationBodyTimeoutMs = 10_000
+/** After a provider fails, skip it briefly so every keystroke doesn't re-wait on a dead endpoint. */
+const providerCooldownMs = 10 * 60 * 1_000
 
 export class NetworkService {
   private readonly controllers = new Map<string, AbortController>()
   private readonly timers = new Map<string, NodeJS.Timeout>()
+  private readonly proxyDispatchers = new Map<string, Dispatcher>()
+  private readonly translationProxyDispatchers = new Map<string, Dispatcher>()
+  private readonly providerCooldownUntil = new Map<TranslationProvider, number>()
+  private readonly directTranslationAgent = createTranslationAgent()
   private bingSession: BingSession | null = null
 
   async sendHttp(input: HttpSendInput, proxy: ProxyConfiguration): Promise<HttpResponseResult> {
     const startedAt = Date.now()
     const controller = this.begin(input.requestId, input.timeoutMs)
-    let dispatcher: Dispatcher | undefined
     try {
       const url = buildRequestUrl(input.request.url, input.request.method, input.request.params)
       const headers = buildHeaders(input.request.headers, input.request.cookies)
       const body = buildRequestBody(input.request.method, input.request.body, input.request.bodyType, input.request.params, headers)
-      dispatcher = createProxyDispatcher(proxy)
       const response = await fetch(url, {
         method: input.request.method,
         headers,
         body,
         signal: controller.signal,
-        dispatcher,
+        dispatcher: this.getProxyDispatcher(proxy),
         redirect: 'follow'
       })
       const bytes = await readLimitedResponse(response)
@@ -80,29 +87,73 @@ export class NetworkService {
       }
     } finally {
       this.finish(input.requestId)
-      await closeDispatcher(dispatcher)
     }
   }
 
   async translate(input: TranslationInput, proxy: ProxyConfiguration): Promise<TranslationResult> {
     const controller = this.begin(input.requestId, input.timeoutMs)
-    let dispatcher: Dispatcher | undefined
     try {
-      dispatcher = createProxyDispatcher(proxy)
-      const primary = input.preferredProvider
-      try {
-        const text = await this.translateWith(primary, input, controller.signal, dispatcher)
-        return { requestId: input.requestId, text, provider: primary, fallbackUsed: false }
-      } catch (primaryError) {
-        if (controller.signal.aborted) throw primaryError
-        const fallback: TranslationProvider = primary === 'google' ? 'bing' : 'google'
-        const text = await this.translateWith(fallback, input, controller.signal, dispatcher)
-        return { requestId: input.requestId, text, provider: fallback, fallbackUsed: true }
+      const dispatcher = this.getTranslationDispatcher(proxy)
+      const preferred = input.preferredProvider
+      const order = translationProviderOrder(preferred, this.shouldSkipProvider(preferred))
+      let lastError: unknown
+
+      for (const provider of order) {
+        if (controller.signal.aborted) break
+        try {
+          const text = await this.translateWith(provider, input, controller.signal, dispatcher)
+          this.markProviderSuccess(provider)
+          return {
+            requestId: input.requestId,
+            text,
+            provider,
+            fallbackUsed: provider !== preferred
+          }
+        } catch (error) {
+          lastError = error
+          if (isRequestCancelled(controller.signal, error)) throw error
+          this.markProviderFailure(provider)
+        }
       }
+
+      throw lastError instanceof Error ? lastError : new Error(errorMessage(lastError))
     } finally {
       this.finish(input.requestId)
-      await closeDispatcher(dispatcher)
     }
+  }
+
+  private getTranslationDispatcher(proxy: ProxyConfiguration): Dispatcher {
+    if (!proxy.enabled) return this.directTranslationAgent
+    const key = proxyDispatcherKey(proxy)
+    const existing = this.translationProxyDispatchers.get(key)
+    if (existing) return existing
+    const dispatcher = createTranslationProxyDispatcher(proxy)
+    this.translationProxyDispatchers.set(key, dispatcher)
+    return dispatcher
+  }
+
+  private getProxyDispatcher(proxy: ProxyConfiguration): Dispatcher | undefined {
+    if (!proxy.enabled) return undefined
+    const key = proxyDispatcherKey(proxy)
+    const existing = this.proxyDispatchers.get(key)
+    if (existing) return existing
+    const dispatcher = createProxyDispatcher(proxy)
+    if (!dispatcher) return undefined
+    this.proxyDispatchers.set(key, dispatcher)
+    return dispatcher
+  }
+
+  private shouldSkipProvider(provider: TranslationProvider): boolean {
+    const until = this.providerCooldownUntil.get(provider)
+    return until != null && until > Date.now()
+  }
+
+  private markProviderFailure(provider: TranslationProvider): void {
+    this.providerCooldownUntil.set(provider, Date.now() + providerCooldownMs)
+  }
+
+  private markProviderSuccess(provider: TranslationProvider): void {
+    this.providerCooldownUntil.delete(provider)
   }
 
   cancel(requestId: string): boolean {
@@ -137,37 +188,34 @@ export class NetworkService {
   }
 
   private async translateBing(text: string, sourceLang: string, targetLang: string, signal: AbortSignal, dispatcher?: Dispatcher): Promise<string> {
+    // Align with Java: one POST for the full text (no client-side chunking).
     const session = await this.getBingSession(signal, dispatcher)
-    const results: string[] = []
-    for (const chunk of splitTranslationText(text, 1_000)) {
-      session.requestCount += 2
-      const body = new URLSearchParams({
-        fromLang: bingLanguage(sourceLang, true),
-        to: bingLanguage(targetLang, false),
-        text: chunk,
-        token: session.token,
-        key: session.key,
-        tryFetchingGenderDebiasedTranslations: 'true'
-      })
-      const response = await fetch(`https://cn.bing.com/ttranslatev3?isVertical=1&IG=${encodeURIComponent(session.ig)}&IID=translator.5026.${session.requestCount}`, {
-        method: 'POST',
-        headers: {
-          'content-type': 'application/x-www-form-urlencoded',
-          origin: 'https://cn.bing.com',
-          referer: 'https://cn.bing.com/translator',
-          'user-agent': userAgent
-        },
-        body: body.toString(),
-        signal,
-        dispatcher
-      })
-      if (!response.ok) throw new Error(`Bing HTTP ${response.status}`)
-      const payload = await response.json() as Array<{ translations?: Array<{ text?: string }> }>
-      const translated = payload[0]?.translations?.[0]?.text
-      if (!translated) throw new Error('Bing returned no translation')
-      results.push(translated)
-    }
-    return results.join('')
+    session.requestCount += 2
+    const body = new URLSearchParams({
+      fromLang: bingLanguage(sourceLang, true),
+      to: bingLanguage(targetLang, false),
+      text,
+      token: session.token,
+      key: session.key,
+      tryFetchingGenderDebiasedTranslations: 'true'
+    })
+    const response = await fetch(`https://cn.bing.com/ttranslatev3?isVertical=1&IG=${encodeURIComponent(session.ig)}&IID=translator.5026.${session.requestCount}`, {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/x-www-form-urlencoded',
+        origin: 'https://cn.bing.com',
+        referer: 'https://cn.bing.com/translator',
+        'user-agent': userAgent
+      },
+      body: body.toString(),
+      signal,
+      dispatcher
+    })
+    if (!response.ok) throw new Error(`Bing HTTP ${response.status}`)
+    const payload = await response.json() as Array<{ translations?: Array<{ text?: string }> }>
+    const translated = payload[0]?.translations?.[0]?.text
+    if (!translated) throw new Error('Bing returned no translation')
+    return translated
   }
 
   private async getBingSession(signal: AbortSignal, dispatcher?: Dispatcher): Promise<BingSession> {
@@ -211,19 +259,38 @@ function buildRequestBody(method: string, body: string, bodyType: string, params
   return form.toString()
 }
 
+const googleChunkConcurrency = 3
+
 async function translateGoogle(text: string, sourceLang: string, targetLang: string, signal: AbortSignal, dispatcher?: Dispatcher): Promise<string> {
   const chunks = splitTranslationText(text, 1800)
-  const results: string[] = []
-  for (const chunk of chunks) {
-    const query = new URLSearchParams({ client: 'gtx', sl: googleLanguage(sourceLang), tl: googleLanguage(targetLang), dt: 't', q: chunk })
-    const response = await fetch(`https://translate.googleapis.com/translate_a/single?${query}`, { headers: { 'user-agent': userAgent }, signal, dispatcher })
-    if (!response.ok) throw new Error(`Google HTTP ${response.status}`)
-    const payload = await response.json() as [Array<[string]>]
-    const translated = payload[0]?.map((part) => part[0] || '').join('')
-    if (!translated) throw new Error('Google returned no translation')
-    results.push(translated)
-  }
+  if (chunks.length === 1) return translateGoogleChunk(chunks[0], sourceLang, targetLang, signal, dispatcher)
+  const results = await mapPool(chunks, googleChunkConcurrency, (chunk) => translateGoogleChunk(chunk, sourceLang, targetLang, signal, dispatcher))
   return results.join('')
+}
+
+async function translateGoogleChunk(chunk: string, sourceLang: string, targetLang: string, signal: AbortSignal, dispatcher?: Dispatcher): Promise<string> {
+  const query = new URLSearchParams({ client: 'gtx', sl: googleLanguage(sourceLang), tl: googleLanguage(targetLang), dt: 't', q: chunk })
+  const response = await fetch(`https://translate.googleapis.com/translate_a/single?${query}`, { headers: { 'user-agent': userAgent }, signal, dispatcher })
+  if (!response.ok) throw new Error(`Google HTTP ${response.status}`)
+  const payload = await response.json() as [Array<[string]>]
+  const translated = payload[0]?.map((part) => part[0] || '').join('')
+  if (!translated) throw new Error('Google returned no translation')
+  return translated
+}
+
+async function mapPool<T, R>(items: T[], concurrency: number, mapper: (item: T, index: number) => Promise<R>): Promise<R[]> {
+  const results = new Array<R>(items.length)
+  let nextIndex = 0
+  async function worker(): Promise<void> {
+    while (nextIndex < items.length) {
+      const index = nextIndex
+      nextIndex += 1
+      results[index] = await mapper(items[index], index)
+    }
+  }
+  const workers = Math.min(Math.max(1, concurrency), items.length)
+  await Promise.all(Array.from({ length: workers }, () => worker()))
+  return results
 }
 
 export function splitTranslationText(text: string, maxLength: number): string[] {
@@ -281,8 +348,38 @@ function prettyJson(value: string): string {
   }
 }
 
+function proxyDispatcherKey(proxy: ProxyConfiguration): string {
+  return `${proxy.host.trim()}|${proxy.port}|${proxy.username}|${proxy.password}`
+}
+
+function createTranslationAgent(): Dispatcher {
+  return new Agent({
+    connect: { timeout: translationConnectTimeoutMs },
+    bodyTimeout: translationBodyTimeoutMs,
+    headersTimeout: translationBodyTimeoutMs,
+    keepAliveTimeout: 60_000,
+    keepAliveMaxTimeout: 60_000
+  })
+}
+
+function createTranslationProxyDispatcher(proxy: ProxyConfiguration): Dispatcher {
+  const uri = buildProxyUri(proxy)
+  return new ProxyAgent({
+    uri: uri.toString(),
+    connect: { timeout: translationConnectTimeoutMs },
+    bodyTimeout: translationBodyTimeoutMs,
+    headersTimeout: translationBodyTimeoutMs,
+    keepAliveTimeout: 60_000,
+    keepAliveMaxTimeout: 60_000
+  })
+}
+
 function createProxyDispatcher(proxy: ProxyConfiguration): Dispatcher | undefined {
   if (!proxy.enabled) return undefined
+  return new ProxyAgent(buildProxyUri(proxy).toString())
+}
+
+function buildProxyUri(proxy: ProxyConfiguration): URL {
   const host = proxy.host.trim()
   const port = Number(proxy.port)
   if (!host || !Number.isInteger(port) || port < 1 || port > 65535) throw new Error('Invalid proxy settings')
@@ -290,11 +387,46 @@ function createProxyDispatcher(proxy: ProxyConfiguration): Dispatcher | undefine
   uri.port = String(port)
   if (proxy.username) uri.username = proxy.username
   if (proxy.password) uri.password = proxy.password
-  return new ProxyAgent(uri.toString())
+  return uri
 }
 
-async function closeDispatcher(dispatcher?: Dispatcher): Promise<void> {
-  if (dispatcher && 'close' in dispatcher) await dispatcher.close()
+export function translationProviderOrder(preferred: TranslationProvider, skipPreferred: boolean): TranslationProvider[] {
+  const alternate: TranslationProvider = preferred === 'google' ? 'bing' : 'google'
+  return skipPreferred ? [alternate, preferred] : [preferred, alternate]
+}
+
+/** Parse Chromium `session.resolveProxy` output, preferring HTTP CONNECT over SOCKS (undici ProxyAgent). */
+export function parseChromiumProxyDirective(value: string): { host: string; port: number } | null {
+  const parts = value.split(';').map((part) => part.trim()).filter(Boolean)
+  for (const part of parts) {
+    if (/^DIRECT$/i.test(part)) continue
+    const match = /^(PROXY|HTTPS|HTTP)\s+(\S+)$/i.exec(part)
+    if (!match) continue
+    const parsed = parseProxyHostPort(match[2])
+    if (parsed) return parsed
+  }
+  return null
+}
+
+function parseProxyHostPort(endpoint: string): { host: string; port: number } | null {
+  const value = endpoint.trim()
+  const ipv6 = /^\[([^\]]+)\]:(\d+)$/.exec(value)
+  if (ipv6) {
+    const port = Number(ipv6[2])
+    return Number.isInteger(port) && port >= 1 && port <= 65535 ? { host: ipv6[1], port } : null
+  }
+  const index = value.lastIndexOf(':')
+  if (index <= 0) return null
+  const host = value.slice(0, index).trim()
+  const port = Number(value.slice(index + 1))
+  if (!host || !Number.isInteger(port) || port < 1 || port > 65535) return null
+  return { host, port }
+}
+
+function isRequestCancelled(signal: AbortSignal, error: unknown): boolean {
+  if (!signal.aborted) return false
+  const message = errorMessage(error)
+  return message.includes('ABORTED') || message.includes('TIMEOUT')
 }
 
 function classifyNetworkError(error: unknown, signal: AbortSignal): HttpResponseResult['errorCode'] {

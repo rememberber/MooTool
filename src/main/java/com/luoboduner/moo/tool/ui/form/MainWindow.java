@@ -10,6 +10,7 @@ import com.luoboduner.moo.tool.ui.UiMetrics;
 import com.luoboduner.moo.tool.ui.component.FuncTabGroupSidebar;
 import com.luoboduner.moo.tool.ui.component.TabUiUtil;
 import com.luoboduner.moo.tool.ui.component.TopMenuBar;
+import com.luoboduner.moo.tool.ui.component.UpdateInstallPromptPanel;
 import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
 import com.luoboduner.moo.tool.ui.listener.TabListener;
@@ -73,6 +74,11 @@ public class MainWindow {
     private JPanel funcShellPanel;
 
     private FuncTabGroupSidebar funcTabGroupSidebar;
+
+    /**
+     * 非分组导航模式下，在功能区顶部展示更新安装提示。
+     */
+    private UpdateInstallPromptPanel updateInstallPromptPanel;
 
     private MainWindow() {
     }
@@ -170,17 +176,35 @@ public class MainWindow {
             if (funcTabGroupSidebar.getParent() != funcShellPanel) {
                 funcShellPanel.add(funcTabGroupSidebar, BorderLayout.WEST);
             }
+            removeStandaloneUpdatePrompt();
             setTabStripHidden(true);
             tabbedPane.putClientProperty(TABBED_PANE_LEADING_COMPONENT, null);
         } else {
             if (funcTabGroupSidebar != null && funcTabGroupSidebar.getParent() == funcShellPanel) {
                 funcShellPanel.remove(funcTabGroupSidebar);
             }
+            ensureStandaloneUpdatePrompt();
             setTabStripHidden(false);
             ensureTabLeadingComponent();
         }
         relayoutAfterTabStripChanged();
         TopMenuBar.refreshFuncNavigatorMenuVisibility();
+    }
+
+    private void ensureStandaloneUpdatePrompt() {
+        if (updateInstallPromptPanel == null) {
+            updateInstallPromptPanel = new UpdateInstallPromptPanel();
+            updateInstallPromptPanel.setBorder(BorderFactory.createEmptyBorder(4, 8, 0, 8));
+        }
+        if (updateInstallPromptPanel.getParent() != funcShellPanel) {
+            funcShellPanel.add(updateInstallPromptPanel, BorderLayout.NORTH);
+        }
+    }
+
+    private void removeStandaloneUpdatePrompt() {
+        if (updateInstallPromptPanel != null && updateInstallPromptPanel.getParent() == funcShellPanel) {
+            funcShellPanel.remove(updateInstallPromptPanel);
+        }
     }
 
     private void setTabStripHidden(boolean hidden) {

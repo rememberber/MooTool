@@ -7,12 +7,21 @@ import {
   ViewPlugin,
   type ViewUpdate
 } from '@codemirror/view'
+import {
+  buildSearchRegExp,
+  defaultFindReplaceOptions,
+  type FindReplaceOptions
+} from './findReplace'
 
-export function codeEditorSearchHighlight(query: string): Extension {
-  if (!query) return []
+export function codeEditorSearchHighlight(
+  query: string,
+  options: FindReplaceOptions = defaultFindReplaceOptions
+): Extension {
+  const expression = buildSearchRegExp(query, options)
+  if (!expression) return []
 
   const matcher = new MatchDecorator({
-    regexp: new RegExp(escapeRegExp(query), 'giu'),
+    regexp: expression,
     decoration: Decoration.mark({ class: 'cm-searchMatch' })
   })
 
@@ -29,8 +38,4 @@ export function codeEditorSearchHighlight(query: string): Extension {
   }, {
     decorations: (value) => value.decorations
   })
-}
-
-function escapeRegExp(value: string): string {
-  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 }
