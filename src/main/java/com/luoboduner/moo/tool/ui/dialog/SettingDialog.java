@@ -49,6 +49,7 @@ public class SettingDialog extends JDialog {
     private JPanel contentPane;
     private JScrollPane settingScrollPane;
     private JCheckBox autoCheckUpdateCheckBox;
+    private JCheckBox autoDownloadUpdateCheckBox;
     private JComboBox comboBox1;
     private JComboBox menuBarPositionComboBox;
     private JTextField dbFilePathTextField;
@@ -120,6 +121,7 @@ public class SettingDialog extends JDialog {
 
     private static final Map<String, String> CHECKBOX_KEYS = Map.of(
             "启动时自动检查更新", "setting.autoCheckUpdate",
+            "自动静默下载新版", "setting.autoDownloadUpdate",
             "紧凑", "setting.tabCompact",
             "隐藏标题", "setting.tabHideTitle",
             "显示分割线", "setting.tabSeparator",
@@ -177,6 +179,7 @@ public class SettingDialog extends JDialog {
 
         // 常规
         autoCheckUpdateCheckBox.setSelected(App.config.isAutoCheckUpdate());
+        autoDownloadUpdateCheckBox.setSelected(App.config.isAutoDownloadUpdate());
 
         // HTTP请求
         httpUseProxyCheckBox.setSelected(App.config.isHttpUseProxy());
@@ -218,6 +221,12 @@ public class SettingDialog extends JDialog {
         // 设置-常规-启动时自动检查更新
         autoCheckUpdateCheckBox.addActionListener(e -> {
             App.config.setAutoCheckUpdate(autoCheckUpdateCheckBox.isSelected());
+            App.config.save();
+        });
+
+        // 设置-常规-自动静默下载新版
+        autoDownloadUpdateCheckBox.addActionListener(e -> {
+            App.config.setAutoDownloadUpdate(autoDownloadUpdateCheckBox.isSelected());
             App.config.save();
         });
 
@@ -771,38 +780,41 @@ public class SettingDialog extends JDialog {
         panel2.setLayout(new GridLayoutManager(6, 1, new Insets(0, 0, 0, 0), -1, -1));
         panel1.add(panel2, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, new Dimension(600, -1), null, 0, false));
         final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(4, 3, new Insets(15, 15, 25, 0), -1, -1));
+        panel3.setLayout(new GridLayoutManager(5, 3, new Insets(15, 15, 25, 0), -1, -1));
         panel2.add(panel3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         panel3.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "常规", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel3.getFont()), null));
         autoCheckUpdateCheckBox = new JCheckBox();
         autoCheckUpdateCheckBox.setText("启动时自动检查更新");
         panel3.add(autoCheckUpdateCheckBox, new GridConstraints(0, 0, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        autoDownloadUpdateCheckBox = new JCheckBox();
+        autoDownloadUpdateCheckBox.setText("自动静默下载新版");
+        panel3.add(autoDownloadUpdateCheckBox, new GridConstraints(1, 0, 1, 2, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label1 = new JLabel();
         label1.setText("语言");
-        panel3.add(label1, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel3.add(label1, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JLabel label2 = new JLabel();
         label2.setText("字体");
-        panel3.add(label2, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel3.add(label2, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         comboBox1 = new JComboBox();
         comboBox1.setEnabled(false);
         final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
         defaultComboBoxModel1.addElement("简体中文");
         defaultComboBoxModel1.addElement("English");
         comboBox1.setModel(defaultComboBoxModel1);
-        panel3.add(comboBox1, new GridConstraints(1, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel3.add(comboBox1, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         fontFamilyComboBox = new JComboBox();
         fontFamilyComboBox.setEnabled(true);
         final DefaultComboBoxModel defaultComboBoxModel2 = new DefaultComboBoxModel();
         fontFamilyComboBox.setModel(defaultComboBoxModel2);
-        panel3.add(fontFamilyComboBox, new GridConstraints(2, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel3.add(fontFamilyComboBox, new GridConstraints(3, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer2 = new Spacer();
-        panel3.add(spacer2, new GridConstraints(1, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        panel3.add(spacer2, new GridConstraints(2, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         accentColorPanel = new JPanel();
         accentColorPanel.setLayout(new FlowLayout(FlowLayout.LEFT, 5, 5));
-        panel3.add(accentColorPanel, new GridConstraints(3, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel3.add(accentColorPanel, new GridConstraints(4, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JLabel label3 = new JLabel();
         label3.setText("强调色");
-        panel3.add(label3, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel3.add(label3, new GridConstraints(4, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         quickNoteSettingPanel = new JPanel();
         quickNoteSettingPanel.setLayout(new GridLayoutManager(1, 3, new Insets(15, 15, 25, 0), -1, -1));
         panel2.add(quickNoteSettingPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
