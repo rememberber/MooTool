@@ -147,6 +147,75 @@
               "size": 97767340
             }
           ]
+        },
+        {
+          "version": "1.0.2",
+          "title": "MooTool Next Electron 1.0.2",
+          "notes": "## English\n\n> Product: MooTool Next Electron<br>\n> Version: 1.0.2<br>\n> This release is installed and updated independently from MooTool Java and does not overwrite the Java edition.\n\n### Features\n\n- Added code highlighting, brace matching, code folding, and formatting for Notes, JSON Workbench, and other suitable text editing areas.\n- Enhanced Find & Replace in Notes and JSON Workbench: auto-fill the search box from the current selection, and support regular expressions and other Java-parity capabilities.\n\n### Fixes and improvements\n\n- Fixed window activation focus so it returns to the ribbon content (the Notes / JSON Workbench editor) instead of the navigation Settings button.\n- Improved Translation performance so it is no longer noticeably slower than the Java edition.\n\n### Notes\n\n- Installers remain unsigned. On macOS, the app downloads and verifies the new DMG, then asks the user to open it and drag the app into Applications.\n- The Java product line continues to use `v*` tags and its existing update manifest.\n\n## 中文\n\n> 产品线：MooTool Next Electron<br>\n> 版本：1.0.2<br>\n> 本版本与 MooTool Java 独立安装、独立更新，不会覆盖 Java 版本。\n\n### 新功能\n\n- 随手记、JSON 工作台及其他适用的文本编辑区域支持代码高亮、括号匹配、代码折叠与格式化。\n- 增强随手记与 JSON 工作台的查找替换：选中文本时可自动填入搜索框，并支持正则表达式等与 Java 版对齐的能力。\n\n### 修复与改进\n\n- 修复窗口激活时焦点落在导航栏设置按钮的问题；现在会回到功能区内容（随手记 / JSON 工作台的文本编辑框）。\n- 优化翻译功能性能，不再明显慢于 Java 版。\n\n### 说明\n\n- 安装包仍未签名。macOS 会下载并校验新版 DMG，随后提示用户打开 DMG 并将应用拖入“应用程序”。\n- Java 产品线继续使用 `v*` tag 和原有更新清单，不受本次发布影响。\n\n## 日本語\n\n> 製品ライン：MooTool Next Electron<br>\n> バージョン：1.0.2<br>\n> このリリースは MooTool Java とは独立してインストール・更新され、Java 版を上書きしません。\n\n### 新機能\n\n- クイックノート、JSON ワークベンチなど対応するテキスト編集領域で、コードハイライト、括弧マッチング、コード折りたたみ、フォーマットに対応しました。\n- クイックノートと JSON ワークベンチの検索／置換を強化：選択中のテキストを検索欄へ自動入力し、正規表現など Java 版と同等の機能をサポートします。\n\n### 修正と改善\n\n- ウインドウがアクティブになったときのフォーカスがナビゲーションの設定ボタンに当たる問題を修正し、リボン内の内容（クイックノート／JSON ワークベンチのテキスト編集欄）へ戻るようにしました。\n- 翻訳機能のパフォーマンスを改善し、Java 版より明らかに遅い状態を解消しました。\n\n### 補足\n\n- インストーラーは引き続き未署名です。macOS では新しい DMG をダウンロードして検証し、その後 DMG を開いてアプリを「アプリケーション」へドラッグするよう案内します。\n- Java 製品ラインは引き続き `v*` タグと従来の更新マニフェストを使用し、このリリースの影響を受けません。",
+          "prerelease": false,
+          "releaseUrl": "https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.0.2",
+          "assets": [
+            {
+              "platform": "darwin",
+              "architecture": "arm64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.0.2-mac-arm64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.2/MooTool-Next-Electron-1.0.2-mac-arm64.dmg",
+              "sha512": "Vyv3T/5j8LesiJkrM2jg657RfbbZ1rTuaFl2I2J6PurJywQPizKlQzf6n7iLYPim/AaUfPlA+fsWOLfhwtqezQ==",
+              "size": 146611535
+            },
+            {
+              "platform": "darwin",
+              "architecture": "x64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.0.2-mac-x64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.2/MooTool-Next-Electron-1.0.2-mac-x64.dmg",
+              "sha512": "l/IQ/Qws9Lswy+p/BVsTf88aoqKS5KKhkwC9X6NcxmGWpAVF+yYBMBZ2r9kTdPGzm5SKDW9xjz+coFexC94NNg==",
+              "size": 148374006
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "nsis",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.0.2-win-x64-setup.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.2/MooTool-Next-Electron-1.0.2-win-x64-setup.exe",
+              "sha512": "3RGGefHkiPP3+S2zm98M9psTxULBjWkBNhvYiIJbXgr+wcVrCo6maPBNZUg5qTc/a6CIwXWwY/FqteZPEOPayQ==",
+              "size": 118535390
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "portable",
+              "priority": 20,
+              "fileName": "MooTool-Next-Electron-1.0.2-win-x64-portable.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.2/MooTool-Next-Electron-1.0.2-win-x64-portable.exe",
+              "sha512": "CqtTVz1ymOUT/41ihjJyYYeMxOcb6lWqJvSExrAgJajK/oSO4zBtxfyB4K9jDX8WlH/OvtOjvozSinjHHN7OIA==",
+              "size": 118365631
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "appimage",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.0.2-linux-x64.AppImage",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.2/MooTool-Next-Electron-1.0.2-linux-x64.AppImage",
+              "sha512": "W1qdec4zIxKw17O2T5mQI46vcBs2WP+o+dlG9xr1zNBIaXKKrOomvlUYljGmo6F+CJHNpEj2na6ZgmJNZwWFRQ==",
+              "size": 153958531
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "deb",
+              "priority": 20,
+              "fileName": "MooTool-Next-Electron-1.0.2-linux-x64.deb",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.2/MooTool-Next-Electron-1.0.2-linux-x64.deb",
+              "sha512": "zG8IX5V7x9KVup00glfVnb5ZKIRpgpxsNoDFF8mtUsZlqSHhAECc11x7WFpGL4906bDcZq3OxFMbCk9txl18OA==",
+              "size": 98268600
+            }
+          ]
         }
       ]
     },
