@@ -106,7 +106,7 @@ public class UiConsts {
      * MooTool Next Electron download page recommended to Java users.
      */
     public static final String NEXT_EDITION_RELEASE_URL =
-            "https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.0.1";
+            "https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.0.2";
 
     /**
      * Grace信息url
