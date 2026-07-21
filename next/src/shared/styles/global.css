@@ -554,6 +554,13 @@
   user-select: none;
 }
 
+.find-replace-bar__option input[type='checkbox'] {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 15px;
+  accent-color: var(--accent);
+}
+
 .find-replace-bar__option input {
   margin: 0;
 }
@@ -8139,7 +8146,7 @@ select:not([multiple]) {
   flex-basis: 32px;
 }
 
-.find-replace-bar input,
+.find-replace-bar input:not([type='checkbox']),
 .find-replace-bar__controls > button:not(.icon-ghost),
 .find-replace-bar > .find-replace-bar__row > button:not(.icon-ghost) {
   height: 32px;
