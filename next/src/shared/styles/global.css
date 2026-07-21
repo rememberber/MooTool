@@ -35,6 +35,11 @@
   --syntax-string: #3f755d;
   --syntax-number: #a05f27;
   --syntax-literal: #8a536b;
+  --syntax-keyword: #7b5792;
+  --syntax-type: #376f91;
+  --syntax-function: #3f6f9c;
+  --syntax-comment: #7e857c;
+  --syntax-operator: #6d6d73;
   --accent: #4f83cc;
   --accent-strong: #3f6fae;
   --accent-contrast: #ffffff;
@@ -87,6 +92,11 @@
   --syntax-string: #82b59d;
   --syntax-number: #d1a267;
   --syntax-literal: #c48aa2;
+  --syntax-keyword: #c59ad9;
+  --syntax-type: #83b8d7;
+  --syntax-function: #82aad4;
+  --syntax-comment: #8c978b;
+  --syntax-operator: #b0b1b7;
   --accent: #4f83cc;
   --accent-strong: #3f6fae;
   --accent-contrast: #ffffff;
@@ -631,6 +641,32 @@
   min-width: 42px;
   padding: 0 8px 0 4px;
   text-align: right;
+}
+
+.text-code-editor .cm-foldGutter .cm-gutterElement {
+  width: 15px;
+  padding: 0 2px;
+  color: var(--text-soft);
+  cursor: pointer;
+  text-align: center;
+}
+
+.text-code-editor .cm-foldGutter .cm-gutterElement:hover {
+  color: var(--text-body);
+}
+
+.text-code-editor .cm-matchingBracket {
+  color: var(--text-strong);
+  background: color-mix(in srgb, var(--accent) 18%, transparent);
+  outline: 1px solid color-mix(in srgb, var(--accent) 42%, transparent);
+  border-radius: 2px;
+}
+
+.text-code-editor .cm-nonmatchingBracket {
+  color: var(--error-text);
+  background: var(--error-bg);
+  outline: 1px solid color-mix(in srgb, var(--error-text) 50%, transparent);
+  border-radius: 2px;
 }
 
 .text-code-editor .cm-editor.cm-focused {
@@ -2613,7 +2649,13 @@ select:not([multiple]) {
   overflow: hidden;
   color: var(--editor-text);
   background: transparent;
-  font-size: var(--json-editor-font-size, 14px);
+  border: 0;
+  border-radius: 0;
+  font-size: var(--text-code-editor-font-size, var(--json-editor-font-size, 14px));
+}
+
+.json-editor:focus-within {
+  box-shadow: none;
 }
 
 .json-editor .cm-editor {
@@ -6859,9 +6901,20 @@ select:not([multiple]) {
   padding: 0 8px 8px;
 }
 
-.http-body-editor select {
+.http-body-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.http-body-controls select {
   width: fit-content;
-  align-self: center;
+}
+
+.http-body-controls .toolbar-button {
+  min-height: 27px;
+  padding: 4px 8px;
+  font-size: 10px;
 }
 
 .http-body-editor textarea,

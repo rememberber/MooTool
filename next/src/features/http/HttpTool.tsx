@@ -1,9 +1,11 @@
-import { Clock3, Code2, Copy, FileInput, History, Plus, Save, Search, Send, Square, Trash2, X } from 'lucide-react'
+import { Braces, Clock3, Code2, Copy, FileInput, History, Plus, Save, Search, Send, Square, Trash2, X } from 'lucide-react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { Dialog } from '@/shared/components/Dialog'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { ToolPageHeader, ToolTabs } from '@/shared/components/ToolPage'
 import { TextCodeEditor } from '@/shared/components/TextCodeEditor'
+import { formatCodeEditorContent } from '@/shared/components/codeEditorFormatting'
+import { resolveTextCodeEditorLanguage } from '@/shared/components/codeEditorLanguage'
 import { httpMethods, type HttpCookieEntry, type HttpRequestDraft, type HttpRequestHistory, type HttpResponseResult, type KeyValueEntry, type SavedHttpRequest } from '@/shared/contracts/network'
 import { useToolActions } from '@/shared/hooks/useToolActions'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -82,6 +84,15 @@ export function HttpTool() {
     } catch (error) { actions.reportError(error) }
   }
 
+  async function formatRequestBody(): Promise<void> {
+    try {
+      const body = await formatCodeEditorContent(request.body, request.bodyType)
+      setRequest({ ...request, body })
+    } catch (error) {
+      actions.reportError(error)
+    }
+  }
+
   const responseValue = responseTab === 'body' ? response?.body : responseTab === 'headers' ? response?.headers : response?.cookies
   return (
     <section className="tool-page p5-tool http-tool-page">
@@ -98,7 +109,7 @@ export function HttpTool() {
             {requestTab === 'params' && <KeyValueEditor entries={request.params} onChange={(params) => setRequest({ ...request, params })} />}
             {requestTab === 'headers' && <KeyValueEditor entries={request.headers} onChange={(headers) => setRequest({ ...request, headers })} />}
             {requestTab === 'cookies' && <CookieEditor entries={request.cookies} onChange={(cookies) => setRequest({ ...request, cookies })} />}
-            {requestTab === 'body' && <div className="http-body-editor"><select aria-label={t('http.bodyType')} value={request.bodyType} onChange={(event) => setRequest({ ...request, bodyType: event.target.value })}>{['application/json', 'text/plain', 'application/xml', 'text/xml', 'text/html', 'application/javascript'].map((type) => <option key={type}>{type}</option>)}</select><TextCodeEditor className="http-body-code-editor" testId="http-body" ariaLabel={t('http.tab.body')} value={request.body} onChange={(body) => setRequest({ ...request, body })} /></div>}
+            {requestTab === 'body' && <div className="http-body-editor"><div className="http-body-controls"><select aria-label={t('http.bodyType')} value={request.bodyType} onChange={(event) => setRequest({ ...request, bodyType: event.target.value })}>{['application/json', 'text/plain', 'application/xml', 'text/xml', 'text/html', 'application/javascript'].map((type) => <option key={type}>{type}</option>)}</select><button className="toolbar-button" type="button" disabled={!request.body.trim()} onClick={() => { void formatRequestBody() }}><Braces size={13} />{t('common.action.format')}</button></div><TextCodeEditor className="http-body-code-editor" testId="http-body" ariaLabel={t('http.tab.body')} language={resolveTextCodeEditorLanguage(request.bodyType)} value={request.body} onChange={(body) => setRequest({ ...request, body })} onKeyDown={(event) => { if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLocaleLowerCase() === 'f') { event.preventDefault(); void formatRequestBody() } }} /></div>}
           </div>
           <div className="http-response-pane"><header><ToolTabs tabs={(['body', 'headers', 'cookies'] as ResponseTab[]).map((id) => ({ id, label: t(`http.response.${id}` as 'http.response.body') }))} active={responseTab} onChange={setResponseTab} /><div className={response?.ok ? 'http-status http-status--ok' : 'http-status'}>{response && <><span>{response.status || response.errorCode}</span><span>{response.durationMs} ms</span><button className="icon-button" type="button" aria-label={t('common.action.copy')} onClick={() => { void actions.copy(responseValue || '') }}><Copy size={13} /></button></>}</div></header><pre data-testid="http-response">{responseValue || t('http.responseEmpty')}</pre></div>
         </main>

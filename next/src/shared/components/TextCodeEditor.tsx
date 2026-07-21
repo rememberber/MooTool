@@ -1,4 +1,6 @@
 import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
+import { closeBracketsKeymap } from '@codemirror/autocomplete'
+import { foldKeymap } from '@codemirror/language'
 import { Compartment, EditorState, StateEffect, StateField, type Extension } from '@codemirror/state'
 import {
   Decoration,
@@ -20,6 +22,11 @@ import {
   type CodeEditorViewState
 } from './codeEditorViewState'
 import { defaultFindReplaceOptions, type FindReplaceOptions } from './findReplace'
+import {
+  codeEditorLanguageExtensions,
+  richCodeDocumentLimit,
+  type TextCodeEditorLanguage
+} from './codeEditorLanguage'
 
 export type TextCodeEditorHandle = {
   focus: () => void
@@ -50,6 +57,7 @@ export type TextCodeEditorProps = {
   placeholder?: string
   readOnly?: boolean
   wrap?: boolean
+  language?: TextCodeEditorLanguage
   fontSize?: number
   fontFamily?: string
   searchQuery?: string
@@ -130,6 +138,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
     placeholder = '',
     readOnly = false,
     wrap = true,
+    language = 'text',
     fontSize,
     fontFamily,
     searchQuery = '',
@@ -153,13 +162,15 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
   const onViewStateChangeRef = useRef(onViewStateChange)
   const localValueRef = useRef(value)
   const applyingExternalValueRef = useRef(false)
-  const initialConfigRef = useRef({ ariaLabel, id, testId, placeholder, readOnly, wrap, fontFamily, fontSize, searchQuery, searchOptions, initialViewState })
+  const initialConfigRef = useRef({ ariaLabel, id, testId, placeholder, readOnly, wrap, language, fontFamily, fontSize, searchQuery, searchOptions, initialViewState })
   const wrapCompartment = useCompartment()
   const attributesCompartment = useCompartment()
   const placeholderCompartment = useCompartment()
   const readOnlyCompartment = useCompartment()
+  const languageCompartment = useCompartment()
   const searchCompartment = useCompartment()
   const metricsCompartment = useCompartment()
+  const richLanguageEnabled = value.length <= richCodeDocumentLimit
   onChangeRef.current = onChange
   onPasteTextRef.current = onPasteText
   onKeyDownRef.current = onKeyDown
@@ -181,7 +192,8 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
           lineNumbers(),
           highlightActiveLine(),
           highlightActiveLineGutter(),
-          keymap.of([...defaultKeymap, ...historyKeymap, indentWithTab]),
+          keymap.of([...closeBracketsKeymap, ...defaultKeymap, ...historyKeymap, ...foldKeymap, indentWithTab]),
+          languageCompartment.of(codeEditorLanguageExtensions(initial.language, localValueRef.current.length <= richCodeDocumentLimit)),
           wrapCompartment.of(initial.wrap ? EditorView.lineWrapping : []),
           attributesCompartment.of(EditorView.contentAttributes.of(editorAttributes(initial.ariaLabel, initial.id, initial.testId))),
           placeholderCompartment.of(initial.placeholder ? editorPlaceholder(initial.placeholder) : []),
@@ -235,7 +247,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
       viewRef.current = null
       view.destroy()
     }
-  }, [attributesCompartment, metricsCompartment, placeholderCompartment, readOnlyCompartment, searchCompartment, wrapCompartment])
+  }, [attributesCompartment, languageCompartment, metricsCompartment, placeholderCompartment, readOnlyCompartment, searchCompartment, wrapCompartment])
 
   useEffect(() => {
     const view = viewRef.current
@@ -271,6 +283,12 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
   useEffect(() => {
     viewRef.current?.dispatch({ effects: readOnlyCompartment.reconfigure(readOnlyExtensions(readOnly)) })
   }, [readOnly, readOnlyCompartment])
+
+  useEffect(() => {
+    viewRef.current?.dispatch({
+      effects: languageCompartment.reconfigure(codeEditorLanguageExtensions(language, richLanguageEnabled))
+    })
+  }, [language, languageCompartment, richLanguageEnabled])
 
   useEffect(() => {
     viewRef.current?.dispatch({ effects: searchCompartment.reconfigure(codeEditorSearchHighlight(searchQuery, searchOptions)) })
