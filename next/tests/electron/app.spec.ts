@@ -130,6 +130,26 @@ test('matches the Java home content and persists sidebar collapse state', async 
   await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ layout: { hideNavigationTitles: false } })
 })
 
+test('shows a first-run tip for migrating Java data without modifying the source', async () => {
+  await mainPage.evaluate(() => window.mootool.updateSettings({ general: { legacyMigrationHintDismissed: false } }))
+  const dialog = mainPage.getByRole('dialog', { name: '迁移 Java 版数据' })
+  await expect(dialog).toBeVisible()
+  await expect(dialog.getByText(/不会修改或删除 Java 版原始数据/)).toBeVisible()
+
+  const settingsWindowPromise = electronApp.waitForEvent('window')
+  await dialog.getByRole('button', { name: '打开设置' }).click()
+  const settingsPage = await settingsWindowPromise
+  await settingsPage.waitForLoadState('domcontentloaded')
+  await expect(settingsPage.locator('.settings-nav__item').filter({ hasText: '数据与备份' })).toHaveAttribute('aria-current', 'page')
+  await expect(settingsPage.getByRole('heading', { name: '旧版数据迁移', exact: true })).toBeVisible()
+  await settingsPage.locator('.settings-titlebar .icon-ghost').click()
+
+  await expect(dialog).toBeHidden()
+  await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({
+    general: { legacyMigrationHintDismissed: true }
+  })
+})
+
 test('creates and persists custom navigation groups', async () => {
   await mainPage.getByRole('button', { name: '管理分组', exact: true }).click()
   const dialog = mainPage.getByRole('dialog', { name: '管理功能分组' })
@@ -144,7 +164,7 @@ test('creates and persists custom navigation groups', async () => {
   await expect(customGroup).toBeVisible()
   await expect(customGroup.locator('.tool-button')).toHaveCount(2)
   await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({
-    schemaVersion: 10,
+    schemaVersion: 11,
     layout: { customGroups: [{ name: '开发常用', toolIds: ['json', 'http'] }] }
   })
 

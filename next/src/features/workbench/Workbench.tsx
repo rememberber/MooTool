@@ -9,6 +9,7 @@ import { Tooltip } from '@/shared/components/Tooltip'
 import { ToolActivityProvider } from '@/shared/components/ToolActivity'
 import type { ToolWindowSnapshot } from '@/shared/contracts/app'
 import { useI18n } from '@/shared/i18n/I18nProvider'
+import { LegacyMigrationHintDialog } from '@/features/settings/LegacyMigrationHintDialog'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { CustomGroupManager } from './CustomGroupManager'
 import { UpdateReadyAction } from './UpdateReadyAction'
@@ -287,6 +288,7 @@ export function Workbench() {
 
       <CommandPalette />
       <CustomGroupManager open={groupManagerOpen && workspaceOverlayReady} onClose={() => setGroupManagerOpen(false)} />
+      <LegacyMigrationHintDialog />
     </main>
   )
 }
