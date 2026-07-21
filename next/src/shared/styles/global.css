@@ -7818,7 +7818,7 @@ select:not([multiple]) {
 :root[data-interface-style='modern'] .recent-item,
 :root[data-interface-style='modern'] .settings-nav__item {
   border-radius: 7px;
-  font-weight: 450;
+  font-weight: 500;
 }
 
 :root[data-interface-style='modern'] .tool-button--active,
@@ -8462,8 +8462,8 @@ select:not([multiple]) {
   --desktop-font-size-control: 12px;
   --desktop-font-size-meta: 11px;
   --desktop-font-size-title: 22px;
-  --desktop-font-weight-regular: 450;
-  --desktop-font-weight-medium: 550;
+  --desktop-font-weight-regular: 500;
+  --desktop-font-weight-medium: 600;
   --desktop-font-weight-semibold: 650;
   --desktop-control-height: 34px;
   --desktop-control-radius: 9px;
