@@ -72,6 +72,7 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "sm-crypto": "^0.4.0",
+    "sql-formatter": "^15.8.2",
     "systeminformation": "^5.31.17",
     "ua-parser-js": "^2.0.10",
     "undici": "^8.7.0",

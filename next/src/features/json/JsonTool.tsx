@@ -15,6 +15,7 @@ import { useToolActivity } from '@/shared/components/ToolActivity'
 import { useToast } from '@/shared/feedback/ToastProvider'
 import { useFocusOnWindowActivate } from '@/shared/hooks/useFocusOnWindowActivate'
 import { useI18n } from '@/shared/i18n/I18nProvider'
+import { isFormatShortcut } from '@/shared/utils/formatShortcut'
 import { JsonCodeEditor, type JsonCodeEditorHandle } from './JsonCodeEditor'
 import { JsonInspector } from './JsonInspector'
 import { JsonToolbar } from './JsonToolbar'
@@ -150,7 +151,7 @@ export function JsonTool() {
     if (!toolActive) return
     const handleFindShortcut = (event: KeyboardEvent) => {
       if (!(event.metaKey || event.ctrlKey)) return
-      if (event.key.toLowerCase() === 'f' || event.key.toLowerCase() === 'r') {
+      if (!event.shiftKey && !event.altKey && (event.key.toLowerCase() === 'f' || event.key.toLowerCase() === 'r')) {
         event.preventDefault()
         openFindReplace()
       }
@@ -365,6 +366,12 @@ export function JsonTool() {
             ariaLabel={t('json.editor.label')}
             initialViewState={jsonEditorViewState}
             onChange={(content) => update({ content, notice: '', copyState: 'idle' })}
+            onKeyDown={(event) => {
+              if (isFormatShortcut(event)) {
+                event.preventDefault()
+                void runTransform((value) => formatJson(value, t, 2), t('json.notice.formatted'), t('json.action.format'))
+              }
+            }}
             onViewStateChange={(viewState) => { jsonEditorViewState = viewState }}
           />
         </div>
