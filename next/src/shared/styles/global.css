@@ -7818,20 +7818,20 @@ select:not([multiple]) {
 :root[data-interface-style='modern'] .recent-item,
 :root[data-interface-style='modern'] .settings-nav__item {
   border-radius: 7px;
-  font-weight: 400;
+  font-weight: 450;
 }
 
 :root[data-interface-style='modern'] .tool-button--active,
 :root[data-interface-style='modern'] .settings-nav__item--active {
   color: var(--text-strong);
-  font-weight: 500;
+  font-weight: 600;
 }
 
 :root[data-interface-style='modern'] .tool-page h1,
 :root[data-interface-style='modern'] .placeholder-page h1 {
   color: var(--text-strong);
   font-size: 22px;
-  font-weight: 600;
+  font-weight: 650;
   letter-spacing: -0.025em;
 }
 
@@ -7914,7 +7914,7 @@ select:not([multiple]) {
 :root[data-interface-style='modern'] .settings-content__header h1 {
   color: var(--text-strong);
   font-size: 18px;
-  font-weight: 600;
+  font-weight: 650;
 }
 
 :root[data-interface-style='modern'] .settings-group h2 {
@@ -8462,9 +8462,9 @@ select:not([multiple]) {
   --desktop-font-size-control: 12px;
   --desktop-font-size-meta: 11px;
   --desktop-font-size-title: 22px;
-  --desktop-font-weight-regular: 400;
-  --desktop-font-weight-medium: 500;
-  --desktop-font-weight-semibold: 600;
+  --desktop-font-weight-regular: 450;
+  --desktop-font-weight-medium: 550;
+  --desktop-font-weight-semibold: 650;
   --desktop-control-height: 34px;
   --desktop-control-radius: 9px;
   --desktop-control-bg: var(--surface);
@@ -8625,7 +8625,7 @@ button:disabled {
   border-radius: var(--desktop-control-radius);
   box-shadow: var(--desktop-control-shadow);
   font-size: var(--desktop-font-size-control);
-  font-weight: 500;
+  font-weight: var(--desktop-font-weight-medium);
   line-height: 1.25;
 }
 
@@ -8675,7 +8675,7 @@ button:disabled {
   border-radius: var(--desktop-control-radius);
   box-shadow: var(--desktop-control-shadow);
   font-size: var(--desktop-font-size-control);
-  font-weight: 600;
+  font-weight: var(--desktop-font-weight-semibold);
   line-height: 1.25;
 }
 
@@ -8694,7 +8694,7 @@ button:disabled {
   border: 1px solid transparent;
   border-radius: var(--desktop-control-radius);
   box-shadow: none;
-  font-weight: 500;
+  font-weight: var(--desktop-font-weight-medium);
 }
 
 .toolbar-button:hover:not(:disabled) {
