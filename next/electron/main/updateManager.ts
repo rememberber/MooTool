@@ -33,7 +33,8 @@ function idleState(installMode: UpdateInstallMode): UpdateDownloadState {
     percent: null,
     transferred: null,
     total: null,
-    message: null
+    message: null,
+    releaseNotes: null
   }
 }
 
@@ -100,7 +101,8 @@ export class UpdateManager {
       percent: null,
       transferred: null,
       total: null,
-      message: null
+      message: null,
+      releaseNotes: result.releaseNotes || null
     })
 
     if (!this.enabled) return
@@ -237,7 +239,10 @@ export class UpdateManager {
   }
 
   private publish(state: UpdateDownloadState): void {
-    this.state = { ...state }
+    this.state = {
+      ...state,
+      releaseNotes: this.activeResult?.releaseNotes || null
+    }
     this.onStateChange(this.getState())
   }
 }

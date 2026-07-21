@@ -17,7 +17,7 @@ describe('UpdateManager', () => {
     expect(adapter.feedUrl).toBe('https://github.com/rememberber/MooTool/releases/download/next-electron-v1.1.0/')
     expect(adapter.feedChannel).toBe('x64')
     expect(states.map((state) => state.status)).toEqual(expect.arrayContaining(['available', 'downloading', 'ready']))
-    expect(manager.getState()).toMatchObject({ status: 'ready', version: '1.1.0', percent: 100 })
+    expect(manager.getState()).toMatchObject({ status: 'ready', version: '1.1.0', percent: 100, releaseNotes: 'Update' })
   })
 
   it('waits for a manual download when automatic downloads are disabled', async () => {

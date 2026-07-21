@@ -9,7 +9,8 @@ const initialState: UpdateDownloadState = {
   percent: null,
   transferred: null,
   total: null,
-  message: null
+  message: null,
+  releaseNotes: null
 }
 
 export function useUpdateState(): UpdateDownloadState {

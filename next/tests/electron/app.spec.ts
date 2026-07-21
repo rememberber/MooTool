@@ -505,10 +505,14 @@ test('opens the settings window and synchronizes appearance changes', async () =
       percent: 100,
       transferred: 100,
       total: 100,
-      message: null
+      message: null,
+      releaseNotes: '## 9.9.9\n- hover notes'
     })
   })
   await expect(mainPage.getByRole('button', { name: /安装并重启/ })).toContainText('新版本 9.9.9 已就绪')
+  await mainPage.locator('.sidebar-update-action').hover()
+  await expect(mainPage.locator('.sidebar-update-notes')).toContainText('更新内容')
+  await expect(mainPage.locator('.sidebar-update-notes')).toContainText('hover notes')
   await electronApp.evaluate(({ BrowserWindow }) => {
     BrowserWindow.getAllWindows().find((window) => !window.getParentWindow())?.webContents.send('update:state-changed', {
       status: 'ready',
@@ -518,7 +522,8 @@ test('opens the settings window and synchronizes appearance changes', async () =
       percent: 100,
       transferred: 100,
       total: 100,
-      message: null
+      message: null,
+      releaseNotes: null
     })
   })
   await expect(mainPage.getByRole('button', { name: /更新已下载，打开 DMG 安装/ })).toContainText('新版本 9.9.9 已就绪')
@@ -531,7 +536,8 @@ test('opens the settings window and synchronizes appearance changes', async () =
       percent: null,
       transferred: null,
       total: null,
-      message: null
+      message: null,
+      releaseNotes: null
     })
   })
   await expect(mainPage.locator('.sidebar-update-action')).toHaveCount(0)

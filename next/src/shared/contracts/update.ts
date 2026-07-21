@@ -47,4 +47,5 @@ export type UpdateDownloadState = {
   transferred: number | null
   total: number | null
   message: string | null
+  releaseNotes: string | null
 }
