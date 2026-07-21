@@ -1408,7 +1408,7 @@ function configureUpdateChecks(settings: AppSettings): void {
   updateIntervalTimer = undefined
   if (!settings.general.autoCheckUpdates || process.env.NODE_ENV === 'test') return
   updateStartupTimer = setTimeout(() => { void checkForUpdatesAndBroadcast(true) }, 2500)
-  updateIntervalTimer = setInterval(() => { void checkForUpdatesAndBroadcast(true) }, 24 * 60 * 60 * 1000)
+  updateIntervalTimer = setInterval(() => { void checkForUpdatesAndBroadcast(true) }, 60 * 60 * 1000)
 }
 
 function checkForUpdates(): Promise<UpdateCheckResult> {
