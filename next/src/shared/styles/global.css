@@ -3105,7 +3105,7 @@ select:not([multiple]) {
 .primary-command,
 .panel-command,
 .inline-command-row button,
-.diff-toolbar > button,
+.diff-toolbar button,
 .cron-presets button {
   display: inline-flex;
   align-items: center;
@@ -3124,12 +3124,12 @@ select:not([multiple]) {
 .io-action-button:hover,
 .panel-command:hover,
 .inline-command-row button:hover,
-.diff-toolbar > button:hover,
+.diff-toolbar button:hover,
 .cron-presets button:hover {
   background: var(--control-hover);
 }
 
-.diff-toolbar > button:disabled {
+.diff-toolbar button:disabled {
   cursor: default;
   opacity: 0.35;
 }
@@ -3312,7 +3312,30 @@ select:not([multiple]) {
 .cron-runs li::before { width: 24px; color: var(--text-faint); content: counter(cron); }
 
 .diff-workspace { overflow: hidden; }
-.diff-toolbar { display: flex; align-items: center; gap: 6px; min-height: 48px; padding: 5px 10px; background: var(--toolbar); border-bottom: 1px solid var(--border-soft); overflow-x: auto; }
+.diff-toolbar {
+  display: grid;
+  grid-template-columns: max-content max-content max-content minmax(90px, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-height: 50px;
+  padding: 7px 10px;
+  background: var(--toolbar);
+  border-bottom: 1px solid var(--border-soft);
+}
+.diff-toolbar__commands,
+.diff-toolbar__navigation,
+.diff-toolbar__options {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 6px;
+}
+.diff-toolbar button,
+.diff-toolbar label,
+.diff-toolbar select {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
 .diff-editor-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: minmax(0, 1fr); width: 100%; min-height: 0; flex: 1; }
 .diff-editor-grid > div { display: flex; min-width: 0; min-height: 0; flex-direction: column; gap: 6px; padding: 10px; }
 .diff-editor-grid > div:first-child { border-right: 1px solid var(--border-soft); }
@@ -3328,7 +3351,7 @@ select:not([multiple]) {
   font-size: 11px;
 }
 .diff-toolbar select:focus { border-color: var(--accent); }
-.diff-status { margin-left: auto; padding: 0 4px 0 8px; color: var(--text-muted); font-size: 11px; white-space: nowrap; }
+.diff-status { min-width: 0; padding: 0 4px 0 8px; color: var(--text-muted); font-size: 11px; overflow: hidden; text-align: right; text-overflow: ellipsis; white-space: nowrap; }
 .diff-content { display: flex; min-width: 0; min-height: 0; flex: 1; flex-direction: column; }
 .diff-content--unified { display: grid; grid-template-rows: minmax(190px, 1.15fr) minmax(150px, 0.85fr); }
 .diff-editor-grid > .diff-editor-pane { gap: 7px; padding: 10px; }
@@ -3348,6 +3371,35 @@ select:not([multiple]) {
 .cm-diff-character-removed { background: var(--error-bg); }
 .cm-diff-character-added { background: var(--success-bg); }
 .cm-diff-character-changed { background: color-mix(in srgb, var(--warning-text) 28%, transparent); }
+
+@media (max-width: 1320px) {
+  .diff-toolbar {
+    grid-template-areas:
+      "commands navigation"
+      "options status";
+    grid-template-columns: minmax(0, 1fr) max-content;
+    gap: 7px 10px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .diff-toolbar__commands {
+    grid-area: commands;
+  }
+
+  .diff-toolbar__navigation {
+    grid-area: navigation;
+  }
+
+  .diff-toolbar__options {
+    grid-area: options;
+    flex-wrap: wrap;
+  }
+
+  .diff-status {
+    grid-area: status;
+  }
+}
 
 .yaml-validate-layout { display: grid; grid-template-columns: minmax(0, 1fr) 160px minmax(220px, 0.6fr); gap: 12px; flex: 1; min-height: 0; padding: 14px; }
 .validate-actions { display: flex; align-self: center; flex-direction: column; gap: 8px; }
@@ -7982,7 +8034,7 @@ select:not([multiple]) {
 .tool-page .panel-command,
 .tool-page .io-action-button,
 .tool-page .inline-command-row button,
-.tool-page .diff-toolbar > button,
+.tool-page .diff-toolbar button,
 .tool-page .cron-presets button {
   min-height: var(--tool-control-height);
   font-size: var(--tool-control-font-size);
@@ -8616,7 +8668,7 @@ button:disabled {
 .runtime-missing-banner button,
 .find-replace-bar__controls > button:not(.icon-ghost),
 .find-replace-bar > .find-replace-bar__row > button:not(.icon-ghost),
-.diff-toolbar > button,
+.diff-toolbar button,
 .cron-presets button {
   min-height: var(--desktop-control-height);
   color: var(--text-body);
@@ -8644,7 +8696,7 @@ button:disabled {
 .runtime-missing-banner button:hover:not(:disabled),
 .find-replace-bar__controls > button:hover:not(:disabled),
 .find-replace-bar > .find-replace-bar__row > button:hover:not(:disabled),
-.diff-toolbar > button:hover:not(:disabled),
+.diff-toolbar button:hover:not(:disabled),
 .cron-presets button:hover:not(:disabled) {
   color: var(--text-strong);
   background: var(--desktop-button-hover);
@@ -8658,7 +8710,7 @@ button:disabled {
 .io-action-button:active:not(:disabled),
 .inspector-action:active:not(:disabled),
 .runtime-toolbar > button:active:not(:disabled),
-.diff-toolbar > button:active:not(:disabled),
+.diff-toolbar button:active:not(:disabled),
 .cron-presets button:active:not(:disabled) {
   background: var(--desktop-button-pressed);
   box-shadow: none;

@@ -239,45 +239,51 @@ export function TextDiffTool() {
       />
       <div className="local-tool-shell diff-workspace">
         <div className="diff-toolbar">
-          <button type="button" onClick={compare}><Play size={14} />{t('diff.compare')}</button>
-          <button type="button" onClick={clear}><Trash2 size={14} />{t('common.action.clear')}</button>
-          <button type="button" onClick={swap}><ArrowLeftRight size={14} />{t('common.action.swap')}</button>
-          <button type="button" onClick={() => { void copyDiff() }}><Copy size={14} />{t('diff.copy')}</button>
-          <button type="button" disabled={visibleSegments.length === 0} onClick={() => navigateDifference(-1)}>
-            <ChevronUp size={14} />{t('diff.previous')}
-          </button>
-          <button type="button" disabled={visibleSegments.length === 0} onClick={() => navigateDifference(1)}>
-            <ChevronDown size={14} />{t('diff.next')}
-          </button>
-          <label>
-            <input type="checkbox" checked={realtime} onChange={(event) => changeRealtime(event.target.checked)} />
-            {t('diff.realtime')}
-          </label>
-          <label>
-            <input type="checkbox" checked={ignoreWhitespace} onChange={(event) => changeIgnoreWhitespace(event.target.checked)} />
-            {t('diff.ignoreWhitespace')}
-          </label>
-          <select
-            aria-label={t('diff.highlightMode')}
-            value={highlightMode}
-            onChange={(event) => {
-              setHighlightMode(event.target.value as HighlightMode)
-              navigationIndex.current = -1
-              updateStatus(left || right ? { kind: 'complete' } : { kind: 'enterText' })
-            }}
-          >
-            <option value="both">{t('diff.highlightBoth')}</option>
-            <option value="characters">{t('diff.highlightCharacters')}</option>
-            <option value="lines">{t('diff.highlightLines')}</option>
-          </select>
-          <select
-            aria-label={t('diff.displayMode')}
-            value={mode}
-            onChange={(event) => changeDisplayMode(event.target.value as DiffMode)}
-          >
-            <option value="side">{t('diff.sideBySide')}</option>
-            <option value="unified">{t('diff.unified')}</option>
-          </select>
+          <div className="diff-toolbar__commands">
+            <button type="button" onClick={compare}><Play size={14} />{t('diff.compare')}</button>
+            <button type="button" onClick={clear}><Trash2 size={14} />{t('common.action.clear')}</button>
+            <button type="button" onClick={swap}><ArrowLeftRight size={14} />{t('common.action.swap')}</button>
+            <button type="button" onClick={() => { void copyDiff() }}><Copy size={14} />{t('diff.copy')}</button>
+          </div>
+          <div className="diff-toolbar__navigation">
+            <button type="button" disabled={visibleSegments.length === 0} onClick={() => navigateDifference(-1)}>
+              <ChevronUp size={14} />{t('diff.previous')}
+            </button>
+            <button type="button" disabled={visibleSegments.length === 0} onClick={() => navigateDifference(1)}>
+              <ChevronDown size={14} />{t('diff.next')}
+            </button>
+          </div>
+          <div className="diff-toolbar__options">
+            <label>
+              <input type="checkbox" checked={realtime} onChange={(event) => changeRealtime(event.target.checked)} />
+              {t('diff.realtime')}
+            </label>
+            <label>
+              <input type="checkbox" checked={ignoreWhitespace} onChange={(event) => changeIgnoreWhitespace(event.target.checked)} />
+              {t('diff.ignoreWhitespace')}
+            </label>
+            <select
+              aria-label={t('diff.highlightMode')}
+              value={highlightMode}
+              onChange={(event) => {
+                setHighlightMode(event.target.value as HighlightMode)
+                navigationIndex.current = -1
+                updateStatus(left || right ? { kind: 'complete' } : { kind: 'enterText' })
+              }}
+            >
+              <option value="both">{t('diff.highlightBoth')}</option>
+              <option value="characters">{t('diff.highlightCharacters')}</option>
+              <option value="lines">{t('diff.highlightLines')}</option>
+            </select>
+            <select
+              aria-label={t('diff.displayMode')}
+              value={mode}
+              onChange={(event) => changeDisplayMode(event.target.value as DiffMode)}
+            >
+              <option value="side">{t('diff.sideBySide')}</option>
+              <option value="unified">{t('diff.unified')}</option>
+            </select>
+          </div>
           <span className="diff-status" aria-live="polite">
             {statusText(status, highlightMode, visibleSegments.length, t)}
           </span>
