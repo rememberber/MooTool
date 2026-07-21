@@ -1,8 +1,30 @@
 import type { Plugin } from 'prettier'
+import type { SqlLanguage } from 'sql-formatter'
 import { resolveTextCodeEditorLanguage, type TextCodeEditorLanguage } from './codeEditorLanguage'
 
 type FormatCodeEditorOptions = {
   tabWidth?: number
+  sqlDialect?: string
+}
+
+const sqlLanguageByDialect: Record<string, SqlLanguage> = {
+  'standard sql': 'sql',
+  sql: 'sql',
+  mysql: 'mysql',
+  mariadb: 'mariadb',
+  postgresql: 'postgresql',
+  'oracle pl/sql': 'plsql',
+  plsql: 'plsql',
+  'sql server transact-sql': 'transactsql',
+  'transact-sql': 'transactsql',
+  tsql: 'transactsql',
+  'ibm db2': 'db2',
+  db2: 'db2',
+  'couchbase n1ql': 'n1ql',
+  n1ql: 'n1ql',
+  'amazon redshift': 'redshift',
+  redshift: 'redshift',
+  spark: 'spark'
 }
 
 export async function formatCodeEditorContent(
@@ -22,7 +44,33 @@ export async function formatCodeEditorContent(
   if (language === 'typescript') return formatWithPlugin(content, 'typescript', () => import('prettier/plugins/typescript'), tabWidth, {}, true)
   if (language === 'markdown') return formatWithPlugin(content, 'markdown', () => import('prettier/plugins/markdown'), tabWidth)
   if (language === 'yaml') return formatWithPlugin(content, 'yaml', () => import('prettier/plugins/yaml'), tabWidth)
+  if (language === 'sql') return formatSql(content, options.sqlDialect, tabWidth)
+  if (language === 'python') return formatPython(content, tabWidth)
   return trimTrailingWhitespace(content)
+}
+
+async function formatSql(content: string, dialect: string | undefined, tabWidth: number): Promise<string> {
+  const { format } = await import('sql-formatter')
+  return format(content, {
+    language: resolveSqlLanguage(dialect),
+    tabWidth,
+    keywordCase: 'upper'
+  }).trimEnd()
+}
+
+function resolveSqlLanguage(dialect: string | undefined): SqlLanguage {
+  const normalized = dialect?.trim().toLocaleLowerCase() ?? ''
+  return sqlLanguageByDialect[normalized] ?? 'sql'
+}
+
+function formatPython(content: string, tabWidth: number): string {
+  const indent = ' '.repeat(tabWidth)
+  return content
+    .replaceAll('\t', indent)
+    .split(/\r?\n/)
+    .map((line) => line.trimEnd())
+    .join('\n')
+    .trimEnd()
 }
 
 async function formatWithPlugin(

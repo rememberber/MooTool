@@ -17,11 +17,12 @@ type JsonCodeEditorProps = {
   ariaLabel: string
   initialViewState?: CodeEditorViewState
   onChange: (value: string) => void
+  onKeyDown?: (event: KeyboardEvent) => void
   onViewStateChange?: (state: CodeEditorViewState) => void
 }
 
 export const JsonCodeEditor = forwardRef<JsonCodeEditorHandle, JsonCodeEditorProps>(function JsonCodeEditor(
-  { value, wrap, fontSize, searchQuery, searchOptions = defaultFindReplaceOptions, ariaLabel, initialViewState, onChange, onViewStateChange },
+  { value, wrap, fontSize, searchQuery, searchOptions = defaultFindReplaceOptions, ariaLabel, initialViewState, onChange, onKeyDown, onViewStateChange },
   ref
 ) {
   return (
@@ -37,6 +38,7 @@ export const JsonCodeEditor = forwardRef<JsonCodeEditorHandle, JsonCodeEditorPro
       ariaLabel={ariaLabel}
       initialViewState={initialViewState}
       onChange={onChange}
+      onKeyDown={onKeyDown}
       onViewStateChange={onViewStateChange}
     />
   )

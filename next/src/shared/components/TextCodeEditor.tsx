@@ -1,4 +1,4 @@
-import { defaultKeymap, history, historyKeymap, indentWithTab } from '@codemirror/commands'
+import { defaultKeymap, deleteLine, history, historyKeymap, indentWithTab } from '@codemirror/commands'
 import { closeBracketsKeymap } from '@codemirror/autocomplete'
 import { foldKeymap } from '@codemirror/language'
 import { Compartment, EditorState, StateEffect, StateField, type Extension } from '@codemirror/state'
@@ -192,7 +192,14 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
           lineNumbers(),
           highlightActiveLine(),
           highlightActiveLineGutter(),
-          keymap.of([...closeBracketsKeymap, ...defaultKeymap, ...historyKeymap, ...foldKeymap, indentWithTab]),
+          keymap.of([
+            { key: 'Mod-d', run: deleteLine },
+            ...closeBracketsKeymap,
+            ...defaultKeymap,
+            ...historyKeymap,
+            ...foldKeymap,
+            indentWithTab
+          ]),
           languageCompartment.of(codeEditorLanguageExtensions(initial.language, localValueRef.current.length <= richCodeDocumentLimit)),
           wrapCompartment.of(initial.wrap ? EditorView.lineWrapping : []),
           attributesCompartment.of(EditorView.contentAttributes.of(editorAttributes(initial.ariaLabel, initial.id, initial.testId))),
@@ -203,7 +210,10 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
           externalDecorations,
           EditorState.tabSize.of(4),
           EditorView.domEventHandlers({
-            keydown: (event) => { onKeyDownRef.current?.(event) }
+            keydown: (event) => {
+              onKeyDownRef.current?.(event)
+              return event.defaultPrevented
+            }
           }),
           EditorView.updateListener.of((update) => {
             if (update.docChanged) {

@@ -51,6 +51,7 @@ import { useToast } from '@/shared/feedback/ToastProvider'
 import { useFocusOnWindowActivate } from '@/shared/hooks/useFocusOnWindowActivate'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { MessageKey } from '@/shared/i18n/messages'
+import { isFormatShortcut } from '@/shared/utils/formatShortcut'
 import {
   collectDirectoryPaths,
   ensureAncestorsExpanded,
@@ -455,7 +456,7 @@ export function QuickNoteTool() {
       if (event.key.toLocaleLowerCase() === 's') {
         event.preventDefault()
         void saveCurrent()
-      } else if (event.key.toLocaleLowerCase() === 'f' || event.key.toLocaleLowerCase() === 'r') {
+      } else if (!event.shiftKey && !event.altKey && (event.key.toLocaleLowerCase() === 'f' || event.key.toLocaleLowerCase() === 'r')) {
         event.preventDefault()
         openFindReplace()
       }
@@ -739,7 +740,12 @@ export function QuickNoteTool() {
   async function formatCurrent(): Promise<void> {
     if (!state.note) return
     try {
-      update({ content: await formatCodeEditorContent(state.content, state.note.metadata.syntax) })
+      update({
+        content: await formatCodeEditorContent(state.content, state.note.metadata.syntax, {
+          tabWidth: 4,
+          sqlDialect: settings.editor.sqlDialect
+        })
+      })
     } catch (error) {
       toast.error(errorMessage(error))
     }
@@ -964,7 +970,7 @@ export function QuickNoteTool() {
                       initialViewState={quickNoteEditorViewState}
                       onChange={(content) => update({ content })}
                       onKeyDown={(event) => {
-                        if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLocaleLowerCase() === 'f') {
+                        if (isFormatShortcut(event)) {
                           event.preventDefault()
                           void formatCurrent()
                         }

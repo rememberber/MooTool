@@ -2,7 +2,7 @@ import { normalizeTranslationLanguagePair } from './network'
 import { isToolId, type ToolId } from './app'
 import { isVaultTreeExpandMode, type VaultTreeExpandMode } from '../vaultTreeExpand'
 
-export const appSettingsSchemaVersion = 10
+export const appSettingsSchemaVersion = 11
 
 export type AppLanguage = 'zh-CN' | 'en-US' | 'ja-JP'
 export type ThemePreference = 'system' | 'light' | 'dark'
@@ -30,6 +30,8 @@ export type AppSettings = {
     startMaximized: boolean
     closeBehavior: CloseBehavior
     trayEnabled: boolean
+    /** First-install tip about migrating Java-edition data; upgrades default to dismissed. */
+    legacyMigrationHintDismissed: boolean
   }
   appearance: {
     interfaceStyle: InterfaceStyle
@@ -123,7 +125,8 @@ export const defaultAppSettings: AppSettings = {
     autoDownloadUpdates: true,
     startMaximized: false,
     closeBehavior: 'ask',
-    trayEnabled: true
+    trayEnabled: true,
+    legacyMigrationHintDismissed: false
   },
   appearance: {
     interfaceStyle: 'modern',
@@ -202,6 +205,7 @@ export const defaultAppSettings: AppSettings = {
 }
 
 export function mergeSettings(current: AppSettings, patch: SettingsPatch): AppSettings {
+  const previousSchema = typeof patch.schemaVersion === 'number' ? patch.schemaVersion : current.schemaVersion
   const merged: AppSettings = {
     schemaVersion: appSettingsSchemaVersion,
     general: { ...current.general, ...patch.general },
@@ -214,6 +218,11 @@ export function mergeSettings(current: AppSettings, patch: SettingsPatch): AppSe
     runtime: { ...current.runtime, ...patch.runtime },
     tools: { ...current.tools, ...patch.tools },
     shortcuts: { ...current.shortcuts, ...patch.shortcuts }
+  }
+
+  // Existing Next installs upgrading past schema 10 should not see the first-run migration tip.
+  if (previousSchema < 11 && patch.general?.legacyMigrationHintDismissed === undefined) {
+    merged.general.legacyMigrationHintDismissed = true
   }
 
   return normalizeSettings(merged)
@@ -235,7 +244,8 @@ export function normalizeSettings(value: AppSettings): AppSettings {
     general: {
       ...value.general,
       language: languages.includes(value.general.language) ? value.general.language : defaultAppSettings.general.language,
-      closeBehavior: closeBehaviors.includes(value.general.closeBehavior) ? value.general.closeBehavior : defaultAppSettings.general.closeBehavior
+      closeBehavior: closeBehaviors.includes(value.general.closeBehavior) ? value.general.closeBehavior : defaultAppSettings.general.closeBehavior,
+      legacyMigrationHintDismissed: Boolean(value.general.legacyMigrationHintDismissed)
     },
     appearance: {
       ...value.appearance,

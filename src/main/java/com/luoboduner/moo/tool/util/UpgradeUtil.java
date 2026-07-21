@@ -101,23 +101,13 @@ public class UpgradeUtil {
         if (!versionChanges.isEmpty()) {
             // 启动时自动检查且开启静默下载：后台下载安装包，就绪后在左侧导航提示安装
             if (initCheck && App.config.isAutoDownloadUpdate()) {
-                UpdateDownloadManager.getInstance().startSilentDownload(newVersion);
+                UpdateDownloadManager.getInstance().startSilentDownload(
+                        newVersion, buildVersionChangesHtml(versionChanges, null));
                 return;
             }
 
-            // 版本更新日志：
-            StringBuilder versionLogBuilder = new StringBuilder("<h1>")
-                    .append(I18n.get("msg.upgradeNewVersion"))
-                    .append("</h1>");
-            for (VersionSummary.Version version : versionChanges) {
-                versionLogBuilder.append("<h2>").append(version.getVersion()).append("</h2>");
-                versionLogBuilder.append("<b>").append(version.getTitle()).append("</b><br/>");
-                versionLogBuilder.append("<p>").append(version.getLog().replaceAll("\\n", "</p><p>")).append("</p>");
-            }
-            String versionLog = versionLogBuilder.toString();
-
             UpdateInfoDialog updateInfoDialog = new UpdateInfoDialog();
-            updateInfoDialog.setHtmlText(versionLog);
+            updateInfoDialog.setHtmlText(buildVersionChangesHtml(versionChanges, "msg.upgradeNewVersion"));
             updateInfoDialog.setNewVersion(newVersion);
             updateInfoDialog.pack();
             updateInfoDialog.setVisible(true);
@@ -127,6 +117,19 @@ public class UpgradeUtil {
                         JOptionPane.INFORMATION_MESSAGE);
             }
         }
+    }
+
+    static String buildVersionChangesHtml(List<VersionSummary.Version> versionChanges, String titleKey) {
+        StringBuilder versionLogBuilder = new StringBuilder();
+        if (StringUtils.isNotBlank(titleKey)) {
+            versionLogBuilder.append("<h1>").append(I18n.get(titleKey)).append("</h1>");
+        }
+        for (VersionSummary.Version version : versionChanges) {
+            versionLogBuilder.append("<h2>").append(version.getVersion()).append("</h2>");
+            versionLogBuilder.append("<b>").append(version.getTitle()).append("</b><br/>");
+            versionLogBuilder.append("<p>").append(version.getLog().replaceAll("\\n", "</p><p>")).append("</p>");
+        }
+        return versionLogBuilder.toString();
     }
 
     /**

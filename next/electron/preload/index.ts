@@ -35,7 +35,7 @@ contextBridge.exposeInMainWorld('mootool', {
   getSystemTheme: (): Promise<'light' | 'dark'> => ipcRenderer.invoke('theme:get-system'),
   getSettings: (): Promise<AppSettings> => ipcRenderer.invoke('settings:get'),
   updateSettings: (patch: SettingsPatch): Promise<AppSettings> => ipcRenderer.invoke('settings:update', patch),
-  openSettings: (): Promise<void> => ipcRenderer.invoke('settings:open'),
+  openSettings: (category?: string): Promise<void> => ipcRenderer.invoke('settings:open', category),
   closeSettings: (): Promise<void> => ipcRenderer.invoke('settings:close'),
   dismissWindow: (): Promise<void> => ipcRenderer.invoke('window:dismiss'),
   getSecretStatus: (key: SecretKey): Promise<SecretStatus> => ipcRenderer.invoke('secret:status', key),

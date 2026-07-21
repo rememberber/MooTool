@@ -28,7 +28,7 @@ declare global {
       getSystemTheme: () => Promise<'light' | 'dark'>
       getSettings: () => Promise<AppSettings>
       updateSettings: (patch: SettingsPatch) => Promise<AppSettings>
-      openSettings: () => Promise<void>
+      openSettings: (category?: string) => Promise<void>
       closeSettings: () => Promise<void>
       dismissWindow: () => Promise<void>
       getSecretStatus: (key: SecretKey) => Promise<SecretStatus>
