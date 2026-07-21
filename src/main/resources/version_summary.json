@@ -1,5 +1,5 @@
 {
-  "currentVersion": "v1.8.0",
+  "currentVersion": "v1.8.1",
   "versionIndex": {
     "v0.0.0": "0",
     "v1.0.0": "1",
@@ -51,7 +51,8 @@
     "v1.7.7": "47",
     "v1.7.8": "48",
     "v1.7.9": "49",
-    "v1.8.0": "50"
+    "v1.8.0": "50",
+    "v1.8.1": "51"
   },
   "versionDetailList": [
     {
@@ -316,6 +317,15 @@
       "logEn": "● feat: [Home/About] Added an introduction and recommended download link for MooTool Next Electron\n● MooTool Next is rebuilt with Electron, React, and TypeScript for a modern UI and multi-window experience, and is recommended for new users\n● Supports macOS, Windows, and Linux, and can be installed and used alongside MooTool Java\n● chore: [Editor] Upgraded RSyntaxTextArea to 4.0.0\n\n",
       "titleJa": "おすすめの MooTool Next を紹介",
       "logJa": "● feat: 【ホーム／MooTool について】MooTool Next Electron の紹介とおすすめダウンロードリンクを追加\n● MooTool Next は Electron、React、TypeScript で全面的に再構築され、モダンな UI とマルチウインドウ体験を提供します。新規ユーザーにはこちらをおすすめします\n● macOS、Windows、Linux に対応し、MooTool Java と同時にインストールして利用できます\n● chore: 【エディター】RSyntaxTextArea を 4.0.0 に更新\n\n"
+    },
+    {
+      "version": "v1.8.1",
+      "title": "发布流程可靠性优化",
+      "log": "● fix：【发布】macOS Intel 安装包改用 GitHub 托管 runner 构建，不再依赖本地 runner\n● opt：【发布】创建版本标签时自动构建并发布 macOS Intel、Apple Silicon、Windows x64 和 Linux x64 全平台安装包\n\n",
+      "titleEn": "Release pipeline reliability improvements",
+      "logEn": "● fix: [Release] Build the macOS Intel installer on a GitHub-hosted runner instead of depending on a local runner\n● opt: [Release] Automatically build and publish installers for macOS Intel, Apple Silicon, Windows x64, and Linux x64 when a release tag is created\n\n",
+      "titleJa": "リリースパイプラインの信頼性を改善",
+      "logJa": "● fix: 【リリース】macOS Intel インストーラーを GitHub ホスト runner でビルドし、ローカル runner への依存を解消\n● opt: 【リリース】リリースタグ作成時に macOS Intel、Apple Silicon、Windows x64、Linux x64 のインストーラーを自動でビルド・公開\n\n"
     }
   ]
 }
