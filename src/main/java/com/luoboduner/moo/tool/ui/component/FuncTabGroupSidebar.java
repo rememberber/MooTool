@@ -40,6 +40,7 @@ public class FuncTabGroupSidebar extends JPanel {
     private final JButton manageButton = new JButton();
     private final JPanel groupsPanel = new JPanel();
     private final JScrollPane scrollPane = new JScrollPane(groupsPanel);
+    private final UpdateInstallPromptPanel updateInstallPrompt = new UpdateInstallPromptPanel();
     private final Map<Integer, JButton> tabButtons = new HashMap<>();
 
     public FuncTabGroupSidebar(JTabbedPane tabbedPane) {
@@ -81,6 +82,8 @@ public class FuncTabGroupSidebar extends JPanel {
 
         add(topPanel, BorderLayout.NORTH);
         add(scrollPane, BorderLayout.CENTER);
+        // 对齐 Next：分组列表下方展示「新版本已就绪」安装提示
+        add(updateInstallPrompt, BorderLayout.SOUTH);
     }
 
     private void addListeners() {

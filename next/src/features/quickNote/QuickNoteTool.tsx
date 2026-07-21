@@ -29,12 +29,13 @@ import { useCallback, useEffect, useEffectEvent, useLayoutEffect, useMemo, useRe
 import { createPortal } from 'react-dom'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { VaultGitDialog } from '@/features/json/VaultGitDialog'
-import { formatCode } from '@/features/reformat/reformatTools'
 import { Dialog } from '@/shared/components/Dialog'
 import { FindReplaceBar } from '@/shared/components/FindReplaceBar'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { Tooltip } from '@/shared/components/Tooltip'
 import type { CodeEditorViewState } from '@/shared/components/codeEditorViewState'
+import { formatCodeEditorContent } from '@/shared/components/codeEditorFormatting'
+import { resolveTextCodeEditorLanguage } from '@/shared/components/codeEditorLanguage'
 import {
   defaultFindReplaceOptions,
   findAllMatches,
@@ -738,13 +739,7 @@ export function QuickNoteTool() {
   async function formatCurrent(): Promise<void> {
     if (!state.note) return
     try {
-      const syntax = state.note.metadata.syntax
-      let content = state.content
-      if (syntax === 'application/json') content = JSON.stringify(JSON.parse(content), null, 2)
-      else if (syntax === 'text/java') content = await formatCode(content, 'java')
-      else if (syntax === 'text/xml') content = await formatCode(content, 'xml')
-      else content = content.split(/\r?\n/).map((line) => line.trimEnd()).join('\n')
-      update({ content })
+      update({ content: await formatCodeEditorContent(state.content, state.note.metadata.syntax) })
     } catch (error) {
       toast.error(errorMessage(error))
     }
@@ -910,6 +905,7 @@ export function QuickNoteTool() {
               </select>
               <input className="quick-note-font-size" aria-label={t('quickNote.fontSize')} type="number" min={8} max={48} disabled={!state.note} value={state.note?.metadata.fontSize ?? settings.editor.quickNoteFontSize} onChange={(event) => patchMetadata({ fontSize: Number(event.target.value) })} />
               <IconButton label={t('quickNote.wrap')} icon={WrapText} active={state.note?.metadata.lineWrap} disabled={!state.note} onClick={() => patchMetadata({ lineWrap: !state.note?.metadata.lineWrap })} />
+              <IconButton label={t('common.action.format')} icon={WandSparkles} disabled={!state.note || !state.content.trim()} onClick={() => { void formatCurrent() }} />
               <IconButton label={t('quickNote.bulletList')} icon={List} disabled={!state.note} onClick={() => prefixSelectedLines('bullet')} />
               <IconButton label={t('quickNote.numberedList')} icon={ListOrdered} disabled={!state.note} onClick={() => prefixSelectedLines('numbered')} />
               <span className="quick-note-toolbar__spacer" />
@@ -958,6 +954,7 @@ export function QuickNoteTool() {
                     <QuickNoteCodeEditor
                       ref={editorRef}
                       value={state.content}
+                      language={resolveTextCodeEditorLanguage(state.note.metadata.syntax)}
                       wrap={state.note.metadata.lineWrap}
                       fontFamily={editorFont(state.note.metadata.fontName)}
                       fontSize={state.note.metadata.fontSize}
@@ -966,6 +963,12 @@ export function QuickNoteTool() {
                       ariaLabel={t('quickNote.editorLabel')}
                       initialViewState={quickNoteEditorViewState}
                       onChange={(content) => update({ content })}
+                      onKeyDown={(event) => {
+                        if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLocaleLowerCase() === 'f') {
+                          event.preventDefault()
+                          void formatCurrent()
+                        }
+                      }}
                       onViewStateChange={(viewState) => { quickNoteEditorViewState = viewState }}
                     />
                   </div>

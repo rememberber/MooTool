@@ -268,10 +268,12 @@ test('formats JSON and completes history and Vault workflows', async () => {
   await mainPage.locator('.editor-toolbar').getByRole('button', { name: '格式化', exact: true }).click()
   await expect.poll(() => editor.evaluate((element) => (element as HTMLElement).innerText)).toBe('{\n  "b": 1,\n  "a": 2\n}')
   await expect(mainPage.locator('.json-editor .cm-activeLine')).toHaveCount(1)
-  await expect(mainPage.locator('.json-editor .cm-activeLineGutter')).toHaveCount(1)
+  await expect(mainPage.locator('.json-editor .cm-lineNumbers .cm-activeLineGutter')).toHaveCount(1)
+  await expect(mainPage.locator('.json-editor .cm-foldGutter')).toHaveCount(1)
 
   await mainPage.locator('.editor-toolbar').getByRole('button', { name: '查找', exact: true }).click()
-  await mainPage.getByLabel('在 JSON 中查找…').fill('"a"')
+  const findInput = mainPage.getByRole('textbox', { name: '查找', exact: true })
+  await findInput.fill('"a"')
   await expect(mainPage.locator('.json-editor .cm-searchMatch')).toHaveCount(1)
   await editor.focus()
   await mainPage.keyboard.press('ControlOrMeta+End')
@@ -279,7 +281,7 @@ test('formats JSON and completes history and Vault workflows', async () => {
 
   await mainPage.getByRole('button', { name: '主页', exact: true }).click()
   await mainPage.locator('.tool-button').filter({ hasText: 'JSON' }).click()
-  await expect(mainPage.getByLabel('在 JSON 中查找…')).toHaveValue('"a"')
+  await expect(findInput).toHaveValue('"a"')
   await editor.focus()
   await mainPage.keyboard.type('}')
   await expect.poll(() => editor.evaluate((element) => (element as HTMLElement).innerText)).toBe(`{

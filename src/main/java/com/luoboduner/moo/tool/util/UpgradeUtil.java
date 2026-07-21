@@ -99,7 +99,12 @@ public class UpgradeUtil {
         }
 
         if (!versionChanges.isEmpty()) {
-            // 当前版本索引
+            // 启动时自动检查且开启静默下载：后台下载安装包，就绪后在左侧导航提示安装
+            if (initCheck && App.config.isAutoDownloadUpdate()) {
+                UpdateDownloadManager.getInstance().startSilentDownload(newVersion);
+                return;
+            }
+
             // 版本更新日志：
             StringBuilder versionLogBuilder = new StringBuilder("<h1>")
                     .append(I18n.get("msg.upgradeNewVersion"))
