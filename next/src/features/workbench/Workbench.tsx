@@ -26,6 +26,7 @@ export function Workbench() {
   const setSearchOpen = useAppStore((state) => state.setSearchOpen)
   const [recentCollapsed, setRecentCollapsed] = useState(false)
   const [groupManagerOpen, setGroupManagerOpen] = useState(false)
+  const [updateNotesOpen, setUpdateNotesOpen] = useState(false)
   const [toolWindows, setToolWindows] = useState<ToolWindowSnapshot>({ enabled: window.mootool.toolWindowsEnabled, activeToolId: 'mootool', tools: [] })
   const [mountedToolIds, setMountedToolIds] = useState<ToolId[]>([])
   const workspaceRef = useRef<HTMLElement>(null)
@@ -34,7 +35,7 @@ export function Workbench() {
   const renderedToolIds = mountedToolIds.includes(activeTool.id) ? mountedToolIds : [...mountedToolIds, activeTool.id]
   const hiddenNavigationToolIds = new Set(settings.layout.hiddenNavigationToolIds)
   const visibleBuiltinToolCount = toolGroups.reduce((count, group) => count + group.toolIds.filter((toolId) => !hiddenNavigationToolIds.has(toolId)).length, 0)
-  const workspaceOverlayOpen = searchOpen || groupManagerOpen
+  const workspaceOverlayOpen = searchOpen || groupManagerOpen || updateNotesOpen
   const workspaceOverlayReady = !toolWindows.enabled || toolWindows.activeToolId === 'mootool'
   const dockedToolViewActive = toolWindows.enabled
     && !workspaceOverlayOpen
@@ -225,7 +226,7 @@ export function Workbench() {
           </section>}
         </div>
 
-        <UpdateReadyAction />
+        <UpdateReadyAction onNotesVisibilityChange={setUpdateNotesOpen} />
 
         <div className="sidebar-footer">
           <div className="brand-mark">

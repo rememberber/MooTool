@@ -233,6 +233,36 @@ test('temporarily reveals main overlays above a docked tool', async () => {
   expect(restoredAfterGroups.value).toBe(beforeSearch.value)
 })
 
+test('reveals update notes above a docked tool view', async () => {
+  await mainPage.locator('.tool-button').filter({ hasText: '计算器' }).click()
+  await waitForToolSelector('calculator', '.calculator-workspace')
+  await expect.poll(() => getMainChildViewCount()).toBe(1)
+
+  await electronApp.evaluate(({ BrowserWindow }) => {
+    BrowserWindow.getAllWindows().find((window) => !window.getParentWindow())?.webContents.send('update:state-changed', {
+      status: 'ready',
+      installMode: 'automatic',
+      version: '9.9.9',
+      fileName: 'MooTool-Next-Electron-9.9.9-test.bin',
+      percent: 100,
+      transferred: 100,
+      total: 100,
+      message: null,
+      releaseNotes: '## 9.9.9\n- visible above the tool view'
+    })
+  })
+
+  const updateAction = mainPage.locator('.sidebar-update-action')
+  await expect(updateAction).toBeVisible()
+  await updateAction.hover()
+  await expect(mainPage.locator('.sidebar-update-notes')).toContainText('visible above the tool view')
+  await expect.poll(() => getMainChildViewCount()).toBe(0)
+
+  await mainPage.locator('.sidebar-actions').hover()
+  await expect(mainPage.locator('.sidebar-update-notes')).toBeHidden()
+  await expect.poll(() => getMainChildViewCount()).toBe(1)
+})
+
 async function waitForTool(toolId: string): Promise<{ id: number; value: string }> {
   await expect.poll(async () => {
     const result = await evaluateTool<string>(toolId, `document.querySelector('#calculator-expression')?.value ?? ''`).catch(() => null)
