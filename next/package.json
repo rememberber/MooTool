@@ -1,6 +1,6 @@
 {
   "name": "mootool-next",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "private": true,
   "description": "MooTool rewritten with Electron, Vite, React, and TypeScript.",
   "license": "MIT",
