@@ -8867,3 +8867,56 @@ textarea:focus {
   font-weight: var(--desktop-font-weight-regular);
   line-height: 1.3;
 }
+
+/* Compound search controls own the border and focus ring. Their inner input
+ * stays visually transparent so global field focus styles cannot create a
+ * second rounded outline inside the control. */
+.quick-note-search,
+.compact-search {
+  border-radius: var(--desktop-control-radius);
+  box-shadow: var(--desktop-control-shadow);
+  transition:
+    color 120ms ease,
+    background-color 120ms ease,
+    border-color 120ms ease,
+    box-shadow 120ms ease;
+}
+
+.quick-note-search:hover,
+.compact-search:hover {
+  border-color: var(--desktop-control-border-hover);
+}
+
+.quick-note-search:focus-within,
+.compact-search:focus-within {
+  color: var(--text-strong);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--desktop-control-focus);
+}
+
+:root :is(.quick-note-search, .compact-search, .command-palette__search) input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+:root :is(.quick-note-search, .compact-search, .command-palette__search) input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):hover,
+:root :is(.quick-note-search, .compact-search, .command-palette__search) input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):focus {
+  background: transparent;
+  border-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  outline: 0;
+}
+
+.command-palette__search:focus-within {
+  color: var(--text-strong);
+  border-bottom-color: color-mix(in srgb, var(--accent) 48%, var(--border-soft));
+  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.language-menu:focus-within {
+  color: var(--text-strong);
+  box-shadow: 0 0 0 3px var(--desktop-control-focus);
+}
+
+:root .language-menu select:not([multiple]):focus {
+  border-color: transparent;
+  box-shadow: none;
+  outline: 0;
+}
