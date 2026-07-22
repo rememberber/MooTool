@@ -7,13 +7,18 @@ export function useFocusOnWindowActivate(focus: () => void, enabled: boolean): v
 
   useEffect(() => {
     if (!enabled) return
+    let frame = 0
 
     const run = () => {
-      requestAnimationFrame(() => focusRef.current())
+      window.cancelAnimationFrame(frame)
+      frame = window.requestAnimationFrame(() => focusRef.current())
     }
 
     run()
     window.addEventListener('focus', run)
-    return () => window.removeEventListener('focus', run)
+    return () => {
+      window.cancelAnimationFrame(frame)
+      window.removeEventListener('focus', run)
+    }
   }, [enabled])
 }

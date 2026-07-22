@@ -207,6 +207,32 @@ test('aligns detached tool branding, header controls, and dock action in one top
   await expect.poll(() => getToolSnapshot('quickNote')).toMatchObject({ detached: false, ready: true })
 })
 
+test('keeps Quick Note split-preview text selected when the docked view regains focus', async () => {
+  await mainPage.getByRole('button', { name: '随手记', exact: true }).click()
+  await waitForToolSelector('quickNote', '.quick-note-tool')
+  await evaluateTool('quickNote', `(() => {
+    const split = [...document.querySelectorAll('[role="tab"]')].find((tab) => tab.textContent === '分栏')
+    if (!split) throw new Error('Quick Note split tab not found')
+    split.click()
+  })()`)
+  await waitForToolSelector('quickNote', '.quick-note-preview h1')
+
+  const result = await evaluateTool<{ selection: string }>('quickNote', `new Promise((resolve) => {
+    const heading = document.querySelector('.quick-note-preview h1')
+    if (!heading) throw new Error('Quick Note preview heading not found')
+    const range = document.createRange()
+    range.selectNodeContents(heading)
+    const selection = window.getSelection()
+    selection.removeAllRanges()
+    selection.addRange(range)
+    window.dispatchEvent(new Event('focus'))
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve({
+      selection: window.getSelection()?.toString() ?? ''
+    })))
+  })`)
+  expect(result.value.selection).toContain('MooTool Quick Note')
+})
+
 test('temporarily reveals main overlays above a docked tool', async () => {
   await mainPage.locator('.tool-button').filter({ hasText: '计算器' }).click()
   await waitForToolSelector('calculator', '.calculator-workspace')

@@ -303,7 +303,7 @@ export function QuickNoteTool() {
     () => editorRef.current?.focus(),
     toolActive
       && Boolean(state.note)
-      && state.viewMode !== 'preview'
+      && state.viewMode === 'editor'
       && !state.findOpen
       && !state.actionMode
       && !state.infoOpen
