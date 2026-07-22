@@ -137,6 +137,11 @@ export function TimeConvertTool() {
             </div>
           </div>
 
+          <div className="time-convert-actions">
+            <button className="time-convert-button" type="button" onClick={convertToLocal}><ArrowDown size={15} />{t('time.toLocal')}</button>
+            <button className="time-convert-button" type="button" onClick={convertToTimestamp}><ArrowUp size={15} />{t('time.toTimestamp')}</button>
+          </div>
+
           <div className="time-field-group">
             <label htmlFor="local-time-input">{t('time.localTime')} · {state.zone}</label>
             <div className="time-input-row">
@@ -144,11 +149,6 @@ export function TimeConvertTool() {
               <span className="time-format-hint">{t('time.formatHint')}</span>
               <Tooltip content={t('time.copy')}><button className="icon-button" type="button" aria-label={t('time.copy')} onClick={() => { void copy(state.localTime) }}><Copy size={14} /></button></Tooltip>
             </div>
-          </div>
-
-          <div className="time-convert-actions">
-            <button className="time-convert-button" type="button" onClick={convertToLocal}><ArrowDown size={15} />{t('time.toLocal')}</button>
-            <button className="time-convert-button" type="button" onClick={convertToTimestamp}><ArrowUp size={15} />{t('time.toTimestamp')}</button>
           </div>
         </section>
       </div>
