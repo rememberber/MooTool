@@ -572,9 +572,9 @@ test('runs P3 time, encode, UA, calculator and config workflows', async () => {
   await openTool('计算器', '计算器')
   await mainPage.locator('#calculator-expression').fill('(12 + 8) / 4')
   await mainPage.getByRole('button', { name: '计算', exact: true }).click()
-  await expect(mainPage.locator('.calculator-expression output')).toHaveText('5')
+  await expect(mainPage.locator('.calculator-result')).toHaveText('5')
   await mainPage.getByRole('button', { name: '最大公约数' }).click()
-  await expect(mainPage.locator('.calculator-expression output')).toHaveText('6')
+  await expect(mainPage.locator('.calculator-result')).toHaveText('6')
 
   await openTool('配置文件转换', '配置文件转换')
   const configPanes = mainPage.locator('.workspace-tool-session:not([hidden]) .io-workspace .cm-content')

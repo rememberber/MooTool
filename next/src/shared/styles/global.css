@@ -3094,7 +3094,7 @@ select:not([multiple]) {
 .diff-editor-grid textarea:focus,
 .regex-expression-row input:focus,
 .cron-expression-panel input:focus,
-.calculator-expression input:focus,
+.calculator-controls input:focus,
 .labeled-input input:focus,
 .favorite-create input:focus {
   border-color: var(--accent);
@@ -3265,20 +3265,27 @@ select:not([multiple]) {
 .ua-result-row span { color: var(--text-faint); font-size: 10px; }
 .ua-result-row strong { color: var(--text-body); font-size: 13px; font-weight: 550; overflow-wrap: anywhere; }
 
-.calculator-workspace { overflow: auto; }
-.calculator-expression { display: grid; grid-template-columns: 110px minmax(0, 1fr) minmax(130px, auto); align-items: center; gap: 14px; padding: 18px 20px; background: var(--surface-soft); border-bottom: 1px solid var(--border-soft); }
-.calculator-expression > div { display: flex; min-width: 0; gap: 8px; }
-.calculator-expression input { min-width: 0; height: 38px; flex: 1; padding: 0 11px; color: var(--text-body); background: var(--surface); border: 1px solid var(--border-control); border-radius: 6px; outline: none; font-family: ui-monospace, Menlo, monospace; }
-.calculator-expression output { padding: 8px 12px; color: var(--accent-strong); font-family: ui-monospace, Menlo, monospace; font-size: 20px; text-align: right; overflow-wrap: anywhere; }
-.calculator-grid { display: grid; grid-template-columns: minmax(260px, 1fr) minmax(260px, 1fr) minmax(240px, 0.8fr); gap: 12px; padding: 14px; }
-.operation-panel, .calculator-log { display: flex; flex-direction: column; gap: 10px; padding: 16px; background: var(--surface-soft); border: 1px solid var(--border-soft); border-radius: 7px; }
-.operation-panel h2, .calculator-log h2, .cron-builder h2, .cron-runs h2 { margin: 0 0 4px; color: var(--text-body); font-size: 12px; }
+.calculator-workspace { overflow: hidden; }
+.calculator-layout { display: grid; grid-template-columns: minmax(360px, 1fr) minmax(320px, 1fr); flex: 1; min-width: 0; min-height: 0; overflow: auto; }
+.calculator-controls { min-width: 0; min-height: 0; padding: 0 18px 30px; border-right: 1px solid var(--border-soft); overflow: auto; }
+.calculator-section { padding: 18px 0 22px; border-bottom: 1px solid var(--border-soft); }
+.calculator-section:last-child { border-bottom: 0; }
+.calculator-section h2, .calculator-log h2, .cron-builder h2, .cron-runs h2 { margin: 0 0 12px; color: var(--text-body); font-size: 12px; }
+.calculator-expression-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(110px, auto); align-items: stretch; gap: 10px; }
+.calculator-expression-row input { min-width: 0; height: 48px; padding: 0 13px; color: var(--editor-text); background: var(--workspace); border: 1px solid var(--border-control); border-radius: 6px; outline: none; font-family: ui-monospace, Menlo, monospace; font-size: 22px; }
+.calculator-base-grid { display: grid; grid-template-columns: 86px minmax(0, 1fr); align-items: center; gap: 10px 12px; }
+.calculator-base-grid > label { color: var(--text-muted); font-size: 11px; }
+.calculator-base-grid > input { min-width: 0; height: 36px; padding: 0 10px; color: var(--text-body); background: var(--surface); border: 1px solid var(--border-control); border-radius: 5px; outline: none; font-family: ui-monospace, Menlo, monospace; }
+.calculator-base-actions { grid-column: 1 / -1; display: flex; justify-content: center; gap: 10px; }
+.calculator-base-actions button { min-width: 112px; }
+.calculator-operation-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)) minmax(140px, auto); align-items: end; gap: 10px; }
 .labeled-input { display: flex; flex-direction: column; gap: 5px; }
 .labeled-input span { color: var(--text-faint); font-size: 10px; }
 .labeled-input input { min-width: 0; height: 32px; padding: 0 8px; color: var(--text-body); background: var(--surface); border: 1px solid var(--border-control); border-radius: 5px; outline: none; font-family: ui-monospace, Menlo, monospace; }
-.paired-inputs, .inline-command-row { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; }
 .panel-command { width: 100%; }
-.calculator-log { min-height: 0; overflow: auto; }
+.calculator-output-panel { display: grid; grid-template-rows: auto minmax(0, 1fr); min-width: 0; min-height: 0; gap: 10px; padding: 14px; background: var(--surface-soft); }
+.calculator-result { display: flex; align-items: center; min-height: 56px; padding: 8px 14px; color: var(--accent-strong); background: var(--workspace); border: 1px solid var(--border-control); border-radius: 6px; font-family: ui-monospace, Menlo, monospace; font-size: 26px; overflow-wrap: anywhere; }
+.calculator-log { min-height: 0; padding: 14px; background: var(--workspace); border: 1px solid var(--border-control); border-radius: 6px; overflow: auto; }
 .calculator-log p { margin: 0; padding: 7px 0; color: var(--text-muted); border-bottom: 1px solid var(--border-soft); font-family: ui-monospace, Menlo, monospace; font-size: 10px; line-height: 1.45; }
 
 .regex-test-layout { display: grid; grid-template-columns: minmax(0, 1fr) 290px; grid-template-rows: auto minmax(0, 1fr); min-height: 0; flex: 1; }
@@ -6909,23 +6916,6 @@ select:not([multiple]) {
     justify-content: flex-start;
   }
 
-  .calculator-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .calculator-log {
-    grid-column: 1 / -1;
-    max-height: 190px;
-  }
-
-  .calculator-expression {
-    grid-template-columns: minmax(0, 1fr) minmax(120px, auto);
-  }
-
-  .calculator-expression > label {
-    grid-column: 1 / -1;
-  }
-
   .ua-actions {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -8415,8 +8405,7 @@ select:not([multiple]) {
 .regex-controls > label,
 .regex-source > span,
 .cron-expression-panel > label,
-.diff-editor-grid > div > span,
-.calculator-expression > label {
+.diff-editor-grid > div > span {
   font-size: var(--tool-control-font-size);
 }
 
@@ -8440,7 +8429,7 @@ select:not([multiple]) {
   font-size: var(--tool-control-font-size);
 }
 
-.operation-panel h2,
+.calculator-section h2,
 .calculator-log h2,
 .cron-builder h2,
 .cron-runs h2,
