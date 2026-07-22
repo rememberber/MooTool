@@ -1311,6 +1311,43 @@ test('keeps the application alive when the close behavior is set to hide', async
   await mainPage.evaluate(() => window.mootool.updateSettings({ general: { closeBehavior: 'ask' } }))
 })
 
+test('captures a custom region through the full-screen overlay', async () => {
+  const overlayWindow = electronApp.waitForEvent('window')
+  await mainPage.evaluate(() => {
+    const state = window as typeof window & { __captureResult?: Awaited<ReturnType<typeof window.mootool.captureScreenRegion>> }
+    state.__captureResult = undefined
+    void window.mootool.captureScreenRegion().then((result) => { state.__captureResult = result })
+  })
+
+  const overlay = await overlayWindow
+  await overlay.waitForLoadState('domcontentloaded')
+  await expect(overlay.locator('.screen-capture-overlay')).toBeVisible()
+  await expect.poll(() => electronApp.evaluate(({ BrowserWindow }) => {
+    return BrowserWindow.getAllWindows().find((window) => !window.webContents.getURL().includes('window=capture'))?.isVisible()
+  })).toBe(false)
+  const viewport = await overlay.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight }))
+  await overlay.mouse.move(viewport.width * 0.2, viewport.height * 0.2)
+  await overlay.mouse.down()
+  await overlay.mouse.move(viewport.width * 0.6, viewport.height * 0.55, { steps: 5 })
+  await overlay.mouse.up()
+  await expect(overlay.locator('.screen-capture-overlay__selection')).toBeVisible()
+  await overlay.keyboard.press('Enter')
+
+  await expect.poll(() => mainPage.evaluate(() => {
+    const state = window as typeof window & { __captureResult?: { width: number; height: number } | null }
+    return state.__captureResult ? { width: state.__captureResult.width, height: state.__captureResult.height } : null
+  })).toEqual(expect.objectContaining({ width: expect.any(Number), height: expect.any(Number) }))
+  const result = await mainPage.evaluate(() => {
+    const state = window as typeof window & { __captureResult?: { width: number; height: number } | null }
+    return state.__captureResult
+  })
+  expect(result?.width).toBeGreaterThan(50)
+  expect(result?.height).toBeGreaterThan(50)
+  await expect.poll(() => electronApp.evaluate(({ BrowserWindow }) => {
+    return BrowserWindow.getAllWindows().find((window) => !window.webContents.getURL().includes('window=capture'))?.isVisible()
+  })).toBe(true)
+})
+
 async function editorLineTopOffsets(page: Page, rootSelector: string): Promise<number[]> {
   return page.locator(rootSelector).evaluate((root) => {
     const lines = [...root.querySelectorAll<HTMLElement>('.cm-line')]

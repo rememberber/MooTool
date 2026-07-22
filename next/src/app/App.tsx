@@ -3,6 +3,7 @@ import { SettingsProvider } from '@/features/settings/SettingsProvider'
 import { SettingsWindow } from '@/features/settings/SettingsWindow'
 import { Workbench } from '@/features/workbench/Workbench'
 import { ToolWindow } from '@/features/workbench/ToolWindow'
+import { ScreenCaptureOverlay } from '@/features/image/ScreenCaptureOverlay'
 import { ToastProvider, useToast } from '@/shared/feedback/ToastProvider'
 import { I18nProvider, useI18n } from '@/shared/i18n/I18nProvider'
 import { useSystemTheme } from '@/shared/theme/useSystemTheme'
@@ -19,20 +20,21 @@ export function App() {
 
 function ThemedApp() {
   useSystemTheme()
-  useEscapeToDismissWindow()
   const params = new URLSearchParams(window.location.search)
   const windowType = params.get('window')
+  useEscapeToDismissWindow(windowType !== 'capture')
 
   return (
     <ToastProvider>
-      {windowType !== 'tool' && <UpdateNotifications />}
-      {windowType === 'settings' ? <SettingsWindow /> : windowType === 'tool' ? <ToolWindow requestedToolId={params.get('toolId') ?? ''} /> : <Workbench />}
+      {windowType !== 'tool' && windowType !== 'capture' && <UpdateNotifications />}
+      {windowType === 'capture' ? <ScreenCaptureOverlay /> : windowType === 'settings' ? <SettingsWindow /> : windowType === 'tool' ? <ToolWindow requestedToolId={params.get('toolId') ?? ''} /> : <Workbench />}
     </ToastProvider>
   )
 }
 
-function useEscapeToDismissWindow(): void {
+function useEscapeToDismissWindow(enabled: boolean): void {
   useEffect(() => {
+    if (!enabled) return
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape' || event.repeat || event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return
 
@@ -47,7 +49,7 @@ function useEscapeToDismissWindow(): void {
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [])
+  }, [enabled])
 }
 
 function UpdateNotifications() {

@@ -18,6 +18,8 @@ import {
   Tray,
   type WebContents,
   type WebContentsView,
+  type NativeImage,
+  type Display,
   type MenuItemConstructorOptions,
   type OpenDialogOptions
 } from 'electron'
@@ -39,7 +41,6 @@ import {
   type RuntimeId,
   type RuntimeStatus,
   type ToolId,
-  type ToolAction,
   type ToolWorkspaceBounds,
   type WindowState,
   type WorkspaceState
@@ -55,7 +56,7 @@ import {
 } from '../../src/shared/contracts/settings'
 import type { HistoryQuery, SaveFuncHistoryInput } from '../../src/shared/contracts/history'
 import type { SaveTextFileInput, TextFileKind, TextFileResult } from '../../src/shared/contracts/files'
-import type { RenameImageAssetInput, SaveImageAssetInput, ScreenCapture } from '../../src/shared/contracts/images'
+import type { RenameImageAssetInput, SaveImageAssetInput, ScreenCapture, ScreenCaptureOverlayData, ScreenCaptureRect, ScreenCaptureResult } from '../../src/shared/contracts/images'
 import { digestAlgorithmIds, type DigestAlgorithmId, type DigestFileResult, type ImageFilePayload, type SaveBinaryFileInput } from '../../src/shared/contracts/nativeFiles'
 import type { PdfMergeSource, PdfSplitTask } from '../../src/shared/contracts/pdf'
 import type {
@@ -119,6 +120,22 @@ type PersistedStore = {
   activeHostId: number | null
 }
 
+type ScreenCaptureOverlayRecord = {
+  window: BrowserWindow
+  display: Display
+  displayName: string
+  image: NativeImage
+}
+
+type ScreenCaptureSession = {
+  overlays: Map<number, ScreenCaptureOverlayRecord>
+  hiddenWindows: BaseWindow[]
+  focusedWindow: BaseWindow | null
+  promise: Promise<ScreenCaptureResult | null>
+  resolve: (result: ScreenCaptureResult | null) => void
+  completing: boolean
+}
+
 const isDev = Boolean(process.env.ELECTRON_RENDERER_URL)
 const defaultWindowState: WindowState = {
   bounds: { width: 1440, height: 920 },
@@ -150,7 +167,7 @@ let toolWindowManager: ToolWindowManager
 let tray: Tray | null = null
 let isQuitting = false
 let closePromptOpen = false
-const pendingToolActions = new Map<Exclude<ToolId, 'mootool'>, ToolAction>()
+let screenCaptureSession: ScreenCaptureSession | null = null
 let historyRepository: HistoryRepository
 let favoriteRepository: FavoriteRepository
 let p5Repository: P5Repository
@@ -274,6 +291,16 @@ function loadToolRenderer(view: WebContentsView, toolId: string): void {
   void view.webContents.loadFile(join(__dirname, '../renderer/index.html'), {
     query: { window: 'tool', toolId }
   })
+}
+
+function loadScreenCaptureRenderer(window: BrowserWindow): Promise<void> {
+  if (isDev && process.env.ELECTRON_RENDERER_URL) {
+    const url = new URL(process.env.ELECTRON_RENDERER_URL)
+    url.searchParams.set('window', 'capture')
+    return window.loadURL(url.toString()).then(() => undefined)
+  }
+
+  return window.loadFile(join(__dirname, '../renderer/index.html'), { query: { window: 'capture' } }).then(() => undefined)
 }
 
 function createMainWindow(): BrowserWindow {
@@ -576,13 +603,6 @@ function registerIpc(): void {
     if (typeof title !== 'string') throw new Error('Invalid tool window title')
     toolWindowManager.setTitle(toolId, title)
   })
-  ipcMain.handle('tool-action:consume', (event, toolId: unknown): ToolAction | null => {
-    if (!isDetachableToolId(toolId)) throw new Error('Invalid tool id')
-    assertToolWindowAccess(event.sender, toolId)
-    const action = pendingToolActions.get(toolId) ?? null
-    pendingToolActions.delete(toolId)
-    return action
-  })
   ipcMain.handle('history:list', (_event, query: HistoryQuery) => historyRepository.list(normalizeHistoryQuery(query)))
   ipcMain.handle('history:save', (_event, input: SaveFuncHistoryInput) => {
     historyRepository.save(normalizeHistoryInput(input))
@@ -767,6 +787,34 @@ function registerIpc(): void {
     } finally {
       if (wasVisible && owner && !owner.isDestroyed()) { owner.show(); owner.focus() }
     }
+  })
+  ipcMain.handle('screen:capture-region', (event): Promise<ScreenCaptureResult | null> => {
+    return startScreenCapture(resolveOwnerWindow(event.sender) ?? mainWindow)
+  })
+  ipcMain.handle('screen-capture:get-overlay', (event): ScreenCaptureOverlayData | null => {
+    const record = screenCaptureSession?.overlays.get(event.sender.id)
+    if (!record) return null
+    const size = record.image.getSize()
+    return {
+      displayId: String(record.display.id),
+      displayName: record.displayName,
+      width: size.width,
+      height: size.height,
+      dataUrl: record.image.toDataURL()
+    }
+  })
+  ipcMain.handle('screen-capture:confirm', (event, value: unknown) => {
+    const session = screenCaptureSession
+    const record = session?.overlays.get(event.sender.id)
+    if (!session || !record) return
+    const imageSize = record.image.getSize()
+    const rect = normalizeScreenCaptureRect(value, imageSize.width, imageSize.height)
+    const image = record.image.crop(rect)
+    const result = { width: rect.width, height: rect.height, dataUrl: image.toDataURL() }
+    setImmediate(() => finishScreenCapture(result))
+  })
+  ipcMain.handle('screen-capture:cancel', (event) => {
+    if (screenCaptureSession?.overlays.has(event.sender.id)) setImmediate(() => finishScreenCapture(null))
   })
   ipcMain.handle('images:list', () => createImageRepository().list())
   ipcMain.handle('images:read', (_event, name: string) => createImageRepository().read(normalizeImageName(name)))
@@ -1490,6 +1538,174 @@ async function checkForUpdatesAndBroadcast(automatic = false): Promise<void> {
   }
 }
 
+async function startScreenCapture(owner: BaseWindow | null): Promise<ScreenCaptureResult | null> {
+  if (screenCaptureSession) return null
+
+  const focusedWindow = BaseWindow.getFocusedWindow() ?? owner
+  const hiddenWindows = BaseWindow.getAllWindows().filter((window) => window.isVisible() && !window.isDestroyed())
+  for (const window of hiddenWindows) window.hide()
+
+  let displays: Display[]
+  let sources: Awaited<ReturnType<typeof desktopCapturer.getSources>>
+  try {
+    await delay(180)
+    displays = screen.getAllDisplays()
+    const maxWidth = Math.max(...displays.map((display) => Math.round(display.size.width * display.scaleFactor)), 1920)
+    const maxHeight = Math.max(...displays.map((display) => Math.round(display.size.height * display.scaleFactor)), 1080)
+    sources = await desktopCapturer.getSources({
+      types: ['screen'],
+      thumbnailSize: { width: maxWidth, height: maxHeight },
+      fetchWindowIcons: false
+    })
+  } catch (error) {
+    restoreScreenCaptureWindows(hiddenWindows, focusedWindow)
+    throw error
+  }
+
+  const availableSources = sources.filter((source) => !source.thumbnail.isEmpty())
+  if (displays.length === 0 || availableSources.length === 0) {
+    restoreScreenCaptureWindows(hiddenWindows, focusedWindow)
+    throw new Error('No display is available for capture')
+  }
+
+  let resolveSession!: (result: ScreenCaptureResult | null) => void
+  const promise = new Promise<ScreenCaptureResult | null>((resolve) => { resolveSession = resolve })
+  const session: ScreenCaptureSession = {
+    overlays: new Map(),
+    hiddenWindows,
+    focusedWindow,
+    promise,
+    resolve: resolveSession,
+    completing: false
+  }
+  screenCaptureSession = session
+
+  const usedSources = new Set<number>()
+  const loads: Promise<void>[] = []
+  for (const [displayIndex, display] of displays.entries()) {
+    let sourceIndex = availableSources.findIndex((source, index) => !usedSources.has(index) && source.display_id === String(display.id))
+    if (sourceIndex < 0) sourceIndex = availableSources.findIndex((_source, index) => !usedSources.has(index))
+    if (sourceIndex < 0) continue
+    usedSources.add(sourceIndex)
+    const source = availableSources[sourceIndex]
+    const overlay = new BrowserWindow({
+      ...display.bounds,
+      frame: false,
+      show: false,
+      resizable: false,
+      movable: false,
+      minimizable: false,
+      maximizable: false,
+      fullscreenable: false,
+      skipTaskbar: true,
+      hasShadow: false,
+      acceptFirstMouse: true,
+      enableLargerThanScreen: true,
+      roundedCorners: false,
+      backgroundColor: '#000000',
+      title: `MooTool Capture ${displayIndex + 1}`,
+      webPreferences: {
+        preload: join(__dirname, '../preload/index.js'),
+        sandbox: true,
+        contextIsolation: true,
+        nodeIntegration: false,
+        backgroundThrottling: false
+      }
+    })
+    overlay.setMenuBarVisibility(false)
+    overlay.setAlwaysOnTop(true, 'screen-saver')
+    if (process.platform === 'darwin') {
+      overlay.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true })
+    }
+    const record: ScreenCaptureOverlayRecord = {
+      window: overlay,
+      display,
+      displayName: source.name || `Display ${displayIndex + 1}`,
+      image: source.thumbnail
+    }
+    session.overlays.set(overlay.webContents.id, record)
+    overlay.on('closed', () => {
+      if (screenCaptureSession === session && !session.completing) finishScreenCapture(null)
+    })
+    loads.push(loadScreenCaptureRenderer(overlay))
+  }
+
+  if (session.overlays.size === 0) {
+    finishScreenCapture(null)
+    return promise
+  }
+
+  try {
+    await Promise.all(loads)
+  } catch {
+    if (screenCaptureSession === session) finishScreenCapture(null)
+    return promise
+  }
+  if (screenCaptureSession !== session) return promise
+
+  const cursorDisplay = screen.getDisplayNearestPoint(screen.getCursorScreenPoint())
+  let focusedOverlay: BrowserWindow | null = null
+  for (const record of session.overlays.values()) {
+    record.window.showInactive()
+    if (record.display.id === cursorDisplay.id) focusedOverlay = record.window
+  }
+  const target = focusedOverlay ?? session.overlays.values().next().value?.window
+  target?.show()
+  target?.focus()
+  return promise
+}
+
+function finishScreenCapture(result: ScreenCaptureResult | null, restoreWindows = true): void {
+  const session = screenCaptureSession
+  if (!session || session.completing) return
+  session.completing = true
+  screenCaptureSession = null
+  for (const record of session.overlays.values()) {
+    if (!record.window.isDestroyed()) record.window.destroy()
+  }
+  if (restoreWindows) restoreScreenCaptureWindows(session.hiddenWindows, session.focusedWindow)
+  session.resolve(result)
+}
+
+async function captureScreenFromTray(): Promise<void> {
+  const labels = menuLabels[store.get('settings').general.language]
+  try {
+    const result = await startScreenCapture(null)
+    if (!result) return
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19)
+    const saved = await createImageRepository().save({ name: `Screenshot-${timestamp}.png`, dataUrl: result.dataUrl })
+    if (Notification.isSupported()) {
+      new Notification({ title: 'MooTool', body: `${labels.screenshot}: ${saved.name}` }).show()
+    }
+  } catch (error) {
+    dialog.showErrorBox(labels.screenshot, error instanceof Error ? error.message : String(error))
+  }
+}
+
+function restoreScreenCaptureWindows(windows: BaseWindow[], focusedWindow: BaseWindow | null): void {
+  for (const window of windows) {
+    if (!window.isDestroyed()) window.show()
+  }
+  if (focusedWindow && !focusedWindow.isDestroyed()) focusedWindow.focus()
+}
+
+function normalizeScreenCaptureRect(value: unknown, imageWidth: number, imageHeight: number): ScreenCaptureRect {
+  if (!isRecord(value)) throw new Error('Invalid screen capture rectangle')
+  const number = (key: keyof ScreenCaptureRect) => {
+    const entry = value[key]
+    if (typeof entry !== 'number' || !Number.isFinite(entry)) throw new Error('Invalid screen capture rectangle')
+    return Math.round(entry)
+  }
+  const x = Math.min(imageWidth - 1, Math.max(0, number('x')))
+  const y = Math.min(imageHeight - 1, Math.max(0, number('y')))
+  return {
+    x,
+    y,
+    width: Math.min(imageWidth - x, Math.max(1, number('width'))),
+    height: Math.min(imageHeight - y, Math.max(1, number('height')))
+  }
+}
+
 function updateTray(settings: AppSettings): void {
   if (!settings.general.trayEnabled) {
     tray?.destroy()
@@ -1515,7 +1731,7 @@ function updateTray(settings: AppSettings): void {
     openApp: showMainWindow,
     openSettings: () => createSettingsWindow(),
     openColorPicker: () => openToolFromTray('colorBoard'),
-    captureScreen: () => openToolFromTray('image', 'capture-screen'),
+    captureScreen: () => { void captureScreenFromTray() },
     openTranslation: () => openToolFromTray('translation'),
     switchHost: (profile) => { void switchHostFromTray(profile.id) },
     quit: () => { isQuitting = true; app.quit() }
@@ -1569,15 +1785,8 @@ function navigateMainWindow(event: AppNavigationEvent): void {
   }
 }
 
-function openToolFromTray(toolId: Exclude<ToolId, 'mootool'>, action?: ToolAction): void {
+function openToolFromTray(toolId: Exclude<ToolId, 'mootool'>): void {
   if (!toolWindowManager.focus(toolId)) navigateMainWindow({ type: 'open-tool', toolId })
-  if (action) queueToolAction(toolId, action)
-}
-
-function queueToolAction(toolId: Exclude<ToolId, 'mootool'>, action: ToolAction): void {
-  pendingToolActions.set(toolId, action)
-  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('tool-action:available', toolId)
-  toolWindowManager.sendToTool(toolId, 'tool-action:available', toolId)
 }
 
 function broadcast(channel: string, payload: unknown): void {
@@ -1902,6 +2111,7 @@ app.whenReady().then(async () => {
 
 app.on('before-quit', () => {
   isQuitting = true
+  finishScreenCapture(null, false)
   toolWindowManager?.dispose()
   quickNoteWatcherGeneration += 1
   jsonVaultWatcherGeneration += 1

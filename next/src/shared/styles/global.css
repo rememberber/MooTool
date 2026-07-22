@@ -6202,7 +6202,6 @@ select:not([multiple]) {
 }
 
 .capture-preview {
-  position: relative;
   display: grid;
   min-width: 0;
   min-height: 0;
@@ -6211,70 +6210,12 @@ select:not([multiple]) {
   background: var(--workspace);
   border: 1px solid var(--border-soft);
   overflow: hidden;
-  cursor: crosshair;
-  touch-action: none;
-  user-select: none;
 }
 
 .capture-preview img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
-  pointer-events: none;
-  user-select: none;
-}
-
-.capture-selection {
-  position: absolute;
-  box-sizing: border-box;
-  min-width: 1px;
-  min-height: 1px;
-  border: 2px solid var(--accent-strong);
-  box-shadow: 0 0 0 9999px rgb(0 0 0 / 46%);
-  cursor: move;
-}
-
-.capture-selection-size {
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  padding: 3px 5px;
-  color: #fff;
-  background: rgb(0 0 0 / 72%);
-  border-radius: 4px;
-  font-size: 10px;
-  line-height: 1;
-  pointer-events: none;
-  white-space: nowrap;
-}
-
-.capture-selection-handle {
-  position: absolute;
-  width: 10px;
-  height: 10px;
-  background: #fff;
-  border: 2px solid var(--accent-strong);
-  border-radius: 50%;
-}
-
-.capture-selection-handle--nw { top: -6px; left: -6px; cursor: nwse-resize; }
-.capture-selection-handle--ne { top: -6px; right: -6px; cursor: nesw-resize; }
-.capture-selection-handle--se { right: -6px; bottom: -6px; cursor: nwse-resize; }
-.capture-selection-handle--sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
-
-.capture-crop-controls {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.capture-crop-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  color: var(--text-muted);
-  font-size: 10px;
 }
 
 .capture-crop-fields {
@@ -6289,6 +6230,150 @@ select:not([multiple]) {
   gap: 5px;
   color: var(--text-muted);
   font-size: 10px;
+}
+
+:root[data-window='capture'],
+:root[data-window='capture'] body,
+:root[data-window='capture'] #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  background: #000;
+}
+
+.screen-capture-overlay {
+  position: fixed;
+  z-index: 1;
+  inset: 0;
+  overflow: hidden;
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+
+.screen-capture-overlay--loading {
+  background: #000;
+}
+
+.screen-capture-overlay__image,
+.screen-capture-overlay__shade {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.screen-capture-overlay__image {
+  object-fit: fill;
+  pointer-events: none;
+  user-select: none;
+}
+
+.screen-capture-overlay__shade {
+  background: rgb(0 0 0 / 46%);
+  pointer-events: none;
+}
+
+.screen-capture-overlay__selection {
+  position: absolute;
+  box-sizing: border-box;
+  min-width: 1px;
+  min-height: 1px;
+  border: 2px solid #58a6ff;
+  box-shadow: 0 0 0 99999px rgb(0 0 0 / 46%);
+  cursor: move;
+}
+
+.screen-capture-overlay__size {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 4px 7px;
+  color: #fff;
+  background: rgb(0 0 0 / 74%);
+  border-radius: 5px;
+  font: 500 12px/1 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.screen-capture-overlay__handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #fff;
+  border: 2px solid #58a6ff;
+  border-radius: 50%;
+}
+
+.screen-capture-overlay__handle--nw { top: -7px; left: -7px; cursor: nwse-resize; }
+.screen-capture-overlay__handle--ne { top: -7px; right: -7px; cursor: nesw-resize; }
+.screen-capture-overlay__handle--se { right: -7px; bottom: -7px; cursor: nwse-resize; }
+.screen-capture-overlay__handle--sw { bottom: -7px; left: -7px; cursor: nesw-resize; }
+
+.screen-capture-overlay__commands {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  display: flex;
+  gap: 8px;
+  padding: 7px;
+  background: rgb(26 27 30 / 94%);
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 9px;
+  box-shadow: 0 8px 30px rgb(0 0 0 / 35%);
+  cursor: default;
+}
+
+.screen-capture-overlay__commands button {
+  display: grid;
+  width: 38px;
+  height: 34px;
+  padding: 0;
+  color: #f5f5f7;
+  background: rgb(255 255 255 / 10%);
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  place-items: center;
+}
+
+.screen-capture-overlay__commands button:hover {
+  background: rgb(255 255 255 / 18%);
+}
+
+.screen-capture-overlay__commands .screen-capture-overlay__confirm {
+  color: #fff;
+  background: #1677ff;
+}
+
+.screen-capture-overlay__commands .screen-capture-overlay__confirm:hover {
+  background: #2f88ff;
+}
+
+.screen-capture-overlay__hint {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 13px;
+  color: #f5f5f7;
+  background: rgb(18 19 22 / 82%);
+  border: 1px solid rgb(255 255 255 / 16%);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 28%);
+  font-size: 12px;
+  pointer-events: none;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.screen-capture-overlay__hint span {
+  color: rgb(255 255 255 / 68%);
+  font-size: 11px;
 }
 
 @media (max-width: 1050px) {

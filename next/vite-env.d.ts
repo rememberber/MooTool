@@ -1,10 +1,10 @@
 /// <reference types="vite/client" />
 
-import type { AppNavigationEvent, AppPaths, ExternalPageId, RuntimeStatus, ToolAction, ToolId, ToolWindowSnapshot, ToolWindowStatus, ToolWorkspaceBounds, WorkspaceState } from './src/shared/contracts/app'
+import type { AppNavigationEvent, AppPaths, ExternalPageId, RuntimeStatus, ToolId, ToolWindowSnapshot, ToolWindowStatus, ToolWorkspaceBounds, WorkspaceState } from './src/shared/contracts/app'
 import type { AppSettings, SecretKey, SecretStatus, SettingsPatch } from './src/shared/contracts/settings'
 import type { FuncHistoryRecord, HistoryQuery, SaveFuncHistoryInput } from './src/shared/contracts/history'
 import type { SaveTextFileInput, TextFileKind, TextFileResult } from './src/shared/contracts/files'
-import type { ImageAsset, ImageAssetSummary, RenameImageAssetInput, SaveImageAssetInput, ScreenCapture } from './src/shared/contracts/images'
+import type { ImageAsset, ImageAssetSummary, RenameImageAssetInput, SaveImageAssetInput, ScreenCapture, ScreenCaptureOverlayData, ScreenCaptureRect, ScreenCaptureResult } from './src/shared/contracts/images'
 import type { DigestAlgorithmId, DigestFileResult, ImageFilePayload, SaveBinaryFileInput } from './src/shared/contracts/nativeFiles'
 import type { PdfFileInfo, PdfMergeSource, PdfOperationResult, PdfSplitTask } from './src/shared/contracts/pdf'
 import type { JsonVaultFile, JsonVaultListInput, JsonVaultNode, MoveJsonVaultEntryInput, RenameJsonVaultEntryInput, SaveJsonVaultFileInput } from './src/shared/contracts/jsonVault'
@@ -44,7 +44,6 @@ declare global {
       dockToolWindow: (toolId: Exclude<ToolId, 'mootool'>) => Promise<ToolWindowStatus>
       focusToolWindow: (toolId: Exclude<ToolId, 'mootool'>) => Promise<boolean>
       setToolWindowTitle: (toolId: Exclude<ToolId, 'mootool'>, title: string) => Promise<void>
-      consumeToolAction: (toolId: Exclude<ToolId, 'mootool'>) => Promise<ToolAction | null>
       listHistory: (query: HistoryQuery) => Promise<FuncHistoryRecord[]>
       saveHistory: (input: SaveFuncHistoryInput) => Promise<void>
       deleteHistory: (id: number) => Promise<void>
@@ -87,6 +86,10 @@ declare global {
       readClipboardImage: () => Promise<string | null>
       writeClipboardImage: (dataUrl: string) => Promise<void>
       captureScreens: () => Promise<ScreenCapture[]>
+      captureScreenRegion: () => Promise<ScreenCaptureResult | null>
+      getScreenCaptureOverlay: () => Promise<ScreenCaptureOverlayData | null>
+      confirmScreenCapture: (rect: ScreenCaptureRect) => Promise<void>
+      cancelScreenCapture: () => Promise<void>
       listImageAssets: () => Promise<ImageAssetSummary[]>
       readImageAsset: (name: string) => Promise<ImageAsset>
       importImageAssets: () => Promise<ImageAssetSummary[]>
@@ -150,7 +153,6 @@ declare global {
       onSettingsChange: (callback: (settings: AppSettings) => void) => () => void
       onSettingsNavigate: (callback: (category: string) => void) => () => void
       onNavigate: (callback: (event: AppNavigationEvent) => void) => () => void
-      onToolActionAvailable: (callback: (toolId: Exclude<ToolId, 'mootool'>) => void) => () => void
       onToolWindowSnapshotChange: (callback: (snapshot: ToolWindowSnapshot) => void) => () => void
       onToolWindowStateChange: (callback: (state: ToolWindowStatus) => void) => () => void
       onToolWindowActivityChange: (callback: (active: boolean) => void) => () => void

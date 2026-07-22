@@ -51,8 +51,6 @@ export type AppNavigationEvent = 'focus-search' | {
   toolId: ToolId
 }
 
-export type ToolAction = 'capture-screen'
-
 export type ToolWorkspaceBounds = {
   x: number
   y: number

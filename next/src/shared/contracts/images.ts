@@ -27,3 +27,24 @@ export type ScreenCapture = {
   height: number
   dataUrl: string
 }
+
+export type ScreenCaptureRect = {
+  x: number
+  y: number
+  width: number
+  height: number
+}
+
+export type ScreenCaptureOverlayData = {
+  displayId: string
+  displayName: string
+  width: number
+  height: number
+  dataUrl: string
+}
+
+export type ScreenCaptureResult = {
+  width: number
+  height: number
+  dataUrl: string
+}

@@ -1,11 +1,11 @@
 import { ClipboardCopy, ClipboardPaste, Download, FileImage, FolderOpen, ImageDown, ImagePlus, List, Maximize2, Minimize2, Minus, Pencil, Plus, Save, ScanLine, Trash2, Type, Upload, ZoomIn } from 'lucide-react'
-import { useCallback, useEffect, useEffectEvent, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ToolPageHeader } from '@/shared/components/ToolPage'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
-import type { ImageAsset, ImageAssetSummary, ScreenCapture } from '@/shared/contracts/images'
+import type { ImageAsset, ImageAssetSummary } from '@/shared/contracts/images'
 import { useToolActions } from '@/shared/hooks/useToolActions'
 import { useI18n } from '@/shared/i18n/I18nProvider'
-import { ImageBase64Dialog, ImageCompressDialog, ImageWatermarkDialog, ScreenCaptureDialog } from './ImageDialogs'
+import { ImageBase64Dialog, ImageCompressDialog, ImageWatermarkDialog } from './ImageDialogs'
 import { compressImage, ensureImageDataUrl, processedImageName, watermarkImage, type CompressImageOptions, type ImageOutputMode, type WatermarkImageOptions } from './imageTools'
 
 export function ImageTool() {
@@ -21,8 +21,6 @@ export function ImageTool() {
   const [base64Mode, setBase64Mode] = useState<'import' | 'export' | null>(null)
   const [compressOpen, setCompressOpen] = useState(false)
   const [watermarkOpen, setWatermarkOpen] = useState(false)
-  const [captureOpen, setCaptureOpen] = useState(false)
-  const [captureSources, setCaptureSources] = useState<ScreenCapture[]>([])
 
   const loadAssets = useCallback(async (preferredName?: string) => {
     const next = await window.mootool.listImageAssets()
@@ -39,25 +37,6 @@ export function ImageTool() {
   }, [])
 
   useEffect(() => { void loadAssets() }, [loadAssets])
-  const captureFromShortcut = useEffectEvent(() => { void capture() })
-  useEffect(() => {
-    let consuming = false
-    const consume = async () => {
-      if (consuming) return
-      consuming = true
-      try {
-        const action = await window.mootool.consumeToolAction('image')
-        if (action === 'capture-screen') captureFromShortcut()
-      } finally {
-        consuming = false
-      }
-    }
-    const unsubscribe = window.mootool.onToolActionAvailable((toolId) => {
-      if (toolId === 'image') void consume()
-    })
-    void consume()
-    return unsubscribe
-  }, [])
   const processingNames = useMemo(() => selectedNames.length > 0 ? selectedNames : current ? [current.name] : [], [current, selectedNames])
 
   async function selectAsset(name: string): Promise<void> {
@@ -94,17 +73,14 @@ export function ImageTool() {
     if (busy) return
     setBusy(true)
     try {
-      const sources = await window.mootool.captureScreens()
-      if (!sources.length) throw new Error(t('image.captureUnavailable'))
-      setCaptureSources(sources)
-      setCaptureOpen(true)
+      const result = await window.mootool.captureScreenRegion()
+      if (result) await saveCapture(result.dataUrl)
     } catch (error) { actions.reportError(error) } finally { setBusy(false) }
   }
 
   async function saveCapture(dataUrl: string): Promise<void> {
     try {
       const saved = await window.mootool.saveImageAsset({ name: `Screenshot-${timestamp()}.png`, dataUrl })
-      setCaptureOpen(false)
       await loadAssets(saved.name)
     } catch (error) { actions.reportError(error) }
   }
@@ -187,7 +163,6 @@ export function ImageTool() {
       <ImageBase64Dialog open={base64Mode !== null} mode={base64Mode ?? 'import'} value={base64Mode === 'export' ? current?.dataUrl ?? '' : ''} onClose={() => setBase64Mode(null)} onImport={(value) => { void importBase64(value) }} />
       <ImageCompressDialog open={compressOpen} count={processingNames.length} onClose={() => setCompressOpen(false)} onConfirm={(options, mode) => { void processCompression(options, mode) }} />
       <ImageWatermarkDialog open={watermarkOpen} count={processingNames.length} onClose={() => setWatermarkOpen(false)} onConfirm={(options, mode) => { void processWatermark(options, mode) }} />
-      <ScreenCaptureDialog open={captureOpen} sources={captureSources} onClose={() => setCaptureOpen(false)} onConfirm={(dataUrl) => { void saveCapture(dataUrl) }} />
     </section>
   )
 }

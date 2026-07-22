@@ -220,13 +220,6 @@ export class ToolWindowManager {
     }
   }
 
-  sendToTool(toolId: DetachableToolId, channel: string, payload: unknown): boolean {
-    const record = this.records.get(toolId)
-    if (!record?.ready || record.view.webContents.isDestroyed()) return false
-    record.view.webContents.send(channel, payload)
-    return true
-  }
-
   updateBackground(color: string): void {
     for (const record of this.records.values()) {
       record.view.setBackgroundColor(color)

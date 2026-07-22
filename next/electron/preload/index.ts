@@ -5,7 +5,6 @@ import type {
   ExternalPageId,
   RuntimeStatus,
   ToolId,
-  ToolAction,
   ToolWindowSnapshot,
   ToolWindowStatus,
   ToolWorkspaceBounds,
@@ -14,7 +13,7 @@ import type {
 import type { AppSettings, SecretKey, SecretStatus, SettingsPatch } from '../../src/shared/contracts/settings'
 import type { FuncHistoryRecord, HistoryQuery, SaveFuncHistoryInput } from '../../src/shared/contracts/history'
 import type { SaveTextFileInput, TextFileKind, TextFileResult } from '../../src/shared/contracts/files'
-import type { ImageAsset, ImageAssetSummary, RenameImageAssetInput, SaveImageAssetInput, ScreenCapture } from '../../src/shared/contracts/images'
+import type { ImageAsset, ImageAssetSummary, RenameImageAssetInput, SaveImageAssetInput, ScreenCapture, ScreenCaptureOverlayData, ScreenCaptureRect, ScreenCaptureResult } from '../../src/shared/contracts/images'
 import type { DigestAlgorithmId, DigestFileResult, ImageFilePayload, SaveBinaryFileInput } from '../../src/shared/contracts/nativeFiles'
 import type { PdfFileInfo, PdfMergeSource, PdfOperationResult, PdfSplitTask } from '../../src/shared/contracts/pdf'
 import type { JsonVaultFile, JsonVaultListInput, JsonVaultNode, MoveJsonVaultEntryInput, RenameJsonVaultEntryInput, SaveJsonVaultFileInput } from '../../src/shared/contracts/jsonVault'
@@ -52,7 +51,6 @@ contextBridge.exposeInMainWorld('mootool', {
   dockToolWindow: (toolId: Exclude<ToolId, 'mootool'>): Promise<ToolWindowStatus> => ipcRenderer.invoke('tool-window:dock', toolId),
   focusToolWindow: (toolId: Exclude<ToolId, 'mootool'>): Promise<boolean> => ipcRenderer.invoke('tool-window:focus', toolId),
   setToolWindowTitle: (toolId: Exclude<ToolId, 'mootool'>, title: string): Promise<void> => ipcRenderer.invoke('tool-window:set-title', toolId, title),
-  consumeToolAction: (toolId: Exclude<ToolId, 'mootool'>): Promise<ToolAction | null> => ipcRenderer.invoke('tool-action:consume', toolId),
   listHistory: (query: HistoryQuery): Promise<FuncHistoryRecord[]> => ipcRenderer.invoke('history:list', query),
   saveHistory: (input: SaveFuncHistoryInput): Promise<void> => ipcRenderer.invoke('history:save', input),
   deleteHistory: (id: number): Promise<void> => ipcRenderer.invoke('history:delete', id),
@@ -95,6 +93,10 @@ contextBridge.exposeInMainWorld('mootool', {
   readClipboardImage: (): Promise<string | null> => ipcRenderer.invoke('clipboard:read-image'),
   writeClipboardImage: (dataUrl: string): Promise<void> => ipcRenderer.invoke('clipboard:write-image', dataUrl),
   captureScreens: (): Promise<ScreenCapture[]> => ipcRenderer.invoke('screen:capture'),
+  captureScreenRegion: (): Promise<ScreenCaptureResult | null> => ipcRenderer.invoke('screen:capture-region'),
+  getScreenCaptureOverlay: (): Promise<ScreenCaptureOverlayData | null> => ipcRenderer.invoke('screen-capture:get-overlay'),
+  confirmScreenCapture: (rect: ScreenCaptureRect): Promise<void> => ipcRenderer.invoke('screen-capture:confirm', rect),
+  cancelScreenCapture: (): Promise<void> => ipcRenderer.invoke('screen-capture:cancel'),
   listImageAssets: (): Promise<ImageAssetSummary[]> => ipcRenderer.invoke('images:list'),
   readImageAsset: (name: string): Promise<ImageAsset> => ipcRenderer.invoke('images:read', name),
   importImageAssets: (): Promise<ImageAssetSummary[]> => ipcRenderer.invoke('images:import'),
@@ -158,7 +160,6 @@ contextBridge.exposeInMainWorld('mootool', {
   onSettingsChange: (callback: (settings: AppSettings) => void) => subscribe('settings:changed', callback),
   onSettingsNavigate: (callback: (category: string) => void) => subscribe('settings:navigate', callback),
   onNavigate: (callback: (event: AppNavigationEvent) => void) => subscribe('app:navigate', callback),
-  onToolActionAvailable: (callback: (toolId: Exclude<ToolId, 'mootool'>) => void) => subscribe('tool-action:available', callback),
   onToolWindowSnapshotChange: (callback: (snapshot: ToolWindowSnapshot) => void) => subscribe('tool-window:snapshot-changed', callback),
   onToolWindowStateChange: (callback: (state: ToolWindowStatus) => void) => subscribe('tool-window:state-changed', callback),
   onToolWindowActivityChange: (callback: (active: boolean) => void) => subscribe('tool-window:activity-changed', callback),
