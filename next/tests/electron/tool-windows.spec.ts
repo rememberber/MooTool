@@ -274,6 +274,9 @@ test('reveals update notes above a docked tool view', async () => {
   await updateAction.hover()
   await expect(mainPage.locator('.sidebar-update-notes')).toContainText('visible above the tool view')
   await expect.poll(() => getMainChildViewCount()).toBe(0)
+  await expect(mainPage.locator('.update-notes-workspace-placeholder')).toContainText('正在查看本次更新')
+  await expect(mainPage.locator('.update-notes-workspace-placeholder')).toContainText('计算器')
+  await expect(mainPage.locator('.workspace-loading')).toHaveCount(0)
 
   await mainPage.locator('.sidebar-actions').hover()
   await expect(mainPage.locator('.sidebar-update-notes')).toBeHidden()

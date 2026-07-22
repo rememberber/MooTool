@@ -1,4 +1,4 @@
-import { ChevronDown, FolderCog, Languages, LocateFixed, PanelLeftClose, PanelLeftOpen, PanelTopClose, Search, Settings } from 'lucide-react'
+import { ChevronDown, FolderCog, Languages, LocateFixed, Megaphone, PanelLeftClose, PanelLeftOpen, PanelTopClose, Search, Settings } from 'lucide-react'
 import { Suspense, useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useAppStore } from '@/app/appStore'
 import { toolById, toolGroups, type ToolId } from '@/app/toolRegistry'
@@ -283,6 +283,12 @@ export function Workbench() {
                 <PanelTopClose size={15} />{t('toolWindow.dock')}
               </button>
             </div>
+          </section>
+        ) : updateNotesOpen ? (
+          <section className="update-notes-workspace-placeholder" role="status">
+            <span className="update-notes-workspace-placeholder__icon"><Megaphone size={30} /></span>
+            <h1>{t('toolWindow.updateNotesTitle')}</h1>
+            <p>{t('toolWindow.updateNotesDescription', { tool: t(activeTool.titleKey) })}</p>
           </section>
         ) : (
           <div className="workspace-loading">{t('common.loading')}</div>
