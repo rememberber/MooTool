@@ -3,6 +3,7 @@ import { SettingsProvider } from '@/features/settings/SettingsProvider'
 import { SettingsWindow } from '@/features/settings/SettingsWindow'
 import { Workbench } from '@/features/workbench/Workbench'
 import { ToolWindow } from '@/features/workbench/ToolWindow'
+import { ScreenColorPickerOverlay } from '@/features/color/ScreenColorPickerOverlay'
 import { ScreenCaptureOverlay } from '@/features/image/ScreenCaptureOverlay'
 import { ToastProvider, useToast } from '@/shared/feedback/ToastProvider'
 import { I18nProvider, useI18n } from '@/shared/i18n/I18nProvider'
@@ -22,12 +23,13 @@ function ThemedApp() {
   useSystemTheme()
   const params = new URLSearchParams(window.location.search)
   const windowType = params.get('window')
-  useEscapeToDismissWindow(windowType !== 'capture')
+  const isScreenOverlay = windowType === 'capture' || windowType === 'color-picker'
+  useEscapeToDismissWindow(!isScreenOverlay)
 
   return (
     <ToastProvider>
-      {windowType !== 'tool' && windowType !== 'capture' && <UpdateNotifications />}
-      {windowType === 'capture' ? <ScreenCaptureOverlay /> : windowType === 'settings' ? <SettingsWindow /> : windowType === 'tool' ? <ToolWindow requestedToolId={params.get('toolId') ?? ''} /> : <Workbench />}
+      {windowType !== 'tool' && !isScreenOverlay && <UpdateNotifications />}
+      {windowType === 'capture' ? <ScreenCaptureOverlay /> : windowType === 'color-picker' ? <ScreenColorPickerOverlay /> : windowType === 'settings' ? <SettingsWindow /> : windowType === 'tool' ? <ToolWindow requestedToolId={params.get('toolId') ?? ''} /> : <Workbench />}
     </ToastProvider>
   )
 }

@@ -1348,6 +1348,31 @@ test('captures a custom region through the full-screen overlay', async () => {
   })).toBe(true)
 })
 
+test('picks a screen color while the application window is hidden', async () => {
+  await openTool('调色板', '调色板')
+  const overlayWindow = electronApp.waitForEvent('window')
+  await mainPage.getByRole('button', { name: '屏幕取色' }).click()
+
+  const overlay = await overlayWindow
+  await overlay.waitForLoadState('domcontentloaded')
+  await expect(overlay.locator('.screen-color-picker-overlay')).toBeVisible()
+  await expect.poll(() => electronApp.evaluate(({ BrowserWindow }) => {
+    return BrowserWindow.getAllWindows().find((window) => !window.webContents.getURL().includes('window=color-picker'))?.isVisible()
+  })).toBe(false)
+
+  const viewport = await overlay.evaluate(() => ({ width: window.innerWidth, height: window.innerHeight }))
+  await overlay.mouse.move(viewport.width * 0.5, viewport.height * 0.5)
+  await expect(overlay.locator('.screen-color-picker-overlay__preview')).toBeVisible()
+  const selectedColor = await overlay.locator('.screen-color-picker-overlay__preview strong').textContent()
+  expect(selectedColor).toMatch(/^#[0-9A-F]{6}$/)
+  await overlay.mouse.click(viewport.width * 0.5, viewport.height * 0.5)
+
+  await expect.poll(() => electronApp.evaluate(({ BrowserWindow }) => {
+    return BrowserWindow.getAllWindows().find((window) => !window.webContents.getURL().includes('window=color-picker'))?.isVisible()
+  })).toBe(true)
+  await expect(mainPage.locator('.color-preview strong')).toHaveText(selectedColor!)
+})
+
 async function editorLineTopOffsets(page: Page, rootSelector: string): Promise<number[]> {
   return page.locator(rootSelector).evaluate((root) => {
     const lines = [...root.querySelectorAll<HTMLElement>('.cm-line')]

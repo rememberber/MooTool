@@ -127,12 +127,16 @@ type ScreenCaptureOverlayRecord = {
   image: NativeImage
 }
 
+type ScreenOverlayMode = 'capture' | 'color-picker'
+type ScreenOverlayResult = ScreenCaptureResult | string | null
+
 type ScreenCaptureSession = {
+  mode: ScreenOverlayMode
   overlays: Map<number, ScreenCaptureOverlayRecord>
   hiddenWindows: BaseWindow[]
   focusedWindow: BaseWindow | null
-  promise: Promise<ScreenCaptureResult | null>
-  resolve: (result: ScreenCaptureResult | null) => void
+  promise: Promise<ScreenOverlayResult>
+  resolve: (result: ScreenOverlayResult) => void
   completing: boolean
 }
 
@@ -168,6 +172,7 @@ let tray: Tray | null = null
 let isQuitting = false
 let closePromptOpen = false
 let screenCaptureSession: ScreenCaptureSession | null = null
+let pendingScreenColor: string | null = null
 let historyRepository: HistoryRepository
 let favoriteRepository: FavoriteRepository
 let p5Repository: P5Repository
@@ -293,14 +298,14 @@ function loadToolRenderer(view: WebContentsView, toolId: string): void {
   })
 }
 
-function loadScreenCaptureRenderer(window: BrowserWindow): Promise<void> {
+function loadScreenCaptureRenderer(window: BrowserWindow, mode: ScreenOverlayMode): Promise<void> {
   if (isDev && process.env.ELECTRON_RENDERER_URL) {
     const url = new URL(process.env.ELECTRON_RENDERER_URL)
-    url.searchParams.set('window', 'capture')
+    url.searchParams.set('window', mode)
     return window.loadURL(url.toString()).then(() => undefined)
   }
 
-  return window.loadFile(join(__dirname, '../renderer/index.html'), { query: { window: 'capture' } }).then(() => undefined)
+  return window.loadFile(join(__dirname, '../renderer/index.html'), { query: { window: mode } }).then(() => undefined)
 }
 
 function createMainWindow(): BrowserWindow {
@@ -792,8 +797,9 @@ function registerIpc(): void {
     return startScreenCapture(resolveOwnerWindow(event.sender) ?? mainWindow)
   })
   ipcMain.handle('screen-capture:get-overlay', (event): ScreenCaptureOverlayData | null => {
-    const record = screenCaptureSession?.overlays.get(event.sender.id)
-    if (!record) return null
+    const session = screenCaptureSession
+    const record = session?.overlays.get(event.sender.id)
+    if (!session || session.mode !== 'capture' || !record) return null
     const size = record.image.getSize()
     return {
       displayId: String(record.display.id),
@@ -806,7 +812,7 @@ function registerIpc(): void {
   ipcMain.handle('screen-capture:confirm', (event, value: unknown) => {
     const session = screenCaptureSession
     const record = session?.overlays.get(event.sender.id)
-    if (!session || !record) return
+    if (!session || session.mode !== 'capture' || !record) return
     const imageSize = record.image.getSize()
     const rect = normalizeScreenCaptureRect(value, imageSize.width, imageSize.height)
     const image = record.image.crop(rect)
@@ -814,7 +820,38 @@ function registerIpc(): void {
     setImmediate(() => finishScreenCapture(result))
   })
   ipcMain.handle('screen-capture:cancel', (event) => {
-    if (screenCaptureSession?.overlays.has(event.sender.id)) setImmediate(() => finishScreenCapture(null))
+    if (screenCaptureSession?.mode === 'capture' && screenCaptureSession.overlays.has(event.sender.id)) setImmediate(() => finishScreenCapture(null))
+  })
+  ipcMain.handle('screen-color:pick', (event): Promise<string | null> => {
+    return startScreenCapture(resolveOwnerWindow(event.sender) ?? mainWindow, 'color-picker')
+  })
+  ipcMain.handle('screen-color:get-overlay', (event): ScreenCaptureOverlayData | null => {
+    const session = screenCaptureSession
+    const record = session?.overlays.get(event.sender.id)
+    if (!session || session.mode !== 'color-picker' || !record) return null
+    const size = record.image.getSize()
+    return {
+      displayId: String(record.display.id),
+      displayName: record.displayName,
+      width: size.width,
+      height: size.height,
+      dataUrl: record.image.toDataURL()
+    }
+  })
+  ipcMain.handle('screen-color:confirm', (event, value: unknown) => {
+    const session = screenCaptureSession
+    if (!session || session.mode !== 'color-picker' || !session.overlays.has(event.sender.id)) return
+    const color = normalizeScreenColor(value)
+    setImmediate(() => finishScreenCapture(color))
+  })
+  ipcMain.handle('screen-color:cancel', (event) => {
+    if (screenCaptureSession?.mode === 'color-picker' && screenCaptureSession.overlays.has(event.sender.id)) setImmediate(() => finishScreenCapture(null))
+  })
+  ipcMain.handle('screen-color:consume-pending', (event): string | null => {
+    assertToolWindowAccess(event.sender, 'colorBoard')
+    const color = pendingScreenColor
+    pendingScreenColor = null
+    return color
   })
   ipcMain.handle('images:list', () => createImageRepository().list())
   ipcMain.handle('images:read', (_event, name: string) => createImageRepository().read(normalizeImageName(name)))
@@ -1538,7 +1575,10 @@ async function checkForUpdatesAndBroadcast(automatic = false): Promise<void> {
   }
 }
 
-async function startScreenCapture(owner: BaseWindow | null): Promise<ScreenCaptureResult | null> {
+function startScreenCapture(owner: BaseWindow | null): Promise<ScreenCaptureResult | null>
+function startScreenCapture(owner: BaseWindow | null, mode: 'capture'): Promise<ScreenCaptureResult | null>
+function startScreenCapture(owner: BaseWindow | null, mode: 'color-picker'): Promise<string | null>
+async function startScreenCapture(owner: BaseWindow | null, mode: ScreenOverlayMode = 'capture'): Promise<ScreenOverlayResult> {
   if (screenCaptureSession) return null
 
   const focusedWindow = BaseWindow.getFocusedWindow() ?? owner
@@ -1568,9 +1608,10 @@ async function startScreenCapture(owner: BaseWindow | null): Promise<ScreenCaptu
     throw new Error('No display is available for capture')
   }
 
-  let resolveSession!: (result: ScreenCaptureResult | null) => void
-  const promise = new Promise<ScreenCaptureResult | null>((resolve) => { resolveSession = resolve })
+  let resolveSession!: (result: ScreenOverlayResult) => void
+  const promise = new Promise<ScreenOverlayResult>((resolve) => { resolveSession = resolve })
   const session: ScreenCaptureSession = {
+    mode,
     overlays: new Map(),
     hiddenWindows,
     focusedWindow,
@@ -1603,7 +1644,7 @@ async function startScreenCapture(owner: BaseWindow | null): Promise<ScreenCaptu
       enableLargerThanScreen: true,
       roundedCorners: false,
       backgroundColor: '#000000',
-      title: `MooTool Capture ${displayIndex + 1}`,
+      title: `MooTool ${mode === 'capture' ? 'Capture' : 'Color Picker'} ${displayIndex + 1}`,
       webPreferences: {
         preload: join(__dirname, '../preload/index.js'),
         sandbox: true,
@@ -1627,7 +1668,7 @@ async function startScreenCapture(owner: BaseWindow | null): Promise<ScreenCaptu
     overlay.on('closed', () => {
       if (screenCaptureSession === session && !session.completing) finishScreenCapture(null)
     })
-    loads.push(loadScreenCaptureRenderer(overlay))
+    loads.push(loadScreenCaptureRenderer(overlay, mode))
   }
 
   if (session.overlays.size === 0) {
@@ -1655,7 +1696,7 @@ async function startScreenCapture(owner: BaseWindow | null): Promise<ScreenCaptu
   return promise
 }
 
-function finishScreenCapture(result: ScreenCaptureResult | null, restoreWindows = true): void {
+function finishScreenCapture(result: ScreenOverlayResult, restoreWindows = true): void {
   const session = screenCaptureSession
   if (!session || session.completing) return
   session.completing = true
@@ -1679,6 +1720,19 @@ async function captureScreenFromTray(): Promise<void> {
     }
   } catch (error) {
     dialog.showErrorBox(labels.screenshot, error instanceof Error ? error.message : String(error))
+  }
+}
+
+async function pickScreenColorFromTray(): Promise<void> {
+  const labels = menuLabels[store.get('settings').general.language]
+  try {
+    const color = await startScreenCapture(null, 'color-picker')
+    if (!color) return
+    pendingScreenColor = color
+    openToolFromTray('colorBoard')
+    broadcast('screen-color:picked', color)
+  } catch (error) {
+    dialog.showErrorBox(labels.colorPicker, error instanceof Error ? error.message : String(error))
   }
 }
 
@@ -1706,6 +1760,11 @@ function normalizeScreenCaptureRect(value: unknown, imageWidth: number, imageHei
   }
 }
 
+function normalizeScreenColor(value: unknown): string {
+  if (typeof value !== 'string' || !/^#[0-9a-fA-F]{6}$/.test(value)) throw new Error('Invalid screen color')
+  return value.toUpperCase()
+}
+
 function updateTray(settings: AppSettings): void {
   if (!settings.general.trayEnabled) {
     tray?.destroy()
@@ -1730,7 +1789,7 @@ function updateTray(settings: AppSettings): void {
   tray.setContextMenu(Menu.buildFromTemplate(buildTrayMenuTemplate(labels, profiles, activeHostId, {
     openApp: showMainWindow,
     openSettings: () => createSettingsWindow(),
-    openColorPicker: () => openToolFromTray('colorBoard'),
+    openColorPicker: () => { void pickScreenColorFromTray() },
     captureScreen: () => { void captureScreenFromTray() },
     openTranslation: () => openToolFromTray('translation'),
     switchHost: (profile) => { void switchHostFromTray(profile.id) },

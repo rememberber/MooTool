@@ -90,6 +90,11 @@ declare global {
       getScreenCaptureOverlay: () => Promise<ScreenCaptureOverlayData | null>
       confirmScreenCapture: (rect: ScreenCaptureRect) => Promise<void>
       cancelScreenCapture: () => Promise<void>
+      pickScreenColor: () => Promise<string | null>
+      getScreenColorOverlay: () => Promise<ScreenCaptureOverlayData | null>
+      confirmScreenColor: (color: string) => Promise<void>
+      cancelScreenColor: () => Promise<void>
+      consumePendingScreenColor: () => Promise<string | null>
       listImageAssets: () => Promise<ImageAssetSummary[]>
       readImageAsset: (name: string) => Promise<ImageAsset>
       importImageAssets: () => Promise<ImageAssetSummary[]>
@@ -153,6 +158,7 @@ declare global {
       onSettingsChange: (callback: (settings: AppSettings) => void) => () => void
       onSettingsNavigate: (callback: (category: string) => void) => () => void
       onNavigate: (callback: (event: AppNavigationEvent) => void) => () => void
+      onScreenColorPicked: (callback: (color: string) => void) => () => void
       onToolWindowSnapshotChange: (callback: (snapshot: ToolWindowSnapshot) => void) => () => void
       onToolWindowStateChange: (callback: (state: ToolWindowStatus) => void) => () => void
       onToolWindowActivityChange: (callback: (active: boolean) => void) => () => void

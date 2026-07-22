@@ -6234,7 +6234,10 @@ select:not([multiple]) {
 
 :root[data-window='capture'],
 :root[data-window='capture'] body,
-:root[data-window='capture'] #root {
+:root[data-window='capture'] #root,
+:root[data-window='color-picker'],
+:root[data-window='color-picker'] body,
+:root[data-window='color-picker'] #root {
   width: 100%;
   height: 100%;
   margin: 0;
@@ -6372,6 +6375,101 @@ select:not([multiple]) {
 }
 
 .screen-capture-overlay__hint span {
+  color: rgb(255 255 255 / 68%);
+  font-size: 11px;
+}
+
+.screen-color-picker-overlay {
+  position: fixed;
+  z-index: 1;
+  inset: 0;
+  overflow: hidden;
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
+}
+
+.screen-color-picker-overlay--loading {
+  background: #000;
+}
+
+.screen-color-picker-overlay__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: fill;
+  pointer-events: none;
+  user-select: none;
+}
+
+.screen-color-picker-overlay__crosshair {
+  position: fixed;
+  width: 15px;
+  height: 15px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1px #111, 0 1px 5px rgb(0 0 0 / 80%);
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+}
+
+.screen-color-picker-overlay__preview {
+  position: fixed;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 134px;
+  padding: 7px 9px;
+  color: #fff;
+  background: rgb(18 19 22 / 92%);
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-radius: 8px;
+  box-shadow: 0 6px 22px rgb(0 0 0 / 38%);
+  font: 500 12px/1.15 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  pointer-events: none;
+}
+
+.screen-color-picker-overlay__swatch {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  border: 1px solid rgb(255 255 255 / 58%);
+  border-radius: 5px;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 18%);
+}
+
+.screen-color-picker-overlay__preview span:last-child {
+  display: grid;
+  gap: 4px;
+}
+
+.screen-color-picker-overlay__preview small {
+  color: rgb(255 255 255 / 68%);
+  font-size: 9px;
+  white-space: nowrap;
+}
+
+.screen-color-picker-overlay__hint {
+  position: fixed;
+  top: 24px;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 13px;
+  color: #f5f5f7;
+  background: rgb(18 19 22 / 82%);
+  border: 1px solid rgb(255 255 255 / 16%);
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgb(0 0 0 / 28%);
+  font-size: 12px;
+  pointer-events: none;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.screen-color-picker-overlay__hint span {
   color: rgb(255 255 255 / 68%);
   font-size: 11px;
 }

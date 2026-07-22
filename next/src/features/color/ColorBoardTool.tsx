@@ -1,5 +1,5 @@
 import { ArrowLeftRight, Copy, Eye, History, Palette, Star } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useEffectEvent, useMemo, useState } from 'react'
 import { FavoriteDialog } from '@/features/favorites/FavoriteDialog'
 import { HistoryDialog } from '@/features/history/HistoryDialog'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
@@ -19,9 +19,6 @@ import {
   type RgbColor
 } from './colorTools'
 
-type EyeDropperResult = { sRGBHex: string }
-type EyeDropperConstructor = new () => { open: () => Promise<EyeDropperResult> }
-
 export function ColorBoardTool() {
   const { t } = useI18n()
   const actions = useToolActions('colorBoard')
@@ -35,6 +32,17 @@ export function ColorBoardTool() {
   const selectedTheme = useMemo(() => colorThemes.find((item) => item.id === theme) ?? colorThemes[0], [theme])
   const primaryHex = formatColor(primary, 'HEX_UPPER')
   const secondaryHex = formatColor(secondary, 'HEX_UPPER')
+  const applyPendingScreenColor = useEffectEvent((color: string) => selectColor(color, false, t('color.picker')))
+
+  useEffect(() => {
+    const consume = async () => {
+      const color = await window.mootool.consumePendingScreenColor()
+      if (color) applyPendingScreenColor(color)
+    }
+    const unsubscribe = window.mootool.onScreenColorPicked(() => { void consume() })
+    void consume()
+    return unsubscribe
+  }, [])
 
   function selectColor(value: string, asSecondary = false, operation = t('color.select')): void {
     try {
@@ -75,12 +83,9 @@ export function ColorBoardTool() {
 
   async function pickScreenColor(): Promise<void> {
     try {
-      const Constructor = (window as unknown as { EyeDropper?: EyeDropperConstructor }).EyeDropper
-      if (!Constructor) throw new Error(t('color.eyeDropperUnavailable'))
-      const result = await new Constructor().open()
-      selectColor(result.sRGBHex, false, t('color.picker'))
+      const color = await window.mootool.pickScreenColor()
+      if (color) selectColor(color, false, t('color.picker'))
     } catch (error) {
-      if (error instanceof Error && error.name === 'AbortError') return
       actions.reportError(error)
     }
   }
