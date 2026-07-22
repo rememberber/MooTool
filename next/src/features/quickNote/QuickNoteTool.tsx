@@ -308,6 +308,7 @@ export function QuickNoteTool() {
     {}
   )
   const previewHtml = useMemo(() => renderPreview(state.content, state.note?.metadata.syntax, attachmentUrls), [attachmentUrls, state.content, state.note?.metadata.syntax])
+  const previewMarkup = useMemo(() => ({ __html: previewHtml }), [previewHtml])
 
   useFocusOnWindowActivate(
     () => editorRef.current?.focus(),
@@ -1081,7 +1082,7 @@ export function QuickNoteTool() {
                   </div>
                 )}
                 {state.viewMode !== 'editor' && (
-                  <article className="quick-note-preview" dangerouslySetInnerHTML={{ __html: previewHtml }} />
+                  <article className="quick-note-preview" dangerouslySetInnerHTML={previewMarkup} />
                 )}
               </ResizableColumns>
             ) : <div className="quick-note-select-empty">{t('quickNote.select')}</div>}

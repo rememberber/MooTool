@@ -207,7 +207,7 @@ test('aligns detached tool branding, header controls, and dock action in one top
   await expect.poll(() => getToolSnapshot('quickNote')).toMatchObject({ detached: false, ready: true })
 })
 
-test('keeps Quick Note split-preview text selected when the docked view regains focus', async () => {
+test('keeps double-clicked Quick Note split-preview text selected after auto-save', async () => {
   await mainPage.getByRole('button', { name: '随手记', exact: true }).click()
   await waitForToolSelector('quickNote', '.quick-note-tool')
   await evaluateTool('quickNote', `(() => {
@@ -217,20 +217,11 @@ test('keeps Quick Note split-preview text selected when the docked view regains 
   })()`)
   await waitForToolSelector('quickNote', '.quick-note-preview h1')
 
-  const result = await evaluateTool<{ selection: string }>('quickNote', `new Promise((resolve) => {
-    const heading = document.querySelector('.quick-note-preview h1')
-    if (!heading) throw new Error('Quick Note preview heading not found')
-    const range = document.createRange()
-    range.selectNodeContents(heading)
-    const selection = window.getSelection()
-    selection.removeAllRanges()
-    selection.addRange(range)
-    window.dispatchEvent(new Event('focus'))
-    requestAnimationFrame(() => requestAnimationFrame(() => resolve({
-      selection: window.getSelection()?.toString() ?? ''
-    })))
-  })`)
-  expect(result.value.selection).toContain('MooTool Quick Note')
+  const doubleClickResult = await doubleClickToolText('quickNote', '.quick-note-preview h1', 2)
+  expect(doubleClickResult).toBe('MooTool')
+  await typeInToolTextEditor('quickNote', '!')
+  const dirtyDoubleClickResult = await doubleClickToolText('quickNote', '.quick-note-preview h1', 2)
+  expect(dirtyDoubleClickResult).toBe('MooTool')
 })
 
 test('temporarily reveals main overlays above a docked tool', async () => {
@@ -335,6 +326,55 @@ async function clickToolWindowToggle(toolId: string): Promise<void> {
     contents.sendInputEvent({ type: 'mouseDown', x: point.x, y: point.y, button: 'left', clickCount: 1 })
     contents.sendInputEvent({ type: 'mouseUp', x: point.x, y: point.y, button: 'left', clickCount: 1 })
   }, toolId)
+}
+
+async function doubleClickToolText(
+  toolId: string,
+  selector: string,
+  offset: number
+): Promise<string> {
+  return electronApp.evaluate(async ({ webContents }, input) => {
+    const contents = webContents.getAllWebContents().find((item) => {
+      const url = new URL(item.getURL())
+      return url.searchParams.get('window') === 'tool' && url.searchParams.get('toolId') === input.toolId
+    })
+    if (!contents) throw new Error(`Tool webContents not found: ${input.toolId}`)
+    const point = await contents.executeJavaScript(`(() => {
+      window.getSelection()?.removeAllRanges()
+      const element = document.querySelector(${JSON.stringify(input.selector)})
+      const text = element?.firstChild
+      if (!text || text.nodeType !== Node.TEXT_NODE || !text.textContent) throw new Error('Tool selection text is unavailable')
+      const range = document.createRange()
+      range.setStart(text, ${input.offset})
+      range.setEnd(text, ${input.offset + 1})
+      const rect = range.getBoundingClientRect()
+      return { x: Math.round(rect.left + rect.width / 2), y: Math.round(rect.top + rect.height / 2) }
+    })()`)
+
+    contents.focus()
+    contents.sendInputEvent({ type: 'mouseMove', x: point.x, y: point.y })
+    contents.sendInputEvent({ type: 'mouseDown', x: point.x, y: point.y, button: 'left', clickCount: 1 })
+    contents.sendInputEvent({ type: 'mouseUp', x: point.x, y: point.y, button: 'left', clickCount: 1 })
+    contents.sendInputEvent({ type: 'mouseDown', x: point.x, y: point.y, button: 'left', clickCount: 2 })
+    contents.sendInputEvent({ type: 'mouseUp', x: point.x, y: point.y, button: 'left', clickCount: 2 })
+    await new Promise((resolve) => setTimeout(resolve, 800))
+    return contents.executeJavaScript(`window.getSelection()?.toString() ?? ''`) as Promise<string>
+  }, { toolId, selector, offset })
+}
+
+async function typeInToolTextEditor(toolId: string, text: string): Promise<void> {
+  await electronApp.evaluate(async ({ webContents }, input) => {
+    const contents = webContents.getAllWebContents().find((item) => {
+      const url = new URL(item.getURL())
+      return url.searchParams.get('window') === 'tool' && url.searchParams.get('toolId') === input.toolId
+    })
+    if (!contents) throw new Error(`Tool webContents not found: ${input.toolId}`)
+    await contents.executeJavaScript(`document.querySelector('.quick-note-code-editor .cm-content')?.focus()`)
+    contents.sendInputEvent({ type: 'keyDown', keyCode: 'END' })
+    contents.sendInputEvent({ type: 'keyUp', keyCode: 'END' })
+    for (const character of input.text) contents.sendInputEvent({ type: 'char', keyCode: character })
+    await new Promise((resolve) => setTimeout(resolve, 50))
+  }, { toolId, text })
 }
 
 async function sendToolWindowControlsVisibility(toolId: string, visible: boolean): Promise<void> {
