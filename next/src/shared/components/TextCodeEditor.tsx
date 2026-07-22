@@ -66,6 +66,7 @@ export type TextCodeEditorProps = {
   initialViewState?: CodeEditorViewState
   onChange?: (value: string) => void
   onPasteText?: (value: string) => void
+  onPaste?: (event: ClipboardEvent) => void
   onKeyDown?: (event: KeyboardEvent) => void
   onScroll?: (scroll: TextCodeEditorScroll) => void
   onViewStateChange?: (state: CodeEditorViewState) => void
@@ -147,6 +148,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
     initialViewState,
     onChange,
     onPasteText,
+    onPaste,
     onKeyDown,
     onScroll,
     onViewStateChange
@@ -157,6 +159,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
   const viewRef = useRef<EditorView>(null)
   const onChangeRef = useRef(onChange)
   const onPasteTextRef = useRef(onPasteText)
+  const onPasteRef = useRef(onPaste)
   const onKeyDownRef = useRef(onKeyDown)
   const onScrollRef = useRef(onScroll)
   const onViewStateChangeRef = useRef(onViewStateChange)
@@ -173,6 +176,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
   const richLanguageEnabled = value.length <= richCodeDocumentLimit
   onChangeRef.current = onChange
   onPasteTextRef.current = onPasteText
+  onPasteRef.current = onPaste
   onKeyDownRef.current = onKeyDown
   onScrollRef.current = onScroll
   onViewStateChangeRef.current = onViewStateChange
@@ -210,6 +214,10 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
           externalDecorations,
           EditorState.tabSize.of(4),
           EditorView.domEventHandlers({
+            paste: (event) => {
+              onPasteRef.current?.(event)
+              return event.defaultPrevented
+            },
             keydown: (event) => {
               onKeyDownRef.current?.(event)
               return event.defaultPrevented

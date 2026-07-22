@@ -1,4 +1,4 @@
-import { copyFile, lstat, mkdir, readFile, readdir, realpath, rename, rm, stat, writeFile } from 'node:fs/promises'
+import { lstat, mkdir, readFile, readdir, realpath, rename, rm, stat, writeFile } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import { basename, dirname, extname, isAbsolute, relative, resolve, sep } from 'node:path'
 import ignore, { type Ignore } from 'ignore'
@@ -188,13 +188,24 @@ export class QuickNoteVaultRepository {
     if (!attachmentExtensions.has(extension)) throw new Error('Unsupported image attachment')
     const sourceStat = await stat(sourcePath)
     if (!sourceStat.isFile() || sourceStat.size > maxFileSize) throw new Error('Attachment exceeds 20 MB limit')
+    return this.storeAttachment(await readFile(sourcePath), extension)
+  }
+
+  async importAttachmentBuffer(data: Uint8Array, extension = '.png'): Promise<QuickNoteAttachment> {
+    const normalizedExtension = extension.toLocaleLowerCase()
+    if (!attachmentExtensions.has(normalizedExtension)) throw new Error('Unsupported image attachment')
+    if (data.byteLength === 0 || data.byteLength > maxFileSize) throw new Error('Attachment exceeds 20 MB limit')
+    return this.storeAttachment(data, normalizedExtension)
+  }
+
+  private async storeAttachment(data: Uint8Array, extension: string): Promise<QuickNoteAttachment> {
     const root = await this.ensureRoot()
     const directory = resolve(root, 'attachments')
     await mkdir(directory, { recursive: true })
     await this.assertRealDirectoryInside(root, directory)
     const filename = `${compactTimestamp()}_${randomUUID().slice(0, 8)}${extension === '.jpeg' ? '.jpg' : extension}`
     const target = resolve(directory, filename)
-    await copyFile(sourcePath, target)
+    await writeFile(target, data)
     const relativePath = `attachments/${filename}`
     return {
       relativePath,
@@ -512,7 +523,7 @@ function clampFontSize(value: number): number {
 }
 
 function compactTimestamp(): string {
-  return new Date().toISOString().replace(/[-:T]/g, '').slice(0, 15)
+  return new Date().toISOString().replace(/\D/g, '').slice(0, 14)
 }
 
 function imageMime(extension: string): string {

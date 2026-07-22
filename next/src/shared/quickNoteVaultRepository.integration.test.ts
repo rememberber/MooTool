@@ -77,6 +77,20 @@ describe('QuickNoteVaultRepository', () => {
     await expect(repository.readAttachment(attachment.relativePath)).rejects.toThrow()
   })
 
+  it('stores clipboard image bytes as a Quick Note attachment', async () => {
+    const { directory, repository } = await createRepository()
+    const attachment = await repository.importAttachmentBuffer(Buffer.from('clipboard png'))
+    const jpegAttachment = await repository.importAttachmentBuffer(Buffer.from('clipboard jpeg'), '.jpeg')
+
+    expect(attachment.relativePath).toMatch(/^attachments\/\d{14}_[a-f0-9]{8}\.png$/)
+    expect(attachment.markdown).toBe(`![image](${attachment.relativePath})`)
+    expect(attachment.dataUrl).toBe('data:image/png;base64,Y2xpcGJvYXJkIHBuZw==')
+    expect(await readFile(join(directory, attachment.relativePath), 'utf8')).toBe('clipboard png')
+    expect(jpegAttachment.relativePath).toMatch(/^attachments\/\d{14}_[a-f0-9]{8}\.jpg$/)
+    expect(jpegAttachment.dataUrl).toBe('data:image/jpeg;base64,Y2xpcGJvYXJkIGpwZWc=')
+    expect(await readFile(join(directory, jpegAttachment.relativePath), 'utf8')).toBe('clipboard jpeg')
+  })
+
   it('does not follow an existing note symlink while saving', async () => {
     if (process.platform === 'win32') return
     const { directory, repository } = await createRepository()

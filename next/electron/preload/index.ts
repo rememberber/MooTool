@@ -128,6 +128,7 @@ contextBridge.exposeInMainWorld('mootool', {
   duplicateQuickNote: (relativePath: string): Promise<QuickNoteFile> => ipcRenderer.invoke('quick-note:duplicate', relativePath),
   deleteQuickNoteEntry: (relativePath: string): Promise<void> => ipcRenderer.invoke('quick-note:delete', relativePath),
   importQuickNoteAttachment: (): Promise<QuickNoteAttachment | null> => ipcRenderer.invoke('quick-note:import-attachment'),
+  importQuickNoteClipboardAttachment: (dataUrl?: string): Promise<QuickNoteAttachment | null> => ipcRenderer.invoke('quick-note:import-clipboard-attachment', dataUrl),
   readQuickNoteAttachment: (relativePath: string): Promise<string> => ipcRenderer.invoke('quick-note:read-attachment', relativePath),
   openQuickNoteVault: (): Promise<void> => ipcRenderer.invoke('quick-note:open-vault'),
   setQuickNoteEditorDirty: (dirty: boolean): Promise<void> => ipcRenderer.invoke('quick-note:set-editor-dirty', dirty),
