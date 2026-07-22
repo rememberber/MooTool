@@ -137,8 +137,6 @@ export function TimeConvertTool() {
             </div>
           </div>
 
-          <button className="time-convert-button" type="button" onClick={convertToLocal}><ArrowDown size={15} />{t('time.toLocal')}</button>
-
           <div className="time-field-group">
             <label htmlFor="local-time-input">{t('time.localTime')} · {state.zone}</label>
             <div className="time-input-row">
@@ -148,7 +146,10 @@ export function TimeConvertTool() {
             </div>
           </div>
 
-          <button className="time-convert-button" type="button" onClick={convertToTimestamp}><ArrowUp size={15} />{t('time.toTimestamp')}</button>
+          <div className="time-convert-actions">
+            <button className="time-convert-button" type="button" onClick={convertToLocal}><ArrowDown size={15} />{t('time.toLocal')}</button>
+            <button className="time-convert-button" type="button" onClick={convertToTimestamp}><ArrowUp size={15} />{t('time.toTimestamp')}</button>
+          </div>
         </section>
       </div>
 

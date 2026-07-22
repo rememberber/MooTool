@@ -3527,8 +3527,8 @@ select:not([multiple]) {
 
 .time-converter {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px 18px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
   align-items: end;
   width: min(820px, calc(100% - 44px));
   padding: 34px 0 42px;
@@ -3578,12 +3578,19 @@ select:not([multiple]) {
   white-space: nowrap;
 }
 
+.time-convert-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
 .time-convert-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 7px;
-  min-width: 160px;
+  min-width: 0;
+  width: 100%;
   height: 38px;
   padding: 0 12px;
   color: var(--text-strong);
@@ -5596,6 +5603,7 @@ select:not([multiple]) {
 }
 
 .qrcode-generate-button {
+  width: 100%;
   margin-top: 16px;
 }
 
@@ -6901,14 +6909,6 @@ select:not([multiple]) {
     justify-content: flex-start;
   }
 
-  .time-converter {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .time-convert-button {
-    width: fit-content;
-  }
-
   .calculator-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
@@ -6931,6 +6931,10 @@ select:not([multiple]) {
   }
 
   .ua-actions select {
+    grid-column: 1 / -1;
+  }
+
+  .ua-actions .primary-command {
     grid-column: 1 / -1;
   }
 
