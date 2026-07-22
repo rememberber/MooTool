@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { clipboardContainsImage, prepareMarkdownImageInsertion } from './quickNoteAttachments'
+import {
+  clipboardContainsImage,
+  dataTransferContainsFiles,
+  imageFilesFromDataTransfer,
+  prepareMarkdownImageInsertion
+} from './quickNoteAttachments'
 
 function clipboardData(input: { itemTypes?: string[]; files?: Array<{ name: string; type: string }>; types?: string[] }) {
   return {
@@ -20,6 +25,22 @@ describe('clipboardContainsImage', () => {
   it('leaves regular text and HTML pastes alone', () => {
     expect(clipboardContainsImage(clipboardData({ itemTypes: ['text/plain'], types: ['text/plain', 'text/html'] }))).toBe(false)
     expect(clipboardContainsImage(null)).toBe(false)
+  })
+})
+
+describe('imageFilesFromDataTransfer', () => {
+  it('returns supported image files from an external drop in order', () => {
+    const text = { name: 'notes.txt', type: 'text/plain' }
+    const png = { name: 'first.png', type: 'image/png' }
+    const jpeg = { name: 'second.JPG', type: '' }
+    const data = clipboardData({ files: [text, png, jpeg] })
+
+    expect(imageFilesFromDataTransfer(data)).toEqual([png, jpeg])
+  })
+
+  it('recognizes protected external file transfers before their file names are available', () => {
+    expect(dataTransferContainsFiles(clipboardData({ types: ['Files'] }))).toBe(true)
+    expect(dataTransferContainsFiles(clipboardData({ types: ['text/plain'] }))).toBe(false)
   })
 })
 

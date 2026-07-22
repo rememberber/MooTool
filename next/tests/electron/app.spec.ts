@@ -1106,6 +1106,72 @@ test('appends a second Quick Note image without requiring a manual line break', 
   expect(note.content).toMatch(/^!\[image]\(attachments\/[^)]+\.png\)\n!\[image]\(attachments\/[^)]+\.jpg\)$/)
 })
 
+test('drops external image files into the Quick Note editor', async () => {
+  await openTool('随手记', '随手记')
+  await mainPage.getByRole('button', { name: '新建笔记' }).click()
+  const createDialog = mainPage.getByRole('dialog', { name: '新建笔记' })
+  await createDialog.getByLabel('名称').fill('E2E Quick External Drop')
+  await createDialog.getByRole('button', { name: '创建' }).click()
+  await mainPage.getByRole('tab', { name: '编辑' }).click()
+
+  const editor = mainPage.getByLabel('笔记内容')
+  await editor.fill('Drop target')
+  await expect(editor).toContainText('Drop target')
+  await mainPage.getByRole('button', { name: '保存', exact: true }).click()
+  await expect.poll(() => mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick External Drop.txt'))).toMatchObject({ content: 'Drop target' })
+  const content = mainPage.locator('.quick-note-code-editor .cm-content')
+  const box = await content.boundingBox()
+  if (!box) throw new Error('Quick Note editor content has no bounding box')
+  const prevented = await content.evaluate(async (element, point) => {
+    const pngBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+    const pngBytes = Uint8Array.from(atob(pngBase64), (character) => character.charCodeAt(0))
+    const canvas = document.createElement('canvas')
+    canvas.width = 2
+    canvas.height = 2
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('Canvas is unavailable')
+    context.fillStyle = '#4e9275'
+    context.fillRect(0, 0, 2, 2)
+    const jpeg = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9))
+    if (!jpeg) throw new Error('Unable to create JPEG fixture')
+
+    const data = new DataTransfer()
+    data.items.add(new File([pngBytes], 'dropped-first.png', { type: 'image/png' }))
+    data.items.add(new File([jpeg], 'dropped-second.jpg', { type: 'image/jpeg' }))
+    const dragOver = new DragEvent('dragover', {
+      bubbles: true,
+      cancelable: true,
+      clientX: point.x,
+      clientY: point.y,
+      dataTransfer: data
+    })
+    element.dispatchEvent(dragOver)
+    const drop = new DragEvent('drop', {
+      bubbles: true,
+      cancelable: true,
+      clientX: point.x,
+      clientY: point.y,
+      dataTransfer: data
+    })
+    element.dispatchEvent(drop)
+    return [dragOver.defaultPrevented, drop.defaultPrevented]
+  }, { x: box.x + box.width - 8, y: box.y + 8 })
+  expect(prevented).toEqual([true, true])
+
+  await expect.poll(() => mainPage.evaluate(async () => {
+    const note = await window.mootool.readQuickNote('E2E Quick External Drop.txt')
+    return note.content.match(/!\[image]\(attachments\/[^)]+\.(?:png|jpg)\)/g) ?? []
+  })).toHaveLength(2)
+  const note = await mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick External Drop.txt'))
+  const imageMarkdown = note.content.match(/!\[image]\(attachments\/[^)]+\.(?:png|jpg)\)/g) ?? []
+  expect(imageMarkdown[0]).toMatch(/\.png\)$/)
+  expect(imageMarkdown[1]).toMatch(/\.jpg\)$/)
+  expect(note.content).toContain('Drop target')
+
+  await mainPage.getByRole('tab', { name: '预览' }).click()
+  await expect(mainPage.locator('.quick-note-preview img')).toHaveCount(2)
+})
+
 test('restores the Quick Note expanded folder and selected note after switching tools', async () => {
   await openTool('随手记', '随手记')
   await mainPage.getByRole('button', { name: '新建文件夹' }).click()

@@ -1,4 +1,4 @@
-type ClipboardImageData = Pick<DataTransfer, 'files' | 'items' | 'types'>
+type ImageTransferData = Pick<DataTransfer, 'files' | 'items' | 'types'>
 
 export type TextSelection = { start: number; end: number }
 
@@ -9,30 +9,40 @@ export type MarkdownImageInsertion = TextSelection & {
 
 const imageFileExtension = /\.(?:png|jpe?g|gif|bmp|webp)$/i
 
-export function clipboardImageFile(data: ClipboardImageData | null): File | null {
-  if (!data) return null
-  const file = Array.from(data.files).find(isImageFile)
-  if (file) return file
-  for (const item of Array.from(data.items)) {
-    if (!item.type.toLocaleLowerCase().startsWith('image/')) continue
-    const itemFile = item.getAsFile()
-    if (itemFile) return itemFile
-  }
-  return null
+export function imageFilesFromDataTransfer(data: ImageTransferData | null): File[] {
+  if (!data) return []
+  const files = Array.from(data.files).filter(isImageFile)
+  if (files.length > 0) return files
+  return Array.from(data.items).flatMap((item) => {
+    if (!item.type.toLocaleLowerCase().startsWith('image/')) return []
+    const file = item.getAsFile()
+    return file ? [file] : []
+  })
 }
 
-export function clipboardContainsImage(data: ClipboardImageData | null): boolean {
+export function clipboardImageFile(data: ImageTransferData | null): File | null {
+  return imageFilesFromDataTransfer(data)[0] ?? null
+}
+
+export function clipboardContainsImage(data: ImageTransferData | null): boolean {
   if (!data) return false
   return Array.from(data.items).some((item) => item.type.toLocaleLowerCase().startsWith('image/'))
     || Array.from(data.files).some(isImageFile)
     || Array.from(data.types).some((type) => type.toLocaleLowerCase().startsWith('image/'))
 }
 
+export function dataTransferContainsFiles(data: ImageTransferData | null): boolean {
+  if (!data) return false
+  return data.files.length > 0
+    || Array.from(data.items).some((item) => item.kind === 'file')
+    || Array.from(data.types).some((type) => type.toLocaleLowerCase() === 'files')
+}
+
 export function readFileAsDataUrl(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
-    reader.addEventListener('load', () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Unable to read clipboard image')))
-    reader.addEventListener('error', () => reject(reader.error ?? new Error('Unable to read clipboard image')))
+    reader.addEventListener('load', () => typeof reader.result === 'string' ? resolve(reader.result) : reject(new Error('Unable to read image file')))
+    reader.addEventListener('error', () => reject(reader.error ?? new Error('Unable to read image file')))
     reader.readAsDataURL(file)
   })
 }

@@ -30,6 +30,7 @@ import {
 
 export type TextCodeEditorHandle = {
   focus: () => void
+  getPositionAtCoordinates: (clientX: number, clientY: number) => number | null
   getSelection: () => { start: number; end: number }
   getViewState: () => CodeEditorViewState | null
   setValueAndSelection: (value: string, anchor: number, head: number) => void
@@ -66,6 +67,8 @@ export type TextCodeEditorProps = {
   decorations?: readonly TextCodeEditorDecoration[]
   initialViewState?: CodeEditorViewState
   onChange?: (value: string) => void
+  onDragOver?: (event: DragEvent) => void
+  onDrop?: (event: DragEvent) => void
   onPasteText?: (value: string) => void
   onPaste?: (event: ClipboardEvent) => void
   onKeyDown?: (event: KeyboardEvent) => void
@@ -148,6 +151,8 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
     decorations = emptyDecorations,
     initialViewState,
     onChange,
+    onDragOver,
+    onDrop,
     onPasteText,
     onPaste,
     onKeyDown,
@@ -159,6 +164,8 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
   const hostRef = useRef<HTMLDivElement>(null)
   const viewRef = useRef<EditorView>(null)
   const onChangeRef = useRef(onChange)
+  const onDragOverRef = useRef(onDragOver)
+  const onDropRef = useRef(onDrop)
   const onPasteTextRef = useRef(onPasteText)
   const onPasteRef = useRef(onPaste)
   const onKeyDownRef = useRef(onKeyDown)
@@ -176,6 +183,8 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
   const metricsCompartment = useCompartment()
   const richLanguageEnabled = value.length <= richCodeDocumentLimit
   onChangeRef.current = onChange
+  onDragOverRef.current = onDragOver
+  onDropRef.current = onDrop
   onPasteTextRef.current = onPasteText
   onPasteRef.current = onPaste
   onKeyDownRef.current = onKeyDown
@@ -215,6 +224,14 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
           externalDecorations,
           EditorState.tabSize.of(4),
           EditorView.domEventHandlers({
+            dragover: (event) => {
+              onDragOverRef.current?.(event)
+              return event.defaultPrevented
+            },
+            drop: (event) => {
+              onDropRef.current?.(event)
+              return event.defaultPrevented
+            },
             paste: (event) => {
               onPasteRef.current?.(event)
               return event.defaultPrevented
@@ -322,6 +339,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
 
   useImperativeHandle(ref, () => ({
     focus: () => viewRef.current?.focus(),
+    getPositionAtCoordinates: (clientX, clientY) => viewRef.current?.posAtCoords({ x: clientX, y: clientY }) ?? null,
     getSelection: () => {
       const selection = viewRef.current?.state.selection.main
       return selection ? { start: selection.from, end: selection.to } : { start: 0, end: 0 }

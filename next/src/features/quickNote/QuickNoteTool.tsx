@@ -62,6 +62,8 @@ import { QuickNoteCodeEditor, type QuickNoteCodeEditorHandle } from './QuickNote
 import {
   clipboardContainsImage,
   clipboardImageFile,
+  dataTransferContainsFiles,
+  imageFilesFromDataTransfer,
   prepareMarkdownImageInsertion,
   readFileAsDataUrl,
   type TextSelection
@@ -100,7 +102,7 @@ type QuickNoteState = {
   gitChangeCount: number
 }
 
-type ClipboardAttachmentInsertion = {
+type QueuedAttachmentInsertion = {
   notePath: string
   sourceSelection: TextSelection
   caret: number
@@ -289,8 +291,8 @@ export function QuickNoteTool() {
   const [state, update] = useReducer(updateState, undefined, createQuickNoteState)
   const latestStateRef = useRef(state)
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve())
-  const clipboardAttachmentQueueRef = useRef<Promise<ClipboardAttachmentInsertion | null>>(Promise.resolve(null))
-  const pendingClipboardAttachmentsRef = useRef(0)
+  const attachmentInsertionQueueRef = useRef<Promise<QueuedAttachmentInsertion | null>>(Promise.resolve(null))
+  const pendingAttachmentInsertionsRef = useRef(0)
   const treeExpandModeRef = useRef(settings.vault.quickNoteTreeExpandMode)
   const dirty = state.note !== null && (state.content !== state.note.content || state.metadataDirty)
   latestStateRef.current = state
@@ -717,7 +719,7 @@ export function QuickNoteTool() {
     }
   }
 
-  async function importClipboardAttachment(
+  async function importDataTransferAttachment(
     selection: TextSelection,
     file: File | null,
     expectedNotePath: string
@@ -737,27 +739,27 @@ export function QuickNoteTool() {
     }
   }
 
-  function enqueueClipboardAttachment(selection: TextSelection, file: File | null): void {
+  function enqueueDataTransferAttachment(selection: TextSelection, file: File | null): void {
     const notePath = latestStateRef.current.note?.relativePath
     if (!notePath) return
-    const followsPendingPaste = pendingClipboardAttachmentsRef.current > 0
-    pendingClipboardAttachmentsRef.current += 1
-    const operation = clipboardAttachmentQueueRef.current.catch(() => null).then(async (previous) => {
+    const followsPendingInsertion = pendingAttachmentInsertionsRef.current > 0
+    pendingAttachmentInsertionsRef.current += 1
+    const operation = attachmentInsertionQueueRef.current.catch(() => null).then(async (previous) => {
       try {
-        const continuesAtSameSelection = followsPendingPaste
+        const continuesAtSameSelection = followsPendingInsertion
           && previous?.notePath === notePath
           && previous.sourceSelection.start === selection.start
           && previous.sourceSelection.end === selection.end
         const targetSelection = continuesAtSameSelection
           ? { start: previous.caret, end: previous.caret }
           : selection
-        const caret = await importClipboardAttachment(targetSelection, file, notePath)
+        const caret = await importDataTransferAttachment(targetSelection, file, notePath)
         return caret === null ? null : { notePath, sourceSelection: selection, caret }
       } finally {
-        pendingClipboardAttachmentsRef.current -= 1
+        pendingAttachmentInsertionsRef.current -= 1
       }
     })
-    clipboardAttachmentQueueRef.current = operation
+    attachmentInsertionQueueRef.current = operation
   }
 
   async function exportNote(): Promise<void> {
@@ -1039,11 +1041,31 @@ export function QuickNoteTool() {
                       ariaLabel={t('quickNote.editorLabel')}
                       initialViewState={quickNoteEditorViewState}
                       onChange={(content) => update({ content })}
+                      onDragOver={(event) => {
+                        const dataTransfer = event.dataTransfer
+                        if (!dataTransfer || (!clipboardContainsImage(dataTransfer) && !dataTransferContainsFiles(dataTransfer))) return
+                        event.preventDefault()
+                        dataTransfer.dropEffect = 'copy'
+                      }}
+                      onDrop={(event) => {
+                        const dataTransfer = event.dataTransfer
+                        const files = imageFilesFromDataTransfer(dataTransfer)
+                        if (files.length === 0) {
+                          if (dataTransferContainsFiles(dataTransfer)) event.preventDefault()
+                          return
+                        }
+                        event.preventDefault()
+                        const position = editorRef.current?.getPositionAtCoordinates(event.clientX, event.clientY)
+                        const selection = position === null || position === undefined
+                          ? editorRef.current?.getSelection() ?? { start: state.content.length, end: state.content.length }
+                          : { start: position, end: position }
+                        for (const file of files) enqueueDataTransferAttachment(selection, file)
+                      }}
                       onPaste={(event) => {
                         if (!clipboardContainsImage(event.clipboardData)) return
                         const file = clipboardImageFile(event.clipboardData)
                         event.preventDefault()
-                        enqueueClipboardAttachment(
+                        enqueueDataTransferAttachment(
                           editorRef.current?.getSelection() ?? { start: state.content.length, end: state.content.length },
                           file
                         )
