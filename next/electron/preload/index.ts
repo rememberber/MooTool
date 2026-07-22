@@ -78,7 +78,7 @@ contextBridge.exposeInMainWorld('mootool', {
   saveHostProfile: (input: SaveHostProfileInput): Promise<HostProfile> => ipcRenderer.invoke('host:save', input),
   deleteHostProfile: (id: number): Promise<void> => ipcRenderer.invoke('host:delete', id),
   readSystemHosts: (): Promise<SystemHostsFile> => ipcRenderer.invoke('host:read-system'),
-  writeSystemHosts: (content: string): Promise<SystemHostsFile> => ipcRenderer.invoke('host:write-system', content),
+  writeSystemHosts: (content: string, activeHostId?: number): Promise<SystemHostsFile> => ipcRenderer.invoke('host:write-system', content, activeHostId),
   runNetworkCommand: (input: NetworkCommandInput): Promise<NetworkCommandResult> => ipcRenderer.invoke('system:network-command', input),
   cancelSystemCommand: (requestId: string): Promise<boolean> => ipcRenderer.invoke('system:cancel', requestId),
   getEnvironmentSnapshot: (): Promise<EnvironmentSnapshot> => ipcRenderer.invoke('system:environment'),

@@ -49,6 +49,8 @@ export function Workbench() {
     const unsubscribeNavigation = window.mootool.onNavigate((event) => {
       if (event === 'focus-search') {
         setSearchOpen(true)
+      } else if (event.type === 'open-tool') {
+        openTool(event.toolId)
       }
     })
     const unsubscribeToolWindows = window.mootool.onToolWindowSnapshotChange(setToolWindows)
@@ -57,7 +59,7 @@ export function Workbench() {
       unsubscribeNavigation()
       unsubscribeToolWindows()
     }
-  }, [hydrate, setSearchOpen])
+  }, [hydrate, openTool, setSearchOpen])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

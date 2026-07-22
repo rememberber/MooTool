@@ -46,7 +46,10 @@ export const defaultWorkspaceState: WorkspaceState = {
   recentToolIds: []
 }
 
-export type AppNavigationEvent = 'focus-search'
+export type AppNavigationEvent = 'focus-search' | {
+  type: 'open-tool'
+  toolId: ToolId
+}
 
 export type ToolWorkspaceBounds = {
   x: number

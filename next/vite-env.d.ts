@@ -71,7 +71,7 @@ declare global {
       saveHostProfile: (input: SaveHostProfileInput) => Promise<HostProfile>
       deleteHostProfile: (id: number) => Promise<void>
       readSystemHosts: () => Promise<SystemHostsFile>
-      writeSystemHosts: (content: string) => Promise<SystemHostsFile>
+      writeSystemHosts: (content: string, activeHostId?: number) => Promise<SystemHostsFile>
       runNetworkCommand: (input: NetworkCommandInput) => Promise<NetworkCommandResult>
       cancelSystemCommand: (requestId: string) => Promise<boolean>
       getEnvironmentSnapshot: () => Promise<EnvironmentSnapshot>

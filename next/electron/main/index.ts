@@ -10,6 +10,7 @@ import {
   nativeImage,
   nativeTheme,
   net,
+  Notification,
   safeStorage,
   screen,
   session,
@@ -106,6 +107,7 @@ import { downloadUpdateFile } from './updateDownloader'
 import { VaultGitService } from './vaultGitService'
 import { VaultGitCheckpointScheduler } from './vaultGitCheckpointScheduler'
 import { ToolWindowManager } from './toolWindowManager'
+import { buildTrayMenuTemplate } from './trayMenu'
 
 type PersistedStore = {
   settings: AppSettings
@@ -113,6 +115,7 @@ type PersistedStore = {
   window: WindowState
   toolWindows: Partial<Record<string, WindowState>>
   secrets: Partial<Record<SecretKey, string>>
+  activeHostId: number | null
 }
 
 const isDev = Boolean(process.env.ELECTRON_RENDERER_URL)
@@ -449,6 +452,7 @@ function registerIpc(): void {
       closeDataRepositories()
       try {
         openDataRepositories(settings)
+        store.set('activeHostId', null)
       } catch (error) {
         store.set('settings', previous)
         openDataRepositories(previous)
@@ -619,10 +623,25 @@ function registerIpc(): void {
   ipcMain.handle('translation:history-delete', (_event, id: unknown) => p5Repository.deleteTranslationHistory(normalizePositiveId(id)))
   ipcMain.handle('translation:history-clear', () => p5Repository.clearTranslationHistory())
   ipcMain.handle('host:list', (_event, keyword?: string) => p5Repository.listHosts(normalizeKeyword(keyword)))
-  ipcMain.handle('host:save', (_event, value: unknown) => p5Repository.saveHost(normalizeHostInput(value)))
-  ipcMain.handle('host:delete', (_event, id: unknown) => p5Repository.deleteHost(normalizePositiveId(id)))
+  ipcMain.handle('host:save', (_event, value: unknown) => {
+    const profile = p5Repository.saveHost(normalizeHostInput(value))
+    updateTray(store.get('settings'))
+    return profile
+  })
+  ipcMain.handle('host:delete', (_event, id: unknown) => {
+    const hostId = normalizePositiveId(id)
+    p5Repository.deleteHost(hostId)
+    if (store.get('activeHostId') === hostId) store.set('activeHostId', null)
+    updateTray(store.get('settings'))
+  })
   ipcMain.handle('host:read-system', () => systemService.readHosts())
-  ipcMain.handle('host:write-system', (_event, content: unknown) => systemService.writeHosts(typeof content === 'string' ? content : ''))
+  ipcMain.handle('host:write-system', async (_event, content: unknown, activeHostId?: unknown) => {
+    const result = await systemService.writeHosts(typeof content === 'string' ? content : '')
+    const hostId = typeof activeHostId === 'number' ? normalizePositiveId(activeHostId) : null
+    store.set('activeHostId', hostId)
+    updateTray(store.get('settings'))
+    return result
+  })
   ipcMain.handle('system:network-command', (_event, value: unknown) => systemService.runNetwork(normalizeNetworkInput(value)))
   ipcMain.handle('system:cancel', (_event, requestId: unknown) => systemService.cancel(normalizeRequestId(requestId)))
   ipcMain.handle('system:environment', () => systemService.getEnvironment())
@@ -1478,18 +1497,46 @@ function updateTray(settings: AppSettings): void {
   }
 
   const labels = menuLabels[settings.general.language]
-  tray.setContextMenu(Menu.buildFromTemplate([
-    { label: labels.open, click: showMainWindow },
-    { label: labels.settings, click: () => createSettingsWindow() },
-    { type: 'separator' },
-    { label: labels.quit, click: () => { isQuitting = true; app.quit() } }
-  ]))
+  const profiles = p5Repository.listHosts()
+  const activeHostId = profiles.some((profile) => profile.id === store.get('activeHostId'))
+    ? store.get('activeHostId')
+    : null
+  if (activeHostId !== store.get('activeHostId')) store.set('activeHostId', null)
+  tray.setContextMenu(Menu.buildFromTemplate(buildTrayMenuTemplate(labels, profiles, activeHostId, {
+    openApp: showMainWindow,
+    openSettings: () => createSettingsWindow(),
+    openColorPicker: () => openToolFromTray('colorBoard'),
+    openTranslation: () => openToolFromTray('translation'),
+    switchHost: (profile) => { void switchHostFromTray(profile.id) },
+    quit: () => { isQuitting = true; app.quit() }
+  })))
 }
 
-function showMainWindow(): void {
+async function switchHostFromTray(hostId: number): Promise<void> {
+  const profile = p5Repository.listHosts().find((item) => item.id === hostId)
+  if (!profile) {
+    updateTray(store.get('settings'))
+    return
+  }
+  const labels = menuLabels[store.get('settings').general.language]
+  try {
+    await systemService.writeHosts(profile.content)
+    store.set('activeHostId', profile.id)
+    updateTray(store.get('settings'))
+    if (Notification.isSupported()) {
+      new Notification({ title: 'MooTool', body: labels.hostSwitched.replace('{name}', profile.name) }).show()
+    }
+  } catch (error) {
+    updateTray(store.get('settings'))
+    dialog.showErrorBox(labels.hostSwitchFailed, error instanceof Error ? error.message : String(error))
+  }
+}
+
+function showMainWindow(): BrowserWindow {
   const window = mainWindow ?? createMainWindow()
   window.show()
   window.focus()
+  return window
 }
 
 function updateApplicationWindowActivity(): void {
@@ -1501,8 +1548,20 @@ function updateApplicationWindowActivity(): void {
 }
 
 function navigateMainWindow(event: AppNavigationEvent): void {
-  showMainWindow()
-  mainWindow?.webContents.send('app:navigate', event)
+  const window = showMainWindow()
+  const send = () => {
+    if (!window.isDestroyed()) window.webContents.send('app:navigate', event)
+  }
+  if (window.webContents.isLoadingMainFrame()) {
+    window.webContents.once('did-finish-load', send)
+  } else {
+    send()
+  }
+}
+
+function openToolFromTray(toolId: Exclude<ToolId, 'mootool'>): void {
+  if (toolWindowManager.focus(toolId)) return
+  navigateMainWindow({ type: 'open-tool', toolId })
 }
 
 function broadcast(channel: string, payload: unknown): void {
@@ -1716,7 +1775,7 @@ function normalizeSecretKey(value: unknown): SecretKey {
 type MenuLabels = Record<'file' | 'edit' | 'view' | 'window' | 'tools' | 'search' | 'settings' | 'checkUpdates' | 'open' | 'quit' |
   'about' | 'backup' | 'shortcuts' | 'appearance' | 'layout' | 'runtime' | 'toolDefaults' | 'undo' | 'redo' | 'cut' | 'copy' |
   'paste' | 'selectAll' | 'actualSize' | 'zoomIn' | 'zoomOut' | 'fullscreen' | 'minimize' | 'zoom' | 'bringAllToFront' |
-  'hide' | 'hideOthers' | 'showAll', string>
+  'hide' | 'hideOthers' | 'showAll' | 'colorPicker' | 'translation' | 'hostSwitched' | 'hostSwitchFailed', string>
 
 const menuLabels: Record<AppLanguage, MenuLabels> = {
   'zh-CN': {
@@ -1724,21 +1783,24 @@ const menuLabels: Record<AppLanguage, MenuLabels> = {
     open: '打开 MooTool', quit: '退出 MooTool', about: '关于 MooTool', backup: '同步与备份…', shortcuts: '快捷键…', appearance: '外观…',
     layout: '布局与习惯…', runtime: '运行环境…', toolDefaults: '工具默认值…', undo: '撤销', redo: '重做', cut: '剪切', copy: '复制',
     paste: '粘贴', selectAll: '全选', actualSize: '实际大小', zoomIn: '放大', zoomOut: '缩小', fullscreen: '进入全屏幕', minimize: '最小化',
-    zoom: '缩放', bringAllToFront: '前置全部窗口', hide: '隐藏 MooTool', hideOthers: '隐藏其他', showAll: '全部显示'
+    zoom: '缩放', bringAllToFront: '前置全部窗口', hide: '隐藏 MooTool', hideOthers: '隐藏其他', showAll: '全部显示',
+    colorPicker: '取色器', translation: '翻译', hostSwitched: 'Host 已切换：{name}', hostSwitchFailed: 'Host 切换失败'
   },
   'en-US': {
     file: 'File', edit: 'Edit', view: 'View', window: 'Window', tools: 'Tools', search: 'Search Tools', settings: 'Settings…', checkUpdates: 'Check for Updates…',
     open: 'Open MooTool', quit: 'Quit MooTool', about: 'About MooTool', backup: 'Sync and Backup…', shortcuts: 'Keyboard Shortcuts…', appearance: 'Appearance…',
     layout: 'Layout and Behavior…', runtime: 'Runtimes…', toolDefaults: 'Tool Defaults…', undo: 'Undo', redo: 'Redo', cut: 'Cut', copy: 'Copy',
     paste: 'Paste', selectAll: 'Select All', actualSize: 'Actual Size', zoomIn: 'Zoom In', zoomOut: 'Zoom Out', fullscreen: 'Enter Full Screen', minimize: 'Minimize',
-    zoom: 'Zoom', bringAllToFront: 'Bring All to Front', hide: 'Hide MooTool', hideOthers: 'Hide Others', showAll: 'Show All'
+    zoom: 'Zoom', bringAllToFront: 'Bring All to Front', hide: 'Hide MooTool', hideOthers: 'Hide Others', showAll: 'Show All',
+    colorPicker: 'Color Picker', translation: 'Translation', hostSwitched: 'Host switched: {name}', hostSwitchFailed: 'Host switch failed'
   },
   'ja-JP': {
     file: 'ファイル', edit: '編集', view: '表示', window: 'ウインドウ', tools: 'ツール', search: 'ツールを検索', settings: '設定…', checkUpdates: 'アップデートを確認…',
     open: 'MooTool を開く', quit: 'MooTool を終了', about: 'MooTool について', backup: '同期とバックアップ…', shortcuts: 'キーボードショートカット…', appearance: '外観…',
     layout: 'レイアウトと操作…', runtime: '実行環境…', toolDefaults: 'ツールのデフォルト…', undo: '取り消す', redo: 'やり直す', cut: 'カット', copy: 'コピー',
     paste: 'ペースト', selectAll: 'すべてを選択', actualSize: '実際のサイズ', zoomIn: '拡大', zoomOut: '縮小', fullscreen: 'フルスクリーンにする', minimize: 'しまう',
-    zoom: '拡大／縮小', bringAllToFront: 'すべてを手前に移動', hide: 'MooTool を隠す', hideOthers: 'ほかを隠す', showAll: 'すべてを表示'
+    zoom: '拡大／縮小', bringAllToFront: 'すべてを手前に移動', hide: 'MooTool を隠す', hideOthers: 'ほかを隠す', showAll: 'すべてを表示',
+    colorPicker: 'スポイト', translation: '翻訳', hostSwitched: 'Host を切り替えました：{name}', hostSwitchFailed: 'Host の切り替えに失敗しました'
   }
 }
 
@@ -1775,7 +1837,8 @@ app.whenReady().then(async () => {
       workspace: defaultWorkspaceState,
       window: defaultWindowState,
       toolWindows: {},
-      secrets: {}
+      secrets: {},
+      activeHostId: null
     }
   })
   store.set('settings', mergeSettings(defaultAppSettings, store.get('settings') as SettingsPatch))

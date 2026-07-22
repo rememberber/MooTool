@@ -103,7 +103,7 @@ export function HostTool() {
     if (!content.trim() || !window.confirm(t('host.confirmApply'))) return
     setApplying(true)
     try {
-      const result = await window.mootool.writeSystemHosts(content)
+      const result = await window.mootool.writeSystemHosts(content, selected?.id)
       setSystemHosts(result)
       actions.toast.success(t('host.applied'))
     } catch (error) { actions.reportError(error) } finally { setApplying(false) }
