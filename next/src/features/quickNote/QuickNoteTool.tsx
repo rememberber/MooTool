@@ -100,6 +100,12 @@ type QuickNoteState = {
   gitChangeCount: number
 }
 
+type ClipboardAttachmentInsertion = {
+  notePath: string
+  sourceSelection: TextSelection
+  caret: number
+}
+
 const initialState: QuickNoteState = {
   nodes: [],
   selectedPath: '',
@@ -283,6 +289,8 @@ export function QuickNoteTool() {
   const [state, update] = useReducer(updateState, undefined, createQuickNoteState)
   const latestStateRef = useRef(state)
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve())
+  const clipboardAttachmentQueueRef = useRef<Promise<ClipboardAttachmentInsertion | null>>(Promise.resolve(null))
+  const pendingClipboardAttachmentsRef = useRef(0)
   const treeExpandModeRef = useRef(settings.vault.quickNoteTreeExpandMode)
   const dirty = state.note !== null && (state.content !== state.note.content || state.metadataDirty)
   latestStateRef.current = state
@@ -709,18 +717,47 @@ export function QuickNoteTool() {
     }
   }
 
-  async function importClipboardAttachment(selection: TextSelection, file: File | null): Promise<void> {
-    if (!state.note) return
+  async function importClipboardAttachment(
+    selection: TextSelection,
+    file: File | null,
+    expectedNotePath: string
+  ): Promise<number | null> {
+    if (latestStateRef.current.note?.relativePath !== expectedNotePath) return null
     try {
       const attachment = await window.mootool.importQuickNoteClipboardAttachment(file ? await readFileAsDataUrl(file) : undefined)
       if (!attachment) {
         toast.error(t('quickNote.clipboardEmpty'))
-        return
+        return null
       }
-      insertAttachment(attachment, selection)
+      if (latestStateRef.current.note?.relativePath !== expectedNotePath) return null
+      return insertAttachment(attachment, selection)
     } catch (error) {
       toast.error(errorMessage(error))
+      return null
     }
+  }
+
+  function enqueueClipboardAttachment(selection: TextSelection, file: File | null): void {
+    const notePath = latestStateRef.current.note?.relativePath
+    if (!notePath) return
+    const followsPendingPaste = pendingClipboardAttachmentsRef.current > 0
+    pendingClipboardAttachmentsRef.current += 1
+    const operation = clipboardAttachmentQueueRef.current.catch(() => null).then(async (previous) => {
+      try {
+        const continuesAtSameSelection = followsPendingPaste
+          && previous?.notePath === notePath
+          && previous.sourceSelection.start === selection.start
+          && previous.sourceSelection.end === selection.end
+        const targetSelection = continuesAtSameSelection
+          ? { start: previous.caret, end: previous.caret }
+          : selection
+        const caret = await importClipboardAttachment(targetSelection, file, notePath)
+        return caret === null ? null : { notePath, sourceSelection: selection, caret }
+      } finally {
+        pendingClipboardAttachmentsRef.current -= 1
+      }
+    })
+    clipboardAttachmentQueueRef.current = operation
   }
 
   async function exportNote(): Promise<void> {
@@ -736,20 +773,25 @@ export function QuickNoteTool() {
   function insertAttachment(
     attachment: QuickNoteAttachment,
     requestedSelection?: TextSelection
-  ): void {
+  ): number {
     const editor = editorRef.current
-    const content = latestStateRef.current.content
+    const current = latestStateRef.current
+    const content = current.content
     const selection = requestedSelection ?? editor?.getSelection() ?? { start: content.length, end: content.length }
     const insertion = prepareMarkdownImageInsertion(content, selection, attachment.markdown)
-    const note = latestStateRef.current.note
-    setAttachmentUrls({ [attachment.relativePath]: attachment.dataUrl })
-    update({
-      content: `${content.slice(0, insertion.start)}${insertion.text}${content.slice(insertion.end)}`,
+    const note = current.note
+    const nextContent = `${content.slice(0, insertion.start)}${insertion.text}${content.slice(insertion.end)}`
+    const patch: Partial<QuickNoteState> = {
+      content: nextContent,
       ...(note && note.metadata.syntax !== 'text/markdown'
         ? { note: { ...note, metadata: { ...note.metadata, syntax: 'text/markdown' } }, metadataDirty: true }
         : {})
-    })
-    requestAnimationFrame(() => editorRef.current?.selectRange(insertion.caret, insertion.caret))
+    }
+    setAttachmentUrls({ [attachment.relativePath]: attachment.dataUrl })
+    latestStateRef.current = { ...current, ...patch }
+    editor?.setValueAndSelection(nextContent, insertion.caret, insertion.caret)
+    update(patch)
+    return insertion.caret
   }
 
   function prefixSelectedLines(prefix: 'bullet' | 'numbered'): void {
@@ -1001,7 +1043,7 @@ export function QuickNoteTool() {
                         if (!clipboardContainsImage(event.clipboardData)) return
                         const file = clipboardImageFile(event.clipboardData)
                         event.preventDefault()
-                        void importClipboardAttachment(
+                        enqueueClipboardAttachment(
                           editorRef.current?.getSelection() ?? { start: state.content.length, end: state.content.length },
                           file
                         )

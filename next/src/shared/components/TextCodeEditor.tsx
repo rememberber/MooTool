@@ -32,6 +32,7 @@ export type TextCodeEditorHandle = {
   focus: () => void
   getSelection: () => { start: number; end: number }
   getViewState: () => CodeEditorViewState | null
+  setValueAndSelection: (value: string, anchor: number, head: number) => void
   selectRange: (anchor: number, head: number) => void
   syncScroll: (scrollTop: number, scrollLeft: number) => void
 }
@@ -326,6 +327,24 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
       return selection ? { start: selection.from, end: selection.to } : { start: 0, end: 0 }
     },
     getViewState: () => viewRef.current ? readCodeEditorViewState(viewRef.current) : null,
+    setValueAndSelection: (nextValue, anchor, head) => {
+      const view = viewRef.current
+      if (!view) return
+      const start = Math.max(0, Math.min(anchor, nextValue.length))
+      const end = Math.max(start, Math.min(head, nextValue.length))
+      applyingExternalValueRef.current = true
+      try {
+        view.dispatch({
+          changes: { from: 0, to: view.state.doc.length, insert: nextValue },
+          selection: { anchor: start, head: end },
+          scrollIntoView: true
+        })
+      } finally {
+        applyingExternalValueRef.current = false
+      }
+      localValueRef.current = nextValue
+      view.focus()
+    },
     selectRange: (anchor, head) => {
       const view = viewRef.current
       if (!view) return

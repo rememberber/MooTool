@@ -1012,6 +1012,100 @@ test('pastes clipboard images into Quick Note without intercepting text pastes',
   expect(await mainPage.evaluate((path) => window.mootool.readQuickNoteAttachment(path), attachmentPath!)).toMatch(/^data:image\/png;base64,/)
 })
 
+test('keeps consecutive Quick Note image pastes in order', async () => {
+  await openTool('随手记', '随手记')
+  await mainPage.getByRole('button', { name: '新建笔记' }).click()
+  const createDialog = mainPage.getByRole('dialog', { name: '新建笔记' })
+  await createDialog.getByLabel('名称').fill('E2E Quick Consecutive Images')
+  await createDialog.getByRole('button', { name: '创建' }).click()
+  await mainPage.getByRole('tab', { name: '编辑' }).click()
+
+  const editor = mainPage.getByLabel('笔记内容')
+  const prevented = await editor.evaluate(async (element) => {
+    const pngBase64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+    const pngBytes = Uint8Array.from(atob(pngBase64), (character) => character.charCodeAt(0))
+    const canvas = document.createElement('canvas')
+    canvas.width = 2
+    canvas.height = 2
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('Canvas is unavailable')
+    context.fillStyle = '#4f83cc'
+    context.fillRect(0, 0, 2, 2)
+    const jpeg = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9))
+    if (!jpeg) throw new Error('Unable to create JPEG fixture')
+
+    const dispatchImagePaste = (file: File) => {
+      const data = new DataTransfer()
+      data.items.add(file)
+      const event = new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: data })
+      element.dispatchEvent(event)
+      return event.defaultPrevented
+    }
+
+    return [
+      dispatchImagePaste(new File([pngBytes], 'first.png', { type: 'image/png' })),
+      dispatchImagePaste(new File([jpeg], 'second.jpg', { type: 'image/jpeg' }))
+    ]
+  })
+  expect(prevented).toEqual([true, true])
+
+  await expect.poll(() => mainPage.evaluate(async () => {
+    const note = await window.mootool.readQuickNote('E2E Quick Consecutive Images.txt')
+    return note.content.match(/!\[image]\(attachments\/[^)]+\.(?:png|jpg)\)/g) ?? []
+  })).toHaveLength(2)
+  const note = await mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick Consecutive Images.txt'))
+  expect(note.content).toMatch(/^!\[image]\(attachments\/[^)]+\.png\)\n!\[image]\(attachments\/[^)]+\.jpg\)$/)
+
+  await mainPage.getByRole('tab', { name: '预览' }).click()
+  await expect(mainPage.locator('.quick-note-preview img')).toHaveCount(2)
+  await expect(mainPage.locator('.quick-note-preview img').nth(0)).toHaveAttribute('src', /^data:image\/png;base64,/)
+  await expect(mainPage.locator('.quick-note-preview img').nth(1)).toHaveAttribute('src', /^data:image\/jpeg;base64,/)
+})
+
+test('appends a second Quick Note image without requiring a manual line break', async () => {
+  await openTool('随手记', '随手记')
+  await mainPage.getByRole('button', { name: '新建笔记' }).click()
+  const createDialog = mainPage.getByRole('dialog', { name: '新建笔记' })
+  await createDialog.getByLabel('名称').fill('E2E Quick Images Without Break')
+  await createDialog.getByRole('button', { name: '创建' }).click()
+  await mainPage.getByRole('tab', { name: '编辑' }).click()
+
+  const editor = mainPage.getByLabel('笔记内容')
+  await editor.evaluate((element) => {
+    const base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+    const bytes = Uint8Array.from(atob(base64), (character) => character.charCodeAt(0))
+    const data = new DataTransfer()
+    data.items.add(new File([bytes], 'first.png', { type: 'image/png' }))
+    element.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: data }))
+  })
+  await expect.poll(() => mainPage.evaluate(async () => {
+    const note = await window.mootool.readQuickNote('E2E Quick Images Without Break.txt')
+    return /\.png\)$/.test(note.content)
+  })).toBe(true)
+
+  await editor.evaluate(async (element) => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 2
+    canvas.height = 2
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('Canvas is unavailable')
+    context.fillStyle = '#c96761'
+    context.fillRect(0, 0, 2, 2)
+    const jpeg = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9))
+    if (!jpeg) throw new Error('Unable to create JPEG fixture')
+    const data = new DataTransfer()
+    data.items.add(new File([jpeg], 'second.jpg', { type: 'image/jpeg' }))
+    element.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: data }))
+  })
+
+  await expect.poll(() => mainPage.evaluate(async () => {
+    const note = await window.mootool.readQuickNote('E2E Quick Images Without Break.txt')
+    return note.content.match(/!\[image]\(attachments\/[^)]+\.(?:png|jpg)\)/g) ?? []
+  })).toHaveLength(2)
+  const note = await mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick Images Without Break.txt'))
+  expect(note.content).toMatch(/^!\[image]\(attachments\/[^)]+\.png\)\n!\[image]\(attachments\/[^)]+\.jpg\)$/)
+})
+
 test('restores the Quick Note expanded folder and selected note after switching tools', async () => {
   await openTool('随手记', '随手记')
   await mainPage.getByRole('button', { name: '新建文件夹' }).click()
