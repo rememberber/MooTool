@@ -22,6 +22,7 @@ export type UpdateManagerOptions = {
   installMode?: UpdateInstallMode
   downloadFile?: (download: UpdateDownload, onProgress: (progress: UpdateProgress) => void) => Promise<string>
   openDownloadedFile?: (filePath: string) => Promise<void> | void
+  quitApp?: () => void
 }
 
 function idleState(installMode: UpdateInstallMode): UpdateDownloadState {
@@ -48,6 +49,7 @@ export class UpdateManager {
   private readonly installMode: UpdateInstallMode
   private readonly downloadFile: UpdateManagerOptions['downloadFile']
   private readonly openDownloadedFile: UpdateManagerOptions['openDownloadedFile']
+  private readonly quitApp: UpdateManagerOptions['quitApp']
 
   constructor(
     private readonly updater: UpdateAdapter,
@@ -58,6 +60,7 @@ export class UpdateManager {
     this.installMode = options.installMode ?? 'automatic'
     this.downloadFile = options.downloadFile
     this.openDownloadedFile = options.openDownloadedFile
+    this.quitApp = options.quitApp
     this.state = idleState(this.installMode)
     updater.autoInstallOnAppQuit = false
     updater.allowDowngrade = false
@@ -184,6 +187,7 @@ export class UpdateManager {
       if (!this.downloadedFilePath) throw new Error('The downloaded update file is unavailable')
       if (!this.openDownloadedFile) throw new Error('Opening the downloaded update is unavailable')
       await this.openDownloadedFile(this.downloadedFilePath)
+      this.quitApp?.()
       return
     }
     this.updater.quitAndInstall(true, true)

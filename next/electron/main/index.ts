@@ -191,7 +191,8 @@ const updateManager = new UpdateManager(
     openDownloadedFile: async (filePath) => {
       const error = await shell.openPath(filePath)
       if (error) throw new Error(error)
-    }
+    },
+    quitApp: () => app.quit()
   }
 )
 const quickNoteCheckpointScheduler = new VaultGitCheckpointScheduler({
@@ -482,12 +483,11 @@ function registerIpc(): void {
   })
   ipcMain.handle('update:download', () => updateManager.download())
   ipcMain.handle('update:install', async () => {
-    const automaticInstall = updateManager.getState().installMode === 'automatic'
-    if (automaticInstall) isQuitting = true
+    isQuitting = true
     try {
       await updateManager.install()
     } catch (error) {
-      if (automaticInstall) isQuitting = false
+      isQuitting = false
       throw error
     }
   })

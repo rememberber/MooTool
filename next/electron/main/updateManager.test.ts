@@ -49,6 +49,7 @@ describe('UpdateManager', () => {
   it('silently downloads an unsigned macOS update and reveals it for manual installation', async () => {
     const adapter = new FakeUpdater()
     const openDownloadedFile = vi.fn(async () => undefined)
+    const quitApp = vi.fn()
     const downloadFile = vi.fn(async (_download, onProgress) => {
       onProgress({ percent: 52, transferred: 52, total: 100 })
       return '/tmp/MooTool-1.1.0.dmg'
@@ -56,7 +57,8 @@ describe('UpdateManager', () => {
     const manager = new UpdateManager(adapter.asAdapter(), true, () => undefined, {
       installMode: 'manual',
       downloadFile,
-      openDownloadedFile
+      openDownloadedFile,
+      quitApp
     })
 
     manager.prepare(macUpdateResult(), true)
@@ -67,7 +69,25 @@ describe('UpdateManager', () => {
     expect(downloadFile).toHaveBeenCalledOnce()
     expect(adapter.downloadCalls).toBe(0)
     expect(openDownloadedFile).toHaveBeenCalledWith('/tmp/MooTool-1.1.0.dmg')
+    expect(quitApp).toHaveBeenCalledOnce()
     expect(adapter.quitAndInstall).not.toHaveBeenCalled()
+  })
+
+  it('keeps the app running when the manual installer cannot be opened', async () => {
+    const adapter = new FakeUpdater()
+    const quitApp = vi.fn()
+    const manager = new UpdateManager(adapter.asAdapter(), true, () => undefined, {
+      installMode: 'manual',
+      downloadFile: async () => '/tmp/MooTool-1.1.0.dmg',
+      openDownloadedFile: async () => { throw new Error('Could not open installer') },
+      quitApp
+    })
+
+    manager.prepare(macUpdateResult(), false)
+    await manager.download()
+
+    await expect(manager.install()).rejects.toThrow('Could not open installer')
+    expect(quitApp).not.toHaveBeenCalled()
   })
 })
 
