@@ -121,6 +121,7 @@ declare global {
       duplicateQuickNote: (relativePath: string) => Promise<QuickNoteFile>
       deleteQuickNoteEntry: (relativePath: string) => Promise<void>
       importQuickNoteAttachment: () => Promise<QuickNoteAttachment | null>
+      importQuickNoteClipboardAttachment: (dataUrl?: string) => Promise<QuickNoteAttachment | null>
       readQuickNoteAttachment: (relativePath: string) => Promise<string>
       openQuickNoteVault: () => Promise<void>
       setQuickNoteEditorDirty: (dirty: boolean) => Promise<void>

@@ -18,7 +18,11 @@ import { useI18n } from '@/shared/i18n/I18nProvider'
 
 const notesGap = 12
 
-export function UpdateReadyAction() {
+type UpdateReadyActionProps = {
+  onNotesVisibilityChange?: (visible: boolean) => void
+}
+
+export function UpdateReadyAction({ onNotesVisibilityChange }: UpdateReadyActionProps) {
   const { t } = useI18n()
   const toast = useToast()
   const update = useUpdateState()
@@ -81,6 +85,15 @@ export function UpdateReadyAction() {
   }, [notesOpen])
 
   useEffect(() => () => clearHideTimer(), [clearHideTimer])
+
+  const notesVisible = notesOpen
+    && update.status === 'ready'
+    && Boolean(update.version)
+    && Boolean(releaseNotesHtml)
+
+  useEffect(() => {
+    onNotesVisibilityChange?.(notesVisible)
+  }, [notesVisible, onNotesVisibilityChange])
 
   if (update.status !== 'ready' || !update.version) return null
 

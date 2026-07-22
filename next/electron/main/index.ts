@@ -191,7 +191,8 @@ const updateManager = new UpdateManager(
     openDownloadedFile: async (filePath) => {
       const error = await shell.openPath(filePath)
       if (error) throw new Error(error)
-    }
+    },
+    quitApp: () => app.quit()
   }
 )
 const quickNoteCheckpointScheduler = new VaultGitCheckpointScheduler({
@@ -482,12 +483,11 @@ function registerIpc(): void {
   })
   ipcMain.handle('update:download', () => updateManager.download())
   ipcMain.handle('update:install', async () => {
-    const automaticInstall = updateManager.getState().installMode === 'automatic'
-    if (automaticInstall) isQuitting = true
+    isQuitting = true
     try {
       await updateManager.install()
     } catch (error) {
-      if (automaticInstall) isQuitting = false
+      isQuitting = false
       throw error
     }
   })
@@ -910,8 +910,29 @@ function registerIpc(): void {
     const options: OpenDialogOptions = { properties: ['openFile'], filters: [imageFileFilter] }
     const result = owner ? await dialog.showOpenDialog(owner, options) : await dialog.showOpenDialog(options)
     if (result.canceled || !result.filePaths[0]) return null
+    if (nativeImage.createFromPath(result.filePaths[0]).isEmpty()) throw new Error('Invalid image attachment')
     const attachment = await createQuickNoteRepository().importAttachment(result.filePaths[0])
     quickNoteCheckpointScheduler.recordActivity('Add Quick Note attachment')
+    return attachment
+  })
+  ipcMain.handle('quick-note:import-clipboard-attachment', async (_event, pastedDataUrl?: unknown) => {
+    let data: Buffer
+    let extension = '.png'
+    if (pastedDataUrl !== undefined) {
+      const dataUrl = normalizeDataUrl(pastedDataUrl)
+      const mime = /^data:(image\/[\w.+-]+);base64,/i.exec(dataUrl)?.[1].toLocaleLowerCase()
+      const image = nativeImage.createFromDataURL(dataUrl)
+      if (image.isEmpty()) throw new Error('Invalid clipboard image')
+      const sourceExtension = clipboardImageExtension(mime)
+      extension = sourceExtension ?? '.png'
+      data = sourceExtension ? decodeDataUrl(dataUrl) : image.toPNG()
+    } else {
+      const image = clipboard.readImage()
+      if (image.isEmpty()) return null
+      data = image.toPNG()
+    }
+    const attachment = await createQuickNoteRepository().importAttachmentBuffer(data, extension)
+    quickNoteCheckpointScheduler.recordActivity('Paste Quick Note attachment')
     return attachment
   })
   ipcMain.handle('quick-note:read-attachment', (_event, relativePath: string) => createQuickNoteRepository().readAttachment(relativePath))
@@ -1139,8 +1160,10 @@ function configureQuickNoteWatcher(): void {
     if (generation !== quickNoteWatcherGeneration || isQuitting) return
     try {
       quickNoteWatcher = watch(root, { recursive: true }, (_event, filename) => {
+        const changedPath = typeof filename === 'string' ? filename.replaceAll('\\', '/') : ''
+        if (changedPath === 'attachments' || changedPath.startsWith('attachments/')) return
         clearTimeout(quickNoteWatchTimer)
-        quickNoteWatchTimer = setTimeout(() => broadcast('quick-note:vault-changed', typeof filename === 'string' ? filename : ''), 180)
+        quickNoteWatchTimer = setTimeout(() => broadcast('quick-note:vault-changed', changedPath), 180)
       })
       quickNoteWatcher.on('error', () => {
         quickNoteWatcher?.close()
@@ -1630,6 +1653,15 @@ function normalizeDataUrl(value: unknown): string {
 
 function decodeDataUrl(dataUrl: string): Buffer {
   return Buffer.from(dataUrl.slice(dataUrl.indexOf(',') + 1).replace(/\s+/g, ''), 'base64')
+}
+
+function clipboardImageExtension(mime: string | undefined): string | null {
+  if (mime === 'image/png') return '.png'
+  if (mime === 'image/jpeg' || mime === 'image/jpg' || mime === 'image/pjpeg' || mime === 'image/jfif') return '.jpg'
+  if (mime === 'image/gif') return '.gif'
+  if (mime === 'image/bmp' || mime === 'image/x-ms-bmp') return '.bmp'
+  if (mime === 'image/webp') return '.webp'
+  return null
 }
 
 function sanitizeBinaryFileName(value: unknown, kind: SaveBinaryFileInput['kind']): string {

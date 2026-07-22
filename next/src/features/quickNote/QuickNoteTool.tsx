@@ -45,7 +45,7 @@ import {
   type FindReplaceOptions
 } from '@/shared/components/findReplace'
 import { useToolActivity } from '@/shared/components/ToolActivity'
-import type { QuickNoteFile, QuickNoteMetadata, QuickNoteNode, QuickNoteSort } from '@/shared/contracts/quickNote'
+import type { QuickNoteAttachment, QuickNoteFile, QuickNoteMetadata, QuickNoteNode, QuickNoteSort } from '@/shared/contracts/quickNote'
 import type { VaultGitAction } from '@/shared/contracts/vaultGit'
 import { useToast } from '@/shared/feedback/ToastProvider'
 import { useFocusOnWindowActivate } from '@/shared/hooks/useFocusOnWindowActivate'
@@ -59,6 +59,13 @@ import {
   type VaultTreeExpandMode
 } from '@/shared/vaultTreeExpand'
 import { QuickNoteCodeEditor, type QuickNoteCodeEditorHandle } from './QuickNoteCodeEditor'
+import {
+  clipboardContainsImage,
+  clipboardImageFile,
+  prepareMarkdownImageInsertion,
+  readFileAsDataUrl,
+  type TextSelection
+} from './quickNoteAttachments'
 import { QuickNoteTree } from './QuickNoteTree'
 import { quickReplaceActionIds, runQuickReplace, type QuickReplaceActionId } from './quickReplace'
 
@@ -696,8 +703,21 @@ export function QuickNoteTool() {
     try {
       const attachment = await window.mootool.importQuickNoteAttachment()
       if (!attachment) return
-      setAttachmentUrls({ [attachment.relativePath]: attachment.dataUrl })
-      insertText(attachment.markdown)
+      insertAttachment(attachment)
+    } catch (error) {
+      toast.error(errorMessage(error))
+    }
+  }
+
+  async function importClipboardAttachment(selection: TextSelection, file: File | null): Promise<void> {
+    if (!state.note) return
+    try {
+      const attachment = await window.mootool.importQuickNoteClipboardAttachment(file ? await readFileAsDataUrl(file) : undefined)
+      if (!attachment) {
+        toast.error(t('quickNote.clipboardEmpty'))
+        return
+      }
+      insertAttachment(attachment, selection)
     } catch (error) {
       toast.error(errorMessage(error))
     }
@@ -713,15 +733,23 @@ export function QuickNoteTool() {
     if (path) toast.success(t('quickNote.export'))
   }
 
-  function insertText(text: string): void {
+  function insertAttachment(
+    attachment: QuickNoteAttachment,
+    requestedSelection?: TextSelection
+  ): void {
     const editor = editorRef.current
-    const selection = editor?.getSelection()
-    const start = selection?.start ?? state.content.length
-    const end = selection?.end ?? start
-    update({ content: `${state.content.slice(0, start)}${text}${state.content.slice(end)}` })
-    requestAnimationFrame(() => {
-      editorRef.current?.selectRange(start + text.length, start + text.length)
+    const content = latestStateRef.current.content
+    const selection = requestedSelection ?? editor?.getSelection() ?? { start: content.length, end: content.length }
+    const insertion = prepareMarkdownImageInsertion(content, selection, attachment.markdown)
+    const note = latestStateRef.current.note
+    setAttachmentUrls({ [attachment.relativePath]: attachment.dataUrl })
+    update({
+      content: `${content.slice(0, insertion.start)}${insertion.text}${content.slice(insertion.end)}`,
+      ...(note && note.metadata.syntax !== 'text/markdown'
+        ? { note: { ...note, metadata: { ...note.metadata, syntax: 'text/markdown' } }, metadataDirty: true }
+        : {})
     })
+    requestAnimationFrame(() => editorRef.current?.selectRange(insertion.caret, insertion.caret))
   }
 
   function prefixSelectedLines(prefix: 'bullet' | 'numbered'): void {
@@ -969,6 +997,15 @@ export function QuickNoteTool() {
                       ariaLabel={t('quickNote.editorLabel')}
                       initialViewState={quickNoteEditorViewState}
                       onChange={(content) => update({ content })}
+                      onPaste={(event) => {
+                        if (!clipboardContainsImage(event.clipboardData)) return
+                        const file = clipboardImageFile(event.clipboardData)
+                        event.preventDefault()
+                        void importClipboardAttachment(
+                          editorRef.current?.getSelection() ?? { start: state.content.length, end: state.content.length },
+                          file
+                        )
+                      }}
                       onKeyDown={(event) => {
                         if (isFormatShortcut(event)) {
                           event.preventDefault()

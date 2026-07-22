@@ -930,6 +930,88 @@ test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () =>
   await gitDialog.getByRole('button', { name: '关闭' }).click()
 })
 
+test('pastes clipboard images into Quick Note without intercepting text pastes', async () => {
+  await openTool('随手记', '随手记')
+  await mainPage.getByRole('button', { name: '新建笔记' }).click()
+  const createDialog = mainPage.getByRole('dialog', { name: '新建笔记' })
+  await createDialog.getByLabel('名称').fill('E2E Quick Clipboard')
+  await createDialog.getByRole('button', { name: '创建' }).click()
+  await mainPage.getByRole('tab', { name: '编辑' }).click()
+
+  const editor = mainPage.getByLabel('笔记内容')
+  await expect(mainPage.getByLabel('语法')).toHaveValue('text/plain')
+  await editor.fill('BeforeAfter')
+  await expect.poll(() => mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick Clipboard.txt'))).toMatchObject({ content: 'BeforeAfter' })
+  await editor.press('ControlOrMeta+Home')
+  for (let index = 0; index < 6; index += 1) await editor.press('ArrowRight')
+
+  const pastePrevented = await editor.evaluate((element) => {
+    const base64 = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII='
+    const bytes = Uint8Array.from(atob(base64), (character) => character.charCodeAt(0))
+    const data = new DataTransfer()
+    data.items.add(new File([bytes], 'pixel.png', { type: 'image/png' }))
+    const event = new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: data })
+    element.dispatchEvent(event)
+    return event.defaultPrevented
+  })
+  expect(pastePrevented).toBe(true)
+  await expect(mainPage.getByLabel('语法')).toHaveValue('text/markdown')
+  await expect(editor).toContainText('![image](attachments/')
+
+  await expect.poll(() => mainPage.evaluate(async () => {
+    const note = await window.mootool.readQuickNote('E2E Quick Clipboard.txt')
+    return /!\[image]\((attachments\/[^)]+\.png)\)/.exec(note.content)?.[1] ?? ''
+  })).toMatch(/^attachments\/\d{14}_[a-f0-9]{8}\.png$/)
+  const note = await mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick Clipboard.txt'))
+  expect(note.content).toMatch(/^Before\n!\[image]\(attachments\/[^)]+\.png\)\nAfter$/)
+  const attachmentPath = /!\[image]\((attachments\/[^)]+\.png)\)/.exec(note.content)?.[1]
+  expect(attachmentPath).toBeTruthy()
+
+  await mainPage.getByRole('tab', { name: '预览' }).click()
+  const previewImage = mainPage.locator('.quick-note-preview img')
+  await expect(previewImage).toBeVisible()
+  await expect(previewImage).toHaveAttribute('src', /^data:image\/png;base64,/)
+
+  await mainPage.getByRole('tab', { name: '编辑' }).click()
+  await editor.press('ControlOrMeta+End')
+  await editor.evaluate(async (element) => {
+    const canvas = document.createElement('canvas')
+    canvas.width = 2
+    canvas.height = 2
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('Canvas is unavailable')
+    context.fillStyle = '#d97868'
+    context.fillRect(0, 0, 2, 2)
+    const jpeg = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9))
+    if (!jpeg) throw new Error('Unable to create JPEG fixture')
+    const data = new DataTransfer()
+    data.items.add(new File([jpeg], 'photo.jpg', { type: 'image/jpeg' }))
+    element.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: data }))
+  })
+  await expect.poll(() => mainPage.evaluate(async () => {
+    const current = await window.mootool.readQuickNote('E2E Quick Clipboard.txt')
+    return /!\[image]\((attachments\/[^)]+\.jpg)\)/.exec(current.content)?.[1] ?? ''
+  })).toMatch(/^attachments\/\d{14}_[a-f0-9]{8}\.jpg$/)
+  const noteWithJpeg = await mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick Clipboard.txt'))
+  const jpegAttachmentPath = /!\[image]\((attachments\/[^)]+\.jpg)\)/.exec(noteWithJpeg.content)?.[1]
+  expect(jpegAttachmentPath).toBeTruthy()
+  expect(await mainPage.evaluate((path) => window.mootool.readQuickNoteAttachment(path), jpegAttachmentPath!)).toMatch(/^data:image\/jpeg;base64,/)
+
+  await mainPage.getByRole('tab', { name: '预览' }).click()
+  await expect(previewImage).toHaveCount(2)
+  await expect(previewImage.nth(1)).toHaveAttribute('src', /^data:image\/jpeg;base64,/)
+  await mainPage.getByRole('tab', { name: '编辑' }).click()
+  await editor.press('ControlOrMeta+End')
+  await editor.evaluate((element) => {
+    const data = new DataTransfer()
+    data.setData('text/plain', '\nplain text paste')
+    const event = new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: data })
+    element.dispatchEvent(event)
+  })
+  await expect(editor).toContainText('plain text paste')
+  expect(await mainPage.evaluate((path) => window.mootool.readQuickNoteAttachment(path), attachmentPath!)).toMatch(/^data:image\/png;base64,/)
+})
+
 test('restores the Quick Note expanded folder and selected note after switching tools', async () => {
   await openTool('随手记', '随手记')
   await mainPage.getByRole('button', { name: '新建文件夹' }).click()
