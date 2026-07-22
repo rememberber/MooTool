@@ -423,6 +423,75 @@
               "size": 98680534
             }
           ]
+        },
+        {
+          "version": "1.0.6",
+          "title": "MooTool Next Electron 1.0.6",
+          "notes": "## English\n\n> Product: MooTool Next Electron<br>\n> Version: 1.0.6<br>\n> This release is installed and updated independently from MooTool Java and does not overwrite the Java edition.\n\n### Features\n\n- Aligned the system tray menu with the Java edition.\n- Added custom-area screenshot capture with a screen overlay and tray-menu shortcuts.\n- Added screen color picking: hide the app window, pick a color on screen, then restore the window.\n- Quick Notes now supports dragging and inserting images from external sources.\n\n### Fixes\n\n- Fixed the second inserted image not automatically wrapping to a new line.\n- Fixed inaccurate focus when selecting text in the Quick Notes sidebar preview.\n\n### Notes\n\n- Installers remain unsigned. On macOS, the app downloads and verifies the new DMG, then asks the user to open it and drag the app into Applications.\n- The Java product line continues to use `v*` tags and its existing update manifest.\n\n## 中文\n\n> 产品线：MooTool Next Electron<br>\n> 版本：1.0.6<br>\n> 本版本与 MooTool Java 独立安装、独立更新，不会覆盖 Java 版本。\n\n### 新功能\n\n- 系统托盘菜单对齐 Java 版实现。\n- 截图支持自定义区域：点击后隐藏窗口并显示半透明遮罩，可框选区域后截图；相关快捷操作已加入托盘菜单。\n- 屏幕取色：点击后隐藏应用窗口，在屏幕上取色后恢复窗口。\n- 随手记支持从外部拖拽并插入图片。\n\n### 修复\n\n- 修复第二张图片插入时未自动换行的问题。\n- 修复随手记侧边栏预览区选中文本时焦点不准确、无法正常选择的问题。\n\n### 说明\n\n- 安装包仍未签名。macOS 会下载并校验新版 DMG，随后提示用户打开 DMG 并将应用拖入“应用程序”。\n- Java 产品线继续使用 `v*` tag 和原有更新清单，不受本次发布影响。\n\n## 日本語\n\n> 製品ライン：MooTool Next Electron<br>\n> バージョン：1.0.6<br>\n> このリリースは MooTool Java とは独立してインストール・更新され、Java 版を上書きしません。\n\n### 新機能\n\n- システムトレイメニューを Java 版の実装に合わせました。\n- カスタム領域のスクリーンショットに対応：クリック後にウインドウを隠し半透明オーバーレイで範囲選択して撮影できます。関連ショートカットをトレイメニューに追加しました。\n- 画面から色を取得：クリック後にアプリを隠して画面上で色を取得し、ウインドウを復帰します。\n- クイックノートで外部から画像をドラッグして挿入できます。\n\n### 修正\n\n- 2 枚目の画像挿入時に自動改行されない問題を修正しました。\n- クイックノートのサイドバープレビューでテキスト選択時のフォーカスがずれる問題を修正しました。\n\n### 補足\n\n- インストーラーは引き続き未署名です。macOS では新しい DMG をダウンロードして検証し、その後 DMG を開いてアプリを「アプリケーション」へドラッグするよう案内します。\n- Java 製品ラインは引き続き `v*` タグと従来の更新マニフェストを使用し、このリリースの影響を受けません。",
+          "prerelease": false,
+          "releaseUrl": "https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.0.6",
+          "assets": [
+            {
+              "platform": "darwin",
+              "architecture": "arm64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.0.6-mac-arm64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.6/MooTool-Next-Electron-1.0.6-mac-arm64.dmg",
+              "sha512": "o2i9N+MhUC8RnsAZSlahCi2f7eTe3dLLXGPzmOKO1wYMgn2YQMruFyK5n0zb3k8M/sUaLox5mxDYUtZh2top4A==",
+              "size": 147437153
+            },
+            {
+              "platform": "darwin",
+              "architecture": "x64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.0.6-mac-x64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.6/MooTool-Next-Electron-1.0.6-mac-x64.dmg",
+              "sha512": "7HMzI83GTLHqoDzg0Adl1HoAFovYfKtIW39aFmGKcsdKL68VlzM9RWdwJdwmRyJS79ydU3hL5NAiF3/KiariQQ==",
+              "size": 149176752
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "nsis",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.0.6-win-x64-setup.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.6/MooTool-Next-Electron-1.0.6-win-x64-setup.exe",
+              "sha512": "Ig3jBITcO/FXSrixmcjI6g90uaOnwO0FnkXLmHjziJDFe3+Ga4vuynlqhaWx9gZ4dTlhZYFtsWsFpz+AKK3kNQ==",
+              "size": 118990228
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "portable",
+              "priority": 20,
+              "fileName": "MooTool-Next-Electron-1.0.6-win-x64-portable.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.6/MooTool-Next-Electron-1.0.6-win-x64-portable.exe",
+              "sha512": "RsbQkI2oR+DIOUC7g8/HMfbUVXCfnQsPIsWOd9lXcVsTt8xLWm4jEsuT/1k38t66A7h1uywKKRHPiL5vrXAZIg==",
+              "size": 118820470
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "appimage",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.0.6-linux-x64.AppImage",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.6/MooTool-Next-Electron-1.0.6-linux-x64.AppImage",
+              "sha512": "E81t5AOw8ZZfRhaJwc6gTNfHwE4Aa01JFiuP3duIT1Oyska9OuU7/9qtj46abfmZQ9LXymItWBWP1UcMA93vxA==",
+              "size": 154836436
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "deb",
+              "priority": 20,
+              "fileName": "MooTool-Next-Electron-1.0.6-linux-x64.deb",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.6/MooTool-Next-Electron-1.0.6-linux-x64.deb",
+              "sha512": "NiYi9vz6gSOM1/56is/TFeA7dYWauWgWCAzztMhuwenxP/jovxzG8vcFE2lQw++JxOK8ZumhlJeaIn5u7umBCw==",
+              "size": 98690602
+            }
+          ]
         }
       ]
     },
