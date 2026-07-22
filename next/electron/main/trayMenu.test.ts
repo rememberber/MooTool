@@ -6,6 +6,7 @@ const labels: TrayMenuLabels = {
   open: 'Open MooTool',
   settings: 'Settings…',
   colorPicker: 'Color Picker',
+  screenshot: 'Capture',
   translation: 'Translation',
   quit: 'Quit MooTool'
 }
@@ -19,6 +20,7 @@ function actions(): TrayMenuActions {
     openApp: vi.fn(),
     openSettings: vi.fn(),
     openColorPicker: vi.fn(),
+    captureScreen: vi.fn(),
     openTranslation: vi.fn(),
     switchHost: vi.fn(),
     quit: vi.fn()
@@ -32,19 +34,26 @@ describe('buildTrayMenuTemplate', () => {
     const template = buildTrayMenuTemplate(labels, profiles, 2, handlers)
 
     expect(template.map((item) => item.type === 'separator' ? '-' : item.label)).toEqual([
-      'Open MooTool', 'Settings…', '-', 'Color Picker', 'Translation', '-', 'Local', 'Development', '-', 'Quit MooTool'
+      'Open MooTool', 'Settings…', '-', 'Color Picker', 'Capture', 'Translation', '-', 'Local', 'Development', '-', 'Quit MooTool'
     ])
-    expect(template[6]).toMatchObject({ type: 'checkbox', checked: false })
-    expect(template[7]).toMatchObject({ type: 'checkbox', checked: true })
+    expect(template[7]).toMatchObject({ type: 'checkbox', checked: false })
+    expect(template[8]).toMatchObject({ type: 'checkbox', checked: true })
 
-    ;(template[7].click as () => void)()
+    ;(template[8].click as () => void)()
     expect(handlers.switchHost).toHaveBeenCalledWith(profiles[1])
   })
 
   it('does not add an empty Host separator when no profiles exist', () => {
     const template = buildTrayMenuTemplate(labels, [], null, actions())
     expect(template.map((item) => item.type === 'separator' ? '-' : item.label)).toEqual([
-      'Open MooTool', 'Settings…', '-', 'Color Picker', 'Translation', '-', 'Quit MooTool'
+      'Open MooTool', 'Settings…', '-', 'Color Picker', 'Capture', 'Translation', '-', 'Quit MooTool'
     ])
+  })
+
+  it('routes the screenshot shortcut to its action', () => {
+    const handlers = actions()
+    const template = buildTrayMenuTemplate(labels, [], null, handlers)
+    ;(template[4].click as () => void)()
+    expect(handlers.captureScreen).toHaveBeenCalledOnce()
   })
 })

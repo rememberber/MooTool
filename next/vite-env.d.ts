@@ -1,6 +1,6 @@
 /// <reference types="vite/client" />
 
-import type { AppNavigationEvent, AppPaths, ExternalPageId, RuntimeStatus, ToolId, ToolWindowSnapshot, ToolWindowStatus, ToolWorkspaceBounds, WorkspaceState } from './src/shared/contracts/app'
+import type { AppNavigationEvent, AppPaths, ExternalPageId, RuntimeStatus, ToolAction, ToolId, ToolWindowSnapshot, ToolWindowStatus, ToolWorkspaceBounds, WorkspaceState } from './src/shared/contracts/app'
 import type { AppSettings, SecretKey, SecretStatus, SettingsPatch } from './src/shared/contracts/settings'
 import type { FuncHistoryRecord, HistoryQuery, SaveFuncHistoryInput } from './src/shared/contracts/history'
 import type { SaveTextFileInput, TextFileKind, TextFileResult } from './src/shared/contracts/files'
@@ -44,6 +44,7 @@ declare global {
       dockToolWindow: (toolId: Exclude<ToolId, 'mootool'>) => Promise<ToolWindowStatus>
       focusToolWindow: (toolId: Exclude<ToolId, 'mootool'>) => Promise<boolean>
       setToolWindowTitle: (toolId: Exclude<ToolId, 'mootool'>, title: string) => Promise<void>
+      consumeToolAction: (toolId: Exclude<ToolId, 'mootool'>) => Promise<ToolAction | null>
       listHistory: (query: HistoryQuery) => Promise<FuncHistoryRecord[]>
       saveHistory: (input: SaveFuncHistoryInput) => Promise<void>
       deleteHistory: (id: number) => Promise<void>
@@ -149,6 +150,7 @@ declare global {
       onSettingsChange: (callback: (settings: AppSettings) => void) => () => void
       onSettingsNavigate: (callback: (category: string) => void) => () => void
       onNavigate: (callback: (event: AppNavigationEvent) => void) => () => void
+      onToolActionAvailable: (callback: (toolId: Exclude<ToolId, 'mootool'>) => void) => () => void
       onToolWindowSnapshotChange: (callback: (snapshot: ToolWindowSnapshot) => void) => () => void
       onToolWindowStateChange: (callback: (state: ToolWindowStatus) => void) => () => void
       onToolWindowActivityChange: (callback: (active: boolean) => void) => () => void

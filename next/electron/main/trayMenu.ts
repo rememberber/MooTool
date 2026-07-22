@@ -5,6 +5,7 @@ export type TrayMenuLabels = {
   open: string
   settings: string
   colorPicker: string
+  screenshot: string
   translation: string
   quit: string
 }
@@ -13,6 +14,7 @@ export type TrayMenuActions = {
   openApp: () => void
   openSettings: () => void
   openColorPicker: () => void
+  captureScreen: () => void
   openTranslation: () => void
   switchHost: (profile: HostProfile) => void
   quit: () => void
@@ -29,6 +31,7 @@ export function buildTrayMenuTemplate(
     { label: labels.settings, click: actions.openSettings },
     { type: 'separator' },
     { label: labels.colorPicker, click: actions.openColorPicker },
+    { label: labels.screenshot, click: actions.captureScreen },
     { label: labels.translation, click: actions.openTranslation },
     { type: 'separator' },
     ...profiles.map((profile) => ({

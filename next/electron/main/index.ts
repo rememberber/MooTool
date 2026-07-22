@@ -39,6 +39,7 @@ import {
   type RuntimeId,
   type RuntimeStatus,
   type ToolId,
+  type ToolAction,
   type ToolWorkspaceBounds,
   type WindowState,
   type WorkspaceState
@@ -149,6 +150,7 @@ let toolWindowManager: ToolWindowManager
 let tray: Tray | null = null
 let isQuitting = false
 let closePromptOpen = false
+const pendingToolActions = new Map<Exclude<ToolId, 'mootool'>, ToolAction>()
 let historyRepository: HistoryRepository
 let favoriteRepository: FavoriteRepository
 let p5Repository: P5Repository
@@ -573,6 +575,13 @@ function registerIpc(): void {
     if (!isDetachableToolId(toolId) || !toolWindowManager.owns(toolId, event.sender)) throw new Error('Invalid tool window')
     if (typeof title !== 'string') throw new Error('Invalid tool window title')
     toolWindowManager.setTitle(toolId, title)
+  })
+  ipcMain.handle('tool-action:consume', (event, toolId: unknown): ToolAction | null => {
+    if (!isDetachableToolId(toolId)) throw new Error('Invalid tool id')
+    assertToolWindowAccess(event.sender, toolId)
+    const action = pendingToolActions.get(toolId) ?? null
+    pendingToolActions.delete(toolId)
+    return action
   })
   ipcMain.handle('history:list', (_event, query: HistoryQuery) => historyRepository.list(normalizeHistoryQuery(query)))
   ipcMain.handle('history:save', (_event, input: SaveFuncHistoryInput) => {
@@ -1506,6 +1515,7 @@ function updateTray(settings: AppSettings): void {
     openApp: showMainWindow,
     openSettings: () => createSettingsWindow(),
     openColorPicker: () => openToolFromTray('colorBoard'),
+    captureScreen: () => openToolFromTray('image', 'capture-screen'),
     openTranslation: () => openToolFromTray('translation'),
     switchHost: (profile) => { void switchHostFromTray(profile.id) },
     quit: () => { isQuitting = true; app.quit() }
@@ -1559,9 +1569,15 @@ function navigateMainWindow(event: AppNavigationEvent): void {
   }
 }
 
-function openToolFromTray(toolId: Exclude<ToolId, 'mootool'>): void {
-  if (toolWindowManager.focus(toolId)) return
-  navigateMainWindow({ type: 'open-tool', toolId })
+function openToolFromTray(toolId: Exclude<ToolId, 'mootool'>, action?: ToolAction): void {
+  if (!toolWindowManager.focus(toolId)) navigateMainWindow({ type: 'open-tool', toolId })
+  if (action) queueToolAction(toolId, action)
+}
+
+function queueToolAction(toolId: Exclude<ToolId, 'mootool'>, action: ToolAction): void {
+  pendingToolActions.set(toolId, action)
+  if (mainWindow && !mainWindow.isDestroyed()) mainWindow.webContents.send('tool-action:available', toolId)
+  toolWindowManager.sendToTool(toolId, 'tool-action:available', toolId)
 }
 
 function broadcast(channel: string, payload: unknown): void {
@@ -1775,7 +1791,7 @@ function normalizeSecretKey(value: unknown): SecretKey {
 type MenuLabels = Record<'file' | 'edit' | 'view' | 'window' | 'tools' | 'search' | 'settings' | 'checkUpdates' | 'open' | 'quit' |
   'about' | 'backup' | 'shortcuts' | 'appearance' | 'layout' | 'runtime' | 'toolDefaults' | 'undo' | 'redo' | 'cut' | 'copy' |
   'paste' | 'selectAll' | 'actualSize' | 'zoomIn' | 'zoomOut' | 'fullscreen' | 'minimize' | 'zoom' | 'bringAllToFront' |
-  'hide' | 'hideOthers' | 'showAll' | 'colorPicker' | 'translation' | 'hostSwitched' | 'hostSwitchFailed', string>
+  'hide' | 'hideOthers' | 'showAll' | 'colorPicker' | 'screenshot' | 'translation' | 'hostSwitched' | 'hostSwitchFailed', string>
 
 const menuLabels: Record<AppLanguage, MenuLabels> = {
   'zh-CN': {
@@ -1784,7 +1800,7 @@ const menuLabels: Record<AppLanguage, MenuLabels> = {
     layout: '布局与习惯…', runtime: '运行环境…', toolDefaults: '工具默认值…', undo: '撤销', redo: '重做', cut: '剪切', copy: '复制',
     paste: '粘贴', selectAll: '全选', actualSize: '实际大小', zoomIn: '放大', zoomOut: '缩小', fullscreen: '进入全屏幕', minimize: '最小化',
     zoom: '缩放', bringAllToFront: '前置全部窗口', hide: '隐藏 MooTool', hideOthers: '隐藏其他', showAll: '全部显示',
-    colorPicker: '取色器', translation: '翻译', hostSwitched: 'Host 已切换：{name}', hostSwitchFailed: 'Host 切换失败'
+    colorPicker: '取色器', screenshot: '截图', translation: '翻译', hostSwitched: 'Host 已切换：{name}', hostSwitchFailed: 'Host 切换失败'
   },
   'en-US': {
     file: 'File', edit: 'Edit', view: 'View', window: 'Window', tools: 'Tools', search: 'Search Tools', settings: 'Settings…', checkUpdates: 'Check for Updates…',
@@ -1792,7 +1808,7 @@ const menuLabels: Record<AppLanguage, MenuLabels> = {
     layout: 'Layout and Behavior…', runtime: 'Runtimes…', toolDefaults: 'Tool Defaults…', undo: 'Undo', redo: 'Redo', cut: 'Cut', copy: 'Copy',
     paste: 'Paste', selectAll: 'Select All', actualSize: 'Actual Size', zoomIn: 'Zoom In', zoomOut: 'Zoom Out', fullscreen: 'Enter Full Screen', minimize: 'Minimize',
     zoom: 'Zoom', bringAllToFront: 'Bring All to Front', hide: 'Hide MooTool', hideOthers: 'Hide Others', showAll: 'Show All',
-    colorPicker: 'Color Picker', translation: 'Translation', hostSwitched: 'Host switched: {name}', hostSwitchFailed: 'Host switch failed'
+    colorPicker: 'Color Picker', screenshot: 'Capture', translation: 'Translation', hostSwitched: 'Host switched: {name}', hostSwitchFailed: 'Host switch failed'
   },
   'ja-JP': {
     file: 'ファイル', edit: '編集', view: '表示', window: 'ウインドウ', tools: 'ツール', search: 'ツールを検索', settings: '設定…', checkUpdates: 'アップデートを確認…',
@@ -1800,7 +1816,7 @@ const menuLabels: Record<AppLanguage, MenuLabels> = {
     layout: 'レイアウトと操作…', runtime: '実行環境…', toolDefaults: 'ツールのデフォルト…', undo: '取り消す', redo: 'やり直す', cut: 'カット', copy: 'コピー',
     paste: 'ペースト', selectAll: 'すべてを選択', actualSize: '実際のサイズ', zoomIn: '拡大', zoomOut: '縮小', fullscreen: 'フルスクリーンにする', minimize: 'しまう',
     zoom: '拡大／縮小', bringAllToFront: 'すべてを手前に移動', hide: 'MooTool を隠す', hideOthers: 'ほかを隠す', showAll: 'すべてを表示',
-    colorPicker: 'スポイト', translation: '翻訳', hostSwitched: 'Host を切り替えました：{name}', hostSwitchFailed: 'Host の切り替えに失敗しました'
+    colorPicker: 'スポイト', screenshot: 'スクリーンショット', translation: '翻訳', hostSwitched: 'Host を切り替えました：{name}', hostSwitchFailed: 'Host の切り替えに失敗しました'
   }
 }
 

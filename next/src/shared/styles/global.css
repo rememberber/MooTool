@@ -6202,6 +6202,7 @@ select:not([multiple]) {
 }
 
 .capture-preview {
+  position: relative;
   display: grid;
   min-width: 0;
   min-height: 0;
@@ -6210,12 +6211,70 @@ select:not([multiple]) {
   background: var(--workspace);
   border: 1px solid var(--border-soft);
   overflow: hidden;
+  cursor: crosshair;
+  touch-action: none;
+  user-select: none;
 }
 
 .capture-preview img {
   max-width: 100%;
   max-height: 100%;
   object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+}
+
+.capture-selection {
+  position: absolute;
+  box-sizing: border-box;
+  min-width: 1px;
+  min-height: 1px;
+  border: 2px solid var(--accent-strong);
+  box-shadow: 0 0 0 9999px rgb(0 0 0 / 46%);
+  cursor: move;
+}
+
+.capture-selection-size {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  padding: 3px 5px;
+  color: #fff;
+  background: rgb(0 0 0 / 72%);
+  border-radius: 4px;
+  font-size: 10px;
+  line-height: 1;
+  pointer-events: none;
+  white-space: nowrap;
+}
+
+.capture-selection-handle {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  background: #fff;
+  border: 2px solid var(--accent-strong);
+  border-radius: 50%;
+}
+
+.capture-selection-handle--nw { top: -6px; left: -6px; cursor: nwse-resize; }
+.capture-selection-handle--ne { top: -6px; right: -6px; cursor: nesw-resize; }
+.capture-selection-handle--se { right: -6px; bottom: -6px; cursor: nwse-resize; }
+.capture-selection-handle--sw { bottom: -6px; left: -6px; cursor: nesw-resize; }
+
+.capture-crop-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.capture-crop-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--text-muted);
+  font-size: 10px;
 }
 
 .capture-crop-fields {

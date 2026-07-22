@@ -1,5 +1,5 @@
 import { ClipboardCopy, ClipboardPaste, Download, FileImage, FolderOpen, ImageDown, ImagePlus, List, Maximize2, Minimize2, Minus, Pencil, Plus, Save, ScanLine, Trash2, Type, Upload, ZoomIn } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useEffectEvent, useMemo, useState } from 'react'
 import { ToolPageHeader } from '@/shared/components/ToolPage'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import type { ImageAsset, ImageAssetSummary, ScreenCapture } from '@/shared/contracts/images'
@@ -39,6 +39,25 @@ export function ImageTool() {
   }, [])
 
   useEffect(() => { void loadAssets() }, [loadAssets])
+  const captureFromShortcut = useEffectEvent(() => { void capture() })
+  useEffect(() => {
+    let consuming = false
+    const consume = async () => {
+      if (consuming) return
+      consuming = true
+      try {
+        const action = await window.mootool.consumeToolAction('image')
+        if (action === 'capture-screen') captureFromShortcut()
+      } finally {
+        consuming = false
+      }
+    }
+    const unsubscribe = window.mootool.onToolActionAvailable((toolId) => {
+      if (toolId === 'image') void consume()
+    })
+    void consume()
+    return unsubscribe
+  }, [])
   const processingNames = useMemo(() => selectedNames.length > 0 ? selectedNames : current ? [current.name] : [], [current, selectedNames])
 
   async function selectAsset(name: string): Promise<void> {
@@ -72,6 +91,7 @@ export function ImageTool() {
   }
 
   async function capture(): Promise<void> {
+    if (busy) return
     setBusy(true)
     try {
       const sources = await window.mootool.captureScreens()
