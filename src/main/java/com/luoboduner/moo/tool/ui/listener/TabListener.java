@@ -1,16 +1,16 @@
 package com.luoboduner.moo.tool.ui.listener;
 
 
-import cn.hutool.core.util.RuntimeUtil;
-import com.luoboduner.moo.tool.ui.form.MainWindow;
-import com.luoboduner.moo.tool.util.FuncGroupUtil;
 import com.luoboduner.moo.tool.ui.FuncTabCatalog;
-import com.luoboduner.moo.tool.ui.form.func.HardwareInfoForm;
+import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.NetForm;
 import com.luoboduner.moo.tool.ui.listener.func.HardwareInfoListener;
-import com.luoboduner.moo.tool.util.SystemUtil;
+import com.luoboduner.moo.tool.ui.listener.func.NetListener;
+import com.luoboduner.moo.tool.ui.startup.LazyToolManager;
+import com.luoboduner.moo.tool.ui.startup.StartupCoordinator;
+import com.luoboduner.moo.tool.ui.startup.ToolLoadState;
+import com.luoboduner.moo.tool.util.FuncGroupUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.apache.commons.lang3.exception.ExceptionUtils;
 
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
@@ -26,39 +26,27 @@ import javax.swing.event.ChangeListener;
 @Slf4j
 public class TabListener {
 
-    private static boolean warnFlag = true;
-
     public static void addListeners() {
         MainWindow.getInstance().getTabbedPane().addChangeListener(new ChangeListener() {
-            /**
-             * Invoked when the target of the listener has changed its state.
-             *
-             * @param e a ChangeEvent object
-             */
             @Override
             public void stateChanged(ChangeEvent e) {
                 int index = MainWindow.getInstance().getTabbedPane().getSelectedIndex();
                 FuncGroupUtil.recordRecent(index);
                 FrameListener.persistRecentTab(index);
-                String tabTitle = MainWindow.getInstance().getTabbedPane().getTitleAt(index);
-                if (HardwareInfoForm.TAB_TITLE.equals(tabTitle)) {
-                    HardwareInfoListener.onTabSelected();
-                }
-                if (FuncTabCatalog.byId("net").map(tab -> tab.index() == index).orElse(false)) {
-                    try {
-                        String ipConfigStr;
-                        if (SystemUtil.isWindowsOs()) {
-                            ipConfigStr = RuntimeUtil.execForStr("ipconfig");
-                        } else {
-                            ipConfigStr = RuntimeUtil.execForStr("ifconfig");
-                        }
-                        NetForm.getInstance().getIpConfigTextArea().setText(ipConfigStr);
-                        NetForm.getInstance().getIpConfigTextArea().setCaretPosition(0);
-                    } catch (Exception ex) {
-                        ex.printStackTrace();
-                        log.error(ExceptionUtils.getStackTrace(ex));
+
+                FuncTabCatalog.byIndex(index).ifPresent(tab -> {
+                    StartupCoordinator.getInstance().ensureToolWhenReady(tab.id());
+                    if ("hardware".equals(tab.id())
+                            && LazyToolManager.getInstance().stateOf(tab.id()) == ToolLoadState.READY) {
+                        HardwareInfoListener.onTabSelected();
                     }
-                }
+                    if ("net".equals(tab.id())
+                            && LazyToolManager.getInstance().stateOf(tab.id()) == ToolLoadState.READY
+                            && NetForm.getInstance().getIpConfigTextArea() != null
+                            && NetForm.getInstance().getIpConfigTextArea().getText().isBlank()) {
+                        NetListener.refreshIpConfigAsync();
+                    }
+                });
             }
         });
     }

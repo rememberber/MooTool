@@ -37,6 +37,8 @@ import com.luoboduner.moo.tool.util.QuickNoteListSortMode;
 import com.luoboduner.moo.tool.util.QuickNoteTreeUtil;
 import com.luoboduner.moo.tool.util.QuickNoteVaultRefreshCoordinator;
 import com.luoboduner.moo.tool.util.QuickNoteVaultUtil;
+import com.luoboduner.moo.tool.ui.startup.EdtGuard;
+import com.luoboduner.moo.tool.ui.startup.QuickNoteLoadData;
 import com.luoboduner.moo.tool.util.QuickNoteVaultWatcher;
 import com.luoboduner.moo.tool.util.VaultTreeExpandMode;
 import com.luoboduner.moo.tool.util.VaultTreeUiUtil;
@@ -160,6 +162,8 @@ public class QuickNoteForm {
     private static QuickNoteForm quickNoteForm;
     private static boolean i18nRegistered;
 
+    private static boolean viewShellInitialized;
+
     /** 切换笔记时回显工具栏，避免触发字体下拉框保存逻辑 */
     private static boolean syncingToolbarFromNote;
 
@@ -277,34 +281,67 @@ public class QuickNoteForm {
     }
 
     public static void resetInstance() {
+        stopPageServices();
         quickNoteForm = null;
+        viewShellInitialized = false;
+        quickNoteRSyntaxTextViewerManager = null;
     }
 
     public static void init() {
-        quickNoteForm = getInstance();
-
-        quickNoteRSyntaxTextViewerManager = new QuickNoteRSyntaxTextViewerManager();
-
-        initUi();
-
-        initTextAreaFont();
-
+        createViewShell();
         initNoteList();
+        startPageServices();
+    }
 
-        QuickNoteVaultWatcher.start();
-        QuickNoteAutoGitScheduler.start();
-        QuickNoteAutoPullScheduler.start();
+    /**
+     * EDT：创建 UI 壳与监听器，不扫描 Vault、不启动 watcher。
+     */
+    public static JPanel createViewShell() {
+        EdtGuard.assertEdt();
+        quickNoteForm = getInstance();
+        if (viewShellInitialized) {
+            return quickNoteForm.getQuickNotePanel();
+        }
+        if (quickNoteRSyntaxTextViewerManager == null) {
+            quickNoteRSyntaxTextViewerManager = new QuickNoteRSyntaxTextViewerManager();
+        }
+        initUi();
+        initTextAreaFont();
         quickNoteForm.initConflictBanner();
         quickNoteForm.configureToolbarLayout();
         updateGitButtonStatus();
-
         QuickNoteListener.addListeners();
-
         quickNoteForm.applyI18n();
         if (!i18nRegistered) {
             I18nUiUtil.register(QuickNoteForm::applyI18nStatic);
             i18nRegistered = true;
         }
+        viewShellInitialized = true;
+        return quickNoteForm.getQuickNotePanel();
+    }
+
+    /**
+     * EDT：绑定后台扫描得到的笔记树数据。
+     */
+    public static void bindLoadedData(QuickNoteLoadData data) {
+        EdtGuard.assertEdt();
+        if (data == null) {
+            initNoteList();
+            return;
+        }
+        applyNoteListData(data.getNotes(), data.getFolders());
+    }
+
+    public static void startPageServices() {
+        QuickNoteVaultWatcher.start();
+        QuickNoteAutoGitScheduler.start();
+        QuickNoteAutoPullScheduler.start();
+    }
+
+    public static void stopPageServices() {
+        QuickNoteVaultWatcher.stop();
+        QuickNoteAutoGitScheduler.stop();
+        QuickNoteAutoPullScheduler.stop();
     }
 
     private void applyI18n() {
@@ -813,7 +850,7 @@ public class QuickNoteForm {
 
     public static void initNoteList() {
         QuickNoteVaultUtil.ensureVaultReady();
-        if (quickNoteForm.getNoteTree() == null) {
+        if (quickNoteForm == null || quickNoteForm.getNoteTree() == null) {
             log.error("Quick note tree is not initialized");
             return;
         }
@@ -831,24 +868,55 @@ public class QuickNoteForm {
         List<String> folders = searchContent && StringUtils.isNotBlank(titleFilterKeyWord)
                 ? List.of()
                 : QuickNoteVaultUtil.listFolders();
-        quickNoteForm.getNoteTree().setModel(QuickNoteTreeUtil.buildTreeModel(quickNoteList, folders, getListSortMode()));
+        applyNoteListData(quickNoteList, folders);
+    }
+
+    /**
+     * EDT：用已加载的笔记/文件夹数据刷新树并选中首条。
+     */
+    public static void applyNoteListData(List<TQuickNote> quickNoteList, List<String> folders) {
+        applyNoteListData(quickNoteList, folders, false);
+    }
+
+    public static void applyNoteListData(List<TQuickNote> quickNoteList, List<String> folders, boolean preserveOnly) {
+        EdtGuard.assertEdt();
+        if (quickNoteForm == null || quickNoteForm.getNoteTree() == null) {
+            log.error("Quick note tree is not initialized");
+            return;
+        }
+        List<TQuickNote> notes = quickNoteList == null ? List.of() : quickNoteList;
+        List<String> folderList = folders == null ? List.of() : folders;
+        quickNoteForm.getNoteTree().setModel(QuickNoteTreeUtil.buildTreeModel(notes, folderList, getListSortMode()));
         applyTreeExpandPreference(quickNoteForm.getNoteTree());
 
-        if (!quickNoteList.isEmpty()) {
-            QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
-            try {
-                String preservePath = QuickNoteListener.selectedPath;
-                TQuickNote selectedNote = null;
-                if (StringUtils.isNotEmpty(preservePath)) {
-                    selectedNote = quickNoteList.stream()
-                            .filter(note -> preservePath.equals(note.getRelativePath()))
-                            .findFirst()
-                            .orElse(null);
-                }
-                if (selectedNote != null) {
-                    selectNoteInTree(selectedNote.getRelativePath());
+        if (notes.isEmpty()) {
+            if (!preserveOnly) {
+                clearEditorPanel();
+            }
+            updateEditorActionsEnabled();
+            updateGitButtonStatus();
+            return;
+        }
+
+        QuickNoteRSyntaxTextViewer.ignoreQuickSave = true;
+        try {
+            String preservePath = QuickNoteListener.selectedPath;
+            TQuickNote selectedNote = null;
+            if (StringUtils.isNotEmpty(preservePath)) {
+                selectedNote = notes.stream()
+                        .filter(note -> preservePath.equals(note.getRelativePath()))
+                        .findFirst()
+                        .orElse(null);
+            }
+            if (selectedNote != null) {
+                selectNoteInTree(selectedNote.getRelativePath());
+                if (!preserveOnly) {
                     showNote(selectedNote);
-                } else if (StringUtils.isNotEmpty(preservePath)) {
+                }
+            } else if (StringUtils.isNotEmpty(preservePath)) {
+                if (preserveOnly) {
+                    selectNoteInTree(preservePath);
+                } else {
                     TQuickNote noteOnDisk = QuickNoteVaultUtil.loadByPath(preservePath);
                     if (noteOnDisk == null) {
                         clearEditorPanel();
@@ -856,18 +924,16 @@ public class QuickNoteForm {
                         selectNoteInTree(preservePath);
                         showNote(noteOnDisk);
                     }
-                } else {
-                    selectedNote = QuickNoteTreeUtil.sortedNotes(quickNoteList, getListSortMode()).get(0);
-                    selectNoteInTree(selectedNote.getRelativePath());
-                    showNote(selectedNote);
                 }
-            } catch (Exception e1) {
-                log.error(e1.toString());
-            } finally {
-                QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
+            } else if (!preserveOnly) {
+                selectedNote = QuickNoteTreeUtil.sortedNotes(notes, getListSortMode()).get(0);
+                selectNoteInTree(selectedNote.getRelativePath());
+                showNote(selectedNote);
             }
-        } else {
-            clearEditorPanel();
+        } catch (Exception e1) {
+            log.error(e1.toString());
+        } finally {
+            QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
         }
         updateEditorActionsEnabled();
         updateGitButtonStatus();

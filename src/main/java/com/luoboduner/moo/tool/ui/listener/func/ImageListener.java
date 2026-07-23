@@ -703,26 +703,62 @@ public class ImageListener {
     }
 
     public static void showImageByFileName(ImageForm imageForm, String fileName) {
-        try {
-            imageForm.getImagePreview().setPlaceholderImage(DEFAULT_IMAGE);
+        previewImageAsync(imageForm, fileName);
+    }
 
-            selectedName = FileUtil.mainName(fileName);
-            selectedImage = ImageIO.read(FileUtil.newFile(IMAGE_PATH_PRE_FIX + fileName));
-            if (selectedImage == null) {
-                MsgUtil.error(App.mainFrame, "msg.cannotReadImage", fileName);
-                return;
+    /**
+     * 后台解码图片，完成后若仍选中同一文件则更新预览。
+     */
+    public static void previewImageAsync(ImageForm imageForm, String fileName) {
+        if (imageForm == null || StringUtils.isBlank(fileName)) {
+            return;
+        }
+        imageForm.getImagePreview().setPlaceholderImage(DEFAULT_IMAGE);
+        final String requested = fileName;
+        com.luoboduner.moo.tool.ui.startup.AppExecutors.io().execute(() -> {
+            try {
+                BufferedImage image = ImageIO.read(FileUtil.newFile(IMAGE_PATH_PRE_FIX + requested));
+                if (image == null) {
+                    SwingUtilities.invokeLater(() ->
+                            MsgUtil.error(App.mainFrame, "msg.cannotReadImage", requested));
+                    return;
+                }
+                String pixel = image.getWidth() + " x " + image.getHeight();
+                String size = FileUtil.readableFileSize(FileUtil.file(IMAGE_PATH_PRE_FIX + requested).length());
+                String info = I18n.format("image.info.size", pixel, size);
+                SwingUtilities.invokeLater(() -> {
+                    Object selected = imageForm.getImageList().getSelectedValue();
+                    if (selected != null && !requested.equals(String.valueOf(selected))) {
+                        return;
+                    }
+                    showDecodedImage(imageForm, requested, image, info);
+                });
+            } catch (IOException ex) {
+                SwingUtilities.invokeLater(() ->
+                        MsgUtil.errorDetail(App.mainFrame, "common.exception", ex.getMessage()));
+                log.error(ExceptionUtils.getStackTrace(ex));
             }
+        });
+    }
 
-            displayZoomFactor = 1.0;
-            updateImageDisplay(imageForm);
-            imageForm.getShowImagePanel().updateUI();
-
+    /**
+     * 使用已在后台解码的图片展示，避免 EDT 再读盘。
+     */
+    public static void showDecodedImage(ImageForm imageForm, String fileName, BufferedImage image, String infoText) {
+        imageForm.getImagePreview().setPlaceholderImage(DEFAULT_IMAGE);
+        selectedName = FileUtil.mainName(fileName);
+        selectedImage = image;
+        if (selectedImage == null) {
+            return;
+        }
+        displayZoomFactor = 1.0;
+        updateImageDisplay(imageForm);
+        imageForm.getShowImagePanel().updateUI();
+        if (StringUtils.isNotBlank(infoText)) {
+            imageForm.getImageInfoLabel().setText(infoText);
+        } else {
             String pixel = selectedImage.getWidth(null) + " x " + selectedImage.getHeight(null);
-            String size = FileUtil.readableFileSize(FileUtil.file(IMAGE_PATH_PRE_FIX + fileName).length());
-            imageForm.getImageInfoLabel().setText(I18n.format("image.info.size", pixel, size));
-        } catch (IOException ex) {
-            MsgUtil.errorDetail(App.mainFrame, "common.exception", ex.getMessage());
-            log.error(ExceptionUtils.getStackTrace(ex));
+            imageForm.getImageInfoLabel().setText(I18n.format("image.info.size", pixel, ""));
         }
     }
 

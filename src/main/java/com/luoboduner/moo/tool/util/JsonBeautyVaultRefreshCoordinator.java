@@ -4,10 +4,13 @@ import com.luoboduner.moo.tool.domain.QuickNoteGitPullResult;
 import com.luoboduner.moo.tool.domain.TJsonBeauty;
 import com.luoboduner.moo.tool.ui.form.func.JsonBeautyForm;
 import com.luoboduner.moo.tool.ui.listener.func.JsonBeautyListener;
+import com.luoboduner.moo.tool.ui.startup.AppExecutors;
+import com.luoboduner.moo.tool.ui.startup.JsonBeautyLoadData;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.SwingUtilities;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -21,6 +24,11 @@ public final class JsonBeautyVaultRefreshCoordinator {
     private static volatile long lastInternalWriteAt;
     private static volatile String discardInProgressPath;
     private static final Set<String> skipSavePaths = ConcurrentHashMap.newKeySet();
+
+    private static final VaultExternalRefreshSupport EXTERNAL_REFRESH =
+            new VaultExternalRefreshSupport(
+                    JsonBeautyVaultRefreshCoordinator::shouldSuppressWatcherRefresh,
+                    JsonBeautyVaultRefreshCoordinator::runAsyncExternalRefresh);
 
     private JsonBeautyVaultRefreshCoordinator() {
     }
@@ -95,11 +103,15 @@ public final class JsonBeautyVaultRefreshCoordinator {
     }
 
     public static void refreshAfterExternalChange(boolean forceReloadCurrent) {
-        if (SwingUtilities.isEventDispatchThread()) {
-            doRefreshAfterExternalChange(forceReloadCurrent);
-        } else {
-            SwingUtilities.invokeLater(() -> doRefreshAfterExternalChange(forceReloadCurrent));
-        }
+        EXTERNAL_REFRESH.requestImmediate(forceReloadCurrent);
+    }
+
+    public static void requestDebouncedExternalRefresh() {
+        EXTERNAL_REFRESH.requestDebounced();
+    }
+
+    public static void cancelPendingExternalRefresh() {
+        EXTERNAL_REFRESH.cancelPending();
     }
 
     public static void refreshAfterPull(QuickNoteGitPullResult result) {
@@ -112,11 +124,7 @@ public final class JsonBeautyVaultRefreshCoordinator {
                 case UP_TO_DATE, CONFLICT, ERROR -> JsonBeautyForm.updateGitButtonStatus();
             }
         };
-        if (SwingUtilities.isEventDispatchThread()) {
-            task.run();
-        } else {
-            SwingUtilities.invokeLater(task);
-        }
+        VaultExternalRefreshSupport.runOnEdt(task);
     }
 
     private static void refreshAfterPullUpdates(java.util.List<String> updatedFiles) {
@@ -131,13 +139,32 @@ public final class JsonBeautyVaultRefreshCoordinator {
         JsonBeautyForm.updateGitButtonStatus();
     }
 
-    private static void doRefreshAfterExternalChange(boolean forceReloadCurrent) {
-        JsonBeautyForm.refreshList();
-        if (forceReloadCurrent) {
-            JsonBeautyForm.reloadCurrentFromDisk(true);
-        } else {
-            JsonBeautyForm.reloadCurrentFromDiskIfClean();
-        }
-        JsonBeautyForm.updateGitButtonStatus();
+    private static void runAsyncExternalRefresh(boolean forceReloadCurrent) {
+        VaultExternalRefreshSupport.runOnEdt(() -> {
+            String filter = JsonBeautyForm.getInstance().getSearchTextField().getText();
+            AppExecutors.io().execute(() -> {
+                try {
+                    JsonBeautyVaultUtil.ensureVaultReady();
+                    List<TJsonBeauty> items = JsonBeautyVaultUtil.listByFilter(filter);
+                    List<String> folders = StringUtils.isNotBlank(filter) ? List.of() : JsonBeautyVaultUtil.listFolders();
+                    JsonBeautyLoadData data = new JsonBeautyLoadData(items, folders);
+                    SwingUtilities.invokeLater(() -> {
+                        try {
+                            JsonBeautyForm.applyJsonListData(data.getItems(), data.getFolders(), true);
+                            if (forceReloadCurrent) {
+                                JsonBeautyForm.reloadCurrentFromDisk(true);
+                            } else {
+                                JsonBeautyForm.reloadCurrentFromDiskIfClean();
+                            }
+                            JsonBeautyForm.updateGitButtonStatus();
+                        } finally {
+                            EXTERNAL_REFRESH.markFinished();
+                        }
+                    });
+                } catch (Exception e) {
+                    EXTERNAL_REFRESH.markFinished();
+                }
+            });
+        });
     }
 }

@@ -12,6 +12,8 @@ import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.form.TranslationLayoutForm;
 import com.luoboduner.moo.tool.ui.listener.func.TranslationListener;
+import com.luoboduner.moo.tool.ui.startup.EdtGuard;
+import com.luoboduner.moo.tool.ui.startup.TranslationLoadData;
 import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.JTableUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
@@ -67,6 +69,8 @@ public class TranslationForm {
     private static TranslationForm translationForm;
 
     private static boolean i18nRegistered;
+
+    private static boolean viewShellInitialized;
 
     private TranslationLayoutForm translationLayoutForm;
 
@@ -276,19 +280,48 @@ public class TranslationForm {
     }
 
     public static void init() {
-        translationForm = getInstance();
-        translationForm.bindGeneratedUiRefs();
-
-        initUi();
+        createViewShell();
         initWordBookTable();
         initHistoryTable();
-        TranslationListener.addListeners();
+    }
 
+    public static JPanel createViewShell() {
+        EdtGuard.assertEdt();
+        translationForm = getInstance();
+        if (viewShellInitialized) {
+            return translationForm.getTranslationPanel();
+        }
+        translationForm.bindGeneratedUiRefs();
+        initUi();
+        TranslationListener.addListeners();
         translationForm.applyI18n();
         if (!i18nRegistered) {
             I18nUiUtil.register(TranslationForm::applyI18nStatic);
             i18nRegistered = true;
         }
+        viewShellInitialized = true;
+        return translationForm.getTranslationPanel();
+    }
+
+    public static void bindLoadedData(TranslationLoadData data) {
+        EdtGuard.assertEdt();
+        if (data == null) {
+            initWordBookTable();
+            initHistoryTable();
+            return;
+        }
+        TranslationForm form = getInstance();
+        form.getListTable().setModel(TranslationListener.createEmptyWordBookTableModel());
+        form.getListTable().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        form.getListTable().getTableHeader().setReorderingAllowed(false);
+        TranslationListener.fillWordBookModel(form.getListTable(), data.getWords());
+        JTableUtil.hideColumn(form.getListTable(), 0);
+
+        form.getHistoryTable().setModel(TranslationListener.createEmptyHistoryTableModel());
+        form.getHistoryTable().setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+        form.getHistoryTable().getTableHeader().setReorderingAllowed(false);
+        TranslationListener.fillHistoryModel(form.getHistoryTable(), data.getHistories());
+        JTableUtil.hideColumn(form.getHistoryTable(), 0);
     }
 
     private void applyI18n() {

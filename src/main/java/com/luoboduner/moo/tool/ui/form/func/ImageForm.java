@@ -14,6 +14,8 @@ import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.ImagePreviewComponent;
 import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.listener.func.ImageListener;
+import com.luoboduner.moo.tool.ui.startup.EdtGuard;
+import com.luoboduner.moo.tool.ui.startup.ImageLoadData;
 import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
@@ -77,6 +79,8 @@ public class ImageForm {
 
     private static boolean i18nRegistered;
 
+    private static boolean viewShellInitialized;
+
     private static final Log logger = LogFactory.get();
 
     private ImageForm() {
@@ -115,17 +119,63 @@ public class ImageForm {
     }
 
     public static void init() {
-        imageForm = getInstance();
-
-        initUi();
+        createViewShell();
         initList();
+    }
 
+    public static JPanel createViewShell() {
+        EdtGuard.assertEdt();
+        imageForm = getInstance();
+        if (viewShellInitialized) {
+            return imageForm.getImagePanel();
+        }
+        initUi();
         ImageListener.addListeners();
-
         imageForm.applyI18n();
         if (!i18nRegistered) {
             I18nUiUtil.register(ImageForm::applyI18nStatic);
             i18nRegistered = true;
+        }
+        viewShellInitialized = true;
+        return imageForm.getImagePanel();
+    }
+
+    public static void bindLoadedData(ImageLoadData data) {
+        EdtGuard.assertEdt();
+        if (data == null) {
+            initList();
+            return;
+        }
+        applyImageListData(data);
+    }
+
+    public static void applyImageListData(ImageLoadData data) {
+        EdtGuard.assertEdt();
+        DefaultListModel<String> model = new DefaultListModel<>();
+        JList<String> imageList = imageForm.getImageList();
+        imageList.setModel(model);
+        List<String> fileNames = data.getFileNames();
+        for (String fileName : fileNames) {
+            model.addElement(fileName);
+        }
+        if (fileNames.isEmpty()) {
+            return;
+        }
+        String selectedFileName = data.getSelectedFileName();
+        int selectedIndex = 0;
+        if (selectedFileName != null) {
+            for (int i = 0; i < fileNames.size(); i++) {
+                if (selectedFileName.equals(fileNames.get(i))) {
+                    selectedIndex = i;
+                    break;
+                }
+            }
+        }
+        imageList.setSelectedIndex(selectedIndex);
+        if (data.getPreviewImage() != null) {
+            ImageListener.showDecodedImage(imageForm, selectedFileName, data.getPreviewImage(), data.getPreviewInfoText());
+        } else {
+            ImageListener.showImageByFileName(imageForm, selectedFileName != null ? selectedFileName : fileNames.get(0));
         }
     }
 

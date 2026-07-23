@@ -36,51 +36,26 @@ public class NetListener {
     public static void addListeners() {
 
         NetForm netForm = NetForm.getInstance();
-        netForm.getIpConfigButton().addActionListener(e -> {
-            try {
-
-                String ipConfigStr;
-                if (SystemUtil.isWindowsOs()) {
-                    ipConfigStr = RuntimeUtil.execForStr("ipconfig");
-                } else {
-                    ipConfigStr = RuntimeUtil.execForStr("ifconfig");
-                }
-                netForm.getIpConfigTextArea().setText(ipConfigStr);
-                netForm.getIpConfigTextArea().setCaretPosition(0);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                logger.error(ExceptionUtils.getStackTrace(ex));
-            }
-        });
-        netForm.getIpConfigAllButton().addActionListener(e -> {
-            try {
-                String ipConfigStr;
-                if (SystemUtil.isWindowsOs()) {
-                    ipConfigStr = RuntimeUtil.execForStr("ipconfig /all");
-                } else {
-                    ipConfigStr = RuntimeUtil.execForStr("netstat -nat");
-                }
-                netForm.getIpConfigTextArea().setText(ipConfigStr);
-                netForm.getIpConfigTextArea().setCaretPosition(0);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                logger.error(ExceptionUtils.getStackTrace(ex));
-            }
-        });
+        netForm.getIpConfigButton().addActionListener(e -> refreshIpConfigAsync());
+        netForm.getIpConfigAllButton().addActionListener(e -> refreshIpConfigAllAsync());
         netForm.getFlushDnsButton().addActionListener(e -> {
-            try {
-                String flushDnsStr;
-                if (SystemUtil.isWindowsOs()) {
-                    flushDnsStr = RuntimeUtil.execForStr("ipconfig /flushdns");
-                } else {
-                    flushDnsStr = RuntimeUtil.execForStr("killall -HUP mDNSResponder");
+            ThreadUtil.execute(() -> {
+                try {
+                    String flushDnsStr;
+                    if (SystemUtil.isWindowsOs()) {
+                        flushDnsStr = RuntimeUtil.execForStr("ipconfig /flushdns");
+                    } else {
+                        flushDnsStr = RuntimeUtil.execForStr("killall -HUP mDNSResponder");
+                    }
+                    final String result = flushDnsStr;
+                    SwingUtilities.invokeLater(() -> {
+                        netForm.getIpConfigTextArea().setText(result);
+                        netForm.getIpConfigTextArea().setCaretPosition(0);
+                    });
+                } catch (Exception ex) {
+                    logger.error(ExceptionUtils.getStackTrace(ex));
                 }
-                netForm.getIpConfigTextArea().setText(flushDnsStr);
-                netForm.getIpConfigTextArea().setCaretPosition(0);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-                logger.error(ExceptionUtils.getStackTrace(ex));
-            }
+            });
         });
         netForm.getIpv4ToLongButton().addActionListener(e -> {
             try {
@@ -141,7 +116,6 @@ public class NetListener {
             try {
                 String pingIp = netForm.getPingTextField().getText().trim();
                 netForm.getIpConfigTextArea().setText("");
-//                if (SystemUtil.isWindowsOs()) {
                 Process process = RuntimeUtil.exec("ping " + pingIp);
                 InputStream inputStream = process.getInputStream();
                 ThreadUtil.execute(() -> {
@@ -150,7 +124,7 @@ public class NetListener {
                     try {
                         inputStreamReader = new InputStreamReader(inputStream, CharsetUtil.GBK);
                         bufferedReader = new BufferedReader(inputStreamReader);
-                        String line = null;
+                        String line;
                         while (true) {
                             try {
                                 if ((line = bufferedReader.readLine()) == null) {
@@ -158,8 +132,11 @@ public class NetListener {
                                 }
                             } catch (IOException ex) {
                                 logger.error(ExceptionUtils.getStackTrace(ex));
+                                break;
                             }
-                            netForm.getIpConfigTextArea().append(line + "\n");
+                            final String lineToAppend = line;
+                            SwingUtilities.invokeLater(() ->
+                                    netForm.getIpConfigTextArea().append(lineToAppend + "\n"));
                         }
                     } catch (UnsupportedEncodingException ex) {
                         logger.error(ExceptionUtils.getStackTrace(ex));
@@ -182,8 +159,6 @@ public class NetListener {
                     }
 
                 });
-//                } else {
-//                }
                 netForm.getIpConfigTextArea().setCaretPosition(0);
             } catch (Exception ex) {
                 MsgUtil.errorDetail(netForm.getNetPanel(), "msg.failedTitle", ex.getMessage());
@@ -216,6 +191,48 @@ public class NetListener {
                     });
                 }
             });
+        });
+    }
+
+    public static void refreshIpConfigAsync() {
+        NetForm netForm = NetForm.getInstance();
+        ThreadUtil.execute(() -> {
+            try {
+                String ipConfigStr;
+                if (SystemUtil.isWindowsOs()) {
+                    ipConfigStr = RuntimeUtil.execForStr("ipconfig");
+                } else {
+                    ipConfigStr = RuntimeUtil.execForStr("ifconfig");
+                }
+                final String result = ipConfigStr;
+                SwingUtilities.invokeLater(() -> {
+                    netForm.getIpConfigTextArea().setText(result);
+                    netForm.getIpConfigTextArea().setCaretPosition(0);
+                });
+            } catch (Exception ex) {
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
+        });
+    }
+
+    public static void refreshIpConfigAllAsync() {
+        NetForm netForm = NetForm.getInstance();
+        ThreadUtil.execute(() -> {
+            try {
+                String ipConfigStr;
+                if (SystemUtil.isWindowsOs()) {
+                    ipConfigStr = RuntimeUtil.execForStr("ipconfig /all");
+                } else {
+                    ipConfigStr = RuntimeUtil.execForStr("netstat -nat");
+                }
+                final String result = ipConfigStr;
+                SwingUtilities.invokeLater(() -> {
+                    netForm.getIpConfigTextArea().setText(result);
+                    netForm.getIpConfigTextArea().setCaretPosition(0);
+                });
+            } catch (Exception ex) {
+                logger.error(ExceptionUtils.getStackTrace(ex));
+            }
         });
     }
 }

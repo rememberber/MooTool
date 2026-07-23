@@ -1,6 +1,5 @@
 package com.luoboduner.moo.tool;
 
-import cn.hutool.core.io.FileUtil;
 import com.formdev.flatlaf.FlatLaf;
 import com.formdev.flatlaf.extras.FlatDesktop;
 import com.formdev.flatlaf.fonts.jetbrains_mono.FlatJetBrainsMonoFont;
@@ -11,13 +10,13 @@ import com.luoboduner.moo.tool.ui.dialog.SettingDialog;
 import com.luoboduner.moo.tool.ui.form.LoadingForm;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.frame.MainFrame;
+import com.luoboduner.moo.tool.ui.startup.EdtLagMonitor;
+import com.luoboduner.moo.tool.ui.startup.StartupCoordinator;
+import com.luoboduner.moo.tool.ui.startup.StartupMetrics;
 import com.luoboduner.moo.tool.util.ConfigUtil;
 import com.luoboduner.moo.tool.util.I18n;
-import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.MacApplicationMenuUtil;
-import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.TesseractEnvUtil;
-import com.luoboduner.moo.tool.util.UpgradeUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.apache.ibatis.session.SqlSession;
@@ -42,7 +41,10 @@ public class App {
 
     public static MainFrame mainFrame;
 
-    public static SqlSession sqlSession = MybatisUtil.getSqlSession();
+    /**
+     * 延迟初始化，避免类加载阶段打开数据库阻塞首屏。
+     */
+    public static volatile SqlSession sqlSession;
 
     public static SystemTray tray;
 
@@ -53,12 +55,12 @@ public class App {
     public static File tempDir = null;
 
     public static void main(String[] args) {
+        StartupMetrics.mark("app.main.enter");
         I18n.init();
         TesseractEnvUtil.ensureConfigured();
+        StartupMetrics.mark("bootstrap.config.ready");
 
         if (SystemInfo.isMacOS) {
-//            java -Xdock:name="MooTool" -Xdock:icon=MooTool.jpg ... (whatever else you normally specify here)
-//            java -Xms64m -Xmx256m -Dapple.awt.application.name="MooTool" -Dcom.apple.mrj.application.apple.menu.about.name="MooTool" -cp "./lib/*" com.luoboduner.moo.tool.App
             System.setProperty("apple.laf.useScreenMenuBar", "true");
             System.setProperty("apple.awt.application.name", "MooTool");
             System.setProperty("com.apple.mrj.application.apple.menu.about.name", "MooTool");
@@ -68,7 +70,6 @@ public class App {
             FlatDesktop.setAboutHandler(() -> {
                 try {
                     AboutDialog dialog = new AboutDialog();
-
                     dialog.pack();
                     dialog.setVisible(true);
                 } catch (Exception e2) {
@@ -78,7 +79,6 @@ public class App {
             FlatDesktop.setPreferencesHandler(() -> {
                 try {
                     SettingDialog dialog = new SettingDialog();
-
                     dialog.pack();
                     dialog.setVisible(true);
                 } catch (Exception e2) {
@@ -94,52 +94,43 @@ public class App {
         }
 
         FlatLaf.registerCustomDefaultsSource("themes");
-        SwingUtilities.invokeLater(FlatJetBrainsMonoFont::install);
 
-        Init.initTheme();
+        EventQueue.invokeLater(() -> {
+            try {
+                FlatJetBrainsMonoFont.install();
+                Init.initTheme();
+                StartupMetrics.mark("laf.ready");
 
-        // install inspectors
-//        FlatInspector.install("ctrl shift alt X");
-//        FlatUIDefaultsInspector.install("ctrl shift alt Y");
+                mainFrame = new MainFrame();
+                mainFrame.init();
+                mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
 
-        mainFrame = new MainFrame();
-        mainFrame.init();
-        JPanel loadingPanel = new LoadingForm().getLoadingPanel();
-        mainFrame.add(loadingPanel);
-        mainFrame.pack();
-        mainFrame.setVisible(true);
+                JPanel loadingPanel = new LoadingForm().getLoadingPanel();
+                mainFrame.setContentPane(loadingPanel);
+                mainFrame.pack();
+                mainFrame.setVisible(true);
 
-        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
-        if (config.isDefaultMaxWindow() || screenSize.getWidth() <= 1366) {
-            // 低分辨率下自动最大化窗口
-            mainFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
-        }
+                Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+                if (config.isDefaultMaxWindow() || screenSize.getWidth() <= 1366) {
+                    mainFrame.setExtendedState(JFrame.MAXIMIZED_BOTH);
+                }
 
-        UpgradeUtil.smoothUpgrade();
+                EdtLagMonitor.startIfEnabled();
 
-        mainFrame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
-        Init.initGlobalFont();
-        mainFrame.setContentPane(MainWindow.getInstance().getMainPanel());
-
-        if (SystemUtil.isLinuxOs()) {
-            tempDir = new File(SystemUtil.CONFIG_HOME + File.separator + "temp");
-        } else {
-            tempDir = new File(FileUtil.getTmpDirPath() + "MooTool");
-        }
-        if (!tempDir.exists()) {
-            tempDir.mkdirs();
-        }
-        FileUtil.clean(tempDir);
-
-        MainWindow.getInstance().init();
-        Init.initAllTab();
-        Init.initOthers();
-        mainFrame.remove(loadingPanel);
-        Init.languageGuide();
-        Init.fontSizeGuide();
-
-        if (SystemInfo.isMacOS) {
-            SwingUtilities.invokeLater(MacApplicationMenuUtil::installCheckForUpdatesMenu);
-        }
+                // 尽快返回当前 EDT 任务，让首帧与输入事件得到处理。
+                EventQueue.invokeLater(() -> {
+                    Init.initGlobalFont();
+                    MainWindow mainWindow = MainWindow.getInstance();
+                    mainFrame.setContentPane(mainWindow.getMainPanel());
+                    mainWindow.init();
+                    if (SystemInfo.isMacOS) {
+                        MacApplicationMenuUtil.installCheckForUpdatesMenu();
+                    }
+                    StartupCoordinator.getInstance().startAfterWindowVisible();
+                });
+            } catch (Exception e) {
+                log.error("Failed to start UI", e);
+            }
+        });
     }
 }

@@ -25,6 +25,8 @@ public final class QuickNoteAutoGitScheduler {
     private static volatile long lastInactiveCheckpointAt;
     private static Timer tickTimer;
     private static boolean started;
+    private static volatile boolean checkpointInProgress;
+    private static java.awt.event.AWTEventListener windowListener;
 
     private QuickNoteAutoGitScheduler() {
     }
@@ -45,6 +47,8 @@ public final class QuickNoteAutoGitScheduler {
             tickTimer.stop();
             tickTimer = null;
         }
+        detachWindowListener();
+        checkpointInProgress = false;
         started = false;
     }
 
@@ -53,7 +57,10 @@ public final class QuickNoteAutoGitScheduler {
     }
 
     private static void attachWindowListener() {
-        Toolkit.getDefaultToolkit().addAWTEventListener(event -> {
+        if (windowListener != null) {
+            return;
+        }
+        windowListener = event -> {
             if (event.getID() == WindowEvent.WINDOW_DEACTIVATED
                     && event instanceof WindowEvent windowEvent
                     && windowEvent.getWindow() == App.mainFrame) {
@@ -63,11 +70,22 @@ public final class QuickNoteAutoGitScheduler {
                     && windowEvent.getWindow() == App.mainFrame) {
                 windowDeactivatedAt = 0;
             }
-        }, AWTEvent.WINDOW_EVENT_MASK);
+        };
+        Toolkit.getDefaultToolkit().addAWTEventListener(windowListener, AWTEvent.WINDOW_EVENT_MASK);
+    }
+
+    private static void detachWindowListener() {
+        if (windowListener != null) {
+            Toolkit.getDefaultToolkit().removeAWTEventListener(windowListener);
+            windowListener = null;
+        }
     }
 
     private static void evaluateCheckpoint() {
         if (!App.config.isQuickNoteAutoGitCommit()) {
+            return;
+        }
+        if (checkpointInProgress) {
             return;
         }
         if (!QuickNoteGitUtil.isGitRepo(QuickNoteVaultUtil.getVaultDir())) {
@@ -103,6 +121,7 @@ public final class QuickNoteAutoGitScheduler {
         final long idleActivitySnapshot = lastActivityAt;
         final long inactiveSnapshot = windowDeactivatedAt;
 
+        checkpointInProgress = true;
         new SwingWorker<QuickNoteGitUtil.GitCommandResult, Void>() {
             @Override
             protected QuickNoteGitUtil.GitCommandResult doInBackground() {
@@ -125,6 +144,8 @@ public final class QuickNoteAutoGitScheduler {
                     }
                 } catch (Exception ex) {
                     log.debug("Auto git checkpoint failed: {}", ex.getMessage());
+                } finally {
+                    checkpointInProgress = false;
                 }
             }
         }.execute();

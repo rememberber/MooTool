@@ -21,6 +21,8 @@ import com.luoboduner.moo.tool.ui.component.PanelCloseUtil;
 import com.luoboduner.moo.tool.ui.component.ToolbarUiUtil;
 import com.luoboduner.moo.tool.ui.component.TableInCellButtonColumn;
 import com.luoboduner.moo.tool.ui.listener.func.HttpRequestListener;
+import com.luoboduner.moo.tool.ui.startup.EdtGuard;
+import com.luoboduner.moo.tool.ui.startup.HttpRequestLoadData;
 import com.luoboduner.moo.tool.util.*;
 import lombok.Getter;
 import lombok.Setter;
@@ -100,6 +102,8 @@ public class HttpRequestForm {
 
     private static final Log logger = LogFactory.get();
     private static boolean i18nRegistered;
+
+    private static boolean viewShellInitialized;
     private static HttpRequestForm httpRequestForm;
     private static TMsgHttpMapper msgHttpMapper = MybatisUtil.getSqlSession().getMapper(TMsgHttpMapper.class);
     private static THttpRequestHistoryMapper httpRequestHistoryMapper = MybatisUtil.getSqlSession().getMapper(THttpRequestHistoryMapper.class);
@@ -146,17 +150,57 @@ public class HttpRequestForm {
     }
 
     public static void init() {
-        httpRequestForm = getInstance();
-
-        initUi();
+        createViewShell();
         initList();
+    }
 
+    public static JPanel createViewShell() {
+        EdtGuard.assertEdt();
+        httpRequestForm = getInstance();
+        if (viewShellInitialized) {
+            return httpRequestForm.getHttpRequestPanel();
+        }
+        initUi();
         HttpRequestListener.addListeners();
-
         httpRequestForm.applyI18n();
         if (!i18nRegistered) {
             I18nUiUtil.register(HttpRequestForm::applyI18nStatic);
             i18nRegistered = true;
+        }
+        viewShellInitialized = true;
+        return httpRequestForm.getHttpRequestPanel();
+    }
+
+    public static void bindLoadedData(HttpRequestLoadData data) {
+        EdtGuard.assertEdt();
+        if (data == null) {
+            initList();
+            return;
+        }
+        applyHttpListData(data);
+    }
+
+    public static void applyHttpListData(HttpRequestLoadData data) {
+        EdtGuard.assertEdt();
+        DefaultListModel<TMsgHttp> model = new DefaultListModel<>();
+        JList<TMsgHttp> noteList = httpRequestForm.getNoteList();
+        noteList.setModel(model);
+        noteList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                String label = value instanceof TMsgHttp ? ((TMsgHttp) value).getMsgName() : String.valueOf(value);
+                return super.getListCellRendererComponent(list, label, index, isSelected, cellHasFocus);
+            }
+        });
+        for (TMsgHttp msg : data.getMessages()) {
+            model.addElement(msg);
+        }
+        if (data.getFirstMessage() != null) {
+            initHistoryTable();
+            initMsg(data.getFirstMessage().getMsgName());
+            noteList.setSelectedIndex(0);
+            HttpRequestListener.selectedName = data.getFirstMessage().getMsgName();
         }
     }
 

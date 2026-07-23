@@ -2,14 +2,12 @@ package com.luoboduner.moo.tool.util;
 
 import lombok.extern.slf4j.Slf4j;
 
-import javax.swing.*;
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 监听 Vault 目录外部变更，防抖后刷新笔记树与 Git 状态。
@@ -19,8 +17,6 @@ public final class QuickNoteVaultWatcher {
 
     private static final AtomicBoolean running = new AtomicBoolean(false);
     private static Thread watchThread;
-    private static final AtomicLong lastRefreshRequest = new AtomicLong(0);
-    private static Timer debounceTimer;
 
     private QuickNoteVaultWatcher() {
     }
@@ -35,6 +31,7 @@ public final class QuickNoteVaultWatcher {
 
     public static void stop() {
         running.set(false);
+        QuickNoteVaultRefreshCoordinator.cancelPendingExternalRefresh();
         if (watchThread != null) {
             watchThread.interrupt();
             watchThread = null;
@@ -82,7 +79,7 @@ public final class QuickNoteVaultWatcher {
                         break;
                     }
                     if (changed) {
-                        scheduleRefresh();
+                        QuickNoteVaultRefreshCoordinator.requestDebouncedExternalRefresh();
                     }
                 }
             } catch (InterruptedException e) {
@@ -127,28 +124,6 @@ public final class QuickNoteVaultWatcher {
 
     private static boolean shouldIgnore(String name) {
         return ".git".equals(name) || name.startsWith(".");
-    }
-
-    private static void scheduleRefresh() {
-        if (QuickNoteVaultRefreshCoordinator.shouldSuppressWatcherRefresh()) {
-            return;
-        }
-        lastRefreshRequest.set(System.currentTimeMillis());
-        SwingUtilities.invokeLater(() -> {
-            if (debounceTimer != null) {
-                debounceTimer.stop();
-            }
-            debounceTimer = new Timer(600, e -> {
-                long elapsed = System.currentTimeMillis() - lastRefreshRequest.get();
-                if (elapsed >= 550) {
-                    if (!QuickNoteVaultRefreshCoordinator.shouldSuppressWatcherRefresh()) {
-                        QuickNoteVaultRefreshCoordinator.refreshAfterExternalChange();
-                    }
-                }
-            });
-            debounceTimer.setRepeats(false);
-            debounceTimer.start();
-        });
     }
 
     private static void sleepQuietly(long ms) {

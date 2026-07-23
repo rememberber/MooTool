@@ -12,14 +12,25 @@ import com.luoboduner.moo.tool.ui.component.TabUiUtil;
 import com.luoboduner.moo.tool.ui.component.TopMenuBar;
 import com.luoboduner.moo.tool.ui.component.UpdateInstallPromptPanel;
 import com.luoboduner.moo.tool.ui.form.func.*;
-import com.luoboduner.moo.tool.ui.listener.FrameListener;
 import com.luoboduner.moo.tool.ui.listener.TabListener;
+import com.luoboduner.moo.tool.ui.listener.func.HardwareInfoListener;
+import com.luoboduner.moo.tool.ui.listener.func.NetListener;
+import com.luoboduner.moo.tool.ui.startup.AboutToolInitializer;
+import com.luoboduner.moo.tool.ui.startup.HostToolInitializer;
+import com.luoboduner.moo.tool.ui.startup.HttpRequestToolInitializer;
+import com.luoboduner.moo.tool.ui.startup.ImageToolInitializer;
+import com.luoboduner.moo.tool.ui.startup.JsonBeautyToolInitializer;
+import com.luoboduner.moo.tool.ui.startup.LazyToolManager;
+import com.luoboduner.moo.tool.ui.startup.LegacyFormInitializer;
+import com.luoboduner.moo.tool.ui.startup.QuickNoteToolInitializer;
+import com.luoboduner.moo.tool.ui.startup.TranslationToolInitializer;
 import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import lombok.Getter;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.function.Supplier;
 
 import static com.formdev.flatlaf.FlatClientProperties.*;
 
@@ -117,31 +128,7 @@ public class MainWindow {
         ensureTabStripLayoutListener();
         initTabPlacement();
 
-        mainWindow.getAboutPanel().add(AboutForm.getInstance().getAboutPanel(), gridConstraints);
-        mainWindow.getQuickNotePanel().add(QuickNoteForm.getInstance().getQuickNotePanel(), gridConstraints);
-        mainWindow.getJsonBeautyPanel().add(JsonBeautyForm.getInstance().getJsonBeautyPanel(), gridConstraints);
-        mainWindow.getTimeConvertPanel().add(TimeConvertForm.getInstance().getTimeConvertPanel(), gridConstraints);
-        mainWindow.getHostPanel().add(HostForm.getInstance().getHostPanel(), gridConstraints);
-        mainWindow.getHttpRequestPanel().add(HttpRequestForm.getInstance().getHttpRequestPanel(), gridConstraints);
-        mainWindow.getUaParsePanel().add(UaParseForm.getInstance().getUaParsePanel(), gridConstraints);
-        mainWindow.getEncodePanel().add(EnCodeForm.getInstance().getEnCodePanel(), gridConstraints);
-        mainWindow.getQrCodePanel().add(QrCodeForm.getInstance().getQrCodePanel(), gridConstraints);
-        mainWindow.getCryptoPanel().add(CryptoForm.getInstance().getCryptoPanel(), gridConstraints);
-        mainWindow.getCalculatorPanel().add(CalculatorForm.getInstance().getCalculatorPanel(), gridConstraints);
-        mainWindow.getNetPanel().add(NetForm.getInstance().getNetPanel(), gridConstraints);
-        mainWindow.getColorBoardPanel().add(ColorBoardForm.getInstance().getColorBoardPanel(), gridConstraints);
-        mainWindow.getTranslationPanel().add(TranslationForm.getInstance().getTranslationPanel(), gridConstraints);
-        mainWindow.getCronPanel().add(CronForm.getInstance().getCronPanel(), gridConstraints);
-        mainWindow.getRegexPanel().add(RegexForm.getInstance().getRegexPanel(), gridConstraints);
-        mainWindow.getImagePanel().add(ImageForm.getInstance().getImagePanel(), gridConstraints);
-        mainWindow.getJavaConsolePanel().add(JavaConsoleForm.getInstance().getJavaConsolePanel(), gridConstraints);
-        mainWindow.getReformattingPanel().add(FileReformattingForm.getInstance().getReformattingPanel(), gridConstraints);
-        mainWindow.getPdfPanel().add(PdfForm.getInstance().getPdfPanel(), gridConstraints);
-        mainWindow.getVariablesPanel().add(VariablesForm.getInstance().getVariablesPanel(), gridConstraints);
-        mainWindow.getHardwareInfoPanel().add(HardwareInfoForm.getInstance().getHardwareInfoPanel(), gridConstraints);
-        mainWindow.getYmlProperties().add(YmlPropertiesForm.getInstance().getYmlPropertiesPanel(), gridConstraints);
-        mainWindow.getTextDiffPanel().add(TextDiffForm.getInstance().getTextDiffPanel(), gridConstraints);
-        mainWindow.getProtoBufPanel().add(ProtoBufForm.getInstance().getProtoBufPanel(), gridConstraints);
+        registerLazyTools();
 
         refreshTabbedPaneUi();
         TabUiUtil.applySafeTabbedPaneUi(mainPanel, tabbedPane);
@@ -149,8 +136,70 @@ public class MainWindow {
         initFuncTabShell();
         refreshFuncTabNavigation();
         TabListener.addListeners();
-        FrameListener.restoreRecentTab();
+        // 最近 Tab 由 StartupCoordinator 在窗口可见后恢复，避免启动时抢跑初始化
         relayoutAfterTabStripChanged();
+    }
+
+    /**
+     * 仅切换选中 Tab，不触发额外业务；供启动协调器恢复最近工具。
+     */
+    public void selectTabWithoutInit(int index) {
+        if (index >= 0 && index < tabbedPane.getTabCount() && tabbedPane.getSelectedIndex() != index) {
+            tabbedPane.setSelectedIndex(index);
+        }
+    }
+
+    private void registerLazyTools() {
+        LazyToolManager manager = LazyToolManager.getInstance();
+
+        manager.register("mootool", new AboutToolInitializer(), aboutPanel);
+        manager.register("quickNote", new QuickNoteToolInitializer(), quickNotePanel);
+        manager.register("timeConvert", legacy("正在加载时间转换……", TimeConvertForm::init, () -> TimeConvertForm.getInstance().getTimeConvertPanel()), timeConvertPanel);
+        manager.register("json", new JsonBeautyToolInitializer(), jsonBeautyPanel);
+        manager.register("translation", new TranslationToolInitializer(), translationPanel);
+        manager.register("host", new HostToolInitializer(), hostPanel);
+        manager.register("http", new HttpRequestToolInitializer(), httpRequestPanel);
+        manager.register("uaParse", legacy("正在加载 UA 分析……", UaParseForm::init, () -> UaParseForm.getInstance().getUaParsePanel()), uaParsePanel);
+        manager.register("encode", legacy("正在加载编码转换……", EnCodeForm::init, () -> EnCodeForm.getInstance().getEnCodePanel()), encodePanel);
+        manager.register("qrCode", legacy("正在加载二维码……", QrCodeForm::init, () -> QrCodeForm.getInstance().getQrCodePanel()), qrCodePanel);
+        manager.register("crypto", legacy("正在加载加解密……", CryptoForm::init, () -> CryptoForm.getInstance().getCryptoPanel()), cryptoPanel);
+        manager.register("calculator", legacy("正在加载计算器……", CalculatorForm::init, () -> CalculatorForm.getInstance().getCalculatorPanel()), calculatorPanel);
+        manager.register("net", new LegacyFormInitializer(
+                "正在加载网络工具……",
+                NetForm::init,
+                () -> NetForm.getInstance().getNetPanel(),
+                () -> {
+                    if (NetForm.getInstance().getIpConfigTextArea() != null
+                            && NetForm.getInstance().getIpConfigTextArea().getText().isBlank()) {
+                        NetListener.refreshIpConfigAsync();
+                    }
+                },
+                null), netPanel);
+        manager.register("colorBoard", legacy("正在加载调色板……", ColorBoardForm::init, () -> ColorBoardForm.getInstance().getColorBoardPanel()), colorBoardPanel);
+        manager.register("image", new ImageToolInitializer(), imagePanel);
+        manager.register("cron", legacy("正在加载 Cron……", CronForm::init, () -> CronForm.getInstance().getCronPanel()), cronPanel);
+        manager.register("regex", legacy("正在加载正则……", RegexForm::init, () -> RegexForm.getInstance().getRegexPanel()), regexPanel);
+        manager.register("java", legacy("正在加载 Java 控制台……",
+                () -> { /* constructed in getInstance */ },
+                () -> JavaConsoleForm.getInstance().getJavaConsolePanel()), javaConsolePanel);
+        manager.register("reformat", legacy("正在加载格式化……", FileReformattingForm::init, () -> FileReformattingForm.getInstance().getReformattingPanel()), reformattingPanel);
+        manager.register("pdf", legacy("正在加载 PDF……",
+                () -> { /* constructed in getInstance */ },
+                () -> PdfForm.getInstance().getPdfPanel()), pdfPanel);
+        manager.register("variables", legacy("正在加载环境变量……", VariablesForm::init, () -> VariablesForm.getInstance().getVariablesPanel()), variablesPanel);
+        manager.register("hardware", new LegacyFormInitializer(
+                "正在加载系统信息……",
+                HardwareInfoForm::init,
+                () -> HardwareInfoForm.getInstance().getHardwareInfoPanel(),
+                () -> HardwareInfoListener.onTabSelected(),
+                null), hardwareInfoPanel);
+        manager.register("ymlProperties", legacy("正在加载配置转换……", YmlPropertiesForm::init, () -> YmlPropertiesForm.getInstance().getYmlPropertiesPanel()), ymlProperties);
+        manager.register("textDiff", legacy("正在加载文本对比……", TextDiffForm::init, () -> TextDiffForm.getInstance().getTextDiffPanel()), textDiffPanel);
+        manager.register("protobuf", legacy("正在加载 Protobuf……", ProtoBufForm::init, () -> ProtoBufForm.getInstance().getProtoBufPanel()), protoBufPanel);
+    }
+
+    private static LegacyFormInitializer legacy(String message, Runnable init, Supplier<JComponent> view) {
+        return new LegacyFormInitializer(message, init, view);
     }
 
     private void initFuncTabShell() {

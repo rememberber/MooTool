@@ -4,11 +4,14 @@ import com.luoboduner.moo.tool.domain.QuickNoteGitPullResult;
 import com.luoboduner.moo.tool.ui.component.textviewer.QuickNoteRSyntaxTextViewerManager;
 import com.luoboduner.moo.tool.ui.form.func.QuickNoteForm;
 import com.luoboduner.moo.tool.ui.listener.func.QuickNoteListener;
+import com.luoboduner.moo.tool.ui.startup.AppExecutors;
+import com.luoboduner.moo.tool.ui.startup.QuickNoteLoadData;
 import com.luoboduner.moo.tool.domain.TQuickNote;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.SwingUtilities;
 import java.util.Collection;
+import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -24,6 +27,11 @@ public final class QuickNoteVaultRefreshCoordinator {
     private static final AtomicInteger pendingSaveTasks = new AtomicInteger();
     private static volatile String discardInProgressPath;
     private static final Set<String> skipSavePaths = ConcurrentHashMap.newKeySet();
+
+    private static final VaultExternalRefreshSupport EXTERNAL_REFRESH =
+            new VaultExternalRefreshSupport(
+                    QuickNoteVaultRefreshCoordinator::shouldSuppressWatcherRefresh,
+                    QuickNoteVaultRefreshCoordinator::runAsyncExternalRefresh);
 
     private QuickNoteVaultRefreshCoordinator() {
     }
@@ -123,11 +131,15 @@ public final class QuickNoteVaultRefreshCoordinator {
     }
 
     public static void refreshAfterExternalChange(boolean forceReloadCurrentNote) {
-        if (SwingUtilities.isEventDispatchThread()) {
-            doRefreshAfterExternalChange(forceReloadCurrentNote);
-        } else {
-            SwingUtilities.invokeLater(() -> doRefreshAfterExternalChange(forceReloadCurrentNote));
-        }
+        EXTERNAL_REFRESH.requestImmediate(forceReloadCurrentNote);
+    }
+
+    public static void requestDebouncedExternalRefresh() {
+        EXTERNAL_REFRESH.requestDebounced();
+    }
+
+    public static void cancelPendingExternalRefresh() {
+        EXTERNAL_REFRESH.cancelPending();
     }
 
     public static void refreshAfterPull(QuickNoteGitPullResult result) {
@@ -141,11 +153,7 @@ public final class QuickNoteVaultRefreshCoordinator {
                 case CONFLICT, ERROR -> QuickNoteForm.updateGitButtonStatus();
             }
         };
-        if (SwingUtilities.isEventDispatchThread()) {
-            task.run();
-        } else {
-            SwingUtilities.invokeLater(task);
-        }
+        VaultExternalRefreshSupport.runOnEdt(task);
     }
 
     private static void refreshAfterPullUpdates(java.util.List<String> updatedFiles) {
@@ -159,13 +167,40 @@ public final class QuickNoteVaultRefreshCoordinator {
         QuickNoteForm.updateGitButtonStatus();
     }
 
-    private static void doRefreshAfterExternalChange(boolean forceReloadCurrentNote) {
-        QuickNoteForm.refreshNoteTree();
-        if (forceReloadCurrentNote) {
-            QuickNoteForm.reloadCurrentNoteFromDisk(true);
-        } else {
-            QuickNoteForm.reloadCurrentNoteFromDiskIfClean();
-        }
-        QuickNoteForm.updateGitButtonStatus();
+    private static void runAsyncExternalRefresh(boolean forceReloadCurrentNote) {
+        VaultExternalRefreshSupport.runOnEdt(() -> {
+            String filter = QuickNoteForm.getInstance().getSearchTextField().getText();
+            boolean searchContent = QuickNoteForm.getInstance().getSearchContentCheckBox().isSelected();
+            AppExecutors.io().execute(() -> {
+                try {
+                    QuickNoteVaultUtil.ensureVaultReady();
+                    List<TQuickNote> notes;
+                    if (searchContent && StringUtils.isNotBlank(filter)) {
+                        notes = QuickNoteVaultUtil.listByFilter(filter, true);
+                    } else {
+                        notes = QuickNoteVaultUtil.listByFilter(filter, false);
+                    }
+                    List<String> folders = searchContent && StringUtils.isNotBlank(filter)
+                            ? List.of()
+                            : QuickNoteVaultUtil.listFolders();
+                    QuickNoteLoadData data = new QuickNoteLoadData(notes, folders);
+                    SwingUtilities.invokeLater(() -> {
+                        try {
+                            QuickNoteForm.applyNoteListData(data.getNotes(), data.getFolders(), true);
+                            if (forceReloadCurrentNote) {
+                                QuickNoteForm.reloadCurrentNoteFromDisk(true);
+                            } else {
+                                QuickNoteForm.reloadCurrentNoteFromDiskIfClean();
+                            }
+                            QuickNoteForm.updateGitButtonStatus();
+                        } finally {
+                            EXTERNAL_REFRESH.markFinished();
+                        }
+                    });
+                } catch (Exception e) {
+                    EXTERNAL_REFRESH.markFinished();
+                }
+            });
+        });
     }
 }

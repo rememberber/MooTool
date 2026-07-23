@@ -168,14 +168,41 @@ public class TranslationListener {
     }
 
     public static DefaultTableModel createWordBookTableModel() {
-        DefaultTableModel model = new DefaultTableModel(wordBookColumns(), 0) {
+        DefaultTableModel model = createEmptyWordBookTableModel();
+        loadWordsIntoModel(model, "");
+        return model;
+    }
+
+    public static DefaultTableModel createEmptyWordBookTableModel() {
+        return new DefaultTableModel(wordBookColumns(), 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
-        loadWordsIntoModel(model, "");
-        return model;
+    }
+
+    public static void fillWordBookModel(JTable table, List<TTranslationWord> words) {
+        DefaultTableModel model = (DefaultTableModel) table.getModel();
+        while (model.getRowCount() > 0) {
+            model.removeRow(0);
+        }
+        if (words == null) {
+            return;
+        }
+        for (TTranslationWord word : words) {
+            model.addRow(new Object[]{
+                    word.getId(),
+                    TranslationWordBookUtil.previewText(word.getSourceText(), 40),
+                    TranslationWordBookUtil.previewText(word.getTargetText(), 40)
+            });
+        }
+        if (table.getRowCount() > 0) {
+            table.setRowSelectionInterval(0, 0);
+            viewWordByRow(0);
+        } else {
+            clearWordDetail();
+        }
     }
 
     public static void refreshWordBookList() {
@@ -376,14 +403,47 @@ public class TranslationListener {
     }
 
     public static DefaultTableModel createHistoryTableModel() {
-        DefaultTableModel model = new DefaultTableModel(historyColumns(), 0) {
+        DefaultTableModel model = createEmptyHistoryTableModel();
+        loadHistoryIntoModel(model, "");
+        return model;
+    }
+
+    public static DefaultTableModel createEmptyHistoryTableModel() {
+        return new DefaultTableModel(historyColumns(), 0) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
         };
-        loadHistoryIntoModel(model, "");
-        return model;
+    }
+
+    public static void fillHistoryModel(JTable table, List<TTranslationHistory> histories) {
+        DefaultTableModel model = (DefaultTableModel) table.getModel();
+        while (model.getRowCount() > 0) {
+            model.removeRow(0);
+        }
+        if (histories == null) {
+            return;
+        }
+        for (TTranslationHistory history : histories) {
+            String langPair = String.format("%s → %s",
+                    TranslatorLangUtil.toDisplayName(history.getSourceLang()),
+                    TranslatorLangUtil.toDisplayName(
+                            StringUtils.defaultIfBlank(history.getTargetLang(), TranslatorLangUtil.DEFAULT_TARGET_CODE)));
+            model.addRow(new Object[]{
+                    history.getId(),
+                    StringUtils.defaultString(history.getCreateTime()),
+                    TranslationHistoryUtil.previewText(history.getSourceText(), 36),
+                    langPair,
+                    TranslationHistoryUtil.formatTranslatorType(history.getTranslatorType())
+            });
+        }
+        if (table.getRowCount() > 0) {
+            table.setRowSelectionInterval(0, 0);
+            viewHistoryByRow(0);
+        } else {
+            clearHistoryDetail();
+        }
     }
 
     public static void refreshHistoryListIfVisible() {

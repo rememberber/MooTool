@@ -1,6 +1,5 @@
 package com.luoboduner.moo.tool.ui;
 
-import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.log.Log;
 import cn.hutool.log.LogFactory;
 import com.formdev.flatlaf.*;
@@ -22,14 +21,14 @@ import com.luoboduner.moo.tool.ui.dialog.SettingDialog;
 import com.luoboduner.moo.tool.ui.dialog.TranslationDialog;
 import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.ui.UiConsts;
-import com.luoboduner.moo.tool.ui.form.AboutForm;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
-import com.luoboduner.moo.tool.ui.form.func.*;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.frame.MainFrame;
 import com.luoboduner.moo.tool.ui.listener.FrameListener;
+import com.luoboduner.moo.tool.ui.startup.DeferredServices;
+import com.luoboduner.moo.tool.ui.startup.StartupCoordinator;
+import com.luoboduner.moo.tool.util.MybatisUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
-import com.luoboduner.moo.tool.util.UpgradeUtil;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.exception.ExceptionUtils;
 
@@ -38,8 +37,6 @@ import javax.swing.plaf.FontUIResource;
 import java.awt.*;
 import java.util.Collections;
 import java.util.Enumeration;
-import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.TimeUnit;
 
 import static java.awt.GraphicsDevice.WindowTranslucency.TRANSLUCENT;
 
@@ -227,33 +224,18 @@ public class Init {
     }
 
     /**
-     * 初始化所有tab
+     * 兼容旧调用：全量并发 init 已移除，改为空操作。
+     * 页面初始化由 {@link com.luoboduner.moo.tool.ui.startup.LazyToolManager} 按需触发。
      */
+    @Deprecated
     public static void initAllTab() {
-        ThreadUtil.execute(AboutForm::init);
-        ThreadUtil.execute(QuickNoteForm::init);
-        ThreadUtil.execute(JsonBeautyForm::init);
-        ThreadUtil.execute(TimeConvertForm::init);
-        ThreadUtil.execute(HostForm::init);
-        ThreadUtil.execute(HttpRequestForm::init);
-        ThreadUtil.execute(UaParseForm::init);
-        ThreadUtil.execute(EnCodeForm::init);
-        ThreadUtil.execute(QrCodeForm::init);
-        ThreadUtil.execute(CryptoForm::init);
-        ThreadUtil.execute(CalculatorForm::init);
-        ThreadUtil.execute(ColorBoardForm::init);
-        ThreadUtil.execute(NetForm::init);
-        ThreadUtil.execute(TranslationForm::init);
-        ThreadUtil.execute(CronForm::init);
-        ThreadUtil.execute(RegexForm::init);
-        ThreadUtil.execute(ImageForm::init);
-        ThreadUtil.execute(VariablesForm::init);
-        ThreadUtil.execute(HardwareInfoForm::init);
-        ThreadUtil.execute(YmlPropertiesForm::init);
-        ThreadUtil.execute(TextDiffForm::init);
-        ThreadUtil.execute(ProtoBufForm::init);
-        ThreadUtil.execute(FileReformattingForm::init);
+        // no-op: replaced by LazyToolManager
+    }
 
+    /**
+     * 延后启动的非关键服务（自动更新等）。
+     */
+    public static void startDeferredServices() {
         SwingUtilities.invokeLater(() -> {
             if (App.mainFrame != null) {
                 MainWindow mainWindow = MainWindow.getInstance();
@@ -265,12 +247,7 @@ public class Init {
                         mainWindow.getMainPanel());
             }
         });
-
-        // 检查新版版
-        if (App.config.isAutoCheckUpdate()) {
-            ScheduledThreadPoolExecutor threadPoolExecutor = new ScheduledThreadPoolExecutor(1);
-            threadPoolExecutor.scheduleAtFixedRate(() -> UpgradeUtil.checkUpdate(true), 0, 1, TimeUnit.HOURS);
-        }
+        DeferredServices.start();
     }
 
     /**
@@ -409,9 +386,10 @@ public class Init {
 
     public static void shutdown() {
         FrameListener.saveBeforeExit();
-        if (App.sqlSession != null) {
-            App.sqlSession.close();
-        }
+        DeferredServices.stop();
+        StartupCoordinator.getInstance().shutdown();
+        MybatisUtil.closeQuietly();
+        App.sqlSession = null;
         App.mainFrame.dispose();
         System.exit(0);
     }

@@ -19,6 +19,8 @@ import com.luoboduner.moo.tool.ui.dialog.CommonTipsDialog;
 import com.luoboduner.moo.tool.ui.dialog.TranslationDialog;
 import com.luoboduner.moo.tool.ui.frame.ColorPickerFrame;
 import com.luoboduner.moo.tool.ui.listener.func.HostListener;
+import com.luoboduner.moo.tool.ui.startup.EdtGuard;
+import com.luoboduner.moo.tool.ui.startup.HostLoadData;
 import com.luoboduner.moo.tool.util.AlertUtil;
 import com.luoboduner.moo.tool.util.HostFileUtil;
 import com.luoboduner.moo.tool.util.I18n;
@@ -66,6 +68,8 @@ public class HostForm {
     private static HostForm hostForm;
 
     private static boolean i18nRegistered;
+
+    private static boolean viewShellInitialized;
 
     private static THostMapper hostMapper = MybatisUtil.getSqlSession().getMapper(THostMapper.class);
 
@@ -231,19 +235,134 @@ public class HostForm {
     }
 
     public static void init() {
-        hostForm = getInstance();
-        Init.initTray();
-
-        initUi();
+        createViewShell();
         initList();
+        startPageServices();
+    }
 
+    public static JPanel createViewShell() {
+        EdtGuard.assertEdt();
+        hostForm = getInstance();
+        if (viewShellInitialized) {
+            return hostForm.getHostPanel();
+        }
+        initUi();
         HostListener.addListeners();
-
         hostForm.applyI18n();
         if (!i18nRegistered) {
             I18nUiUtil.register(HostForm::applyI18nStatic);
             i18nRegistered = true;
         }
+        viewShellInitialized = true;
+        return hostForm.getHostPanel();
+    }
+
+    public static void bindLoadedData(HostLoadData data) {
+        EdtGuard.assertEdt();
+        if (data == null) {
+            initList();
+            return;
+        }
+        applyHostListData(data.getFilteredHosts(), data.getAllHosts());
+    }
+
+    public static void startPageServices() {
+        Init.initTray();
+    }
+
+    public static void applyHostListData(List<THost> filteredHosts, List<THost> allHosts) {
+        EdtGuard.assertEdt();
+        Init.initTray();
+        DefaultListModel<THost> model = new DefaultListModel<>();
+        JList<THost> noteList = hostForm.getNoteList();
+        noteList.setModel(model);
+        noteList.setCellRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                String label = value instanceof THost ? ((THost) value).getName() : String.valueOf(value);
+                return super.getListCellRendererComponent(list, label, index, isSelected, cellHasFocus);
+            }
+        });
+
+        List<THost> hostList = filteredHosts == null ? List.of() : filteredHosts;
+        for (THost tHost : hostList) {
+            model.addElement(tHost);
+        }
+
+        if (!hostList.isEmpty()) {
+            HostListener.ignoreQuickSave = true;
+            try {
+                HostListener.selectedNameHost = hostList.get(0).getName();
+                hostForm.getTextArea().setText(hostList.get(0).getContent());
+                noteList.setSelectedIndex(0);
+            } catch (Exception e1) {
+                log.error(e1.getMessage());
+            } finally {
+                HostListener.ignoreQuickSave = false;
+            }
+        }
+
+        if (model.getSize() > 0) {
+            noteList.setSelectedIndex(0);
+        }
+
+        rebuildTrayHostMenu(allHosts != null ? allHosts : hostList);
+    }
+
+    private static void rebuildTrayHostMenu(List<THost> hostList) {
+        if (SystemUtil.isLinuxOs() || App.popupMenu == null) {
+            return;
+        }
+        App.popupMenu.removeAll();
+        JMenuItem openItem = new JMenuItem("MooTool");
+        JMenuItem colorPickerItem = new JMenuItem(I18n.get("tray.colorPicker"));
+        JMenuItem translateItem = new JMenuItem(I18n.get("tray.translation"));
+        JMenuItem exitItem = new JMenuItem(I18n.get("common.quit"));
+
+        openItem.addActionListener(e -> Init.showMainFrame());
+        colorPickerItem.addActionListener(e -> {
+            GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+            GraphicsDevice gd = ge.getDefaultScreenDevice();
+            if (gd.isWindowTranslucencySupported(TRANSLUCENT)) {
+                App.mainFrame.setVisible(false);
+                ColorPickerFrame.showPicker();
+            }
+        });
+        translateItem.addActionListener(e -> {
+            TranslationDialog translationDialog = new TranslationDialog();
+            translationDialog.pack();
+            translationDialog.setVisible(true);
+        });
+        exitItem.addActionListener(e -> Init.shutdown());
+
+        App.popupMenu.add(openItem);
+        App.popupMenu.addSeparator();
+        App.popupMenu.add(colorPickerItem);
+        App.popupMenu.add(translateItem);
+        App.popupMenu.addSeparator();
+
+        for (THost tHost : hostList) {
+            JMenuItem menuItem = new JMenuItem(tHost.getName());
+            menuItem.addActionListener(e -> {
+                THost tHost1 = hostMapper.selectByName(tHost.getName());
+                String hostName = tHost1.getName();
+                setHost(hostName, tHost1.getContent());
+            });
+            App.popupMenu.add(menuItem);
+        }
+        App.popupMenu.addSeparator();
+        App.popupMenu.add(exitItem);
+
+        highlightHostMenu(App.config.getCurrentHostName());
+    }
+
+    public static void initList() {
+        String titleFilterKeyWord = hostForm.getSearchTextField().getText();
+        titleFilterKeyWord = "%" + titleFilterKeyWord + "%";
+        List<THost> filtered = hostMapper.selectByFilter(titleFilterKeyWord);
+        List<THost> all = SystemUtil.isLinuxOs() ? filtered : hostMapper.selectAll();
+        applyHostListData(filtered, all);
     }
 
     private void applyI18n() {
@@ -318,97 +437,6 @@ public class HostForm {
         hostForm.getTextArea().grabFocus();
 
         hostForm.getHostPanel().updateUI();
-    }
-
-    public static void initList() {
-        DefaultListModel<THost> model = new DefaultListModel<>();
-        JList<THost> noteList = hostForm.getNoteList();
-        noteList.setModel(model);
-        noteList.setCellRenderer(new DefaultListCellRenderer() {
-            @Override
-            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
-                                                          boolean isSelected, boolean cellHasFocus) {
-                String label = value instanceof THost ? ((THost) value).getName() : String.valueOf(value);
-                return super.getListCellRendererComponent(list, label, index, isSelected, cellHasFocus);
-            }
-        });
-
-        String titleFilterKeyWord = hostForm.getSearchTextField().getText();
-        titleFilterKeyWord = "%" + titleFilterKeyWord + "%";
-        List<THost> hostList = hostMapper.selectByFilter(titleFilterKeyWord);
-
-        for (THost tHost : hostList) {
-            model.addElement(tHost);
-        }
-
-        if (hostList.size() > 0) {
-            HostListener.ignoreQuickSave = true;
-            try {
-                HostListener.selectedNameHost = hostList.get(0).getName();
-                hostForm.getTextArea().setText(hostList.get(0).getContent());
-                noteList.setSelectedIndex(0);
-            } catch (Exception e1) {
-                log.error(e1.getMessage());
-            } finally {
-                HostListener.ignoreQuickSave = false;
-            }
-
-        }
-
-        if (model.getSize() > 0) {
-            noteList.setSelectedIndex(0);
-        }
-
-        // 更新系统托盘
-        if (!SystemUtil.isLinuxOs()) {
-            hostList = hostMapper.selectAll();
-            App.popupMenu.removeAll();
-            JMenuItem openItem = new JMenuItem("MooTool");
-            JMenuItem colorPickerItem = new JMenuItem(I18n.get("tray.colorPicker"));
-            JMenuItem translateItem = new JMenuItem(I18n.get("tray.translation"));
-            JMenuItem exitItem = new JMenuItem(I18n.get("common.quit"));
-
-            openItem.addActionListener(e -> {
-                Init.showMainFrame();
-            });
-            colorPickerItem.addActionListener(e -> {
-                GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-                GraphicsDevice gd = ge.getDefaultScreenDevice();
-                if (gd.isWindowTranslucencySupported(TRANSLUCENT)) {
-                    App.mainFrame.setVisible(false);
-                    ColorPickerFrame.showPicker();
-                }
-            });
-            translateItem.addActionListener(e -> {
-                TranslationDialog translationDialog = new TranslationDialog();
-                translationDialog.pack();
-                translationDialog.setVisible(true);
-            });
-            exitItem.addActionListener(e -> {
-                Init.shutdown();
-            });
-
-            App.popupMenu.add(openItem);
-            App.popupMenu.addSeparator();
-            App.popupMenu.add(colorPickerItem);
-            App.popupMenu.add(translateItem);
-            App.popupMenu.addSeparator();
-
-            JMenuItem menuItem;
-            for (THost tHost : hostList) {
-                menuItem = new JMenuItem(tHost.getName());
-                menuItem.addActionListener(e -> {
-                    THost tHost1 = hostMapper.selectByName(tHost.getName());
-                    String hostName = tHost1.getName();
-                    setHost(hostName, tHost1.getContent());
-                });
-                App.popupMenu.add(menuItem);
-            }
-            App.popupMenu.addSeparator();
-            App.popupMenu.add(exitItem);
-
-            highlightHostMenu(App.config.getCurrentHostName());
-        }
     }
 
     private static void highlightHostMenu(String hostName) {

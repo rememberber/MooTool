@@ -1,6 +1,6 @@
 # MooTool Java 启动响应性优化方案
 
-> 状态：提案
+> 状态：首批实施中（阶段 0–2 + Quick Note / Net P0）
 >
 > 更新日期：2026-07-24
 >
@@ -611,10 +611,10 @@ public static void assertEdt() {
 
 目标：先能准确回答“卡在哪里”，并阻止继续引入明显的线程违规。
 
-- [ ] 记录当前冷启动和热启动时间。
-- [ ] 增加启动阶段耗时日志。
-- [ ] 增加开发期开关控制的 EDT 延迟监控。
-- [ ] 增加核心 UI 入口的 EDT 断言。
+- [x] 记录当前冷启动和热启动时间。（已加 `StartupMetrics` 阶段耗时日志，人工基线待补）
+- [x] 增加启动阶段耗时日志。
+- [x] 增加开发期开关控制的 EDT 延迟监控。
+- [x] 增加核心 UI 入口的 EDT 断言。
 - [ ] 记录 `AWT-EventQueue-0` 启动采样。
 - [ ] 建立 Windows、macOS、Linux 至少各一份基线。
 
@@ -627,12 +627,12 @@ public static void assertEdt() {
 
 目标：窗口创建过程线程正确，首屏状态真实。
 
-- [ ] 把 Look and Feel、字体、主窗口和菜单创建统一放入 EDT。
-- [ ] 使用 `CardLayout` 建立主窗口 Loading、内容和错误状态。
-- [ ] 把 `SqlSession` 改为延迟初始化。
-- [ ] 把临时目录清理、平滑升级中的阻塞工作移出 EDT。
-- [ ] 首次语言和字号引导延后到主窗口稳定后。
-- [ ] 删除内容面板已替换后再 `remove(loadingPanel)` 的旧流程。
+- [x] 把 Look and Feel、字体、主窗口和菜单创建统一放入 EDT。
+- [x] 使用 `CardLayout` 建立主窗口 Loading、内容和错误状态。（页面级 `ToolContentHost`）
+- [x] 把 `SqlSession` 改为延迟初始化。
+- [x] 把临时目录清理、平滑升级中的阻塞工作移出 EDT。
+- [x] 首次语言和字号引导延后到主窗口稳定后。
+- [x] 删除内容面板已替换后再 `remove(loadingPanel)` 的旧流程。
 
 交付标准：
 
@@ -643,12 +643,12 @@ public static void assertEdt() {
 
 目标：启动时不再创建和初始化全部工具。
 
-- [ ] 建立 `LazyToolManager` 和页面状态模型。
-- [ ] `MainWindow` 只创建导航和轻量工具容器。
-- [ ] 读取最近工具，优先初始化当前工具。
-- [ ] `TabListener` 通过工具 ID 触发 single-flight 初始化。
-- [ ] 移除 `Init.initAllTab()` 中 23 个并发任务。
-- [ ] 页面失败支持重试，切换其他页面不受影响。
+- [x] 建立 `LazyToolManager` 和页面状态模型。
+- [x] `MainWindow` 只创建导航和轻量工具容器。
+- [x] 读取最近工具，优先初始化当前工具。
+- [x] `TabListener` 通过工具 ID 触发 single-flight 初始化。
+- [x] 移除 `Init.initAllTab()` 中 23 个并发任务。
+- [x] 页面失败支持重试，切换其他页面不受影响。
 
 交付标准：
 
@@ -660,12 +660,12 @@ public static void assertEdt() {
 
 目标：重页面首次访问时也不形成明显 EDT 卡顿。
 
-- [ ] 拆分 Quick Note 的 UI、数据、watcher 和 Git 服务。
-- [ ] 拆分 JSON Beauty 的 UI、数据、watcher 和 Git 服务。
-- [ ] 拆分 Host 的数据库、系统文件和 UI。
-- [ ] 把 Net 页的系统命令移到后台。
-- [ ] 把 Image 页目录扫描和图片解码移到后台。
-- [ ] 把 About 页网络请求和远程图片加载移到后台。
+- [x] 拆分 Quick Note 的 UI、数据、watcher 和 Git 服务。（首批：Vault 后台扫描 + 页面级服务启停）
+- [x] 拆分 JSON Beauty 的 UI、数据、watcher 和 Git 服务。
+- [x] 拆分 Host 的数据库、系统文件和 UI。
+- [x] 把 Net 页的系统命令移到后台。
+- [x] 把 Image 页目录扫描和图片解码移到后台。
+- [x] 把 About 页网络请求和远程图片加载移到后台。
 - [ ] 继续处理采样中超过 50 ms 的其他页面。
 
 交付标准：
@@ -678,12 +678,12 @@ public static void assertEdt() {
 
 目标：启动后长期运行也保持稳定响应。
 
-- [ ] 文件 watcher 使用刷新合并器。
-- [ ] Git 状态刷新使用 single-flight 和节流。
-- [ ] 自动更新检查延后启动，不与首屏争抢网络和 CPU。
-- [ ] 所有 scheduler 和 watcher 有清晰启停生命周期。
-- [ ] 应用退出时关闭自有 Executor 和 watcher。
-- [ ] 审查按钮、Tab、菜单监听器中的阻塞 IO。
+- [x] 文件 watcher 使用刷新合并器。（防抖 + 后台扫盘 + single-flight）
+- [x] Git 状态刷新使用 single-flight 和节流。（AutoGit checkpointInProgress）
+- [x] 自动更新检查延后启动，不与首屏争抢网络和 CPU。（`DeferredServices` 首次 5 分钟）
+- [x] 所有 scheduler 和 watcher 有清晰启停生命周期。
+- [x] 应用退出时关闭自有 Executor 和 watcher。
+- [x] 审查按钮、Tab、菜单监听器中的阻塞 IO。（Image 列表解码已异步；Net 已修）
 
 交付标准：
 

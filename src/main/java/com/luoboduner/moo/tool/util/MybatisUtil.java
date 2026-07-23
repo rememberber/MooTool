@@ -80,6 +80,23 @@ public class MybatisUtil {
         MybatisUtil.sqlSession = sqlSession;
     }
 
+    public static void closeQuietly() {
+        if (sqlSession == null) {
+            return;
+        }
+        synchronized (MybatisUtil.class) {
+            if (sqlSession != null) {
+                try {
+                    sqlSession.close();
+                } catch (Exception e) {
+                    log.warn("close sqlSession failed: {}", e.toString());
+                } finally {
+                    sqlSession = null;
+                }
+            }
+        }
+    }
+
     /**
      * 初始化数据库文件
      */
