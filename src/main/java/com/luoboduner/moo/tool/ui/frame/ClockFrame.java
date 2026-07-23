@@ -46,9 +46,11 @@ public class ClockFrame extends JFrame {
         ThreadUtil.execute(() -> {
             while (true) {
                 Date now = new Date();
-                cloockForm.getTimeLabel().setText(DateFormatUtils.format(now, "HH:mm"));
+                SwingUtilities.invokeLater(()->{
+                    cloockForm.getTimeLabel().setText(DateFormatUtils.format(now, "HH:mm"));
 //                cloockForm.getDateLabel().setText(DateFormatUtils.format(now, "yyyy-MM-dd"));
-                cloockForm.getSecondProgressBar().setValue(now.getSeconds());
+                    cloockForm.getSecondProgressBar().setValue(now.getSeconds());
+                });
                 ThreadUtil.safeSleep(1000);
             }
         });

@@ -232,8 +232,10 @@ public class TimeConvertForm {
 
         ThreadUtil.execute(() -> {
             while (true) {
-                timeConvertForm.getCurrentTimestampLabel().setText(String.valueOf(System.currentTimeMillis() / 1000));
-                timeConvertForm.getCurrentGmtLabel().setText(DateFormatUtils.format(new Date(), TIME_FORMAT));
+                SwingUtilities.invokeLater(() -> {
+                    timeConvertForm.getCurrentTimestampLabel().setText(String.valueOf(System.currentTimeMillis() / 1000));
+                    timeConvertForm.getCurrentGmtLabel().setText(DateFormatUtils.format(new Date(), TIME_FORMAT));
+                });
                 ThreadUtil.safeSleep(1000);
             }
         });
