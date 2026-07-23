@@ -11,6 +11,7 @@ import com.luoboduner.moo.tool.dao.TFuncContentMapper;
 import com.luoboduner.moo.tool.domain.TFuncContent;
 import com.luoboduner.moo.tool.ui.FuncConsts;
 import com.luoboduner.moo.tool.ui.Style;
+import com.luoboduner.moo.tool.ui.component.SplitPaneUtil;
 import com.luoboduner.moo.tool.ui.listener.func.TimeConvertListener;
 import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.I18nUiUtil;
@@ -263,7 +264,7 @@ public class TimeConvertForm {
         timeConvertForm.getToLocalTimeButton().setIcon(new FlatSVGIcon("icon/down.svg"));
         timeConvertForm.getClockButton().setIcon(new FlatSVGIcon("icon/full_screen.svg"));
 
-        timeConvertForm.getSplitPane().setDividerLocation((int) (timeConvertForm.getSplitPane().getWidth() * 0.62));
+        SplitPaneUtil.setDividerProportion(timeConvertForm.getSplitPane(), 0.62);
 
         ScrollUtil.smoothPane(timeConvertForm.getLeftScrollPane());
 

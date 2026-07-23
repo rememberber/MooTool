@@ -2,6 +2,8 @@ package com.luoboduner.moo.tool.ui.component;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.ComponentAdapter;
+import java.awt.event.ComponentEvent;
 
 /**
  * JSplitPane 布局辅助：按面板自身宽度比例设置分隔条，避免用主窗口像素导致内容区被裁切。
@@ -39,14 +41,38 @@ public final class SplitPaneUtil {
         setDividerProportion(splitPane, Math.max(0, Math.min(1, 1.0 - secondaryRatio)));
     }
 
+    /**
+     * 按比例设置分隔条。懒加载场景下面板可能尚未完成布局（宽高为 0），
+     * 会延后到首次有效尺寸时再应用，避免比例被算成 0。
+     */
     public static void setDividerProportion(JSplitPane splitPane, double proportion) {
         double location = Math.max(0, Math.min(1, proportion));
-        Runnable apply = () -> splitPane.setDividerLocation(location);
-        if (splitPane.getWidth() > 0) {
-            apply.run();
-        } else {
-            SwingUtilities.invokeLater(apply);
+        if (applyDividerProportion(splitPane, location)) {
+            return;
         }
+        SwingUtilities.invokeLater(() -> {
+            if (applyDividerProportion(splitPane, location)) {
+                return;
+            }
+            splitPane.addComponentListener(new ComponentAdapter() {
+                @Override
+                public void componentResized(ComponentEvent e) {
+                    if (applyDividerProportion(splitPane, location)) {
+                        splitPane.removeComponentListener(this);
+                    }
+                }
+            });
+        });
+    }
+
+    private static boolean applyDividerProportion(JSplitPane splitPane, double proportion) {
+        boolean vertical = splitPane.getOrientation() == JSplitPane.VERTICAL_SPLIT;
+        int size = vertical ? splitPane.getHeight() : splitPane.getWidth();
+        if (size <= splitPane.getDividerSize()) {
+            return false;
+        }
+        splitPane.setDividerLocation(proportion);
+        return true;
     }
 
     public static void relaxHorizontalMinimum(JComponent... components) {
