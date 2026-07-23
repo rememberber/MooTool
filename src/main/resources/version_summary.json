@@ -1,5 +1,5 @@
 {
-  "currentVersion": "v1.8.1",
+  "currentVersion": "v1.8.2",
   "versionIndex": {
     "v0.0.0": "0",
     "v1.0.0": "1",
@@ -52,7 +52,8 @@
     "v1.7.8": "48",
     "v1.7.9": "49",
     "v1.8.0": "50",
-    "v1.8.1": "51"
+    "v1.8.1": "51",
+    "v1.8.2": "52"
   },
   "versionDetailList": [
     {
@@ -326,6 +327,15 @@
       "logEn": "● fix: [Release] Build the macOS Intel installer on a GitHub-hosted runner instead of depending on a local runner\n● opt: [Release] Automatically build and publish installers for macOS Intel, Apple Silicon, Windows x64, and Linux x64 when a release tag is created\n\n",
       "titleJa": "リリースパイプラインの信頼性を改善",
       "logJa": "● fix: 【リリース】macOS Intel インストーラーを GitHub ホスト runner でビルドし、ローカル runner への依存を解消\n● opt: 【リリース】リリースタグ作成時に macOS Intel、Apple Silicon、Windows x64、Linux x64 のインストーラーを自動でビルド・公開\n\n"
+    },
+    {
+      "version": "v1.8.2",
+      "title": "启动性能优化与体验修复",
+      "log": "● opt：【全局】优化启动策略，功能页按需懒加载，加快应用启动并减少启动卡顿\n● fix：【时间转换/时钟】修复在工作线程中直接更新 UI 数据的问题\n● fix：【设置】修复字号初始化时的空指针异常\n● opt：【更新】定时检查更新频率调整为每小时一次\n● opt：【更新】安装提示悬停时可查看更新内容详情\n\n",
+      "titleEn": "Startup performance improvements and experience fixes",
+      "logEn": "● opt: [Global] Optimized the startup strategy with on-demand lazy loading of feature tabs to speed up launch and reduce startup freezes\n● fix: [Time Convert/Clock] Fixed updating UI data directly from worker threads\n● fix: [Settings] Fixed a null pointer exception during font size initialization\n● opt: [Update] Changed the scheduled update check frequency to once per hour\n● opt: [Update] Hovering the install prompt now shows update details\n\n",
+      "titleJa": "起動パフォーマンス改善と体験修正",
+      "logJa": "● opt: 【全体】起動戦略を最適化し、機能タブを必要時に遅延読み込みすることで起動を高速化し、起動時のカクつきを軽減\n● fix: 【時間変換／時計】ワーカースレッドから UI データを直接更新していた問題を修正\n● fix: 【設定】フォントサイズ初期化時の NullPointerException を修正\n● opt: 【更新】定期的な更新チェック頻度を 1 時間に 1 回に変更\n● opt: 【更新】インストール案内にマウスを乗せると更新内容の詳細を表示\n\n"
     }
   ]
 }
