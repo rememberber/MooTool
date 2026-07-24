@@ -117,7 +117,7 @@
     ],
     "extraResources": [
       {
-        "from": "resources/icon.png",
+        "from": "resources/tray-icon.png",
         "to": "tray-icon.png"
       }
     ],

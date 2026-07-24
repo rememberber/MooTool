@@ -261,9 +261,9 @@ function detectUpdatePackageType(): string | undefined {
   }
 }
 
-function getIconPath(): string {
+function getTrayIconPath(): string {
   if (!app.isPackaged) {
-    return join(__dirname, '../../resources', 'icon.png')
+    return join(__dirname, '../../resources', 'tray-icon.png')
   }
   return join(process.resourcesPath, 'tray-icon.png')
 }
@@ -1773,9 +1773,11 @@ function updateTray(settings: AppSettings): void {
   }
 
   if (!tray) {
-    const trayImage = nativeImage.createFromPath(getIconPath())
+    const traySize = process.platform === 'darwin' ? 18 : 20
+    const trayImage = nativeImage.createFromPath(getTrayIconPath()).resize({ width: traySize, height: traySize })
     if (trayImage.isEmpty()) return
-    tray = new Tray(trayImage.resize({ width: process.platform === 'darwin' ? 18 : 20, height: process.platform === 'darwin' ? 18 : 20 }))
+    if (process.platform === 'darwin') trayImage.setTemplateImage(true)
+    tray = new Tray(trayImage)
     tray.setToolTip('MooTool')
     tray.on('click', showMainWindow)
   }

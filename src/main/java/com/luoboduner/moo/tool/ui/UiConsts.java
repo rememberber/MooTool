@@ -54,6 +54,12 @@ public class UiConsts {
             .getImage(UiConsts.class.getResource("/icon/logo-64.png"));
 
     /**
+     * Tray icon-64*64
+     */
+    public static final Image IMAGE_TRAY_64 = Toolkit.getDefaultToolkit()
+            .getImage(UiConsts.class.getResource("/icon/tray-64.png"));
+
+    /**
      * Logo-48*48
      */
     public static final Image IMAGE_LOGO_48 = Toolkit.getDefaultToolkit()

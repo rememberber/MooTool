@@ -337,7 +337,7 @@ public class Init {
                 App.popupMenu.addSeparator();
                 App.popupMenu.add(exitItem);
 
-                App.trayIcon = new TrayIcon(UiConsts.IMAGE_LOGO_64, "MooTool");
+                App.trayIcon = new TrayIcon(UiConsts.IMAGE_TRAY_64, "MooTool");
                 App.trayIcon.setImageAutoSize(true);
 
                 App.trayIcon.addActionListener(e -> {
