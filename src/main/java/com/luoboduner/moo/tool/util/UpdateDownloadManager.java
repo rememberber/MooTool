@@ -12,11 +12,11 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
-import java.awt.*;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 /**
@@ -105,16 +105,66 @@ public class UpdateDownloadManager {
     }
 
     public void installAndExit() {
-        File file = downloadedFile;
+        openPackageAndExit(downloadedFile);
+    }
+
+    /**
+     * 打开已下载的安装包后退出应用。
+     * <p>
+     * 不使用 {@link java.awt.Desktop#open(File)} 后立刻 {@link System#exit(int)}：
+     * AWT 的 open 只是异步提交打开请求，JVM 硬退出会打断系统交接，
+     * 表现为应用已退出但安装包/DMG 未真正打开。
+     */
+    public static void openPackageAndExit(File file) {
         if (file == null || !file.exists()) {
             throw new IllegalStateException("update package missing");
         }
         try {
-            Desktop.getDesktop().open(file);
+            openPackage(file);
+            // open/xdg-open/start 返回后仍给系统一点交接时间，再退出 JVM
+            Thread.sleep(500);
             System.exit(0);
         } catch (IOException e) {
             throw new IllegalStateException(e.getMessage(), e);
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            System.exit(0);
         }
+    }
+
+    /**
+     * 用各平台原生命令打开安装包，并等待命令成功返回。
+     */
+    static void openPackage(File file) throws IOException {
+        String path = file.getAbsolutePath();
+        ProcessBuilder pb = new ProcessBuilder(buildOpenCommand(path));
+        pb.redirectOutput(ProcessBuilder.Redirect.DISCARD);
+        pb.redirectError(ProcessBuilder.Redirect.DISCARD);
+        Process process = pb.start();
+        try {
+            boolean finished = process.waitFor(5, TimeUnit.SECONDS);
+            if (finished && process.exitValue() != 0) {
+                throw new IOException("open update package failed, exitCode=" + process.exitValue());
+            }
+            if (!finished) {
+                // start/open 一般会很快返回；超时则视为已提交，继续退出流程
+                log.warn("open update package still running after timeout: {}", path);
+            }
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+            throw new IOException("interrupted while opening update package", e);
+        }
+    }
+
+    static String[] buildOpenCommand(String absolutePath) {
+        if (SystemUtil.isMacOs()) {
+            return new String[]{"open", absolutePath};
+        }
+        if (SystemUtil.isWindowsOs()) {
+            // start 的第一个引号参数是窗口标题；空标题可正确处理带空格路径，并脱离当前 JVM
+            return new String[]{"cmd", "/c", "start", "", absolutePath};
+        }
+        return new String[]{"xdg-open", absolutePath};
     }
 
     private void download(String newVersion) {

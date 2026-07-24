@@ -18,6 +18,7 @@ import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.MsgUtil;
 import com.luoboduner.moo.tool.util.DownloadLinkSelector;
 import com.luoboduner.moo.tool.util.SystemUtil;
+import com.luoboduner.moo.tool.util.UpdateDownloadManager;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.*;
@@ -162,11 +163,10 @@ public class UpdateDialog extends JDialog {
 
     private void onOK() {
         try {
-            Desktop.getDesktop().open(downLoadFile);
-            dispose();
-            System.exit(0);
-        } catch (IOException e) {
+            UpdateDownloadManager.openPackageAndExit(downLoadFile);
+        } catch (Exception e) {
             e.printStackTrace();
+            MsgUtil.show(this, e.getMessage(), "common.failure", JOptionPane.ERROR_MESSAGE);
         }
     }
 
