@@ -1,5 +1,5 @@
 {
-  "currentVersion": "v1.8.2",
+  "currentVersion": "v1.8.3",
   "versionIndex": {
     "v0.0.0": "0",
     "v1.0.0": "1",
@@ -53,7 +53,8 @@
     "v1.7.9": "49",
     "v1.8.0": "50",
     "v1.8.1": "51",
-    "v1.8.2": "52"
+    "v1.8.2": "52",
+    "v1.8.3": "53"
   },
   "versionDetailList": [
     {
@@ -336,6 +337,15 @@
       "logEn": "● opt: [Global] Optimized the startup strategy with on-demand lazy loading of feature tabs to speed up launch and reduce startup freezes\n● fix: [Time Convert/Clock] Fixed updating UI data directly from worker threads\n● fix: [Settings] Fixed a null pointer exception during font size initialization\n● opt: [Update] Changed the scheduled update check frequency to once per hour\n● opt: [Update] Hovering the install prompt now shows update details\n\n",
       "titleJa": "起動パフォーマンス改善と体験修正",
       "logJa": "● opt: 【全体】起動戦略を最適化し、機能タブを必要時に遅延読み込みすることで起動を高速化し、起動時のカクつきを軽減\n● fix: 【時間変換／時計】ワーカースレッドから UI データを直接更新していた問題を修正\n● fix: 【設定】フォントサイズ初期化時の NullPointerException を修正\n● opt: 【更新】定期的な更新チェック頻度を 1 時間に 1 回に変更\n● opt: 【更新】インストール案内にマウスを乗せると更新内容の詳細を表示\n\n"
+    },
+    {
+      "version": "v1.8.3",
+      "title": "更新检查与安装流程修复",
+      "log": "● fix：【更新】修复菜单栏「检查更新」点击无响应的问题\n● fix：【更新】修复下载完成后点击「了解并安装」仅退出应用、未真正启动安装的问题\n\n",
+      "titleEn": "Update check and install flow fixes",
+      "logEn": "● fix: [Update] Fixed the menu bar \"Check for Updates\" option not responding when clicked\n● fix: [Update] Fixed the issue where clicking \"Understand and Install\" after download only closed the app without starting installation\n\n",
+      "titleJa": "更新チェックとインストール手順の修正",
+      "logJa": "● fix: 【更新】メニューバーの「更新を確認」をクリックしても反応しない問題を修正\n● fix: 【更新】ダウンロード完了後に「了解してインストール」をクリックするとアプリが終了するだけで、インストールが開始されない問題を修正\n\n"
     }
   ]
 }
