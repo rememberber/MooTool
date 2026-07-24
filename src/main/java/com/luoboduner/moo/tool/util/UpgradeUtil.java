@@ -1,6 +1,7 @@
 package com.luoboduner.moo.tool.util;
 
 import cn.hutool.core.io.FileUtil;
+import cn.hutool.core.thread.ThreadUtil;
 import cn.hutool.core.util.CharsetUtil;
 import cn.hutool.http.HttpUtil;
 import com.alibaba.fastjson.JSON;
@@ -11,8 +12,6 @@ import com.luoboduner.moo.tool.domain.TQuickNote;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.dialog.SupportMeDialog;
 import com.luoboduner.moo.tool.ui.dialog.UpdateInfoDialog;
-import com.luoboduner.moo.tool.util.I18n;
-import com.luoboduner.moo.tool.util.MsgUtil;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants;
@@ -24,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * <pre>
@@ -35,6 +35,9 @@ import java.util.Map;
  */
 @Slf4j
 public class UpgradeUtil {
+    private static final int CHECK_TIMEOUT_MS = 10_000;
+    private static final AtomicBoolean MANUAL_CHECKING = new AtomicBoolean(false);
+
     private static TQuickNoteMapper quickNoteMapper() {
         return MybatisUtil.getSqlSession().getMapper(TQuickNoteMapper.class);
     }
@@ -73,17 +76,48 @@ public class UpgradeUtil {
         return changes;
     }
 
+    /**
+     * 检查更新。网络请求在后台线程执行，提示对话框在 EDT 弹出。
+     *
+     * @param initCheck true 表示启动后自动检查（已是最新时不打扰）；false 表示用户手动检查（始终给出结果反馈）
+     */
     public static void checkUpdate(boolean initCheck) {
-        // 当前版本
+        if (!initCheck && !MANUAL_CHECKING.compareAndSet(false, true)) {
+            return;
+        }
+        ThreadUtil.execute(() -> {
+            try {
+                doCheckUpdate(initCheck);
+            } catch (Exception e) {
+                log.error("检查更新失败", e);
+                if (!initCheck) {
+                    showMessage(I18n.get("msg.upgradeCheckTimeout"), "msg.upgradeNetworkError");
+                }
+            } finally {
+                if (!initCheck) {
+                    MANUAL_CHECKING.set(false);
+                }
+            }
+        });
+    }
+
+    private static void doCheckUpdate(boolean initCheck) {
         String currentVersion = UiConsts.APP_VERSION;
 
-        // 从github获取最新版本相关信息
-        String versionSummaryJsonContent = HttpUtil.get(UiConsts.CHECK_VERSION_URL);
-        if (StringUtils.isEmpty(versionSummaryJsonContent) && !initCheck) {
-            MsgUtil.show(App.mainFrame, I18n.get("msg.upgradeCheckTimeout"), "msg.upgradeNetworkError",
-                    JOptionPane.INFORMATION_MESSAGE);
+        String versionSummaryJsonContent;
+        try {
+            versionSummaryJsonContent = HttpUtil.get(UiConsts.CHECK_VERSION_URL, CHECK_TIMEOUT_MS);
+        } catch (Exception e) {
+            log.error("检查更新网络请求失败", e);
+            if (!initCheck) {
+                showMessage(I18n.get("msg.upgradeCheckTimeout"), "msg.upgradeNetworkError");
+            }
             return;
-        } else if (StringUtils.isEmpty(versionSummaryJsonContent) || versionSummaryJsonContent.contains("404: Not Found")) {
+        }
+        if (StringUtils.isEmpty(versionSummaryJsonContent) || versionSummaryJsonContent.contains("404: Not Found")) {
+            if (!initCheck) {
+                showMessage(I18n.get("msg.upgradeCheckTimeout"), "msg.upgradeNetworkError");
+            }
             return;
         }
         versionSummaryJsonContent = versionSummaryJsonContent.replace("\n", "");
@@ -95,6 +129,9 @@ public class UpgradeUtil {
             versionChanges = versionChangesAfter(versionSummary, currentVersion);
         } catch (IllegalStateException | NumberFormatException e) {
             log.error("检查更新时版本配置异常", e);
+            if (!initCheck) {
+                showMessage(I18n.get("msg.upgradeCheckFailed"), "common.failure");
+            }
             return;
         }
 
@@ -106,17 +143,22 @@ public class UpgradeUtil {
                 return;
             }
 
-            UpdateInfoDialog updateInfoDialog = new UpdateInfoDialog();
-            updateInfoDialog.setHtmlText(buildVersionChangesHtml(versionChanges, "msg.upgradeNewVersion"));
-            updateInfoDialog.setNewVersion(newVersion);
-            updateInfoDialog.pack();
-            updateInfoDialog.setVisible(true);
-        } else {
-            if (!initCheck) {
-                MsgUtil.show(App.mainFrame, I18n.get("msg.upgradeLatest"), "msg.upgradeCongrats",
-                        JOptionPane.INFORMATION_MESSAGE);
-            }
+            String html = buildVersionChangesHtml(versionChanges, "msg.upgradeNewVersion");
+            SwingUtilities.invokeLater(() -> {
+                UpdateInfoDialog updateInfoDialog = new UpdateInfoDialog();
+                updateInfoDialog.setHtmlText(html);
+                updateInfoDialog.setNewVersion(newVersion);
+                updateInfoDialog.pack();
+                updateInfoDialog.setVisible(true);
+            });
+        } else if (!initCheck) {
+            showMessage(I18n.get("msg.upgradeLatest"), "msg.upgradeCongrats");
         }
+    }
+
+    private static void showMessage(String message, String titleKey) {
+        SwingUtilities.invokeLater(() ->
+                MsgUtil.show(App.mainFrame, message, titleKey, JOptionPane.INFORMATION_MESSAGE));
     }
 
     static String buildVersionChangesHtml(List<VersionSummary.Version> versionChanges, String titleKey) {

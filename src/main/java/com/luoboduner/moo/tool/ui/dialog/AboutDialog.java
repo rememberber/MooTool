@@ -1,6 +1,5 @@
 package com.luoboduner.moo.tool.ui.dialog;
 
-import cn.hutool.core.thread.ThreadUtil;
 import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.formdev.flatlaf.util.SystemInfo;
 import com.intellij.uiDesigner.core.GridConstraints;
@@ -323,7 +322,7 @@ public class AboutDialog extends JDialog {
             @Override
             public void mousePressed(MouseEvent e) {
                 super.mousePressed(e);
-                ThreadUtil.execute(() -> UpgradeUtil.checkUpdate(false));
+                UpgradeUtil.checkUpdate(false);
             }
 
             @Override

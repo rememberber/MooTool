@@ -1,6 +1,5 @@
 package com.luoboduner.moo.tool.ui.listener;
 
-import cn.hutool.core.thread.ThreadUtil;
 import com.luoboduner.moo.tool.ui.form.AboutForm;
 import com.luoboduner.moo.tool.util.UpgradeUtil;
 
@@ -190,7 +189,7 @@ public class AboutListener {
             @Override
             public void mousePressed(MouseEvent e) {
                 super.mousePressed(e);
-                ThreadUtil.execute(() -> UpgradeUtil.checkUpdate(false));
+                UpgradeUtil.checkUpdate(false);
             }
 
             @Override

@@ -14,6 +14,9 @@ import javax.swing.SwingUtilities;
 /**
  * 向 macOS 原生应用菜单（菜单栏应用名对应菜单）插入自定义项。
  * Swing 的 JMenuBar 与 Cocoa 应用菜单是两套机制，不能靠第一个 JMenu 合并进去。
+ * <p>
+ * 注意：{@link NSMenuItem#setTarget(ID)} 是弱引用；JNA {@link Callback} 也必须由 Java 侧强引用保住，
+ * 否则 GC / autorelease pool drain 后点击菜单无任何反应。
  */
 @Slf4j
 public final class MacApplicationMenuUtil {
@@ -23,6 +26,12 @@ public final class MacApplicationMenuUtil {
     private static volatile boolean handlerRegistered;
     private static volatile boolean menuInstalled;
     private static volatile NSMenuItem checkUpdateMenuItem;
+
+    /** 必须静态持有，防止 JNA Callback 被 GC。 */
+    private static Callback checkUpdateCallback;
+
+    /** 必须静态持有并 retain：NSMenuItem.target 是弱引用。 */
+    private static ID checkUpdateHandler;
 
     private MacApplicationMenuUtil() {
     }
@@ -51,11 +60,6 @@ public final class MacApplicationMenuUtil {
     }
 
     private static void installOnAppKitThread() {
-        if (menuInstalled) {
-            refreshCheckForUpdatesMenuTitle();
-            return;
-        }
-
         Foundation.NSAutoreleasePool pool = new Foundation.NSAutoreleasePool();
         try {
             NSMenu mainMenu = NSApplication.sharedApplication().mainMenu();
@@ -70,9 +74,16 @@ public final class MacApplicationMenuUtil {
 
             NSMenu appMenu = appMenuHolder.submenu();
             String title = I18n.get("menu.checkUpdate");
-            if (findMenuItemIndex(appMenu, title) >= 0) {
-                menuInstalled = true;
+
+            if (menuInstalled && checkUpdateMenuItem != null) {
+                checkUpdateMenuItem.setTitle(title);
                 return;
+            }
+
+            int existingIndex = findMenuItemIndex(appMenu, title);
+            if (existingIndex >= 0) {
+                // 已有同名项但可能 target 已失效，替换为可点击的新项
+                appMenu.removeItemAtIndex(existingIndex);
             }
 
             NSMenuItem item = createCheckUpdateMenuItem(title);
@@ -119,19 +130,18 @@ public final class MacApplicationMenuUtil {
 
     private static NSMenuItem createCheckUpdateMenuItem(String title) {
         ensureHandlerRegistered();
-        if (!handlerRegistered) {
+        if (!handlerRegistered || checkUpdateHandler == null || ID.NIL.equals(checkUpdateHandler)) {
             return null;
         }
 
-        ID handler = Foundation.invoke(HANDLER_CLASS, "new");
         Pointer selector = Foundation.createSelector("checkForUpdates:");
         NSMenuItem item = NSMenuItem.alloc().initWithTitle(title, selector, "");
-        item.setTarget(handler);
+        item.setTarget(checkUpdateHandler);
         return item;
     }
 
     private static synchronized void ensureHandlerRegistered() {
-        if (handlerRegistered) {
+        if (handlerRegistered && checkUpdateHandler != null && !ID.NIL.equals(checkUpdateHandler)) {
             return;
         }
 
@@ -142,17 +152,30 @@ public final class MacApplicationMenuUtil {
                 return;
             }
 
-            Callback callback = new Callback() {
+            // 静态字段强引用，避免 JNA Callback 被 GC 后原生点击空回调
+            checkUpdateCallback = new Callback() {
                 @SuppressWarnings("unused")
                 public void callback(ID self, Pointer sel, ID sender) {
+                    // AppKit 主线程回调，切回 EDT 再启动检查更新
                     SwingUtilities.invokeLater(() -> UpgradeUtil.checkUpdate(false));
                 }
             };
-            if (!Foundation.addMethod(handlerClass, Foundation.createSelector("checkForUpdates:"), callback, "v@:@")) {
+            if (!Foundation.addMethod(handlerClass, Foundation.createSelector("checkForUpdates:"), checkUpdateCallback, "v@:@")) {
                 log.error("Failed to register macOS checkForUpdates: callback");
+                checkUpdateCallback = null;
                 return;
             }
             Foundation.registerObjcClassPair(handlerClass);
+        }
+
+        if (checkUpdateHandler == null || ID.NIL.equals(checkUpdateHandler)) {
+            checkUpdateHandler = Foundation.invoke(HANDLER_CLASS, "new");
+            if (checkUpdateHandler == null || ID.NIL.equals(checkUpdateHandler)) {
+                log.error("Failed to create macOS checkForUpdates handler instance");
+                return;
+            }
+            // NSMenuItem.target 是弱引用，必须额外 retain，否则 pool.drain 后 target 失效
+            Foundation.invoke(checkUpdateHandler, "retain");
         }
         handlerRegistered = true;
     }
