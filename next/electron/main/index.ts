@@ -1773,7 +1773,7 @@ function updateTray(settings: AppSettings): void {
   }
 
   if (!tray) {
-    const traySize = process.platform === 'darwin' ? 18 : 20
+    const traySize = process.platform === 'darwin' ? 20 : 24
     const trayImage = nativeImage.createFromPath(getTrayIconPath()).resize({ width: traySize, height: traySize })
     if (trayImage.isEmpty()) return
     if (process.platform === 'darwin') trayImage.setTemplateImage(true)

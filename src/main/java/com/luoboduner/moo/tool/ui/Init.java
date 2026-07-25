@@ -299,8 +299,12 @@ public class Init {
     public static void initTray() {
 
         try {
-            if (SystemTray.isSupported() && App.tray == null) {
-                App.tray = SystemTray.getSystemTray();
+            if (!SystemTray.isSupported()) {
+                logger.warn("System tray is not supported");
+                return;
+            }
+            if (App.trayIcon == null) {
+                SystemTray tray = App.tray != null ? App.tray : SystemTray.getSystemTray();
 
                 App.popupMenu = new JPopupMenu();
 //                App.popupMenu.setFont(App.mainFrame.getContentPane().getFont());
@@ -337,20 +341,23 @@ public class Init {
                 App.popupMenu.addSeparator();
                 App.popupMenu.add(exitItem);
 
-                App.trayIcon = new TrayIcon(UiConsts.IMAGE_TRAY_64, "MooTool");
-                App.trayIcon.setImageAutoSize(true);
+                TrayIcon trayIcon = new TrayIcon(UiConsts.IMAGE_TRAY_64, "MooTool");
+                trayIcon.setImageAutoSize(true);
 
-                App.trayIcon.addActionListener(e -> {
+                trayIcon.addActionListener(e -> {
                     App.mainFrame.setVisible(true);
                     App.mainFrame.setExtendedState(JFrame.NORMAL);
                     App.mainFrame.requestFocus();
                 });
 
                 JPopupMenuMouseAdapter jPopupMenuMouseAdapter = new JPopupMenuMouseAdapter(App.popupMenu);
-                App.trayIcon.addMouseListener(jPopupMenuMouseAdapter);
+                trayIcon.addMouseListener(jPopupMenuMouseAdapter);
 
                 try {
-                    App.tray.add(App.trayIcon);
+                    tray.add(trayIcon);
+                    App.tray = tray;
+                    App.trayIcon = trayIcon;
+                    logger.info("System tray icon initialized");
                 } catch (AWTException e) {
                     e.printStackTrace();
                     logger.error(ExceptionUtils.getStackTrace(e));

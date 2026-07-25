@@ -62,6 +62,7 @@ public final class StartupCoordinator {
         started = true;
         phase.set(StartupPhase.SHELL_VISIBLE);
         StartupMetrics.mark("mainFrame.visible");
+        Init.initTray();
 
         phase.set(StartupPhase.CRITICAL_LOADING);
         StartupMetrics.mark("critical.loading");
