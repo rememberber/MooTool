@@ -9515,3 +9515,467 @@ textarea:focus {
   color: var(--text-body);
   background: var(--surface-card);
 }
+
+/*
+ * Smartisan OS interface style
+ *
+ * Warm neutral chrome, fine separators and tactile raised/inset controls echo
+ * Smartisan's deliberately physical UI without changing MooTool's layout.
+ */
+:root[data-interface-style='smartisan'] {
+  color: #3f3b36;
+  background: #dedbd5;
+  --sidebar: #e9e7e2;
+  --surface: #f5f3ef;
+  --workspace: #dedbd5;
+  --surface-soft: #ebe8e2;
+  --surface-card: #e6e3dd;
+  --surface-card-hover: #d9d5ce;
+  --surface-elevated: rgba(246, 244, 240, 0.96);
+  --surface-command: rgba(245, 243, 239, 0.96);
+  --toolbar: #e9e6e0;
+  --control: #e5e1da;
+  --control-hover: rgba(73, 67, 60, 0.09);
+  --control-hover-soft: rgba(73, 67, 60, 0.055);
+  --control-active: #d4d0c8;
+  --border: #c4bfb6;
+  --border-soft: #d6d1c9;
+  --border-control: #bcb6ac;
+  --border-control-hover: #9f988e;
+  --text: #3f3b36;
+  --text-strong: #292622;
+  --text-body: #4f4a44;
+  --text-muted: #777169;
+  --text-soft: #989188;
+  --text-faint: #898279;
+  --editor-text: #37332f;
+  --success-text: #477158;
+  --success-bg: #dce8df;
+  --error-text: #9e3f3b;
+  --error-bg: #eedbd8;
+  --warning-text: #886727;
+  --tooltip-bg: #393632;
+  --tooltip-text: #f5f3ef;
+  --shadow: rgba(64, 57, 49, 0.25);
+  --shadow-soft: rgba(64, 57, 49, 0.13);
+  --shadow-popover: 0 18px 42px rgba(52, 46, 40, 0.28);
+  --pattern-dot: #bdb8af;
+  --sidebar-vibrancy-tint: rgba(233, 231, 226, 0.58);
+  --sidebar-vibrancy-border: rgba(91, 83, 74, 0.2);
+  --smartisan-red: #9f403c;
+  --smartisan-red-soft: #ead8d5;
+  --smartisan-raised-top: #fffefa;
+  --smartisan-raised-bottom: #ddd9d2;
+  --smartisan-toolbar-top: #f8f6f2;
+  --smartisan-toolbar-bottom: #e2ded7;
+  --smartisan-inset: #d8d4cd;
+  --smartisan-highlight: rgba(255, 255, 255, 0.92);
+  --smartisan-lowlight: rgba(69, 62, 55, 0.2);
+  --desktop-control-height: 34px;
+  --desktop-control-radius: 7px;
+  --desktop-control-bg: var(--surface);
+  --desktop-control-border: var(--border-control);
+  --desktop-control-border-hover: var(--border-control-hover);
+  --desktop-control-shadow:
+    inset 0 1px 0 var(--smartisan-highlight),
+    0 1px 2px var(--smartisan-lowlight);
+  --desktop-control-shadow-hover:
+    inset 0 1px 0 var(--smartisan-highlight),
+    0 2px 4px var(--smartisan-lowlight);
+  --desktop-control-focus: color-mix(in srgb, var(--accent) 22%, transparent);
+  --desktop-button-hover: var(--surface-card);
+  --desktop-button-pressed: var(--control-active);
+  --desktop-button-prominent: var(--accent-strong);
+  --desktop-button-prominent-hover: color-mix(in srgb, var(--accent-strong) 88%, #000);
+  --desktop-button-prominent-text: var(--accent-contrast);
+}
+
+:root[data-interface-style='smartisan'][data-theme='dark'] {
+  color: #dedbd5;
+  background: #171614;
+  --sidebar: #22211f;
+  --surface: #292826;
+  --workspace: #1a1917;
+  --surface-soft: #302f2c;
+  --surface-card: #353431;
+  --surface-card-hover: #403e3a;
+  --surface-elevated: rgba(42, 41, 38, 0.97);
+  --surface-command: rgba(42, 41, 38, 0.96);
+  --toolbar: #2b2a28;
+  --control: #343330;
+  --control-hover: rgba(255, 252, 244, 0.1);
+  --control-hover-soft: rgba(255, 252, 244, 0.065);
+  --control-active: #45433f;
+  --border: #484641;
+  --border-soft: #373632;
+  --border-control: #55524d;
+  --border-control-hover: #706b64;
+  --text: #dedbd5;
+  --text-strong: #f2f0eb;
+  --text-body: #d0ccc5;
+  --text-muted: #aaa49b;
+  --text-soft: #7f7a73;
+  --text-faint: #918b83;
+  --editor-text: #e7e3dc;
+  --success-text: #85b495;
+  --success-bg: #26362b;
+  --error-text: #d8857f;
+  --error-bg: #422b29;
+  --warning-text: #d0ad64;
+  --tooltip-bg: #e9e6e0;
+  --tooltip-text: #292622;
+  --shadow: rgba(0, 0, 0, 0.52);
+  --shadow-soft: rgba(0, 0, 0, 0.32);
+  --shadow-popover: 0 20px 48px rgba(0, 0, 0, 0.58);
+  --pattern-dot: #484641;
+  --sidebar-vibrancy-tint: rgba(34, 33, 31, 0.66);
+  --sidebar-vibrancy-border: rgba(242, 240, 235, 0.11);
+  --smartisan-red: #b75953;
+  --smartisan-red-soft: #442b29;
+  --smartisan-raised-top: #3d3b38;
+  --smartisan-raised-bottom: #292825;
+  --smartisan-toolbar-top: #34332f;
+  --smartisan-toolbar-bottom: #252422;
+  --smartisan-inset: #1f1e1c;
+  --smartisan-highlight: rgba(255, 255, 255, 0.09);
+  --smartisan-lowlight: rgba(0, 0, 0, 0.55);
+  --desktop-control-shadow:
+    inset 0 1px 0 var(--smartisan-highlight),
+    0 1px 2px var(--smartisan-lowlight);
+  --desktop-control-shadow-hover:
+    inset 0 1px 0 rgba(255, 255, 255, 0.13),
+    0 2px 5px var(--smartisan-lowlight);
+}
+
+:root[data-interface-style='smartisan'] body {
+  line-height: 1.45;
+  letter-spacing: 0;
+  text-shadow: 0 1px 0 var(--smartisan-highlight);
+}
+
+:root[data-interface-style='smartisan'][data-theme='dark'] body {
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.72);
+}
+
+:root[data-interface-style='smartisan'] .app-shell,
+:root[data-interface-style='smartisan'] .workspace,
+:root[data-interface-style='smartisan'] .settings-content,
+:root[data-interface-style='smartisan'] .settings-scroll {
+  background-color: var(--workspace);
+  background-image: radial-gradient(
+    circle at 50% -20%,
+    color-mix(in srgb, var(--surface) 56%, transparent),
+    transparent 58%
+  );
+}
+
+:root[data-interface-style='smartisan'] .sidebar,
+:root[data-interface-style='smartisan'] .settings-nav {
+  background-image: linear-gradient(90deg, var(--sidebar), color-mix(in srgb, var(--sidebar) 88%, var(--workspace)));
+  border-color: var(--border);
+  box-shadow: inset -1px 0 0 var(--smartisan-highlight);
+}
+
+:root[data-interface-style='smartisan'] .settings-titlebar,
+:root[data-interface-style='smartisan'] .settings-content__header {
+  background: linear-gradient(to bottom, var(--smartisan-toolbar-top), var(--smartisan-toolbar-bottom));
+  border-color: var(--border);
+  box-shadow: inset 0 1px 0 var(--smartisan-highlight);
+}
+
+:root[data-interface-style='smartisan'] .tool-button,
+:root[data-interface-style='smartisan'] .recent-item,
+:root[data-interface-style='smartisan'] .settings-nav__item,
+:root[data-interface-style='smartisan'] .command-result {
+  position: relative;
+  border: 1px solid transparent;
+  border-radius: 7px;
+}
+
+:root[data-interface-style='smartisan'] .tool-button:hover,
+:root[data-interface-style='smartisan'] .recent-item:hover,
+:root[data-interface-style='smartisan'] .settings-nav__item:hover,
+:root[data-interface-style='smartisan'] .command-result:hover {
+  background: linear-gradient(to bottom, color-mix(in srgb, var(--smartisan-raised-top) 70%, transparent), var(--smartisan-raised-bottom));
+  border-color: color-mix(in srgb, var(--border) 72%, transparent);
+  box-shadow: inset 0 1px 0 var(--smartisan-highlight);
+}
+
+:root[data-interface-style='smartisan'] .tool-button--active,
+:root[data-interface-style='smartisan'] .settings-nav__item--active,
+:root[data-interface-style='smartisan'] .command-result--selected {
+  color: var(--text-strong);
+  background: linear-gradient(to bottom, var(--smartisan-raised-top), var(--smartisan-raised-bottom));
+  border-color: var(--border-control);
+  box-shadow:
+    inset 3px 0 0 var(--smartisan-red),
+    inset 0 1px 0 var(--smartisan-highlight),
+    0 1px 3px var(--smartisan-lowlight);
+}
+
+:root[data-interface-style='smartisan'] .tool-button--active svg,
+:root[data-interface-style='smartisan'] .settings-nav__item--active svg {
+  color: var(--smartisan-red);
+}
+
+:root[data-interface-style='smartisan'] .tool-page h1,
+:root[data-interface-style='smartisan'] .placeholder-page h1,
+:root[data-interface-style='smartisan'] .settings-content__header h1 {
+  color: var(--text-strong);
+  font-weight: 650;
+  text-shadow: 0 1px 0 var(--smartisan-highlight);
+}
+
+:root[data-interface-style='smartisan'][data-theme='dark'] .tool-page h1,
+:root[data-interface-style='smartisan'][data-theme='dark'] .placeholder-page h1,
+:root[data-interface-style='smartisan'][data-theme='dark'] .settings-content__header h1 {
+  text-shadow: 0 1px 0 #000;
+}
+
+:root[data-interface-style='smartisan'] .editor-shell,
+:root[data-interface-style='smartisan'] .local-tool-shell,
+:root[data-interface-style='smartisan'] .quick-note-editor-shell,
+:root[data-interface-style='smartisan'] .runtime-shell,
+:root[data-interface-style='smartisan'] .vault-panel,
+:root[data-interface-style='smartisan'] .quick-note-sidebar,
+:root[data-interface-style='smartisan'] .quick-replace-panel {
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 1px 0 var(--smartisan-highlight),
+    0 7px 18px var(--shadow-soft);
+}
+
+:root[data-interface-style='smartisan'] .inspector-card,
+:root[data-interface-style='smartisan'] .operation-panel,
+:root[data-interface-style='smartisan'] .calculator-log,
+:root[data-interface-style='smartisan'] .common-pattern-list button,
+:root[data-interface-style='smartisan'] .home-work-list button,
+:root[data-interface-style='smartisan'] .home-contributors button {
+  background: linear-gradient(to bottom, var(--smartisan-raised-top), var(--smartisan-raised-bottom));
+  border: 1px solid var(--border-control);
+  border-radius: 8px;
+  box-shadow:
+    inset 0 1px 0 var(--smartisan-highlight),
+    0 2px 5px var(--smartisan-lowlight);
+}
+
+:root[data-interface-style='smartisan'] .editor-toolbar,
+:root[data-interface-style='smartisan'] .tool-tabs,
+:root[data-interface-style='smartisan'] .p4-toolbar,
+:root[data-interface-style='smartisan'] .runtime-toolbar,
+:root[data-interface-style='smartisan'] .quick-note-toolbar {
+  background: linear-gradient(to bottom, var(--smartisan-toolbar-top), var(--smartisan-toolbar-bottom));
+  border-color: var(--border);
+  box-shadow: inset 0 1px 0 var(--smartisan-highlight);
+}
+
+:root[data-interface-style='smartisan'] .toolbar-button,
+:root[data-interface-style='smartisan'] .icon-button,
+:root[data-interface-style='smartisan'] .settings-command,
+:root[data-interface-style='smartisan'] .dialog-button,
+:root[data-interface-style='smartisan'] .panel-command,
+:root[data-interface-style='smartisan'] .io-action-button,
+:root[data-interface-style='smartisan'] .primary-command,
+:root[data-interface-style='smartisan'] select {
+  color: var(--text-body);
+  background: linear-gradient(to bottom, var(--smartisan-raised-top), var(--smartisan-raised-bottom));
+  border: 1px solid var(--border-control);
+  border-radius: 7px;
+  box-shadow:
+    inset 0 1px 0 var(--smartisan-highlight),
+    0 1px 2px var(--smartisan-lowlight);
+  text-shadow: 0 1px 0 var(--smartisan-highlight);
+}
+
+:root[data-interface-style='smartisan'][data-theme='dark'] .toolbar-button,
+:root[data-interface-style='smartisan'][data-theme='dark'] .icon-button,
+:root[data-interface-style='smartisan'][data-theme='dark'] .settings-command,
+:root[data-interface-style='smartisan'][data-theme='dark'] .dialog-button,
+:root[data-interface-style='smartisan'][data-theme='dark'] .panel-command,
+:root[data-interface-style='smartisan'][data-theme='dark'] .io-action-button,
+:root[data-interface-style='smartisan'][data-theme='dark'] .primary-command,
+:root[data-interface-style='smartisan'][data-theme='dark'] select {
+  text-shadow: 0 1px 0 #000;
+}
+
+:root[data-interface-style='smartisan'] .toolbar-button:hover:not(:disabled),
+:root[data-interface-style='smartisan'] .icon-button:hover:not(:disabled),
+:root[data-interface-style='smartisan'] .settings-command:hover:not(:disabled),
+:root[data-interface-style='smartisan'] .dialog-button:hover:not(:disabled),
+:root[data-interface-style='smartisan'] .panel-command:hover:not(:disabled),
+:root[data-interface-style='smartisan'] .io-action-button:hover:not(:disabled) {
+  color: var(--text-strong);
+  border-color: var(--border-control-hover);
+  filter: brightness(1.035);
+}
+
+:root[data-interface-style='smartisan'] .toolbar-button:active:not(:disabled),
+:root[data-interface-style='smartisan'] .icon-button:active:not(:disabled),
+:root[data-interface-style='smartisan'] .settings-command:active:not(:disabled),
+:root[data-interface-style='smartisan'] .dialog-button:active:not(:disabled),
+:root[data-interface-style='smartisan'] .panel-command:active:not(:disabled),
+:root[data-interface-style='smartisan'] .io-action-button:active:not(:disabled) {
+  background: linear-gradient(to bottom, var(--smartisan-raised-bottom), var(--smartisan-raised-top));
+  box-shadow: inset 0 2px 4px var(--smartisan-lowlight);
+  transform: translateY(1px);
+}
+
+:root[data-interface-style='smartisan'] .toolbar-button--primary,
+:root[data-interface-style='smartisan'] .primary-command,
+:root[data-interface-style='smartisan'] .dialog-button--primary,
+:root[data-interface-style='smartisan'] .runtime-toolbar > button.runtime-run-button {
+  color: var(--accent-contrast);
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--accent) 84%, #fff),
+    var(--accent-strong)
+  );
+  border-color: color-mix(in srgb, var(--accent-strong) 78%, #292622);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--accent) 42%, #fff),
+    0 2px 5px color-mix(in srgb, var(--accent-strong) 30%, transparent);
+  text-shadow: 0 -1px 0 color-mix(in srgb, var(--accent-strong) 74%, #000);
+}
+
+:root[data-interface-style='smartisan'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+:root[data-interface-style='smartisan'] textarea {
+  color: var(--text-body);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: 7px;
+  box-shadow:
+    inset 0 2px 4px var(--smartisan-lowlight),
+    0 1px 0 var(--smartisan-highlight);
+}
+
+:root[data-interface-style='smartisan'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):focus,
+:root[data-interface-style='smartisan'] textarea:focus,
+:root[data-interface-style='smartisan'] select:focus {
+  border-color: var(--accent-strong);
+  box-shadow:
+    inset 0 2px 4px var(--smartisan-lowlight),
+    0 0 0 2px var(--desktop-control-focus);
+}
+
+:root[data-interface-style='smartisan'] .settings-group h2 {
+  color: var(--text-muted);
+  font-weight: 650;
+}
+
+:root[data-interface-style='smartisan'] .settings-group__rows {
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 1px 0 var(--smartisan-highlight),
+    0 5px 13px var(--shadow-soft);
+  overflow: hidden;
+}
+
+:root[data-interface-style='smartisan'] .setting-row {
+  min-height: 56px;
+  padding: 0 14px;
+  border-color: var(--border-soft);
+}
+
+:root[data-interface-style='smartisan'] .setting-row:last-child,
+:root[data-interface-style='smartisan'] .runtime-row:last-child {
+  border-bottom: 0;
+}
+
+:root[data-interface-style='smartisan'] .segmented {
+  padding: 3px;
+  background: var(--smartisan-inset);
+  border: 1px solid var(--border-control);
+  border-radius: 8px;
+  box-shadow:
+    inset 0 2px 4px var(--smartisan-lowlight),
+    0 1px 0 var(--smartisan-highlight);
+}
+
+:root[data-interface-style='smartisan'] .segmented__item {
+  min-height: 28px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  text-shadow: 0 1px 0 var(--smartisan-highlight);
+}
+
+:root[data-interface-style='smartisan'] .segmented__item--active {
+  color: var(--text-strong);
+  background: linear-gradient(to bottom, var(--smartisan-raised-top), var(--smartisan-raised-bottom));
+  border-color: var(--border-control);
+  box-shadow:
+    inset 0 1px 0 var(--smartisan-highlight),
+    0 1px 3px var(--smartisan-lowlight);
+}
+
+:root[data-interface-style='smartisan'] .toggle {
+  width: 40px;
+  height: 24px;
+  padding: 2px;
+  background: var(--smartisan-inset);
+  border: 1px solid var(--border-control);
+  box-shadow:
+    inset 0 2px 4px var(--smartisan-lowlight),
+    0 1px 0 var(--smartisan-highlight);
+}
+
+:root[data-interface-style='smartisan'] .toggle span {
+  width: 18px;
+  height: 18px;
+  background: linear-gradient(to bottom, var(--smartisan-raised-top), var(--smartisan-raised-bottom));
+  border: 1px solid var(--border-control);
+  box-shadow:
+    inset 0 1px 0 var(--smartisan-highlight),
+    0 1px 2px var(--smartisan-lowlight);
+}
+
+:root[data-interface-style='smartisan'] .toggle--checked {
+  background: var(--smartisan-red);
+  border-color: color-mix(in srgb, var(--smartisan-red) 78%, #292622);
+}
+
+:root[data-interface-style='smartisan'] .toggle--checked span {
+  transform: translateX(16px);
+}
+
+:root[data-interface-style='smartisan'] .dialog-backdrop,
+:root[data-interface-style='smartisan'] .command-palette-backdrop {
+  background: rgba(35, 31, 27, 0.42);
+  backdrop-filter: blur(2px);
+}
+
+:root[data-interface-style='smartisan'] .dialog,
+:root[data-interface-style='smartisan'] .command-palette,
+:root[data-interface-style='smartisan'] .toast,
+:root[data-interface-style='smartisan'] .sidebar-update-notes {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-control);
+  border-radius: 10px;
+  box-shadow:
+    inset 0 1px 0 var(--smartisan-highlight),
+    var(--shadow-popover);
+  backdrop-filter: blur(16px);
+}
+
+:root[data-interface-style='smartisan'] .dialog__header,
+:root[data-interface-style='smartisan'] .dialog__footer,
+:root[data-interface-style='smartisan'] .command-palette__search {
+  background: linear-gradient(to bottom, var(--smartisan-toolbar-top), var(--smartisan-toolbar-bottom));
+  border-color: var(--border);
+}
+
+:root[data-interface-style='smartisan'] .tooltip {
+  border: 1px solid color-mix(in srgb, var(--tooltip-text) 14%, transparent);
+  border-radius: 6px;
+  box-shadow: 0 6px 16px var(--shadow);
+}
+
+:root[data-interface-style='smartisan'] .status-pill {
+  color: var(--text-body);
+  background: linear-gradient(to bottom, var(--smartisan-raised-top), var(--smartisan-raised-bottom));
+  border: 1px solid var(--border);
+  box-shadow: inset 0 1px 0 var(--smartisan-highlight);
+}

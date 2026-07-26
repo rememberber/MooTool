@@ -168,4 +168,12 @@ describe('mergeSettings', () => {
 
     expect(settings.appearance.interfaceStyle).toBe('hero')
   })
+
+  it('accepts and persists the Smartisan OS interface style', () => {
+    const settings = mergeSettings(defaultAppSettings, {
+      appearance: { interfaceStyle: 'smartisan' }
+    })
+
+    expect(settings.appearance.interfaceStyle).toBe('smartisan')
+  })
 })

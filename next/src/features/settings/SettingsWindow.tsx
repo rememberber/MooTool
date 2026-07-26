@@ -202,7 +202,8 @@ function AppearanceSettings({ settings, commit }: SettingsPanelProps) {
           options={[
             { value: 'modern', label: t('settings.interfaceStyle.modern') },
             { value: 'quiet', label: t('settings.interfaceStyle.quiet') },
-            { value: 'hero', label: t('settings.interfaceStyle.hero') }
+            { value: 'hero', label: t('settings.interfaceStyle.hero') },
+            { value: 'smartisan', label: t('settings.interfaceStyle.smartisan') }
           ]}
           onChange={(value) => commit({ appearance: { interfaceStyle: value } })}
         />

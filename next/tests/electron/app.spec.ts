@@ -150,7 +150,7 @@ test('shows a first-run tip for migrating Java data without modifying the source
   })
 })
 
-test('switches to the Hero interface style from appearance settings', async () => {
+test('switches interface styles from appearance settings', async () => {
   await mainPage.evaluate(() => window.mootool.updateSettings({ general: { legacyMigrationHintDismissed: true } }))
   const settingsWindowPromise = electronApp.waitForEvent('window')
   await mainPage.getByRole('button', { name: '设置', exact: true }).click()
@@ -181,6 +181,31 @@ test('switches to the Hero interface style from appearance settings', async () =
     interfaceStyle: 'hero',
     controlRadius: '12px',
     cardRadius: '14px'
+  })
+
+  const smartisanStyle = settingsPage.getByRole('button', { name: 'Smartisan OS', exact: true })
+  await expect(smartisanStyle).toBeVisible()
+  await smartisanStyle.click()
+  await expect(smartisanStyle).toHaveAttribute('aria-pressed', 'true')
+
+  await expect.poll(() => mainPage.evaluate(async () => ({
+    interfaceStyle: document.documentElement.dataset.interfaceStyle,
+    settings: await window.mootool.getSettings()
+  }))).toMatchObject({
+    interfaceStyle: 'smartisan',
+    settings: { appearance: { interfaceStyle: 'smartisan' } }
+  })
+  await expect.poll(() => settingsPage.evaluate(() => {
+    const card = document.querySelector('.settings-group__rows')
+    return {
+      interfaceStyle: document.documentElement.dataset.interfaceStyle,
+      controlRadius: getComputedStyle(document.documentElement).getPropertyValue('--desktop-control-radius').trim(),
+      cardRadius: card ? getComputedStyle(card).borderRadius : ''
+    }
+  })).toEqual({
+    interfaceStyle: 'smartisan',
+    controlRadius: '7px',
+    cardRadius: '10px'
   })
 
   await settingsPage.getByRole('button', { name: '现代主题', exact: true }).click()
