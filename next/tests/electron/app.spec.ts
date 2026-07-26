@@ -150,6 +150,44 @@ test('shows a first-run tip for migrating Java data without modifying the source
   })
 })
 
+test('switches to the Hero interface style from appearance settings', async () => {
+  await mainPage.evaluate(() => window.mootool.updateSettings({ general: { legacyMigrationHintDismissed: true } }))
+  const settingsWindowPromise = electronApp.waitForEvent('window')
+  await mainPage.getByRole('button', { name: '设置', exact: true }).click()
+  const settingsPage = await settingsWindowPromise
+  await settingsPage.waitForLoadState('domcontentloaded')
+  await settingsPage.locator('.settings-nav__item').filter({ hasText: '外观' }).click()
+
+  const heroStyle = settingsPage.getByRole('button', { name: 'Hero（NextUI）', exact: true })
+  await expect(heroStyle).toBeVisible()
+  await heroStyle.click()
+  await expect(heroStyle).toHaveAttribute('aria-pressed', 'true')
+
+  await expect.poll(() => mainPage.evaluate(async () => ({
+    interfaceStyle: document.documentElement.dataset.interfaceStyle,
+    settings: await window.mootool.getSettings()
+  }))).toMatchObject({
+    interfaceStyle: 'hero',
+    settings: { appearance: { interfaceStyle: 'hero' } }
+  })
+  await expect.poll(() => settingsPage.evaluate(() => {
+    const card = document.querySelector('.settings-group__rows')
+    return {
+      interfaceStyle: document.documentElement.dataset.interfaceStyle,
+      controlRadius: getComputedStyle(document.documentElement).getPropertyValue('--desktop-control-radius').trim(),
+      cardRadius: card ? getComputedStyle(card).borderRadius : ''
+    }
+  })).toEqual({
+    interfaceStyle: 'hero',
+    controlRadius: '12px',
+    cardRadius: '14px'
+  })
+
+  await settingsPage.getByRole('button', { name: '现代主题', exact: true }).click()
+  await expect.poll(() => mainPage.evaluate(() => document.documentElement.dataset.interfaceStyle)).toBe('modern')
+  await settingsPage.locator('.settings-titlebar .icon-ghost').click()
+})
+
 test('creates and persists custom navigation groups', async () => {
   await mainPage.getByRole('button', { name: '管理分组', exact: true }).click()
   const dialog = mainPage.getByRole('dialog', { name: '管理功能分组' })

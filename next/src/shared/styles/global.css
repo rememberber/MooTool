@@ -9196,3 +9196,322 @@ textarea:focus {
   box-shadow: none;
   outline: 0;
 }
+
+/*
+ * Hero interface style
+ *
+ * HeroUI (formerly NextUI) uses semantic surfaces, generous radii and a
+ * restrained accent color. Keep MooTool's existing components and density,
+ * but map them onto that visual language so every tool inherits the style.
+ */
+:root[data-interface-style='hero'] {
+  color: #18181b;
+  background: #f4f4f5;
+  --sidebar: #fafafa;
+  --surface: #ffffff;
+  --workspace: #f4f4f5;
+  --surface-soft: #fafafa;
+  --surface-card: #f4f4f5;
+  --surface-card-hover: #e4e4e7;
+  --surface-elevated: rgba(255, 255, 255, 0.92);
+  --surface-command: rgba(255, 255, 255, 0.94);
+  --toolbar: rgba(250, 250, 250, 0.9);
+  --control: #f4f4f5;
+  --control-hover: rgba(24, 24, 27, 0.08);
+  --control-hover-soft: rgba(24, 24, 27, 0.055);
+  --control-active: #e4e4e7;
+  --border: #e4e4e7;
+  --border-soft: #f0f0f2;
+  --border-control: #d4d4d8;
+  --border-control-hover: #a1a1aa;
+  --text: #18181b;
+  --text-strong: #09090b;
+  --text-body: #3f3f46;
+  --text-muted: #71717a;
+  --text-soft: #a1a1aa;
+  --text-faint: #8b8b95;
+  --editor-text: #27272a;
+  --success-text: #0e793c;
+  --success-bg: #e8faf0;
+  --error-text: #c20e4d;
+  --error-bg: #fee7ef;
+  --warning-text: #936316;
+  --tooltip-bg: #18181b;
+  --tooltip-text: #fafafa;
+  --shadow: rgba(24, 24, 27, 0.16);
+  --shadow-soft: rgba(24, 24, 27, 0.08);
+  --shadow-popover: 0 18px 48px rgba(24, 24, 27, 0.18);
+  --pattern-dot: #d4d4d8;
+  --sidebar-vibrancy-tint: rgba(250, 250, 250, 0.56);
+  --sidebar-vibrancy-border: rgba(113, 113, 122, 0.18);
+  --desktop-control-height: 36px;
+  --desktop-control-radius: 12px;
+  --desktop-control-bg: var(--surface);
+  --desktop-control-border: color-mix(in srgb, var(--border-control) 78%, transparent);
+  --desktop-control-border-hover: color-mix(in srgb, var(--border-control-hover) 70%, transparent);
+  --desktop-control-shadow: 0 2px 8px rgba(24, 24, 27, 0.07);
+  --desktop-control-shadow-hover: 0 4px 12px rgba(24, 24, 27, 0.11);
+  --desktop-control-focus: color-mix(in srgb, var(--accent) 24%, transparent);
+  --desktop-button-hover: var(--surface-card);
+  --desktop-button-pressed: var(--surface-card-hover);
+  --desktop-button-prominent: var(--accent-strong);
+  --desktop-button-prominent-hover: color-mix(in srgb, var(--accent-strong) 88%, #000);
+  --desktop-button-prominent-text: var(--accent-contrast);
+}
+
+:root[data-interface-style='hero'][data-theme='dark'] {
+  color: #f4f4f5;
+  background: #09090b;
+  --sidebar: #111113;
+  --surface: #18181b;
+  --workspace: #09090b;
+  --surface-soft: #202023;
+  --surface-card: #27272a;
+  --surface-card-hover: #3f3f46;
+  --surface-elevated: rgba(24, 24, 27, 0.92);
+  --surface-command: rgba(24, 24, 27, 0.94);
+  --toolbar: rgba(24, 24, 27, 0.9);
+  --control: #27272a;
+  --control-hover: rgba(244, 244, 245, 0.11);
+  --control-hover-soft: rgba(244, 244, 245, 0.075);
+  --control-active: #3f3f46;
+  --border: #3f3f46;
+  --border-soft: #2f2f33;
+  --border-control: #52525b;
+  --border-control-hover: #71717a;
+  --text: #f4f4f5;
+  --text-strong: #fafafa;
+  --text-body: #e4e4e7;
+  --text-muted: #a1a1aa;
+  --text-soft: #71717a;
+  --text-faint: #8b8b95;
+  --editor-text: #f4f4f5;
+  --success-text: #45d483;
+  --success-bg: #12351f;
+  --error-text: #f871a0;
+  --error-bg: #3b1022;
+  --warning-text: #f7b750;
+  --tooltip-bg: #f4f4f5;
+  --tooltip-text: #18181b;
+  --shadow: rgba(0, 0, 0, 0.48);
+  --shadow-soft: rgba(0, 0, 0, 0.3);
+  --shadow-popover: 0 20px 54px rgba(0, 0, 0, 0.52);
+  --pattern-dot: #3f3f46;
+  --sidebar-vibrancy-tint: rgba(17, 17, 19, 0.64);
+  --sidebar-vibrancy-border: rgba(244, 244, 245, 0.12);
+  --desktop-control-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --desktop-control-shadow-hover: 0 4px 14px rgba(0, 0, 0, 0.4);
+}
+
+:root[data-interface-style='hero'] body {
+  line-height: 1.5;
+  letter-spacing: -0.008em;
+}
+
+:root[data-interface-style='hero'] .app-shell,
+:root[data-interface-style='hero'] .workspace,
+:root[data-interface-style='hero'] .settings-content,
+:root[data-interface-style='hero'] .settings-scroll {
+  background: var(--workspace);
+}
+
+:root[data-interface-style='hero'] .sidebar,
+:root[data-interface-style='hero'] .settings-nav {
+  border-color: var(--border-soft);
+}
+
+:root[data-interface-style='hero'] .tool-button,
+:root[data-interface-style='hero'] .recent-item,
+:root[data-interface-style='hero'] .settings-nav__item,
+:root[data-interface-style='hero'] .command-result {
+  border-radius: 10px;
+}
+
+:root[data-interface-style='hero'] .tool-button--active,
+:root[data-interface-style='hero'] .settings-nav__item--active,
+:root[data-interface-style='hero'] .command-result--selected {
+  color: var(--accent-strong);
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+}
+
+:root[data-interface-style='hero'][data-theme='dark'] .tool-button--active,
+:root[data-interface-style='hero'][data-theme='dark'] .settings-nav__item--active,
+:root[data-interface-style='hero'][data-theme='dark'] .command-result--selected {
+  color: color-mix(in srgb, var(--accent) 78%, #fff);
+  background: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+
+:root[data-interface-style='hero'] .app-shell--nav-card .tool-button--active {
+  border-color: color-mix(in srgb, var(--accent) 24%, var(--border));
+  box-shadow: 0 5px 16px color-mix(in srgb, var(--accent) 12%, transparent);
+}
+
+:root[data-interface-style='hero'] .tool-page h1,
+:root[data-interface-style='hero'] .placeholder-page h1 {
+  color: var(--text-strong);
+  font-weight: 700;
+}
+
+:root[data-interface-style='hero'] .editor-shell,
+:root[data-interface-style='hero'] .local-tool-shell,
+:root[data-interface-style='hero'] .quick-note-editor-shell,
+:root[data-interface-style='hero'] .runtime-shell,
+:root[data-interface-style='hero'] .vault-panel,
+:root[data-interface-style='hero'] .quick-note-sidebar,
+:root[data-interface-style='hero'] .quick-replace-panel {
+  background: var(--surface);
+  border-color: var(--border-soft);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px var(--shadow-soft);
+}
+
+:root[data-interface-style='hero'] .inspector-card,
+:root[data-interface-style='hero'] .operation-panel,
+:root[data-interface-style='hero'] .calculator-log,
+:root[data-interface-style='hero'] .common-pattern-list button,
+:root[data-interface-style='hero'] .home-work-list button,
+:root[data-interface-style='hero'] .home-contributors button {
+  background: var(--surface);
+  border-color: var(--border-soft);
+  border-radius: 12px;
+  box-shadow: 0 4px 14px var(--shadow-soft);
+}
+
+:root[data-interface-style='hero'] .editor-toolbar,
+:root[data-interface-style='hero'] .tool-tabs,
+:root[data-interface-style='hero'] .p4-toolbar,
+:root[data-interface-style='hero'] .runtime-toolbar,
+:root[data-interface-style='hero'] .quick-note-toolbar {
+  background: var(--toolbar);
+}
+
+:root[data-interface-style='hero'] .toolbar-button,
+:root[data-interface-style='hero'] .icon-button,
+:root[data-interface-style='hero'] .icon-ghost,
+:root[data-interface-style='hero'] .settings-command,
+:root[data-interface-style='hero'] .dialog-button,
+:root[data-interface-style='hero'] .panel-command,
+:root[data-interface-style='hero'] .io-action-button,
+:root[data-interface-style='hero'] .primary-command,
+:root[data-interface-style='hero'] select,
+:root[data-interface-style='hero'] textarea,
+:root[data-interface-style='hero'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']) {
+  border-radius: 12px;
+}
+
+:root[data-interface-style='hero'] .toolbar-button--primary {
+  color: var(--accent-strong);
+  background: color-mix(in srgb, var(--accent) 14%, var(--surface));
+  border-color: color-mix(in srgb, var(--accent) 22%, var(--border));
+}
+
+:root[data-interface-style='hero'] .primary-command,
+:root[data-interface-style='hero'] .dialog-button--primary,
+:root[data-interface-style='hero'] .runtime-toolbar > button.runtime-run-button {
+  color: var(--accent-contrast);
+  background: var(--accent-strong);
+  border-color: var(--accent-strong);
+  box-shadow: 0 5px 14px color-mix(in srgb, var(--accent-strong) 24%, transparent);
+}
+
+:root[data-interface-style='hero'] .settings-content__header {
+  background: color-mix(in srgb, var(--surface) 88%, transparent);
+  border-color: var(--border-soft);
+  backdrop-filter: blur(16px);
+}
+
+:root[data-interface-style='hero'] .settings-content__header h1 {
+  color: var(--text-strong);
+  font-weight: 700;
+}
+
+:root[data-interface-style='hero'] .settings-group h2 {
+  color: var(--text-muted);
+  font-weight: 600;
+}
+
+:root[data-interface-style='hero'] .settings-group__rows {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 14px;
+  box-shadow: 0 5px 18px var(--shadow-soft);
+  overflow: hidden;
+}
+
+:root[data-interface-style='hero'] .setting-row {
+  min-height: 58px;
+  padding: 0 16px;
+}
+
+:root[data-interface-style='hero'] .setting-row:last-child,
+:root[data-interface-style='hero'] .runtime-row:last-child {
+  border-bottom: 0;
+}
+
+:root[data-interface-style='hero'] .segmented {
+  padding: 4px;
+  background: var(--surface-card);
+  border-color: transparent;
+  border-radius: 14px;
+  box-shadow: none;
+}
+
+:root[data-interface-style='hero'] .segmented__item {
+  min-height: 30px;
+  border-radius: 10px;
+}
+
+:root[data-interface-style='hero'] .segmented__item--active {
+  color: var(--text-strong);
+  background: var(--surface);
+  box-shadow: 0 3px 10px var(--shadow-soft);
+}
+
+:root[data-interface-style='hero'] .toggle {
+  width: 40px;
+  height: 24px;
+  padding: 2px;
+  border-color: transparent;
+  background: var(--surface-card-hover);
+  box-shadow: none;
+}
+
+:root[data-interface-style='hero'] .toggle span {
+  width: 20px;
+  height: 20px;
+}
+
+:root[data-interface-style='hero'] .toggle--checked {
+  background: var(--accent-strong);
+}
+
+:root[data-interface-style='hero'] .toggle--checked span {
+  transform: translateX(16px);
+}
+
+:root[data-interface-style='hero'] .dialog-backdrop,
+:root[data-interface-style='hero'] .command-palette-backdrop {
+  background: rgba(9, 9, 11, 0.46);
+  backdrop-filter: blur(4px);
+}
+
+:root[data-interface-style='hero'] .dialog,
+:root[data-interface-style='hero'] .command-palette,
+:root[data-interface-style='hero'] .toast,
+:root[data-interface-style='hero'] .sidebar-update-notes {
+  background: var(--surface-elevated);
+  border-color: color-mix(in srgb, var(--border) 78%, transparent);
+  border-radius: 16px;
+  box-shadow: var(--shadow-popover);
+  backdrop-filter: blur(20px);
+}
+
+:root[data-interface-style='hero'] .tooltip {
+  padding: 7px 10px;
+  border-radius: 9px;
+}
+
+:root[data-interface-style='hero'] .status-pill {
+  color: var(--text-body);
+  background: var(--surface-card);
+}

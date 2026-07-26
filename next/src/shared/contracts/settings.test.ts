@@ -160,4 +160,12 @@ describe('mergeSettings', () => {
 
     expect(settings.appearance.interfaceStyle).toBe('modern')
   })
+
+  it('accepts and persists the Hero interface style', () => {
+    const settings = mergeSettings(defaultAppSettings, {
+      appearance: { interfaceStyle: 'hero' }
+    })
+
+    expect(settings.appearance.interfaceStyle).toBe('hero')
+  })
 })
