@@ -208,6 +208,34 @@ test('switches interface styles from appearance settings', async () => {
     cardRadius: '10px'
   })
 
+  const miuiV5Style = settingsPage.getByRole('button', { name: 'MIUI V5', exact: true })
+  await expect(miuiV5Style).toBeVisible()
+  await miuiV5Style.click()
+  await expect(miuiV5Style).toHaveAttribute('aria-pressed', 'true')
+
+  await expect.poll(() => mainPage.evaluate(async () => ({
+    interfaceStyle: document.documentElement.dataset.interfaceStyle,
+    settings: await window.mootool.getSettings()
+  }))).toMatchObject({
+    interfaceStyle: 'miui-v5',
+    settings: { appearance: { interfaceStyle: 'miui-v5' } }
+  })
+  await expect.poll(() => settingsPage.evaluate(() => {
+    const card = document.querySelector('.settings-group__rows')
+    const stylePicker = document.querySelector('.setting-row .segmented')
+    return {
+      interfaceStyle: document.documentElement.dataset.interfaceStyle,
+      controlRadius: getComputedStyle(document.documentElement).getPropertyValue('--desktop-control-radius').trim(),
+      cardRadius: card ? getComputedStyle(card).borderRadius : '',
+      stylePickerFits: stylePicker ? stylePicker.scrollWidth <= stylePicker.clientWidth : false
+    }
+  })).toEqual({
+    interfaceStyle: 'miui-v5',
+    controlRadius: '4px',
+    cardRadius: '5px',
+    stylePickerFits: true
+  })
+
   await settingsPage.getByRole('button', { name: '现代主题', exact: true }).click()
   await expect.poll(() => mainPage.evaluate(() => document.documentElement.dataset.interfaceStyle)).toBe('modern')
   await settingsPage.locator('.settings-titlebar .icon-ghost').click()

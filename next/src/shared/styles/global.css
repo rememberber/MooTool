@@ -9979,3 +9979,457 @@ textarea:focus {
   border: 1px solid var(--border);
   box-shadow: inset 0 1px 0 var(--smartisan-highlight);
 }
+
+/*
+ * MIUI V5 interface style
+ *
+ * Crisp white content, pale grouped navigation, orange state accents and
+ * lightly dimensional controls mirror MIUI V5's system-app language.
+ */
+:root[data-interface-style='miui-v5'] {
+  color: #333333;
+  background: #e7e7e7;
+  --sidebar: #f2f2f2;
+  --surface: #ffffff;
+  --workspace: #e9e9e9;
+  --surface-soft: #f5f5f5;
+  --surface-card: #eeeeee;
+  --surface-card-hover: #e3e3e3;
+  --surface-elevated: rgba(255, 255, 255, 0.97);
+  --surface-command: rgba(255, 255, 255, 0.97);
+  --toolbar: #f3f3f3;
+  --control: #ececec;
+  --control-hover: rgba(0, 0, 0, 0.07);
+  --control-hover-soft: rgba(0, 0, 0, 0.045);
+  --control-active: #dddddd;
+  --border: #cecece;
+  --border-soft: #e3e3e3;
+  --border-control: #c5c5c5;
+  --border-control-hover: #a7a7a7;
+  --text: #333333;
+  --text-strong: #202020;
+  --text-body: #494949;
+  --text-muted: #777777;
+  --text-soft: #a0a0a0;
+  --text-faint: #929292;
+  --editor-text: #303030;
+  --success-text: #4f7d55;
+  --success-bg: #e5f0e6;
+  --error-text: #b94d43;
+  --error-bg: #f5e4e1;
+  --warning-text: #a86d19;
+  --tooltip-bg: #333333;
+  --tooltip-text: #ffffff;
+  --shadow: rgba(0, 0, 0, 0.2);
+  --shadow-soft: rgba(0, 0, 0, 0.09);
+  --shadow-popover: 0 14px 38px rgba(0, 0, 0, 0.24);
+  --pattern-dot: #c8c8c8;
+  --sidebar-vibrancy-tint: rgba(242, 242, 242, 0.62);
+  --sidebar-vibrancy-border: rgba(80, 80, 80, 0.18);
+  --miui-orange: #f36c21;
+  --miui-orange-strong: #d95312;
+  --miui-orange-soft: #fff0e6;
+  --miui-raised-top: #ffffff;
+  --miui-raised-bottom: #e8e8e8;
+  --miui-toolbar-top: #fafafa;
+  --miui-toolbar-bottom: #ededed;
+  --miui-inset: #dddddd;
+  --miui-highlight: rgba(255, 255, 255, 0.92);
+  --miui-lowlight: rgba(0, 0, 0, 0.16);
+  --desktop-control-height: 34px;
+  --desktop-control-radius: 4px;
+  --desktop-control-bg: var(--surface);
+  --desktop-control-border: var(--border-control);
+  --desktop-control-border-hover: var(--border-control-hover);
+  --desktop-control-shadow:
+    inset 0 1px 0 var(--miui-highlight),
+    0 1px 2px var(--miui-lowlight);
+  --desktop-control-shadow-hover:
+    inset 0 1px 0 var(--miui-highlight),
+    0 2px 4px var(--miui-lowlight);
+  --desktop-control-focus: color-mix(in srgb, var(--miui-orange) 24%, transparent);
+  --desktop-button-hover: var(--surface-card);
+  --desktop-button-pressed: var(--control-active);
+  --desktop-button-prominent: var(--miui-orange);
+  --desktop-button-prominent-hover: var(--miui-orange-strong);
+  --desktop-button-prominent-text: #ffffff;
+}
+
+:root[data-interface-style='miui-v5'][data-theme='dark'] {
+  color: #e9e9e9;
+  background: #151515;
+  --sidebar: #202020;
+  --surface: #282828;
+  --workspace: #191919;
+  --surface-soft: #303030;
+  --surface-card: #363636;
+  --surface-card-hover: #424242;
+  --surface-elevated: rgba(40, 40, 40, 0.97);
+  --surface-command: rgba(40, 40, 40, 0.96);
+  --toolbar: #2d2d2d;
+  --control: #373737;
+  --control-hover: rgba(255, 255, 255, 0.1);
+  --control-hover-soft: rgba(255, 255, 255, 0.065);
+  --control-active: #484848;
+  --border: #464646;
+  --border-soft: #363636;
+  --border-control: #555555;
+  --border-control-hover: #777777;
+  --text: #e9e9e9;
+  --text-strong: #ffffff;
+  --text-body: #d4d4d4;
+  --text-muted: #a5a5a5;
+  --text-soft: #787878;
+  --text-faint: #909090;
+  --editor-text: #eeeeee;
+  --success-text: #8fbd91;
+  --success-bg: #29382a;
+  --error-text: #e28a80;
+  --error-bg: #422b29;
+  --warning-text: #ddb067;
+  --tooltip-bg: #efefef;
+  --tooltip-text: #282828;
+  --shadow: rgba(0, 0, 0, 0.54);
+  --shadow-soft: rgba(0, 0, 0, 0.34);
+  --shadow-popover: 0 18px 44px rgba(0, 0, 0, 0.6);
+  --pattern-dot: #484848;
+  --sidebar-vibrancy-tint: rgba(32, 32, 32, 0.68);
+  --sidebar-vibrancy-border: rgba(255, 255, 255, 0.11);
+  --miui-orange: #ff7a2d;
+  --miui-orange-strong: #e85d12;
+  --miui-orange-soft: #442b1e;
+  --miui-raised-top: #414141;
+  --miui-raised-bottom: #2c2c2c;
+  --miui-toolbar-top: #353535;
+  --miui-toolbar-bottom: #292929;
+  --miui-inset: #222222;
+  --miui-highlight: rgba(255, 255, 255, 0.09);
+  --miui-lowlight: rgba(0, 0, 0, 0.58);
+  --desktop-control-shadow:
+    inset 0 1px 0 var(--miui-highlight),
+    0 1px 2px var(--miui-lowlight);
+  --desktop-control-shadow-hover:
+    inset 0 1px 0 rgba(255, 255, 255, 0.13),
+    0 2px 5px var(--miui-lowlight);
+}
+
+:root[data-interface-style='miui-v5'] body {
+  line-height: 1.45;
+  letter-spacing: 0;
+  text-shadow: none;
+}
+
+:root[data-interface-style='miui-v5'] .app-shell,
+:root[data-interface-style='miui-v5'] .workspace,
+:root[data-interface-style='miui-v5'] .settings-content,
+:root[data-interface-style='miui-v5'] .settings-scroll {
+  background: var(--workspace);
+}
+
+:root[data-interface-style='miui-v5'] .sidebar,
+:root[data-interface-style='miui-v5'] .settings-nav {
+  background: var(--sidebar);
+  border-color: var(--border);
+  box-shadow: inset -1px 0 0 var(--miui-highlight);
+}
+
+:root[data-interface-style='miui-v5'] .settings-titlebar,
+:root[data-interface-style='miui-v5'] .settings-content__header {
+  background: linear-gradient(to bottom, var(--miui-toolbar-top), var(--miui-toolbar-bottom));
+  border-color: var(--border);
+  box-shadow:
+    inset 0 1px 0 var(--miui-highlight),
+    inset 0 -2px 0 color-mix(in srgb, var(--miui-orange) 72%, transparent);
+}
+
+:root[data-interface-style='miui-v5'] .tool-button,
+:root[data-interface-style='miui-v5'] .recent-item,
+:root[data-interface-style='miui-v5'] .settings-nav__item,
+:root[data-interface-style='miui-v5'] .command-result {
+  position: relative;
+  border: 1px solid transparent;
+  border-radius: 4px;
+}
+
+:root[data-interface-style='miui-v5'] .tool-button:hover,
+:root[data-interface-style='miui-v5'] .recent-item:hover,
+:root[data-interface-style='miui-v5'] .settings-nav__item:hover,
+:root[data-interface-style='miui-v5'] .command-result:hover {
+  background: var(--surface-card);
+  border-color: var(--border-soft);
+}
+
+:root[data-interface-style='miui-v5'] .tool-button--active,
+:root[data-interface-style='miui-v5'] .settings-nav__item--active,
+:root[data-interface-style='miui-v5'] .command-result--selected {
+  color: var(--miui-orange-strong);
+  background: var(--surface);
+  border-color: var(--border);
+  box-shadow:
+    inset 3px 0 0 var(--miui-orange),
+    0 1px 3px var(--shadow-soft);
+}
+
+:root[data-interface-style='miui-v5'][data-theme='dark'] .tool-button--active,
+:root[data-interface-style='miui-v5'][data-theme='dark'] .settings-nav__item--active,
+:root[data-interface-style='miui-v5'][data-theme='dark'] .command-result--selected {
+  color: var(--miui-orange);
+}
+
+:root[data-interface-style='miui-v5'] .tool-button--active svg,
+:root[data-interface-style='miui-v5'] .settings-nav__item--active svg {
+  color: var(--miui-orange);
+}
+
+:root[data-interface-style='miui-v5'] .tool-page h1,
+:root[data-interface-style='miui-v5'] .placeholder-page h1,
+:root[data-interface-style='miui-v5'] .settings-content__header h1 {
+  color: var(--text-strong);
+  font-weight: 600;
+  text-shadow: none;
+}
+
+:root[data-interface-style='miui-v5'] .tool-group h2,
+:root[data-interface-style='miui-v5'] .section-title,
+:root[data-interface-style='miui-v5'] .settings-group h2 {
+  color: var(--text-muted);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.035em;
+}
+
+:root[data-interface-style='miui-v5'] .editor-shell,
+:root[data-interface-style='miui-v5'] .local-tool-shell,
+:root[data-interface-style='miui-v5'] .quick-note-editor-shell,
+:root[data-interface-style='miui-v5'] .runtime-shell,
+:root[data-interface-style='miui-v5'] .vault-panel,
+:root[data-interface-style='miui-v5'] .quick-note-sidebar,
+:root[data-interface-style='miui-v5'] .quick-replace-panel {
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: 5px;
+  box-shadow:
+    inset 0 1px 0 var(--miui-highlight),
+    0 5px 14px var(--shadow-soft);
+}
+
+:root[data-interface-style='miui-v5'] .inspector-card,
+:root[data-interface-style='miui-v5'] .operation-panel,
+:root[data-interface-style='miui-v5'] .calculator-log,
+:root[data-interface-style='miui-v5'] .common-pattern-list button,
+:root[data-interface-style='miui-v5'] .home-work-list button,
+:root[data-interface-style='miui-v5'] .home-contributors button {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 2px 6px var(--shadow-soft);
+}
+
+:root[data-interface-style='miui-v5'] .editor-toolbar,
+:root[data-interface-style='miui-v5'] .tool-tabs,
+:root[data-interface-style='miui-v5'] .p4-toolbar,
+:root[data-interface-style='miui-v5'] .runtime-toolbar,
+:root[data-interface-style='miui-v5'] .quick-note-toolbar {
+  background: linear-gradient(to bottom, var(--miui-toolbar-top), var(--miui-toolbar-bottom));
+  border-color: var(--border);
+  box-shadow: inset 0 1px 0 var(--miui-highlight);
+}
+
+:root[data-interface-style='miui-v5'] .toolbar-button,
+:root[data-interface-style='miui-v5'] .icon-button,
+:root[data-interface-style='miui-v5'] .settings-command,
+:root[data-interface-style='miui-v5'] .dialog-button,
+:root[data-interface-style='miui-v5'] .panel-command,
+:root[data-interface-style='miui-v5'] .io-action-button,
+:root[data-interface-style='miui-v5'] .primary-command,
+:root[data-interface-style='miui-v5'] select {
+  color: var(--text-body);
+  background: linear-gradient(to bottom, var(--miui-raised-top), var(--miui-raised-bottom));
+  border: 1px solid var(--border-control);
+  border-radius: 4px;
+  box-shadow:
+    inset 0 1px 0 var(--miui-highlight),
+    0 1px 2px var(--miui-lowlight);
+  text-shadow: none;
+}
+
+:root[data-interface-style='miui-v5'] .toolbar-button:hover:not(:disabled),
+:root[data-interface-style='miui-v5'] .icon-button:hover:not(:disabled),
+:root[data-interface-style='miui-v5'] .settings-command:hover:not(:disabled),
+:root[data-interface-style='miui-v5'] .dialog-button:hover:not(:disabled),
+:root[data-interface-style='miui-v5'] .panel-command:hover:not(:disabled),
+:root[data-interface-style='miui-v5'] .io-action-button:hover:not(:disabled) {
+  color: var(--text-strong);
+  border-color: var(--border-control-hover);
+  filter: brightness(1.035);
+}
+
+:root[data-interface-style='miui-v5'] .toolbar-button:active:not(:disabled),
+:root[data-interface-style='miui-v5'] .icon-button:active:not(:disabled),
+:root[data-interface-style='miui-v5'] .settings-command:active:not(:disabled),
+:root[data-interface-style='miui-v5'] .dialog-button:active:not(:disabled),
+:root[data-interface-style='miui-v5'] .panel-command:active:not(:disabled),
+:root[data-interface-style='miui-v5'] .io-action-button:active:not(:disabled) {
+  background: var(--miui-inset);
+  box-shadow: inset 0 2px 4px var(--miui-lowlight);
+}
+
+:root[data-interface-style='miui-v5'] .toolbar-button--primary,
+:root[data-interface-style='miui-v5'] .primary-command,
+:root[data-interface-style='miui-v5'] .dialog-button--primary,
+:root[data-interface-style='miui-v5'] .runtime-toolbar > button.runtime-run-button {
+  color: #ffffff;
+  background: linear-gradient(
+    to bottom,
+    color-mix(in srgb, var(--miui-orange) 84%, #fff),
+    var(--miui-orange-strong)
+  );
+  border-color: color-mix(in srgb, var(--miui-orange-strong) 82%, #7b310b);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--miui-orange) 46%, #fff),
+    0 2px 4px color-mix(in srgb, var(--miui-orange-strong) 28%, transparent);
+  text-shadow: 0 -1px 0 color-mix(in srgb, var(--miui-orange-strong) 70%, #000);
+}
+
+:root[data-interface-style='miui-v5'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+:root[data-interface-style='miui-v5'] textarea {
+  color: var(--text-body);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: 4px;
+  box-shadow: inset 0 1px 3px var(--miui-lowlight);
+}
+
+:root[data-interface-style='miui-v5'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):focus,
+:root[data-interface-style='miui-v5'] textarea:focus,
+:root[data-interface-style='miui-v5'] select:focus {
+  border-color: var(--miui-orange);
+  box-shadow:
+    inset 0 1px 3px var(--miui-lowlight),
+    0 0 0 2px var(--desktop-control-focus);
+}
+
+:root[data-interface-style='miui-v5'] .settings-group__rows {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  box-shadow: 0 3px 10px var(--shadow-soft);
+  overflow: hidden;
+}
+
+:root[data-interface-style='miui-v5'] .setting-row {
+  min-height: 54px;
+  padding: 0 14px;
+  border-color: var(--border-soft);
+}
+
+:root[data-interface-style='miui-v5'] .setting-row:last-child,
+:root[data-interface-style='miui-v5'] .runtime-row:last-child {
+  border-bottom: 0;
+}
+
+:root[data-interface-style='miui-v5'] .segmented {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  padding: 0;
+  background: var(--miui-inset);
+  border: 1px solid var(--border-control);
+  border-radius: 4px;
+  box-shadow: inset 0 1px 3px var(--miui-lowlight);
+  overflow: hidden;
+}
+
+:root[data-interface-style='miui-v5'] .segmented__item {
+  min-height: 32px;
+  border-right: 1px solid var(--border);
+  border-radius: 0;
+  font-weight: 500;
+  text-shadow: none;
+}
+
+:root[data-interface-style='miui-v5'] .segmented__item:last-child {
+  border-right: 0;
+}
+
+:root[data-interface-style='miui-v5'] .segmented__item--active {
+  color: var(--miui-orange-strong);
+  background: var(--surface);
+  box-shadow:
+    inset 0 -3px 0 var(--miui-orange),
+    0 1px 2px var(--miui-lowlight);
+}
+
+:root[data-interface-style='miui-v5'] .toggle {
+  width: 42px;
+  height: 22px;
+  padding: 2px;
+  background: var(--miui-inset);
+  border: 1px solid var(--border-control);
+  border-radius: 3px;
+  box-shadow: inset 0 1px 3px var(--miui-lowlight);
+}
+
+:root[data-interface-style='miui-v5'] .toggle span {
+  width: 16px;
+  height: 16px;
+  background: linear-gradient(to bottom, var(--miui-raised-top), var(--miui-raised-bottom));
+  border: 1px solid var(--border-control);
+  border-radius: 2px;
+  box-shadow: 0 1px 2px var(--miui-lowlight);
+}
+
+:root[data-interface-style='miui-v5'] .toggle--checked {
+  background: var(--miui-orange);
+  border-color: var(--miui-orange-strong);
+}
+
+:root[data-interface-style='miui-v5'] .toggle--checked span {
+  transform: translateX(20px);
+}
+
+:root[data-interface-style='miui-v5'] input[type='checkbox'],
+:root[data-interface-style='miui-v5'] input[type='radio'],
+:root[data-interface-style='miui-v5'] input[type='range'] {
+  accent-color: var(--miui-orange);
+}
+
+:root[data-interface-style='miui-v5'] .dialog-backdrop,
+:root[data-interface-style='miui-v5'] .command-palette-backdrop {
+  background: rgba(0, 0, 0, 0.38);
+  backdrop-filter: blur(2px);
+}
+
+:root[data-interface-style='miui-v5'] .dialog,
+:root[data-interface-style='miui-v5'] .command-palette,
+:root[data-interface-style='miui-v5'] .toast,
+:root[data-interface-style='miui-v5'] .sidebar-update-notes {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border-control);
+  border-radius: 5px;
+  box-shadow: var(--shadow-popover);
+  backdrop-filter: blur(14px);
+}
+
+:root[data-interface-style='miui-v5'] .dialog__header,
+:root[data-interface-style='miui-v5'] .dialog__footer,
+:root[data-interface-style='miui-v5'] .command-palette__search {
+  background: linear-gradient(to bottom, var(--miui-toolbar-top), var(--miui-toolbar-bottom));
+  border-color: var(--border);
+}
+
+:root[data-interface-style='miui-v5'] .dialog__header {
+  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--miui-orange) 72%, transparent);
+}
+
+:root[data-interface-style='miui-v5'] .tooltip {
+  border-radius: 4px;
+  box-shadow: 0 5px 14px var(--shadow);
+}
+
+:root[data-interface-style='miui-v5'] .status-pill {
+  color: var(--text-body);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  box-shadow: 0 1px 2px var(--shadow-soft);
+}

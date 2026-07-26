@@ -203,7 +203,8 @@ function AppearanceSettings({ settings, commit }: SettingsPanelProps) {
             { value: 'modern', label: t('settings.interfaceStyle.modern') },
             { value: 'quiet', label: t('settings.interfaceStyle.quiet') },
             { value: 'hero', label: t('settings.interfaceStyle.hero') },
-            { value: 'smartisan', label: t('settings.interfaceStyle.smartisan') }
+            { value: 'smartisan', label: t('settings.interfaceStyle.smartisan') },
+            { value: 'miui-v5', label: t('settings.interfaceStyle.miuiV5') }
           ]}
           onChange={(value) => commit({ appearance: { interfaceStyle: value } })}
         />

@@ -6,7 +6,7 @@ export const appSettingsSchemaVersion = 11
 
 export type AppLanguage = 'zh-CN' | 'en-US' | 'ja-JP'
 export type ThemePreference = 'system' | 'light' | 'dark'
-export type InterfaceStyle = 'modern' | 'quiet' | 'hero' | 'smartisan'
+export type InterfaceStyle = 'modern' | 'quiet' | 'hero' | 'smartisan' | 'miui-v5'
 export type CloseBehavior = 'ask' | 'hide' | 'quit'
 export type NavigationStyle = 'classic' | 'card' | 'grouped'
 export type SecretKey = 'proxyPassword' | 'gitToken'
@@ -231,7 +231,7 @@ export function mergeSettings(current: AppSettings, patch: SettingsPatch): AppSe
 export function normalizeSettings(value: AppSettings): AppSettings {
   const languages: AppLanguage[] = ['zh-CN', 'en-US', 'ja-JP']
   const themes: ThemePreference[] = ['system', 'light', 'dark']
-  const interfaceStyles: InterfaceStyle[] = ['modern', 'quiet', 'hero', 'smartisan']
+  const interfaceStyles: InterfaceStyle[] = ['modern', 'quiet', 'hero', 'smartisan', 'miui-v5']
   const closeBehaviors: CloseBehavior[] = ['ask', 'hide', 'quit']
   const navigationStyles: NavigationStyle[] = ['classic', 'card', 'grouped']
   const corrections: AppSettings['tools']['qrErrorCorrection'][] = ['L', 'M', 'Q', 'H']

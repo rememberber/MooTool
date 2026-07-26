@@ -176,4 +176,12 @@ describe('mergeSettings', () => {
 
     expect(settings.appearance.interfaceStyle).toBe('smartisan')
   })
+
+  it('accepts and persists the MIUI V5 interface style', () => {
+    const settings = mergeSettings(defaultAppSettings, {
+      appearance: { interfaceStyle: 'miui-v5' }
+    })
+
+    expect(settings.appearance.interfaceStyle).toBe('miui-v5')
+  })
 })
