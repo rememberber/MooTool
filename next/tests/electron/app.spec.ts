@@ -157,6 +157,20 @@ test('switches interface styles from appearance settings', async () => {
   const settingsPage = await settingsWindowPromise
   await settingsPage.waitForLoadState('domcontentloaded')
   await settingsPage.locator('.settings-nav__item').filter({ hasText: '外观' }).click()
+  const getToggleGeometry = () => settingsPage.evaluate(() => {
+    const track = document.querySelector('.toggle')
+    const thumb = track?.querySelector('span')
+    if (!track || !thumb) return null
+    const trackBounds = track.getBoundingClientRect()
+    const thumbBounds = thumb.getBoundingClientRect()
+    return {
+      borderWidth: getComputedStyle(track).borderTopWidth,
+      trackHeight: trackBounds.height,
+      thumbHeight: thumbBounds.height,
+      centered: Math.abs((trackBounds.top + trackBounds.bottom) / 2 - (thumbBounds.top + thumbBounds.bottom) / 2) < 0.5,
+      contained: thumbBounds.top >= trackBounds.top && thumbBounds.bottom <= trackBounds.bottom
+    }
+  })
 
   const heroStyle = settingsPage.getByRole('button', { name: 'Hero（NextUI）', exact: true })
   await expect(heroStyle).toBeVisible()
@@ -181,6 +195,13 @@ test('switches interface styles from appearance settings', async () => {
     interfaceStyle: 'hero',
     controlRadius: '12px',
     cardRadius: '14px'
+  })
+  await expect.poll(getToggleGeometry).toEqual({
+    borderWidth: '0px',
+    trackHeight: 24,
+    thumbHeight: 20,
+    centered: true,
+    contained: true
   })
 
   const smartisanStyle = settingsPage.getByRole('button', { name: 'Smartisan OS', exact: true })
@@ -236,8 +257,25 @@ test('switches interface styles from appearance settings', async () => {
     stylePickerFits: true
   })
 
+  await settingsPage.getByRole('button', { name: '安静主题', exact: true }).click()
+  await expect.poll(() => mainPage.evaluate(() => document.documentElement.dataset.interfaceStyle)).toBe('quiet')
+  await expect.poll(getToggleGeometry).toEqual({
+    borderWidth: '0px',
+    trackHeight: 22,
+    thumbHeight: 18,
+    centered: true,
+    contained: true
+  })
+
   await settingsPage.getByRole('button', { name: '现代主题', exact: true }).click()
   await expect.poll(() => mainPage.evaluate(() => document.documentElement.dataset.interfaceStyle)).toBe('modern')
+  await expect.poll(getToggleGeometry).toEqual({
+    borderWidth: '0px',
+    trackHeight: 22,
+    thumbHeight: 18,
+    centered: true,
+    contained: true
+  })
   await settingsPage.locator('.settings-titlebar .icon-ghost').click()
 })
 

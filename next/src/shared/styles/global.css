@@ -10433,3 +10433,11 @@ textarea:focus {
   border-radius: 4px;
   box-shadow: 0 1px 2px var(--shadow-soft);
 }
+
+/* Rounded switches size their thumbs against a borderless track. The shared
+ * desktop border reduced the inner height and made the thumb overflow. */
+:root[data-interface-style='modern'] .toggle,
+:root[data-interface-style='quiet'] .toggle,
+:root[data-interface-style='hero'] .toggle {
+  border: 0;
+}
