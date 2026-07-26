@@ -18,6 +18,7 @@ export const toolIds = [
   'cron',
   'qrCode',
   'timeConvert',
+  'messageBoard',
   'translation',
   'calculator',
   'colorBoard',

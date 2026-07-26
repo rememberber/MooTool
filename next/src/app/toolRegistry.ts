@@ -15,6 +15,7 @@ import {
   Image,
   Languages,
   LockKeyhole,
+  MessageSquareText,
   Network,
   NotebookPen,
   Palette,
@@ -56,6 +57,7 @@ export type ToolGroupDefinition = {
 const HomePage = lazy(() => import('@/features/home/HomePage').then((module) => ({ default: module.HomePage })))
 const JsonTool = lazy(() => import('@/features/json/JsonTool').then((module) => ({ default: module.JsonTool })))
 const TimeConvertTool = lazy(() => import('@/features/time/TimeConvertTool').then((module) => ({ default: module.TimeConvertTool })))
+const MessageBoardTool = lazy(() => import('@/features/messageBoard/MessageBoardTool').then((module) => ({ default: module.MessageBoardTool })))
 const EncodeTool = lazy(() => import('@/features/encode/EncodeTool').then((module) => ({ default: module.EncodeTool })))
 const UaParseTool = lazy(() => import('@/features/ua/UaParseTool').then((module) => ({ default: module.UaParseTool })))
 const CalculatorTool = lazy(() => import('@/features/calculator/CalculatorTool').then((module) => ({ default: module.CalculatorTool })))
@@ -99,6 +101,7 @@ export const toolRegistry: ToolDefinition[] = [
   tool('cron', 'encode', 'app.nav.cron', CalendarClock, ['cron', 'schedule', '定时', '表达式'], CronTool, 'parity-review'),
   tool('qrCode', 'encode', 'app.nav.qrCode', QrCode, ['qr', 'qrcode', '二维码', '条码'], QrCodeTool, 'parity-review'),
   tool('timeConvert', 'daily', 'app.nav.timeConvert', Clock3, ['time', 'timestamp', 'clock', '时间', '时区', '时间戳'], TimeConvertTool, 'parity-review'),
+  tool('messageBoard', 'daily', 'app.nav.messageBoard', MessageSquareText, ['message', 'sign', 'notice', 'board', '留言', '告示', '暂停营业', '马上回来'], MessageBoardTool, 'complete'),
   tool('translation', 'daily', 'app.nav.translation', Languages, ['translate', 'translation', 'word', '翻译', '单词'], TranslationTool, 'parity-review'),
   tool('calculator', 'daily', 'app.nav.calculator', Calculator, ['calculator', 'calc', 'math', '计算', '表达式'], CalculatorTool, 'parity-review'),
   tool('colorBoard', 'daily', 'app.nav.colorBoard', Palette, ['color', 'palette', 'hex', 'rgb', '调色', '颜色'], ColorBoardTool, 'parity-review'),
@@ -139,7 +142,7 @@ function tool(
     icon,
     component,
     status,
-    supportsHistory: id !== 'mootool' && id !== 'hardware',
+    supportsHistory: id !== 'mootool' && id !== 'hardware' && id !== 'messageBoard',
     supportsFavorites: ['regex', 'cron', 'colorBoard'].includes(id)
   }
 }

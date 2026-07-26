@@ -347,7 +347,7 @@ test('sizes compact controls from their localized English content', async () => 
 })
 
 test('opens all registered tools through search and persists recent access', async () => {
-  await expect(mainPage.locator('.tool-button')).toHaveCount(25)
+  await expect(mainPage.locator('.tool-button')).toHaveCount(26)
 
   await mainPage.getByRole('button', { name: '搜索', exact: true }).click()
   const searchInput = mainPage.locator('.command-palette__search input')
@@ -368,6 +368,34 @@ test('opens all registered tools through search and persists recent access', asy
   await expect(mainPage.locator('.recent-item').first()).toContainText('代码运行')
   const workspace = await mainPage.evaluate(() => window.mootool.getWorkspaceState())
   expect(workspace).toEqual({ activeToolId: 'java', recentToolIds: ['java'] })
+})
+
+test('creates and presents an auto-fitting message board', async () => {
+  await openTool('留言板', '留言板')
+
+  const stage = mainPage.locator('.message-board-stage')
+  const message = mainPage.locator('.message-board-stage__message')
+  const editor = mainPage.getByLabel('留言内容')
+  await expect(stage).toBeVisible()
+  await expect(message).toHaveText('离开一会，马上回来')
+
+  await editor.fill('重要通知：设备升级维护中\n预计半小时后恢复服务')
+  await expect(message).toContainText('设备升级维护中')
+  await expect.poll(() => message.evaluate((element) => {
+    const frame = element.parentElement
+    return Boolean(frame)
+      && element.scrollHeight <= frame.clientHeight
+      && element.scrollWidth <= frame.clientWidth
+  })).toBe(true)
+
+  await mainPage.getByRole('button', { name: '珊瑚', exact: true }).click()
+  await expect(stage).toHaveClass(/message-board-stage--coral/)
+
+  await mainPage.getByRole('button', { name: '沉浸展示', exact: true }).click()
+  await expect(mainPage.locator('.message-board-tool')).toHaveClass(/message-board-tool--presenting/)
+  await expect(mainPage.locator('.message-board-controls')).toBeHidden()
+  await mainPage.keyboard.press('Escape')
+  await expect(mainPage.locator('.message-board-tool')).not.toHaveClass(/message-board-tool--presenting/)
 })
 
 test('formats JSON and completes history and Vault workflows', async () => {
