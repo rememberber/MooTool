@@ -8299,17 +8299,6 @@ select:not([multiple]) {
   font-weight: 600;
 }
 
-.host-find-bar {
-  display: grid;
-  grid-template-columns: minmax(100px, 1fr) minmax(100px, 1fr) auto auto 30px;
-  align-items: center;
-  gap: 6px;
-  min-height: 44px;
-  padding: 6px 9px;
-  background: var(--surface-soft);
-  border-bottom: 1px solid var(--border-soft);
-}
-
 .host-editor > .host-content-editor {
   width: 100%;
   min-height: 0;
