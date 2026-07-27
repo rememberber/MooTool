@@ -7841,7 +7841,7 @@ select:not([multiple]) {
 
 .http-url-bar {
   display: grid;
-  grid-template-columns: 92px minmax(180px, 1fr) auto;
+  grid-template-columns: 92px minmax(140px, 1fr) auto auto;
   align-items: center;
   gap: 7px;
   padding: 8px 10px;
@@ -7852,6 +7852,40 @@ select:not([multiple]) {
 .http-url-bar > input {
   width: 100%;
   font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+
+.http-timeout {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 34px;
+  padding: 0 8px;
+  border: 1px solid var(--border-soft);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.http-timeout input {
+  width: 72px;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 12px;
+  text-align: right;
+}
+
+.http-timeout input:focus {
+  outline: none;
+}
+
+.http-timeout span {
+  font-size: 11px;
+  color: var(--muted);
 }
 
 .http-request-pane,

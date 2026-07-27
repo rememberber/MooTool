@@ -17,7 +17,7 @@ type ResponseTab = 'body' | 'headers' | 'cookies'
 
 export function HttpTool() {
   const { t } = useI18n()
-  const { settings } = useSettings()
+  const { settings, updateSettings } = useSettings()
   const actions = useToolActions('http')
   const [saved, setSaved] = useState<SavedHttpRequest[]>([])
   const [search, setSearch] = useState('')
@@ -31,10 +31,25 @@ export function HttpTool() {
   const [saveName, setSaveName] = useState('')
   const [curlOpen, setCurlOpen] = useState(false)
   const [curlValue, setCurlValue] = useState('')
+  const [timeoutMs, setTimeoutMs] = useState(settings.network.requestTimeoutMs)
   const activeRequestId = useRef('')
 
   const loadSaved = useCallback(async () => setSaved(await window.mootool.listHttpRequests(search)), [search])
   useEffect(() => { const timer = window.setTimeout(() => { void loadSaved() }, 100); return () => window.clearTimeout(timer) }, [loadSaved])
+  useEffect(() => { setTimeoutMs(settings.network.requestTimeoutMs) }, [settings.network.requestTimeoutMs])
+
+  function clampTimeout(value: number): number {
+    if (!Number.isFinite(value)) return 30_000
+    return Math.max(1_000, Math.min(120_000, Math.round(value)))
+  }
+
+  function commitTimeout(value: number): void {
+    const next = clampTimeout(value)
+    setTimeoutMs(next)
+    if (next !== settings.network.requestTimeoutMs) {
+      void updateSettings({ network: { requestTimeoutMs: next } }).catch((error) => actions.reportError(error))
+    }
+  }
 
   function openSaved(item: SavedHttpRequest): void {
     setRequest(item)
@@ -43,10 +58,15 @@ export function HttpTool() {
 
   async function sendRequest(): Promise<void> {
     if (!request.url.trim()) { actions.toast.error(t('http.urlRequired')); return }
+    const nextTimeout = clampTimeout(timeoutMs)
+    setTimeoutMs(nextTimeout)
     activeRequestId.current = `http-${Date.now()}-${Math.random().toString(36).slice(2)}`
     setSending(true)
     try {
-      const result = await window.mootool.sendHttpRequest({ requestId: activeRequestId.current, request, timeoutMs: settings.network.requestTimeoutMs })
+      if (nextTimeout !== settings.network.requestTimeoutMs) {
+        await updateSettings({ network: { requestTimeoutMs: nextTimeout } })
+      }
+      const result = await window.mootool.sendHttpRequest({ requestId: activeRequestId.current, request, timeoutMs: nextTimeout })
       setResponse(result)
       if (!result.ok) actions.toast.error(result.statusText || t(`http.error.${result.errorCode ?? 'NETWORK'}` as 'http.error.NETWORK'))
     } catch (error) { actions.reportError(error) } finally { setSending(false) }
@@ -104,7 +124,27 @@ export function HttpTool() {
           <footer><button className="icon-button" type="button" aria-label={t('http.importCurl')} onClick={() => setCurlOpen(true)}><FileInput size={14} /></button><button className="icon-button" type="button" aria-label={t('http.copyCurl')} onClick={() => { void actions.copy(toCurlCommand(request)) }}><Code2 size={14} /></button><button className="icon-button" type="button" aria-label={t('common.save')} onClick={() => { setSaveName(request.name || t('http.untitled')); setSaveOpen(true) }}><Save size={14} /></button><button className="icon-button icon-button--danger" type="button" disabled={!request.id} aria-label={t('common.action.delete')} onClick={() => { void deleteRequest() }}><Trash2 size={14} /></button></footer>
         </aside>
         <main className="http-editor">
-          <div className="http-url-bar"><select aria-label={t('http.method')} value={request.method} onChange={(event) => setRequest({ ...request, method: event.target.value as HttpRequestDraft['method'] })}>{httpMethods.map((method) => <option key={method}>{method}</option>)}</select><input data-testid="http-url" value={request.url} placeholder="https://api.example.com" spellCheck={false} onChange={(event) => setRequest({ ...request, url: event.target.value })} onKeyDown={(event) => { if (event.key === 'Enter' && !sending) void sendRequest() }} />{sending ? <button className="toolbar-button" type="button" onClick={() => { void stopRequest() }}><Square size={13} />{t('common.stop')}</button> : <button className="toolbar-button toolbar-button--primary" data-testid="http-send" type="button" onClick={() => { void sendRequest() }}><Send size={13} />{t('http.send')}</button>}</div>
+          <div className="http-url-bar">
+            <select aria-label={t('http.method')} value={request.method} onChange={(event) => setRequest({ ...request, method: event.target.value as HttpRequestDraft['method'] })}>{httpMethods.map((method) => <option key={method}>{method}</option>)}</select>
+            <input data-testid="http-url" value={request.url} placeholder="https://api.example.com" spellCheck={false} onChange={(event) => setRequest({ ...request, url: event.target.value })} onKeyDown={(event) => { if (event.key === 'Enter' && !sending) void sendRequest() }} />
+            <label className="http-timeout" title={t('http.timeoutHint')}>
+              <Clock3 size={13} aria-hidden />
+              <input
+                data-testid="http-timeout"
+                type="number"
+                min={1_000}
+                max={120_000}
+                step={1_000}
+                value={timeoutMs}
+                aria-label={t('http.timeout')}
+                onChange={(event) => setTimeoutMs(Number(event.target.value))}
+                onBlur={() => commitTimeout(timeoutMs)}
+                onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); commitTimeout(timeoutMs); if (!sending) void sendRequest() } }}
+              />
+              <span>ms</span>
+            </label>
+            {sending ? <button className="toolbar-button" type="button" onClick={() => { void stopRequest() }}><Square size={13} />{t('common.stop')}</button> : <button className="toolbar-button toolbar-button--primary" data-testid="http-send" type="button" onClick={() => { void sendRequest() }}><Send size={13} />{t('http.send')}</button>}
+          </div>
           <div className="http-request-pane"><ToolTabs tabs={(['params', 'headers', 'cookies', 'body'] as RequestTab[]).map((id) => ({ id, label: t(`http.tab.${id}` as 'http.tab.params') }))} active={requestTab} onChange={setRequestTab} />
             {requestTab === 'params' && <KeyValueEditor entries={request.params} onChange={(params) => setRequest({ ...request, params })} />}
             {requestTab === 'headers' && <KeyValueEditor entries={request.headers} onChange={(headers) => setRequest({ ...request, headers })} />}

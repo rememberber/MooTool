@@ -269,6 +269,17 @@ public class ConfigUtil extends ConfigBaseUtil {
         setting.putByGroup("httpProxyPassword", "setting.http", httpProxyPassword);
     }
 
+    /** HTTP 请求超时（毫秒），范围 1000–120000，默认 30000。 */
+    public int getHttpTimeoutMs() {
+        int value = setting.getInt("httpTimeoutMs", "setting.http", 30_000);
+        return Math.max(1_000, Math.min(120_000, value));
+    }
+
+    public void setHttpTimeoutMs(int httpTimeoutMs) {
+        int value = Math.max(1_000, Math.min(120_000, httpTimeoutMs));
+        setting.putByGroup("httpTimeoutMs", "setting.http", String.valueOf(value));
+    }
+
     public String getQuickNoteFontName() {
         if (SystemUtil.isLinuxOs()) {
             return setting.getStr("font", "setting.appearance", "Noto Sans CJK HK");

@@ -269,6 +269,7 @@ public class HttpRequestListener {
 
         httpRequestForm.getSendToWindowButton().addActionListener(e -> {
             try {
+                HttpRequestForm.applyTimeoutFromForm();
                 HttpMsgMaker.prepare();
                 HttpMsgSender httpMsgSender = new HttpMsgSender();
                 HttpSendResult httpSendResult = httpMsgSender.send();
@@ -303,6 +304,7 @@ public class HttpRequestListener {
 
         httpRequestForm.getSendButton().addActionListener(e -> {
             try {
+                HttpRequestForm.applyTimeoutFromForm();
                 HttpMsgMaker.prepare();
                 HttpMsgSender httpMsgSender = new HttpMsgSender();
                 HttpSendResult httpSendResult = httpMsgSender.send();

@@ -100,6 +100,7 @@ public class HttpMsgSender {
             if (App.config.isHttpUseProxy()) {
                 httpRequest.setProxy(getProxy());
             }
+            httpRequest.timeout(App.config.getHttpTimeoutMs());
 
             httpResponse = httpRequest.execute();
             if (!httpResponse.isOk()) {
@@ -272,12 +273,23 @@ public class HttpMsgSender {
         return proxy;
     }
 
+    public static void resetClient() {
+        synchronized (HttpMsgSender.class) {
+            okHttpClient = null;
+            proxy = null;
+        }
+    }
+
     public static OkHttpClient getOkHttpClient() {
         if (okHttpClient == null) {
             synchronized (HttpMsgSender.class) {
                 if (okHttpClient == null) {
+                    int timeoutMs = App.config.getHttpTimeoutMs();
                     OkHttpClient.Builder builder = new OkHttpClient.Builder();
-                    builder.connectTimeout(3, TimeUnit.MINUTES);
+                    builder.connectTimeout(timeoutMs, TimeUnit.MILLISECONDS);
+                    builder.readTimeout(timeoutMs, TimeUnit.MILLISECONDS);
+                    builder.writeTimeout(timeoutMs, TimeUnit.MILLISECONDS);
+                    builder.callTimeout(timeoutMs, TimeUnit.MILLISECONDS);
                     if (App.config.isHttpUseProxy()) {
                         builder.proxy(getProxy());
                     }

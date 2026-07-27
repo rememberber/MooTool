@@ -15,6 +15,7 @@ import com.luoboduner.moo.tool.dao.THttpRequestHistoryMapper;
 import com.luoboduner.moo.tool.dao.TMsgHttpMapper;
 import com.luoboduner.moo.tool.domain.THttpRequestHistory;
 import com.luoboduner.moo.tool.domain.TMsgHttp;
+import com.luoboduner.moo.tool.service.HttpMsgSender;
 import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.UiConsts;
 import com.luoboduner.moo.tool.ui.component.PanelCloseUtil;
@@ -99,6 +100,8 @@ public class HttpRequestForm {
     private JPanel historyPanel;
     private JButton bodyFormatButton;
     private JButton importCurlButton;
+    private JSpinner timeoutSpinner;
+    private JLabel timeoutLabel;
 
     private static final Log logger = LogFactory.get();
     private static boolean i18nRegistered;
@@ -217,6 +220,10 @@ public class HttpRequestForm {
         I18nUiUtil.setToolTip(closeHistoryButton, "common.close");
         I18nUiUtil.setToolTip(deleteHistoryButton, "common.delete");
         I18nUiUtil.setText(importCurlButton, "httpRequest.curl");
+        if (timeoutLabel != null) {
+            timeoutLabel.setText(I18n.get("httpRequest.timeout"));
+            timeoutSpinner.setToolTipText(I18n.get("httpRequest.tooltip.timeout"));
+        }
 
         I18nUiUtil.setTabTitle(tabbedPane1, 0, "Params");
         I18nUiUtil.setTabTitle(tabbedPane1, 1, "Headers");
@@ -315,7 +322,31 @@ public class HttpRequestForm {
         httpRequestForm.getHistorySplitPane().setDividerLocation(totalWidth);
         httpRequestForm.getHistoryPanel().setVisible(false);
 
+        syncTimeoutFromConfig();
+
         httpRequestForm.getHttpRequestPanel().updateUI();
+    }
+
+    public static void syncTimeoutFromConfig() {
+        if (httpRequestForm == null || httpRequestForm.getTimeoutSpinner() == null) {
+            return;
+        }
+        httpRequestForm.getTimeoutSpinner().setValue(App.config.getHttpTimeoutMs());
+    }
+
+    /** 将工具页超时写入配置并重建 HTTP 客户端。 */
+    public static void applyTimeoutFromForm() {
+        if (httpRequestForm == null || httpRequestForm.getTimeoutSpinner() == null) {
+            return;
+        }
+        int timeoutMs = ((Number) httpRequestForm.getTimeoutSpinner().getValue()).intValue();
+        if (timeoutMs != App.config.getHttpTimeoutMs()) {
+            App.config.setHttpTimeoutMs(timeoutMs);
+            App.config.save();
+            HttpMsgSender.resetClient();
+        }
+        // 保证 spinner 显示 clamp 后的值
+        syncTimeoutFromConfig();
     }
 
     /**
@@ -911,7 +942,7 @@ public class HttpRequestForm {
         panel2.setLayout(new GridLayoutManager(2, 2, new Insets(0, 0, 0, 0), -1, -1));
         historySplitPane.setLeftComponent(panel2);
         final JPanel panel3 = new JPanel();
-        panel3.setLayout(new GridLayoutManager(1, 3, new Insets(0, 0, 10, 0), -1, -1));
+        panel3.setLayout(new GridLayoutManager(1, 5, new Insets(0, 0, 10, 0), -1, -1));
         panel2.add(panel3, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         methodComboBox = new JComboBox();
         final DefaultComboBoxModel defaultComboBoxModel1 = new DefaultComboBoxModel();
@@ -926,10 +957,16 @@ public class HttpRequestForm {
         panel3.add(methodComboBox, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         urlTextField = new JTextField();
         panel3.add(urlTextField, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        timeoutLabel = new JLabel();
+        timeoutLabel.setText("超时");
+        panel3.add(timeoutLabel, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        timeoutSpinner = new JSpinner(new SpinnerNumberModel(30_000, 1_000, 120_000, 1_000));
+        timeoutSpinner.setToolTipText("超时（毫秒）");
+        panel3.add(timeoutSpinner, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(96, -1), null, 0, false));
         sendButton = new JButton();
         sendButton.setText("");
         sendButton.setToolTipText("发送请求");
-        panel3.add(sendButton, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel3.add(sendButton, new GridConstraints(0, 4, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JSplitPane splitPane1 = new JSplitPane();
         splitPane1.setAutoscrolls(false);
         splitPane1.setContinuousLayout(true);

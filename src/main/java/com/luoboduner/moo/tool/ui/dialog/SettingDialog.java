@@ -62,6 +62,8 @@ public class SettingDialog extends JDialog {
     private JTextField httpProxyPortTextField;
     private JTextField httpProxyUserTextField;
     private JTextField httpProxyPasswordTextField;
+    private JSpinner httpTimeoutSpinner;
+    private JLabel httpTimeoutLabel;
     private JComboBox sqlDialectComboBox;
     private JComboBox fontFamilyComboBox;
     private JPanel accentColorPanel;
@@ -116,7 +118,8 @@ public class SettingDialog extends JDialog {
             Map.entry("Host", "Host"),
             Map.entry("端口", "setting.port"),
             Map.entry("用户名", "setting.username"),
-            Map.entry("密码", "setting.password")
+            Map.entry("密码", "setting.password"),
+            Map.entry("超时（毫秒）", "setting.httpTimeout")
     );
 
     private static final Map<String, String> CHECKBOX_KEYS = Map.of(
@@ -187,6 +190,7 @@ public class SettingDialog extends JDialog {
         httpProxyPortTextField.setText(App.config.getHttpProxyPort());
         httpProxyUserTextField.setText(App.config.getHttpProxyUserName());
         httpProxyPasswordTextField.setText(App.config.getHttpProxyPassword());
+        httpTimeoutSpinner.setValue(App.config.getHttpTimeoutMs());
 
         toggleHttpProxyPanel();
 
@@ -237,9 +241,11 @@ public class SettingDialog extends JDialog {
                 App.config.setHttpProxyPort(httpProxyPortTextField.getText());
                 App.config.setHttpProxyUserName(httpProxyUserTextField.getText());
                 App.config.setHttpProxyPassword(httpProxyPasswordTextField.getText());
+                App.config.setHttpTimeoutMs(((Number) httpTimeoutSpinner.getValue()).intValue());
                 App.config.save();
 
-                HttpMsgSender.proxy = null;
+                HttpMsgSender.resetClient();
+                HttpRequestForm.syncTimeoutFromConfig();
                 AlertUtil.buttonInfo(httpSaveButton, I18n.get("common.save"), I18n.get("common.saveSuccess"), 2000);
             } catch (Exception e1) {
                 JOptionPane.showMessageDialog(contentPane, I18n.format("common.saveFailed", e1.getMessage()),
@@ -917,14 +923,22 @@ public class SettingDialog extends JDialog {
         final Spacer spacer7 = new Spacer();
         panel10.add(spacer7, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         final JPanel panel11 = new JPanel();
-        panel11.setLayout(new GridLayoutManager(3, 1, new Insets(15, 15, 25, 0), -1, -1));
+        panel11.setLayout(new GridLayoutManager(4, 1, new Insets(15, 15, 25, 0), -1, -1));
         Font panel11Font = this.$$$getFont$$$("Microsoft YaHei UI", -1, -1, panel11.getFont());
         if (panel11Font != null) panel11.setFont(panel11Font);
         panel2.add(panel11, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         panel11.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(), "HTTP请求", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION, this.$$$getFont$$$(null, Font.BOLD, -1, panel11.getFont()), null));
+        final JPanel httpTimeoutPanel = new JPanel();
+        httpTimeoutPanel.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 8, 0), -1, -1));
+        panel11.add(httpTimeoutPanel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        httpTimeoutLabel = new JLabel();
+        httpTimeoutLabel.setText("超时（毫秒）");
+        httpTimeoutPanel.add(httpTimeoutLabel, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        httpTimeoutSpinner = new JSpinner(new SpinnerNumberModel(30_000, 1_000, 120_000, 1_000));
+        httpTimeoutPanel.add(httpTimeoutSpinner, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, GridConstraints.SIZEPOLICY_FIXED, null, new Dimension(150, -1), null, 0, false));
         final JPanel panel12 = new JPanel();
         panel12.setLayout(new GridLayoutManager(1, 2, new Insets(0, 0, 0, 0), -1, -1));
-        panel11.add(panel12, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel11.add(panel12, new GridConstraints(3, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         httpSaveButton = new JButton();
         httpSaveButton.setIcon(new ImageIcon(getClass().getResource("/icon/menu-saveall_dark.png")));
         httpSaveButton.setText("保存");
@@ -933,10 +947,10 @@ public class SettingDialog extends JDialog {
         panel12.add(spacer8, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         httpUseProxyCheckBox = new JCheckBox();
         httpUseProxyCheckBox.setText("使用HTTP代理");
-        panel11.add(httpUseProxyCheckBox, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        panel11.add(httpUseProxyCheckBox, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         httpProxyPanel = new JPanel();
         httpProxyPanel.setLayout(new GridLayoutManager(4, 2, new Insets(0, 26, 0, 0), -1, -1));
-        panel11.add(httpProxyPanel, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
+        panel11.add(httpProxyPanel, new GridConstraints(2, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final JLabel label8 = new JLabel();
         label8.setText("Host");
         httpProxyPanel.add(label8, new GridConstraints(0, 0, 1, 1, GridConstraints.ANCHOR_WEST, GridConstraints.FILL_NONE, GridConstraints.SIZEPOLICY_FIXED, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
