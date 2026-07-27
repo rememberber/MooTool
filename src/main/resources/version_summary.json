@@ -1,5 +1,5 @@
 {
-  "currentVersion": "v1.8.4",
+  "currentVersion": "v1.8.5",
   "versionIndex": {
     "v0.0.0": "0",
     "v1.0.0": "1",
@@ -55,7 +55,8 @@
     "v1.8.1": "51",
     "v1.8.2": "52",
     "v1.8.3": "53",
-    "v1.8.4": "54"
+    "v1.8.4": "54",
+    "v1.8.5": "55"
   },
   "versionDetailList": [
     {
@@ -356,6 +357,15 @@
       "logEn": "● opt: [Global] Switched the tray icon to a transparent template image for better light/dark mode adaptation\n● opt: [Update] Optimized automatic update check scheduling: briefly delay the first check after the window is ready, then once per hour\n\n",
       "titleJa": "トレイアイコンと更新スケジュールの改善",
       "logJa": "● opt: 【全体】トレイアイコンを透明なテンプレート画像に変更し、システムのライト／ダークモードにより適合\n● opt: 【更新】自動更新チェックのスケジュールを最適化：ウィンドウ準備完了後に少し遅らせて初回確認し、以降は 1 時間ごと\n\n"
+    },
+    {
+      "version": "v1.8.5",
+      "title": "HTTP 工具增强",
+      "log": "● feat：【HTTP】支持自定义请求超时时间\n● feat：【HTTP】响应结果 Body 区域支持搜索\n\n",
+      "titleEn": "HTTP tool enhancements",
+      "logEn": "● feat: [HTTP] Added support for customizing the request timeout\n● feat: [HTTP] Added search support in the response Body section\n\n",
+      "titleJa": "HTTP ツールの強化",
+      "logJa": "● feat: 【HTTP】リクエストのタイムアウト時間をカスタマイズ可能に\n● feat: 【HTTP】レスポンス結果の Body 領域で検索をサポート\n\n"
     }
   ]
 }
