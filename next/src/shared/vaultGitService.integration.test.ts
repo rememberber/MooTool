@@ -159,6 +159,17 @@ describe.skipIf(!gitAvailable)('VaultGitService', { timeout: 20_000 }, () => {
     expect((await service.status()).ahead).toBe(0)
   })
 
+  it('initializes a new Vault when creating its first automatic checkpoint', async () => {
+    const { directory, service } = createService()
+    writeFileSync(join(directory, 'first-note.txt'), 'Saved automatically\n')
+
+    expect((await service.status()).repository).toBe(false)
+    expect((await service.automaticCheckpoint('Automatic checkpoint')).success).toBe(true)
+    expect((await service.status()).repository).toBe(true)
+    expect((await service.status()).changes).toEqual([])
+    expect(git(directory, ['log', '--pretty=%s'])).toContain('Initial MooTool Vault setup')
+  })
+
   it('detects and continues a rebase after conflicts are resolved', async () => {
     const { directory, service } = createService()
     await service.action({ action: 'init' })

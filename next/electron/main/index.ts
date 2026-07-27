@@ -229,7 +229,6 @@ const quickNoteCheckpointScheduler = new VaultGitCheckpointScheduler({
   inactiveMilliseconds: () => store.get('settings').vault.autoCommitInactiveSeconds * 1_000,
   checkpoint: async (message) => {
     const service = createQuickNoteGitService()
-    if (!(await service.status()).repository) return { success: false, message: 'Git repository is not initialized' }
     return service.automaticCheckpoint(message)
   }
 })
@@ -240,7 +239,6 @@ const jsonVaultCheckpointScheduler = new VaultGitCheckpointScheduler({
   inactiveMilliseconds: () => store.get('settings').vault.autoCommitInactiveSeconds * 1_000,
   checkpoint: async (message) => {
     const service = createVaultGitService()
-    if (!(await service.status()).repository) return { success: false, message: 'Git repository is not initialized' }
     return service.automaticCheckpoint(message)
   }
 })
