@@ -630,6 +630,75 @@
               "size": 98445712
             }
           ]
+        },
+        {
+          "version": "1.0.9",
+          "title": "MooTool Next Electron 1.0.9",
+          "notes": "## English\n\n> Product: MooTool Next Electron<br>\n> Version: 1.0.9<br>\n> This release is installed and updated independently from MooTool Java and does not overwrite the Java edition.\n\n### Features\n\n- Host find & replace now matches Notes; JSON and Host lists support searching file names and file contents.\n- Host list adds a right-click menu for rename, export, delete, and other common actions.\n- Notes / JSON Git commit diffs now use a side-by-side before/after comparison, aligned with the Java edition.\n- HTTP tool supports a custom request timeout, and the response body panel includes search.\n- Message Board can keep the display awake.\n\n### Fixes\n\n- Fixed Notes automatic Git commit no longer working.\n- Removed the outer black border when Message Board is shown in immersive mode.\n\n### Notes\n\n- Installers remain unsigned. On macOS, the app downloads and verifies the new DMG, then asks the user to open it and drag the app into Applications.\n- The Java product line continues to use `v*` tags and its existing update manifest.\n\n## 中文\n\n> 产品线：MooTool Next Electron<br>\n> 版本：1.0.9<br>\n> 本版本与 MooTool Java 独立安装、独立更新，不会覆盖 Java 版本。\n\n### 新功能\n\n- Host 查找替换与随手记对齐；JSON 与 Host 列表支持按文件名及文件内容搜索。\n- Host 列表增加右键菜单，支持重命名、导出、删除等常用操作。\n- 随手记 / JSON 的 Git 提交差异改为左右对照展示，与 Java 版一致。\n- HTTP 工具支持自定义超时时间，响应 Body 区域支持搜索。\n- 留言板支持保持屏幕常亮。\n\n### 修复\n\n- 修复随手记自动提交不再生效的问题。\n- 修复留言板沉浸模式下外层黑边问题。\n\n### 说明\n\n- 安装包仍未签名。macOS 会下载并校验新版 DMG，随后提示用户打开 DMG 并将应用拖入“应用程序”。\n- Java 产品线继续使用 `v*` tag 和原有更新清单，不受本次发布影响。\n\n## 日本語\n\n> 製品ライン：MooTool Next Electron<br>\n> バージョン：1.0.9<br>\n> このリリースは MooTool Java とは独立してインストール・更新され、Java 版を上書きしません。\n\n### 新機能\n\n- Host の検索／置換をクイックノートと揃え、JSON／Host リストでファイル名およびファイル内容の検索に対応しました。\n- Host リストに右クリックメニューを追加し、名前変更・エクスポート・削除などの操作ができます。\n- クイックノート／JSON の Git コミット差分を左右比較表示にし、Java 版に揃えました。\n- HTTP ツールでリクエストタイムアウトをカスタムでき、レスポンス Body の検索にも対応しました。\n- 伝言板でディスプレイのスリープ防止（常時点灯）に対応しました。\n\n### 修正\n\n- クイックノートの自動コミットが動作しなくなっていた問題を修正しました。\n- 伝言板のイマーシブ表示時に外側の黒い枠が出る問題を修正しました。\n\n### 補足\n\n- インストーラーは引き続き未署名です。macOS では新しい DMG をダウンロードして検証し、その後 DMG を開いてアプリを「アプリケーション」へドラッグするよう案内します。\n- Java 製品ラインは引き続き `v*` タグと従来の更新マニフェストを使用し、このリリースの影響を受けません。",
+          "prerelease": false,
+          "releaseUrl": "https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.0.9",
+          "assets": [
+            {
+              "platform": "darwin",
+              "architecture": "arm64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.0.9-mac-arm64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.9/MooTool-Next-Electron-1.0.9-mac-arm64.dmg",
+              "sha512": "0OGBrtxTbap5GHE0wh9vzipQiv8rK4HkwY+MtPW7HJnpWC65NomTrU9CPWZlHRtRlN01fbi3qI4PF/XcsHa/Ww==",
+              "size": 147421078
+            },
+            {
+              "platform": "darwin",
+              "architecture": "x64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.0.9-mac-x64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.9/MooTool-Next-Electron-1.0.9-mac-x64.dmg",
+              "sha512": "aB7yRxt72dt2SbH/wT+XS8J/lWBmdKthpsGU/JBd+tRI+SeJRfEYg2qanxhjJrtqDAzSpBQCJZrtfOA54jcLzw==",
+              "size": 149173272
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "nsis",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.0.9-win-x64-setup.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.9/MooTool-Next-Electron-1.0.9-win-x64-setup.exe",
+              "sha512": "N8cht0Fr9inxQGD8tIuDVOALos7qM2YPGoZNhCVzcO2s4RJFZEDyUM7DTCORDeYQ0ALt4b0iQcFI7xAzi/4kUg==",
+              "size": 118972051
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "portable",
+              "priority": 20,
+              "fileName": "MooTool-Next-Electron-1.0.9-win-x64-portable.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.9/MooTool-Next-Electron-1.0.9-win-x64-portable.exe",
+              "sha512": "gnkKd2sIxqQBWvVo21K2uSGnD4XJlkBTI88/KVe7dZ7rgVCuQSw7hkaWnnl9XkkN6WMUIzGffpg+7YxELElJFA==",
+              "size": 118802293
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "appimage",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.0.9-linux-x64.AppImage",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.9/MooTool-Next-Electron-1.0.9-linux-x64.AppImage",
+              "sha512": "NI8eajYK1KP74UBMMG1Yu0dKVFj8LFsihcpiYGDNXXXi7FSjQp4eevzG0Gb3sgCbHRwSj10e4rBBUZR9BKP0fQ==",
+              "size": 154876749
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "deb",
+              "priority": 20,
+              "fileName": "MooTool-Next-Electron-1.0.9-linux-x64.deb",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.0.9/MooTool-Next-Electron-1.0.9-linux-x64.deb",
+              "sha512": "3nROnIUsv96ZpVSDhAtrmpSBeeaiyYlQ0I9H6bxHlIitMQI01LSCZN4npza/v3DhBVLq9GEAICvaODw2ezZFDA==",
+              "size": 98465864
+            }
+          ]
         }
       ]
     },
