@@ -20,7 +20,11 @@ export class JsonVaultRepository {
   async list(input: JsonVaultListInput = {}): Promise<JsonVaultNode[]> {
     const root = await this.ensureRoot()
     const matcher = input.hideIgnored ? await this.loadIgnoreMatcher(root) : null
-    return this.listDirectory(root, root, 0, { value: 0 }, matcher, input.sort ?? 'name')
+    return this.listDirectory(root, root, 0, { value: 0 }, matcher, {
+      keyword: input.keyword?.trim().toLocaleLowerCase() ?? '',
+      includeContent: input.includeContent ?? true,
+      sort: input.sort ?? 'name'
+    })
   }
 
   async read(relativePath: string): Promise<JsonVaultFile> {
@@ -147,7 +151,7 @@ export class JsonVaultRepository {
     depth: number,
     counter: { value: number },
     matcher: Ignore | null,
-    sort: 'name' | 'modified'
+    options: { keyword: string; includeContent: boolean; sort: 'name' | 'modified' }
   ): Promise<JsonVaultNode[]> {
     if (depth > maxDepth || counter.value >= maxEntries) return []
     const nodes: JsonVaultNode[] = []
@@ -157,16 +161,24 @@ export class JsonVaultRepository {
       const relativePath = toPortablePath(relative(root, target))
       if (matcher?.ignores(entry.isDirectory() ? `${relativePath}/` : relativePath)) continue
       if (entry.isDirectory()) {
-        const children = await this.listDirectory(root, target, depth + 1, counter, matcher, sort)
-        nodes.push({ name: entry.name, relativePath, kind: 'directory', children })
-        counter.value += 1
+        const children = await this.listDirectory(root, target, depth + 1, counter, matcher, options)
+        const directoryMatches = options.keyword && relativePath.toLocaleLowerCase().includes(options.keyword)
+        if (!options.keyword || directoryMatches || children.length > 0) {
+          nodes.push({ name: entry.name, relativePath, kind: 'directory', children })
+          counter.value += 1
+        }
       } else if (entry.isFile() && entry.name.toLocaleLowerCase().endsWith('.json')) {
         const fileStat = await stat(target)
+        let matches = !options.keyword || relativePath.toLocaleLowerCase().includes(options.keyword)
+        if (!matches && options.includeContent && fileStat.size <= maxFileSize) {
+          matches = (await readFile(target, 'utf8')).toLocaleLowerCase().includes(options.keyword)
+        }
+        if (!matches) continue
         nodes.push({ name: entry.name, relativePath, kind: 'file', modifiedAt: fileStat.mtime.toISOString() })
         counter.value += 1
       }
     }
-    return sortNodes(nodes, sort)
+    return sortNodes(nodes, options.sort)
   }
 
   private async loadIgnoreMatcher(root: string): Promise<Ignore | null> {

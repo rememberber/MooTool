@@ -42,7 +42,11 @@ describe('P5Repository', () => {
     const database = repository()
     const host = database.saveHost({ name: 'Local', content: '127.0.0.1 localhost\n' })
     expect(database.listHosts()).toEqual([host])
-    expect(database.saveHost({ id: host.id, name: 'Development', content: '127.0.0.1 dev.local\n' })).toMatchObject({ name: 'Development' })
+    const updatedHost = database.saveHost({ id: host.id, name: 'Development', content: '127.0.0.1 content-only.local\n' })
+    expect(updatedHost).toMatchObject({ name: 'Development' })
+    expect(database.listHosts('content-only', true)).toEqual([updatedHost])
+    expect(database.listHosts('content-only', false)).toEqual([])
+    expect(database.listHosts('develop', false)).toEqual([updatedHost])
 
     const word = database.saveTranslationWord({ sourceText: 'hello', targetText: '你好', sourceLang: 'en', targetLang: 'zh-CN', remark: 'greeting' })
     expect(database.listTranslationWords('greet')).toEqual([word])

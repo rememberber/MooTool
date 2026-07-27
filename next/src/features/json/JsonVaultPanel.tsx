@@ -14,6 +14,7 @@ import {
   Pencil,
   RefreshCw,
   Save,
+  Search,
   Trash2,
   UnfoldVertical
 } from 'lucide-react'
@@ -56,6 +57,8 @@ type JsonVaultSessionState = {
   moveOpen: boolean
   moveTarget: string
   contextMenu: { entry: SelectedEntry; left: number; top: number } | null
+  query: string
+  includeContent: boolean
   sort: 'name' | 'modified'
 }
 
@@ -70,6 +73,8 @@ let jsonVaultSessionState: JsonVaultSessionState = {
   moveOpen: false,
   moveTarget: '',
   contextMenu: null,
+  query: '',
+  includeContent: true,
   sort: 'name'
 }
 let jsonVaultTreeScrollTop = 0
@@ -94,6 +99,8 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
   const [moveOpen, setMoveOpen] = useState(jsonVaultSessionState.moveOpen)
   const [moveTarget, setMoveTarget] = useState(jsonVaultSessionState.moveTarget)
   const [contextMenu, setContextMenu] = useState<{ entry: SelectedEntry; left: number; top: number } | null>(jsonVaultSessionState.contextMenu)
+  const [query, setQuery] = useState(jsonVaultSessionState.query)
+  const [includeContent, setIncludeContent] = useState(jsonVaultSessionState.includeContent)
   const contextMenuRef = useRef<HTMLDivElement>(null)
   const treeRef = useRef<HTMLDivElement>(null)
   const [sort, setSort] = useState<'name' | 'modified'>(jsonVaultSessionState.sort)
@@ -128,9 +135,11 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
       moveOpen,
       moveTarget,
       contextMenu,
+      query,
+      includeContent,
       sort
     }
-  }, [contextMenu, expanded, gitDialogOpen, moveOpen, moveTarget, nodes, savedContent, selectedEntry, selectedPath, sort, textAction])
+  }, [contextMenu, expanded, gitDialogOpen, includeContent, moveOpen, moveTarget, nodes, query, savedContent, selectedEntry, selectedPath, sort, textAction])
 
   useLayoutEffect(() => {
     if (treeRef.current) treeRef.current.scrollTop = jsonVaultTreeScrollTop
@@ -138,14 +147,19 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
 
   const load = useCallback(async () => {
     try {
-      const nextNodes = await window.mootool.listJsonVault({ hideIgnored: settings.vault.hideGitignoredFiles, sort })
+      const nextNodes = await window.mootool.listJsonVault({
+        keyword: query,
+        includeContent,
+        hideIgnored: settings.vault.hideGitignoredFiles,
+        sort
+      })
       setNodes(nextNodes)
       return nextNodes
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t('json.notice.failed'))
       return [] as JsonVaultNode[]
     }
-  }, [settings.vault.hideGitignoredFiles, sort, t, toast])
+  }, [includeContent, query, settings.vault.hideGitignoredFiles, sort, t, toast])
 
   const reloadSelectedFromDisk = useCallback(async () => {
     if (!selectedPath) return
@@ -451,6 +465,13 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
           <VaultAction label={t('json.git.open')} badge={gitChangeCount} onClick={() => setGitDialogOpen(true)}><GitBranch size={14} /></VaultAction>
         </div>
       </header>
+      <div className="vault-panel__search">
+        <div className="compact-search">
+          <Search size={13} />
+          <input value={query} placeholder={t('common.search')} aria-label={t('common.search')} onChange={(event) => setQuery(event.target.value)} />
+        </div>
+        <label className="list-search-content"><input type="checkbox" checked={includeContent} onChange={(event) => setIncludeContent(event.target.checked)} />{t('common.searchContent')}</label>
+      </div>
       <div className="vault-panel__options">
         <select aria-label={t('json.vault.sort')} value={sort} onChange={(event) => setSort(event.target.value as typeof sort)}>
           <option value="name">{t('json.vault.sortName')}</option>

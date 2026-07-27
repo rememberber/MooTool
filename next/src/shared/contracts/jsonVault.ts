@@ -18,6 +18,8 @@ export type SaveJsonVaultFileInput = {
 }
 
 export type JsonVaultListInput = {
+  keyword?: string
+  includeContent?: boolean
   hideIgnored?: boolean
   sort?: 'name' | 'modified'
 }

@@ -24,6 +24,7 @@ export function HostTool() {
   const actions = useToolActions('host')
   const [profiles, setProfiles] = useState<HostProfile[]>([])
   const [query, setQuery] = useState('')
+  const [includeContent, setIncludeContent] = useState(true)
   const [selected, setSelected] = useState<HostProfile | null>(null)
   const [name, setName] = useState('')
   const [content, setContent] = useState('')
@@ -43,13 +44,13 @@ export function HostTool() {
   latestEditorRef.current = { selected, name, content }
 
   const load = useCallback(async () => {
-    const items = await window.mootool.listHostProfiles(query)
+    const items = await window.mootool.listHostProfiles({ keyword: query, includeContent })
     setProfiles(items)
     const current = latestEditorRef.current
     if (!current.selected && !current.name && !current.content && items[0]) {
       setSelected(items[0]); setName(items[0].name); setContent(items[0].content)
     }
-  }, [query])
+  }, [includeContent, query])
   useEffect(() => { const timer = window.setTimeout(() => { void load() }, 100); return () => clearTimeout(timer) }, [load])
 
   const persistProfileOnIdle = useEffectEvent((snapshot: { id: number; name: string; content: string }) => {
@@ -215,7 +216,7 @@ export function HostTool() {
     <section className="tool-page p5-tool host-tool-page">
       <ToolPageHeader title={t('host.title')} />
       <ResizableColumns className="local-tool-shell host-workspace" columns={2} defaultSizes={[220, 780]} minPaneWidths={[170, 360]} storageKey="host-workspace">
-        <aside className="host-profiles"><header><div className="compact-search"><Search size={13} /><input value={query} placeholder={t('common.search')} aria-label={t('common.search')} onChange={(event) => setQuery(event.target.value)} /></div><button className="icon-button" type="button" aria-label={t('common.new')} onClick={() => { void createProfile() }}><Plus size={14} /></button></header><div>{profiles.length === 0 ? <div className="history-empty">{t('host.empty')}</div> : profiles.map((profile) => <button className={profile.id === selected?.id ? 'host-profile host-profile--active' : 'host-profile'} type="button" key={profile.id} onClick={() => { void openProfile(profile) }}><strong>{profile.name}</strong><span>{profile.modifiedTime}</span></button>)}</div><footer><button className="icon-button" type="button" aria-label={t('host.import')} onClick={() => { void importFile() }}><FileInput size={14} /></button><button className="icon-button" type="button" disabled={!content} aria-label={t('host.export')} onClick={() => { void exportFile() }}><Download size={14} /></button><button className="icon-button icon-button--danger" type="button" disabled={!selected} aria-label={t('common.action.delete')} onClick={() => { void remove() }}><Trash2 size={14} /></button></footer></aside>
+        <aside className="host-profiles"><header><div className="compact-search"><Search size={13} /><input value={query} placeholder={t('common.search')} aria-label={t('common.search')} onChange={(event) => setQuery(event.target.value)} /></div><button className="icon-button" type="button" aria-label={t('common.new')} onClick={() => { void createProfile() }}><Plus size={14} /></button><label className="list-search-content host-search-content"><input type="checkbox" checked={includeContent} onChange={(event) => setIncludeContent(event.target.checked)} />{t('common.searchContent')}</label></header><div>{profiles.length === 0 ? <div className="history-empty">{t('host.empty')}</div> : profiles.map((profile) => <button className={profile.id === selected?.id ? 'host-profile host-profile--active' : 'host-profile'} type="button" key={profile.id} onClick={() => { void openProfile(profile) }}><strong>{profile.name}</strong><span>{profile.modifiedTime}</span></button>)}</div><footer><button className="icon-button" type="button" aria-label={t('host.import')} onClick={() => { void importFile() }}><FileInput size={14} /></button><button className="icon-button" type="button" disabled={!content} aria-label={t('host.export')} onClick={() => { void exportFile() }}><Download size={14} /></button><button className="icon-button icon-button--danger" type="button" disabled={!selected} aria-label={t('common.action.delete')} onClick={() => { void remove() }}><Trash2 size={14} /></button></footer></aside>
         <main className="host-editor"><div className="host-toolbar"><input className="host-name" value={name} aria-label={t('host.profileName')} placeholder={t('host.profileName')} onChange={(event) => setName(event.target.value)} /><span className="p4-toolbar__spacer" /><button className="toolbar-button" type="button" onClick={() => { void showSystemHosts() }}><Eye size={14} />{t('host.current')}</button><button className="toolbar-button" type="button" onClick={() => { if (findVisible) closeFindReplace(); else openFindReplace() }}><Search size={14} />{t('host.find')}</button><button className="toolbar-button" type="button" disabled={!dirty} onClick={() => { void save() }}><Save size={14} />{t('common.save')}</button><button className="toolbar-button toolbar-button--primary" data-testid="host-apply" type="button" disabled={!content || applying} onClick={() => { void apply() }}><Check size={14} />{applying ? t('host.applying') : t('host.apply')}</button></div>
           {findVisible && (
             <FindReplaceBar

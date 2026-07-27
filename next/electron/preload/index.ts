@@ -21,7 +21,7 @@ import type { CreateQuickNoteInput, MoveQuickNoteEntryInput, QuickNoteAttachment
 import type { VaultGitActionInput, VaultGitActionResult, VaultGitCommit, VaultGitDiffInput, VaultGitDiffResult, VaultGitStatus } from '../../src/shared/contracts/vaultGit'
 import type { FavoriteKind, FavoriteRecord, SaveFavoriteInput } from '../../src/shared/contracts/favorites'
 import type { HttpRequestDraft, HttpRequestHistory, HttpResponseResult, HttpSendInput, SaveTranslationHistoryInput, SaveTranslationWordInput, SavedHttpRequest, TranslationHistory, TranslationInput, TranslationResult, TranslationWord } from '../../src/shared/contracts/network'
-import type { EnvironmentSnapshot, HostProfile, LocalAddressSnapshot, NetworkCommandInput, NetworkCommandResult, SaveHostProfileInput, SystemHostsFile, SystemInfoSnapshot } from '../../src/shared/contracts/system'
+import type { EnvironmentSnapshot, HostProfile, HostProfileListInput, LocalAddressSnapshot, NetworkCommandInput, NetworkCommandResult, SaveHostProfileInput, SystemHostsFile, SystemInfoSnapshot } from '../../src/shared/contracts/system'
 import type { RuntimeExecutionInput, RuntimeExecutionResult, RuntimeOutputEvent } from '../../src/shared/contracts/runtime'
 import type { BackupExportResult, BackupInfo, BackupKind, BackupLocation } from '../../src/shared/contracts/backup'
 import type { LegacyMigrationInput, LegacyMigrationPreview, LegacyMigrationResult } from '../../src/shared/contracts/migration'
@@ -74,7 +74,7 @@ contextBridge.exposeInMainWorld('mootool', {
   saveTranslationHistory: (input: SaveTranslationHistoryInput): Promise<TranslationHistory> => ipcRenderer.invoke('translation:history-save', input),
   deleteTranslationHistory: (id: number): Promise<void> => ipcRenderer.invoke('translation:history-delete', id),
   clearTranslationHistory: (): Promise<void> => ipcRenderer.invoke('translation:history-clear'),
-  listHostProfiles: (keyword?: string): Promise<HostProfile[]> => ipcRenderer.invoke('host:list', keyword),
+  listHostProfiles: (input?: HostProfileListInput): Promise<HostProfile[]> => ipcRenderer.invoke('host:list', input),
   saveHostProfile: (input: SaveHostProfileInput): Promise<HostProfile> => ipcRenderer.invoke('host:save', input),
   deleteHostProfile: (id: number): Promise<void> => ipcRenderer.invoke('host:delete', id),
   readSystemHosts: (): Promise<SystemHostsFile> => ipcRenderer.invoke('host:read-system'),

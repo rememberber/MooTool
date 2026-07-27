@@ -12,7 +12,7 @@ import type { CreateQuickNoteInput, MoveQuickNoteEntryInput, QuickNoteAttachment
 import type { VaultGitActionInput, VaultGitActionResult, VaultGitCommit, VaultGitDiffInput, VaultGitDiffResult, VaultGitStatus } from './src/shared/contracts/vaultGit'
 import type { FavoriteKind, FavoriteRecord, SaveFavoriteInput } from './src/shared/contracts/favorites'
 import type { HttpRequestDraft, HttpRequestHistory, HttpResponseResult, HttpSendInput, SaveTranslationHistoryInput, SaveTranslationWordInput, SavedHttpRequest, TranslationHistory, TranslationInput, TranslationResult, TranslationWord } from './src/shared/contracts/network'
-import type { EnvironmentSnapshot, HostProfile, LocalAddressSnapshot, NetworkCommandInput, NetworkCommandResult, SaveHostProfileInput, SystemHostsFile, SystemInfoSnapshot } from './src/shared/contracts/system'
+import type { EnvironmentSnapshot, HostProfile, HostProfileListInput, LocalAddressSnapshot, NetworkCommandInput, NetworkCommandResult, SaveHostProfileInput, SystemHostsFile, SystemInfoSnapshot } from './src/shared/contracts/system'
 import type { RuntimeExecutionInput, RuntimeExecutionResult, RuntimeOutputEvent } from './src/shared/contracts/runtime'
 import type { BackupExportResult, BackupInfo, BackupKind, BackupLocation } from './src/shared/contracts/backup'
 import type { LegacyMigrationInput, LegacyMigrationPreview, LegacyMigrationResult } from './src/shared/contracts/migration'
@@ -67,7 +67,7 @@ declare global {
       saveTranslationHistory: (input: SaveTranslationHistoryInput) => Promise<TranslationHistory>
       deleteTranslationHistory: (id: number) => Promise<void>
       clearTranslationHistory: () => Promise<void>
-      listHostProfiles: (keyword?: string) => Promise<HostProfile[]>
+      listHostProfiles: (input?: HostProfileListInput) => Promise<HostProfile[]>
       saveHostProfile: (input: SaveHostProfileInput) => Promise<HostProfile>
       deleteHostProfile: (id: number) => Promise<void>
       readSystemHosts: () => Promise<SystemHostsFile>

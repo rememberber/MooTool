@@ -69,4 +69,20 @@ describe('JsonVaultRepository', () => {
     symlinkSync(join(directory, 'newer.json'), join(directory, 'linked.json'))
     await expect(repository.read('linked.json')).rejects.toThrow('Symbolic links')
   })
+
+  it('searches file paths and optionally searches JSON contents while preserving parent folders', async () => {
+    const repository = createRepository()
+    await repository.save({ relativePath: 'requests/by-name.json', content: '{"marker":"ordinary"}' })
+    await repository.save({ relativePath: 'archive/content-only.json', content: '{"marker":"needle-value"}' })
+
+    expect(await repository.list({ keyword: 'by-name', includeContent: false })).toMatchObject([{
+      name: 'requests',
+      children: [{ name: 'by-name.json' }]
+    }])
+    expect(await repository.list({ keyword: 'needle-value', includeContent: false })).toEqual([])
+    expect(await repository.list({ keyword: 'NEEDLE-VALUE', includeContent: true })).toMatchObject([{
+      name: 'archive',
+      children: [{ name: 'content-only.json' }]
+    }])
+  })
 })

@@ -72,6 +72,7 @@ import type {
   RenameQuickNoteEntryInput,
   SaveQuickNoteInput
 } from '../../src/shared/contracts/quickNote'
+import type { HostProfileListInput } from '../../src/shared/contracts/system'
 import type { VaultGitActionInput, VaultGitDiffInput } from '../../src/shared/contracts/vaultGit'
 import { codeRuntimeIds, type RuntimeExecutionInput } from '../../src/shared/contracts/runtime'
 import { favoriteKinds, type FavoriteKind, type SaveFavoriteInput } from '../../src/shared/contracts/favorites'
@@ -654,7 +655,10 @@ function registerIpc(): void {
   ipcMain.handle('translation:history-save', (_event, value: unknown) => p5Repository.saveTranslationHistory(normalizeTranslationHistoryInput(value)))
   ipcMain.handle('translation:history-delete', (_event, id: unknown) => p5Repository.deleteTranslationHistory(normalizePositiveId(id)))
   ipcMain.handle('translation:history-clear', () => p5Repository.clearTranslationHistory())
-  ipcMain.handle('host:list', (_event, keyword?: string) => p5Repository.listHosts(normalizeKeyword(keyword)))
+  ipcMain.handle('host:list', (_event, value?: HostProfileListInput) => {
+    const input = normalizeHostProfileListInput(value)
+    return p5Repository.listHosts(input.keyword, input.includeContent)
+  })
   ipcMain.handle('host:save', (_event, value: unknown) => {
     const profile = p5Repository.saveHost(normalizeHostInput(value))
     updateTray(store.get('settings'))
@@ -1226,8 +1230,19 @@ function normalizeJsonVaultListInput(value: unknown): JsonVaultListInput {
   if (value == null) return {}
   if (!isRecord(value)) throw new Error('Invalid JSON Vault list input')
   return {
+    keyword: typeof value.keyword === 'string' ? value.keyword.slice(0, 300) : undefined,
+    includeContent: typeof value.includeContent === 'boolean' ? value.includeContent : undefined,
     hideIgnored: typeof value.hideIgnored === 'boolean' ? value.hideIgnored : undefined,
     sort: value.sort === 'name' || value.sort === 'modified' ? value.sort : undefined
+  }
+}
+
+function normalizeHostProfileListInput(value: unknown): Required<HostProfileListInput> {
+  if (value == null) return { keyword: '', includeContent: true }
+  if (!isRecord(value)) throw new Error('Invalid Host profile list input')
+  return {
+    keyword: normalizeKeyword(value.keyword),
+    includeContent: typeof value.includeContent === 'boolean' ? value.includeContent : true
   }
 }
 

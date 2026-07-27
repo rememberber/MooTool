@@ -159,9 +159,12 @@ export class P5Repository {
     this.database.prepare('DELETE FROM t_http_request_history').run()
   }
 
-  listHosts(keyword = ''): HostProfile[] {
+  listHosts(keyword = '', includeContent = true): HostProfile[] {
     const rows = keyword.trim()
-      ? this.database.prepare('SELECT * FROM t_host WHERE name LIKE ? ORDER BY modified_time DESC, id DESC').all(`%${keyword.trim()}%`)
+      ? includeContent
+        ? this.database.prepare('SELECT * FROM t_host WHERE name LIKE ? OR content LIKE ? ORDER BY modified_time DESC, id DESC')
+          .all(`%${keyword.trim()}%`, `%${keyword.trim()}%`)
+        : this.database.prepare('SELECT * FROM t_host WHERE name LIKE ? ORDER BY modified_time DESC, id DESC').all(`%${keyword.trim()}%`)
       : this.database.prepare('SELECT * FROM t_host ORDER BY modified_time DESC, id DESC').all()
     return rows.map(mapHost)
   }

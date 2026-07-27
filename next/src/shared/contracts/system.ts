@@ -6,6 +6,11 @@ export type HostProfile = {
   modifiedTime: string
 }
 
+export type HostProfileListInput = {
+  keyword?: string
+  includeContent?: boolean
+}
+
 export type SaveHostProfileInput = {
   id?: number
   name: string
