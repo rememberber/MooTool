@@ -1008,6 +1008,21 @@ test('runs P5 Hosts, translation records, network and system workflows', async (
   await expect(hostProfile).toBeVisible()
   await hostSearch.fill('')
   await hostSearchContent.check()
+  await hostProfile.click({ button: 'right' })
+  const hostContextMenu = mainPage.getByRole('menu', { name: 'Host 方案操作' })
+  await expect(hostContextMenu.getByRole('menuitem')).toHaveCount(3)
+  await expect(hostContextMenu.getByRole('menuitem', { name: '导出' })).toBeVisible()
+  await expect(hostContextMenu.getByRole('menuitem', { name: '删除' })).toBeVisible()
+  await hostContextMenu.getByRole('menuitem', { name: '重命名' }).click()
+  const renameHostDialog = mainPage.getByRole('dialog', { name: '重命名' })
+  await renameHostDialog.getByRole('textbox', { name: '方案名称' }).fill('E2E renamed host')
+  await renameHostDialog.getByRole('button', { name: '保存', exact: true }).click()
+  const renamedHostProfile = mainPage.locator('.host-profile').filter({ hasText: 'E2E renamed host' })
+  await expect(renamedHostProfile).toBeVisible()
+  await renamedHostProfile.click({ button: 'right' })
+  mainPage.once('dialog', (dialog) => dialog.accept())
+  await mainPage.getByRole('menu', { name: 'Host 方案操作' }).getByRole('menuitem', { name: '删除' }).click()
+  await expect(renamedHostProfile).toHaveCount(0)
 
   await mainPage.evaluate(() => window.mootool.saveTranslationWord({
     sourceText: 'MooTool parity',

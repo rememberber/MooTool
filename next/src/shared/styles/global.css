@@ -801,7 +801,8 @@
 }
 
 .quick-note-tree-menu,
-.vault-tree-menu {
+.vault-tree-menu,
+.host-profile-menu {
   position: fixed;
   z-index: 260;
   display: grid;
@@ -814,7 +815,8 @@
 }
 
 .quick-note-tree-menu button,
-.vault-tree-menu button {
+.vault-tree-menu button,
+.host-profile-menu button {
   min-height: 30px;
   padding: 0 9px;
   color: var(--text-body);
@@ -829,7 +831,9 @@
 .quick-note-tree-menu button:hover,
 .quick-note-tree-menu button:focus-visible,
 .vault-tree-menu button:hover,
-.vault-tree-menu button:focus-visible {
+.vault-tree-menu button:focus-visible,
+.host-profile-menu button:hover,
+.host-profile-menu button:focus-visible {
   color: var(--text-strong);
   background: var(--control-hover);
   outline: none;
@@ -9752,6 +9756,7 @@ textarea:focus {
 
 .quick-note-tree-menu,
 .vault-tree-menu,
+.host-profile-menu,
 .vault-more-menu > div {
   padding: 6px;
   background: var(--surface-elevated);
@@ -9763,6 +9768,7 @@ textarea:focus {
 
 .quick-note-tree-menu button,
 .vault-tree-menu button,
+.host-profile-menu button,
 .vault-more-menu > div button {
   font-size: var(--desktop-font-size-control);
   font-weight: var(--desktop-font-weight-regular);
