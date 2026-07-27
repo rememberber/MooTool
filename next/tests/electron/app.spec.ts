@@ -394,6 +394,15 @@ test('creates and presents an auto-fitting message board', async () => {
   await mainPage.getByRole('button', { name: '沉浸展示', exact: true }).click()
   await expect(mainPage.locator('.message-board-tool')).toHaveClass(/message-board-tool--presenting/)
   await expect(mainPage.locator('.message-board-controls')).toBeHidden()
+  await expect.poll(() => stage.evaluate((element) => {
+    const bounds = element.getBoundingClientRect()
+    return {
+      top: Math.round(bounds.top),
+      right: Math.round(window.innerWidth - bounds.right),
+      bottom: Math.round(window.innerHeight - bounds.bottom),
+      left: Math.round(bounds.left)
+    }
+  })).toEqual({ top: 0, right: 0, bottom: 0, left: 0 })
   await mainPage.keyboard.press('Escape')
   await expect(mainPage.locator('.message-board-tool')).not.toHaveClass(/message-board-tool--presenting/)
 })

@@ -283,6 +283,26 @@ test('reveals update notes above a docked tool view', async () => {
   await expect.poll(() => getMainChildViewCount()).toBe(1)
 })
 
+test('keeps message board presentation controls from overlapping', async () => {
+  await mainPage.getByRole('button', { name: '留言板', exact: true }).click()
+  await waitForToolSelector('messageBoard', '.message-board-tool')
+  await evaluateTool('messageBoard', `(() => {
+    const button = [...document.querySelectorAll('button')].find((item) => item.textContent?.includes('沉浸展示'))
+    if (!button) throw new Error('Message board presentation button not found')
+    button.click()
+  })()`)
+
+  await expect.poll(async () => (await evaluateTool('messageBoard', `(() => {
+    const exit = document.querySelector('.message-board-stage__exit')?.getBoundingClientRect()
+    const dock = document.querySelector('.tool-window-toggle')?.getBoundingClientRect()
+    if (!exit || !dock) return null
+    return {
+      gap: Math.round(dock.left - exit.right),
+      overlaps: exit.left < dock.right && exit.right > dock.left && exit.top < dock.bottom && exit.bottom > dock.top
+    }
+  })()`)).value).toEqual({ gap: 20, overlaps: false })
+})
+
 async function waitForTool(toolId: string): Promise<{ id: number; value: string }> {
   await expect.poll(async () => {
     const result = await evaluateTool<string>(toolId, `document.querySelector('#calculator-expression')?.value ?? ''`).catch(() => null)
