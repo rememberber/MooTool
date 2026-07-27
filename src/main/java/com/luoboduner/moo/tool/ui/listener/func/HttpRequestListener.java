@@ -11,6 +11,7 @@ import com.luoboduner.moo.tool.domain.TMsgHttp;
 import com.luoboduner.moo.tool.service.HttpMsgMaker;
 import com.luoboduner.moo.tool.service.HttpMsgSender;
 import com.luoboduner.moo.tool.service.HttpSendResult;
+import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
 import com.luoboduner.moo.tool.ui.form.func.HttpRequestForm;
 import com.luoboduner.moo.tool.ui.form.func.HttpResultForm;
@@ -135,6 +136,20 @@ public class HttpRequestListener {
             javax.swing.text.AbstractDocument doc = (javax.swing.text.AbstractDocument) httpRequestForm.getBodyTextArea().getDocument();
             doc.setDocumentFilter(new AutoIndentDocumentFilter(() -> (String) httpRequestForm.getBodyTypeComboBox().getSelectedItem()));
         } catch (Exception ignore) {
+        }
+
+        if (httpRequestForm.getResponseFindButton() != null) {
+            httpRequestForm.getResponseFindButton().addActionListener(e -> showFindPanel());
+        }
+        if (httpRequestForm.getResponseBodyTextArea() != null) {
+            httpRequestForm.getResponseBodyTextArea().addKeyListener(new KeyAdapter() {
+                @Override
+                public void keyPressed(KeyEvent evt) {
+                    if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_F) {
+                        showFindPanel();
+                    }
+                }
+            });
         }
 
         // 左侧列表按键事件（重命名）
@@ -505,6 +520,24 @@ public class HttpRequestListener {
             HttpRequestForm.initList();
             log.error(e.toString());
         }
+    }
+
+    public static void showFindPanel() {
+        HttpRequestForm httpRequestForm = HttpRequestForm.getInstance();
+        if (httpRequestForm.getFindReplacePanel() == null
+                || !(httpRequestForm.getResponseBodyTextArea() instanceof org.fife.ui.rsyntaxtextarea.RSyntaxTextArea textArea)) {
+            return;
+        }
+        httpRequestForm.getTabbedPane2().setSelectedIndex(0);
+        httpRequestForm.getFindReplacePanel().removeAll();
+        httpRequestForm.getFindReplacePanel().setDoubleBuffered(true);
+        FindReplaceBar findReplaceBar = new FindReplaceBar(textArea);
+        httpRequestForm.getFindReplacePanel().add(findReplaceBar.getFindOptionPanel());
+        httpRequestForm.getFindReplacePanel().setVisible(true);
+        httpRequestForm.getFindReplacePanel().updateUI();
+        findReplaceBar.getFindField().setText(textArea.getSelectedText());
+        findReplaceBar.getFindField().grabFocus();
+        findReplaceBar.getFindField().selectAll();
     }
 
     private static void deleteFiles(HttpRequestForm httpRequestForm) {

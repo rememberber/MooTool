@@ -15,6 +15,8 @@ export type FindReplaceBarProps = {
   replacedCount: number
   className?: string
   autoFocus?: boolean
+  /** When false, only the find row is shown. Defaults to true. */
+  showReplace?: boolean
   onFindTextChange: (value: string) => void
   onReplaceTextChange: (value: string) => void
   onOptionsChange: (options: FindReplaceOptions) => void
@@ -34,6 +36,7 @@ export function FindReplaceBar({
   replacedCount,
   className = '',
   autoFocus = true,
+  showReplace = true,
   onFindTextChange,
   onReplaceTextChange,
   onOptionsChange,
@@ -122,6 +125,7 @@ export function FindReplaceBar({
           </button>
         </Tooltip>
       </div>
+      {showReplace ? (
       <div className="find-replace-bar__row">
         <input
           aria-label={t('findReplace.replacePlaceholder')}
@@ -141,6 +145,7 @@ export function FindReplaceBar({
           <span className="find-replace-bar__count">{t('findReplace.replacedPrefix')} {replacedCount}</span>
         </div>
       </div>
+      ) : null}
     </div>
   )
 }

@@ -8028,7 +8028,23 @@ select:not([multiple]) {
   --text-code-editor-padding: 11px 13px;
 }
 
+.http-findbar.find-replace-bar {
+  flex: 0 0 auto;
+  border-bottom: 1px solid var(--border-soft);
+}
+
+.http-response-code-editor {
+  flex: 1;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  --text-code-editor-font-size: 11px;
+  --text-code-editor-line-height: 1.55;
+  --text-code-editor-padding: 11px 13px;
+}
+
 .http-body-code-editor:focus-within,
+.http-response-code-editor:focus-within,
 .translation-editor-grid .text-code-editor:focus-within,
 .host-content-editor:focus-within {
   box-shadow: none;

@@ -1,15 +1,21 @@
 package com.luoboduner.moo.tool.ui.form.func;
 
+import com.formdev.flatlaf.extras.FlatSVGIcon;
 import com.intellij.uiDesigner.core.GridConstraints;
 import com.intellij.uiDesigner.core.GridLayoutManager;
 import com.luoboduner.moo.tool.ui.Style;
+import com.luoboduner.moo.tool.ui.component.FindReplaceBar;
+import com.luoboduner.moo.tool.ui.component.textviewer.HttpResponseRSyntaxTextViewer;
 import com.luoboduner.moo.tool.ui.frame.HttpResultFrame;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.UndoUtil;
 import lombok.Getter;
+import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 
 /**
@@ -28,17 +34,33 @@ public class HttpResultForm {
     private JTextArea responseBodyTextArea;
     private JTextArea headersTextArea;
     private JTextArea cookiesTextArea;
+    private JPanel findReplacePanel;
+    private JButton responseFindButton;
 
     private static HttpResultForm httpResultForm;
 
     private HttpResultForm() {
+        installResponseFindSupport();
         ScrollUtil.smoothPane(this.getHttpResultScrollPane());
 
-        Style.blackTextArea(responseBodyTextArea);
         Style.blackTextArea(headersTextArea);
         Style.blackTextArea(cookiesTextArea);
 
         this.getHttpResultPanel().registerKeyboardAction(e -> HttpResultFrame.getInstance().dispose(), KeyStroke.getKeyStroke(KeyEvent.VK_ESCAPE, 0), JComponent.WHEN_IN_FOCUSED_WINDOW);
+
+        if (responseFindButton != null) {
+            responseFindButton.addActionListener(e -> showFindPanel());
+        }
+        if (responseBodyTextArea != null) {
+            responseBodyTextArea.addKeyListener(new KeyAdapter() {
+                @Override
+                public void keyPressed(KeyEvent evt) {
+                    if ((evt.isControlDown() || evt.isMetaDown()) && evt.getKeyCode() == KeyEvent.VK_F) {
+                        showFindPanel();
+                    }
+                }
+            });
+        }
     }
 
     public static HttpResultForm getInstance() {
@@ -47,6 +69,59 @@ public class HttpResultForm {
             UndoUtil.register(httpResultForm);
         }
         return httpResultForm;
+    }
+
+    public void showFindPanel() {
+        if (findReplacePanel == null || !(responseBodyTextArea instanceof RSyntaxTextArea textArea)) {
+            return;
+        }
+        tabbedPane2.setSelectedIndex(0);
+        findReplacePanel.removeAll();
+        findReplacePanel.setDoubleBuffered(true);
+        FindReplaceBar findReplaceBar = new FindReplaceBar(textArea);
+        findReplacePanel.add(findReplaceBar.getFindOptionPanel());
+        findReplacePanel.setVisible(true);
+        findReplacePanel.updateUI();
+        findReplaceBar.getFindField().setText(textArea.getSelectedText());
+        findReplaceBar.getFindField().grabFocus();
+        findReplaceBar.getFindField().selectAll();
+    }
+
+    private void installResponseFindSupport() {
+        if (!(responseBodyTextArea instanceof HttpResponseRSyntaxTextViewer)) {
+            HttpResponseRSyntaxTextViewer viewer = new HttpResponseRSyntaxTextViewer();
+            viewer.setText(responseBodyTextArea != null ? responseBodyTextArea.getText() : "");
+            responseBodyTextArea = viewer;
+            if (httpResultScrollPane != null) {
+                httpResultScrollPane.setViewportView(viewer);
+            }
+        }
+        if (findReplacePanel != null) {
+            return;
+        }
+        JPanel bodyPanel = (JPanel) httpResultScrollPane.getParent();
+        if (bodyPanel == null) {
+            return;
+        }
+        bodyPanel.removeAll();
+        bodyPanel.setLayout(new BorderLayout(0, 0));
+
+        findReplacePanel = new JPanel(new BorderLayout(0, 0));
+        findReplacePanel.setVisible(false);
+        responseFindButton = new JButton();
+        responseFindButton.setIcon(new FlatSVGIcon("icon/find.svg"));
+        responseFindButton.setToolTipText(I18n.get("httpRequest.tooltip.find"));
+        responseFindButton.setFocusable(false);
+
+        JPanel north = new JPanel(new BorderLayout(0, 0));
+        JPanel findToolbar = new JPanel(new FlowLayout(FlowLayout.RIGHT, 4, 2));
+        findToolbar.setOpaque(false);
+        findToolbar.add(responseFindButton);
+        north.add(findToolbar, BorderLayout.EAST);
+        north.add(findReplacePanel, BorderLayout.SOUTH);
+
+        bodyPanel.add(north, BorderLayout.NORTH);
+        bodyPanel.add(httpResultScrollPane, BorderLayout.CENTER);
     }
 
     {
