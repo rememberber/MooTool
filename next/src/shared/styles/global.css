@@ -4985,30 +4985,104 @@ select:not([multiple]) {
   flex-direction: column;
 }
 
-.git-diff h3 {
+.git-diff__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   min-height: 41px;
-  margin: 0;
-  padding: 13px 12px;
-  color: var(--text-muted);
+  padding: 6px 8px 6px 12px;
   background: var(--toolbar);
   border-bottom: 1px solid var(--border-soft);
+}
+
+.git-diff__header h3 {
+  margin: 0;
+  color: var(--text-muted);
   font-size: 11px;
   font-weight: 600;
 }
 
-.git-diff pre {
+.git-diff__header select {
+  min-width: 0;
+  max-width: 72%;
+  height: 28px;
+  padding: 0 7px;
+  color: var(--text-body);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: 5px;
+  outline: none;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 9px;
+}
+
+.git-diff__header select:focus {
+  border-color: var(--accent);
+}
+
+.git-diff__header code {
+  min-width: 0;
+  color: var(--text-faint);
+  font-size: 9px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.git-diff__comparison {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   flex: 1;
   min-height: 0;
   max-height: 388px;
-  margin: 0;
-  padding: 12px;
-  color: var(--editor-text);
-  background: var(--workspace);
-  overflow: auto;
-  font-family: ui-monospace, Menlo, Consolas, monospace;
+}
+
+.git-diff__pane {
+  display: flex;
+  min-width: 0;
+  min-height: 0;
+  flex-direction: column;
+}
+
+.git-diff__pane:first-child {
+  border-right: 1px solid var(--border-soft);
+}
+
+.git-diff__pane > span {
+  min-height: 28px;
+  padding: 7px 9px;
+  color: var(--text-muted);
+  background: var(--surface-soft);
+  border-bottom: 1px solid var(--border-soft);
+  font-size: 9px;
+  font-weight: 600;
+}
+
+.git-diff-editor {
+  flex: 1;
+  border: 0;
+  border-radius: 0;
   font-size: 10px;
-  line-height: 1.5;
-  white-space: pre;
+  --text-code-editor-line-height: 1.5;
+}
+
+.git-diff-editor:focus-within {
+  border-color: transparent;
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.git-diff__empty {
+  display: grid;
+  flex: 1;
+  min-height: 0;
+  max-height: 388px;
+  padding: 12px;
+  place-items: center;
+  color: var(--text-faint);
+  background: var(--workspace);
+  font-size: 11px;
+  text-align: center;
 }
 
 .path-picker__preview pre {

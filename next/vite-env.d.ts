@@ -9,7 +9,7 @@ import type { DigestAlgorithmId, DigestFileResult, ImageFilePayload, SaveBinaryF
 import type { PdfFileInfo, PdfMergeSource, PdfOperationResult, PdfSplitTask } from './src/shared/contracts/pdf'
 import type { JsonVaultFile, JsonVaultListInput, JsonVaultNode, MoveJsonVaultEntryInput, RenameJsonVaultEntryInput, SaveJsonVaultFileInput } from './src/shared/contracts/jsonVault'
 import type { CreateQuickNoteInput, MoveQuickNoteEntryInput, QuickNoteAttachment, QuickNoteFile, QuickNoteListInput, QuickNoteNode, RenameQuickNoteEntryInput, SaveQuickNoteInput } from './src/shared/contracts/quickNote'
-import type { VaultGitActionInput, VaultGitActionResult, VaultGitCommit, VaultGitDiffInput, VaultGitStatus } from './src/shared/contracts/vaultGit'
+import type { VaultGitActionInput, VaultGitActionResult, VaultGitCommit, VaultGitDiffInput, VaultGitDiffResult, VaultGitStatus } from './src/shared/contracts/vaultGit'
 import type { FavoriteKind, FavoriteRecord, SaveFavoriteInput } from './src/shared/contracts/favorites'
 import type { HttpRequestDraft, HttpRequestHistory, HttpResponseResult, HttpSendInput, SaveTranslationHistoryInput, SaveTranslationWordInput, SavedHttpRequest, TranslationHistory, TranslationInput, TranslationResult, TranslationWord } from './src/shared/contracts/network'
 import type { EnvironmentSnapshot, HostProfile, LocalAddressSnapshot, NetworkCommandInput, NetworkCommandResult, SaveHostProfileInput, SystemHostsFile, SystemInfoSnapshot } from './src/shared/contracts/system'
@@ -118,7 +118,7 @@ declare global {
       setJsonVaultEditorDirty: (dirty: boolean) => Promise<void>
       getVaultGitStatus: () => Promise<VaultGitStatus>
       listVaultGitHistory: () => Promise<VaultGitCommit[]>
-      getVaultGitDiff: (input: VaultGitDiffInput) => Promise<string>
+      getVaultGitDiff: (input: VaultGitDiffInput) => Promise<VaultGitDiffResult>
       runVaultGitAction: (input: VaultGitActionInput) => Promise<VaultGitActionResult>
       listQuickNotes: (input?: QuickNoteListInput) => Promise<QuickNoteNode[]>
       readQuickNote: (relativePath: string) => Promise<QuickNoteFile>
@@ -136,7 +136,7 @@ declare global {
       setQuickNoteEditorDirty: (dirty: boolean) => Promise<void>
       getQuickNoteGitStatus: () => Promise<VaultGitStatus>
       listQuickNoteGitHistory: () => Promise<VaultGitCommit[]>
-      getQuickNoteGitDiff: (input: VaultGitDiffInput) => Promise<string>
+      getQuickNoteGitDiff: (input: VaultGitDiffInput) => Promise<VaultGitDiffResult>
       runQuickNoteGitAction: (input: VaultGitActionInput) => Promise<VaultGitActionResult>
       getBackupInfo: () => Promise<BackupInfo>
       exportBackup: (kind: BackupKind) => Promise<BackupExportResult | null>

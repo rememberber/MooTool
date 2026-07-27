@@ -1,12 +1,15 @@
 import { execFile } from 'node:child_process'
-import { access, mkdir, realpath, writeFile } from 'node:fs/promises'
+import { access, lstat, mkdir, readFile, realpath, writeFile } from 'node:fs/promises'
 import { join, resolve } from 'node:path'
 import type {
   VaultGitActionInput,
   VaultGitActionResult,
   VaultGitChange,
   VaultGitCommit,
+  VaultGitDiffFile,
   VaultGitDiffInput,
+  VaultGitDiffPreview,
+  VaultGitDiffResult,
   VaultGitStatus
 } from '../../src/shared/contracts/vaultGit'
 
@@ -21,6 +24,19 @@ type CommandResult = {
   stderr: string
   exitCode: number
 }
+
+type GitChangedPath = {
+  path: string
+  originalPath?: string
+  status: string
+}
+
+type ContentPreview = {
+  text: string
+  state: 'text' | 'missing' | VaultGitDiffPreview
+}
+
+const maxDiffPreviewBytes = 512 * 1024
 
 const defaultGitignore = `.DS_Store
 .idea/
@@ -85,19 +101,75 @@ export class VaultGitService {
     })
   }
 
-  async diff(input: VaultGitDiffInput): Promise<string> {
-    if (!(await this.status()).repository) throw new Error('Git repository is not initialized in the Vault root')
+  async diff(input: VaultGitDiffInput): Promise<VaultGitDiffResult> {
+    const status = await this.status()
+    if (!status.repository) throw new Error('Git repository is not initialized in the Vault root')
     const path = normalizeGitPath(input.path)
     if (input.commit) {
       if (!/^[0-9a-f]{7,40}$/i.test(input.commit)) throw new Error('Invalid Git commit')
-      return this.requireSuccess(['show', '--format=fuller', '--stat', '--patch', input.commit, ...(path ? ['--', path] : [])])
+      return { files: await this.commitDiffFiles(input.commit, path) }
     }
-    const args = path ? ['--', path] : []
-    const [working, staged] = await Promise.all([
-      this.requireSuccess(['diff', '--no-ext-diff', ...args]),
-      this.requireSuccess(['diff', '--cached', '--no-ext-diff', ...args])
-    ])
-    return [staged, working].filter(Boolean).join('\n\n')
+    const changes = path ? status.changes.filter((change) => change.path === path) : status.changes
+    const files: VaultGitDiffFile[] = []
+    for (const change of changes) {
+      const before = await this.readBlobPreview('HEAD', change.originalPath ?? change.path)
+      const after = await this.readWorkingPreview(change.path)
+      files.push(buildDiffFile(change, before, after))
+    }
+    return { files }
+  }
+
+  private async commitDiffFiles(commit: string, path?: string): Promise<VaultGitDiffFile[]> {
+    const parentResult = await this.run(['rev-parse', '--verify', `${commit}^`])
+    const parent = parentResult.exitCode === 0 ? parentResult.stdout.trim() : undefined
+    const changes = await this.listCommitChanges(commit, parent, path)
+    const files: VaultGitDiffFile[] = []
+    for (const change of changes) {
+      const before = parent
+        ? await this.readBlobPreview(parent, change.originalPath ?? change.path)
+        : missingContent()
+      const after = await this.readBlobPreview(commit, change.path)
+      files.push(buildDiffFile(change, before, after))
+    }
+    return files
+  }
+
+  private async listCommitChanges(commit: string, parent: string | undefined, path?: string): Promise<GitChangedPath[]> {
+    const pathArgs = path ? ['--', path] : []
+    const result = parent
+      ? await this.run(['diff', '--name-status', '-z', '-M', '-C', parent, commit, ...pathArgs])
+      : await this.run(['diff-tree', '--root', '--no-commit-id', '--name-status', '-z', '-r', '-M', '-C', commit, ...pathArgs])
+    if (result.exitCode !== 0) throw new Error(result.stderr.trim() || result.stdout.trim() || 'Unable to read Git commit')
+    return parseNameStatus(result.stdout)
+  }
+
+  private async readBlobPreview(ref: string, path: string): Promise<ContentPreview> {
+    const objectSpec = `${ref}:${path}`
+    const sizeResult = await this.run(['cat-file', '-s', objectSpec])
+    if (sizeResult.exitCode !== 0) return missingContent()
+    const size = Number(sizeResult.stdout.trim())
+    if (Number.isFinite(size) && size > maxDiffPreviewBytes) return { text: '', state: 'too-large' }
+    const contentResult = await this.run(['cat-file', 'blob', objectSpec])
+    if (contentResult.exitCode !== 0) return missingContent()
+    return contentResult.stdout.includes('\0')
+      ? { text: '', state: 'binary' }
+      : { text: contentResult.stdout, state: 'text' }
+  }
+
+  private async readWorkingPreview(path: string): Promise<ContentPreview> {
+    const filePath = join(this.rootDirectory, path)
+    try {
+      const fileStat = await lstat(filePath)
+      if (!fileStat.isFile()) return { text: '', state: 'binary' }
+      if (fileStat.size > maxDiffPreviewBytes) return { text: '', state: 'too-large' }
+      const content = await readFile(filePath)
+      return content.includes(0)
+        ? { text: '', state: 'binary' }
+        : { text: content.toString('utf8'), state: 'text' }
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code === 'ENOENT') return missingContent()
+      throw error
+    }
   }
 
   async action(input: VaultGitActionInput): Promise<VaultGitActionResult> {
@@ -282,6 +354,47 @@ export class VaultGitService {
       })
     })
   }
+}
+
+function parseNameStatus(output: string): GitChangedPath[] {
+  const records = output.split('\0')
+  const changes: GitChangedPath[] = []
+  let index = 0
+  while (index < records.length) {
+    const record = records[index++]
+    if (!record) continue
+    const separator = record.indexOf('\t')
+    const status = separator >= 0 ? record.slice(0, separator) : record
+    const inlinePath = separator >= 0 ? record.slice(separator + 1) : ''
+    const renamed = status.startsWith('R') || status.startsWith('C')
+    const originalPathValue = renamed ? inlinePath || records[index++] : undefined
+    const pathValue = renamed ? records[index++] : inlinePath || records[index++]
+    const path = normalizeGitPath(pathValue)
+    if (!path) continue
+    const originalPath = normalizeGitPath(originalPathValue)
+    changes.push({ path, originalPath, status })
+  }
+  return changes
+}
+
+function buildDiffFile(change: GitChangedPath, before: ContentPreview, after: ContentPreview): VaultGitDiffFile {
+  const preview: VaultGitDiffPreview = before.state === 'too-large' || after.state === 'too-large'
+    ? 'too-large'
+    : before.state === 'binary' || after.state === 'binary'
+      ? 'binary'
+      : 'text'
+  return {
+    path: change.path,
+    originalPath: change.originalPath,
+    status: change.status,
+    before: before.text,
+    after: after.text,
+    preview
+  }
+}
+
+function missingContent(): ContentPreview {
+  return { text: '', state: 'missing' }
 }
 
 function emptyStatus(available: boolean): VaultGitStatus {

@@ -39,18 +39,42 @@ describe.skipIf(!gitAvailable)('VaultGitService', { timeout: 20_000 }, () => {
     writeFileSync(join(directory, 'sample.json'), '{"value":1}\n')
     expect((await service.status()).changes[0]).toMatchObject({ path: 'sample.json', status: '??' })
     expect((await service.action({ action: 'commit', message: 'Add sample' })).success).toBe(true)
-    expect((await service.history())[0]).toMatchObject({ message: 'Add sample' })
-    expect((await service.history())[0]?.author).not.toBe('')
+    const commit = (await service.history())[0]
+    expect(commit).toMatchObject({ message: 'Add sample' })
+    expect(commit?.author).not.toBe('')
+    expect((await service.diff({ commit: commit?.hash })).files[0]).toMatchObject({
+      path: 'sample.json',
+      before: '',
+      after: '{"value":1}\n',
+      preview: 'text'
+    })
 
     writeFileSync(join(directory, 'sample.json'), '{"value":2}\n')
-    expect(await service.diff({ path: 'sample.json' })).toContain('+{"value":2}')
+    expect((await service.diff({ path: 'sample.json' })).files[0]).toMatchObject({
+      path: 'sample.json',
+      before: '{"value":1}\n',
+      after: '{"value":2}\n',
+      preview: 'text'
+    })
+    writeFileSync(join(directory, 'notes.txt'), 'new note\n')
+    expect((await service.action({ action: 'commit', message: 'Update sample' })).success).toBe(true)
+    const updatedCommit = (await service.history())[0]
+    const committedDiff = await service.diff({ commit: updatedCommit?.hash })
+    expect(committedDiff.files.find((file) => file.path === 'sample.json')).toMatchObject({
+      before: '{"value":1}\n',
+      after: '{"value":2}\n'
+    })
+    expect(committedDiff.files.find((file) => file.path === 'notes.txt')).toMatchObject({
+      before: '',
+      after: 'new note\n'
+    })
   })
 
   it('rejects unsafe paths and unsupported remotes', async () => {
     const { service } = createService()
     await service.action({ action: 'init' })
     await expect(service.diff({ path: '../outside' })).rejects.toThrow('Invalid Git path')
-    await expect(service.diff({ path: 'valid..name.json' })).resolves.toBe('')
+    await expect(service.diff({ path: 'valid..name.json' })).resolves.toEqual({ files: [] })
     await expect(service.action({ action: 'configure-remote', remote: 'javascript:alert(1)' })).rejects.toThrow('Invalid Git remote')
   })
 
@@ -104,7 +128,10 @@ describe.skipIf(!gitAvailable)('VaultGitService', { timeout: 20_000 }, () => {
     writeFileSync(join(directory, original), '第二版\n')
 
     expect((await service.status()).changes[0]?.path).toBe(original)
-    expect(await service.diff({ path: original })).toContain('+第二版')
+    expect((await service.diff({ path: original })).files[0]).toMatchObject({
+      before: '第一版\n',
+      after: '第二版\n'
+    })
     expect((await service.action({ action: 'discard', path: original })).success).toBe(true)
 
     git(directory, ['mv', original, renamed])

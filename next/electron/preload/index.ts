@@ -18,7 +18,7 @@ import type { DigestAlgorithmId, DigestFileResult, ImageFilePayload, SaveBinaryF
 import type { PdfFileInfo, PdfMergeSource, PdfOperationResult, PdfSplitTask } from '../../src/shared/contracts/pdf'
 import type { JsonVaultFile, JsonVaultListInput, JsonVaultNode, MoveJsonVaultEntryInput, RenameJsonVaultEntryInput, SaveJsonVaultFileInput } from '../../src/shared/contracts/jsonVault'
 import type { CreateQuickNoteInput, MoveQuickNoteEntryInput, QuickNoteAttachment, QuickNoteFile, QuickNoteListInput, QuickNoteNode, RenameQuickNoteEntryInput, SaveQuickNoteInput } from '../../src/shared/contracts/quickNote'
-import type { VaultGitActionInput, VaultGitActionResult, VaultGitCommit, VaultGitDiffInput, VaultGitStatus } from '../../src/shared/contracts/vaultGit'
+import type { VaultGitActionInput, VaultGitActionResult, VaultGitCommit, VaultGitDiffInput, VaultGitDiffResult, VaultGitStatus } from '../../src/shared/contracts/vaultGit'
 import type { FavoriteKind, FavoriteRecord, SaveFavoriteInput } from '../../src/shared/contracts/favorites'
 import type { HttpRequestDraft, HttpRequestHistory, HttpResponseResult, HttpSendInput, SaveTranslationHistoryInput, SaveTranslationWordInput, SavedHttpRequest, TranslationHistory, TranslationInput, TranslationResult, TranslationWord } from '../../src/shared/contracts/network'
 import type { EnvironmentSnapshot, HostProfile, LocalAddressSnapshot, NetworkCommandInput, NetworkCommandResult, SaveHostProfileInput, SystemHostsFile, SystemInfoSnapshot } from '../../src/shared/contracts/system'
@@ -125,7 +125,7 @@ contextBridge.exposeInMainWorld('mootool', {
   setJsonVaultEditorDirty: (dirty: boolean): Promise<void> => ipcRenderer.invoke('json-vault:set-editor-dirty', dirty),
   getVaultGitStatus: (): Promise<VaultGitStatus> => ipcRenderer.invoke('vault-git:status'),
   listVaultGitHistory: (): Promise<VaultGitCommit[]> => ipcRenderer.invoke('vault-git:history'),
-  getVaultGitDiff: (input: VaultGitDiffInput): Promise<string> => ipcRenderer.invoke('vault-git:diff', input),
+  getVaultGitDiff: (input: VaultGitDiffInput): Promise<VaultGitDiffResult> => ipcRenderer.invoke('vault-git:diff', input),
   runVaultGitAction: (input: VaultGitActionInput): Promise<VaultGitActionResult> => ipcRenderer.invoke('vault-git:action', input),
   listQuickNotes: (input?: QuickNoteListInput): Promise<QuickNoteNode[]> => ipcRenderer.invoke('quick-note:list', input),
   readQuickNote: (relativePath: string): Promise<QuickNoteFile> => ipcRenderer.invoke('quick-note:read', relativePath),
@@ -143,7 +143,7 @@ contextBridge.exposeInMainWorld('mootool', {
   setQuickNoteEditorDirty: (dirty: boolean): Promise<void> => ipcRenderer.invoke('quick-note:set-editor-dirty', dirty),
   getQuickNoteGitStatus: (): Promise<VaultGitStatus> => ipcRenderer.invoke('quick-note-git:status'),
   listQuickNoteGitHistory: (): Promise<VaultGitCommit[]> => ipcRenderer.invoke('quick-note-git:history'),
-  getQuickNoteGitDiff: (input: VaultGitDiffInput): Promise<string> => ipcRenderer.invoke('quick-note-git:diff', input),
+  getQuickNoteGitDiff: (input: VaultGitDiffInput): Promise<VaultGitDiffResult> => ipcRenderer.invoke('quick-note-git:diff', input),
   runQuickNoteGitAction: (input: VaultGitActionInput): Promise<VaultGitActionResult> => ipcRenderer.invoke('quick-note-git:action', input),
   getBackupInfo: (): Promise<BackupInfo> => ipcRenderer.invoke('backup:info'),
   exportBackup: (kind: BackupKind): Promise<BackupExportResult | null> => ipcRenderer.invoke('backup:export', kind),

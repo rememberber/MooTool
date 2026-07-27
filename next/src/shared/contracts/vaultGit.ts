@@ -45,3 +45,18 @@ export type VaultGitDiffInput = {
   path?: string
   commit?: string
 }
+
+export type VaultGitDiffPreview = 'text' | 'binary' | 'too-large'
+
+export type VaultGitDiffFile = {
+  path: string
+  originalPath?: string
+  status: string
+  before: string
+  after: string
+  preview: VaultGitDiffPreview
+}
+
+export type VaultGitDiffResult = {
+  files: VaultGitDiffFile[]
+}
