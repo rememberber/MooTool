@@ -11,6 +11,7 @@ import {
   nativeTheme,
   net,
   Notification,
+  powerSaveBlocker,
   safeStorage,
   screen,
   session,
@@ -111,6 +112,7 @@ import { VaultGitService } from './vaultGitService'
 import { VaultGitCheckpointScheduler } from './vaultGitCheckpointScheduler'
 import { ToolWindowManager } from './toolWindowManager'
 import { buildTrayMenuTemplate } from './trayMenu'
+import { DisplaySleepService } from './displaySleepService'
 
 type PersistedStore = {
   settings: AppSettings
@@ -178,6 +180,8 @@ let historyRepository: HistoryRepository
 let favoriteRepository: FavoriteRepository
 let p5Repository: P5Repository
 const networkService = new NetworkService()
+const displaySleepService = new DisplaySleepService(powerSaveBlocker)
+const displaySleepCleanupSenders = new Set<number>()
 let systemService: SystemService
 let runtimeExecutionService: RuntimeExecutionService
 let gitAskPassPath = ''
@@ -476,6 +480,20 @@ function registerIpc(): void {
     downloads: app.getPath('downloads')
   }))
   ipcMain.handle('theme:get-system', () => (nativeTheme.shouldUseDarkColors ? 'dark' : 'light'))
+  ipcMain.handle('system:set-prevent-display-sleep', (event, enabled: unknown) => {
+    assertToolWindowAccess(event.sender, 'messageBoard')
+    if (typeof enabled !== 'boolean') throw new Error('Invalid display sleep preference')
+
+    const senderId = event.sender.id
+    if (enabled && !displaySleepCleanupSenders.has(senderId)) {
+      displaySleepCleanupSenders.add(senderId)
+      event.sender.once('destroyed', () => {
+        displaySleepCleanupSenders.delete(senderId)
+        displaySleepService.set(senderId, false)
+      })
+    }
+    return displaySleepService.set(senderId, enabled)
+  })
   ipcMain.handle('settings:get', () => store.get('settings'))
   ipcMain.handle('settings:update', (_event, patch: SettingsPatch) => {
     const previous = store.get('settings')
@@ -2185,6 +2203,8 @@ app.whenReady().then(async () => {
 
 app.on('before-quit', () => {
   isQuitting = true
+  displaySleepService.dispose()
+  displaySleepCleanupSenders.clear()
   finishScreenCapture(null, false)
   toolWindowManager?.dispose()
   quickNoteWatcherGeneration += 1

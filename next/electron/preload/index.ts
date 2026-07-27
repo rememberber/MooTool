@@ -33,6 +33,7 @@ contextBridge.exposeInMainWorld('mootool', {
   getAppVersion: (): Promise<string> => ipcRenderer.invoke('app:get-version'),
   getAppPaths: (): Promise<AppPaths> => ipcRenderer.invoke('app:get-paths'),
   getSystemTheme: (): Promise<'light' | 'dark'> => ipcRenderer.invoke('theme:get-system'),
+  setPreventDisplaySleep: (enabled: boolean): Promise<boolean> => ipcRenderer.invoke('system:set-prevent-display-sleep', enabled),
   getSettings: (): Promise<AppSettings> => ipcRenderer.invoke('settings:get'),
   updateSettings: (patch: SettingsPatch): Promise<AppSettings> => ipcRenderer.invoke('settings:update', patch),
   openSettings: (category?: string): Promise<void> => ipcRenderer.invoke('settings:open', category),

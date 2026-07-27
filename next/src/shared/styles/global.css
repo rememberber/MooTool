@@ -443,6 +443,14 @@
   font: inherit;
 }
 
+.message-board-stage__header .message-board-stage__awake {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--board-ink);
+  letter-spacing: 0.08em;
+}
+
 .message-board-stage__message-frame {
   display: flex;
   flex: 1 1 0;

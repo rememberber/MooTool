@@ -26,6 +26,7 @@ declare global {
       getAppVersion: () => Promise<string>
       getAppPaths: () => Promise<AppPaths>
       getSystemTheme: () => Promise<'light' | 'dark'>
+      setPreventDisplaySleep: (enabled: boolean) => Promise<boolean>
       getSettings: () => Promise<AppSettings>
       updateSettings: (patch: SettingsPatch) => Promise<AppSettings>
       openSettings: (category?: string) => Promise<void>

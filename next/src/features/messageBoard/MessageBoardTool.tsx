@@ -1,5 +1,6 @@
-import { AlignCenter, AlignLeft, Maximize2, Minimize2, Sparkles } from 'lucide-react'
+import { AlignCenter, AlignLeft, Maximize2, Minimize2, Sparkles, Sun } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
+import { useToolActivity } from '@/shared/components/ToolActivity'
 import { ToolPageHeader } from '@/shared/components/ToolPage'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { MessageKey } from '@/shared/i18n/messages'
@@ -38,12 +39,14 @@ type StoredPreferences = {
 
 export function MessageBoardTool() {
   const { t } = useI18n()
+  const toolActive = useToolActivity()
   const initialPreferences = useRef(readPreferences(t('messageBoard.preset.away')))
   const [message, setMessage] = useState(initialPreferences.current.message)
   const [theme, setTheme] = useState<BoardTheme>(initialPreferences.current.theme)
   const [alignment, setAlignment] = useState<BoardAlignment>(initialPreferences.current.alignment)
   const [size, setSize] = useState(initialPreferences.current.size)
   const [presenting, setPresenting] = useState(false)
+  const [displayAwake, setDisplayAwake] = useState(false)
   const messageFrameRef = useRef<HTMLDivElement>(null)
   const messageRef = useRef<HTMLDivElement>(null)
   const visibleMessage = message.trim() || t('messageBoard.empty')
@@ -91,6 +94,32 @@ export function MessageBoardTool() {
     window.addEventListener('keydown', handleEscape, true)
     return () => window.removeEventListener('keydown', handleEscape, true)
   }, [presenting])
+
+  useEffect(() => {
+    if (!toolActive) setPresenting(false)
+  }, [toolActive])
+
+  useEffect(() => {
+    if (!presenting || !toolActive) {
+      setDisplayAwake(false)
+      return
+    }
+
+    let disposed = false
+    void window.mootool.setPreventDisplaySleep(true)
+      .then((active) => {
+        if (!disposed) setDisplayAwake(active)
+      })
+      .catch(() => {
+        if (!disposed) setDisplayAwake(false)
+      })
+
+    return () => {
+      disposed = true
+      setDisplayAwake(false)
+      void window.mootool.setPreventDisplaySleep(false)
+    }
+  }, [presenting, toolActive])
 
   function selectPreset(preset: (typeof presets)[number]): void {
     setMessage(t(preset.key))
@@ -211,7 +240,11 @@ export function MessageBoardTool() {
           <div className="message-board-stage__orb message-board-stage__orb--two" />
           <header className="message-board-stage__header">
             <span><i />{t('messageBoard.badge')}</span>
-            <small>{t('messageBoard.badgeEnglish')}</small>
+            {displayAwake ? (
+              <small className="message-board-stage__awake" role="status">
+                <Sun size={12} aria-hidden="true" />{t('messageBoard.keepAwake')}
+              </small>
+            ) : <small>{t('messageBoard.badgeEnglish')}</small>}
           </header>
           <div className="message-board-stage__message-frame" ref={messageFrameRef}>
             <div className="message-board-stage__message" ref={messageRef}>{visibleMessage}</div>

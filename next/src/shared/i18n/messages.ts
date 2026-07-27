@@ -1195,6 +1195,7 @@ export const messages = {
     ,'messageBoard.theme.forest': '森林'
     ,'messageBoard.theme.paper': '纸张'
     ,'messageBoard.theme.midnight': '午夜'
+    ,'messageBoard.keepAwake': '屏幕常亮'
   },
   'en-US': {
     'common.toast.dismiss': 'Dismiss notification',
@@ -2378,6 +2379,7 @@ export const messages = {
     ,'messageBoard.theme.forest': 'Forest'
     ,'messageBoard.theme.paper': 'Paper'
     ,'messageBoard.theme.midnight': 'Midnight'
+    ,'messageBoard.keepAwake': 'Screen stays awake'
   },
   'ja-JP': {
     'common.toast.dismiss': '通知を閉じる',
@@ -3561,5 +3563,6 @@ export const messages = {
     ,'messageBoard.theme.forest': 'フォレスト'
     ,'messageBoard.theme.paper': 'ペーパー'
     ,'messageBoard.theme.midnight': 'ミッドナイト'
+    ,'messageBoard.keepAwake': '画面を常時表示'
   }
 } as const
