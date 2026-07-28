@@ -1,11 +1,11 @@
 package com.jthemedetecor.util;
 
 import com.jthemedetecor.OsThemeDetector;
+import com.sun.jna.Platform;
 import io.github.g00fy2.versioncompare.Version;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import oshi.PlatformEnum;
 import oshi.SystemInfo;
 import oshi.software.os.OperatingSystem;
 
@@ -17,7 +17,7 @@ public class OsInfo {
 
     private static final Logger logger = LoggerFactory.getLogger(OsThemeDetector.class);
 
-    private static final PlatformEnum platformType;
+    private static final int platformType;
     private static final String family;
     private static final String version;
 
@@ -26,21 +26,21 @@ public class OsInfo {
         final OperatingSystem osInfo = systemInfo.getOperatingSystem();
         final OperatingSystem.OSVersionInfo osVersionInfo = osInfo.getVersionInfo();
 
-        platformType = SystemInfo.getCurrentPlatform();
+        platformType = Platform.getOSType();
         family = osInfo.getFamily();
         version = osVersionInfo.getVersion();
     }
 
     public static boolean isWindows10OrLater() {
-        return hasTypeAndVersionOrHigher(PlatformEnum.WINDOWS, "10");
+        return hasTypeAndVersionOrHigher(Platform.WINDOWS, "10");
     }
 
     public static boolean isLinux() {
-        return hasType(PlatformEnum.LINUX);
+        return hasType(Platform.LINUX);
     }
 
     public static boolean isMacOsMojaveOrLater() {
-        return hasTypeAndVersionOrHigher(PlatformEnum.MACOS, "10.14");
+        return hasTypeAndVersionOrHigher(Platform.MAC, "10.14");
     }
 
     public static boolean isGnome() {
@@ -51,15 +51,15 @@ public class OsInfo {
         );
     }
 
-    public static boolean hasType(PlatformEnum platformType) {
-        return OsInfo.platformType.equals(platformType);
+    public static boolean hasType(int platformType) {
+        return OsInfo.platformType == platformType;
     }
 
     public static boolean isVersionAtLeast(String version) {
         return new Version(OsInfo.version).isAtLeast(version);
     }
 
-    public static boolean hasTypeAndVersionOrHigher(PlatformEnum platformType, String version) {
+    public static boolean hasTypeAndVersionOrHigher(int platformType, String version) {
         return hasType(platformType) && isVersionAtLeast(version);
     }
 

@@ -411,8 +411,8 @@ export class VaultGitService {
         maxBuffer: 10 * 1024 * 1024,
         windowsHide: true
       }, (error, stdout, stderr) => {
-        const exitCode = typeof (error as NodeJS.ErrnoException & { code?: number } | null)?.code === 'number'
-          ? (error as NodeJS.ErrnoException & { code: number }).code
+        const exitCode = typeof error?.code === 'number'
+          ? error.code
           : error ? 1 : 0
         resolve({ stdout, stderr, exitCode })
       })

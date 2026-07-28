@@ -1,29 +1,8 @@
-import { Parser } from 'expr-eval'
-
-const arithmeticParser = new Parser({
-  allowMemberAccess: false,
-  operators: {
-    add: true,
-    subtract: true,
-    multiply: true,
-    divide: true,
-    power: false,
-    factorial: false,
-    remainder: false,
-    comparison: false,
-    concatenate: false,
-    conditional: false,
-    logical: false,
-    assignment: false,
-    fndef: false
-  }
-})
-
 export function evaluateExpression(expression: string): string {
   const source = expression.trim().replace(/=$/, '')
   if (!source || source.length > 500 || !/^[\d+\-*/().\s]+$/.test(source)) throw new Error('Invalid expression')
-  const result: unknown = arithmeticParser.evaluate(source)
-  if (typeof result !== 'number' || !Number.isFinite(result)) throw new Error('Expression did not produce a finite number')
+  const result = new ArithmeticParser(source).parse()
+  if (!Number.isFinite(result)) throw new Error('Expression did not produce a finite number')
   return Number.parseFloat(result.toPrecision(14)).toString()
 }
 
@@ -81,4 +60,66 @@ function parseCountPair(nValue: string, mValue: string): [number, number] {
 
 function absBigInt(value: bigint): bigint {
   return value < 0n ? -value : value
+}
+
+class ArithmeticParser {
+  private position = 0
+
+  constructor(private readonly source: string) {}
+
+  parse(): number {
+    const result = this.parseAddition()
+    this.skipWhitespace()
+    if (this.position !== this.source.length) throw new Error('Invalid expression')
+    return result
+  }
+
+  private parseAddition(): number {
+    let result = this.parseMultiplication()
+    while (true) {
+      if (this.consume('+')) result += this.parseMultiplication()
+      else if (this.consume('-')) result -= this.parseMultiplication()
+      else return result
+    }
+  }
+
+  private parseMultiplication(): number {
+    let result = this.parseUnary()
+    while (true) {
+      if (this.consume('*')) result *= this.parseUnary()
+      else if (this.consume('/')) result /= this.parseUnary()
+      else return result
+    }
+  }
+
+  private parseUnary(): number {
+    if (this.consume('+')) return this.parseUnary()
+    if (this.consume('-')) return -this.parseUnary()
+    return this.parsePrimary()
+  }
+
+  private parsePrimary(): number {
+    if (this.consume('(')) {
+      const result = this.parseAddition()
+      if (!this.consume(')')) throw new Error('Invalid expression')
+      return result
+    }
+
+    this.skipWhitespace()
+    const match = /^(?:\d+(?:\.\d*)?|\.\d+)/.exec(this.source.slice(this.position))
+    if (!match) throw new Error('Invalid expression')
+    this.position += match[0].length
+    return Number(match[0])
+  }
+
+  private consume(token: string): boolean {
+    this.skipWhitespace()
+    if (this.source[this.position] !== token) return false
+    this.position += 1
+    return true
+  }
+
+  private skipWhitespace(): void {
+    while (/\s/.test(this.source[this.position] ?? '')) this.position += 1
+  }
 }

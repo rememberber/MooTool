@@ -328,7 +328,7 @@ function hasHeader(headers: Record<string, string>, name: string): boolean {
   return Object.keys(headers).some((key) => key.toLowerCase() === name)
 }
 
-function formatHeaders(headers: Headers): string {
+function formatHeaders(headers: Awaited<ReturnType<typeof fetch>>['headers']): string {
   return [...headers.entries()].map(([name, value]) => `${name}: ${value}`).join('\n')
 }
 

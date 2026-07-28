@@ -1,4 +1,4 @@
-import { ExternalLink, Github, HeartHandshake, PackageOpen, Users } from 'lucide-react'
+import { ExternalLink, GitFork, HeartHandshake, PackageOpen, Users } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import sponsorQrImage from '@/assets/wx-zanshang.jpg'
 import { BrandIcon } from '@/shared/components/BrandIcon'
@@ -81,7 +81,7 @@ export function HomePage() {
         <section className="home-section">
           <h2>{t('app.home.source.title')}</h2>
           <div className="home-link-list">
-            <button type="button" onClick={() => openPage('github')}><Github size={15} />GitHub<ExternalLink size={12} /></button>
+            <button type="button" onClick={() => openPage('github')}><GitFork size={15} />GitHub<ExternalLink size={12} /></button>
             <button type="button" onClick={() => openPage('gitee')}><PackageOpen size={15} />Gitee<ExternalLink size={12} /></button>
           </div>
         </section>

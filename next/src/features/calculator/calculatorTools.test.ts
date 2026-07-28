@@ -4,7 +4,11 @@ import { combination, convertBase, evaluateExpression, gcd, lcm, permutation } f
 describe('calculator tools', () => {
   it('evaluates arithmetic without allowing symbols or assignments', () => {
     expect(evaluateExpression('2 * (3 + 4)=')).toBe('14')
+    expect(evaluateExpression('-3 + 10 / 2')).toBe('2')
+    expect(evaluateExpression('.5 * 8')).toBe('4')
     expect(() => evaluateExpression('x = 2')).toThrow()
+    expect(() => evaluateExpression('1 / 0')).toThrow()
+    expect(() => evaluateExpression('(1 + 2')).toThrow()
   })
 
   it('converts integer bases and performs number operations', () => {
