@@ -1,5 +1,5 @@
 {
-  "currentVersion": "v1.8.5",
+  "currentVersion": "v1.8.6",
   "versionIndex": {
     "v0.0.0": "0",
     "v1.0.0": "1",
@@ -56,7 +56,8 @@
     "v1.8.2": "52",
     "v1.8.3": "53",
     "v1.8.4": "54",
-    "v1.8.5": "55"
+    "v1.8.5": "55",
+    "v1.8.6": "56"
   },
   "versionDetailList": [
     {
@@ -366,6 +367,15 @@
       "logEn": "● feat: [HTTP] Added support for customizing the request timeout\n● feat: [HTTP] Added search support in the response Body section\n\n",
       "titleJa": "HTTP ツールの強化",
       "logJa": "● feat: 【HTTP】リクエストのタイムアウト時間をカスタマイズ可能に\n● feat: 【HTTP】レスポンス結果の Body 領域で検索をサポート\n\n"
+    },
+    {
+      "version": "v1.8.6",
+      "title": "环境变量、网络扫描与随手记增强",
+      "log": "● feat：【环境变量】支持直接修改系统环境变量\n● feat：【网络/IP】支持 IP 网段批量 Ping 检测，便于网络调试\n● feat：【随手记】支持调整行间距\n● chore：升级依赖至最新版本\n\n",
+      "titleEn": "Environment variables, network scan, and Quick Notes enhancements",
+      "logEn": "● feat: [Environment Variables] Added support for directly modifying system environment variables\n● feat: [Network/IP] Added IP range batch Ping scanning for network debugging\n● feat: [Quick Notes] Added line spacing adjustment\n● chore: Upgraded dependencies to the latest versions\n\n",
+      "titleJa": "環境変数、ネットワークスキャン、クイックノートの強化",
+      "logJa": "● feat: 【環境変数】システム環境変数の直接編集に対応\n● feat: 【ネットワーク／IP】IP 範囲の一括 Ping スキャンに対応し、ネットワークデバッグを容易に\n● feat: 【クイックノート】行間の調整に対応\n● chore: 依存関係を最新バージョンに更新\n\n"
     }
   ]
 }
