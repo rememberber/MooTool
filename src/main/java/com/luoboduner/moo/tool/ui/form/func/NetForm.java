@@ -9,6 +9,7 @@ import com.intellij.uiDesigner.core.Spacer;
 import com.luoboduner.moo.tool.App;
 import com.luoboduner.moo.tool.ui.Style;
 import com.luoboduner.moo.tool.ui.listener.func.NetListener;
+import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.I18nUiUtil;
 import com.luoboduner.moo.tool.util.ScrollUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
@@ -55,6 +56,15 @@ public class NetForm {
     private JButton flushDnsButton;
     private JTextField whoisTextField;
     private JButton whoisButton;
+    private JPanel networkScanPanel;
+    private JLabel ipRangeLabel;
+    private JTextField ipRangeTextField;
+    private JButton ipRangeScanButton;
+    private JLabel portScanHostLabel;
+    private JTextField portScanHostTextField;
+    private JLabel portScanPortsLabel;
+    private JTextField portScanPortsTextField;
+    private JButton portScanButton;
 
     private static NetForm netForm;
 
@@ -102,6 +112,19 @@ public class NetForm {
         I18nUiUtil.setText(hostToIpButton, "net.fetch");
         I18nUiUtil.setText(whoisButton, "net.query");
         I18nUiUtil.setText(flushDnsButton, "net.flushDns");
+        if (networkScanPanel != null) {
+            networkScanPanel.setBorder(BorderFactory.createTitledBorder(
+                    BorderFactory.createEmptyBorder(), I18n.get("net.scanner"),
+                    TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION,
+                    networkScanPanel.getFont().deriveFont(Font.BOLD)));
+            I18nUiUtil.setText(ipRangeLabel, "net.ipRange");
+            I18nUiUtil.setText(ipRangeScanButton, "net.scan");
+            I18nUiUtil.setText(portScanHostLabel, "net.scanTarget");
+            I18nUiUtil.setText(portScanPortsLabel, "net.ports");
+            I18nUiUtil.setText(portScanButton, "net.scan");
+            ipRangeTextField.setToolTipText(I18n.get("net.ipRangeHint"));
+            portScanPortsTextField.setToolTipText(I18n.get("net.portsHint"));
+        }
         if (rightScrollPane.getViewport().getView() instanceof Container rightPanel) {
             I18nUiUtil.localizeTree(rightPanel, Map.ofEntries(
                     Map.entry("ipv4地址和Long值互转", "net.ipv4Long"),
@@ -137,10 +160,93 @@ public class NetForm {
         netForm.getIpv4ToLongButton().setIcon(new FlatSVGIcon("icon/down.svg"));
         netForm.getLongToIpv4Button().setIcon(new FlatSVGIcon("icon/up.svg"));
 
+        initNetworkScanPanel();
+
         // 设置滚动条速度
         ScrollUtil.smoothPane(netForm.getRightScrollPane());
 
         netForm.getNetPanel().updateUI();
+    }
+
+    /**
+     * This panel is assembled outside the GUI Designer block so the generated legacy form stays maintainable.
+     */
+    private static void initNetworkScanPanel() {
+        if (!(netForm.getRightScrollPane().getViewport().getView() instanceof JPanel rightPanel)
+                || netForm.networkScanPanel != null) {
+            return;
+        }
+        for (Component component : rightPanel.getComponents()) {
+            if (component instanceof Spacer) {
+                rightPanel.remove(component);
+            }
+        }
+
+        netForm.networkScanPanel = new JPanel(new GridLayout(2, 1, 0, 8));
+        netForm.networkScanPanel.setBorder(BorderFactory.createTitledBorder(BorderFactory.createEmptyBorder(),
+                "网络扫描", TitledBorder.DEFAULT_JUSTIFICATION, TitledBorder.DEFAULT_POSITION,
+                netForm.networkScanPanel.getFont().deriveFont(Font.BOLD)));
+
+        JPanel rangeRow = new JPanel(new GridBagLayout());
+        GridBagConstraints gbc = scanConstraints();
+        netForm.ipRangeLabel = new JLabel("IP 段");
+        rangeRow.add(netForm.ipRangeLabel, gbc);
+        gbc.gridx = 1;
+        gbc.weightx = 1;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        netForm.ipRangeTextField = new JTextField("192.168.10");
+        rangeRow.add(netForm.ipRangeTextField, gbc);
+        gbc.gridx = 2;
+        gbc.weightx = 0;
+        gbc.fill = GridBagConstraints.NONE;
+        netForm.ipRangeScanButton = new JButton("扫描");
+        rangeRow.add(netForm.ipRangeScanButton, gbc);
+        netForm.networkScanPanel.add(rangeRow);
+
+        JPanel portRow = new JPanel(new GridBagLayout());
+        gbc = scanConstraints();
+        netForm.portScanHostLabel = new JLabel("目标 IP");
+        portRow.add(netForm.portScanHostLabel, gbc);
+        gbc.gridx = 1;
+        gbc.weightx = 0.45;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        netForm.portScanHostTextField = new JTextField("127.0.0.1");
+        portRow.add(netForm.portScanHostTextField, gbc);
+        gbc.gridx = 2;
+        gbc.weightx = 0;
+        gbc.fill = GridBagConstraints.NONE;
+        netForm.portScanPortsLabel = new JLabel("端口");
+        portRow.add(netForm.portScanPortsLabel, gbc);
+        gbc.gridx = 3;
+        gbc.weightx = 0.55;
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        netForm.portScanPortsTextField = new JTextField();
+        portRow.add(netForm.portScanPortsTextField, gbc);
+        gbc.gridx = 4;
+        gbc.weightx = 0;
+        gbc.fill = GridBagConstraints.NONE;
+        netForm.portScanButton = new JButton("扫描");
+        portRow.add(netForm.portScanButton, gbc);
+        netForm.networkScanPanel.add(portRow);
+
+        UndoUtil.register(netForm.ipRangeTextField);
+        UndoUtil.register(netForm.portScanHostTextField);
+        UndoUtil.register(netForm.portScanPortsTextField);
+        rightPanel.add(netForm.networkScanPanel,
+                new GridConstraints(13, 0, 1, 1, GridConstraints.ANCHOR_NORTH,
+                        GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW,
+                        GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        rightPanel.revalidate();
+        rightPanel.repaint();
+    }
+
+    private static GridBagConstraints scanConstraints() {
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.gridx = 0;
+        gbc.gridy = 0;
+        gbc.insets = new Insets(0, 4, 0, 4);
+        gbc.anchor = GridBagConstraints.WEST;
+        return gbc;
     }
 
     {

@@ -23,12 +23,13 @@ export type SystemHostsFile = {
   writable: boolean
 }
 
-export type NetworkAction = 'interfaces' | 'connections' | 'ping' | 'flush-dns' | 'resolve' | 'whois'
+export type NetworkAction = 'interfaces' | 'connections' | 'ping' | 'ping-range' | 'port-scan' | 'flush-dns' | 'resolve' | 'whois'
 
 export type NetworkCommandInput = {
   requestId: string
   action: NetworkAction
   target?: string
+  ports?: string
   timeoutMs: number
 }
 

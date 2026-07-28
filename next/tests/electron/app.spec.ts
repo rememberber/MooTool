@@ -1055,6 +1055,12 @@ test('runs P5 Hosts, translation records, network and system workflows', async (
 
   await openTool('网络/IP', '网络/IP')
   await expectTextEditorChrome(mainPage.locator('.local-address-editor').nth(0))
+  await expect(mainPage.getByRole('heading', { name: 'IP 段存活探测' })).toBeVisible()
+  await expect(mainPage.getByRole('heading', { name: 'TCP 端口扫描' })).toBeVisible()
+  const portScanRow = mainPage.locator('.net-port-scan-row')
+  await portScanRow.locator('input').nth(1).fill('1')
+  await mainPage.getByTestId('net-port-scan').click()
+  await expect(mainPage.getByTestId('net-output')).toContainText('Open TCP ports on 127.0.0.1')
   await mainPage.getByTestId('net-resolve').click()
   await expect(mainPage.getByTestId('net-output')).toContainText(/127\.0\.0\.1|::1/)
 

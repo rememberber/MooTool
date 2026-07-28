@@ -1,7 +1,7 @@
 import { httpMethods, normalizeTranslationLanguagePair, type HttpCookieEntry, type HttpRequestDraft, type HttpResponseResult, type HttpSendInput, type KeyValueEntry, type SaveTranslationHistoryInput, type SaveTranslationWordInput, type TranslationInput } from '../../src/shared/contracts/network'
 import type { NetworkCommandInput, SaveHostProfileInput } from '../../src/shared/contracts/system'
 
-const networkActions = ['interfaces', 'connections', 'ping', 'flush-dns', 'resolve', 'whois'] as const
+const networkActions = ['interfaces', 'connections', 'ping', 'ping-range', 'port-scan', 'flush-dns', 'resolve', 'whois'] as const
 
 export function normalizeHttpRequest(value: unknown): HttpRequestDraft {
   const record = objectValue(value, 'Invalid HTTP request')
@@ -79,7 +79,13 @@ export function normalizeNetworkInput(value: unknown): NetworkCommandInput {
   const record = objectValue(value, 'Invalid network command')
   const action = stringValue(record.action, 32)
   if (!networkActions.includes(action as NetworkCommandInput['action'])) throw new Error('Unsupported network action')
-  return { requestId: requestId(record.requestId), action: action as NetworkCommandInput['action'], target: optionalString(record.target, 300), timeoutMs: timeout(record.timeoutMs) }
+  return {
+    requestId: requestId(record.requestId),
+    action: action as NetworkCommandInput['action'],
+    target: optionalString(record.target, 300),
+    ports: optionalString(record.ports, 30_000),
+    timeoutMs: timeout(record.timeoutMs)
+  }
 }
 
 export function normalizeKeyword(value: unknown): string {

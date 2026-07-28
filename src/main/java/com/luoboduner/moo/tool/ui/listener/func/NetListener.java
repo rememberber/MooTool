@@ -9,6 +9,7 @@ import cn.hutool.log.LogFactory;
 import com.luoboduner.moo.tool.ui.form.func.NetForm;
 import com.luoboduner.moo.tool.util.I18n;
 import com.luoboduner.moo.tool.util.MsgUtil;
+import com.luoboduner.moo.tool.util.NetworkScanUtil;
 import com.luoboduner.moo.tool.util.SystemUtil;
 import com.luoboduner.moo.tool.util.WhoisUtil;
 import org.apache.commons.lang3.exception.ExceptionUtils;
@@ -20,6 +21,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.util.LinkedHashSet;
+import java.util.List;
 
 /**
  * <pre>
@@ -166,6 +168,77 @@ public class NetListener {
             }
         });
 
+        netForm.getIpRangeScanButton().addActionListener(e -> {
+            String prefix = netForm.getIpRangeTextField().getText().trim();
+            try {
+                NetworkScanUtil.expandIpv4Prefix(prefix);
+            } catch (IllegalArgumentException ex) {
+                MsgUtil.errorDetail(netForm.getNetPanel(), "msg.failedTitle", ex.getMessage());
+                return;
+            }
+            netForm.getIpRangeScanButton().setEnabled(false);
+            netForm.getIpConfigTextArea().setText(I18n.get("net.scanningIpRange"));
+            ThreadUtil.execute(() -> {
+                try {
+                    List<String> reachable = NetworkScanUtil.scanReachableHosts(prefix, 800);
+                    StringBuilder output = new StringBuilder(
+                            I18n.format("net.ipRangeResult", reachable.size(), 254));
+                    if (reachable.isEmpty()) {
+                        output.append("\n").append(I18n.get("net.noReachableHosts"));
+                    } else {
+                        output.append("\n\n").append(String.join("\n", reachable));
+                    }
+                    showScanResult(netForm, output.toString(), netForm.getIpRangeScanButton());
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    showScanResult(netForm, I18n.get("net.scanStopped"), netForm.getIpRangeScanButton());
+                } catch (Exception ex) {
+                    showScanError(netForm, ex, netForm.getIpRangeScanButton());
+                }
+            });
+        });
+
+        netForm.getPortScanButton().addActionListener(e -> {
+            String host = netForm.getPortScanHostTextField().getText().trim();
+            String portExpression = netForm.getPortScanPortsTextField().getText().trim();
+            try {
+                NetworkScanUtil.parsePorts(portExpression);
+            } catch (IllegalArgumentException ex) {
+                MsgUtil.errorDetail(netForm.getNetPanel(), "msg.failedTitle", ex.getMessage());
+                return;
+            }
+            netForm.getPortScanButton().setEnabled(false);
+            netForm.getIpConfigTextArea().setText(I18n.get("net.scanningPorts"));
+            ThreadUtil.execute(() -> {
+                try {
+                    List<Integer> requestedPorts = NetworkScanUtil.parsePorts(portExpression);
+                    List<NetworkScanUtil.PortResult> openPorts =
+                            NetworkScanUtil.scanOpenPorts(host, portExpression, 500);
+                    StringBuilder output = new StringBuilder(
+                            I18n.format("net.portScanResult", host, openPorts.size(), requestedPorts.size()));
+                    if (openPorts.isEmpty()) {
+                        output.append("\n").append(I18n.get("net.noOpenPorts"));
+                    } else {
+                        for (NetworkScanUtil.PortResult result : openPorts) {
+                            output.append("\n")
+                                    .append(result.port())
+                                    .append("/tcp ")
+                                    .append(I18n.get("net.open"));
+                            if (!result.service().isEmpty()) {
+                                output.append(" ").append(result.service());
+                            }
+                        }
+                    }
+                    showScanResult(netForm, output.toString(), netForm.getPortScanButton());
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    showScanResult(netForm, I18n.get("net.scanStopped"), netForm.getPortScanButton());
+                } catch (Exception ex) {
+                    showScanError(netForm, ex, netForm.getPortScanButton());
+                }
+            });
+        });
+
         // WHOIS
         netForm.getWhoisButton().addActionListener(e -> {
             String query = netForm.getWhoisTextField().getText().trim();
@@ -191,6 +264,22 @@ public class NetListener {
                     });
                 }
             });
+        });
+    }
+
+    private static void showScanResult(NetForm netForm, String output, JButton button) {
+        SwingUtilities.invokeLater(() -> {
+            netForm.getIpConfigTextArea().setText(output);
+            netForm.getIpConfigTextArea().setCaretPosition(0);
+            button.setEnabled(true);
+        });
+    }
+
+    private static void showScanError(NetForm netForm, Exception error, JButton button) {
+        logger.error(ExceptionUtils.getStackTrace(error));
+        SwingUtilities.invokeLater(() -> {
+            MsgUtil.errorDetail(netForm.getNetPanel(), "msg.failedTitle", error.getMessage());
+            button.setEnabled(true);
         });
     }
 

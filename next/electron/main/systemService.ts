@@ -2,7 +2,7 @@ import { execFile, spawn, type ChildProcessWithoutNullStreams } from 'node:child
 import { access, readFile, unlink, writeFile } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import { lookup } from 'node:dns/promises'
-import { createConnection } from 'node:net'
+import { createConnection, type Socket } from 'node:net'
 import { networkInterfaces } from 'node:os'
 import { join } from 'node:path'
 import si from 'systeminformation'
@@ -19,9 +19,25 @@ import type {
 } from '../../src/shared/contracts/system'
 
 const maxCommandOutput = 2 * 1024 * 1024
+const maxCustomPorts = 4096
+const ipRangeConcurrency = 32
+const portScanConcurrency = 96
+const commonPorts = new Map<number, string>([
+  [20, 'ftp-data'], [21, 'ftp'], [22, 'ssh'], [23, 'telnet'], [25, 'smtp'], [53, 'dns'],
+  [67, 'dhcp'], [68, 'dhcp'], [69, 'tftp'], [80, 'http'], [110, 'pop3'], [123, 'ntp'],
+  [135, 'msrpc'], [139, 'netbios'], [143, 'imap'], [161, 'snmp'], [389, 'ldap'], [443, 'https'],
+  [445, 'smb'], [465, 'smtps'], [587, 'smtp-submission'], [631, 'ipp'], [636, 'ldaps'],
+  [873, 'rsync'], [993, 'imaps'], [995, 'pop3s'], [1080, 'socks'], [1433, 'mssql'],
+  [1521, 'oracle'], [2049, 'nfs'], [2181, 'zookeeper'], [2375, 'docker'], [3000, 'http-alt'],
+  [3306, 'mysql'], [3389, 'rdp'], [5432, 'postgresql'], [5601, 'kibana'], [5672, 'amqp'],
+  [5900, 'vnc'], [6379, 'redis'], [8080, 'http-alt'], [8081, 'http-alt'], [8443, 'https-alt'],
+  [8888, 'http-alt'], [9092, 'kafka'], [9200, 'elasticsearch'], [9300, 'elasticsearch'],
+  [11211, 'memcached'], [27017, 'mongodb']
+])
 
 export class SystemService {
-  private readonly processes = new Map<string, ChildProcessWithoutNullStreams>()
+  private readonly processes = new Map<string, Set<ChildProcessWithoutNullStreams>>()
+  private readonly scanControllers = new Map<string, AbortController>()
 
   constructor(private readonly tempDirectory: string) {}
 
@@ -51,8 +67,10 @@ export class SystemService {
 
   async runNetwork(input: NetworkCommandInput): Promise<NetworkCommandResult> {
     const startedAt = Date.now()
+    const controller = new AbortController()
+    this.scanControllers.set(input.requestId, controller)
     try {
-      const output = await this.executeNetworkAction(input)
+      const output = await this.executeNetworkAction(input, controller.signal)
       return { requestId: input.requestId, action: input.action, output, durationMs: Date.now() - startedAt }
     } catch (error) {
       return {
@@ -64,13 +82,16 @@ export class SystemService {
       }
     } finally {
       this.processes.delete(input.requestId)
+      this.scanControllers.delete(input.requestId)
     }
   }
 
   cancel(requestId: string): boolean {
-    const process = this.processes.get(requestId)
-    if (!process) return false
-    process.kill('SIGTERM')
+    const controller = this.scanControllers.get(requestId)
+    const processes = this.processes.get(requestId)
+    if (!controller && !processes) return false
+    controller?.abort()
+    for (const process of processes ?? []) process.kill('SIGTERM')
     this.processes.delete(requestId)
     return true
   }
@@ -138,7 +159,7 @@ export class SystemService {
     }
   }
 
-  private async executeNetworkAction(input: NetworkCommandInput): Promise<string> {
+  private async executeNetworkAction(input: NetworkCommandInput, signal: AbortSignal): Promise<string> {
     const timeoutMs = clampTimeout(input.timeoutMs)
     switch (input.action) {
       case 'resolve': {
@@ -148,6 +169,10 @@ export class SystemService {
       }
       case 'whois':
         return queryWhois(normalizeWhoisTarget(input.target), timeoutMs)
+      case 'ping-range':
+        return this.scanIpRange(input.requestId, input.target, timeoutMs, signal)
+      case 'port-scan':
+        return scanPorts(normalizeHostTarget(input.target), input.ports, timeoutMs, signal)
       case 'interfaces':
       case 'connections':
       case 'ping':
@@ -161,7 +186,7 @@ export class SystemService {
   private spawnCommand(requestId: string, file: string, args: string[], timeoutMs: number): Promise<string> {
     return new Promise((resolve, reject) => {
       const child = spawn(file, args, { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] })
-      this.processes.set(requestId, child)
+      this.registerProcess(requestId, child)
       let stdout = ''
       let stderr = ''
       let overflow = false
@@ -178,15 +203,73 @@ export class SystemService {
         stderr += chunk.toString()
         if (stderr.length > maxCommandOutput) { overflow = true; child.kill('SIGTERM') }
       })
-      child.on('error', (error) => { clearTimeout(timer); reject(error) })
+      child.on('error', (error) => { clearTimeout(timer); this.unregisterProcess(requestId, child); reject(error) })
       child.on('close', (code, signal) => {
         clearTimeout(timer)
+        this.unregisterProcess(requestId, child)
         if (overflow) return reject(new Error('Command output exceeds 2 MB'))
         if (signal === 'SIGTERM') return reject(new Error('ABORTED'))
         if (code !== 0) return reject(new Error(stderr.trim() || `${file} exited with code ${code}`))
         resolve((stdout || stderr).trim())
       })
     })
+  }
+
+  private async scanIpRange(requestId: string, value: string | undefined, timeoutMs: number, signal: AbortSignal): Promise<string> {
+    const addresses = parseIpv4Range(value)
+    const reachable = (await concurrentMap(addresses, ipRangeConcurrency, signal,
+      async (address) => await this.pingOnce(requestId, address, Math.min(timeoutMs, 800), signal),
+      Date.now() + timeoutMs))
+      .filter((entry) => entry.reachable)
+      .map((entry) => entry.address)
+    return [`Reachable hosts: ${reachable.length} / ${addresses.length}`, '', ...(reachable.length ? reachable : ['No reachable host found'])].join('\n')
+  }
+
+  private pingOnce(requestId: string, address: string, timeoutMs: number, signal: AbortSignal): Promise<{ address: string; reachable: boolean }> {
+    return new Promise((resolve, reject) => {
+      if (signal.aborted) return reject(new Error('ABORTED'))
+      const command = pingOnceCommand(address, timeoutMs)
+      const child = spawn(command.file, command.args, { windowsHide: true, stdio: ['pipe', 'pipe', 'pipe'] })
+      this.registerProcess(requestId, child)
+      let settled = false
+      const finish = (reachable: boolean, error?: Error): void => {
+        if (settled) return
+        settled = true
+        clearTimeout(timer)
+        signal.removeEventListener('abort', abort)
+        this.unregisterProcess(requestId, child)
+        if (error) reject(error)
+        else resolve({ address, reachable })
+      }
+      const abort = (): void => {
+        child.kill('SIGTERM')
+        finish(false, new Error('ABORTED'))
+      }
+      const timer = setTimeout(() => {
+        child.kill('SIGTERM')
+        finish(false)
+      }, timeoutMs + 1_000)
+      timer.unref()
+      signal.addEventListener('abort', abort, { once: true })
+      child.on('error', (error) => finish(false, error))
+      child.on('close', (code, closeSignal) => {
+        if (signal.aborted || closeSignal === 'SIGTERM' && !settled) return finish(false, new Error('ABORTED'))
+        finish(code === 0)
+      })
+    })
+  }
+
+  private registerProcess(requestId: string, child: ChildProcessWithoutNullStreams): void {
+    const processes = this.processes.get(requestId) ?? new Set<ChildProcessWithoutNullStreams>()
+    processes.add(child)
+    this.processes.set(requestId, processes)
+  }
+
+  private unregisterProcess(requestId: string, child: ChildProcessWithoutNullStreams): void {
+    const processes = this.processes.get(requestId)
+    if (!processes) return
+    processes.delete(child)
+    if (!processes.size) this.processes.delete(requestId)
   }
 
   private async writeHostsElevated(destination: string, content: string): Promise<void> {
@@ -227,6 +310,108 @@ export function localAddresses(family: 4 | 6): string[] {
 export function normalizeHostsContent(value: string): string {
   if (typeof value !== 'string' || value.length > 2 * 1024 * 1024 || value.includes('\0')) throw new Error('Invalid hosts content')
   return `${value.replace(/\r\n/g, '\n').replace(/\r/g, '\n').replace(/\n*$/, '')}\n`
+}
+
+export function parseIpv4Range(value?: string): string[] {
+  const match = value?.trim().match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.?$/)
+  if (!match) throw new Error('INVALID_TARGET')
+  const octets = match.slice(1).map(Number)
+  if (octets.some((octet) => octet > 255)) throw new Error('INVALID_TARGET')
+  const prefix = octets.join('.')
+  return Array.from({ length: 254 }, (_, index) => `${prefix}.${index + 1}`)
+}
+
+export function parsePortSpec(value?: string): number[] {
+  const input = value?.trim() ?? ''
+  if (!input) return [...commonPorts.keys()]
+  const ports = new Set<number>()
+  for (const rawToken of input.split(',')) {
+    const token = rawToken.trim()
+    const range = token.match(/^(\d{1,5})\s*-\s*(\d{1,5})$/)
+    if (range) {
+      const start = validPort(range[1])
+      const end = validPort(range[2])
+      if (start > end || end - start + 1 > maxCustomPorts) throw new Error('INVALID_TARGET')
+      for (let port = start; port <= end; port += 1) ports.add(port)
+    } else {
+      ports.add(validPort(token))
+    }
+    if (ports.size > maxCustomPorts) throw new Error('INVALID_TARGET')
+  }
+  return [...ports].sort((left, right) => left - right)
+}
+
+async function scanPorts(host: string, portSpec: string | undefined, timeoutMs: number, signal: AbortSignal): Promise<string> {
+  const ports = parsePortSpec(portSpec)
+  const results = await concurrentMap(ports, portScanConcurrency, signal, async (port) => ({
+    port,
+    open: await probePort(host, port, Math.min(timeoutMs, 500), signal)
+  }), Date.now() + timeoutMs)
+  const openPorts = results.filter((entry) => entry.open)
+  const lines = openPorts.map(({ port }) => {
+    const service = commonPorts.get(port)
+    return `${port}/tcp open${service ? ` ${service}` : ''}`
+  })
+  return [`Open TCP ports on ${host}: ${openPorts.length} / ${ports.length}`, '', ...(lines.length ? lines : ['No open TCP port found'])].join('\n')
+}
+
+function probePort(host: string, port: number, timeoutMs: number, signal: AbortSignal): Promise<boolean> {
+  return new Promise((resolve, reject) => {
+    if (signal.aborted) return reject(new Error('ABORTED'))
+    let socket: Socket | undefined
+    let settled = false
+    const finish = (open: boolean, error?: Error): void => {
+      if (settled) return
+      settled = true
+      signal.removeEventListener('abort', abort)
+      socket?.destroy()
+      if (error) reject(error)
+      else resolve(open)
+    }
+    const abort = (): void => finish(false, new Error('ABORTED'))
+    signal.addEventListener('abort', abort, { once: true })
+    socket = createConnection({ host, port })
+    socket.setTimeout(Math.max(100, timeoutMs))
+    socket.once('connect', () => finish(true))
+    socket.once('timeout', () => finish(false))
+    socket.once('error', () => finish(false))
+  })
+}
+
+async function concurrentMap<T, R>(
+  values: T[],
+  concurrency: number,
+  signal: AbortSignal,
+  mapper: (value: T) => Promise<R>,
+  deadline?: number
+): Promise<R[]> {
+  const results = new Array<R>(values.length)
+  let nextIndex = 0
+  const worker = async (): Promise<void> => {
+    while (true) {
+      if (signal.aborted) throw new Error('ABORTED')
+      if (deadline && Date.now() >= deadline) throw new Error('TIMEOUT')
+      const index = nextIndex
+      nextIndex += 1
+      if (index >= values.length) return
+      results[index] = await mapper(values[index])
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, values.length) }, worker))
+  return results
+}
+
+function validPort(value: string): number {
+  if (!/^\d{1,5}$/.test(value)) throw new Error('INVALID_TARGET')
+  const port = Number(value)
+  if (port < 1 || port > 65535) throw new Error('INVALID_TARGET')
+  return port
+}
+
+function pingOnceCommand(host: string, timeoutMs: number): { file: string; args: string[] } {
+  if (process.platform === 'win32') return { file: 'ping.exe', args: ['-n', '1', '-w', String(timeoutMs), host] }
+  if (process.platform === 'darwin') return { file: '/sbin/ping', args: ['-c', '1', '-W', String(timeoutMs), host] }
+  return { file: 'ping', args: ['-c', '1', '-W', String(Math.max(1, Math.ceil(timeoutMs / 1_000))), host] }
 }
 
 function networkCommand(action: NetworkAction, target?: string): { file: string; args: string[] } {

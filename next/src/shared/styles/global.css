@@ -8514,6 +8514,23 @@ select:not([multiple]) {
   color: var(--text-muted);
 }
 
+.net-port-scan-row {
+  display: grid;
+  width: 100%;
+  grid-template-columns: auto minmax(90px, 0.8fr) minmax(130px, 1.2fr) auto;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-muted);
+}
+
+.net-section-hint {
+  width: 100%;
+  margin: -2px 0 0 20px;
+  color: var(--text-faint);
+  font-size: 9px;
+  line-height: 1.4;
+}
+
 .local-address-columns {
   display: grid;
   width: 100%;
