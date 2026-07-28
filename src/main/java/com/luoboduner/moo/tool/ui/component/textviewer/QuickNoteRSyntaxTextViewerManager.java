@@ -48,7 +48,7 @@ public class QuickNoteRSyntaxTextViewerManager {
             } finally {
                 QuickNoteRSyntaxTextViewer.ignoreQuickSave = false;
             }
-            applyFont(plainTextViewer, tQuickNote);
+            applyEditorMetrics(plainTextViewer, tQuickNote);
 
             plainTextViewer.setCaretPosition(0);
 
@@ -92,7 +92,7 @@ public class QuickNoteRSyntaxTextViewerManager {
                 (QuickNoteRSyntaxTextViewer) editorPanel.getEditorScrollPane().getTextArea();
         TQuickNote tQuickNote = QuickNoteVaultUtil.loadByPath(relativePath);
         if (tQuickNote != null) {
-            applyFont(plainTextViewer, tQuickNote);
+            applyEditorMetrics(plainTextViewer, tQuickNote);
         }
     }
 
@@ -106,10 +106,21 @@ public class QuickNoteRSyntaxTextViewerManager {
         plainTextViewer.setFont(EditorFontUtil.getEditorFont(fontName, Font.PLAIN, fontSize));
     }
 
-    private static void applyFont(QuickNoteRSyntaxTextViewer viewer, TQuickNote note) {
+    public void applyLineSpacing(String relativePath, float lineSpacing) {
+        QuickNoteEditorPanel editorPanel = viewMap.get(relativePath);
+        if (editorPanel == null) {
+            return;
+        }
+        QuickNoteRSyntaxTextViewer plainTextViewer =
+                (QuickNoteRSyntaxTextViewer) editorPanel.getEditorScrollPane().getTextArea();
+        plainTextViewer.setLineSpacingFactor(lineSpacing);
+    }
+
+    private static void applyEditorMetrics(QuickNoteRSyntaxTextViewer viewer, TQuickNote note) {
         String fontName = QuickNoteForm.resolveNoteFontName(note);
         int fontSize = QuickNoteForm.resolveNoteFontSize(note);
         viewer.setFont(EditorFontUtil.getEditorFont(fontName, Font.PLAIN, fontSize));
+        viewer.setLineSpacingFactor(QuickNoteForm.resolveNoteLineSpacing(note));
     }
 
     public static void updateGutter(RTextScrollPane rTextScrollPane) {

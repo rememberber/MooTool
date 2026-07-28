@@ -222,6 +222,21 @@ public class QuickNoteListener {
             }
         });
 
+        // 行间距下拉框事件
+        quickNoteForm.getLineSpacingComboBox().addItemListener(e -> {
+            if (e.getStateChange() == ItemEvent.SELECTED) {
+                String lineSpacingValue = e.getItem().toString();
+                float lineSpacing = Float.parseFloat(lineSpacingValue);
+
+                if (selectedPath != null
+                        && !QuickNoteRSyntaxTextViewer.ignoreQuickSave
+                        && !QuickNoteForm.isSyncingToolbarFromNote()) {
+                    updateCurrentMetadata(note -> note.setLineSpacing(lineSpacingValue));
+                    quickNoteRSyntaxTextViewerManager.applyLineSpacing(selectedPath, lineSpacing);
+                }
+            }
+        });
+
         // 插入图片按钮事件
         quickNoteForm.getInsertImageButton().addActionListener(e -> QuickNoteImageInsertUtil.insertImageFromChooser());
 

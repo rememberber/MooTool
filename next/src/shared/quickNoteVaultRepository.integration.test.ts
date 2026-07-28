@@ -28,8 +28,10 @@ describe('QuickNoteVaultRepository', () => {
     expect(saved.relativePath).toBe('Work/API ideas.txt')
     expect(saved.metadata.fontName).toBe('ui-monospace')
     expect(saved.metadata.fontSize).toBe(15)
+    expect(saved.metadata.lineSpacing).toBe(1)
     expect(await readFile(join(directory, saved.relativePath), 'utf8')).toContain('font_name: ui-monospace')
     expect(await readFile(join(directory, saved.relativePath), 'utf8')).toContain('font_size: "15"')
+    expect(await readFile(join(directory, saved.relativePath), 'utf8')).toContain('line_spacing: "1.0"')
     expect((await repository.list({ keyword: 'needle' }))[0].children).toHaveLength(1)
 
     const renamed = await repository.renameEntry({ relativePath: saved.relativePath, name: 'API notes' })
@@ -45,13 +47,14 @@ describe('QuickNoteVaultRepository', () => {
   it('reads legacy files and honors gitignore filtering', async () => {
     const { directory, repository } = await createRepository()
     await mkdir(join(directory, 'Private'))
-    await writeFile(join(directory, 'Legacy.txt'), '---\ntitle: Legacy title\nsyntax: text/markdown\nline_wrap: "0"\n---\nlegacy body')
+    await writeFile(join(directory, 'Legacy.txt'), '---\ntitle: Legacy title\nsyntax: text/markdown\nline_spacing: "1.6"\nline_wrap: "0"\n---\nlegacy body')
     await writeFile(join(directory, 'Private', 'Secret.txt'), 'secret')
     await writeFile(join(directory, '.gitignore'), 'Private/\n')
 
     const note = await repository.read('Legacy.txt')
     expect(note.content).toBe('legacy body')
     expect(note.metadata.title).toBe('Legacy title')
+    expect(note.metadata.lineSpacing).toBe(1.6)
     expect(note.metadata.lineWrap).toBe(false)
     expect(await repository.list({ hideIgnored: true })).toHaveLength(1)
     expect(await repository.list({ hideIgnored: false })).toHaveLength(2)
@@ -101,7 +104,7 @@ describe('QuickNoteVaultRepository', () => {
     await expect(repository.save({
       relativePath: 'Linked.txt',
       content: 'unsafe',
-      metadata: { title: 'Linked', style: '', syntax: 'text/plain', fontName: '', fontSize: 14, color: 'default', lineWrap: true, createdAt: now, modifiedAt: now }
+      metadata: { title: 'Linked', style: '', syntax: 'text/plain', fontName: '', fontSize: 14, lineSpacing: 1, color: 'default', lineWrap: true, createdAt: now, modifiedAt: now }
     })).rejects.toThrow('Invalid Quick Note file')
     expect(await readFile(outside, 'utf8')).toBe('outside')
   })

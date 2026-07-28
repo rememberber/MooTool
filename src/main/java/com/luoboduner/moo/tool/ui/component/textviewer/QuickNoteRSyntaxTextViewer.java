@@ -29,6 +29,8 @@ import java.net.URISyntaxException;
 public class QuickNoteRSyntaxTextViewer extends RSyntaxTextArea {
     public static boolean ignoreQuickSave;
 
+    private float lineSpacingFactor = 1.0f;
+
     private Runnable onContentChanged;
 
     public QuickNoteRSyntaxTextViewer() {
@@ -110,6 +112,32 @@ public class QuickNoteRSyntaxTextViewer extends RSyntaxTextArea {
 
     public void setOnContentChanged(Runnable onContentChanged) {
         this.onContentChanged = onContentChanged;
+    }
+
+    public float getLineSpacingFactor() {
+        return lineSpacingFactor;
+    }
+
+    public void setLineSpacingFactor(float lineSpacingFactor) {
+        float normalized = Float.isFinite(lineSpacingFactor)
+                ? Math.max(1.0f, Math.min(2.0f, lineSpacingFactor))
+                : 1.0f;
+        if (Float.compare(this.lineSpacingFactor, normalized) == 0) {
+            return;
+        }
+        float oldValue = this.lineSpacingFactor;
+        this.lineSpacingFactor = normalized;
+        firePropertyChange("lineSpacingFactor", oldValue, normalized);
+        // RSyntaxTextArea's gutter refreshes cached row heights on font changes.
+        firePropertyChange("font", null, getFont());
+        revalidate();
+        repaint();
+    }
+
+    @Override
+    public int getLineHeight() {
+        float factor = lineSpacingFactor > 0 ? lineSpacingFactor : 1.0f;
+        return Math.max(1, Math.round(super.getLineHeight() * factor));
     }
 
     @Override

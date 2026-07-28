@@ -19,6 +19,8 @@ public class TQuickNote {
 
     private String fontSize;
 
+    private String lineSpacing;
+
     private String syntax;
 
     private String lineWrap;
@@ -96,6 +98,14 @@ public class TQuickNote {
 
     public void setFontSize(String fontSize) {
         this.fontSize = fontSize == null ? null : fontSize.trim();
+    }
+
+    public String getLineSpacing() {
+        return lineSpacing;
+    }
+
+    public void setLineSpacing(String lineSpacing) {
+        this.lineSpacing = lineSpacing == null ? null : lineSpacing.trim();
     }
 
     public String getSyntax() {

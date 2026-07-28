@@ -6,6 +6,7 @@ export type QuickNoteMetadata = {
   syntax: string
   fontName: string
   fontSize: number
+  lineSpacing: number
   color: string
   lineWrap: boolean
   createdAt: string

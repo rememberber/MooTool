@@ -82,6 +82,7 @@ public class QuickNoteForm {
     private JButton addButton;
     private JComboBox fontNameComboBox;
     private JComboBox fontSizeComboBox;
+    private JComboBox<String> lineSpacingComboBox;
     private JButton findButton;
     private JButton listItemButton;
     private JPanel rightPanel;
@@ -192,6 +193,21 @@ public class QuickNoteForm {
         return fontSize > 0 ? fontSize : 14;
     }
 
+    public static float resolveNoteLineSpacing(TQuickNote note) {
+        if (note != null && StringUtils.isNotBlank(note.getLineSpacing())) {
+            try {
+                float value = Float.parseFloat(note.getLineSpacing());
+                if (!Float.isFinite(value)) {
+                    return 1.0f;
+                }
+                return Math.max(1.0f, Math.min(2.0f, value));
+            } catch (NumberFormatException ignored) {
+                // fall through to default
+            }
+        }
+        return 1.0f;
+    }
+
     private QuickNoteForm() {
         colorButton = new JButton(new ListColorIcon("Moo.accent.blue", 18, 18));
         colorButton.setSelected(true);
@@ -206,6 +222,19 @@ public class QuickNoteForm {
         ToolbarUiUtil.add(leftMenuToolBar, syntaxComboBox);
         ToolbarUiUtil.add(leftMenuToolBar, fontNameComboBox);
         ToolbarUiUtil.add(leftMenuToolBar, fontSizeComboBox);
+        lineSpacingComboBox = new JComboBox<>(new String[]{"1.0", "1.2", "1.4", "1.6", "1.8", "2.0"});
+        lineSpacingComboBox.setSelectedItem("1.0");
+        lineSpacingComboBox.setRenderer(new DefaultListCellRenderer() {
+            @Override
+            public Component getListCellRendererComponent(JList<?> list, Object value, int index,
+                                                          boolean isSelected, boolean cellHasFocus) {
+                JLabel label = (JLabel) super.getListCellRendererComponent(
+                        list, value, index, isSelected, cellHasFocus);
+                label.setText(value == null ? "" : value + "×");
+                return label;
+            }
+        });
+        ToolbarUiUtil.add(leftMenuToolBar, lineSpacingComboBox);
         wrapButton = new JToggleButton(new FlatSVGIcon("icon/wrap.svg"));
         wrapButton.setSelected(false);
         wrapButton.setToolTipText("自动换行");
@@ -360,6 +389,7 @@ public class QuickNoteForm {
         I18nUiUtil.setToolTip(listSortComboBox, "quickNote.tooltip.listSort");
         I18nUiUtil.setToolTip(fontNameComboBox, "quickNote.tooltip.font");
         I18nUiUtil.setToolTip(fontSizeComboBox, "quickNote.tooltip.fontSize");
+        I18nUiUtil.setToolTip(lineSpacingComboBox, "quickNote.tooltip.lineSpacing");
         I18nUiUtil.setToolTip(listItemButton, "quickNote.tooltip.toggleList");
         I18nUiUtil.setToolTip(wrapButton, "quickNote.tooltip.wrap");
         I18nUiUtil.setToolTip(unOrderListButton, "quickNote.tooltip.unorderedList");
@@ -1111,7 +1141,7 @@ public class QuickNoteForm {
             quickNoteForm.getSyntaxComboBox().setSelectedItem(tQuickNote.getSyntax().substring(5));
         }
         updateInsertImageButtonVisibility();
-        syncFontToolbarFromNote(tQuickNote);
+        syncEditorToolbarFromNote(tQuickNote);
 
         quickNoteForm.getFindReplacePanel().removeAll();
         quickNoteForm.getFindReplacePanel().setVisible(false);
@@ -1183,23 +1213,26 @@ public class QuickNoteForm {
                 fontSize = quickNoteForm.getNoteList().getFont().getSize() + 2;
             }
             quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(fontSize));
+            quickNoteForm.getLineSpacingComboBox().setSelectedItem("1.0");
         } finally {
             syncingToolbarFromNote = false;
         }
     }
 
-    private static void syncFontToolbarFromNote(TQuickNote note) {
+    private static void syncEditorToolbarFromNote(TQuickNote note) {
         if (quickNoteForm == null || note == null) {
             return;
         }
         String fontName = resolveNoteFontName(note);
         int fontSize = resolveNoteFontSize(note);
+        float lineSpacing = resolveNoteLineSpacing(note);
         ensureFontNameInCombo(fontName);
 
         syncingToolbarFromNote = true;
         try {
             quickNoteForm.getFontNameComboBox().setSelectedItem(fontName);
             quickNoteForm.getFontSizeComboBox().setSelectedItem(String.valueOf(fontSize));
+            quickNoteForm.getLineSpacingComboBox().setSelectedItem(String.valueOf(lineSpacing));
         } finally {
             syncingToolbarFromNote = false;
         }
@@ -1207,6 +1240,7 @@ public class QuickNoteForm {
         if (quickNoteRSyntaxTextViewerManager != null
                 && StringUtils.isNotBlank(note.getRelativePath())) {
             quickNoteRSyntaxTextViewerManager.applyFont(note.getRelativePath(), fontName, fontSize);
+            quickNoteRSyntaxTextViewerManager.applyLineSpacing(note.getRelativePath(), lineSpacing);
         }
     }
 

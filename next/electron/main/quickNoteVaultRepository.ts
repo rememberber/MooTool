@@ -68,6 +68,7 @@ export class QuickNoteVaultRepository {
         syntax: 'text/plain',
         fontName: 'ui-monospace',
         fontSize: clampFontSize(input.fontSize ?? 14),
+        lineSpacing: 1,
         color: 'default',
         lineWrap: input.lineWrap ?? true,
         createdAt: now,
@@ -241,6 +242,7 @@ export class QuickNoteVaultRepository {
       syntax: 'text/markdown',
       fontName: 'ui-monospace',
       fontSize: 14,
+      lineSpacing: 1,
       color: 'default',
       lineWrap: true,
       createdAt: now,
@@ -396,6 +398,7 @@ function parseNote(raw: string, fallbackTitle: string, fileStat: { birthtime: Da
       syntax: stringValue(values.syntax, 'text/plain'),
       fontName: stringValue(values.font_name, ''),
       fontSize: clampFontSize(numberValue(values.font_size, 14)),
+      lineSpacing: clampLineSpacing(numberValue(values.line_spacing, 1)),
       color: stringValue(values.color, 'default'),
       lineWrap: booleanValue(values.line_wrap, true),
       createdAt: stringValue(values.created_at, fallbackCreated),
@@ -411,6 +414,7 @@ function serializeNote(metadata: QuickNoteMetadata, content: string): string {
     syntax: metadata.syntax,
     font_name: metadata.fontName,
     font_size: String(metadata.fontSize),
+    line_spacing: formatLineSpacing(metadata.lineSpacing),
     color: metadata.color,
     line_wrap: metadata.lineWrap ? '1' : '0',
     created_at: metadata.createdAt,
@@ -428,6 +432,7 @@ function normalizeMetadata(value: QuickNoteMetadata, fallbackTitle: string): Qui
     syntax: stringValue(value.syntax, 'text/plain').slice(0, 80),
     fontName: stringValue(value.fontName, '').slice(0, 120),
     fontSize: clampFontSize(value.fontSize),
+    lineSpacing: clampLineSpacing(value.lineSpacing),
     color: stringValue(value.color, 'default').slice(0, 32),
     lineWrap: Boolean(value.lineWrap),
     createdAt: validDate(value.createdAt) ? value.createdAt : new Date().toISOString(),
@@ -520,6 +525,15 @@ function validDate(value: unknown): value is string {
 
 function clampFontSize(value: number): number {
   return Math.min(48, Math.max(8, Math.round(Number.isFinite(value) ? value : 14)))
+}
+
+function clampLineSpacing(value: number): number {
+  const normalized = Number.isFinite(value) ? value : 1
+  return Math.round(Math.min(2, Math.max(1, normalized)) * 10) / 10
+}
+
+function formatLineSpacing(value: number): string {
+  return clampLineSpacing(value).toFixed(1)
 }
 
 function compactTimestamp(): string {

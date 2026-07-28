@@ -182,6 +182,8 @@ const noteColors = [
   ['red', '#c96761']
 ] as const
 
+const lineSpacingOptions = [1, 1.2, 1.4, 1.6, 1.8, 2] as const
+
 function NoteColorPicker({ value, disabled, label, onChange }: { value?: string; disabled: boolean; label: string; onChange: (color: string) => void }) {
   const toolActive = useToolActivity()
   const triggerRef = useRef<HTMLButtonElement>(null)
@@ -983,6 +985,9 @@ export function QuickNoteTool() {
                 <option value="Georgia">{t('quickNote.font.serif')}</option>
               </select>
               <input className="quick-note-font-size" aria-label={t('quickNote.fontSize')} type="number" min={8} max={48} disabled={!state.note} value={state.note?.metadata.fontSize ?? settings.editor.quickNoteFontSize} onChange={(event) => patchMetadata({ fontSize: Number(event.target.value) })} />
+              <select className="quick-note-line-spacing" aria-label={t('quickNote.lineSpacing')} title={t('quickNote.lineSpacing')} disabled={!state.note} value={state.note?.metadata.lineSpacing ?? 1} onChange={(event) => patchMetadata({ lineSpacing: Number(event.target.value) })}>
+                {lineSpacingOptions.map((value) => <option value={value} key={value}>{value.toFixed(1)}×</option>)}
+              </select>
               <IconButton label={t('quickNote.wrap')} icon={WrapText} active={state.note?.metadata.lineWrap} disabled={!state.note} onClick={() => patchMetadata({ lineWrap: !state.note?.metadata.lineWrap })} />
               <IconButton label={t('common.action.format')} icon={WandSparkles} disabled={!state.note || !state.content.trim()} onClick={() => { void formatCurrent() }} />
               <IconButton label={t('quickNote.bulletList')} icon={List} disabled={!state.note} onClick={() => prefixSelectedLines('bullet')} />
@@ -1037,6 +1042,7 @@ export function QuickNoteTool() {
                       wrap={state.note.metadata.lineWrap}
                       fontFamily={editorFont(state.note.metadata.fontName)}
                       fontSize={state.note.metadata.fontSize}
+                      lineHeight={1.65 * state.note.metadata.lineSpacing}
                       searchQuery={state.findOpen ? state.findText : ''}
                       searchOptions={state.findOptions}
                       ariaLabel={t('quickNote.editorLabel')}

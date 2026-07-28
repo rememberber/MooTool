@@ -62,6 +62,7 @@ export type TextCodeEditorProps = {
   language?: TextCodeEditorLanguage
   fontSize?: number
   fontFamily?: string
+  lineHeight?: number
   searchQuery?: string
   searchOptions?: FindReplaceOptions
   decorations?: readonly TextCodeEditorDecoration[]
@@ -103,7 +104,7 @@ function buildDecorations(decorations: readonly TextCodeEditorDecoration[], docu
   return Decoration.set(ranges, true)
 }
 
-function editorMetrics(fontFamily?: string, fontSize?: number): Extension {
+function editorMetrics(fontFamily?: string, fontSize?: number, lineHeight?: number): Extension {
   const editor: Record<string, string> = {}
   const scroller: Record<string, string> = {}
   if (fontFamily) {
@@ -111,6 +112,7 @@ function editorMetrics(fontFamily?: string, fontSize?: number): Extension {
     scroller.fontFamily = fontFamily
   }
   if (fontSize) editor.fontSize = `${fontSize}px`
+  if (lineHeight) scroller.lineHeight = String(lineHeight)
   return EditorView.theme({ '&': editor, '.cm-scroller': scroller })
 }
 
@@ -146,6 +148,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
     language = 'text',
     fontSize,
     fontFamily,
+    lineHeight,
     searchQuery = '',
     searchOptions = defaultFindReplaceOptions,
     decorations = emptyDecorations,
@@ -173,7 +176,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
   const onViewStateChangeRef = useRef(onViewStateChange)
   const localValueRef = useRef(value)
   const applyingExternalValueRef = useRef(false)
-  const initialConfigRef = useRef({ ariaLabel, id, testId, placeholder, readOnly, wrap, language, fontFamily, fontSize, searchQuery, searchOptions, initialViewState })
+  const initialConfigRef = useRef({ ariaLabel, id, testId, placeholder, readOnly, wrap, language, fontFamily, fontSize, lineHeight, searchQuery, searchOptions, initialViewState })
   const wrapCompartment = useCompartment()
   const attributesCompartment = useCompartment()
   const placeholderCompartment = useCompartment()
@@ -220,7 +223,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
           placeholderCompartment.of(initial.placeholder ? editorPlaceholder(initial.placeholder) : []),
           readOnlyCompartment.of(readOnlyExtensions(initial.readOnly)),
           searchCompartment.of(codeEditorSearchHighlight(initial.searchQuery, initial.searchOptions)),
-          metricsCompartment.of(editorMetrics(initial.fontFamily, initial.fontSize)),
+          metricsCompartment.of(editorMetrics(initial.fontFamily, initial.fontSize, initial.lineHeight)),
           externalDecorations,
           EditorState.tabSize.of(4),
           EditorView.domEventHandlers({
@@ -333,9 +336,9 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
   useEffect(() => {
     const view = viewRef.current
     if (!view) return
-    view.dispatch({ effects: metricsCompartment.reconfigure(editorMetrics(fontFamily, fontSize)) })
+    view.dispatch({ effects: metricsCompartment.reconfigure(editorMetrics(fontFamily, fontSize, lineHeight)) })
     view.requestMeasure()
-  }, [fontFamily, fontSize, metricsCompartment])
+  }, [fontFamily, fontSize, lineHeight, metricsCompartment])
 
   useImperativeHandle(ref, () => ({
     focus: () => viewRef.current?.focus(),
@@ -381,7 +384,8 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
 
   const style = {
     ...(fontFamily ? { '--text-code-editor-font-family': fontFamily } : {}),
-    ...(fontSize ? { '--text-code-editor-font-size': `${fontSize}px` } : {})
+    ...(fontSize ? { '--text-code-editor-font-size': `${fontSize}px` } : {}),
+    ...(lineHeight ? { '--text-code-editor-line-height': String(lineHeight) } : {})
   } as CSSProperties
 
   return <div ref={hostRef} className={`text-code-editor ${className}`.trim()} style={style} />

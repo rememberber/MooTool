@@ -175,6 +175,7 @@ public final class QuickNoteVaultUtil {
         note.setFontName(App.config.getQuickNoteFontName());
         int fontSize = App.config.getQuickNoteFontSize();
         note.setFontSize(fontSize > 0 ? String.valueOf(fontSize) : "14");
+        note.setLineSpacing("1.0");
         note.setColor("default");
         note.setLineWrap("0");
 
@@ -203,6 +204,7 @@ public final class QuickNoteVaultUtil {
         copy.setFontName(defaultString(source.getFontName(), App.config.getQuickNoteFontName()));
         copy.setFontSize(defaultString(source.getFontSize(),
                 String.valueOf(Math.max(App.config.getQuickNoteFontSize(), 14))));
+        copy.setLineSpacing(defaultString(source.getLineSpacing(), "1.0"));
         copy.setColor(defaultString(source.getColor(), "default"));
         copy.setLineWrap(defaultString(source.getLineWrap(), "0"));
 
@@ -493,6 +495,7 @@ public final class QuickNoteVaultUtil {
         note.setStyle(parsed.getString("style"));
         note.setFontName(parsed.getString("font_name"));
         note.setFontSize(parsed.getString("font_size"));
+        note.setLineSpacing(normalizeLineSpacing(parsed.getString("line_spacing")));
         note.setSyntax(defaultString(parsed.getString("syntax"), SyntaxConstants.SYNTAX_STYLE_NONE));
         note.setLineWrap(defaultString(parsed.getString("line_wrap"), "0"));
         return note;
@@ -504,6 +507,7 @@ public final class QuickNoteVaultUtil {
         metadata.put("syntax", defaultString(note.getSyntax(), SyntaxConstants.SYNTAX_STYLE_NONE));
         metadata.put("font_name", defaultString(note.getFontName(), ""));
         metadata.put("font_size", defaultString(note.getFontSize(), ""));
+        metadata.put("line_spacing", normalizeLineSpacing(note.getLineSpacing()));
         metadata.put("color", defaultString(note.getColor(), "default"));
         metadata.put("line_wrap", defaultString(note.getLineWrap(), "0"));
         metadata.put("created_at", defaultString(note.getCreateTime(), SqliteUtil.nowDateForSqlite()));
@@ -521,6 +525,18 @@ public final class QuickNoteVaultUtil {
             return fileName.substring(0, fileName.length() - TXT_EXTENSION.length());
         }
         return fileName;
+    }
+
+    private static String normalizeLineSpacing(String value) {
+        try {
+            float parsed = Float.parseFloat(defaultString(value, "1.0"));
+            if (!Float.isFinite(parsed)) {
+                return "1.0";
+            }
+            return String.format(Locale.ROOT, "%.1f", Math.max(1.0f, Math.min(2.0f, parsed)));
+        } catch (NumberFormatException ignored) {
+            return "1.0";
+        }
     }
 
     private static void migrateFromDatabaseIfNeeded(File vaultDir) {
@@ -575,6 +591,7 @@ public final class QuickNoteVaultUtil {
         welcome.setFontName(App.config.getQuickNoteFontName());
         int fontSize = App.config.getQuickNoteFontSize();
         welcome.setFontSize(fontSize > 0 ? String.valueOf(fontSize) : "14");
+        welcome.setLineSpacing("1.0");
         welcome.setColor("default");
         welcome.setLineWrap("0");
         writeNoteFile(welcome, welcome.getContent());

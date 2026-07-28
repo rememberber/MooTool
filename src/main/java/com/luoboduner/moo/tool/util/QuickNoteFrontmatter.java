@@ -98,6 +98,7 @@ public final class QuickNoteFrontmatter {
         metadata.put("syntax", SyntaxConstants.SYNTAX_STYLE_NONE);
         metadata.put("font_name", "");
         metadata.put("font_size", "");
+        metadata.put("line_spacing", "1.0");
         metadata.put("color", "default");
         metadata.put("line_wrap", "0");
         metadata.put("created_at", SqliteUtil.nowDateForSqlite());

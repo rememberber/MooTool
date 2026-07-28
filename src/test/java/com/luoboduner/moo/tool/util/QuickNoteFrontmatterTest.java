@@ -18,6 +18,7 @@ class QuickNoteFrontmatterTest {
                 syntax: text/markdown
                 font_name: 等线
                 font_size: "14"
+                line_spacing: "1.6"
                 color: default
                 line_wrap: "1"
                 created_at: 2024-01-01 10:00:00
@@ -31,12 +32,14 @@ class QuickNoteFrontmatterTest {
         assertEquals("测试笔记", parsed.getString("title"));
         assertEquals("text/markdown", parsed.getString("syntax"));
         assertEquals("14", parsed.getString("font_size"));
+        assertEquals("1.6", parsed.getString("line_spacing"));
         assertTrue(parsed.getBody().contains("正文第一行"));
 
         Map<String, Object> metadata = new LinkedHashMap<>(parsed.getMetadata());
         String serialized = QuickNoteFrontmatter.serialize(metadata, parsed.getBody().trim());
         QuickNoteFrontmatter.ParsedNote again = QuickNoteFrontmatter.parse(serialized);
         assertEquals("测试笔记", again.getString("title"));
+        assertEquals("1.6", again.getString("line_spacing"));
         assertEquals(parsed.getBody().trim(), again.getBody().trim());
     }
 

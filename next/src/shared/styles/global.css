@@ -902,6 +902,11 @@
   width: 48px;
 }
 
+.quick-note-line-spacing {
+  flex: 0 0 64px;
+  width: 64px;
+}
+
 .quick-note-toolbar__spacer {
   flex: 1 1 auto;
   min-width: 8px;
@@ -1274,7 +1279,7 @@
 
 .quick-note-code-editor .cm-scroller {
   font-family: inherit;
-  line-height: 1.65;
+  line-height: var(--text-code-editor-line-height, 1.65);
   overflow: auto;
   scrollbar-width: thin;
   scrollbar-color: var(--border-control) transparent;
