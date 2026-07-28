@@ -699,6 +699,75 @@
               "size": 98465864
             }
           ]
+        },
+        {
+          "version": "1.1.0",
+          "title": "MooTool Next Electron 1.1.0",
+          "notes": "## English\n\n> Product: MooTool Next Electron<br>\n> Version: 1.1.0<br>\n> This release is installed and updated independently from MooTool Java and does not overwrite the Java edition.\n\n### Features\n\n- System environment variables tool now supports viewing and directly editing variables.\n- Network tool adds IP-range reachability checks (for example `192.168.10`) and lists hosts that respond to ping for network debugging.\n- Quick Notes adds adjustable line spacing.\n\n### Improvements\n\n- Upgraded dependencies to the latest compatible versions.\n- Optimized Git lock handling for Notes / JSON vault operations.\n\n### Notes\n\n- Installers remain unsigned. On macOS, the app downloads and verifies the new DMG, then asks the user to open it and drag the app into Applications.\n- The Java product line continues to use `v*` tags and its existing update manifest.\n\n## 中文\n\n> 产品线：MooTool Next Electron<br>\n> 版本：1.1.0<br>\n> 本版本与 MooTool Java 独立安装、独立更新，不会覆盖 Java 版本。\n\n### 新功能\n\n- 系统环境变量工具支持查看并直接修改环境变量。\n- 网络工具新增 IP 段可达性检测（例如输入 `192.168.10`），输出可 ping 通的具体 IP，便于网络排查。\n- 随手记新增行距调节功能。\n\n### 改进\n\n- 升级依赖至最新兼容版本。\n- 优化随手记 / JSON 的 Git 锁处理。\n\n### 说明\n\n- 安装包仍未签名。macOS 会下载并校验新版 DMG，随后提示用户打开 DMG 并将应用拖入“应用程序”。\n- Java 产品线继续使用 `v*` tag 和原有更新清单，不受本次发布影响。\n\n## 日本語\n\n> 製品ライン：MooTool Next Electron<br>\n> バージョン：1.1.0<br>\n> このリリースは MooTool Java とは独立してインストール・更新され、Java 版を上書きしません。\n\n### 新機能\n\n- システム環境変数ツールで変数の表示と直接編集に対応しました。\n- ネットワークツールに IP 範囲の到達性チェックを追加（例：`192.168.10`）。ping 可能な IP を一覧表示し、ネットワーク調査に役立ちます。\n- クイックノートに行間調整機能を追加しました。\n\n### 改善\n\n- 依存関係を最新の互換バージョンへ更新しました。\n- クイックノート／JSON の Git ロック処理を最適化しました。\n\n### 補足\n\n- インストーラーは引き続き未署名です。macOS では新しい DMG をダウンロードして検証し、その後 DMG を開いてアプリを「アプリケーション」へドラッグするよう案内します。\n- Java 製品ラインは引き続き `v*` タグと従来の更新マニフェストを使用し、このリリースの影響を受けません。",
+          "prerelease": false,
+          "releaseUrl": "https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.0",
+          "assets": [
+            {
+              "platform": "darwin",
+              "architecture": "arm64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.1.0-mac-arm64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.1.0/MooTool-Next-Electron-1.1.0-mac-arm64.dmg",
+              "sha512": "N/sUS32vMOg1d7N/p31QOY8kj98e281oTVZVIj0FwRhR9jrEkXF1LkemKwNdrdOLi+jwOsE0Ea2WHH3/vZVDow==",
+              "size": 148243899
+            },
+            {
+              "platform": "darwin",
+              "architecture": "x64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.1.0-mac-x64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.1.0/MooTool-Next-Electron-1.1.0-mac-x64.dmg",
+              "sha512": "+v+ozkoN0SKtU11TPvEwRNYp+nqJ14lUvKSxkBbFAzZjXcphVAOT22T1WHGofji8tYpR030S1kiORJFUgLO++Q==",
+              "size": 150036771
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "nsis",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.1.0-win-x64-setup.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.1.0/MooTool-Next-Electron-1.1.0-win-x64-setup.exe",
+              "sha512": "hmUCmHwwX+DwPw57TO2vyknnSVFIP4eJSMsKfzcH+Zb4ixxVMtZz0j9bAa321o5mP65EbV8WtLElXSOTWU7SlQ==",
+              "size": 116924512
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "portable",
+              "priority": 20,
+              "fileName": "MooTool-Next-Electron-1.1.0-win-x64-portable.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.1.0/MooTool-Next-Electron-1.1.0-win-x64-portable.exe",
+              "sha512": "uNJB53yKZFz7Ff55QLtTi68OB/TT6aEIIZAIuT/V/6R5b5hCPD3oY+kYEUwGXUoSPPYKX+JsYSfgOve4S4T2sw==",
+              "size": 116737131
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "appimage",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.1.0-linux-x64.AppImage",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.1.0/MooTool-Next-Electron-1.1.0-linux-x64.AppImage",
+              "sha512": "hgyVMwdFv/kIIU6enU3UNLGIP6rkg61SbMNtwvrqKbWYnlBil1QNBpq8js27+2duTaGV7fQ5k9dN6vi7DZMhXg==",
+              "size": 155787876
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "deb",
+              "priority": 20,
+              "fileName": "MooTool-Next-Electron-1.1.0-linux-x64.deb",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.1.0/MooTool-Next-Electron-1.1.0-linux-x64.deb",
+              "sha512": "UK9h3bhb0AnaNRixjiD5mvKoaR12Q+4jU0CG1oLDEqYUeEsNVdpkl/CE4ocWovCozmJcyEF3EvC2g1NAxM5Jdw==",
+              "size": 114583152
+            }
+          ]
         }
       ]
     },
