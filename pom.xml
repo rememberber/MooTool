@@ -312,6 +312,13 @@
             <groupId>com.intellij</groupId>
             <artifactId>forms_rt</artifactId>
             <version>${forms_rt.version}</version>
+            <exclusions>
+                <!-- jdom 1.0 has default-package classes; breaks jdeps/module-path packaging -->
+                <exclusion>
+                    <groupId>jdom</groupId>
+                    <artifactId>jdom</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -473,6 +480,15 @@
                     <artifactId>slf4j-api</artifactId>
                     <groupId>org.slf4j</groupId>
                 </exclusion>
+                <!-- Prefer classic JNA already declared above; avoid duplicate JPMS artifacts -->
+                <exclusion>
+                    <groupId>net.java.dev.jna</groupId>
+                    <artifactId>jna-jpms</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>net.java.dev.jna</groupId>
+                    <artifactId>jna-platform-jpms</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
 
@@ -480,6 +496,12 @@
             <groupId>de.jangassen</groupId>
             <artifactId>jfa</artifactId>
             <version>${jfa.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>net.java.dev.jna</groupId>
+                    <artifactId>jna</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <dependency>
@@ -698,6 +720,25 @@
                     <jdkPath>${packaging.jdkPath}</jdkPath>
                     <mainClass>com.luoboduner.moo.tool.App</mainClass>
                     <generateInstaller>true</generateInstaller>
+                    <!-- Explicit modules skip jdeps over dependency jars (jdom/oshi JPMS issues). -->
+                    <modules>
+                        <module>java.base</module>
+                        <module>java.desktop</module>
+                        <module>java.instrument</module>
+                        <module>java.management</module>
+                        <module>java.naming</module>
+                        <module>java.net.http</module>
+                        <module>java.prefs</module>
+                        <module>java.rmi</module>
+                        <module>java.scripting</module>
+                        <module>java.sql</module>
+                        <module>java.xml.crypto</module>
+                        <module>jdk.attach</module>
+                        <module>jdk.compiler</module>
+                        <module>jdk.httpserver</module>
+                        <module>jdk.jdi</module>
+                        <module>jdk.unsupported</module>
+                    </modules>
                     <!-- 这行不能被格式化为多行，否则会出错-->
                     <vmArgs>-Dswing.aatext=true -XX:+UseZGC -XX:+ZGenerational -XX:-ZUncommit -Xms128m -Xmx512m --add-exports jdk.compiler/com.sun.tools.javac.api=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.file=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.parser=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.tree=ALL-UNNAMED --add-exports jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED</vmArgs>
                 </configuration>
