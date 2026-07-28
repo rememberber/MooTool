@@ -1,14 +1,17 @@
 import { execFile, spawn, type ChildProcessWithoutNullStreams } from 'node:child_process'
-import { access, readFile, unlink, writeFile } from 'node:fs/promises'
+import { access, mkdir, readFile, unlink, writeFile } from 'node:fs/promises'
 import { constants } from 'node:fs'
 import { lookup } from 'node:dns/promises'
 import { createConnection, type Socket } from 'node:net'
-import { networkInterfaces } from 'node:os'
-import { join } from 'node:path'
+import { homedir, networkInterfaces } from 'node:os'
+import { dirname, join } from 'node:path'
 import si from 'systeminformation'
 import type {
+  DeleteEnvironmentVariableInput,
   EnvironmentEntry,
+  EnvironmentScope,
   EnvironmentSnapshot,
+  EnvironmentVariableInput,
   NetworkAction,
   NetworkCommandInput,
   NetworkCommandResult,
@@ -22,6 +25,8 @@ const maxCommandOutput = 2 * 1024 * 1024
 const maxCustomPorts = 4096
 const ipRangeConcurrency = 32
 const portScanConcurrency = 96
+const environmentAssignment = /^\s*(?:export\s+)?([A-Za-z_][A-Za-z0-9_]*)\s*=\s*(.*)$/
+const environmentProfileMarker = '# >>> MooTool environment >>>'
 const commonPorts = new Map<number, string>([
   [20, 'ftp-data'], [21, 'ftp'], [22, 'ssh'], [23, 'telnet'], [25, 'smtp'], [53, 'dns'],
   [67, 'dhcp'], [68, 'dhcp'], [69, 'tftp'], [80, 'http'], [110, 'pop3'], [123, 'ntp'],
@@ -96,7 +101,7 @@ export class SystemService {
     return true
   }
 
-  getEnvironment(): EnvironmentSnapshot {
+  async getEnvironment(): Promise<EnvironmentSnapshot> {
     const environment = Object.entries(process.env)
       .map(([key, value]) => ({ key, value: value ?? '' }))
       .sort(compareEntries)
@@ -112,7 +117,29 @@ export class SystemService {
       ['process.locale', Intl.DateTimeFormat().resolvedOptions().locale],
       ['process.timeZone', Intl.DateTimeFormat().resolvedOptions().timeZone]
     ].map(([key, value]) => ({ key, value })).sort(compareEntries)
-    return { environment, runtime }
+    const [user, system] = await Promise.all([
+      this.listPersistentEnvironment('user'),
+      this.listPersistentEnvironment('system')
+    ])
+    return { environment, runtime, user, system }
+  }
+
+  async setEnvironmentVariable(input: EnvironmentVariableInput): Promise<void> {
+    if (process.platform === 'win32') {
+      await writeWindowsEnvironment(input.scope, input.key, input.value)
+    } else {
+      await this.writeUnixEnvironment(input.scope, input.key, input.value)
+    }
+    await this.syncCurrentProcessEnvironment(input.key)
+  }
+
+  async deleteEnvironmentVariable(input: DeleteEnvironmentVariableInput): Promise<void> {
+    if (process.platform === 'win32') {
+      await writeWindowsEnvironment(input.scope, input.key)
+    } else {
+      await this.writeUnixEnvironment(input.scope, input.key)
+    }
+    await this.syncCurrentProcessEnvironment(input.key)
   }
 
   getLocalAddresses(): LocalAddressSnapshot {
@@ -283,12 +310,165 @@ export class SystemService {
         const script = `Copy-Item -LiteralPath '${psQuote(temporary)}' -Destination '${psQuote(destination)}' -Force`
         await execFilePromise('powershell.exe', ['-NoProfile', '-Command', `Start-Process powershell.exe -Verb RunAs -Wait -ArgumentList @('-NoProfile','-Command',${psString(script)})`], 120_000)
       } else {
-        await execFilePromise('pkexec', ['/bin/cp', temporary, destination], 120_000)
+        await execFilePromise('pkexec', ['/bin/sh', '-c', '/bin/cp "$1" "$2" && /bin/chmod 644 "$2"', 'mootool', temporary, destination], 120_000)
       }
     } finally {
       await unlink(temporary).catch(() => undefined)
     }
   }
+
+  private async listPersistentEnvironment(scope: EnvironmentScope): Promise<EnvironmentEntry[]> {
+    if (process.platform === 'win32') return readWindowsEnvironment(scope)
+    const path = unixEnvironmentPath(scope)
+    const content = await readFile(path, 'utf8').catch((error: NodeJS.ErrnoException) => {
+      if (error.code === 'ENOENT') return ''
+      throw error
+    })
+    return parseEnvironmentContent(content)
+  }
+
+  private async writeUnixEnvironment(scope: EnvironmentScope, key: string, value?: string): Promise<void> {
+    const destination = unixEnvironmentPath(scope)
+    const current = await readFile(destination, 'utf8').catch((error: NodeJS.ErrnoException) => {
+      if (error.code === 'ENOENT') return ''
+      throw error
+    })
+    const content = updateEnvironmentContent(current, key, value, scope === 'user' || process.platform === 'darwin')
+    if (scope === 'user') {
+      await mkdir(dirname(destination), { recursive: true })
+      await writeFile(destination, content, { encoding: 'utf8', mode: 0o600 })
+      await ensureUnixEnvironmentProfile(destination)
+      if (process.platform === 'darwin') {
+        const args = value === undefined ? ['unsetenv', key] : ['setenv', key, value]
+        await execFilePromise('/bin/launchctl', args, 30_000).catch(() => undefined)
+      }
+      return
+    }
+    try {
+      await writeFile(destination, content, 'utf8')
+    } catch (error) {
+      if (!isPermissionError(error)) throw error
+      await this.writeEnvironmentElevated(destination, content)
+    }
+  }
+
+  private async syncCurrentProcessEnvironment(key: string): Promise<void> {
+    const [user, system] = await Promise.all([
+      this.listPersistentEnvironment('user'),
+      this.listPersistentEnvironment('system')
+    ])
+    const matches = (entry: EnvironmentEntry): boolean => process.platform === 'win32'
+      ? entry.key.toLowerCase() === key.toLowerCase()
+      : entry.key === key
+    const effective = user.find(matches) ?? system.find(matches)
+    if (effective) process.env[key] = effective.value
+    else delete process.env[key]
+  }
+
+  private async writeEnvironmentElevated(destination: string, content: string): Promise<void> {
+    const temporary = join(this.tempDirectory, `mootool-environment-${process.pid}-${Date.now()}`)
+    await writeFile(temporary, content, { encoding: 'utf8', mode: 0o600 })
+    try {
+      if (process.platform === 'darwin') {
+        const command = `/bin/cp ${shellQuote(temporary)} ${shellQuote(destination)} && /bin/chmod 644 ${shellQuote(destination)}`
+        await execFilePromise('/usr/bin/osascript', ['-e', `do shell script ${appleScriptString(command)} with administrator privileges`], 120_000)
+      } else {
+        await execFilePromise('pkexec', ['/bin/sh', '-c', '/bin/cp "$1" "$2" && /bin/chmod 644 "$2"', 'mootool', temporary, destination], 120_000)
+      }
+    } finally {
+      await unlink(temporary).catch(() => undefined)
+    }
+  }
+}
+
+export function parseEnvironmentContent(content: string): EnvironmentEntry[] {
+  const values = new Map<string, string>()
+  for (const line of content.split(/\r?\n/)) {
+    const match = line.match(environmentAssignment)
+    if (!match) continue
+    values.set(match[1], unquoteEnvironmentValue(match[2].trim()))
+  }
+  return [...values].map(([key, value]) => ({ key, value })).sort(compareEntries)
+}
+
+export function updateEnvironmentContent(content: string, key: string, value: string | undefined, shellExport: boolean): string {
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) throw new Error('Invalid environment variable name')
+  if (value !== undefined && (value.length > 65_535 || /[\0\r\n]/.test(value))) throw new Error('Invalid environment variable value')
+  const replacement = value === undefined ? undefined : serializeEnvironmentValue(key, value, shellExport)
+  const lines = content.split(/\r?\n/)
+  const result: string[] = []
+  let replaced = false
+  for (const line of lines) {
+    const match = line.match(environmentAssignment)
+    if (match?.[1] === key) {
+      if (!replaced && replacement !== undefined) {
+        result.push(replacement)
+        replaced = true
+      }
+      continue
+    }
+    result.push(line)
+  }
+  while (result.at(-1) === '') result.pop()
+  if (replacement !== undefined && !replaced) result.push(replacement)
+  return result.length ? `${result.join('\n')}\n` : ''
+}
+
+async function readWindowsEnvironment(scope: EnvironmentScope): Promise<EnvironmentEntry[]> {
+  const target = scope === 'user' ? 'User' : 'Machine'
+  const script = `[Console]::OutputEncoding=[Text.Encoding]::UTF8; `
+    + `[Environment]::GetEnvironmentVariables([EnvironmentVariableTarget]::${target}).GetEnumerator() `
+    + `| Sort-Object Name | ForEach-Object { [PSCustomObject]@{ key=[string]$_.Key; value=[string]$_.Value } } `
+    + '| ConvertTo-Json -Compress'
+  const output = (await execFileText('powershell.exe', ['-NoProfile', '-Command', script], 30_000)).trim()
+  if (!output) return []
+  const parsed = JSON.parse(output) as EnvironmentEntry | EnvironmentEntry[]
+  return (Array.isArray(parsed) ? parsed : [parsed]).sort(compareEntries)
+}
+
+async function writeWindowsEnvironment(scope: EnvironmentScope, key: string, value?: string): Promise<void> {
+  const target = scope === 'user' ? 'User' : 'Machine'
+  const psValue = value === undefined ? '$null' : `'${psQuote(value)}'`
+  const script = `[Environment]::SetEnvironmentVariable('${psQuote(key)}',${psValue},[EnvironmentVariableTarget]::${target})`
+  const encoded = Buffer.from(script, 'utf16le').toString('base64')
+  if (scope === 'user') {
+    await execFilePromise('powershell.exe', ['-NoProfile', '-EncodedCommand', encoded], 30_000)
+    return
+  }
+  const elevated = `$p=Start-Process -FilePath powershell.exe -Verb RunAs -Wait -PassThru -ArgumentList @('-NoProfile','-EncodedCommand','${encoded}'); exit $p.ExitCode`
+  await execFilePromise('powershell.exe', ['-NoProfile', '-Command', elevated], 120_000)
+}
+
+function unixEnvironmentPath(scope: EnvironmentScope): string {
+  if (scope === 'user') return join(homedir(), '.MooTool', 'environment')
+  return process.platform === 'darwin' ? '/etc/zshenv' : '/etc/environment'
+}
+
+async function ensureUnixEnvironmentProfile(environmentPath: string): Promise<void> {
+  const profile = join(homedir(), process.platform === 'darwin' ? '.zshenv' : '.profile')
+  const current = await readFile(profile, 'utf8').catch((error: NodeJS.ErrnoException) => {
+    if (error.code === 'ENOENT') return ''
+    throw error
+  })
+  if (current.includes(environmentProfileMarker)) return
+  const separator = !current || current.endsWith('\n') ? '' : '\n'
+  const block = `${environmentProfileMarker}\n[ -f ${shellQuote(environmentPath)} ] && . ${shellQuote(environmentPath)}\n# <<< MooTool environment <<<\n`
+  await writeFile(profile, `${current}${separator}${block}`, 'utf8')
+}
+
+function serializeEnvironmentValue(key: string, value: string, shellExport: boolean): string {
+  if (shellExport) return `export ${key}='${value.replace(/'/g, `'\\''`)}'`
+  return `${key}="${value.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}"`
+}
+
+function unquoteEnvironmentValue(value: string): string {
+  if (value.length >= 2 && value.startsWith("'") && value.endsWith("'")) {
+    return value.slice(1, -1).replace(/'\\''/g, "'")
+  }
+  if (value.length >= 2 && value.startsWith('"') && value.endsWith('"')) {
+    return value.slice(1, -1).replace(/\\"/g, '"').replace(/\\\\/g, '\\')
+  }
+  return value
 }
 
 export function ipv4ToLong(value: string): number {
@@ -532,6 +712,10 @@ function errorMessage(error: unknown): string {
 
 function execFilePromise(file: string, args: string[], timeout: number): Promise<void> {
   return new Promise((resolve, reject) => execFile(file, args, { timeout, windowsHide: true }, (error) => error ? reject(error) : resolve()))
+}
+
+function execFileText(file: string, args: string[], timeout: number): Promise<string> {
+  return new Promise((resolve, reject) => execFile(file, args, { timeout, windowsHide: true, encoding: 'utf8' }, (error, stdout) => error ? reject(error) : resolve(stdout)))
 }
 
 function shellQuote(value: string): string {

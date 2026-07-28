@@ -12,7 +12,7 @@ import type { CreateQuickNoteInput, MoveQuickNoteEntryInput, QuickNoteAttachment
 import type { VaultGitActionInput, VaultGitActionResult, VaultGitCommit, VaultGitDiffInput, VaultGitDiffResult, VaultGitStatus } from './src/shared/contracts/vaultGit'
 import type { FavoriteKind, FavoriteRecord, SaveFavoriteInput } from './src/shared/contracts/favorites'
 import type { HttpRequestDraft, HttpRequestHistory, HttpResponseResult, HttpSendInput, SaveTranslationHistoryInput, SaveTranslationWordInput, SavedHttpRequest, TranslationHistory, TranslationInput, TranslationResult, TranslationWord } from './src/shared/contracts/network'
-import type { EnvironmentSnapshot, HostProfile, HostProfileListInput, LocalAddressSnapshot, NetworkCommandInput, NetworkCommandResult, SaveHostProfileInput, SystemHostsFile, SystemInfoSnapshot } from './src/shared/contracts/system'
+import type { DeleteEnvironmentVariableInput, EnvironmentSnapshot, EnvironmentVariableInput, HostProfile, HostProfileListInput, LocalAddressSnapshot, NetworkCommandInput, NetworkCommandResult, SaveHostProfileInput, SystemHostsFile, SystemInfoSnapshot } from './src/shared/contracts/system'
 import type { RuntimeExecutionInput, RuntimeExecutionResult, RuntimeOutputEvent } from './src/shared/contracts/runtime'
 import type { BackupExportResult, BackupInfo, BackupKind, BackupLocation } from './src/shared/contracts/backup'
 import type { LegacyMigrationInput, LegacyMigrationPreview, LegacyMigrationResult } from './src/shared/contracts/migration'
@@ -76,6 +76,8 @@ declare global {
       runNetworkCommand: (input: NetworkCommandInput) => Promise<NetworkCommandResult>
       cancelSystemCommand: (requestId: string) => Promise<boolean>
       getEnvironmentSnapshot: () => Promise<EnvironmentSnapshot>
+      setEnvironmentVariable: (input: EnvironmentVariableInput) => Promise<void>
+      deleteEnvironmentVariable: (input: DeleteEnvironmentVariableInput) => Promise<void>
       getLocalAddresses: () => Promise<LocalAddressSnapshot>
       getSystemInfo: () => Promise<SystemInfoSnapshot>
       chooseDirectory: (initialPath?: string) => Promise<string | null>

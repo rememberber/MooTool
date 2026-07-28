@@ -1,5 +1,5 @@
 import { httpMethods, normalizeTranslationLanguagePair, type HttpCookieEntry, type HttpRequestDraft, type HttpResponseResult, type HttpSendInput, type KeyValueEntry, type SaveTranslationHistoryInput, type SaveTranslationWordInput, type TranslationInput } from '../../src/shared/contracts/network'
-import type { NetworkCommandInput, SaveHostProfileInput } from '../../src/shared/contracts/system'
+import type { DeleteEnvironmentVariableInput, EnvironmentVariableInput, NetworkCommandInput, SaveHostProfileInput } from '../../src/shared/contracts/system'
 
 const networkActions = ['interfaces', 'connections', 'ping', 'ping-range', 'port-scan', 'flush-dns', 'resolve', 'whois'] as const
 
@@ -88,8 +88,42 @@ export function normalizeNetworkInput(value: unknown): NetworkCommandInput {
   }
 }
 
+export function normalizeEnvironmentVariableInput(value: unknown): EnvironmentVariableInput {
+  const record = objectValue(value, 'Invalid environment variable')
+  return {
+    scope: environmentScope(record.scope),
+    key: environmentKey(record.key),
+    value: environmentValue(record.value)
+  }
+}
+
+export function normalizeDeleteEnvironmentVariableInput(value: unknown): DeleteEnvironmentVariableInput {
+  const record = objectValue(value, 'Invalid environment variable')
+  return {
+    scope: environmentScope(record.scope),
+    key: environmentKey(record.key)
+  }
+}
+
 export function normalizeKeyword(value: unknown): string {
   return typeof value === 'string' ? value.slice(0, 200) : ''
+}
+
+function environmentScope(value: unknown): EnvironmentVariableInput['scope'] {
+  if (value !== 'user' && value !== 'system') throw new Error('Invalid environment variable scope')
+  return value
+}
+
+function environmentKey(value: unknown): string {
+  const key = stringValue(value, 256)
+  if (!/^[A-Za-z_][A-Za-z0-9_]*$/.test(key)) throw new Error('Invalid environment variable name')
+  return key
+}
+
+function environmentValue(value: unknown): string {
+  const result = stringValue(value, 65_535)
+  if (/[\0\r\n]/.test(result)) throw new Error('Environment variable values cannot contain line breaks')
+  return result
 }
 
 export function normalizePositiveId(value: unknown): number {

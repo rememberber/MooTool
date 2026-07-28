@@ -286,7 +286,7 @@ type AppSettings = {
 | 开发 | `java` | 代码运行 | Java/Python/Node.js 三个 Tab、编辑器、格式化、运行结果、历史；Java Tab 兼容旧版 Java/Groovy | P6 | 待对齐验收 |
 | 开发 | `ymlProperties` | 配置转换 | 转换 Tab、校验、历史 | P3 | 待对齐验收 |
 | 开发 | `protobuf` | Protobuf | JSON/二进制、Wire、Hex/Base64 三个 Tab | P4 | 待对齐验收 |
-| 开发 | `variables` | 环境变量 | 系统变量/Java Properties Tab、表格、导出 | P5 | 待对齐验收 |
+| 开发 | `variables` | 环境变量 | 用户/系统变量直接修改、Java Properties Tab、表格、导出 | P5 | 待对齐验收 |
 | 网络 | `http` | HTTP 请求 | 请求列表、请求编辑、响应 Body/Header/Cookie、历史 | P5 | 待对齐验收 |
 | 网络 | `host` | Host | Host 列表、编辑器、查找替换、导入导出 | P5 | 待对齐验收 |
 | 网络 | `net` | 网络/IP | 功能选择、参数区、结果区 | P5 | 待对齐验收 |

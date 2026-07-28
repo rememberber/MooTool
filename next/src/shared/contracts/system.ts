@@ -46,9 +46,24 @@ export type EnvironmentEntry = {
   value: string
 }
 
+export type EnvironmentScope = 'user' | 'system'
+
+export type EnvironmentVariableInput = {
+  scope: EnvironmentScope
+  key: string
+  value: string
+}
+
+export type DeleteEnvironmentVariableInput = {
+  scope: EnvironmentScope
+  key: string
+}
+
 export type EnvironmentSnapshot = {
   environment: EnvironmentEntry[]
   runtime: EnvironmentEntry[]
+  user: EnvironmentEntry[]
+  system: EnvironmentEntry[]
 }
 
 export type LocalAddressSnapshot = {

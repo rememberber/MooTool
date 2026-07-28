@@ -92,6 +92,8 @@ import { QuickNoteVaultRepository } from './quickNoteVaultRepository'
 import { RuntimeExecutionService } from './runtimeExecutionService'
 import {
   normalizeHostInput,
+  normalizeDeleteEnvironmentVariableInput,
+  normalizeEnvironmentVariableInput,
   normalizeHttpRequest,
   normalizeHttpResponse,
   normalizeHttpSendInput,
@@ -699,6 +701,8 @@ function registerIpc(): void {
   ipcMain.handle('system:network-command', (_event, value: unknown) => systemService.runNetwork(normalizeNetworkInput(value)))
   ipcMain.handle('system:cancel', (_event, requestId: unknown) => systemService.cancel(normalizeRequestId(requestId)))
   ipcMain.handle('system:environment', () => systemService.getEnvironment())
+  ipcMain.handle('system:environment-set', (_event, value: unknown) => systemService.setEnvironmentVariable(normalizeEnvironmentVariableInput(value)))
+  ipcMain.handle('system:environment-delete', (_event, value: unknown) => systemService.deleteEnvironmentVariable(normalizeDeleteEnvironmentVariableInput(value)))
   ipcMain.handle('system:local-addresses', () => systemService.getLocalAddresses())
   ipcMain.handle('system:info', () => systemService.getSystemInfo())
   ipcMain.handle('runtime:run', (event, value: unknown) => {

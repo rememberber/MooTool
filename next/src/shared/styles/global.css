@@ -8574,6 +8574,25 @@ select:not([multiple]) {
   width: min(260px, 38%);
 }
 
+.environment-scope {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-faint);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.environment-scope select {
+  height: 26px;
+  padding: 0 24px 0 8px;
+  color: var(--text-body);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: 5px;
+  font: inherit;
+}
+
 .environment-table-wrap {
   min-width: 0;
   min-height: 0;
@@ -8607,7 +8626,7 @@ select:not([multiple]) {
 }
 
 .environment-table th:last-child {
-  width: 42px;
+  width: 116px;
 }
 
 .environment-table td {
@@ -8625,13 +8644,58 @@ select:not([multiple]) {
   font-size: 10px;
 }
 
+.environment-row-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+}
+
+.environment-table td.environment-empty {
+  height: 120px;
+  color: var(--text-faint);
+  text-align: center;
+}
+
 .variables-workspace > footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
   min-height: 30px;
   padding: 8px 11px;
   color: var(--text-faint);
   background: var(--toolbar);
   border-top: 1px solid var(--border-soft);
   font-size: 10px;
+}
+
+.environment-editor {
+  display: grid;
+  gap: 14px;
+}
+
+.environment-editor textarea {
+  width: 100%;
+  min-height: 120px;
+  padding: 9px 10px;
+  resize: vertical;
+  color: var(--text-body);
+  background: var(--workspace);
+  border: 1px solid var(--border-control);
+  border-radius: 6px;
+  outline: none;
+  font: 11px/1.5 var(--font-mono);
+}
+
+.environment-editor textarea:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.environment-editor p {
+  margin: 0;
+  color: var(--text-faint);
+  font-size: 10px;
+  line-height: 1.5;
 }
 
 .hardware-workspace > header > div {

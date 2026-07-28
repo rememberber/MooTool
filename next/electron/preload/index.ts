@@ -21,7 +21,7 @@ import type { CreateQuickNoteInput, MoveQuickNoteEntryInput, QuickNoteAttachment
 import type { VaultGitActionInput, VaultGitActionResult, VaultGitCommit, VaultGitDiffInput, VaultGitDiffResult, VaultGitStatus } from '../../src/shared/contracts/vaultGit'
 import type { FavoriteKind, FavoriteRecord, SaveFavoriteInput } from '../../src/shared/contracts/favorites'
 import type { HttpRequestDraft, HttpRequestHistory, HttpResponseResult, HttpSendInput, SaveTranslationHistoryInput, SaveTranslationWordInput, SavedHttpRequest, TranslationHistory, TranslationInput, TranslationResult, TranslationWord } from '../../src/shared/contracts/network'
-import type { EnvironmentSnapshot, HostProfile, HostProfileListInput, LocalAddressSnapshot, NetworkCommandInput, NetworkCommandResult, SaveHostProfileInput, SystemHostsFile, SystemInfoSnapshot } from '../../src/shared/contracts/system'
+import type { DeleteEnvironmentVariableInput, EnvironmentSnapshot, EnvironmentVariableInput, HostProfile, HostProfileListInput, LocalAddressSnapshot, NetworkCommandInput, NetworkCommandResult, SaveHostProfileInput, SystemHostsFile, SystemInfoSnapshot } from '../../src/shared/contracts/system'
 import type { RuntimeExecutionInput, RuntimeExecutionResult, RuntimeOutputEvent } from '../../src/shared/contracts/runtime'
 import type { BackupExportResult, BackupInfo, BackupKind, BackupLocation } from '../../src/shared/contracts/backup'
 import type { LegacyMigrationInput, LegacyMigrationPreview, LegacyMigrationResult } from '../../src/shared/contracts/migration'
@@ -83,6 +83,8 @@ contextBridge.exposeInMainWorld('mootool', {
   runNetworkCommand: (input: NetworkCommandInput): Promise<NetworkCommandResult> => ipcRenderer.invoke('system:network-command', input),
   cancelSystemCommand: (requestId: string): Promise<boolean> => ipcRenderer.invoke('system:cancel', requestId),
   getEnvironmentSnapshot: (): Promise<EnvironmentSnapshot> => ipcRenderer.invoke('system:environment'),
+  setEnvironmentVariable: (input: EnvironmentVariableInput): Promise<void> => ipcRenderer.invoke('system:environment-set', input),
+  deleteEnvironmentVariable: (input: DeleteEnvironmentVariableInput): Promise<void> => ipcRenderer.invoke('system:environment-delete', input),
   getLocalAddresses: (): Promise<LocalAddressSnapshot> => ipcRenderer.invoke('system:local-addresses'),
   getSystemInfo: (): Promise<SystemInfoSnapshot> => ipcRenderer.invoke('system:info'),
   chooseDirectory: (initialPath?: string): Promise<string | null> => ipcRenderer.invoke('dialog:choose-directory', initialPath),

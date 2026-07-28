@@ -1,7 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import { createServer } from 'node:net'
 import { tmpdir } from 'node:os'
-import { SystemService, ipv4ToLong, longToIpv4, normalizeHostsContent, parseIpv4Range, parsePortSpec } from '../../electron/main/systemService'
+import { SystemService, ipv4ToLong, longToIpv4, normalizeHostsContent, parseEnvironmentContent, parseIpv4Range, parsePortSpec, updateEnvironmentContent } from '../../electron/main/systemService'
+import { normalizeDeleteEnvironmentVariableInput, normalizeEnvironmentVariableInput } from '../../electron/main/p5Validation'
 
 describe('system helpers', () => {
   it('converts IPv4 and unsigned long values in both directions', () => {
@@ -29,6 +30,32 @@ describe('system helpers', () => {
     expect(parsePortSpec()).toEqual(expect.arrayContaining([22, 3306, 5432, 6379]))
     expect(() => parsePortSpec('0,70000')).toThrow('INVALID_TARGET')
     expect(() => parsePortSpec('1-5000')).toThrow('INVALID_TARGET')
+  })
+
+  it('parses and safely updates persistent environment files', () => {
+    const source = `# keep this comment
+export JAVA_HOME='/old jdk'
+OTHER="value"
+`
+    const updated = updateEnvironmentContent(source, 'JAVA_HOME', "/opt/jdk's", true)
+    expect(updated).toBe(`# keep this comment
+export JAVA_HOME='/opt/jdk'\\''s'
+OTHER="value"
+`)
+    expect(parseEnvironmentContent(updated)).toEqual([
+      { key: 'JAVA_HOME', value: "/opt/jdk's" },
+      { key: 'OTHER', value: 'value' }
+    ])
+    expect(updateEnvironmentContent(updated, 'JAVA_HOME', undefined, true)).toBe('# keep this comment\nOTHER="value"\n')
+  })
+
+  it('validates environment mutations at the IPC boundary', () => {
+    expect(normalizeEnvironmentVariableInput({ scope: 'user', key: 'JAVA_HOME', value: '/opt/jdk' }))
+      .toEqual({ scope: 'user', key: 'JAVA_HOME', value: '/opt/jdk' })
+    expect(normalizeDeleteEnvironmentVariableInput({ scope: 'system', key: 'JAVA_HOME' }))
+      .toEqual({ scope: 'system', key: 'JAVA_HOME' })
+    expect(() => normalizeEnvironmentVariableInput({ scope: 'user', key: 'BAD-NAME', value: 'x' })).toThrow()
+    expect(() => normalizeEnvironmentVariableInput({ scope: 'user', key: 'SAFE', value: 'one\ntwo' })).toThrow()
   })
 
   it('reports an open TCP port from a real local listener', async () => {
