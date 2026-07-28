@@ -1,5 +1,5 @@
 import { execFileSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs'
+import { closeSync, existsSync, mkdirSync, mkdtempSync, openSync, readdirSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -7,9 +7,19 @@ import { afterEach, describe, expect, it } from 'vitest'
 import { VaultGitService } from '../../electron/main/vaultGitService'
 
 const tempDirectories: string[] = []
+const lockInspectorExecutable = process.platform === 'darwin' ? '/usr/sbin/lsof' : process.platform === 'linux' ? 'lsof' : undefined
 const gitAvailable = (() => {
   try {
     execFileSync('git', ['--version'], { stdio: 'ignore' })
+    return true
+  } catch {
+    return false
+  }
+})()
+const lockInspectorAvailable = (() => {
+  if (!lockInspectorExecutable) return false
+  try {
+    execFileSync(lockInspectorExecutable, ['-v'], { stdio: 'ignore' })
     return true
   } catch {
     return false
@@ -195,6 +205,68 @@ describe.skipIf(!gitAvailable)('VaultGitService', { timeout: 20_000 }, () => {
     expect((await service.status()).repository).toBe(true)
     expect((await service.status()).changes).toEqual([])
     expect(git(directory, ['log', '--pretty=%s'])).toContain('Initial MooTool Vault setup')
+  })
+
+  it('repairs a stale index lock and retries the blocked Git command', async () => {
+    const { directory, service } = createService()
+    await service.action({ action: 'init' })
+    writeFileSync(join(directory, 'stale-lock.txt'), 'Recovered\n')
+    const lockPath = join(directory, '.git', 'index.lock')
+    writeFileSync(lockPath, '')
+    const staleTime = new Date(Date.now() - 10 * 60_000)
+    utimesSync(lockPath, staleTime, staleTime)
+
+    expect((await service.action({ action: 'commit', message: 'Recover stale lock' })).success).toBe(true)
+    expect(existsSync(lockPath)).toBe(false)
+    expect(readdirSync(join(directory, '.git')).some((name) => name.startsWith('index.lock.mootool-stale-'))).toBe(false)
+    expect(git(directory, ['log', '-1', '--pretty=%s']).trim()).toBe('Recover stale lock')
+  })
+
+  it('does not remove a recent index lock that may belong to another Git process', async () => {
+    const { directory, service } = createService()
+    await service.action({ action: 'init' })
+    writeFileSync(join(directory, 'active-lock.txt'), 'Keep lock\n')
+    const lockPath = join(directory, '.git', 'index.lock')
+    writeFileSync(lockPath, '')
+
+    const result = await service.action({ action: 'commit', message: 'Must stay blocked' })
+    expect(result.success).toBe(false)
+    expect(result.message).toContain('index.lock')
+    expect(existsSync(lockPath)).toBe(true)
+  })
+
+  it.skipIf(!lockInspectorAvailable)('does not remove an old index lock while another process holds it open', async () => {
+    const { directory, service } = createService()
+    await service.action({ action: 'init' })
+    writeFileSync(join(directory, 'held-lock.txt'), 'Keep held lock\n')
+    const lockPath = join(directory, '.git', 'index.lock')
+    writeFileSync(lockPath, '')
+    const staleTime = new Date(Date.now() - 10 * 60_000)
+    utimesSync(lockPath, staleTime, staleTime)
+    const descriptor = openSync(lockPath, 'r')
+
+    try {
+      const result = await service.action({ action: 'commit', message: 'Must stay blocked' })
+      expect(result.success).toBe(false)
+      expect(existsSync(lockPath)).toBe(true)
+    } finally {
+      closeSync(descriptor)
+    }
+  })
+
+  it('serializes Git actions created by separate service instances for the same Vault', async () => {
+    const { directory, service } = createService()
+    await service.action({ action: 'init' })
+    const secondService = new VaultGitService(directory, { username: 'MooTool Test' })
+    writeFileSync(join(directory, 'concurrent.txt'), 'One change\n')
+
+    const results = await Promise.all([
+      service.action({ action: 'commit', message: 'First checkpoint' }),
+      secondService.action({ action: 'commit', message: 'Second checkpoint' })
+    ])
+
+    expect(results.every((result) => result.success)).toBe(true)
+    expect(git(directory, ['log', '--pretty=%s', '--', 'concurrent.txt']).trim().split(/\r?\n/)).toEqual(['First checkpoint'])
   })
 
   it('detects and continues a rebase after conflicts are resolved', async () => {

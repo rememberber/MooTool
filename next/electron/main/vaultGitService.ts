@@ -1,6 +1,7 @@
 import { execFile } from 'node:child_process'
-import { access, lstat, mkdir, readFile, realpath, writeFile } from 'node:fs/promises'
-import { join, resolve } from 'node:path'
+import type { Stats } from 'node:fs'
+import { access, lstat, mkdir, readFile, realpath, rename, unlink, writeFile } from 'node:fs/promises'
+import { basename, join, resolve } from 'node:path'
 import type {
   VaultGitActionInput,
   VaultGitActionResult,
@@ -37,6 +38,10 @@ type ContentPreview = {
 }
 
 const maxDiffPreviewBytes = 512 * 1024
+const staleIndexLockMilliseconds = 5 * 60 * 1_000
+const indexLockRetryDelayMilliseconds = 250
+const indexLockStabilityDelayMilliseconds = 100
+const repositoryOperationQueues = new Map<string, Promise<void>>()
 
 const defaultGitignore = `.DS_Store
 .idea/
@@ -173,6 +178,10 @@ export class VaultGitService {
   }
 
   async action(input: VaultGitActionInput): Promise<VaultGitActionResult> {
+    return enqueueRepositoryOperation(this.rootDirectory, () => this.performAction(input))
+  }
+
+  private async performAction(input: VaultGitActionInput): Promise<VaultGitActionResult> {
     await mkdir(this.rootDirectory, { recursive: true })
     if (input.action !== 'init' && !(await this.status()).repository) {
       return { success: false, message: 'Git repository is not initialized in the Vault root' }
@@ -202,6 +211,10 @@ export class VaultGitService {
   }
 
   async automaticCheckpoint(message: string): Promise<VaultGitActionResult> {
+    return enqueueRepositoryOperation(this.rootDirectory, () => this.performAutomaticCheckpoint(message))
+  }
+
+  private async performAutomaticCheckpoint(message: string): Promise<VaultGitActionResult> {
     let status = await this.status()
     if (!status.available) return { success: true, message: 'Git is unavailable; checkpoint skipped' }
     if (!status.repository) {
@@ -333,7 +346,58 @@ export class VaultGitService {
   }
 
   private run(args: string[], options: { authenticated?: boolean; cwd?: string } = {}): Promise<CommandResult> {
+    return this.runWithIndexLockRecovery(() => this.execute(args, options))
+  }
+
+  private async runWithIndexLockRecovery(execute: () => Promise<CommandResult>): Promise<CommandResult> {
+    let result = await execute()
+    if (!isIndexLockFailure(result)) return result
+
+    await delay(indexLockRetryDelayMilliseconds)
+    result = await execute()
+    if (!isIndexLockFailure(result)) return result
+
+    const quarantinedLock = await this.quarantineStaleIndexLock()
+    if (!quarantinedLock) return result
+    try {
+      return await execute()
+    } finally {
+      await unlink(quarantinedLock).catch(() => undefined)
+    }
+  }
+
+  private async quarantineStaleIndexLock(): Promise<string | undefined> {
+    const lockPath = await this.resolveIndexLockPath()
+    if (!lockPath) return undefined
+
+    const initial = await safeLstat(lockPath)
+    if (!initial?.isFile() || Date.now() - initial.mtimeMs < staleIndexLockMilliseconds) return undefined
+    if (await fileHasOpenHandle(lockPath)) return undefined
+
+    await delay(indexLockStabilityDelayMilliseconds)
+    const stable = await safeLstat(lockPath)
+    if (!stable?.isFile() || !sameFileState(initial, stable)) return undefined
+
+    const quarantinedPath = `${lockPath}.mootool-stale-${Date.now()}-${process.pid}`
+    try {
+      await rename(lockPath, quarantinedPath)
+      return quarantinedPath
+    } catch (error) {
+      if (['ENOENT', 'EEXIST'].includes((error as NodeJS.ErrnoException).code ?? '')) return undefined
+      throw error
+    }
+  }
+
+  private async resolveIndexLockPath(): Promise<string | undefined> {
+    const result = await this.execute(['rev-parse', '--git-path', 'index.lock'])
+    if (result.exitCode !== 0 || !result.stdout.trim()) return undefined
+    const lockPath = resolve(this.rootDirectory, result.stdout.trim())
+    return basename(lockPath) === 'index.lock' ? lockPath : undefined
+  }
+
+  private execute(args: string[], options: { authenticated?: boolean; cwd?: string } = {}): Promise<CommandResult> {
     const env: NodeJS.ProcessEnv = { ...process.env, GIT_TERMINAL_PROMPT: '0' }
+    env.GIT_OPTIONAL_LOCKS = '0'
     if (options.authenticated && this.credentials.askPassPath && this.credentials.token) {
       env.GIT_ASKPASS = this.credentials.askPassPath
       env.MOOTOOL_GIT_USERNAME = this.credentials.username ?? ''
@@ -354,6 +418,58 @@ export class VaultGitService {
       })
     })
   }
+}
+
+function enqueueRepositoryOperation<T>(rootDirectory: string, operation: () => Promise<T>): Promise<T> {
+  const resolved = resolve(rootDirectory)
+  const key = process.platform === 'win32' ? resolved.toLocaleLowerCase() : resolved
+  const previous = repositoryOperationQueues.get(key) ?? Promise.resolve()
+  const current = previous.catch(() => undefined).then(operation)
+  const settled = current.then(() => undefined, () => undefined)
+  repositoryOperationQueues.set(key, settled)
+  void settled.finally(() => {
+    if (repositoryOperationQueues.get(key) === settled) repositoryOperationQueues.delete(key)
+  })
+  return current
+}
+
+function isIndexLockFailure(result: CommandResult): boolean {
+  return /unable to create [^\r\n]*index\.lock['"]?: file exists/i.test(`${result.stderr}\n${result.stdout}`)
+}
+
+async function safeLstat(path: string): Promise<Stats | undefined> {
+  try {
+    return await lstat(path)
+  } catch (error) {
+    if ((error as NodeJS.ErrnoException).code === 'ENOENT') return undefined
+    throw error
+  }
+}
+
+function sameFileState(left: Stats, right: Stats): boolean {
+  return left.dev === right.dev
+    && left.ino === right.ino
+    && left.size === right.size
+    && left.mtimeMs === right.mtimeMs
+}
+
+function fileHasOpenHandle(path: string): Promise<boolean> {
+  const executable = process.platform === 'darwin'
+    ? '/usr/sbin/lsof'
+    : process.platform === 'linux'
+      ? 'lsof'
+      : undefined
+  if (!executable) return Promise.resolve(false)
+  return new Promise((resolve) => {
+    execFile(executable, ['-t', '--', path], {
+      timeout: 2_000,
+      windowsHide: true
+    }, (_error, stdout) => resolve(Boolean(stdout.trim())))
+  })
+}
+
+function delay(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds))
 }
 
 function parseNameStatus(output: string): GitChangedPath[] {
