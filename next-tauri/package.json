@@ -1,0 +1,45 @@
+{
+  "name": "mootool-next-tauri",
+  "version": "0.1.0",
+  "private": true,
+  "description": "MooTool Next Tauri — an independent Tauri desktop product.",
+  "license": "MIT",
+  "author": {
+    "name": "Zhou Bo",
+    "email": "rememberber@163.com"
+  },
+  "homepage": "https://github.com/rememberber/MooTool",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rememberber/MooTool.git"
+  },
+  "type": "module",
+  "scripts": {
+    "dev": "tauri dev",
+    "web:dev": "vite",
+    "web:build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "check:boundaries": "node scripts/check-product-boundaries.mjs",
+    "check": "npm run check:boundaries && npm run typecheck && npm run test && npm run web:build && cargo test --manifest-path src-tauri/Cargo.toml",
+    "tauri": "tauri",
+    "build:desktop": "tauri build --no-bundle"
+  },
+  "dependencies": {
+    "@tauri-apps/api": "^2.11.1",
+    "lucide-react": "^1.27.0",
+    "react": "^19.2.8",
+    "react-dom": "^19.2.8"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^2.11.4",
+    "@types/node": "^26.1.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.2.0",
+    "typescript": "^7.0.2",
+    "vite": "^7.3.6",
+    "vitest": "^4.1.10"
+  }
+}

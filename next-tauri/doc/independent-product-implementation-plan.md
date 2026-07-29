@@ -1,6 +1,6 @@
 # MooTool Next Tauri 独立产品线实现方案
 
-> - 状态：方案草案
+> - 状态：已批准，执行中
 > - 更新日期：2026-07-29
 > - 产品 ID：`next-tauri`
 > - 产品名称：MooTool Next Tauri
@@ -296,6 +296,15 @@ Tauri 官方文档：
 该模型的目标是让工具在停靠和分离之间移动时不刷新、不丢输入和编辑器状态。Tauri 已提供 WebView 创建、定位、显示、隐藏和 `reparent()` API，但跨平台稳定性必须在 P0 阶段实测：
 
 - [Tauri WebView API](https://v2.tauri.app/reference/javascript/api/namespacewebview/)
+
+截至 2026-07-29 的 P0 实现结论：
+
+- 当前锁定的 Tauri `2.11.5` 中，`Webview::reparent()` 是公开 API；但创建普通原生 `Window`、添加子 WebView 所需的 `WindowBuilder`、`WebviewBuilder` 和 `Window::add_child()` 仍要求开启 Tauri 的 `unstable` feature。
+- 低层窗口能力集中在 Rust `ToolWebviewManager` 和领域 Command 中，Shell 只传递停靠区域和生命周期意图，工具子页面无权调用生命周期 Command。
+- macOS 26.6 / x86_64 / WKWebView 原生实测中，同一个子 WebView 完成手工分离/收回和 100 个往返周期，累计 202 次 `reparent` 操作；页面加载次数保持为 1，会话 ID、内存计数器和草稿均保持。
+- 上述结果仅判定 macOS 机制可行，不替代 Windows WebView2、Linux WebKitGTK 验证，也不代表可以把 `unstable` API 当作无升级成本的长期承诺。
+
+进入正式工具开发前，应锁定精确 Tauri/Wry 版本；每次升级必须重复 reparent 回归。在相关 API 稳定前，发布评审需把 `unstable` feature 视为明确的架构风险。
 
 如果 `reparent()` 在任一首发平台无法达到稳定性门槛，必须在以下方案中作出明确产品决策：
 

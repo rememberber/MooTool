@@ -1,0 +1,20 @@
+[package]
+name = "mootool-next-tauri"
+version = "0.1.0"
+description = "MooTool Next Tauri independent desktop product"
+authors = ["Zhou Bo <rememberber@163.com>"]
+license = "MIT"
+repository = "https://github.com/rememberber/MooTool"
+edition = "2024"
+rust-version = "1.85"
+
+[lib]
+name = "mootool_next_tauri_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2", features = [] }
+
+[dependencies]
+serde = { version = "1", features = ["derive"] }
+tauri = { version = "2", features = ["unstable"] }

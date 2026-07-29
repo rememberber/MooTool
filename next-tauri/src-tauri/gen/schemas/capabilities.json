@@ -1,0 +1,1 @@
+{"default":{"identifier":"default","description":"Least-privilege capability for the main MooTool Tauri workbench.","local":true,"webviews":["main"],"permissions":["core:default"]},"tool-probe":{"identifier":"tool-probe","description":"IPC boundary for the P0 owned child WebView probe.","local":true,"webviews":["p0-tool-probe"],"permissions":[]}}

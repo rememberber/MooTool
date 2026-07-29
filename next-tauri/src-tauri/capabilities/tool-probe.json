@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "tool-probe",
+  "description": "IPC boundary for the P0 owned child WebView probe.",
+  "webviews": ["p0-tool-probe"],
+  "permissions": []
+}
