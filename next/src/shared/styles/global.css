@@ -11216,3 +11216,390 @@ textarea:focus {
 :root[data-interface-style='hero'] .toggle {
   border: 0;
 }
+
+/*
+ * Claude-inspired interface style
+ *
+ * Warm paper surfaces, restrained borders and a terracotta action color give
+ * this style its editorial, conversational character without using branded
+ * artwork or external assets.
+ */
+:root[data-interface-style='claude'] {
+  color: #2f2b28;
+  background: #f5f3ed;
+  --sidebar: #eeece5;
+  --surface: #fffefa;
+  --workspace: #f7f5ef;
+  --surface-soft: #f3f0e9;
+  --surface-card: #f0ede6;
+  --surface-card-hover: #e8e4dc;
+  --surface-elevated: rgba(255, 254, 250, 0.97);
+  --surface-command: rgba(255, 254, 250, 0.97);
+  --toolbar: #faf8f2;
+  --control: #eeebe4;
+  --control-hover: rgba(76, 65, 58, 0.075);
+  --control-hover-soft: rgba(76, 65, 58, 0.052);
+  --control-active: #e5e0d7;
+  --border: #ded9d0;
+  --border-soft: #ebe7df;
+  --border-control: #d8d2c8;
+  --border-control-hover: #beb6aa;
+  --text: #2f2b28;
+  --text-strong: #25211f;
+  --text-body: #48423d;
+  --text-muted: #777069;
+  --text-soft: #9a938b;
+  --text-faint: #8a837b;
+  --editor-text: #302c29;
+  --success-text: #4f785e;
+  --success-bg: #e5eee7;
+  --error-text: #ad4f43;
+  --error-bg: #f5e5e0;
+  --warning-text: #9c681f;
+  --tooltip-bg: #302b27;
+  --tooltip-text: #fffaf3;
+  --shadow: rgba(67, 55, 47, 0.16);
+  --shadow-soft: rgba(67, 55, 47, 0.075);
+  --shadow-popover: 0 18px 48px rgba(62, 50, 42, 0.2);
+  --pattern-dot: #d8d2c8;
+  --sidebar-vibrancy-tint: rgba(238, 236, 229, 0.72);
+  --sidebar-vibrancy-border: rgba(91, 78, 68, 0.14);
+  --claude-accent: #d97757;
+  --claude-accent-strong: #bd6348;
+  --claude-accent-soft: #f6e7df;
+  --desktop-control-height: 34px;
+  --desktop-control-radius: 10px;
+  --desktop-control-bg: var(--surface);
+  --desktop-control-border: var(--border-control);
+  --desktop-control-border-hover: var(--border-control-hover);
+  --desktop-control-shadow: 0 1px 2px rgba(67, 55, 47, 0.055);
+  --desktop-control-shadow-hover: 0 2px 6px rgba(67, 55, 47, 0.105);
+  --desktop-control-focus: color-mix(in srgb, var(--claude-accent) 25%, transparent);
+  --desktop-button-hover: var(--surface-soft);
+  --desktop-button-pressed: var(--control-active);
+  --desktop-button-prominent: var(--claude-accent);
+  --desktop-button-prominent-hover: var(--claude-accent-strong);
+  --desktop-button-prominent-text: #ffffff;
+}
+
+:root[data-interface-style='claude'][data-theme='dark'] {
+  color: #eeeae3;
+  background: #1d1b18;
+  --sidebar: #25221e;
+  --surface: #2b2824;
+  --workspace: #201e1b;
+  --surface-soft: #302d28;
+  --surface-card: #35312c;
+  --surface-card-hover: #3e3933;
+  --surface-elevated: rgba(43, 40, 36, 0.97);
+  --surface-command: rgba(43, 40, 36, 0.97);
+  --toolbar: #2e2b27;
+  --control: #37332e;
+  --control-hover: rgba(255, 247, 237, 0.09);
+  --control-hover-soft: rgba(255, 247, 237, 0.06);
+  --control-active: #423d36;
+  --border: #474139;
+  --border-soft: #38342f;
+  --border-control: #514a41;
+  --border-control-hover: #6b6257;
+  --text: #eeeae3;
+  --text-strong: #fffaf2;
+  --text-body: #ded8cf;
+  --text-muted: #aaa198;
+  --text-soft: #817970;
+  --text-faint: #938b82;
+  --editor-text: #f1ece5;
+  --success-text: #8db497;
+  --success-bg: #29372d;
+  --error-text: #e49886;
+  --error-bg: #462d28;
+  --warning-text: #d8ad70;
+  --tooltip-bg: #f4eee5;
+  --tooltip-text: #2d2925;
+  --shadow: rgba(0, 0, 0, 0.52);
+  --shadow-soft: rgba(0, 0, 0, 0.27);
+  --shadow-popover: 0 20px 52px rgba(0, 0, 0, 0.58);
+  --pattern-dot: #4a443d;
+  --sidebar-vibrancy-tint: rgba(37, 34, 30, 0.76);
+  --sidebar-vibrancy-border: rgba(255, 244, 232, 0.1);
+  --claude-accent: #e78a6c;
+  --claude-accent-strong: #d57457;
+  --claude-accent-soft: #4a3129;
+  --desktop-control-shadow: 0 1px 2px rgba(0, 0, 0, 0.24);
+  --desktop-control-shadow-hover: 0 2px 7px rgba(0, 0, 0, 0.34);
+}
+
+:root[data-interface-style='claude'] body {
+  font-weight: 400;
+  line-height: 1.48;
+  letter-spacing: -0.006em;
+}
+
+:root[data-interface-style='claude'] .app-shell,
+:root[data-interface-style='claude'] .workspace,
+:root[data-interface-style='claude'] .settings-window,
+:root[data-interface-style='claude'] .settings-content,
+:root[data-interface-style='claude'] .settings-scroll {
+  background: var(--workspace);
+}
+
+:root[data-interface-style='claude'] .sidebar,
+:root[data-interface-style='claude'] .settings-nav {
+  background: var(--sidebar);
+  border-color: var(--border);
+  box-shadow: inset -1px 0 0 color-mix(in srgb, var(--surface) 58%, transparent);
+}
+
+:root[data-interface-style='claude'] .settings-titlebar,
+:root[data-interface-style='claude'] .settings-content__header {
+  background: color-mix(in srgb, var(--surface) 88%, var(--workspace));
+  border-color: var(--border-soft);
+}
+
+:root[data-interface-style='claude'] .settings-titlebar {
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+:root[data-interface-style='claude'] .tool-button,
+:root[data-interface-style='claude'] .recent-item,
+:root[data-interface-style='claude'] .settings-nav__item,
+:root[data-interface-style='claude'] .command-result {
+  border: 1px solid transparent;
+  border-radius: 9px;
+  font-weight: 450;
+}
+
+:root[data-interface-style='claude'] .tool-button:hover,
+:root[data-interface-style='claude'] .recent-item:hover,
+:root[data-interface-style='claude'] .settings-nav__item:hover,
+:root[data-interface-style='claude'] .command-result:hover {
+  background: var(--control-hover);
+}
+
+:root[data-interface-style='claude'] .tool-button--active,
+:root[data-interface-style='claude'] .settings-nav__item--active,
+:root[data-interface-style='claude'] .command-result--selected {
+  color: var(--claude-accent-strong);
+  background: var(--claude-accent-soft);
+  border-color: color-mix(in srgb, var(--claude-accent) 16%, transparent);
+  font-weight: 550;
+}
+
+:root[data-interface-style='claude'][data-theme='dark'] .tool-button--active,
+:root[data-interface-style='claude'][data-theme='dark'] .settings-nav__item--active,
+:root[data-interface-style='claude'][data-theme='dark'] .command-result--selected {
+  color: #f2a087;
+}
+
+:root[data-interface-style='claude'] .tool-button--active svg,
+:root[data-interface-style='claude'] .settings-nav__item--active svg {
+  color: var(--claude-accent);
+}
+
+:root[data-interface-style='claude'] .tool-page h1,
+:root[data-interface-style='claude'] .placeholder-page h1,
+:root[data-interface-style='claude'] .settings-content__header h1 {
+  color: var(--text-strong);
+  font-weight: 560;
+  letter-spacing: -0.025em;
+}
+
+:root[data-interface-style='claude'] .tool-group h2,
+:root[data-interface-style='claude'] .section-title,
+:root[data-interface-style='claude'] .settings-group h2 {
+  color: var(--text-muted);
+  font-weight: 500;
+  letter-spacing: 0.015em;
+}
+
+:root[data-interface-style='claude'] .editor-shell,
+:root[data-interface-style='claude'] .local-tool-shell,
+:root[data-interface-style='claude'] .quick-note-editor-shell,
+:root[data-interface-style='claude'] .runtime-shell,
+:root[data-interface-style='claude'] .vault-panel,
+:root[data-interface-style='claude'] .quick-note-sidebar,
+:root[data-interface-style='claude'] .quick-replace-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 6px 22px var(--shadow-soft);
+}
+
+:root[data-interface-style='claude'] .inspector-card,
+:root[data-interface-style='claude'] .operation-panel,
+:root[data-interface-style='claude'] .calculator-log,
+:root[data-interface-style='claude'] .common-pattern-list button,
+:root[data-interface-style='claude'] .home-work-list button,
+:root[data-interface-style='claude'] .home-contributors button {
+  background: var(--surface);
+  border: 1px solid var(--border-soft);
+  border-radius: 12px;
+  box-shadow: 0 2px 9px var(--shadow-soft);
+}
+
+:root[data-interface-style='claude'] .editor-toolbar,
+:root[data-interface-style='claude'] .tool-tabs,
+:root[data-interface-style='claude'] .p4-toolbar,
+:root[data-interface-style='claude'] .runtime-toolbar,
+:root[data-interface-style='claude'] .quick-note-toolbar {
+  background: var(--toolbar);
+  border-color: var(--border-soft);
+}
+
+:root[data-interface-style='claude'] .toolbar-button,
+:root[data-interface-style='claude'] .icon-button,
+:root[data-interface-style='claude'] .settings-command,
+:root[data-interface-style='claude'] .dialog-button,
+:root[data-interface-style='claude'] .panel-command,
+:root[data-interface-style='claude'] .io-action-button,
+:root[data-interface-style='claude'] .primary-command,
+:root[data-interface-style='claude'] select {
+  border-radius: var(--desktop-control-radius);
+}
+
+:root[data-interface-style='claude'] .toolbar-button--primary {
+  color: var(--claude-accent-strong);
+  background: var(--claude-accent-soft);
+  border-color: color-mix(in srgb, var(--claude-accent) 20%, var(--border-soft));
+}
+
+:root[data-interface-style='claude'] .primary-command,
+:root[data-interface-style='claude'] .dialog-button--primary,
+:root[data-interface-style='claude'] .runtime-toolbar > button.runtime-run-button {
+  color: #ffffff;
+  background: var(--claude-accent);
+  border-color: var(--claude-accent);
+  box-shadow: 0 2px 6px color-mix(in srgb, var(--claude-accent-strong) 24%, transparent);
+}
+
+:root[data-interface-style='claude'] .primary-command:hover:not(:disabled),
+:root[data-interface-style='claude'] .dialog-button--primary:hover:not(:disabled),
+:root[data-interface-style='claude'] .runtime-toolbar > button.runtime-run-button:hover:not(:disabled) {
+  color: #ffffff;
+  background: var(--claude-accent-strong);
+  border-color: var(--claude-accent-strong);
+}
+
+:root[data-interface-style='claude'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']),
+:root[data-interface-style='claude'] textarea {
+  color: var(--text-body);
+  background: var(--surface);
+  border-color: var(--border-control);
+  border-radius: var(--desktop-control-radius);
+}
+
+:root[data-interface-style='claude'] input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='color']):focus,
+:root[data-interface-style='claude'] textarea:focus,
+:root[data-interface-style='claude'] select:focus {
+  border-color: var(--claude-accent);
+  box-shadow: 0 0 0 3px var(--desktop-control-focus);
+}
+
+:root[data-interface-style='claude'] .settings-group__rows {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 3px 14px var(--shadow-soft);
+  overflow: hidden;
+}
+
+:root[data-interface-style='claude'] .setting-row {
+  min-height: 58px;
+  padding: 0 15px;
+  border-color: var(--border-soft);
+}
+
+:root[data-interface-style='claude'] .setting-row:last-child,
+:root[data-interface-style='claude'] .runtime-row:last-child {
+  border-bottom: 0;
+}
+
+:root[data-interface-style='claude'] .segmented {
+  gap: 2px;
+  padding: 3px;
+  background: var(--control);
+  border: 1px solid var(--border-soft);
+  border-radius: 11px;
+  box-shadow: none;
+}
+
+:root[data-interface-style='claude'] .segmented__item {
+  min-height: 30px;
+  border-radius: 8px;
+  font-weight: 450;
+}
+
+:root[data-interface-style='claude'] .segmented__item--active {
+  color: var(--text-strong);
+  background: var(--surface);
+  box-shadow: 0 1px 3px var(--shadow-soft);
+}
+
+:root[data-interface-style='claude'] .toggle {
+  width: 40px;
+  height: 24px;
+  padding: 2px;
+  background: var(--border-control);
+  border: 0;
+  border-radius: 999px;
+  box-shadow: inset 0 1px 2px color-mix(in srgb, var(--shadow) 34%, transparent);
+}
+
+:root[data-interface-style='claude'] .toggle span {
+  width: 20px;
+  height: 20px;
+  background: #fffefa;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(57, 45, 37, 0.24);
+}
+
+:root[data-interface-style='claude'] .toggle--checked {
+  background: var(--claude-accent);
+}
+
+:root[data-interface-style='claude'] .toggle--checked span {
+  transform: translateX(16px);
+}
+
+:root[data-interface-style='claude'] input[type='checkbox'],
+:root[data-interface-style='claude'] input[type='radio'],
+:root[data-interface-style='claude'] input[type='range'] {
+  accent-color: var(--claude-accent);
+}
+
+:root[data-interface-style='claude'] .dialog-backdrop,
+:root[data-interface-style='claude'] .command-palette-backdrop {
+  background: rgba(45, 37, 32, 0.34);
+  backdrop-filter: blur(3px);
+}
+
+:root[data-interface-style='claude'] .dialog,
+:root[data-interface-style='claude'] .command-palette,
+:root[data-interface-style='claude'] .toast,
+:root[data-interface-style='claude'] .sidebar-update-notes {
+  background: var(--surface-elevated);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  box-shadow: var(--shadow-popover);
+  backdrop-filter: blur(18px);
+}
+
+:root[data-interface-style='claude'] .dialog__header,
+:root[data-interface-style='claude'] .dialog__footer,
+:root[data-interface-style='claude'] .command-palette__search {
+  background: var(--toolbar);
+  border-color: var(--border-soft);
+}
+
+:root[data-interface-style='claude'] .tooltip {
+  border-radius: 8px;
+  box-shadow: 0 7px 20px var(--shadow);
+}
+
+:root[data-interface-style='claude'] .status-pill {
+  color: var(--claude-accent-strong);
+  background: var(--claude-accent-soft);
+  border: 1px solid color-mix(in srgb, var(--claude-accent) 18%, transparent);
+  border-radius: 999px;
+}

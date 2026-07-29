@@ -184,4 +184,12 @@ describe('mergeSettings', () => {
 
     expect(settings.appearance.interfaceStyle).toBe('miui-v5')
   })
+
+  it('accepts and persists the Claude interface style', () => {
+    const settings = mergeSettings(defaultAppSettings, {
+      appearance: { interfaceStyle: 'claude' }
+    })
+
+    expect(settings.appearance.interfaceStyle).toBe('claude')
+  })
 })

@@ -197,17 +197,18 @@ function AppearanceSettings({ settings, commit }: SettingsPanelProps) {
   return (
     <SettingsGroup title={t('settings.group.theme')}>
       <SettingRow label={t('settings.interfaceStyle')}>
-        <Segmented
+        <select
+          aria-label={t('settings.interfaceStyle')}
           value={settings.appearance.interfaceStyle}
-          options={[
-            { value: 'modern', label: t('settings.interfaceStyle.modern') },
-            { value: 'quiet', label: t('settings.interfaceStyle.quiet') },
-            { value: 'hero', label: t('settings.interfaceStyle.hero') },
-            { value: 'smartisan', label: t('settings.interfaceStyle.smartisan') },
-            { value: 'miui-v5', label: t('settings.interfaceStyle.miuiV5') }
-          ]}
-          onChange={(value) => commit({ appearance: { interfaceStyle: value } })}
-        />
+          onChange={(event) => commit({ appearance: { interfaceStyle: event.target.value as AppSettings['appearance']['interfaceStyle'] } })}
+        >
+          <option value="modern">{t('settings.interfaceStyle.modern')}</option>
+          <option value="claude">{t('settings.interfaceStyle.claude')}</option>
+          <option value="quiet">{t('settings.interfaceStyle.quiet')}</option>
+          <option value="hero">{t('settings.interfaceStyle.hero')}</option>
+          <option value="smartisan">{t('settings.interfaceStyle.smartisan')}</option>
+          <option value="miui-v5">{t('settings.interfaceStyle.miuiV5')}</option>
+        </select>
       </SettingRow>
       <SettingRow label={t('settings.theme')}>
         <Segmented

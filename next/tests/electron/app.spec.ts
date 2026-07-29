@@ -171,11 +171,18 @@ test('switches interface styles from appearance settings', async () => {
       contained: thumbBounds.top >= trackBounds.top && thumbBounds.bottom <= trackBounds.bottom
     }
   })
+  const interfaceStyleSelect = settingsPage.getByRole('combobox', { name: '界面风格' })
+  await expect(interfaceStyleSelect.locator('option')).toHaveText([
+    '现代主题',
+    'Claude',
+    '安静主题',
+    'Hero（NextUI）',
+    'Smartisan OS',
+    'MIUI V5'
+  ])
 
-  const heroStyle = settingsPage.getByRole('button', { name: 'Hero（NextUI）', exact: true })
-  await expect(heroStyle).toBeVisible()
-  await heroStyle.click()
-  await expect(heroStyle).toHaveAttribute('aria-pressed', 'true')
+  await interfaceStyleSelect.selectOption('hero')
+  await expect(interfaceStyleSelect).toHaveValue('hero')
 
   await expect.poll(() => mainPage.evaluate(async () => ({
     interfaceStyle: document.documentElement.dataset.interfaceStyle,
@@ -204,10 +211,8 @@ test('switches interface styles from appearance settings', async () => {
     contained: true
   })
 
-  const smartisanStyle = settingsPage.getByRole('button', { name: 'Smartisan OS', exact: true })
-  await expect(smartisanStyle).toBeVisible()
-  await smartisanStyle.click()
-  await expect(smartisanStyle).toHaveAttribute('aria-pressed', 'true')
+  await interfaceStyleSelect.selectOption('smartisan')
+  await expect(interfaceStyleSelect).toHaveValue('smartisan')
 
   await expect.poll(() => mainPage.evaluate(async () => ({
     interfaceStyle: document.documentElement.dataset.interfaceStyle,
@@ -229,10 +234,8 @@ test('switches interface styles from appearance settings', async () => {
     cardRadius: '10px'
   })
 
-  const miuiV5Style = settingsPage.getByRole('button', { name: 'MIUI V5', exact: true })
-  await expect(miuiV5Style).toBeVisible()
-  await miuiV5Style.click()
-  await expect(miuiV5Style).toHaveAttribute('aria-pressed', 'true')
+  await interfaceStyleSelect.selectOption('miui-v5')
+  await expect(interfaceStyleSelect).toHaveValue('miui-v5')
 
   await expect.poll(() => mainPage.evaluate(async () => ({
     interfaceStyle: document.documentElement.dataset.interfaceStyle,
@@ -243,21 +246,48 @@ test('switches interface styles from appearance settings', async () => {
   })
   await expect.poll(() => settingsPage.evaluate(() => {
     const card = document.querySelector('.settings-group__rows')
-    const stylePicker = document.querySelector('.setting-row .segmented')
     return {
       interfaceStyle: document.documentElement.dataset.interfaceStyle,
       controlRadius: getComputedStyle(document.documentElement).getPropertyValue('--desktop-control-radius').trim(),
-      cardRadius: card ? getComputedStyle(card).borderRadius : '',
-      stylePickerFits: stylePicker ? stylePicker.scrollWidth <= stylePicker.clientWidth : false
+      cardRadius: card ? getComputedStyle(card).borderRadius : ''
     }
   })).toEqual({
     interfaceStyle: 'miui-v5',
     controlRadius: '4px',
-    cardRadius: '5px',
-    stylePickerFits: true
+    cardRadius: '5px'
   })
 
-  await settingsPage.getByRole('button', { name: '安静主题', exact: true }).click()
+  await interfaceStyleSelect.selectOption('claude')
+  await expect(interfaceStyleSelect).toHaveValue('claude')
+
+  await expect.poll(() => mainPage.evaluate(async () => ({
+    interfaceStyle: document.documentElement.dataset.interfaceStyle,
+    settings: await window.mootool.getSettings()
+  }))).toMatchObject({
+    interfaceStyle: 'claude',
+    settings: { appearance: { interfaceStyle: 'claude' } }
+  })
+  await expect.poll(() => settingsPage.evaluate(() => {
+    const card = document.querySelector('.settings-group__rows')
+    return {
+      interfaceStyle: document.documentElement.dataset.interfaceStyle,
+      controlRadius: getComputedStyle(document.documentElement).getPropertyValue('--desktop-control-radius').trim(),
+      cardRadius: card ? getComputedStyle(card).borderRadius : ''
+    }
+  })).toEqual({
+    interfaceStyle: 'claude',
+    controlRadius: '10px',
+    cardRadius: '12px'
+  })
+  await expect.poll(getToggleGeometry).toEqual({
+    borderWidth: '0px',
+    trackHeight: 24,
+    thumbHeight: 20,
+    centered: true,
+    contained: true
+  })
+
+  await interfaceStyleSelect.selectOption('quiet')
   await expect.poll(() => mainPage.evaluate(() => document.documentElement.dataset.interfaceStyle)).toBe('quiet')
   await expect.poll(getToggleGeometry).toEqual({
     borderWidth: '0px',
@@ -267,7 +297,7 @@ test('switches interface styles from appearance settings', async () => {
     contained: true
   })
 
-  await settingsPage.getByRole('button', { name: '现代主题', exact: true }).click()
+  await interfaceStyleSelect.selectOption('modern')
   await expect.poll(() => mainPage.evaluate(() => document.documentElement.dataset.interfaceStyle)).toBe('modern')
   await expect.poll(getToggleGeometry).toEqual({
     borderWidth: '0px',
@@ -613,11 +643,12 @@ test('opens the settings window and synchronizes appearance changes', async () =
   await settingsPage.getByRole('button', { name: '每次询问', exact: true }).click()
   await settingsPage.locator('.settings-nav__item').filter({ hasText: '外观' }).click()
   await expect(mainPage.locator('html')).toHaveAttribute('data-interface-style', 'modern')
-  await settingsPage.getByRole('button', { name: '安静主题', exact: true }).click()
+  const interfaceStyleSelect = settingsPage.getByRole('combobox', { name: '界面风格' })
+  await interfaceStyleSelect.selectOption('quiet')
   await expect(settingsPage.locator('html')).toHaveAttribute('data-interface-style', 'quiet')
   await expect(mainPage.locator('html')).toHaveAttribute('data-interface-style', 'quiet')
   await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ appearance: { interfaceStyle: 'quiet' } })
-  await settingsPage.getByRole('button', { name: '现代主题', exact: true }).click()
+  await interfaceStyleSelect.selectOption('modern')
   await expect(mainPage.locator('html')).toHaveAttribute('data-interface-style', 'modern')
   await settingsPage.getByRole('button', { name: '浅色' }).click()
   await expect(mainPage.locator('html')).toHaveAttribute('data-theme', 'light')
