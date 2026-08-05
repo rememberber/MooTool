@@ -369,7 +369,7 @@ python3 scripts/prepare_jdks.py --targets linux-x64
 python3 scripts/prepare_jdks.py --targets all --resolve-only
 ```
 
-#### 本地打包命令
+#### 本地打包命令（本地软件安装）
 
 默认 `mvn clean package` 仍然会使用当前运行 Maven 的 JDK 打一个 macOS universal 包。
 
