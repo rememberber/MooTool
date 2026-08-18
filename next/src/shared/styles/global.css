@@ -3357,6 +3357,7 @@ select:not([multiple]) {
   background: transparent;
   border: 0;
   border-radius: 0;
+  font-family: var(--text-code-editor-font-family, "JetBrains Mono", "SFMono-Regular", ui-monospace, Menlo, Consolas, monospace);
   font-size: var(--text-code-editor-font-size, var(--json-editor-font-size, 14px));
 }
 
@@ -3368,12 +3369,12 @@ select:not([multiple]) {
   height: 100%;
   color: var(--editor-text);
   background: transparent;
+  font-family: inherit;
   font-size: inherit;
 }
 
 .json-editor .cm-scroller {
-  font-family:
-    "JetBrains Mono", "SFMono-Regular", ui-monospace, Menlo, Consolas, monospace;
+  font-family: inherit;
   line-height: 1.7;
   overflow: auto;
   scrollbar-width: thin;

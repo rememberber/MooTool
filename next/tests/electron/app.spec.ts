@@ -515,6 +515,7 @@ test('formats JSON and completes history and Vault workflows', async () => {
   expect(Math.max(...jsonLineOffsets)).toBeLessThan(1.5)
   await mainPage.getByLabel('字体').selectOption('Georgia')
   await expect.poll(() => mainPage.locator('.json-editor').evaluate((element) => (element as HTMLElement).style.getPropertyValue('--text-code-editor-font-family'))).toContain('Georgia')
+  await expect.poll(() => mainPage.locator('.json-editor .cm-scroller').evaluate((element) => getComputedStyle(element).fontFamily)).toMatch(/Georgia/)
   await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ editor: { jsonFontName: 'Georgia' } })
   await mainPage.evaluate(() => window.mootool.updateSettings({ editor: { jsonFontSize: 14 } }))
 
