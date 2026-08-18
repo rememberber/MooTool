@@ -10,6 +10,16 @@
 
 開発者向けデスクトップツールセット
 
+## About
+
+MooTool をご利用いただきありがとうございます。「Moo」は作者の娘の愛称です。
+
+自分の日常の開発作業を支えるために、MooTool を作り続け、改善し続けています。
+
+Swing で開発する Java 開発者は減りましたが、今でもその開発を楽しんでいます。空いた時間を少しずつ、このプロジェクトの開発に注いできました。Web 上に似たツールが多くある中でも、ひとつの形にすることができました。
+
+開発したときと同じくらい、楽しく使っていただければ幸いです。
+
 [![码云Gitee](https://gitee.com/zhoubochina/MooTool/badge/star.svg?theme=blue)](https://gitee.com/zhoubochina/MooTool)
 [![GitHub stars](https://img.shields.io/github/stars/rememberber/MooTool.svg)](https://github.com/rememberber/MooTool)
 [![GitHub release](https://img.shields.io/github/v/release/rememberber/MooTool)](https://github.com/rememberber/MooTool/releases)

@@ -10,6 +10,15 @@
 
 Handy desktop toolset for developers.
 
+## About
+Hi! Thanks for using MooTool. "Moo" is named after my daughter.
+
+I keep building and improving MooTool to support my own day-to-day development work.
+
+Fewer Java developers build with Swing nowadays, but I still enjoy it. So in every bit of free time, I kept working on this project. I finally shipped something, though many similar tools exist on the web.
+
+Hope you enjoy using it as much as I enjoyed building it.
+
 [![码云Gitee](https://gitee.com/zhoubochina/MooTool/badge/star.svg?theme=blue)](https://gitee.com/zhoubochina/MooTool)
 [![GitHub stars](https://img.shields.io/github/stars/rememberber/MooTool.svg)](https://github.com/rememberber/MooTool)
 [![GitHub release](https://img.shields.io/github/v/release/rememberber/MooTool)](https://github.com/rememberber/MooTool/releases)

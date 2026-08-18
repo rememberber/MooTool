@@ -89,7 +89,7 @@
                   </component>
                 </children>
               </grid>
-              <grid id="607c3" layout-manager="GridLayoutManager" row-count="5" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
+              <grid id="607c3" layout-manager="GridLayoutManager" row-count="6" column-count="1" same-size-horizontally="false" same-size-vertically="false" hgap="-1" vgap="-1">
                 <margin top="5" left="3" bottom="20" right="0"/>
                 <constraints>
                   <grid row="3" column="0" row-span="1" col-span="2" vsize-policy="3" hsize-policy="3" anchor="0" fill="3" indent="0" use-parent-layout="false"/>
@@ -99,7 +99,7 @@
                   <font style="1"/>
                 </border>
                 <children>
-                  <component id="b22f0" class="javax.swing.JLabel">
+                  <component id="b22f0" class="javax.swing.JLabel" binding="aboutLine1Label">
                     <constraints>
                       <grid row="0" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
@@ -107,33 +107,41 @@
                       <text value="Hi! Thanks to use MooTool. &quot;Moo&quot; named from my daughter."/>
                     </properties>
                   </component>
-                  <component id="9e877" class="javax.swing.JLabel">
+                  <component id="a8d01" class="javax.swing.JLabel" binding="aboutLineDailyLabel">
                     <constraints>
                       <grid row="1" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                    </constraints>
+                    <properties>
+                      <text value="I keep building and improving MooTool to support my own day-to-day development work."/>
+                    </properties>
+                  </component>
+                  <component id="9e877" class="javax.swing.JLabel" binding="aboutLine2Label">
+                    <constraints>
+                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
                       <text value="Less Java developer use Swing building projects, but I still love to develop by it."/>
                     </properties>
                   </component>
-                  <component id="8da3c" class="javax.swing.JLabel">
+                  <component id="8da3c" class="javax.swing.JLabel" binding="aboutLine3Label">
                     <constraints>
-                      <grid row="2" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
                       <text value="So every little free time, I had went towards the development."/>
                     </properties>
                   </component>
-                  <component id="91e15" class="javax.swing.JLabel">
+                  <component id="91e15" class="javax.swing.JLabel" binding="aboutLine4Label">
                     <constraints>
-                      <grid row="3" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                      <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
                       <text value="I did some works finaly, although there are so many same on web page."/>
                     </properties>
                   </component>
-                  <component id="fb9ce" class="javax.swing.JLabel">
+                  <component id="fb9ce" class="javax.swing.JLabel" binding="aboutLine5Label">
                     <constraints>
-                      <grid row="4" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
+                      <grid row="5" column="0" row-span="1" col-span="1" vsize-policy="0" hsize-policy="0" anchor="8" fill="0" indent="0" use-parent-layout="false"/>
                     </constraints>
                     <properties>
                       <text value="Hope you enjoy using it as much as I did building it."/>

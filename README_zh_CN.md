@@ -10,6 +10,16 @@
 
 开发者常备小工具
 
+## 关于
+
+你好！感谢使用 MooTool。「Moo」是我女儿的小名。
+
+我持续构建和改进 MooTool，来支撑自己的日常开发工作。
+
+现在用 Swing 做项目的 Java 开发者越来越少了，但我依然热爱它。所以每当有一点空闲时间，我都会投入到开发中。最终做出了一些成果，尽管网上已有很多类似工具。
+
+希望你使用它的愉快程度，不亚于我开发它时的投入。
+
 [![码云Gitee](https://gitee.com/zhoubochina/MooTool/badge/star.svg?theme=blue)](https://gitee.com/zhoubochina/MooTool)
 [![GitHub stars](https://img.shields.io/github/stars/rememberber/MooTool.svg)](https://github.com/rememberber/MooTool)
 [![GitHub release](https://img.shields.io/github/v/release/rememberber/MooTool)](https://github.com/rememberber/MooTool/releases)
