@@ -19,6 +19,7 @@ const maxFileSize = 20 * 1024 * 1024
 const maxEntries = 5000
 const maxDepth = 24
 const attachmentExtensions = new Set(['.png', '.jpg', '.jpeg', '.gif', '.bmp', '.webp'])
+const noteExtensions = new Set(['.txt', '.md', '.json', '.java', '.js', '.ts', '.py', '.xml', '.yaml', '.yml', '.sql'])
 
 export class QuickNoteVaultRepository {
   constructor(private readonly rootDirectory: string) {}
@@ -82,18 +83,26 @@ export class QuickNoteVaultRepository {
       throw new Error('Invalid Quick Note content')
     }
     const root = await this.ensureRoot()
-    const normalizedPath = normalizeNotePath(input.relativePath)
+    const sourcePath = normalizeNotePath(input.relativePath)
+    const normalizedPath = withNoteExtension(sourcePath, extensionForSyntax(input.metadata.syntax))
+    const source = resolve(root, ...splitPath(sourcePath))
     const target = resolve(root, ...splitPath(normalizedPath))
     assertInsideRoot(root, target)
     await mkdir(dirname(target), { recursive: true })
     await this.assertRealDirectoryInside(root, dirname(target))
     let previousAttachments = new Set<string>()
+    if (source !== target && await exists(source)) {
+      const sourceStat = await lstat(source)
+      if (sourceStat.isSymbolicLink() || !sourceStat.isFile()) throw new Error('Invalid Quick Note file')
+      if (await exists(target)) throw new Error('An entry with that name already exists')
+      await rename(source, target)
+    }
     if (await exists(target)) {
       const targetStat = await lstat(target)
       if (targetStat.isSymbolicLink() || !targetStat.isFile()) throw new Error('Invalid Quick Note file')
-      previousAttachments = extractAttachmentPaths(parseNote(await readFile(target, 'utf8'), basename(normalizedPath, '.txt'), await stat(target)).content)
+      previousAttachments = extractAttachmentPaths(parseNote(await readFile(target, 'utf8'), basename(normalizedPath, extname(normalizedPath)), await stat(target)).content)
     }
-    const metadata = normalizeMetadata(input.metadata, basename(normalizedPath, '.txt'))
+    const metadata = normalizeMetadata(input.metadata, basename(normalizedPath, extname(normalizedPath)))
     metadata.modifiedAt = new Date().toISOString()
     await writeFile(target, serializeNote(metadata, input.content), 'utf8')
     const currentAttachments = extractAttachmentPaths(input.content)
@@ -117,7 +126,7 @@ export class QuickNoteVaultRepository {
     const source = await this.resolveExisting(root, sourcePath)
     const sourceStat = await lstat(source)
     const name = sanitizeName(normalizeTitle(input.name))
-    const nextName = sourceStat.isFile() ? `${name}.txt` : name
+    const nextName = sourceStat.isFile() ? `${name}${extname(source)}` : name
     const target = resolve(dirname(source), nextName)
     assertInsideRoot(root, target)
     if (await exists(target)) throw new Error('An entry with that name already exists')
@@ -125,7 +134,7 @@ export class QuickNoteVaultRepository {
     const nextPath = toPortablePath(relative(root, target))
     if (sourceStat.isFile()) {
       const note = await this.read(nextPath)
-      await this.save({ ...note, metadata: { ...note.metadata, title: input.name.trim() } })
+      return (await this.save({ ...note, metadata: { ...note.metadata, title: input.name.trim() } })).relativePath
     }
     return nextPath
   }
@@ -144,8 +153,8 @@ export class QuickNoteVaultRepository {
     let target = resolve(targetDirectory, basename(source))
     if (await exists(target)) {
       if ((await lstat(source)).isDirectory()) throw new Error('Target folder already contains this entry')
-      const title = basename(source, '.txt')
-      const unique = await this.uniqueNotePath(root, targetDirectoryPath, title)
+      const title = basename(source, extname(source))
+      const unique = await this.uniqueNotePath(root, targetDirectoryPath, title, extname(source))
       target = resolve(root, ...splitPath(unique))
     }
     await rename(source, target)
@@ -173,7 +182,7 @@ export class QuickNoteVaultRepository {
     const targetStat = await lstat(target)
     let deletedAttachments = new Set<string>()
     if (targetStat.isFile()) {
-      const parsed = parseNote(await readFile(target, 'utf8'), basename(target, '.txt'), await stat(target))
+      const parsed = parseNote(await readFile(target, 'utf8'), basename(target, extname(target)), await stat(target))
       deletedAttachments = extractAttachmentPaths(parsed.content)
     }
     if (targetStat.isDirectory()) {
@@ -232,7 +241,7 @@ export class QuickNoteVaultRepository {
 
   private async seedWelcomeNote(root: string): Promise<void> {
     const entries = await readdir(root, { withFileTypes: true })
-    if (entries.some((entry) => entry.isFile() && entry.name.toLocaleLowerCase().endsWith('.txt'))) return
+    if (entries.some((entry) => entry.isFile() && isNoteFile(entry.name))) return
     const nested = await this.containsNote(root, 0)
     if (nested) return
     const now = new Date().toISOString()
@@ -255,7 +264,7 @@ export class QuickNoteVaultRepository {
     if (depth > maxDepth) return false
     for (const entry of await readdir(directory, { withFileTypes: true })) {
       if (entry.name.startsWith('.') || entry.name === 'attachments' || entry.isSymbolicLink()) continue
-      if (entry.isFile() && entry.name.toLocaleLowerCase().endsWith('.txt')) return true
+      if (entry.isFile() && isNoteFile(entry.name)) return true
       if (entry.isDirectory() && await this.containsNote(resolve(directory, entry.name), depth + 1)) return true
     }
     return false
@@ -283,11 +292,11 @@ export class QuickNoteVaultRepository {
           nodes.push({ name: entry.name, relativePath, kind: 'directory', children })
           counter.value += 1
         }
-      } else if (entry.isFile() && entry.name.toLocaleLowerCase().endsWith('.txt')) {
+      } else if (entry.isFile() && isNoteFile(entry.name)) {
         const fileStat = await stat(target)
         if (fileStat.size > maxFileSize) continue
         const raw = await readFile(target, 'utf8')
-        const parsed = parseNote(raw, basename(entry.name, '.txt'), fileStat)
+        const parsed = parseNote(raw, basename(entry.name, extname(entry.name)), fileStat)
         const matches = !options.keyword || [parsed.metadata.title, relativePath, options.includeContent ? parsed.content : '']
           .some((value) => value.toLocaleLowerCase().includes(options.keyword))
         if (!matches) continue
@@ -338,10 +347,10 @@ export class QuickNoteVaultRepository {
       const target = resolve(directory, entry.name)
       if (entry.isDirectory()) {
         await this.collectReferences(root, target, depth + 1, referenced)
-      } else if (entry.isFile() && entry.name.toLocaleLowerCase().endsWith('.txt')) {
+      } else if (entry.isFile() && isNoteFile(entry.name)) {
         const fileStat = await stat(target)
         if (fileStat.size > maxFileSize) continue
-        const parsed = parseNote(await readFile(target, 'utf8'), basename(entry.name, '.txt'), fileStat)
+        const parsed = parseNote(await readFile(target, 'utf8'), basename(entry.name, extname(entry.name)), fileStat)
         for (const path of extractAttachmentPaths(parsed.content)) referenced.add(path)
       }
     }
@@ -367,10 +376,10 @@ export class QuickNoteVaultRepository {
     assertInsideRoot(root, await realpath(directory), true)
   }
 
-  private async uniqueNotePath(root: string, parent: string, name: string): Promise<string> {
+  private async uniqueNotePath(root: string, parent: string, name: string, extension = '.txt'): Promise<string> {
     for (let index = 0; index < 10_000; index += 1) {
       const suffix = index === 0 ? '' : ` (${index + 1})`
-      const candidate = [parent, `${name}${suffix}.txt`].filter(Boolean).join('/')
+      const candidate = [parent, `${name}${suffix}${extension}`].filter(Boolean).join('/')
       if (!await exists(resolve(root, ...splitPath(candidate)))) return candidate
     }
     throw new Error('Unable to allocate a unique note path')
@@ -442,7 +451,10 @@ function normalizeMetadata(value: QuickNoteMetadata, fallbackTitle: string): Qui
 
 function normalizeNotePath(value: unknown): string {
   const normalized = normalizeEntryPath(value)
-  return normalized.toLocaleLowerCase().endsWith('.txt') ? normalized : `${normalized}.txt`
+  const extension = extname(normalized).toLocaleLowerCase()
+  if (!extension) return `${normalized}.txt`
+  if (!noteExtensions.has(extension)) throw new Error('Invalid Quick Note file')
+  return normalized
 }
 
 function normalizeAttachmentPath(value: unknown): string {
@@ -466,8 +478,31 @@ function normalizeEntryPath(value: unknown): string {
 function normalizeDirectoryPath(value: unknown, allowRoot = false): string {
   if (allowRoot && (value === '' || value == null)) return ''
   const normalized = normalizeEntryPath(value)
-  if (normalized.toLocaleLowerCase().endsWith('.txt')) throw new Error('Invalid Vault directory')
+  if (isNoteFile(normalized)) throw new Error('Invalid Vault directory')
   return normalized
+}
+
+function isNoteFile(path: string): boolean {
+  return noteExtensions.has(extname(path).toLocaleLowerCase())
+}
+
+function withNoteExtension(path: string, extension: string): string {
+  return `${path.slice(0, -extname(path).length)}${extension}`
+}
+
+function extensionForSyntax(syntax: string): string {
+  switch (syntax) {
+    case 'text/markdown': return '.md'
+    case 'application/json': return '.json'
+    case 'text/java': return '.java'
+    case 'text/javascript': return '.js'
+    case 'text/typescript': return '.ts'
+    case 'text/python': return '.py'
+    case 'text/xml': return '.xml'
+    case 'text/yaml': return '.yaml'
+    case 'text/sql': return '.sql'
+    default: return '.txt'
+  }
 }
 
 function normalizeTitle(value: unknown): string {

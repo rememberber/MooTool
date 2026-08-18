@@ -60,6 +60,33 @@ describe('QuickNoteVaultRepository', () => {
     expect(await repository.list({ hideIgnored: false })).toHaveLength(2)
   })
 
+  it('renames note files to match their selected syntax', async () => {
+    const { directory, repository } = await createRepository()
+    const note = await repository.create({ title: 'Configuration' })
+    const markdown = await repository.save({
+      ...note,
+      content: '# Configuration',
+      metadata: { ...note.metadata, syntax: 'text/markdown' }
+    })
+
+    expect(markdown.relativePath).toBe('Configuration.md')
+    await expect(readFile(join(directory, 'Configuration.txt'), 'utf8')).rejects.toThrow()
+    expect(await readFile(join(directory, 'Configuration.md'), 'utf8')).toContain('syntax: text/markdown')
+
+    const renamedPath = await repository.renameEntry({ relativePath: markdown.relativePath, name: 'Config' })
+    expect(renamedPath).toBe('Config.md')
+    const renamed = await repository.read(renamedPath)
+
+    const json = await repository.save({
+      ...renamed,
+      content: '{"enabled":true}',
+      metadata: { ...renamed.metadata, syntax: 'application/json' }
+    })
+
+    expect(json.relativePath).toBe('Config.json')
+    expect((await repository.list()).some((entry) => entry.relativePath === 'Config.json')).toBe(true)
+  })
+
   it('rejects traversal and non-empty folder deletion', async () => {
     const { repository } = await createRepository()
     await expect(repository.read('../outside.txt')).rejects.toThrow('Invalid Vault path')
