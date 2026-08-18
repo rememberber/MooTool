@@ -119,9 +119,6 @@ export class JsonVaultRepository {
     const normalized = normalizeEntryPath(relativePath)
     const target = await this.resolveExisting(root, normalized)
     const targetStat = await lstat(target)
-    if (targetStat.isDirectory() && (await readdir(target)).length > 0) {
-      throw new Error('Folder must be empty before it can be deleted')
-    }
     await rm(target, { force: true, recursive: targetStat.isDirectory() })
   }
 

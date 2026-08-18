@@ -191,10 +191,9 @@ export class QuickNoteVaultRepository {
       deletedAttachments = extractAttachmentPaths(parsed.content)
     }
     if (targetStat.isDirectory()) {
-      const entries = await readdir(target)
-      if (entries.length > 0) throw new Error('Folder must be empty before it can be deleted')
+      deletedAttachments = await this.collectAttachmentPaths(target, 0)
     }
-    await rm(target, { force: true })
+    await rm(target, { force: true, recursive: targetStat.isDirectory() })
     await this.cleanupOrphanedAttachments(root, [...deletedAttachments])
   }
 
@@ -359,6 +358,23 @@ export class QuickNoteVaultRepository {
         for (const path of extractAttachmentPaths(parsed.content)) referenced.add(path)
       }
     }
+  }
+
+  private async collectAttachmentPaths(directory: string, depth: number, attachments = new Set<string>()): Promise<Set<string>> {
+    if (depth > maxDepth) return attachments
+    for (const entry of await readdir(directory, { withFileTypes: true })) {
+      if (entry.isSymbolicLink()) continue
+      const target = resolve(directory, entry.name)
+      if (entry.isDirectory()) {
+        await this.collectAttachmentPaths(target, depth + 1, attachments)
+      } else if (entry.isFile() && isNoteFile(entry.name)) {
+        const fileStat = await stat(target)
+        if (fileStat.size > maxFileSize) continue
+        const parsed = parseNote(await readFile(target, 'utf8'), basename(entry.name, extname(entry.name)), fileStat)
+        for (const path of extractAttachmentPaths(parsed.content)) attachments.add(path)
+      }
+    }
+    return attachments
   }
 
   private async resolveExisting(root: string, normalizedPath: string, expected?: 'file' | 'directory'): Promise<string> {

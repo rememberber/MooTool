@@ -87,12 +87,13 @@ describe('QuickNoteVaultRepository', () => {
     expect((await repository.list()).some((entry) => entry.relativePath === 'Config.json')).toBe(true)
   })
 
-  it('rejects traversal and non-empty folder deletion', async () => {
+  it('rejects traversal and recursively deletes non-empty folders', async () => {
     const { repository } = await createRepository()
     await expect(repository.read('../outside.txt')).rejects.toThrow('Invalid Vault path')
     await repository.createFolder('Folder')
-    await repository.create({ title: 'Note', parentPath: 'Folder' })
-    await expect(repository.delete('Folder')).rejects.toThrow('empty')
+    const note = await repository.create({ title: 'Note', parentPath: 'Folder' })
+    await repository.delete('Folder')
+    await expect(repository.read(note.relativePath)).rejects.toThrow()
   })
 
   it('cleans orphaned image attachments when the last reference is removed', async () => {

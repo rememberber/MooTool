@@ -50,8 +50,6 @@ describe('JsonVaultRepository', () => {
     const copy = await repository.duplicate(moved)
     expect(copy.relativePath).toBe('archive/response Copy.json')
     await repository.delete(copy.relativePath)
-    await expect(repository.delete('archive')).rejects.toThrow('empty')
-    await repository.delete(moved)
     await repository.delete('archive')
     expect((await repository.list()).map((node) => node.name)).toEqual(['drafts'])
   })
