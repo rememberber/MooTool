@@ -1224,16 +1224,16 @@
 
 .text-code-editor .cm-selectionBackground,
 .text-code-editor .cm-editor.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground {
-  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  background: color-mix(in srgb, var(--accent) 38%, transparent) !important;
 }
 
 .text-code-editor .cm-activeLine {
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent) !important;
 }
 
 .text-code-editor .cm-activeLineGutter {
   color: var(--text-body);
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  background: color-mix(in srgb, var(--accent) 20%, transparent) !important;
 }
 
 .text-code-editor .cm-searchMatch {
@@ -1322,7 +1322,7 @@
 
 .quick-note-code-editor .cm-selectionBackground,
 .quick-note-code-editor .cm-editor.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground {
-  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  background: color-mix(in srgb, var(--accent) 38%, transparent) !important;
 }
 
 .quick-note-preview {
@@ -3398,18 +3398,18 @@ select:not([multiple]) {
 
 .json-editor .cm-selectionBackground,
 .json-editor .cm-editor.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground {
-  background: color-mix(in srgb, var(--accent) 22%, transparent);
+  background: color-mix(in srgb, var(--accent) 38%, transparent) !important;
 }
 
 .quick-note-code-editor .cm-activeLine,
 .json-editor .cm-activeLine {
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  background: color-mix(in srgb, var(--accent) 14%, transparent) !important;
 }
 
 .quick-note-code-editor .cm-activeLineGutter,
 .json-editor .cm-activeLineGutter {
   color: var(--text-body);
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  background: color-mix(in srgb, var(--accent) 20%, transparent) !important;
 }
 
 .quick-note-code-editor .cm-searchMatch,

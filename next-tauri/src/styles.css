@@ -1251,12 +1251,12 @@ input:focus {
 
 .editor-lab-editor .cm-activeLine,
 .editor-lab-editor .cm-activeLineGutter {
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .editor-lab-editor .cm-selectionBackground,
 .editor-lab-editor .cm-content ::selection {
-  background: color-mix(in srgb, var(--accent) 32%, transparent) !important;
+  background: color-mix(in srgb, var(--accent) 40%, transparent) !important;
 }
 
 .editor-lab-editor .cm-searchMatch {
@@ -1691,12 +1691,12 @@ input:focus {
 
 .json-editor .cm-activeLine,
 .json-editor .cm-activeLineGutter {
-  background: color-mix(in srgb, var(--accent) 8%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .json-editor .cm-selectionBackground,
 .json-editor .cm-content ::selection {
-  background: color-mix(in srgb, var(--accent) 32%, transparent) !important;
+  background: color-mix(in srgb, var(--accent) 40%, transparent) !important;
 }
 
 .json-editor .cm-searchMatch {
@@ -1998,12 +1998,12 @@ input:focus {
 }
 
 .text-diff-editor .cm-activeLine {
-  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .text-diff-editor .cm-selectionBackground,
 .text-diff-editor .cm-content ::selection {
-  background: color-mix(in srgb, var(--accent) 30%, transparent) !important;
+  background: color-mix(in srgb, var(--accent) 40%, transparent) !important;
 }
 
 .text-diff-editor .cm-panels {
@@ -2444,12 +2444,12 @@ input:focus {
 
 .shared-code-editor .cm-activeLine,
 .shared-code-editor .cm-activeLineGutter {
-  background: color-mix(in srgb, var(--accent) 7%, transparent);
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
 }
 
 .shared-code-editor .cm-selectionBackground,
 .shared-code-editor .cm-content ::selection {
-  background: color-mix(in srgb, var(--accent) 30%, transparent) !important;
+  background: color-mix(in srgb, var(--accent) 40%, transparent) !important;
 }
 
 .shared-code-editor .cm-panels {
