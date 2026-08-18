@@ -1,7 +1,6 @@
 import {
   Boxes,
   ChevronDown,
-  Clock3,
   Command,
   FolderCog,
   Languages,
@@ -21,7 +20,6 @@ import { EncodeHost } from '../features/encode/EncodeHost'
 import { EditorLabHost } from '../features/editorLab/EditorLabHost'
 import { HomePage } from '../features/home/HomePage'
 import { HostHost } from '../features/host/HostHost'
-import { HistoryPanel } from '../features/history/HistoryPanel'
 import { CustomGroupDialog } from '../features/groups/CustomGroupDialog'
 import { HttpHost } from '../features/http/HttpHost'
 import { ImageHost } from '../features/image/ImageHost'
@@ -68,7 +66,6 @@ export function App() {
   const [query, setQuery] = useState('')
   const [runtimeInfo, setRuntimeInfo] = useState<RuntimeInfo>()
   const [notice, setNotice] = useState('')
-  const [historyOpen, setHistoryOpen] = useState(false)
   const [customGroupsOpen, setCustomGroupsOpen] = useState(false)
   const [closeRequest, setCloseRequest] = useState<DesktopCloseRequest>()
   const [rememberCloseChoice, setRememberCloseChoice] = useState(false)
@@ -360,9 +357,6 @@ export function App() {
             <span>MooTool <small>Tauri</small></span>
           </div>
           <div className="footer-actions">
-            <button className="icon-button" type="button" aria-label={t('shell.history')} onClick={() => setHistoryOpen(true)}>
-              <Clock3 />
-            </button>
             <button className="icon-button" type="button" aria-label={t('shell.groups')} onClick={() => setCustomGroupsOpen(true)}>
               <FolderCog />
             </button>
@@ -465,7 +459,6 @@ export function App() {
             {notice || settingsError}
           </button>
         )}
-        {historyOpen && <HistoryPanel limit={settings.data.historyLimit} onClose={() => setHistoryOpen(false)} />}
         <CustomGroupDialog open={customGroupsOpen} onClose={() => setCustomGroupsOpen(false)} />
         {closeRequest && (
           <div className="desktop-dialog-backdrop" role="presentation">
