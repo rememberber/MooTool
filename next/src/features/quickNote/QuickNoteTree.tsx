@@ -13,14 +13,16 @@ type QuickNoteTreeProps = {
   onMove: (node: Pick<QuickNoteNode, 'relativePath' | 'kind'>, targetDirectory: string) => void
   onRenameRequest: (node: QuickNoteNode) => void
   onMoveRequest: (node: QuickNoteNode) => void
+  onRevealRequest: (node: QuickNoteNode) => void
   renameLabel: string
   moveLabel: string
+  revealLabel: string
 }
 
 const quickNotePathType = 'application/x-mootool-quick-note-path'
 const quickNoteKindType = 'application/x-mootool-quick-note-kind'
 
-export function QuickNoteTree({ nodes, selectedPath, expanded, onSelect, onToggle, onMove, onRenameRequest, onMoveRequest, renameLabel, moveLabel }: QuickNoteTreeProps) {
+export function QuickNoteTree({ nodes, selectedPath, expanded, onSelect, onToggle, onMove, onRenameRequest, onMoveRequest, onRevealRequest, renameLabel, moveLabel, revealLabel }: QuickNoteTreeProps) {
   const toolActive = useToolActivity()
   const menuRef = useRef<HTMLDivElement>(null)
   const [contextMenu, setContextMenu] = useState<{ node: QuickNoteNode; left: number; top: number } | null>(null)
@@ -81,6 +83,7 @@ export function QuickNoteTree({ nodes, selectedPath, expanded, onSelect, onToggl
         >
           <button type="button" role="menuitem" onClick={() => { onRenameRequest(contextMenu.node); setContextMenu(null) }}>{renameLabel}</button>
           <button type="button" role="menuitem" onClick={() => { onMoveRequest(contextMenu.node); setContextMenu(null) }}>{moveLabel}</button>
+          <button type="button" role="menuitem" onClick={() => { onRevealRequest(contextMenu.node); setContextMenu(null) }}>{revealLabel}</button>
         </div>,
         document.body
       )}
@@ -114,7 +117,7 @@ function QuickNoteTreeNode({ node, depth, selectedPath, expanded, onSelect, onTo
         }}
         onContextMenu={(event) => {
           event.preventDefault()
-          onOpenContextMenu(node, Math.min(event.clientX, window.innerWidth - 164), Math.min(event.clientY, window.innerHeight - 78))
+          onOpenContextMenu(node, Math.min(event.clientX, window.innerWidth - 164), Math.min(event.clientY, window.innerHeight - 108))
         }}
         onDragStart={(event) => {
           event.dataTransfer.effectAllowed = 'move'

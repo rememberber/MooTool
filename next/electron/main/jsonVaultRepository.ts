@@ -39,6 +39,11 @@ export class JsonVaultRepository {
     }
   }
 
+  async resolveEntry(relativePath: string): Promise<string> {
+    const root = await this.ensureRoot()
+    return this.resolveExisting(root, normalizeEntryPath(relativePath))
+  }
+
   async save(input: SaveJsonVaultFileInput): Promise<JsonVaultFile> {
     if (typeof input.content !== 'string' || Buffer.byteLength(input.content, 'utf8') > maxFileSize) {
       throw new Error('Invalid Vault file content')

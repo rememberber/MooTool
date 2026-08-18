@@ -532,6 +532,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
         >
           <button type="button" role="menuitem" onClick={() => { beginRename(contextMenu.entry); setContextMenu(null) }}>{t('json.vault.rename')}</button>
           <button type="button" role="menuitem" onClick={() => { beginMove(contextMenu.entry); setContextMenu(null) }}>{t('json.vault.move')}</button>
+          <button type="button" role="menuitem" onClick={() => { void window.mootool.revealJsonVaultEntry(contextMenu.entry.path).catch(reportError); setContextMenu(null) }}>{t('json.vault.revealInFinder')}</button>
         </div>,
         document.body
       )}
@@ -614,7 +615,7 @@ function VaultNode({ node, depth, expanded, selectedEntryPath, activePath, dirty
         }}
         onContextMenu={(event) => {
           event.preventDefault()
-          onOpenContextMenu(node, Math.min(event.clientX, window.innerWidth - 164), Math.min(event.clientY, window.innerHeight - 78))
+          onOpenContextMenu(node, Math.min(event.clientX, window.innerWidth - 164), Math.min(event.clientY, window.innerHeight - 108))
         }}
         onDragStart={(event) => {
           event.dataTransfer.effectAllowed = 'move'

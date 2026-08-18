@@ -971,6 +971,10 @@ function registerIpc(): void {
     const error = await shell.openPath(getJsonVaultRoot())
     if (error) throw new Error(error)
   })
+  ipcMain.handle('json-vault:reveal', async (_event, relativePath: unknown) => {
+    if (typeof relativePath !== 'string') throw new Error('Invalid JSON Vault path')
+    shell.showItemInFolder(await createJsonVaultRepository().resolveEntry(relativePath))
+  })
   ipcMain.handle('json-vault:set-editor-dirty', (_event, value: unknown) => {
     jsonVaultEditorDirty = value === true
   })
@@ -1077,6 +1081,10 @@ function registerIpc(): void {
     await mkdir(getQuickNoteRoot(), { recursive: true })
     const error = await shell.openPath(getQuickNoteRoot())
     if (error) throw new Error(error)
+  })
+  ipcMain.handle('quick-note:reveal', async (_event, relativePath: unknown) => {
+    if (typeof relativePath !== 'string') throw new Error('Invalid Quick Note path')
+    shell.showItemInFolder(await createQuickNoteRepository().resolveEntry(relativePath))
   })
   ipcMain.handle('quick-note:set-editor-dirty', (_event, value: unknown) => {
     quickNoteEditorDirty = value === true

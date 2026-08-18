@@ -50,6 +50,11 @@ export class QuickNoteVaultRepository {
     }
   }
 
+  async resolveEntry(relativePath: string): Promise<string> {
+    const root = await this.ensureRoot()
+    return this.resolveExisting(root, normalizeEntryPath(relativePath))
+  }
+
   async create(input: CreateQuickNoteInput): Promise<QuickNoteFile> {
     const title = normalizeTitle(input.title)
     const root = await this.ensureRoot()

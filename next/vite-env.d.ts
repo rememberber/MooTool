@@ -118,6 +118,7 @@ declare global {
       duplicateJsonVaultFile: (relativePath: string) => Promise<JsonVaultFile>
       deleteJsonVaultFile: (relativePath: string) => Promise<void>
       openJsonVault: () => Promise<void>
+      revealJsonVaultEntry: (relativePath: string) => Promise<void>
       setJsonVaultEditorDirty: (dirty: boolean) => Promise<void>
       getVaultGitStatus: () => Promise<VaultGitStatus>
       listVaultGitHistory: () => Promise<VaultGitCommit[]>
@@ -136,6 +137,7 @@ declare global {
       importQuickNoteClipboardAttachment: (dataUrl?: string) => Promise<QuickNoteAttachment | null>
       readQuickNoteAttachment: (relativePath: string) => Promise<string>
       openQuickNoteVault: () => Promise<void>
+      revealQuickNoteEntry: (relativePath: string) => Promise<void>
       setQuickNoteEditorDirty: (dirty: boolean) => Promise<void>
       getQuickNoteGitStatus: () => Promise<VaultGitStatus>
       listQuickNoteGitHistory: () => Promise<VaultGitCommit[]>
