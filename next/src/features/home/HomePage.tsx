@@ -48,6 +48,7 @@ export function HomePage() {
           <h2>{t('app.home.about.title')}</h2>
           <div className="home-about-copy">
             <p>{t('app.home.about.line1')}</p>
+            <p>{t('app.home.about.lineDaily')}</p>
             <p>{t('app.home.about.line2')}</p>
             <p>{t('app.home.about.line2Note')}</p>
             <p>{t('app.home.about.line3')}</p>
