@@ -586,7 +586,7 @@ export function QuickNoteTool() {
     update({ actionMode: mode, actionValue: defaultValue })
   }
 
-  async function openTreeAction(node: QuickNoteNode, mode: 'rename' | 'move'): Promise<void> {
+  async function openTreeAction(node: QuickNoteNode, mode: 'rename' | 'move' | 'delete'): Promise<void> {
     if (node.kind === 'directory') {
       update({
         selectedPath: node.relativePath,
@@ -594,7 +594,7 @@ export function QuickNoteTool() {
         note: null,
         content: '',
         actionMode: mode,
-        actionValue: mode === 'rename' ? directoryLeaf(node.relativePath) : parentDirectory(node.relativePath)
+        actionValue: mode === 'rename' ? directoryLeaf(node.relativePath) : mode === 'move' ? parentDirectory(node.relativePath) : ''
       })
       return
     }
@@ -608,7 +608,7 @@ export function QuickNoteTool() {
         content: note.content,
         metadataDirty: false,
         actionMode: mode,
-        actionValue: mode === 'rename' ? note.metadata.title : parentDirectory(node.relativePath)
+        actionValue: mode === 'rename' ? note.metadata.title : mode === 'move' ? parentDirectory(node.relativePath) : ''
       })
     } catch (error) {
       toast.error(errorMessage(error))
@@ -966,7 +966,7 @@ export function QuickNoteTool() {
               </div>
               <div ref={treeScrollRef} className="quick-note-tree-scroll" onScroll={(event) => { quickNoteTreeScrollTop = event.currentTarget.scrollTop }}>
                 {state.nodes.length
-                  ? <QuickNoteTree nodes={state.nodes} selectedPath={state.selectedPath} expanded={state.expanded} onSelect={(node) => { void selectNode(node) }} onToggle={toggleDirectory} onMove={(node, targetDirectory) => { void moveTreeEntry(node, targetDirectory) }} onRenameRequest={(node) => { void openTreeAction(node, 'rename') }} onMoveRequest={(node) => { void openTreeAction(node, 'move') }} onRevealRequest={(node) => { void window.mootool.revealQuickNoteEntry(node.relativePath).catch((error) => toast.error(errorMessage(error))) }} renameLabel={t('quickNote.rename')} moveLabel={t('quickNote.move')} revealLabel={t('quickNote.revealInFinder')} />
+                  ? <QuickNoteTree nodes={state.nodes} selectedPath={state.selectedPath} expanded={state.expanded} onSelect={(node) => { void selectNode(node) }} onToggle={toggleDirectory} onMove={(node, targetDirectory) => { void moveTreeEntry(node, targetDirectory) }} onRenameRequest={(node) => { void openTreeAction(node, 'rename') }} onMoveRequest={(node) => { void openTreeAction(node, 'move') }} onDeleteRequest={(node) => { void openTreeAction(node, 'delete') }} onRevealRequest={(node) => { void window.mootool.revealQuickNoteEntry(node.relativePath).catch((error) => toast.error(errorMessage(error))) }} renameLabel={t('quickNote.rename')} moveLabel={t('quickNote.move')} deleteLabel={t('quickNote.delete')} revealLabel={t('quickNote.revealInFinder')} />
                   : <div className="quick-note-empty">{t('quickNote.empty')}</div>}
               </div>
             </aside>

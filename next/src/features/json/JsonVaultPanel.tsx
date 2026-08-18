@@ -397,11 +397,11 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
     }
   }
 
-  async function deleteSelected(): Promise<void> {
-    if (!selectedEntry || !window.confirm(t('json.vault.confirmDelete', { name: selectedEntry.path }))) return
+  async function deleteEntry(entry = selectedEntry): Promise<void> {
+    if (!entry || !window.confirm(t('json.vault.confirmDelete', { name: entry.path }))) return
     try {
-      await window.mootool.deleteJsonVaultFile(selectedEntry.path)
-      if (selectedEntry.path === selectedPath) {
+      await window.mootool.deleteJsonVaultFile(entry.path)
+      if (entry.path === selectedPath) {
         setSelectedPath('')
         setSavedContent('')
       }
@@ -461,7 +461,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
             {settings.vault.jsonTreeExpandMode === 'expandAll' ? <FoldVertical size={14} /> : <UnfoldVertical size={14} />}
           </VaultAction>
           <VaultAction label={t('json.vault.save')} onClick={() => { void saveSelected() }}><Save size={14} /></VaultAction>
-          <VaultAction label={t('json.vault.delete')} disabled={!selectedEntry} onClick={() => { void deleteSelected() }}><Trash2 size={14} /></VaultAction>
+          <VaultAction label={t('json.vault.delete')} disabled={!selectedEntry} onClick={() => { void deleteEntry() }}><Trash2 size={14} /></VaultAction>
           <VaultAction label={t('json.git.open')} badge={gitChangeCount} onClick={() => setGitDialogOpen(true)}><GitBranch size={14} /></VaultAction>
         </div>
       </header>
@@ -532,6 +532,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
         >
           <button type="button" role="menuitem" onClick={() => { beginRename(contextMenu.entry); setContextMenu(null) }}>{t('json.vault.rename')}</button>
           <button type="button" role="menuitem" onClick={() => { beginMove(contextMenu.entry); setContextMenu(null) }}>{t('json.vault.move')}</button>
+          <button type="button" role="menuitem" onClick={() => { void deleteEntry(contextMenu.entry); setContextMenu(null) }}>{t('json.vault.delete')}</button>
           <button type="button" role="menuitem" onClick={() => { void window.mootool.revealJsonVaultEntry(contextMenu.entry.path).catch(reportError); setContextMenu(null) }}>{t('json.vault.revealInFinder')}</button>
         </div>,
         document.body
@@ -615,7 +616,7 @@ function VaultNode({ node, depth, expanded, selectedEntryPath, activePath, dirty
         }}
         onContextMenu={(event) => {
           event.preventDefault()
-          onOpenContextMenu(node, Math.min(event.clientX, window.innerWidth - 164), Math.min(event.clientY, window.innerHeight - 108))
+          onOpenContextMenu(node, Math.min(event.clientX, window.innerWidth - 164), Math.min(event.clientY, window.innerHeight - 138))
         }}
         onDragStart={(event) => {
           event.dataTransfer.effectAllowed = 'move'
