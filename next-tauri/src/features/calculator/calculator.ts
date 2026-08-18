@@ -1,22 +1,39 @@
+export type CalculatorToolErrorCode =
+  | 'expressionInvalid'
+  | 'nonFinite'
+  | 'valueRequired'
+  | 'baseMismatch'
+  | 'integerRequired'
+  | 'countRange'
+  | 'expressionFormat'
+  | 'parenthesesMismatch'
+
+export class CalculatorToolError extends Error {
+  constructor(readonly code: CalculatorToolErrorCode) {
+    super(code)
+    this.name = 'CalculatorToolError'
+  }
+}
+
 export function evaluateExpression(expression: string): string {
   const source = expression.trim().replace(/=$/, '')
   if (!source || source.length > 500 || !/^[\d+\-*/().\s]+$/.test(source)) {
-    throw new Error('请输入有效的四则运算表达式')
+    throw new CalculatorToolError('expressionInvalid')
   }
 
   const result = new ArithmeticParser(source).parse()
-  if (!Number.isFinite(result)) throw new Error('计算结果不是有限数值')
+  if (!Number.isFinite(result)) throw new CalculatorToolError('nonFinite')
   return Number.parseFloat(result.toPrecision(14)).toString()
 }
 
 export function convertBase(value: string, from: 2 | 10 | 16, to: 2 | 10 | 16): string {
   const normalized = value.trim()
-  if (!normalized) throw new Error('请输入需要转换的数值')
+  if (!normalized) throw new CalculatorToolError('valueRequired')
 
   const negative = normalized.startsWith('-')
   const unsigned = normalized.replace(/^[+-]/, '')
   const valid = from === 2 ? /^[01]+$/ : from === 10 ? /^\d+$/ : /^[\da-f]+$/i
-  if (!valid.test(unsigned)) throw new Error('输入值与当前进制不匹配')
+  if (!valid.test(unsigned)) throw new CalculatorToolError('baseMismatch')
 
   const parsed = from === 10
     ? BigInt(unsigned)
@@ -56,7 +73,7 @@ export function combination(nValue: string, mValue: string): string {
 }
 
 function parseInteger(value: string): bigint {
-  if (!/^[+-]?\d+$/.test(value.trim())) throw new Error('请输入整数')
+  if (!/^[+-]?\d+$/.test(value.trim())) throw new CalculatorToolError('integerRequired')
   return BigInt(value.trim())
 }
 
@@ -64,7 +81,7 @@ function parseCountPair(nValue: string, mValue: string): [number, number] {
   const n = Number(nValue)
   const m = Number(mValue)
   if (!Number.isSafeInteger(n) || !Number.isSafeInteger(m) || n < 0 || m < 0 || m > n || n > 5000) {
-    throw new Error('需要满足 0 ≤ m ≤ n ≤ 5000')
+    throw new CalculatorToolError('countRange')
   }
   return [n, m]
 }
@@ -81,7 +98,7 @@ class ArithmeticParser {
   parse(): number {
     const result = this.parseAddition()
     this.skipWhitespace()
-    if (this.position !== this.source.length) throw new Error('表达式格式错误')
+    if (this.position !== this.source.length) throw new CalculatorToolError('expressionFormat')
     return result
   }
 
@@ -112,13 +129,13 @@ class ArithmeticParser {
   private parsePrimary(): number {
     if (this.consume('(')) {
       const result = this.parseAddition()
-      if (!this.consume(')')) throw new Error('表达式括号不匹配')
+      if (!this.consume(')')) throw new CalculatorToolError('parenthesesMismatch')
       return result
     }
 
     this.skipWhitespace()
     const match = /^(?:\d+(?:\.\d*)?|\.\d+)/.exec(this.source.slice(this.position))
-    if (!match) throw new Error('表达式格式错误')
+    if (!match) throw new CalculatorToolError('expressionFormat')
     this.position += match[0].length
     return Number(match[0])
   }

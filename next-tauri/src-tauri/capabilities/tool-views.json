@@ -1,0 +1,39 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "tool-views",
+  "description": "IPC boundary for owned child tool WebViews.",
+  "webviews": [
+    "tool-calculator",
+    "tool-color",
+    "tool-config",
+    "tool-cron",
+    "tool-crypto",
+    "tool-host",
+    "tool-http",
+    "tool-image",
+    "tool-encode",
+    "tool-editor-lab",
+    "tool-json",
+    "tool-message-board",
+    "tool-network",
+    "tool-pdf",
+    "tool-protobuf",
+    "tool-quick-note",
+    "tool-qrcode",
+    "tool-reformat",
+    "tool-regex",
+    "tool-runtime",
+    "tool-timestamp",
+    "tool-text-diff",
+    "tool-translation",
+    "tool-ua",
+    "tool-variables",
+    "tool-system",
+    "p0-tool-probe"
+  ],
+  "permissions": [
+    "core:event:allow-listen",
+    "core:event:allow-unlisten",
+    "dialog:allow-open"
+  ]
+}

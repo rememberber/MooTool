@@ -7,115 +7,20 @@ import {
   Power,
   RefreshCw
 } from 'lucide-react'
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { toolWebviewApi } from '../../platform/api/toolWebviewApi'
-import type {
-  ToolWebviewBounds,
-  ToolWebviewSnapshot
-} from '../../platform/contracts/toolWebview'
-
-const initialSnapshot: ToolWebviewSnapshot = {
-  exists: false,
-  visible: false,
-  placement: 'closed',
-  reparentOperations: 0,
-  pageLoads: 0,
-  sessionId: null,
-  counter: 0,
-  draft: '',
-  lastStressCycles: 0,
-  lastStressPassed: null
-}
+import { useToolWebviewSession } from '../toolWebview/useToolWebviewSession'
+import type { ToolWebviewSnapshot } from '../../platform/contracts/toolWebview'
 
 export function WebviewLab({ active }: { active: boolean }) {
-  const slotRef = useRef<HTMLDivElement>(null)
-  const [snapshot, setSnapshot] = useState(initialSnapshot)
-  const [busy, setBusy] = useState('')
-  const [error, setError] = useState('')
-  const nativeRuntime = typeof window !== 'undefined' && Boolean(window.__TAURI_INTERNALS__)
-
-  const readBounds = useCallback((): ToolWebviewBounds => {
-    const slot = slotRef.current
-    if (!slot) {
-      throw new Error('工具 WebView 容器尚未就绪')
-    }
-    const bounds = slot.getBoundingClientRect()
-    return {
-      x: Math.round(bounds.x),
-      y: Math.round(bounds.y),
-      width: Math.round(bounds.width),
-      height: Math.round(bounds.height)
-    }
-  }, [])
-
-  const run = useCallback(async (
-    label: string,
-    operation: () => Promise<ToolWebviewSnapshot>
-  ): Promise<void> => {
-    setBusy(label)
-    setError('')
-    try {
-      setSnapshot(await operation())
-    } catch (cause) {
-      setError(cause instanceof Error ? cause.message : String(cause))
-    } finally {
-      setBusy('')
-    }
-  }, [])
-
-  useEffect(() => {
-    let cancelled = false
-    void toolWebviewApi.getSnapshot().then(async (current) => {
-      if (cancelled) return
-      let next = current
-      if (current.exists && current.placement === 'docked') {
-        if (active) {
-          next = await toolWebviewApi.updateBounds(readBounds())
-          next = await toolWebviewApi.setVisible(true)
-        } else {
-          next = await toolWebviewApi.setVisible(false)
-        }
-      }
-      if (!cancelled) setSnapshot(next)
-    }).catch((cause: unknown) => {
-      if (!cancelled) setError(cause instanceof Error ? cause.message : String(cause))
-    })
-    return () => {
-      cancelled = true
-    }
-  }, [active, readBounds])
-
-  useEffect(() => {
-    if (!active) return
-    const timer = window.setInterval(() => {
-      void toolWebviewApi.getSnapshot().then(setSnapshot).catch(() => undefined)
-    }, 750)
-    return () => window.clearInterval(timer)
-  }, [active])
-
-  useEffect(() => {
-    if (!active || !slotRef.current) return
-    let frame = 0
-    const update = () => {
-      window.cancelAnimationFrame(frame)
-      frame = window.requestAnimationFrame(() => {
-        void toolWebviewApi.getSnapshot().then((current) => {
-          if (current.exists && current.placement === 'docked') {
-            return toolWebviewApi.updateBounds(readBounds()).then(setSnapshot)
-          }
-          return undefined
-        }).catch(() => undefined)
-      })
-    }
-    const observer = new ResizeObserver(update)
-    observer.observe(slotRef.current)
-    window.addEventListener('resize', update)
-    return () => {
-      window.cancelAnimationFrame(frame)
-      observer.disconnect()
-      window.removeEventListener('resize', update)
-    }
-  }, [active, readBounds])
+  const {
+    api,
+    busy,
+    error,
+    nativeRuntime,
+    readBounds,
+    run,
+    slotRef,
+    snapshot
+  } = useToolWebviewSession({ toolId: 'webview-probe', active })
 
   return (
     <section className="webview-lab">
@@ -129,7 +34,7 @@ export function WebviewLab({ active }: { active: boolean }) {
             className="primary-button"
             type="button"
             disabled={busy !== '' || snapshot.exists}
-            onClick={() => void run('正在创建', () => toolWebviewApi.open(readBounds()))}
+            onClick={() => void run('正在创建', () => api.open(readBounds()))}
           >
             <Power />创建
           </button>
@@ -137,7 +42,7 @@ export function WebviewLab({ active }: { active: boolean }) {
             className="secondary-button"
             type="button"
             disabled={busy !== '' || !snapshot.exists || snapshot.placement === 'detached'}
-            onClick={() => void run('正在分离', () => toolWebviewApi.detach())}
+            onClick={() => void run('正在分离', () => api.detach())}
           >
             <ExternalLink />分离
           </button>
@@ -145,15 +50,15 @@ export function WebviewLab({ active }: { active: boolean }) {
             className="secondary-button"
             type="button"
             disabled={busy !== '' || snapshot.placement !== 'detached'}
-            onClick={() => void run('正在收回', () => toolWebviewApi.dock(readBounds()))}
+            onClick={() => void run('正在收回', () => api.dock(readBounds()))}
           >
             <PanelTop />收回
           </button>
           <button
             className="secondary-button"
             type="button"
-            disabled={busy !== '' || !snapshot.exists}
-            onClick={() => void run('100 次验证中', () => toolWebviewApi.stress(readBounds(), 100))}
+            disabled={busy !== '' || !snapshot.exists || snapshot.sessionId === null}
+            onClick={() => void run('100 次验证中', () => api.stress(readBounds(), 100))}
           >
             <Play />100 次验证
           </button>
@@ -162,7 +67,7 @@ export function WebviewLab({ active }: { active: boolean }) {
             type="button"
             aria-label="关闭工具 WebView"
             disabled={busy !== '' || !snapshot.exists}
-            onClick={() => void run('正在关闭', () => toolWebviewApi.close())}
+            onClick={() => void run('正在关闭', () => api.close())}
           >
             <CircleX />
           </button>
@@ -173,7 +78,7 @@ export function WebviewLab({ active }: { active: boolean }) {
         <Metric label="位置" value={placementLabel(snapshot.placement)} />
         <Metric label="页面加载" value={`${snapshot.pageLoads} 次`} />
         <Metric label="重挂载操作" value={`${snapshot.reparentOperations} 次`} />
-        <Metric label="探针计数" value={String(snapshot.counter)} />
+        <Metric label="状态版本" value={String(snapshot.stateRevision)} />
         <Metric
           label="压力结论"
           value={stressLabel(snapshot)}
@@ -207,7 +112,7 @@ export function WebviewLab({ active }: { active: boolean }) {
             会话：<code>{snapshot.sessionId ?? '等待探针上报'}</code>
           </span>
           <span>
-            草稿：<code>{snapshot.draft || '—'}</code>
+            状态：<code>{snapshot.stateSummary || '—'}</code>
           </span>
           {busy && <strong>{busy}…</strong>}
           {error && <strong className="webview-lab__error">{error}</strong>}

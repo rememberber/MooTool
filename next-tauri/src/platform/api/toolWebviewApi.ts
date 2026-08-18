@@ -1,45 +1,50 @@
 import { invoke } from '@tauri-apps/api/core'
-import type {
-  ToolProbeReport,
-  ToolWebviewApi,
-  ToolWebviewBounds,
-  ToolWebviewSnapshot
+import {
+  closedToolWebviewSnapshot,
+  type ManagedToolId,
+  type ToolSessionReport,
+  type ToolWebviewApi,
+  type ToolWebviewBounds,
+  type ToolWebviewSnapshot
 } from '../contracts/toolWebview'
 
 type Invoke = <T>(command: string, args?: Record<string, unknown>) => Promise<T>
 
-const closedSnapshot: ToolWebviewSnapshot = {
-  exists: false,
-  visible: false,
-  placement: 'closed',
-  reparentOperations: 0,
-  pageLoads: 0,
-  sessionId: null,
-  counter: 0,
-  draft: '',
-  lastStressCycles: 0,
-  lastStressPassed: null
-}
-
-export function createToolWebviewApi(invokeCommand: Invoke = invoke): ToolWebviewApi {
+export function createToolWebviewApi(
+  toolId: ManagedToolId,
+  invokeCommand: Invoke = invoke
+): ToolWebviewApi {
+  const toolArg = { toolId }
   return {
-    getSnapshot: () => invokeCommand<ToolWebviewSnapshot>('get_tool_webview_snapshot'),
-    open: (bounds) => invokeCommand<ToolWebviewSnapshot>('open_tool_webview', { bounds }),
-    updateBounds: (bounds) => invokeCommand<ToolWebviewSnapshot>('update_tool_webview_bounds', { bounds }),
-    setVisible: (visible) => invokeCommand<ToolWebviewSnapshot>('set_tool_webview_visible', { visible }),
-    detach: () => invokeCommand<ToolWebviewSnapshot>('detach_tool_webview'),
-    dock: (bounds) => invokeCommand<ToolWebviewSnapshot>('dock_tool_webview', { bounds }),
+    getSnapshot: () => invokeCommand<ToolWebviewSnapshot>('get_tool_webview_snapshot', toolArg),
+    open: (bounds) => invokeCommand<ToolWebviewSnapshot>('open_tool_webview', { ...toolArg, bounds }),
+    updateBounds: (bounds) => invokeCommand<ToolWebviewSnapshot>(
+      'update_tool_webview_bounds',
+      { ...toolArg, bounds }
+    ),
+    setVisible: (visible) => invokeCommand<ToolWebviewSnapshot>(
+      'set_tool_webview_visible',
+      { ...toolArg, visible }
+    ),
+    detach: () => invokeCommand<ToolWebviewSnapshot>('detach_tool_webview', toolArg),
+    dock: (bounds) => invokeCommand<ToolWebviewSnapshot>(
+      'dock_tool_webview',
+      { ...toolArg, bounds }
+    ),
     stress: (bounds, cycles) => invokeCommand<ToolWebviewSnapshot>(
       'stress_tool_webview_reparent',
-      { bounds, cycles }
+      { ...toolArg, bounds, cycles }
     ),
-    close: () => invokeCommand<ToolWebviewSnapshot>('close_tool_webview'),
-    report: (report) => invokeCommand<ToolWebviewSnapshot>('report_tool_webview_probe', { report })
+    close: () => invokeCommand<ToolWebviewSnapshot>('close_tool_webview', toolArg),
+    report: (report) => invokeCommand<ToolWebviewSnapshot>(
+      'report_tool_webview_session',
+      { report }
+    )
   }
 }
 
-function createBrowserPreviewApi(): ToolWebviewApi {
-  let snapshot = { ...closedSnapshot }
+function createBrowserPreviewApi(toolId: ManagedToolId): ToolWebviewApi {
+  let snapshot = closedToolWebviewSnapshot(toolId)
 
   const withBounds = async (_bounds: ToolWebviewBounds): Promise<ToolWebviewSnapshot> => snapshot
   return {
@@ -82,17 +87,48 @@ function createBrowserPreviewApi(): ToolWebviewApi {
       return snapshot
     },
     close: async () => {
-      snapshot = { ...closedSnapshot }
+      snapshot = closedToolWebviewSnapshot(toolId)
       return snapshot
     },
-    report: async (report: ToolProbeReport) => {
+    report: async (report: ToolSessionReport) => {
       snapshot = { ...snapshot, ...report }
       return snapshot
     }
   }
 }
 
-export const toolWebviewApi: ToolWebviewApi =
-  typeof window !== 'undefined' && window.__TAURI_INTERNALS__
-    ? createToolWebviewApi()
-    : createBrowserPreviewApi()
+function platformApi(toolId: ManagedToolId): ToolWebviewApi {
+  return typeof window !== 'undefined' && window.__TAURI_INTERNALS__
+    ? createToolWebviewApi(toolId)
+    : createBrowserPreviewApi(toolId)
+}
+
+export const toolWebviewApis: Record<ManagedToolId, ToolWebviewApi> = {
+  calculator: platformApi('calculator'),
+  color: platformApi('color'),
+  config: platformApi('config'),
+  cron: platformApi('cron'),
+  crypto: platformApi('crypto'),
+  host: platformApi('host'),
+  http: platformApi('http'),
+  image: platformApi('image'),
+  encode: platformApi('encode'),
+  'editor-lab': platformApi('editor-lab'),
+  json: platformApi('json'),
+  'message-board': platformApi('message-board'),
+  network: platformApi('network'),
+  pdf: platformApi('pdf'),
+  protobuf: platformApi('protobuf'),
+  'quick-note': platformApi('quick-note'),
+  qrcode: platformApi('qrcode'),
+  reformat: platformApi('reformat'),
+  regex: platformApi('regex'),
+  runtime: platformApi('runtime'),
+  timestamp: platformApi('timestamp'),
+  'text-diff': platformApi('text-diff'),
+  translation: platformApi('translation'),
+  ua: platformApi('ua'),
+  variables: platformApi('variables'),
+  system: platformApi('system'),
+  'webview-probe': platformApi('webview-probe')
+}

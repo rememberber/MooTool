@@ -1,0 +1,272 @@
+name: MooTool Next Tauri Release
+
+on:
+  push:
+    tags:
+      - 'next-tauri-v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing next-tauri-v* tag to build
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: next-tauri-release-${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Validate independent release
+    runs-on: ubuntu-22.04
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      version: ${{ steps.release.outputs.version }}
+      notes: ${{ steps.release.outputs.notes }}
+      pub_date: ${{ steps.release.outputs.pub_date }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref }}
+          fetch-depth: 0
+      - id: release
+        name: Validate tag, versions, and release notes
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.tag || github.ref_name }}
+        run: |
+          set -euo pipefail
+          tag="${RELEASE_TAG}"
+          case "${tag}" in
+            next-tauri-v*) ;;
+            *) echo "Release tag must use next-tauri-v*: ${tag}" >&2; exit 1 ;;
+          esac
+          version="${tag#next-tauri-v}"
+          package_version="$(node -p "require('./next-tauri/package.json').version")"
+          test "${version}" = "${package_version}" || { echo "Tag version ${version} differs from package ${package_version}" >&2; exit 1; }
+          test -f "next-tauri/release-notes/${version}.md"
+          node next-tauri/scripts/check-release-boundaries.mjs
+          printf 'tag=%s\n' "${tag}" >> "${GITHUB_OUTPUT}"
+          printf 'version=%s\n' "${version}" >> "${GITHUB_OUTPUT}"
+          printf 'notes=next-tauri/release-notes/%s.md\n' "${version}" >> "${GITHUB_OUTPUT}"
+          printf 'pub_date=%s\n' "$(git show -s --format=%cI "${tag}")" >> "${GITHUB_OUTPUT}"
+
+  build:
+    name: Bundle (${{ matrix.name }})
+    needs: prepare
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS-x64
+            target: darwin-x86_64
+            os: macos-15-intel
+          - name: macOS-arm64
+            target: darwin-aarch64
+            os: macos-15
+          - name: Windows-x64
+            target: windows-x86_64
+            os: windows-2022
+          - name: Linux-x64
+            target: linux-x86_64
+            os: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: next-tauri
+    env:
+      TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
+      TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
+      WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
+      WINDOWS_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_CERTIFICATE_PASSWORD }}
+      WINDOWS_TIMESTAMP_URL: ${{ secrets.WINDOWS_TIMESTAMP_URL }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.tag }}
+      - name: Require the independent updater signing key
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "${TAURI_SIGNING_PRIVATE_KEY}" || { echo 'TAURI_SIGNING_PRIVATE_KEY is required' >&2; exit 1; }
+          test -n "${TAURI_SIGNING_PRIVATE_KEY_PASSWORD}" || { echo 'TAURI_SIGNING_PRIVATE_KEY_PASSWORD is required' >&2; exit 1; }
+      - name: Install Linux desktop dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf xvfb pkg-config libclang-dev libxcb1-dev libxrandr-dev libdbus-1-dev libpipewire-0.3-dev libwayland-dev libegl-dev
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: next-tauri/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.87'
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: next-tauri/src-tauri
+      - run: npm ci
+      - run: npm run check
+      - name: Import optional Windows Authenticode certificate
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:WINDOWS_CERTIFICATE)) {
+            Write-Warning 'WINDOWS_CERTIFICATE is not configured; Windows bundles will be unsigned at the operating-system layer.'
+            exit 0
+          }
+          if ([string]::IsNullOrWhiteSpace($env:WINDOWS_CERTIFICATE_PASSWORD)) {
+            throw 'WINDOWS_CERTIFICATE_PASSWORD is required when WINDOWS_CERTIFICATE is configured'
+          }
+          $encoded = Join-Path $env:RUNNER_TEMP 'mootool-next-tauri-certificate.txt'
+          $pfx = Join-Path $env:RUNNER_TEMP 'mootool-next-tauri-certificate.pfx'
+          Set-Content -Path $encoded -Value $env:WINDOWS_CERTIFICATE
+          certutil -decode $encoded $pfx | Out-Null
+          Remove-Item $encoded -Force
+          $password = ConvertTo-SecureString -String $env:WINDOWS_CERTIFICATE_PASSWORD -Force -AsPlainText
+          $certificate = Import-PfxCertificate -FilePath $pfx -CertStoreLocation Cert:\CurrentUser\My -Password $password
+          Remove-Item $pfx -Force
+          $timestampUrl = if ([string]::IsNullOrWhiteSpace($env:WINDOWS_TIMESTAMP_URL)) { 'http://timestamp.digicert.com' } else { $env:WINDOWS_TIMESTAMP_URL }
+          $config = @{ bundle = @{ windows = @{ certificateThumbprint = $certificate.Thumbprint; digestAlgorithm = 'sha256'; timestampUrl = $timestampUrl } } }
+          $config | ConvertTo-Json -Depth 5 | Set-Content -Path src-tauri/tauri.windows.conf.json -Encoding UTF8
+      - name: Build signed independent Tauri bundles
+        run: npx tauri build
+        env:
+          APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_SIGNING_IDENTITY: ${{ secrets.APPLE_SIGNING_IDENTITY || '-' }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_PASSWORD: ${{ secrets.APPLE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+      - name: Verify macOS updater, DMG, and first launch
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -euo pipefail
+          app="$(find src-tauri/target/release/bundle/macos -maxdepth 1 -type d -name '*.app' -print -quit)"
+          dmg="$(find src-tauri/target/release/bundle/dmg -maxdepth 1 -type f -name '*.dmg' -print -quit)"
+          updater="$(find src-tauri/target/release/bundle/macos -maxdepth 1 -type f -name '*.app.tar.gz' -print -quit)"
+          test -n "${app}" && test -n "${dmg}" && test -n "${updater}" && test -s "${updater}.sig"
+          codesign --verify --deep --strict --verbose=2 "${app}"
+          mount_dir="$(mktemp -d)"
+          app_pid=''
+          cleanup() {
+            if test -n "${app_pid}" && kill -0 "${app_pid}" 2>/dev/null; then kill "${app_pid}" || true; fi
+            hdiutil detach "${mount_dir}" -quiet >/dev/null 2>&1 || true
+            rmdir "${mount_dir}" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+          hdiutil attach -nobrowse -readonly -mountpoint "${mount_dir}" "${dmg}" >/dev/null
+          mounted_app="$(find "${mount_dir}" -maxdepth 1 -type d -name '*.app' -print -quit)"
+          test -n "${mounted_app}"
+          codesign --verify --deep --strict --verbose=2 "${mounted_app}"
+          executable="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "${app}/Contents/Info.plist")"
+          "${app}/Contents/MacOS/${executable}" >"${RUNNER_TEMP}/mootool-next-tauri-first-launch.log" 2>&1 &
+          app_pid=$!
+          sleep 8
+          kill -0 "${app_pid}"
+      - name: Verify Windows updater, install, first launch, and uninstall
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $installer = Get-ChildItem -Path 'src-tauri/target/release/bundle/nsis' -Filter '*-setup.exe' -File | Select-Object -First 1
+          if ($null -eq $installer -or -not (Test-Path "$($installer.FullName).sig")) {
+            throw 'NSIS installer or updater signature is missing'
+          }
+          $installDirectory = Join-Path $env:RUNNER_TEMP 'MooToolNextTauriSmoke'
+          $install = Start-Process -FilePath $installer.FullName -ArgumentList '/S', "/D=$installDirectory" -Wait -PassThru
+          if ($install.ExitCode -ne 0) { throw "NSIS install failed with exit code $($install.ExitCode)" }
+          $executable = Get-ChildItem -Path $installDirectory -Filter '*.exe' -File -Recurse |
+            Where-Object { $_.Name -notmatch '^(unins|uninstall)' } | Select-Object -First 1
+          if ($null -eq $executable) { throw 'Installed application executable is missing' }
+          $application = Start-Process -FilePath $executable.FullName -PassThru
+          try {
+            Start-Sleep -Seconds 8
+            if ($application.HasExited) { throw "Application exited during first launch with code $($application.ExitCode)" }
+          } finally {
+            if (-not $application.HasExited) { Stop-Process -Id $application.Id -Force }
+          }
+          $uninstaller = Get-ChildItem -Path $installDirectory -Filter '*.exe' -File -Recurse |
+            Where-Object { $_.Name -match '^(unins|uninstall)' } | Select-Object -First 1
+          if ($null -eq $uninstaller) { throw 'NSIS uninstaller is missing' }
+          $uninstall = Start-Process -FilePath $uninstaller.FullName -ArgumentList '/S' -Wait -PassThru
+          if ($uninstall.ExitCode -ne 0) { throw "NSIS uninstall failed with exit code $($uninstall.ExitCode)" }
+      - name: Verify Linux updater, packages, and first launch
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          appimage="$(find src-tauri/target/release/bundle/appimage -maxdepth 1 -type f -name '*.AppImage' -print -quit)"
+          deb="$(find src-tauri/target/release/bundle/deb -maxdepth 1 -type f -name '*.deb' -print -quit)"
+          test -n "${appimage}" && test -s "${appimage}.sig" && test -n "${deb}"
+          dpkg-deb --info "${deb}" >/dev/null
+          chmod +x "${appimage}"
+          APPIMAGE_EXTRACT_AND_RUN=1 xvfb-run -a "${appimage}" >"${RUNNER_TEMP}/mootool-next-tauri-first-launch.log" 2>&1 &
+          app_pid=$!
+          cleanup() { kill "${app_pid}" >/dev/null 2>&1 || true; }
+          trap cleanup EXIT
+          sleep 8
+          kill -0 "${app_pid}"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MooTool-Next-Tauri-${{ matrix.target }}
+          path: |
+            next-tauri/src-tauri/target/release/bundle/**/*.dmg
+            next-tauri/src-tauri/target/release/bundle/**/*.app.tar.gz
+            next-tauri/src-tauri/target/release/bundle/**/*.app.tar.gz.sig
+            next-tauri/src-tauri/target/release/bundle/**/*.AppImage
+            next-tauri/src-tauri/target/release/bundle/**/*.AppImage.sig
+            next-tauri/src-tauri/target/release/bundle/**/*.deb
+            next-tauri/src-tauri/target/release/bundle/**/*.rpm
+            next-tauri/src-tauri/target/release/bundle/**/*.msi
+            next-tauri/src-tauri/target/release/bundle/**/*.msi.sig
+            next-tauri/src-tauri/target/release/bundle/**/*.exe
+            next-tauri/src-tauri/target/release/bundle/**/*.exe.sig
+          if-no-files-found: error
+
+  draft-release:
+    name: Create independent draft pre-release
+    needs:
+      - prepare
+      - build
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.tag }}
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: MooTool-Next-Tauri-*
+          path: artifacts
+      - name: Normalize assets and generate signed updater metadata
+        run: >-
+          node next-tauri/scripts/prepare-release-assets.mjs prepare
+          --artifacts artifacts
+          --output release-assets
+          --version '${{ needs.prepare.outputs.version }}'
+          --tag '${{ needs.prepare.outputs.tag }}'
+          --notes '${{ needs.prepare.outputs.notes }}'
+          --pub-date '${{ needs.prepare.outputs.pub_date }}'
+      - name: Create draft without changing repository Latest
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+          RELEASE_VERSION: ${{ needs.prepare.outputs.version }}
+          RELEASE_NOTES: ${{ needs.prepare.outputs.notes }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          if gh release view "${RELEASE_TAG}" --json isDraft --jq '.isDraft' > existing-draft 2>/dev/null; then
+            test "$(cat existing-draft)" = 'true' || { echo "Refusing to overwrite published release ${RELEASE_TAG}" >&2; exit 1; }
+          else
+            gh release create "${RELEASE_TAG}" --draft --prerelease --latest=false --title "MooTool Next Tauri ${RELEASE_VERSION}" --notes-file "${RELEASE_NOTES}"
+          fi
+          gh release upload "${RELEASE_TAG}" release-assets/* --clobber

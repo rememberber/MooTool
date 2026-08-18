@@ -1,0 +1,66 @@
+name: MooTool Next Tauri CI
+
+on:
+  pull_request:
+    paths:
+      - 'next-tauri/**'
+      - '.github/workflows/next-tauri-ci.yml'
+      - '.github/workflows/next-tauri-release.yml'
+  push:
+    branches:
+      - master
+      - main
+      - 'codex/**'
+    paths:
+      - 'next-tauri/**'
+      - '.github/workflows/next-tauri-ci.yml'
+      - '.github/workflows/next-tauri-release.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: next-tauri-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    name: Check (${{ matrix.name }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: macOS x64
+            os: macos-15-intel
+          - name: macOS arm64
+            os: macos-15
+          - name: Windows x64
+            os: windows-2022
+          - name: Linux x64
+            os: ubuntu-22.04
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        working-directory: next-tauri
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install Linux desktop dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libclang-dev libxcb1-dev libxrandr-dev libdbus-1-dev libpipewire-0.3-dev libwayland-dev libegl-dev
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: next-tauri/package-lock.json
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: '1.87'
+          components: rustfmt, clippy
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: next-tauri/src-tauri
+      - run: npm ci
+      - run: npm run check

@@ -1,3 +1,32 @@
+export type ManagedToolId =
+  | 'calculator'
+  | 'color'
+  | 'config'
+  | 'cron'
+  | 'crypto'
+  | 'host'
+  | 'http'
+  | 'image'
+  | 'encode'
+  | 'editor-lab'
+  | 'json'
+  | 'message-board'
+  | 'network'
+  | 'pdf'
+  | 'protobuf'
+  | 'quick-note'
+  | 'qrcode'
+  | 'reformat'
+  | 'regex'
+  | 'runtime'
+  | 'timestamp'
+  | 'text-diff'
+  | 'translation'
+  | 'ua'
+  | 'variables'
+  | 'system'
+  | 'webview-probe'
+
 export interface ToolWebviewBounds {
   x: number
   y: number
@@ -7,21 +36,24 @@ export interface ToolWebviewBounds {
 
 export type ToolWebviewPlacement = 'closed' | 'docked' | 'detached'
 
-export interface ToolProbeReport {
+export interface ToolSessionReport {
   sessionId: string
-  counter: number
-  draft: string
+  stateRevision: number
+  stateDigest: string
+  stateSummary: string
 }
 
 export interface ToolWebviewSnapshot {
+  toolId: ManagedToolId
   exists: boolean
   visible: boolean
   placement: ToolWebviewPlacement
   reparentOperations: number
   pageLoads: number
   sessionId: string | null
-  counter: number
-  draft: string
+  stateRevision: number
+  stateDigest: string
+  stateSummary: string
   lastStressCycles: number
   lastStressPassed: boolean | null
 }
@@ -35,5 +67,22 @@ export interface ToolWebviewApi {
   dock(bounds: ToolWebviewBounds): Promise<ToolWebviewSnapshot>
   stress(bounds: ToolWebviewBounds, cycles: number): Promise<ToolWebviewSnapshot>
   close(): Promise<ToolWebviewSnapshot>
-  report(report: ToolProbeReport): Promise<ToolWebviewSnapshot>
+  report(report: ToolSessionReport): Promise<ToolWebviewSnapshot>
+}
+
+export function closedToolWebviewSnapshot(toolId: ManagedToolId): ToolWebviewSnapshot {
+  return {
+    toolId,
+    exists: false,
+    visible: false,
+    placement: 'closed',
+    reparentOperations: 0,
+    pageLoads: 0,
+    sessionId: null,
+    stateRevision: 0,
+    stateDigest: '',
+    stateSummary: '',
+    lastStressCycles: 0,
+    lastStressPassed: null
+  }
 }

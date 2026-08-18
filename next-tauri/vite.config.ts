@@ -3,6 +3,11 @@ import { defineConfig } from 'vite'
 
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      string_decoder: 'string_decoder/'
+    }
+  },
   clearScreen: false,
   server: {
     host: '127.0.0.1',

@@ -1,18 +1,21 @@
 import { Minus, Plus, RotateCcw, ShieldCheck } from 'lucide-react'
 import { useEffect, useRef, useState } from 'react'
-import { toolWebviewApi } from '../../platform/api/toolWebviewApi'
+import { toolWebviewApis } from '../../platform/api/toolWebviewApi'
 
 export function ToolProbePage() {
   const sessionId = useRef(crypto.randomUUID())
+  const revision = useRef(0)
   const [counter, setCounter] = useState(0)
   const [draft, setDraft] = useState('state survives reparent')
   const [reportError, setReportError] = useState('')
 
   useEffect(() => {
-    void toolWebviewApi.report({
+    revision.current += 1
+    void toolWebviewApis['webview-probe'].report({
       sessionId: sessionId.current,
-      counter,
-      draft
+      stateRevision: revision.current,
+      stateDigest: JSON.stringify({ counter, draft }),
+      stateSummary: `计数 ${counter} · 草稿 ${draft}`
     }).then(() => setReportError('')).catch((error: unknown) => {
       setReportError(error instanceof Error ? error.message : String(error))
     })

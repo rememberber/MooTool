@@ -1,0 +1,89 @@
+name: Promote MooTool Next Tauri Update
+
+on:
+  release:
+    types:
+      - published
+
+permissions:
+  contents: write
+
+concurrency:
+  group: next-tauri-update-promotion
+  cancel-in-progress: false
+
+jobs:
+  promote:
+    name: Promote published Tauri release
+    if: startsWith(github.event.release.tag_name, 'next-tauri-v')
+    runs-on: ubuntu-22.04
+    env:
+      GH_TOKEN: ${{ github.token }}
+      RELEASE_TAG: ${{ github.event.release.tag_name }}
+      UPDATE_CHANNEL_TAG: next-tauri-updater
+      UPDATE_CHANNEL_URL: https://github.com/rememberber/MooTool/releases/download/next-tauri-updater/latest.json
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: master
+          fetch-depth: 0
+      - name: Verify the published release boundary
+        shell: bash
+        run: |
+          set -euo pipefail
+          test '${{ github.event.release.draft }}' = 'false'
+          test '${{ github.event.release.prerelease }}' = 'true'
+      - name: Download and validate promotion metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p promotion
+          gh release download "${RELEASE_TAG}" --pattern latest.json --pattern next-tauri-release.json --dir promotion
+          node next-tauri/scripts/prepare-release-assets.mjs validate-promotion \
+            --latest promotion/latest.json \
+            --release promotion/next-tauri-release.json \
+            --tag "${RELEASE_TAG}"
+      - name: Verify every published installer and updater URL
+        shell: bash
+        run: |
+          set -euo pipefail
+          {
+            jq -r '.platforms[].url' promotion/latest.json
+            jq -r '.assets[].url' promotion/next-tauri-release.json
+          } | sort -u | while IFS= read -r asset_url; do
+            curl --fail --head --location --retry 4 --retry-all-errors --connect-timeout 15 --max-time 90 "${asset_url}"
+          done
+      - name: Publish the isolated stable updater channel
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! gh release view "${UPDATE_CHANNEL_TAG}" >/dev/null 2>&1; then
+            gh release create "${UPDATE_CHANNEL_TAG}" \
+              --prerelease \
+              --latest=false \
+              --title 'MooTool Next Tauri Update Channel' \
+              --notes 'Machine-readable signed update metadata for the independent MooTool Next Tauri product line.'
+          fi
+          gh release upload "${UPDATE_CHANNEL_TAG}" promotion/latest.json --clobber
+          curl --fail --location --retry 6 --retry-all-errors --connect-timeout 15 --max-time 90 \
+            "${UPDATE_CHANNEL_URL}?run=${GITHUB_RUN_ID}" --output promotion/published-latest.json
+          node -e "const fs=require('fs');const expected=JSON.parse(fs.readFileSync('promotion/latest.json'));const actual=JSON.parse(fs.readFileSync('promotion/published-latest.json'));if(JSON.stringify(expected)!==JSON.stringify(actual))throw new Error('Published updater channel does not match the promoted release')"
+      - name: Activate only products.next-tauri in the root registry
+        run: >-
+          node next-tauri/scripts/prepare-release-assets.mjs update-registry
+          --manifest update-manifest.json
+          --release promotion/next-tauri-release.json
+      - name: Commit and push the Tauri registry node
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email 'github-actions[bot]@users.noreply.github.com'
+          git add update-manifest.json
+          if git diff --staged --quiet; then
+            echo 'products.next-tauri is already up to date'
+            exit 0
+          fi
+          git commit -m "chore: publish ${RELEASE_TAG} update manifest"
+          git pull --rebase origin master
+          git push origin master

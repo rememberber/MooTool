@@ -1,0 +1,7 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "settings",
+  "description": "Capability for the single-instance MooTool Tauri settings window.",
+  "webviews": ["settings"],
+  "permissions": ["core:default", "dialog:allow-open"]
+}

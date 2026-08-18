@@ -1,0 +1,25 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "tool-clipboard-text",
+  "description": "Text clipboard write access only for MooTool tools that expose explicit copy actions.",
+  "webviews": [
+    "tool-color",
+    "tool-config",
+    "tool-crypto",
+    "tool-encode",
+    "tool-http",
+    "tool-image",
+    "tool-json",
+    "tool-network",
+    "tool-protobuf",
+    "tool-qrcode",
+    "tool-reformat",
+    "tool-regex",
+    "tool-text-diff",
+    "tool-timestamp",
+    "tool-translation",
+    "tool-ua",
+    "tool-variables"
+  ],
+  "permissions": ["clipboard-manager:allow-write-text"]
+}

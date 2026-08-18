@@ -774,6 +774,7 @@
     "next-tauri": {
       "displayName": "MooTool Next Tauri",
       "status": "planned",
+      "updaterManifestUrl": "https://github.com/rememberber/MooTool/releases/download/next-tauri-updater/latest.json",
       "releases": []
     },
     "next-macos-native": {

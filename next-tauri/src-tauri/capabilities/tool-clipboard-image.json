@@ -1,0 +1,10 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "tool-clipboard-image",
+  "description": "Native image clipboard access reserved for the MooTool image workbench.",
+  "webviews": ["tool-image"],
+  "permissions": [
+    "clipboard-manager:allow-read-image",
+    "clipboard-manager:allow-write-image"
+  ]
+}

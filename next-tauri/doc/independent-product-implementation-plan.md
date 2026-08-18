@@ -1,7 +1,7 @@
 # MooTool Next Tauri 独立产品线实现方案
 
-> - 状态：已批准，执行中
-> - 更新日期：2026-07-29
+> - 状态：产品线已确定，全量开发中
+> - 更新日期：2026-08-17
 > - 产品 ID：`next-tauri`
 > - 产品名称：MooTool Next Tauri
 > - 目标技术栈：Tauri 2 + Rust + Vite + React + TypeScript
@@ -19,7 +19,7 @@ MooTool Next Tauri 是新的独立产品线，不是 MooTool Next Electron 的�
 4. 产品间通过显式导入、导出和备份格式实现数据可携带，不默认共享正在使用的数据目录，不允许多个产品静默并发写入同一份数据库或 Vault。
 5. Tauri 后端以 Rust 原生实现为正式方向，不以 Node.js Sidecar 承载长期业务后端。
 6. Tauri 首版追求与 Electron 相近的功能、信息架构和操作心智，但允许在系统 WebView、窗口装饰、权限提示、更新安装方式等平台能力上采用 Tauri 自己的实现。
-7. 在全面开发前先完成跨平台技术验证。工具 WebView 停靠/分离、截图取色和系统 WebView 渲染是产品立项后的首批 Go/No-Go 项。
+7. Tauri 产品线不再设置技术 Go/No-Go 立项闸门。系统 WebView、停靠/分离、截图取色等兼容性问题在正式开发中持续收敛；无法统一时采用平台实现、批准降级或调整单项功能，不影响产品线继续建设。
 
 ## 1. 产品定位与边界
 
@@ -300,9 +300,11 @@ Tauri 官方文档：
 截至 2026-07-29 的 P0 实现结论：
 
 - 当前锁定的 Tauri `2.11.5` 中，`Webview::reparent()` 是公开 API；但创建普通原生 `Window`、添加子 WebView 所需的 `WindowBuilder`、`WebviewBuilder` 和 `Window::add_child()` 仍要求开启 Tauri 的 `unstable` feature。
-- 低层窗口能力集中在 Rust `ToolWebviewManager` 和领域 Command 中，Shell 只传递停靠区域和生命周期意图，工具子页面无权调用生命周期 Command。
-- macOS 26.6 / x86_64 / WKWebView 原生实测中，同一个子 WebView 完成手工分离/收回和 100 个往返周期，累计 202 次 `reparent` 操作；页面加载次数保持为 1，会话 ID、内存计数器和草稿均保持。
-- 上述结果仅判定 macOS 机制可行，不替代 Windows WebView2、Linux WebKitGTK 验证，也不代表可以把 `unstable` API 当作无升级成本的长期承诺。
+- 低层窗口能力集中在 Rust `ToolWebviewManager` 和领域 Command 中；Manager 以工具 ID 隔离 Calculator、CodeMirror 与状态探针会话，Shell 只传递停靠区域和生命周期意图，工具子页面无权调用生命周期 Command。
+- Calculator 已作为首个正式独立工具 WebView 接入。macOS 26.6 / x86_64 / WKWebView 原生实测中，同一个 Calculator 页面完成手工分离/收回和 100 个往返周期，累计 202 次 `reparent` 操作；页面加载次数保持为 1，会话 ID、表达式 `123 * 7`、结果 `861`、进制字段和两条历史均保持。
+- CodeMirror 6 已作为第二个独立工具 WebView 和系统 WebView 风险探针接入。macOS 原生实测中，中文拼音输入完整触发一次 composition 开始/结束并提交“测试”，Unicode 选区、外部查找和 CodeMirror 原生查找正常；分离/收回、隐藏/恢复及 100 个往返周期后页面加载仍为 1，会话、内容、选区、查找词和 IME 计数保持。
+- Calculator 切到 Home 时只隐藏子 WebView，返回后同一会话恢复；工具栏关闭后可重新创建新会话。状态探针保留为低层回归入口，不再代替真实工具验收。
+- 上述结果仅判定 macOS WKWebView 与中文拼音 IME 机制可行；日文字符显示正常但日文 IME 尚未实测，也不替代 Windows WebView2、Linux WebKitGTK 验证，或代表可以把 `unstable` API 当作无升级成本的长期承诺。
 
 进入正式工具开发前，应锁定精确 Tauri/Wry 版本；每次升级必须重复 reparent 回归。在相关 API 稳定前，发布评审需把 `unstable` feature 视为明确的架构风险。
 
@@ -347,6 +349,8 @@ Tauri 使用操作系统 WebView：
 - Clipboard API 的安全上下文和权限行为。
 
 不稳定的浏览器能力应通过 Tauri-owned Platform API 封装，不让工具页面直接依赖不同 WebView 的权限行为。
+
+截至 2026-07-29，macOS WKWebView 已完成真实 CodeMirror 6 验证：中文拼音 composition、Unicode 选区、外部查找、原生查找、停靠/分离和状态保持通过。Windows WebView2、Linux WebKitGTK 及 macOS 日文 IME 仍是 P0 未完成项，不能从 macOS 中文结果外推。
 
 ### 5.3 macOS 外观
 
@@ -574,7 +578,6 @@ Tauri 2 Capability 可以按窗口、WebView 和平台分配权限：
 ├── mootool-tauri.json
 ├── MooToolTauri.db
 ├── images/
-├── quick-notes/
 ├── json-vault/
 ├── backups/
 ├── migration-backups/
@@ -762,9 +765,9 @@ Tauri 使用系统 WebView 通常能减小安装包，但多 WebView、Rust 依�
 
 - [Tauri App Size](https://v2.tauri.app/concept/size/)
 
-## 12. P0：跨平台技术验证
+## 12. 持续兼容性跟踪（非开发闸门）
 
-P0 不以实现完整工具为目标，而是验证最可能推翻产品方案的能力。
+本节保留原 P0 风险清单作为工程跟踪依据。根据 2026-07-29 的产品决策，这些项目不再决定 Tauri 产品线是否继续，也不要求在正式工具开发前全部完成。兼容性任务按功能依赖和发布节奏穿插处理。
 
 ### 12.1 验证范围
 
@@ -783,7 +786,7 @@ P0 不以实现完整工具为目标，而是验证最可能推翻产品方案�
 13. 1440 × 920、1080 × 720 的布局与视觉基线。
 14. 三平台最小安装包构建和启动。
 
-### 12.2 Go 条件
+### 12.2 发布前质量目标
 
 - 三个平台均能启动独立安装包。
 - 工具停靠/分离达到稳定性测试门槛。
@@ -794,7 +797,7 @@ P0 不以实现完整工具为目标，而是验证最可能推翻产品方案�
 - 未发现必须把 Node Sidecar 作为长期后端的阻塞项。
 - 权限模型能做到不向 Renderer 暴露通用 Shell/FS/SQL。
 
-### 12.3 No-Go 或调整条件
+### 12.3 兼容性处理原则
 
 - 工具 WebView 在任一首发平台频繁重载、崩溃或丢状态。
 - WKWebView/WebKitGTK 无法稳定运行关键编辑器或算法依赖。
@@ -803,44 +806,44 @@ P0 不以实现完整工具为目标，而是验证最可能推翻产品方案�
 - 安装签名、权限或系统依赖使目标发行渠道不可行。
 - 为达到体验目标必须引入与 Electron 等量的 Node/Chromium 运行时。
 
-No-Go 不表示永久取消 Tauri 产品，可以调整首发功能、平台或窗口策略后重新评审。
+出现上述问题时，优先修复；不能及时统一时，采用平台专用实现、显式降级、调整单项功能或调整首发平台范围。兼容性结论影响对应功能的发布范围，不重新讨论 Tauri 产品线是否存在。
 
 ## 13. 分阶段实施
 
-### P0：产品骨架与风险验证
+### 工程基线（已完成）
 
 范围见上一节。
 
-**出口条件**：完成书面技术验证报告和 Go/No-Go 决策。
+**成果**：独立工程、产品边界、Rust-owned 工具 WebView 管理、Calculator 与 CodeMirror 基线已经建立；后续兼容性验证转入持续工程任务。
 
 ### P1：独立工作台与桌面基础
 
 - 完整工程结构。
-- 首页、导航、搜索、最近使用和自定义分组。
+- 首页、导航、搜索、最近使用和自定义分组。（已交付，自定义分组进入独立设置 Schema）
 - 设置 Schema 与设置窗口。
 - 主题、三语言、快捷键。
 - 主窗口状态、关闭策略、托盘和菜单。
-- Tauri-owned API、错误模型和事件模型。
-- Capability、CSP 和日志。
+- Tauri-owned API、错误模型和事件模型。（已交付结构化 `AppError`、前端统一归一化与错误上报）
+- Capability、CSP 和日志。（已交付每日 JSON 日志、脱敏与 14 天留存）
 
 **出口条件**：Tauri 作为独立产品可以日常开发、测试和打包。
 
 ### P2：纯本地工具
 
 - 文本对比。
-- 格式化。
-- YAML/Properties。
-- Protobuf。
-- UA 分析。
-- 编码解码。
-- 加解密/随机。
-- Regex。
-- Cron。
-- 二维码。
-- 时间转换。
-- 留言板。
+- 格式化。（已交付 Nginx/Java/XML/HTML）
+- YAML/Properties。（已交付双向转换、格式化与校验）
+- Protobuf。（已交付 proto2/proto3、JSON/Base64/Hex 与 Wire 检查）
+- UA 分析。（已交付浏览器、引擎、系统、设备与 Bot 分类）
+- 编码解码。（已交付 Unicode/URL/Base64/Hex/ASCII）
+- 加解密/随机。（已交付摘要/HMAC、AES-256-GCM、PBKDF2 与安全随机）
+- Regex。（已交付表达式测试、捕获组、常用库和替换预览）
+- Cron。（已交付 Quartz 构建、说明与未来执行计划）
+- 二维码。（已交付 SVG 生成、样式配置、图片识别与下载）
+- 时间转换。（已交付 Unix 秒/毫秒、IANA 时区与 DST）
+- 留言板。（已交付全屏文字演示、预设、主题、对齐、自动缩放、常用消息与演示防休眠）
 - 计算器。
-- 调色板。
+- 调色板。（已交付格式转换、色阶与 WCAG 对比度）
 
 优先使用 Tauri 自己的 Golden Fixtures 验证输入输出，不以复制 Electron 测试文件作为完成条件。
 
@@ -848,22 +851,22 @@ No-Go 不表示永久取消 Tauri 产品，可以调整首发功能、平台或�
 
 ### P3：数据、文件与媒体
 
-- SQLite Repository。
+- SQLite Repository。（已交付独立数据库、Schema 初始化与笔记/留言 Repository）
 - 通用历史和收藏。
-- JSON 与 JSON Vault。
-- Quick Note 与附件。
-- 文件导入导出。
+- JSON 与 JSON Vault。（已交付安全目录边界、指纹冲突保护、原子保存、文件监控与可恢复删除）
+- Quick Note。（已交付 SQLite 数据库优先模型、自动保存、全文搜索、查找替换、分栏预览与受控原生文本导入导出；不复用 Electron 文件树/Git 工作区，见 ADR-011）
+- 文件导入导出。（已交付随手记和 Host 文本文件的 Rust-owned 原生选择与保存边界）
 - 图片仓库和处理。
-- PDF 拆分合并。
-- Vault Git。
-- 备份与恢复。
-- Java/Electron 显式导入。
+- PDF 拆分合并。（已交付页码选择、排序、取消，以及单文件 200 MiB/批次 500 MiB 上限的 Rust-owned 分块原生导出）
+- Vault Git。（已交付系统 Git 固定操作、超时、取消、脏编辑保护与可选自动提交）
+- 备份与恢复。（已交付 v2，覆盖数据库、设置、图片和 Vault；Vault 恢复到 Tauri 自有导入目录）
+- Java/Electron 显式导入。（已交付独立适配器：只读双重指纹扫描、凭据跳过、导入前完整备份、SQLite 事务、幂等标记与迁移报告）
 
 **出口条件**：数据闭环、备份、回滚和导入报告通过集成测试。
 
 ### P4：网络、系统与运行时
 
-- HTTP。
+- HTTP。（已交付 Rust 请求、参数/Header/Cookie、正文类型、超时、cURL、取消、SQLite 收藏/响应快照与最近 500 条历史）
 - 翻译、单词本和翻译历史。
 - Host Profile 与系统 Hosts。
 - 网络/IP 工具。
@@ -877,13 +880,13 @@ No-Go 不表示永久取消 Tauri 产品，可以调整首发功能、平台或�
 ### P5：高风险桌面体验
 
 - 完整工具停靠/分离。
-- 多显示器截图。
-- 取色。
-- 防显示器休眠。
-- macOS 透明/毛玻璃和窗口按钮策略。
-- Windows DPI 和拖放。
-- Linux X11/Wayland 降级。
-- 自动更新。
+- 多显示器截图。（已交付隐藏应用、多显示器快照、显示器切换、物理像素区域选择与临时资产清理）
+- 取色。（已交付显示器快照实时预览、HEX/RGB/坐标与单击确认）
+- 防显示器休眠。（已交付 Rust owner 隔离 token）
+- macOS 透明/毛玻璃和窗口按钮策略。（已由 ADR-010 固定为原生 Overlay 标题栏、保留系统按钮、不启用私有透明 API）
+- Windows DPI 和拖放。（已交付 Tauri 原生路径拖放及 Rust 文件校验；多缩放人工验收保留在发布矩阵）
+- Linux X11/Wayland 降级。（已交付 X11/可用桌面会话路径和明确失败提示；Wayland Portal Overlay 后续增强）
+- 自动更新。（已交付独立通道、签名验证、进度、取消、安装与重启）
 
 部分能力已在 P0 验证，P5 负责生产化、错误恢复和全面验收。
 
@@ -942,7 +945,7 @@ No-Go 不表示永久取消 Tauri 产品，可以调整首发功能、平台或�
 - 移动端。
 - App Store/Microsoft Store 审核周期。
 
-## 16. 待决 ADR
+## 16. ADR 状态
 
 P0 结束前至少需要作出：
 
@@ -960,10 +963,10 @@ P0 结束前至少需要作出：
    `rusqlite`、SQLx 或其他方案。
 7. **ADR-007：契约生成**
    手写 TypeScript/Rust 契约或生成式绑定。
-8. **ADR-008：自动更新清单**
-   根产品清单与 Tauri `latest.json` 的生成关系。
-9. **ADR-009：代码签名策略**
-   首版是否允许未签名、不同平台的安装与更新限制。
+8. **[ADR-008：自动更新清单](adr/008-updater-manifest.md)（已采纳）**
+   根产品清单负责产品发现，Tauri 静态 `latest.json` 负责平台更新；已发布版本通过独立提升工作流建立两者关系。
+9. **[ADR-009：代码签名策略](adr/009-code-signing.md)（已采纳）**
+   Updater 签名始终强制；0.x 预览允许明确披露的操作系统层未签名/ad-hoc 包，正式受信任分发要求 Apple/Windows 代码签名材料。
 10. **ADR-010：跨产品备份格式**
     是否以及何时建立产品中立数据包。
 
@@ -990,10 +993,10 @@ P0 结束前至少需要作出：
 
 ## 18. 近期下一步
 
-1. 评审并确认本方案的产品独立性边界。
-2. 为当前功能注册表生成 Tauri 首版功能基线，解决“24/25 个工具”计数差异。
-3. 创建 P0 ADR 目录和技术验证清单。
-4. 初始化独立 `next-tauri` Tauri 2 工程。
-5. 先完成 Calculator WebView reparent、CodeMirror、SQLite、运行时 Channel、截图/取色五个垂直原型。
-6. 在 macOS、Windows、Linux Runner 生成最小安装包。
-7. 输出 P0 技术验证报告，再决定是否进入 P1–P6。
+已完成产品独立性边界确认、独立工程初始化、macOS Calculator/CodeMirror 基线、正式 JSON 与文本对比工作台、Rust-owned 版本化设置与 SQLite 数据基础设施，以及格式化、配置转换、编码解码、Regex、Cron、时间转换、UA、密码学/随机、二维码、Protobuf、颜色、随手记、留言板、环境变量、网络/IP 和硬件系统。后续以正式功能交付为主线：
+
+1. Tauri 1.0 功能基线已冻结为 25 个正式工具；CodeMirror/WebView 实验台作为工程入口，不进入产品计数，详见 `doc/feature-baseline.md`。
+2. 设置 Schema、独立原子持久化、单实例设置窗口、三语言基础设施、主题和跨 WebView 同步已完成；25 个正式工具均已建立强类型消息目录并完成动态状态、错误、确认提示、示例内容和宿主加载态迁移，共享历史面板与原生 WebView 宿主同步覆盖。目录测试校验中/英/日键、空文案和插值参数，产品覆盖测试保证正式工具清单与消息目录一一对应。Rust-owned 窗口状态、原生菜单/托盘、关闭策略和登录启动也已交付。统一 IPC 错误模型、前端异常上报、每日结构化日志与脱敏诊断导出已经形成闭环。
+3. 二十五个正式工具已全部交付；翻译、图片和 PDF 已进入正式产品，后续按独立产品路线持续增强，不与 Electron 版本绑定发布节奏。
+4. SQLite 独立数据库、随手记、留言板、Host 配置档案、翻译单词本/历史、图片索引、工具收藏、通用操作历史及自定义分组已交付。JSON Vault 与受限 Vault Git 已进入正式 JSON 工作台；完整备份 v2 覆盖数据库、设置、图片和 Vault，并在导入前保留回滚副本，导入 Vault 不覆盖原外部目录。Java/Electron 显式导入适配器已交付：来源只读、预览后变化拒绝、凭据跳过、写入事务化且生成独立报告。
+5. 独立 CI、`next-tauri-v*` 多平台 Draft Pre-release、Tauri 更新签名、产品专属静态更新通道及发布后提升工作流已交付；本地 macOS x64 已通过 DMG/签名/首次启动验收，Windows、Linux 与 macOS arm64 由发布矩阵执行安装和首次启动冒烟。
