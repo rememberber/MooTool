@@ -16,6 +16,7 @@ import { useToast } from '@/shared/feedback/ToastProvider'
 import { useFocusOnWindowActivate } from '@/shared/hooks/useFocusOnWindowActivate'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { isFormatShortcut } from '@/shared/utils/formatShortcut'
+import { cssFontFamily } from '@/shared/fonts/systemFonts'
 import { JsonCodeEditor, type JsonCodeEditorHandle } from './JsonCodeEditor'
 import { JsonInspector } from './JsonInspector'
 import { JsonToolbar } from './JsonToolbar'
@@ -125,7 +126,7 @@ async function persistHistory(summary: string, input: string, output: string): P
 export function JsonTool() {
   const toolActive = useToolActivity()
   const { t } = useI18n()
-  const { settings } = useSettings()
+  const { settings, updateSettings } = useSettings()
   const toast = useToast()
   const editorRef = useRef<JsonCodeEditorHandle>(null)
   const findIndexRef = useRef(jsonFindIndex)
@@ -336,6 +337,8 @@ export function JsonTool() {
             findOptions={state.findOptions}
             matchCount={findMatches.length}
             replacedCount={state.replacedCount}
+            fontName={settings.editor.jsonFontName}
+            onFontNameChange={(jsonFontName) => { void updateSettings({ editor: { jsonFontName } }) }}
             onFormat={() => { void runTransform((value) => formatJson(value, t, 2), t('json.notice.formatted'), t('json.action.format')) }}
             onCompress={() => { void runTransform((value) => compressJson(value, t), t('json.notice.compressed'), t('json.action.compress')) }}
             onToggleWrap={() => update({ wrap: !state.wrap })}
@@ -361,6 +364,7 @@ export function JsonTool() {
             value={state.content}
             wrap={state.wrap}
             fontSize={settings.editor.jsonFontSize}
+            fontFamily={cssFontFamily(settings.editor.jsonFontName)}
             searchQuery={state.findOpen ? state.findQuery : ''}
             searchOptions={state.findOptions}
             ariaLabel={t('json.editor.label')}

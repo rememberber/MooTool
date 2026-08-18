@@ -52,7 +52,7 @@ describe('LegacyMigrationService', () => {
       appearance: { theme: 'dark', fontFamily: 'PingFang SC', fontSize: 13 },
       network: { proxyEnabled: true, proxyHost: '127.0.0.1', proxyPort: '7890', proxyUsername: 'moo' },
       layout: { compactNavigation: true },
-      editor: { sqlDialect: 'MySQL', quickNoteFontSize: 16, jsonFontSize: 15 },
+      editor: { sqlDialect: 'MySQL', quickNoteFontSize: 16, jsonFontSize: 15, quickNoteFontName: 'PingFang SC', jsonFontName: 'Menlo' },
       vault: { gitUsername: 'zhoubo', autoCommit: true, autoCommitIdleSeconds: 25, autoCommitInactiveSeconds: 90, autoPullMinutes: 5 },
       tools: { qrCodeSize: 480, qrErrorCorrection: 'H', randomStringLength: 24, translationProvider: 'bing' }
     })
@@ -188,6 +188,7 @@ sqlDialect = MySQL
 
 [func.quickNote]
 quickNoteFontSize = 16
+quickNoteFontName = PingFang SC
 quickNoteGitRemoteUrl = https://example.com/quick.git
 quickNoteAutoGitCommit = true
 quickNoteAutoGitIdleSeconds = 30
@@ -196,6 +197,7 @@ quickNoteAutoPullIntervalMinutes = 5
 
 [func.jsonBeauty]
 jsonBeautyFontSize = 15
+jsonBeautyFontName = Menlo
 jsonBeautyGitRemoteUrl = https://example.com/json.git
 jsonBeautyAutoGitIdleSeconds = 25
 jsonBeautyAutoGitInactiveSeconds = 90

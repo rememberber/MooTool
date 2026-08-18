@@ -510,8 +510,12 @@ function legacySettingsPatch(config: LegacySetting): SettingsPatch {
   if (hasSetting(config, 'setting.quickNote', 'sqlDialect')) editor.sqlDialect = settingValue(config, 'setting.quickNote', 'sqlDialect')
   const quickNoteFontSize = numberValue(settingValue(config, 'func.quickNote', 'quickNoteFontSize'), 0)
   const jsonFontSize = numberValue(settingValue(config, 'func.jsonBeauty', 'jsonBeautyFontSize'), 0)
+  const quickNoteFontName = settingValue(config, 'func.quickNote', 'quickNoteFontName')
+  const jsonFontName = settingValue(config, 'func.jsonBeauty', 'jsonBeautyFontName')
   if (quickNoteFontSize > 0) editor.quickNoteFontSize = quickNoteFontSize
   if (jsonFontSize > 0) editor.jsonFontSize = jsonFontSize
+  if (quickNoteFontName) editor.quickNoteFontName = quickNoteFontName
+  if (jsonFontName) editor.jsonFontName = jsonFontName
   if (Object.keys(editor).length) patch.editor = editor
 
   const network: NonNullable<SettingsPatch['network']> = {}

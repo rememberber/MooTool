@@ -31,6 +31,7 @@ import { useSettings } from '@/features/settings/SettingsProvider'
 import { VaultGitDialog } from '@/features/json/VaultGitDialog'
 import { Dialog } from '@/shared/components/Dialog'
 import { FindReplaceBar } from '@/shared/components/FindReplaceBar'
+import { FontSelect } from '@/shared/components/FontSelect'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { Tooltip } from '@/shared/components/Tooltip'
 import type { CodeEditorViewState } from '@/shared/components/codeEditorViewState'
@@ -52,6 +53,7 @@ import { useFocusOnWindowActivate } from '@/shared/hooks/useFocusOnWindowActivat
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { MessageKey } from '@/shared/i18n/messages'
 import { isFormatShortcut } from '@/shared/utils/formatShortcut'
+import { cssFontFamily } from '@/shared/fonts/systemFonts'
 import {
   collectDirectoryPaths,
   ensureAncestorsExpanded,
@@ -624,6 +626,7 @@ export function QuickNoteTool() {
         const note = await window.mootool.createQuickNote({
           title: state.actionValue,
           parentPath: selectedDirectory(state.selectedPath, state.selectedKind),
+          fontName: settings.editor.quickNoteFontName,
           fontSize: settings.editor.quickNoteFontSize,
           lineWrap: settings.editor.softWrap
         })
@@ -829,6 +832,9 @@ export function QuickNoteTool() {
   function patchMetadata(patch: Partial<QuickNoteMetadata>): void {
     if (!state.note) return
     update({ note: { ...state.note, metadata: { ...state.note.metadata, ...patch } }, metadataDirty: true })
+    if (patch.fontName !== undefined) {
+      void updateSettings({ editor: { quickNoteFontName: patch.fontName || settings.editor.quickNoteFontName } })
+    }
   }
 
   function openFindReplace(): void {
@@ -976,14 +982,18 @@ export function QuickNoteTool() {
             <div className="quick-note-toolbar">
               <IconButton label={state.treeOpen ? t('quickNote.openVault') : t('quickNote.newNote')} icon={state.treeOpen ? PanelLeftClose : PanelLeftOpen} onClick={() => update({ treeOpen: !state.treeOpen })} />
               <NoteColorPicker key={state.note?.relativePath ?? 'empty'} value={state.note?.metadata.color} disabled={!state.note} label={t('quickNote.color')} onChange={(color) => patchMetadata({ color })} />
-              <select aria-label={t('quickNote.syntax')} disabled={!state.note} value={state.note?.metadata.syntax ?? 'text/plain'} onChange={(event) => patchMetadata({ syntax: event.target.value })}>
+              <select className="quick-note-syntax" aria-label={t('quickNote.syntax')} disabled={!state.note} value={state.note?.metadata.syntax ?? 'text/plain'} onChange={(event) => patchMetadata({ syntax: event.target.value })}>
                 {syntaxOptions.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
               </select>
-              <select aria-label={t('quickNote.font')} disabled={!state.note} value={state.note?.metadata.fontName ?? ''} onChange={(event) => patchMetadata({ fontName: event.target.value })}>
-                <option value="">{t('quickNote.font.system')}</option>
-                <option value="ui-monospace">{t('quickNote.font.mono')}</option>
-                <option value="Georgia">{t('quickNote.font.serif')}</option>
-              </select>
+              <FontSelect
+                className="quick-note-font-select"
+                ariaLabel={t('quickNote.font')}
+                disabled={!state.note}
+                value={state.note?.metadata.fontName ?? ''}
+                emptyLabel={t('quickNote.font.system')}
+                labels={{ 'ui-monospace': t('quickNote.font.mono') }}
+                onChange={(fontName) => patchMetadata({ fontName })}
+              />
               <input className="quick-note-font-size" aria-label={t('quickNote.fontSize')} type="number" min={8} max={48} disabled={!state.note} value={state.note?.metadata.fontSize ?? settings.editor.quickNoteFontSize} onChange={(event) => patchMetadata({ fontSize: Number(event.target.value) })} />
               <select className="quick-note-line-spacing" aria-label={t('quickNote.lineSpacing')} title={t('quickNote.lineSpacing')} disabled={!state.note} value={state.note?.metadata.lineSpacing ?? 1} onChange={(event) => patchMetadata({ lineSpacing: Number(event.target.value) })}>
                 {lineSpacingOptions.map((value) => <option value={value} key={value}>{value.toFixed(1)}×</option>)}
@@ -1040,7 +1050,7 @@ export function QuickNoteTool() {
                       value={state.content}
                       language={resolveTextCodeEditorLanguage(state.note.metadata.syntax)}
                       wrap={state.note.metadata.lineWrap}
-                      fontFamily={editorFont(state.note.metadata.fontName)}
+                      fontFamily={cssFontFamily(state.note.metadata.fontName)}
                       fontSize={state.note.metadata.fontSize}
                       lineHeight={1.65 * state.note.metadata.lineSpacing}
                       searchQuery={state.findOpen ? state.findText : ''}
@@ -1088,7 +1098,7 @@ export function QuickNoteTool() {
                   </div>
                 )}
                 {state.viewMode !== 'editor' && (
-                  <article className="quick-note-preview" dangerouslySetInnerHTML={previewMarkup} />
+                  <article className="quick-note-preview" style={{ fontFamily: cssFontFamily(state.note.metadata.fontName) }} dangerouslySetInnerHTML={previewMarkup} />
                 )}
               </ResizableColumns>
             ) : <div className="quick-note-select-empty">{t('quickNote.select')}</div>}
@@ -1269,12 +1279,6 @@ function renderPreview(content: string, syntax: string | undefined, attachmentUr
   let source = content
   for (const [path, url] of Object.entries(attachmentUrls)) source = source.replaceAll(path, url)
   return DOMPurify.sanitize(marked.parse(source, { async: false }) as string)
-}
-
-function editorFont(value: string): string {
-  if (value === 'ui-monospace') return 'ui-monospace, SFMono-Regular, Menlo, Consolas, monospace'
-  if (value === 'Georgia') return 'Georgia, "Times New Roman", serif'
-  return 'var(--app-font-family), system-ui, sans-serif'
 }
 
 function formatDate(value: string): string {

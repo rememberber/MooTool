@@ -72,7 +72,7 @@ export class QuickNoteVaultRepository {
         title,
         style: '',
         syntax: 'text/plain',
-        fontName: 'ui-monospace',
+        fontName: typeof input.fontName === 'string' ? input.fontName.slice(0, 120) : 'ui-monospace',
         fontSize: clampFontSize(input.fontSize ?? 14),
         lineSpacing: 1,
         color: 'default',

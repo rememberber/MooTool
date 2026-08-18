@@ -1007,6 +1007,7 @@ function registerIpc(): void {
       title: typeof input.title === 'string' ? input.title : '',
       parentPath: typeof input.parentPath === 'string' ? input.parentPath : undefined,
       fontSize: typeof input.fontSize === 'number' ? input.fontSize : undefined,
+      fontName: typeof input.fontName === 'string' ? input.fontName : undefined,
       lineWrap: typeof input.lineWrap === 'boolean' ? input.lineWrap : undefined
     })
     quickNoteCheckpointScheduler.recordActivity('Create Quick Note')

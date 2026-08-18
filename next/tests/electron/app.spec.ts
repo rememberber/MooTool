@@ -323,7 +323,7 @@ test('creates and persists custom navigation groups', async () => {
   await expect(customGroup).toBeVisible()
   await expect(customGroup.locator('.tool-button')).toHaveCount(2)
   await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({
-    schemaVersion: 11,
+    schemaVersion: 12,
     layout: { customGroups: [{ name: '开发常用', toolIds: ['json', 'http'] }] }
   })
 
@@ -513,6 +513,9 @@ test('formats JSON and completes history and Vault workflows', async () => {
   const jsonLineOffsets = await editorLineTopOffsets(mainPage, '.json-editor')
   expect(jsonLineOffsets).toEqual(expect.arrayContaining([expect.any(Number)]))
   expect(Math.max(...jsonLineOffsets)).toBeLessThan(1.5)
+  await mainPage.getByLabel('字体').selectOption('Georgia')
+  await expect.poll(() => mainPage.locator('.json-editor').evaluate((element) => (element as HTMLElement).style.getPropertyValue('--text-code-editor-font-family'))).toContain('Georgia')
+  await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ editor: { jsonFontName: 'Georgia' } })
   await mainPage.evaluate(() => window.mootool.updateSettings({ editor: { jsonFontSize: 14 } }))
 
   await mainPage.getByRole('button', { name: '历史', exact: true }).click()
@@ -1135,6 +1138,8 @@ test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () =>
   await createDialog.getByLabel('名称').fill('E2E Quick Note')
   await createDialog.getByRole('button', { name: '创建' }).click()
   await expect(mainPage.getByLabel('字体')).toHaveValue('ui-monospace')
+  await mainPage.getByLabel('字体').selectOption('Georgia')
+  await expect.poll(() => mainPage.locator('.quick-note-code-editor').evaluate((element) => (element as HTMLElement).style.getPropertyValue('--text-code-editor-font-family'))).toContain('Georgia')
   const colorTrigger = mainPage.getByRole('button', { name: '笔记颜色', exact: true })
   await expect(colorTrigger).toHaveAttribute('data-color', 'default')
   await expect.poll(() => colorTrigger.evaluate((element) => ({
@@ -1181,7 +1186,7 @@ test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () =>
   await expect.poll(() => mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick Note.txt'))).toEqual(
     expect.objectContaining({
       content: '## E2E Markdown\n\n- Vault file\n- Git checkpoint',
-      metadata: expect.objectContaining({ color: 'yellow', fontName: 'ui-monospace' })
+      metadata: expect.objectContaining({ color: 'yellow', fontName: 'Georgia' })
     })
   )
 

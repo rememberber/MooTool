@@ -2,7 +2,7 @@ import { normalizeTranslationLanguagePair } from './network'
 import { isToolId, type ToolId } from './app'
 import { isVaultTreeExpandMode, type VaultTreeExpandMode } from '../vaultTreeExpand'
 
-export const appSettingsSchemaVersion = 11
+export const appSettingsSchemaVersion = 12
 
 export type AppLanguage = 'zh-CN' | 'en-US' | 'ja-JP'
 export type ThemePreference = 'system' | 'light' | 'dark'
@@ -53,7 +53,9 @@ export type AppSettings = {
   }
   editor: {
     sqlDialect: string
+    jsonFontName: string
     jsonFontSize: number
+    quickNoteFontName: string
     quickNoteFontSize: number
     softWrap: boolean
   }
@@ -148,7 +150,9 @@ export const defaultAppSettings: AppSettings = {
   },
   editor: {
     sqlDialect: 'Standard SQL',
+    jsonFontName: 'ui-monospace',
     jsonFontSize: 14,
+    quickNoteFontName: 'ui-monospace',
     quickNoteFontSize: 14,
     softWrap: true
   },
@@ -269,7 +273,9 @@ export function normalizeSettings(value: AppSettings): AppSettings {
     },
     editor: {
       ...value.editor,
+      jsonFontName: normalizeFontName(value.editor.jsonFontName, defaultAppSettings.editor.jsonFontName),
       jsonFontSize: clampNumber(value.editor.jsonFontSize, 11, 24, defaultAppSettings.editor.jsonFontSize),
+      quickNoteFontName: normalizeFontName(value.editor.quickNoteFontName, defaultAppSettings.editor.quickNoteFontName),
       quickNoteFontSize: clampNumber(value.editor.quickNoteFontSize, 11, 24, defaultAppSettings.editor.quickNoteFontSize)
     },
     network: {
@@ -363,6 +369,12 @@ function normalizeRuntimeOptions(value: Record<RuntimeSettingsId, RuntimeRunOpti
     arguments: typeof value?.[id]?.arguments === 'string' ? value[id].arguments.slice(0, 2000) : '',
     workingDirectory: typeof value?.[id]?.workingDirectory === 'string' ? value[id].workingDirectory.slice(0, 1000) : ''
   }])) as Record<RuntimeSettingsId, RuntimeRunOption>
+}
+
+function normalizeFontName(value: unknown, fallback: string): string {
+  if (typeof value !== 'string') return fallback
+  const trimmed = value.trim().slice(0, 120)
+  return trimmed || fallback
 }
 
 function clampNumber(value: number, minimum: number, maximum: number, fallback: number): number {

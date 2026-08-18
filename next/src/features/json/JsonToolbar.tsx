@@ -1,6 +1,7 @@
 import { Copy, Download, Eraser, FolderOpen, History, Minimize2, MoreHorizontal, Search, Sparkles, WrapText } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { FindReplaceBar } from '@/shared/components/FindReplaceBar'
+import { FontSelect } from '@/shared/components/FontSelect'
 import { Tooltip } from '@/shared/components/Tooltip'
 import type { FindReplaceOptions } from '@/shared/components/findReplace'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -14,6 +15,8 @@ type JsonToolbarProps = {
   findOptions: FindReplaceOptions
   matchCount: number
   replacedCount: number
+  fontName: string
+  onFontNameChange: (value: string) => void
   onFormat: () => void
   onCompress: () => void
   onToggleWrap: () => void
@@ -44,6 +47,8 @@ export function JsonToolbar({
   findOptions,
   matchCount,
   replacedCount,
+  fontName,
+  onFontNameChange,
   onFormat,
   onCompress,
   onToggleWrap,
@@ -70,6 +75,13 @@ export function JsonToolbar({
       <div className="editor-toolbar">
         <button className="toolbar-button toolbar-button--primary" type="button" onClick={onFormat}><Sparkles size={14} />{t('json.action.format')}</button>
         <button className="toolbar-button" type="button" onClick={onCompress}><Minimize2 size={14} />{t('json.action.compress')}</button>
+        <FontSelect
+          className="editor-font-select"
+          ariaLabel={t('json.font')}
+          value={fontName}
+          labels={{ 'ui-monospace': t('quickNote.font.mono') }}
+          onChange={onFontNameChange}
+        />
         <IconAction label={wrap ? t('json.action.wrap') : t('json.action.nowrap')} onClick={onToggleWrap}><WrapText size={14} /></IconAction>
         <IconAction label={copied ? t('json.action.copied') : t('json.action.copy')} onClick={onCopy}><Copy size={14} /></IconAction>
         <span className="toolbar-divider" />

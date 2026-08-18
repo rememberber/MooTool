@@ -7,6 +7,8 @@ it('uses the MooTool Next visual defaults', () => {
   expect(defaultAppSettings.appearance.fontSize).toBe(13)
   expect(defaultAppSettings.layout.navigationStyle).toBe('classic')
   expect(defaultAppSettings.editor.quickNoteFontSize).toBe(14)
+  expect(defaultAppSettings.editor.jsonFontName).toBe('ui-monospace')
+  expect(defaultAppSettings.editor.quickNoteFontName).toBe('ui-monospace')
   expect(defaultAppSettings.general.autoDownloadUpdates).toBe(true)
 })
 
@@ -63,7 +65,7 @@ describe('mergeSettings', () => {
       }
     })
 
-    expect(settings.schemaVersion).toBe(11)
+    expect(settings.schemaVersion).toBe(12)
     expect(settings.appearance.interfaceStyle).toBe('modern')
     expect(settings.runtime.javaPath).toBe('/opt/java')
     expect(settings.runtime.drafts).toEqual(defaultAppSettings.runtime.drafts)
@@ -191,5 +193,14 @@ describe('mergeSettings', () => {
     })
 
     expect(settings.appearance.interfaceStyle).toBe('claude')
+  })
+
+  it('normalizes editor font family names', () => {
+    const settings = mergeSettings(defaultAppSettings, {
+      editor: { jsonFontName: '  PingFang SC  ', quickNoteFontName: '' }
+    })
+
+    expect(settings.editor.jsonFontName).toBe('PingFang SC')
+    expect(settings.editor.quickNoteFontName).toBe('ui-monospace')
   })
 })

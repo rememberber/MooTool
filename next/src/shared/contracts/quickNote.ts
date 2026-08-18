@@ -41,6 +41,7 @@ export type QuickNoteListInput = {
 export type CreateQuickNoteInput = {
   title: string
   parentPath?: string
+  fontName?: string
   fontSize?: number
   lineWrap?: boolean
 }

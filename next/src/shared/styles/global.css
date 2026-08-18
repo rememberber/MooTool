@@ -887,14 +887,17 @@
   display: none;
 }
 
-.quick-note-toolbar select:first-of-type {
+.quick-note-toolbar select:first-of-type,
+.quick-note-syntax {
   flex: 0 0 auto;
   min-width: 86px;
 }
 
-.quick-note-toolbar select:nth-of-type(2) {
+.quick-note-toolbar select:nth-of-type(2),
+.quick-note-font-select {
   flex: 0 0 auto;
   min-width: 82px;
+  max-width: 148px;
 }
 
 .quick-note-font-size {
@@ -1516,10 +1519,6 @@
   .quick-note-layout--replace-open,
   .quick-note-layout--tree-closed.quick-note-layout--replace-open {
     position: relative;
-  }
-
-  .quick-note-toolbar select:nth-of-type(2) {
-    display: none;
   }
 }
 
@@ -3301,6 +3300,25 @@ select:not([multiple]) {
   margin: 0 1px;
   background: var(--border);
   flex: 0 0 1px;
+}
+
+.editor-font-select {
+  height: 34px;
+  min-width: 110px;
+  max-width: 168px;
+  padding: 0 8px;
+  color: var(--text-body);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: 9px;
+  outline: none;
+  font: inherit;
+  font-size: 13px;
+  flex: 0 0 auto;
+}
+
+.editor-font-select:focus {
+  border-color: var(--accent);
 }
 
 .json-findbar.find-replace-bar {
@@ -9157,11 +9175,13 @@ select:not([multiple]) {
   padding: 7px 8px;
 }
 
-.quick-note-toolbar select:first-of-type {
+.quick-note-toolbar select:first-of-type,
+.quick-note-syntax {
   min-width: 102px;
 }
 
-.quick-note-toolbar select:nth-of-type(2) {
+.quick-note-toolbar select:nth-of-type(2),
+.quick-note-font-select {
   min-width: 94px;
 }
 
