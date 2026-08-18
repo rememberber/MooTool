@@ -1,5 +1,4 @@
 import {
-  Boxes,
   CheckCircle2,
   Cpu,
   Database,
@@ -14,6 +13,7 @@ import {
 import { useI18n } from '../../app/i18n'
 import type { RuntimeInfo } from '../../platform/contracts/runtime'
 import sponsorQrImage from '../../../../assets/material/wx-zanshang.jpg'
+import brandLogo from '../../assets/brand/mootool-logo.png'
 
 interface HomePageProps {
   runtimeInfo?: RuntimeInfo
@@ -48,7 +48,7 @@ export function HomePage({ runtimeInfo, onOpenJson }: HomePageProps) {
             aria-label={t('app.home.website')}
             onClick={() => openExternalPage('https://mootool.luoboduner.com')}
           >
-            <div className="brand-symbol brand-symbol--large"><Boxes aria-hidden="true" /></div>
+            <img className="brand-symbol brand-symbol--large" src={brandLogo} alt="" aria-hidden="true" draggable={false} />
           </button>
 
           <div className="home-identity">

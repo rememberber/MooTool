@@ -293,31 +293,20 @@ svg {
 }
 
 .brand-symbol {
-  display: inline-grid;
+  display: block;
   width: 29px;
   height: 29px;
   flex: 0 0 auto;
-  place-items: center;
   border-radius: 9px;
-  background: linear-gradient(145deg, #4384ff, #245dcc);
-  box-shadow: 0 5px 12px rgba(47, 111, 237, 0.24);
-  color: white;
-}
-
-.brand-symbol svg {
-  width: 17px;
-  height: 17px;
+  object-fit: cover;
+  background: transparent;
+  box-shadow: none;
 }
 
 .brand-symbol--large {
   width: 86px;
   height: 86px;
-  border-radius: 24px;
-}
-
-.brand-symbol--large svg {
-  width: 46px;
-  height: 46px;
+  border-radius: 18px;
 }
 
 .footer-actions {
@@ -421,6 +410,7 @@ svg {
 .home-logo-button .brand-symbol {
   width: 104px;
   height: 104px;
+  border-radius: 24px;
 }
 
 .home-identity {

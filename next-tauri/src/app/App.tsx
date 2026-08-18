@@ -11,6 +11,7 @@ import {
   Settings
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
+import brandLogo from '../assets/brand/mootool-logo.png'
 import { CalculatorHost } from '../features/calculator/CalculatorHost'
 import { ColorHost } from '../features/color/ColorHost'
 import { CryptoHost } from '../features/crypto/CryptoHost'
@@ -355,7 +356,7 @@ export function App() {
 
         <footer className="sidebar-footer">
           <div className="brand-lockup">
-            <span className="brand-symbol"><Boxes /></span>
+            <img className="brand-symbol" src={brandLogo} alt="" aria-hidden="true" draggable={false} />
             <span>MooTool <small>Tauri</small></span>
           </div>
           <div className="footer-actions">
