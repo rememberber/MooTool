@@ -91,4 +91,48 @@ describe('findReplace', () => {
     )
     expect(result).toEqual({ content: '1a 2b', count: 2 })
   })
+
+  it('finds newline matches written as \\n in regex mode', () => {
+    expect(findAllMatches('a\nb\nc', '\\n', { matchCase: false, wholeWord: false, regex: true }))
+      .toEqual([
+        { start: 1, end: 2 },
+        { start: 3, end: 4 }
+      ])
+  })
+
+  it('inserts a newline when replacing with \\n in regex mode', () => {
+    expect(replaceAllMatches(
+      'a,b,c',
+      ',',
+      '\\n',
+      { matchCase: false, wholeWord: false, regex: true }
+    )).toEqual({ content: 'a\nb\nc', count: 2 })
+  })
+
+  it('keeps \\n literal when regex mode is off', () => {
+    expect(replaceAllMatches(
+      'a,b',
+      ',',
+      '\\n',
+      { matchCase: false, wholeWord: false, regex: false }
+    )).toEqual({ content: 'a\\nb', count: 1 })
+  })
+
+  it('expands \\n together with capture groups', () => {
+    expect(replaceAllMatches(
+      'a1',
+      '(\\w)(\\d)',
+      '$2\\n$1',
+      { matchCase: false, wholeWord: false, regex: true }
+    )).toEqual({ content: '1\na', count: 1 })
+  })
+
+  it('treats \\\\n as a literal backslash-n in regex replacements', () => {
+    expect(replaceAllMatches(
+      'a',
+      'a',
+      '\\\\n',
+      { matchCase: false, wholeWord: false, regex: true }
+    )).toEqual({ content: '\\n', count: 1 })
+  })
 })

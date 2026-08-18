@@ -68,6 +68,20 @@ export function findNextMatch(
   return matches[matches.length - 1]
 }
 
+/** Expand `\n` `\t` `\r` and `\\` in a regex replacement. `$1` / `$&` stay as JS tokens. */
+function expandRegexReplacement(replaceWith: string): string {
+  return replaceWith.replace(/\\([nrt\\])/g, (_match, token: string) => {
+    if (token === 'n') return '\n'
+    if (token === 'r') return '\r'
+    if (token === 't') return '\t'
+    return '\\'
+  })
+}
+
+function replacementTemplate(replaceWith: string, regex: boolean): string {
+  return regex ? expandRegexReplacement(replaceWith) : replaceWith
+}
+
 function applyReplacement(matchedText: string, replaceWith: string, expression: RegExp): string {
   const single = new RegExp(expression.source, expression.flags.replace('g', ''))
   return matchedText.replace(single, replaceWith)
@@ -88,6 +102,8 @@ export function replaceCurrentMatch(
   const expression = buildSearchRegExp(query, options)
   if (!expression) return { content, nextFrom: selection?.end ?? 0, replaced: false, match: null }
 
+  const replacement = replacementTemplate(replaceWith, options.regex)
+
   if (selection && selection.end > selection.start) {
     const selected = content.slice(selection.start, selection.end)
     const selectedMatches = findAllMatches(selected, query, options)
@@ -95,7 +111,7 @@ export function replaceCurrentMatch(
       && selectedMatches[0].start === 0
       && selectedMatches[0].end === selected.length
     if (exact) {
-      const replacedSlice = applyReplacement(selected, replaceWith, expression)
+      const replacedSlice = applyReplacement(selected, replacement, expression)
       const next = `${content.slice(0, selection.start)}${replacedSlice}${content.slice(selection.end)}`
       return {
         content: next,
@@ -110,7 +126,7 @@ export function replaceCurrentMatch(
   const match = findNextMatch(content, query, options, from, true)
   if (!match) return { content, nextFrom: from, replaced: false, match: null }
   const slice = content.slice(match.start, match.end)
-  const replacedSlice = applyReplacement(slice, replaceWith, expression)
+  const replacedSlice = applyReplacement(slice, replacement, expression)
   const next = `${content.slice(0, match.start)}${replacedSlice}${content.slice(match.end)}`
   return {
     content: next,
@@ -128,11 +144,12 @@ export function replaceAllMatches(
 ): { content: string; count: number } {
   const expression = buildSearchRegExp(query, options)
   if (!expression) return { content, count: 0 }
+  const replacement = replacementTemplate(replaceWith, options.regex)
   let count = 0
   const next = content.replace(expression, (match) => {
     if (!match.length) return match
     count += 1
-    return applyReplacement(match, replaceWith, expression)
+    return applyReplacement(match, replacement, expression)
   })
   return { content: next, count }
 }
