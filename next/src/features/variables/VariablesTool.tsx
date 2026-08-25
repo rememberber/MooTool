@@ -4,6 +4,7 @@ import { Dialog } from '@/shared/components/Dialog'
 import { ToolPageHeader, ToolTabs } from '@/shared/components/ToolPage'
 import type { EnvironmentEntry, EnvironmentScope, EnvironmentSnapshot } from '@/shared/contracts/system'
 import { useToolActions } from '@/shared/hooks/useToolActions'
+import { useDesktopDialog } from '@/shared/feedback/DesktopDialogProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 
 type VariableTab = 'environment' | 'runtime'
@@ -14,6 +15,7 @@ const emptySnapshot: EnvironmentSnapshot = { environment: [], runtime: [], user:
 export function VariablesTool() {
   const { t } = useI18n()
   const actions = useToolActions('variables')
+  const desktopDialog = useDesktopDialog()
   const [tab, setTab] = useState<VariableTab>('environment')
   const [scope, setScope] = useState<DisplayScope>('process')
   const [targetScope, setTargetScope] = useState<EnvironmentScope>('user')
@@ -78,7 +80,7 @@ export function VariablesTool() {
   }
 
   async function deleteVariable(entry: EnvironmentEntry): Promise<void> {
-    if (scope === 'process' || !window.confirm(t('variables.confirmDelete', { key: entry.key }))) return
+    if (scope === 'process' || !await desktopDialog.confirm(t('variables.confirmDelete', { key: entry.key }), { confirmLabel: t('common.action.delete'), danger: true })) return
     setSaving(true)
     try {
       await window.mootool.deleteEnvironmentVariable({ scope, key: entry.key })

@@ -2,7 +2,7 @@ import { ClipboardPaste, Copy, Download, FolderOpen, History, QrCode, ScanLine, 
 import { useCallback, useEffect, useState } from 'react'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
-import { ToolPageHeader, ToolTabs } from '@/shared/components/ToolPage'
+import { ToolTabs } from '@/shared/components/ToolPage'
 import { TextCodeEditor } from '@/shared/components/TextCodeEditor'
 import type { FuncHistoryRecord } from '@/shared/contracts/history'
 import { useToolActions } from '@/shared/hooks/useToolActions'
@@ -100,8 +100,7 @@ export function QrCodeTool() {
   }
 
   return (
-    <section className="tool-page p4-tool">
-      <ToolPageHeader title={t('qrcode.title')} />
+    <section className="tool-page tool-page--workspace p4-tool qrcode-tool-page" aria-label={t('qrcode.title')}>
       <div className="local-tool-shell qrcode-workspace">
         <ToolTabs tabs={[{ id: 'generate', label: t('qrcode.tab.generate') }, { id: 'recognize', label: t('qrcode.tab.recognize') }, { id: 'history', label: t('qrcode.tab.history') }]} active={tab} onChange={setTab} />
         {tab === 'generate' && <ResizableColumns className="qrcode-generate-layout" columns={2} defaultSizes={[1, 1]} minPaneWidths={[300, 280]} storageKey="qrcode-generate"><section className="qrcode-input-panel"><div className="qrcode-content-editor"><span>{t('qrcode.content')}</span><TextCodeEditor ariaLabel={t('qrcode.content')} value={content} onChange={setContent} /></div><div className="qrcode-options"><label><span>{t('qrcode.size')}</span><div><input type="number" min={120} max={2000} value={size} onChange={(event) => setSize(Number(event.target.value))} /><em>px</em></div></label><label><span>{t('qrcode.correction')}</span><select value={correction} onChange={(event) => setCorrection(event.target.value as QrErrorCorrection)}>{(['L', 'M', 'Q', 'H'] as const).map((level) => <option value={level} key={level}>{t(`qrcode.level.${level}` as 'qrcode.level.L')}</option>)}</select></label><label><span>{t('qrcode.logo')}</span><button className="dialog-button" type="button" onClick={() => { void chooseLogo() }}><FolderOpen size={14} />{logoName || t('qrcode.chooseLogo')}</button></label></div><button className="primary-command qrcode-generate-button" type="button" disabled={busy || !content.trim()} onClick={() => { void generate() }}><QrCode size={15} />{busy ? t('common.processing') : t('qrcode.generate')}</button></section><section className="qrcode-preview-panel">{qrDataUrl ? <img src={qrDataUrl} alt={t('qrcode.preview')} /> : <div className="image-placeholder"><QrCode size={42} /><span>{t('qrcode.preview')}</span></div>}<div className="qrcode-preview-actions"><button className="dialog-button" type="button" disabled={!qrDataUrl} onClick={() => { void saveQr() }}><Download size={14} />{t('common.save')}</button><button className="dialog-button" type="button" disabled={!qrDataUrl} onClick={() => { void window.mootool.writeClipboardImage(qrDataUrl); actions.toast.success(t('json.notice.copied')) }}><Copy size={14} />{t('common.action.copy')}</button></div></section></ResizableColumns>}

@@ -1,5 +1,5 @@
 import { X } from 'lucide-react'
-import { useEffect, useId, type ReactNode } from 'react'
+import { useEffect, useId, useRef, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 import { useToolActivity } from './ToolActivity'
 
@@ -14,12 +14,15 @@ type DialogProps = {
 
 export function Dialog({ title, open, onClose, children, footer, width = 640 }: DialogProps) {
   const titleId = useId()
+  const dialogRef = useRef<HTMLElement>(null)
   const toolActive = useToolActivity()
   const visible = open && toolActive
   useEffect(() => {
     if (!visible) return
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
+        const dialogs = document.querySelectorAll<HTMLElement>('[role="dialog"][aria-modal="true"]')
+        if (dialogs.item(dialogs.length - 1) !== dialogRef.current) return
         event.preventDefault()
         onClose()
       }
@@ -33,6 +36,7 @@ export function Dialog({ title, open, onClose, children, footer, width = 640 }: 
   return createPortal(
     <div className="dialog-backdrop" role="presentation" onMouseDown={onClose}>
       <section
+        ref={dialogRef}
         className="dialog"
         role="dialog"
         aria-modal="true"

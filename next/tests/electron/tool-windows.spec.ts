@@ -47,14 +47,17 @@ test('moves one live tool view into a separate window and restores it without lo
       && dragRegion.getBoundingClientRect().right <= workspace.getBoundingClientRect().left
   })).toBe(true)
   await expect.poll(async () => (await evaluateTool<boolean>('calculator', `(() => {
+    const shell = document.querySelector('.tool-view-shell')
     const dragRegion = document.querySelector('.window-drag-region').getBoundingClientRect()
-    const button = document.querySelector('.tool-window-toggle').getBoundingClientRect()
-    return dragRegion.right <= button.left
+    const slot = document.querySelector('.tool-window-toggle-slot').getBoundingClientRect()
+    return shell?.classList.contains('tool-view-shell--immersive')
+      && Math.round(dragRegion.height) === 6
+      && Math.round(slot.width) === 7
   })()`)).value).toBe(true)
 
   await clickToolWindowToggle('calculator')
-  await expect(mainPage.getByRole('heading', { name: '计算器 已在独立窗口中打开' })).toBeVisible()
   await expect.poll(() => getToolSnapshot('calculator')).toMatchObject({ detached: true, ready: true })
+  await expect(mainPage.getByRole('heading', { name: '计算器 已在独立窗口中打开' })).toBeVisible()
   await expect.poll(() => getBaseWindowCount()).toBe(2)
   await expect.poll(() => getDetachedWindowChrome()).toMatchObject({
     contentInsetTop: 0,
@@ -87,40 +90,51 @@ test('keeps multiple detached tools independent and returns each one to its dock
   await evaluateTool('json', `document.querySelector('.tool-window-toggle').click()`)
   await expect.poll(() => getToolSnapshot('json')).toMatchObject({ detached: true, ready: true })
   await expect.poll(async () => (await evaluateTool('json', `(() => {
-    const logo = document.querySelector('.tool-window-brand')
-    const title = document.querySelector('.tool-page__header h1')
-    const zone = document.querySelector('.tool-window-brand-zone')
-    if (!logo || !title || !zone) return null
-    const logoBounds = logo.getBoundingClientRect()
-    const titleBounds = title.getBoundingClientRect()
-    const zoneBounds = zone.getBoundingClientRect()
-    const zoneStyle = getComputedStyle(zone)
+    const shell = document.querySelector('.tool-view-shell')
+    const page = document.querySelector('.json-tool')
+    const drag = document.querySelector('.window-drag-region')
+    const slot = document.querySelector('.tool-window-toggle-slot')
+    const trigger = slot?.querySelector('.tooltip-trigger')
+    if (!shell || !page || !drag || !slot || !trigger) return null
+    const pageBounds = page.getBoundingClientRect()
+    const dragBounds = drag.getBoundingClientRect()
+    const slotBounds = slot.getBoundingClientRect()
+    const triggerStyle = getComputedStyle(trigger)
     return {
-      title: title.textContent,
-      logoBeforeTitle: logoBounds.right < titleBounds.left,
-      logoVisible: logoBounds.width > 0 && logoBounds.height > 0,
-      logoLoaded: logo instanceof HTMLImageElement && logo.complete && logo.naturalWidth > 0,
-      logoLeft: Math.round(logoBounds.left),
-      titleLeft: Math.round(titleBounds.left),
-      sameRow: Math.abs((logoBounds.top + logoBounds.height / 2) - (titleBounds.top + titleBounds.height / 2)) < 2,
-      headerTop: Math.round(zoneBounds.top),
-      controlsHidden: zone.getAttribute('data-window-controls-visible') === 'false',
-      hasVisualOverlay: zoneStyle.backgroundImage !== 'none'
-        || zoneStyle.boxShadow !== 'none'
-        || String(zoneStyle.backdropFilter || zoneStyle.getPropertyValue('-webkit-backdrop-filter')) !== 'none'
+      immersive: shell.classList.contains('tool-view-shell--immersive'),
+      accessibleName: page.getAttribute('aria-label'),
+      visibleTitleCount: page.querySelectorAll('h1').length,
+      brandCount: shell.querySelectorAll('.tool-window-brand-zone').length,
+      pageTop: Math.round(pageBounds.top),
+      dragHeight: Math.round(dragBounds.height),
+      edgeSlotWidth: Math.round(slotBounds.width),
+      toggleOpacity: triggerStyle.opacity,
+      togglePointerEvents: triggerStyle.pointerEvents
     }
   })()`)).value).toEqual({
-    title: 'JSON 工作台',
-    logoBeforeTitle: true,
-    logoVisible: true,
-    logoLoaded: true,
-    logoLeft: 20,
-    titleLeft: 54,
-    sameRow: true,
-    headerTop: 18,
-    controlsHidden: true,
-    hasVisualOverlay: false
+    immersive: true,
+    accessibleName: 'JSON 工作台',
+    visibleTitleCount: 0,
+    brandCount: 0,
+    pageTop: 0,
+    dragHeight: 6,
+    edgeSlotWidth: 7,
+    toggleOpacity: '0',
+    togglePointerEvents: 'none'
   })
+
+  await evaluateTool('json', `document.querySelector('.tool-window-toggle').focus()`)
+  await expect.poll(async () => (await evaluateTool('json', `(() => {
+    const slot = document.querySelector('.tool-window-toggle-slot')
+    const trigger = slot?.querySelector('.tooltip-trigger')
+    if (!slot || !trigger) return null
+    return {
+      edgeSlotWidth: Math.round(slot.getBoundingClientRect().width),
+      toggleOpacity: getComputedStyle(trigger).opacity,
+      togglePointerEvents: getComputedStyle(trigger).pointerEvents
+    }
+  })()`)).value).toEqual({ edgeSlotWidth: 52, toggleOpacity: '1', togglePointerEvents: 'auto' })
+  await evaluateTool('json', `document.querySelector('.tool-window-toggle').blur()`)
 
   await mainPage.getByRole('button', { name: 'HTTP 请求', exact: true }).click()
   await waitForToolSelector('http', '.http-tool-page')
@@ -138,77 +152,68 @@ test('keeps multiple detached tools independent and returns each one to its dock
   await expect.poll(() => getBaseWindowCount()).toBe(1)
 })
 
-test('aligns detached tool branding, header controls, and dock action in one top row', async () => {
+test('keeps a custom-header tool immersive while preserving its view controls', async () => {
   await mainPage.getByRole('button', { name: '随手记', exact: true }).click()
   await waitForToolSelector('quickNote', '.quick-note-tool')
   await evaluateTool('quickNote', `document.querySelector('.tool-window-toggle').click()`)
   await expect.poll(() => getToolSnapshot('quickNote')).toMatchObject({ detached: true, ready: true })
 
   await expect.poll(async () => (await evaluateTool('quickNote', `(() => {
-    const bounds = (selector) => document.querySelector(selector)?.getBoundingClientRect()
-    const header = bounds('.quick-note-page-header')
-    const zone = bounds('.tool-window-brand-zone')
-    const logo = bounds('.tool-window-brand')
-    const title = bounds('.quick-note-page-header h1')
-    const switcher = bounds('.quick-note-view-switch')
-    const dock = bounds('.tool-window-toggle')
-    if (!header || !zone || !logo || !title || !switcher || !dock) return null
-    const centerY = (rect) => rect.top + rect.height / 2
+    const shell = document.querySelector('.tool-view-shell')
+    const page = document.querySelector('.quick-note-tool')
+    const header = document.querySelector('.quick-note-page-header')?.getBoundingClientRect()
+    const title = document.querySelector('.quick-note-page-header h1')?.getBoundingClientRect()
+    const switcher = document.querySelector('.quick-note-view-switch')?.getBoundingClientRect()
+    const drag = document.querySelector('.window-drag-region')?.getBoundingClientRect()
+    const slot = document.querySelector('.tool-window-toggle-slot')?.getBoundingClientRect()
+    if (!shell || !page || !header || !title || !switcher || !drag || !slot) return null
     return {
+      immersive: shell.classList.contains('tool-view-shell--immersive'),
+      brandCount: shell.querySelectorAll('.tool-window-brand-zone').length,
+      pageTop: Math.round(page.getBoundingClientRect().top),
       headerTop: Math.round(header.top),
-      brandTop: Math.round(zone.top),
-      dockTop: Math.round(dock.top),
-      logoAligned: Math.abs(centerY(logo) - centerY(dock)) <= 2,
-      titleAligned: Math.abs(centerY(title) - centerY(dock)) <= 2,
-      switcherAligned: Math.abs(centerY(switcher) - centerY(dock)) <= 2,
-      controlsHidden: document.querySelector('.tool-window-brand-zone').getAttribute('data-window-controls-visible') === 'false',
-      logoLeft: Math.round(logo.left),
-      brandDraggable: getComputedStyle(document.querySelector('.tool-window-brand-zone')).getPropertyValue('-webkit-app-region') === 'drag'
+      headerCompact: header.height >= 42 && header.height <= 48,
+      titleWidth: Math.round(title.width),
+      titleHeight: Math.round(title.height),
+      switchVisible: switcher.width > 0 && switcher.height > 0,
+      dragHeight: Math.round(drag.height),
+      edgeSlotWidth: Math.round(slot.width)
     }
   })()`)).value).toMatchObject({
-    headerTop: 18,
-    brandTop: 18,
-    dockTop: 18,
-    logoAligned: true,
-    titleAligned: true,
-    switcherAligned: true,
-    controlsHidden: true,
-    logoLeft: 20,
-    brandDraggable: true
+    immersive: true,
+    brandCount: 0,
+    pageTop: 0,
+    headerTop: 0,
+    headerCompact: true,
+    titleWidth: 1,
+    titleHeight: 1,
+    switchVisible: true,
+    dragHeight: 6,
+    edgeSlotWidth: 7
   })
 
   await sendToolWindowControlsVisibility('quickNote', true)
   await expect.poll(async () => (await evaluateTool('quickNote', `(() => {
-    const zone = document.querySelector('.tool-window-brand-zone')
-    const logo = document.querySelector('.tool-window-brand').getBoundingClientRect()
-    const title = document.querySelector('.quick-note-page-header h1').getBoundingClientRect()
     return {
-      controlsVisible: zone.getAttribute('data-window-controls-visible') === 'true',
-      logoLeft: Math.round(logo.left),
-      titleLeft: Math.round(title.left)
+      controlsClass: document.querySelector('.tool-view-shell').classList.contains('tool-view-shell--window-controls-visible'),
+      brandCount: document.querySelectorAll('.tool-window-brand-zone').length,
+      headerTop: Math.round(document.querySelector('.quick-note-page-header').getBoundingClientRect().top)
     }
   })()`)).value).toEqual({
-    controlsVisible: process.platform === 'darwin',
-    logoLeft: process.platform === 'darwin' ? 88 : 20,
-    titleLeft: process.platform === 'darwin' ? 122 : 54
+    controlsClass: true,
+    brandCount: 0,
+    headerTop: 0
   })
 
   await sendToolWindowControlsVisibility('quickNote', false)
-  await expect.poll(async () => (await evaluateTool('quickNote', `(() => {
-    const zone = document.querySelector('.tool-window-brand-zone')
-    const logo = document.querySelector('.tool-window-brand').getBoundingClientRect()
-    return {
-      controlsHidden: zone.getAttribute('data-window-controls-visible') === 'false',
-      logoLeft: Math.round(logo.left)
-    }
-  })()`)).value).toEqual({ controlsHidden: true, logoLeft: 20 })
+  await expect.poll(async () => (await evaluateTool('quickNote', `document.querySelector('.tool-view-shell').classList.contains('tool-view-shell--window-controls-visible')`)).value).toBe(false)
 
   await closeDetachedBaseWindow()
   await expect.poll(() => getToolSnapshot('quickNote')).toMatchObject({ detached: false, ready: true })
 })
 
 test('keeps double-clicked Quick Note split-preview text selected after auto-save', async () => {
-  await mainPage.getByRole('button', { name: '随手记', exact: true }).click()
+  await mainPage.locator('.tool-button').filter({ hasText: '随手记' }).click()
   await waitForToolSelector('quickNote', '.quick-note-tool')
   await evaluateTool('quickNote', `(() => {
     const split = [...document.querySelectorAll('[role="tab"]')].find((tab) => tab.textContent === '分栏')
@@ -300,7 +305,12 @@ test('keeps message board presentation controls from overlapping', async () => {
       gap: Math.round(dock.left - exit.right),
       overlaps: exit.left < dock.right && exit.right > dock.left && exit.top < dock.bottom && exit.bottom > dock.top
     }
-  })()`)).value).toEqual({ gap: 20, overlaps: false })
+  })()`)).value).toMatchObject({ overlaps: false })
+  await expect.poll(async () => (await evaluateTool<number>('messageBoard', `(() => {
+    const exit = document.querySelector('.message-board-stage__exit')?.getBoundingClientRect()
+    const dock = document.querySelector('.tool-window-toggle')?.getBoundingClientRect()
+    return exit && dock ? Math.round(dock.left - exit.right) : -1
+  })()`)).value).toBeGreaterThanOrEqual(12)
 })
 
 async function waitForTool(toolId: string): Promise<{ id: number; value: string }> {
@@ -337,6 +347,17 @@ async function clickToolWindowToggle(toolId: string): Promise<void> {
     })
     if (!contents) throw new Error(`Tool webContents not found: ${id}`)
 
+    const edgePoint = await contents.executeJavaScript(`(() => {
+      const slot = document.querySelector('.tool-window-toggle-slot')
+      if (!slot) throw new Error('Tool window toggle slot not found')
+      const rect = slot.getBoundingClientRect()
+      return { x: Math.max(0, Math.round(rect.right - 2)), y: Math.round(rect.top + rect.height / 2) }
+    })()`)
+
+    contents.focus()
+    contents.sendInputEvent({ type: 'mouseMove', x: edgePoint.x, y: edgePoint.y })
+    await new Promise((resolve) => setTimeout(resolve, 180))
+
     const point = await contents.executeJavaScript(`(() => {
       const button = document.querySelector('.tool-window-toggle')
       if (!button) throw new Error('Tool window toggle not found')
@@ -344,7 +365,6 @@ async function clickToolWindowToggle(toolId: string): Promise<void> {
       return { x: Math.round(rect.left + rect.width / 2), y: Math.round(rect.top + rect.height / 2) }
     })()`)
 
-    contents.focus()
     contents.sendInputEvent({ type: 'mouseMove', x: point.x, y: point.y })
     contents.sendInputEvent({ type: 'mouseDown', x: point.x, y: point.y, button: 'left', clickCount: 1 })
     contents.sendInputEvent({ type: 'mouseUp', x: point.x, y: point.y, button: 'left', clickCount: 1 })

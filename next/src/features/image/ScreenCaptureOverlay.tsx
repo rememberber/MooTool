@@ -39,7 +39,7 @@ export function ScreenCaptureOverlay() {
         void cancel()
       } else if (event.key === 'Enter' && selection) {
         event.preventDefault()
-        void confirm()
+        void acceptCapture()
       }
     }
     window.addEventListener('keydown', keyDown)
@@ -83,7 +83,7 @@ export function ScreenCaptureOverlay() {
     if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId)
   }
 
-  async function confirm(): Promise<void> {
+  async function acceptCapture(): Promise<void> {
     if (!selection || confirmingRef.current) return
     confirmingRef.current = true
     await window.mootool.confirmScreenCapture(selection)
@@ -123,7 +123,7 @@ export function ScreenCaptureOverlay() {
           ))}
           <div className="screen-capture-overlay__commands" data-capture-command>
             <button type="button" aria-label={t('common.cancel')} onClick={() => { void cancel() }}><X size={17} /></button>
-            <button className="screen-capture-overlay__confirm" type="button" aria-label={t('image.captureConfirm')} onClick={() => { void confirm() }}><Check size={17} /></button>
+            <button className="screen-capture-overlay__confirm" type="button" aria-label={t('image.captureConfirm')} onClick={() => { void acceptCapture() }}><Check size={17} /></button>
           </div>
         </div>
       )}

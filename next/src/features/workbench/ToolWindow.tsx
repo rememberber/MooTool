@@ -6,6 +6,7 @@ import { ToolActivityProvider } from '@/shared/components/ToolActivity'
 import { Tooltip } from '@/shared/components/Tooltip'
 import { isDetachableToolId, type ToolWindowStatus } from '@/shared/contracts/app'
 import { useI18n } from '@/shared/i18n/I18nProvider'
+import { isImmersiveToolId } from './immersiveTools'
 
 export function ToolWindow({ requestedToolId }: { requestedToolId: string }) {
   const { t } = useI18n()
@@ -40,16 +41,18 @@ export function ToolWindow({ requestedToolId }: { requestedToolId: string }) {
   }
 
   const detached = status?.detached ?? false
+  const immersive = isImmersiveToolId(tool.id)
   const shellClassName = [
     'tool-view-shell',
     detached ? 'tool-view-shell--detached' : '',
+    immersive ? 'tool-view-shell--immersive' : '',
     window.mootool.platform === 'darwin' ? 'tool-view-shell--macos' : '',
     windowControlsVisible ? 'tool-view-shell--window-controls-visible' : ''
   ].filter(Boolean).join(' ')
   return (
     <main className={shellClassName}>
       <div className="window-drag window-drag-region" aria-hidden="true" />
-      {detached && (
+      {detached && !immersive && (
         <div
           className={windowControlsVisible ? 'tool-window-brand-zone tool-window-brand-zone--controls-visible' : 'tool-window-brand-zone'}
           data-window-controls-visible={windowControlsVisible}
@@ -58,12 +61,13 @@ export function ToolWindow({ requestedToolId }: { requestedToolId: string }) {
         </div>
       )}
       <div className="tool-window-toggle-slot">
-        <Tooltip content={detached ? t('toolWindow.dock') : t('toolWindow.detach')} side="bottom">
+        <Tooltip content={detached ? t('toolWindow.dock') : t('toolWindow.detach')} side={immersive ? 'left' : 'bottom'}>
           <button
             className="toolbar-button toolbar-button--icon tool-window-toggle"
             type="button"
             aria-label={detached ? t('toolWindow.dock') : t('toolWindow.detach')}
-            onClick={() => {
+            onClick={(event) => {
+              event.currentTarget.blur()
               if (detached) {
                 void window.mootool.dockToolWindow(toolId)
               }

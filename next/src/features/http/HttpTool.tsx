@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Dialog } from '@/shared/components/Dialog'
 import { FindReplaceBar } from '@/shared/components/FindReplaceBar'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
-import { ToolPageHeader, ToolTabs } from '@/shared/components/ToolPage'
+import { ToolTabs } from '@/shared/components/ToolPage'
 import { TextCodeEditor, type TextCodeEditorHandle } from '@/shared/components/TextCodeEditor'
 import { formatCodeEditorContent } from '@/shared/components/codeEditorFormatting'
 import { resolveTextCodeEditorLanguage } from '@/shared/components/codeEditorLanguage'
@@ -15,6 +15,7 @@ import {
 } from '@/shared/components/findReplace'
 import { httpMethods, type HttpCookieEntry, type HttpRequestDraft, type HttpRequestHistory, type HttpResponseResult, type KeyValueEntry, type SavedHttpRequest } from '@/shared/contracts/network'
 import { useToolActions } from '@/shared/hooks/useToolActions'
+import { useDesktopDialog } from '@/shared/feedback/DesktopDialogProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { cookie, emptyHttpRequest, entry, parseCurlCommand, toCurlCommand } from './httpTools'
@@ -26,6 +27,7 @@ export function HttpTool() {
   const { t } = useI18n()
   const { settings, updateSettings } = useSettings()
   const actions = useToolActions('http')
+  const desktopDialog = useDesktopDialog()
   const [saved, setSaved] = useState<SavedHttpRequest[]>([])
   const [search, setSearch] = useState('')
   const [request, setRequest] = useState<HttpRequestDraft>(() => emptyHttpRequest(t('http.untitled')))
@@ -121,7 +123,7 @@ export function HttpTool() {
   }
 
   async function deleteRequest(): Promise<void> {
-    if (!request.id || !window.confirm(t('http.confirmDelete'))) return
+    if (!request.id || !await desktopDialog.confirm(t('http.confirmDelete'), { confirmLabel: t('common.action.delete'), danger: true })) return
     try { await window.mootool.deleteHttpRequest(request.id); setRequest(emptyHttpRequest(t('http.untitled'))); setResponse(null); await loadSaved() } catch (error) { actions.reportError(error) }
   }
 
@@ -180,13 +182,12 @@ export function HttpTool() {
     : 'text'
 
   return (
-    <section className="tool-page p5-tool http-tool-page">
-      <ToolPageHeader title={t('http.title')} actions={<button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('common.action.history')}</button>} />
+    <section className="tool-page tool-page--workspace p5-tool http-tool-page" aria-label={t('http.title')}>
       <ResizableColumns className="local-tool-shell http-workspace" columns={2} defaultSizes={[230, 770]} minPaneWidths={[180, 420]} storageKey="http-workspace">
         <aside className="http-collection">
           <header><div className="compact-search"><Search size={13} /><input value={search} aria-label={t('common.search')} placeholder={t('common.search')} onChange={(event) => setSearch(event.target.value)} /></div><button className="icon-button" type="button" aria-label={t('common.new')} onClick={() => { setRequest(emptyHttpRequest(t('http.untitled'))); setResponse(null) }}><Plus size={14} /></button></header>
           <div className="http-saved-list">{saved.length === 0 ? <div className="history-empty">{t('http.savedEmpty')}</div> : saved.map((item) => <button className={item.id === request.id ? 'http-saved-item http-saved-item--active' : 'http-saved-item'} type="button" key={item.id} onClick={() => openSaved(item)}><strong>{item.name}</strong><span><em>{item.method}</em>{item.url || t('http.noUrl')}</span></button>)}</div>
-          <footer><button className="icon-button" type="button" aria-label={t('http.importCurl')} onClick={() => setCurlOpen(true)}><FileInput size={14} /></button><button className="icon-button" type="button" aria-label={t('http.copyCurl')} onClick={() => { void actions.copy(toCurlCommand(request)) }}><Code2 size={14} /></button><button className="icon-button" type="button" aria-label={t('common.save')} onClick={() => { setSaveName(request.name || t('http.untitled')); setSaveOpen(true) }}><Save size={14} /></button><button className="icon-button icon-button--danger" type="button" disabled={!request.id} aria-label={t('common.action.delete')} onClick={() => { void deleteRequest() }}><Trash2 size={14} /></button></footer>
+          <footer><button className="icon-button" type="button" aria-label={t('common.action.history')} onClick={() => setHistoryOpen(true)}><History size={14} /></button><button className="icon-button" type="button" aria-label={t('http.importCurl')} onClick={() => setCurlOpen(true)}><FileInput size={14} /></button><button className="icon-button" type="button" aria-label={t('http.copyCurl')} onClick={() => { void actions.copy(toCurlCommand(request)) }}><Code2 size={14} /></button><button className="icon-button" type="button" aria-label={t('common.save')} onClick={() => { setSaveName(request.name || t('http.untitled')); setSaveOpen(true) }}><Save size={14} /></button><button className="icon-button icon-button--danger" type="button" disabled={!request.id} aria-label={t('common.action.delete')} onClick={() => { void deleteRequest() }}><Trash2 size={14} /></button></footer>
         </aside>
         <main className="http-editor">
           <div className="http-url-bar">
@@ -293,9 +294,15 @@ function CookieEditor({ entries, onChange }: { entries: HttpCookieEntry[]; onCha
 
 function HttpHistoryDialog({ open, onClose, onApply }: { open: boolean; onClose: () => void; onApply: (item: HttpRequestHistory) => void }) {
   const { t } = useI18n()
+  const desktopDialog = useDesktopDialog()
   const [items, setItems] = useState<HttpRequestHistory[]>([])
   const [query, setQuery] = useState('')
   const load = useCallback(async () => setItems(await window.mootool.listHttpHistory(query)), [query])
   useEffect(() => { if (open) void load() }, [load, open])
-  return <Dialog title={t('http.history')} open={open} width={820} onClose={onClose} footer={<><button className="dialog-button dialog-button--danger" type="button" disabled={!items.length} onClick={() => { if (window.confirm(t('history.confirmClear'))) void window.mootool.clearHttpHistory().then(load) }}><Trash2 size={14} />{t('history.clearAll')}</button><button className="dialog-button" type="button" onClick={onClose}>{t('common.close')}</button></>}><div className="history-search"><Search size={14} /><input value={query} placeholder={t('history.search')} onChange={(event) => setQuery(event.target.value)} /></div><div className="http-history-list">{items.length === 0 ? <div className="history-empty">{t('history.empty')}</div> : items.map((item) => <article key={item.id}><button type="button" onClick={() => { onApply(item); onClose() }}><strong><em>{item.method}</em>{item.title || item.url}</strong><span>{item.status} · {item.costTime} ms · {item.createTime}</span><p>{item.url}</p></button><button className="icon-button" type="button" aria-label={t('history.delete')} onClick={() => { void window.mootool.deleteHttpHistory(item.id).then(load) }}><Trash2 size={13} /></button></article>)}</div></Dialog>
+  async function clearAll(): Promise<void> {
+    if (!await desktopDialog.confirm(t('history.confirmClear'), { confirmLabel: t('history.clearAll'), danger: true })) return
+    await window.mootool.clearHttpHistory()
+    await load()
+  }
+  return <Dialog title={t('http.history')} open={open} width={820} onClose={onClose} footer={<><button className="dialog-button dialog-button--danger" type="button" disabled={!items.length} onClick={() => { void clearAll() }}><Trash2 size={14} />{t('history.clearAll')}</button><button className="dialog-button" type="button" onClick={onClose}>{t('common.close')}</button></>}><div className="history-search"><Search size={14} /><input value={query} placeholder={t('history.search')} onChange={(event) => setQuery(event.target.value)} /></div><div className="http-history-list">{items.length === 0 ? <div className="history-empty">{t('history.empty')}</div> : items.map((item) => <article key={item.id}><button type="button" onClick={() => { onApply(item); onClose() }}><strong><em>{item.method}</em>{item.title || item.url}</strong><span>{item.status} · {item.costTime} ms · {item.createTime}</span><p>{item.url}</p></button><button className="icon-button" type="button" aria-label={t('history.delete')} onClick={() => { void window.mootool.deleteHttpHistory(item.id).then(load) }}><Trash2 size={13} /></button></article>)}</div></Dialog>
 }

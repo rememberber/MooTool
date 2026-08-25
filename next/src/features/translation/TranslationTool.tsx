@@ -6,6 +6,7 @@ import { useSettings } from '@/features/settings/SettingsProvider'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { TextCodeEditor } from '@/shared/components/TextCodeEditor'
 import { useToolActions } from '@/shared/hooks/useToolActions'
+import { useDesktopDialog } from '@/shared/feedback/DesktopDialogProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { MessageKey } from '@/shared/i18n/messages'
 
@@ -173,23 +174,30 @@ function LanguageSelect({ value, includeAuto = false, onChange }: { value: strin
 function WordBook({ onApply, onRetranslate }: { onApply: (word: TranslationWord) => void; onRetranslate: (word: TranslationWord) => Promise<TranslationWord> }) {
   const { t } = useI18n()
   const actions = useToolActions('translation')
+  const desktopDialog = useDesktopDialog()
   const [query, setQuery] = useState('')
   const [items, setItems] = useState<TranslationWord[]>([])
   const [selected, setSelected] = useState<TranslationWord | null>(null)
   const load = useCallback(async () => { const next = await window.mootool.listTranslationWords(query); setItems(next); setSelected((current) => current ? next.find((item) => item.id === current.id) ?? null : next[0] ?? null) }, [query])
   useEffect(() => { const timer = window.setTimeout(() => { void load() }, 100); return () => clearTimeout(timer) }, [load])
   async function save(): Promise<void> { if (!selected) return; try { setSelected(await window.mootool.saveTranslationWord(selected)); await load(); actions.toast.success(t('common.saved')) } catch (error) { actions.reportError(error) } }
-  async function remove(): Promise<void> { if (!selected || !window.confirm(t('translation.confirmDeleteWord'))) return; await window.mootool.deleteTranslationWord(selected.id); setSelected(null); await load() }
+  async function remove(): Promise<void> { if (!selected || !await desktopDialog.confirm(t('translation.confirmDeleteWord'), { confirmLabel: t('common.action.delete'), danger: true })) return; await window.mootool.deleteTranslationWord(selected.id); setSelected(null); await load() }
   return <ResizableColumns className="translation-record-layout" columns={2} defaultSizes={[220, 780]} minPaneWidths={[170, 360]} storageKey="translation-words"><aside><div className="compact-search"><Search size={13} /><input aria-label={t('translation.searchWords')} value={query} placeholder={t('translation.searchWords')} onChange={(event) => setQuery(event.target.value)} /></div><div className="translation-record-list">{items.map((item) => <button className={item.id === selected?.id ? 'translation-record translation-record--active' : 'translation-record'} type="button" key={item.id} onClick={() => setSelected(item)}><strong>{item.sourceText}</strong><span>{item.targetText}</span></button>)}</div><footer><button className="icon-button" type="button" aria-label={t('common.add')} onClick={() => setSelected({ id: 0, sourceText: '', targetText: '', sourceLang: 'auto', targetLang: 'zh-CN', remark: '', createTime: '', modifiedTime: '' })}><Plus size={14} /></button><button className="icon-button icon-button--danger" type="button" disabled={!selected?.id} aria-label={t('common.action.delete')} onClick={() => { void remove() }}><Trash2 size={14} /></button></footer></aside><main>{selected ? <><header><span>{languageLabel(selected.sourceLang, t)} → {languageLabel(selected.targetLang, t)}</span><div><button className="toolbar-button" type="button" onClick={() => onApply(selected)}><Languages size={14} />{t('translation.apply')}</button><button className="toolbar-button" type="button" onClick={() => { void onRetranslate(selected).then((word) => { setSelected(word); void load() }) }}><History size={14} />{t('translation.retranslate')}</button></div></header><TextCodeEditor className="translation-record-editor" ariaLabel={t('translation.sourcePlaceholder')} value={selected.sourceText} placeholder={t('translation.sourcePlaceholder')} onChange={(sourceText) => setSelected({ ...selected, sourceText })} /><TextCodeEditor className="translation-record-editor" ariaLabel={t('translation.targetPlaceholder')} value={selected.targetText} placeholder={t('translation.targetPlaceholder')} onChange={(targetText) => setSelected({ ...selected, targetText })} /><input aria-label={t('translation.remark')} value={selected.remark} placeholder={t('translation.remark')} onChange={(event) => setSelected({ ...selected, remark: event.target.value })} /><button className="dialog-button" type="button" onClick={() => { void save() }}><Save size={14} />{t('common.save')}</button></> : <div className="history-empty">{t('translation.wordEmpty')}</div>}</main></ResizableColumns>
 }
 
 function TranslationHistoryPanel({ onApply }: { onApply: (item: TranslationHistory) => void }) {
   const { t } = useI18n()
+  const desktopDialog = useDesktopDialog()
   const [query, setQuery] = useState('')
   const [items, setItems] = useState<TranslationHistory[]>([])
   const load = useCallback(async () => setItems(await window.mootool.listTranslationHistory(query)), [query])
   useEffect(() => { const timer = window.setTimeout(() => { void load() }, 100); return () => clearTimeout(timer) }, [load])
-  return <div className="translation-history"><div className="compact-search"><Search size={13} /><input aria-label={t('translation.searchHistory')} value={query} placeholder={t('translation.searchHistory')} onChange={(event) => setQuery(event.target.value)} /></div><div className="translation-history-list">{items.length === 0 ? <div className="history-empty">{t('history.empty')}</div> : items.map((item) => <article key={item.id}><button type="button" onClick={() => onApply(item)}><header><strong>{languageLabel(item.sourceLang, t)} → {languageLabel(item.targetLang, t)}</strong><span>{item.translatorType} · {item.createTime}</span></header><p>{item.sourceText}</p><p>{item.targetText}</p></button><button className="icon-button" type="button" aria-label={t('history.delete')} onClick={() => { void window.mootool.deleteTranslationHistory(item.id).then(load) }}><Trash2 size={13} /></button></article>)}</div><footer><button className="dialog-button dialog-button--danger" type="button" disabled={!items.length} onClick={() => { if (window.confirm(t('history.confirmClear'))) void window.mootool.clearTranslationHistory().then(load) }}><Trash2 size={14} />{t('history.clearAll')}</button></footer></div>
+  async function clearAll(): Promise<void> {
+    if (!await desktopDialog.confirm(t('history.confirmClear'), { confirmLabel: t('history.clearAll'), danger: true })) return
+    await window.mootool.clearTranslationHistory()
+    await load()
+  }
+  return <div className="translation-history"><div className="compact-search"><Search size={13} /><input aria-label={t('translation.searchHistory')} value={query} placeholder={t('translation.searchHistory')} onChange={(event) => setQuery(event.target.value)} /></div><div className="translation-history-list">{items.length === 0 ? <div className="history-empty">{t('history.empty')}</div> : items.map((item) => <article key={item.id}><button type="button" onClick={() => onApply(item)}><header><strong>{languageLabel(item.sourceLang, t)} → {languageLabel(item.targetLang, t)}</strong><span>{item.translatorType} · {item.createTime}</span></header><p>{item.sourceText}</p><p>{item.targetText}</p></button><button className="icon-button" type="button" aria-label={t('history.delete')} onClick={() => { void window.mootool.deleteTranslationHistory(item.id).then(load) }}><Trash2 size={13} /></button></article>)}</div><footer><button className="dialog-button dialog-button--danger" type="button" disabled={!items.length} onClick={() => { void clearAll() }}><Trash2 size={14} />{t('history.clearAll')}</button></footer></div>
 }
 
 async function translateWord(word: TranslationWord, settings: ReturnType<typeof useSettings>['settings'], reportError: (error: unknown) => void): Promise<TranslationWord> {

@@ -17,6 +17,7 @@ import type {
   VaultGitStatus
 } from '@/shared/contracts/vaultGit'
 import { useToast } from '@/shared/feedback/ToastProvider'
+import { useDesktopDialog } from '@/shared/feedback/DesktopDialogProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { compareText, type DiffSegment } from '../diff/diffTools'
 
@@ -50,6 +51,7 @@ export function VaultGitDialog({ open, onClose, onVaultChange, beforeWorkingTree
   const { t } = useI18n()
   const { settings, updateSettings } = useSettings()
   const toast = useToast()
+  const desktopDialog = useDesktopDialog()
   const [state, update] = useReducer(updateState, {
     status: null,
     history: [],
@@ -161,7 +163,7 @@ export function VaultGitDialog({ open, onClose, onVaultChange, beforeWorkingTree
             {status?.repository && <button type="button" disabled={state.busy || !status.remote || status.merging} onClick={() => { void runAction('pull') }}>{t('json.git.pull')}</button>}
             {status?.repository && <button type="button" disabled={state.busy || !status.remote || status.merging} onClick={() => { void runAction('push') }}><CloudUpload size={13} />{t('json.git.push')}</button>}
             {status?.repository && (status.merging || status.conflicts > 0) && <button className="git-danger-button" type="button" disabled={state.busy} onClick={() => {
-              if (window.confirm(t('json.git.confirmAbort'))) void runAction('abort-merge')
+              void desktopDialog.confirm(t('json.git.confirmAbort'), { confirmLabel: t('json.git.abortMerge'), danger: true }).then((confirmed) => { if (confirmed) return runAction('abort-merge') })
             }}><GitMerge size={13} />{t('json.git.abortMerge')}</button>}
             {status?.repository && status.merging && status.conflicts === 0 && <button type="button" disabled={state.busy} onClick={() => { void runAction('continue-operation') }}><GitMerge size={13} />{t('json.git.continueOperation')}</button>}
           </div>
@@ -199,9 +201,7 @@ export function VaultGitDialog({ open, onClose, onVaultChange, beforeWorkingTree
                 {status?.repository && state.tab === 'changes' && selectedChange && (
                   <div className="git-change-actions">
                     <button type="button" disabled={state.busy} onClick={() => {
-                      if (window.confirm(t('json.git.confirmDiscard', { path: selectedChange.path }))) {
-                        void runAction('discard', { path: selectedChange.path })
-                      }
+                      void desktopDialog.confirm(t('json.git.confirmDiscard', { path: selectedChange.path }), { confirmLabel: t('json.git.discard'), danger: true }).then((confirmed) => { if (confirmed) return runAction('discard', { path: selectedChange.path }) })
                     }}><Undo2 size={13} />{t('json.git.discard')}</button>
                     {selectedChange.conflict && <>
                       <button type="button" disabled={state.busy} onClick={() => { void runAction('resolve-conflict', { path: selectedChange.path, strategy: 'ours' }) }}><ShieldCheck size={13} />{t('json.git.useOurs')}</button>

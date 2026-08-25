@@ -6,6 +6,7 @@ import { ToolWindow } from '@/features/workbench/ToolWindow'
 import { ScreenColorPickerOverlay } from '@/features/color/ScreenColorPickerOverlay'
 import { ScreenCaptureOverlay } from '@/features/image/ScreenCaptureOverlay'
 import { ToastProvider, useToast } from '@/shared/feedback/ToastProvider'
+import { DesktopDialogProvider } from '@/shared/feedback/DesktopDialogProvider'
 import { I18nProvider, useI18n } from '@/shared/i18n/I18nProvider'
 import { useSystemTheme } from '@/shared/theme/useSystemTheme'
 
@@ -28,8 +29,10 @@ function ThemedApp() {
 
   return (
     <ToastProvider>
-      {windowType !== 'tool' && !isScreenOverlay && <UpdateNotifications />}
-      {windowType === 'capture' ? <ScreenCaptureOverlay /> : windowType === 'color-picker' ? <ScreenColorPickerOverlay /> : windowType === 'settings' ? <SettingsWindow /> : windowType === 'tool' ? <ToolWindow requestedToolId={params.get('toolId') ?? ''} /> : <Workbench />}
+      <DesktopDialogProvider>
+        {windowType !== 'tool' && !isScreenOverlay && <UpdateNotifications />}
+        {windowType === 'capture' ? <ScreenCaptureOverlay /> : windowType === 'color-picker' ? <ScreenColorPickerOverlay /> : windowType === 'settings' ? <SettingsWindow /> : windowType === 'tool' ? <ToolWindow requestedToolId={params.get('toolId') ?? ''} /> : <Workbench />}
+      </DesktopDialogProvider>
     </ToastProvider>
   )
 }

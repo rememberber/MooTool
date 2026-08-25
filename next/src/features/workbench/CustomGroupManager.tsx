@@ -5,6 +5,7 @@ import { useSettings } from '@/features/settings/SettingsProvider'
 import { Dialog } from '@/shared/components/Dialog'
 import type { CustomToolGroup } from '@/shared/contracts/settings'
 import { useToast } from '@/shared/feedback/ToastProvider'
+import { useDesktopDialog } from '@/shared/feedback/DesktopDialogProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 
 type CustomGroupManagerProps = {
@@ -16,6 +17,7 @@ export function CustomGroupManager({ open, onClose }: CustomGroupManagerProps) {
   const { settings, updateSettings } = useSettings()
   const { t } = useI18n()
   const toast = useToast()
+  const desktopDialog = useDesktopDialog()
   const [groups, setGroups] = useState<CustomToolGroup[]>([])
   const [selectedId, setSelectedId] = useState<string>()
   const [saving, setSaving] = useState(false)
@@ -54,8 +56,8 @@ export function CustomGroupManager({ open, onClose }: CustomGroupManagerProps) {
     updateSelected({ toolIds })
   }
 
-  function deleteSelected(): void {
-    if (!selectedGroup || !window.confirm(t('app.group.manage.deleteConfirm', { name: selectedGroup.name }))) return
+  async function deleteSelected(): Promise<void> {
+    if (!selectedGroup || !await desktopDialog.confirm(t('app.group.manage.deleteConfirm', { name: selectedGroup.name }), { confirmLabel: t('app.group.manage.delete'), danger: true })) return
     const selectedIndex = groups.findIndex((group) => group.id === selectedGroup.id)
     const nextGroups = groups.filter((group) => group.id !== selectedGroup.id)
     setGroups(nextGroups)
@@ -87,7 +89,7 @@ export function CustomGroupManager({ open, onClose }: CustomGroupManagerProps) {
       onClose={onClose}
       footer={(
         <>
-          <button className="dialog-button dialog-button--danger" type="button" disabled={!selectedGroup || saving} onClick={deleteSelected}>
+          <button className="dialog-button dialog-button--danger" type="button" disabled={!selectedGroup || saving} onClick={() => { void deleteSelected() }}>
             <Trash2 size={14} />{t('app.group.manage.delete')}
           </button>
           <button className="dialog-button" type="button" disabled={saving} onClick={onClose}>{t('common.cancel')}</button>

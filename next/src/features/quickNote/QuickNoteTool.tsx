@@ -927,8 +927,8 @@ export function QuickNoteTool() {
     : state.quickReplaceOpen ? [320, 170] : [320]
   return (
     <section className="tool-page quick-note-tool">
-      <div className="tool-page__header quick-note-page-header">
-        <h1>{t('quickNote.title')}</h1>
+      <div className="tool-page__header tool-page__header--actions quick-note-page-header">
+        <h1 className="visually-hidden">{t('quickNote.title')}</h1>
         <div className="quick-note-view-switch segmented" role="tablist">
           {(['editor', 'split', 'preview'] as const).map((mode) => (
             <button className={state.viewMode === mode ? 'segmented__item segmented__item--active' : 'segmented__item'} type="button" role="tab" aria-selected={state.viewMode === mode} key={mode} onClick={() => update({ viewMode: mode })}>

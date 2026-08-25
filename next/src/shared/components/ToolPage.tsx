@@ -6,8 +6,8 @@ import { useI18n } from '@/shared/i18n/I18nProvider'
 
 export function ToolPageHeader({ title, actions }: { title: string; actions?: ReactNode }) {
   return (
-    <div className="tool-page__header">
-      <h1>{title}</h1>
+    <div className={actions ? 'tool-page__header tool-page__header--actions' : 'tool-page__header tool-page__header--semantic'}>
+      <h1 className="visually-hidden">{title}</h1>
       {actions && <div className="tool-header-actions">{actions}</div>}
     </div>
   )

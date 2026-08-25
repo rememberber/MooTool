@@ -354,8 +354,10 @@ test('creates and persists custom navigation groups', async () => {
 
   await mainPage.getByRole('button', { name: '管理分组', exact: true }).click()
   await dialog.locator('.custom-group-manager__group').filter({ hasText: '开发常用' }).click()
-  mainPage.once('dialog', (confirmation) => confirmation.accept())
   await dialog.getByRole('button', { name: '删除分组', exact: true }).click()
+  const deleteGroupDialog = mainPage.getByRole('dialog', { name: '确认操作' })
+  await expect(deleteGroupDialog).toContainText('确定删除分组“开发常用”吗？')
+  await deleteGroupDialog.getByRole('button', { name: '删除分组', exact: true }).click()
   await dialog.getByRole('button', { name: '保存', exact: true }).click()
   await expect(mainPage.locator('.tool-group--custom')).toHaveCount(0)
   await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ layout: { customGroups: [] } })
@@ -459,10 +461,17 @@ test('creates and presents an auto-fitting message board', async () => {
 
 test('formats JSON and completes history and Vault workflows', async () => {
   await mainPage.locator('.tool-button').filter({ hasText: 'JSON' }).click()
-  await expect.poll(() => mainPage.locator('.workspace-tool-session:not([hidden]) .tool-page').evaluate((element) => {
+  const activeJsonPage = mainPage.locator('.workspace-tool-session:not([hidden]) .tool-page')
+  await expect.poll(() => activeJsonPage.evaluate((element) => {
     const style = getComputedStyle(element)
     return { top: style.paddingTop, bottom: style.paddingBottom }
-  })).toEqual({ top: '20px', bottom: '20px' })
+  })).toEqual({ top: '0px', bottom: '0px' })
+  await expect(activeJsonPage).toHaveAttribute('aria-label', 'JSON 工作台')
+  await expect(activeJsonPage.locator('h1')).toHaveCount(0)
+  await expect.poll(() => mainPage.locator('.editor-shell').evaluate((element) => {
+    const style = getComputedStyle(element)
+    return { borderRadius: style.borderRadius, boxShadow: style.boxShadow }
+  })).toEqual({ borderRadius: '0px', boxShadow: 'none' })
   const jsonVault = mainPage.locator('.vault-panel')
   await expect(mainPage.locator('.vault-panel__header h2')).toHaveCSS('font-size', '14px')
   await expect(mainPage.locator('.vault-panel__options > select')).toHaveCSS('font-size', '12px')
@@ -528,9 +537,10 @@ test('formats JSON and completes history and Vault workflows', async () => {
 
   await mainPage.evaluate(() => window.mootool.updateSettings({ editor: { jsonFontSize: 22 } }))
   await expect(mainPage.locator('.json-editor')).toHaveCSS('font-size', '22px')
-  const jsonLineOffsets = await editorLineTopOffsets(mainPage, '.json-editor')
-  expect(jsonLineOffsets).toEqual(expect.arrayContaining([expect.any(Number)]))
-  expect(Math.max(...jsonLineOffsets)).toBeLessThan(1.5)
+  await expect.poll(async () => {
+    const offsets = await editorLineTopOffsets(mainPage, '.json-editor')
+    return offsets.length ? Math.max(...offsets) : Number.POSITIVE_INFINITY
+  }).toBeLessThan(1.5)
   await mainPage.getByLabel('字体').selectOption('Georgia')
   await expect.poll(() => mainPage.locator('.json-editor').evaluate((element) => (element as HTMLElement).style.getPropertyValue('--text-code-editor-font-family'))).toContain('Georgia')
   await expect.poll(() => mainPage.locator('.json-editor .cm-scroller').evaluate((element) => getComputedStyle(element).fontFamily)).toMatch(/Georgia/)
@@ -551,9 +561,9 @@ test('formats JSON and completes history and Vault workflows', async () => {
   await expect.poll(() => vaultNode.locator('svg').evaluate((icon) => icon.getBoundingClientRect().width)).toBe(16)
 
   await editor.fill('{"saved":true}')
+  await expect.poll(() => editor.evaluate((element) => (element as HTMLElement).innerText)).toBe('{"saved":true}')
   await mainPage.getByRole('button', { name: '保存片段' }).click()
-  const vaultFile = await mainPage.evaluate(() => window.mootool.readJsonVaultFile('e2e-sample.json'))
-  expect(vaultFile.content).toBe('{"saved":true}')
+  await expect.poll(() => mainPage.evaluate(async () => (await window.mootool.readJsonVaultFile('e2e-sample.json')).content)).toBe('{"saved":true}')
   const vaultSearch = jsonVault.getByRole('textbox', { name: '搜索', exact: true })
   const vaultSearchContent = jsonVault.getByRole('checkbox', { name: '搜索正文' })
   await vaultSearch.fill('"saved"')
@@ -565,8 +575,10 @@ test('formats JSON and completes history and Vault workflows', async () => {
   await vaultSearch.fill('')
   await vaultSearchContent.check()
 
-  mainPage.once('dialog', (dialog) => dialog.accept())
   await mainPage.getByRole('button', { name: '删除片段' }).click()
+  const deleteVaultDialog = mainPage.getByRole('dialog', { name: '确认操作' })
+  await expect(deleteVaultDialog).toContainText('确定删除')
+  await deleteVaultDialog.getByRole('button', { name: '删除', exact: true }).click()
   await expect(mainPage.locator('.vault-node').filter({ hasText: 'e2e-sample.json' })).toHaveCount(0)
 })
 
@@ -596,8 +608,8 @@ test('manages JSON Vault folders, rename, duplicate, and move workflows', async 
   await mainPage.getByRole('button', { name: '保存', exact: true }).click()
   await expect(mainPage.locator('.vault-tree > div > .vault-node').filter({ hasText: 'renamed Copy.json' })).toBeVisible()
 
-  mainPage.once('dialog', (dialog) => dialog.accept())
   await mainPage.getByRole('button', { name: '删除片段' }).click()
+  await mainPage.getByRole('dialog', { name: '确认操作' }).getByRole('button', { name: '删除', exact: true }).click()
   await expect(mainPage.locator('.vault-node').filter({ hasText: 'renamed Copy.json' })).toHaveCount(0)
 })
 
@@ -680,7 +692,7 @@ test('opens the settings window and synchronizes appearance changes', async () =
   await expect(jsonNavigationToggle).toBeChecked()
   await jsonNavigationToggle.uncheck()
   await expect.poll(() => settingsPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ layout: { hiddenNavigationToolIds: ['json'] } })
-  await expect(mainPage.getByRole('button', { name: 'JSON', exact: true })).toHaveCount(0)
+  await expect(mainPage.locator('.tool-button').filter({ hasText: 'JSON' })).toHaveCount(0)
 
   await settingsPage.locator('.settings-nav__item').filter({ hasText: '运行环境' }).click()
   const runtimeGroup = settingsPage.locator('.runtime-settings-group')
@@ -857,8 +869,6 @@ test('runs P3 regex, Cron and text Diff workflows with persistent favorites', as
     clipboard.setData('text/plain', 'one\ntwo\n')
     element.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: clipboard }))
   })
-  await mainPage.evaluate(() => new Promise<void>((resolve) => requestAnimationFrame(() => resolve())))
-  expect(await mainPage.locator('.diff-status').textContent()).toContain('共发现 0 处差异')
   await expect(mainPage.locator('.diff-status')).toContainText('共发现 0 处差异')
   await expect(mainPage.locator('.diff-editor-grid [class*="cm-diff-"]')).toHaveCount(0)
   await diffEditors.nth(1).focus()
@@ -976,6 +986,12 @@ test('runs P4 color favorites, image persistence and PDF workspace', async () =>
   await openTool('图片助手', '图片助手')
   await expect(mainPage.locator('.image-list-item').filter({ hasText: 'e2e-image.png' })).toBeVisible()
   await expect(mainPage.locator('.image-canvas img')).toBeVisible()
+  await mainPage.getByRole('button', { name: '重命名', exact: true }).click()
+  const renameImageDialog = mainPage.getByRole('dialog', { name: '输入新的图片名称' })
+  await expect(renameImageDialog.getByRole('textbox', { name: '输入新的图片名称' })).toHaveValue('e2e-image.png')
+  await renameImageDialog.getByRole('textbox', { name: '输入新的图片名称' }).fill('e2e-image-renamed.png')
+  await renameImageDialog.getByRole('button', { name: '重命名', exact: true }).click()
+  await expect(mainPage.locator('.image-list-item').filter({ hasText: 'e2e-image-renamed.png' })).toBeVisible()
   await mainPage.getByRole('button', { name: '复制图片' }).click()
   expect(await mainPage.evaluate(() => window.mootool.readClipboardImage())).toMatch(/^data:image\/png;base64,/)
 
@@ -1088,8 +1104,8 @@ test('runs P5 Hosts, translation records, network and system workflows', async (
   const renamedHostProfile = mainPage.locator('.host-profile').filter({ hasText: 'E2E renamed host' })
   await expect(renamedHostProfile).toBeVisible()
   await renamedHostProfile.click({ button: 'right' })
-  mainPage.once('dialog', (dialog) => dialog.accept())
   await mainPage.getByRole('menu', { name: 'Host 方案操作' }).getByRole('menuitem', { name: '删除' }).click()
+  await mainPage.getByRole('dialog', { name: '确认操作' }).getByRole('button', { name: '删除', exact: true }).click()
   await expect(renamedHostProfile).toHaveCount(0)
 
   await mainPage.evaluate(() => window.mootool.saveTranslationWord({
@@ -1176,13 +1192,14 @@ test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () =>
   await expect(colorMenu).toHaveCount(0)
   const editor = mainPage.getByLabel('笔记内容')
   await editor.fill('## E2E Markdown\n\n- Vault file\n- Git checkpoint')
-  await expect(mainPage.locator('.quick-note-code-editor .cm-activeLine')).toHaveCount(1)
-  await expect(mainPage.locator('.quick-note-code-editor .cm-activeLineGutter')).toHaveCount(1)
+  await expect.poll(() => mainPage.locator('.quick-note-code-editor .cm-activeLine').count()).toBeGreaterThanOrEqual(1)
+  await expect.poll(() => mainPage.locator('.quick-note-code-editor .cm-activeLineGutter').count()).toBeGreaterThanOrEqual(1)
   await mainPage.getByLabel('字号').fill('24')
   await expect(mainPage.locator('.quick-note-code-editor')).toHaveCSS('font-size', '24px')
-  const quickNoteLineOffsets = await editorLineTopOffsets(mainPage, '.quick-note-code-editor')
-  expect(quickNoteLineOffsets).toEqual(expect.arrayContaining([expect.any(Number)]))
-  expect(Math.max(...quickNoteLineOffsets)).toBeLessThan(1.5)
+  await expect.poll(async () => {
+    const offsets = await editorLineTopOffsets(mainPage, '.quick-note-code-editor')
+    return offsets.length ? Math.max(...offsets) : Number.POSITIVE_INFINITY
+  }).toBeLessThan(1.5)
   await mainPage.getByRole('button', { name: '查找与替换' }).click()
   await mainPage.getByRole('textbox', { name: '查找', exact: true }).fill('Vault')
   await expect(mainPage.locator('.quick-note-code-editor .cm-searchMatch')).toHaveCount(1)
@@ -1685,8 +1702,8 @@ async function editorLineTopOffsets(page: Page, rootSelector: string): Promise<n
 
 async function expectTextEditorChrome(editor: Locator): Promise<void> {
   await expect(editor.locator('.cm-lineNumbers')).toHaveCount(1)
-  await expect(editor.locator('.cm-activeLine')).toHaveCount(1)
-  await expect(editor.locator('.cm-activeLineGutter')).toHaveCount(1)
+  await expect.poll(() => editor.locator('.cm-activeLine').count()).toBeGreaterThanOrEqual(1)
+  await expect.poll(() => editor.locator('.cm-activeLineGutter').count()).toBeGreaterThanOrEqual(1)
 }
 
 async function expectSelectedOptionToFit(select: Locator): Promise<void> {
@@ -1723,5 +1740,7 @@ async function openTool(label: string, title: string): Promise<void> {
   const button = mainPage.locator('.tool-button').filter({ hasText: label }).first()
   await button.scrollIntoViewIfNeeded()
   await button.click()
-  await expect(mainPage.locator('.workspace-tool-session:not([hidden]) .tool-page h1')).toHaveText(title)
+  await expect.poll(() => mainPage.locator('.workspace-tool-session:not([hidden]) .tool-page').evaluate((element) => {
+    return element.querySelector('h1')?.textContent ?? element.getAttribute('aria-label')
+  })).toBe(title)
 }

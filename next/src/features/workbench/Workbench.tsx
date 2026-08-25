@@ -13,6 +13,7 @@ import { LegacyMigrationHintDialog } from '@/features/settings/LegacyMigrationHi
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { CustomGroupManager } from './CustomGroupManager'
 import { UpdateReadyAction } from './UpdateReadyAction'
+import { isImmersiveToolId } from './immersiveTools'
 
 export function Workbench() {
   const { language, languageLabels, languages, setLanguage, t } = useI18n()
@@ -112,6 +113,7 @@ export function Workbench() {
     settings.layout.hideNavigationTitles ? 'app-shell--hide-nav-titles' : '',
     settings.appearance.unifiedBackground ? 'app-shell--unified-background' : '',
     dockedToolViewActive ? 'app-shell--tool-view-docked' : '',
+    isImmersiveToolId(activeTool.id) ? 'app-shell--immersive-tool' : '',
     `app-shell--nav-${settings.layout.navigationStyle}`
   ].filter(Boolean).join(' ')
 

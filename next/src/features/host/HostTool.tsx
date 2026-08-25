@@ -17,12 +17,14 @@ import {
 import { useToolActivity } from '@/shared/components/ToolActivity'
 import type { HostProfile, SystemHostsFile } from '@/shared/contracts/system'
 import { useToolActions } from '@/shared/hooks/useToolActions'
+import { useDesktopDialog } from '@/shared/feedback/DesktopDialogProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 
 export function HostTool() {
   const toolActive = useToolActivity()
   const { t } = useI18n()
   const actions = useToolActions('host')
+  const desktopDialog = useDesktopDialog()
   const [profiles, setProfiles] = useState<HostProfile[]>([])
   const [query, setQuery] = useState('')
   const [includeContent, setIncludeContent] = useState(true)
@@ -114,7 +116,7 @@ export function HostTool() {
   }
 
   async function save(): Promise<void> {
-    const nextName = name.trim() || window.prompt(t('host.namePrompt'), t('host.untitled'))?.trim()
+    const nextName = name.trim() || (await desktopDialog.prompt(t('host.namePrompt'), { defaultValue: t('host.untitled'), confirmLabel: t('common.save') }))?.trim()
     if (!nextName) return
     try {
       await persistProfile({ id: selected?.id, name: nextName, content }, true)
@@ -146,7 +148,7 @@ export function HostTool() {
   }
 
   async function remove(profile = selected): Promise<void> {
-    if (!profile || !window.confirm(t('host.confirmDelete'))) return
+    if (!profile || !await desktopDialog.confirm(t('host.confirmDelete'), { confirmLabel: t('common.action.delete'), danger: true })) return
     try {
       await window.mootool.deleteHostProfile(profile.id)
       if (selected?.id === profile.id) {
@@ -164,7 +166,7 @@ export function HostTool() {
   }
 
   async function apply(): Promise<void> {
-    if (!content.trim() || !window.confirm(t('host.confirmApply'))) return
+    if (!content.trim() || !await desktopDialog.confirm(t('host.confirmApply'), { confirmLabel: t('common.action.apply') })) return
     setApplying(true)
     try {
       const result = await window.mootool.writeSystemHosts(content, selected?.id)

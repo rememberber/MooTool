@@ -3,6 +3,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { Dialog } from '@/shared/components/Dialog'
 import type { FuncHistoryRecord } from '@/shared/contracts/history'
 import { useToast } from '@/shared/feedback/ToastProvider'
+import { useDesktopDialog } from '@/shared/feedback/DesktopDialogProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 
 type HistoryDialogProps = {
@@ -16,6 +17,7 @@ type HistoryDialogProps = {
 export function HistoryDialog({ funcType, open, onClose, onApply, onApplyRecord }: HistoryDialogProps) {
   const { language, t } = useI18n()
   const toast = useToast()
+  const desktopDialog = useDesktopDialog()
   const [records, setRecords] = useState<FuncHistoryRecord[]>([])
   const [query, setQuery] = useState('')
 
@@ -41,7 +43,7 @@ export function HistoryDialog({ funcType, open, onClose, onApply, onApplyRecord 
   }
 
   async function clearAll(): Promise<void> {
-    if (!window.confirm(t('history.confirmClear'))) return
+    if (!await desktopDialog.confirm(t('history.confirmClear'), { confirmLabel: t('history.clearAll'), danger: true })) return
     await window.mootool.clearHistory(funcType)
     await load()
   }

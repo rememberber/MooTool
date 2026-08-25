@@ -309,14 +309,7 @@ export function JsonTool() {
   }
 
   return (
-    <section className="tool-page json-tool">
-      <div className="tool-page__header">
-        <h1>{t('json.title')}</h1>
-        <div className={status.kind === 'valid' ? 'status-pill status-pill--valid' : status.kind === 'error' ? 'status-pill status-pill--error' : 'status-pill'}>
-          {status.kind === 'valid' ? <CheckCircle2 size={14} /> : status.kind === 'error' ? <XCircle size={14} /> : <FileJson size={14} />}
-          {status.message}
-        </div>
-      </div>
+    <section className="tool-page tool-page--workspace json-tool" aria-label={t('json.title')}>
 
       <ResizableColumns
         className={state.inspectorOpen ? 'json-layout' : 'json-layout json-layout--editor-only'}
@@ -378,6 +371,10 @@ export function JsonTool() {
             }}
             onViewStateChange={(viewState) => { jsonEditorViewState = viewState }}
           />
+          <div className={status.kind === 'valid' ? 'json-statusbar json-statusbar--valid' : status.kind === 'error' ? 'json-statusbar json-statusbar--error' : 'json-statusbar'}>
+            {status.kind === 'valid' ? <CheckCircle2 size={12} /> : status.kind === 'error' ? <XCircle size={12} /> : <FileJson size={12} />}
+            <span>{status.message}</span>
+          </div>
         </div>
 
         {state.inspectorOpen && (

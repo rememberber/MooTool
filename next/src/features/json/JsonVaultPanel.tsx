@@ -27,6 +27,7 @@ import { useToolActivity } from '@/shared/components/ToolActivity'
 import type { JsonVaultNode } from '@/shared/contracts/jsonVault'
 import type { VaultGitAction } from '@/shared/contracts/vaultGit'
 import { useToast } from '@/shared/feedback/ToastProvider'
+import { useDesktopDialog } from '@/shared/feedback/DesktopDialogProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import {
   collectDirectoryPaths,
@@ -83,6 +84,7 @@ let jsonVaultNeedsExpandPreference = true
 export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
   const toolActive = useToolActivity()
   const { t } = useI18n()
+  const desktopDialog = useDesktopDialog()
   const { settings, updateSettings } = useSettings()
   const toast = useToast()
   const [nodes, setNodes] = useState<JsonVaultNode[]>(jsonVaultSessionState.nodes)
@@ -398,7 +400,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
   }
 
   async function deleteEntry(entry = selectedEntry): Promise<void> {
-    if (!entry || !window.confirm(t('json.vault.confirmDelete', { name: entry.path }))) return
+    if (!entry || !await desktopDialog.confirm(t('json.vault.confirmDelete', { name: entry.path }), { confirmLabel: t('common.action.delete'), danger: true })) return
     try {
       await window.mootool.deleteJsonVaultFile(entry.path)
       if (entry.path === selectedPath) {

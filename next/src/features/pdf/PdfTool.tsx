@@ -4,6 +4,7 @@ import { Dialog } from '@/shared/components/Dialog'
 import { ToolPageHeader, ToolTabs } from '@/shared/components/ToolPage'
 import type { PdfFileInfo, PdfSplitRule } from '@/shared/contracts/pdf'
 import { useToolActions } from '@/shared/hooks/useToolActions'
+import { useDesktopDialog } from '@/shared/feedback/DesktopDialogProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 
 type PdfTab = 'split' | 'merge'
@@ -14,6 +15,7 @@ type MergeRow = PdfFileInfo & { selected: boolean; pages: string; status: TaskSt
 export function PdfTool() {
   const { t } = useI18n()
   const actions = useToolActions('pdf')
+  const desktopDialog = useDesktopDialog()
   const [tab, setTab] = useState<PdfTab>('split')
   const [splitRows, setSplitRows] = useState<SplitRow[]>([])
   const [mergeRows, setMergeRows] = useState<MergeRow[]>([])
@@ -38,7 +40,7 @@ export function PdfTool() {
   async function splitFiles(): Promise<void> {
     const selected = splitRows.filter((row) => row.selected)
     if (selected.length === 0) { actions.toast.error(t('pdf.selectTask')); return }
-    if (!window.confirm(t('pdf.confirmSplit'))) return
+    if (!await desktopDialog.confirm(t('pdf.confirmSplit'))) return
     setBusy(true)
     setSplitRows((rows) => rows.map((row) => row.selected ? { ...row, status: 'running' } : row))
     try {

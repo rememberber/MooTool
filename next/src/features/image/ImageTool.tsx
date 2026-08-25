@@ -4,6 +4,7 @@ import { ToolPageHeader } from '@/shared/components/ToolPage'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import type { ImageAsset, ImageAssetSummary, ImageVectorizeOptions } from '@/shared/contracts/images'
 import { useToolActions } from '@/shared/hooks/useToolActions'
+import { useDesktopDialog } from '@/shared/feedback/DesktopDialogProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { ImageBase64Dialog, ImageCompressDialog, ImageSvgDialog, ImageWatermarkDialog } from './ImageDialogs'
 import { compressImage, ensureImageDataUrl, processedImageName, watermarkImage, type CompressImageOptions, type ImageOutputMode, type WatermarkImageOptions } from './imageTools'
@@ -11,6 +12,7 @@ import { compressImage, ensureImageDataUrl, processedImageName, watermarkImage, 
 export function ImageTool() {
   const { t } = useI18n()
   const actions = useToolActions('image')
+  const desktopDialog = useDesktopDialog()
   const [assets, setAssets] = useState<ImageAssetSummary[]>([])
   const [selectedNames, setSelectedNames] = useState<string[]>([])
   const [current, setCurrent] = useState<ImageAsset | null>(null)
@@ -101,20 +103,20 @@ export function ImageTool() {
 
   async function saveCurrent(): Promise<void> {
     if (!current) return
-    const name = window.prompt(t('image.saveName'), current.name)
+    const name = await desktopDialog.prompt(t('image.saveName'), { defaultValue: current.name, confirmLabel: t('common.save') })
     if (!name) return
     try { const saved = await window.mootool.saveImageAsset({ name, dataUrl: current.dataUrl }); await loadAssets(saved.name); actions.toast.success(t('common.saved')) } catch (error) { actions.reportError(error) }
   }
 
   async function renameCurrent(): Promise<void> {
     if (!current) return
-    const nextName = window.prompt(t('image.renamePrompt'), current.name)
+    const nextName = await desktopDialog.prompt(t('image.renamePrompt'), { defaultValue: current.name, confirmLabel: t('common.rename') })
     if (!nextName || nextName === current.name) return
     try { const renamed = await window.mootool.renameImageAsset({ name: current.name, nextName }); await loadAssets(renamed.name) } catch (error) { actions.reportError(error) }
   }
 
   async function deleteSelected(): Promise<void> {
-    if (!processingNames.length || !window.confirm(t('image.confirmDelete', { count: String(processingNames.length) }))) return
+    if (!processingNames.length || !await desktopDialog.confirm(t('image.confirmDelete', { count: String(processingNames.length) }), { confirmLabel: t('common.action.delete'), danger: true })) return
     try { await window.mootool.deleteImageAssets(processingNames); setCurrent(null); setSelectedNames([]); await loadAssets(); actions.toast.success(t('favorite.deleted')) } catch (error) { actions.reportError(error) }
   }
 

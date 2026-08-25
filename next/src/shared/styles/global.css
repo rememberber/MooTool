@@ -1944,6 +1944,11 @@ select:not([multiple]) {
   width: var(--navigation-width);
 }
 
+.app-shell--immersive-tool > .window-drag-region {
+  right: auto;
+  width: var(--navigation-width);
+}
+
 .sidebar {
   position: relative;
   display: flex;
@@ -7591,6 +7596,63 @@ select:not([multiple]) {
   }
 }
 
+/* JSON, HTTP and QR code have tool-specific edge-to-edge workspace details. */
+.tool-page.tool-page--workspace {
+  position: relative;
+  padding: 0;
+  background: var(--surface);
+}
+
+:root .tool-page.tool-page--workspace > .local-tool-shell,
+:root .tool-page.tool-page--workspace .editor-shell,
+:root .tool-page.tool-page--workspace .vault-panel,
+:root .tool-page.tool-page--workspace .inspector-panel {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.tool-page.tool-page--workspace > .local-tool-shell {
+  border: 0;
+}
+
+.json-tool.tool-page--workspace .json-layout {
+  gap: 0;
+}
+
+.json-tool.tool-page--workspace .vault-panel {
+  border-width: 0 1px 0 0;
+}
+
+.json-tool.tool-page--workspace .editor-shell {
+  border-width: 0 1px 0 0;
+}
+
+.json-tool.tool-page--workspace .inspector-panel {
+  border-width: 0;
+}
+
+.json-statusbar {
+  display: flex;
+  min-height: 24px;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 5px;
+  padding: 0 10px;
+  color: var(--text-muted);
+  background: var(--toolbar);
+  border-top: 1px solid var(--border-soft);
+  font-size: 10px;
+  line-height: 1;
+}
+
+.json-statusbar--valid {
+  color: var(--success-text);
+}
+
+.json-statusbar--error {
+  color: var(--error-text);
+}
+
 @media (max-width: 1320px) {
   .app-shell {
     grid-template-columns: 232px 1fr;
@@ -11684,4 +11746,139 @@ textarea:focus {
   background: var(--claude-accent-soft);
   border: 1px solid color-mix(in srgb, var(--claude-accent) 18%, transparent);
   border-radius: 999px;
+}
+
+/* Immersive tools keep window mechanics at the edges instead of reserving
+ * visible chrome above the workspace. */
+.tool-view-shell--immersive > .window-drag-region {
+  right: 0;
+  height: 6px;
+}
+
+.tool-view-shell--immersive .tool-window-toggle-slot {
+  top: 50%;
+  right: 0;
+  width: 7px;
+  height: 64px;
+  align-items: center;
+  justify-content: flex-end;
+  transform: translateY(-50%);
+  transition: width 140ms ease;
+}
+
+.tool-view-shell--immersive .tool-window-toggle-slot > .tooltip-trigger {
+  position: absolute;
+  right: 8px;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(10px) scale(0.96);
+  transition: opacity 120ms ease, transform 140ms ease;
+}
+
+.tool-view-shell--immersive .tool-window-toggle-slot:hover,
+.tool-view-shell--immersive .tool-window-toggle-slot:focus-within {
+  width: 52px;
+}
+
+.tool-view-shell--immersive .tool-window-toggle-slot:hover > .tooltip-trigger,
+.tool-view-shell--immersive .tool-window-toggle-slot:focus-within > .tooltip-trigger {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(0) scale(1);
+}
+
+:root .tool-view-shell--immersive .tool-window-toggle {
+  color: var(--text-body);
+  background: color-mix(in srgb, var(--surface-elevated) 88%, transparent);
+  border: 1px solid var(--border-control);
+  border-radius: 9px;
+  box-shadow: var(--shadow-popover);
+  backdrop-filter: blur(14px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tool-view-shell--immersive .tool-window-toggle-slot,
+  .tool-view-shell--immersive .tool-window-toggle-slot > .tooltip-trigger {
+    transition: none;
+  }
+}
+
+/* All functional tools use their window as the workspace. The home page keeps
+ * its existing composition because it does not use the .tool-page root. */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
+:root .tool-page {
+  position: relative;
+  padding: 0;
+  background: var(--surface);
+}
+
+:root .tool-page__header--semantic {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+:root .tool-page__header--actions {
+  min-height: 42px;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 0;
+  padding: 5px 10px;
+  background: var(--toolbar);
+  border-bottom: 1px solid var(--border-soft);
+}
+
+:root[data-interface-style] .tool-page__header--actions {
+  margin: 0;
+}
+
+:root .tool-page__header--actions > :not(.visually-hidden) {
+  margin-left: auto;
+}
+
+:root .tool-page > .local-tool-shell,
+:root .tool-page > .runtime-shell,
+:root .tool-page .editor-shell,
+:root .tool-page .vault-panel,
+:root .tool-page .inspector-panel,
+:root .tool-page .quick-note-editor-shell,
+:root .tool-page .quick-note-sidebar,
+:root .tool-page .quick-replace-panel {
+  border-radius: 0;
+  box-shadow: none;
+}
+
+:root .tool-page > .local-tool-shell,
+:root .tool-page > .runtime-shell {
+  border: 0;
+}
+
+.desktop-dialog__message {
+  margin: 0;
+  color: var(--text-body);
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
+.desktop-dialog__field {
+  padding-top: 2px;
+}
+
+.dialog__footer .desktop-dialog__confirm.dialog-button--danger {
+  margin-right: 0;
 }

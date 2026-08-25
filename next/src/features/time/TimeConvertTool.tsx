@@ -98,8 +98,8 @@ export function TimeConvertTool() {
   const currentLocalTime = formatLocalTime(state.now, state.zone)
   return (
     <section className="tool-page time-tool">
-      <div className="tool-page__header">
-        <h1>{t('time.title')}</h1>
+      <div className="tool-page__header tool-page__header--actions">
+        <h1 className="visually-hidden">{t('time.title')}</h1>
         <div className="tool-header-actions">
           <button className="toolbar-button" type="button" onClick={() => update({ historyOpen: true })}><History size={14} />{t('time.history')}</button>
           <button className="toolbar-button" type="button" onClick={() => update({ clockOpen: true })}><Expand size={14} />{t('time.clock')}</button>
