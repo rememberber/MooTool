@@ -124,6 +124,7 @@
     ],
     "mac": {
       "icon": "resources/icon.icns",
+      "executableName": "MooTool Next Electron",
       "category": "public.app-category.developer-tools",
       "target": [
         "dmg"
@@ -131,12 +132,15 @@
     },
     "win": {
       "icon": "resources/icon.png",
+      "executableName": "MooTool Next Electron",
       "target": [
         "nsis",
         "portable"
       ]
     },
     "nsis": {
+      "shortcutName": "MooTool Next Electron",
+      "uninstallDisplayName": "MooTool Next Electron ${version}",
       "artifactName": "MooTool-Next-Electron-${version}-win-${arch}-setup.${ext}"
     },
     "portable": {
