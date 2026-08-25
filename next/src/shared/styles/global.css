@@ -4282,53 +4282,118 @@ select:not([multiple]) {
   display: grid;
   place-items: center;
   padding: 28px;
-  background: rgba(0, 0, 0, 0.28);
-  backdrop-filter: blur(2px);
+  background: rgba(18, 18, 20, 0.24);
+  backdrop-filter: blur(7px);
+  -webkit-app-region: no-drag;
+  animation: dialog-backdrop-in 120ms ease-out;
 }
 
 .dialog {
+  position: relative;
   display: flex;
   max-width: min(100%, 900px);
   max-height: min(82vh, 760px);
   flex-direction: column;
   color: var(--text);
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 22px 70px rgba(0, 0, 0, 0.2);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+  border-radius: 13px;
+  box-shadow:
+    0 24px 64px rgba(0, 0, 0, 0.2),
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 color-mix(in srgb, var(--surface) 80%, transparent);
   overflow: hidden;
-}
-
-.dialog__header,
-.dialog__footer {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-height: 50px;
-  padding: 9px 14px;
-  background: var(--toolbar);
+  backdrop-filter: blur(22px) saturate(1.08);
+  animation: dialog-surface-in 150ms cubic-bezier(0.2, 0.78, 0.24, 1);
 }
 
 .dialog__header {
+  display: flex;
+  align-items: center;
   justify-content: space-between;
-  border-bottom: 1px solid var(--border-soft);
+  gap: 12px;
+  min-height: 0;
+  padding: 22px 52px 8px 22px;
+  background: transparent;
+  border: 0;
 }
 
 .dialog__header h2 {
   margin: 0;
-  font-size: 15px;
-  font-weight: 600;
+  color: var(--text-strong);
+  font-size: 16px;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.dialog__close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  color: var(--text-soft);
+  border-radius: 8px;
 }
 
 .dialog__body {
   min-height: 0;
-  padding: 14px;
+  padding: 10px 22px 22px;
   overflow: auto;
 }
 
 .dialog__footer {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
   justify-content: flex-end;
-  border-top: 1px solid var(--border-soft);
+  gap: 9px;
+  min-height: 0;
+  padding: 0 22px 22px;
+  background: transparent;
+  border: 0;
+}
+
+@keyframes dialog-backdrop-in {
+  from { opacity: 0; }
+}
+
+@keyframes dialog-surface-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.985);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialog-backdrop,
+  .dialog {
+    animation: none;
+  }
+}
+
+@media (max-width: 640px) {
+  .dialog-backdrop {
+    padding: 16px;
+  }
+
+  .dialog {
+    max-height: calc(100vh - 32px);
+  }
+
+  .dialog__header {
+    padding: 20px 50px 7px 20px;
+  }
+
+  .dialog__body {
+    padding: 9px 20px 20px;
+  }
+
+  .dialog__footer {
+    padding: 0 20px 20px;
+  }
 }
 
 .dialog-field,
@@ -4426,9 +4491,11 @@ select:not([multiple]) {
 .custom-group-manager {
   display: grid;
   grid-template-columns: 190px minmax(0, 1fr);
-  height: min(500px, calc(82vh - 132px));
+  height: min(500px, calc(82vh - 164px));
   min-height: 360px;
-  margin: -14px;
+  border: 1px solid var(--border-soft);
+  border-radius: 9px;
+  overflow: hidden;
 }
 
 .custom-group-manager__list {
@@ -9013,7 +9080,11 @@ select:not([multiple]) {
   box-shadow: 0 2px 8px var(--shadow-soft);
 }
 
-:root[data-interface-style='modern'] .dialog,
+:root[data-interface-style='modern'] .dialog {
+  border-radius: 13px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
 :root[data-interface-style='modern'] .command-palette {
   border-radius: 8px;
   box-shadow: 0 18px 54px var(--shadow);
@@ -10756,8 +10827,6 @@ textarea:focus {
   backdrop-filter: blur(16px);
 }
 
-:root[data-interface-style='smartisan'] .dialog__header,
-:root[data-interface-style='smartisan'] .dialog__footer,
 :root[data-interface-style='smartisan'] .command-palette__search {
   background: linear-gradient(to bottom, var(--smartisan-toolbar-top), var(--smartisan-toolbar-bottom));
   border-color: var(--border);
@@ -11206,15 +11275,9 @@ textarea:focus {
   backdrop-filter: blur(14px);
 }
 
-:root[data-interface-style='miui-v5'] .dialog__header,
-:root[data-interface-style='miui-v5'] .dialog__footer,
 :root[data-interface-style='miui-v5'] .command-palette__search {
   background: linear-gradient(to bottom, var(--miui-toolbar-top), var(--miui-toolbar-bottom));
   border-color: var(--border);
-}
-
-:root[data-interface-style='miui-v5'] .dialog__header {
-  box-shadow: inset 0 -2px 0 color-mix(in srgb, var(--miui-orange) 72%, transparent);
 }
 
 :root[data-interface-style='miui-v5'] .tooltip {
@@ -11606,8 +11669,6 @@ textarea:focus {
   backdrop-filter: blur(18px);
 }
 
-:root[data-interface-style='claude'] .dialog__header,
-:root[data-interface-style='claude'] .dialog__footer,
 :root[data-interface-style='claude'] .command-palette__search {
   background: var(--toolbar);
   border-color: var(--border-soft);

@@ -135,6 +135,24 @@ test('shows a first-run tip for migrating Java data without modifying the source
   const dialog = mainPage.getByRole('dialog', { name: '迁移 Java 版数据' })
   await expect(dialog).toBeVisible()
   await expect(dialog.getByText(/不会修改或删除 Java 版原始数据/)).toBeVisible()
+  await expect.poll(() => dialog.evaluate((element) => {
+    const header = element.querySelector('.dialog__header')
+    const footer = element.querySelector('.dialog__footer')
+    if (!header || !footer) return null
+    const headerStyle = getComputedStyle(header)
+    const footerStyle = getComputedStyle(footer)
+    return {
+      headerBackground: headerStyle.backgroundColor,
+      headerDivider: headerStyle.borderBottomWidth,
+      footerBackground: footerStyle.backgroundColor,
+      footerDivider: footerStyle.borderTopWidth
+    }
+  })).toEqual({
+    headerBackground: 'rgba(0, 0, 0, 0)',
+    headerDivider: '0px',
+    footerBackground: 'rgba(0, 0, 0, 0)',
+    footerDivider: '0px'
+  })
 
   const settingsWindowPromise = electronApp.waitForEvent('window')
   await dialog.getByRole('button', { name: '打开设置' }).click()

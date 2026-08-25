@@ -42,7 +42,7 @@ export function Dialog({ title, open, onClose, children, footer, width = 640 }: 
       >
         <header className="dialog__header">
           <h2 id={titleId}>{title}</h2>
-          <button className="icon-ghost" type="button" aria-label={title} onClick={onClose}><X size={16} /></button>
+          <button className="icon-ghost dialog__close" type="button" aria-label={title} onClick={onClose}><X size={16} /></button>
         </header>
         <div className="dialog__body">{children}</div>
         {footer && <footer className="dialog__footer">{footer}</footer>}
