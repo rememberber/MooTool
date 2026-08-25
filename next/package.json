@@ -99,7 +99,7 @@
   },
   "build": {
     "appId": "com.rememberber.mootool.next.electron",
-    "productName": "MooTool Next Electron",
+    "productName": "MooTool",
     "artifactName": "MooTool-Next-Electron-${version}-${os}-${arch}.${ext}",
     "publish": [
       {

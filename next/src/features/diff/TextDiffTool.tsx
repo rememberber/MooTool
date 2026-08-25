@@ -50,7 +50,6 @@ export function TextDiffTool() {
   const [mode, setMode] = useState<DiffMode>('side')
   const [highlightMode, setHighlightMode] = useState<HighlightMode>('both')
   const [ignoreWhitespace, setIgnoreWhitespace] = useState(false)
-  const [realtime, setRealtime] = useState(true)
   const [comparison, setComparison] = useState<ComparisonState>({
     result: initialResult,
     status: initialDraft.left || initialDraft.right ? { kind: 'complete' } : { kind: 'ready' }
@@ -80,7 +79,6 @@ export function TextDiffTool() {
   )
 
   useEffect(() => {
-    if (!realtime) return
     const timer = window.setTimeout(() => {
       const next = compareText(left, right, ignoreWhitespace)
       setComparison({
@@ -90,7 +88,7 @@ export function TextDiffTool() {
       navigationIndex.current = -1
     }, 160)
     return () => window.clearTimeout(timer)
-  }, [ignoreWhitespace, left, realtime, right])
+  }, [ignoreWhitespace, left, right])
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -174,18 +172,9 @@ export function TextDiffTool() {
     applyComparison(compareText(left, right, checked))
   }
 
-  function changeRealtime(checked: boolean): void {
-    setRealtime(checked)
-    if (checked) applyComparison(compareText(left, right, ignoreWhitespace))
-  }
-
   function changeDisplayMode(nextMode: DiffMode): void {
     setMode(nextMode)
     if (left || right) applyComparison(compareText(left, right, ignoreWhitespace))
-  }
-
-  function comparePastedText(nextLeft: string, nextRight: string): void {
-    if (realtime) applyComparison(compareText(nextLeft, nextRight, ignoreWhitespace))
   }
 
   const editors = (
@@ -207,7 +196,6 @@ export function TextDiffTool() {
           wrap={false}
           onScroll={(scroll) => syncEditorScroll(scroll, rightEditorRef.current)}
           onChange={setLeft}
-          onPasteText={(nextLeft) => comparePastedText(nextLeft, right)}
         />
       </div>
       <div className="diff-editor-pane">
@@ -221,7 +209,6 @@ export function TextDiffTool() {
           wrap={false}
           onScroll={(scroll) => syncEditorScroll(scroll, leftEditorRef.current)}
           onChange={setRight}
-          onPasteText={(nextRight) => comparePastedText(left, nextRight)}
         />
       </div>
     </ResizableColumns>
@@ -254,10 +241,6 @@ export function TextDiffTool() {
             </button>
           </div>
           <div className="diff-toolbar__options">
-            <label>
-              <input type="checkbox" checked={realtime} onChange={(event) => changeRealtime(event.target.checked)} />
-              {t('diff.realtime')}
-            </label>
             <label>
               <input type="checkbox" checked={ignoreWhitespace} onChange={(event) => changeIgnoreWhitespace(event.target.checked)} />
               {t('diff.ignoreWhitespace')}
