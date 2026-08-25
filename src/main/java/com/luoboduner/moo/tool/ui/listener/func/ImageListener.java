@@ -10,10 +10,12 @@ import com.luoboduner.moo.tool.ui.dialog.Base64Dialog;
 import com.luoboduner.moo.tool.ui.dialog.ImageCompressDialog;
 import com.luoboduner.moo.tool.ui.dialog.ImageOcrDialog;
 import com.luoboduner.moo.tool.ui.dialog.ImageOcrResultDialog;
+import com.luoboduner.moo.tool.ui.dialog.ImageSvgDialog;
 import com.luoboduner.moo.tool.ui.dialog.ImageWatermarkDialog;
 import com.luoboduner.moo.tool.util.ImageCompressUtil;
 import com.luoboduner.moo.tool.util.ImageDisplayUtil;
 import com.luoboduner.moo.tool.util.ImageOcrUtil;
+import com.luoboduner.moo.tool.util.ImageSvgUtil;
 import com.luoboduner.moo.tool.util.ImageWatermarkUtil;
 import com.luoboduner.moo.tool.util.TesseractEnvUtil;
 import com.luoboduner.moo.tool.ui.form.MainWindow;
@@ -101,6 +103,9 @@ public class ImageListener {
 
         // OCR 识别按钮事件
         imageForm.getOcrButton().addActionListener(e -> ocrImages(imageForm));
+
+        // 图片矢量化为 SVG
+        imageForm.getToSvgButton().addActionListener(e -> convertImagesToSvg(imageForm));
 
         // 保存按钮事件
         imageForm.getSaveButton().addActionListener(e -> {
@@ -525,6 +530,123 @@ public class ImageListener {
         }
         MsgUtil.show(imageForm.getImagePanel(), message, "msg.compressCompleteTitle",
                 errorMessages.length() > 0 ? JOptionPane.WARNING_MESSAGE : JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    private static void convertImagesToSvg(ImageForm imageForm) {
+        int[] selectedIndices = imageForm.getImageList().getSelectedIndices();
+        if (selectedIndices.length == 0) {
+            MsgUtil.info(imageForm.getImagePanel(), "msg.selectAtLeastOneImage");
+            return;
+        }
+
+        ImageSvgDialog optionsDialog = new ImageSvgDialog(selectedIndices.length);
+        optionsDialog.setVisible(true);
+        if (!optionsDialog.isConfirmed()) {
+            return;
+        }
+        ImageSvgUtil.SvgOptions svgOptions = optionsDialog.getOptions();
+
+        SystemFileChooser fileChooser = new SystemFileChooser(App.config.getImageExportPath());
+        fileChooser.setDialogTitle(I18n.get("imageSvg.outputDirectory"));
+        fileChooser.setFileSelectionMode(SystemFileChooser.DIRECTORIES_ONLY);
+        if (fileChooser.showOpenDialog(imageForm.getImagePanel()) != SystemFileChooser.APPROVE_OPTION) {
+            return;
+        }
+        File outputDirectory = fileChooser.getSelectedFile();
+        App.config.setImageExportPath(outputDirectory.getAbsolutePath());
+        App.config.save();
+
+        DefaultListModel<String> listModel = (DefaultListModel<String>) imageForm.getImageList().getModel();
+        List<File> sourceFiles = new ArrayList<>();
+        for (int index : selectedIndices) {
+            sourceFiles.add(FileUtil.file(IMAGE_PATH_PRE_FIX + listModel.getElementAt(index)));
+        }
+
+        JDialog progressDialog = new JDialog(App.mainFrame, I18n.get("imageSvg.progressTitle"), true);
+        progressDialog.setDefaultCloseOperation(JDialog.DO_NOTHING_ON_CLOSE);
+        JPanel progressPanel = new JPanel(new BorderLayout(12, 12));
+        progressPanel.setBorder(BorderFactory.createEmptyBorder(16, 20, 16, 20));
+        JLabel progressLabel = new JLabel(I18n.format("imageSvg.progress", 0, sourceFiles.size()));
+        JProgressBar progressBar = new JProgressBar(0, sourceFiles.size());
+        progressBar.setStringPainted(true);
+        JButton cancelButton = new JButton(I18n.get("common.cancel"));
+        JPanel progressButtonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 0, 0));
+        progressButtonPanel.add(cancelButton);
+        progressPanel.add(progressLabel, BorderLayout.NORTH);
+        progressPanel.add(progressBar, BorderLayout.CENTER);
+        progressPanel.add(progressButtonPanel, BorderLayout.SOUTH);
+        progressDialog.setContentPane(progressPanel);
+        progressDialog.pack();
+        progressDialog.setMinimumSize(new Dimension(380, progressDialog.getPreferredSize().height));
+        progressDialog.setLocationRelativeTo(imageForm.getImagePanel());
+
+        imageForm.getToSvgButton().setEnabled(false);
+        SwingWorker<SvgBatchResult, Integer> worker = new SwingWorker<>() {
+            @Override
+            protected SvgBatchResult doInBackground() {
+                int successCount = 0;
+                StringBuilder errors = new StringBuilder();
+                for (int index = 0; index < sourceFiles.size() && !isCancelled(); index++) {
+                    File source = sourceFiles.get(index);
+                    ImageSvgUtil.ConversionResult result = ImageSvgUtil.convert(
+                            source, outputDirectory, svgOptions);
+                    if (result.success()) {
+                        successCount++;
+                    } else {
+                        errors.append(source.getName()).append("：")
+                                .append(result.errorMessage()).append("\n");
+                    }
+                    publish(index + 1);
+                }
+                return new SvgBatchResult(successCount, errors.toString());
+            }
+
+            @Override
+            protected void process(List<Integer> chunks) {
+                int completed = chunks.get(chunks.size() - 1);
+                progressBar.setValue(completed);
+                progressLabel.setText(I18n.format("imageSvg.progress", completed, sourceFiles.size()));
+            }
+
+            @Override
+            protected void done() {
+                progressDialog.dispose();
+                imageForm.getToSvgButton().setEnabled(true);
+                if (isCancelled()) {
+                    return;
+                }
+                try {
+                    SvgBatchResult result = get();
+                    String message = I18n.format("msg.svgResult", result.successCount(), sourceFiles.size(),
+                            outputDirectory.getAbsolutePath());
+                    if (!result.errors().isBlank()) {
+                        message += I18n.format("msg.svgFailedList", result.errors());
+                    }
+                    MsgUtil.show(imageForm.getImagePanel(), message, "msg.svgCompleteTitle",
+                            result.errors().isBlank() ? JOptionPane.INFORMATION_MESSAGE : JOptionPane.WARNING_MESSAGE);
+                    if (result.successCount() > 0 && Desktop.isDesktopSupported()) {
+                        try {
+                            Desktop.getDesktop().open(outputDirectory);
+                        } catch (Exception openException) {
+                            log.warn("无法打开 SVG 输出目录", openException);
+                        }
+                    }
+                } catch (Exception exception) {
+                    MsgUtil.errorWithDetail(imageForm.getImagePanel(), "msg.svgFailed", exception.getMessage());
+                    log.error(ExceptionUtils.getStackTrace(exception));
+                }
+            }
+        };
+        cancelButton.addActionListener(event -> {
+            worker.cancel(true);
+            progressDialog.dispose();
+            imageForm.getToSvgButton().setEnabled(true);
+        });
+        worker.execute();
+        progressDialog.setVisible(true);
+    }
+
+    private record SvgBatchResult(int successCount, String errors) {
     }
 
     private static void ocrImages(ImageForm imageForm) {

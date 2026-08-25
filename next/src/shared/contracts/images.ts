@@ -48,3 +48,18 @@ export type ScreenCaptureResult = {
   height: number
   dataUrl: string
 }
+
+export type ImageVectorizePreset = 'poster' | 'photo' | 'bw'
+export type ImageVectorizeDetail = 'low' | 'medium' | 'high'
+
+export type ImageVectorizeOptions = {
+  preset: ImageVectorizePreset
+  colorCount: number
+  detail: ImageVectorizeDetail
+  filterSpeckle: number
+}
+
+export type ImageVectorizeResult = {
+  outputPath: string
+  files: string[]
+}

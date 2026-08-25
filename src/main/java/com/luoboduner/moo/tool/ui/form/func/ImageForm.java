@@ -66,6 +66,7 @@ public class ImageForm {
     private JButton pressImageButton;
     private JButton fromBase64Button;
     private JButton toBase64Button;
+    private JButton toSvgButton;
     private JPanel imageControlPanel;
 
     private JToolBar imageToolBar;
@@ -204,6 +205,7 @@ public class ImageForm {
                 "压缩", "image.compress",
                 "加水印", "image.watermark",
                 "OCR识别", "image.ocr",
+                "转SVG", "image.toSvg",
                 "导出为Base64", "image.toBase64",
                 "复制到剪贴板", "image.copyToClipboard"
         ));
@@ -356,10 +358,10 @@ public class ImageForm {
         fromBase64Button.setText("从Base64获取");
         panel5.add(fromBase64Button, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final JPanel panel6 = new JPanel();
-        panel6.setLayout(new GridLayoutManager(1, 7, new Insets(0, 0, 0, 0), -1, -1));
+        panel6.setLayout(new GridLayoutManager(1, 8, new Insets(0, 0, 0, 0), -1, -1));
         panel4.add(panel6, new GridConstraints(1, 0, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_BOTH, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, null, null, null, 0, false));
         final Spacer spacer3 = new Spacer();
-        panel6.add(spacer3, new GridConstraints(0, 6, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
+        panel6.add(spacer3, new GridConstraints(0, 7, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         scaleImageButton = new JButton();
         scaleImageButton.setText("压缩");
         panel6.add(scaleImageButton, new GridConstraints(0, 1, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
@@ -380,6 +382,9 @@ public class ImageForm {
         toBase64Button = new JButton();
         toBase64Button.setText("导出为Base64");
         panel6.add(toBase64Button, new GridConstraints(0, 3, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
+        toSvgButton = new JButton();
+        toSvgButton.setText("转SVG");
+        panel6.add(toSvgButton, new GridConstraints(0, 6, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_CAN_SHRINK | GridConstraints.SIZEPOLICY_CAN_GROW, GridConstraints.SIZEPOLICY_FIXED, null, null, null, 0, false));
         final Spacer spacer4 = new Spacer();
         menuPanel.add(spacer4, new GridConstraints(0, 2, 1, 1, GridConstraints.ANCHOR_CENTER, GridConstraints.FILL_HORIZONTAL, GridConstraints.SIZEPOLICY_WANT_GROW, 1, null, null, null, 0, false));
         final JPanel panel7 = new JPanel();

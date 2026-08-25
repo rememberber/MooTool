@@ -13,7 +13,7 @@ import type {
 import type { AppSettings, SecretKey, SecretStatus, SettingsPatch } from '../../src/shared/contracts/settings'
 import type { FuncHistoryRecord, HistoryQuery, SaveFuncHistoryInput } from '../../src/shared/contracts/history'
 import type { SaveTextFileInput, TextFileKind, TextFileResult } from '../../src/shared/contracts/files'
-import type { ImageAsset, ImageAssetSummary, RenameImageAssetInput, SaveImageAssetInput, ScreenCapture, ScreenCaptureOverlayData, ScreenCaptureRect, ScreenCaptureResult } from '../../src/shared/contracts/images'
+import type { ImageAsset, ImageAssetSummary, ImageVectorizeOptions, ImageVectorizeResult, RenameImageAssetInput, SaveImageAssetInput, ScreenCapture, ScreenCaptureOverlayData, ScreenCaptureRect, ScreenCaptureResult } from '../../src/shared/contracts/images'
 import type { DigestAlgorithmId, DigestFileResult, ImageFilePayload, SaveBinaryFileInput } from '../../src/shared/contracts/nativeFiles'
 import type { PdfFileInfo, PdfMergeSource, PdfOperationResult, PdfSplitTask } from '../../src/shared/contracts/pdf'
 import type { JsonVaultFile, JsonVaultListInput, JsonVaultNode, MoveJsonVaultEntryInput, RenameJsonVaultEntryInput, SaveJsonVaultFileInput } from '../../src/shared/contracts/jsonVault'
@@ -113,6 +113,7 @@ contextBridge.exposeInMainWorld('mootool', {
   deleteImageAssets: (names: string[]): Promise<void> => ipcRenderer.invoke('images:delete', names),
   exportImageAssets: (names: string[]): Promise<string | null> => ipcRenderer.invoke('images:export', names),
   openImageAsset: (name: string): Promise<void> => ipcRenderer.invoke('images:open', name),
+  vectorizeImageAssets: (names: string[], options: ImageVectorizeOptions): Promise<ImageVectorizeResult | null> => ipcRenderer.invoke('images:vectorize-svg', names, options),
   choosePdfFiles: (): Promise<PdfFileInfo[]> => ipcRenderer.invoke('pdf:choose-files'),
   mergePdfFiles: (sources: PdfMergeSource[]): Promise<PdfOperationResult | null> => ipcRenderer.invoke('pdf:merge', sources),
   splitPdfFiles: (tasks: PdfSplitTask[]): Promise<PdfOperationResult> => ipcRenderer.invoke('pdf:split', tasks),

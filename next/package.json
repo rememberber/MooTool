@@ -46,6 +46,7 @@
     "@codemirror/view": "^6.43.7",
     "@lezer/highlight": "^1.2.3",
     "@prettier/plugin-xml": "^3.4.2",
+    "@visioncortex/vtracer": "1.0.0-alpha.3",
     "@zxing/browser": "^0.2.1",
     "@zxing/library": "^0.23.0",
     "buffer": "^6.0.3",

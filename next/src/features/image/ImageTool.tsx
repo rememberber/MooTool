@@ -1,11 +1,11 @@
-import { ClipboardCopy, ClipboardPaste, Download, FileImage, FolderOpen, ImageDown, ImagePlus, List, Maximize2, Minimize2, Minus, Pencil, Plus, Save, ScanLine, Trash2, Type, Upload, ZoomIn } from 'lucide-react'
+import { ClipboardCopy, ClipboardPaste, Download, FileImage, FolderOpen, ImageDown, ImagePlus, List, Maximize2, Minimize2, Minus, Pencil, Plus, Save, ScanLine, Shapes, Trash2, Type, Upload, ZoomIn } from 'lucide-react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { ToolPageHeader } from '@/shared/components/ToolPage'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
-import type { ImageAsset, ImageAssetSummary } from '@/shared/contracts/images'
+import type { ImageAsset, ImageAssetSummary, ImageVectorizeOptions } from '@/shared/contracts/images'
 import { useToolActions } from '@/shared/hooks/useToolActions'
 import { useI18n } from '@/shared/i18n/I18nProvider'
-import { ImageBase64Dialog, ImageCompressDialog, ImageWatermarkDialog } from './ImageDialogs'
+import { ImageBase64Dialog, ImageCompressDialog, ImageSvgDialog, ImageWatermarkDialog } from './ImageDialogs'
 import { compressImage, ensureImageDataUrl, processedImageName, watermarkImage, type CompressImageOptions, type ImageOutputMode, type WatermarkImageOptions } from './imageTools'
 
 export function ImageTool() {
@@ -21,6 +21,7 @@ export function ImageTool() {
   const [base64Mode, setBase64Mode] = useState<'import' | 'export' | null>(null)
   const [compressOpen, setCompressOpen] = useState(false)
   const [watermarkOpen, setWatermarkOpen] = useState(false)
+  const [svgOpen, setSvgOpen] = useState(false)
 
   const loadAssets = useCallback(async (preferredName?: string) => {
     const next = await window.mootool.listImageAssets()
@@ -132,6 +133,16 @@ export function ImageTool() {
     await processImages(async (asset) => watermarkImage(asset.dataUrl, options), 'watermarked', mode, 'auto')
   }
 
+  async function processSvg(options: ImageVectorizeOptions): Promise<void> {
+    setSvgOpen(false)
+    if (!processingNames.length) return
+    setBusy(true)
+    try {
+      const result = await window.mootool.vectorizeImageAssets(processingNames, options)
+      if (result) actions.toast.success(t('image.svgComplete', { count: String(result.files.length), path: result.outputPath }))
+    } catch (error) { actions.reportError(error) } finally { setBusy(false) }
+  }
+
   async function processImages(transform: (asset: ImageAsset) => Promise<string>, suffix: 'compressed' | 'watermarked', mode: ImageOutputMode, format: CompressImageOptions['format']): Promise<void> {
     if (!processingNames.length) return
     setBusy(true)
@@ -154,7 +165,7 @@ export function ImageTool() {
     <section className="tool-page p4-tool image-tool-page">
       <ToolPageHeader title={t('image.title')} />
       <div className="local-tool-shell image-workspace">
-        <div className="image-main-toolbar"><button className="toolbar-button toolbar-button--icon" type="button" aria-label={t('image.toggleList')} onClick={() => setListVisible((value) => !value)}><List size={14} /></button><button className="toolbar-button" type="button" disabled={busy} onClick={() => { void capture() }}><ScanLine size={14} />{t('image.screenshot')}</button><button className="toolbar-button" type="button" onClick={() => { void importClipboard() }}><ClipboardPaste size={14} />{t('image.fromClipboard')}</button><button className="toolbar-button" type="button" onClick={() => { void importImages() }}><FolderOpen size={14} />{t('image.import')}</button><button className="toolbar-button" type="button" onClick={() => setBase64Mode('import')}><ImageDown size={14} />{t('image.fromBase64')}</button><span className="p4-toolbar__spacer" /><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setCompressOpen(true)}><Minimize2 size={14} />{t('image.compress')}</button><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setWatermarkOpen(true)}><Type size={14} />{t('image.watermark')}</button><button className="toolbar-button" type="button" disabled={!current} onClick={() => { void saveCurrent() }}><Save size={14} />{t('common.save')}</button><button className="toolbar-button" type="button" disabled={!current} onClick={() => { void copyImage() }}><ClipboardCopy size={14} />{t('image.copy')}</button><button className="toolbar-button" type="button" disabled={!current} onClick={() => setBase64Mode('export')}><Upload size={14} />{t('image.toBase64')}</button></div>
+        <div className="image-main-toolbar"><button className="toolbar-button toolbar-button--icon" type="button" aria-label={t('image.toggleList')} onClick={() => setListVisible((value) => !value)}><List size={14} /></button><button className="toolbar-button" type="button" disabled={busy} onClick={() => { void capture() }}><ScanLine size={14} />{t('image.screenshot')}</button><button className="toolbar-button" type="button" onClick={() => { void importClipboard() }}><ClipboardPaste size={14} />{t('image.fromClipboard')}</button><button className="toolbar-button" type="button" onClick={() => { void importImages() }}><FolderOpen size={14} />{t('image.import')}</button><button className="toolbar-button" type="button" onClick={() => setBase64Mode('import')}><ImageDown size={14} />{t('image.fromBase64')}</button><span className="p4-toolbar__spacer" /><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setSvgOpen(true)}><Shapes size={14} />{t('image.toSvg')}</button><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setCompressOpen(true)}><Minimize2 size={14} />{t('image.compress')}</button><button className="toolbar-button" type="button" disabled={!processingNames.length || busy} onClick={() => setWatermarkOpen(true)}><Type size={14} />{t('image.watermark')}</button><button className="toolbar-button" type="button" disabled={!current} onClick={() => { void saveCurrent() }}><Save size={14} />{t('common.save')}</button><button className="toolbar-button" type="button" disabled={!current} onClick={() => { void copyImage() }}><ClipboardCopy size={14} />{t('image.copy')}</button><button className="toolbar-button" type="button" disabled={!current} onClick={() => setBase64Mode('export')}><Upload size={14} />{t('image.toBase64')}</button></div>
         <ResizableColumns className={listVisible ? 'image-layout' : 'image-layout image-layout--collapsed'} columns={listVisible ? 2 : 1} defaultSizes={listVisible ? [230, 770] : [1]} minPaneWidths={listVisible ? [180, 360] : [360]} storageKey="image-library">
           {listVisible && <aside className="image-library"><header><span>{t('image.library')}</span><button className="icon-button" type="button" aria-label={t('image.import')} onClick={() => { void importImages() }}><ImagePlus size={14} /></button></header><div className="image-list">{assets.length === 0 ? <div className="history-empty">{t('image.empty')}</div> : assets.map((asset) => <div className={current?.name === asset.name ? 'image-list-item image-list-item--active' : 'image-list-item'} key={asset.name}><input type="checkbox" aria-label={`${t('image.select')} ${asset.name}`} checked={selectedNames.includes(asset.name)} onChange={(event) => toggleAsset(asset.name, event.target.checked)} /><button type="button" onClick={() => { void selectAsset(asset.name) }}><FileImage size={15} /><span><strong>{asset.name}</strong><small>{asset.width} × {asset.height} · {formatBytes(asset.size)}</small></span></button></div>)}</div><footer><button className="icon-button" type="button" disabled={!current} aria-label={t('common.rename')} onClick={() => { void renameCurrent() }}><Pencil size={14} /></button><button className="icon-button" type="button" disabled={!processingNames.length} aria-label={t('common.export')} onClick={() => { void exportSelected() }}><Download size={14} /></button><button className="icon-button icon-button--danger" type="button" disabled={!processingNames.length} aria-label={t('common.action.delete')} onClick={() => { void deleteSelected() }}><Trash2 size={14} /></button></footer></aside>}
           <main className="image-canvas-panel" onDoubleClick={() => { if (current) void window.mootool.openImageAsset(current.name) }}><div className={fit ? 'image-canvas image-canvas--fit' : 'image-canvas'}>{current ? <img src={current.dataUrl} alt={current.name} style={fit ? undefined : { width: `${current.width * zoom}px`, height: `${current.height * zoom}px` }} /> : <div className="image-placeholder"><FileImage size={48} /><span>{t('image.emptyPreview')}</span></div>}</div><div className="image-zoom-toolbar" onDoubleClick={(event) => event.stopPropagation()}><button className="icon-button" type="button" aria-label={t('image.zoomIn')} disabled={!current} onClick={() => { setFit(false); setZoom((value) => Math.min(5, value * 1.1)) }}><Plus size={14} /></button><button className="icon-button" type="button" aria-label={t('image.zoomOut')} disabled={!current} onClick={() => { setFit(false); setZoom((value) => Math.max(0.1, value * 0.9)) }}><Minus size={14} /></button><button className="icon-button" type="button" aria-label={t('image.original')} disabled={!current} onClick={() => { setFit(false); setZoom(1) }}><ZoomIn size={14} /></button><button className="icon-button" type="button" aria-label={t('image.fit')} disabled={!current} onClick={() => setFit(true)}><Maximize2 size={14} /></button><span>{current ? `${current.width} × ${current.height} · ${formatBytes(current.size)} · ${fit ? t('image.fit') : `${Math.round(zoom * 100)}%`}` : ''}</span></div></main>
@@ -163,6 +174,7 @@ export function ImageTool() {
       <ImageBase64Dialog open={base64Mode !== null} mode={base64Mode ?? 'import'} value={base64Mode === 'export' ? current?.dataUrl ?? '' : ''} onClose={() => setBase64Mode(null)} onImport={(value) => { void importBase64(value) }} />
       <ImageCompressDialog open={compressOpen} count={processingNames.length} onClose={() => setCompressOpen(false)} onConfirm={(options, mode) => { void processCompression(options, mode) }} />
       <ImageWatermarkDialog open={watermarkOpen} count={processingNames.length} onClose={() => setWatermarkOpen(false)} onConfirm={(options, mode) => { void processWatermark(options, mode) }} />
+      <ImageSvgDialog open={svgOpen} count={processingNames.length} onClose={() => setSvgOpen(false)} onConfirm={(options) => { void processSvg(options) }} />
     </section>
   )
 }

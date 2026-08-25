@@ -29,8 +29,8 @@ import { autoUpdater } from 'electron-updater'
 import { execFile } from 'node:child_process'
 import { createHash, getHashes } from 'node:crypto'
 import { createReadStream, readFileSync, watch, type FSWatcher } from 'node:fs'
-import { chmod, mkdir, readFile, stat, writeFile } from 'node:fs/promises'
-import { basename, extname, join } from 'node:path'
+import { chmod, mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { basename, extname, join, parse } from 'node:path'
 import {
   defaultWorkspaceState,
   isDetachableToolId,
@@ -57,7 +57,7 @@ import {
 } from '../../src/shared/contracts/settings'
 import type { HistoryQuery, SaveFuncHistoryInput } from '../../src/shared/contracts/history'
 import type { SaveTextFileInput, TextFileKind, TextFileResult } from '../../src/shared/contracts/files'
-import type { RenameImageAssetInput, SaveImageAssetInput, ScreenCapture, ScreenCaptureOverlayData, ScreenCaptureRect, ScreenCaptureResult } from '../../src/shared/contracts/images'
+import type { ImageVectorizeOptions, ImageVectorizeResult, RenameImageAssetInput, SaveImageAssetInput, ScreenCapture, ScreenCaptureOverlayData, ScreenCaptureRect, ScreenCaptureResult } from '../../src/shared/contracts/images'
 import { digestAlgorithmIds, type DigestAlgorithmId, type DigestFileResult, type ImageFilePayload, type SaveBinaryFileInput } from '../../src/shared/contracts/nativeFiles'
 import type { PdfMergeSource, PdfSplitTask } from '../../src/shared/contracts/pdf'
 import type {
@@ -84,6 +84,7 @@ import { BackupService } from './backupService'
 import { FavoriteRepository } from './favoriteRepository'
 import { HistoryRepository } from './historyRepository'
 import { ImageRepository } from './imageRepository'
+import { normalizeImageVectorizeOptions, vectorizePng } from './imageVectorizationService'
 import { JsonVaultRepository } from './jsonVaultRepository'
 import { LegacyMigrationService } from './legacyMigrationService'
 import { NetworkService, parseChromiumProxyDirective, type ProxyConfiguration } from './networkService'
@@ -146,6 +147,7 @@ type ScreenCaptureSession = {
 }
 
 const isDev = Boolean(process.env.ELECTRON_RENDERER_URL)
+const MAX_VECTOR_PIXELS = 16_000_000
 const defaultWindowState: WindowState = {
   bounds: { width: 1440, height: 920 },
   maximized: false
@@ -907,6 +909,53 @@ function registerIpc(): void {
   ipcMain.handle('images:open', async (_event, name: string) => {
     const error = await shell.openPath(createImageRepository().pathFor(normalizeImageName(name)))
     if (error) throw new Error(error)
+  })
+  ipcMain.handle('images:vectorize-svg', async (event, names: string[], value: ImageVectorizeOptions): Promise<ImageVectorizeResult | null> => {
+    const normalizedNames = normalizeImageNames(names)
+    const vectorizeOptions = normalizeImageVectorizeOptions(value)
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
+    const targets: Array<{ name: string; path: string }> = []
+    let outputPath: string
+
+    if (normalizedNames.length === 1) {
+      const defaultName = `${parse(normalizedNames[0]).name}.svg`
+      const saveOptions = { defaultPath: join(app.getPath('desktop'), defaultName), filters: [svgFileFilter] }
+      const result = owner ? await dialog.showSaveDialog(owner, saveOptions) : await dialog.showSaveDialog(saveOptions)
+      if (result.canceled || !result.filePath) return null
+      outputPath = extname(result.filePath).toLowerCase() === '.svg' ? result.filePath : `${result.filePath}.svg`
+      targets.push({ name: normalizedNames[0], path: outputPath })
+    } else {
+      const result = owner
+        ? await dialog.showOpenDialog(owner, { properties: ['openDirectory', 'createDirectory'] })
+        : await dialog.showOpenDialog({ properties: ['openDirectory', 'createDirectory'] })
+      if (result.canceled || !result.filePaths[0]) return null
+      outputPath = result.filePaths[0]
+      const reserved = new Set<string>()
+      for (const name of normalizedNames) {
+        targets.push({ name, path: await availableSvgPath(outputPath, parse(name).name, reserved) })
+      }
+    }
+
+    const writtenPaths: string[] = []
+    try {
+      const repository = createImageRepository()
+      for (const target of targets) {
+        const image = nativeImage.createFromPath(repository.pathFor(target.name))
+        if (image.isEmpty()) throw new Error(`Unable to read image: ${target.name}`)
+        const size = image.getSize()
+        if ((size.width * size.height) > MAX_VECTOR_PIXELS) {
+          throw new Error(`${target.name} exceeds the 16 megapixel vectorization limit`)
+        }
+        const svg = vectorizePng(image.toPNG(), vectorizeOptions)
+        await writeFile(target.path, svg, 'utf8')
+        writtenPaths.push(target.path)
+        await new Promise<void>((resolve) => setImmediate(resolve))
+      }
+      return { outputPath, files: writtenPaths }
+    } catch (error) {
+      if (targets.length > 1) await Promise.all(writtenPaths.map((path) => rm(path, { force: true })))
+      throw error
+    }
   })
   ipcMain.handle('pdf:choose-files', async (event) => {
     const owner = resolveOwnerWindow(event.sender) ?? mainWindow
@@ -2071,6 +2120,29 @@ function normalizeImageNames(value: unknown): string[] {
   return value.map(normalizeImageName)
 }
 
+async function availableSvgPath(directory: string, rawBaseName: string, reserved: Set<string>): Promise<string> {
+  const baseName = rawBaseName.replace(/[^a-zA-Z0-9._\-\u4e00-\u9fff\u3040-\u30ff]/g, '_').slice(0, 140) || 'image'
+  let suffix = 1
+  while (true) {
+    const fileName = suffix === 1 ? `${baseName}.svg` : `${baseName}_${suffix}.svg`
+    const candidate = join(directory, fileName)
+    if (!reserved.has(candidate) && !(await pathExists(candidate))) {
+      reserved.add(candidate)
+      return candidate
+    }
+    suffix += 1
+  }
+}
+
+async function pathExists(path: string): Promise<boolean> {
+  try {
+    await stat(path)
+    return true
+  } catch {
+    return false
+  }
+}
+
 function normalizePdfMergeSources(value: unknown): PdfMergeSource[] {
   if (!Array.isArray(value) || value.length < 2 || value.length > 20) throw new Error('Select between 2 and 20 PDF files')
   return value.map((source) => {
@@ -2148,6 +2220,7 @@ const textFileFilters: Record<TextFileKind, { name: string; extensions: string[]
 }
 
 const imageFileFilter = { name: 'Images', extensions: ['png', 'jpg', 'jpeg', 'gif', 'bmp', 'webp'] }
+const svgFileFilter = { name: 'Scalable Vector Graphics', extensions: ['svg'] }
 const pdfFileFilter = { name: 'PDF', extensions: ['pdf'] }
 const binaryFileFilters: Record<SaveBinaryFileInput['kind'], { name: string; extensions: string[] }> = {
   image: imageFileFilter,
