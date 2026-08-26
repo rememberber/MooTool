@@ -74,6 +74,24 @@ test('renders every functional tool as an immersive workspace while leaving home
       outerSurfaceFlat: true,
       workspaceDragUsable: true
     })
+
+    if (label === '文本对比') {
+      await expect.poll(() => page.locator('.diff-toolbar').evaluate((toolbar) => {
+        const dragZone = toolbar.querySelector<HTMLElement>('.diff-toolbar__drag-zone')
+        const controls = [...toolbar.querySelectorAll<HTMLElement>('button, input, select, label')]
+        return {
+          toolbarRegion: getComputedStyle(toolbar).getPropertyValue('-webkit-app-region'),
+          dragZoneUsable: (dragZone?.getBoundingClientRect().width ?? 0) >= 32,
+          controlsAreClickable: controls.every((control) => (
+            getComputedStyle(control).getPropertyValue('-webkit-app-region') === 'no-drag'
+          ))
+        }
+      })).toEqual({
+        toolbarRegion: 'drag',
+        dragZoneUsable: true,
+        controlsAreClickable: true
+      })
+    }
   }
 
   await mainPage.getByRole('button', { name: '主页', exact: true }).click()
