@@ -2533,21 +2533,6 @@ select:not([multiple]) {
   overflow: hidden;
 }
 
-.tool-view-shell--detached.tool-view-shell--immersive {
-  padding-top: 12px;
-}
-
-.window-drag-rail {
-  position: absolute;
-  z-index: 220;
-  top: 0;
-  right: 0;
-  left: 0;
-  height: 12px;
-  user-select: none;
-  -webkit-user-select: none;
-}
-
 .tool-view-shell .tool-page__header {
   padding-right: 64px;
 }
@@ -11839,9 +11824,8 @@ textarea:focus {
   border-radius: 999px;
 }
 
-/* Immersive tools keep window mechanics in real toolbar gaps. Detached tools
- * additionally reserve a narrow rail above the workspace as a reliable
- * fallback, so the rail never covers an input or button. */
+/* Immersive tools keep window mechanics in real toolbar gaps instead of
+ * reserving chrome above the workspace. */
 
 .tool-view-shell--immersive .tool-window-toggle-slot {
   top: 50%;

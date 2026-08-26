@@ -119,13 +119,11 @@ test('keeps multiple detached tools independent and returns each one to its dock
   await expect.poll(async () => (await evaluateTool('json', `(() => {
     const shell = document.querySelector('.tool-view-shell')
     const page = document.querySelector('.json-tool')
-    const drag = document.querySelector('[data-window-drag-rail]')
     const workspaceDrag = document.querySelector('[data-window-drag-zone]')
     const slot = document.querySelector('.tool-window-toggle-slot')
     const trigger = slot?.querySelector('.tooltip-trigger')
-    if (!shell || !page || !drag || !workspaceDrag || !slot || !trigger) return null
+    if (!shell || !page || !workspaceDrag || !slot || !trigger) return null
     const pageBounds = page.getBoundingClientRect()
-    const dragBounds = drag.getBoundingClientRect()
     const workspaceDragBounds = workspaceDrag.getBoundingClientRect()
     const slotBounds = slot.getBoundingClientRect()
     const triggerStyle = getComputedStyle(trigger)
@@ -135,9 +133,8 @@ test('keeps multiple detached tools independent and returns each one to its dock
       visibleTitleCount: page.querySelectorAll('h1').length,
       brandCount: shell.querySelectorAll('.tool-window-brand-zone').length,
       pageTop: Math.round(pageBounds.top),
-      dragHeight: Math.round(dragBounds.height),
+      dragRailCount: shell.querySelectorAll('[data-window-drag-rail]').length,
       workspaceDragUsable: workspaceDragBounds.width >= 32 && workspaceDragBounds.height >= 24,
-      dragRailRegion: getComputedStyle(drag).getPropertyValue('-webkit-app-region'),
       workspaceDragRegion: getComputedStyle(workspaceDrag).getPropertyValue('-webkit-app-region'),
       edgeSlotWidth: Math.round(slotBounds.width),
       toggleOpacity: triggerStyle.opacity,
@@ -148,10 +145,9 @@ test('keeps multiple detached tools independent and returns each one to its dock
     accessibleName: 'JSON 工作台',
     visibleTitleCount: 0,
     brandCount: 0,
-    pageTop: 12,
-    dragHeight: 12,
+    pageTop: 0,
+    dragRailCount: 0,
     workspaceDragUsable: true,
-    dragRailRegion: 'drag',
     workspaceDragRegion: 'drag',
     edgeSlotWidth: 7,
     toggleOpacity: '0',
@@ -199,10 +195,9 @@ test('keeps a custom-header tool immersive while preserving its view controls', 
     const header = document.querySelector('.quick-note-page-header')?.getBoundingClientRect()
     const title = document.querySelector('.quick-note-page-header h1')?.getBoundingClientRect()
     const switcher = document.querySelector('.quick-note-view-switch')?.getBoundingClientRect()
-    const drag = document.querySelector('[data-window-drag-rail]')?.getBoundingClientRect()
     const workspaceDrag = document.querySelector('[data-window-drag-zone]')?.getBoundingClientRect()
     const slot = document.querySelector('.tool-window-toggle-slot')?.getBoundingClientRect()
-    if (!shell || !page || !header || !title || !switcher || !drag || !workspaceDrag || !slot) return null
+    if (!shell || !page || !header || !title || !switcher || !workspaceDrag || !slot) return null
     return {
       immersive: shell.classList.contains('tool-view-shell--immersive'),
       brandCount: shell.querySelectorAll('.tool-window-brand-zone').length,
@@ -212,24 +207,22 @@ test('keeps a custom-header tool immersive while preserving its view controls', 
       titleWidth: Math.round(title.width),
       titleHeight: Math.round(title.height),
       switchVisible: switcher.width > 0 && switcher.height > 0,
-      dragHeight: Math.round(drag.height),
+      dragRailCount: shell.querySelectorAll('[data-window-drag-rail]').length,
       workspaceDragUsable: workspaceDrag.width >= 48 && workspaceDrag.height >= 24,
-      dragRailRegion: getComputedStyle(document.querySelector('[data-window-drag-rail]')).getPropertyValue('-webkit-app-region'),
       workspaceDragRegion: getComputedStyle(document.querySelector('[data-window-drag-zone]')).getPropertyValue('-webkit-app-region'),
       edgeSlotWidth: Math.round(slot.width)
     }
   })()`)).value).toMatchObject({
     immersive: true,
     brandCount: 0,
-    pageTop: 12,
-    headerTop: 12,
+    pageTop: 0,
+    headerTop: 0,
     headerCompact: true,
     titleWidth: 1,
     titleHeight: 1,
     switchVisible: true,
-    dragHeight: 12,
+    dragRailCount: 0,
     workspaceDragUsable: true,
-    dragRailRegion: 'drag',
     workspaceDragRegion: 'drag',
     edgeSlotWidth: 7
   })
@@ -244,7 +237,7 @@ test('keeps a custom-header tool immersive while preserving its view controls', 
   })()`)).value).toEqual({
     controlsClass: true,
     brandCount: 0,
-    headerTop: 12
+    headerTop: 0
   })
 
   await sendToolWindowControlsVisibility('quickNote', false)
