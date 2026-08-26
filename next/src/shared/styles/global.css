@@ -4032,9 +4032,13 @@ select:not([multiple]) {
   display: flex;
   min-height: 0;
   flex-direction: column;
-  gap: 10px;
-  padding: 22px;
+  gap: 8px;
+  padding: 14px 22px 22px;
   border-right: 1px solid var(--border-soft);
+}
+
+.ua-input-panel > .embedded-tool-heading {
+  margin-bottom: 0;
 }
 
 .ua-input-panel textarea { flex: 1; min-height: 220px; }
