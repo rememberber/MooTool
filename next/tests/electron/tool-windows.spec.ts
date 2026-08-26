@@ -206,35 +206,41 @@ test('keeps a custom-header tool immersive while preserving its view controls', 
   await expect.poll(async () => (await evaluateTool('quickNote', `(() => {
     const shell = document.querySelector('.tool-view-shell')
     const page = document.querySelector('.quick-note-tool')
-    const header = document.querySelector('.quick-note-page-header')?.getBoundingClientRect()
-    const title = document.querySelector('.quick-note-page-header h1')?.getBoundingClientRect()
+    const toolbar = document.querySelector('.quick-note-toolbar')?.getBoundingClientRect()
+    const title = document.querySelector('.quick-note-tool > h1')?.getBoundingClientRect()
     const switcher = document.querySelector('.quick-note-view-switch')?.getBoundingClientRect()
     const workspaceDrag = document.querySelector('[data-window-drag-zone]')?.getBoundingClientRect()
+    const sidebar = document.querySelector('.quick-note-sidebar')?.getBoundingClientRect()
+    const editor = document.querySelector('.quick-note-editor-shell')?.getBoundingClientRect()
     const slot = document.querySelector('.tool-window-toggle-slot')?.getBoundingClientRect()
-    if (!shell || !page || !header || !title || !switcher || !workspaceDrag || !slot) return null
+    if (!shell || !page || !toolbar || !title || !switcher || !workspaceDrag || !sidebar || !editor || !slot) return null
     return {
       immersive: shell.classList.contains('tool-view-shell--immersive'),
       brandCount: shell.querySelectorAll('.tool-window-brand-zone').length,
+      standaloneHeaderCount: page.querySelectorAll(':scope > .tool-page__header').length,
       pageTop: Math.round(page.getBoundingClientRect().top),
-      headerTop: Math.round(header.top),
-      headerCompact: header.height >= 42 && header.height <= 48,
+      toolbarTop: Math.round(toolbar.top),
+      toolbarCompact: toolbar.height >= 48 && toolbar.height <= 54,
       titleWidth: Math.round(title.width),
       titleHeight: Math.round(title.height),
-      switchVisible: switcher.width > 0 && switcher.height > 0,
+      switchInsideToolbar: switcher.top >= toolbar.top && switcher.bottom <= toolbar.bottom,
+      firstColumnsGap: Math.round(editor.left - sidebar.right),
       dragRailCount: shell.querySelectorAll('[data-window-drag-rail]').length,
-      workspaceDragUsable: workspaceDrag.width >= 48 && workspaceDrag.height >= 24,
+      workspaceDragUsable: workspaceDrag.width >= 32 && workspaceDrag.height >= 24,
       workspaceDragRegion: getComputedStyle(document.querySelector('[data-window-drag-zone]')).getPropertyValue('-webkit-app-region'),
       edgeSlotWidth: Math.round(slot.width)
     }
   })()`)).value).toMatchObject({
     immersive: true,
     brandCount: 0,
+    standaloneHeaderCount: 0,
     pageTop: 0,
-    headerTop: 0,
-    headerCompact: true,
+    toolbarTop: 0,
+    toolbarCompact: true,
     titleWidth: 1,
     titleHeight: 1,
-    switchVisible: true,
+    switchInsideToolbar: true,
+    firstColumnsGap: 0,
     dragRailCount: 0,
     workspaceDragUsable: true,
     workspaceDragRegion: 'drag',
@@ -246,12 +252,14 @@ test('keeps a custom-header tool immersive while preserving its view controls', 
     return {
       controlsClass: document.querySelector('.tool-view-shell').classList.contains('tool-view-shell--window-controls-visible'),
       brandCount: document.querySelectorAll('.tool-window-brand-zone').length,
-      headerTop: Math.round(document.querySelector('.quick-note-page-header').getBoundingClientRect().top)
+      toolbarTop: Math.round(document.querySelector('.quick-note-toolbar').getBoundingClientRect().top),
+      searchInset: Math.round(document.querySelector('.quick-note-search').getBoundingClientRect().left - document.querySelector('.quick-note-sidebar').getBoundingClientRect().left)
     }
   })()`)).value).toEqual({
     controlsClass: true,
     brandCount: 0,
-    headerTop: 0
+    toolbarTop: 0,
+    searchInset: process.platform === 'darwin' ? 82 : 8
   })
 
   await sendToolWindowControlsVisibility('quickNote', false)
@@ -265,7 +273,7 @@ test('keeps double-clicked Quick Note split-preview text selected after auto-sav
   await mainPage.locator('.tool-button').filter({ hasText: '随手记' }).click()
   await waitForToolSelector('quickNote', '.quick-note-tool')
   await evaluateTool('quickNote', `(() => {
-    const split = [...document.querySelectorAll('[role="tab"]')].find((tab) => tab.textContent === '分栏')
+    const split = [...document.querySelectorAll('[role="tab"]')].find((tab) => tab.getAttribute('aria-label') === '分栏')
     if (!split) throw new Error('Quick Note split tab not found')
     split.click()
   })()`)

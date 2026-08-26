@@ -2,8 +2,11 @@ import DOMPurify from 'dompurify'
 import {
   Check,
   ChevronDown,
+  Columns2,
   CopyPlus,
   Download,
+  Eye,
+  FilePenLine,
   FilePlus2,
   FolderOpen,
   FolderPlus,
@@ -928,19 +931,9 @@ export function QuickNoteTool() {
     : state.quickReplaceOpen ? [320, 170] : [320]
   return (
     <section className="tool-page quick-note-tool">
-      <div className="tool-page__header tool-page__header--actions quick-note-page-header">
-        <h1 className="visually-hidden">{t('quickNote.title')}</h1>
-        <WorkspaceDragZone />
-        <div className="quick-note-view-switch segmented" role="tablist">
-          {(['editor', 'split', 'preview'] as const).map((mode) => (
-            <button className={state.viewMode === mode ? 'segmented__item segmented__item--active' : 'segmented__item'} type="button" role="tab" aria-selected={state.viewMode === mode} key={mode} onClick={() => update({ viewMode: mode })}>
-              {t(`quickNote.view.${mode}` as MessageKey)}
-            </button>
-          ))}
-        </div>
-      </div>
+      <h1 className="visually-hidden">{t('quickNote.title')}</h1>
 
-      <div className={[state.treeOpen ? '' : 'quick-note-layout--tree-closed', state.quickReplaceOpen ? 'quick-note-layout--replace-open' : ''].filter(Boolean).join(' ') || undefined}>
+      <div className={['quick-note-stage', state.treeOpen ? '' : 'quick-note-layout--tree-closed', state.quickReplaceOpen ? 'quick-note-layout--replace-open' : ''].filter(Boolean).join(' ')}>
         <ResizableColumns
           className="quick-note-layout"
           columns={quickNoteColumns}
@@ -983,6 +976,27 @@ export function QuickNoteTool() {
           <section className="quick-note-editor-shell">
             <div className="quick-note-toolbar">
               <IconButton label={state.treeOpen ? t('quickNote.openVault') : t('quickNote.newNote')} icon={state.treeOpen ? PanelLeftClose : PanelLeftOpen} onClick={() => update({ treeOpen: !state.treeOpen })} />
+              <div className="quick-note-view-switch segmented" role="tablist" aria-label={t('quickNote.title')}>
+                {([
+                  { id: 'editor', icon: FilePenLine },
+                  { id: 'split', icon: Columns2 },
+                  { id: 'preview', icon: Eye }
+                ] as const).map(({ id, icon: ViewIcon }) => (
+                  <button
+                    className={state.viewMode === id ? 'segmented__item segmented__item--active' : 'segmented__item'}
+                    type="button"
+                    role="tab"
+                    aria-label={t(`quickNote.view.${id}` as MessageKey)}
+                    aria-selected={state.viewMode === id}
+                    title={t(`quickNote.view.${id}` as MessageKey)}
+                    key={id}
+                    onClick={() => update({ viewMode: id })}
+                  >
+                    <ViewIcon size={15} />
+                  </button>
+                ))}
+              </div>
+              <span className="quick-note-toolbar__divider" aria-hidden="true" />
               <NoteColorPicker key={state.note?.relativePath ?? 'empty'} value={state.note?.metadata.color} disabled={!state.note} label={t('quickNote.color')} onChange={(color) => patchMetadata({ color })} />
               <select className="quick-note-syntax" aria-label={t('quickNote.syntax')} disabled={!state.note} value={state.note?.metadata.syntax ?? 'text/plain'} onChange={(event) => patchMetadata({ syntax: event.target.value })}>
                 {syntaxOptions.map(([value, label]) => <option value={value} key={value}>{label}</option>)}
@@ -1004,7 +1018,7 @@ export function QuickNoteTool() {
               <IconButton label={t('common.action.format')} icon={WandSparkles} disabled={!state.note || !state.content.trim()} onClick={() => { void formatCurrent() }} />
               <IconButton label={t('quickNote.bulletList')} icon={List} disabled={!state.note} onClick={() => prefixSelectedLines('bullet')} />
               <IconButton label={t('quickNote.numberedList')} icon={ListOrdered} disabled={!state.note} onClick={() => prefixSelectedLines('numbered')} />
-              <span className="quick-note-toolbar__spacer" />
+              <WorkspaceDragZone className="quick-note-toolbar__drag-zone" />
               <IconButton label={t('quickNote.find')} icon={Search} disabled={!state.note} active={state.findOpen} onClick={() => { if (state.findOpen) update({ findOpen: false }); else openFindReplace() }} />
               <IconButton label={t('quickNote.save')} icon={Save} disabled={!state.note || state.busy} active={dirty} onClick={() => { void saveCurrent() }} />
               <IconButton label={t('quickNote.duplicate')} icon={CopyPlus} disabled={!state.note} onClick={() => { void duplicateNote() }} />
