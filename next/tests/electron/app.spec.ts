@@ -471,7 +471,13 @@ test('formats JSON and completes history and Vault workflows', async () => {
     return { borderRadius: style.borderRadius, boxShadow: style.boxShadow }
   })).toEqual({ borderRadius: '0px', boxShadow: 'none' })
   const jsonVault = mainPage.locator('.vault-panel')
-  await expect(mainPage.locator('.vault-panel__header h2')).toHaveCSS('font-size', '14px')
+  await expect(mainPage.locator('.vault-panel > h2')).toHaveClass(/visually-hidden/)
+  await expect.poll(() => jsonVault.evaluate((panel) => {
+    const search = panel.querySelector('.vault-panel__search')!.getBoundingClientRect()
+    const options = panel.querySelector('.vault-panel__options')!.getBoundingClientRect()
+    const actions = panel.querySelector('.vault-panel__actions')!.getBoundingClientRect()
+    return search.top < options.top && options.top < actions.top
+  })).toBe(true)
   await expect(mainPage.locator('.vault-panel__options > select')).toHaveCSS('font-size', '12px')
   await expect.poll(() => mainPage.locator('.vault-panel__options > select').evaluate((element) => element.getBoundingClientRect().height)).toBe(34)
   await expect.poll(() => mainPage.locator('.vault-panel__actions button').first().evaluate((button) => {
@@ -480,7 +486,9 @@ test('formats JSON and completes history and Vault workflows', async () => {
       button: button.getBoundingClientRect().width,
       icon: icon?.getBoundingClientRect().width
     }
-  })).toEqual({ button: 32, icon: 16 })
+  })).toEqual({ button: expect.any(Number), icon: 16 })
+  await expect.poll(() => mainPage.locator('.vault-panel__actions button').first().evaluate((button) => button.getBoundingClientRect().width)).toBeGreaterThanOrEqual(26)
+  await expect.poll(() => mainPage.locator('.vault-panel__actions button').first().evaluate((button) => button.getBoundingClientRect().width)).toBeLessThanOrEqual(32)
   await expect.poll(() => mainPage.locator('.vault-panel__actions').evaluate((actions) => {
     const actionsRect = actions.getBoundingClientRect()
     const panelRect = actions.closest('.vault-panel')!.getBoundingClientRect()

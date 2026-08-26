@@ -451,30 +451,15 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
 
   return (
     <aside className="vault-panel">
-      <header className="vault-panel__header">
-        <h2>{t('json.vault.title')}</h2>
-        <div className="vault-panel__actions">
-          <VaultAction label={t('json.vault.new')} onClick={beginCreateFile}><FilePlus2 size={14} /></VaultAction>
-          <VaultAction label={t('json.vault.newFolder')} onClick={beginCreateFolder}><FolderPlus size={14} /></VaultAction>
-          <VaultAction
-            label={settings.vault.jsonTreeExpandMode === 'expandAll' ? t('json.vault.collapseAll') : t('json.vault.expandAll')}
-            onClick={() => setTreeExpandMode(settings.vault.jsonTreeExpandMode === 'expandAll' ? 'collapseAll' : 'expandAll')}
-          >
-            {settings.vault.jsonTreeExpandMode === 'expandAll' ? <FoldVertical size={14} /> : <UnfoldVertical size={14} />}
-          </VaultAction>
-          <VaultAction label={t('json.vault.save')} onClick={() => { void saveSelected() }}><Save size={14} /></VaultAction>
-          <VaultAction label={t('json.vault.delete')} disabled={!selectedEntry} onClick={() => { void deleteEntry() }}><Trash2 size={14} /></VaultAction>
-          <VaultAction label={t('json.git.open')} badge={gitChangeCount} onClick={() => setGitDialogOpen(true)}><GitBranch size={14} /></VaultAction>
-        </div>
-      </header>
+      <h2 className="visually-hidden">{t('json.vault.title')}</h2>
       <div className="vault-panel__search">
         <div className="compact-search">
           <Search size={13} />
           <input value={query} placeholder={t('common.search')} aria-label={t('common.search')} onChange={(event) => setQuery(event.target.value)} />
         </div>
-        <label className="list-search-content"><input type="checkbox" checked={includeContent} onChange={(event) => setIncludeContent(event.target.checked)} />{t('common.searchContent')}</label>
       </div>
       <div className="vault-panel__options">
+        <label className="list-search-content"><input type="checkbox" checked={includeContent} onChange={(event) => setIncludeContent(event.target.checked)} />{t('common.searchContent')}</label>
         <select aria-label={t('json.vault.sort')} value={sort} onChange={(event) => setSort(event.target.value as typeof sort)}>
           <option value="name">{t('json.vault.sortName')}</option>
           <option value="modified">{t('json.vault.sortModified')}</option>
@@ -489,6 +474,19 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
             <MenuAction icon={FolderOpen} label={t('json.vault.openFolder')} onClick={() => { void window.mootool.openJsonVault() }} />
           </div>
         </details>
+      </div>
+      <div className="vault-panel__actions">
+        <VaultAction label={t('json.vault.new')} onClick={beginCreateFile}><FilePlus2 size={14} /></VaultAction>
+        <VaultAction label={t('json.vault.newFolder')} onClick={beginCreateFolder}><FolderPlus size={14} /></VaultAction>
+        <VaultAction
+          label={settings.vault.jsonTreeExpandMode === 'expandAll' ? t('json.vault.collapseAll') : t('json.vault.expandAll')}
+          onClick={() => setTreeExpandMode(settings.vault.jsonTreeExpandMode === 'expandAll' ? 'collapseAll' : 'expandAll')}
+        >
+          {settings.vault.jsonTreeExpandMode === 'expandAll' ? <FoldVertical size={14} /> : <UnfoldVertical size={14} />}
+        </VaultAction>
+        <VaultAction label={t('json.vault.save')} onClick={() => { void saveSelected() }}><Save size={14} /></VaultAction>
+        <VaultAction label={t('json.vault.delete')} disabled={!selectedEntry} onClick={() => { void deleteEntry() }}><Trash2 size={14} /></VaultAction>
+        <VaultAction label={t('json.git.open')} badge={gitChangeCount} onClick={() => setGitDialogOpen(true)}><GitBranch size={14} /></VaultAction>
       </div>
       <div
         ref={treeRef}

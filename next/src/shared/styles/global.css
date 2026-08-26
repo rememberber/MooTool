@@ -943,6 +943,10 @@
   margin-left: 82px;
 }
 
+.tool-view-shell--detached.tool-view-shell--macos .vault-panel__search {
+  padding-left: 82px;
+}
+
 .quick-note-icon-button {
   position: relative;
   display: inline-flex;
@@ -3091,26 +3095,15 @@ select:not([multiple]) {
   overflow: hidden;
 }
 
-.vault-panel__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  min-height: 44px;
-  padding: 7px 4px 7px 10px;
-  border-bottom: 1px solid var(--border-soft);
-}
-
-.vault-panel__header h2 {
-  margin: 0;
-  font-size: 12px;
-  font-weight: 600;
-  white-space: nowrap;
-}
-
 .vault-panel__actions {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
   gap: 1px;
+  width: 100%;
+  min-height: 35px;
+  padding: 4px 6px;
+  border-top: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--border-soft);
 }
 
 .vault-panel__actions button {
@@ -3118,7 +3111,8 @@ select:not([multiple]) {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 22px;
+  width: 100%;
+  max-width: 32px;
   height: 26px;
   padding: 0;
   color: var(--text-muted);
@@ -3160,20 +3154,15 @@ select:not([multiple]) {
 .vault-panel__options {
   position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(58px, max-content) auto;
   align-items: center;
   gap: 5px;
   min-height: 35px;
-  padding: 4px 6px;
-  border-bottom: 1px solid var(--border-soft);
+  padding: 0 7px 7px;
 }
 
 .vault-panel__search {
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  padding: 6px 7px;
-  border-bottom: 1px solid var(--border-soft);
+  padding: 7px 7px 5px;
 }
 
 .list-search-content {
@@ -9723,22 +9712,15 @@ select:not([multiple]) {
 }
 
 /* JSON Vault */
-.vault-panel__header {
-  min-height: 48px;
-  padding: 7px 7px 7px 11px;
-  flex-wrap: wrap;
-}
-
-.vault-panel__header h2 {
-  font-size: 14px;
-}
-
 .vault-panel__actions {
   gap: 2px;
+  min-height: 40px;
+  padding: 3px 7px;
 }
 
 .vault-panel__actions button {
-  width: 32px;
+  width: 100%;
+  max-width: 32px;
   height: 32px;
 }
 
@@ -9751,13 +9733,13 @@ select:not([multiple]) {
 }
 
 .vault-panel__options {
-  min-height: 44px;
-  padding: 5px 7px;
+  min-height: 34px;
+  padding: 0 7px 7px;
   gap: 6px;
 }
 
 .vault-panel__search {
-  padding: 7px;
+  padding: 7px 7px 5px;
 }
 
 .list-search-content {
