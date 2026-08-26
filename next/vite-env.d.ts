@@ -30,7 +30,6 @@ declare global {
       getSettings: () => Promise<AppSettings>
       updateSettings: (patch: SettingsPatch) => Promise<AppSettings>
       openSettings: (category?: string) => Promise<void>
-      closeSettings: () => Promise<void>
       dismissWindow: () => Promise<void>
       getSecretStatus: (key: SecretKey) => Promise<SecretStatus>
       setSecret: (key: SecretKey, value: string) => Promise<SecretStatus>
@@ -162,7 +161,6 @@ declare global {
       cancelCodeRun: (requestId: string) => Promise<boolean>
       onSystemThemeChange: (callback: (theme: 'light' | 'dark') => void) => () => void
       onSettingsChange: (callback: (settings: AppSettings) => void) => () => void
-      onSettingsNavigate: (callback: (category: string) => void) => () => void
       onNavigate: (callback: (event: AppNavigationEvent) => void) => () => void
       onScreenColorPicked: (callback: (color: string) => void) => () => void
       onToolWindowSnapshotChange: (callback: (snapshot: ToolWindowSnapshot) => void) => () => void

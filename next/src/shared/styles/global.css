@@ -1949,6 +1949,11 @@ select:not([multiple]) {
   width: var(--navigation-width);
 }
 
+.app-shell--settings-page > .window-drag-region {
+  right: auto;
+  width: var(--navigation-width);
+}
+
 .sidebar {
   position: relative;
   display: flex;
@@ -2017,6 +2022,11 @@ select:not([multiple]) {
 .icon-ghost:hover {
   background: var(--control-hover);
   color: var(--text-strong);
+}
+
+.sidebar-settings-button[aria-current='page'] {
+  color: var(--accent);
+  background: var(--control-active);
 }
 
 .tooltip-trigger {
@@ -2107,6 +2117,15 @@ select:not([multiple]) {
   font-size: var(--app-font-size);
 }
 
+.tool-button-row {
+  position: relative;
+  min-width: 0;
+}
+
+.tool-button-row--window-action > .tool-button {
+  padding-right: 38px;
+}
+
 .tool-button:hover,
 .recent-item:hover {
   background: var(--control-hover-soft);
@@ -2117,9 +2136,45 @@ select:not([multiple]) {
   color: var(--text-strong);
 }
 
-.tool-button__detached {
-  flex: 0 0 auto;
-  margin-left: auto;
+.tool-button__window-action {
+  position: absolute;
+  top: 50%;
+  right: 6px;
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  padding: 0;
+  transform: translateY(-50%);
+  color: var(--text-faint);
+  background: transparent;
+  border: 0;
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0;
+  pointer-events: none;
+  transition: color 120ms ease, background-color 120ms ease, opacity 120ms ease;
+}
+
+.tool-button-row:hover .tool-button__window-action,
+.tool-button-row:focus-within .tool-button__window-action,
+.tool-button__window-action--detached {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.tool-button__window-action:hover,
+.tool-button__window-action:focus-visible {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 11%, transparent);
+  outline: none;
+}
+
+.tool-button__window-action:focus-visible {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.tool-button__window-action--detached {
   color: var(--accent);
 }
 
@@ -5433,36 +5488,37 @@ select:not([multiple]) {
   text-align: center;
 }
 
-.settings-window {
+.settings-page {
+  display: grid;
   width: 100%;
   height: 100%;
   background: var(--surface);
+  grid-template-rows: 56px minmax(0, 1fr);
 }
 
-.settings-titlebar {
+.settings-page__header {
   position: relative;
   z-index: 2;
   display: flex;
   align-items: center;
-  justify-content: center;
-  height: var(--window-drag-height);
+  gap: 10px;
+  padding: 0 20px;
   color: var(--text-muted);
   background: var(--surface);
   border-bottom: 1px solid var(--border-soft);
-  font-size: 13px;
-  font-weight: 600;
 }
 
-.settings-titlebar .icon-ghost {
-  position: absolute;
-  right: 12px;
-  -webkit-app-region: no-drag;
+.settings-page__header h1 {
+  margin: 0;
+  color: var(--text-strong);
+  font-size: 17px;
+  font-weight: 650;
 }
 
 .settings-layout {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr);
-  height: calc(100% - var(--window-drag-height));
+  min-height: 0;
 }
 
 .settings-nav {
@@ -5492,7 +5548,8 @@ select:not([multiple]) {
   background: var(--control-hover-soft);
 }
 
-.settings-nav__item--active {
+.settings-nav__item--active,
+.settings-nav__item--active:hover {
   color: var(--text-strong);
   background: var(--control-active);
 }
@@ -10605,7 +10662,7 @@ textarea:focus {
   box-shadow: inset -1px 0 0 var(--smartisan-highlight);
 }
 
-:root[data-interface-style='smartisan'] .settings-titlebar,
+:root[data-interface-style='smartisan'] .settings-page__header,
 :root[data-interface-style='smartisan'] .settings-content__header {
   background: linear-gradient(to bottom, var(--smartisan-toolbar-top), var(--smartisan-toolbar-bottom));
   border-color: var(--border);
@@ -11060,7 +11117,7 @@ textarea:focus {
   box-shadow: inset -1px 0 0 var(--miui-highlight);
 }
 
-:root[data-interface-style='miui-v5'] .settings-titlebar,
+:root[data-interface-style='miui-v5'] .settings-page__header,
 :root[data-interface-style='miui-v5'] .settings-content__header {
   background: linear-gradient(to bottom, var(--miui-toolbar-top), var(--miui-toolbar-bottom));
   border-color: var(--border);
@@ -11483,7 +11540,7 @@ textarea:focus {
 
 :root[data-interface-style='claude'] .app-shell,
 :root[data-interface-style='claude'] .workspace,
-:root[data-interface-style='claude'] .settings-window,
+:root[data-interface-style='claude'] .settings-page,
 :root[data-interface-style='claude'] .settings-content,
 :root[data-interface-style='claude'] .settings-scroll {
   background: var(--workspace);
@@ -11496,13 +11553,13 @@ textarea:focus {
   box-shadow: inset -1px 0 0 color-mix(in srgb, var(--surface) 58%, transparent);
 }
 
-:root[data-interface-style='claude'] .settings-titlebar,
+:root[data-interface-style='claude'] .settings-page__header,
 :root[data-interface-style='claude'] .settings-content__header {
   background: color-mix(in srgb, var(--surface) 88%, var(--workspace));
   border-color: var(--border-soft);
 }
 
-:root[data-interface-style='claude'] .settings-titlebar {
+:root[data-interface-style='claude'] .settings-page__header {
   color: var(--text-muted);
   font-weight: 500;
 }

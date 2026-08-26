@@ -1,4 +1,5 @@
 import {
+  ArrowLeft,
   ArchiveRestore,
   Code2,
   Command,
@@ -15,7 +16,6 @@ import {
   SlidersHorizontal,
   SquareTerminal,
   SunMedium,
-  X,
   type LucideIcon
 } from 'lucide-react'
 import DOMPurify from 'dompurify'
@@ -49,6 +49,11 @@ function isSettingsCategory(value: string | null): value is SettingsCategory {
   return categories.some((category) => category.id === value)
 }
 
+function normalizeSettingsCategory(value?: string): SettingsCategory {
+  const candidate = value ?? null
+  return isSettingsCategory(candidate) ? candidate : 'general'
+}
+
 const categories: Array<{ id: SettingsCategory; labelKey: MessageKey; icon: LucideIcon }> = [
   { id: 'general', labelKey: 'settings.category.general', icon: Settings2 },
   { id: 'appearance', labelKey: 'settings.category.appearance', icon: SunMedium },
@@ -63,32 +68,31 @@ const categories: Array<{ id: SettingsCategory; labelKey: MessageKey; icon: Luci
   { id: 'about', labelKey: 'settings.category.about', icon: Info }
 ]
 
-export function SettingsWindow() {
+export function SettingsPage({ initialCategory, onBack }: { initialCategory?: string; onBack: () => void }) {
   const { settings, ready, updateSettings } = useSettings()
   const { t } = useI18n()
   const toast = useToast()
-  const requestedCategory = new URLSearchParams(window.location.search).get('category')
-  const [activeCategory, setActiveCategory] = useState<SettingsCategory>(() => isSettingsCategory(requestedCategory) ? requestedCategory : 'general')
+  const [activeCategory, setActiveCategory] = useState<SettingsCategory>(() => normalizeSettingsCategory(initialCategory))
   const category = categories.find((item) => item.id === activeCategory) ?? categories[0]
 
-  useEffect(() => window.mootool.onSettingsNavigate((nextCategory) => {
-    if (isSettingsCategory(nextCategory)) setActiveCategory(nextCategory)
-  }), [])
+  useEffect(() => {
+    setActiveCategory(normalizeSettingsCategory(initialCategory))
+  }, [initialCategory])
 
   function commit(patch: SettingsPatch): void {
     void updateSettings(patch).catch(() => toast.error(t('settings.saveFailed')))
   }
 
   return (
-    <main className="settings-window">
-      <header className="settings-titlebar window-drag">
-        <span>{t('settings.title')}</span>
-        <button className="icon-ghost" type="button" aria-label={t('settings.close')} onClick={() => window.mootool.closeSettings()}>
-          <X size={16} />
+    <main className="settings-page">
+      <header className="settings-page__header">
+        <button className="icon-ghost" type="button" aria-label={t('settings.back')} onClick={onBack}>
+          <ArrowLeft size={17} />
         </button>
+        <h1>{t('settings.title')}</h1>
       </header>
 
-      <ResizableColumns className="settings-layout" columns={2} defaultSizes={[220, 780]} minPaneWidths={[180, 420]} storageKey="settings-window">
+      <ResizableColumns className="settings-layout" columns={2} defaultSizes={[220, 780]} minPaneWidths={[180, 420]} storageKey="settings-page">
         <nav className="settings-nav" aria-label={t('settings.title')}>
           {categories.map((item) => {
             const Icon = item.icon

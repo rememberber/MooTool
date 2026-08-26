@@ -50,6 +50,9 @@ export const defaultWorkspaceState: WorkspaceState = {
 export type AppNavigationEvent = 'focus-search' | {
   type: 'open-tool'
   toolId: ToolId
+} | {
+  type: 'open-settings'
+  category?: string
 }
 
 export type ToolWorkspaceBounds = {

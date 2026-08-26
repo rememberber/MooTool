@@ -173,7 +173,6 @@ const externalPages: Record<ExternalPageId, string> = {
 
 let store: Store<PersistedStore>
 let mainWindow: BrowserWindow | null = null
-let settingsWindow: BrowserWindow | null = null
 let toolWindowManager: ToolWindowManager
 let tray: Tray | null = null
 let isQuitting = false
@@ -275,20 +274,13 @@ function getTrayIconPath(): string {
   return join(process.resourcesPath, 'tray-icon.png')
 }
 
-function loadRenderer(window: BrowserWindow, target: 'main' | 'settings', settingsCategory?: string): void {
+function loadRenderer(window: BrowserWindow): void {
   if (isDev && process.env.ELECTRON_RENDERER_URL) {
-    const url = new URL(process.env.ELECTRON_RENDERER_URL)
-    if (target === 'settings') {
-      url.searchParams.set('window', 'settings')
-      if (settingsCategory) url.searchParams.set('category', settingsCategory)
-    }
-    void window.loadURL(url.toString())
+    void window.loadURL(process.env.ELECTRON_RENDERER_URL)
     return
   }
 
-  void window.loadFile(join(__dirname, '../renderer/index.html'), target === 'settings'
-    ? { query: { window: 'settings', ...(settingsCategory ? { category: settingsCategory } : {}) } }
-    : undefined)
+  void window.loadFile(join(__dirname, '../renderer/index.html'))
 }
 
 function loadToolRenderer(view: WebContentsView, toolId: string): void {
@@ -381,48 +373,7 @@ function createMainWindow(): BrowserWindow {
     mainWindow = null
   })
 
-  loadRenderer(window, 'main')
-  return window
-}
-
-function createSettingsWindow(category?: string): BrowserWindow {
-  if (settingsWindow && !settingsWindow.isDestroyed()) {
-    settingsWindow.show()
-    settingsWindow.focus()
-    if (category) settingsWindow.webContents.send('settings:navigate', category)
-    return settingsWindow
-  }
-
-  const dark = nativeTheme.shouldUseDarkColors
-  const window = new BrowserWindow({
-    width: 920,
-    height: 700,
-    minWidth: 820,
-    minHeight: 620,
-    parent: mainWindow ?? undefined,
-    modal: true,
-    show: false,
-    backgroundColor: dark ? '#171719' : '#f7f7f8',
-    titleBarStyle: 'hiddenInset',
-    trafficLightPosition: { x: 18, y: 18 },
-    resizable: true,
-    minimizable: false,
-    maximizable: false,
-    icon: app.isPackaged ? undefined : getDevelopmentIconPath(),
-    webPreferences: {
-      preload: join(__dirname, '../preload/index.js'),
-      sandbox: true,
-      contextIsolation: true,
-      nodeIntegration: false
-    }
-  })
-
-  settingsWindow = window
-  window.once('ready-to-show', () => window.show())
-  window.on('closed', () => {
-    settingsWindow = null
-  })
-  loadRenderer(window, 'settings', category)
+  loadRenderer(window)
   return window
 }
 
@@ -519,20 +470,13 @@ function registerIpc(): void {
     return settings
   })
   ipcMain.handle('settings:open', (_event, category?: unknown) => {
-    createSettingsWindow(typeof category === 'string' ? category : undefined)
-  })
-  ipcMain.handle('settings:close', (event) => {
-    BrowserWindow.fromWebContents(event.sender)?.close()
+    openSettingsPage(typeof category === 'string' ? category : undefined)
   })
   ipcMain.handle('window:dismiss', (event) => {
     if (toolWindowManager.dismissOwner(event.sender)) return
 
     const window = BrowserWindow.fromWebContents(event.sender)
     if (!window || window.isDestroyed()) return
-    if (window === settingsWindow) {
-      window.close()
-      return
-    }
     window.hide()
   })
   ipcMain.handle('update:check', () => checkForUpdates())
@@ -1161,7 +1105,7 @@ function registerIpc(): void {
   ipcMain.handle('backup:info', () => createBackupService().getInfo())
   ipcMain.handle('backup:export', async (event, kind: BackupKind) => {
     if (!backupKinds.includes(kind)) throw new Error('Invalid backup kind')
-    const owner = resolveOwnerWindow(event.sender) ?? settingsWindow ?? mainWindow
+    const owner = resolveOwnerWindow(event.sender) ?? mainWindow
     const options: OpenDialogOptions = {
       properties: ['openDirectory', 'createDirectory'],
       defaultPath: store.get('settings').tools.exportDirectory || app.getPath('documents')
@@ -1199,12 +1143,15 @@ function registerIpc(): void {
     const backupTarget = join(dataDirectory, 'migration-backups')
     closeDataRepositories()
     let backupDirectory = ''
+    let repositoriesReopened = false
     try {
       const backup = await createBackupService().export(backupTarget, 'all')
       backupDirectory = backup.directory
       const result = await service.migrate(normalized, backup.directory)
       const settings = mergeSettings(store.get('settings'), result.settingsPatch)
       store.set('settings', settings)
+      openDataRepositories(settings)
+      repositoriesReopened = true
       applySettings(settings)
       broadcast('settings:changed', settings)
       return result
@@ -1212,7 +1159,7 @@ function registerIpc(): void {
       const message = error instanceof Error ? error.message : String(error)
       throw new Error(backupDirectory ? `${message} (backup: ${backupDirectory})` : message)
     } finally {
-      openDataRepositories()
+      if (!repositoriesReopened) openDataRepositories()
     }
   })
 }
@@ -1540,7 +1487,7 @@ function rebuildApplicationMenu(language: AppLanguage): void {
   const settingsItem: MenuItemConstructorOptions = {
     label: labels.settings,
     accelerator: 'CommandOrControl+,',
-    click: () => createSettingsWindow()
+    click: () => openSettingsPage()
   }
   const searchItem: MenuItemConstructorOptions = {
     label: labels.search,
@@ -1550,13 +1497,13 @@ function rebuildApplicationMenu(language: AppLanguage): void {
   const updateItem: MenuItemConstructorOptions = {
     label: labels.checkUpdates,
     click: () => {
-      createSettingsWindow('about')
+      openSettingsPage('about')
       void checkForUpdatesAndBroadcast()
     }
   }
   const settingsLink = (label: string, category: string): MenuItemConstructorOptions => ({
     label,
-    click: () => createSettingsWindow(category)
+    click: () => openSettingsPage(category)
   })
 
   const template: MenuItemConstructorOptions[] = [
@@ -1883,7 +1830,7 @@ function updateTray(settings: AppSettings): void {
   if (activeHostId !== store.get('activeHostId')) store.set('activeHostId', null)
   tray.setContextMenu(Menu.buildFromTemplate(buildTrayMenuTemplate(labels, profiles, activeHostId, {
     openApp: showMainWindow,
-    openSettings: () => createSettingsWindow(),
+    openSettings: () => openSettingsPage(),
     openColorPicker: () => { void pickScreenColorFromTray() },
     captureScreen: () => { void captureScreenFromTray() },
     openTranslation: () => openToolFromTray('translation'),
@@ -1937,6 +1884,10 @@ function navigateMainWindow(event: AppNavigationEvent): void {
   } else {
     send()
   }
+}
+
+function openSettingsPage(category?: string): void {
+  navigateMainWindow({ type: 'open-settings', ...(category ? { category } : {}) })
 }
 
 function openToolFromTray(toolId: Exclude<ToolId, 'mootool'>): void {

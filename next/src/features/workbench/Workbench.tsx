@@ -10,6 +10,7 @@ import { ToolActivityProvider } from '@/shared/components/ToolActivity'
 import type { ToolWindowSnapshot } from '@/shared/contracts/app'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { LegacyMigrationHintDialog } from '@/features/settings/LegacyMigrationHintDialog'
+import { SettingsPage } from '@/features/settings/SettingsWindow'
 import { useSettings } from '@/features/settings/SettingsProvider'
 import { CustomGroupManager } from './CustomGroupManager'
 import { UpdateReadyAction } from './UpdateReadyAction'
@@ -28,6 +29,7 @@ export function Workbench() {
   const [recentCollapsed, setRecentCollapsed] = useState(false)
   const [groupManagerOpen, setGroupManagerOpen] = useState(false)
   const [updateNotesOpen, setUpdateNotesOpen] = useState(false)
+  const [settingsCategory, setSettingsCategory] = useState<string | null>(null)
   const [toolWindows, setToolWindows] = useState<ToolWindowSnapshot>({ enabled: window.mootool.toolWindowsEnabled, activeToolId: 'mootool', tools: [] })
   const [mountedToolIds, setMountedToolIds] = useState<ToolId[]>([])
   const workspaceRef = useRef<HTMLElement>(null)
@@ -36,7 +38,8 @@ export function Workbench() {
   const renderedToolIds = mountedToolIds.includes(activeTool.id) ? mountedToolIds : [...mountedToolIds, activeTool.id]
   const hiddenNavigationToolIds = new Set(settings.layout.hiddenNavigationToolIds)
   const visibleBuiltinToolCount = toolGroups.reduce((count, group) => count + group.toolIds.filter((toolId) => !hiddenNavigationToolIds.has(toolId)).length, 0)
-  const workspaceOverlayOpen = searchOpen || groupManagerOpen || updateNotesOpen
+  const settingsPageOpen = settingsCategory !== null
+  const workspaceOverlayOpen = searchOpen || groupManagerOpen || updateNotesOpen || settingsPageOpen
   const workspaceOverlayReady = !toolWindows.enabled || toolWindows.activeToolId === 'mootool'
   const dockedToolViewActive = toolWindows.enabled
     && !workspaceOverlayOpen
@@ -45,13 +48,29 @@ export function Workbench() {
     && activeToolWindow?.ready === true
     && !activeToolWindow.detached
 
+  const toolWindowButtonProps = (toolId: Exclude<ToolId, 'mootool'>, label: string) => {
+    const detached = toolWindows.tools.some((item) => item.toolId === toolId && item.detached)
+    if (!toolWindows.enabled || settings.layout.hideNavigationTitles) return { detached }
+    return {
+      detached,
+      windowActionLabel: t(detached ? 'toolWindow.dockTool' : 'toolWindow.detachTool', { tool: label }),
+      onWindowAction: () => {
+        if (detached) void window.mootool.dockToolWindow(toolId)
+        else void window.mootool.detachToolWindow(toolId)
+      }
+    }
+  }
+
   useEffect(() => {
     void hydrate()
     const unsubscribeNavigation = window.mootool.onNavigate((event) => {
       if (event === 'focus-search') {
         setSearchOpen(true)
       } else if (event.type === 'open-tool') {
+        setSettingsCategory(null)
         openTool(event.toolId)
+      } else if (event.type === 'open-settings') {
+        setSettingsCategory(event.category ?? 'general')
       }
     })
     const unsubscribeToolWindows = window.mootool.onToolWindowSnapshotChange(setToolWindows)
@@ -64,14 +83,17 @@ export function Workbench() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === 'k') {
+      if (settingsPageOpen && event.key === 'Escape' && !event.repeat && !event.metaKey && !event.ctrlKey && !event.altKey && !event.shiftKey) {
+        event.preventDefault()
+        setSettingsCategory(null)
+      } else if ((event.metaKey || event.ctrlKey) && event.key.toLocaleLowerCase() === 'k') {
         event.preventDefault()
         setSearchOpen(true)
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [setSearchOpen])
+  }, [setSearchOpen, settingsPageOpen])
 
   useEffect(() => {
     if (!hydrated || !toolWindows.enabled) return
@@ -113,7 +135,8 @@ export function Workbench() {
     settings.layout.hideNavigationTitles ? 'app-shell--hide-nav-titles' : '',
     settings.appearance.unifiedBackground ? 'app-shell--unified-background' : '',
     dockedToolViewActive ? 'app-shell--tool-view-docked' : '',
-    isImmersiveToolId(activeTool.id) ? 'app-shell--immersive-tool' : '',
+    settingsPageOpen ? 'app-shell--settings-page' : '',
+    !settingsPageOpen && isImmersiveToolId(activeTool.id) ? 'app-shell--immersive-tool' : '',
     `app-shell--nav-${settings.layout.navigationStyle}`
   ].filter(Boolean).join(' ')
 
@@ -153,8 +176,11 @@ export function Workbench() {
             <ToolButton
               icon={toolById.get('mootool')!.icon}
               label={t('app.nav.home')}
-              active={activeToolId === 'mootool'}
-              onClick={() => openTool('mootool')}
+              active={!settingsPageOpen && activeToolId === 'mootool'}
+              onClick={() => {
+                setSettingsCategory(null)
+                openTool('mootool')
+              }}
             />
 
             {settings.layout.customGroups.map((group) => {
@@ -171,9 +197,12 @@ export function Workbench() {
                       key={tool.id}
                       icon={tool.icon}
                       label={t(tool.titleKey)}
-                      active={activeToolId === tool.id}
-                      detached={toolWindows.tools.some((item) => item.toolId === tool.id && item.detached)}
-                      onClick={() => openTool(tool.id)}
+                      active={!settingsPageOpen && activeToolId === tool.id}
+                      {...toolWindowButtonProps(tool.id as Exclude<ToolId, 'mootool'>, t(tool.titleKey))}
+                      onClick={() => {
+                        setSettingsCategory(null)
+                        openTool(tool.id)
+                      }}
                     />
                   ))}
                 </section>
@@ -195,9 +224,12 @@ export function Workbench() {
                         key={tool.id}
                         icon={tool.icon}
                         label={t(tool.titleKey)}
-                        active={activeToolId === tool.id}
-                        detached={toolWindows.tools.some((item) => item.toolId === tool.id && item.detached)}
-                        onClick={() => openTool(tool.id)}
+                        active={!settingsPageOpen && activeToolId === tool.id}
+                        {...toolWindowButtonProps(tool.id as Exclude<ToolId, 'mootool'>, t(tool.titleKey))}
+                        onClick={() => {
+                          setSettingsCategory(null)
+                          openTool(tool.id)
+                        }}
                       />
                     )
                   })}
@@ -220,7 +252,10 @@ export function Workbench() {
                   return null
                 }
                 return (
-                  <button className="recent-item" type="button" key={tool.id} onClick={() => openTool(tool.id)}>
+                  <button className="recent-item" type="button" key={tool.id} onClick={() => {
+                    setSettingsCategory(null)
+                    openTool(tool.id)
+                  }}>
                     <span className={index === 0 ? 'recent-dot recent-dot--blue' : 'recent-dot'} />
                     <span>{t(tool.titleKey)}</span>
                   </button>
@@ -245,7 +280,13 @@ export function Workbench() {
               </select>
             </label>
             <Tooltip content={t('app.nav.settings')} side="top">
-              <button className="icon-ghost" type="button" aria-label={t('app.nav.settings')} onClick={() => window.mootool.openSettings()}>
+              <button
+                className="icon-ghost sidebar-settings-button"
+                type="button"
+                aria-label={t('app.nav.settings')}
+                aria-current={settingsPageOpen ? 'page' : undefined}
+                onClick={() => window.mootool.openSettings()}
+              >
                 <Settings size={17} />
               </button>
             </Tooltip>
@@ -254,21 +295,24 @@ export function Workbench() {
       </aside>
 
       <section className="workspace" ref={workspaceRef}>
-        {!toolWindows.enabled ? renderedToolIds.map((toolId) => {
+        {!toolWindows.enabled && renderedToolIds.map((toolId) => {
           const definition = toolById.get(toolId)
           const ToolComponent = definition?.component
           const active = toolId === activeTool.id
           if (!definition) return null
           return (
             <ToolActivityProvider active={active} key={toolId}>
-              <div className="workspace-tool-session" hidden={!active}>
+              <div className="workspace-tool-session" hidden={!active || settingsPageOpen}>
                 <Suspense fallback={active ? <div className="workspace-loading">{t('common.loading')}</div> : null}>
                   {ToolComponent ? <ToolComponent /> : null}
                 </Suspense>
               </div>
             </ToolActivityProvider>
           )
-        }) : activeTool.id === 'mootool' ? (
+        })}
+        {settingsPageOpen ? (
+          <SettingsPage initialCategory={settingsCategory} onBack={() => setSettingsCategory(null)} />
+        ) : !toolWindows.enabled ? null : activeTool.id === 'mootool' ? (
           <Suspense fallback={<div className="workspace-loading">{t('common.loading')}</div>}>
             {activeTool.component ? <activeTool.component /> : null}
           </Suspense>
@@ -297,7 +341,10 @@ export function Workbench() {
         )}
       </section>
 
-      <CommandPalette />
+      <CommandPalette onOpenTool={(toolId) => {
+        setSettingsCategory(null)
+        openTool(toolId)
+      }} />
       <CustomGroupManager open={groupManagerOpen && workspaceOverlayReady} onClose={() => setGroupManagerOpen(false)} />
       <LegacyMigrationHintDialog />
     </main>

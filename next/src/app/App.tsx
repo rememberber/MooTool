@@ -1,6 +1,5 @@
 import { useEffect } from 'react'
 import { SettingsProvider } from '@/features/settings/SettingsProvider'
-import { SettingsWindow } from '@/features/settings/SettingsWindow'
 import { Workbench } from '@/features/workbench/Workbench'
 import { ToolWindow } from '@/features/workbench/ToolWindow'
 import { ScreenColorPickerOverlay } from '@/features/color/ScreenColorPickerOverlay'
@@ -31,7 +30,7 @@ function ThemedApp() {
     <ToastProvider>
       <DesktopDialogProvider>
         {windowType !== 'tool' && !isScreenOverlay && <UpdateNotifications />}
-        {windowType === 'capture' ? <ScreenCaptureOverlay /> : windowType === 'color-picker' ? <ScreenColorPickerOverlay /> : windowType === 'settings' ? <SettingsWindow /> : windowType === 'tool' ? <ToolWindow requestedToolId={params.get('toolId') ?? ''} /> : <Workbench />}
+        {windowType === 'capture' ? <ScreenCaptureOverlay /> : windowType === 'color-picker' ? <ScreenColorPickerOverlay /> : windowType === 'tool' ? <ToolWindow requestedToolId={params.get('toolId') ?? ''} /> : <Workbench />}
       </DesktopDialogProvider>
     </ToastProvider>
   )

@@ -84,6 +84,29 @@ test('moves one live tool view into a separate window and restores it without lo
   expect(closedAndRestored.value).toBe('40 + 2')
 })
 
+test('opens and returns an inactive tool from its navigation shortcut', async () => {
+  await mainPage.getByRole('button', { name: '主页', exact: true }).click()
+
+  const qrButton = mainPage.getByRole('button', { name: '二维码', exact: true })
+  const qrRow = qrButton.locator('..')
+  await qrRow.hover()
+
+  const detachShortcut = qrRow.getByRole('button', { name: '在独立窗口中打开“二维码”', exact: true })
+  await expect(detachShortcut).toHaveCSS('pointer-events', 'auto')
+  await detachShortcut.click()
+
+  await expect.poll(() => getToolSnapshot('qrCode')).toMatchObject({ detached: true, ready: true })
+  await expect(mainPage.getByRole('button', { name: '主页', exact: true })).toHaveAttribute('aria-current', 'page')
+
+  const dockShortcut = qrRow.getByRole('button', { name: '将“二维码”收回到功能区', exact: true })
+  await expect(dockShortcut).toHaveClass(/tool-button__window-action--detached/)
+  await expect(dockShortcut).toHaveCSS('opacity', '1')
+  await dockShortcut.click()
+
+  await expect.poll(() => getToolSnapshot('qrCode')).toMatchObject({ detached: false, ready: true })
+  await expect(mainPage.getByRole('button', { name: '主页', exact: true })).toHaveAttribute('aria-current', 'page')
+})
+
 test('keeps multiple detached tools independent and returns each one to its dock', async () => {
   await mainPage.getByRole('button', { name: 'JSON', exact: true }).click()
   await waitForToolSelector('json', '.json-tool')
@@ -144,7 +167,7 @@ test('keeps multiple detached tools independent and returns each one to its dock
   await expect.poll(() => getBaseWindowCount()).toBe(3)
 
   await mainPage.getByRole('button', { name: '主页', exact: true }).click()
-  await expect(mainPage.locator('.tool-button__detached')).toHaveCount(2)
+  await expect(mainPage.locator('.tool-button__window-action--detached')).toHaveCount(2)
 
   await closeAllDetachedBaseWindows()
   await expect.poll(() => getToolSnapshot('json')).toMatchObject({ detached: false, ready: true })
@@ -253,6 +276,20 @@ test('temporarily reveals main overlays above a docked tool', async () => {
   await expect.poll(() => getMainChildViewCount()).toBe(1)
   const restoredAfterGroups = await evaluateTool<string>('calculator', `document.querySelector('#calculator-expression').value`)
   expect(restoredAfterGroups.value).toBe(beforeSearch.value)
+
+  const windowCount = await getBaseWindowCount()
+  await mainPage.getByRole('button', { name: '设置', exact: true }).click()
+  await expect(mainPage.locator('.settings-page')).toBeVisible()
+  await expect.poll(() => getMainChildViewCount()).toBe(0)
+  await expect.poll(() => getBaseWindowCount()).toBe(windowCount)
+
+  await mainPage.evaluate(() => window.mootool.openSettings('runtime'))
+  await expect(mainPage.locator('.settings-nav__item').filter({ hasText: '运行环境' })).toHaveAttribute('aria-current', 'page')
+  await mainPage.getByRole('button', { name: '返回工作区', exact: true }).click()
+  await expect(mainPage.locator('.settings-page')).toBeHidden()
+  await expect.poll(() => getMainChildViewCount()).toBe(1)
+  const restoredAfterSettings = await evaluateTool<string>('calculator', `document.querySelector('#calculator-expression').value`)
+  expect(restoredAfterSettings.value).toBe(beforeSearch.value)
 })
 
 test('reveals update notes above a docked tool view', async () => {

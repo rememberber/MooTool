@@ -5,7 +5,7 @@ import { useAppStore } from '@/app/appStore'
 import { toolGroups, toolRegistry, type ToolDefinition } from '@/app/toolRegistry'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 
-export function CommandPalette() {
+export function CommandPalette({ onOpenTool }: { onOpenTool?: (toolId: ToolDefinition['id']) => void }) {
   const { t } = useI18n()
   const open = useAppStore((state) => state.searchOpen)
   const setOpen = useAppStore((state) => state.setSearchOpen)
@@ -45,7 +45,8 @@ export function CommandPalette() {
   }
 
   function choose(tool: ToolDefinition): void {
-    openTool(tool.id)
+    if (onOpenTool) onOpenTool(tool.id)
+    else openTool(tool.id)
   }
 
   return createPortal(

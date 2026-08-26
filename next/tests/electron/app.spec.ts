@@ -33,7 +33,7 @@ test.beforeAll(async () => {
             assets: [{
               platform: process.platform,
               architecture: process.arch,
-              packageType: 'test-installer',
+              packageType: process.platform === 'darwin' ? 'dmg' : 'test-installer',
               priority: 10,
               fileName: 'MooTool-Next-Electron-9.9.9-test.bin',
               url: 'https://example.test/MooTool-Next-Electron-9.9.9-test.bin',
@@ -154,13 +154,12 @@ test('shows a first-run tip for migrating Java data without modifying the source
     footerDivider: '0px'
   })
 
-  const settingsWindowPromise = electronApp.waitForEvent('window')
   await dialog.getByRole('button', { name: '打开设置' }).click()
-  const settingsPage = await settingsWindowPromise
-  await settingsPage.waitForLoadState('domcontentloaded')
+  const settingsPage = mainPage
+  await expect(settingsPage.locator('.settings-page')).toBeVisible()
   await expect(settingsPage.locator('.settings-nav__item').filter({ hasText: '数据与备份' })).toHaveAttribute('aria-current', 'page')
   await expect(settingsPage.getByRole('heading', { name: '旧版数据迁移', exact: true })).toBeVisible()
-  await settingsPage.locator('.settings-titlebar .icon-ghost').click()
+  await settingsPage.getByRole('button', { name: '返回工作区', exact: true }).click()
 
   await expect(dialog).toBeHidden()
   await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({
@@ -170,10 +169,9 @@ test('shows a first-run tip for migrating Java data without modifying the source
 
 test('switches interface styles from appearance settings', async () => {
   await mainPage.evaluate(() => window.mootool.updateSettings({ general: { legacyMigrationHintDismissed: true } }))
-  const settingsWindowPromise = electronApp.waitForEvent('window')
   await mainPage.getByRole('button', { name: '设置', exact: true }).click()
-  const settingsPage = await settingsWindowPromise
-  await settingsPage.waitForLoadState('domcontentloaded')
+  const settingsPage = mainPage
+  await expect(settingsPage.locator('.settings-page')).toBeVisible()
   await settingsPage.locator('.settings-nav__item').filter({ hasText: '外观' }).click()
   const getToggleGeometry = () => settingsPage.evaluate(() => {
     const track = document.querySelector('.toggle')
@@ -324,7 +322,7 @@ test('switches interface styles from appearance settings', async () => {
     centered: true,
     contained: true
   })
-  await settingsPage.locator('.settings-titlebar .icon-ghost').click()
+  await settingsPage.getByRole('button', { name: '返回工作区', exact: true }).click()
 })
 
 test('creates and persists custom navigation groups', async () => {
@@ -655,12 +653,14 @@ test('initializes the JSON Vault Git repository and commits a snippet', async ()
   await gitDialog.getByRole('button', { name: '关闭' }).click()
 })
 
-test('opens the settings window and synchronizes appearance changes', async () => {
-  const settingsWindowPromise = electronApp.waitForEvent('window')
+test('opens settings as a workspace page and synchronizes appearance changes', async () => {
+  const initialWindowCount = electronApp.windows().length
   await mainPage.locator('.sidebar-footer .icon-ghost').click()
-  const settingsPage = await settingsWindowPromise
-  await settingsPage.waitForLoadState('domcontentloaded')
+  const settingsPage = mainPage
 
+  await expect(settingsPage.locator('.settings-page')).toBeVisible()
+  await expect.poll(() => electronApp.windows().length).toBe(initialWindowCount)
+  await expect(settingsPage.getByRole('button', { name: '设置', exact: true })).toHaveAttribute('aria-current', 'page')
   await expect(settingsPage.locator('.settings-nav__item')).toHaveCount(11)
   const trayToggle = settingsPage.getByRole('switch', { name: '启用系统托盘' })
   const autoDownloadToggle = settingsPage.getByRole('switch', { name: '自动静默下载新版' })
@@ -720,7 +720,8 @@ test('opens the settings window and synchronizes appearance changes', async () =
   }
 
   await settingsPage.locator('.settings-nav__item').filter({ hasText: '关于与更新' }).click()
-  await expect(settingsPage.locator('.settings-about')).toContainText('版本 1.0.0')
+  const appVersion = await settingsPage.evaluate(() => window.mootool.getAppVersion())
+  await expect(settingsPage.locator('.settings-about')).toContainText(`版本 ${appVersion}`)
   await settingsPage.getByRole('button', { name: '检查更新', exact: true }).click()
   await expect(settingsPage.locator('.settings-update-result')).toContainText('发现新版本 9.9.9')
   await expect(settingsPage.locator('.settings-update-result')).toContainText('MooTool Next Electron')
@@ -730,7 +731,8 @@ test('opens the settings window and synchronizes appearance changes', async () =
   expect(update.download?.fileName).toBe('MooTool-Next-Electron-9.9.9-test.bin')
   await expect.poll(() => settingsPage.evaluate(() => window.mootool.getUpdateState())).toMatchObject({ status: 'available', version: '9.9.9' })
 
-  await settingsPage.locator('.settings-titlebar .icon-ghost').click()
+  await settingsPage.getByRole('button', { name: '返回工作区', exact: true }).click()
+  await expect(settingsPage.locator('.settings-page')).toBeHidden()
 
   await mainPage.getByRole('button', { name: '搜索', exact: true }).click()
   await mainPage.locator('.command-palette__search input').fill('json')
@@ -1530,17 +1532,15 @@ test('runs and stops P6 Node.js code with persistent history', async () => {
 
 test('shows P6 backup paths and export controls in Settings', async () => {
   await mainPage.locator('.sidebar-footer .icon-ghost').click()
-  await expect.poll(() => electronApp.windows().filter((page) => page !== mainPage && !page.isClosed()).length).toBeGreaterThan(0)
-  const settingsPage = electronApp.windows().find((page) => page !== mainPage && !page.isClosed())
-  if (!settingsPage) throw new Error('Settings window did not open')
-  await settingsPage.waitForLoadState('domcontentloaded')
+  const settingsPage = mainPage
+  await expect(settingsPage.locator('.settings-page')).toBeVisible()
   await settingsPage.locator('.settings-nav__item').filter({ hasText: '数据与备份' }).click()
   await expect(settingsPage.locator('.backup-row')).toHaveCount(3)
   await expect(settingsPage.getByRole('button', { name: '完整备份' })).toBeVisible()
   const backupInfo = await settingsPage.evaluate(() => window.mootool.getBackupInfo())
   expect(backupInfo.databasePath).toContain('MooToolNext.db')
   expect(backupInfo.quickNotePath).toContain('quick-notes')
-  await settingsPage.locator('.settings-titlebar .icon-ghost').click()
+  await settingsPage.getByRole('button', { name: '返回工作区', exact: true }).click()
 })
 
 test('scans and migrates Java data from the Data & Backup settings page', async () => {
@@ -1558,10 +1558,8 @@ test('scans and migrates Java data from the Data & Backup settings page', async 
     legacyDatabase.close()
 
     await mainPage.locator('.sidebar-footer .icon-ghost').click()
-    await expect.poll(() => electronApp.windows().filter((page) => page !== mainPage && !page.isClosed()).length).toBeGreaterThan(0)
-    const settingsPage = electronApp.windows().find((page) => page !== mainPage && !page.isClosed())
-    if (!settingsPage) throw new Error('Settings window did not open')
-    await settingsPage.waitForLoadState('domcontentloaded')
+    const settingsPage = mainPage
+    await expect(settingsPage.locator('.settings-page')).toBeVisible()
     await settingsPage.locator('.settings-nav__item').filter({ hasText: '数据与备份' }).click()
     const sourceInput = settingsPage.getByLabel('Java 版数据目录')
     await sourceInput.fill(legacyDirectory)
@@ -1578,7 +1576,7 @@ test('scans and migrates Java data from the Data & Backup settings page', async 
     const backupInfo = await settingsPage.evaluate(() => window.mootool.getBackupInfo())
     const migrationBackups = await readdir(join(backupInfo.dataDirectory, 'migration-backups'))
     expect(migrationBackups.some((name) => name.startsWith('MooTool-backup-'))).toBe(true)
-    await settingsPage.locator('.settings-titlebar .icon-ghost').click()
+    await settingsPage.getByRole('button', { name: '返回工作区', exact: true }).click()
   } finally {
     await rm(legacyDirectory, { recursive: true, force: true })
   }
