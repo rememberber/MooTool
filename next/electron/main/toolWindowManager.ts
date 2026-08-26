@@ -12,6 +12,7 @@ import type {
   ToolWorkspaceBounds,
   WindowState
 } from '../../src/shared/contracts/app'
+import { isWindowControlsHoverTarget } from './windowControlsHover'
 
 type DetachableToolId = Exclude<ToolId, 'mootool'>
 type ToolViewHost = 'none' | 'main' | 'detached'
@@ -45,7 +46,6 @@ const defaultDetachedWindow: WindowState = {
 }
 
 const windowControlsPollInterval = 80
-const brandRegionInset = { top: 18, left: 20, height: 32, maximumWidth: 420, reservedRight: 360 }
 
 export class ToolWindowManager {
   private readonly records = new Map<DetachableToolId, ToolViewRecord>()
@@ -352,13 +352,8 @@ export class ToolWindowManager {
     for (const record of this.records.values()) {
       const window = record.window
       if (!window || window.isDestroyed()) continue
-      const bounds = window.getContentBounds()
-      const width = Math.min(brandRegionInset.maximumWidth, Math.max(0, bounds.width - brandRegionInset.reservedRight))
-      const hovered = window.isVisible()
-        && cursor.x >= bounds.x + brandRegionInset.left
-        && cursor.x <= bounds.x + brandRegionInset.left + width
-        && cursor.y >= bounds.y + brandRegionInset.top
-        && cursor.y <= bounds.y + brandRegionInset.top + brandRegionInset.height
+      const bounds = window.getBounds()
+      const hovered = window.isVisible() && isWindowControlsHoverTarget(cursor, bounds)
       this.updateWindowControls(record, hovered)
     }
   }
