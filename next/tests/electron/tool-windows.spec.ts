@@ -359,9 +359,31 @@ test('reveals update notes above a docked tool view', async () => {
   await expect.poll(() => getMainChildViewCount()).toBe(1)
 })
 
-test('keeps message board presentation controls from overlapping', async () => {
+test('keeps the message board draggable without overlapping presentation controls', async () => {
   await mainPage.getByRole('button', { name: '留言板', exact: true }).click()
   await waitForToolSelector('messageBoard', '.message-board-tool')
+  await expect.poll(async () => (await evaluateTool('messageBoard', `(() => {
+    const controls = document.querySelector('.message-board-controls')
+    const firstSection = document.querySelector('.message-board-control-section')
+    const composerHeader = document.querySelector('.message-board-composer > header')
+    const stage = document.querySelector('.message-board-stage')
+    const messageFrame = document.querySelector('.message-board-stage__message-frame')
+    const display = document.querySelector('.message-board-stage__display')
+    if (!controls || !firstSection || !composerHeader || !stage || !messageFrame || !display) return null
+    return {
+      leftInsetUsable: firstSection.getBoundingClientRect().left - controls.getBoundingClientRect().left >= 14,
+      composerHeaderRegion: getComputedStyle(composerHeader).getPropertyValue('-webkit-app-region'),
+      stageRegion: getComputedStyle(stage).getPropertyValue('-webkit-app-region'),
+      messageFrameRegion: getComputedStyle(messageFrame).getPropertyValue('-webkit-app-region'),
+      displayRegion: getComputedStyle(display).getPropertyValue('-webkit-app-region')
+    }
+  })()`)).value).toEqual({
+    leftInsetUsable: true,
+    composerHeaderRegion: 'drag',
+    stageRegion: 'drag',
+    messageFrameRegion: 'no-drag',
+    displayRegion: 'no-drag'
+  })
   await evaluateTool('messageBoard', `(() => {
     const button = [...document.querySelectorAll('button')].find((item) => item.textContent?.includes('沉浸展示'))
     if (!button) throw new Error('Message board presentation button not found')

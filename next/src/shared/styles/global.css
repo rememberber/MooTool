@@ -81,7 +81,7 @@
 .message-board-controls {
   min-width: 0;
   min-height: 0;
-  padding: 5px 6px 18px 0;
+  padding: 5px 6px 18px 16px;
   overflow: auto;
   scrollbar-color: var(--border-control) transparent;
   scrollbar-width: thin;
@@ -109,6 +109,14 @@
   min-height: 22px;
   margin-bottom: 9px;
   color: var(--text-muted);
+}
+
+.message-board-composer > header {
+  -webkit-app-region: drag;
+}
+
+.message-board-composer > header > label {
+  -webkit-app-region: no-drag;
 }
 
 .message-board-control-section h2,
@@ -323,6 +331,7 @@
     0 20px 50px color-mix(in srgb, var(--board-ink) 12%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.2);
   overflow: hidden;
+  -webkit-app-region: drag;
 }
 
 .message-board-stage::before {
@@ -461,6 +470,7 @@
   font: inherit;
   letter-spacing: 0;
   text-transform: none;
+  -webkit-app-region: no-drag;
 }
 
 .message-board-stage__display:hover {
@@ -495,6 +505,7 @@
   min-height: 0;
   padding: clamp(20px, 4vh, 58px) 0;
   overflow: hidden;
+  -webkit-app-region: no-drag;
 }
 
 .message-board-stage__message {
@@ -527,6 +538,7 @@
   padding-top: 12px;
   border-top: 1px solid var(--board-line);
   letter-spacing: 0.1em;
+  -webkit-app-region: no-drag;
 }
 
 .message-board-stage > footer i {
@@ -556,6 +568,7 @@
   opacity: 0;
   transform: translateY(-4px);
   transition: opacity 150ms ease, transform 150ms ease, background 150ms ease;
+  -webkit-app-region: no-drag;
 }
 
 .tool-view-shell .message-board-stage__exit {
@@ -599,6 +612,7 @@
   border: 0;
   border-radius: 0;
   box-shadow: none;
+  -webkit-app-region: no-drag;
 }
 
 .message-board-tool--presenting .message-board-stage__message-frame {
