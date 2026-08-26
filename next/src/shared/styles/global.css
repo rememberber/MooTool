@@ -427,8 +427,44 @@
 
 .message-board-stage__header > span {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 8px;
+}
+
+.tool-view-shell--detached.tool-view-shell--macos .message-board-stage__header > span {
+  margin-left: 72px;
+}
+
+.message-board-stage__drag-zone {
+  min-width: 32px;
+}
+
+.message-board-stage__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.message-board-stage__display {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 0 10px;
+  color: var(--board-ink);
+  background: color-mix(in srgb, var(--board-bg) 74%, transparent);
+  border: 1px solid var(--board-line);
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.message-board-stage__display:hover {
+  background: color-mix(in srgb, var(--board-bg) 54%, var(--board-ink));
 }
 
 .message-board-stage__header i {
@@ -1570,12 +1606,20 @@
 
 .runtime-tabs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(110px, auto)) minmax(0, 1fr) 30px;
+  grid-template-columns: repeat(3, minmax(110px, auto)) minmax(32px, 1fr) max-content 30px;
   align-items: end;
   min-height: 43px;
   padding: 7px 9px 0;
   background: var(--toolbar);
   border-bottom: 1px solid var(--border-soft);
+}
+
+.runtime-tabs__drag-zone {
+  min-width: 32px;
+}
+
+.tool-view-shell--detached.tool-view-shell--macos .runtime-tabs {
+  padding-left: 90px;
 }
 
 .runtime-tab {
@@ -1900,7 +1944,7 @@
 
 @media (max-width: 1120px) {
   .runtime-tabs {
-    grid-template-columns: repeat(3, minmax(90px, auto)) minmax(0, 1fr) 30px;
+    grid-template-columns: repeat(3, minmax(90px, auto)) minmax(32px, 1fr) max-content 30px;
   }
 
   .runtime-toolbar > code {
@@ -1968,6 +2012,35 @@ select:not([multiple]) {
 .workspace-drag-zone--editor-toolbar {
   min-width: 32px;
   flex-basis: 48px;
+}
+
+.embedded-tool-heading {
+  display: flex;
+  min-width: 0;
+  min-height: 34px;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.embedded-tool-heading :is(h2, label) {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+.embedded-tool-heading .workspace-drag-zone {
+  min-width: 32px;
+}
+
+.embedded-tool-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+
+.tool-view-shell--detached.tool-view-shell--macos .embedded-tool-heading {
+  padding-left: 72px;
 }
 
 .app-shell {
@@ -3711,12 +3784,25 @@ select:not([multiple]) {
 
 .tool-tabs {
   display: flex;
+  align-items: flex-end;
   min-height: 45px;
   padding: 7px 10px 0;
   gap: 2px;
   background: var(--toolbar);
   border-bottom: 1px solid var(--border-soft);
   overflow-x: auto;
+}
+
+.tool-tabs__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-self: center;
+  align-items: center;
+  gap: 6px;
+}
+
+.tool-view-shell--detached.tool-view-shell--macos .tool-tabs--window-drag {
+  padding-left: 90px;
 }
 
 .tool-tab {
@@ -4049,11 +4135,24 @@ select:not([multiple]) {
 }
 .diff-toolbar__commands,
 .diff-toolbar__navigation,
-.diff-toolbar__options {
+.diff-toolbar__options,
+.diff-toolbar__tail {
   display: flex;
   min-width: 0;
   align-items: center;
   gap: 6px;
+}
+
+.diff-toolbar__tail {
+  justify-content: flex-end;
+}
+
+.diff-toolbar__drag-zone {
+  min-width: 32px;
+}
+
+.tool-view-shell--detached.tool-view-shell--macos .diff-toolbar {
+  padding-left: 90px;
 }
 .diff-toolbar button,
 .diff-toolbar label,
@@ -4152,13 +4251,36 @@ select:not([multiple]) {
 
 .time-current-band {
   display: grid;
-  grid-template-columns: auto minmax(220px, 0.8fr) minmax(320px, 1.2fr);
+  grid-template-columns: auto minmax(480px, 1fr) minmax(32px, 0.4fr) max-content;
   align-items: center;
   gap: 18px;
   min-height: 104px;
   padding: 18px 22px;
   background: var(--surface-soft);
   border-bottom: 1px solid var(--border-soft);
+}
+
+.time-current-band__values {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(320px, 1.2fr);
+  align-items: center;
+  gap: 18px;
+  min-width: 0;
+}
+
+.time-current-band__drag-zone {
+  min-width: 32px;
+}
+
+.time-current-band__actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 7px;
+}
+
+.tool-view-shell--detached.tool-view-shell--macos .time-current-band {
+  padding-left: 90px;
 }
 
 .time-current-band h2 {
@@ -6226,6 +6348,10 @@ select:not([multiple]) {
   overflow: visible;
 }
 
+.tool-view-shell--detached.tool-view-shell--macos .color-toolbar {
+  padding-left: 90px;
+}
+
 .color-native-input input {
   width: 28px;
   height: 28px;
@@ -7803,11 +7929,12 @@ select:not([multiple]) {
   }
 
   .time-current-band {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    grid-template-columns: auto minmax(32px, 1fr) max-content;
   }
 
-  .time-current-band h2 {
+  .time-current-band__values {
     grid-column: 1 / -1;
+    grid-row: 2;
   }
 
   .time-zone-band {

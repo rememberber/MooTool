@@ -221,7 +221,7 @@ export function CryptoTool() {
 
   return (
     <section className="tool-page p4-tool">
-      <ToolPageHeader title={t('crypto.title')} actions={<button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('common.action.history')}</button>} />
+      <ToolPageHeader title={t('crypto.title')} />
       <div className="local-tool-shell crypto-workspace">
         <ToolTabs tabs={[
           { id: 'symmetric', label: t('crypto.tab.symmetric') },
@@ -229,7 +229,7 @@ export function CryptoTool() {
           { id: 'digest', label: t('crypto.tab.digest') },
           { id: 'base', label: t('crypto.tab.base') },
           { id: 'random', label: t('crypto.tab.random') }
-        ]} active={tab} onChange={setTab} />
+        ]} active={tab} onChange={setTab} windowDrag actions={<button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('common.action.history')}</button>} />
         {tab === 'symmetric' && <SymmetricPanel algorithm={symAlgorithm} setAlgorithm={setSymAlgorithm} keyValue={symKey} setKeyValue={setSymKey} plain={symPlain} setPlain={setSymPlain} cipher={symCipher} setCipher={setSymCipher} encrypt={encryptSymmetric} decrypt={decryptSymmetric} copy={actions.copy} t={t} />}
         {tab === 'asymmetric' && <AsymmetricPanel algorithm={asymAlgorithm} setAlgorithm={setAsymAlgorithm} publicKey={publicKey} setPublicKey={setPublicKey} privateKey={privateKey} setPrivateKey={setPrivateKey} plain={asymPlain} setPlain={setAsymPlain} cipher={asymCipher} setCipher={setAsymCipher} busy={asymBusy} generate={generateKeys} encrypt={encryptAsymmetric} decrypt={decryptAsymmetric} privateEncrypt={runPrivateEncrypt} publicDecrypt={runPublicDecrypt} sign={sign} verify={verify} copy={actions.copy} t={t} />}
         {tab === 'digest' && <DigestPanel algorithm={digestAlgorithm} setAlgorithm={setDigestAlgorithm} input={digestInput} setInput={setDigestInput} output={digestOutput} fileName={digestFileName} hashText={hashText} hashFile={hashFile} copy={actions.copy} t={t} />}

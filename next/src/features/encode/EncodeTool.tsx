@@ -46,14 +46,14 @@ export function EncodeTool() {
 
   return (
     <section className="tool-page p3-tool">
-      <ToolPageHeader title={t('encode.title')} actions={<ToolHeaderButtons onHistory={() => setHistoryOpen(true)} onClear={() => setPairs({ ...initialPairs, [tab]: { left: '', right: '' } })} />} />
+      <ToolPageHeader title={t('encode.title')} />
       <div className="local-tool-shell">
         <ToolTabs tabs={[
           { id: 'unicode', label: t('encode.tab.unicode') },
           { id: 'url', label: t('encode.tab.url') },
           { id: 'hex', label: t('encode.tab.hex') },
           { id: 'ascii', label: t('encode.tab.ascii') }
-        ]} active={tab} onChange={setTab} />
+        ]} active={tab} onChange={setTab} windowDrag actions={<ToolHeaderButtons onHistory={() => setHistoryOpen(true)} onClear={() => setPairs({ ...initialPairs, [tab]: { left: '', right: '' } })} />} />
         <ResizableColumns className="io-workspace" columns={3} defaultSizes={[1, 0.32, 1]} minPaneWidths={[240, 120, 240]} storageKey="encode-panes">
           <TextPane label={labels.left} value={pair.left} onChange={(left) => setPair({ left })} />
           <div className="io-actions">

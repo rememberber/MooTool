@@ -73,9 +73,9 @@ export function PdfTool() {
 
   return (
     <section className="tool-page p4-tool">
-      <ToolPageHeader title={t('pdf.title')} actions={<button className="toolbar-button toolbar-button--icon" type="button" aria-label={t('common.help')} onClick={() => setHelpOpen(true)}><CircleHelp size={15} /></button>} />
+      <ToolPageHeader title={t('pdf.title')} />
       <div className="local-tool-shell pdf-workspace">
-        <ToolTabs tabs={[{ id: 'split', label: t('pdf.tab.split') }, { id: 'merge', label: t('pdf.tab.merge') }]} active={tab} onChange={setTab} />
+        <ToolTabs tabs={[{ id: 'split', label: t('pdf.tab.split') }, { id: 'merge', label: t('pdf.tab.merge') }]} active={tab} onChange={setTab} windowDrag actions={<button className="toolbar-button toolbar-button--icon" type="button" aria-label={t('common.help')} onClick={() => setHelpOpen(true)}><CircleHelp size={15} /></button>} />
         <div className="p4-toolbar"><span className="p4-toolbar__spacer" /><button className="dialog-button" type="button" disabled={busy || (tab === 'split' ? splitRows.length : mergeRows.length) >= 20} onClick={() => { void (tab === 'split' ? addSplitFiles() : addMergeFiles()) }}><FilePlus2 size={14} />{tab === 'split' ? t('pdf.addTask') : t('pdf.addFile')}</button><button className="primary-command" type="button" disabled={busy} onClick={() => { void (tab === 'split' ? splitFiles() : mergeFiles()) }}>{tab === 'split' ? <Split size={14} /> : <Merge size={14} />}{busy ? t('common.processing') : tab === 'split' ? t('pdf.startSplit') : t('pdf.startMerge')}</button></div>
         {tab === 'split' ? <SplitTable rows={splitRows} setRows={setSplitRows} t={t} /> : <MergeTable rows={mergeRows} setRows={setMergeRows} t={t} />}
         <div className="pdf-output-strip"><span>{t('pdf.output')}</span>{lastOutputs.length === 0 ? <em>—</em> : lastOutputs.map((output) => <code key={output}>{output}</code>)}</div>

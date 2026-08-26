@@ -9,7 +9,7 @@ import {
 } from 'lucide-react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { HistoryDialog } from '@/features/history/HistoryDialog'
-import { ToolPageHeader } from '@/shared/components/ToolPage'
+import { ToolPageHeader, WorkspaceDragZone } from '@/shared/components/ToolPage'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import {
   TextCodeEditor,
@@ -218,11 +218,6 @@ export function TextDiffTool() {
     <section className="tool-page p3-tool">
       <ToolPageHeader
         title={t('diff.title')}
-        actions={
-          <button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}>
-            <History size={14} />{t('common.action.history')}
-          </button>
-        }
       />
       <div className="local-tool-shell diff-workspace">
         <div className="diff-toolbar">
@@ -267,9 +262,13 @@ export function TextDiffTool() {
               <option value="unified">{t('diff.unified')}</option>
             </select>
           </div>
-          <span className="diff-status" aria-live="polite">
-            {statusText(status, highlightMode, visibleSegments.length, t)}
-          </span>
+          <div className="diff-toolbar__tail">
+            <WorkspaceDragZone className="diff-toolbar__drag-zone" />
+            <span className="diff-status" aria-live="polite">
+              {statusText(status, highlightMode, visibleSegments.length, t)}
+            </span>
+            <button type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('common.action.history')}</button>
+          </div>
         </div>
         <div className={mode === 'unified' ? 'diff-content diff-content--unified' : 'diff-content'}>
           {editors}

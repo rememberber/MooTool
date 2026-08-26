@@ -95,17 +95,10 @@ export function VariablesTool() {
 
   return (
     <section className="tool-page p5-tool variables-tool-page">
-      <ToolPageHeader
-        title={t('variables.title')}
-        actions={<>
-          {tab === 'environment' && <button className="toolbar-button" type="button" disabled={saving} onClick={() => openEditor()}><Plus size={14} />{t('variables.add')}</button>}
-          <button className="toolbar-button" type="button" disabled={loading || saving} onClick={() => { void refresh() }}><RefreshCw size={14} className={loading ? 'spin' : undefined} />{t('common.refresh')}</button>
-          <button className="toolbar-button" type="button" onClick={() => { void exportValues() }}><Download size={14} />{t('common.export')}</button>
-        </>}
-      />
+      <ToolPageHeader title={t('variables.title')} />
       <div className="local-tool-shell variables-workspace">
         <header>
-          <ToolTabs tabs={(['environment', 'runtime'] as VariableTab[]).map((id) => ({ id, label: t(`variables.tab.${id}` as 'variables.tab.environment') }))} active={tab} onChange={setTab} />
+          <ToolTabs tabs={(['environment', 'runtime'] as VariableTab[]).map((id) => ({ id, label: t(`variables.tab.${id}` as 'variables.tab.environment') }))} active={tab} onChange={setTab} windowDrag />
           {tab === 'environment' && (
             <label className="environment-scope">
               <span>{t('variables.scope')}</span>
@@ -117,6 +110,11 @@ export function VariablesTool() {
             </label>
           )}
           <div className="compact-search"><Search size={13} /><input value={query} placeholder={t('common.search')} aria-label={t('common.search')} onChange={(event) => setQuery(event.target.value)} /></div>
+          <div className="embedded-tool-actions">
+            {tab === 'environment' && <button className="toolbar-button" type="button" disabled={saving} onClick={() => openEditor()}><Plus size={14} />{t('variables.add')}</button>}
+            <button className="toolbar-button" type="button" disabled={loading || saving} onClick={() => { void refresh() }}><RefreshCw size={14} className={loading ? 'spin' : undefined} />{t('common.refresh')}</button>
+            <button className="toolbar-button" type="button" onClick={() => { void exportValues() }}><Download size={14} />{t('common.export')}</button>
+          </div>
         </header>
         <EnvironmentTable
           entries={entries}

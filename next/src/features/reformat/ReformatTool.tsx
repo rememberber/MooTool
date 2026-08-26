@@ -93,9 +93,9 @@ export function ReformatTool() {
 
   return (
     <section className="tool-page p4-tool">
-      <ToolPageHeader title={t('reformat.title')} actions={<button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('common.action.history')}</button>} />
+      <ToolPageHeader title={t('reformat.title')} />
       <div className="local-tool-shell reformat-workspace">
-        <ToolTabs tabs={[{ id: 'text', label: t('reformat.tab.text') }, { id: 'file', label: t('reformat.tab.file') }]} active={tab} onChange={setTab} />
+        <ToolTabs tabs={[{ id: 'text', label: t('reformat.tab.text') }, { id: 'file', label: t('reformat.tab.file') }]} active={tab} onChange={setTab} windowDrag actions={<button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('common.action.history')}</button>} />
         <div className="p4-toolbar">{toolbar}<span className="p4-toolbar__spacer" /><button className="toolbar-button toolbar-button--icon" type="button" aria-label={t('common.action.copy')} onClick={() => { void actions.copy(tab === 'text' ? text : fileResult) }}><Copy size={14} /></button><button className="toolbar-button toolbar-button--icon" type="button" aria-label={t('common.export')} onClick={() => { void exportResult() }}><FileDown size={14} /></button><button className="toolbar-button toolbar-button--icon" type="button" aria-label={t('common.action.clear')} onClick={() => { if (tab === 'text') setText(''); else { setFileName(''); setFileSource(''); setFileResult('') } }}><Trash2 size={14} /></button></div>
         {tab === 'text' ? <TextCodeEditor className="code-editor" ariaLabel={t('reformat.input')} language={type === 'nginx' ? 'text' : type} value={text} onChange={setText} onKeyDown={(event) => { if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.key.toLowerCase() === 'f') { event.preventDefault(); void runText() } }} /> : (
           <ResizableColumns className="reformat-file-layout" columns={2} defaultSizes={[1, 1]} minPaneWidths={[260, 260]} paneSelector=".text-pane" storageKey="reformat-file">

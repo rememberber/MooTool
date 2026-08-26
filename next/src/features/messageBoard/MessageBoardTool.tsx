@@ -1,7 +1,7 @@
 import { AlignCenter, AlignLeft, Maximize2, Minimize2, Sparkles, Sun } from 'lucide-react'
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { useToolActivity } from '@/shared/components/ToolActivity'
-import { ToolPageHeader } from '@/shared/components/ToolPage'
+import { ToolPageHeader, WorkspaceDragZone } from '@/shared/components/ToolPage'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { MessageKey } from '@/shared/i18n/messages'
 
@@ -128,15 +128,7 @@ export function MessageBoardTool() {
 
   return (
     <section className={presenting ? 'tool-page message-board-tool message-board-tool--presenting' : 'tool-page message-board-tool'}>
-      <ToolPageHeader
-        title={t('messageBoard.title')}
-        actions={(
-          <button className="toolbar-button toolbar-button--primary" type="button" onClick={() => setPresenting((value) => !value)}>
-            {presenting ? <Minimize2 size={15} /> : <Maximize2 size={15} />}
-            {presenting ? t('messageBoard.exitDisplay') : t('messageBoard.display')}
-          </button>
-        )}
-      />
+      <ToolPageHeader title={t('messageBoard.title')} />
 
       <div className="message-board-workspace">
         <aside className="message-board-controls">
@@ -240,11 +232,19 @@ export function MessageBoardTool() {
           <div className="message-board-stage__orb message-board-stage__orb--two" />
           <header className="message-board-stage__header">
             <span><i />{t('messageBoard.badge')}</span>
-            {displayAwake ? (
-              <small className="message-board-stage__awake" role="status">
-                <Sun size={12} aria-hidden="true" />{t('messageBoard.keepAwake')}
-              </small>
-            ) : <small>{t('messageBoard.badgeEnglish')}</small>}
+            <WorkspaceDragZone className="message-board-stage__drag-zone" />
+            <div className="message-board-stage__actions">
+              {displayAwake ? (
+                <small className="message-board-stage__awake" role="status">
+                  <Sun size={12} aria-hidden="true" />{t('messageBoard.keepAwake')}
+                </small>
+              ) : <small>{t('messageBoard.badgeEnglish')}</small>}
+              {!presenting && (
+                <button className="message-board-stage__display" type="button" onClick={() => setPresenting(true)}>
+                  <Maximize2 size={15} />{t('messageBoard.display')}
+                </button>
+              )}
+            </div>
           </header>
           <div className="message-board-stage__message-frame" ref={messageFrameRef}>
             <div className="message-board-stage__message" ref={messageRef}>{visibleMessage}</div>

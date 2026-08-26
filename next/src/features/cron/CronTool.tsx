@@ -2,7 +2,7 @@ import { History, Play, Star } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { FavoriteDialog } from '@/features/favorites/FavoriteDialog'
 import { HistoryDialog } from '@/features/history/HistoryDialog'
-import { ToolPageHeader } from '@/shared/components/ToolPage'
+import { ToolPageHeader, WorkspaceDragZone } from '@/shared/components/ToolPage'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { useToolActions } from '@/shared/hooks/useToolActions'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -56,10 +56,15 @@ export function CronTool() {
 
   return (
     <section className="tool-page p3-tool">
-      <ToolPageHeader title={t('cron.title')} actions={<><button className="toolbar-button" type="button" onClick={() => setFavoritesOpen(true)}><Star size={14} />{t('favorite.title')}</button><button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('common.action.history')}</button></>} />
+      <ToolPageHeader title={t('cron.title')} />
       <ResizableColumns className="local-tool-shell cron-workspace" columns={2} defaultSizes={[660, 340]} minPaneWidths={[460, 260]} minimumWidth={900} storageKey="cron-builder">
         <section className="cron-builder">
-          <h2>{t('cron.builder')}</h2>
+          <div className="embedded-tool-heading">
+            <h2>{t('cron.builder')}</h2>
+            <WorkspaceDragZone />
+            <button className="toolbar-button" type="button" onClick={() => setFavoritesOpen(true)}><Star size={14} />{t('favorite.title')}</button>
+            <button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('common.action.history')}</button>
+          </div>
           <div className="cron-fields">{fieldEntries.map(([key, label]) => <label key={key}><span>{label}</span><input value={fields[key]} onChange={(event) => updateField(key, event.target.value)} /></label>)}</div>
           <div className="cron-presets"><span>{t('cron.preset')}</span>{cronPresets.map((preset) => <button type="button" key={preset.id} onClick={() => updateExpression(preset.expression)}>{t(`cron.${preset.id === 'minute' ? 'everyMinute' : preset.id === 'hour' ? 'everyHour' : preset.id === 'day' ? 'everyDay' : 'weekdays'}` as 'cron.everyMinute')}</button>)}</div>
         </section>

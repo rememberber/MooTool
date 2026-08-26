@@ -42,9 +42,9 @@ export function RegexTool() {
 
   return (
     <section className="tool-page p3-tool">
-      <ToolPageHeader title={t('regex.title')} actions={<><button className="toolbar-button" type="button" onClick={() => setFavoritesOpen(true)}><Star size={14} />{t('favorite.title')}</button><button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('common.action.history')}</button></>} />
+      <ToolPageHeader title={t('regex.title')} />
       <div className="local-tool-shell regex-workspace">
-        <ToolTabs tabs={[{ id: 'test', label: t('regex.tab.test') }, { id: 'common', label: t('regex.tab.common') }]} active={tab} onChange={setTab} />
+        <ToolTabs tabs={[{ id: 'test', label: t('regex.tab.test') }, { id: 'common', label: t('regex.tab.common') }]} active={tab} onChange={setTab} windowDrag actions={<><button className="toolbar-button" type="button" onClick={() => setFavoritesOpen(true)}><Star size={14} />{t('favorite.title')}</button><button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('common.action.history')}</button></>} />
         {tab === 'test' ? (
           <ResizableColumns className="regex-test-layout" columns={2} defaultSizes={[710, 290]} minPaneWidths={[320, 220]} paneSelector=".regex-source, .regex-results" storageKey="regex-test">
             <section className="regex-controls">

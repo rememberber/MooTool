@@ -2,7 +2,7 @@ import { ArrowDown, ArrowUp, Equal, History } from 'lucide-react'
 import { useState } from 'react'
 import { HistoryDialog } from '@/features/history/HistoryDialog'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
-import { ToolPageHeader } from '@/shared/components/ToolPage'
+import { ToolPageHeader, WorkspaceDragZone } from '@/shared/components/ToolPage'
 import { useToolActions } from '@/shared/hooks/useToolActions'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import { combination, convertBase, evaluateExpression, gcd, lcm, permutation } from './calculatorTools'
@@ -43,12 +43,16 @@ export function CalculatorTool() {
 
   return (
     <section className="tool-page p3-tool">
-      <ToolPageHeader title={t('calculator.title')} actions={<button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('common.action.history')}</button>} />
+      <ToolPageHeader title={t('calculator.title')} />
       <div className="local-tool-shell calculator-workspace">
         <ResizableColumns className="calculator-layout" columns={2} defaultSizes={[1, 1]} minPaneWidths={[360, 320]} minimumWidth={680} storageKey="calculator-panels">
           <div className="calculator-controls">
             <section className="calculator-section calculator-arithmetic">
-              <h2>{t('calculator.arithmetic')}</h2>
+              <div className="embedded-tool-heading">
+                <h2>{t('calculator.arithmetic')}</h2>
+                <WorkspaceDragZone />
+                <button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('common.action.history')}</button>
+              </div>
               <div className="calculator-expression-row">
                 <input id="calculator-expression" aria-label={t('calculator.expression')} value={expression} onChange={(event) => setExpression(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') evaluate() }} />
                 <button className="primary-command" type="button" onClick={evaluate}><Equal size={16} />{t('calculator.calculate')}</button>

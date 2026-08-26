@@ -211,14 +211,7 @@ export function RuntimeTool() {
 
   return (
     <section className="tool-page runtime-tool">
-      <div className="tool-page__header tool-page__header--actions">
-        <h1 className="visually-hidden">{t('runtime.title')}</h1>
-        <WorkspaceDragZone />
-        <div className={availableCount > 0 ? 'status-pill status-pill--valid' : 'status-pill status-pill--error'}>
-          {state.detecting ? <LoaderCircle className="spin" size={14} /> : availableCount > 0 ? <CheckCircle2 size={14} /> : <CircleAlert size={14} />}
-          {statusText}
-        </div>
-      </div>
+      <h1 className="visually-hidden">{t('runtime.title')}</h1>
 
       <div className="runtime-shell">
         <div className="runtime-tabs" role="tablist">
@@ -227,7 +220,11 @@ export function RuntimeTool() {
               {t(`runtime.tab.${tab}` as MessageKey)}
             </button>
           ))}
-          <span />
+          <WorkspaceDragZone className="runtime-tabs__drag-zone" />
+          <div className={availableCount > 0 ? 'status-pill status-pill--valid' : 'status-pill status-pill--error'}>
+            {state.detecting ? <LoaderCircle className="spin" size={14} /> : availableCount > 0 ? <CheckCircle2 size={14} /> : <CircleAlert size={14} />}
+            {statusText}
+          </div>
           <Tooltip content={t('runtime.detect')} side="bottom">
             <button className="quick-note-icon-button" type="button" aria-label={t('runtime.detect')} disabled={state.detecting || state.running} onClick={() => { void detectRuntimes() }}><Settings size={14} /></button>
           </Tooltip>

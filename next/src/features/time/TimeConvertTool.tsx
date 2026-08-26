@@ -99,21 +99,21 @@ export function TimeConvertTool() {
   const currentLocalTime = formatLocalTime(state.now, state.zone)
   return (
     <section className="tool-page time-tool">
-      <div className="tool-page__header tool-page__header--actions">
-        <h1 className="visually-hidden">{t('time.title')}</h1>
-        <WorkspaceDragZone />
-        <div className="tool-header-actions">
-          <button className="toolbar-button" type="button" onClick={() => update({ historyOpen: true })}><History size={14} />{t('time.history')}</button>
-          <button className="toolbar-button" type="button" onClick={() => update({ clockOpen: true })}><Expand size={14} />{t('time.clock')}</button>
-          <div className="status-pill"><Clock3 size={14} />{formatTimezoneLabel(state.zone, state.now)}</div>
-        </div>
-      </div>
+      <h1 className="visually-hidden">{t('time.title')}</h1>
 
       <div className="time-workspace">
         <section className="time-current-band">
           <h2>{t('time.current')}</h2>
-          <TimeValue label={t('time.timestamp')} value={currentTimestamp} onCopy={() => { void copy(currentTimestamp) }} />
-          <TimeValue label={`${t('time.localTime')} · ${state.zone}`} value={currentLocalTime} onCopy={() => { void copy(currentLocalTime) }} />
+          <div className="time-current-band__values">
+            <TimeValue label={t('time.timestamp')} value={currentTimestamp} onCopy={() => { void copy(currentTimestamp) }} />
+            <TimeValue label={`${t('time.localTime')} · ${state.zone}`} value={currentLocalTime} onCopy={() => { void copy(currentLocalTime) }} />
+          </div>
+          <WorkspaceDragZone className="time-current-band__drag-zone" />
+          <div className="time-current-band__actions">
+            <button className="toolbar-button" type="button" onClick={() => update({ historyOpen: true })}><History size={14} />{t('time.history')}</button>
+            <button className="toolbar-button" type="button" onClick={() => update({ clockOpen: true })}><Expand size={14} />{t('time.clock')}</button>
+            <div className="status-pill"><Clock3 size={14} />{formatTimezoneLabel(state.zone, state.now)}</div>
+          </div>
         </section>
 
         <section className="time-zone-band">

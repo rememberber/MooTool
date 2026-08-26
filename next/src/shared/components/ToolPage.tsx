@@ -24,14 +24,15 @@ export function ToolPageHeader({ title, actions }: { title: string; actions?: Re
   )
 }
 
-export function ToolTabs<T extends string>({ tabs, active, onChange, windowDrag = false }: {
+export function ToolTabs<T extends string>({ tabs, active, onChange, windowDrag = false, actions }: {
   tabs: ReadonlyArray<{ id: T; label: string }>
   active: T
   onChange: (id: T) => void
   windowDrag?: boolean
+  actions?: ReactNode
 }) {
   return (
-    <div className="tool-tabs" role="tablist">
+    <div className={windowDrag ? 'tool-tabs tool-tabs--window-drag' : 'tool-tabs'} role="tablist">
       {tabs.map((tab) => (
         <button
           className={active === tab.id ? 'tool-tab tool-tab--active' : 'tool-tab'}
@@ -45,6 +46,7 @@ export function ToolTabs<T extends string>({ tabs, active, onChange, windowDrag 
         </button>
       ))}
       {windowDrag && <WorkspaceDragZone className="workspace-drag-zone--tabs" />}
+      {actions && <div className="tool-tabs__actions">{actions}</div>}
     </div>
   )
 }

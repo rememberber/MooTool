@@ -47,8 +47,7 @@ test('renders every functional tool as an immersive workspace while leaving home
       const style = getComputedStyle(element)
       const title = element.querySelector(':scope > .tool-page__header h1')
       const titleBounds = title?.getBoundingClientRect()
-      const actionHeader = element.querySelector(':scope > .tool-page__header--actions')
-      const actionControls = actionHeader ? [...actionHeader.querySelectorAll<HTMLElement>('button, input, select')] : []
+      const actionHeaders = element.querySelectorAll(':scope > .tool-page__header--actions')
       const outerSurface = element.querySelector<HTMLElement>(':scope > .local-tool-shell, :scope > .runtime-shell')
       const outerStyle = outerSurface ? getComputedStyle(outerSurface) : null
       const workspaceDragUsable = [...element.querySelectorAll<HTMLElement>('[data-window-drag-zone]')].some((zone) => {
@@ -63,11 +62,7 @@ test('renders every functional tool as an immersive workspace while leaving home
         topAligned: workspace ? Math.abs(bounds.top - workspace.top) < 0.5 : false,
         padding: [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft],
         visiblePageTitle: Boolean(titleBounds && titleBounds.width > 1 && titleBounds.height > 1),
-        actionHeaderFlush: !actionHeader || getComputedStyle(actionHeader).marginBottom === '0px',
-        actionControlsVisible: actionControls.every((control) => {
-          const rect = control.getBoundingClientRect()
-          return rect.width > 0 && rect.height > 0
-        }),
+        standaloneActionHeaderCount: actionHeaders.length,
         outerSurfaceFlat: !outerStyle || (outerStyle.borderRadius === '0px' && outerStyle.boxShadow === 'none'),
         workspaceDragUsable
       }
@@ -75,8 +70,7 @@ test('renders every functional tool as an immersive workspace while leaving home
       topAligned: true,
       padding: ['0px', '0px', '0px', '0px'],
       visiblePageTitle: false,
-      actionHeaderFlush: true,
-      actionControlsVisible: true,
+      standaloneActionHeaderCount: 0,
       outerSurfaceFlat: true,
       workspaceDragUsable: true
     })

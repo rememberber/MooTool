@@ -3,7 +3,7 @@ import { useEffect, useEffectEvent, useMemo, useState } from 'react'
 import { FavoriteDialog } from '@/features/favorites/FavoriteDialog'
 import { HistoryDialog } from '@/features/history/HistoryDialog'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
-import { ToolPageHeader } from '@/shared/components/ToolPage'
+import { ToolPageHeader, WorkspaceDragZone } from '@/shared/components/ToolPage'
 import { useToolActions } from '@/shared/hooks/useToolActions'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import {
@@ -92,7 +92,7 @@ export function ColorBoardTool() {
 
   return (
     <section className="tool-page p4-tool">
-      <ToolPageHeader title={t('color.title')} actions={<><button className="toolbar-button" type="button" onClick={() => setFavoritesOpen(true)}><Star size={14} />{t('favorite.title')}</button><button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('common.action.history')}</button></>} />
+      <ToolPageHeader title={t('color.title')} />
       <div className="local-tool-shell color-workspace">
         <div className="p4-toolbar color-toolbar">
           <button className="dialog-button" type="button" onClick={() => { void pickScreenColor() }}><Eye size={14} />{t('color.picker')}</button>
@@ -100,6 +100,9 @@ export function ColorBoardTool() {
           <label className="compact-field"><span>{t('color.format')}</span><select value={format} onChange={(event) => changeFormat(event.target.value as ColorFormat)}><option value="HEX_UPPER">HTML</option><option value="HEX_LOWER">html</option><option value="RGB">RGB</option></select></label>
           <label className="color-code-input"><span>{t('color.code')}</span><input value={code} spellCheck={false} onChange={(event) => setCode(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') applyCode() }} /></label>
           <button className="toolbar-button toolbar-button--icon" type="button" aria-label={t('common.action.copy')} onClick={() => { void actions.copy(code) }}><Copy size={14} /></button>
+          <WorkspaceDragZone className="p4-toolbar__spacer" />
+          <button className="toolbar-button" type="button" onClick={() => setFavoritesOpen(true)}><Star size={14} />{t('favorite.title')}</button>
+          <button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('common.action.history')}</button>
         </div>
         <ResizableColumns className="color-board-layout" columns={2} defaultSizes={[0.34, 0.66]} minPaneWidths={[240, 420]} storageKey="color-board">
           <section className="color-current-panel">

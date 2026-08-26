@@ -2,7 +2,7 @@ import { ClipboardPaste, History, Trash2 } from 'lucide-react'
 import { useState } from 'react'
 import { HistoryDialog } from '@/features/history/HistoryDialog'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
-import { ToolPageHeader } from '@/shared/components/ToolPage'
+import { ToolPageHeader, WorkspaceDragZone } from '@/shared/components/ToolPage'
 import { TextCodeEditor } from '@/shared/components/TextCodeEditor'
 import { useToolActions } from '@/shared/hooks/useToolActions'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -44,10 +44,14 @@ export function UaParseTool() {
 
   return (
     <section className="tool-page p3-tool">
-      <ToolPageHeader title={t('ua.title')} actions={<button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('common.action.history')}</button>} />
+      <ToolPageHeader title={t('ua.title')} />
       <ResizableColumns className="local-tool-shell ua-workspace" columns={2} defaultSizes={[0.9, 1.1]} minPaneWidths={[300, 300]} storageKey="ua-parser">
         <section className="ua-input-panel">
-          <label htmlFor="ua-source">{t('ua.input')}</label>
+          <div className="embedded-tool-heading">
+            <label htmlFor="ua-source">{t('ua.input')}</label>
+            <WorkspaceDragZone />
+            <button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('common.action.history')}</button>
+          </div>
           <TextCodeEditor id="ua-source" ariaLabel={t('ua.input')} value={source} onChange={setSource} />
           <div className="ua-actions">
             <select aria-label={t('ua.preset')} defaultValue="" onChange={(event) => { if (event.target.value) setSource(event.target.value) }}><option value="">{t('ua.preset')}</option>{uaPresets.map(([name, value]) => <option value={value} key={name}>{name}</option>)}</select>
