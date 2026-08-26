@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Dialog } from '@/shared/components/Dialog'
 import { FindReplaceBar } from '@/shared/components/FindReplaceBar'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
-import { ToolTabs } from '@/shared/components/ToolPage'
+import { ToolTabs, WorkspaceDragZone } from '@/shared/components/ToolPage'
 import { TextCodeEditor, type TextCodeEditorHandle } from '@/shared/components/TextCodeEditor'
 import { formatCodeEditorContent } from '@/shared/components/codeEditorFormatting'
 import { resolveTextCodeEditorLanguage } from '@/shared/components/codeEditorLanguage'
@@ -209,6 +209,7 @@ export function HttpTool() {
               />
               <span>ms</span>
             </label>
+            <WorkspaceDragZone className="http-window-drag-zone" />
             {sending ? <button className="toolbar-button" type="button" onClick={() => { void stopRequest() }}><Square size={13} />{t('common.stop')}</button> : <button className="toolbar-button toolbar-button--primary" data-testid="http-send" type="button" onClick={() => { void sendRequest() }}><Send size={13} />{t('http.send')}</button>}
           </div>
           <div className="http-request-pane"><ToolTabs tabs={(['params', 'headers', 'cookies', 'body'] as RequestTab[]).map((id) => ({ id, label: t(`http.tab.${id}` as 'http.tab.params') }))} active={requestTab} onChange={setRequestTab} />

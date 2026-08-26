@@ -171,6 +171,20 @@ test('keeps multiple detached tools independent and returns each one to its dock
   await waitForToolSelector('http', '.http-tool-page')
   await evaluateTool('http', `document.querySelector('.tool-window-toggle').click()`)
   await expect.poll(() => getToolSnapshot('http')).toMatchObject({ detached: true, ready: true })
+  await expect.poll(async () => (await evaluateTool('http', `(() => {
+    const drag = document.querySelector('.http-window-drag-zone')
+    const timeout = document.querySelector('.http-timeout')
+    const send = document.querySelector('[data-testid="http-send"]')
+    if (!drag || !timeout || !send) return null
+    const dragBounds = drag.getBoundingClientRect()
+    const timeoutBounds = timeout.getBoundingClientRect()
+    const sendBounds = send.getBoundingClientRect()
+    return {
+      width: Math.round(dragBounds.width),
+      betweenControls: dragBounds.left >= timeoutBounds.right && dragBounds.right <= sendBounds.left,
+      dragRegion: getComputedStyle(drag).getPropertyValue('-webkit-app-region')
+    }
+  })()`)).value).toEqual({ width: 36, betweenControls: true, dragRegion: 'drag' })
   await expect(mainPage.getByRole('heading', { name: 'HTTP 请求 已在独立窗口中打开' })).toBeVisible()
   await expect.poll(() => getBaseWindowCount()).toBe(3)
 

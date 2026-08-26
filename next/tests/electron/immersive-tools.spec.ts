@@ -78,7 +78,7 @@ test('renders every functional tool as an immersive workspace while leaving home
       actionHeaderFlush: true,
       actionControlsVisible: true,
       outerSurfaceFlat: true,
-      workspaceDragUsable: label !== 'HTTP 请求'
+      workspaceDragUsable: true
     })
   }
 

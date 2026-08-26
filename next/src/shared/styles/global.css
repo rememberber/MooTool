@@ -8070,12 +8070,19 @@ select:not([multiple]) {
 
 .http-url-bar {
   display: grid;
-  grid-template-columns: 92px minmax(140px, 1fr) auto auto;
+  grid-template-columns: 92px minmax(140px, 1fr) auto 36px auto;
   align-items: center;
   gap: 7px;
   padding: 8px 10px;
   background: var(--toolbar);
   border-bottom: 1px solid var(--border-soft);
+}
+
+.http-window-drag-zone {
+  width: 36px;
+  min-width: 36px;
+  min-height: 32px;
+  flex: none;
 }
 
 .http-url-bar > input {
