@@ -5,6 +5,7 @@ import { useSettings } from '@/features/settings/SettingsProvider'
 import { Dialog } from '@/shared/components/Dialog'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { TextCodeEditor } from '@/shared/components/TextCodeEditor'
+import { WorkspaceDragZone } from '@/shared/components/ToolPage'
 import { Tooltip } from '@/shared/components/Tooltip'
 import type { RuntimeStatus } from '@/shared/contracts/app'
 import type { CodeRuntimeId, RuntimeExecutionResult } from '@/shared/contracts/runtime'
@@ -212,6 +213,7 @@ export function RuntimeTool() {
     <section className="tool-page runtime-tool">
       <div className="tool-page__header tool-page__header--actions">
         <h1 className="visually-hidden">{t('runtime.title')}</h1>
+        <WorkspaceDragZone />
         <div className={availableCount > 0 ? 'status-pill status-pill--valid' : 'status-pill status-pill--error'}>
           {state.detecting ? <LoaderCircle className="spin" size={14} /> : availableCount > 0 ? <CheckCircle2 size={14} /> : <CircleAlert size={14} />}
           {statusText}

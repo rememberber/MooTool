@@ -33,6 +33,7 @@ import { Dialog } from '@/shared/components/Dialog'
 import { FindReplaceBar } from '@/shared/components/FindReplaceBar'
 import { FontSelect } from '@/shared/components/FontSelect'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
+import { WorkspaceDragZone } from '@/shared/components/ToolPage'
 import { Tooltip } from '@/shared/components/Tooltip'
 import type { CodeEditorViewState } from '@/shared/components/codeEditorViewState'
 import { formatCodeEditorContent } from '@/shared/components/codeEditorFormatting'
@@ -929,6 +930,7 @@ export function QuickNoteTool() {
     <section className="tool-page quick-note-tool">
       <div className="tool-page__header tool-page__header--actions quick-note-page-header">
         <h1 className="visually-hidden">{t('quickNote.title')}</h1>
+        <WorkspaceDragZone />
         <div className="quick-note-view-switch segmented" role="tablist">
           {(['editor', 'split', 'preview'] as const).map((mode) => (
             <button className={state.viewMode === mode ? 'segmented__item segmented__item--active' : 'segmented__item'} type="button" role="tab" aria-selected={state.viewMode === mode} key={mode} onClick={() => update({ viewMode: mode })}>

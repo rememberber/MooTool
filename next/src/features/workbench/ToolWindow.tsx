@@ -51,7 +51,7 @@ export function ToolWindow({ requestedToolId }: { requestedToolId: string }) {
   ].filter(Boolean).join(' ')
   return (
     <main className={shellClassName}>
-      <div className="window-drag window-drag-region" aria-hidden="true" />
+      {detached && <div className="window-drag window-drag-rail" data-window-drag-rail aria-hidden="true" />}
       {detached && !immersive && (
         <div
           className={windowControlsVisible ? 'tool-window-brand-zone tool-window-brand-zone--controls-visible' : 'tool-window-brand-zone'}

@@ -3,6 +3,7 @@ import { useEffect, useMemo, useReducer } from 'react'
 import { createPortal } from 'react-dom'
 import { useToolActivity } from '@/shared/components/ToolActivity'
 import { HistoryDialog } from '@/features/history/HistoryDialog'
+import { WorkspaceDragZone } from '@/shared/components/ToolPage'
 import { Tooltip } from '@/shared/components/Tooltip'
 import { useToast } from '@/shared/feedback/ToastProvider'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -100,6 +101,7 @@ export function TimeConvertTool() {
     <section className="tool-page time-tool">
       <div className="tool-page__header tool-page__header--actions">
         <h1 className="visually-hidden">{t('time.title')}</h1>
+        <WorkspaceDragZone />
         <div className="tool-header-actions">
           <button className="toolbar-button" type="button" onClick={() => update({ historyOpen: true })}><History size={14} />{t('time.history')}</button>
           <button className="toolbar-button" type="button" onClick={() => update({ clockOpen: true })}><Expand size={14} />{t('time.clock')}</button>

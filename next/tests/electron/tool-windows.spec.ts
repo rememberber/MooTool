@@ -48,10 +48,14 @@ test('moves one live tool view into a separate window and restores it without lo
   })).toBe(true)
   await expect.poll(async () => (await evaluateTool<boolean>('calculator', `(() => {
     const shell = document.querySelector('.tool-view-shell')
-    const dragRegion = document.querySelector('.window-drag-region').getBoundingClientRect()
+    const dragZoneElement = document.querySelector('[data-window-drag-zone]')
+    const dragZone = dragZoneElement?.getBoundingClientRect()
+    const dragRail = document.querySelector('[data-window-drag-rail]')
     const slot = document.querySelector('.tool-window-toggle-slot').getBoundingClientRect()
     return shell?.classList.contains('tool-view-shell--immersive')
-      && Math.round(dragRegion.height) === 6
+      && !dragRail
+      && Boolean(dragZone && dragZone.width >= 48 && dragZone.height >= 24)
+      && getComputedStyle(dragZoneElement).getPropertyValue('-webkit-app-region') === 'drag'
       && Math.round(slot.width) === 7
   })()`)).value).toBe(true)
 
@@ -115,12 +119,14 @@ test('keeps multiple detached tools independent and returns each one to its dock
   await expect.poll(async () => (await evaluateTool('json', `(() => {
     const shell = document.querySelector('.tool-view-shell')
     const page = document.querySelector('.json-tool')
-    const drag = document.querySelector('.window-drag-region')
+    const drag = document.querySelector('[data-window-drag-rail]')
+    const workspaceDrag = document.querySelector('[data-window-drag-zone]')
     const slot = document.querySelector('.tool-window-toggle-slot')
     const trigger = slot?.querySelector('.tooltip-trigger')
-    if (!shell || !page || !drag || !slot || !trigger) return null
+    if (!shell || !page || !drag || !workspaceDrag || !slot || !trigger) return null
     const pageBounds = page.getBoundingClientRect()
     const dragBounds = drag.getBoundingClientRect()
+    const workspaceDragBounds = workspaceDrag.getBoundingClientRect()
     const slotBounds = slot.getBoundingClientRect()
     const triggerStyle = getComputedStyle(trigger)
     return {
@@ -130,6 +136,9 @@ test('keeps multiple detached tools independent and returns each one to its dock
       brandCount: shell.querySelectorAll('.tool-window-brand-zone').length,
       pageTop: Math.round(pageBounds.top),
       dragHeight: Math.round(dragBounds.height),
+      workspaceDragUsable: workspaceDragBounds.width >= 32 && workspaceDragBounds.height >= 24,
+      dragRailRegion: getComputedStyle(drag).getPropertyValue('-webkit-app-region'),
+      workspaceDragRegion: getComputedStyle(workspaceDrag).getPropertyValue('-webkit-app-region'),
       edgeSlotWidth: Math.round(slotBounds.width),
       toggleOpacity: triggerStyle.opacity,
       togglePointerEvents: triggerStyle.pointerEvents
@@ -139,8 +148,11 @@ test('keeps multiple detached tools independent and returns each one to its dock
     accessibleName: 'JSON 工作台',
     visibleTitleCount: 0,
     brandCount: 0,
-    pageTop: 0,
-    dragHeight: 6,
+    pageTop: 12,
+    dragHeight: 12,
+    workspaceDragUsable: true,
+    dragRailRegion: 'drag',
+    workspaceDragRegion: 'drag',
     edgeSlotWidth: 7,
     toggleOpacity: '0',
     togglePointerEvents: 'none'
@@ -187,9 +199,10 @@ test('keeps a custom-header tool immersive while preserving its view controls', 
     const header = document.querySelector('.quick-note-page-header')?.getBoundingClientRect()
     const title = document.querySelector('.quick-note-page-header h1')?.getBoundingClientRect()
     const switcher = document.querySelector('.quick-note-view-switch')?.getBoundingClientRect()
-    const drag = document.querySelector('.window-drag-region')?.getBoundingClientRect()
+    const drag = document.querySelector('[data-window-drag-rail]')?.getBoundingClientRect()
+    const workspaceDrag = document.querySelector('[data-window-drag-zone]')?.getBoundingClientRect()
     const slot = document.querySelector('.tool-window-toggle-slot')?.getBoundingClientRect()
-    if (!shell || !page || !header || !title || !switcher || !drag || !slot) return null
+    if (!shell || !page || !header || !title || !switcher || !drag || !workspaceDrag || !slot) return null
     return {
       immersive: shell.classList.contains('tool-view-shell--immersive'),
       brandCount: shell.querySelectorAll('.tool-window-brand-zone').length,
@@ -200,18 +213,24 @@ test('keeps a custom-header tool immersive while preserving its view controls', 
       titleHeight: Math.round(title.height),
       switchVisible: switcher.width > 0 && switcher.height > 0,
       dragHeight: Math.round(drag.height),
+      workspaceDragUsable: workspaceDrag.width >= 48 && workspaceDrag.height >= 24,
+      dragRailRegion: getComputedStyle(document.querySelector('[data-window-drag-rail]')).getPropertyValue('-webkit-app-region'),
+      workspaceDragRegion: getComputedStyle(document.querySelector('[data-window-drag-zone]')).getPropertyValue('-webkit-app-region'),
       edgeSlotWidth: Math.round(slot.width)
     }
   })()`)).value).toMatchObject({
     immersive: true,
     brandCount: 0,
-    pageTop: 0,
-    headerTop: 0,
+    pageTop: 12,
+    headerTop: 12,
     headerCompact: true,
     titleWidth: 1,
     titleHeight: 1,
     switchVisible: true,
-    dragHeight: 6,
+    dragHeight: 12,
+    workspaceDragUsable: true,
+    dragRailRegion: 'drag',
+    workspaceDragRegion: 'drag',
     edgeSlotWidth: 7
   })
 
@@ -225,7 +244,7 @@ test('keeps a custom-header tool immersive while preserving its view controls', 
   })()`)).value).toEqual({
     controlsClass: true,
     brandCount: 0,
-    headerTop: 0
+    headerTop: 12
   })
 
   await sendToolWindowControlsVisibility('quickNote', false)

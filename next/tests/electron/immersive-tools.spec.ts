@@ -51,6 +51,14 @@ test('renders every functional tool as an immersive workspace while leaving home
       const actionControls = actionHeader ? [...actionHeader.querySelectorAll<HTMLElement>('button, input, select')] : []
       const outerSurface = element.querySelector<HTMLElement>(':scope > .local-tool-shell, :scope > .runtime-shell')
       const outerStyle = outerSurface ? getComputedStyle(outerSurface) : null
+      const workspaceDragUsable = [...element.querySelectorAll<HTMLElement>('[data-window-drag-zone]')].some((zone) => {
+        const rect = zone.getBoundingClientRect()
+        return rect.width >= 32
+          && rect.height >= 24
+          && rect.right > bounds.left
+          && rect.left < bounds.right
+          && getComputedStyle(zone).getPropertyValue('-webkit-app-region') === 'drag'
+      })
       return {
         topAligned: workspace ? Math.abs(bounds.top - workspace.top) < 0.5 : false,
         padding: [style.paddingTop, style.paddingRight, style.paddingBottom, style.paddingLeft],
@@ -60,7 +68,8 @@ test('renders every functional tool as an immersive workspace while leaving home
           const rect = control.getBoundingClientRect()
           return rect.width > 0 && rect.height > 0
         }),
-        outerSurfaceFlat: !outerStyle || (outerStyle.borderRadius === '0px' && outerStyle.boxShadow === 'none')
+        outerSurfaceFlat: !outerStyle || (outerStyle.borderRadius === '0px' && outerStyle.boxShadow === 'none'),
+        workspaceDragUsable
       }
     })).toEqual({
       topAligned: true,
@@ -68,7 +77,8 @@ test('renders every functional tool as an immersive workspace while leaving home
       visiblePageTitle: false,
       actionHeaderFlush: true,
       actionControlsVisible: true,
-      outerSurfaceFlat: true
+      outerSurfaceFlat: true,
+      workspaceDragUsable: label !== 'HTTP 请求'
     })
   }
 

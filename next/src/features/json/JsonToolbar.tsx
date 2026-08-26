@@ -2,6 +2,7 @@ import { Copy, Download, Eraser, FolderOpen, History, Minimize2, MoreHorizontal,
 import type { ReactNode } from 'react'
 import { FindReplaceBar } from '@/shared/components/FindReplaceBar'
 import { FontSelect } from '@/shared/components/FontSelect'
+import { WorkspaceDragZone } from '@/shared/components/ToolPage'
 import { Tooltip } from '@/shared/components/Tooltip'
 import type { FindReplaceOptions } from '@/shared/components/findReplace'
 import { useI18n } from '@/shared/i18n/I18nProvider'
@@ -84,6 +85,7 @@ export function JsonToolbar({
         />
         <IconAction label={wrap ? t('json.action.wrap') : t('json.action.nowrap')} onClick={onToggleWrap}><WrapText size={14} /></IconAction>
         <IconAction label={copied ? t('json.action.copied') : t('json.action.copy')} onClick={onCopy}><Copy size={14} /></IconAction>
+        <WorkspaceDragZone className="workspace-drag-zone--editor-toolbar" />
         <span className="toolbar-divider" />
         <IconAction label={t('json.action.find')} onClick={onToggleFind}><Search size={14} /></IconAction>
         <IconAction label={t('json.action.import')} onClick={onImport}><FolderOpen size={14} /></IconAction>

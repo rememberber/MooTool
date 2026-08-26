@@ -4,19 +4,31 @@ import { TextCodeEditor } from './TextCodeEditor'
 import { Tooltip } from './Tooltip'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 
+export function WorkspaceDragZone({ className = '' }: { className?: string }) {
+  return (
+    <div
+      className={['workspace-drag-zone', className].filter(Boolean).join(' ')}
+      data-window-drag-zone
+      aria-hidden="true"
+    />
+  )
+}
+
 export function ToolPageHeader({ title, actions }: { title: string; actions?: ReactNode }) {
   return (
     <div className={actions ? 'tool-page__header tool-page__header--actions' : 'tool-page__header tool-page__header--semantic'}>
       <h1 className="visually-hidden">{title}</h1>
+      {actions && <WorkspaceDragZone />}
       {actions && <div className="tool-header-actions">{actions}</div>}
     </div>
   )
 }
 
-export function ToolTabs<T extends string>({ tabs, active, onChange }: {
+export function ToolTabs<T extends string>({ tabs, active, onChange, windowDrag = false }: {
   tabs: ReadonlyArray<{ id: T; label: string }>
   active: T
   onChange: (id: T) => void
+  windowDrag?: boolean
 }) {
   return (
     <div className="tool-tabs" role="tablist">
@@ -32,6 +44,7 @@ export function ToolTabs<T extends string>({ tabs, active, onChange }: {
           {tab.label}
         </button>
       ))}
+      {windowDrag && <WorkspaceDragZone className="workspace-drag-zone--tabs" />}
     </div>
   )
 }

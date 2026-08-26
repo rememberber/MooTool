@@ -1919,6 +1919,25 @@ select:not([multiple]) {
   -webkit-app-region: drag;
 }
 
+.workspace-drag-zone {
+  min-width: 48px;
+  min-height: 24px;
+  align-self: stretch;
+  flex: 1 1 80px;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-app-region: drag;
+}
+
+.workspace-drag-zone--tabs {
+  min-width: 64px;
+}
+
+.workspace-drag-zone--editor-toolbar {
+  min-width: 32px;
+  flex-basis: 48px;
+}
+
 .app-shell {
   --navigation-width: 248px;
   position: relative;
@@ -2512,6 +2531,21 @@ select:not([multiple]) {
   color: var(--text);
   background: var(--workspace);
   overflow: hidden;
+}
+
+.tool-view-shell--detached.tool-view-shell--immersive {
+  padding-top: 12px;
+}
+
+.window-drag-rail {
+  position: absolute;
+  z-index: 220;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 12px;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .tool-view-shell .tool-page__header {
@@ -11805,12 +11839,9 @@ textarea:focus {
   border-radius: 999px;
 }
 
-/* Immersive tools keep window mechanics at the edges instead of reserving
- * visible chrome above the workspace. */
-.tool-view-shell--immersive > .window-drag-region {
-  right: 0;
-  height: 6px;
-}
+/* Immersive tools keep window mechanics in real toolbar gaps. Detached tools
+ * additionally reserve a narrow rail above the workspace as a reliable
+ * fallback, so the rail never covers an input or button. */
 
 .tool-view-shell--immersive .tool-window-toggle-slot {
   top: 50%;
@@ -11904,7 +11935,13 @@ textarea:focus {
 }
 
 :root .tool-page__header--actions > :not(.visually-hidden) {
-  margin-left: auto;
+  margin-left: 0;
+}
+
+:root .tool-page__header--actions > .workspace-drag-zone {
+  position: relative;
+  z-index: 101;
+  -webkit-app-region: drag;
 }
 
 :root .tool-page > .local-tool-shell,
