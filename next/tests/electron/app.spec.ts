@@ -510,6 +510,16 @@ test('formats JSON and completes history and Vault workflows', async () => {
   await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({
     layout: { paneSizes: { 'json-three-pane': expect.any(Array) } }
   })
+  const jsonInspector = mainPage.locator('.json-layout .inspector-panel')
+  const initialInspectorWidth = await jsonInspector.evaluate((element) => element.getBoundingClientRect().width)
+  const secondDivider = mainPage.locator('.json-layout .pane-resizer').nth(1)
+  const secondDividerBounds = await secondDivider.boundingBox()
+  expect(secondDividerBounds).not.toBeNull()
+  await mainPage.mouse.move(secondDividerBounds!.x + secondDividerBounds!.width / 2, secondDividerBounds!.y + 80)
+  await mainPage.mouse.down()
+  await mainPage.mouse.move(secondDividerBounds!.x + secondDividerBounds!.width / 2 - 70, secondDividerBounds!.y + 80)
+  await mainPage.mouse.up()
+  await expect.poll(() => jsonInspector.evaluate((element) => element.getBoundingClientRect().width)).toBeGreaterThan(initialInspectorWidth + 50)
   await mainPage.getByRole('button', { name: '主页', exact: true }).click()
   await mainPage.locator('.tool-button').filter({ hasText: 'JSON' }).click()
   await expect.poll(() => jsonVault.evaluate((element) => element.getBoundingClientRect().width)).toBeCloseTo(resizedVaultWidth, 0)
@@ -586,6 +596,42 @@ test('formats JSON and completes history and Vault workflows', async () => {
   await expect(deleteVaultDialog).toContainText('确定删除')
   await deleteVaultDialog.getByRole('button', { name: '删除', exact: true }).click()
   await expect(mainPage.locator('.vault-node').filter({ hasText: 'e2e-sample.json' })).toHaveCount(0)
+})
+
+test('resizes the JSON more-tools pane with collapsed navigation at a compact window width', async () => {
+  await electronApp.evaluate(({ BrowserWindow }) => {
+    BrowserWindow.getAllWindows().find((window) => !window.getParentWindow())?.setSize(1200, 920)
+  })
+  await expect.poll(() => mainPage.evaluate(() => window.innerWidth)).toBe(1200)
+
+  const collapseNavigation = mainPage.getByRole('button', { name: '收起导航栏', exact: true })
+  if (await collapseNavigation.isVisible()) await collapseNavigation.click()
+  await expect(mainPage.locator('.app-shell')).toHaveClass(/app-shell--hide-nav-titles/)
+
+  await mainPage.locator('.tool-button').filter({ hasText: 'JSON' }).click()
+  const inspector = mainPage.locator('.json-layout .inspector-panel')
+  if (!await inspector.isVisible()) {
+    await mainPage.locator('.editor-toolbar').getByRole('button', { name: '更多工具', exact: true }).click()
+  }
+  await expect(inspector).toBeVisible()
+  await expect(mainPage.locator('.json-layout')).toHaveClass(/resizable-columns--enabled/)
+
+  const initialWidth = await inspector.evaluate((element) => element.getBoundingClientRect().width)
+  const divider = mainPage.locator('.json-layout .pane-resizer').nth(1)
+  const dividerBounds = await divider.boundingBox()
+  expect(dividerBounds).not.toBeNull()
+  await mainPage.mouse.move(dividerBounds!.x + dividerBounds!.width / 2, dividerBounds!.y + 80)
+  await mainPage.mouse.down()
+  await mainPage.mouse.move(dividerBounds!.x + dividerBounds!.width / 2 - 70, dividerBounds!.y + 80)
+  await mainPage.mouse.up()
+  await expect.poll(() => inspector.evaluate((element) => element.getBoundingClientRect().width)).toBeGreaterThan(initialWidth + 50)
+
+  await electronApp.evaluate(({ BrowserWindow }) => {
+    BrowserWindow.getAllWindows().find((window) => !window.getParentWindow())?.setSize(1440, 920)
+  })
+  await expect.poll(() => mainPage.evaluate(() => window.innerWidth)).toBe(1440)
+  await mainPage.getByRole('button', { name: '展开导航栏', exact: true }).click()
+  await expect(mainPage.locator('.app-shell')).not.toHaveClass(/app-shell--hide-nav-titles/)
 })
 
 test('manages JSON Vault folders, rename, duplicate, and move workflows', async () => {

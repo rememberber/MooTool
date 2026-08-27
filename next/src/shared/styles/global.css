@@ -8083,7 +8083,7 @@ select:not([multiple]) {
     grid-template-columns: 190px minmax(360px, 1fr);
   }
 
-  .inspector-panel {
+  .json-layout:not(.resizable-columns--enabled) > .inspector-panel {
     position: absolute;
     z-index: 20;
     top: 0;
@@ -8094,7 +8094,7 @@ select:not([multiple]) {
     box-shadow: -16px 0 38px var(--shadow);
   }
 
-  .inspector-mobile-header {
+  .json-layout:not(.resizable-columns--enabled) .inspector-mobile-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -8104,7 +8104,7 @@ select:not([multiple]) {
     font-size: 12px;
   }
 
-  .inspector-mobile-header button {
+  .json-layout:not(.resizable-columns--enabled) .inspector-mobile-header button {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -8117,7 +8117,7 @@ select:not([multiple]) {
     cursor: pointer;
   }
 
-  .inspector-mobile-header button:hover {
+  .json-layout:not(.resizable-columns--enabled) .inspector-mobile-header button:hover {
     background: var(--control-hover);
   }
 

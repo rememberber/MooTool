@@ -151,7 +151,11 @@ export function ResizableColumns({
     : undefined
 
   return (
-    <div ref={containerRef} className={`${className} resizable-columns`} style={{ gridTemplateColumns }}>
+    <div
+      ref={containerRef}
+      className={`${className} resizable-columns${enabled ? ' resizable-columns--enabled' : ''}`}
+      style={{ gridTemplateColumns }}
+    >
       {children}
       {enabled && dividerPositions.map((position, index) => (
         <div
