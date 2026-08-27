@@ -968,6 +968,11 @@ test('runs P4 reformat, crypto, Protobuf and QR workflows', async () => {
 test('runs P4 color favorites, image persistence and PDF workspace', async () => {
   await openTool('调色板', '调色板')
   await expect(mainPage.getByLabel('主题').locator('option')).toHaveText(['默认', '主题1', '主题2', '主题3', '主题4', '主题5', '中国色'])
+  expect(await mainPage.locator('.color-palette-panel').evaluate((panel) => {
+    const select = panel.querySelector('select')!.getBoundingClientRect()
+    const colors = panel.querySelector('.theme-main-colors')!.getBoundingClientRect()
+    return colors.top - select.bottom
+  })).toBeGreaterThanOrEqual(12)
   await expect(mainPage.locator('.theme-shade-column')).toHaveCount(10)
   expect(await mainPage.locator('.theme-shade-column').first().locator('.color-chip').evaluateAll((chips) => chips.map((chip) => chip.getAttribute('aria-label')))).toEqual(['#808080', '#595959', '#404040', '#262626', '#0D0D0D'])
   const colorCode = mainPage.locator('.color-code-input input')
@@ -978,6 +983,12 @@ test('runs P4 color favorites, image persistence and PDF workspace', async () =>
   await mainPage.getByRole('button', { name: '收藏', exact: true }).click()
   const saveColorFavorite = mainPage.getByRole('dialog', { name: '颜色收藏' })
   await expect(saveColorFavorite.getByLabel('名称')).toHaveValue('Color-#123456')
+  await saveColorFavorite.getByRole('button', { name: '新建收藏夹' }).click()
+  const createColorFolder = mainPage.getByRole('dialog', { name: '新建收藏夹' })
+  await createColorFolder.getByLabel('请输入收藏夹名称').fill('E2E 收藏夹')
+  await createColorFolder.getByRole('button', { name: '添加', exact: true }).click()
+  await expect(saveColorFavorite.getByLabel('收藏夹')).toHaveValue(/\d+/)
+  await expect(saveColorFavorite.getByLabel('收藏夹').locator('option:checked')).toHaveText('E2E 收藏夹')
   await saveColorFavorite.getByLabel('名称').fill('E2E color')
   await saveColorFavorite.getByRole('button', { name: '收藏', exact: true }).click()
   await expect(saveColorFavorite).toHaveCount(0)
@@ -986,6 +997,7 @@ test('runs P4 color favorites, image persistence and PDF workspace', async () =>
   await colorCode.press('Enter')
   await mainPage.getByRole('button', { name: '收藏夹', exact: true }).click()
   const colorFavorites = mainPage.getByRole('dialog', { name: '收藏夹' })
+  await colorFavorites.locator('.color-favorite-folder > button').filter({ hasText: 'E2E 收藏夹' }).click()
   await expect(colorFavorites.locator('.favorite-item')).toContainText('E2E color')
   await colorFavorites.locator('.favorite-item > button').first().click()
   await expect(mainPage.locator('.color-preview strong')).toHaveText('#123456')

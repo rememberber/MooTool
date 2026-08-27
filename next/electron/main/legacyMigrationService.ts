@@ -299,12 +299,12 @@ function migrateFavorites(
       continue
     }
     const originalName = cleanText(row.name) || `Legacy ${migration.kind} ${index + 1}`
-    const listTitle = cleanText(row.list_title)
-    const preferredName = listTitle && !isDefaultFavoriteList(listTitle) ? `${listTitle} / ${originalName}` : originalName
-    const name = uniqueFavoriteName(destination, migration.kind, preferredName, listTitle ? `${listTitle} / ${originalName}` : originalName)
+    const listTitle = cleanText(row.list_title) || '默认收藏夹'
+    const folderId = ensureFavoriteFolder(destination, migration.kind, listTitle)
+    const name = uniqueFavoriteName(destination, migration.kind, folderId, originalName)
     const description = [cleanText(row.remark), cleanText(row.list_remark)].filter(Boolean).join('\n')
-    destination.prepare(`INSERT INTO t_next_favorite (kind, name, value, description, create_time) VALUES (?, ?, ?, ?, ?)`)
-      .run(migration.kind, name, cleanText(row.value), description, cleanText(row.create_time) || sqliteDate())
+    destination.prepare(`INSERT INTO t_next_favorite (kind, folder_id, name, value, description, create_time) VALUES (?, ?, ?, ?, ?, ?)`)
+      .run(migration.kind, folderId, name, cleanText(row.value), description, cleanText(row.create_time) || sqliteDate())
     recordMigratedRow(destination, sourcePath, migration.item, sourceId, name)
     imported[migration.category] += 1
   }
@@ -629,12 +629,17 @@ function rowIdentity(row: SqliteRow, index: number): string {
   return createHash('sha256').update(JSON.stringify(row)).update(String(index)).digest('hex')
 }
 
-function uniqueFavoriteName(database: DatabaseSync, kind: string, preferred: string, qualified: string): string {
-  const names = preferred === qualified ? [preferred] : [preferred, qualified]
+function ensureFavoriteFolder(database: DatabaseSync, kind: string, title: string): number {
+  const existing = database.prepare('SELECT id FROM t_next_favorite_folder WHERE kind = ? AND title = ?').get(kind, title) as SqliteRow | undefined
+  if (existing) return Number(existing.id)
+  const result = database.prepare('INSERT INTO t_next_favorite_folder (kind, title, create_time) VALUES (?, ?, ?)').run(kind, title, sqliteDate())
+  return Number(result.lastInsertRowid)
+}
+
+function uniqueFavoriteName(database: DatabaseSync, kind: string, folderId: number, preferred: string): string {
   for (let index = 0; index < 10_000; index += 1) {
-    const base = names[Math.min(index, names.length - 1)]
-    const candidate = index < names.length ? base : `${qualified} (${index - names.length + 2})`
-    if (!database.prepare('SELECT 1 FROM t_next_favorite WHERE kind = ? AND name = ?').get(kind, candidate)) return candidate.slice(0, 240)
+    const candidate = index === 0 ? preferred : `${preferred} (${index + 1})`
+    if (!database.prepare('SELECT 1 FROM t_next_favorite WHERE kind = ? AND folder_id = ? AND name = ?').get(kind, folderId, candidate)) return candidate.slice(0, 240)
   }
   throw new Error('Unable to allocate a favorite name')
 }
@@ -753,10 +758,6 @@ function unquote(value: string): string {
     return value.slice(1, -1)
   }
   return value
-}
-
-function isDefaultFavoriteList(value: string): boolean {
-  return ['默认收藏夹', 'default', 'default favorites'].includes(value.trim().toLocaleLowerCase())
 }
 
 function sanitizeFileName(value: string): string {

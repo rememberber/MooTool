@@ -19,7 +19,7 @@ import type { PdfFileInfo, PdfMergeSource, PdfOperationResult, PdfSplitTask } fr
 import type { JsonVaultFile, JsonVaultListInput, JsonVaultNode, MoveJsonVaultEntryInput, RenameJsonVaultEntryInput, SaveJsonVaultFileInput } from '../../src/shared/contracts/jsonVault'
 import type { CreateQuickNoteInput, MoveQuickNoteEntryInput, QuickNoteAttachment, QuickNoteFile, QuickNoteListInput, QuickNoteNode, RenameQuickNoteEntryInput, SaveQuickNoteInput } from '../../src/shared/contracts/quickNote'
 import type { VaultGitActionInput, VaultGitActionResult, VaultGitCommit, VaultGitDiffInput, VaultGitDiffResult, VaultGitStatus } from '../../src/shared/contracts/vaultGit'
-import type { FavoriteKind, FavoriteRecord, SaveFavoriteInput } from '../../src/shared/contracts/favorites'
+import type { FavoriteFolderRecord, FavoriteKind, FavoriteRecord, RenameFavoriteFolderInput, SaveFavoriteFolderInput, SaveFavoriteInput } from '../../src/shared/contracts/favorites'
 import type { HttpRequestDraft, HttpRequestHistory, HttpResponseResult, HttpSendInput, SaveTranslationHistoryInput, SaveTranslationWordInput, SavedHttpRequest, TranslationHistory, TranslationInput, TranslationResult, TranslationWord } from '../../src/shared/contracts/network'
 import type { DeleteEnvironmentVariableInput, EnvironmentSnapshot, EnvironmentVariableInput, HostProfile, HostProfileListInput, LocalAddressSnapshot, NetworkCommandInput, NetworkCommandResult, SaveHostProfileInput, SystemHostsFile, SystemInfoSnapshot } from '../../src/shared/contracts/system'
 import type { RuntimeExecutionInput, RuntimeExecutionResult, RuntimeOutputEvent } from '../../src/shared/contracts/runtime'
@@ -55,9 +55,13 @@ contextBridge.exposeInMainWorld('mootool', {
   saveHistory: (input: SaveFuncHistoryInput): Promise<void> => ipcRenderer.invoke('history:save', input),
   deleteHistory: (id: number): Promise<void> => ipcRenderer.invoke('history:delete', id),
   clearHistory: (funcType: string): Promise<void> => ipcRenderer.invoke('history:clear', funcType),
-  listFavorites: (kind: FavoriteKind): Promise<FavoriteRecord[]> => ipcRenderer.invoke('favorite:list', kind),
+  listFavorites: (kind: FavoriteKind, folderId?: number): Promise<FavoriteRecord[]> => ipcRenderer.invoke('favorite:list', kind, folderId),
   saveFavorite: (input: SaveFavoriteInput): Promise<FavoriteRecord> => ipcRenderer.invoke('favorite:save', input),
   deleteFavorite: (id: number): Promise<void> => ipcRenderer.invoke('favorite:delete', id),
+  listFavoriteFolders: (kind: FavoriteKind): Promise<FavoriteFolderRecord[]> => ipcRenderer.invoke('favorite-folder:list', kind),
+  createFavoriteFolder: (input: SaveFavoriteFolderInput): Promise<FavoriteFolderRecord> => ipcRenderer.invoke('favorite-folder:create', input),
+  renameFavoriteFolder: (input: RenameFavoriteFolderInput): Promise<FavoriteFolderRecord> => ipcRenderer.invoke('favorite-folder:rename', input),
+  deleteFavoriteFolder: (id: number): Promise<void> => ipcRenderer.invoke('favorite-folder:delete', id),
   listHttpRequests: (keyword?: string): Promise<SavedHttpRequest[]> => ipcRenderer.invoke('http:list', keyword),
   saveHttpRequest: (request: HttpRequestDraft, response?: HttpResponseResult): Promise<SavedHttpRequest> => ipcRenderer.invoke('http:save', request, response),
   deleteHttpRequest: (id: number): Promise<void> => ipcRenderer.invoke('http:delete', id),

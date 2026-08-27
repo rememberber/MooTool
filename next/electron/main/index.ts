@@ -76,7 +76,13 @@ import type {
 import type { HostProfileListInput } from '../../src/shared/contracts/system'
 import type { VaultGitActionInput, VaultGitDiffInput } from '../../src/shared/contracts/vaultGit'
 import { codeRuntimeIds, type RuntimeExecutionInput } from '../../src/shared/contracts/runtime'
-import { favoriteKinds, type FavoriteKind, type SaveFavoriteInput } from '../../src/shared/contracts/favorites'
+import {
+  favoriteKinds,
+  type FavoriteKind,
+  type RenameFavoriteFolderInput,
+  type SaveFavoriteFolderInput,
+  type SaveFavoriteInput
+} from '../../src/shared/contracts/favorites'
 import { backupKinds, type BackupKind, type BackupLocation } from '../../src/shared/contracts/backup'
 import type { LegacyMigrationInput } from '../../src/shared/contracts/migration'
 import type { UpdateCheckEvent, UpdateCheckResult, UpdateDownloadState } from '../../src/shared/contracts/update'
@@ -582,12 +588,16 @@ function registerIpc(): void {
     historyRepository.delete(id)
   })
   ipcMain.handle('history:clear', (_event, funcType: string) => historyRepository.clear(normalizeFuncType(funcType)))
-  ipcMain.handle('favorite:list', (_event, kind: FavoriteKind) => favoriteRepository.list(normalizeFavoriteKind(kind)))
+  ipcMain.handle('favorite:list', (_event, kind: FavoriteKind, folderId?: unknown) => favoriteRepository.list(normalizeFavoriteKind(kind), normalizeOptionalPositiveId(folderId)))
   ipcMain.handle('favorite:save', (_event, input: SaveFavoriteInput) => favoriteRepository.save(normalizeFavoriteInput(input)))
   ipcMain.handle('favorite:delete', (_event, id: number) => {
     if (!Number.isSafeInteger(id) || id <= 0) throw new Error('Invalid favorite id')
     favoriteRepository.delete(id)
   })
+  ipcMain.handle('favorite-folder:list', (_event, kind: FavoriteKind) => favoriteRepository.listFolders(normalizeFavoriteKind(kind)))
+  ipcMain.handle('favorite-folder:create', (_event, input: SaveFavoriteFolderInput) => favoriteRepository.createFolder(normalizeFavoriteFolderInput(input)))
+  ipcMain.handle('favorite-folder:rename', (_event, input: RenameFavoriteFolderInput) => favoriteRepository.renameFolder(normalizeRenameFavoriteFolderInput(input)))
+  ipcMain.handle('favorite-folder:delete', (_event, id: unknown) => favoriteRepository.deleteFolder(normalizePositiveId(id)))
   ipcMain.handle('http:list', (_event, keyword?: string) => p5Repository.listHttpRequests(normalizeKeyword(keyword)))
   ipcMain.handle('http:save', (_event, request: unknown, response?: unknown) => p5Repository.saveHttpRequest(normalizeHttpRequest(request), response == null ? undefined : normalizeHttpResponse(response)))
   ipcMain.handle('http:delete', (_event, id: unknown) => p5Repository.deleteHttpRequest(normalizePositiveId(id)))
@@ -1973,6 +1983,10 @@ function normalizeFavoriteKind(value: unknown): FavoriteKind {
   throw new Error('Unsupported favorite kind')
 }
 
+function normalizeOptionalPositiveId(value: unknown): number | undefined {
+  return value == null ? undefined : normalizePositiveId(value)
+}
+
 function normalizeFavoriteInput(value: SaveFavoriteInput): SaveFavoriteInput {
   if (!isRecord(value) || typeof value.name !== 'string' || typeof value.value !== 'string') {
     throw new Error('Invalid favorite')
@@ -1982,10 +1996,25 @@ function normalizeFavoriteInput(value: SaveFavoriteInput): SaveFavoriteInput {
   if (!name || !favoriteValue) throw new Error('Favorite name and value are required')
   return {
     kind: normalizeFavoriteKind(value.kind),
+    folderId: normalizeOptionalPositiveId(value.folderId),
     name,
     value: favoriteValue,
     description: typeof value.description === 'string' ? value.description.trim().slice(0, 1000) : ''
   }
+}
+
+function normalizeFavoriteFolderInput(value: SaveFavoriteFolderInput): SaveFavoriteFolderInput {
+  if (!isRecord(value) || typeof value.title !== 'string') throw new Error('Invalid favorite folder')
+  const title = value.title.trim().slice(0, 120)
+  if (!title) throw new Error('Favorite folder title is required')
+  return { kind: normalizeFavoriteKind(value.kind), title }
+}
+
+function normalizeRenameFavoriteFolderInput(value: RenameFavoriteFolderInput): RenameFavoriteFolderInput {
+  if (!isRecord(value) || typeof value.title !== 'string') throw new Error('Invalid favorite folder')
+  const title = value.title.trim().slice(0, 120)
+  if (!title) throw new Error('Favorite folder title is required')
+  return { id: normalizePositiveId(value.id), title }
 }
 
 function normalizeTextFileKind(value: unknown): TextFileKind {

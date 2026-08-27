@@ -6454,6 +6454,7 @@ select:not([multiple]) {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+  margin-bottom: 14px;
 }
 
 .color-palette-panel header label {
@@ -6521,14 +6522,16 @@ select:not([multiple]) {
   font-size: 16px;
 }
 
-.color-favorite-name {
+.color-favorite-field {
   display: grid;
   gap: 6px;
+  margin-top: 12px;
   color: var(--text-muted);
   font-size: 11px;
 }
 
-.color-favorite-name input {
+.color-favorite-field input,
+.color-favorite-field select {
   height: 36px;
   padding: 0 10px;
   color: var(--text-body);
@@ -6538,9 +6541,102 @@ select:not([multiple]) {
   outline: none;
 }
 
-.color-favorite-name input:focus {
+.color-favorite-field input:focus,
+.color-favorite-field select:focus {
   border-color: var(--accent);
   box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+.color-favorite-folder-select {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 8px;
+}
+
+.color-favorite-folder-select .dialog-button {
+  height: 36px;
+}
+
+.color-favorites-manager {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  min-height: 340px;
+  max-height: 480px;
+  margin: -10px -22px -22px;
+}
+
+.color-favorite-folders {
+  display: flex;
+  min-width: 0;
+  padding: 12px;
+  flex-direction: column;
+  gap: 10px;
+  background: var(--surface-soft);
+  border-right: 1px solid var(--border-soft);
+}
+
+.color-favorite-folders__new {
+  display: flex;
+  min-height: 32px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  color: var(--text-body);
+  background: var(--surface);
+  border: 1px solid var(--border-control);
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 11px;
+}
+
+.color-favorite-folders__list {
+  display: flex;
+  min-height: 0;
+  flex-direction: column;
+  gap: 3px;
+  overflow-y: auto;
+}
+
+.color-favorite-folder {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 26px 26px;
+  align-items: center;
+  min-height: 34px;
+  border-radius: 6px;
+}
+
+.color-favorite-folder--active {
+  background: var(--selection-bg);
+}
+
+.color-favorite-folder > button:first-child {
+  min-width: 0;
+  height: 100%;
+  padding: 0 8px;
+  overflow: hidden;
+  color: var(--text-body);
+  background: transparent;
+  cursor: pointer;
+  font-size: 11px;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.color-favorite-folder .icon-ghost {
+  width: 24px;
+  height: 24px;
+  opacity: 0;
+}
+
+.color-favorite-folder:hover .icon-ghost,
+.color-favorite-folder:focus-within .icon-ghost {
+  opacity: 1;
+}
+
+.color-favorites-manager > .color-favorite-list {
+  max-height: none;
+  padding: 14px;
 }
 
 .color-favorite-item > button:first-child {

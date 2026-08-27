@@ -10,7 +10,7 @@ import type { PdfFileInfo, PdfMergeSource, PdfOperationResult, PdfSplitTask } fr
 import type { JsonVaultFile, JsonVaultListInput, JsonVaultNode, MoveJsonVaultEntryInput, RenameJsonVaultEntryInput, SaveJsonVaultFileInput } from './src/shared/contracts/jsonVault'
 import type { CreateQuickNoteInput, MoveQuickNoteEntryInput, QuickNoteAttachment, QuickNoteFile, QuickNoteListInput, QuickNoteNode, RenameQuickNoteEntryInput, SaveQuickNoteInput } from './src/shared/contracts/quickNote'
 import type { VaultGitActionInput, VaultGitActionResult, VaultGitCommit, VaultGitDiffInput, VaultGitDiffResult, VaultGitStatus } from './src/shared/contracts/vaultGit'
-import type { FavoriteKind, FavoriteRecord, SaveFavoriteInput } from './src/shared/contracts/favorites'
+import type { FavoriteFolderRecord, FavoriteKind, FavoriteRecord, RenameFavoriteFolderInput, SaveFavoriteFolderInput, SaveFavoriteInput } from './src/shared/contracts/favorites'
 import type { HttpRequestDraft, HttpRequestHistory, HttpResponseResult, HttpSendInput, SaveTranslationHistoryInput, SaveTranslationWordInput, SavedHttpRequest, TranslationHistory, TranslationInput, TranslationResult, TranslationWord } from './src/shared/contracts/network'
 import type { DeleteEnvironmentVariableInput, EnvironmentSnapshot, EnvironmentVariableInput, HostProfile, HostProfileListInput, LocalAddressSnapshot, NetworkCommandInput, NetworkCommandResult, SaveHostProfileInput, SystemHostsFile, SystemInfoSnapshot } from './src/shared/contracts/system'
 import type { RuntimeExecutionInput, RuntimeExecutionResult, RuntimeOutputEvent } from './src/shared/contracts/runtime'
@@ -48,9 +48,13 @@ declare global {
       saveHistory: (input: SaveFuncHistoryInput) => Promise<void>
       deleteHistory: (id: number) => Promise<void>
       clearHistory: (funcType: string) => Promise<void>
-      listFavorites: (kind: FavoriteKind) => Promise<FavoriteRecord[]>
+      listFavorites: (kind: FavoriteKind, folderId?: number) => Promise<FavoriteRecord[]>
       saveFavorite: (input: SaveFavoriteInput) => Promise<FavoriteRecord>
       deleteFavorite: (id: number) => Promise<void>
+      listFavoriteFolders: (kind: FavoriteKind) => Promise<FavoriteFolderRecord[]>
+      createFavoriteFolder: (input: SaveFavoriteFolderInput) => Promise<FavoriteFolderRecord>
+      renameFavoriteFolder: (input: RenameFavoriteFolderInput) => Promise<FavoriteFolderRecord>
+      deleteFavoriteFolder: (id: number) => Promise<void>
       listHttpRequests: (keyword?: string) => Promise<SavedHttpRequest[]>
       saveHttpRequest: (request: HttpRequestDraft, response?: HttpResponseResult) => Promise<SavedHttpRequest>
       deleteHttpRequest: (id: number) => Promise<void>
