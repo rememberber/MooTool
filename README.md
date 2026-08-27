@@ -29,6 +29,15 @@ Hope you enjoy using it as much as I enjoyed building it.
 ## Supported platforms
 Windows • Linux • macOS
 
+## Product lines
+
+| Product | Introduction | Download |
+| --- | --- | --- |
+| **MooTool Next Electron** | Recommended cross-platform edition, rebuilt with Electron, Vite, React, and TypeScript. It is installed, stored, and updated independently from the Java edition. | [Download 1.1.3](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.3) |
+| **MooTool Java** | The original Swing-based cross-platform edition, maintained as an independent product line for Windows, Linux, and macOS. | [Download 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6) · [Gitee mirror](https://gitee.com/zhoubochina/MooTool/releases) |
+| [**MooTool Next Tauri**](next-tauri/README.md) | Independent desktop edition built with Tauri 2, Rust, React, and TypeScript; currently under development. | Not available yet |
+| [**MooTool Next macOS Native**](macos/README.md) | SwiftUI-based native macOS preview, currently providing the project skeleton and a minimal application shell. | Not available yet |
+
 ## Screenshots
 
 > Main feature screenshots below. Translation, UA analysis, Image assistant, PDF, environment variables, system info, config conversion, Protobuf, and other modules do not have dedicated screenshots yet — open the corresponding tabs after install.
