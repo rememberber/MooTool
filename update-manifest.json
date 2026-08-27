@@ -906,6 +906,75 @@
               "size": 114830028
             }
           ]
+        },
+        {
+          "version": "1.1.3",
+          "title": "MooTool Next Electron 1.1.3",
+          "notes": "## English\n\n> Product: MooTool Next Electron<br>\n> Version: 1.1.3<br>\n> This release is installed and updated independently from MooTool Java and does not overwrite the Java edition.\n\n### Features\n\n- More app-like main layout and dialogs; settings open as a dedicated page instead of a popup.\n- Pin / unpin tool windows from the left navigation, with per-tool custom drag regions.\n- Color palette supports multiple favorite folders (aligned with Java) and a proper favorite button.\n- Notes: create copy, export, and document info moved to the left-list context menu; Git sync also available from the menu.\n- Recent tools in feature navigation are off by default.\n\n### Fixes and improvements\n\n- Immersive title-bar / drag-region polish across Notes, JSON, Text Diff, HTTP, Message Board, and other tools.\n- JSON “More tools” and Notes quick-replace panels resize with the splitter.\n- Fixed detached-window traffic lights disappearing under the cursor; improved light-mode navigation dividers.\n- Notes / JSON layout tweaks (search on top, denser side panes).\n\n### Notes\n\n- Installers remain unsigned. On macOS, the app downloads and verifies the new DMG, then asks the user to open it and drag the app into Applications.\n- The Java product line continues to use `v*` tags and its existing update manifest.\n\n## 中文\n\n> 产品线：MooTool Next Electron<br>\n> 版本：1.1.3<br>\n> 本版本与 MooTool Java 独立安装、独立更新，不会覆盖 Java 版本。\n\n### 新功能\n\n- 主布局与对话框更偏桌面 App 风格；设置改为独立页面打开，不再弹窗。\n- 左侧导航支持打开 / 收回独立窗口；各功能区按内容定制可拖拽区域。\n- 调色板支持多个收藏夹（对齐 Java），并补齐收藏按钮。\n- 随手记：创建副本、导出、文档信息移至左侧右键菜单；Git 同步同步加入菜单（工具栏保留）。\n- 功能导航中「显示最近使用」默认关闭。\n\n### 修复与改进\n\n- 随手记、JSON、文本对比、HTTP、留言板等页面沉浸式顶栏与拖拽区域优化。\n- JSON「更多工具」与随手记快捷替换栏可随分割线动态变宽。\n- 修复独立窗口红绿灯悬停消失；优化亮色模式下左侧分割线表现。\n- 随手记 / JSON 左侧布局调整（搜索置顶、栏间距收紧）。\n\n### 说明\n\n- 安装包仍未签名。macOS 会下载并校验新版 DMG，随后提示用户打开 DMG 并将应用拖入“应用程序”。\n- Java 产品线继续使用 `v*` tag 和原有更新清单，不受本次发布影响。\n\n## 日本語\n\n> 製品ライン：MooTool Next Electron<br>\n> バージョン：1.1.3<br>\n> このリリースは MooTool Java とは独立してインストール・更新され、Java 版を上書きしません。\n\n### 新機能\n\n- メインレイアウトとダイアログをよりデスクトップアプリ向けに刷新。設定はポップアップではなく専用ページで開きます。\n- 左ナビからツールウインドウのピン留め／解除に対応し、各ツールに合わせたドラッグ領域を用意しました。\n- カラーパレットで複数のお気に入りフォルダーに対応（Java 版に準拠）し、お気に入りボタンを追加しました。\n- クイックノート：コピー作成・エクスポート・ドキュメント情報を左リストの右クリックへ移動。Git 同期もメニューに追加（ツールバーは維持）。\n- 機能ナビの「最近使用」は既定でオフです。\n\n### 修正と改善\n\n- クイックノート、JSON、テキスト比較、HTTP、伝言板などの没入型タイトルバー／ドラッグ領域を改善。\n- JSON「その他のツール」とクイックノートのクイック置換パネルがスプリッターに追従して幅変更されます。\n- 独立ウインドウの信号機ボタンがカーソル下で消える問題を修正。ライトモードのナビ区切り線も改善。\n- クイックノート／JSON の左レイアウトを調整（検索を最上段へ、余白を縮小）。\n\n### 補足\n\n- インストーラーは引き続き未署名です。macOS では新しい DMG をダウンロードして検証し、その後 DMG を開いてアプリを「アプリケーション」へドラッグするよう案内します。\n- Java 製品ラインは引き続き `v*` タグと従来の更新マニフェストを使用し、このリリースの影響を受けません。",
+          "prerelease": false,
+          "releaseUrl": "https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.3",
+          "assets": [
+            {
+              "platform": "darwin",
+              "architecture": "arm64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.1.3-mac-arm64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.1.3/MooTool-Next-Electron-1.1.3-mac-arm64.dmg",
+              "sha512": "MxkGLg36jgduzBX42l4yamA7V4l/9DWOSMLpdgCMjq5Il8H9b6QrFIAfFM3JGqzITSRKgsBE2o2yz/sJiYd4Uw==",
+              "size": 148560752
+            },
+            {
+              "platform": "darwin",
+              "architecture": "x64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.1.3-mac-x64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.1.3/MooTool-Next-Electron-1.1.3-mac-x64.dmg",
+              "sha512": "xqVrnJOQMvo8Vej2JEZ9gH9WR9ViWoQA6VzdiRiMZuqJt9kVSrBge4A64YuVZdfubfEsMDqMPydpkRdi+LThBw==",
+              "size": 150367617
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "nsis",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.1.3-win-x64-setup.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.1.3/MooTool-Next-Electron-1.1.3-win-x64-setup.exe",
+              "sha512": "0XJVzN08mWP2TRvZusjdfTuZ35z1DaV3xHgMa1o7AG0skI5ksTrzDXKbPreESI37xAJEK1BkYz70kn7fedX2iQ==",
+              "size": 117139181
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "portable",
+              "priority": 20,
+              "fileName": "MooTool-Next-Electron-1.1.3-win-x64-portable.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.1.3/MooTool-Next-Electron-1.1.3-win-x64-portable.exe",
+              "sha512": "2ByWdIBcVHZHVcD8wJ20RSQ7SScudi6qjzQR/whzyEB3D0WqnKhxQ8Mg4NIN5a2dvmnqtEFgyp+OiLM62OZa/g==",
+              "size": 116951983
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "appimage",
+              "priority": 10,
+              "fileName": "MooTool-Next-Electron-1.1.3-linux-x64.AppImage",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.1.3/MooTool-Next-Electron-1.1.3-linux-x64.AppImage",
+              "sha512": "WosbGlU6WLx+9DRRWIMYs0Lmda5TEZJi5Cx9JYpzf1Mo1SghfyDAh08scClP+fQfWGAigNfv/TqfDtJFL9lIWg==",
+              "size": 156119678
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "deb",
+              "priority": 20,
+              "fileName": "MooTool-Next-Electron-1.1.3-linux-x64.deb",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-electron-v1.1.3/MooTool-Next-Electron-1.1.3-linux-x64.deb",
+              "sha512": "ZoB01kClLlx9tqP4mGf0zWdO+54NyNcklm5AJyvdheE7ntoyUxxADoYqixEbKtnfKbUkD24qXYj4TZCHLdze4Q==",
+              "size": 114837060
+            }
+          ]
         }
       ]
     },
