@@ -3,8 +3,6 @@ import {
   Check,
   ChevronDown,
   Columns2,
-  CopyPlus,
-  Download,
   Eye,
   FilePenLine,
   FilePlus2,
@@ -13,7 +11,6 @@ import {
   FoldVertical,
   GitBranch,
   ImagePlus,
-  Info,
   List,
   ListOrdered,
   PanelLeftClose,
@@ -551,21 +548,23 @@ export function QuickNoteTool() {
     await Promise.all([loadTree(), reloadCurrentNoteFromDisk(), refreshGitChangeCount()])
   }
 
-  async function selectNode(node: QuickNoteNode): Promise<void> {
+  async function selectNode(node: QuickNoteNode): Promise<QuickNoteFile | null> {
     if (node.kind === 'directory') {
       if (dirty) await saveCurrent(false)
       update({ selectedPath: node.relativePath, selectedKind: 'directory', note: null, content: '', metadataDirty: false })
-      return
+      return null
     }
-    if (node.relativePath === state.note?.relativePath) return
-    if (dirty && !await saveCurrent(false)) return
+    if (node.relativePath === state.note?.relativePath) return state.note
+    if (dirty && !await saveCurrent(false)) return null
     update({ busy: true })
     try {
       const note = await window.mootool.readQuickNote(node.relativePath)
       update({ selectedPath: note.relativePath, selectedKind: 'file', note, content: note.content, busy: false, metadataDirty: false })
+      return note
     } catch (error) {
       update({ busy: false })
       toast.error(errorMessage(error))
+      return null
     }
   }
 
@@ -594,6 +593,7 @@ export function QuickNoteTool() {
 
   async function openTreeAction(node: QuickNoteNode, mode: 'rename' | 'move' | 'delete'): Promise<void> {
     if (node.kind === 'directory') {
+      if (dirty && !await saveCurrent(false)) return
       update({
         selectedPath: node.relativePath,
         selectedKind: 'directory',
@@ -684,13 +684,15 @@ export function QuickNoteTool() {
     }
   }
 
-  async function duplicateNote(): Promise<void> {
-    if (!state.note) return
-    if (dirty && !await saveCurrent(false)) return
+  async function duplicateNote(node: QuickNoteNode): Promise<void> {
+    if (node.kind !== 'file') return
+    const note = await selectNode(node)
+    if (!note) return
+    if (node.relativePath === state.note?.relativePath && dirty && !await saveCurrent(false)) return
     try {
-      const note = await window.mootool.duplicateQuickNote(state.note.relativePath)
+      const duplicate = await window.mootool.duplicateQuickNote(node.relativePath)
       await loadTree()
-      update({ selectedPath: note.relativePath, selectedKind: 'file', note, content: note.content, metadataDirty: false })
+      update({ selectedPath: duplicate.relativePath, selectedKind: 'file', note: duplicate, content: duplicate.content, metadataDirty: false })
     } catch (error) {
       toast.error(errorMessage(error))
     }
@@ -772,14 +774,22 @@ export function QuickNoteTool() {
     attachmentInsertionQueueRef.current = operation
   }
 
-  async function exportNote(): Promise<void> {
-    if (!state.note) return
+  async function exportNote(node: QuickNoteNode): Promise<void> {
+    if (node.kind !== 'file') return
+    const note = await selectNode(node)
+    if (!note) return
+    const content = node.relativePath === state.note?.relativePath ? state.content : note.content
     const path = await window.mootool.saveTextFile({
       kind: 'text',
-      defaultName: `${state.note.metadata.title}.txt`,
-      content: state.content
+      defaultName: `${note.metadata.title}.txt`,
+      content
     })
     if (path) toast.success(t('quickNote.export'))
+  }
+
+  async function showDocumentInfo(node: QuickNoteNode): Promise<void> {
+    if (node.kind !== 'file') return
+    if (await selectNode(node)) update({ infoOpen: true })
   }
 
   function insertAttachment(
@@ -967,7 +977,7 @@ export function QuickNoteTool() {
               </div>
               <div ref={treeScrollRef} className="quick-note-tree-scroll" onScroll={(event) => { quickNoteTreeScrollTop = event.currentTarget.scrollTop }}>
                 {state.nodes.length
-                  ? <QuickNoteTree nodes={state.nodes} selectedPath={state.selectedPath} expanded={state.expanded} onSelect={(node) => { void selectNode(node) }} onToggle={toggleDirectory} onMove={(node, targetDirectory) => { void moveTreeEntry(node, targetDirectory) }} onRenameRequest={(node) => { void openTreeAction(node, 'rename') }} onMoveRequest={(node) => { void openTreeAction(node, 'move') }} onDeleteRequest={(node) => { void openTreeAction(node, 'delete') }} onRevealRequest={(node) => { void window.mootool.revealQuickNoteEntry(node.relativePath).catch((error) => toast.error(errorMessage(error))) }} renameLabel={t('quickNote.rename')} moveLabel={t('quickNote.move')} deleteLabel={t('quickNote.delete')} revealLabel={t('quickNote.revealInFinder')} />
+                  ? <QuickNoteTree nodes={state.nodes} selectedPath={state.selectedPath} expanded={state.expanded} onSelect={(node) => { void selectNode(node) }} onToggle={toggleDirectory} onMove={(node, targetDirectory) => { void moveTreeEntry(node, targetDirectory) }} onRenameRequest={(node) => { void openTreeAction(node, 'rename') }} onMoveRequest={(node) => { void openTreeAction(node, 'move') }} onDuplicateRequest={(node) => { void duplicateNote(node) }} onExportRequest={(node) => { void exportNote(node) }} onInfoRequest={(node) => { void showDocumentInfo(node) }} onDeleteRequest={(node) => { void openTreeAction(node, 'delete') }} onRevealRequest={(node) => { void window.mootool.revealQuickNoteEntry(node.relativePath).catch((error) => toast.error(errorMessage(error))) }} renameLabel={t('quickNote.rename')} moveLabel={t('quickNote.move')} duplicateLabel={t('quickNote.duplicate')} exportLabel={t('quickNote.export')} infoLabel={t('quickNote.info')} deleteLabel={t('quickNote.delete')} revealLabel={t('quickNote.revealInFinder')} />
                   : <div className="quick-note-empty">{t('quickNote.empty')}</div>}
               </div>
             </aside>
@@ -1021,11 +1031,8 @@ export function QuickNoteTool() {
               <WorkspaceDragZone className="quick-note-toolbar__drag-zone" />
               <IconButton label={t('quickNote.find')} icon={Search} disabled={!state.note} active={state.findOpen} onClick={() => { if (state.findOpen) update({ findOpen: false }); else openFindReplace() }} />
               <IconButton label={t('quickNote.save')} icon={Save} disabled={!state.note || state.busy} active={dirty} onClick={() => { void saveCurrent() }} />
-              <IconButton label={t('quickNote.duplicate')} icon={CopyPlus} disabled={!state.note} onClick={() => { void duplicateNote() }} />
               <IconButton label={t('quickNote.attachment')} icon={ImagePlus} disabled={!state.note} onClick={() => { void importAttachment() }} />
-              <IconButton label={t('quickNote.export')} icon={Download} disabled={!state.note} onClick={() => { void exportNote() }} />
               <IconButton label={t('quickNote.quickReplace')} icon={Replace} active={state.quickReplaceOpen} onClick={() => update({ quickReplaceOpen: !state.quickReplaceOpen })} />
-              <IconButton label={t('quickNote.info')} icon={Info} disabled={!state.note} onClick={() => update({ infoOpen: true })} />
               <IconButton label={t('quickNote.git')} icon={GitBranch} badge={state.gitChangeCount} onClick={() => update({ gitOpen: true })} />
               <IconButton label={t('quickNote.openVault')} icon={FolderOpen} onClick={() => { void window.mootool.openQuickNoteVault() }} />
               <IconButton label={t('quickNote.delete')} icon={Trash2} disabled={!state.selectedPath} onClick={() => openAction('delete')} />

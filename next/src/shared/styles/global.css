@@ -901,6 +901,12 @@
   text-align: left;
 }
 
+.quick-note-tree-menu__separator {
+  height: 1px;
+  margin: 4px 7px;
+  background: var(--border-control);
+}
+
 .quick-note-tree-menu button:hover,
 .quick-note-tree-menu button:focus-visible,
 .vault-tree-menu button:hover,

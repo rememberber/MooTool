@@ -13,10 +13,16 @@ type QuickNoteTreeProps = {
   onMove: (node: Pick<QuickNoteNode, 'relativePath' | 'kind'>, targetDirectory: string) => void
   onRenameRequest: (node: QuickNoteNode) => void
   onMoveRequest: (node: QuickNoteNode) => void
+  onDuplicateRequest: (node: QuickNoteNode) => void
+  onExportRequest: (node: QuickNoteNode) => void
+  onInfoRequest: (node: QuickNoteNode) => void
   onDeleteRequest: (node: QuickNoteNode) => void
   onRevealRequest: (node: QuickNoteNode) => void
   renameLabel: string
   moveLabel: string
+  duplicateLabel: string
+  exportLabel: string
+  infoLabel: string
   deleteLabel: string
   revealLabel: string
 }
@@ -24,7 +30,7 @@ type QuickNoteTreeProps = {
 const quickNotePathType = 'application/x-mootool-quick-note-path'
 const quickNoteKindType = 'application/x-mootool-quick-note-kind'
 
-export function QuickNoteTree({ nodes, selectedPath, expanded, onSelect, onToggle, onMove, onRenameRequest, onMoveRequest, onDeleteRequest, onRevealRequest, renameLabel, moveLabel, deleteLabel, revealLabel }: QuickNoteTreeProps) {
+export function QuickNoteTree({ nodes, selectedPath, expanded, onSelect, onToggle, onMove, onRenameRequest, onMoveRequest, onDuplicateRequest, onExportRequest, onInfoRequest, onDeleteRequest, onRevealRequest, renameLabel, moveLabel, duplicateLabel, exportLabel, infoLabel, deleteLabel, revealLabel }: QuickNoteTreeProps) {
   const toolActive = useToolActivity()
   const menuRef = useRef<HTMLDivElement>(null)
   const [contextMenu, setContextMenu] = useState<{ node: QuickNoteNode; left: number; top: number } | null>(null)
@@ -69,7 +75,6 @@ export function QuickNoteTree({ nodes, selectedPath, expanded, onSelect, onToggl
             onToggle={onToggle}
             onMove={onMove}
             onOpenContextMenu={(menuNode, left, top) => {
-              onSelect(menuNode)
               setContextMenu({ node: menuNode, left, top })
             }}
           />
@@ -85,6 +90,14 @@ export function QuickNoteTree({ nodes, selectedPath, expanded, onSelect, onToggl
         >
           <button type="button" role="menuitem" onClick={() => { onRenameRequest(contextMenu.node); setContextMenu(null) }}>{renameLabel}</button>
           <button type="button" role="menuitem" onClick={() => { onMoveRequest(contextMenu.node); setContextMenu(null) }}>{moveLabel}</button>
+          {contextMenu.node.kind === 'file' && (
+            <>
+              <button type="button" role="menuitem" onClick={() => { onDuplicateRequest(contextMenu.node); setContextMenu(null) }}>{duplicateLabel}</button>
+              <button type="button" role="menuitem" onClick={() => { onExportRequest(contextMenu.node); setContextMenu(null) }}>{exportLabel}</button>
+              <button type="button" role="menuitem" onClick={() => { onInfoRequest(contextMenu.node); setContextMenu(null) }}>{infoLabel}</button>
+              <div className="quick-note-tree-menu__separator" role="separator" />
+            </>
+          )}
           <button type="button" role="menuitem" onClick={() => { onDeleteRequest(contextMenu.node); setContextMenu(null) }}>{deleteLabel}</button>
           <button type="button" role="menuitem" onClick={() => { onRevealRequest(contextMenu.node); setContextMenu(null) }}>{revealLabel}</button>
         </div>,
@@ -120,7 +133,12 @@ function QuickNoteTreeNode({ node, depth, selectedPath, expanded, onSelect, onTo
         }}
         onContextMenu={(event) => {
           event.preventDefault()
-          onOpenContextMenu(node, Math.min(event.clientX, window.innerWidth - 164), Math.min(event.clientY, window.innerHeight - 138))
+          const menuHeight = node.kind === 'file' ? 238 : 140
+          onOpenContextMenu(
+            node,
+            Math.max(8, Math.min(event.clientX, window.innerWidth - 176)),
+            Math.max(8, Math.min(event.clientY, window.innerHeight - menuHeight))
+          )
         }}
         onDragStart={(event) => {
           event.dataTransfer.effectAllowed = 'move'
