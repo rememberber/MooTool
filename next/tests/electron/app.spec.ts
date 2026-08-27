@@ -1324,6 +1324,37 @@ test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () =>
   await gitDialog.getByRole('button', { name: '关闭' }).click()
 })
 
+test('resizes the Quick Note quick-replace pane at a compact window width', async () => {
+  await electronApp.evaluate(({ BrowserWindow }) => {
+    BrowserWindow.getAllWindows().find((window) => !window.getParentWindow())?.setSize(1080, 920)
+  })
+  await expect.poll(() => mainPage.evaluate(() => window.innerWidth)).toBe(1080)
+
+  await openTool('随手记', '随手记')
+  const quickReplace = mainPage.locator('.quick-replace-panel')
+  if (!await quickReplace.isVisible()) {
+    await mainPage.getByRole('button', { name: '快速替换' }).click()
+  }
+  await expect(quickReplace).toBeVisible()
+  const layout = mainPage.locator('.quick-note-layout')
+  await expect(layout).toHaveClass(/resizable-columns--enabled/)
+
+  const initialWidth = await quickReplace.evaluate((element) => element.getBoundingClientRect().width)
+  const divider = layout.locator(':scope > .pane-resizer').nth(1)
+  const dividerBounds = await divider.boundingBox()
+  expect(dividerBounds).not.toBeNull()
+  await mainPage.mouse.move(dividerBounds!.x + dividerBounds!.width / 2, dividerBounds!.y + 80)
+  await mainPage.mouse.down()
+  await mainPage.mouse.move(dividerBounds!.x + dividerBounds!.width / 2 - 60, dividerBounds!.y + 80)
+  await mainPage.mouse.up()
+  await expect.poll(() => quickReplace.evaluate((element) => element.getBoundingClientRect().width)).toBeGreaterThan(initialWidth + 40)
+
+  await electronApp.evaluate(({ BrowserWindow }) => {
+    BrowserWindow.getAllWindows().find((window) => !window.getParentWindow())?.setSize(1440, 920)
+  })
+  await expect.poll(() => mainPage.evaluate(() => window.innerWidth)).toBe(1440)
+})
+
 test('pastes clipboard images into Quick Note without intercepting text pastes', async () => {
   await openTool('随手记', '随手记')
   await mainPage.getByRole('button', { name: '新建笔记' }).click()

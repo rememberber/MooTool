@@ -1589,7 +1589,7 @@
     grid-template-columns: 190px minmax(280px, 1fr);
   }
 
-  .quick-note-layout--replace-open .quick-replace-panel {
+  .quick-note-layout--replace-open .quick-note-layout:not(.resizable-columns--enabled) > .quick-replace-panel {
     position: absolute;
     z-index: 20;
     top: 0;
