@@ -18,6 +18,7 @@ type QuickNoteTreeProps = {
   onInfoRequest: (node: QuickNoteNode) => void
   onDeleteRequest: (node: QuickNoteNode) => void
   onRevealRequest: (node: QuickNoteNode) => void
+  onGitRequest: () => void
   renameLabel: string
   moveLabel: string
   duplicateLabel: string
@@ -25,12 +26,13 @@ type QuickNoteTreeProps = {
   infoLabel: string
   deleteLabel: string
   revealLabel: string
+  gitLabel: string
 }
 
 const quickNotePathType = 'application/x-mootool-quick-note-path'
 const quickNoteKindType = 'application/x-mootool-quick-note-kind'
 
-export function QuickNoteTree({ nodes, selectedPath, expanded, onSelect, onToggle, onMove, onRenameRequest, onMoveRequest, onDuplicateRequest, onExportRequest, onInfoRequest, onDeleteRequest, onRevealRequest, renameLabel, moveLabel, duplicateLabel, exportLabel, infoLabel, deleteLabel, revealLabel }: QuickNoteTreeProps) {
+export function QuickNoteTree({ nodes, selectedPath, expanded, onSelect, onToggle, onMove, onRenameRequest, onMoveRequest, onDuplicateRequest, onExportRequest, onInfoRequest, onDeleteRequest, onRevealRequest, onGitRequest, renameLabel, moveLabel, duplicateLabel, exportLabel, infoLabel, deleteLabel, revealLabel, gitLabel }: QuickNoteTreeProps) {
   const toolActive = useToolActivity()
   const menuRef = useRef<HTMLDivElement>(null)
   const [contextMenu, setContextMenu] = useState<{ node: QuickNoteNode; left: number; top: number } | null>(null)
@@ -100,6 +102,8 @@ export function QuickNoteTree({ nodes, selectedPath, expanded, onSelect, onToggl
           )}
           <button type="button" role="menuitem" onClick={() => { onDeleteRequest(contextMenu.node); setContextMenu(null) }}>{deleteLabel}</button>
           <button type="button" role="menuitem" onClick={() => { onRevealRequest(contextMenu.node); setContextMenu(null) }}>{revealLabel}</button>
+          <div className="quick-note-tree-menu__separator" role="separator" />
+          <button type="button" role="menuitem" onClick={() => { onGitRequest(); setContextMenu(null) }}>{gitLabel}</button>
         </div>,
         document.body
       )}
@@ -133,7 +137,7 @@ function QuickNoteTreeNode({ node, depth, selectedPath, expanded, onSelect, onTo
         }}
         onContextMenu={(event) => {
           event.preventDefault()
-          const menuHeight = node.kind === 'file' ? 238 : 140
+          const menuHeight = node.kind === 'file' ? 276 : 180
           onOpenContextMenu(
             node,
             Math.max(8, Math.min(event.clientX, window.innerWidth - 176)),
