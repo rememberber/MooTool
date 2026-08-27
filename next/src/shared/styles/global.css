@@ -24,6 +24,7 @@
   --border-soft: #ececef;
   --border-control: #e1e1e3;
   --border-control-hover: #d5d5d8;
+  --navigation-separator: color-mix(in srgb, var(--text) 13%, transparent);
   --text: #242426;
   --text-strong: #27272a;
   --text-body: #45464a;
@@ -659,6 +660,7 @@
   --border-soft: #292a2f;
   --border-control: #34353a;
   --border-control-hover: #414249;
+  --navigation-separator: var(--border-soft);
   --text: #e8e8ea;
   --text-strong: #f2f2f3;
   --text-body: #d3d3d7;
@@ -2240,7 +2242,7 @@ select:not([multiple]) {
   margin: 20px 10px 5px;
   padding-top: 12px;
   color: var(--text-faint);
-  border-top: 1px solid var(--border-soft);
+  border-top: 1px solid var(--navigation-separator);
   font-size: 11px;
   font-weight: 600;
 }
@@ -2529,7 +2531,7 @@ select:not([multiple]) {
 
 .app-shell--nav-separators .tool-group {
   padding-bottom: 12px;
-  border-bottom: 1px solid var(--border-soft);
+  border-bottom: 1px solid var(--navigation-separator);
 }
 
 .app-shell--nav-classic .tool-group {
