@@ -1,6 +1,5 @@
-import { ArrowLeftRight, Copy, Eye, History, Palette, Star } from 'lucide-react'
+import { ArrowLeftRight, BookMarked, Copy, Eye, History, Palette, Star } from 'lucide-react'
 import { useEffect, useEffectEvent, useMemo, useState } from 'react'
-import { FavoriteDialog } from '@/features/favorites/FavoriteDialog'
 import { HistoryDialog } from '@/features/history/HistoryDialog'
 import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { ToolPageHeader, WorkspaceDragZone } from '@/shared/components/ToolPage'
@@ -18,6 +17,7 @@ import {
   type ColorThemeId,
   type RgbColor
 } from './colorTools'
+import { ColorFavoritesDialog, SaveColorFavoriteDialog } from './ColorFavoriteDialogs'
 
 export function ColorBoardTool() {
   const { t } = useI18n()
@@ -28,6 +28,7 @@ export function ColorBoardTool() {
   const [code, setCode] = useState('#DE8F7D')
   const [theme, setTheme] = useState<ColorThemeId>('default')
   const [historyOpen, setHistoryOpen] = useState(false)
+  const [saveFavoriteOpen, setSaveFavoriteOpen] = useState(false)
   const [favoritesOpen, setFavoritesOpen] = useState(false)
   const selectedTheme = useMemo(() => colorThemes.find((item) => item.id === theme) ?? colorThemes[0], [theme])
   const primaryHex = formatColor(primary, 'HEX_UPPER')
@@ -101,7 +102,8 @@ export function ColorBoardTool() {
           <label className="color-code-input"><span>{t('color.code')}</span><input value={code} spellCheck={false} onChange={(event) => setCode(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') applyCode() }} /></label>
           <button className="toolbar-button toolbar-button--icon" type="button" aria-label={t('common.action.copy')} onClick={() => { void actions.copy(code) }}><Copy size={14} /></button>
           <WorkspaceDragZone className="p4-toolbar__spacer" />
-          <button className="toolbar-button" type="button" onClick={() => setFavoritesOpen(true)}><Star size={14} />{t('favorite.title')}</button>
+          <button className="toolbar-button" type="button" onClick={() => setSaveFavoriteOpen(true)}><Star size={14} />{t('color.favorite')}</button>
+          <button className="toolbar-button" type="button" onClick={() => setFavoritesOpen(true)}><BookMarked size={14} />{t('color.favorites')}</button>
           <button className="toolbar-button" type="button" onClick={() => setHistoryOpen(true)}><History size={14} />{t('common.action.history')}</button>
         </div>
         <ResizableColumns className="color-board-layout" columns={2} defaultSizes={[0.34, 0.66]} minPaneWidths={[240, 420]} storageKey="color-board">
@@ -113,14 +115,19 @@ export function ColorBoardTool() {
           <section className="color-palette-panel">
             <header><h2>{t('color.themeColors')}</h2><label><Palette size={14} /><select aria-label={t('color.theme')} value={theme} onChange={(event) => setTheme(event.target.value as ColorThemeId)}>{colorThemes.map((item) => <option key={item.id} value={item.id}>{t(`color.theme.${item.id}` as 'color.theme.default')}</option>)}</select></label></header>
             <div className="theme-main-colors">{selectedTheme.main.map((color) => <ColorChip key={color} color={color} onSelect={(secondarySelection) => selectColor(color, secondarySelection)} />)}</div>
-            <div className="theme-shade-grid">{selectedTheme.shades.flatMap((row, column) => row.map((color) => <ColorChip key={`${column}-${color}`} color={color} onSelect={(secondarySelection) => selectColor(color, secondarySelection)} />))}</div>
+            <div className="theme-shade-grid">{selectedTheme.shades.map((column, columnIndex) => (
+              <div className="theme-shade-column" key={`${selectedTheme.id}-${columnIndex}`}>
+                {column.map((color, rowIndex) => <ColorChip key={`${rowIndex}-${color}`} color={color} onSelect={(secondarySelection) => selectColor(color, secondarySelection)} />)}
+              </div>
+            ))}</div>
             <h2>{t('color.standardColors')}</h2>
             <div className="standard-colors">{standardColors.map((color) => <ColorChip key={color} color={color} onSelect={(secondarySelection) => selectColor(color, secondarySelection)} />)}</div>
             <p className="color-shift-hint">{t('color.shiftHint')}</p>
           </section>
         </ResizableColumns>
       </div>
-      <FavoriteDialog kind="color" open={favoritesOpen} currentValue={primaryHex} onClose={() => setFavoritesOpen(false)} onApply={(value) => selectColor(value, false, t('favorite.title'))} />
+      <SaveColorFavoriteDialog color={primaryHex} open={saveFavoriteOpen} onClose={() => setSaveFavoriteOpen(false)} />
+      <ColorFavoritesDialog open={favoritesOpen} onClose={() => setFavoritesOpen(false)} onApply={(value) => selectColor(value, false, t('color.favorites'))} />
       <HistoryDialog funcType="colorBoard" open={historyOpen} onClose={() => setHistoryOpen(false)} onApply={(value) => selectColor(value)} onApplyRecord={(record) => {
         const color = (record.outputText || record.inputText).match(/#[0-9a-fA-F]{6}/)?.[0]
         if (color) selectColor(color, false, record.summary)

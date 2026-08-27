@@ -1,5 +1,6 @@
+import { createHash } from 'node:crypto'
 import { describe, expect, it } from 'vitest'
-import { applyColorOperation, bestTextColor, formatColor, parseColor } from './colorTools'
+import { applyColorOperation, bestTextColor, colorThemes, formatColor, parseColor, standardColors } from './colorTools'
 
 describe('color tools', () => {
   it('parses short/long hex and RGB strings', () => {
@@ -22,5 +23,12 @@ describe('color tools', () => {
   it('chooses readable preview text', () => {
     expect(bestTextColor(parseColor('#ffffff'))).toBe('#000000')
     expect(bestTextColor(parseColor('#111111'))).toBe('#FFFFFF')
+  })
+
+  it('keeps every Java theme color and its column order', () => {
+    expect(colorThemes.map((theme) => theme.id)).toEqual(['default', 'theme1', 'theme2', 'theme3', 'theme4', 'theme5', 'china'])
+    expect(colorThemes.every((theme) => theme.main.length === 10 && theme.shades.length === 10 && theme.shades.every((column) => column.length === 5))).toBe(true)
+    expect(createHash('sha256').update(JSON.stringify(colorThemes)).digest('hex')).toBe('72e2218c6dcffce0def99f1317075f2041127035730a0379875f5e875e893575')
+    expect(createHash('sha256').update(JSON.stringify(standardColors)).digest('hex')).toBe('1994345359abd00b901c22614eeef6b400775120cebc04083e05bab9875b535c')
   })
 })
