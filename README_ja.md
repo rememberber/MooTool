@@ -30,6 +30,15 @@ Swing で開発する Java 開発者は減りましたが、今でもその開�
 ## 対応プラットフォーム
 Windows • Linux • macOS
 
+## 製品ライン
+
+| 製品 | 概要 | ダウンロード |
+| --- | --- | --- |
+| **MooTool Next Electron** | Electron、Vite、React、TypeScript で再構築した推奨クロスプラットフォーム版です。Java 版とは独立してインストール、データ保存、更新が行われます。 | [1.1.3 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.3) |
+| **MooTool Java** | Swing ベースの従来のクロスプラットフォーム版で、Windows、Linux、macOS 向けの独立した製品ラインとして保守を継続しています。 | [1.8.6 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/v1.8.6) · [Gitee ミラー](https://gitee.com/zhoubochina/MooTool/releases) |
+| [**MooTool Next Tauri**](next-tauri/README.md) | Tauri 2、Rust、React、TypeScript で構築した独立デスクトップ版で、現在開発中です。 | 現在は提供していません |
+| [**MooTool Next macOS Native**](macos/README.md) | SwiftUI ベースの macOS ネイティブプレビュー版で、現在はプロジェクト構成と最小限のアプリシェルを提供しています。 | 現在は提供していません |
+
 ## スクリーンショット
 
 > 主要機能のスクリーンショットは以下の通りです。翻訳、UA 分析、画像アシスタント、PDF、環境変数、システム情報、設定ファイル変換、Protobuf などのモジュールは個別の画像がありません。インストール後、該当タブでお試しください。
