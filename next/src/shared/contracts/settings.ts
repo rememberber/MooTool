@@ -139,7 +139,7 @@ export const defaultAppSettings: AppSettings = {
     unifiedBackground: true
   },
   layout: {
-    showRecent: true,
+    showRecent: false,
     compactNavigation: false,
     showSeparators: true,
     hideNavigationTitles: false,

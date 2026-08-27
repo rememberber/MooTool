@@ -6,6 +6,7 @@ it('uses the MooTool Next visual defaults', () => {
   expect(defaultAppSettings.appearance.interfaceStyle).toBe('modern')
   expect(defaultAppSettings.appearance.fontSize).toBe(13)
   expect(defaultAppSettings.layout.navigationStyle).toBe('classic')
+  expect(defaultAppSettings.layout.showRecent).toBe(false)
   expect(defaultAppSettings.editor.quickNoteFontSize).toBe(14)
   expect(defaultAppSettings.editor.jsonFontName).toBe('ui-monospace')
   expect(defaultAppSettings.editor.quickNoteFontName).toBe('ui-monospace')
@@ -22,7 +23,12 @@ describe('mergeSettings', () => {
     expect(settings.general.language).toBe('en-US')
     expect(settings.general.trayEnabled).toBe(defaultAppSettings.general.trayEnabled)
     expect(settings.layout.compactNavigation).toBe(true)
+    expect(settings.layout.showRecent).toBe(false)
     expect(settings.appearance).toEqual(defaultAppSettings.appearance)
+  })
+
+  it('preserves an explicit recent-tools preference', () => {
+    expect(mergeSettings(defaultAppSettings, { layout: { showRecent: true } }).layout.showRecent).toBe(true)
   })
 
   it('normalizes numeric settings at their supported boundaries', () => {
