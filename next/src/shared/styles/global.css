@@ -6816,11 +6816,16 @@ select:not([multiple]) {
   gap: 10px;
 }
 
-.qrcode-recognize-source .p4-toolbar {
-  min-height: 0;
-  padding: 0;
-  background: transparent;
-  border: 0;
+.qrcode-recognize-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-width: 0;
+}
+
+.qrcode-recognize-actions > button {
+  white-space: nowrap;
 }
 
 .qrcode-recognize-source > img {
