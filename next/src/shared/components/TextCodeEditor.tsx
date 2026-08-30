@@ -5,6 +5,7 @@ import { Compartment, EditorState, StateEffect, StateField, type Extension } fro
 import {
   Decoration,
   type DecorationSet,
+  crosshairCursor,
   drawSelection,
   dropCursor,
   EditorView,
@@ -12,7 +13,8 @@ import {
   highlightActiveLineGutter,
   keymap,
   lineNumbers,
-  placeholder as editorPlaceholder
+  placeholder as editorPlaceholder,
+  rectangularSelection
 } from '@codemirror/view'
 import { forwardRef, useEffect, useImperativeHandle, useRef, type CSSProperties } from 'react'
 import { codeEditorSearchHighlight } from './codeEditorSearchHighlight'
@@ -58,6 +60,7 @@ export type TextCodeEditorProps = {
   testId?: string
   placeholder?: string
   readOnly?: boolean
+  columnEditing?: boolean
   wrap?: boolean
   language?: TextCodeEditorLanguage
   fontSize?: number
@@ -129,6 +132,12 @@ function readOnlyExtensions(readOnly: boolean): Extension {
   return [EditorState.readOnly.of(readOnly), EditorView.editable.of(!readOnly)]
 }
 
+export function columnEditingExtensions(enabled: boolean): Extension {
+  return enabled
+    ? [EditorState.allowMultipleSelections.of(true), rectangularSelection(), crosshairCursor()]
+    : []
+}
+
 function useCompartment(): Compartment {
   const compartmentRef = useRef<Compartment | null>(null)
   if (compartmentRef.current === null) compartmentRef.current = new Compartment()
@@ -144,6 +153,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
     testId,
     placeholder = '',
     readOnly = false,
+    columnEditing = false,
     wrap = true,
     language = 'text',
     fontSize,
@@ -176,11 +186,12 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
   const onViewStateChangeRef = useRef(onViewStateChange)
   const localValueRef = useRef(value)
   const applyingExternalValueRef = useRef(false)
-  const initialConfigRef = useRef({ ariaLabel, id, testId, placeholder, readOnly, wrap, language, fontFamily, fontSize, lineHeight, searchQuery, searchOptions, initialViewState })
+  const initialConfigRef = useRef({ ariaLabel, id, testId, placeholder, readOnly, columnEditing, wrap, language, fontFamily, fontSize, lineHeight, searchQuery, searchOptions, initialViewState })
   const wrapCompartment = useCompartment()
   const attributesCompartment = useCompartment()
   const placeholderCompartment = useCompartment()
   const readOnlyCompartment = useCompartment()
+  const columnEditingCompartment = useCompartment()
   const languageCompartment = useCompartment()
   const searchCompartment = useCompartment()
   const metricsCompartment = useCompartment()
@@ -222,6 +233,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
           attributesCompartment.of(EditorView.contentAttributes.of(editorAttributes(initial.ariaLabel, initial.id, initial.testId))),
           placeholderCompartment.of(initial.placeholder ? editorPlaceholder(initial.placeholder) : []),
           readOnlyCompartment.of(readOnlyExtensions(initial.readOnly)),
+          columnEditingCompartment.of(columnEditingExtensions(initial.columnEditing)),
           searchCompartment.of(codeEditorSearchHighlight(initial.searchQuery, initial.searchOptions)),
           metricsCompartment.of(editorMetrics(initial.fontFamily, initial.fontSize, initial.lineHeight)),
           externalDecorations,
@@ -286,7 +298,7 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
       viewRef.current = null
       view.destroy()
     }
-  }, [attributesCompartment, languageCompartment, metricsCompartment, placeholderCompartment, readOnlyCompartment, searchCompartment, wrapCompartment])
+  }, [attributesCompartment, columnEditingCompartment, languageCompartment, metricsCompartment, placeholderCompartment, readOnlyCompartment, searchCompartment, wrapCompartment])
 
   useEffect(() => {
     const view = viewRef.current
@@ -322,6 +334,10 @@ export const TextCodeEditor = forwardRef<TextCodeEditorHandle, TextCodeEditorPro
   useEffect(() => {
     viewRef.current?.dispatch({ effects: readOnlyCompartment.reconfigure(readOnlyExtensions(readOnly)) })
   }, [readOnly, readOnlyCompartment])
+
+  useEffect(() => {
+    viewRef.current?.dispatch({ effects: columnEditingCompartment.reconfigure(columnEditingExtensions(columnEditing)) })
+  }, [columnEditing, columnEditingCompartment])
 
   useEffect(() => {
     viewRef.current?.dispatch({

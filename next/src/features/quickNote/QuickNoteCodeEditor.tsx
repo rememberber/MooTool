@@ -7,11 +7,11 @@ import {
 
 export type QuickNoteCodeEditorHandle = TextCodeEditorHandle
 
-type QuickNoteCodeEditorProps = Omit<TextCodeEditorProps, 'className'>
+type QuickNoteCodeEditorProps = Omit<TextCodeEditorProps, 'className' | 'columnEditing'>
 
 export const QuickNoteCodeEditor = forwardRef<QuickNoteCodeEditorHandle, QuickNoteCodeEditorProps>(function QuickNoteCodeEditor(
   props,
   ref
 ) {
-  return <TextCodeEditor {...props} ref={ref} className="quick-note-code-editor" />
+  return <TextCodeEditor {...props} ref={ref} className="quick-note-code-editor" columnEditing />
 })
