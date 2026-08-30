@@ -210,7 +210,7 @@ export function HttpTool() {
               <span>ms</span>
             </label>
             <WorkspaceDragZone className="http-window-drag-zone" />
-            {sending ? <button className="toolbar-button" type="button" onClick={() => { void stopRequest() }}><Square size={13} />{t('common.stop')}</button> : <button className="toolbar-button toolbar-button--primary" data-testid="http-send" type="button" onClick={() => { void sendRequest() }}><Send size={13} />{t('http.send')}</button>}
+            {sending ? <button className="toolbar-button" type="button" onClick={() => { void stopRequest() }}><Square size={13} />{t('common.stop')}</button> : <button className="primary-execution-button" data-testid="http-send" type="button" onClick={() => { void sendRequest() }}><Send size={13} />{t('http.send')}</button>}
           </div>
           <div className="http-request-pane"><ToolTabs tabs={(['params', 'headers', 'cookies', 'body'] as RequestTab[]).map((id) => ({ id, label: t(`http.tab.${id}` as 'http.tab.params') }))} active={requestTab} onChange={setRequestTab} />
             {requestTab === 'params' && <KeyValueEditor entries={request.params} onChange={(params) => setRequest({ ...request, params })} />}

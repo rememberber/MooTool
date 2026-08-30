@@ -241,7 +241,7 @@ export function RuntimeTool() {
             </div>
           )}
           <button type="button" disabled={state.running} onClick={() => { void formatSource() }}><WandSparkles size={13} />{t('runtime.format')}</button>
-          <button className="runtime-run-button" type="button" disabled={state.running || status?.available === false} onClick={() => { void runCode() }}><Play size={13} />{t('runtime.run')}</button>
+          <button className="primary-execution-button runtime-run-button" type="button" disabled={state.running || status?.available === false} onClick={() => { void runCode() }}><Play size={13} />{t('runtime.run')}</button>
           <button type="button" disabled={!state.running} onClick={() => { void stopCode() }}><Square size={12} />{t('runtime.stop')}</button>
           <button type="button" onClick={() => { stdoutRef.current = ''; stderrRef.current = ''; update({ stdout: '', stderr: '', result: null }) }}><Eraser size={13} />{t('runtime.clear')}</button>
           <button type="button" disabled={state.running} onClick={() => update({ historyOpen: true })}><History size={13} />{t('runtime.history')}</button>

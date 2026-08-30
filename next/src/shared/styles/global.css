@@ -1690,8 +1690,10 @@
   overflow-x: auto;
 }
 
-.runtime-toolbar > button:not(.segmented__item),
-.runtime-missing-banner button {
+.runtime-toolbar > button:not(.segmented__item):not(.primary-execution-button),
+.runtime-missing-banner button,
+.primary-command,
+.primary-execution-button {
   display: inline-flex;
   flex: 0 0 auto;
   align-items: center;
@@ -1708,23 +1710,23 @@
   white-space: nowrap;
 }
 
-.runtime-toolbar > button:hover:not(:disabled),
+.runtime-toolbar > button:not(.primary-execution-button):hover:not(:disabled),
 .runtime-missing-banner button:hover {
   background: var(--control);
 }
 
-.runtime-toolbar > button:disabled {
+.runtime-toolbar > button:not(.primary-execution-button):disabled {
   opacity: 0.4;
   cursor: default;
 }
 
-.runtime-toolbar > button.runtime-run-button {
+.primary-execution-button {
   color: var(--accent-contrast);
   background: var(--accent-strong);
   border-color: var(--accent-strong);
 }
 
-.runtime-toolbar .runtime-run-button:hover:not(:disabled) {
+.primary-execution-button:hover:not(:disabled) {
   background: color-mix(in srgb, var(--accent-strong) 88%, #000);
 }
 
@@ -3928,10 +3930,9 @@ select:not([multiple]) {
 }
 
 .io-action-button,
-.primary-command,
 .panel-command,
 .inline-command-row button,
-.diff-toolbar button,
+.diff-toolbar button:not(.primary-execution-button),
 .cron-presets button {
   display: inline-flex;
   align-items: center;
@@ -3950,12 +3951,12 @@ select:not([multiple]) {
 .io-action-button:hover,
 .panel-command:hover,
 .inline-command-row button:hover,
-.diff-toolbar button:hover,
+.diff-toolbar button:not(.primary-execution-button):hover,
 .cron-presets button:hover {
   background: var(--control-hover);
 }
 
-.diff-toolbar button:disabled {
+.diff-toolbar button:not(.primary-execution-button):disabled {
   cursor: default;
   opacity: 0.35;
 }
@@ -9663,6 +9664,7 @@ select:not([multiple]) {
 .tool-page .panel-command svg,
 .tool-page .io-action-button svg,
 .runtime-toolbar button svg,
+.primary-execution-button svg,
 .quick-note-icon-button svg {
   width: var(--tool-icon-size);
   height: var(--tool-icon-size);
@@ -9847,8 +9849,10 @@ select:not([multiple]) {
 }
 
 /* Runtime */
-.runtime-toolbar > button:not(.segmented__item),
-.runtime-missing-banner button {
+.runtime-toolbar > button:not(.segmented__item):not(.primary-execution-button),
+.runtime-missing-banner button,
+.primary-command,
+.primary-execution-button {
   min-height: var(--tool-control-height);
   font-size: var(--tool-control-font-size);
 }
@@ -10287,11 +10291,11 @@ button:disabled {
 .git-commit-row button,
 .git-change-actions button,
 .protobuf-copy,
-.runtime-toolbar > button:not(.segmented__item),
+.runtime-toolbar > button:not(.segmented__item):not(.primary-execution-button),
 .runtime-missing-banner button,
 .find-replace-bar__controls > button:not(.icon-ghost),
 .find-replace-bar > .find-replace-bar__row > button:not(.icon-ghost),
-.diff-toolbar button,
+.diff-toolbar button:not(.primary-execution-button),
 .cron-presets button {
   min-height: var(--desktop-control-height);
   color: var(--text-body);
@@ -10315,11 +10319,11 @@ button:disabled {
 .git-commit-row button:hover:not(:disabled),
 .git-change-actions button:hover:not(:disabled),
 .protobuf-copy:hover:not(:disabled),
-.runtime-toolbar > button:hover:not(:disabled),
+.runtime-toolbar > button:not(.primary-execution-button):hover:not(:disabled),
 .runtime-missing-banner button:hover:not(:disabled),
 .find-replace-bar__controls > button:hover:not(:disabled),
 .find-replace-bar > .find-replace-bar__row > button:hover:not(:disabled),
-.diff-toolbar button:hover:not(:disabled),
+.diff-toolbar button:not(.primary-execution-button):hover:not(:disabled),
 .cron-presets button:hover:not(:disabled) {
   color: var(--text-strong);
   background: var(--desktop-button-hover);
@@ -10332,8 +10336,9 @@ button:disabled {
 .panel-command:active:not(:disabled),
 .io-action-button:active:not(:disabled),
 .inspector-action:active:not(:disabled),
-.runtime-toolbar > button:active:not(:disabled),
-.diff-toolbar button:active:not(:disabled),
+.runtime-toolbar > button:not(.primary-execution-button):active:not(:disabled),
+.primary-execution-button:active:not(:disabled),
+.diff-toolbar button:not(.primary-execution-button):active:not(:disabled),
 .cron-presets button:active:not(:disabled) {
   background: var(--desktop-button-pressed);
   box-shadow: none;
@@ -10343,7 +10348,7 @@ button:disabled {
  * toggles and focus states instead of making every command look like a CTA. */
 .primary-command,
 .dialog-button--primary,
-.runtime-toolbar > button.runtime-run-button {
+.primary-execution-button {
   color: var(--desktop-button-prominent-text);
   background: var(--desktop-button-prominent);
   border: 1px solid var(--desktop-button-prominent);
@@ -10356,7 +10361,7 @@ button:disabled {
 
 .primary-command:hover:not(:disabled),
 .dialog-button--primary:hover:not(:disabled),
-.runtime-toolbar > button.runtime-run-button:hover:not(:disabled) {
+.primary-execution-button:hover:not(:disabled) {
   color: var(--desktop-button-prominent-text);
   background: var(--desktop-button-prominent-hover);
   border-color: var(--desktop-button-prominent-hover);
@@ -10756,7 +10761,7 @@ textarea:focus {
 
 :root[data-interface-style='hero'] .primary-command,
 :root[data-interface-style='hero'] .dialog-button--primary,
-:root[data-interface-style='hero'] .runtime-toolbar > button.runtime-run-button {
+:root[data-interface-style='hero'] .primary-execution-button {
   color: var(--accent-contrast);
   background: var(--accent-strong);
   border-color: var(--accent-strong);
@@ -11174,7 +11179,7 @@ textarea:focus {
 :root[data-interface-style='smartisan'] .toolbar-button--primary,
 :root[data-interface-style='smartisan'] .primary-command,
 :root[data-interface-style='smartisan'] .dialog-button--primary,
-:root[data-interface-style='smartisan'] .runtime-toolbar > button.runtime-run-button {
+:root[data-interface-style='smartisan'] .primary-execution-button {
   color: var(--accent-contrast);
   background: linear-gradient(
     to bottom,
@@ -11624,7 +11629,7 @@ textarea:focus {
 :root[data-interface-style='miui-v5'] .toolbar-button--primary,
 :root[data-interface-style='miui-v5'] .primary-command,
 :root[data-interface-style='miui-v5'] .dialog-button--primary,
-:root[data-interface-style='miui-v5'] .runtime-toolbar > button.runtime-run-button {
+:root[data-interface-style='miui-v5'] .primary-execution-button {
   color: #ffffff;
   background: linear-gradient(
     to bottom,
@@ -12032,7 +12037,7 @@ textarea:focus {
 
 :root[data-interface-style='claude'] .primary-command,
 :root[data-interface-style='claude'] .dialog-button--primary,
-:root[data-interface-style='claude'] .runtime-toolbar > button.runtime-run-button {
+:root[data-interface-style='claude'] .primary-execution-button {
   color: #ffffff;
   background: var(--claude-accent);
   border-color: var(--claude-accent);
@@ -12041,7 +12046,7 @@ textarea:focus {
 
 :root[data-interface-style='claude'] .primary-command:hover:not(:disabled),
 :root[data-interface-style='claude'] .dialog-button--primary:hover:not(:disabled),
-:root[data-interface-style='claude'] .runtime-toolbar > button.runtime-run-button:hover:not(:disabled) {
+:root[data-interface-style='claude'] .primary-execution-button:hover:not(:disabled) {
   color: #ffffff;
   background: var(--claude-accent-strong);
   border-color: var(--claude-accent-strong);
@@ -12303,4 +12308,20 @@ textarea:focus {
 
 .dialog__footer .desktop-dialog__confirm.dialog-button--danger {
   margin-right: 0;
+}
+
+/* Shared execution actions must win over tool-local button geometry and typography. */
+:root button.primary-command,
+:root button.primary-execution-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: var(--desktop-control-height);
+  height: var(--desktop-control-height);
+  padding: 0 10px;
+  font-size: var(--desktop-font-size-control);
+  font-weight: var(--desktop-font-weight-semibold);
+  line-height: 1.25;
+  white-space: nowrap;
 }

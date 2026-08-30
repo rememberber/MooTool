@@ -222,7 +222,7 @@ export function TextDiffTool() {
       <div className="local-tool-shell diff-workspace">
         <div className="diff-toolbar">
           <div className="diff-toolbar__commands">
-            <button type="button" onClick={compare}><Play size={14} />{t('diff.compare')}</button>
+            <button className="primary-execution-button" type="button" onClick={compare}><Play size={14} />{t('diff.compare')}</button>
             <button type="button" onClick={clear}><Trash2 size={14} />{t('common.action.clear')}</button>
             <button type="button" onClick={swap}><ArrowLeftRight size={14} />{t('common.action.swap')}</button>
             <button type="button" onClick={() => { void copyDiff() }}><Copy size={14} />{t('diff.copy')}</button>

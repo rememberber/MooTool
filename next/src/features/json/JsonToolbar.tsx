@@ -74,7 +74,7 @@ export function JsonToolbar({
   return (
     <>
       <div className="editor-toolbar">
-        <button className="toolbar-button toolbar-button--primary" type="button" onClick={onFormat}><Sparkles size={14} />{t('json.action.format')}</button>
+        <button className="primary-execution-button" type="button" onClick={onFormat}><Sparkles size={14} />{t('json.action.format')}</button>
         <button className="toolbar-button" type="button" onClick={onCompress}><Minimize2 size={14} />{t('json.action.compress')}</button>
         <FontSelect
           className="editor-font-select"

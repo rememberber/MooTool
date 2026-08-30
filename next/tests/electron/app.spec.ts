@@ -418,6 +418,49 @@ test('opens all registered tools through search and persists recent access', asy
   expect(workspace).toEqual({ activeToolId: 'java', recentToolIds: ['java'] })
 })
 
+test('uses the code execution appearance for primary tool actions', async () => {
+  const appearance = (button: Locator) => button.evaluate((element) => {
+    const style = getComputedStyle(element)
+    const icon = element.querySelector('svg')
+    const iconStyle = icon ? getComputedStyle(icon) : null
+    return {
+      alignItems: style.alignItems,
+      backgroundColor: style.backgroundColor,
+      border: style.border,
+      borderRadius: style.borderRadius,
+      boxShadow: style.boxShadow,
+      color: style.color,
+      display: style.display,
+      fontSize: style.fontSize,
+      fontWeight: style.fontWeight,
+      gap: style.gap,
+      height: style.height,
+      iconHeight: iconStyle?.height ?? null,
+      iconWidth: iconStyle?.width ?? null,
+      justifyContent: style.justifyContent,
+      lineHeight: style.lineHeight,
+      padding: style.padding,
+      whiteSpace: style.whiteSpace
+    }
+  })
+
+  await openTool('代码运行', '代码运行')
+  const reference = await appearance(mainPage.locator('.runtime-run-button'))
+
+  const cases: Array<{ label: string; title: string; button: () => Locator }> = [
+    { label: 'HTTP 请求', title: 'HTTP 请求', button: () => mainPage.getByTestId('http-send') },
+    { label: 'Host', title: 'Host', button: () => mainPage.getByTestId('host-apply') },
+    { label: 'JSON', title: 'JSON 工作台', button: () => mainPage.locator('.editor-toolbar').getByRole('button', { name: '格式化', exact: true }) },
+    { label: '文本对比', title: '文本对比', button: () => mainPage.getByRole('button', { name: '对比', exact: true }) },
+    { label: '正则', title: '正则表达式', button: () => mainPage.getByRole('button', { name: '匹配测试', exact: true }) }
+  ]
+
+  for (const current of cases) {
+    await openTool(current.label, current.title)
+    await expect.poll(() => appearance(current.button())).toEqual(reference)
+  }
+})
+
 test('creates and presents an auto-fitting message board', async () => {
   await openTool('留言板', '留言板')
 
