@@ -55,7 +55,7 @@ export function CalculatorTool() {
               </div>
               <div className="calculator-expression-row">
                 <input id="calculator-expression" aria-label={t('calculator.expression')} value={expression} onChange={(event) => setExpression(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') evaluate() }} />
-                <button className="primary-command" type="button" onClick={evaluate}><Equal size={16} />{t('calculator.calculate')}</button>
+                <button className="primary-command calculator-evaluate-button" type="button" aria-label={t('calculator.calculate')} onClick={evaluate}><Equal size={16} /></button>
               </div>
             </section>
 

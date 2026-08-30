@@ -4095,7 +4095,7 @@ select:not([multiple]) {
 .calculator-section { padding: 18px 0 22px; border-bottom: 1px solid var(--border-soft); }
 .calculator-section:last-child { border-bottom: 0; }
 .calculator-section h2, .calculator-log h2, .cron-builder h2, .cron-runs h2 { margin: 0 0 12px; color: var(--text-body); font-size: 12px; }
-.calculator-expression-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(110px, auto); align-items: stretch; gap: 10px; }
+.calculator-expression-row { display: grid; grid-template-columns: minmax(0, 1fr) 48px; align-items: stretch; gap: 10px; }
 .calculator-expression-row input { min-width: 0; height: 48px; padding: 0 13px; color: var(--editor-text); background: var(--workspace); border: 1px solid var(--border-control); border-radius: 6px; outline: none; font-family: ui-monospace, Menlo, monospace; font-size: 22px; }
 .calculator-base-grid { display: grid; grid-template-columns: 86px minmax(0, 1fr); align-items: center; gap: 10px 12px; }
 .calculator-base-grid > label { color: var(--text-muted); font-size: 11px; }
@@ -12324,4 +12324,12 @@ textarea:focus {
   font-weight: var(--desktop-font-weight-semibold);
   line-height: 1.25;
   white-space: nowrap;
+}
+
+:root button.primary-command.calculator-evaluate-button {
+  width: 48px;
+  min-width: 48px;
+  height: 48px;
+  min-height: 48px;
+  padding: 0;
 }

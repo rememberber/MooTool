@@ -912,8 +912,15 @@ test('runs P3 time, encode, UA, calculator and config workflows', async () => {
   await expect(mainPage.locator('.ua-result-row').filter({ hasText: '浏览器' }).first()).toContainText('Chrome')
 
   await openTool('计算器', '计算器')
-  await mainPage.locator('#calculator-expression').fill('(12 + 8) / 4')
-  await mainPage.getByRole('button', { name: '计算', exact: true }).click()
+  const calculatorExpression = mainPage.locator('#calculator-expression')
+  const calculatorEvaluate = mainPage.getByRole('button', { name: '计算', exact: true })
+  await calculatorExpression.fill('(12 + 8) / 4')
+  await expect(calculatorEvaluate).toHaveText('')
+  await expect.poll(async () => ({
+    input: await calculatorExpression.evaluate((element) => element.getBoundingClientRect().height),
+    button: await calculatorEvaluate.evaluate((element) => element.getBoundingClientRect().height)
+  })).toEqual({ input: 48, button: 48 })
+  await calculatorEvaluate.click()
   await expect(mainPage.locator('.calculator-result')).toHaveText('5')
   await mainPage.getByRole('button', { name: '最大公约数' }).click()
   await expect(mainPage.locator('.calculator-result')).toHaveText('6')
