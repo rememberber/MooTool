@@ -34,7 +34,7 @@ Windows • Linux • macOS
 
 | 产品 | 介绍 | 下载 |
 | --- | --- | --- |
-| **MooTool Next Electron** | 推荐的跨平台版本，基于 Electron、Vite、React 和 TypeScript 重写，与 Java 版独立安装、存储和更新。 | [下载 1.1.3](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.3) |
+| **MooTool Next Electron** | 推荐的跨平台版本，基于 Electron、Vite、React 和 TypeScript 重写，与 Java 版独立安装、存储和更新。 | [下载 1.1.4](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.4) |
 | **MooTool Java** | 原始的 Swing 跨平台版本，作为独立产品线继续维护，支持 Windows、Linux 和 macOS。 | [下载 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6) · [Gitee 镜像](https://gitee.com/zhoubochina/MooTool/releases) |
 | [**MooTool Next Tauri**](next-tauri/README.md) | 基于 Tauri 2、Rust、React 和 TypeScript 构建的独立桌面版本，目前正在开发中。 | 暂未提供 |
 | [**MooTool Next macOS Native**](macos/README.md) | 基于 SwiftUI 的 macOS 原生预览版，目前包含项目骨架和最小化应用外壳。 | 暂未提供 |
@@ -83,7 +83,7 @@ Windows • Linux • macOS
 
 ## 下载
 
-- [MooTool Next Electron 1.1.3（推荐）](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.3)
+- [MooTool Next Electron 1.1.4（推荐）](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.4)
 - [MooTool Java 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6)
 - [全部 GitHub Releases](https://github.com/rememberber/MooTool/releases)
 - [MooTool Java Gitee Releases](https://gitee.com/zhoubochina/MooTool/releases)

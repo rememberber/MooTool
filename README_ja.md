@@ -34,7 +34,7 @@ Windows • Linux • macOS
 
 | 製品 | 概要 | ダウンロード |
 | --- | --- | --- |
-| **MooTool Next Electron** | Electron、Vite、React、TypeScript で再構築した推奨クロスプラットフォーム版です。Java 版とは独立してインストール、データ保存、更新が行われます。 | [1.1.3 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.3) |
+| **MooTool Next Electron** | Electron、Vite、React、TypeScript で再構築した推奨クロスプラットフォーム版です。Java 版とは独立してインストール、データ保存、更新が行われます。 | [1.1.4 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.4) |
 | **MooTool Java** | Swing ベースの従来のクロスプラットフォーム版で、Windows、Linux、macOS 向けの独立した製品ラインとして保守を継続しています。 | [1.8.6 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/v1.8.6) · [Gitee ミラー](https://gitee.com/zhoubochina/MooTool/releases) |
 | [**MooTool Next Tauri**](next-tauri/README.md) | Tauri 2、Rust、React、TypeScript で構築した独立デスクトップ版で、現在開発中です。 | 現在は提供していません |
 | [**MooTool Next macOS Native**](macos/README.md) | SwiftUI ベースの macOS ネイティブプレビュー版で、現在はプロジェクト構成と最小限のアプリシェルを提供しています。 | 現在は提供していません |
@@ -83,7 +83,7 @@ Windows • Linux • macOS
 
 ## ダウンロード
 
-- [MooTool Next Electron 1.1.3（推奨）](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.3)
+- [MooTool Next Electron 1.1.4（推奨）](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.4)
 - [MooTool Java 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6)
 - [GitHub Releases 一覧](https://github.com/rememberber/MooTool/releases)
 - [Gitee の MooTool Java Releases](https://gitee.com/zhoubochina/MooTool/releases)
