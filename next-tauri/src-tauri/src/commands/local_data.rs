@@ -11,7 +11,8 @@ use crate::{
     contracts::error::AppResult,
     contracts::local_data::{
         BoardMessage, HostProfile, QuickNote, QuickNoteAttachment,
-        QuickNoteAttachmentImportRequest, SystemHostsFile, TranslationHistory, TranslationWord,
+        QuickNoteAttachmentImportRequest, QuickNoteFolder, SystemHostsFile, ToolFavorite,
+        TranslationHistory, TranslationWord,
     },
     repositories::local_data::LocalDataRepository,
 };
@@ -45,6 +46,80 @@ pub fn delete_quick_note(
     let deleted = repository.delete_note(&id)?;
     if deleted {
         emit_changed(&app, "quick-note")?;
+    }
+    Ok(deleted)
+}
+
+#[tauri::command]
+pub fn list_quick_note_folders(
+    repository: tauri::State<'_, LocalDataRepository>,
+) -> AppResult<Vec<QuickNoteFolder>> {
+    Ok(repository.list_note_folders()?)
+}
+
+#[tauri::command]
+pub fn save_quick_note_folder(
+    app: tauri::AppHandle,
+    repository: tauri::State<'_, LocalDataRepository>,
+    folder: QuickNoteFolder,
+) -> AppResult<QuickNoteFolder> {
+    let saved = repository.save_note_folder(folder)?;
+    emit_changed(&app, "quick-note-folder")?;
+    Ok(saved)
+}
+
+#[tauri::command]
+pub fn rename_quick_note_folder(
+    app: tauri::AppHandle,
+    repository: tauri::State<'_, LocalDataRepository>,
+    path: String,
+    next_path: String,
+    updated_at: i64,
+) -> AppResult<Vec<QuickNoteFolder>> {
+    let renamed = repository.rename_note_folder(&path, &next_path, updated_at)?;
+    emit_changed(&app, "quick-note-folder")?;
+    Ok(renamed)
+}
+
+#[tauri::command]
+pub fn delete_quick_note_folder(
+    app: tauri::AppHandle,
+    repository: tauri::State<'_, LocalDataRepository>,
+    path: String,
+) -> AppResult<usize> {
+    let moved = repository.delete_note_folder(&path, now_millis())?;
+    emit_changed(&app, "quick-note-folder")?;
+    Ok(moved)
+}
+
+#[tauri::command]
+pub fn list_tool_favorites(
+    repository: tauri::State<'_, LocalDataRepository>,
+    tool_id: String,
+) -> AppResult<Vec<ToolFavorite>> {
+    Ok(repository.list_tool_favorites(&tool_id)?)
+}
+
+#[tauri::command]
+pub fn save_tool_favorite(
+    app: tauri::AppHandle,
+    repository: tauri::State<'_, LocalDataRepository>,
+    favorite: ToolFavorite,
+) -> AppResult<ToolFavorite> {
+    let saved = repository.save_tool_favorite(favorite)?;
+    emit_changed(&app, "tool-favorite")?;
+    Ok(saved)
+}
+
+#[tauri::command]
+pub fn delete_tool_favorite(
+    app: tauri::AppHandle,
+    repository: tauri::State<'_, LocalDataRepository>,
+    id: String,
+) -> AppResult<bool> {
+    let deleted = repository.delete_tool_favorite(&id)?;
+    if deleted {
+        emit_changed(&app, "tool-favorite")?;
     }
     Ok(deleted)
 }
@@ -152,6 +227,15 @@ fn attachment_mime_type(name: &str) -> &'static str {
         "zip" => "application/zip",
         _ => "application/octet-stream",
     }
+}
+
+fn now_millis() -> i64 {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_millis()
+        .try_into()
+        .unwrap_or(i64::MAX)
 }
 
 #[tauri::command]

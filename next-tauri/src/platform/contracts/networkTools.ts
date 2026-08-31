@@ -14,6 +14,35 @@ export interface PortScanResult {
   endPort: number
   openPorts: number[]
   durationMs: number
+  cancelled: boolean
+}
+
+export interface NetworkHostProbe {
+  address: string
+  openPorts: number[]
+}
+
+export interface NetworkRangeScanResult {
+  cidr: string
+  scannedHosts: number
+  reachableHosts: NetworkHostProbe[]
+  durationMs: number
+  cancelled: boolean
+}
+
+export interface WhoisResult {
+  query: string
+  server: string
+  output: string
+  durationMs: number
+}
+
+export interface NetworkConnectionInfo {
+  protocol: string
+  localAddress: string
+  remoteAddress: string
+  state: string
+  process: string
 }
 
 export interface PingResult {
@@ -26,6 +55,11 @@ export interface PingResult {
 export interface NetworkToolsApi {
   interfaces(): Promise<NetworkInterfaceInfo[]>
   resolve(host: string): Promise<string[]>
-  scanPorts(host: string, startPort: number, endPort: number, timeoutMs: number): Promise<PortScanResult>
+  scanPorts(requestId: string, host: string, startPort: number, endPort: number, timeoutMs: number): Promise<PortScanResult>
+  scanRange(requestId: string, cidr: string, ports: number[], timeoutMs: number): Promise<NetworkRangeScanResult>
+  cancelTask(requestId: string): Promise<boolean>
+  whois(query: string): Promise<WhoisResult>
+  connections(): Promise<NetworkConnectionInfo[]>
+  flushDns(): Promise<string>
   ping(host: string): Promise<PingResult>
 }

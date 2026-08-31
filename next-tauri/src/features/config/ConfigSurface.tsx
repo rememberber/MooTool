@@ -15,6 +15,7 @@ import { CodeEditor } from '../../shared/CodeEditor'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
+import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import {
   formatYaml,
   propertiesToYaml,
@@ -48,19 +49,38 @@ export function ConfigSurface() {
   const { sessionId, reportError } = useToolSessionReport('config', session.digest, session.summary)
   const recordOperation = useOperationHistory('config')
 
+  useOperationRestore('config', (entry) => {
+    try {
+      const restored = JSON.parse(entry.inputText) as { yaml?: string; properties?: string }
+      setYaml(restored.yaml ?? '')
+      setProperties(restored.properties ?? '')
+      const target = parseOperationMetadata(entry).target
+      if (target === 'yaml') setYaml(entry.outputText)
+      if (target === 'properties') setProperties(entry.outputText)
+    } catch {
+      setYaml(entry.outputText || entry.inputText)
+    }
+    setFailed(false)
+  })
+
   function run(operation: () => string, apply: (value: string) => void, success: ConfigMessageKey): void {
     try {
       const output = operation()
       apply(output)
       setNotice({ key: success })
       setFailed(false)
-      recordOperation(t(success), `${yaml.length} / ${properties.length} → ${output.length}`, 'success')
+      const target = success === 'notice.toProperties' ? 'properties' : 'yaml'
+      recordOperation(t(success), `${yaml.length} / ${properties.length} → ${output.length}`, 'success', {
+        inputText: JSON.stringify({ yaml, properties }), outputText: output, metadata: { target }
+      })
     } catch (cause) {
       setNotice(cause instanceof ConfigToolError
         ? { key: `error.${cause.code}`, values: cause.values }
         : { raw: cause instanceof Error ? cause.message : String(cause) })
       setFailed(true)
-      recordOperation(t(success), cause instanceof Error ? cause.message : String(cause), 'error')
+      recordOperation(t(success), cause instanceof Error ? cause.message : String(cause), 'error', {
+        inputText: JSON.stringify({ yaml, properties })
+      })
     }
   }
 

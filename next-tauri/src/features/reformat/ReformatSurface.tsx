@@ -15,6 +15,7 @@ import { CodeEditor } from '../../shared/CodeEditor'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
+import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import {
   formatCode,
   reformatSamples,
@@ -59,6 +60,15 @@ export function ReformatSurface() {
   )
   const recordOperation = useOperationHistory('reformat')
 
+  useOperationRestore('reformat', (entry) => {
+    const metadata = parseOperationMetadata(entry)
+    if (typeof metadata.type === 'string' && reformatTypes.includes(metadata.type as ReformatType)) setType(metadata.type as ReformatType)
+    if (typeof metadata.indent === 'number') setIndent(metadata.indent)
+    setFileName(typeof metadata.fileName === 'string' ? metadata.fileName : '')
+    setSource(entry.outputText || entry.inputText)
+    setFailed(false)
+  })
+
   async function format(): Promise<void> {
     setBusy(true)
     setFailed(false)
@@ -66,13 +76,17 @@ export function ReformatSurface() {
       const output = await formatCode(source, type, indent)
       setSource(output)
       setNotice({ key: 'notice.formatted', values: { type: typeLabel(type) } })
-      recordOperation(t('action.format'), `${typeLabel(type)} · ${output.length}`, 'success')
+      recordOperation(t('action.format'), `${typeLabel(type)} · ${output.length}`, 'success', {
+        inputText: source, outputText: output, metadata: { type, indent, fileName }
+      })
     } catch (cause) {
       setFailed(true)
       setNotice(cause instanceof ReformatToolError
         ? { key: `error.${cause.code}` }
         : { raw: cause instanceof Error ? cause.message : String(cause) })
-      recordOperation(t('action.format'), `${typeLabel(type)} · ${cause instanceof Error ? cause.message : String(cause)}`, 'error')
+      recordOperation(t('action.format'), `${typeLabel(type)} · ${cause instanceof Error ? cause.message : String(cause)}`, 'error', {
+        inputText: source, metadata: { type, indent, fileName }
+      })
     } finally {
       setBusy(false)
     }

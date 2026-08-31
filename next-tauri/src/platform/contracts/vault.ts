@@ -30,6 +30,19 @@ export interface VaultGitStatus {
   changedFiles: number
   ahead: number
   behind: number
+  remote: string
+}
+
+export interface VaultGitCommit {
+  hash: string
+  author: string
+  timestamp: number
+  subject: string
+}
+
+export interface VaultGitDetails {
+  diff: string
+  commits: VaultGitCommit[]
 }
 
 export interface VaultSnapshot {
@@ -73,6 +86,8 @@ export interface VaultApi {
   delete(relativePath: string, expectedFingerprint: string): Promise<VaultTrashResult>
   deleteEntry(relativePath: string, expectedFingerprint: string | null): Promise<VaultTrashResult>
   gitStatus(): Promise<VaultGitStatus>
+  gitDetails(relativePath?: string): Promise<VaultGitDetails>
+  configureGitRemote(remote: string): Promise<VaultGitStatus>
   runGit(request: VaultGitRequest): Promise<VaultGitResult>
   cancelGit(requestId: string): Promise<boolean>
   subscribe(listener: (event: VaultChangedEvent) => void): Promise<() => void>

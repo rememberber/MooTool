@@ -18,6 +18,17 @@ export default defineConfig({
     }
   },
   build: {
-    target: ['es2022', 'chrome105', 'safari13']
+    target: ['es2022', 'chrome105', 'safari13'],
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (!id.includes('/node_modules/')) return
+          if (/[\\/]node_modules[\\/](react|react-dom|scheduler)[\\/]/.test(id)) return 'vendor-react'
+          if (id.includes('/node_modules/lucide-react/')) return 'vendor-icons'
+          if (id.includes('/node_modules/@tauri-apps/')) return 'vendor-tauri'
+          if (/node_modules\/(?:@codemirror|@lezer|crelt|style-mod|w3c-keyname)\//.test(id)) return 'vendor-editor'
+        }
+      }
+    }
   }
 })

@@ -6,7 +6,8 @@ use crate::contracts::{
     image::ImageAssetSummary,
     local_data::{
         BoardMessage, HostProfile, OperationHistory, QuickNote, QuickNoteAttachment,
-        TranslationHistory, TranslationWord,
+        QuickNoteFolder, ToolFavorite, TranslationHistory, TranslationWord,
+        validate_note_folder_path,
     },
     network::{HttpRequestHistory, SavedHttpRequest},
     product_import::{ProductImportCounts, ProductImportRecords},
@@ -55,7 +56,7 @@ impl LocalDataRepository {
         let connection = self.lock()?;
         let mut statement = connection
             .prepare(
-                "SELECT id, title, content, tags_json, color, pinned, created_at, updated_at
+                "SELECT id, title, content, tags_json, color, folder_path, pinned, created_at, updated_at
                  FROM quick_notes
                  ORDER BY pinned DESC, updated_at DESC, id ASC",
             )
@@ -68,9 +69,10 @@ impl LocalDataRepository {
                     content: row.get(2)?,
                     tags: serde_json::from_str(&row.get::<_, String>(3)?).unwrap_or_default(),
                     color: row.get(4)?,
-                    pinned: row.get(5)?,
-                    created_at: row.get(6)?,
-                    updated_at: row.get(7)?,
+                    folder_path: row.get(5)?,
+                    pinned: row.get(6)?,
+                    created_at: row.get(7)?,
+                    updated_at: row.get(8)?,
                 })
             })
             .map_err(database_error)?;
@@ -84,13 +86,14 @@ impl LocalDataRepository {
         let connection = self.lock()?;
         connection
             .execute(
-                "INSERT INTO quick_notes (id, title, content, tags_json, color, pinned, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+                "INSERT INTO quick_notes (id, title, content, tags_json, color, folder_path, pinned, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
                  ON CONFLICT(id) DO UPDATE SET
                    title = excluded.title,
                    content = excluded.content,
                    tags_json = excluded.tags_json,
                    color = excluded.color,
+                   folder_path = excluded.folder_path,
                    pinned = excluded.pinned,
                    updated_at = excluded.updated_at",
                 params![
@@ -99,6 +102,7 @@ impl LocalDataRepository {
                     note.content,
                     tags_json,
                     note.color,
+                    note.folder_path,
                     note.pinned,
                     note.created_at,
                     note.updated_at
@@ -106,6 +110,233 @@ impl LocalDataRepository {
             )
             .map_err(database_error)?;
         Ok(note)
+    }
+
+    pub fn list_note_folders(&self) -> Result<Vec<QuickNoteFolder>, String> {
+        let connection = self.lock()?;
+        let mut statement = connection
+            .prepare(
+                "SELECT path, MIN(created_at), MAX(updated_at) FROM (
+                   SELECT path, created_at, updated_at FROM quick_note_folders
+                   UNION ALL
+                   SELECT folder_path AS path, created_at, updated_at FROM quick_notes WHERE folder_path <> ''
+                 ) GROUP BY path ORDER BY path COLLATE NOCASE ASC",
+            )
+            .map_err(database_error)?;
+        let rows = statement
+            .query_map([], |row| {
+                Ok(QuickNoteFolder {
+                    path: row.get(0)?,
+                    created_at: row.get(1)?,
+                    updated_at: row.get(2)?,
+                })
+            })
+            .map_err(database_error)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(database_error)
+    }
+
+    pub fn save_note_folder(&self, folder: QuickNoteFolder) -> Result<QuickNoteFolder, String> {
+        folder.validate()?;
+        self.lock()?
+            .execute(
+                "INSERT INTO quick_note_folders (path, created_at, updated_at)
+                 VALUES (?1, ?2, ?3)
+                 ON CONFLICT(path) DO UPDATE SET updated_at = excluded.updated_at",
+                params![folder.path, folder.created_at, folder.updated_at],
+            )
+            .map_err(database_error)?;
+        Ok(folder)
+    }
+
+    pub fn rename_note_folder(
+        &self,
+        path: &str,
+        next_path: &str,
+        updated_at: i64,
+    ) -> Result<Vec<QuickNoteFolder>, String> {
+        validate_note_folder_path(path, false)?;
+        validate_note_folder_path(next_path, false)?;
+        if path == next_path || updated_at < 0 {
+            return Err("invalid note folder rename".into());
+        }
+        let mut connection = self.lock()?;
+        let transaction = connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(database_error)?;
+        let sources = {
+            let mut statement = transaction
+                .prepare(
+                    "SELECT path, MIN(created_at), MAX(updated_at) FROM (
+                       SELECT path, created_at, updated_at FROM quick_note_folders
+                       UNION ALL SELECT folder_path, created_at, updated_at FROM quick_notes WHERE folder_path <> ''
+                     ) WHERE path = ?1 OR substr(path, 1, length(?1) + 1) = ?1 || '/'
+                     GROUP BY path ORDER BY length(path) ASC",
+                )
+                .map_err(database_error)?;
+            statement
+                .query_map([path], |row| {
+                    Ok((
+                        row.get::<_, String>(0)?,
+                        row.get::<_, i64>(1)?,
+                        row.get::<_, i64>(2)?,
+                    ))
+                })
+                .map_err(database_error)?
+                .collect::<Result<Vec<_>, _>>()
+                .map_err(database_error)?
+        };
+        if sources.is_empty() {
+            return Err("note folder not found".into());
+        }
+        let source_paths = sources
+            .iter()
+            .map(|item| item.0.as_str())
+            .collect::<Vec<_>>();
+        let mut renamed = Vec::with_capacity(sources.len());
+        for (source, created_at, _) in &sources {
+            let target = format!("{next_path}{}", &source[path.len()..]);
+            let collision: bool = transaction
+                .query_row(
+                    "SELECT EXISTS(
+                       SELECT 1 FROM quick_note_folders WHERE path = ?1
+                       UNION ALL SELECT 1 FROM quick_notes WHERE folder_path = ?1
+                     )",
+                    [&target],
+                    |row| row.get(0),
+                )
+                .map_err(database_error)?;
+            if collision && !source_paths.contains(&target.as_str()) {
+                return Err(format!("note folder already exists: {target}"));
+            }
+            renamed.push(QuickNoteFolder {
+                path: target,
+                created_at: *created_at,
+                updated_at,
+            });
+        }
+        transaction
+            .execute(
+                "UPDATE quick_notes SET
+                   folder_path = ?2 || substr(folder_path, length(?1) + 1), updated_at = ?3
+                 WHERE folder_path = ?1 OR substr(folder_path, 1, length(?1) + 1) = ?1 || '/'",
+                params![path, next_path, updated_at],
+            )
+            .map_err(database_error)?;
+        transaction
+            .execute(
+                "DELETE FROM quick_note_folders
+                 WHERE path = ?1 OR substr(path, 1, length(?1) + 1) = ?1 || '/'",
+                [path],
+            )
+            .map_err(database_error)?;
+        let target_parts = next_path.split('/').collect::<Vec<_>>();
+        for index in 1..target_parts.len() {
+            let parent = target_parts[..index].join("/");
+            transaction
+                .execute(
+                    "INSERT OR IGNORE INTO quick_note_folders (path, created_at, updated_at)
+                     VALUES (?1, ?2, ?2)",
+                    params![parent, updated_at],
+                )
+                .map_err(database_error)?;
+        }
+        for folder in &renamed {
+            transaction
+                .execute(
+                    "INSERT INTO quick_note_folders (path, created_at, updated_at) VALUES (?1, ?2, ?3)",
+                    params![folder.path, folder.created_at, folder.updated_at],
+                )
+                .map_err(database_error)?;
+        }
+        transaction.commit().map_err(database_error)?;
+        Ok(renamed)
+    }
+
+    pub fn delete_note_folder(&self, path: &str, updated_at: i64) -> Result<usize, String> {
+        validate_note_folder_path(path, false)?;
+        if updated_at < 0 {
+            return Err("invalid note folder update timestamp".into());
+        }
+        let mut connection = self.lock()?;
+        let transaction = connection
+            .transaction_with_behavior(TransactionBehavior::Immediate)
+            .map_err(database_error)?;
+        let moved = transaction
+            .execute(
+                "UPDATE quick_notes SET folder_path = '', updated_at = ?2
+                 WHERE folder_path = ?1 OR substr(folder_path, 1, length(?1) + 1) = ?1 || '/'",
+                params![path, updated_at],
+            )
+            .map_err(database_error)?;
+        transaction
+            .execute(
+                "DELETE FROM quick_note_folders
+                 WHERE path = ?1 OR substr(path, 1, length(?1) + 1) = ?1 || '/'",
+                [path],
+            )
+            .map_err(database_error)?;
+        transaction.commit().map_err(database_error)?;
+        Ok(moved)
+    }
+
+    pub fn list_tool_favorites(&self, tool_id: &str) -> Result<Vec<ToolFavorite>, String> {
+        validate_tool_id(tool_id)?;
+        let connection = self.lock()?;
+        let mut statement = connection
+            .prepare(
+                "SELECT id, tool_id, name, payload_json, created_at, updated_at
+                 FROM tool_favorites WHERE tool_id = ?1
+                 ORDER BY updated_at DESC, name COLLATE NOCASE ASC, id ASC",
+            )
+            .map_err(database_error)?;
+        let rows = statement
+            .query_map([tool_id], |row| {
+                Ok(ToolFavorite {
+                    id: row.get(0)?,
+                    tool_id: row.get(1)?,
+                    name: row.get(2)?,
+                    payload_json: row.get(3)?,
+                    created_at: row.get(4)?,
+                    updated_at: row.get(5)?,
+                })
+            })
+            .map_err(database_error)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(database_error)
+    }
+
+    pub fn save_tool_favorite(&self, mut favorite: ToolFavorite) -> Result<ToolFavorite, String> {
+        favorite.name = favorite.name.trim().to_string();
+        favorite.validate()?;
+        let connection = self.lock()?;
+        let existing = connection
+            .query_row(
+                "SELECT id, created_at FROM tool_favorites WHERE tool_id = ?1 AND name = ?2",
+                params![favorite.tool_id, favorite.name],
+                |row| Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?)),
+            )
+            .optional()
+            .map_err(database_error)?;
+        if let Some((id, created_at)) = existing {
+            favorite.id = id;
+            favorite.created_at = created_at;
+        }
+        connection
+            .execute(
+                "INSERT INTO tool_favorites (id, tool_id, name, payload_json, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+                 ON CONFLICT(id) DO UPDATE SET name = excluded.name, payload_json = excluded.payload_json, updated_at = excluded.updated_at",
+                params![favorite.id, favorite.tool_id, favorite.name, favorite.payload_json, favorite.created_at, favorite.updated_at],
+            )
+            .map_err(database_error)?;
+        Ok(favorite)
+    }
+
+    pub fn delete_tool_favorite(&self, id: &str) -> Result<bool, String> {
+        validate_delete_id(id)?;
+        self.lock()?
+            .execute("DELETE FROM tool_favorites WHERE id = ?1", [id])
+            .map(|affected| affected > 0)
+            .map_err(database_error)
     }
 
     pub fn delete_note(&self, id: &str) -> Result<bool, String> {
@@ -731,14 +962,18 @@ impl LocalDataRepository {
         let connection = self.lock()?;
         connection
             .execute(
-                "INSERT INTO operation_history (id, tool_id, action, summary, status, created_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                "INSERT INTO operation_history
+                   (id, tool_id, action, summary, status, input_text, output_text, metadata_json, created_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
                 params![
                     entry.id,
                     entry.tool_id,
                     entry.action,
                     entry.summary,
                     entry.status,
+                    entry.input_text,
+                    entry.output_text,
+                    entry.metadata_json,
                     entry.created_at
                 ],
             )
@@ -762,7 +997,7 @@ impl LocalDataRepository {
         let connection = self.lock()?;
         let mut statement = connection
             .prepare(
-                "SELECT id, tool_id, action, summary, status, created_at
+                "SELECT id, tool_id, action, summary, status, input_text, output_text, metadata_json, created_at
                  FROM operation_history ORDER BY created_at DESC, id DESC LIMIT ?1",
             )
             .map_err(database_error)?;
@@ -774,7 +1009,10 @@ impl LocalDataRepository {
                     action: row.get(2)?,
                     summary: row.get(3)?,
                     status: row.get(4)?,
-                    created_at: row.get(5)?,
+                    input_text: row.get(5)?,
+                    output_text: row.get(6)?,
+                    metadata_json: row.get(7)?,
+                    created_at: row.get(8)?,
                 })
             })
             .map_err(database_error)?;
@@ -874,9 +1112,9 @@ impl LocalDataRepository {
         for note in records.quick_notes {
             imported.quick_notes += transaction
                 .execute(
-                    "INSERT OR IGNORE INTO quick_notes (id, title, content, tags_json, color, pinned, created_at, updated_at)
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
-                    params![note.id, note.title, note.content, serde_json::to_string(&note.tags).map_err(|error| format!("failed to encode imported note tags: {error}"))?, note.color, note.pinned, note.created_at, note.updated_at],
+                    "INSERT OR IGNORE INTO quick_notes (id, title, content, tags_json, color, folder_path, pinned, created_at, updated_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+                    params![note.id, note.title, note.content, serde_json::to_string(&note.tags).map_err(|error| format!("failed to encode imported note tags: {error}"))?, note.color, note.folder_path, note.pinned, note.created_at, note.updated_at],
                 )
                 .map_err(database_error)?;
         }
@@ -924,14 +1162,17 @@ impl LocalDataRepository {
             imported.operation_history += transaction
                 .execute(
                     "INSERT OR IGNORE INTO operation_history
-                       (id, tool_id, action, summary, status, created_at)
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
+                       (id, tool_id, action, summary, status, input_text, output_text, metadata_json, created_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
                     params![
                         operation.id,
                         operation.tool_id,
                         operation.action,
                         operation.summary,
                         operation.status,
+                        operation.input_text,
+                        operation.output_text,
+                        operation.metadata_json,
                         operation.created_at
                     ],
                 )
@@ -1060,12 +1301,29 @@ fn initialize(connection: &Connection) -> Result<(), String> {
                content TEXT NOT NULL,
                tags_json TEXT NOT NULL DEFAULT '[]',
                color TEXT NOT NULL DEFAULT 'default',
+               folder_path TEXT NOT NULL DEFAULT '',
                pinned INTEGER NOT NULL DEFAULT 0,
                created_at INTEGER NOT NULL,
                updated_at INTEGER NOT NULL
              );
              CREATE INDEX IF NOT EXISTS quick_notes_order
                ON quick_notes (pinned DESC, updated_at DESC);
+             CREATE TABLE IF NOT EXISTS quick_note_folders (
+               path TEXT PRIMARY KEY NOT NULL,
+               created_at INTEGER NOT NULL,
+               updated_at INTEGER NOT NULL
+             );
+             CREATE TABLE IF NOT EXISTS tool_favorites (
+               id TEXT PRIMARY KEY NOT NULL,
+               tool_id TEXT NOT NULL,
+               name TEXT NOT NULL,
+               payload_json TEXT NOT NULL,
+               created_at INTEGER NOT NULL,
+               updated_at INTEGER NOT NULL,
+               UNIQUE(tool_id, name)
+             );
+             CREATE INDEX IF NOT EXISTS tool_favorites_tool
+               ON tool_favorites (tool_id, updated_at DESC);
              CREATE TABLE IF NOT EXISTS quick_note_attachments (
                id TEXT PRIMARY KEY NOT NULL,
                note_id TEXT NOT NULL REFERENCES quick_notes(id) ON DELETE CASCADE,
@@ -1151,6 +1409,9 @@ fn initialize(connection: &Connection) -> Result<(), String> {
                action TEXT NOT NULL,
                summary TEXT NOT NULL,
                status TEXT NOT NULL,
+               input_text TEXT NOT NULL DEFAULT '',
+               output_text TEXT NOT NULL DEFAULT '',
+               metadata_json TEXT NOT NULL DEFAULT '{}',
                created_at INTEGER NOT NULL
              );
              CREATE INDEX IF NOT EXISTS operation_history_order
@@ -1164,7 +1425,7 @@ fn initialize(connection: &Connection) -> Result<(), String> {
                imported_at INTEGER NOT NULL,
                report_json TEXT NOT NULL
              );
-             PRAGMA user_version = 8;",
+             PRAGMA user_version = 11;",
         )
         .map_err(database_error)?;
     ensure_column(
@@ -1176,11 +1437,42 @@ fn initialize(connection: &Connection) -> Result<(), String> {
     ensure_column(
         connection,
         "quick_notes",
+        "folder_path",
+        "TEXT NOT NULL DEFAULT ''",
+    )?;
+    ensure_column(
+        connection,
+        "quick_notes",
         "color",
         "TEXT NOT NULL DEFAULT 'default'",
     )?;
     connection
-        .pragma_update(None, "user_version", 8)
+        .execute(
+            "CREATE INDEX IF NOT EXISTS quick_notes_folder
+             ON quick_notes (folder_path, pinned DESC, updated_at DESC)",
+            [],
+        )
+        .map_err(database_error)?;
+    ensure_column(
+        connection,
+        "operation_history",
+        "input_text",
+        "TEXT NOT NULL DEFAULT ''",
+    )?;
+    ensure_column(
+        connection,
+        "operation_history",
+        "output_text",
+        "TEXT NOT NULL DEFAULT ''",
+    )?;
+    ensure_column(
+        connection,
+        "operation_history",
+        "metadata_json",
+        "TEXT NOT NULL DEFAULT '{}'",
+    )?;
+    connection
+        .pragma_update(None, "user_version", 11)
         .map_err(database_error)
 }
 
@@ -1215,6 +1507,18 @@ fn ensure_column(
 fn validate_delete_id(id: &str) -> Result<(), String> {
     if id.is_empty() || id.len() > 128 {
         return Err("invalid local record ID".into());
+    }
+    Ok(())
+}
+
+fn validate_tool_id(value: &str) -> Result<(), String> {
+    if value.is_empty()
+        || value.len() > 64
+        || !value
+            .bytes()
+            .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'-')
+    {
+        return Err("invalid tool ID".into());
     }
     Ok(())
 }
@@ -1272,6 +1576,7 @@ mod tests {
             content: "content".into(),
             tags: Vec::new(),
             color: "default".into(),
+            folder_path: String::new(),
             pinned,
             created_at: 1,
             updated_at,
@@ -1316,6 +1621,63 @@ mod tests {
     }
 
     #[test]
+    fn organizes_notes_in_nested_folders_and_moves_them_safely() {
+        let repository = LocalDataRepository::open_in_memory().expect("open repository");
+        repository
+            .save_note_folder(QuickNoteFolder {
+                path: "work".into(),
+                created_at: 1,
+                updated_at: 1,
+            })
+            .expect("save root folder");
+        repository
+            .save_note_folder(QuickNoteFolder {
+                path: "work/tauri".into(),
+                created_at: 2,
+                updated_at: 2,
+            })
+            .expect("save nested folder");
+        let mut nested = note("folder-note", 3, false);
+        nested.folder_path = "work/tauri".into();
+        repository.save_note(nested).expect("save nested note");
+
+        let renamed = repository
+            .rename_note_folder("work", "archive/projects", 4)
+            .expect("rename folder tree");
+        assert_eq!(renamed.len(), 2);
+        assert_eq!(
+            repository.list_notes().expect("list notes")[0].folder_path,
+            "archive/projects/tauri"
+        );
+        assert_eq!(
+            repository
+                .list_note_folders()
+                .expect("list folders")
+                .iter()
+                .map(|folder| folder.path.as_str())
+                .collect::<Vec<_>>(),
+            ["archive", "archive/projects", "archive/projects/tauri"]
+        );
+
+        assert_eq!(
+            repository
+                .delete_note_folder("archive", 5)
+                .expect("delete folder tree"),
+            1
+        );
+        assert_eq!(
+            repository.list_notes().expect("list moved notes")[0].folder_path,
+            ""
+        );
+        assert!(
+            repository
+                .list_note_folders()
+                .expect("empty folders")
+                .is_empty()
+        );
+    }
+
+    #[test]
     fn persists_quick_note_attachments_and_cascades_note_deletion() {
         let repository = LocalDataRepository::open_in_memory().expect("open repository");
         repository
@@ -1355,6 +1717,52 @@ mod tests {
     }
 
     #[test]
+    fn persists_updates_and_deletes_tool_favorites() {
+        let repository = LocalDataRepository::open_in_memory().expect("open repository");
+        let first = ToolFavorite {
+            id: "favorite-1".into(),
+            tool_id: "regex".into(),
+            name: "Identifiers".into(),
+            payload_json: r#"{"pattern":"[a-z]+"}"#.into(),
+            created_at: 1,
+            updated_at: 1,
+        };
+        repository
+            .save_tool_favorite(first.clone())
+            .expect("save favorite");
+        let updated = ToolFavorite {
+            id: "replacement-id".into(),
+            payload_json: r#"{"pattern":"[A-Z]+"}"#.into(),
+            updated_at: 2,
+            ..first
+        };
+        let saved = repository
+            .save_tool_favorite(updated)
+            .expect("update favorite by tool and name");
+
+        assert_eq!(saved.id, "favorite-1");
+        assert_eq!(saved.created_at, 1);
+        assert_eq!(
+            repository
+                .list_tool_favorites("regex")
+                .expect("list favorites")[0]
+                .payload_json,
+            r#"{"pattern":"[A-Z]+"}"#
+        );
+        assert!(
+            repository
+                .delete_tool_favorite("favorite-1")
+                .expect("delete favorite")
+        );
+        assert!(
+            repository
+                .list_tool_favorites("regex")
+                .expect("list empty favorites")
+                .is_empty()
+        );
+    }
+
+    #[test]
     fn persists_updates_and_deletes_board_messages() {
         let repository = LocalDataRepository::open_in_memory().expect("open repository");
         repository.save_message(message("one")).expect("save");
@@ -1378,6 +1786,73 @@ mod tests {
         repository.save_note(note("local", 1, false)).expect("save");
         drop(repository);
         assert!(path.exists());
+    }
+
+    #[test]
+    fn migrates_pre_folder_and_history_payload_databases() {
+        let directory = tempfile::TempDir::new().expect("temporary directory");
+        let path = directory.path().join(DATABASE_FILE_NAME);
+        let connection = Connection::open(&path).expect("open legacy database");
+        connection
+            .execute_batch(
+                "CREATE TABLE quick_notes (
+                   id TEXT PRIMARY KEY NOT NULL,
+                   title TEXT NOT NULL,
+                   content TEXT NOT NULL,
+                   tags_json TEXT NOT NULL DEFAULT '[]',
+                   color TEXT NOT NULL DEFAULT 'default',
+                   pinned INTEGER NOT NULL DEFAULT 0,
+                   created_at INTEGER NOT NULL,
+                   updated_at INTEGER NOT NULL
+                 );
+                 CREATE TABLE operation_history (
+                   id TEXT PRIMARY KEY NOT NULL,
+                   tool_id TEXT NOT NULL,
+                   action TEXT NOT NULL,
+                   summary TEXT NOT NULL,
+                   status TEXT NOT NULL,
+                   created_at INTEGER NOT NULL
+                 );
+                 PRAGMA user_version = 8;",
+            )
+            .expect("create legacy schema");
+        drop(connection);
+
+        let repository = LocalDataRepository::open(path).expect("migrate repository");
+        let migrated = note("migrated", 1, false);
+        repository.save_note(migrated).expect("save migrated note");
+        repository
+            .record_operation(
+                OperationHistory {
+                    id: "operation-1".into(),
+                    tool_id: "json".into(),
+                    action: "Format".into(),
+                    summary: "Migrated".into(),
+                    status: "success".into(),
+                    input_text: "{}".into(),
+                    output_text: "{}".into(),
+                    metadata_json: "{}".into(),
+                    created_at: 1,
+                },
+                10,
+            )
+            .expect("save migrated history");
+        assert_eq!(
+            repository.list_notes().expect("list notes")[0].folder_path,
+            ""
+        );
+        assert_eq!(
+            repository.list_operations(10).expect("list history")[0].input_text,
+            "{}"
+        );
+        assert_eq!(
+            repository
+                .lock()
+                .expect("lock database")
+                .query_row("PRAGMA user_version", [], |row| row.get::<_, u32>(0))
+                .expect("read schema version"),
+            11
+        );
     }
 
     #[test]
@@ -1556,6 +2031,9 @@ mod tests {
                         action: "open".into(),
                         summary: format!("Opened JSON {index}"),
                         status: "info".into(),
+                        input_text: format!("{{\"index\":{index}}}"),
+                        output_text: format!("index={index}"),
+                        metadata_json: "{\"mode\":\"format\"}".into(),
                         created_at: index,
                     },
                     10,
@@ -1565,6 +2043,8 @@ mod tests {
         let operations = repository.list_operations(50).expect("list operations");
         assert_eq!(operations.len(), 10);
         assert_eq!(operations[0].id, "operation-11");
+        assert_eq!(operations[0].input_text, "{\"index\":11}");
+        assert_eq!(operations[0].metadata_json, "{\"mode\":\"format\"}");
         assert!(repository.delete_operation("operation-11").expect("delete"));
         assert_eq!(repository.clear_operations().expect("clear"), 9);
     }

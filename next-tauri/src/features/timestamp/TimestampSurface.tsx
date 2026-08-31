@@ -14,6 +14,7 @@ import { clipboardApi } from '../../platform/api/clipboardApi'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
+import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import {
   commonTimezones,
   formatLocalTime,
@@ -66,6 +67,23 @@ export function TimestampSurface() {
   )
   const recordOperation = useOperationHistory('timestamp')
 
+  useOperationRestore('timestamp', (entry) => {
+    const metadata = parseOperationMetadata(entry)
+    const nextUnit = metadata.unit === 'millisecond' ? 'millisecond' : 'second'
+    const nextZone = typeof metadata.zone === 'string' ? metadata.zone : systemZone
+    const direction = metadata.direction === 'toTimestamp' ? 'toTimestamp' : 'toLocal'
+    setUnit(nextUnit)
+    setZone(nextZone)
+    if (direction === 'toLocal') {
+      setTimestamp(entry.inputText)
+      setLocalTime(entry.outputText)
+    } else {
+      setLocalTime(entry.inputText)
+      setTimestamp(entry.outputText)
+    }
+    try { setDetails(timestampToLocal(direction === 'toLocal' ? entry.inputText : entry.outputText, nextUnit, nextZone, locale)); setError(undefined) } catch (cause) { setError(timestampError(cause)) }
+  })
+
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000)
     return () => window.clearInterval(timer)
@@ -79,7 +97,9 @@ export function TimestampSurface() {
       setUnit(result.unit)
       setNotice({ key: 'notice.toLocal', values: { zone } })
       setError(undefined)
-      recordOperation(t('action.toLocal'), `${timestamp} · ${zone} → ${result.localTime}`, 'success')
+      recordOperation(t('action.toLocal'), `${timestamp} · ${zone} → ${result.localTime}`, 'success', {
+        inputText: timestamp, outputText: result.localTime, metadata: { direction: 'toLocal', unit, zone }
+      })
     } catch (cause) {
       setError(timestampError(cause))
     }
@@ -93,7 +113,9 @@ export function TimestampSurface() {
       setDetails(nextDetails)
       setNotice({ key: 'notice.toTimestamp', values: { unit: t(unit === 'second' ? 'unit.second' : 'unit.millisecond') } })
       setError(undefined)
-      recordOperation(t('action.toTimestamp'), `${localTime} · ${zone} → ${result}`, 'success')
+      recordOperation(t('action.toTimestamp'), `${localTime} · ${zone} → ${result}`, 'success', {
+        inputText: localTime, outputText: result, metadata: { direction: 'toTimestamp', unit, zone }
+      })
     } catch (cause) {
       setError(timestampError(cause))
     }

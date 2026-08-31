@@ -1,0 +1,6 @@
+{
+  "identifier": "com.rememberber.mootool.next.tauri.rehearsal",
+  "bundle": {
+    "createUpdaterArtifacts": false
+  }
+}

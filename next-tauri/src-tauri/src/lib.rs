@@ -20,6 +20,7 @@ pub fn run() {
         .manage(commands::code_runtime::CodeExecutionManager::default())
         .manage(commands::translation::TranslationManager::default())
         .manage(commands::native_desktop::NativeDesktopManager::default())
+        .manage(commands::network_tools::NetworkTaskManager::default())
         .manage(commands::pdf_files::PdfExportManager::default())
         .manage(repositories::vault::VaultRepository::default())
         .manage(commands::vault::VaultGitManager::default())
@@ -79,6 +80,8 @@ pub fn run() {
             commands::vault::delete_vault_document,
             commands::vault::delete_vault_entry,
             commands::vault::get_vault_git_status,
+            commands::vault::get_vault_git_details,
+            commands::vault::configure_vault_git_remote,
             commands::vault::run_vault_git,
             commands::vault::cancel_vault_git,
             commands::settings::get_settings,
@@ -89,6 +92,13 @@ pub fn run() {
             commands::local_data::list_quick_notes,
             commands::local_data::save_quick_note,
             commands::local_data::delete_quick_note,
+            commands::local_data::list_quick_note_folders,
+            commands::local_data::save_quick_note_folder,
+            commands::local_data::rename_quick_note_folder,
+            commands::local_data::delete_quick_note_folder,
+            commands::local_data::list_tool_favorites,
+            commands::local_data::save_tool_favorite,
+            commands::local_data::delete_tool_favorite,
             commands::local_data::list_quick_note_attachments,
             commands::local_data::import_quick_note_attachment,
             commands::local_data::export_quick_note_attachment,
@@ -111,6 +121,11 @@ pub fn run() {
             commands::network_tools::list_network_interfaces,
             commands::network_tools::resolve_network_host,
             commands::network_tools::scan_tcp_ports,
+            commands::network_tools::scan_ipv4_range,
+            commands::network_tools::cancel_network_task,
+            commands::network_tools::query_network_whois,
+            commands::network_tools::list_network_connections,
+            commands::network_tools::flush_network_dns_cache,
             commands::network_tools::ping_network_host,
             commands::http::execute_http_request,
             commands::http::cancel_http_request,

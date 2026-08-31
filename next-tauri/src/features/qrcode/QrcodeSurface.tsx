@@ -21,6 +21,7 @@ import { CodeEditor } from '../../shared/CodeEditor'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
+import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import {
   decodeQrImage,
   defaultQrOptions,
@@ -59,6 +60,17 @@ export function QrcodeSurface() {
   }), [decoded, options, source, svg, t])
   const { sessionId, reportError } = useToolSessionReport('qrcode', session.digest, session.summary)
   const recordOperation = useOperationHistory('qrcode')
+  useOperationRestore('qrcode', (entry) => {
+    const metadata = parseOperationMetadata(entry)
+    if (metadata.operation === 'decode') {
+      setDecoded(entry.outputText)
+    } else {
+      setSource(entry.inputText)
+      if (metadata.options && typeof metadata.options === 'object') setOptions({ ...defaultQrOptions, ...metadata.options as Partial<QrOptions> })
+      setSvg(entry.outputText)
+    }
+    setFailed(false)
+  })
 
   useEffect(() => {
     const handle = window.setTimeout(() => void renderQr(), 160)
@@ -69,9 +81,12 @@ export function QrcodeSurface() {
 
   async function renderQr(record = false): Promise<void> {
     try {
-      setSvg(await generateQrSvg(source, options))
+      const output = await generateQrSvg(source, options)
+      setSvg(output)
       succeed('notice.generated')
-      if (record) recordOperation(t('action.refresh'), `${source.length} · ${options.size}px`, 'success')
+      if (record) recordOperation(t('action.refresh'), `${source.length} · ${options.size}px`, 'success', {
+        inputText: source, outputText: output, metadata: { operation: 'generate', options }
+      })
     } catch (cause) {
       setSvg('')
       fail(cause)
@@ -84,7 +99,9 @@ export function QrcodeSurface() {
       const value = await decodeQrImage(file)
       setDecoded(value)
       succeed('notice.decoded')
-      recordOperation(t('scan.title'), `${file.name} · ${value.length}`, 'success')
+      recordOperation(t('scan.title'), `${file.name} · ${value.length}`, 'success', {
+        outputText: value, metadata: { operation: 'decode', fileName: file.name }
+      })
     } catch (cause) {
       fail(cause)
     }

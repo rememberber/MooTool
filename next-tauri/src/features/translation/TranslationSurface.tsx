@@ -24,6 +24,7 @@ import { errorMessage } from '../../shared/errors'
 import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
+import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import { useSettings } from '../settings/SettingsProvider'
 import {
   alternateTargetLanguage,
@@ -73,6 +74,17 @@ export function TranslationSurface() {
   }), [languageName, provider, source, sourceLang, t, tab, target, targetLang])
   const { sessionId, reportError } = useToolSessionReport('translation', session.digest, session.summary)
   const recordOperation = useOperationHistory('translation')
+  useOperationRestore('translation', (entry) => {
+    const metadata = parseOperationMetadata(entry)
+    suppressNextAutomaticTranslation.current = true
+    setSource(entry.inputText)
+    setTarget(entry.outputText)
+    if (typeof metadata.sourceLang === 'string') setSourceLang(metadata.sourceLang)
+    if (typeof metadata.targetLang === 'string') setTargetLang(metadata.targetLang)
+    if (metadata.provider === 'google' || metadata.provider === 'bing') setProvider(metadata.provider)
+    setTab('translate')
+    setFailed(false)
+  })
 
   const cancelActive = useCallback(() => {
     requestSequence.current += 1
@@ -111,12 +123,16 @@ export function TranslationSurface() {
       setProviderUsed(result.provider)
       setFallbackUsed(result.fallbackUsed)
       setNotice({ key: result.fallbackUsed ? 'notice.completeFallback' : 'notice.complete', values: { provider: result.provider === 'google' ? 'Google' : 'Bing' } })
-      recordOperation(t('operation.translate'), `${languageName(sourceLang)} → ${languageName(targetLang)} · ${value.length} · ${result.provider}`, 'success')
+      recordOperation(t('operation.translate'), `${languageName(sourceLang)} → ${languageName(targetLang)} · ${value.length} · ${result.provider}`, 'success', {
+        inputText: value, outputText: result.text, metadata: { sourceLang, targetLang, provider, providerUsed: result.provider }
+      })
     } catch (cause) {
       if (sequence !== requestSequence.current) return
       setFailed(true)
       setNotice({ raw: errorMessage(cause) })
-      recordOperation(t('operation.translate'), `${languageName(sourceLang)} → ${languageName(targetLang)} · ${errorMessage(cause)}`, 'error')
+      recordOperation(t('operation.translate'), `${languageName(sourceLang)} → ${languageName(targetLang)} · ${errorMessage(cause)}`, 'error', {
+        inputText: value, metadata: { sourceLang, targetLang, provider }
+      })
     } finally {
       if (sequence === requestSequence.current) {
         activeRequest.current = ''

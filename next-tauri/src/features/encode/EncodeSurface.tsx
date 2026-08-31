@@ -15,6 +15,7 @@ import { CodeEditor } from '../../shared/CodeEditor'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
+import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import {
   convertEncoding,
   encodeTabs,
@@ -74,6 +75,22 @@ export function EncodeSurface() {
   const { sessionId, reportError } = useToolSessionReport('encode', session.digest, session.summary)
   const recordOperation = useOperationHistory('encode')
 
+  useOperationRestore('encode', (entry) => {
+    const metadata = parseOperationMetadata(entry)
+    const nextTab = typeof metadata.tab === 'string' && encodeTabs.includes(metadata.tab as EncodeTab) ? metadata.tab as EncodeTab : 'unicode'
+    const direction = metadata.direction === 'reverse' ? 'reverse' : 'forward'
+    setTab(nextTab)
+    if (metadata.charset === 'utf-8' || metadata.charset === 'gb2312') setCharset(metadata.charset)
+    if (metadata.asciiFormat === 'decimal' || metadata.asciiFormat === 'hex') setAsciiFormat(metadata.asciiFormat)
+    setPairs((current) => ({
+      ...current,
+      [nextTab]: direction === 'forward'
+        ? { left: entry.inputText, right: entry.outputText }
+        : { left: entry.outputText, right: entry.inputText }
+    }))
+    setFailed(false)
+  })
+
   function updatePair(patch: Partial<Pair>): void {
     setPairs((current) => ({ ...current, [tab]: { ...current[tab], ...patch } }))
   }
@@ -85,13 +102,18 @@ export function EncodeSurface() {
       updatePair(direction === 'forward' ? { right: output } : { left: output })
       setNotice({ key: 'notice.done', values: { action: direction === 'forward' ? labels.forward : labels.reverse } })
       setFailed(false)
-      recordOperation(direction === 'forward' ? labels.forward : labels.reverse, `${tabLabels[tab]} · ${input.length} → ${output.length}`, 'success')
+      recordOperation(direction === 'forward' ? labels.forward : labels.reverse, `${tabLabels[tab]} · ${input.length} → ${output.length}`, 'success', {
+        inputText: input, outputText: output, metadata: { tab, direction, charset, asciiFormat }
+      })
     } catch (cause) {
       setNotice(cause instanceof EncodeToolError
         ? { key: `error.${cause.code}`, values: cause.values }
         : { raw: cause instanceof Error ? cause.message : String(cause) })
       setFailed(true)
-      recordOperation(direction === 'forward' ? labels.forward : labels.reverse, cause instanceof Error ? cause.message : String(cause), 'error')
+      recordOperation(direction === 'forward' ? labels.forward : labels.reverse, cause instanceof Error ? cause.message : String(cause), 'error', {
+        inputText: direction === 'forward' ? pair.left : pair.right,
+        metadata: { tab, direction, charset, asciiFormat }
+      })
     }
   }
 

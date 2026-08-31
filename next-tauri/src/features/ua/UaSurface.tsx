@@ -19,6 +19,7 @@ import { CodeEditor } from '../../shared/CodeEditor'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
+import { useOperationRestore } from '../history/operationRestore'
 import { parseUserAgent, uaPresets, UaToolError, type UaResult } from './uaTools'
 import { uaMessages } from './uaMessages'
 
@@ -52,6 +53,10 @@ export function UaSurface() {
   }), [deviceType, error, result.browser, result.os, source, t])
   const { sessionId, reportError } = useToolSessionReport('ua', session.digest, session.summary)
   const recordOperation = useOperationHistory('ua')
+  useOperationRestore('ua', (entry) => {
+    setSource(entry.inputText)
+    try { setResult(parseUserAgent(entry.inputText)); setError(undefined) } catch (cause) { setError({ raw: cause instanceof Error ? cause.message : String(cause) }) }
+  })
 
   function analyze(nextSource = source): void {
     try {
@@ -59,12 +64,14 @@ export function UaSurface() {
       setResult(next)
       setSource(nextSource)
       setError(undefined)
-      recordOperation(t('action.parse'), `${next.browser || '—'} · ${next.os || '—'} · ${next.deviceType || '—'}`, 'success')
+      recordOperation(t('action.parse'), `${next.browser || '—'} · ${next.os || '—'} · ${next.deviceType || '—'}`, 'success', {
+        inputText: nextSource, outputText: JSON.stringify(next, null, 2)
+      })
     } catch (cause) {
       setError(cause instanceof UaToolError
         ? { key: `error.${cause.code}` }
         : { raw: cause instanceof Error ? cause.message : String(cause) })
-      recordOperation(t('action.parse'), cause instanceof Error ? cause.message : String(cause), 'error')
+      recordOperation(t('action.parse'), cause instanceof Error ? cause.message : String(cause), 'error', { inputText: nextSource })
     }
   }
 

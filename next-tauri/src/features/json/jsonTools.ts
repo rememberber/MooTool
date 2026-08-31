@@ -6,7 +6,7 @@ export type JsonValidation =
   | { kind: 'valid'; rootType: string }
   | { kind: 'error'; cause: unknown }
 
-export type JsonToolErrorCode = 'pathEmpty' | 'notString' | 'contentEmpty' | 'parseDetail' | 'parsePosition' | 'swapValue' | 'xmlParse'
+export type JsonToolErrorCode = 'pathEmpty' | 'notString' | 'contentEmpty' | 'parseDetail' | 'parsePosition' | 'swapValue' | 'xmlParse' | 'duplicateKeys' | 'objectRequired' | 'emptyJavaBean' | 'noJavaFields'
 
 export class JsonToolError extends Error {
   constructor(readonly code: JsonToolErrorCode, readonly values?: Record<string, string | number>) {
@@ -26,14 +26,60 @@ export interface JsonAnalysis {
 export interface JsonFormatOptions {
   indent: number
   sortKeys: boolean
+  ignoreCase?: boolean
+  checkDuplicateKeys?: boolean
+}
+
+export interface JsonPathEntry {
+  path: string
+  label: string
+  depth: number
+  value: unknown
 }
 
 export function formatJson(input: string, options: JsonFormatOptions): string {
+  if (options.checkDuplicateKeys) {
+    const duplicates = findDuplicateJsonKeys(input, options.ignoreCase)
+    if (duplicates.length) throw new JsonToolError('duplicateKeys', { paths: duplicates.join(', ') })
+  }
   return JSON.stringify(
-    options.sortKeys ? sortJsonValue(parseJson(input)) : parseJson(input),
+    options.sortKeys ? sortJsonValue(parseJson(input), Boolean(options.ignoreCase)) : parseJson(input),
     null,
     options.indent
   )
+}
+
+export function findDuplicateJsonKeys(input: string, ignoreCase = false): string[] {
+  parseJson(input)
+  return new DuplicateKeyParser(input, ignoreCase).parse()
+}
+
+export function listJsonPaths(input: string): JsonPathEntry[] {
+  const entries: JsonPathEntry[] = []
+  collectJsonPaths(parseJson(input), '$', '$', 0, entries)
+  return entries.slice(0, 5000)
+}
+
+export function javaBeanToJson(input: string): string {
+  if (!input.trim()) throw new JsonToolError('emptyJavaBean')
+  const result: Record<string, unknown> = {}
+  const fieldPattern = /^(?:(?:public|protected|private)\s+)?(?:(?:static|final|transient|volatile)\s+)*([\w$.<>?, \[\]]+?)\s+(\w+)\s*(?:=.*)?$/
+  for (const statement of input.split(';')) {
+    const boundary = Math.max(statement.lastIndexOf('{'), statement.lastIndexOf('}'))
+    const match = fieldPattern.exec(statement.slice(boundary + 1).trim())
+    if (!match) continue
+    const [, type, name] = match
+    if (name === 'serialVersionUID') continue
+    result[name] = mockJavaValue(type.trim())
+  }
+  if (!Object.keys(result).length) throw new JsonToolError('noJavaFields')
+  return JSON.stringify(result, null, 2)
+}
+
+export function jsonToJavaBean(input: string, rootClassName = 'Root'): string {
+  const value = parseJson(input)
+  if (!isJsonObject(value)) throw new JsonToolError('objectRequired')
+  return buildJavaClass(toPascalCase(rootClassName), value, 0, true)
 }
 
 export function minifyJson(input: string): string {
@@ -169,18 +215,151 @@ function readErrorPosition(message: string): number | undefined {
   return match ? Number(match[1]) : undefined
 }
 
-function sortJsonValue(value: unknown): unknown {
+function sortJsonValue(value: unknown, ignoreCase = false): unknown {
   if (Array.isArray(value)) {
-    return value.map(sortJsonValue)
+    return value.map((item) => sortJsonValue(item, ignoreCase))
   }
   if (!isJsonObject(value)) {
     return value
   }
   return Object.fromEntries(
     Object.keys(value)
-      .sort((left, right) => left.localeCompare(right))
-      .map((key) => [key, sortJsonValue(value[key])])
+      .sort((left, right) => left.localeCompare(right, undefined, ignoreCase ? { sensitivity: 'base' } : undefined))
+      .map((key) => [key, sortJsonValue(value[key], ignoreCase)])
   )
+}
+
+function collectJsonPaths(value: unknown, path: string, label: string, depth: number, entries: JsonPathEntry[]): void {
+  if (entries.length >= 5000) return
+  entries.push({ path, label, value, depth })
+  if (Array.isArray(value)) {
+    value.forEach((item, index) => collectJsonPaths(item, `${path}[${index}]`, `[${index}]`, depth + 1, entries))
+  } else if (isJsonObject(value)) {
+    Object.entries(value).forEach(([key, item]) => collectJsonPaths(item, /^[a-zA-Z_$][\w$]*$/.test(key) ? `${path}.${key}` : `${path}[${JSON.stringify(key)}]`, key, depth + 1, entries))
+  }
+}
+
+function mockJavaValue(type: string): unknown {
+  const normalized = type.replaceAll(' ', '')
+  if (normalized.endsWith('[]') || /^(List|Set|Collection|Iterable)</.test(normalized)) return []
+  if (/^(Map|HashMap|LinkedHashMap)</.test(normalized)) return {}
+  if (/^(boolean|Boolean)$/.test(normalized)) return false
+  if (/^(byte|short|int|long|float|double|Byte|Short|Integer|Long|Float|Double|BigDecimal|BigInteger)$/.test(normalized)) return 0
+  if (/^(char|Character|String|CharSequence)$/.test(normalized)) return ''
+  return null
+}
+
+function buildJavaClass(className: string, value: Record<string, unknown>, depth: number, root: boolean): string {
+  const fields: string[] = []
+  const childClasses: Array<{ name: string; value: Record<string, unknown> }> = []
+  const indent = '    '.repeat(depth)
+  const bodyIndent = '    '.repeat(depth + 1)
+  for (const [key, item] of Object.entries(value)) {
+    fields.push(`${bodyIndent}private ${inferJavaType(key, item, childClasses)} ${toJavaIdentifier(key)};`)
+  }
+  const declaration = root ? `public class ${className}` : `public static class ${className}`
+  const children = childClasses.map((child) => buildJavaClass(child.name, child.value, depth + 1, false))
+  return `${indent}${declaration} {\n${[...fields, ...children].join('\n\n')}\n${indent}}`
+}
+
+function inferJavaType(key: string, value: unknown, children: Array<{ name: string; value: Record<string, unknown> }>): string {
+  if (value === null) return 'Object'
+  if (typeof value === 'string') return 'String'
+  if (typeof value === 'boolean') return 'Boolean'
+  if (typeof value === 'number') return Number.isInteger(value) ? 'Long' : 'Double'
+  if (Array.isArray(value)) {
+    const first = value.find((item) => item !== null)
+    if (first === undefined) return 'java.util.List<Object>'
+    if (isJsonObject(first)) {
+      const name = toPascalCase(singularize(key))
+      children.push({ name, value: first })
+      return `java.util.List<${name}>`
+    }
+    return `java.util.List<${inferJavaType(key, first, children)}>`
+  }
+  if (isJsonObject(value)) {
+    const name = toPascalCase(key)
+    children.push({ name, value })
+    return name
+  }
+  return 'Object'
+}
+
+function toPascalCase(value: string): string {
+  const normalized = value.replace(/[^a-zA-Z0-9]+(.)/g, (_, letter: string) => letter.toUpperCase())
+  const result = normalized.charAt(0).toUpperCase() + normalized.slice(1)
+  return /^\d/.test(result) ? `Type${result}` : result || 'Root'
+}
+
+function toJavaIdentifier(value: string): string {
+  const normalized = value.replace(/[^a-zA-Z0-9_$]/g, '_') || 'value'
+  const identifier = /^\d/.test(normalized) ? `_${normalized}` : normalized
+  return JAVA_RESERVED_WORDS.has(identifier) ? `${identifier}_` : identifier
+}
+
+function singularize(value: string): string {
+  return value.endsWith('ies') ? `${value.slice(0, -3)}y` : value.endsWith('s') ? value.slice(0, -1) : value
+}
+
+const JAVA_RESERVED_WORDS = new Set([
+  'abstract', 'assert', 'boolean', 'break', 'byte', 'case', 'catch', 'char', 'class',
+  'const', 'continue', 'default', 'do', 'double', 'else', 'enum', 'extends', 'final',
+  'finally', 'float', 'for', 'goto', 'if', 'implements', 'import', 'instanceof', 'int',
+  'interface', 'long', 'native', 'new', 'package', 'private', 'protected', 'public',
+  'return', 'short', 'static', 'strictfp', 'super', 'switch', 'synchronized', 'this',
+  'throw', 'throws', 'transient', 'try', 'void', 'volatile', 'while'
+])
+
+class DuplicateKeyParser {
+  private index = 0
+  private readonly duplicates: string[] = []
+  constructor(private readonly source: string, private readonly ignoreCase: boolean) {}
+  parse(): string[] { this.parseValue('$'); return this.duplicates }
+  private parseValue(path: string): void {
+    this.skipWhitespace()
+    const token = this.source[this.index]
+    if (token === '{') this.parseObject(path)
+    else if (token === '[') this.parseArray(path)
+    else if (token === '"') this.parseString()
+    else this.parsePrimitive()
+  }
+  private parseObject(path: string): void {
+    this.index += 1; this.skipWhitespace()
+    const keys = new Set<string>()
+    if (this.source[this.index] === '}') { this.index += 1; return }
+    while (this.index < this.source.length) {
+      this.skipWhitespace()
+      const key = this.parseString()
+      const normalized = this.ignoreCase ? key.toLocaleLowerCase() : key
+      const keyPath = /^[a-zA-Z_$][\w$]*$/.test(key) ? `${path}.${key}` : `${path}[${JSON.stringify(key)}]`
+      if (keys.has(normalized)) this.duplicates.push(keyPath)
+      keys.add(normalized)
+      this.skipWhitespace(); this.index += 1; this.parseValue(keyPath); this.skipWhitespace()
+      if (this.source[this.index++] === '}') return
+    }
+  }
+  private parseArray(path: string): void {
+    this.index += 1; this.skipWhitespace()
+    if (this.source[this.index] === ']') { this.index += 1; return }
+    let itemIndex = 0
+    while (this.index < this.source.length) {
+      this.parseValue(`${path}[${itemIndex++}]`); this.skipWhitespace()
+      if (this.source[this.index++] === ']') return
+    }
+  }
+  private parseString(): string {
+    const start = this.index++
+    let escaped = false
+    while (this.index < this.source.length) {
+      const character = this.source[this.index++]
+      if (escaped) escaped = false
+      else if (character === '\\') escaped = true
+      else if (character === '"') break
+    }
+    return JSON.parse(this.source.slice(start, this.index)) as string
+  }
+  private parsePrimitive(): void { while (this.index < this.source.length && !/[\s,}\]]/.test(this.source[this.index])) this.index += 1 }
+  private skipWhitespace(): void { while (/\s/.test(this.source[this.index] ?? '')) this.index += 1 }
 }
 
 function isJsonObject(value: unknown): value is Record<string, unknown> {

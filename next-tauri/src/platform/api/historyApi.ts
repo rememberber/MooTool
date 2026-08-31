@@ -46,10 +46,24 @@ function createBrowserHistoryApi(): HistoryApi {
 function read(): OperationHistory[] {
   try {
     const raw = window.localStorage.getItem(HISTORY_KEY)
-    const values = raw ? JSON.parse(raw) as OperationHistory[] : []
-    return values.sort((left, right) => right.createdAt - left.createdAt)
+    const values = raw ? JSON.parse(raw) as Partial<OperationHistory>[] : []
+    return values.map(normalizeEntry).sort((left, right) => right.createdAt - left.createdAt)
   } catch {
     return []
+  }
+}
+
+function normalizeEntry(value: Partial<OperationHistory>): OperationHistory {
+  return {
+    id: value.id ?? crypto.randomUUID(),
+    toolId: value.toolId ?? 'system-data',
+    action: value.action ?? 'Unknown',
+    summary: value.summary ?? '',
+    status: value.status ?? 'info',
+    inputText: value.inputText ?? '',
+    outputText: value.outputText ?? '',
+    metadataJson: value.metadataJson ?? '{}',
+    createdAt: value.createdAt ?? 0
   }
 }
 

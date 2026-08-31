@@ -51,6 +51,23 @@ pub struct VaultGitStatus {
     pub changed_files: usize,
     pub ahead: u32,
     pub behind: u32,
+    pub remote: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VaultGitCommit {
+    pub hash: String,
+    pub author: String,
+    pub timestamp: i64,
+    pub subject: String,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct VaultGitDetails {
+    pub diff: String,
+    pub commits: Vec<VaultGitCommit>,
 }
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq, Serialize)]

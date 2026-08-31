@@ -10,7 +10,7 @@ import {
   Star,
   Settings
 } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState, type ComponentType } from 'react'
 import brandLogo from '../assets/brand/mootool-logo.png'
 import { CalculatorHost } from '../features/calculator/CalculatorHost'
 import { ColorHost } from '../features/color/ColorHost'
@@ -49,6 +49,8 @@ import { historyApi } from '../platform/api/historyApi'
 import { desktopApi } from '../platform/api/desktopApi'
 import { productUpdateApi } from '../platform/api/updateApi'
 import type { DesktopCloseDecision, DesktopCloseRequest } from '../platform/contracts/desktop'
+import type { OperationHistory } from '../platform/contracts/history'
+import { queueOperationRestore } from '../features/history/operationRestore'
 import type { RuntimeInfo } from '../platform/contracts/runtime'
 import type { AppLanguage } from '../platform/contracts/settings'
 import { errorMessage, reportProductError, toProductError } from '../shared/errors'
@@ -62,10 +64,41 @@ import {
   type ToolId
 } from './toolCatalog'
 
+const toolHosts: Array<{ id: Exclude<ToolId, 'home'>; Host: ComponentType<{ active: boolean }> }> = [
+  { id: 'calculator', Host: CalculatorHost },
+  { id: 'color', Host: ColorHost },
+  { id: 'json', Host: JsonHost },
+  { id: 'quick-note', Host: QuickNoteHost },
+  { id: 'protobuf', Host: ProtobufHost },
+  { id: 'runtime', Host: RuntimeHost },
+  { id: 'http', Host: HttpHost },
+  { id: 'host', Host: HostHost },
+  { id: 'text-diff', Host: TextDiffHost },
+  { id: 'reformat', Host: ReformatHost },
+  { id: 'encode', Host: EncodeHost },
+  { id: 'crypto', Host: CryptoHost },
+  { id: 'qrcode', Host: QrcodeHost },
+  { id: 'regex', Host: RegexHost },
+  { id: 'config', Host: ConfigHost },
+  { id: 'cron', Host: CronHost },
+  { id: 'timestamp', Host: TimestampHost },
+  { id: 'message-board', Host: MessageBoardHost },
+  { id: 'translation', Host: TranslationHost },
+  { id: 'image', Host: ImageHost },
+  { id: 'pdf', Host: PdfHost },
+  { id: 'network', Host: NetworkHost },
+  { id: 'ua', Host: UaHost },
+  { id: 'variables', Host: VariablesHost },
+  { id: 'system', Host: SystemHost },
+  { id: 'editor-lab', Host: EditorLabHost },
+  { id: 'webview-lab', Host: WebviewLab }
+]
+
 export function App() {
   const { settings, ready: settingsReady, error: settingsError, save, openWindow } = useSettings()
   const { t, toolTitle, groupTitle } = useI18n()
   const [activeTool, setActiveTool] = useState<ToolId>('home')
+  const [visitedTools, setVisitedTools] = useState<ReadonlySet<ToolId>>(() => new Set(['home']))
   const [query, setQuery] = useState('')
   const [runtimeInfo, setRuntimeInfo] = useState<RuntimeInfo>()
   const [notice, setNotice] = useState('')
@@ -228,6 +261,7 @@ export function App() {
       return
     }
     setActiveTool(toolId)
+    setVisitedTools((current) => current.has(toolId) ? current : new Set([...current, toolId]))
     setNotice('')
     if (toolId !== 'home' && settingsReady) {
       void historyApi.record({
@@ -236,6 +270,9 @@ export function App() {
         action: t('history.action.openTool'),
         summary: t('history.summary.openTool', { tool: tool ? toolTitle(tool) : toolId }),
         status: 'info',
+        inputText: '',
+        outputText: '',
+        metadataJson: '{}',
         createdAt: Date.now()
       }, settings.data.historyLimit).catch((cause: unknown) => setNotice(errorMessage(cause)))
       void save((current) => ({
@@ -246,6 +283,21 @@ export function App() {
         }
       })).catch((cause: unknown) => setNotice(errorMessage(cause)))
     }
+  }
+
+  function restoreOperation(entry: OperationHistory): void {
+    if (!isToolId(entry.toolId) || entry.toolId === 'home') return
+    const toolId = entry.toolId
+    queueOperationRestore(entry)
+    setActiveTool(toolId)
+    setVisitedTools((current) => current.has(toolId) ? current : new Set([...current, toolId]))
+    setHistoryOpen(false)
+    setNotice(t('history.summary.restored', { tool: resolveToolName(toolId) }))
+  }
+
+  function resolveToolName(toolId: ToolId): string {
+    const tool = toolCatalog.find((item) => item.id === toolId)
+    return tool ? toolTitle(tool) : toolId
   }
 
   function toggleSidebar(): void {
@@ -425,81 +477,11 @@ export function App() {
         <div className={activeTool === 'home' ? 'view-layer' : 'view-layer view-layer--hidden'}>
           <HomePage runtimeInfo={runtimeInfo} onOpenJson={() => openTool('json')} />
         </div>
-        <div className={activeTool === 'calculator' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <CalculatorHost active={activeTool === 'calculator'} />
-        </div>
-        <div className={activeTool === 'color' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <ColorHost active={activeTool === 'color'} />
-        </div>
-        <div className={activeTool === 'json' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <JsonHost active={activeTool === 'json'} />
-        </div>
-        <div className={activeTool === 'quick-note' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <QuickNoteHost active={activeTool === 'quick-note'} />
-        </div>
-        <div className={activeTool === 'protobuf' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <ProtobufHost active={activeTool === 'protobuf'} />
-        </div>
-        <div className={activeTool === 'runtime' ? 'view-layer' : 'view-layer view-layer--hidden'}><RuntimeHost active={activeTool === 'runtime'} /></div>
-        <div className={activeTool === 'http' ? 'view-layer' : 'view-layer view-layer--hidden'}><HttpHost active={activeTool === 'http'} /></div>
-        <div className={activeTool === 'host' ? 'view-layer' : 'view-layer view-layer--hidden'}><HostHost active={activeTool === 'host'} /></div>
-        <div className={activeTool === 'text-diff' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <TextDiffHost active={activeTool === 'text-diff'} />
-        </div>
-        <div className={activeTool === 'reformat' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <ReformatHost active={activeTool === 'reformat'} />
-        </div>
-        <div className={activeTool === 'encode' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <EncodeHost active={activeTool === 'encode'} />
-        </div>
-        <div className={activeTool === 'crypto' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <CryptoHost active={activeTool === 'crypto'} />
-        </div>
-        <div className={activeTool === 'qrcode' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <QrcodeHost active={activeTool === 'qrcode'} />
-        </div>
-        <div className={activeTool === 'regex' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <RegexHost active={activeTool === 'regex'} />
-        </div>
-        <div className={activeTool === 'config' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <ConfigHost active={activeTool === 'config'} />
-        </div>
-        <div className={activeTool === 'cron' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <CronHost active={activeTool === 'cron'} />
-        </div>
-        <div className={activeTool === 'timestamp' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <TimestampHost active={activeTool === 'timestamp'} />
-        </div>
-        <div className={activeTool === 'message-board' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <MessageBoardHost active={activeTool === 'message-board'} />
-        </div>
-        <div className={activeTool === 'translation' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <TranslationHost active={activeTool === 'translation'} />
-        </div>
-        <div className={activeTool === 'image' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <ImageHost active={activeTool === 'image'} />
-        </div>
-        <div className={activeTool === 'pdf' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <PdfHost active={activeTool === 'pdf'} />
-        </div>
-        <div className={activeTool === 'network' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <NetworkHost active={activeTool === 'network'} />
-        </div>
-        <div className={activeTool === 'ua' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <UaHost active={activeTool === 'ua'} />
-        </div>
-        <div className={activeTool === 'variables' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <VariablesHost active={activeTool === 'variables'} />
-        </div>
-        <div className={activeTool === 'system' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <SystemHost active={activeTool === 'system'} />
-        </div>
-        <div className={activeTool === 'editor-lab' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <EditorLabHost active={activeTool === 'editor-lab'} />
-        </div>
-        <div className={activeTool === 'webview-lab' ? 'view-layer' : 'view-layer view-layer--hidden'}>
-          <WebviewLab active={activeTool === 'webview-lab'} />
-        </div>
+        {toolHosts.map(({ id, Host }) => visitedTools.has(id) && (
+          <div className={activeTool === id ? 'view-layer' : 'view-layer view-layer--hidden'} key={id}>
+            <Host active={activeTool === id} />
+          </div>
+        ))}
         {(notice || settingsError) && (
           <button className="notice-toast" type="button" role={settingsError ? 'alert' : 'status'} aria-live={settingsError ? 'assertive' : 'polite'} onClick={() => setNotice('')}>
             {notice || settingsError}
@@ -511,7 +493,7 @@ export function App() {
           onClose={() => setCommandPaletteOpen(false)}
           onOpenTool={openTool}
         />
-        {historyOpen && <HistoryPanel limit={settings.data.historyLimit} onClose={() => setHistoryOpen(false)} />}
+        {historyOpen && <HistoryPanel limit={settings.data.historyLimit} onClose={() => setHistoryOpen(false)} onRestore={restoreOperation} />}
         {closeRequest && (
           <div className="desktop-dialog-backdrop" role="presentation">
             <section className="desktop-dialog" role="dialog" aria-modal="true" aria-labelledby="close-dialog-title">

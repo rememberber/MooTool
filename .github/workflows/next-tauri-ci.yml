@@ -64,3 +64,21 @@ jobs:
           workspaces: next-tauri/src-tauri
       - run: npm ci
       - run: npm run check
+      - name: Install Chromium for desktop visual regression
+        if: matrix.name == 'macOS arm64'
+        run: npx playwright install chromium
+      - name: Run browser E2E and visual regression
+        if: matrix.name == 'macOS arm64'
+        run: npm run test:e2e
+      - name: Build and launch the native Tauri application
+        if: matrix.name == 'macOS arm64'
+        run: npm run test:native-smoke
+      - name: Upload Playwright diagnostics
+        if: failure() && matrix.name == 'macOS arm64'
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-tauri-playwright-report
+          path: |
+            next-tauri/playwright-report
+            next-tauri/test-results
+          if-no-files-found: ignore

@@ -4,7 +4,23 @@ export interface QuickNote {
   content: string
   tags: string[]
   color: 'default' | 'coral' | 'yellow' | 'green' | 'blue' | 'purple' | 'red'
+  folderPath: string
   pinned: boolean
+  createdAt: number
+  updatedAt: number
+}
+
+export interface QuickNoteFolder {
+  path: string
+  createdAt: number
+  updatedAt: number
+}
+
+export interface ToolFavorite {
+  id: string
+  toolId: string
+  name: string
+  payloadJson: string
   createdAt: number
   updatedAt: number
 }
@@ -33,6 +49,13 @@ export interface LocalDataApi {
   listNotes(): Promise<QuickNote[]>
   saveNote(note: QuickNote): Promise<QuickNote>
   deleteNote(id: string): Promise<boolean>
+  listNoteFolders(): Promise<QuickNoteFolder[]>
+  saveNoteFolder(folder: QuickNoteFolder): Promise<QuickNoteFolder>
+  renameNoteFolder(path: string, nextPath: string, updatedAt: number): Promise<QuickNoteFolder[]>
+  deleteNoteFolder(path: string): Promise<number>
+  listToolFavorites(toolId: string): Promise<ToolFavorite[]>
+  saveToolFavorite(favorite: ToolFavorite): Promise<ToolFavorite>
+  deleteToolFavorite(id: string): Promise<boolean>
   listMessages(): Promise<BoardMessage[]>
   saveMessage(message: BoardMessage): Promise<BoardMessage>
   deleteMessage(id: string): Promise<boolean>

@@ -32,6 +32,7 @@ import {
   LoaderCircle,
   MoreHorizontal,
   Pencil,
+  RefreshCw,
   Save,
   Search,
   Sparkles,
@@ -49,6 +50,7 @@ import { userFilesApi } from '../../platform/api/userFilesApi'
 import { vaultApi } from '../../platform/api/vaultApi'
 import type {
   VaultDocument,
+  VaultGitDetails,
   VaultGitOperation,
   VaultSnapshot
 } from '../../platform/contracts/vault'
@@ -57,14 +59,19 @@ import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
 import { ResizableThreeColumns } from '../../shared/ResizableThreeColumns'
 import { toolWebviewApis } from '../../platform/api/toolWebviewApi'
 import { useOperationHistory } from '../history/useOperationHistory'
+import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import { useSettings } from '../settings/SettingsProvider'
 import { describeJsonSession } from './jsonSession'
 import { jsonMessages } from './jsonMessages'
 import {
   analyzeJson,
   escapeJsonString,
+  findDuplicateJsonKeys,
   formatJson,
+  javaBeanToJson,
+  jsonToJavaBean,
   jsonToXml,
+  listJsonPaths,
   minifyJson,
   queryJsonPath,
   swapJsonKeysAndValues,
@@ -90,7 +97,7 @@ type VaultSelection = { path: string; kind: 'file' | 'folder' }
 export function JsonToolSurface() {
   const dialog = useDesktopDialog()
   const { settings } = useSettings()
-  const { t } = useLocalizedMessages(jsonMessages)
+  const { t, locale } = useLocalizedMessages(jsonMessages)
   const recordOperation = useOperationHistory('json')
   const sampleJson = useRef(t('sample.json')).current
   const hostRef = useRef<HTMLDivElement>(null)
@@ -109,6 +116,9 @@ export function JsonToolSurface() {
   const [wrap, setWrap] = useState(settings.editor.wordWrap)
   const [indent, setIndent] = useState(settings.editor.tabSize)
   const [sortKeys, setSortKeys] = useState(false)
+  const [ignoreCase, setIgnoreCase] = useState(false)
+  const [checkDuplicateKeys, setCheckDuplicateKeys] = useState(true)
+  const [className, setClassName] = useState('Root')
   const [jsonPath, setJsonPath] = useState('$.release.channel')
   const [pathResult, setPathResult] = useState('"next-tauri"')
   const [notice, setNotice] = useState<JsonNotice>({ key: 'notice.ready' })
@@ -121,12 +131,27 @@ export function JsonToolSurface() {
   const [vaultSelection, setVaultSelection] = useState<VaultSelection>()
   const [vaultBusy, setVaultBusy] = useState(false)
   const [gitRequestId, setGitRequestId] = useState('')
+  const [gitDetailsOpen, setGitDetailsOpen] = useState(false)
+  const [gitDetails, setGitDetails] = useState<VaultGitDetails>({ diff: '', commits: [] })
+  const [gitDetailsBusy, setGitDetailsBusy] = useState(false)
   const metricsRef = useRef(metrics)
   const vaultDocumentRef = useRef(vaultDocument)
   metricsRef.current = metrics
   vaultDocumentRef.current = vaultDocument
   const vaultDirty = Boolean(vaultDocument && metrics.content !== vaultDocument.content)
   const noticeText = localizeNotice(notice, t)
+
+  useOperationRestore('json', (entry) => {
+    const metadata = parseOperationMetadata(entry)
+    if (metadata.indent === 2 || metadata.indent === 4 || metadata.indent === 8) setIndent(metadata.indent)
+    if (typeof metadata.sortKeys === 'boolean') setSortKeys(metadata.sortKeys)
+    if (typeof metadata.ignoreCase === 'boolean') setIgnoreCase(metadata.ignoreCase)
+    if (typeof metadata.checkDuplicateKeys === 'boolean') setCheckDuplicateKeys(metadata.checkDuplicateKeys)
+    if (typeof metadata.className === 'string') setClassName(metadata.className)
+    if (typeof metadata.wrap === 'boolean') setWrap(metadata.wrap)
+    if (typeof metadata.jsonPath === 'string') setJsonPath(metadata.jsonPath)
+    replaceDocument(entry.outputText || entry.inputText, { key: 'notice.ready' })
+  })
 
   useEffect(() => {
     setWrap(settings.editor.wordWrap)
@@ -245,6 +270,12 @@ export function JsonToolSurface() {
 
   const validation = useMemo(() => validateJson(metrics.content), [metrics.content])
   const analysis = useMemo(() => analyzeJson(metrics.content), [metrics.content])
+  const duplicates = useMemo(() => {
+    try { return findDuplicateJsonKeys(metrics.content, ignoreCase) } catch { return [] }
+  }, [ignoreCase, metrics.content])
+  const pathEntries = useMemo(() => {
+    try { return listJsonPaths(metrics.content) } catch { return [] }
+  }, [metrics.content])
   const session = useMemo(() => describeJsonSession({
     ...metrics,
     wrap,
@@ -300,12 +331,18 @@ export function JsonToolSurface() {
 
   function runTransform(transform: () => string, success: JsonMessageKey): void {
     try {
-      replaceDocument(transform(), { key: success })
-      recordOperation(t(success), t('operation.content', { length: metrics.content.length }), 'success')
+      const input = metrics.content
+      const output = transform()
+      replaceDocument(output, { key: success })
+      recordOperation(t(success), t('operation.content', { length: input.length }), 'success', {
+        inputText: input, outputText: output, metadata: { indent, sortKeys, ignoreCase, checkDuplicateKeys, wrap, jsonPath, className }
+      })
     } catch (cause) {
       const message = jsonErrorText(cause, t)
       setNotice({ raw: message })
-      recordOperation(t(success), message, 'error')
+      recordOperation(t(success), message, 'error', {
+        inputText: metrics.content, metadata: { indent, sortKeys, ignoreCase, checkDuplicateKeys, wrap, jsonPath, className }
+      })
     }
   }
 
@@ -317,7 +354,9 @@ export function JsonToolSurface() {
         ? xmlToJson(file.content, indent)
         : file.content
       replaceDocument(content, { key: 'notice.imported', values: { name: file.name } })
-      recordOperation(t('operation.import'), `${file.name} · ${content.length}`, 'success')
+      recordOperation(t('operation.import'), `${file.name} · ${content.length}`, 'success', {
+        outputText: content, metadata: { fileName: file.name, indent, sortKeys, wrap, jsonPath }
+      })
     } catch (cause) {
       const message = jsonErrorText(cause, t)
       setNotice({ raw: message })
@@ -340,12 +379,17 @@ export function JsonToolSurface() {
 
   function runJsonPath(): void {
     try {
-      setPathResult(queryJsonPath(metrics.content, jsonPath) ?? t('path.noMatch'))
+      const output = queryJsonPath(metrics.content, jsonPath) ?? t('path.noMatch')
+      setPathResult(output)
       setNotice({ key: 'notice.pathDone' })
+      recordOperation(t('action.query'), `${jsonPath} · ${output.length}`, 'success', {
+        inputText: metrics.content, outputText: output, metadata: { operation: 'jsonPath', jsonPath, indent, sortKeys, wrap }
+      })
     } catch (cause) {
       const message = jsonErrorText(cause, t)
       setPathResult(message)
       setNotice({ raw: message })
+      recordOperation(t('action.query'), message, 'error', { inputText: metrics.content, metadata: { operation: 'jsonPath', jsonPath } })
     }
   }
 
@@ -639,6 +683,28 @@ export function JsonToolSurface() {
     if (gitRequestId) await vaultApi.cancelGit(gitRequestId)
   }
 
+  async function loadGitDetails(open = true): Promise<void> {
+    if (!vault?.git.repository) return
+    if (open) setGitDetailsOpen(true)
+    setGitDetailsBusy(true)
+    try {
+      setGitDetails(await vaultApi.gitDetails(vaultSelection?.kind === 'file' ? vaultSelection.path : undefined))
+    } catch (cause) {
+      setNotice({ raw: errorMessage(cause, 'json.vault.git.details') })
+    } finally { setGitDetailsBusy(false) }
+  }
+
+  async function configureGitRemote(): Promise<void> {
+    if (!vault?.git.repository) return
+    const value = await dialog.prompt(t('git.remotePrompt'), vault.git.remote)
+    if (value === null) return
+    try {
+      const git = await vaultApi.configureGitRemote(value)
+      setVault((current) => current ? { ...current, git } : current)
+      setNotice({ key: value.trim() ? 'notice.remoteSaved' : 'notice.remoteRemoved' })
+    } catch (cause) { setNotice({ raw: errorMessage(cause, 'json.vault.git.remote') }) }
+  }
+
   return (
     <main className="json-workbench">
       <header className="json-workbench__header">
@@ -671,7 +737,7 @@ export function JsonToolSurface() {
           className="secondary-button"
           type="button"
           onClick={() => runTransform(
-            () => formatJson(metrics.content, { indent, sortKeys }),
+            () => formatJson(metrics.content, { indent, sortKeys, ignoreCase, checkDuplicateKeys }),
             'notice.formatted'
           )}
         >
@@ -703,6 +769,14 @@ export function JsonToolSurface() {
           />
           {t('option.sortKeys')}
         </label>
+        <label className="json-toolbar__check" title={t('option.ignoreCase')}>
+          <input type="checkbox" checked={ignoreCase} onChange={(event) => setIgnoreCase(event.target.checked)} />
+          Aa
+        </label>
+        <label className="json-toolbar__check" title={t('option.duplicateKeys')}>
+          <input type="checkbox" checked={checkDuplicateKeys} onChange={(event) => setCheckDuplicateKeys(event.target.checked)} />
+          {t('analysis.duplicates')}
+        </label>
         <button className="secondary-button" type="button" onClick={() => setWrap((value) => !value)}>
           <WrapText />{wrap ? t('action.wrapOff') : t('action.wrapOn')}
         </button>
@@ -722,6 +796,8 @@ export function JsonToolSurface() {
             <button type="button" onClick={() => runTransform(() => swapJsonKeysAndValues(metrics.content, indent), 'notice.swapped')}><ArrowLeftRight />{t('action.swap')}</button>
             <button type="button" onClick={() => runTransform(() => jsonToXml(metrics.content), 'notice.toXml')}><CodeXml />{t('action.toXml')}</button>
             <button type="button" onClick={() => runTransform(() => xmlToJson(metrics.content, indent), 'notice.toJson')}><Braces />{t('action.toJson')}</button>
+            <button type="button" onClick={() => runTransform(() => jsonToJavaBean(metrics.content, className), 'notice.toBean')}><CodeXml />{t('action.jsonToBean')}</button>
+            <button type="button" onClick={() => runTransform(() => javaBeanToJson(metrics.content), 'notice.beanToJson')}><Braces />{t('action.beanToJson')}</button>
           </div>
         </details>
         <button
@@ -797,6 +873,7 @@ export function JsonToolSurface() {
                             <button type="button" title={t('git.pull')} disabled={Boolean(gitRequestId) || vaultDirty || vault.git.dirty} onClick={() => void runGit('pull')}><Download /></button>
                             <button type="button" title={t('git.commit')} disabled={Boolean(gitRequestId) || vaultDirty || !vault.git.dirty} onClick={() => void runGit('commit')}><GitBranch /></button>
                             <button type="button" title={t('git.push')} disabled={Boolean(gitRequestId)} onClick={() => void runGit('push')}><Upload /></button>
+                            <button type="button" title={t('git.details')} disabled={Boolean(gitRequestId)} onClick={() => void loadGitDetails()}><Search /></button>
                           </>
                         )}
                     {gitRequestId && <button type="button" title={t('git.cancel')} onClick={() => void cancelGit()}><LoaderCircle className="spin" />{t('git.cancelAction')}</button>}
@@ -828,8 +905,24 @@ export function JsonToolSurface() {
             <div><dt>{t('analysis.nodes')}</dt><dd>{analysis?.nodes ?? '—'}</dd></div>
             <div><dt>{t('analysis.keys')}</dt><dd>{analysis?.keys ?? '—'}</dd></div>
             <div><dt>{t('analysis.maxDepth')}</dt><dd>{analysis?.maxDepth ?? '—'}</dd></div>
+            <div><dt>{t('analysis.duplicates')}</dt><dd className={duplicates.length ? 'json-duplicate-count json-duplicate-count--error' : 'json-duplicate-count'}>{duplicates.length}</dd></div>
             <div><dt>UTF-8</dt><dd>{analysis ? `${analysis.bytes} B` : '—'}</dd></div>
           </dl>
+
+          {!!duplicates.length && <div className="json-duplicate-list" role="alert">{duplicates.map((path) => <code key={path}>{path}</code>)}</div>}
+
+          <label className="json-path-field">
+            {t('bean.className')}
+            <input value={className} spellCheck={false} onChange={(event) => setClassName(event.target.value)} />
+          </label>
+
+          <label className="json-path-field">
+            {t('path.picker')}
+            <select value={pathEntries.some((entry) => entry.path === jsonPath) ? jsonPath : ''} onChange={(event) => setJsonPath(event.target.value)}>
+              <option value="">—</option>
+              {pathEntries.map((entry) => <option key={entry.path} value={entry.path}>{`${'· '.repeat(entry.depth)}${entry.label}`}</option>)}
+            </select>
+          </label>
 
           <label className="json-path-field">
             JSONPath
@@ -853,6 +946,12 @@ export function JsonToolSurface() {
         <span>{vaultDocument ? `${vaultDocument.relativePath} · ${vaultDirty ? t('footer.unsaved') : t('footer.saved')}` : t('footer.shortcuts')}</span>
         <code>{sessionSummary} · IME {compositionStarts}/{compositionEnds}</code>
       </footer>
+
+      {gitDetailsOpen && <div className="json-git-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setGitDetailsOpen(false) }}><section className="json-git-dialog" role="dialog" aria-modal="true" aria-label={t('git.details')}>
+        <header><div><FolderGit2 /><span><strong>{t('git.details')}</strong><small>{vaultSelection?.kind === 'file' ? vaultSelection.path : vault?.git.branch || 'HEAD'}</small></span></div><div><button type="button" onClick={() => void configureGitRemote()}>{t('git.remote')}</button><button type="button" disabled={gitDetailsBusy} onClick={() => void loadGitDetails(false)}><RefreshCw /></button><button type="button" aria-label={t('action.clear')} onClick={() => setGitDetailsOpen(false)}><XCircle /></button></div></header>
+        <div className="json-git-remote"><span>{t('git.remote')}</span><code>{vault?.git.remote || t('git.noRemote')}</code></div>
+        <main><section><header>{t('git.diff')}</header><pre>{gitDetailsBusy ? t('git.loading') : gitDetails.diff || t('git.clean')}</pre></section><section><header>{t('git.history')}</header><div>{gitDetails.commits.length ? gitDetails.commits.map((commit) => <article key={commit.hash}><code>{commit.hash.slice(0, 8)}</code><strong>{commit.subject}</strong><span>{commit.author}</span><time>{new Date(commit.timestamp * 1000).toLocaleString(locale)}</time></article>) : <p>{t('git.noHistory')}</p>}</div></section></main>
+      </section></div>}
 
       {reportError && (
         <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>

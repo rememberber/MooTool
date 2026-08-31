@@ -12,6 +12,8 @@ pub struct QuickNote {
     pub tags: Vec<String>,
     #[serde(default = "default_note_color")]
     pub color: String,
+    #[serde(default)]
+    pub folder_path: String,
     pub pinned: bool,
     pub created_at: i64,
     pub updated_at: i64,
@@ -42,8 +44,47 @@ impl QuickNote {
         ) {
             return Err("unsupported note color".into());
         }
+        validate_note_folder_path(&self.folder_path, true)?;
         validate_timestamps(self.created_at, self.updated_at)
     }
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct QuickNoteFolder {
+    pub path: String,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+impl QuickNoteFolder {
+    pub fn validate(&self) -> Result<(), String> {
+        validate_note_folder_path(&self.path, false)?;
+        validate_timestamps(self.created_at, self.updated_at)
+    }
+}
+
+pub fn validate_note_folder_path(path: &str, allow_empty: bool) -> Result<(), String> {
+    if path.is_empty() {
+        return if allow_empty {
+            Ok(())
+        } else {
+            Err("note folder path cannot be empty".into())
+        };
+    }
+    if path.len() > 512
+        || path.starts_with('/')
+        || path.ends_with('/')
+        || path.contains("//")
+        || path.contains('\\')
+        || path.chars().any(char::is_control)
+        || path
+            .split('/')
+            .any(|part| part.is_empty() || part == "." || part == ".." || part.chars().count() > 80)
+    {
+        return Err("invalid note folder path".into());
+    }
+    Ok(())
 }
 
 fn default_note_color() -> String {
@@ -183,7 +224,55 @@ pub struct OperationHistory {
     pub action: String,
     pub summary: String,
     pub status: String,
+    #[serde(default)]
+    pub input_text: String,
+    #[serde(default)]
+    pub output_text: String,
+    #[serde(default = "default_metadata_json")]
+    pub metadata_json: String,
     pub created_at: i64,
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ToolFavorite {
+    pub id: String,
+    pub tool_id: String,
+    pub name: String,
+    pub payload_json: String,
+    pub created_at: i64,
+    pub updated_at: i64,
+}
+
+impl ToolFavorite {
+    pub fn validate(&self) -> Result<(), String> {
+        validate_id(&self.id)?;
+        if self.tool_id.is_empty()
+            || self.tool_id.len() > 64
+            || !self
+                .tool_id
+                .bytes()
+                .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'-')
+        {
+            return Err("invalid tool favorite tool ID".into());
+        }
+        if self.name.trim().is_empty() || self.name.chars().count() > 80 {
+            return Err("tool favorite name must contain 1 to 80 characters".into());
+        }
+        if self.payload_json.len() > 512 * 1024 {
+            return Err("tool favorite payload cannot exceed 512 KiB".into());
+        }
+        let payload: serde_json::Value = serde_json::from_str(&self.payload_json)
+            .map_err(|_| "tool favorite payload must be valid JSON".to_string())?;
+        if !payload.is_object() {
+            return Err("tool favorite payload must be a JSON object".into());
+        }
+        validate_timestamps(self.created_at, self.updated_at)
+    }
+}
+
+fn default_metadata_json() -> String {
+    "{}".into()
 }
 
 impl OperationHistory {
@@ -203,6 +292,17 @@ impl OperationHistory {
         }
         if self.summary.chars().count() > 2_000 {
             return Err("operation history summary cannot exceed 2000 characters".into());
+        }
+        if self.input_text.len() > 512 * 1024 || self.output_text.len() > 512 * 1024 {
+            return Err("operation history input and output cannot exceed 512 KiB".into());
+        }
+        if self.metadata_json.len() > 64 * 1024 {
+            return Err("operation history metadata cannot exceed 64 KiB".into());
+        }
+        let metadata: serde_json::Value = serde_json::from_str(&self.metadata_json)
+            .map_err(|_| "operation history metadata must be valid JSON".to_string())?;
+        if !metadata.is_object() {
+            return Err("operation history metadata must be a JSON object".into());
         }
         if !matches!(self.status.as_str(), "info" | "success" | "error") {
             return Err("invalid operation history status".into());
@@ -293,6 +393,7 @@ mod tests {
             content: "Independent product".into(),
             tags: vec!["desktop".into()],
             color: "blue".into(),
+            folder_path: "work/tauri".into(),
             pinned: true,
             created_at: 10,
             updated_at: 11,

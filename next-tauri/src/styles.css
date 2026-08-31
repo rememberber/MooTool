@@ -2070,6 +2070,145 @@ input:focus {
   line-height: 1.5;
 }
 
+.json-git-backdrop {
+  position: fixed;
+  z-index: 90;
+  display: grid;
+  background: rgba(20, 25, 35, .42);
+  inset: 0;
+  place-items: center;
+}
+
+.json-git-dialog {
+  display: grid;
+  width: min(940px, calc(100vw - 48px));
+  height: min(680px, calc(100vh - 64px));
+  grid-template-rows: auto auto minmax(0, 1fr);
+  overflow: hidden;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: 0 24px 80px rgba(15, 23, 42, .3);
+}
+
+.json-git-dialog > header,
+.json-git-remote {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 11px 14px;
+  border-bottom: 1px solid var(--border);
+}
+
+.json-git-dialog > header > div,
+.json-git-dialog > header span {
+  display: flex;
+  min-width: 0;
+  align-items: center;
+  gap: 7px;
+}
+
+.json-git-dialog > header span {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.json-git-dialog > header small,
+.json-git-remote span {
+  color: var(--subtle);
+  font-size: 9px;
+}
+
+.json-git-dialog > header button {
+  display: inline-flex;
+  min-height: 29px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface-muted);
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 9px;
+}
+
+.json-git-dialog > header svg {
+  width: 14px;
+  height: 14px;
+}
+
+.json-git-remote {
+  justify-content: flex-start;
+}
+
+.json-git-remote code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.json-git-dialog > main {
+  display: grid;
+  min-height: 0;
+  grid-template-columns: minmax(0, 1.15fr) minmax(300px, .85fr);
+}
+
+.json-git-dialog > main > section {
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.json-git-dialog > main > section + section {
+  border-left: 1px solid var(--border);
+}
+
+.json-git-dialog > main > section > header {
+  padding: 8px 11px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-muted);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.json-git-dialog pre,
+.json-git-dialog > main > section > div {
+  min-height: 0;
+  margin: 0;
+  padding: 10px;
+  overflow: auto;
+}
+
+.json-git-dialog pre {
+  font: 10px/1.55 var(--font-mono);
+  white-space: pre-wrap;
+}
+
+.json-git-dialog article {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 4px 8px;
+  padding: 8px 3px;
+  border-bottom: 1px solid var(--border);
+  font-size: 9px;
+}
+
+.json-git-dialog article strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.json-git-dialog article span,
+.json-git-dialog article time {
+  color: var(--subtle);
+  font-size: 8px;
+}
+
 .json-vault__empty--setup {
   display: flex;
   min-height: 0;
@@ -2235,8 +2374,40 @@ input:focus {
   font-size: 10px;
 }
 
-.json-path-field input {
+.json-path-field input,
+.json-path-field select {
   width: 100%;
+}
+
+.json-path-field select {
+  min-height: 31px;
+  padding: 0 7px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 9px;
+}
+
+.json-duplicate-count--error {
+  color: var(--danger) !important;
+}
+
+.json-duplicate-list {
+  display: flex;
+  max-height: 72px;
+  flex-wrap: wrap;
+  gap: 4px;
+  overflow: auto;
+}
+
+.json-duplicate-list code {
+  padding: 3px 5px;
+  border: 1px solid color-mix(in srgb, var(--danger) 30%, var(--border));
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--danger) 8%, var(--surface));
+  color: var(--danger);
+  font-size: 8px;
 }
 
 .json-path-result {
@@ -2745,6 +2916,65 @@ input:focus {
   min-height: 32px;
   padding-inline: 10px;
   font-size: 10px;
+}
+
+.tool-favorite-bar {
+  display: flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 6px;
+  min-height: 36px;
+  padding: 4px 6px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  background: var(--surface);
+}
+
+.tool-favorite-bar > svg {
+  width: 16px;
+  height: 16px;
+  color: var(--accent);
+}
+
+.tool-favorite-bar select {
+  min-width: 150px;
+  max-width: 260px;
+  height: 28px;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+}
+
+.tool-favorite-bar button {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.tool-favorite-bar button:hover:not(:disabled) {
+  background: var(--surface-muted);
+  color: var(--text);
+}
+
+.tool-favorite-bar button:disabled {
+  cursor: default;
+  opacity: .4;
+}
+
+.tool-favorite-bar button svg {
+  width: 15px;
+  height: 15px;
+}
+
+.tool-favorite-bar [role="alert"] {
+  color: var(--danger);
+  font-weight: 700;
 }
 
 .utility-segments {
@@ -5004,6 +5234,75 @@ input:focus {
   border-radius: 7px;
   background: var(--panel-strong);
   color: var(--text);
+}
+
+.history-row-actions {
+  display: flex;
+  align-self: start;
+  gap: 4px;
+}
+
+.history-row-actions button,
+.history-payload button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.history-row-actions button {
+  width: 30px;
+  height: 30px;
+}
+
+.history-row-actions button:disabled {
+  cursor: not-allowed;
+  opacity: .35;
+}
+
+.history-payload {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.history-payload section {
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--panel);
+}
+
+.history-payload section > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.history-payload button {
+  padding: 2px 4px;
+  font-size: 11px;
+}
+
+.history-payload button svg {
+  width: 12px;
+  height: 12px;
+}
+
+.history-payload pre {
+  overflow: hidden;
+  margin: 4px 0 0;
+  color: var(--text-secondary);
+  font: 11px/1.45 var(--font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .history-panel > header button,
@@ -8601,7 +8900,100 @@ main.http-workbench {
   min-height: 0;
   border-right: 1px solid var(--border);
   background: var(--surface-muted);
-  grid-template-rows: 43px 32px minmax(0, 1fr);
+  grid-template-rows: 43px minmax(94px, .42fr) 32px minmax(130px, 1fr);
+}
+
+.quick-note-folders {
+  min-height: 0;
+  overflow: auto;
+  padding: 5px;
+  border-bottom: 1px solid var(--border);
+}
+
+.quick-note-folders > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 4px 5px;
+  color: var(--muted);
+  font-size: 8px;
+}
+
+.quick-note-folders > header strong,
+.quick-note-folders > header span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+
+.quick-note-folders > header svg,
+.quick-note-folder svg {
+  width: 11px;
+  height: 11px;
+}
+
+.quick-note-folders > header button {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  padding: 0;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--subtle);
+  cursor: pointer;
+}
+
+.quick-note-folders > header button:hover:not(:disabled) {
+  background: var(--surface);
+  color: var(--accent);
+}
+
+.quick-note-folders > header button:disabled {
+  opacity: .35;
+}
+
+.quick-note-folder {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  min-height: 25px;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 7px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 8px;
+  text-align: left;
+}
+
+.quick-note-folder span {
+  min-width: 0;
+  overflow: hidden;
+  flex: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.quick-note-folder em {
+  margin-left: auto;
+  color: var(--subtle);
+  font-size: 7px;
+  font-style: normal;
+}
+
+.quick-note-folder:hover,
+.quick-note-folder--active {
+  background: var(--surface);
+  color: var(--text);
+}
+
+.quick-note-folder--active svg {
+  color: var(--accent);
 }
 
 .quick-note-tag-filter {
@@ -10118,11 +10510,17 @@ main.http-workbench {
   display: grid;
   min-width: 0;
   min-height: 0;
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: auto minmax(120px, .7fr) minmax(0, 1fr);
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--surface);
+}
+
+.network-native-panel > header > span {
+  display: flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .network-native-panel > header {
@@ -10201,7 +10599,61 @@ main.http-workbench {
 }
 
 .network-diagnostics {
-  grid-template-rows: auto auto auto auto minmax(0, 1fr);
+  grid-template-rows: auto auto auto auto auto minmax(0, 1fr);
+}
+
+.network-connections {
+  display: grid;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+  border-top: 1px solid var(--border);
+}
+
+.network-connections > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 7px 10px;
+  background: var(--surface-muted);
+}
+
+.network-connections > header input {
+  min-width: 220px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+}
+
+.network-connections > div {
+  min-height: 0;
+  overflow: auto;
+}
+
+.network-connections article {
+  display: grid;
+  min-width: 680px;
+  grid-template-columns: 50px minmax(170px, 1fr) auto minmax(170px, 1fr) 90px minmax(100px, .6fr);
+  align-items: center;
+  gap: 7px;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--border);
+  font-size: 9px;
+}
+
+.network-connections article code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.network-connections article em,
+.network-connections article small {
+  color: var(--subtle);
+  font-style: normal;
 }
 
 .network-target,
@@ -10249,6 +10701,10 @@ main.http-workbench {
 
 .network-scan input {
   width: 84px;
+}
+
+.network-range-scan input {
+  width: 140px;
 }
 
 .network-diagnostic-results {

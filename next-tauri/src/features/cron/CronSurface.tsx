@@ -12,6 +12,8 @@ import { contentFingerprint } from '../../shared/fingerprint'
 import { useSettings } from '../settings/SettingsProvider'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
+import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
+import { ToolFavoriteBar } from '../favorites/ToolFavoriteBar'
 import {
   buildCron,
   cronPresets,
@@ -72,6 +74,18 @@ export function CronSurface() {
   }), [error, expression, runs.length, t, timeZone])
   const { sessionId, reportError } = useToolSessionReport('cron', session.digest, session.summary)
   const recordOperation = useOperationHistory('cron')
+  useOperationRestore('cron', (entry) => {
+    const metadata = parseOperationMetadata(entry)
+    const nextZone = typeof metadata.timeZone === 'string' ? metadata.timeZone : systemZone
+    setExpression(entry.inputText)
+    setTimeZone(nextZone)
+    try {
+      setFields(splitCron(entry.inputText))
+      setDescription(typeof metadata.description === 'string' ? metadata.description : '')
+      setRuns(entry.outputText ? entry.outputText.split('\n') : [])
+      setError(undefined)
+    } catch (cause) { setError(cronError(cause)) }
+  })
   const zoneOptions = Array.from(new Set([systemZone, ...timezones]))
 
   function calculate(nextExpression = expression): void {
@@ -84,12 +98,18 @@ export function CronSurface() {
       setDescription(nextDescription)
       setRuns(nextRuns)
       setError(undefined)
-      recordOperation(t('action.parse'), `${nextExpression} · ${timeZone} · ${nextRuns.length}`, 'success')
+      recordOperation(t('action.parse'), `${nextExpression} · ${timeZone} · ${nextRuns.length}`, 'success', {
+        inputText: nextExpression,
+        outputText: nextRuns.join('\n'),
+        metadata: { timeZone, description: nextDescription }
+      })
     } catch (cause) {
       setRuns([])
       setDescription('')
       setError(cronError(cause))
-      recordOperation(t('action.parse'), `${nextExpression} · ${cause instanceof Error ? cause.message : String(cause)}`, 'error')
+      recordOperation(t('action.parse'), `${nextExpression} · ${cause instanceof Error ? cause.message : String(cause)}`, 'error', {
+        inputText: nextExpression, metadata: { timeZone }
+      })
     }
   }
 
@@ -138,6 +158,26 @@ export function CronSurface() {
           </button>
         </div>
       </section>
+
+      <ToolFavoriteBar
+        toolId="cron"
+        defaultName={expression || 'Cron'}
+        payload={{ expression, timeZone }}
+        onApply={(payload) => {
+          const nextExpression = typeof payload.expression === 'string' ? payload.expression : expression
+          const nextZone = typeof payload.timeZone === 'string' ? payload.timeZone : timeZone
+          setExpression(nextExpression)
+          setTimeZone(nextZone)
+          setRuns([])
+          setDescription('')
+          try {
+            setFields(splitCron(nextExpression))
+            setError(undefined)
+          } catch (cause) {
+            setError(cronError(cause))
+          }
+        }}
+      />
 
       <section className="cron-content">
         <div className="cron-builder">

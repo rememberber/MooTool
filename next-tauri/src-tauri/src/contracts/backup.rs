@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 pub const BACKUP_FORMAT_VERSION: u32 = 2;
 pub const BACKUP_PRODUCT_ID: &str = "com.rememberber.mootool.next.tauri";
-pub const DATABASE_SCHEMA_VERSION: u32 = 6;
+pub const DATABASE_SCHEMA_VERSION: u32 = 11;
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]

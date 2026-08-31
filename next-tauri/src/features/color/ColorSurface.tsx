@@ -24,6 +24,8 @@ import type { ImageAsset } from '../../platform/contracts/image'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
+import { useOperationRestore } from '../history/operationRestore'
+import { ToolFavoriteBar } from '../favorites/ToolFavoriteBar'
 import {
   bestTextColor,
   ColorToolError,
@@ -81,6 +83,14 @@ export function ColorSurface() {
   }), [contrastHex, formats.hex, hex, ratio, t])
   const { sessionId, reportError } = useToolSessionReport('color', session.digest, session.summary)
   const recordOperation = useOperationHistory('color')
+  useOperationRestore('color', (entry) => {
+    try {
+      const value = JSON.parse(entry.inputText) as { hex?: string; contrastHex?: string }
+      if (value.hex) setHex(value.hex)
+      if (value.contrastHex) setContrastHex(value.contrastHex)
+    } catch { setHex(entry.outputText || entry.inputText) }
+    setFailed(false)
+  })
 
   function updateHex(value: string): void {
     setHex(value.toUpperCase())
@@ -107,7 +117,9 @@ export function ColorSurface() {
     const value = randomColor()
     setHex(value)
     succeed('notice.random', { value })
-    recordOperation(t('action.random'), value, 'success')
+    recordOperation(t('action.random'), value, 'success', {
+      inputText: JSON.stringify({ hex, contrastHex }), outputText: value, metadata: { source: 'random' }
+    })
   }
 
   async function sampleScreen(): Promise<void> {
@@ -155,7 +167,10 @@ export function ColorSurface() {
       if (names.length) await imageApi.delete(names)
       updateHex(sample.hex)
       succeed('notice.screenColorPosition', { value: sample.hex, x: sample.x, y: sample.y })
-      recordOperation(t('action.pickScreen'), `${sample.hex} · ${sample.x},${sample.y}`, 'success')
+      recordOperation(t('action.pickScreen'), `${sample.hex} · ${sample.x},${sample.y}`, 'success', {
+        inputText: JSON.stringify({ hex, contrastHex }), outputText: sample.hex,
+        metadata: { source: 'screen', x: sample.x, y: sample.y }
+      })
     } catch (cause) {
       fail(cause)
     }
@@ -179,6 +194,16 @@ export function ColorSurface() {
         </div>
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
+
+      <ToolFavoriteBar
+        toolId="color"
+        defaultName={formats.hex}
+        payload={{ hex, contrastHex }}
+        onApply={(payload) => {
+          if (typeof payload.hex === 'string') updateHex(payload.hex)
+          if (typeof payload.contrastHex === 'string') setContrastHex(payload.contrastHex.toUpperCase())
+        }}
+      />
 
       <section className="color-grid">
         <section className="color-hero-card">

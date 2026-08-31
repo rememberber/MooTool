@@ -17,8 +17,8 @@ use crate::{
     contracts::{
         error::AppResult,
         vault::{
-            VaultDocument, VaultGitOperation, VaultGitRequest, VaultGitResult, VaultGitStatus,
-            VaultSaveRequest, VaultSnapshot, VaultTrashResult,
+            VaultDocument, VaultGitCommit, VaultGitDetails, VaultGitOperation, VaultGitRequest,
+            VaultGitResult, VaultGitStatus, VaultSaveRequest, VaultSnapshot, VaultTrashResult,
         },
     },
     repositories::{settings::SettingsRepository, vault::VaultRepository},
@@ -250,6 +250,92 @@ pub async fn get_vault_git_status(
 }
 
 #[tauri::command]
+pub async fn get_vault_git_details(
+    repository: tauri::State<'_, VaultRepository>,
+    relative_path: Option<String>,
+) -> AppResult<VaultGitDetails> {
+    let root = repository.root()?;
+    let selected = relative_path
+        .as_deref()
+        .map(validate_git_relative_path)
+        .transpose()?;
+    let mut diff_arguments = vec!["diff", "--no-ext-diff", "--no-color"];
+    if let Some(path) = selected {
+        diff_arguments.extend(["--", path]);
+    }
+    let diff_output = run_git_unmanaged(&root, &diff_arguments).await?;
+    if !diff_output.status.success() {
+        return Err(bounded_output(diff_output.stderr).into());
+    }
+    let mut staged_arguments = vec!["diff", "--cached", "--no-ext-diff", "--no-color"];
+    if let Some(path) = selected {
+        staged_arguments.extend(["--", path]);
+    }
+    let staged_output = run_git_unmanaged(&root, &staged_arguments).await?;
+    if !staged_output.status.success() {
+        return Err(bounded_output(staged_output.stderr).into());
+    }
+    let mut combined_diff = Vec::new();
+    if !diff_output.stdout.is_empty() {
+        combined_diff.extend_from_slice(b"Unstaged changes\n\n");
+        combined_diff.extend_from_slice(&diff_output.stdout);
+    }
+    if !staged_output.stdout.is_empty() {
+        if !combined_diff.is_empty() {
+            combined_diff.extend_from_slice(b"\n");
+        }
+        combined_diff.extend_from_slice(b"Staged changes\n\n");
+        combined_diff.extend_from_slice(&staged_output.stdout);
+    }
+    let mut log_arguments = vec![
+        "log",
+        "-n",
+        "50",
+        "--date-order",
+        "--pretty=format:%H%x1f%an%x1f%ct%x1f%s%x1e",
+    ];
+    if let Some(path) = selected {
+        log_arguments.extend(["--", path]);
+    }
+    let log_output = run_git_unmanaged(&root, &log_arguments).await?;
+    let commits = if log_output.status.success() {
+        parse_git_commits(&String::from_utf8_lossy(&log_output.stdout))
+    } else {
+        Vec::new()
+    };
+    Ok(VaultGitDetails {
+        diff: bounded_output(combined_diff),
+        commits,
+    })
+}
+
+#[tauri::command]
+pub async fn configure_vault_git_remote(
+    repository: tauri::State<'_, VaultRepository>,
+    remote: String,
+) -> AppResult<VaultGitStatus> {
+    let root = repository.root()?;
+    let remote = validate_git_remote(&remote)?;
+    let current = run_git_unmanaged(&root, &["remote", "get-url", "origin"]).await?;
+    let exists = current.status.success();
+    let output = if remote.is_empty() {
+        if exists {
+            run_git_unmanaged(&root, &["remote", "remove", "origin"]).await?
+        } else {
+            return Ok(inspect_git_status(&root).await?);
+        }
+    } else if exists {
+        run_git_unmanaged(&root, &["remote", "set-url", "origin", &remote]).await?
+    } else {
+        run_git_unmanaged(&root, &["remote", "add", "origin", &remote]).await?
+    };
+    if !output.status.success() {
+        return Err(bounded_output(output.stderr).into());
+    }
+    Ok(inspect_git_status(&root).await?)
+}
+
+#[tauri::command]
 pub async fn run_vault_git(
     repository: tauri::State<'_, VaultRepository>,
     manager: tauri::State<'_, VaultGitManager>,
@@ -344,6 +430,12 @@ async fn inspect_git_status(root: &PathBuf) -> Result<VaultGitStatus, String> {
     let header = lines.next().unwrap_or_default();
     let changed_files = lines.count();
     let branch = parse_branch(header);
+    let remote = run_git_unmanaged(root, &["remote", "get-url", "origin"])
+        .await
+        .ok()
+        .filter(|output| output.status.success())
+        .map(|output| bounded_output(output.stdout).trim().to_string())
+        .unwrap_or_default();
     Ok(VaultGitStatus {
         available: true,
         repository: true,
@@ -352,6 +444,7 @@ async fn inspect_git_status(root: &PathBuf) -> Result<VaultGitStatus, String> {
         changed_files,
         ahead: parse_counter(header, "ahead "),
         behind: parse_counter(header, "behind "),
+        remote,
     })
 }
 
@@ -456,7 +549,10 @@ fn parse_branch(header: &str) -> String {
         return branch.trim().to_string();
     }
     value
-        .split(['.', ' '])
+        .split("...")
+        .next()
+        .unwrap_or_default()
+        .split_whitespace()
         .next()
         .unwrap_or_default()
         .trim()
@@ -475,6 +571,55 @@ fn parse_counter(header: &str, marker: &str) -> u32 {
         .unwrap_or_default()
 }
 
+fn validate_git_relative_path(value: &str) -> Result<&str, String> {
+    if value.is_empty()
+        || value.len() > 2048
+        || value.starts_with('/')
+        || value.contains('\\')
+        || value.contains('\0')
+        || value
+            .split('/')
+            .any(|part| part.is_empty() || part == "." || part == "..")
+    {
+        return Err("invalid Vault Git relative path".into());
+    }
+    Ok(value)
+}
+
+fn validate_git_remote(value: &str) -> Result<String, String> {
+    let remote = value.trim();
+    if remote.is_empty() {
+        return Ok(String::new());
+    }
+    if remote.len() > 2048
+        || remote.contains(['\r', '\n', '\0'])
+        || !(remote.starts_with("https://")
+            || remote.starts_with("http://")
+            || remote.starts_with("ssh://")
+            || remote.starts_with("git://")
+            || remote.starts_with("git@")
+            || remote.starts_with("file://"))
+    {
+        return Err("invalid Vault Git remote URL".into());
+    }
+    Ok(remote.to_string())
+}
+
+fn parse_git_commits(output: &str) -> Vec<VaultGitCommit> {
+    output
+        .split('\x1e')
+        .filter_map(|record| {
+            let fields = record.trim().split('\x1f').collect::<Vec<_>>();
+            (fields.len() == 4).then(|| VaultGitCommit {
+                hash: fields[0].to_string(),
+                author: fields[1].to_string(),
+                timestamp: fields[2].parse().unwrap_or_default(),
+                subject: fields[3].to_string(),
+            })
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -485,6 +630,10 @@ mod tests {
         assert_eq!(parse_branch(header), "main");
         assert_eq!(parse_counter(header, "ahead "), 2);
         assert_eq!(parse_counter(header, "behind "), 3);
+        assert_eq!(
+            parse_branch("## release/1.2...origin/release/1.2"),
+            "release/1.2"
+        );
         assert!(
             validate_git_request(&VaultGitRequest {
                 request_id: "request-1".into(),
@@ -494,6 +643,24 @@ mod tests {
             })
             .is_err()
         );
+    }
+
+    #[test]
+    fn validates_git_remotes_paths_and_commit_records() {
+        assert_eq!(
+            validate_git_remote(" https://example.com/mootool.git ").expect("remote"),
+            "https://example.com/mootool.git"
+        );
+        assert!(validate_git_remote("--upload-pack=helper").is_err());
+        assert!(validate_git_remote("https://example.com/repo\nmalicious").is_err());
+        assert!(validate_git_relative_path("folder/example.json").is_ok());
+        assert!(validate_git_relative_path("../example.json").is_err());
+
+        let commits = parse_git_commits("abc123\x1fMoo\x1f42\x1fInitial commit\x1e");
+        assert_eq!(commits.len(), 1);
+        assert_eq!(commits[0].hash, "abc123");
+        assert_eq!(commits[0].timestamp, 42);
+        assert_eq!(commits[0].subject, "Initial commit");
     }
 
     #[tokio::test]

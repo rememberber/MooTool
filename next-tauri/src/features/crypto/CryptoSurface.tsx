@@ -20,6 +20,7 @@ import { CodeEditor } from '../../shared/CodeEditor'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
+import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import {
   decodeBase,
   decryptAesGcm,
@@ -76,12 +77,27 @@ export function CryptoSurface() {
   }), [hashAlgorithm, output, source, t, tab])
   const { sessionId, reportError } = useToolSessionReport('crypto', session.digest, session.summary)
   const recordOperation = useOperationHistory('crypto')
+  useOperationRestore('crypto', (entry) => {
+    const metadata = parseOperationMetadata(entry)
+    const nextTab = metadata.tab
+    if (nextTab === 'digest' || nextTab === 'base' || nextTab === 'random') setTab(nextTab)
+    if (typeof metadata.hashAlgorithm === 'string') setHashAlgorithm(metadata.hashAlgorithm as HashAlgorithm)
+    if (typeof metadata.baseAlgorithm === 'string') setBaseAlgorithm(metadata.baseAlgorithm as BaseAlgorithm)
+    if (typeof metadata.randomKind === 'string') setRandomKind(metadata.randomKind as RandomKind)
+    if (typeof metadata.randomLength === 'number') setRandomLength(metadata.randomLength)
+    setSource(entry.inputText)
+    setOutput(entry.outputText)
+    setFailed(false)
+  })
 
   function runDigest(): void {
     try {
-      setOutput(hmacSecret ? hmacSha256(source, hmacSecret) : hashText(source, hashAlgorithm))
+      const result = hmacSecret ? hmacSha256(source, hmacSecret) : hashText(source, hashAlgorithm)
+      setOutput(result)
       succeed(hmacSecret ? 'notice.hmacDone' : 'notice.digestDone', hmacSecret ? undefined : { algorithm: hashAlgorithm.toUpperCase() })
-      recordOperation(t('operation.digest'), `${hmacSecret ? 'HMAC-SHA256' : hashAlgorithm.toUpperCase()} · ${source.length}`, 'success')
+      recordOperation(t('operation.digest'), `${hmacSecret ? 'HMAC-SHA256' : hashAlgorithm.toUpperCase()} · ${source.length}`, 'success', hmacSecret
+        ? { metadata: { tab: 'digest', sensitive: true } }
+        : { inputText: source, outputText: result, metadata: { tab: 'digest', hashAlgorithm } })
     } catch (cause) {
       fail(cause)
     }
@@ -93,7 +109,9 @@ export function CryptoSurface() {
       if (!result) return
       setOutput(result.digest)
       succeed('notice.fileDigest', { name: result.name, algorithm: hashAlgorithm.toUpperCase() })
-      recordOperation(t('operation.fileDigest'), `${result.name} · ${hashAlgorithm.toUpperCase()} · ${result.digest}`, 'success')
+      recordOperation(t('operation.fileDigest'), `${result.name} · ${hashAlgorithm.toUpperCase()} · ${result.digest}`, 'success', {
+        outputText: result.digest, metadata: { tab: 'digest', operation: 'fileDigest', fileName: result.name, hashAlgorithm }
+      })
     } catch (cause) { fail(cause) }
   }
 
@@ -104,7 +122,9 @@ export function CryptoSurface() {
         : await decryptAesGcm(source, passphrase)
       setOutput(result)
       succeed(mode === 'encrypt' ? 'notice.encrypted' : 'notice.decrypted')
-      recordOperation(t(mode === 'encrypt' ? 'operation.encrypt' : 'operation.decrypt'), `AES-256-GCM · ${source.length}`, 'success')
+      recordOperation(t(mode === 'encrypt' ? 'operation.encrypt' : 'operation.decrypt'), `AES-256-GCM · ${source.length}`, 'success', {
+        metadata: { tab: 'aes', sensitive: true }
+      })
     } catch (cause) {
       fail(cause)
     }
@@ -112,9 +132,12 @@ export function CryptoSurface() {
 
   function runBase(mode: 'encode' | 'decode'): void {
     try {
-      setOutput(mode === 'encode' ? encodeBase(source, baseAlgorithm) : decodeBase(source, baseAlgorithm))
+      const result = mode === 'encode' ? encodeBase(source, baseAlgorithm) : decodeBase(source, baseAlgorithm)
+      setOutput(result)
       succeed(mode === 'encode' ? 'notice.encoded' : 'notice.decoded', { algorithm: baseAlgorithm.toUpperCase() })
-      recordOperation(t(mode === 'encode' ? 'operation.encode' : 'operation.decode'), `${baseAlgorithm.toUpperCase()} · ${source.length}`, 'success')
+      recordOperation(t(mode === 'encode' ? 'operation.encode' : 'operation.decode'), `${baseAlgorithm.toUpperCase()} · ${source.length}`, 'success', {
+        inputText: source, outputText: result, metadata: { tab: 'base', mode, baseAlgorithm }
+      })
     } catch (cause) { fail(cause) }
   }
 
@@ -125,7 +148,7 @@ export function CryptoSurface() {
       setRsaPublicKey(pair.publicKey)
       setRsaPrivateKey(pair.privateKey)
       succeed('notice.keysGenerated', { bits: rsaBits })
-      recordOperation(t('operation.keyPair'), `RSA ${rsaBits}`, 'success')
+      recordOperation(t('operation.keyPair'), `RSA ${rsaBits}`, 'success', { metadata: { tab: 'rsa', sensitive: true } })
     } catch (cause) { fail(cause) } finally { setRsaBusy(false) }
   }
 
@@ -134,7 +157,7 @@ export function CryptoSurface() {
       if (mode === 'verify') {
         const valid = await rsaVerify(source, output, rsaPublicKey)
         succeed(valid ? 'notice.verified' : 'notice.notVerified')
-        recordOperation(t('operation.verify'), `RSA-PSS · ${valid}`, valid ? 'success' : 'error')
+        recordOperation(t('operation.verify'), `RSA-PSS · ${valid}`, valid ? 'success' : 'error', { metadata: { tab: 'rsa', sensitive: true } })
         return
       }
       const result = mode === 'encrypt'
@@ -144,15 +167,18 @@ export function CryptoSurface() {
           : await rsaSign(source, rsaPrivateKey)
       setOutput(result)
       succeed(mode === 'encrypt' ? 'notice.rsaEncrypted' : mode === 'decrypt' ? 'notice.rsaDecrypted' : 'notice.signed')
-      recordOperation(t(`operation.${mode}` as CryptoMessageKey), `RSA · ${source.length}`, 'success')
+      recordOperation(t(`operation.${mode}` as CryptoMessageKey), `RSA · ${source.length}`, 'success', { metadata: { tab: 'rsa', sensitive: true } })
     } catch (cause) { fail(cause) }
   }
 
   function runRandom(): void {
     try {
-      setOutput(generateRandom(randomKind, randomLength))
+      const result = generateRandom(randomKind, randomLength)
+      setOutput(result)
       succeed(randomKind === 'uuid' ? 'notice.uuid' : 'notice.random')
-      recordOperation(t('operation.random'), `${randomKind} · ${randomKind === 'uuid' ? 36 : randomLength}`, 'success')
+      recordOperation(t('operation.random'), `${randomKind} · ${randomKind === 'uuid' ? 36 : randomLength}`, 'success', {
+        outputText: result, metadata: { tab: 'random', randomKind, randomLength }
+      })
     } catch (cause) {
       fail(cause)
     }

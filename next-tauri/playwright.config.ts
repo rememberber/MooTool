@@ -7,6 +7,9 @@ export default defineConfig({
   workers: 1,
   retries: process.env.CI ? 2 : 0,
   reporter: process.env.CI ? [['html', { open: 'never' }], ['list']] : 'list',
+  expect: {
+    toHaveScreenshot: { maxDiffPixelRatio: 0.01 }
+  },
   use: {
     baseURL: 'http://127.0.0.1:1421',
     colorScheme: 'light',

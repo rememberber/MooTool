@@ -6,7 +6,16 @@ export interface OperationHistory {
   action: string
   summary: string
   status: OperationStatus
+  inputText: string
+  outputText: string
+  metadataJson: string
   createdAt: number
+}
+
+export interface OperationHistoryPayload {
+  inputText?: string
+  outputText?: string
+  metadata?: Record<string, unknown>
 }
 
 export interface HistoryApi {

@@ -34,6 +34,7 @@ import { contentFingerprint } from '../../shared/fingerprint'
 import { useSettings } from '../settings/SettingsProvider'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
+import { useOperationRestore } from '../history/operationRestore'
 import { httpMessages } from './httpMessages'
 import { buildCurl, cookie, emptyHttpRequest, entry, HttpToolError, parseCurl, type HttpMethod } from './httpTools'
 
@@ -91,6 +92,17 @@ export function HttpSurface() {
   }), [progressText, request.body, request.method, request.url, response, running, t])
   const { sessionId, reportError } = useToolSessionReport('http', session.digest, session.summary)
   const recordOperation = useOperationHistory('http')
+  useOperationRestore('http', (entry) => {
+    try {
+      const restored = JSON.parse(entry.inputText) as HttpRequestSpec
+      setRequest({ ...restored, requestId: crypto.randomUUID() })
+      setResponse(undefined)
+      setActiveSavedId('')
+      setRequestTab('params')
+      setResponseTab('body')
+      setFailed(false)
+    } catch (cause) { fail(cause) }
+  })
 
   const responseOutput = responseTab === 'headers'
     ? response?.headers.map(([name, value]) => `${name}: ${value}`).join('\n') ?? ''
@@ -120,10 +132,16 @@ export function HttpSurface() {
       })
       setResponse(result)
       succeed('notice.complete', { status: result.status })
-      recordOperation(t('operation.send'), `${next.method} ${next.url} · HTTP ${result.status} · ${result.durationMs} ms`, result.status < 400 ? 'success' : 'error')
+      const safeRequest = redactRequest(next)
+      recordOperation(t('operation.send'), `${next.method} ${next.url} · HTTP ${result.status} · ${result.durationMs} ms`, result.status < 400 ? 'success' : 'error', {
+        inputText: JSON.stringify(safeRequest, null, 2),
+        metadata: { status: result.status, durationMs: result.durationMs, redacted: JSON.stringify(safeRequest) !== JSON.stringify(next) }
+      })
     } catch (cause) {
       fail(cause)
-      recordOperation(t('operation.send'), `${next.method} ${next.url} · ${errorText(cause, t)}`, 'error')
+      recordOperation(t('operation.send'), `${next.method} ${next.url} · ${errorText(cause, t)}`, 'error', {
+        inputText: JSON.stringify(redactRequest(next), null, 2), metadata: { redacted: true }
+      })
     } finally {
       setRunning(false)
     }
@@ -276,6 +294,38 @@ export function HttpSurface() {
       {reportError && <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>}
     </main>
   )
+}
+
+const SENSITIVE_FIELD = /authorization|cookie|token|secret|password|api[-_]?key|session/i
+
+function redactRequest(request: HttpRequestSpec): HttpRequestSpec {
+  return {
+    ...request,
+    requestId: '',
+    params: request.params.map(redactEntry),
+    headers: request.headers.map(redactEntry),
+    cookies: request.cookies.map((item) => ({ ...item, value: item.value ? '[REDACTED]' : '' })),
+    body: redactBody(request.body, request.bodyType)
+  }
+}
+
+function redactEntry<T extends HttpEntry>(item: T): T {
+  return SENSITIVE_FIELD.test(item.name) ? { ...item, value: item.value ? '[REDACTED]' : '' } : item
+}
+
+function redactBody(body: string, bodyType: string): string {
+  if (!body.trim()) return body
+  if (!bodyType.toLowerCase().includes('json')) return '[REDACTED FROM GLOBAL HISTORY]'
+  try {
+    const redact = (value: unknown): unknown => {
+      if (Array.isArray(value)) return value.map(redact)
+      if (!value || typeof value !== 'object') return value
+      return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, SENSITIVE_FIELD.test(key) ? '[REDACTED]' : redact(item)]))
+    }
+    return JSON.stringify(redact(JSON.parse(body)), null, 2)
+  } catch {
+    return '[REDACTED FROM GLOBAL HISTORY]'
+  }
 }
 
 function Tabs({ values, labels, active, onChange }: { values: string[]; labels: string[]; active: string; onChange: (value: string) => void }) {

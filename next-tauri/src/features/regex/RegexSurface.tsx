@@ -13,7 +13,9 @@ import { clipboardApi } from '../../platform/api/clipboardApi'
 import { CodeEditor } from '../../shared/CodeEditor'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
+import { ToolFavoriteBar } from '../favorites/ToolFavoriteBar'
 import { useOperationHistory } from '../history/useOperationHistory'
+import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import {
   commonRegexes,
   matchRegex,
@@ -69,6 +71,17 @@ export function RegexSurface() {
   }), [error, matches.length, options, pattern, replacement, source, t])
   const { sessionId, reportError } = useToolSessionReport('regex', session.digest, session.summary)
   const recordOperation = useOperationHistory('regex')
+  useOperationRestore('regex', (entry) => {
+    const metadata = parseOperationMetadata(entry)
+    if (typeof metadata.pattern === 'string') setPattern(metadata.pattern)
+    if (typeof metadata.replacement === 'string') setReplacement(metadata.replacement)
+    if (metadata.options && typeof metadata.options === 'object') setOptions({ ...defaultOptions, ...metadata.options as Partial<RegexOptions> })
+    setSource(entry.inputText)
+    setMatches([])
+    setHasRun(false)
+    setError('')
+    setTab('test')
+  })
   const filteredPatterns = commonRegexes.filter((item) => (
     !patternFilter.trim()
     || `${t(`common.${item.id}`)} ${item.pattern}`.toLowerCase().includes(patternFilter.trim().toLowerCase())
@@ -80,12 +93,19 @@ export function RegexSurface() {
       setMatches(result)
       setError('')
       setHasRun(true)
-      recordOperation(t('action.run'), `/${pattern}/${regexFlags(options)} · ${result.length}`, 'success')
+      recordOperation(t('action.run'), `/${pattern}/${regexFlags(options)} · ${result.length}`, 'success', {
+        inputText: source,
+        outputText: replacementPreview,
+        metadata: { pattern, replacement, options }
+      })
     } catch (cause) {
       setMatches([])
       setError(cause instanceof Error ? cause.message : String(cause))
       setHasRun(true)
-      recordOperation(t('action.run'), `/${pattern}/${regexFlags(options)} · ${cause instanceof Error ? cause.message : String(cause)}`, 'error')
+      recordOperation(t('action.run'), `/${pattern}/${regexFlags(options)} · ${cause instanceof Error ? cause.message : String(cause)}`, 'error', {
+        inputText: source,
+        metadata: { pattern, replacement, options }
+      })
     }
   }
 
@@ -136,6 +156,23 @@ export function RegexSurface() {
             {t('tab.common')}
           </button>
         </div>
+        <ToolFavoriteBar
+          toolId="regex"
+          defaultName={pattern || 'Regex'}
+          payload={{ pattern, source, replacement, options }}
+          onApply={(payload) => {
+            if (typeof payload.pattern === 'string') setPattern(payload.pattern)
+            if (typeof payload.source === 'string') setSource(payload.source)
+            if (typeof payload.replacement === 'string') setReplacement(payload.replacement)
+            if (payload.options && typeof payload.options === 'object' && !Array.isArray(payload.options)) {
+              setOptions({ ...defaultOptions, ...payload.options as Partial<RegexOptions> })
+            }
+            setMatches([])
+            setHasRun(false)
+            setError('')
+            setTab('test')
+          }}
+        />
         <button
           className="icon-button"
           type="button"

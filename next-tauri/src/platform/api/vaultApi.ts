@@ -6,6 +6,7 @@ import type {
   VaultChangedEvent,
   VaultDocument,
   VaultGitRequest,
+  VaultGitDetails,
   VaultGitResult,
   VaultGitStatus,
   VaultSaveRequest,
@@ -40,6 +41,8 @@ export function createVaultApi(invokeCommand: Invoke = invoke): Omit<VaultApi, '
       { relativePath, expectedFingerprint }
     ),
     gitStatus: () => invokeCommand<VaultGitStatus>('get_vault_git_status'),
+    gitDetails: (relativePath) => invokeCommand<VaultGitDetails>('get_vault_git_details', { relativePath }),
+    configureGitRemote: (remote) => invokeCommand<VaultGitStatus>('configure_vault_git_remote', { remote }),
     runGit: (request: VaultGitRequest) => invokeCommand<VaultGitResult>('run_vault_git', { request }),
     cancelGit: (requestId) => invokeCommand<boolean>('cancel_vault_git', { requestId })
   }
@@ -56,7 +59,8 @@ const browserSnapshot: VaultSnapshot = {
     dirty: false,
     changedFiles: 0,
     ahead: 0,
-    behind: 0
+    behind: 0,
+    remote: ''
   }
 }
 
@@ -85,6 +89,8 @@ export const vaultApi: VaultApi = typeof window !== 'undefined' && window.__TAUR
       delete: async () => { throw new Error('JSON Vault 需要在 Tauri 桌面应用中运行') },
       deleteEntry: async () => { throw new Error('JSON Vault 需要在 Tauri 桌面应用中运行') },
       gitStatus: async () => browserSnapshot.git,
+      gitDetails: async () => ({ diff: '', commits: [] }),
+      configureGitRemote: async () => { throw new Error('Vault Git 需要在 Tauri 桌面应用中运行') },
       runGit: async () => { throw new Error('Vault Git 需要在 Tauri 桌面应用中运行') },
       cancelGit: async () => false,
       subscribe: async () => () => undefined

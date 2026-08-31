@@ -17,6 +17,7 @@ import { CodeEditor } from '../../shared/CodeEditor'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
+import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
 import {
   convertProtobufBinary,
   decodeProtobuf,
@@ -87,6 +88,24 @@ export function ProtobufSurface() {
   const { sessionId, reportError } = useToolSessionReport('protobuf', session.digest, session.summary)
   const recordOperation = useOperationHistory('protobuf')
 
+  useOperationRestore('protobuf', (entry) => {
+    const metadata = parseOperationMetadata(entry)
+    try {
+      const input = JSON.parse(entry.inputText) as { schema?: string; jsonInput?: string; binaryInput?: string }
+      setSchema(input.schema ?? defaultSchema)
+      setJsonInput(input.jsonInput ?? '')
+      setBinaryInput(input.binaryInput ?? '')
+    } catch {
+      setJsonInput(entry.inputText)
+      setBinaryInput(entry.outputText)
+    }
+    if (typeof metadata.messageName === 'string') setMessageName(metadata.messageName)
+    if (metadata.format === 'base64' || metadata.format === 'hex') setFormat(metadata.format)
+    setWire('')
+    setWireInspected(false)
+    setFailed(false)
+  })
+
   function encode(): void {
     try {
       const output = encodeProtobuf(schema, messageName, jsonInput, format)
@@ -94,7 +113,10 @@ export function ProtobufSurface() {
       setWire(inspectWire(output, format))
       setWireInspected(true)
       succeed('notice.encoded')
-      recordOperation(t('action.encode'), `${messageName} · ${format.toUpperCase()} · ${output.length}`, 'success')
+      recordOperation(t('action.encode'), `${messageName} · ${format.toUpperCase()} · ${output.length}`, 'success', {
+        inputText: JSON.stringify({ schema, jsonInput, binaryInput: '' }), outputText: output,
+        metadata: { direction: 'encode', messageName, format }
+      })
     } catch (cause) {
       fail(cause)
     }
@@ -107,7 +129,10 @@ export function ProtobufSurface() {
       setWire(inspectWire(binaryInput, format))
       setWireInspected(true)
       succeed('notice.decoded')
-      recordOperation(t('action.decode'), `${messageName} · ${format.toUpperCase()} · ${output.length}`, 'success')
+      recordOperation(t('action.decode'), `${messageName} · ${format.toUpperCase()} · ${output.length}`, 'success', {
+        inputText: JSON.stringify({ schema, jsonInput: '', binaryInput }), outputText: output,
+        metadata: { direction: 'decode', messageName, format }
+      })
     } catch (cause) {
       fail(cause)
     }

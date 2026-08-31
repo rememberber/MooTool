@@ -688,6 +688,7 @@ fn read_database_notes(
             content: truncate_utf8_bytes(&content, 2 * 1024 * 1024),
             tags: Vec::new(),
             color: "default".into(),
+            folder_path: String::new(),
             pinned: false,
             created_at: base_time.saturating_add(index as i64),
             updated_at: base_time.saturating_add(index as i64),
@@ -873,6 +874,9 @@ fn read_database_operation_history(
             action: format!("Imported from {}", source_product.id()),
             summary: truncate_chars(summary.trim(), 2_000),
             status: "success".into(),
+            input_text: String::new(),
+            output_text: String::new(),
+            metadata_json: "{}".into(),
             created_at: base_time.saturating_add(index as i64),
         });
     }
@@ -900,6 +904,12 @@ fn append_quick_note_files(
             content: truncate_utf8_bytes(&content, 2 * 1024 * 1024),
             tags: Vec::new(),
             color: "default".into(),
+            folder_path: file
+                .relative
+                .parent()
+                .and_then(|path| path.to_str())
+                .unwrap_or_default()
+                .replace('\\', "/"),
             pinned: false,
             created_at: base_time.saturating_add(index as i64),
             updated_at: base_time.saturating_add(index as i64),

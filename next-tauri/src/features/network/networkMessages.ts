@@ -14,9 +14,11 @@ export const networkMessages = defineMessages({
     'fact.lastHost': '最后主机', 'fact.total': '地址总数', 'fact.usable': '可用主机', 'fact.integer': '无符号整数',
     'fact.binary': '二进制', 'footer.capabilities': 'IPv4 · CIDR · 子网 · 整数转换 · 本地计算',
     'tabs.aria': '网络工具分类', 'tab.calculator': 'IP 计算', 'tab.interfaces': '网络接口', 'tab.diagnostics': '网络诊断',
-    'notice.interfaces': '已读取 {count} 个网络接口', 'notice.resolved': 'DNS 返回 {count} 个地址', 'notice.pingComplete': 'Ping 已完成', 'notice.pingFailed': 'Ping 未成功完成', 'notice.scanComplete': '扫描完成，发现 {count} 个开放端口',
-    'operation.dns': 'DNS 查询', 'operation.ping': 'Ping', 'operation.scan': '端口扫描', 'interfaces.title': '本机网络接口', 'interfaces.received': '累计接收', 'interfaces.transmitted': '累计发送', 'interfaces.empty': '未发现网络接口',
-    'diagnostics.title': 'DNS、Ping 与 TCP 端口扫描', 'diagnostics.host': '主机名或 IP', 'action.refresh': '刷新', 'action.dns': 'DNS 查询', 'action.ping': 'Ping', 'scan.title': 'TCP 端口范围（最多 1024 个）', 'scan.start': '起始端口', 'scan.end': '结束端口', 'action.scan': '开始扫描', 'scan.openPorts': '{count} 个开放端口',
+    'notice.interfaces': '已读取 {count} 个网络接口', 'notice.connections': '已读取 {count} 条网络连接', 'notice.resolved': 'DNS 返回 {count} 个地址', 'notice.pingComplete': 'Ping 已完成', 'notice.pingFailed': 'Ping 未成功完成', 'notice.scanComplete': '扫描完成，发现 {count} 个开放端口',
+    'notice.scanCancelled': '扫描已取消', 'notice.cancelling': '正在取消扫描…', 'notice.rangeComplete': '网段扫描完成，发现 {count} 个主机开放了探测端口', 'notice.whois': 'WHOIS 查询完成：{server}', 'notice.dnsFlushed': '系统 DNS 缓存已刷新',
+    'operation.dns': 'DNS 查询', 'operation.ping': 'Ping', 'operation.scan': '端口扫描', 'operation.range': '网段扫描', 'operation.whois': 'WHOIS 查询', 'interfaces.title': '本机网络接口', 'interfaces.received': '累计接收', 'interfaces.transmitted': '累计发送', 'interfaces.empty': '未发现网络接口',
+    'diagnostics.title': 'DNS、WHOIS、Ping 与 TCP 扫描', 'diagnostics.host': '主机名或 IP', 'action.refresh': '刷新', 'action.connections': '活动连接', 'action.flushDns': '刷新 DNS 缓存', 'confirm.flushDns': '刷新操作系统 DNS 缓存？部分系统可能要求管理员权限。', 'action.dns': 'DNS 查询', 'action.ping': 'Ping', 'scan.title': 'TCP 端口范围（最多 1024 个）', 'scan.start': '起始端口', 'scan.end': '结束端口', 'action.scan': '开始扫描', 'action.cancel': '取消', 'scan.openPorts': '{count} 个开放端口',
+    'connections.title': '活动连接（{count}）', 'connections.search': '筛选地址、状态或进程', 'range.title': 'IPv4 网段探测（最多 /24）', 'range.ports': '探测端口', 'action.scanRange': '扫描网段', 'range.result': '{count}/{total} 个主机开放探测端口',
     'report.error': '网络状态上报失败：{error}', 'host.loading': '正在加载网络 / IP 工具…'
   },
   'en-US': {
@@ -32,9 +34,11 @@ export const networkMessages = defineMessages({
     'fact.lastHost': 'Last host', 'fact.total': 'Total addresses', 'fact.usable': 'Usable hosts', 'fact.integer': 'Unsigned integer',
     'fact.binary': 'Binary', 'footer.capabilities': 'IPv4 · CIDR · Subnet · Integer conversion · Local calculation',
     'tabs.aria': 'Network tool categories', 'tab.calculator': 'IP calculator', 'tab.interfaces': 'Interfaces', 'tab.diagnostics': 'Diagnostics',
-    'notice.interfaces': '{count} network interfaces loaded', 'notice.resolved': 'DNS returned {count} addresses', 'notice.pingComplete': 'Ping completed', 'notice.pingFailed': 'Ping did not complete successfully', 'notice.scanComplete': 'Scan complete; {count} open ports found',
-    'operation.dns': 'DNS lookup', 'operation.ping': 'Ping', 'operation.scan': 'Port scan', 'interfaces.title': 'Local network interfaces', 'interfaces.received': 'Total received', 'interfaces.transmitted': 'Total transmitted', 'interfaces.empty': 'No network interfaces found',
-    'diagnostics.title': 'DNS, ping, and TCP port scan', 'diagnostics.host': 'Host name or IP', 'action.refresh': 'Refresh', 'action.dns': 'DNS lookup', 'action.ping': 'Ping', 'scan.title': 'TCP port range (up to 1024)', 'scan.start': 'Start port', 'scan.end': 'End port', 'action.scan': 'Scan', 'scan.openPorts': '{count} open ports',
+    'notice.interfaces': '{count} network interfaces loaded', 'notice.connections': '{count} network connections loaded', 'notice.resolved': 'DNS returned {count} addresses', 'notice.pingComplete': 'Ping completed', 'notice.pingFailed': 'Ping did not complete successfully', 'notice.scanComplete': 'Scan complete; {count} open ports found',
+    'notice.scanCancelled': 'Scan cancelled', 'notice.cancelling': 'Cancelling scan…', 'notice.rangeComplete': 'Range scan complete; {count} hosts exposed a probe port', 'notice.whois': 'WHOIS completed via {server}', 'notice.dnsFlushed': 'System DNS cache flushed',
+    'operation.dns': 'DNS lookup', 'operation.ping': 'Ping', 'operation.scan': 'Port scan', 'operation.range': 'Range scan', 'operation.whois': 'WHOIS lookup', 'interfaces.title': 'Local network interfaces', 'interfaces.received': 'Total received', 'interfaces.transmitted': 'Total transmitted', 'interfaces.empty': 'No network interfaces found',
+    'diagnostics.title': 'DNS, WHOIS, ping, and TCP scans', 'diagnostics.host': 'Host name or IP', 'action.refresh': 'Refresh', 'action.connections': 'Connections', 'action.flushDns': 'Flush DNS cache', 'confirm.flushDns': 'Flush the operating system DNS cache? Some systems may require administrator permission.', 'action.dns': 'DNS lookup', 'action.ping': 'Ping', 'scan.title': 'TCP port range (up to 1024)', 'scan.start': 'Start port', 'scan.end': 'End port', 'action.scan': 'Scan', 'action.cancel': 'Cancel', 'scan.openPorts': '{count} open ports',
+    'connections.title': 'Active connections ({count})', 'connections.search': 'Filter address, state, or process', 'range.title': 'IPv4 range probe (up to /24)', 'range.ports': 'Probe ports', 'action.scanRange': 'Scan range', 'range.result': '{count}/{total} hosts expose a probe port',
     'report.error': 'Network status reporting failed: {error}', 'host.loading': 'Loading Network / IP tools…'
   },
   'ja-JP': {
@@ -50,9 +54,11 @@ export const networkMessages = defineMessages({
     'fact.lastHost': '最後のホスト', 'fact.total': '総アドレス数', 'fact.usable': '利用可能ホスト', 'fact.integer': '符号なし整数',
     'fact.binary': 'バイナリ', 'footer.capabilities': 'IPv4 · CIDR · サブネット · 整数変換 · ローカル計算',
     'tabs.aria': 'ネットワークツール分類', 'tab.calculator': 'IP 計算', 'tab.interfaces': 'インターフェース', 'tab.diagnostics': '診断',
-    'notice.interfaces': 'ネットワークインターフェースを {count} 件読み込みました', 'notice.resolved': 'DNS が {count} 件のアドレスを返しました', 'notice.pingComplete': 'Ping が完了しました', 'notice.pingFailed': 'Ping は正常に完了しませんでした', 'notice.scanComplete': 'スキャン完了：開放ポート {count} 件',
-    'operation.dns': 'DNS 検索', 'operation.ping': 'Ping', 'operation.scan': 'ポートスキャン', 'interfaces.title': 'ローカルネットワークインターフェース', 'interfaces.received': '累計受信', 'interfaces.transmitted': '累計送信', 'interfaces.empty': 'ネットワークインターフェースが見つかりません',
-    'diagnostics.title': 'DNS、Ping、TCP ポートスキャン', 'diagnostics.host': 'ホスト名または IP', 'action.refresh': '更新', 'action.dns': 'DNS 検索', 'action.ping': 'Ping', 'scan.title': 'TCP ポート範囲（最大 1024）', 'scan.start': '開始ポート', 'scan.end': '終了ポート', 'action.scan': 'スキャン', 'scan.openPorts': '開放ポート {count} 件',
+    'notice.interfaces': 'ネットワークインターフェースを {count} 件読み込みました', 'notice.connections': 'ネットワーク接続を {count} 件読み込みました', 'notice.resolved': 'DNS が {count} 件のアドレスを返しました', 'notice.pingComplete': 'Ping が完了しました', 'notice.pingFailed': 'Ping は正常に完了しませんでした', 'notice.scanComplete': 'スキャン完了：開放ポート {count} 件',
+    'notice.scanCancelled': 'スキャンをキャンセルしました', 'notice.cancelling': 'スキャンをキャンセル中…', 'notice.rangeComplete': '範囲スキャン完了：{count} ホストでプローブポートを検出', 'notice.whois': '{server} で WHOIS を完了しました', 'notice.dnsFlushed': 'システム DNS キャッシュを消去しました',
+    'operation.dns': 'DNS 検索', 'operation.ping': 'Ping', 'operation.scan': 'ポートスキャン', 'operation.range': '範囲スキャン', 'operation.whois': 'WHOIS 検索', 'interfaces.title': 'ローカルネットワークインターフェース', 'interfaces.received': '累計受信', 'interfaces.transmitted': '累計送信', 'interfaces.empty': 'ネットワークインターフェースが見つかりません',
+    'diagnostics.title': 'DNS、WHOIS、Ping、TCP スキャン', 'diagnostics.host': 'ホスト名または IP', 'action.refresh': '更新', 'action.connections': '接続一覧', 'action.flushDns': 'DNS キャッシュ消去', 'confirm.flushDns': 'OS の DNS キャッシュを消去しますか？管理者権限が必要な場合があります。', 'action.dns': 'DNS 検索', 'action.ping': 'Ping', 'scan.title': 'TCP ポート範囲（最大 1024）', 'scan.start': '開始ポート', 'scan.end': '終了ポート', 'action.scan': 'スキャン', 'action.cancel': 'キャンセル', 'scan.openPorts': '開放ポート {count} 件',
+    'connections.title': 'アクティブ接続（{count}）', 'connections.search': 'アドレス、状態、プロセスを絞り込み', 'range.title': 'IPv4 範囲プローブ（最大 /24）', 'range.ports': 'プローブポート', 'action.scanRange': '範囲をスキャン', 'range.result': '{count}/{total} ホストでプローブポートを検出',
     'report.error': 'ネットワーク状態の報告に失敗しました：{error}', 'host.loading': 'ネットワーク / IP ツールを読み込み中…'
   }
 })
