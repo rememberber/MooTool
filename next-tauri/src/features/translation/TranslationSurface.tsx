@@ -21,8 +21,10 @@ import type { TranslationProvider } from '../../platform/contracts/translation'
 import { CodeEditor } from '../../shared/CodeEditor'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { errorMessage } from '../../shared/errors'
+import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
+import { useSettings } from '../settings/SettingsProvider'
 import {
   alternateTargetLanguage,
   includesTranslationQuery,
@@ -36,6 +38,7 @@ type TranslationMessageKey = LocalizedMessageKey<typeof translationMessages>
 type TranslationNotice = { key: TranslationMessageKey; values?: MessageValues } | { raw: string }
 
 export function TranslationSurface() {
+  const { settings } = useSettings()
   const { t, locale } = useLocalizedMessages(translationMessages)
   const [tab, setTab] = useState<TranslationTab>('translate')
   const [source, setSource] = useState('')
@@ -101,7 +104,7 @@ export function TranslationSurface() {
         sourceLang,
         targetLang,
         preferredProvider: provider,
-        timeoutMs: 15_000
+        timeoutMs: settings.network.translationTimeoutSeconds * 1_000
       })
       if (sequence !== requestSequence.current || activeRequest.current !== requestId) return
       setTarget(result.text)
@@ -120,7 +123,7 @@ export function TranslationSurface() {
         setTranslating(false)
       }
     }
-  }, [cancelActive, languageName, provider, recordOperation, sourceLang, t, targetLang])
+  }, [cancelActive, languageName, provider, recordOperation, settings.network.translationTimeoutSeconds, sourceLang, t, targetLang])
 
   useEffect(() => {
     if (suppressNextAutomaticTranslation.current) {
@@ -252,6 +255,7 @@ function LanguageSelect({ value, includeAuto = false, onChange }: { value: strin
 
 function WordBook({ onApply }: { onApply: (word: TranslationWord) => void }) {
   const { t, locale } = useLocalizedMessages(translationMessages)
+  const dialog = useDesktopDialog()
   const [items, setItems] = useState<TranslationWord[]>([])
   const [query, setQuery] = useState('')
   const [selected, setSelected] = useState<TranslationWord>()
@@ -283,7 +287,7 @@ function WordBook({ onApply }: { onApply: (word: TranslationWord) => void }) {
   }
 
   async function remove() {
-    if (!selected || !window.confirm(t('confirm.deleteWord'))) return
+    if (!selected || !await dialog.confirm(t('confirm.deleteWord'), { dangerous: true })) return
     await localDataApi.deleteTranslationWord(selected.id)
     setSelected(undefined)
     await load()
@@ -299,6 +303,7 @@ function WordBook({ onApply }: { onApply: (word: TranslationWord) => void }) {
 
 function HistoryPanel({ onApply }: { onApply: (item: TranslationHistory) => void }) {
   const { t, locale } = useLocalizedMessages(translationMessages)
+  const dialog = useDesktopDialog()
   const [items, setItems] = useState<TranslationHistory[]>([])
   const [query, setQuery] = useState('')
   const [error, setError] = useState('')
@@ -307,9 +312,12 @@ function HistoryPanel({ onApply }: { onApply: (item: TranslationHistory) => void
   }, [])
   useEffect(() => { void load() }, [load])
   const visible = items.filter((item) => includesTranslationQuery(item, query))
+  async function clearHistory() {
+    if (await dialog.confirm(t('confirm.clearHistory'), { dangerous: true })) await localDataApi.clearTranslationHistory().then(load)
+  }
   return (
     <section className="translation-history-panel">
-      <header><label className="translation-search"><Search /><input value={query} placeholder={t('search.history')} onChange={(event) => setQuery(event.target.value)} /></label><button type="button" disabled={!items.length} onClick={() => { if (window.confirm(t('confirm.clearHistory'))) void localDataApi.clearTranslationHistory().then(load) }}><Trash2 />{t('action.clearAll')}</button></header>
+      <header><label className="translation-search"><Search /><input value={query} placeholder={t('search.history')} onChange={(event) => setQuery(event.target.value)} /></label><button type="button" disabled={!items.length} onClick={() => void clearHistory()}><Trash2 />{t('action.clearAll')}</button></header>
       <div>{visible.length ? visible.map((item) => <article key={item.id}><button type="button" onClick={() => onApply(item)}><header><strong>{languageLabel(item.sourceLang, locale, t('language.auto'))} → {languageLabel(item.targetLang, locale, t('language.auto'))}</strong><span>{item.provider === 'google' ? 'Google' : 'Bing'} · {new Date(item.createdAt).toLocaleString(locale)}</span></header><p>{item.sourceText}</p><p>{item.targetText}</p></button><button type="button" title={t('action.delete')} onClick={() => void localDataApi.deleteTranslationHistory(item.id).then(load)}><Trash2 /></button></article>) : <div className="translation-empty">{t('history.empty')}</div>}</div>
       {error && <p className="translation-error">{error}</p>}
     </section>

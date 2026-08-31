@@ -12,9 +12,10 @@ use crate::{
     contracts::{
         error::AppResult,
         local_data::TranslationHistory,
+        settings::{NetworkSettings, ProxyMode},
         translation::{TranslationProvider, TranslationRequest, TranslationResult},
     },
-    repositories::local_data::LocalDataRepository,
+    repositories::{local_data::LocalDataRepository, settings::SettingsRepository},
 };
 
 const MAX_TRANSLATION_CHARS: usize = 50_000;
@@ -78,6 +79,7 @@ impl TranslationManager {
 pub async fn translate_text(
     manager: tauri::State<'_, TranslationManager>,
     repository: tauri::State<'_, LocalDataRepository>,
+    settings: tauri::State<'_, SettingsRepository>,
     request: TranslationRequest,
 ) -> AppResult<TranslationResult> {
     validate_request(&request)?;
@@ -86,7 +88,8 @@ pub async fn translate_text(
     let source_text = request.text.clone();
     let source_lang = request.source_lang.clone();
     let target_lang = request.target_lang.clone();
-    let result = execute_translation(&manager, &request, cancelled).await;
+    let result =
+        execute_translation(&manager, &request, cancelled, &settings.snapshot().network).await;
     manager.finish(&request_id);
     let result = result?;
     let timestamp = now_millis();
@@ -119,12 +122,35 @@ async fn execute_translation(
     manager: &TranslationManager,
     request: &TranslationRequest,
     cancelled: Arc<Notify>,
+    network: &NetworkSettings,
 ) -> Result<TranslationResult, String> {
-    let client = Client::builder()
+    let mut client_builder = Client::builder()
         .connect_timeout(Duration::from_secs(5))
         .timeout(Duration::from_millis(request.timeout_ms))
         .redirect(Policy::limited(3))
-        .user_agent(TRANSLATION_USER_AGENT)
+        .user_agent(TRANSLATION_USER_AGENT);
+    match network.proxy_mode {
+        ProxyMode::System => {}
+        ProxyMode::Direct => client_builder = client_builder.no_proxy(),
+        ProxyMode::Manual => {
+            let host = network.proxy_host.trim();
+            if host.is_empty() {
+                return Err("manual proxy host is required".into());
+            }
+            let endpoint = if host.contains("://") {
+                host.to_string()
+            } else {
+                format!("http://{host}:{}", network.proxy_port)
+            };
+            let mut proxy = reqwest::Proxy::all(&endpoint)
+                .map_err(|error| format!("invalid proxy endpoint: {error}"))?;
+            if !network.proxy_username.trim().is_empty() {
+                proxy = proxy.basic_auth(network.proxy_username.trim(), "");
+            }
+            client_builder = client_builder.proxy(proxy);
+        }
+    }
+    let client = client_builder
         .build()
         .map_err(|error| format!("failed to create translation client: {error}"))?;
     let providers = match request.preferred_provider {

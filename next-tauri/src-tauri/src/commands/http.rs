@@ -20,8 +20,9 @@ use crate::contracts::{
         HttpProgressEvent, HttpRequestHistory, HttpRequestSpec, HttpResponseData, SavedHttpRequest,
         validate_http_request_payload,
     },
+    settings::{NetworkSettings, ProxyMode},
 };
-use crate::repositories::local_data::LocalDataRepository;
+use crate::repositories::{local_data::LocalDataRepository, settings::SettingsRepository};
 
 const MAX_RESPONSE_BYTES: usize = 5 * 1024 * 1024;
 
@@ -76,6 +77,7 @@ pub async fn execute_http_request(
     app: tauri::AppHandle,
     manager: tauri::State<'_, HttpRequestManager>,
     repository: tauri::State<'_, LocalDataRepository>,
+    settings: tauri::State<'_, SettingsRepository>,
     request: HttpRequestSpec,
     progress: Channel<HttpProgressEvent>,
 ) -> AppResult<HttpResponseData> {
@@ -83,7 +85,7 @@ pub async fn execute_http_request(
     let notify = manager.register(&request.request_id)?;
     let request_id = request.request_id.clone();
     let history_request = request.clone();
-    let result = execute(request, notify, progress).await;
+    let result = execute(request, notify, progress, settings.snapshot().network).await;
     manager.finish(&request_id);
     let response = result?;
     let history = HttpRequestHistory {
@@ -177,10 +179,11 @@ async fn execute(
     request: HttpRequestSpec,
     cancelled: Arc<Notify>,
     progress: Channel<HttpProgressEvent>,
+    network: NetworkSettings,
 ) -> Result<HttpResponseData, String> {
     let started = Instant::now();
     let timeout = Duration::from_millis(request.timeout_ms);
-    let client = reqwest::Client::builder()
+    let mut client_builder = reqwest::Client::builder()
         .redirect(if request.follow_redirects {
             Policy::limited(5)
         } else {
@@ -188,7 +191,29 @@ async fn execute(
         })
         .connect_timeout(timeout.min(Duration::from_secs(30)))
         .timeout(timeout)
-        .user_agent("MooTool-Next-Tauri/0.1")
+        .user_agent("MooTool-Next-Tauri/0.1");
+    match network.proxy_mode {
+        ProxyMode::System => {}
+        ProxyMode::Direct => client_builder = client_builder.no_proxy(),
+        ProxyMode::Manual => {
+            let host = network.proxy_host.trim();
+            if host.is_empty() {
+                return Err("manual proxy host is required".into());
+            }
+            let endpoint = if host.contains("://") {
+                host.to_string()
+            } else {
+                format!("http://{host}:{}", network.proxy_port)
+            };
+            let mut proxy = reqwest::Proxy::all(&endpoint)
+                .map_err(|error| format!("invalid proxy endpoint: {error}"))?;
+            if !network.proxy_username.trim().is_empty() {
+                proxy = proxy.basic_auth(network.proxy_username.trim(), "");
+            }
+            client_builder = client_builder.proxy(proxy);
+        }
+    }
+    let client = client_builder
         .build()
         .map_err(|error| format!("failed to create HTTP client: {error}"))?;
     let method = Method::from_bytes(request.method.as_bytes())

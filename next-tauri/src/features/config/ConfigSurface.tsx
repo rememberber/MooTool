@@ -14,6 +14,7 @@ import { clipboardApi } from '../../platform/api/clipboardApi'
 import { CodeEditor } from '../../shared/CodeEditor'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
+import { useOperationHistory } from '../history/useOperationHistory'
 import {
   formatYaml,
   propertiesToYaml,
@@ -45,17 +46,21 @@ export function ConfigSurface() {
     summary: t('session.summary', { yaml: yaml.length, properties: properties.length })
   }), [properties, t, validation.valid, yaml])
   const { sessionId, reportError } = useToolSessionReport('config', session.digest, session.summary)
+  const recordOperation = useOperationHistory('config')
 
   function run(operation: () => string, apply: (value: string) => void, success: ConfigMessageKey): void {
     try {
-      apply(operation())
+      const output = operation()
+      apply(output)
       setNotice({ key: success })
       setFailed(false)
+      recordOperation(t(success), `${yaml.length} / ${properties.length} → ${output.length}`, 'success')
     } catch (cause) {
       setNotice(cause instanceof ConfigToolError
         ? { key: `error.${cause.code}`, values: cause.values }
         : { raw: cause instanceof Error ? cause.message : String(cause) })
       setFailed(true)
+      recordOperation(t(success), cause instanceof Error ? cause.message : String(cause), 'error')
     }
   }
 

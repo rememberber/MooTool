@@ -38,7 +38,7 @@ export function createLocalDataApi(invokeCommand: Invoke = invoke): LocalDataApi
 
 function createBrowserLocalDataApi(): LocalDataApi {
   return {
-    listNotes: async () => readBrowserList<QuickNote>(NOTES_KEY),
+    listNotes: async () => readBrowserList<QuickNote>(NOTES_KEY).map(normalizeQuickNote),
     saveNote: async (note) => {
       writeBrowserList(NOTES_KEY, upsert(readBrowserList<QuickNote>(NOTES_KEY), note))
       return note
@@ -78,6 +78,14 @@ function createBrowserLocalDataApi(): LocalDataApi {
       window.localStorage.removeItem(TRANSLATION_HISTORY_KEY)
       return count
     }
+  }
+}
+
+function normalizeQuickNote(note: QuickNote): QuickNote {
+  return {
+    ...note,
+    tags: Array.isArray(note.tags) ? note.tags.filter((tag) => typeof tag === 'string') : [],
+    color: ['default', 'coral', 'yellow', 'green', 'blue', 'purple', 'red'].includes(note.color) ? note.color : 'default'
   }
 }
 

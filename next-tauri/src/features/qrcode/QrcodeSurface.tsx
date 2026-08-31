@@ -20,6 +20,7 @@ import { userFilesApi } from '../../platform/api/userFilesApi'
 import { CodeEditor } from '../../shared/CodeEditor'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
+import { useOperationHistory } from '../history/useOperationHistory'
 import {
   decodeQrImage,
   defaultQrOptions,
@@ -57,6 +58,7 @@ export function QrcodeSurface() {
     })
   }), [decoded, options, source, svg, t])
   const { sessionId, reportError } = useToolSessionReport('qrcode', session.digest, session.summary)
+  const recordOperation = useOperationHistory('qrcode')
 
   useEffect(() => {
     const handle = window.setTimeout(() => void renderQr(), 160)
@@ -65,10 +67,11 @@ export function QrcodeSurface() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [source, options])
 
-  async function renderQr(): Promise<void> {
+  async function renderQr(record = false): Promise<void> {
     try {
       setSvg(await generateQrSvg(source, options))
       succeed('notice.generated')
+      if (record) recordOperation(t('action.refresh'), `${source.length} · ${options.size}px`, 'success')
     } catch (cause) {
       setSvg('')
       fail(cause)
@@ -81,6 +84,7 @@ export function QrcodeSurface() {
       const value = await decodeQrImage(file)
       setDecoded(value)
       succeed('notice.decoded')
+      recordOperation(t('scan.title'), `${file.name} · ${value.length}`, 'success')
     } catch (cause) {
       fail(cause)
     }
@@ -90,7 +94,7 @@ export function QrcodeSurface() {
     if (!svg) return
     try {
       const path = await userFilesApi.exportText('mootool-qrcode.svg', svg)
-      if (path) succeed('notice.exported', { path })
+      if (path) { succeed('notice.exported', { path }); recordOperation(t('action.export'), path, 'success') }
     } catch (cause) { fail(cause) }
   }
 
@@ -191,7 +195,7 @@ export function QrcodeSurface() {
               : <QrCode />}
           </div>
           <div className="qrcode-preview-actions">
-            <button className="secondary-button" type="button" onClick={() => void renderQr()}>
+            <button className="secondary-button" type="button" onClick={() => void renderQr(true)}>
               <RefreshCw />{t('action.refresh')}
             </button>
             <button className="primary-button" type="button" disabled={!svg} onClick={() => void download()}>

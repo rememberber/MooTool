@@ -6,11 +6,13 @@ import { productUpdateApi } from '../../platform/api/updateApi'
 import type { RuntimeInfo } from '../../platform/contracts/runtime'
 import type { ProductUpdateCheck, ProductUpdateEvent } from '../../platform/contracts/update'
 import { errorMessage, toProductError } from '../../shared/errors'
+import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
 
 type UpdatePhase = 'idle' | 'checking' | 'installing' | 'cancelling' | 'installed'
 
 export function UpdateCard({ disabled = false }: { disabled?: boolean }) {
   const { t } = useI18n()
+  const dialog = useDesktopDialog()
   const [runtime, setRuntime] = useState<RuntimeInfo>()
   const [result, setResult] = useState<ProductUpdateCheck>()
   const [phase, setPhase] = useState<UpdatePhase>('idle')
@@ -45,7 +47,7 @@ export function UpdateCard({ disabled = false }: { disabled?: boolean }) {
 
   async function installAndRestart(): Promise<void> {
     if (!result || result.status !== 'available') return
-    if (!window.confirm(t('settings.updateConfirm', { version: result.latestVersion ?? '' }))) return
+    if (!await dialog.confirm(t('settings.updateConfirm', { version: result.latestVersion ?? '' }))) return
     setPhase('installing')
     setStatus('')
     setDownloaded(0)

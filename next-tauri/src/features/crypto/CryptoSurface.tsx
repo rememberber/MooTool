@@ -3,6 +3,7 @@ import {
   Clipboard,
   Copy,
   Dices,
+  FileSearch,
   KeyRound,
   LockKeyhole,
   Play,
@@ -14,22 +15,32 @@ import {
 import { useMemo, useState } from 'react'
 import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
+import { fileDigestApi } from '../../platform/api/fileDigestApi'
 import { CodeEditor } from '../../shared/CodeEditor'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
+import { useOperationHistory } from '../history/useOperationHistory'
 import {
+  decodeBase,
   decryptAesGcm,
+  encodeBase,
   encryptAesGcm,
+  generateRsaKeyPair,
   generateRandom,
   hashText,
   hmacSha256,
+  rsaDecrypt,
+  rsaEncrypt,
+  rsaSign,
+  rsaVerify,
   CryptoToolError,
+  type BaseAlgorithm,
   type HashAlgorithm,
   type RandomKind
 } from './cryptoTools'
 import { cryptoMessages } from './cryptoMessages'
 
-type CryptoTab = 'digest' | 'aes' | 'random'
+type CryptoTab = 'digest' | 'aes' | 'rsa' | 'base' | 'random'
 type CryptoMessageKey = LocalizedMessageKey<typeof cryptoMessages>
 type CryptoNotice = { key: CryptoMessageKey; values?: MessageValues } | { raw: string }
 
@@ -40,7 +51,12 @@ export function CryptoSurface() {
   const [output, setOutput] = useState('')
   const [hashAlgorithm, setHashAlgorithm] = useState<HashAlgorithm>('sha256')
   const [hmacSecret, setHmacSecret] = useState('')
+  const [baseAlgorithm, setBaseAlgorithm] = useState<BaseAlgorithm>('base64')
   const [passphrase, setPassphrase] = useState('')
+  const [rsaBits, setRsaBits] = useState<2048 | 3072 | 4096>(2048)
+  const [rsaPublicKey, setRsaPublicKey] = useState('')
+  const [rsaPrivateKey, setRsaPrivateKey] = useState('')
+  const [rsaBusy, setRsaBusy] = useState(false)
   const [randomKind, setRandomKind] = useState<RandomKind>('password')
   const [randomLength, setRandomLength] = useState(32)
   const [notice, setNotice] = useState<CryptoNotice>({ key: 'notice.ready', values: { tab: 'SHA-256' } })
@@ -59,14 +75,26 @@ export function CryptoSurface() {
     summary: t('session.summary', { tab: tabLabel(tab), count: output.length })
   }), [hashAlgorithm, output, source, t, tab])
   const { sessionId, reportError } = useToolSessionReport('crypto', session.digest, session.summary)
+  const recordOperation = useOperationHistory('crypto')
 
   function runDigest(): void {
     try {
       setOutput(hmacSecret ? hmacSha256(source, hmacSecret) : hashText(source, hashAlgorithm))
       succeed(hmacSecret ? 'notice.hmacDone' : 'notice.digestDone', hmacSecret ? undefined : { algorithm: hashAlgorithm.toUpperCase() })
+      recordOperation(t('operation.digest'), `${hmacSecret ? 'HMAC-SHA256' : hashAlgorithm.toUpperCase()} · ${source.length}`, 'success')
     } catch (cause) {
       fail(cause)
     }
+  }
+
+  async function runFileDigest(): Promise<void> {
+    try {
+      const result = await fileDigestApi.digest(hashAlgorithm)
+      if (!result) return
+      setOutput(result.digest)
+      succeed('notice.fileDigest', { name: result.name, algorithm: hashAlgorithm.toUpperCase() })
+      recordOperation(t('operation.fileDigest'), `${result.name} · ${hashAlgorithm.toUpperCase()} · ${result.digest}`, 'success')
+    } catch (cause) { fail(cause) }
   }
 
   async function runAes(mode: 'encrypt' | 'decrypt'): Promise<void> {
@@ -76,15 +104,55 @@ export function CryptoSurface() {
         : await decryptAesGcm(source, passphrase)
       setOutput(result)
       succeed(mode === 'encrypt' ? 'notice.encrypted' : 'notice.decrypted')
+      recordOperation(t(mode === 'encrypt' ? 'operation.encrypt' : 'operation.decrypt'), `AES-256-GCM · ${source.length}`, 'success')
     } catch (cause) {
       fail(cause)
     }
+  }
+
+  function runBase(mode: 'encode' | 'decode'): void {
+    try {
+      setOutput(mode === 'encode' ? encodeBase(source, baseAlgorithm) : decodeBase(source, baseAlgorithm))
+      succeed(mode === 'encode' ? 'notice.encoded' : 'notice.decoded', { algorithm: baseAlgorithm.toUpperCase() })
+      recordOperation(t(mode === 'encode' ? 'operation.encode' : 'operation.decode'), `${baseAlgorithm.toUpperCase()} · ${source.length}`, 'success')
+    } catch (cause) { fail(cause) }
+  }
+
+  async function generateKeys(): Promise<void> {
+    setRsaBusy(true)
+    try {
+      const pair = await generateRsaKeyPair(rsaBits)
+      setRsaPublicKey(pair.publicKey)
+      setRsaPrivateKey(pair.privateKey)
+      succeed('notice.keysGenerated', { bits: rsaBits })
+      recordOperation(t('operation.keyPair'), `RSA ${rsaBits}`, 'success')
+    } catch (cause) { fail(cause) } finally { setRsaBusy(false) }
+  }
+
+  async function runRsa(mode: 'encrypt' | 'decrypt' | 'sign' | 'verify'): Promise<void> {
+    try {
+      if (mode === 'verify') {
+        const valid = await rsaVerify(source, output, rsaPublicKey)
+        succeed(valid ? 'notice.verified' : 'notice.notVerified')
+        recordOperation(t('operation.verify'), `RSA-PSS · ${valid}`, valid ? 'success' : 'error')
+        return
+      }
+      const result = mode === 'encrypt'
+        ? await rsaEncrypt(source, rsaPublicKey)
+        : mode === 'decrypt'
+          ? await rsaDecrypt(source, rsaPrivateKey)
+          : await rsaSign(source, rsaPrivateKey)
+      setOutput(result)
+      succeed(mode === 'encrypt' ? 'notice.rsaEncrypted' : mode === 'decrypt' ? 'notice.rsaDecrypted' : 'notice.signed')
+      recordOperation(t(`operation.${mode}` as CryptoMessageKey), `RSA · ${source.length}`, 'success')
+    } catch (cause) { fail(cause) }
   }
 
   function runRandom(): void {
     try {
       setOutput(generateRandom(randomKind, randomLength))
       succeed(randomKind === 'uuid' ? 'notice.uuid' : 'notice.random')
+      recordOperation(t('operation.random'), `${randomKind} · ${randomKind === 'uuid' ? 36 : randomLength}`, 'success')
     } catch (cause) {
       fail(cause)
     }
@@ -123,7 +191,7 @@ export function CryptoSurface() {
 
       <section className="utility-toolbar">
         <div className="utility-segments" role="tablist">
-          {(['digest', 'aes', 'random'] as const).map((item) => (
+          {(['digest', 'aes', 'rsa', 'base', 'random'] as const).map((item) => (
             <button
               className={tab === item ? 'utility-segment utility-segment--active' : 'utility-segment'}
               type="button"
@@ -136,7 +204,7 @@ export function CryptoSurface() {
                 succeed('notice.ready', { tab: tabLabel(item) })
               }}
             >
-              {item === 'digest' ? <ShieldCheck /> : item === 'aes' ? <KeyRound /> : <Dices />}
+              {item === 'digest' ? <ShieldCheck /> : item === 'aes' || item === 'rsa' ? <KeyRound /> : item === 'base' ? <RefreshCw /> : <Dices />}
               {tabLabel(item)}
             </button>
           ))}
@@ -157,6 +225,7 @@ export function CryptoSurface() {
                 <option value="md5">MD5 ({t('option.compatible')})</option>
               </select>
             </label>
+            <button className="secondary-button crypto-file-digest" type="button" disabled={hashAlgorithm === 'md5' || hashAlgorithm === 'sha1' || Boolean(hmacSecret)} onClick={() => void runFileDigest()}><FileSearch />{t('action.fileDigest')}</button>
             <label className="crypto-inline-field">
               {t('field.hmac')}
               <input
@@ -179,6 +248,14 @@ export function CryptoSurface() {
             />
           </label>
         )}
+        {tab === 'rsa' && (
+          <>
+            <label className="utility-select">{t('field.keySize')}<select value={rsaBits} onChange={(event) => setRsaBits(Number(event.target.value) as 2048 | 3072 | 4096)}><option value={2048}>2048</option><option value={3072}>3072</option><option value={4096}>4096</option></select></label>
+            <button className="primary-button" type="button" disabled={rsaBusy} onClick={() => void generateKeys()}><KeyRound />{t(rsaBusy ? 'action.generating' : 'action.generateKeys')}</button>
+            <details className="crypto-key-store"><summary className="secondary-button">{t('action.keys')}</summary><div><label>{t('field.publicKey')}<textarea value={rsaPublicKey} spellCheck={false} onChange={(event) => setRsaPublicKey(event.target.value)} /></label><label>{t('field.privateKey')}<textarea value={rsaPrivateKey} spellCheck={false} onChange={(event) => setRsaPrivateKey(event.target.value)} /></label></div></details>
+          </>
+        )}
+        {tab === 'base' && <label className="utility-select">{t('field.encoding')}<select value={baseAlgorithm} onChange={(event) => setBaseAlgorithm(event.target.value as BaseAlgorithm)}><option value="base64">Base64</option><option value="base32">Base32</option></select></label>}
         {tab === 'random' && (
           <>
             <label className="utility-select">
@@ -208,7 +285,7 @@ export function CryptoSurface() {
 
       <section className="utility-editor-grid crypto-editor-grid">
         <section className="utility-editor-card">
-          <header><span>{t(tab === 'random' ? 'pane.settings' : tab === 'aes' ? 'pane.aesInput' : 'pane.source')}</span></header>
+          <header><span>{t(tab === 'random' ? 'pane.settings' : tab === 'aes' ? 'pane.aesInput' : tab === 'rsa' ? 'pane.rsaInput' : 'pane.source')}</span></header>
           {tab === 'random' ? (
             <div className="crypto-random-hero">
               <Dices />
@@ -239,6 +316,12 @@ export function CryptoSurface() {
               <button type="button" onClick={() => void runAes('decrypt')}><UnlockKeyhole />{t('action.decrypt')}</button>
             </>
           )}
+          {tab === 'rsa' && (
+            <><button type="button" onClick={() => void runRsa('encrypt')}><LockKeyhole />{t('action.publicEncrypt')}</button><button type="button" onClick={() => void runRsa('decrypt')}><UnlockKeyhole />{t('action.privateDecrypt')}</button><button type="button" onClick={() => void runRsa('sign')}><KeyRound />{t('action.sign')}</button><button type="button" disabled={!output} onClick={() => void runRsa('verify')}><ShieldCheck />{t('action.verify')}</button></>
+          )}
+          {tab === 'base' && (
+            <><button type="button" onClick={() => runBase('encode')}><LockKeyhole />{t('action.encode')}</button><button type="button" onClick={() => runBase('decode')}><UnlockKeyhole />{t('action.decode')}</button></>
+          )}
         </section>
 
         <section className="utility-editor-card">
@@ -260,7 +343,7 @@ export function CryptoSurface() {
 
       <footer className={failed ? 'utility-status utility-status--error' : 'utility-status'}>
         <span>{failed ? <TriangleAlert /> : <CheckCircle2 />}{noticeText}</span>
-        <span>Web Crypto · AES-256-GCM · PBKDF2-SHA256</span>
+        <span>{t('footer.capabilities')}</span>
         <code>{session.summary}</code>
       </footer>
       {reportError && <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>}
@@ -269,5 +352,5 @@ export function CryptoSurface() {
 }
 
 function tabMessageKey(tab: CryptoTab): CryptoMessageKey {
-  return { digest: 'tab.digest', aes: 'tab.aes', random: 'tab.random' }[tab] as CryptoMessageKey
+  return { digest: 'tab.digest', aes: 'tab.aes', rsa: 'tab.rsa', base: 'tab.base', random: 'tab.random' }[tab] as CryptoMessageKey
 }

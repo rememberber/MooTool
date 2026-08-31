@@ -1,6 +1,7 @@
 import {
   CheckCircle2,
   CircleGauge,
+  Copy,
   Cpu,
   HardDrive,
   MemoryStick,
@@ -8,11 +9,13 @@ import {
   MoonStar,
   RefreshCw,
   Server,
-  TriangleAlert
+  TriangleAlert,
+  Wifi
 } from 'lucide-react'
 import { useEffect, useMemo, useState } from 'react'
 import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
 import { diagnosticsApi } from '../../platform/api/diagnosticsApi'
+import { clipboardApi } from '../../platform/api/clipboardApi'
 import { nativeDesktopApi } from '../../platform/api/nativeDesktopApi'
 import type { SystemSnapshot } from '../../platform/contracts/diagnostics'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
@@ -82,6 +85,18 @@ export function SystemSurface() {
     }
   }
 
+  async function copySnapshot(): Promise<void> {
+    if (!snapshot) return
+    try {
+      await clipboardApi.writeText(JSON.stringify(snapshot, null, 2))
+      setNotice({ key: 'notice.copied' })
+      setFailed(false)
+    } catch (cause) {
+      setNotice({ raw: cause instanceof Error ? cause.message : String(cause) })
+      setFailed(true)
+    }
+  }
+
   return (
     <main className="utility-workbench system-workbench">
       <header className="utility-header">
@@ -91,6 +106,7 @@ export function SystemSurface() {
           <button className="secondary-button" type="button" disabled={busy} onClick={() => void refresh()}>
             <RefreshCw />{t('action.refresh')}
           </button>
+          <button className="secondary-button" type="button" disabled={!snapshot} onClick={() => void copySnapshot()}><Copy />{t('action.copy')}</button>
         </div>
       </header>
 
@@ -103,11 +119,20 @@ export function SystemSurface() {
         <SystemCard icon={Cpu} title={t('card.cpu')} primary={snapshot?.cpuBrand ?? '—'}>
           <Fact label={t('fact.physicalCores')} value={snapshot ? String(snapshot.physicalCores) : undefined} />
           <Fact label={t('fact.logicalCores')} value={snapshot ? String(snapshot.logicalCores) : undefined} />
+          <Fact label={t('fact.cpuUsage')} value={snapshot ? `${snapshot.cpuUsagePercent.toFixed(1)}%` : undefined} />
+          <Fact label={t('fact.cpuFrequency')} value={snapshot ? `${snapshot.cpuFrequencyMhz} MHz` : undefined} />
         </SystemCard>
         <SystemCard icon={MemoryStick} title={t('card.memory')} primary={snapshot ? formatBytes(snapshot.totalMemoryBytes) : '—'}>
           <Meter value={memoryUsage} />
           <Fact label={t('fact.used')} value={snapshot ? formatBytes(snapshot.totalMemoryBytes - snapshot.availableMemoryBytes) : undefined} />
           <Fact label={t('fact.available')} value={snapshot ? formatBytes(snapshot.availableMemoryBytes) : undefined} />
+          <Fact label={t('fact.swap')} value={snapshot ? `${formatBytes(snapshot.usedSwapBytes)} / ${formatBytes(snapshot.totalSwapBytes)}` : undefined} />
+        </SystemCard>
+        <SystemCard icon={HardDrive} title={t('card.storage')} primary={t('count.disks', { count: snapshot?.disks.length ?? 0 })}>
+          {snapshot?.disks.slice(0, 6).map((disk) => <Fact key={`${disk.name}-${disk.mountPoint}`} label={`${disk.name || disk.mountPoint} · ${disk.fileSystem}`} value={`${formatBytes(disk.totalBytes - disk.availableBytes)} / ${formatBytes(disk.totalBytes)}`} />)}
+        </SystemCard>
+        <SystemCard icon={Wifi} title={t('card.network')} primary={t('count.interfaces', { count: snapshot?.networkInterfaces.length ?? 0 })}>
+          {snapshot?.networkInterfaces.slice(0, 8).map((item) => <Fact key={item.name} label={`${item.name} · ${item.macAddress}`} value={item.addresses.join(', ') || '—'} />)}
         </SystemCard>
         <SystemCard icon={Server} title={t('card.process')} primary={snapshot ? formatBytes(snapshot.processMemoryBytes) : '—'}>
           <Fact label={t('fact.uptime')} value={snapshot ? formatDuration(snapshot.uptimeSeconds, t) : undefined} />

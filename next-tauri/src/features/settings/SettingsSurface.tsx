@@ -1,6 +1,7 @@
-import { Check, Database, FileDown, FolderArchive, FolderInput, Languages, MonitorCog, RotateCcw, Save, SlidersHorizontal, X } from 'lucide-react'
-import { useEffect, useMemo, useState } from 'react'
+import { Check, Database, FileDown, FolderArchive, FolderInput, Languages, MonitorCog, RotateCcw, Save, SlidersHorizontal, Terminal, X } from 'lucide-react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useI18n } from '../../app/i18n'
+import { productToolCatalog } from '../../app/toolCatalog'
 import { backupApi } from '../../platform/api/backupApi'
 import { diagnosticsApi } from '../../platform/api/diagnosticsApi'
 import type {
@@ -9,25 +10,54 @@ import type {
   AppSettings,
   CloseBehavior,
   InterfaceDensity,
+  ProxyMode,
   ThemePreference
 } from '../../platform/contracts/settings'
 import { errorMessage } from '../../shared/errors'
+import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
 import { useSettings } from './SettingsProvider'
 import { UpdateCard } from './UpdateCard'
 import { ProductImportCard } from './ProductImportCard'
 
 export function SettingsSurface() {
   const { settings, save, reset, error: providerError } = useSettings()
-  const { t } = useI18n()
+  const { t, toolTitle } = useI18n()
+  const dialog = useDesktopDialog()
   const [draft, setDraft] = useState(settings)
   const [status, setStatus] = useState('')
   const [busy, setBusy] = useState(false)
+  const allowCloseRef = useRef(false)
 
   useEffect(() => setDraft(settings), [settings])
   const dirty = useMemo(
     () => JSON.stringify({ ...draft, revision: 0 }) !== JSON.stringify({ ...settings, revision: 0 }),
     [draft, settings]
   )
+
+  useEffect(() => {
+    if (!window.__TAURI_INTERNALS__) return
+    let dispose: (() => void) | undefined
+    let cancelled = false
+    void import('@tauri-apps/api/window').then(async ({ getCurrentWindow }) => {
+      const currentWindow = getCurrentWindow()
+      dispose = await currentWindow.onCloseRequested(async (event) => {
+        if (allowCloseRef.current || !dirty) return
+        event.preventDefault()
+        if (await dialog.confirm(t('settings.discardChanges'), { dangerous: true })) {
+          allowCloseRef.current = true
+          await currentWindow.destroy()
+        }
+      })
+      if (cancelled) dispose()
+    })
+    return () => { cancelled = true; dispose?.() }
+  }, [dialog, dirty, t])
+
+  async function handleClose(): Promise<void> {
+    if (dirty && !await dialog.confirm(t('settings.discardChanges'), { dangerous: true })) return
+    allowCloseRef.current = true
+    await closeWindow()
+  }
 
   async function handleSave(): Promise<void> {
     setBusy(true)
@@ -74,7 +104,7 @@ export function SettingsSurface() {
 
   async function handleBackupImport(): Promise<void> {
     const directory = await backupApi.chooseImportDirectory()
-    if (!directory || !window.confirm(t('settings.backupConfirm'))) return
+    if (!directory || !await dialog.confirm(t('settings.backupConfirm'))) return
     setBusy(true)
     setStatus('')
     try {
@@ -111,7 +141,7 @@ export function SettingsSurface() {
           <h1>{t('settings.title')}</h1>
           <p>{t('settings.subtitle')}</p>
         </div>
-        <button className="icon-button" type="button" aria-label={t('settings.close')} onClick={() => void closeWindow()}>
+        <button className="icon-button" type="button" aria-label={t('settings.close')} onClick={() => void handleClose()}>
           <X />
         </button>
       </header>
@@ -160,6 +190,12 @@ export function SettingsSurface() {
               }))}
             />
           </SettingRow>
+          <SettingRow label={t('settings.startMaximized')}>
+            <input type="checkbox" checked={draft.general.startMaximized} onChange={(event) => setDraft(updateGeneral(draft, { startMaximized: event.target.checked }))} />
+          </SettingRow>
+          <SettingRow label={t('settings.trayEnabled')}>
+            <input type="checkbox" checked={draft.general.trayEnabled} onChange={(event) => setDraft(updateGeneral(draft, { trayEnabled: event.target.checked }))} />
+          </SettingRow>
         </SettingsSection>
 
         <SettingsSection icon={<MonitorCog />} title={t('settings.appearance')}>
@@ -207,6 +243,27 @@ export function SettingsSurface() {
               onChange={(event) => setDraft(updateLayout(draft, { sidebarCompact: event.target.checked }))}
             />
           </SettingRow>
+          <SettingRow label={t('settings.showRecent')}>
+            <input type="checkbox" checked={draft.layout.showRecent} onChange={(event) => setDraft(updateLayout(draft, { showRecent: event.target.checked }))} />
+          </SettingRow>
+          <SettingRow label={t('settings.showGroupTitles')}>
+            <input type="checkbox" checked={draft.layout.showGroupTitles} onChange={(event) => setDraft(updateLayout(draft, { showGroupTitles: event.target.checked }))} />
+          </SettingRow>
+          <SettingRow label={t('settings.interfaceFont')}>
+            <select value={draft.appearance.fontFamily} onChange={(event) => setDraft(updateAppearance(draft, { fontFamily: event.target.value as 'system' | 'mono' }))}>
+              <option value="system">{t('settings.interfaceFontSystem')}</option>
+              <option value="mono">{t('settings.interfaceFontMono')}</option>
+            </select>
+          </SettingRow>
+          <SettingRow label={t('settings.uiScale')}>
+            <Segmented value={String(draft.appearance.uiScale)} options={[["90", "90%"], ["100", "100%"], ["110", "110%"]]} onChange={(value) => setDraft(updateAppearance(draft, { uiScale: Number(value) as 90 | 100 | 110 }))} />
+          </SettingRow>
+          <div className="settings-complex-row">
+            <span>{t('settings.visibleTools')}</span>
+            <div className="settings-tool-visibility">
+              {productToolCatalog.map((tool) => <label key={tool.id}><input type="checkbox" checked={!draft.layout.hiddenTools.includes(tool.id)} onChange={(event) => setDraft(updateLayout(draft, { hiddenTools: event.target.checked ? draft.layout.hiddenTools.filter((id) => id !== tool.id) : [...draft.layout.hiddenTools, tool.id] }))} />{toolTitle(tool)}</label>)}
+            </div>
+          </div>
         </SettingsSection>
 
         <SettingsSection icon={<SlidersHorizontal />} title={t('settings.editor')}>
@@ -238,6 +295,21 @@ export function SettingsSurface() {
               onChange={(event) => setDraft(updateEditor(draft, { wordWrap: event.target.checked }))}
             />
           </SettingRow>
+          <SettingRow label={t('settings.jsonFontSize')}>
+            <input type="number" min="10" max="24" value={draft.editor.jsonFontSize} onChange={(event) => setDraft(updateEditor(draft, { jsonFontSize: event.target.valueAsNumber }))} />
+          </SettingRow>
+          <SettingRow label={t('settings.quickNoteFontSize')}>
+            <input type="number" min="10" max="24" value={draft.editor.quickNoteFontSize} onChange={(event) => setDraft(updateEditor(draft, { quickNoteFontSize: event.target.valueAsNumber }))} />
+          </SettingRow>
+        </SettingsSection>
+
+        <SettingsSection icon={<Terminal />} title={t('settings.runtime')}>
+          <SettingRow label={t('settings.runtimeAutoDetect')}><input type="checkbox" checked={draft.runtime.autoDetect} onChange={(event) => setDraft(updateRuntime(draft, { autoDetect: event.target.checked }))} /></SettingRow>
+          {(['javaPath', 'groovyPath', 'pythonPath', 'nodePath'] as const).map((key) => (
+            <SettingRow key={key} label={t(`settings.${key}`)}><input value={draft.runtime[key]} placeholder={t('settings.runtimePathPlaceholder')} onChange={(event) => setDraft(updateRuntime(draft, { [key]: event.target.value }))} /></SettingRow>
+          ))}
+          <SettingRow label={t('settings.searchShortcut')}><input value={draft.shortcuts.globalSearch} onChange={(event) => setDraft({ ...draft, shortcuts: { ...draft.shortcuts, globalSearch: event.target.value } })} /></SettingRow>
+          <SettingRow label={t('settings.settingsShortcut')}><input value={draft.shortcuts.settings} onChange={(event) => setDraft({ ...draft, shortcuts: { ...draft.shortcuts, settings: event.target.value } })} /></SettingRow>
         </SettingsSection>
 
         <SettingsSection icon={<Database />} title={t('settings.data')}>
@@ -265,6 +337,15 @@ export function SettingsSurface() {
               })}
             />
           </SettingRow>
+          <SettingRow label={t('settings.translationTimeout')}><input type="number" min="1" max="300" value={draft.network.translationTimeoutSeconds} onChange={(event) => setDraft(updateNetwork(draft, { translationTimeoutSeconds: event.target.valueAsNumber }))} /></SettingRow>
+          <SettingRow label={t('settings.proxyMode')}>
+            <select value={draft.network.proxyMode} onChange={(event) => setDraft(updateNetwork(draft, { proxyMode: event.target.value as ProxyMode }))}><option value="system">{t('settings.proxySystem')}</option><option value="direct">{t('settings.proxyDirect')}</option><option value="manual">{t('settings.proxyManual')}</option></select>
+          </SettingRow>
+          {draft.network.proxyMode === 'manual' && <>
+            <SettingRow label={t('settings.proxyHost')}><input value={draft.network.proxyHost} onChange={(event) => setDraft(updateNetwork(draft, { proxyHost: event.target.value }))} /></SettingRow>
+            <SettingRow label={t('settings.proxyPort')}><input type="number" min="1" max="65535" value={draft.network.proxyPort} onChange={(event) => setDraft(updateNetwork(draft, { proxyPort: event.target.valueAsNumber }))} /></SettingRow>
+            <SettingRow label={t('settings.proxyUsername')}><input value={draft.network.proxyUsername} autoComplete="off" onChange={(event) => setDraft(updateNetwork(draft, { proxyUsername: event.target.value }))} /></SettingRow>
+          </>}
           <SettingRow label={t('settings.vaultAutoCommit')}>
             <input
               type="checkbox"
@@ -364,6 +445,14 @@ function updateLayout(settings: AppSettings, patch: Partial<AppSettings['layout'
 
 function updateEditor(settings: AppSettings, patch: Partial<AppSettings['editor']>): AppSettings {
   return { ...settings, editor: { ...settings.editor, ...patch } }
+}
+
+function updateNetwork(settings: AppSettings, patch: Partial<AppSettings['network']>): AppSettings {
+  return { ...settings, network: { ...settings.network, ...patch } }
+}
+
+function updateRuntime(settings: AppSettings, patch: Partial<AppSettings['runtime']>): AppSettings {
+  return { ...settings, runtime: { ...settings.runtime, ...patch } }
 }
 
 async function closeWindow(): Promise<void> {

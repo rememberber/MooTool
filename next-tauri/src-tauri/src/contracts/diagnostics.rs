@@ -23,6 +23,33 @@ pub struct SystemSnapshot {
     pub available_memory_bytes: u64,
     pub process_memory_bytes: u64,
     pub uptime_seconds: u64,
+    pub cpu_usage_percent: f32,
+    pub cpu_frequency_mhz: u64,
+    pub total_swap_bytes: u64,
+    pub used_swap_bytes: u64,
+    pub disks: Vec<SystemDisk>,
+    pub network_interfaces: Vec<SystemNetworkInterface>,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SystemDisk {
+    pub name: String,
+    pub mount_point: String,
+    pub file_system: String,
+    pub total_bytes: u64,
+    pub available_bytes: u64,
+    pub removable: bool,
+}
+
+#[derive(Clone, Debug, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct SystemNetworkInterface {
+    pub name: String,
+    pub addresses: Vec<String>,
+    pub mac_address: String,
+    pub received_bytes: u64,
+    pub transmitted_bytes: u64,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq)]

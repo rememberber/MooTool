@@ -14,6 +14,7 @@ import { CodeEditor } from '../../shared/CodeEditor'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
+import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
 import { hostMessages } from './hostMessages'
 
 const template = '# MooTool Next Tauri hosts profile\n127.0.0.1 localhost\n::1 localhost\n'
@@ -21,6 +22,7 @@ type HostMessageKey = LocalizedMessageKey<typeof hostMessages>
 type Notice = { key: HostMessageKey; values?: MessageValues } | { raw: string }
 
 export function HostSurface() {
+  const dialog = useDesktopDialog()
   const { t, locale } = useLocalizedMessages(hostMessages)
   const [profiles, setProfiles] = useState<HostProfile[]>([])
   const [activeId, setActiveId] = useState('')
@@ -128,7 +130,7 @@ export function HostSurface() {
   }
 
   async function remove(): Promise<void> {
-    if (!active || busy || !window.confirm(t('confirm.delete', { name: active.name }))) return
+    if (!active || busy || !await dialog.confirm(t('confirm.delete', { name: active.name }), { dangerous: true })) return
     try {
       await localDataApi.deleteHostProfile(active.id)
       const next = profiles.filter((item) => item.id !== active.id)
@@ -143,7 +145,7 @@ export function HostSurface() {
   }
 
   async function applySystem(): Promise<void> {
-    if (!system || !window.confirm(t('confirm.apply', { path: system.path }))) return
+    if (!system || !await dialog.confirm(t('confirm.apply', { path: system.path }))) return
     setBusy(true)
     try { const updated = await hostApi.writeSystem(content, system.content); setSystem(updated); succeed('notice.systemWritten'); recordOperation(t('operation.writeSystem'), updated.path, 'success') } catch (cause) { fail(cause); recordOperation(t('operation.writeSystem'), cause instanceof Error ? cause.message : String(cause), 'error') } finally { setBusy(false) }
   }

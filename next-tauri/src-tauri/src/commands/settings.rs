@@ -23,6 +23,9 @@ pub fn update_settings(
         .map_err(|error| format!("settings were saved but synchronization failed: {error}"))?;
     super::desktop::sync_autostart(&app, &saved)
         .map_err(|error| format!("settings were saved but launch-at-login sync failed: {error}"))?;
+    super::desktop::sync_desktop_preferences(&app, &saved).map_err(|error| {
+        format!("settings were saved but desktop preferences sync failed: {error}")
+    })?;
     Ok(saved)
 }
 
@@ -36,6 +39,9 @@ pub fn reset_settings(
         .map_err(|error| format!("settings were reset but synchronization failed: {error}"))?;
     super::desktop::sync_autostart(&app, &saved)
         .map_err(|error| format!("settings were reset but launch-at-login sync failed: {error}"))?;
+    super::desktop::sync_desktop_preferences(&app, &saved).map_err(|error| {
+        format!("settings were reset but desktop preferences sync failed: {error}")
+    })?;
     Ok(saved)
 }
 

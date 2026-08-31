@@ -18,7 +18,7 @@ use crate::{
     contracts::{
         desktop::CloseDecision,
         error::AppResult,
-        settings::{AppSettings, CloseBehavior},
+        settings::{AppLanguage, AppSettings, CloseBehavior},
     },
     repositories::{
         settings::SettingsRepository,
@@ -28,6 +28,7 @@ use crate::{
 
 pub const CLOSE_REQUESTED_EVENT: &str = "mootool://close-requested";
 const MENU_SHOW: &str = "mootool-show";
+const MENU_SEARCH: &str = "mootool-search";
 const MENU_SETTINGS: &str = "mootool-settings";
 const MENU_HIDE: &str = "mootool-hide-to-tray";
 const MENU_QUIT: &str = "mootool-quit";
@@ -46,37 +47,90 @@ struct CloseRequestPayload {
     can_minimize_to_tray: bool,
 }
 
+#[derive(Clone, Copy)]
+struct MenuLabels {
+    show: &'static str,
+    search: &'static str,
+    settings: &'static str,
+    hide: &'static str,
+    quit: &'static str,
+    edit: &'static str,
+    window: &'static str,
+}
+
+fn menu_labels(language: AppLanguage) -> MenuLabels {
+    match language {
+        AppLanguage::SimplifiedChinese => MenuLabels {
+            show: "显示 MooTool",
+            search: "搜索工具…",
+            settings: "设置…",
+            hide: "隐藏到托盘",
+            quit: "退出 MooTool Next Tauri",
+            edit: "编辑",
+            window: "窗口",
+        },
+        AppLanguage::English => MenuLabels {
+            show: "Show MooTool",
+            search: "Search Tools…",
+            settings: "Settings…",
+            hide: "Hide to Tray",
+            quit: "Quit MooTool Next Tauri",
+            edit: "Edit",
+            window: "Window",
+        },
+        AppLanguage::Japanese => MenuLabels {
+            show: "MooTool を表示",
+            search: "ツールを検索…",
+            settings: "設定…",
+            hide: "トレイへ隠す",
+            quit: "MooTool Next Tauri を終了",
+            edit: "編集",
+            window: "ウィンドウ",
+        },
+    }
+}
+
 pub fn build_application_menu(app: &AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
-    let show = MenuItem::with_id(
+    build_application_menu_for(app, &AppSettings::default())
+}
+
+fn build_application_menu_for(
+    app: &AppHandle,
+    settings_value: &AppSettings,
+) -> tauri::Result<Menu<tauri::Wry>> {
+    let labels = menu_labels(settings_value.general.language);
+    let show = MenuItem::with_id(app, MENU_SHOW, labels.show, true, Some("CmdOrCtrl+Shift+M"))?;
+    let search = MenuItem::with_id(
         app,
-        MENU_SHOW,
-        "Show MooTool",
+        MENU_SEARCH,
+        labels.search,
         true,
-        Some("CmdOrCtrl+Shift+M"),
+        Some(settings_value.shortcuts.global_search.as_str()),
     )?;
-    let settings = MenuItem::with_id(app, MENU_SETTINGS, "Settings…", true, Some("CmdOrCtrl+,"))?;
-    let quit = MenuItem::with_id(
+    let settings = MenuItem::with_id(
         app,
-        MENU_QUIT,
-        "Quit MooTool Next Tauri",
+        MENU_SETTINGS,
+        labels.settings,
         true,
-        Some("CmdOrCtrl+Q"),
+        Some(settings_value.shortcuts.settings.as_str()),
     )?;
+    let quit = MenuItem::with_id(app, MENU_QUIT, labels.quit, true, Some("CmdOrCtrl+Q"))?;
     let hide = MenuItem::with_id(
         app,
         MENU_HIDE,
-        "Hide to Tray",
-        true,
+        labels.hide,
+        settings_value.general.tray_enabled,
         Some("CmdOrCtrl+Shift+H"),
     )?;
     let application = SubmenuBuilder::new(app, "MooTool")
         .item(&show)
+        .item(&search)
         .item(&settings)
         .item(&hide)
         .separator()
         .item(&quit)
         .build()?;
-    let edit = SubmenuBuilder::new(app, "Edit")
+    let edit = SubmenuBuilder::new(app, labels.edit)
         .undo()
         .redo()
         .separator()
@@ -85,7 +139,7 @@ pub fn build_application_menu(app: &AppHandle) -> tauri::Result<Menu<tauri::Wry>
         .paste()
         .select_all()
         .build()?;
-    let window = SubmenuBuilder::new(app, "Window")
+    let window = SubmenuBuilder::new(app, labels.window)
         .minimize()
         .maximize()
         .fullscreen()
@@ -94,6 +148,7 @@ pub fn build_application_menu(app: &AppHandle) -> tauri::Result<Menu<tauri::Wry>
 }
 
 pub fn setup(app: &mut App) -> Result<(), String> {
+    let settings = app.state::<SettingsRepository>().snapshot();
     let state_path = app
         .path()
         .app_config_dir()
@@ -102,25 +157,35 @@ pub fn setup(app: &mut App) -> Result<(), String> {
     let window_state = WindowStateRepository::open(state_path)?;
     if let Some(main) = app.get_webview_window("main") {
         window_state.restore_window(&main)?;
+        if settings.general.start_maximized {
+            main.maximize()
+                .map_err(|error| format!("failed to maximize main window: {error}"))?;
+        }
     }
     app.manage(window_state);
 
-    let tray_show = MenuItem::with_id(app, MENU_SHOW, "Show MooTool", true, None::<&str>)
+    let labels = menu_labels(settings.general.language);
+    let tray_show = MenuItem::with_id(app, MENU_SHOW, labels.show, true, None::<&str>)
         .map_err(|error| format!("failed to create tray show item: {error}"))?;
-    let tray_settings = MenuItem::with_id(app, MENU_SETTINGS, "Settings…", true, None::<&str>)
+    let tray_search = MenuItem::with_id(app, MENU_SEARCH, labels.search, true, None::<&str>)
+        .map_err(|error| format!("failed to create tray search item: {error}"))?;
+    let tray_settings = MenuItem::with_id(app, MENU_SETTINGS, labels.settings, true, None::<&str>)
         .map_err(|error| format!("failed to create tray settings item: {error}"))?;
-    let tray_quit = MenuItem::with_id(
-        app,
-        MENU_QUIT,
-        "Quit MooTool Next Tauri",
-        true,
-        None::<&str>,
-    )
-    .map_err(|error| format!("failed to create tray quit item: {error}"))?;
-    let tray_hide = MenuItem::with_id(app, MENU_HIDE, "Hide to Tray", true, None::<&str>)
+    let tray_quit = MenuItem::with_id(app, MENU_QUIT, labels.quit, true, None::<&str>)
+        .map_err(|error| format!("failed to create tray quit item: {error}"))?;
+    let tray_hide = MenuItem::with_id(app, MENU_HIDE, labels.hide, true, None::<&str>)
         .map_err(|error| format!("failed to create tray hide item: {error}"))?;
-    let tray_menu = Menu::with_items(app, &[&tray_show, &tray_settings, &tray_hide, &tray_quit])
-        .map_err(|error| format!("failed to create tray menu: {error}"))?;
+    let tray_menu = Menu::with_items(
+        app,
+        &[
+            &tray_show,
+            &tray_search,
+            &tray_settings,
+            &tray_hide,
+            &tray_quit,
+        ],
+    )
+    .map_err(|error| format!("failed to create tray menu: {error}"))?;
     let mut tray = TrayIconBuilder::with_id(TRAY_ID)
         .menu(&tray_menu)
         .tooltip("MooTool Next Tauri")
@@ -128,10 +193,13 @@ pub fn setup(app: &mut App) -> Result<(), String> {
     if let Some(icon) = app.default_window_icon() {
         tray = tray.icon(icon.clone());
     }
-    tray.build(app)
+    let tray = tray
+        .build(app)
         .map_err(|error| format!("failed to create system tray icon: {error}"))?;
+    tray.set_visible(settings.general.tray_enabled)
+        .map_err(|error| format!("failed to apply system tray visibility: {error}"))?;
 
-    let settings = app.state::<SettingsRepository>().snapshot();
+    sync_desktop_preferences(app.handle(), &settings)?;
     sync_autostart(app.handle(), &settings)?;
     if std::env::args().any(|argument| argument == AUTOSTART_ARGUMENT) {
         hide_product_windows(app.handle())?;
@@ -142,6 +210,10 @@ pub fn setup(app: &mut App) -> Result<(), String> {
 pub fn handle_menu_event(app: &AppHandle, event: MenuEvent) {
     let result = match event.id().as_ref() {
         MENU_SHOW => show_main_window(app),
+        MENU_SEARCH => show_main_window(app).and_then(|_| {
+            app.emit_to("main", "mootool://open-command-palette", ())
+                .map_err(|error| format!("failed to open command palette: {error}"))
+        }),
         MENU_SETTINGS => {
             super::settings::open_settings_window(app.clone()).map_err(|error| error.to_string())
         }
@@ -201,18 +273,20 @@ pub fn handle_window_event<R: Runtime>(window: &Window<R>, event: &WindowEvent) 
         }
     }
 
-    let behavior = app
+    let settings = app
         .try_state::<SettingsRepository>()
-        .map(|repository| repository.snapshot().general.close_behavior)
+        .map(|repository| repository.snapshot())
         .unwrap_or_default();
-    match behavior {
+    match settings.general.close_behavior {
         CloseBehavior::Quit => app.exit(0),
         CloseBehavior::MinimizeToTray => {
-            if let Err(error) = hide_product_windows(app) {
+            if !settings.general.tray_enabled {
+                app.exit(0);
+            } else if let Err(error) = hide_product_windows(app) {
                 eprintln!("MooTool Next Tauri could not minimize to tray: {error}");
             }
         }
-        CloseBehavior::Ask => request_close_confirmation(app),
+        CloseBehavior::Ask => request_close_confirmation(app, settings.general.tray_enabled),
     }
 }
 
@@ -259,6 +333,34 @@ pub fn sync_autostart(app: &AppHandle, settings: &AppSettings) -> Result<(), Str
     }
 }
 
+pub fn sync_desktop_preferences(app: &AppHandle, settings: &AppSettings) -> Result<(), String> {
+    let menu = build_application_menu_for(app, settings)
+        .map_err(|error| format!("failed to rebuild application menu: {error}"))?;
+    app.set_menu(menu)
+        .map_err(|error| format!("failed to apply application menu: {error}"))?;
+    if let Some(tray) = app.tray_by_id(TRAY_ID) {
+        let labels = menu_labels(settings.general.language);
+        let show = MenuItem::with_id(app, MENU_SHOW, labels.show, true, None::<&str>)
+            .map_err(|error| format!("failed to rebuild tray menu: {error}"))?;
+        let search = MenuItem::with_id(app, MENU_SEARCH, labels.search, true, None::<&str>)
+            .map_err(|error| format!("failed to rebuild tray menu: {error}"))?;
+        let settings_item =
+            MenuItem::with_id(app, MENU_SETTINGS, labels.settings, true, None::<&str>)
+                .map_err(|error| format!("failed to rebuild tray menu: {error}"))?;
+        let hide = MenuItem::with_id(app, MENU_HIDE, labels.hide, true, None::<&str>)
+            .map_err(|error| format!("failed to rebuild tray menu: {error}"))?;
+        let quit = MenuItem::with_id(app, MENU_QUIT, labels.quit, true, None::<&str>)
+            .map_err(|error| format!("failed to rebuild tray menu: {error}"))?;
+        let menu = Menu::with_items(app, &[&show, &search, &settings_item, &hide, &quit])
+            .map_err(|error| format!("failed to rebuild tray menu: {error}"))?;
+        tray.set_menu(Some(menu))
+            .map_err(|error| format!("failed to apply tray menu: {error}"))?;
+        tray.set_visible(settings.general.tray_enabled)
+            .map_err(|error| format!("failed to apply system tray visibility: {error}"))?;
+    }
+    Ok(())
+}
+
 pub fn show_main_window(app: &AppHandle) -> Result<(), String> {
     #[cfg(target_os = "macos")]
     app.show()
@@ -287,7 +389,7 @@ pub fn show_main_window(app: &AppHandle) -> Result<(), String> {
         .map_err(|error| format!("failed to show main window: {error}"))
 }
 
-fn request_close_confirmation<R: Runtime>(app: &AppHandle<R>) {
+fn request_close_confirmation<R: Runtime>(app: &AppHandle<R>, can_minimize_to_tray: bool) {
     let Some(lifecycle) = app.try_state::<DesktopLifecycle>() else {
         return;
     };
@@ -302,7 +404,7 @@ fn request_close_confirmation<R: Runtime>(app: &AppHandle<R>) {
         "main",
         CLOSE_REQUESTED_EVENT,
         CloseRequestPayload {
-            can_minimize_to_tray: true,
+            can_minimize_to_tray,
         },
     ) {
         lifecycle

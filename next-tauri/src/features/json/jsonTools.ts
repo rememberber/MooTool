@@ -6,7 +6,7 @@ export type JsonValidation =
   | { kind: 'valid'; rootType: string }
   | { kind: 'error'; cause: unknown }
 
-export type JsonToolErrorCode = 'pathEmpty' | 'notString' | 'contentEmpty' | 'parseDetail' | 'parsePosition'
+export type JsonToolErrorCode = 'pathEmpty' | 'notString' | 'contentEmpty' | 'parseDetail' | 'parsePosition' | 'swapValue' | 'xmlParse'
 
 export class JsonToolError extends Error {
   constructor(readonly code: JsonToolErrorCode, readonly values?: Record<string, string | number>) {
@@ -80,6 +80,32 @@ export function unescapeJsonString(input: string): string {
     throw new JsonToolError('notString')
   }
   return value
+}
+
+export function swapJsonKeysAndValues(input: string, indent = 2): string {
+  const value = parseJson(input)
+  if (!isJsonObject(value) || Object.values(value).some((item) => !['string', 'number', 'boolean'].includes(typeof item))) {
+    throw new JsonToolError('swapValue')
+  }
+  const swapped: Record<string, string> = {}
+  for (const [key, item] of Object.entries(value)) {
+    const swappedKey = String(item)
+    if (Object.hasOwn(swapped, swappedKey)) throw new JsonToolError('swapValue')
+    swapped[swappedKey] = key
+  }
+  return JSON.stringify(swapped, null, indent)
+}
+
+export function jsonToXml(input: string): string {
+  const value = parseJson(input)
+  return `<?xml version="1.0" encoding="UTF-8"?>\n${xmlNode('root', value, 0)}`
+}
+
+export function xmlToJson(input: string, indent = 2): string {
+  const parser = new DOMParser()
+  const document = parser.parseFromString(input, 'application/xml')
+  if (document.querySelector('parsererror') || !document.documentElement) throw new JsonToolError('xmlParse')
+  return JSON.stringify({ [document.documentElement.tagName]: xmlElementValue(document.documentElement) }, null, indent)
 }
 
 export function analyzeJson(input: string): JsonAnalysis | undefined {
@@ -159,6 +185,34 @@ function sortJsonValue(value: unknown): unknown {
 
 function isJsonObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function xmlNode(name: string, value: unknown, depth: number): string {
+  const padding = '  '.repeat(depth)
+  const safeName = /^[A-Za-z_][\w.-]*$/.test(name) ? name : 'item'
+  if (Array.isArray(value)) return value.map((item) => xmlNode(safeName, item, depth)).join('\n')
+  if (isJsonObject(value)) {
+    const children = Object.entries(value).map(([key, item]) => xmlNode(key, item, depth + 1)).join('\n')
+    return `${padding}<${safeName}>${children ? `\n${children}\n${padding}` : ''}</${safeName}>`
+  }
+  if (value === null) return `${padding}<${safeName} />`
+  return `${padding}<${safeName}>${escapeXml(String(value))}</${safeName}>`
+}
+
+function xmlElementValue(element: Element): unknown {
+  const children = [...element.children]
+  if (!children.length) return element.textContent ?? ''
+  const output: Record<string, unknown> = {}
+  for (const child of children) {
+    const value = xmlElementValue(child)
+    const current = output[child.tagName]
+    output[child.tagName] = current === undefined ? value : Array.isArray(current) ? [...current, value] : [current, value]
+  }
+  return output
+}
+
+function escapeXml(value: string): string {
+  return value.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&apos;')
 }
 
 function jsonType(value: unknown): string {

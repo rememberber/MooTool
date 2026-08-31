@@ -9,6 +9,7 @@ export const toolWebviewMessages = defineMessages({
     'detached.title': '{title}已分离', 'detached.detail': '同一个工具会话正在独立原生窗口中运行。',
     'closed.title': '{title}已关闭', 'closed.detail': '点击“启动”创建新的工具会话。',
     'session.label': '会话：', 'session.waiting': '等待{title}上报', 'state.label': '状态：',
+    'action.manage': '管理{title}窗口', 'debug.placement': '位置', 'debug.loads': '加载次数', 'debug.session': '会话',
     'error.containerNotReady': '工具 WebView 容器尚未就绪'
   },
   'en-US': {
@@ -19,6 +20,7 @@ export const toolWebviewMessages = defineMessages({
     'detached.title': '{title} detached', 'detached.detail': 'The same tool session is running in a separate native window.',
     'closed.title': '{title} closed', 'closed.detail': 'Click “Start” to create a new tool session.',
     'session.label': 'Session:', 'session.waiting': 'Waiting for {title} report', 'state.label': 'State:',
+    'action.manage': 'Manage {title} window', 'debug.placement': 'Placement', 'debug.loads': 'Loads', 'debug.session': 'Session',
     'error.containerNotReady': 'The tool WebView container is not ready'
   },
   'ja-JP': {
@@ -29,6 +31,7 @@ export const toolWebviewMessages = defineMessages({
     'detached.title': '{title} を切り離しました', 'detached.detail': '同じツールセッションが別のネイティブウィンドウで実行中です。',
     'closed.title': '{title} は閉じています', 'closed.detail': '「起動」をクリックして新しいツールセッションを作成します。',
     'session.label': 'セッション：', 'session.waiting': '{title} の報告を待機中', 'state.label': '状態：',
+    'action.manage': '{title} ウィンドウを管理', 'debug.placement': '位置', 'debug.loads': '読み込み回数', 'debug.session': 'セッション',
     'error.containerNotReady': 'ツール WebView コンテナーの準備ができていません'
   }
 })

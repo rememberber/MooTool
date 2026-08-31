@@ -17,6 +17,29 @@ export interface SystemSnapshot {
   availableMemoryBytes: number
   processMemoryBytes: number
   uptimeSeconds: number
+  cpuUsagePercent: number
+  cpuFrequencyMhz: number
+  totalSwapBytes: number
+  usedSwapBytes: number
+  disks: SystemDisk[]
+  networkInterfaces: SystemNetworkInterface[]
+}
+
+export interface SystemDisk {
+  name: string
+  mountPoint: string
+  fileSystem: string
+  totalBytes: number
+  availableBytes: number
+  removable: boolean
+}
+
+export interface SystemNetworkInterface {
+  name: string
+  addresses: string[]
+  macAddress: string
+  receivedBytes: number
+  transmittedBytes: number
 }
 
 export interface FrontendErrorReport {

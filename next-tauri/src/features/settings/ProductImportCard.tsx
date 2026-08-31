@@ -9,11 +9,13 @@ import type {
   ProductImportSource
 } from '../../platform/contracts/productImport'
 import { errorMessage } from '../../shared/errors'
+import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
 
 type ImportPhase = 'idle' | 'scanning' | 'importing'
 
 export function ProductImportCard({ disabled = false }: { disabled?: boolean }) {
   const { t } = useI18n()
+  const dialog = useDesktopDialog()
   const [phase, setPhase] = useState<ImportPhase>('idle')
   const [preview, setPreview] = useState<ProductImportPreview>()
   const [result, setResult] = useState<ProductImportResult>()
@@ -42,7 +44,7 @@ export function ProductImportCard({ disabled = false }: { disabled?: boolean }) 
     const product = preview.sourceProduct === 'java'
       ? t('settings.importJavaName')
       : t('settings.importElectronName')
-    if (!window.confirm(t('settings.importConfirm', { product, count: preview.totalItems }))) return
+    if (!await dialog.confirm(t('settings.importConfirm', { product, count: preview.totalItems }))) return
     setPhase('importing')
     setStatus('')
     try {

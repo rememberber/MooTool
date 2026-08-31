@@ -6,11 +6,13 @@ import { useLocalizedMessages } from '../../app/localizedMessages'
 import { historyApi } from '../../platform/api/historyApi'
 import type { OperationHistory, OperationStatus } from '../../platform/contracts/history'
 import { errorMessage } from '../../shared/errors'
+import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
 import { historyMessages } from './historyMessages'
 
 export function HistoryPanel({ limit, onClose }: { limit: number; onClose: () => void }) {
   const { toolTitle } = useI18n()
   const { locale, t } = useLocalizedMessages(historyMessages)
+  const dialog = useDesktopDialog()
   const [items, setItems] = useState<OperationHistory[]>([])
   const [query, setQuery] = useState('')
   const [status, setStatus] = useState<OperationStatus | 'all'>('all')
@@ -39,11 +41,15 @@ export function HistoryPanel({ limit, onClose }: { limit: number; onClose: () =>
     return tool ? toolTitle(tool) : toolId === 'system-data' ? t('tool.systemData') : toolId
   }
 
+  async function clearHistory(): Promise<void> {
+    if (await dialog.confirm(t('confirm.clear'), { dangerous: true })) await historyApi.clear()
+  }
+
   return (
     <div className="history-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
       <aside className="history-panel" role="dialog" aria-modal="true" aria-label={t('aria.dialog')}>
         <header><div><span className="eyebrow">TAURI SQLITE HISTORY</span><h2>{t('title')}</h2><p>{t('description')}</p></div><button type="button" aria-label={t('action.close')} onClick={onClose}><X /></button></header>
-        <div className="history-toolbar"><label><Search /><input autoFocus value={query} placeholder={t('search.placeholder')} onChange={(event) => setQuery(event.target.value)} /></label><select value={status} onChange={(event) => setStatus(event.target.value as OperationStatus | 'all')}><option value="all">{t('status.all')}</option><option value="info">{t('status.info')}</option><option value="success">{t('status.success')}</option><option value="error">{t('status.error')}</option></select><button type="button" disabled={!items.length} onClick={() => { if (window.confirm(t('confirm.clear'))) void historyApi.clear() }}><Trash2 />{t('action.clear')}</button></div>
+        <div className="history-toolbar"><label><Search /><input autoFocus value={query} placeholder={t('search.placeholder')} onChange={(event) => setQuery(event.target.value)} /></label><select value={status} onChange={(event) => setStatus(event.target.value as OperationStatus | 'all')}><option value="all">{t('status.all')}</option><option value="info">{t('status.info')}</option><option value="success">{t('status.success')}</option><option value="error">{t('status.error')}</option></select><button type="button" disabled={!items.length} onClick={() => void clearHistory()}><Trash2 />{t('action.clear')}</button></div>
         <div className="history-list">{visible.length ? visible.map((item) => <article key={item.id}><StatusIcon status={item.status} /><div><header><strong>{resolveToolTitle(item.toolId)}</strong><span>{item.action}</span><time>{new Date(item.createdAt).toLocaleString(locale)}</time></header><p>{item.summary || '—'}</p></div><button type="button" aria-label={t('action.delete')} onClick={() => void historyApi.delete(item.id)}><Trash2 /></button></article>) : <div className="history-panel-empty">{t('empty')}</div>}</div>
         <footer><span>{t('footer.limit', { count: limit })}</span><span>{t('footer.count', { count: items.length })}</span>{error && <strong>{error}</strong>}</footer>
       </aside>

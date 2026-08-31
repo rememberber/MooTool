@@ -5,7 +5,8 @@ use rusqlite::{Connection, OptionalExtension, TransactionBehavior, backup::Backu
 use crate::contracts::{
     image::ImageAssetSummary,
     local_data::{
-        BoardMessage, HostProfile, OperationHistory, QuickNote, TranslationHistory, TranslationWord,
+        BoardMessage, HostProfile, OperationHistory, QuickNote, QuickNoteAttachment,
+        TranslationHistory, TranslationWord,
     },
     network::{HttpRequestHistory, SavedHttpRequest},
     product_import::{ProductImportCounts, ProductImportRecords},
@@ -54,7 +55,7 @@ impl LocalDataRepository {
         let connection = self.lock()?;
         let mut statement = connection
             .prepare(
-                "SELECT id, title, content, pinned, created_at, updated_at
+                "SELECT id, title, content, tags_json, color, pinned, created_at, updated_at
                  FROM quick_notes
                  ORDER BY pinned DESC, updated_at DESC, id ASC",
             )
@@ -65,9 +66,11 @@ impl LocalDataRepository {
                     id: row.get(0)?,
                     title: row.get(1)?,
                     content: row.get(2)?,
-                    pinned: row.get(3)?,
-                    created_at: row.get(4)?,
-                    updated_at: row.get(5)?,
+                    tags: serde_json::from_str(&row.get::<_, String>(3)?).unwrap_or_default(),
+                    color: row.get(4)?,
+                    pinned: row.get(5)?,
+                    created_at: row.get(6)?,
+                    updated_at: row.get(7)?,
                 })
             })
             .map_err(database_error)?;
@@ -76,20 +79,26 @@ impl LocalDataRepository {
 
     pub fn save_note(&self, note: QuickNote) -> Result<QuickNote, String> {
         note.validate()?;
+        let tags_json = serde_json::to_string(&note.tags)
+            .map_err(|error| format!("failed to encode note tags: {error}"))?;
         let connection = self.lock()?;
         connection
             .execute(
-                "INSERT INTO quick_notes (id, title, content, pinned, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6)
+                "INSERT INTO quick_notes (id, title, content, tags_json, color, pinned, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
                  ON CONFLICT(id) DO UPDATE SET
                    title = excluded.title,
                    content = excluded.content,
+                   tags_json = excluded.tags_json,
+                   color = excluded.color,
                    pinned = excluded.pinned,
                    updated_at = excluded.updated_at",
                 params![
                     note.id,
                     note.title,
                     note.content,
+                    tags_json,
+                    note.color,
                     note.pinned,
                     note.created_at,
                     note.updated_at
@@ -103,6 +112,114 @@ impl LocalDataRepository {
         validate_delete_id(id)?;
         self.lock()?
             .execute("DELETE FROM quick_notes WHERE id = ?1", [id])
+            .map(|affected| affected > 0)
+            .map_err(database_error)
+    }
+
+    pub fn list_note_attachments(&self, note_id: &str) -> Result<Vec<QuickNoteAttachment>, String> {
+        validate_delete_id(note_id)?;
+        let connection = self.lock()?;
+        let mut statement = connection
+            .prepare(
+                "SELECT id, note_id, name, mime_type, size_bytes, created_at
+                 FROM quick_note_attachments WHERE note_id = ?1
+                 ORDER BY created_at DESC, id ASC",
+            )
+            .map_err(database_error)?;
+        let rows = statement
+            .query_map([note_id], |row| {
+                Ok(QuickNoteAttachment {
+                    id: row.get(0)?,
+                    note_id: row.get(1)?,
+                    name: row.get(2)?,
+                    mime_type: row.get(3)?,
+                    size_bytes: row.get::<_, i64>(4)?.try_into().unwrap_or_default(),
+                    created_at: row.get(5)?,
+                })
+            })
+            .map_err(database_error)?;
+        rows.collect::<Result<Vec<_>, _>>().map_err(database_error)
+    }
+
+    pub fn save_note_attachment(
+        &self,
+        attachment: QuickNoteAttachment,
+        data: &[u8],
+    ) -> Result<QuickNoteAttachment, String> {
+        attachment.validate()?;
+        if data.len() as u64 != attachment.size_bytes {
+            return Err("attachment byte count does not match its metadata".into());
+        }
+        let connection = self.lock()?;
+        let note_exists: bool = connection
+            .query_row(
+                "SELECT EXISTS(SELECT 1 FROM quick_notes WHERE id = ?1)",
+                [&attachment.note_id],
+                |row| row.get(0),
+            )
+            .map_err(database_error)?;
+        if !note_exists {
+            return Err("attachment note does not exist".into());
+        }
+        let current_bytes: i64 = connection
+            .query_row(
+                "SELECT COALESCE(SUM(size_bytes), 0) FROM quick_note_attachments WHERE note_id = ?1",
+                [&attachment.note_id],
+                |row| row.get(0),
+            )
+            .map_err(database_error)?;
+        if current_bytes.saturating_add(i64::try_from(data.len()).unwrap_or(i64::MAX))
+            > 50 * 1024 * 1024
+        {
+            return Err("note attachments cannot exceed 50 MiB in total".into());
+        }
+        connection
+            .execute(
+                "INSERT INTO quick_note_attachments
+                   (id, note_id, name, mime_type, size_bytes, data, created_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7)",
+                params![
+                    attachment.id,
+                    attachment.note_id,
+                    attachment.name,
+                    attachment.mime_type,
+                    i64::try_from(attachment.size_bytes).unwrap_or(i64::MAX),
+                    data,
+                    attachment.created_at
+                ],
+            )
+            .map_err(database_error)?;
+        Ok(attachment)
+    }
+
+    pub fn note_attachment_data(&self, id: &str) -> Result<(QuickNoteAttachment, Vec<u8>), String> {
+        validate_delete_id(id)?;
+        self.lock()?
+            .query_row(
+                "SELECT id, note_id, name, mime_type, size_bytes, created_at, data
+                 FROM quick_note_attachments WHERE id = ?1",
+                [id],
+                |row| {
+                    Ok((
+                        QuickNoteAttachment {
+                            id: row.get(0)?,
+                            note_id: row.get(1)?,
+                            name: row.get(2)?,
+                            mime_type: row.get(3)?,
+                            size_bytes: row.get::<_, i64>(4)?.try_into().unwrap_or_default(),
+                            created_at: row.get(5)?,
+                        },
+                        row.get(6)?,
+                    ))
+                },
+            )
+            .map_err(database_error)
+    }
+
+    pub fn delete_note_attachment(&self, id: &str) -> Result<bool, String> {
+        validate_delete_id(id)?;
+        self.lock()?
+            .execute("DELETE FROM quick_note_attachments WHERE id = ?1", [id])
             .map(|affected| affected > 0)
             .map_err(database_error)
     }
@@ -757,9 +874,9 @@ impl LocalDataRepository {
         for note in records.quick_notes {
             imported.quick_notes += transaction
                 .execute(
-                    "INSERT OR IGNORE INTO quick_notes (id, title, content, pinned, created_at, updated_at)
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6)",
-                    params![note.id, note.title, note.content, note.pinned, note.created_at, note.updated_at],
+                    "INSERT OR IGNORE INTO quick_notes (id, title, content, tags_json, color, pinned, created_at, updated_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)",
+                    params![note.id, note.title, note.content, serde_json::to_string(&note.tags).map_err(|error| format!("failed to encode imported note tags: {error}"))?, note.color, note.pinned, note.created_at, note.updated_at],
                 )
                 .map_err(database_error)?;
         }
@@ -941,12 +1058,25 @@ fn initialize(connection: &Connection) -> Result<(), String> {
                id TEXT PRIMARY KEY NOT NULL,
                title TEXT NOT NULL,
                content TEXT NOT NULL,
+               tags_json TEXT NOT NULL DEFAULT '[]',
+               color TEXT NOT NULL DEFAULT 'default',
                pinned INTEGER NOT NULL DEFAULT 0,
                created_at INTEGER NOT NULL,
                updated_at INTEGER NOT NULL
              );
              CREATE INDEX IF NOT EXISTS quick_notes_order
                ON quick_notes (pinned DESC, updated_at DESC);
+             CREATE TABLE IF NOT EXISTS quick_note_attachments (
+               id TEXT PRIMARY KEY NOT NULL,
+               note_id TEXT NOT NULL REFERENCES quick_notes(id) ON DELETE CASCADE,
+               name TEXT NOT NULL,
+               mime_type TEXT NOT NULL,
+               size_bytes INTEGER NOT NULL,
+               data BLOB NOT NULL,
+               created_at INTEGER NOT NULL
+             );
+             CREATE INDEX IF NOT EXISTS quick_note_attachments_note
+               ON quick_note_attachments (note_id, created_at DESC);
              CREATE TABLE IF NOT EXISTS board_messages (
                id TEXT PRIMARY KEY NOT NULL,
                content TEXT NOT NULL,
@@ -1034,9 +1164,52 @@ fn initialize(connection: &Connection) -> Result<(), String> {
                imported_at INTEGER NOT NULL,
                report_json TEXT NOT NULL
              );
-             PRAGMA user_version = 7;",
+             PRAGMA user_version = 8;",
         )
+        .map_err(database_error)?;
+    ensure_column(
+        connection,
+        "quick_notes",
+        "tags_json",
+        "TEXT NOT NULL DEFAULT '[]'",
+    )?;
+    ensure_column(
+        connection,
+        "quick_notes",
+        "color",
+        "TEXT NOT NULL DEFAULT 'default'",
+    )?;
+    connection
+        .pragma_update(None, "user_version", 8)
         .map_err(database_error)
+}
+
+fn ensure_column(
+    connection: &Connection,
+    table: &str,
+    column: &str,
+    declaration: &str,
+) -> Result<(), String> {
+    let mut statement = connection
+        .prepare(&format!("PRAGMA table_info({table})"))
+        .map_err(database_error)?;
+    let exists = statement
+        .query_map([], |row| row.get::<_, String>(1))
+        .map_err(database_error)?
+        .collect::<Result<Vec<_>, _>>()
+        .map_err(database_error)?
+        .iter()
+        .any(|name| name == column);
+    drop(statement);
+    if !exists {
+        connection
+            .execute(
+                &format!("ALTER TABLE {table} ADD COLUMN {column} {declaration}"),
+                [],
+            )
+            .map_err(database_error)?;
+    }
+    Ok(())
 }
 
 fn validate_delete_id(id: &str) -> Result<(), String> {
@@ -1097,6 +1270,8 @@ mod tests {
             id: id.into(),
             title: format!("Note {id}"),
             content: "content".into(),
+            tags: Vec::new(),
+            color: "default".into(),
             pinned,
             created_at: 1,
             updated_at,
@@ -1138,6 +1313,45 @@ mod tests {
         assert_eq!(notes[1].content, "updated");
         assert!(repository.delete_note("one").expect("delete"));
         assert_eq!(repository.list_notes().expect("list").len(), 1);
+    }
+
+    #[test]
+    fn persists_quick_note_attachments_and_cascades_note_deletion() {
+        let repository = LocalDataRepository::open_in_memory().expect("open repository");
+        repository
+            .save_note(note("attached", 10, false))
+            .expect("save note");
+        let attachment = QuickNoteAttachment {
+            id: "attachment-1".into(),
+            note_id: "attached".into(),
+            name: "example.txt".into(),
+            mime_type: "text/plain".into(),
+            size_bytes: 4,
+            created_at: 11,
+        };
+
+        repository
+            .save_note_attachment(attachment.clone(), b"moo!")
+            .expect("save attachment");
+        assert_eq!(
+            repository
+                .list_note_attachments("attached")
+                .expect("list attachments"),
+            std::slice::from_ref(&attachment)
+        );
+        assert_eq!(
+            repository
+                .note_attachment_data("attachment-1")
+                .expect("read attachment"),
+            (attachment, b"moo!".to_vec())
+        );
+        assert!(repository.delete_note("attached").expect("delete note"));
+        assert!(
+            repository
+                .list_note_attachments("attached")
+                .expect("list after delete")
+                .is_empty()
+        );
     }
 
     #[test]

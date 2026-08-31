@@ -18,7 +18,9 @@ use tokio::{
 use crate::contracts::{
     code_runtime::{CodeOutputEvent, CodeRunResult, CodeRunSpec, CodeRuntimeId, CodeRuntimeStatus},
     error::AppResult,
+    settings::RuntimeSettings,
 };
+use crate::repositories::settings::SettingsRepository;
 
 const MAX_OUTPUT_BYTES: usize = 5 * 1024 * 1024;
 
@@ -74,7 +76,10 @@ impl CodeExecutionManager {
 }
 
 #[tauri::command]
-pub async fn detect_code_runtimes() -> Vec<CodeRuntimeStatus> {
+pub async fn detect_code_runtimes(
+    settings: tauri::State<'_, SettingsRepository>,
+) -> AppResult<Vec<CodeRuntimeStatus>> {
+    let runtime_settings = settings.snapshot().runtime;
     let specifications = [
         (CodeRuntimeId::Java, &["java"][..]),
         (CodeRuntimeId::Groovy, &["groovy"][..]),
@@ -83,7 +88,7 @@ pub async fn detect_code_runtimes() -> Vec<CodeRuntimeStatus> {
     ];
     let mut output = Vec::new();
     for (id, candidates) in specifications {
-        if let Some(path) = find_command(candidates) {
+        if let Some(path) = resolve_runtime(&runtime_settings, id, candidates) {
             let version = runtime_version(&path, matches!(id, CodeRuntimeId::Java)).await;
             output.push(CodeRuntimeStatus {
                 id,
@@ -95,24 +100,28 @@ pub async fn detect_code_runtimes() -> Vec<CodeRuntimeStatus> {
             output.push(CodeRuntimeStatus {
                 id,
                 available: false,
-                command: candidates[0].into(),
+                command: configured_runtime(&runtime_settings, id)
+                    .filter(|value| !value.trim().is_empty())
+                    .unwrap_or(candidates[0])
+                    .into(),
                 version: String::new(),
             });
         }
     }
-    output
+    Ok(output)
 }
 
 #[tauri::command]
 pub async fn run_code(
     manager: tauri::State<'_, CodeExecutionManager>,
+    settings: tauri::State<'_, SettingsRepository>,
     spec: CodeRunSpec,
     output: Channel<CodeOutputEvent>,
 ) -> AppResult<CodeRunResult> {
     validate_spec(&spec)?;
     let control = manager.register(&spec.request_id)?;
     let request_id = spec.request_id.clone();
-    let result = run_owned(spec, control, output).await;
+    let result = run_owned(spec, control, output, settings.snapshot().runtime).await;
     manager.finish(&request_id);
     Ok(result?)
 }
@@ -129,14 +138,20 @@ async fn run_owned(
     spec: CodeRunSpec,
     control: Arc<ProcessControl>,
     output: Channel<CodeOutputEvent>,
+    runtime_settings: RuntimeSettings,
 ) -> Result<CodeRunResult, String> {
     let started = Instant::now();
     let directory = tempfile::tempdir()
         .map_err(|error| format!("failed to create runtime directory: {error}"))?;
-    let (program, source_path, mut arguments) =
-        prepare_source(directory.path(), spec.runtime, &spec.code).await?;
+    let (program, source_path, mut arguments) = prepare_source(
+        directory.path(),
+        spec.runtime,
+        &spec.code,
+        &runtime_settings,
+    )
+    .await?;
     if matches!(spec.runtime, CodeRuntimeId::Java) {
-        let javac = find_command(&["javac"])
+        let javac = resolve_java_compiler(&runtime_settings)
             .ok_or_else(|| "javac is required to run Java source".to_string())?;
         let compile = execute_child(
             &javac,
@@ -145,6 +160,7 @@ async fn run_owned(
             Duration::from_millis(spec.timeout_ms),
             control.clone(),
             output.clone(),
+            &runtime_settings.environment,
         )
         .await?;
         if compile.exit_code != Some(0) {
@@ -168,6 +184,7 @@ async fn run_owned(
         Duration::from_millis(spec.timeout_ms),
         control,
         output,
+        &runtime_settings.environment,
     )
     .await?;
     result.duration_ms = started.elapsed().as_millis();
@@ -178,6 +195,7 @@ async fn prepare_source(
     directory: &Path,
     runtime: CodeRuntimeId,
     code: &str,
+    settings: &RuntimeSettings,
 ) -> Result<(PathBuf, PathBuf, Vec<String>), String> {
     let (commands, filename) = match runtime {
         CodeRuntimeId::Java => (&["java"][..], "Main.java"),
@@ -185,7 +203,7 @@ async fn prepare_source(
         CodeRuntimeId::Python => (&["python3", "python"][..], "main.py"),
         CodeRuntimeId::Node => (&["node"][..], "main.js"),
     };
-    let program = find_command(commands)
+    let program = resolve_runtime(settings, runtime, commands)
         .ok_or_else(|| format!("{} runtime was not found on PATH", commands[0]))?;
     let path = directory.join(filename);
     tokio::fs::write(&path, code)
@@ -206,6 +224,7 @@ async fn execute_child(
     timeout: Duration,
     control: Arc<ProcessControl>,
     output: Channel<CodeOutputEvent>,
+    environment: &std::collections::BTreeMap<String, String>,
 ) -> Result<CodeRunResult, String> {
     let command_text = format!("{} {}", program.display(), arguments.join(" "));
     let mut command = Command::new(program);
@@ -215,6 +234,7 @@ async fn execute_child(
         .stdin(Stdio::null())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
+        .envs(environment)
         .kill_on_drop(true);
     #[cfg(unix)]
     {
@@ -336,6 +356,43 @@ fn find_command(candidates: &[&str]) -> Option<PathBuf> {
         }
     }
     None
+}
+
+fn configured_runtime(settings: &RuntimeSettings, runtime: CodeRuntimeId) -> Option<&str> {
+    let value = match runtime {
+        CodeRuntimeId::Java => settings.java_path.as_str(),
+        CodeRuntimeId::Groovy => settings.groovy_path.as_str(),
+        CodeRuntimeId::Python => settings.python_path.as_str(),
+        CodeRuntimeId::Node => settings.node_path.as_str(),
+    };
+    (!value.trim().is_empty()).then_some(value.trim())
+}
+
+fn resolve_runtime(
+    settings: &RuntimeSettings,
+    runtime: CodeRuntimeId,
+    candidates: &[&str],
+) -> Option<PathBuf> {
+    if let Some(configured) = configured_runtime(settings, runtime) {
+        let path = PathBuf::from(configured);
+        return path.is_file().then_some(path);
+    }
+    settings
+        .auto_detect
+        .then(|| find_command(candidates))
+        .flatten()
+}
+
+fn resolve_java_compiler(settings: &RuntimeSettings) -> Option<PathBuf> {
+    if let Some(java) = configured_runtime(settings, CodeRuntimeId::Java) {
+        let java = Path::new(java);
+        let candidate = java.with_file_name(if cfg!(windows) { "javac.exe" } else { "javac" });
+        return candidate.is_file().then_some(candidate);
+    }
+    settings
+        .auto_detect
+        .then(|| find_command(&["javac"]))
+        .flatten()
 }
 
 async fn runtime_version(program: &Path, java: bool) -> String {

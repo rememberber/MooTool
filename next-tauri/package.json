@@ -21,6 +21,9 @@
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:update": "playwright test --update-snapshots",
+    "test:native-smoke": "node scripts/native-smoke.mjs",
     "check:boundaries": "node scripts/check-product-boundaries.mjs",
     "check:localization": "node scripts/check-localization-boundaries.mjs",
     "check:release": "node scripts/check-release-boundaries.mjs",
@@ -65,6 +68,7 @@
     "yaml": "^2.9.0"
   },
   "devDependencies": {
+    "@playwright/test": "^1.62.1",
     "@tauri-apps/cli": "^2.11.4",
     "@types/node": "^26.1.2",
     "@types/qrcode": "^1.5.6",

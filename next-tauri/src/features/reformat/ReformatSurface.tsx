@@ -14,6 +14,7 @@ import { clipboardApi } from '../../platform/api/clipboardApi'
 import { CodeEditor } from '../../shared/CodeEditor'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
+import { useOperationHistory } from '../history/useOperationHistory'
 import {
   formatCode,
   reformatSamples,
@@ -56,6 +57,7 @@ export function ReformatSurface() {
     session.digest,
     session.summary
   )
+  const recordOperation = useOperationHistory('reformat')
 
   async function format(): Promise<void> {
     setBusy(true)
@@ -64,11 +66,13 @@ export function ReformatSurface() {
       const output = await formatCode(source, type, indent)
       setSource(output)
       setNotice({ key: 'notice.formatted', values: { type: typeLabel(type) } })
+      recordOperation(t('action.format'), `${typeLabel(type)} · ${output.length}`, 'success')
     } catch (cause) {
       setFailed(true)
       setNotice(cause instanceof ReformatToolError
         ? { key: `error.${cause.code}` }
         : { raw: cause instanceof Error ? cause.message : String(cause) })
+      recordOperation(t('action.format'), `${typeLabel(type)} · ${cause instanceof Error ? cause.message : String(cause)}`, 'error')
     } finally {
       setBusy(false)
     }

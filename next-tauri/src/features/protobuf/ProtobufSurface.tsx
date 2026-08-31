@@ -16,6 +16,7 @@ import { json } from '@codemirror/lang-json'
 import { CodeEditor } from '../../shared/CodeEditor'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
+import { useOperationHistory } from '../history/useOperationHistory'
 import {
   convertProtobufBinary,
   decodeProtobuf,
@@ -84,6 +85,7 @@ export function ProtobufSurface() {
     summary: t('session.summary', { message: messageName || t('session.noMessage'), format: format.toUpperCase(), count: binaryInput.replace(/\s/g, '').length })
   }), [binaryInput, format, jsonInput, messageName, schema, t])
   const { sessionId, reportError } = useToolSessionReport('protobuf', session.digest, session.summary)
+  const recordOperation = useOperationHistory('protobuf')
 
   function encode(): void {
     try {
@@ -92,6 +94,7 @@ export function ProtobufSurface() {
       setWire(inspectWire(output, format))
       setWireInspected(true)
       succeed('notice.encoded')
+      recordOperation(t('action.encode'), `${messageName} · ${format.toUpperCase()} · ${output.length}`, 'success')
     } catch (cause) {
       fail(cause)
     }
@@ -99,10 +102,12 @@ export function ProtobufSurface() {
 
   function decode(): void {
     try {
-      setJsonInput(decodeProtobuf(schema, messageName, binaryInput, format))
+      const output = decodeProtobuf(schema, messageName, binaryInput, format)
+      setJsonInput(output)
       setWire(inspectWire(binaryInput, format))
       setWireInspected(true)
       succeed('notice.decoded')
+      recordOperation(t('action.decode'), `${messageName} · ${format.toUpperCase()} · ${output.length}`, 'success')
     } catch (cause) {
       fail(cause)
     }

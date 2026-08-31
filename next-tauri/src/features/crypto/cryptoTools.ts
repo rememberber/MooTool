@@ -4,7 +4,8 @@ import { hmac } from '@noble/hashes/hmac.js'
 import { Buffer } from 'buffer'
 
 export type HashAlgorithm = 'md5' | 'sha1' | 'sha256' | 'sha384' | 'sha512'
-export type CryptoToolErrorCode = 'hmacSecret' | 'invalidCiphertext' | 'decryptFailed' | 'randomLength' | 'passphraseEmpty' | 'passphraseLong'
+export type BaseAlgorithm = 'base64' | 'base32'
+export type CryptoToolErrorCode = 'hmacSecret' | 'invalidCiphertext' | 'decryptFailed' | 'randomLength' | 'passphraseEmpty' | 'passphraseLong' | 'baseInvalid' | 'rsaKey' | 'rsaOperation'
 
 export class CryptoToolError extends Error {
   constructor(readonly code: CryptoToolErrorCode) {
@@ -32,6 +33,72 @@ export function hashText(value: string, algorithm: HashAlgorithm): string {
 export function hmacSha256(value: string, secret: string): string {
   if (!secret) throw new CryptoToolError('hmacSecret')
   return Buffer.from(hmac(sha256, encoder.encode(secret), encoder.encode(value))).toString('hex')
+}
+
+export function encodeBase(value: string, algorithm: BaseAlgorithm): string {
+  const bytes = encoder.encode(value)
+  return algorithm === 'base64' ? Buffer.from(bytes).toString('base64') : encodeBase32(bytes)
+}
+
+export function decodeBase(value: string, algorithm: BaseAlgorithm): string {
+  try {
+    const bytes = algorithm === 'base64' ? decodeBase64(value) : decodeBase32(value)
+    return new TextDecoder('utf-8', { fatal: true }).decode(bytes)
+  } catch {
+    throw new CryptoToolError('baseInvalid')
+  }
+}
+
+export interface RsaKeyPair { publicKey: string; privateKey: string }
+
+export async function generateRsaKeyPair(bits: 2048 | 3072 | 4096 = 2048): Promise<RsaKeyPair> {
+  const pair = await crypto.subtle.generateKey(
+    { name: 'RSA-OAEP', modulusLength: bits, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
+    true,
+    ['encrypt', 'decrypt']
+  )
+  const [publicDer, privateDer] = await Promise.all([
+    crypto.subtle.exportKey('spki', pair.publicKey),
+    crypto.subtle.exportKey('pkcs8', pair.privateKey)
+  ])
+  return { publicKey: pem('PUBLIC KEY', publicDer), privateKey: pem('PRIVATE KEY', privateDer) }
+}
+
+export async function rsaEncrypt(value: string, publicKey: string): Promise<string> {
+  try {
+    const key = await crypto.subtle.importKey('spki', pemBytes(publicKey, 'PUBLIC KEY'), { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['encrypt'])
+    return Buffer.from(await crypto.subtle.encrypt({ name: 'RSA-OAEP' }, key, encoder.encode(value))).toString('base64')
+  } catch {
+    throw new CryptoToolError(publicKey.trim() ? 'rsaOperation' : 'rsaKey')
+  }
+}
+
+export async function rsaDecrypt(value: string, privateKey: string): Promise<string> {
+  try {
+    const key = await crypto.subtle.importKey('pkcs8', pemBytes(privateKey, 'PRIVATE KEY'), { name: 'RSA-OAEP', hash: 'SHA-256' }, false, ['decrypt'])
+    const plaintext = await crypto.subtle.decrypt({ name: 'RSA-OAEP' }, key, decodeBase64(value))
+    return new TextDecoder('utf-8', { fatal: true }).decode(plaintext)
+  } catch {
+    throw new CryptoToolError(privateKey.trim() ? 'rsaOperation' : 'rsaKey')
+  }
+}
+
+export async function rsaSign(value: string, privateKey: string): Promise<string> {
+  try {
+    const key = await crypto.subtle.importKey('pkcs8', pemBytes(privateKey, 'PRIVATE KEY'), { name: 'RSA-PSS', hash: 'SHA-256' }, false, ['sign'])
+    return Buffer.from(await crypto.subtle.sign({ name: 'RSA-PSS', saltLength: 32 }, key, encoder.encode(value))).toString('base64')
+  } catch {
+    throw new CryptoToolError(privateKey.trim() ? 'rsaOperation' : 'rsaKey')
+  }
+}
+
+export async function rsaVerify(value: string, signature: string, publicKey: string): Promise<boolean> {
+  try {
+    const key = await crypto.subtle.importKey('spki', pemBytes(publicKey, 'PUBLIC KEY'), { name: 'RSA-PSS', hash: 'SHA-256' }, false, ['verify'])
+    return crypto.subtle.verify({ name: 'RSA-PSS', saltLength: 32 }, key, decodeBase64(signature), encoder.encode(value))
+  } catch {
+    throw new CryptoToolError(publicKey.trim() ? 'rsaOperation' : 'rsaKey')
+  }
 }
 
 export async function encryptAesGcm(value: string, passphrase: string): Promise<string> {
@@ -144,4 +211,60 @@ function validateEnvelope(envelope: Partial<AesEnvelope>): asserts envelope is A
   ) {
     throw new CryptoToolError('invalidCiphertext')
   }
+}
+
+const BASE32_ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
+
+function encodeBase32(bytes: Uint8Array): string {
+  let bits = 0
+  let value = 0
+  let output = ''
+  for (const byte of bytes) {
+    value = (value << 8) | byte
+    bits += 8
+    while (bits >= 5) {
+      output += BASE32_ALPHABET[(value >>> (bits - 5)) & 31]
+      bits -= 5
+    }
+  }
+  if (bits > 0) output += BASE32_ALPHABET[(value << (5 - bits)) & 31]
+  return output.padEnd(Math.ceil(output.length / 8) * 8, '=')
+}
+
+function decodeBase32(input: string): Uint8Array {
+  const normalized = input.toUpperCase().replace(/\s+/g, '')
+  if (!/^[A-Z2-7]*={0,6}$/.test(normalized) || /=/.test(normalized.replace(/=+$/, ''))) throw new Error('invalid base32')
+  const unpadded = normalized.replace(/=+$/, '')
+  let bits = 0
+  let value = 0
+  const output: number[] = []
+  for (const character of unpadded) {
+    const index = BASE32_ALPHABET.indexOf(character)
+    if (index < 0) throw new Error('invalid base32')
+    value = (value << 5) | index
+    bits += 5
+    if (bits >= 8) {
+      output.push((value >>> (bits - 8)) & 255)
+      bits -= 8
+    }
+  }
+  return new Uint8Array(output)
+}
+
+function decodeBase64(value: string): Uint8Array<ArrayBuffer> {
+  const normalized = value.replace(/\s+/g, '')
+  if (!normalized || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(normalized)) throw new Error('invalid base64')
+  return Uint8Array.from(Buffer.from(normalized, 'base64'))
+}
+
+function pem(label: string, data: ArrayBuffer): string {
+  const body = Buffer.from(data).toString('base64').match(/.{1,64}/g)?.join('\n') ?? ''
+  return `-----BEGIN ${label}-----\n${body}\n-----END ${label}-----`
+}
+
+function pemBytes(value: string, label: string): ArrayBuffer {
+  const match = new RegExp(`-----BEGIN ${label}-----([\\s\\S]+?)-----END ${label}-----`).exec(value.trim())
+  if (!match) throw new CryptoToolError('rsaKey')
+  const bytes = Uint8Array.from(Buffer.from(match[1].replace(/\s+/g, ''), 'base64'))
+  return bytes.buffer
 }

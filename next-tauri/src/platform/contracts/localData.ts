@@ -2,9 +2,20 @@ export interface QuickNote {
   id: string
   title: string
   content: string
+  tags: string[]
+  color: 'default' | 'coral' | 'yellow' | 'green' | 'blue' | 'purple' | 'red'
   pinned: boolean
   createdAt: number
   updatedAt: number
+}
+
+export interface QuickNoteAttachment {
+  id: string
+  noteId: string
+  name: string
+  mimeType: string
+  sizeBytes: number
+  createdAt: number
 }
 
 export type BoardMessageColor = 'blue' | 'green' | 'yellow' | 'pink' | 'purple' | 'gray'

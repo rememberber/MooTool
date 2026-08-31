@@ -11,6 +11,7 @@ import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } fr
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useSettings } from '../settings/SettingsProvider'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
+import { useOperationHistory } from '../history/useOperationHistory'
 import {
   buildCron,
   cronPresets,
@@ -70,6 +71,7 @@ export function CronSurface() {
     summary: t('session.summary', { expression, count: runs.length })
   }), [error, expression, runs.length, t, timeZone])
   const { sessionId, reportError } = useToolSessionReport('cron', session.digest, session.summary)
+  const recordOperation = useOperationHistory('cron')
   const zoneOptions = Array.from(new Set([systemZone, ...timezones]))
 
   function calculate(nextExpression = expression): void {
@@ -82,10 +84,12 @@ export function CronSurface() {
       setDescription(nextDescription)
       setRuns(nextRuns)
       setError(undefined)
+      recordOperation(t('action.parse'), `${nextExpression} · ${timeZone} · ${nextRuns.length}`, 'success')
     } catch (cause) {
       setRuns([])
       setDescription('')
       setError(cronError(cause))
+      recordOperation(t('action.parse'), `${nextExpression} · ${cause instanceof Error ? cause.message : String(cause)}`, 'error')
     }
   }
 

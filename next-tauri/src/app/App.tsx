@@ -3,6 +3,7 @@ import {
   ChevronDown,
   Command,
   FolderCog,
+  History,
   Languages,
   PanelLeftClose,
   Search,
@@ -40,6 +41,8 @@ import { TranslationHost } from '../features/translation/TranslationHost'
 import { UaHost } from '../features/ua/UaHost'
 import { VariablesHost } from '../features/variables/VariablesHost'
 import { SystemHost } from '../features/system/SystemHost'
+import { CommandPalette } from '../features/search/CommandPalette'
+import { HistoryPanel } from '../features/history/HistoryPanel'
 import { WebviewLab } from '../features/webviewLab/WebviewLab'
 import { runtimeApi } from '../platform/api/runtimeApi'
 import { historyApi } from '../platform/api/historyApi'
@@ -67,14 +70,25 @@ export function App() {
   const [runtimeInfo, setRuntimeInfo] = useState<RuntimeInfo>()
   const [notice, setNotice] = useState('')
   const [customGroupsOpen, setCustomGroupsOpen] = useState(false)
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
+  const [historyOpen, setHistoryOpen] = useState(false)
   const [closeRequest, setCloseRequest] = useState<DesktopCloseRequest>()
   const [rememberCloseChoice, setRememberCloseChoice] = useState(false)
+
+  useEffect(() => {
+    if (!notice) return
+    const timer = window.setTimeout(() => setNotice(''), 5_000)
+    return () => window.clearTimeout(timer)
+  }, [notice])
   const sidebarCompact = settings.layout.sidebarCompact
-  const recent = settings.tools.recent.filter(isToolId)
+  const hiddenTools = new Set(settings.layout.hiddenTools)
+  const recent = settings.layout.showRecent
+    ? settings.tools.recent.filter(isToolId).filter((toolId) => !hiddenTools.has(toolId))
+    : []
   const favorites = settings.tools.favorites
     .filter(isToolId)
     .map((toolId) => toolCatalog.find((tool) => tool.id === toolId))
-    .filter((tool): tool is NonNullable<typeof tool> => Boolean(tool && !tool.engineeringOnly))
+    .filter((tool): tool is NonNullable<typeof tool> => Boolean(tool && !tool.engineeringOnly && !hiddenTools.has(tool.id)))
 
   useEffect(() => {
     void runtimeApi.getInfo().then(setRuntimeInfo).catch((error: unknown) => {
@@ -106,13 +120,29 @@ export function App() {
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+      if (matchesShortcut(event, settings.shortcuts.globalSearch)) {
         event.preventDefault()
-        document.getElementById('tool-search')?.focus()
+        setCommandPaletteOpen(true)
+      } else if (matchesShortcut(event, settings.shortcuts.settings)) {
+        event.preventDefault()
+        void openWindow().catch((cause: unknown) => setNotice(errorMessage(cause)))
       }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [openWindow, settings.shortcuts.globalSearch, settings.shortcuts.settings])
+
+  useEffect(() => {
+    if (!window.__TAURI_INTERNALS__) return
+    let dispose: (() => void) | undefined
+    let cancelled = false
+    void import('@tauri-apps/api/event').then(({ listen }) => listen('mootool://open-command-palette', () => {
+      setCommandPaletteOpen(true)
+    })).then((unlisten) => {
+      if (cancelled) unlisten()
+      else dispose = unlisten
+    }).catch((cause: unknown) => setNotice(errorMessage(cause)))
+    return () => { cancelled = true; dispose?.() }
   }, [])
 
   useEffect(() => {
@@ -174,21 +204,22 @@ export function App() {
 
   const visibleGroups = useMemo(() => toolGroups.map((group) => ({
     group,
-    tools: navigationToolCatalog.filter((tool) => tool.group === group && (
+    tools: navigationToolCatalog.filter((tool) => !hiddenTools.has(tool.id) && tool.group === group && (
       !query.trim()
       || `${tool.title} ${toolTitle(tool)} ${tool.keywords.join(' ')}`
         .toLowerCase()
         .includes(query.trim().toLowerCase())
     ))
-  })).filter(({ tools }) => tools.length > 0), [query, toolTitle])
+  })).filter(({ tools }) => tools.length > 0), [query, settings.layout.hiddenTools, toolTitle])
   const visibleCustomGroups = useMemo(() => settings.layout.customGroups.map((group) => ({
     ...group,
     tools: group.toolIds
       .map((toolId) => productToolCatalog.find((tool) => tool.id === toolId))
       .filter((tool): tool is NonNullable<typeof tool> => Boolean(tool))
+      .filter((tool) => !hiddenTools.has(tool.id))
       .filter((tool) => !query.trim() || `${tool.title} ${toolTitle(tool)} ${tool.keywords.join(' ')}`
         .toLowerCase().includes(query.trim().toLowerCase()))
-  })).filter((group) => group.tools.length > 0), [query, settings.layout.customGroups, toolTitle])
+  })).filter((group) => group.tools.length > 0), [query, settings.layout.customGroups, settings.layout.hiddenTools, toolTitle])
 
   function openTool(toolId: ToolId): void {
     const tool = toolCatalog.find((item) => item.id === toolId)
@@ -263,6 +294,14 @@ export function App() {
           >
             <PanelLeftClose />
           </button>
+          <button
+            className="icon-button compact-search-button"
+            type="button"
+            aria-label={t('shell.search')}
+            onClick={() => setCommandPaletteOpen(true)}
+          >
+            <Search />
+          </button>
           <label className="search-control">
             <Search />
             <input
@@ -283,9 +322,16 @@ export function App() {
             compact={sidebarCompact}
             onClick={() => openTool('home')}
           />
+          <NavButton
+            icon={History}
+            label={t('shell.history')}
+            active={historyOpen}
+            compact={sidebarCompact}
+            onClick={() => setHistoryOpen(true)}
+          />
           {favorites.length > 0 && (
             <section className="nav-group nav-group--favorites">
-              <h2><Star />{t('shell.favorites')}</h2>
+              {settings.layout.showGroupTitles && <h2><Star />{t('shell.favorites')}</h2>}
               {favorites.map((tool) => (
                 <NavButton
                   key={`favorite-${tool.id}`}
@@ -302,7 +348,7 @@ export function App() {
           )}
           {visibleCustomGroups.map((group) => (
             <section className="nav-group nav-group--custom" key={group.id}>
-              <h2><FolderCog />{group.name}</h2>
+              {settings.layout.showGroupTitles && <h2><FolderCog />{group.name}</h2>}
               {group.tools.map((tool) => (
                 <NavButton
                   key={`${group.id}-${tool.id}`}
@@ -319,7 +365,7 @@ export function App() {
           ))}
           {visibleGroups.map(({ group, tools }) => (
             <section className="nav-group" key={group}>
-              <h2>{groupTitle(group)}</h2>
+              {settings.layout.showGroupTitles && <h2>{groupTitle(group)}</h2>}
               {tools.map((tool) => (
                 <NavButton
                   key={tool.id}
@@ -455,11 +501,17 @@ export function App() {
           <WebviewLab active={activeTool === 'webview-lab'} />
         </div>
         {(notice || settingsError) && (
-          <button className="notice-toast" type="button" onClick={() => setNotice('')}>
+          <button className="notice-toast" type="button" role={settingsError ? 'alert' : 'status'} aria-live={settingsError ? 'assertive' : 'polite'} onClick={() => setNotice('')}>
             {notice || settingsError}
           </button>
         )}
         <CustomGroupDialog open={customGroupsOpen} onClose={() => setCustomGroupsOpen(false)} />
+        <CommandPalette
+          open={commandPaletteOpen}
+          onClose={() => setCommandPaletteOpen(false)}
+          onOpenTool={openTool}
+        />
+        {historyOpen && <HistoryPanel limit={settings.data.historyLimit} onClose={() => setHistoryOpen(false)} />}
         {closeRequest && (
           <div className="desktop-dialog-backdrop" role="presentation">
             <section className="desktop-dialog" role="dialog" aria-modal="true" aria-labelledby="close-dialog-title">
@@ -499,6 +551,19 @@ function isToolId(value: string): value is ToolId {
   return value === 'home' || toolCatalog.some((tool) => tool.id === value)
 }
 
+function matchesShortcut(event: KeyboardEvent, shortcut: string): boolean {
+  const parts = shortcut.toLowerCase().split('+').map((part) => part.trim())
+  const expectedKey = parts.at(-1)
+  if (!expectedKey || event.key.toLowerCase() !== expectedKey) return false
+  const commandOrControl = parts.includes('commandorcontrol')
+  const expectsMeta = parts.includes('command') || parts.includes('meta')
+  const expectsControl = parts.includes('control') || parts.includes('ctrl')
+  const expectsShift = parts.includes('shift')
+  const expectsAlt = parts.includes('alt') || parts.includes('option')
+  if (commandOrControl ? !(event.metaKey || event.ctrlKey) : event.metaKey !== expectsMeta || event.ctrlKey !== expectsControl) return false
+  return event.shiftKey === expectsShift && event.altKey === expectsAlt
+}
+
 
 function NavButton({
   icon: Icon,
@@ -525,6 +590,8 @@ function NavButton({
       <button
         className={`nav-button ${active ? 'nav-button--active' : ''}`}
         type="button"
+        aria-label={label}
+        aria-current={active ? 'page' : undefined}
         title={compact ? label : undefined}
         onClick={onClick}
       >

@@ -35,6 +35,7 @@ export interface VaultGitStatus {
 export interface VaultSnapshot {
   rootPath: string | null
   files: VaultFileEntry[]
+  directories: string[]
   git: VaultGitStatus
 }
 
@@ -66,7 +67,11 @@ export interface VaultApi {
   disconnect(): Promise<void>
   read(relativePath: string): Promise<VaultDocument>
   save(request: VaultSaveRequest): Promise<VaultDocument>
+  createDirectory(relativePath: string): Promise<string>
+  move(relativePath: string, destinationPath: string, expectedFingerprint: string | null): Promise<string>
+  duplicate(relativePath: string, destinationPath: string, expectedFingerprint: string): Promise<VaultDocument>
   delete(relativePath: string, expectedFingerprint: string): Promise<VaultTrashResult>
+  deleteEntry(relativePath: string, expectedFingerprint: string | null): Promise<VaultTrashResult>
   gitStatus(): Promise<VaultGitStatus>
   runGit(request: VaultGitRequest): Promise<VaultGitResult>
   cancelGit(requestId: string): Promise<boolean>

@@ -104,7 +104,7 @@ fn load_or_recover(file_path: &Path) -> Result<AppSettings, String> {
 fn migrate_settings(mut settings: AppSettings) -> Result<(AppSettings, bool), String> {
     let migrated = match settings.schema_version {
         SETTINGS_SCHEMA_VERSION => false,
-        0..=3 => {
+        0..=6 => {
             settings.schema_version = SETTINGS_SCHEMA_VERSION;
             true
         }

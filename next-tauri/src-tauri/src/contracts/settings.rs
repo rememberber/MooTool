@@ -1,8 +1,8 @@
-use std::collections::HashSet;
+use std::collections::{BTreeMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
-pub const SETTINGS_SCHEMA_VERSION: u32 = 4;
+pub const SETTINGS_SCHEMA_VERSION: u32 = 7;
 
 const PRODUCT_TOOL_IDS: [&str; 25] = [
     "quick-note",
@@ -100,6 +100,9 @@ pub struct GeneralSettings {
     pub close_behavior: CloseBehavior,
     #[serde(default = "default_true")]
     pub auto_check_updates: bool,
+    pub start_maximized: bool,
+    #[serde(default = "default_true")]
+    pub tray_enabled: bool,
 }
 
 impl Default for GeneralSettings {
@@ -109,15 +112,30 @@ impl Default for GeneralSettings {
             launch_at_login: false,
             close_behavior: CloseBehavior::default(),
             auto_check_updates: true,
+            start_maximized: false,
+            tray_enabled: true,
         }
     }
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct AppearanceSettings {
     pub theme: ThemePreference,
     pub accent_color: AccentColor,
+    pub font_family: String,
+    pub ui_scale: u8,
+}
+
+impl Default for AppearanceSettings {
+    fn default() -> Self {
+        Self {
+            theme: ThemePreference::default(),
+            accent_color: AccentColor::default(),
+            font_family: "system".into(),
+            ui_scale: 100,
+        }
+    }
 }
 
 #[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
@@ -128,12 +146,32 @@ pub struct CustomToolGroup {
     pub tool_ids: Vec<String>,
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct LayoutSettings {
     pub sidebar_compact: bool,
     pub density: InterfaceDensity,
     pub custom_groups: Vec<CustomToolGroup>,
+    pub pane_sizes: BTreeMap<String, u16>,
+    #[serde(default = "default_true")]
+    pub show_recent: bool,
+    #[serde(default = "default_true")]
+    pub show_group_titles: bool,
+    pub hidden_tools: Vec<String>,
+}
+
+impl Default for LayoutSettings {
+    fn default() -> Self {
+        Self {
+            sidebar_compact: false,
+            density: InterfaceDensity::default(),
+            custom_groups: Vec::new(),
+            pane_sizes: BTreeMap::new(),
+            show_recent: true,
+            show_group_titles: true,
+            hidden_tools: Vec::new(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -142,6 +180,8 @@ pub struct EditorSettings {
     pub font_size: u8,
     pub tab_size: u8,
     pub word_wrap: bool,
+    pub json_font_size: u8,
+    pub quick_note_font_size: u8,
 }
 
 impl Default for EditorSettings {
@@ -150,6 +190,8 @@ impl Default for EditorSettings {
             font_size: 13,
             tab_size: 2,
             word_wrap: true,
+            json_font_size: 13,
+            quick_note_font_size: 13,
         }
     }
 }
@@ -159,6 +201,10 @@ impl Default for EditorSettings {
 pub struct NetworkSettings {
     pub timeout_seconds: u16,
     pub proxy_mode: ProxyMode,
+    pub proxy_host: String,
+    pub proxy_port: u16,
+    pub proxy_username: String,
+    pub translation_timeout_seconds: u16,
 }
 
 impl Default for NetworkSettings {
@@ -166,6 +212,10 @@ impl Default for NetworkSettings {
         Self {
             timeout_seconds: 30,
             proxy_mode: ProxyMode::default(),
+            proxy_host: String::new(),
+            proxy_port: 8080,
+            proxy_username: String::new(),
+            translation_timeout_seconds: 20,
         }
     }
 }
@@ -174,11 +224,23 @@ impl Default for NetworkSettings {
 #[serde(default, rename_all = "camelCase")]
 pub struct RuntimeSettings {
     pub auto_detect: bool,
+    pub java_path: String,
+    pub groovy_path: String,
+    pub python_path: String,
+    pub node_path: String,
+    pub environment: BTreeMap<String, String>,
 }
 
 impl Default for RuntimeSettings {
     fn default() -> Self {
-        Self { auto_detect: true }
+        Self {
+            auto_detect: true,
+            java_path: String::new(),
+            groovy_path: String::new(),
+            python_path: String::new(),
+            node_path: String::new(),
+            environment: BTreeMap::new(),
+        }
     }
 }
 
@@ -205,12 +267,14 @@ pub struct VaultSettings {
 #[serde(default, rename_all = "camelCase")]
 pub struct ShortcutSettings {
     pub global_search: String,
+    pub settings: String,
 }
 
 impl Default for ShortcutSettings {
     fn default() -> Self {
         Self {
             global_search: "CommandOrControl+K".into(),
+            settings: "CommandOrControl+,".into(),
         }
     }
 }
@@ -269,16 +333,63 @@ impl AppSettings {
         if !(10..=24).contains(&self.editor.font_size) {
             return Err("editor font size must be between 10 and 24".into());
         }
+        if !(10..=24).contains(&self.editor.json_font_size)
+            || !(10..=24).contains(&self.editor.quick_note_font_size)
+        {
+            return Err("tool editor font sizes must be between 10 and 24".into());
+        }
         if ![2, 4, 8].contains(&self.editor.tab_size) {
             return Err("editor tab size must be 2, 4, or 8".into());
         }
         if !(1..=300).contains(&self.network.timeout_seconds) {
             return Err("network timeout must be between 1 and 300 seconds".into());
         }
+        if !(1..=300).contains(&self.network.translation_timeout_seconds) {
+            return Err("translation timeout must be between 1 and 300 seconds".into());
+        }
+        if self.network.proxy_port == 0
+            || self.network.proxy_host.len() > 255
+            || self.network.proxy_username.len() > 255
+            || self.network.proxy_host.chars().any(char::is_control)
+            || self.network.proxy_username.chars().any(char::is_control)
+        {
+            return Err("proxy settings are invalid".into());
+        }
+        if self.appearance.font_family != "system" && self.appearance.font_family != "mono" {
+            return Err("interface font family is invalid".into());
+        }
+        if ![90, 100, 110].contains(&self.appearance.ui_scale) {
+            return Err("interface scale must be 90, 100, or 110".into());
+        }
         if !(10..=5000).contains(&self.data.history_limit) {
             return Err("history limit must be between 10 and 5000".into());
         }
         validate_custom_groups(&self.layout.custom_groups)?;
+        validate_tool_ids(
+            "hidden tools",
+            &self.layout.hidden_tools,
+            PRODUCT_TOOL_IDS.len(),
+        )?;
+        if self
+            .layout
+            .hidden_tools
+            .iter()
+            .any(|id| !PRODUCT_TOOL_IDS.contains(&id.as_str()))
+        {
+            return Err("hidden tools contains an unknown tool".into());
+        }
+        if self.layout.pane_sizes.len() > 64
+            || self.layout.pane_sizes.iter().any(|(key, value)| {
+                key.is_empty()
+                    || key.len() > 64
+                    || !key.bytes().all(|byte| {
+                        byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'-'
+                    })
+                    || !(120..=2000).contains(value)
+            })
+        {
+            return Err("pane sizes contain an invalid entry".into());
+        }
         if self.vault.root_directory.as_ref().is_some_and(|path| {
             path.trim().is_empty()
                 || path.len() > 4_096
@@ -286,9 +397,42 @@ impl AppSettings {
         }) {
             return Err("vault root directory must be an absolute path".into());
         }
-        if self.shortcuts.global_search.trim().is_empty() || self.shortcuts.global_search.len() > 80
+        validate_shortcut("global search", &self.shortcuts.global_search)?;
+        validate_shortcut("settings", &self.shortcuts.settings)?;
+        if self
+            .shortcuts
+            .global_search
+            .eq_ignore_ascii_case(&self.shortcuts.settings)
         {
-            return Err("global search shortcut is invalid".into());
+            return Err("global search and settings shortcuts must be different".into());
+        }
+        for path in [
+            &self.runtime.java_path,
+            &self.runtime.groovy_path,
+            &self.runtime.python_path,
+            &self.runtime.node_path,
+        ] {
+            if path.len() > 4_096
+                || path.chars().any(char::is_control)
+                || (!path.is_empty() && !std::path::Path::new(path).is_absolute())
+            {
+                return Err("runtime paths must be empty or absolute paths".into());
+            }
+        }
+        if self.runtime.environment.len() > 200
+            || self.runtime.environment.iter().any(|(name, value)| {
+                name.is_empty()
+                    || name.len() > 128
+                    || !name.bytes().enumerate().all(|(index, byte)| {
+                        byte == b'_'
+                            || byte.is_ascii_alphabetic()
+                            || (index > 0 && byte.is_ascii_digit())
+                    })
+                    || value.len() > 16_384
+                    || value.contains('\0')
+            })
+        {
+            return Err("runtime environment overrides are invalid".into());
         }
         validate_tool_ids("favorites", &self.tools.favorites, 50)?;
         validate_tool_ids("recent", &self.tools.recent, 20)?;
@@ -308,6 +452,78 @@ fn validate_tool_ids(label: &str, ids: &[String], limit: usize) -> Result<(), St
                 .all(|byte| byte.is_ascii_lowercase() || byte.is_ascii_digit() || byte == b'-')
     }) {
         return Err(format!("{label} contains an invalid tool id"));
+    }
+    Ok(())
+}
+
+fn validate_shortcut(label: &str, value: &str) -> Result<(), String> {
+    if value.trim() != value
+        || value.is_empty()
+        || value.len() > 80
+        || value.chars().any(char::is_control)
+    {
+        return Err(format!("{label} shortcut is invalid"));
+    }
+    let parts = value.split('+').collect::<Vec<_>>();
+    if !(2..=5).contains(&parts.len()) || parts.iter().any(|part| part.is_empty()) {
+        return Err(format!("{label} shortcut is invalid"));
+    }
+    let modifiers = &parts[..parts.len() - 1];
+    let modifier_valid = |part: &&str| {
+        matches!(
+            part.to_ascii_lowercase().as_str(),
+            "commandorcontrol"
+                | "command"
+                | "cmd"
+                | "control"
+                | "ctrl"
+                | "alt"
+                | "option"
+                | "shift"
+                | "super"
+                | "meta"
+        )
+    };
+    if !modifiers.iter().all(modifier_valid)
+        || modifiers
+            .iter()
+            .map(|part| part.to_ascii_lowercase())
+            .collect::<HashSet<_>>()
+            .len()
+            != modifiers.len()
+    {
+        return Err(format!("{label} shortcut has invalid modifiers"));
+    }
+    let key = parts[parts.len() - 1];
+    let named_key = matches!(
+        key.to_ascii_lowercase().as_str(),
+        "space"
+            | "tab"
+            | "enter"
+            | "escape"
+            | "backspace"
+            | "delete"
+            | "insert"
+            | "home"
+            | "end"
+            | "pageup"
+            | "pagedown"
+            | "arrowup"
+            | "arrowdown"
+            | "arrowleft"
+            | "arrowright"
+    );
+    let function_key = key
+        .strip_prefix('F')
+        .or_else(|| key.strip_prefix('f'))
+        .and_then(|number| number.parse::<u8>().ok())
+        .is_some_and(|number| (1..=24).contains(&number));
+    let single_key = key.chars().count() == 1
+        && key.chars().all(|character| {
+            character.is_ascii_alphanumeric() || ",./;'[]\\-=`".contains(character)
+        });
+    if !named_key && !function_key && !single_key {
+        return Err(format!("{label} shortcut key is invalid"));
     }
     Ok(())
 }
@@ -388,6 +604,29 @@ mod tests {
         assert_eq!(
             settings.validate(),
             Err("custom group contains an unknown or duplicated tool".into())
+        );
+    }
+
+    #[test]
+    fn rejects_malformed_or_conflicting_shortcuts() {
+        let mut settings = AppSettings::default();
+        settings.shortcuts.global_search = "K".into();
+        assert_eq!(
+            settings.validate(),
+            Err("global search shortcut is invalid".into())
+        );
+
+        settings.shortcuts.global_search = "Control+Control+K".into();
+        assert_eq!(
+            settings.validate(),
+            Err("global search shortcut has invalid modifiers".into())
+        );
+
+        settings.shortcuts.global_search = "Control+K".into();
+        settings.shortcuts.settings = "control+k".into();
+        assert_eq!(
+            settings.validate(),
+            Err("global search and settings shortcuts must be different".into())
         );
     }
 }

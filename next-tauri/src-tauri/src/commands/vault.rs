@@ -90,12 +90,14 @@ pub async fn get_vault_snapshot(
         return Ok(VaultSnapshot {
             root_path: None,
             files: Vec::new(),
+            directories: Vec::new(),
             git: git_availability().await,
         });
     };
     Ok(VaultSnapshot {
         root_path: Some(root.to_string_lossy().into_owned()),
         files: repository.list_files()?,
+        directories: repository.list_directories()?,
         git: inspect_git_status(&root).await?,
     })
 }
@@ -163,6 +165,45 @@ pub fn save_vault_document(
 }
 
 #[tauri::command]
+pub fn create_vault_directory(
+    repository: tauri::State<'_, VaultRepository>,
+    relative_path: String,
+) -> AppResult<String> {
+    let path = repository.create_directory(&relative_path)?;
+    tracing::info!(vault.directory = %path, "JSON Vault directory created");
+    Ok(path)
+}
+
+#[tauri::command]
+pub fn move_vault_entry(
+    repository: tauri::State<'_, VaultRepository>,
+    relative_path: String,
+    destination_path: String,
+    expected_fingerprint: Option<String>,
+) -> AppResult<String> {
+    let path = repository.move_entry(
+        &relative_path,
+        &destination_path,
+        expected_fingerprint.as_deref(),
+    )?;
+    tracing::info!(vault.entry = %relative_path, vault.destination = %path, "JSON Vault entry moved");
+    Ok(path)
+}
+
+#[tauri::command]
+pub fn duplicate_vault_document(
+    repository: tauri::State<'_, VaultRepository>,
+    relative_path: String,
+    destination_path: String,
+    expected_fingerprint: String,
+) -> AppResult<VaultDocument> {
+    let document =
+        repository.duplicate_document(&relative_path, &destination_path, &expected_fingerprint)?;
+    tracing::info!(vault.document = %document.relative_path, "JSON Vault document duplicated");
+    Ok(document)
+}
+
+#[tauri::command]
 pub fn delete_vault_document(
     app: tauri::AppHandle,
     repository: tauri::State<'_, VaultRepository>,
@@ -180,6 +221,24 @@ pub fn delete_vault_document(
         .join("vault-trash");
     let result = repository.trash_document(&relative_path, &trash_root)?;
     tracing::info!(vault.document = %result.relative_path, "JSON Vault document moved to recovery storage");
+    Ok(result)
+}
+
+#[tauri::command]
+pub fn delete_vault_entry(
+    app: tauri::AppHandle,
+    repository: tauri::State<'_, VaultRepository>,
+    relative_path: String,
+    expected_fingerprint: Option<String>,
+) -> AppResult<VaultTrashResult> {
+    let trash_root = app
+        .path()
+        .app_data_dir()
+        .map_err(|error| format!("failed to resolve Vault recovery directory: {error}"))?
+        .join("vault-trash");
+    let result =
+        repository.trash_entry(&relative_path, expected_fingerprint.as_deref(), &trash_root)?;
+    tracing::info!(vault.entry = %result.relative_path, "JSON Vault entry moved to recovery storage");
     Ok(result)
 }
 

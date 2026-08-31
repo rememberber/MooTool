@@ -135,7 +135,13 @@ function applyDocumentAppearance(settings: AppSettings): () => void {
     root.lang = settings.general.language
     root.style.colorScheme = resolved
     root.style.setProperty('--editor-font-size', `${settings.editor.fontSize}px`)
+    root.style.setProperty('--json-editor-font-size', `${settings.editor.jsonFontSize}px`)
+    root.style.setProperty('--quick-note-editor-font-size', `${settings.editor.quickNoteFontSize}px`)
     root.style.setProperty('--editor-tab-size', String(settings.editor.tabSize))
+    root.style.setProperty('--interface-font-family', settings.appearance.fontFamily === 'mono'
+      ? 'var(--font-mono)'
+      : 'Inter, ui-sans-serif, -apple-system, BlinkMacSystemFont, "SF Pro Text", "PingFang SC", "Microsoft YaHei", sans-serif')
+    root.style.setProperty('--interface-scale', String(settings.appearance.uiScale / 100))
     if (window.__TAURI_INTERNALS__) {
       void import('@tauri-apps/api/window')
         .then(({ getCurrentWindow }) => getCurrentWindow().setTheme(resolved))

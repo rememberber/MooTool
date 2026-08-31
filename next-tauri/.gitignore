@@ -3,4 +3,5 @@ dist/
 src-tauri/target/
 .DS_Store
 *.log
-
+test-results/
+playwright-report/

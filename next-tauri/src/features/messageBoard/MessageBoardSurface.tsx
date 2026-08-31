@@ -17,6 +17,7 @@ import { nativeDesktopApi } from '../../platform/api/nativeDesktopApi'
 import type { BoardMessage, BoardMessageColor } from '../../platform/contracts/localData'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
+import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
 import { messageBoardMessages } from './messageBoardMessages'
 
 type BoardTheme = 'sunbeam' | 'coral' | 'cobalt' | 'forest' | 'paper' | 'midnight'
@@ -57,6 +58,7 @@ const themes: Array<{ id: BoardTheme; labelKey: BoardMessageKey; colors: [string
 ]
 
 export function MessageBoardSurface() {
+  const dialog = useDesktopDialog()
   const { t } = useLocalizedMessages(messageBoardMessages)
   const initial = useRef(readPreferences())
   const [message, setMessage] = useState(initial.current.message)
@@ -191,7 +193,7 @@ export function MessageBoardSurface() {
   }
 
   async function removePreset(item: BoardMessage): Promise<void> {
-    if (!window.confirm(t('confirm.delete'))) return
+    if (!await dialog.confirm(t('confirm.delete'), { dangerous: true })) return
     setBusy(true)
     try {
       await localDataApi.deleteMessage(item.id)

@@ -8,6 +8,8 @@ describe('local data API', () => {
       id: 'note-1',
       title: 'Tauri',
       content: 'Independent',
+      tags: [],
+      color: 'default',
       pinned: false,
       createdAt: 1,
       updatedAt: 1

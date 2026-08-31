@@ -1,4 +1,4 @@
-export const SETTINGS_SCHEMA_VERSION = 4 as const
+export const SETTINGS_SCHEMA_VERSION = 7 as const
 
 export type AppLanguage = 'zh-CN' | 'en-US' | 'ja-JP'
 export type ThemePreference = 'system' | 'light' | 'dark'
@@ -27,27 +27,46 @@ export interface AppSettings {
     launchAtLogin: boolean
     closeBehavior: CloseBehavior
     autoCheckUpdates: boolean
+    startMaximized: boolean
+    trayEnabled: boolean
   }
   appearance: {
     theme: ThemePreference
     accentColor: AccentColor
+    fontFamily: 'system' | 'mono'
+    uiScale: 90 | 100 | 110
   }
   layout: {
     sidebarCompact: boolean
     density: InterfaceDensity
     customGroups: CustomToolGroup[]
+    paneSizes: Record<string, number>
+    showRecent: boolean
+    showGroupTitles: boolean
+    hiddenTools: string[]
   }
   editor: {
     fontSize: number
     tabSize: 2 | 4 | 8
     wordWrap: boolean
+    jsonFontSize: number
+    quickNoteFontSize: number
   }
   network: {
     timeoutSeconds: number
     proxyMode: ProxyMode
+    proxyHost: string
+    proxyPort: number
+    proxyUsername: string
+    translationTimeoutSeconds: number
   }
   runtime: {
     autoDetect: boolean
+    javaPath: string
+    groovyPath: string
+    pythonPath: string
+    nodePath: string
+    environment: Record<string, string>
   }
   data: {
     historyLimit: number
@@ -58,6 +77,7 @@ export interface AppSettings {
   }
   shortcuts: {
     globalSearch: string
+    settings: string
   }
   tools: {
     favorites: string[]
@@ -84,28 +104,47 @@ export function defaultAppSettings(): AppSettings {
       language: 'zh-CN',
       launchAtLogin: false,
       closeBehavior: 'ask',
-      autoCheckUpdates: true
+      autoCheckUpdates: true,
+      startMaximized: false,
+      trayEnabled: true
     },
     appearance: {
       theme: 'system',
-      accentColor: 'blue'
+      accentColor: 'blue',
+      fontFamily: 'system',
+      uiScale: 100
     },
     layout: {
       sidebarCompact: false,
       density: 'comfortable',
-      customGroups: []
+      customGroups: [],
+      paneSizes: {},
+      showRecent: true,
+      showGroupTitles: true,
+      hiddenTools: []
     },
     editor: {
       fontSize: 13,
       tabSize: 2,
-      wordWrap: true
+      wordWrap: true,
+      jsonFontSize: 13,
+      quickNoteFontSize: 13
     },
     network: {
       timeoutSeconds: 30,
-      proxyMode: 'system'
+      proxyMode: 'system',
+      proxyHost: '',
+      proxyPort: 8080,
+      proxyUsername: '',
+      translationTimeoutSeconds: 20
     },
     runtime: {
-      autoDetect: true
+      autoDetect: true,
+      javaPath: '',
+      groovyPath: '',
+      pythonPath: '',
+      nodePath: '',
+      environment: {}
     },
     data: {
       historyLimit: 500
@@ -115,7 +154,8 @@ export function defaultAppSettings(): AppSettings {
       rootDirectory: null
     },
     shortcuts: {
-      globalSearch: 'CommandOrControl+K'
+      globalSearch: 'CommandOrControl+K',
+      settings: 'CommandOrControl+,'
     },
     tools: {
       favorites: [],

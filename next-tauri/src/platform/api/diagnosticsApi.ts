@@ -51,7 +51,13 @@ function createBrowserDiagnosticsApi(): DiagnosticsApi {
       totalMemoryBytes: 0,
       availableMemoryBytes: 0,
       processMemoryBytes: 0,
-      uptimeSeconds: Math.round(performance.now() / 1000)
+      uptimeSeconds: Math.round(performance.now() / 1000),
+      cpuUsagePercent: 0,
+      cpuFrequencyMhz: 0,
+      totalSwapBytes: 0,
+      usedSwapBytes: 0,
+      disks: [],
+      networkInterfaces: []
     }),
     reportError: async () => undefined,
     chooseExportDirectory: async () => null,

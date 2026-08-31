@@ -37,6 +37,7 @@ pub struct VaultTrashResult {
 pub struct VaultSnapshot {
     pub root_path: Option<String>,
     pub files: Vec<VaultFileEntry>,
+    pub directories: Vec<String>,
     pub git: VaultGitStatus,
 }
 

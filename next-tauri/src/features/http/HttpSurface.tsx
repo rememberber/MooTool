@@ -28,6 +28,8 @@ import type {
   SavedHttpRequest
 } from '../../platform/contracts/http'
 import { CodeEditor } from '../../shared/CodeEditor'
+import { ResizableColumns } from '../../shared/ResizableColumns'
+import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useSettings } from '../settings/SettingsProvider'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
@@ -49,6 +51,7 @@ class HttpLocalizedError extends Error {
 
 export function HttpSurface() {
   const { settings, save: saveSettings } = useSettings()
+  const dialog = useDesktopDialog()
   const { t } = useLocalizedMessages(httpMessages)
   const [request, setRequest] = useState<HttpRequestSpec>(() => emptyHttpRequest(settings.network.timeoutSeconds * 1_000))
   const [saved, setSaved] = useState<SavedHttpRequest[]>([])
@@ -150,7 +153,7 @@ export function HttpSurface() {
   }
 
   async function saveRequest() {
-    const name = window.prompt(t('prompt.requestName'), request.name || t('prompt.unnamed'))?.trim()
+    const name = (await dialog.prompt(t('prompt.requestName'), request.name || t('prompt.unnamed')))?.trim()
     if (!name) return
     const existing = saved.find((item) => item.id === activeSavedId)
     const now = Date.now()
@@ -173,7 +176,7 @@ export function HttpSurface() {
   async function removeSaved() {
     if (!activeSavedId) return
     const item = saved.find((value) => value.id === activeSavedId)
-    if (!window.confirm(t('confirm.deleteSaved', { name: item?.name ?? (request.name || t('prompt.unnamed')) }))) return
+    if (!await dialog.confirm(t('confirm.deleteSaved', { name: item?.name ?? (request.name || t('prompt.unnamed')) }), { dangerous: true })) return
     try {
       await httpApi.deleteSaved(activeSavedId)
       createNew()
@@ -182,8 +185,8 @@ export function HttpSurface() {
     } catch (cause) { fail(cause) }
   }
 
-  function importCurl() {
-    const command = window.prompt(t('prompt.curl'))
+  async function importCurl() {
+    const command = await dialog.prompt(t('prompt.curl'))
     if (!command) return
     try {
       setRequest(parseCurl(command, request.timeoutMs))
@@ -241,11 +244,11 @@ export function HttpSurface() {
   return (
     <main className="utility-workbench http-workbench">
       <header className="utility-header"><div><span className="eyebrow">TAURI RUST HTTP CLIENT</span><h1>{t('title')}</h1></div><div className="http-header-actions"><button type="button" onClick={() => setHistoryOpen(true)}><History />{t('action.history')}</button><span className="utility-session">{t('session.label')} <code>{sessionId}</code></span></div></header>
-      <section className="http-workspace-layout">
+      <ResizableColumns id="http-collection" className="http-workspace-layout" initialPrimary={220} minPrimary={170} minSecondary={430}>
         <aside className="http-collection-panel">
           <header><label><Search /><input value={savedQuery} placeholder={t('search.saved')} onChange={(event) => setSavedQuery(event.target.value)} /></label><button type="button" title={t('action.new')} onClick={createNew}><Plus /></button></header>
           <div>{saved.length ? saved.map((item) => <button className={item.id === activeSavedId ? 'http-saved-request http-saved-request--active' : 'http-saved-request'} type="button" key={item.id} onClick={() => openSaved(item)}><strong>{item.name}</strong><span><em>{item.request.method}</em>{item.request.url || t('saved.noUrl')}</span></button>) : <p>{t('saved.empty')}</p>}</div>
-          <footer><button type="button" title={t('action.importCurl')} onClick={importCurl}><Import /></button><button type="button" title={t('action.copyCurl')} onClick={() => void copyCurl()}>{copied ? <Clipboard /> : <Copy />}</button><button type="button" title={t('action.save')} onClick={() => void saveRequest()}><Save /></button><button type="button" title={t('action.delete')} disabled={!activeSavedId} onClick={() => void removeSaved()}><Trash2 /></button></footer>
+          <footer><button type="button" title={t('action.importCurl')} onClick={() => void importCurl()}><Import /></button><button type="button" title={t('action.copyCurl')} onClick={() => void copyCurl()}>{copied ? <Clipboard /> : <Copy />}</button><button type="button" title={t('action.save')} onClick={() => void saveRequest()}><Save /></button><button type="button" title={t('action.delete')} disabled={!activeSavedId} onClick={() => void removeSaved()}><Trash2 /></button></footer>
         </aside>
         <section className="http-editor-grid">
           <div className="http-url-line">
@@ -267,7 +270,7 @@ export function HttpSurface() {
             <CodeEditor ariaLabel={t('aria.response')} value={responseOutput} readOnly className="utility-code-editor" lineWrapping={false} />
           </section>
         </section>
-      </section>
+      </ResizableColumns>
       <footer className={failed ? 'utility-status utility-status--error' : 'utility-status'}><span>{failed ? <TriangleAlert /> : <CheckCircle2 />}{noticeText}</span><span>{t('footer.capabilities')}</span><code>{session.summary}</code></footer>
       {historyOpen && <HttpHistoryDialog onClose={() => setHistoryOpen(false)} onApply={(item) => { setRequest({ ...item.request, requestId: crypto.randomUUID() }); setResponse(item.response); setHistoryOpen(false); succeed('notice.historyRestored') }} />}
       {reportError && <p className="tool-surface-report-error">{t('report.error', { error: reportError })}</p>}
@@ -293,6 +296,7 @@ function CookieEditor({ values, onChange }: { values: HttpCookieEntry[]; onChang
 
 function HttpHistoryDialog({ onClose, onApply }: { onClose: () => void; onApply: (item: HttpRequestHistory) => void }) {
   const { t, locale } = useLocalizedMessages(httpMessages)
+  const dialog = useDesktopDialog()
   const [items, setItems] = useState<HttpRequestHistory[]>([])
   const [query, setQuery] = useState('')
   const [error, setError] = useState('')
@@ -300,7 +304,10 @@ function HttpHistoryDialog({ onClose, onApply }: { onClose: () => void; onApply:
     try { setItems(await httpApi.listHistory(query)); setError('') } catch (cause) { setError(cause instanceof Error ? cause.message : String(cause)) }
   }, [query])
   useEffect(() => { const timer = window.setTimeout(() => { void load() }, 100); return () => window.clearTimeout(timer) }, [load])
-  return <section className="http-history-modal" role="dialog" aria-modal="true" aria-label={t('history.dialog')}><div><header><div><History /><strong>{t('history.title')}</strong><span>{t('history.recent')}</span></div><button type="button" aria-label={t('action.close')} onClick={onClose}><X /></button></header><label><Search /><input autoFocus value={query} placeholder={t('history.search')} onChange={(event) => setQuery(event.target.value)} /></label><main>{error && <p>{error}</p>}{items.length ? items.map((item) => <article key={item.id}><button type="button" onClick={() => onApply(item)}><strong><em>{item.request.method}</em>{item.request.name || item.request.url}</strong><span>HTTP {item.response.status} · {item.response.durationMs} ms · {new Date(item.createdAt).toLocaleString(locale)}</span><small>{item.request.url}</small></button><button type="button" title={t('action.delete')} onClick={() => void httpApi.deleteHistory(item.id).then(load)}><Trash2 /></button></article>) : !error && <p>{t('history.empty')}</p>}</main><footer><button type="button" disabled={!items.length} onClick={() => { if (window.confirm(t('history.clearConfirm'))) void httpApi.clearHistory().then(load) }}><Trash2 />{t('history.clearAll')}</button><button type="button" onClick={onClose}>{t('action.close')}</button></footer></div></section>
+  async function clearHistory() {
+    if (await dialog.confirm(t('history.clearConfirm'), { dangerous: true })) await httpApi.clearHistory().then(load)
+  }
+  return <section className="http-history-modal" role="dialog" aria-modal="true" aria-label={t('history.dialog')}><div><header><div><History /><strong>{t('history.title')}</strong><span>{t('history.recent')}</span></div><button type="button" aria-label={t('action.close')} onClick={onClose}><X /></button></header><label><Search /><input autoFocus value={query} placeholder={t('history.search')} onChange={(event) => setQuery(event.target.value)} /></label><main>{error && <p>{error}</p>}{items.length ? items.map((item) => <article key={item.id}><button type="button" onClick={() => onApply(item)}><strong><em>{item.request.method}</em>{item.request.name || item.request.url}</strong><span>HTTP {item.response.status} · {item.response.durationMs} ms · {new Date(item.createdAt).toLocaleString(locale)}</span><small>{item.request.url}</small></button><button type="button" title={t('action.delete')} onClick={() => void httpApi.deleteHistory(item.id).then(load)}><Trash2 /></button></article>) : !error && <p>{t('history.empty')}</p>}</main><footer><button type="button" disabled={!items.length} onClick={() => void clearHistory()}><Trash2 />{t('history.clearAll')}</button><button type="button" onClick={onClose}>{t('action.close')}</button></footer></div></section>
 }
 
 function localize(notice: HttpNotice, t: (key: HttpMessageKey, values?: MessageValues) => string): string {

@@ -13,6 +13,7 @@ import { clipboardApi } from '../../platform/api/clipboardApi'
 import { CodeEditor } from '../../shared/CodeEditor'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
+import { useOperationHistory } from '../history/useOperationHistory'
 import {
   commonRegexes,
   matchRegex,
@@ -67,6 +68,7 @@ export function RegexSurface() {
     summary: t('session.summary', { flags: regexFlags(options), count: matches.length, error: error ? t('session.error') : '' })
   }), [error, matches.length, options, pattern, replacement, source, t])
   const { sessionId, reportError } = useToolSessionReport('regex', session.digest, session.summary)
+  const recordOperation = useOperationHistory('regex')
   const filteredPatterns = commonRegexes.filter((item) => (
     !patternFilter.trim()
     || `${t(`common.${item.id}`)} ${item.pattern}`.toLowerCase().includes(patternFilter.trim().toLowerCase())
@@ -74,13 +76,16 @@ export function RegexSurface() {
 
   function run(): void {
     try {
-      setMatches(matchRegex(pattern, source, options))
+      const result = matchRegex(pattern, source, options)
+      setMatches(result)
       setError('')
       setHasRun(true)
+      recordOperation(t('action.run'), `/${pattern}/${regexFlags(options)} · ${result.length}`, 'success')
     } catch (cause) {
       setMatches([])
       setError(cause instanceof Error ? cause.message : String(cause))
       setHasRun(true)
+      recordOperation(t('action.run'), `/${pattern}/${regexFlags(options)} · ${cause instanceof Error ? cause.message : String(cause)}`, 'error')
     }
   }
 

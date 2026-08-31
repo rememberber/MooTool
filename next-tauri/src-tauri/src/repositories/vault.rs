@@ -90,6 +90,10 @@ impl VaultRepository {
         list_json_files(&self.root()?)
     }
 
+    pub fn list_directories(&self) -> Result<Vec<String>, String> {
+        list_directories(&self.root()?)
+    }
+
     pub fn read_document(&self, relative_path: &str) -> Result<VaultDocument, String> {
         read_document_at(&self.root()?, relative_path)
     }
@@ -98,12 +102,58 @@ impl VaultRepository {
         save_document_at(&self.root()?, request)
     }
 
+    pub fn create_directory(&self, relative_path: &str) -> Result<String, String> {
+        create_directory_at(&self.root()?, relative_path)
+    }
+
+    pub fn move_entry(
+        &self,
+        relative_path: &str,
+        destination_path: &str,
+        expected_fingerprint: Option<&str>,
+    ) -> Result<String, String> {
+        move_entry_at(
+            &self.root()?,
+            relative_path,
+            destination_path,
+            expected_fingerprint,
+        )
+    }
+
+    pub fn duplicate_document(
+        &self,
+        relative_path: &str,
+        destination_path: &str,
+        expected_fingerprint: &str,
+    ) -> Result<VaultDocument, String> {
+        duplicate_document_at(
+            &self.root()?,
+            relative_path,
+            destination_path,
+            expected_fingerprint,
+        )
+    }
+
     pub fn trash_document(
         &self,
         relative_path: &str,
         trash_root: &Path,
     ) -> Result<VaultTrashResult, String> {
         trash_document_at(&self.root()?, relative_path, trash_root)
+    }
+
+    pub fn trash_entry(
+        &self,
+        relative_path: &str,
+        expected_fingerprint: Option<&str>,
+        trash_root: &Path,
+    ) -> Result<VaultTrashResult, String> {
+        trash_entry_at(
+            &self.root()?,
+            relative_path,
+            expected_fingerprint,
+            trash_root,
+        )
     }
 
     #[cfg(test)]
@@ -221,6 +271,42 @@ fn list_json_files(root: &Path) -> Result<Vec<VaultFileEntry>, String> {
     Ok(files)
 }
 
+fn list_directories(root: &Path) -> Result<Vec<String>, String> {
+    let mut result = Vec::new();
+    let mut directories = vec![(root.to_path_buf(), 0usize)];
+    while let Some((directory, depth)) = directories.pop() {
+        if depth > MAX_SCAN_DEPTH {
+            return Err("JSON Vault directory nesting exceeds 32 levels".into());
+        }
+        let entries = fs::read_dir(&directory).map_err(|error| {
+            format!(
+                "failed to read JSON Vault directory {}: {error}",
+                directory.display()
+            )
+        })?;
+        for entry in entries {
+            let entry = entry.map_err(|error| format!("failed to inspect JSON Vault: {error}"))?;
+            if entry.file_name() == ".git" {
+                continue;
+            }
+            let path = entry.path();
+            let metadata = path
+                .symlink_metadata()
+                .map_err(|error| format!("failed to inspect JSON Vault path: {error}"))?;
+            if metadata.file_type().is_symlink() || !metadata.is_dir() {
+                continue;
+            }
+            result.push(relative_text(root, &path)?);
+            if result.len() > MAX_VAULT_FILES {
+                return Err("JSON Vault contains more than 10000 directories".into());
+            }
+            directories.push((path, depth + 1));
+        }
+    }
+    result.sort();
+    Ok(result)
+}
+
 fn read_document_at(root: &Path, relative_path: &str) -> Result<VaultDocument, String> {
     let relative = normalize_relative_json_path(relative_path)?;
     let path = resolve_existing(root, &relative, false)?;
@@ -292,6 +378,114 @@ fn save_document_at(root: &Path, request: VaultSaveRequest) -> Result<VaultDocum
     read_document_at(root, &request.relative_path)
 }
 
+fn create_directory_at(root: &Path, relative_path: &str) -> Result<String, String> {
+    let relative = normalize_relative_entry_path(relative_path)?;
+    let mut current = root.to_path_buf();
+    let mut created = false;
+    for component in relative.components() {
+        let Component::Normal(value) = component else {
+            return Err("JSON Vault directory path is invalid".into());
+        };
+        current.push(value);
+        match current.symlink_metadata() {
+            Ok(metadata) => {
+                if metadata.file_type().is_symlink() || !metadata.is_dir() {
+                    return Err("JSON Vault directory path conflicts with an existing entry".into());
+                }
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                fs::create_dir(&current)
+                    .map_err(|error| format!("failed to create JSON Vault directory: {error}"))?;
+                created = true;
+            }
+            Err(error) => {
+                return Err(format!("failed to inspect JSON Vault directory: {error}"));
+            }
+        }
+        let canonical = current
+            .canonicalize()
+            .map_err(|error| format!("failed to canonicalize JSON Vault directory: {error}"))?;
+        if !canonical.starts_with(root) {
+            return Err("JSON Vault directory escapes its configured root".into());
+        }
+    }
+    if !created {
+        return Err("JSON Vault directory already exists".into());
+    }
+    relative_text(Path::new(""), &relative)
+}
+
+fn move_entry_at(
+    root: &Path,
+    relative_path: &str,
+    destination_path: &str,
+    expected_fingerprint: Option<&str>,
+) -> Result<String, String> {
+    let source_relative = normalize_relative_entry_path(relative_path)?;
+    let destination_relative = normalize_relative_entry_path(destination_path)?;
+    if source_relative == destination_relative {
+        return Err("JSON Vault source and destination are the same".into());
+    }
+    let source = resolve_existing_any(root, &source_relative)?;
+    let source_metadata = source
+        .symlink_metadata()
+        .map_err(|error| format!("failed to inspect JSON Vault source: {error}"))?;
+    if source_metadata.is_file() {
+        if !has_json_extension(&source_relative) || !has_json_extension(&destination_relative) {
+            return Err("JSON Vault documents must use a .json extension".into());
+        }
+        let expected = expected_fingerprint
+            .ok_or_else(|| "JSON Vault document fingerprint is required".to_string())?;
+        let current = fs::read(&source)
+            .map_err(|error| format!("failed to check JSON Vault conflict: {error}"))?;
+        if fingerprint(&current) != expected {
+            return Err("JSON Vault document changed outside MooTool; reload before moving".into());
+        }
+    } else if !source_metadata.is_dir() {
+        return Err("JSON Vault source is not a regular file or directory".into());
+    }
+    let destination_parent_relative = destination_relative
+        .parent()
+        .unwrap_or_else(|| Path::new(""));
+    let destination_parent = resolve_existing(root, destination_parent_relative, true)?;
+    if source_metadata.is_dir() && destination_parent.starts_with(&source) {
+        return Err("JSON Vault directory cannot be moved inside itself".into());
+    }
+    let destination = destination_parent.join(
+        destination_relative
+            .file_name()
+            .ok_or_else(|| "JSON Vault destination name is invalid".to_string())?,
+    );
+    match destination.symlink_metadata() {
+        Ok(_) => return Err("JSON Vault destination already exists".into()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => return Err(format!("failed to inspect JSON Vault destination: {error}")),
+    }
+    fs::rename(&source, &destination)
+        .map_err(|error| format!("failed to move JSON Vault entry: {error}"))?;
+    relative_text(Path::new(""), &destination_relative)
+}
+
+fn duplicate_document_at(
+    root: &Path,
+    relative_path: &str,
+    destination_path: &str,
+    expected_fingerprint: &str,
+) -> Result<VaultDocument, String> {
+    let source = read_document_at(root, relative_path)?;
+    if source.fingerprint != expected_fingerprint {
+        return Err("JSON Vault document changed outside MooTool; reload before copying".into());
+    }
+    save_document_at(
+        root,
+        VaultSaveRequest {
+            relative_path: destination_path.into(),
+            content: source.content,
+            expected_fingerprint: None,
+        },
+    )
+}
+
 fn trash_document_at(
     root: &Path,
     relative_path: &str,
@@ -319,21 +513,102 @@ fn trash_document_at(
     })
 }
 
+fn trash_entry_at(
+    root: &Path,
+    relative_path: &str,
+    expected_fingerprint: Option<&str>,
+    trash_root: &Path,
+) -> Result<VaultTrashResult, String> {
+    let relative = normalize_relative_entry_path(relative_path)?;
+    let source = resolve_existing_any(root, &relative)?;
+    let metadata = source
+        .symlink_metadata()
+        .map_err(|error| format!("failed to inspect JSON Vault entry: {error}"))?;
+    if metadata.is_file() {
+        let expected = expected_fingerprint
+            .ok_or_else(|| "JSON Vault document fingerprint is required".to_string())?;
+        let current = fs::read(&source)
+            .map_err(|error| format!("failed to check JSON Vault conflict: {error}"))?;
+        if fingerprint(&current) != expected {
+            return Err(
+                "JSON Vault document changed outside MooTool; reload before deleting".into(),
+            );
+        }
+        return trash_document_at(root, relative_path, trash_root);
+    }
+    if !metadata.is_dir() {
+        return Err("JSON Vault entry is not a regular file or directory".into());
+    }
+    let target = trash_root.join(unix_millis().to_string()).join(&relative);
+    let parent = target
+        .parent()
+        .ok_or_else(|| "vault recovery path has no parent".to_string())?;
+    fs::create_dir_all(parent)
+        .map_err(|error| format!("failed to create Vault recovery directory: {error}"))?;
+    fs::rename(&source, &target).map_err(|error| {
+        format!(
+            "failed to move JSON Vault directory to recovery storage without data loss: {error}"
+        )
+    })?;
+    Ok(VaultTrashResult {
+        relative_path: relative_text(Path::new(""), &relative)?,
+        recovery_path: target.to_string_lossy().into_owned(),
+    })
+}
+
 fn normalize_relative_json_path(value: &str) -> Result<PathBuf, String> {
+    let normalized = normalize_relative_entry_path(value)?;
+    if !has_json_extension(&normalized) {
+        return Err("JSON Vault documents must use a .json extension".into());
+    }
+    Ok(normalized)
+}
+
+fn normalize_relative_entry_path(value: &str) -> Result<PathBuf, String> {
     if value.is_empty() || value.len() > 1_024 {
         return Err("JSON Vault relative path is invalid".into());
     }
     let mut normalized = PathBuf::new();
     for component in Path::new(value).components() {
         match component {
-            Component::Normal(value) if !value.is_empty() => normalized.push(value),
+            Component::Normal(value)
+                if !value.is_empty() && !value.eq_ignore_ascii_case(".git") =>
+            {
+                normalized.push(value)
+            }
             _ => return Err("JSON Vault paths cannot be absolute or contain traversal".into()),
         }
     }
-    if normalized.as_os_str().is_empty() || !has_json_extension(&normalized) {
-        return Err("JSON Vault documents must use a .json extension".into());
+    if normalized.as_os_str().is_empty() {
+        return Err("JSON Vault relative path is invalid".into());
     }
     Ok(normalized)
+}
+
+fn resolve_existing_any(root: &Path, relative: &Path) -> Result<PathBuf, String> {
+    let mut current = root.to_path_buf();
+    for component in relative.components() {
+        let Component::Normal(value) = component else {
+            return Err("JSON Vault path is invalid".into());
+        };
+        current.push(value);
+        let metadata = current.symlink_metadata().map_err(|error| {
+            format!(
+                "JSON Vault path {} is unavailable: {error}",
+                current.display()
+            )
+        })?;
+        if metadata.file_type().is_symlink() {
+            return Err("JSON Vault paths cannot traverse symbolic links".into());
+        }
+    }
+    let canonical = current
+        .canonicalize()
+        .map_err(|error| format!("failed to canonicalize JSON Vault path: {error}"))?;
+    if !canonical.starts_with(root) {
+        return Err("JSON Vault path escapes its configured root".into());
+    }
+    Ok(canonical)
 }
 
 fn resolve_existing(root: &Path, relative: &Path, directory: bool) -> Result<PathBuf, String> {
@@ -495,5 +770,71 @@ mod tests {
                     .all(|file| !file.relative_path.starts_with("linked/"))
             );
         }
+    }
+
+    #[test]
+    fn creates_lists_moves_duplicates_and_recovers_vault_entries() {
+        let vault = tempfile::TempDir::new().expect("vault directory");
+        let trash = tempfile::TempDir::new().expect("trash directory");
+        let repository = VaultRepository::default();
+        repository
+            .configure_without_watcher(vault.path().to_path_buf())
+            .expect("configure vault");
+
+        assert_eq!(
+            repository
+                .create_directory("examples/nested")
+                .expect("create nested directory"),
+            "examples/nested"
+        );
+        assert_eq!(
+            repository.list_directories().expect("list directories"),
+            ["examples", "examples/nested"]
+        );
+        let original = repository
+            .save_document(VaultSaveRequest {
+                relative_path: "examples/original.json".into(),
+                content: "{\"value\":1}".into(),
+                expected_fingerprint: None,
+            })
+            .expect("save original");
+        let copied = repository
+            .duplicate_document(
+                "examples/original.json",
+                "examples/copy.json",
+                &original.fingerprint,
+            )
+            .expect("duplicate document");
+        assert_eq!(copied.content, original.content);
+        assert!(
+            repository
+                .duplicate_document("examples/original.json", "examples/stale.json", "stale")
+                .is_err()
+        );
+        assert_eq!(
+            repository
+                .move_entry(
+                    "examples/copy.json",
+                    "examples/nested/moved.json",
+                    Some(&copied.fingerprint),
+                )
+                .expect("move document"),
+            "examples/nested/moved.json"
+        );
+        assert_eq!(
+            repository
+                .move_entry("examples/nested", "archive", None)
+                .expect("move directory"),
+            "archive"
+        );
+        let recovered = repository
+            .trash_entry("archive", None, trash.path())
+            .expect("recover directory");
+        assert!(
+            Path::new(&recovered.recovery_path)
+                .join("moved.json")
+                .is_file()
+        );
+        assert!(!vault.path().join("archive").exists());
     }
 }

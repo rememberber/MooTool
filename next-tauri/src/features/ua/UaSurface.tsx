@@ -18,6 +18,7 @@ import { clipboardApi } from '../../platform/api/clipboardApi'
 import { CodeEditor } from '../../shared/CodeEditor'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
+import { useOperationHistory } from '../history/useOperationHistory'
 import { parseUserAgent, uaPresets, UaToolError, type UaResult } from './uaTools'
 import { uaMessages } from './uaMessages'
 
@@ -50,16 +51,20 @@ export function UaSurface() {
     })
   }), [deviceType, error, result.browser, result.os, source, t])
   const { sessionId, reportError } = useToolSessionReport('ua', session.digest, session.summary)
+  const recordOperation = useOperationHistory('ua')
 
   function analyze(nextSource = source): void {
     try {
-      setResult(parseUserAgent(nextSource))
+      const next = parseUserAgent(nextSource)
+      setResult(next)
       setSource(nextSource)
       setError(undefined)
+      recordOperation(t('action.parse'), `${next.browser || '—'} · ${next.os || '—'} · ${next.deviceType || '—'}`, 'success')
     } catch (cause) {
       setError(cause instanceof UaToolError
         ? { key: `error.${cause.code}` }
         : { raw: cause instanceof Error ? cause.message : String(cause) })
+      recordOperation(t('action.parse'), cause instanceof Error ? cause.message : String(cause), 'error')
     }
   }
 

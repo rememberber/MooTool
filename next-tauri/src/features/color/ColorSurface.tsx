@@ -23,6 +23,7 @@ import { nativeDesktopApi } from '../../platform/api/nativeDesktopApi'
 import type { ImageAsset } from '../../platform/contracts/image'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
+import { useOperationHistory } from '../history/useOperationHistory'
 import {
   bestTextColor,
   ColorToolError,
@@ -79,6 +80,7 @@ export function ColorSurface() {
     summary: t('session.summary', { color: formats.hex, ratio: ratio.toFixed(2) })
   }), [contrastHex, formats.hex, hex, ratio, t])
   const { sessionId, reportError } = useToolSessionReport('color', session.digest, session.summary)
+  const recordOperation = useOperationHistory('color')
 
   function updateHex(value: string): void {
     setHex(value.toUpperCase())
@@ -105,6 +107,7 @@ export function ColorSurface() {
     const value = randomColor()
     setHex(value)
     succeed('notice.random', { value })
+    recordOperation(t('action.random'), value, 'success')
   }
 
   async function sampleScreen(): Promise<void> {
@@ -152,6 +155,7 @@ export function ColorSurface() {
       if (names.length) await imageApi.delete(names)
       updateHex(sample.hex)
       succeed('notice.screenColorPosition', { value: sample.hex, x: sample.x, y: sample.y })
+      recordOperation(t('action.pickScreen'), `${sample.hex} · ${sample.x},${sample.y}`, 'success')
     } catch (cause) {
       fail(cause)
     }

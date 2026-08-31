@@ -8,6 +8,10 @@ pub struct QuickNote {
     pub id: String,
     pub title: String,
     pub content: String,
+    #[serde(default)]
+    pub tags: Vec<String>,
+    #[serde(default = "default_note_color")]
+    pub color: String,
     pub pinned: bool,
     pub created_at: i64,
     pub updated_at: i64,
@@ -22,8 +26,72 @@ impl QuickNote {
         if self.content.len() > 2 * 1024 * 1024 {
             return Err("note content cannot exceed 2 MiB".into());
         }
+        if self.tags.len() > 32
+            || self
+                .tags
+                .iter()
+                .any(|tag| tag.trim().is_empty() || tag.chars().count() > 40)
+        {
+            return Err(
+                "note tags must contain at most 32 non-empty values of 40 characters".into(),
+            );
+        }
+        if !matches!(
+            self.color.as_str(),
+            "default" | "coral" | "yellow" | "green" | "blue" | "purple" | "red"
+        ) {
+            return Err("unsupported note color".into());
+        }
         validate_timestamps(self.created_at, self.updated_at)
     }
+}
+
+fn default_note_color() -> String {
+    "default".into()
+}
+
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct QuickNoteAttachment {
+    pub id: String,
+    pub note_id: String,
+    pub name: String,
+    pub mime_type: String,
+    pub size_bytes: u64,
+    pub created_at: i64,
+}
+
+impl QuickNoteAttachment {
+    pub fn validate(&self) -> Result<(), String> {
+        validate_id(&self.id)?;
+        validate_id(&self.note_id)?;
+        if self.name.trim().is_empty()
+            || self.name.chars().count() > 255
+            || self.name.contains('/')
+            || self.name.contains('\\')
+        {
+            return Err("attachment name must contain 1-255 safe characters".into());
+        }
+        if self.mime_type.is_empty()
+            || self.mime_type.len() > 128
+            || self.size_bytes > 10 * 1024 * 1024
+        {
+            return Err("attachment metadata exceeds local limits".into());
+        }
+        if self.created_at < 0 {
+            return Err("invalid attachment timestamp".into());
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct QuickNoteAttachmentImportRequest {
+    pub id: String,
+    pub note_id: String,
+    pub source_path: String,
+    pub created_at: i64,
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -223,6 +291,8 @@ mod tests {
             id: "note-1".into(),
             title: "Tauri".into(),
             content: "Independent product".into(),
+            tags: vec!["desktop".into()],
+            color: "blue".into(),
             pinned: true,
             created_at: 10,
             updated_at: 11,

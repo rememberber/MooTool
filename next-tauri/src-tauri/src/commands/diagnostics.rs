@@ -5,7 +5,7 @@ use std::{
 };
 
 use serde::Serialize;
-use sysinfo::{Pid, System};
+use sysinfo::{Disks, Networks, Pid, System};
 use tauri::{AppHandle, Manager, Runtime, State};
 use tracing_subscriber::EnvFilter;
 
@@ -13,7 +13,8 @@ use crate::{
     contracts::{
         backup::BACKUP_PRODUCT_ID,
         diagnostics::{
-            DiagnosticsExportResult, EnvironmentVariable, FrontendErrorReport, SystemSnapshot,
+            DiagnosticsExportResult, EnvironmentVariable, FrontendErrorReport, SystemDisk,
+            SystemNetworkInterface, SystemSnapshot,
         },
         error::{AppResult, redact_for_log},
         runtime::{PRODUCT_ID, PRODUCT_NAME},
@@ -219,6 +220,33 @@ fn collect_system_snapshot() -> SystemSnapshot {
         .process(Pid::from_u32(std::process::id()))
         .map(|process| process.memory())
         .unwrap_or_default();
+    let disks = Disks::new_with_refreshed_list()
+        .iter()
+        .map(|disk| SystemDisk {
+            name: disk.name().to_string_lossy().into_owned(),
+            mount_point: disk.mount_point().to_string_lossy().into_owned(),
+            file_system: disk.file_system().to_string_lossy().into_owned(),
+            total_bytes: disk.total_space(),
+            available_bytes: disk.available_space(),
+            removable: disk.is_removable(),
+        })
+        .collect();
+    let networks = Networks::new_with_refreshed_list();
+    let mut network_interfaces = networks
+        .iter()
+        .map(|(name, network)| SystemNetworkInterface {
+            name: name.clone(),
+            addresses: network
+                .ip_networks()
+                .iter()
+                .map(ToString::to_string)
+                .collect(),
+            mac_address: network.mac_address().to_string(),
+            received_bytes: network.total_received(),
+            transmitted_bytes: network.total_transmitted(),
+        })
+        .collect::<Vec<_>>();
+    network_interfaces.sort_by(|left, right| left.name.cmp(&right.name));
     SystemSnapshot {
         os_name: System::name().unwrap_or_else(|| std::env::consts::OS.into()),
         os_version: System::os_version().unwrap_or_else(|| "Unknown".into()),
@@ -237,6 +265,16 @@ fn collect_system_snapshot() -> SystemSnapshot {
         available_memory_bytes: system.available_memory(),
         process_memory_bytes,
         uptime_seconds: System::uptime(),
+        cpu_usage_percent: system.global_cpu_usage(),
+        cpu_frequency_mhz: system
+            .cpus()
+            .first()
+            .map(|cpu| cpu.frequency())
+            .unwrap_or_default(),
+        total_swap_bytes: system.total_swap(),
+        used_swap_bytes: system.used_swap(),
+        disks,
+        network_interfaces,
     }
 }
 

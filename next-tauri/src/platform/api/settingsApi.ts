@@ -49,7 +49,8 @@ function loadBrowserSettings(): AppSettings {
       layout: {
         ...defaults.layout,
         ...parsed.layout,
-        customGroups: normalizeCustomGroups(parsed.layout?.customGroups)
+        customGroups: normalizeCustomGroups(parsed.layout?.customGroups),
+        paneSizes: normalizePaneSizes(parsed.layout?.paneSizes)
       },
       editor: { ...defaults.editor, ...parsed.editor },
       network: { ...defaults.network, ...parsed.network },
@@ -72,7 +73,8 @@ function saveBrowserSettings(settings: AppSettings): AppSettings {
     revision: settings.revision + 1,
     layout: {
       ...settings.layout,
-      customGroups: normalizeCustomGroups(settings.layout.customGroups)
+      customGroups: normalizeCustomGroups(settings.layout.customGroups),
+      paneSizes: normalizePaneSizes(settings.layout.paneSizes)
     }
   }
   window.localStorage.setItem(BROWSER_SETTINGS_KEY, JSON.stringify(saved))
@@ -112,3 +114,14 @@ function createBrowserSettingsApi(): SettingsApi {
 export const settingsApi: SettingsApi = typeof window !== 'undefined' && window.__TAURI_INTERNALS__
   ? createSettingsApi()
   : createBrowserSettingsApi()
+
+function normalizePaneSizes(value: unknown): Record<string, number> {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return {}
+  return Object.fromEntries(Object.entries(value as Record<string, unknown>)
+    .filter(([key, size]) => /^[a-z0-9-]{1,64}$/.test(key)
+      && typeof size === 'number'
+      && Number.isFinite(size)
+      && size >= 120
+      && size <= 2_000)
+    .map(([key, size]) => [key, Math.round(size as number)]))
+}

@@ -4,8 +4,10 @@ import {
   contentFingerprint,
   escapeJsonString,
   formatJson,
+  jsonToXml,
   minifyJson,
   queryJsonPath,
+  swapJsonKeysAndValues,
   unescapeJsonString,
   validateJson
 } from './jsonTools'
@@ -41,5 +43,16 @@ describe('Tauri JSON tools', () => {
   it('creates a stable compact fingerprint for session tracking', () => {
     expect(contentFingerprint('same')).toBe(contentFingerprint('same'))
     expect(contentFingerprint('same')).not.toBe(contentFingerprint('different'))
+  })
+
+  it('swaps scalar object keys and values without silently losing duplicates', () => {
+    expect(swapJsonKeysAndValues('{"one":1,"two":2}')).toBe('{\n  "1": "one",\n  "2": "two"\n}')
+    expect(() => swapJsonKeysAndValues('{"one":1,"uno":1}')).toThrow('JSON_TOOL_swapValue')
+    expect(() => swapJsonKeysAndValues('{"nested":{}}')).toThrow('JSON_TOOL_swapValue')
+  })
+
+  it('converts JSON values to escaped XML', () => {
+    expect(jsonToXml('{"message":"A & B","items":[1,2]}')).toContain('<message>A &amp; B</message>')
+    expect(jsonToXml('{"items":[1,2]}')).toContain('<items>1</items>\n  <items>2</items>')
   })
 })

@@ -13,6 +13,7 @@ import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } fr
 import { clipboardApi } from '../../platform/api/clipboardApi'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
+import { useOperationHistory } from '../history/useOperationHistory'
 import {
   commonTimezones,
   formatLocalTime,
@@ -63,6 +64,7 @@ export function TimestampSurface() {
     session.digest,
     session.summary
   )
+  const recordOperation = useOperationHistory('timestamp')
 
   useEffect(() => {
     const timer = window.setInterval(() => setNow(Date.now()), 1000)
@@ -77,6 +79,7 @@ export function TimestampSurface() {
       setUnit(result.unit)
       setNotice({ key: 'notice.toLocal', values: { zone } })
       setError(undefined)
+      recordOperation(t('action.toLocal'), `${timestamp} · ${zone} → ${result.localTime}`, 'success')
     } catch (cause) {
       setError(timestampError(cause))
     }
@@ -90,6 +93,7 @@ export function TimestampSurface() {
       setDetails(nextDetails)
       setNotice({ key: 'notice.toTimestamp', values: { unit: t(unit === 'second' ? 'unit.second' : 'unit.millisecond') } })
       setError(undefined)
+      recordOperation(t('action.toTimestamp'), `${localTime} · ${zone} → ${result}`, 'success')
     } catch (cause) {
       setError(timestampError(cause))
     }

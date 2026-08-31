@@ -36,6 +36,7 @@ import type { ImageAsset, ImageAssetSummary } from '../../platform/contracts/ima
 import type { ReactNode } from 'react'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
+import { useDesktopDialog } from '../../shared/DesktopDialogProvider'
 import {
   compressImage,
   ensureImageDataUrl,
@@ -59,6 +60,7 @@ class ImageLocalizedError extends Error {
 }
 
 export function ImageSurface() {
+  const dialog = useDesktopDialog()
   const { t } = useLocalizedMessages(imageMessages)
   const fileInput = useRef<HTMLInputElement>(null)
   const [assets, setAssets] = useState<ImageAssetSummary[]>([])
@@ -319,7 +321,7 @@ export function ImageSurface() {
 
   async function renameCurrent() {
     if (!current) return
-    const nextName = window.prompt(t('prompt.rename'), current.name)
+    const nextName = await dialog.prompt(t('prompt.rename'), current.name)
     if (!nextName || nextName === current.name) return
     try {
       const renamed = await imageApi.rename(current.name, nextName)
@@ -329,7 +331,7 @@ export function ImageSurface() {
   }
 
   async function deleteSelected() {
-    if (!processingNames.length || !window.confirm(t('confirm.delete', { count: processingNames.length }))) return
+    if (!processingNames.length || !await dialog.confirm(t('confirm.delete', { count: processingNames.length }), { dangerous: true })) return
     try {
       await imageApi.delete(processingNames)
       setCurrent(undefined)

@@ -6,17 +6,25 @@ import {
   Globe2,
   Network,
   Play,
+  Radio,
+  RefreshCw,
+  ScanLine,
+  Server,
   TriangleAlert
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
+import { networkToolsApi } from '../../platform/api/networkToolsApi'
+import type { NetworkInterfaceInfo, PingResult, PortScanResult } from '../../platform/contracts/networkTools'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
+import { useOperationHistory } from '../history/useOperationHistory'
 import { networkMessages } from './networkMessages'
 import { analyzeIpv4Cidr, integerToIpv4, NetworkToolError, type Ipv4Category } from './networkTools'
 
 type NetworkMessageKey = LocalizedMessageKey<typeof networkMessages>
 type NetworkNotice = { key: NetworkMessageKey; values?: MessageValues } | { raw: string }
+type NetworkTab = 'calculator' | 'interfaces' | 'diagnostics'
 
 export function NetworkSurface() {
   const { t, locale } = useLocalizedMessages(networkMessages)
@@ -27,6 +35,15 @@ export function NetworkSurface() {
   const [notice, setNotice] = useState<NetworkNotice>({ key: 'notice.ready' })
   const [failed, setFailed] = useState(false)
   const [copied, setCopied] = useState('')
+  const [tab, setTab] = useState<NetworkTab>('calculator')
+  const [interfaces, setInterfaces] = useState<NetworkInterfaceInfo[]>([])
+  const [target, setTarget] = useState('localhost')
+  const [dnsResults, setDnsResults] = useState<string[]>([])
+  const [pingResult, setPingResult] = useState<PingResult>()
+  const [scanResult, setScanResult] = useState<PortScanResult>()
+  const [startPort, setStartPort] = useState(1)
+  const [endPort, setEndPort] = useState(1024)
+  const [busy, setBusy] = useState('')
   const category = t(categoryMessageKey(result.category))
   const noticeText = 'raw' in notice ? notice.raw : t(notice.key, notice.values)
   const session = useMemo(() => ({
@@ -34,6 +51,11 @@ export function NetworkSurface() {
     summary: `${result.address}/${result.prefix} · ${category}`
   }), [category, input, integerInput, result])
   const { sessionId, reportError } = useToolSessionReport('network', session.digest, session.summary)
+  const recordOperation = useOperationHistory('network')
+
+  useEffect(() => {
+    if (tab === 'interfaces' && !interfaces.length) void loadInterfaces()
+  }, [tab])
 
   function analyze(): void {
     try {
@@ -63,6 +85,45 @@ export function NetworkSurface() {
       setNotice({ key: 'error.clipboard' })
       setFailed(true)
     }
+  }
+
+  async function loadInterfaces(): Promise<void> {
+    setBusy('interfaces')
+    try {
+      const loaded = await networkToolsApi.interfaces()
+      setInterfaces(loaded)
+      succeed('notice.interfaces', { count: loaded.length })
+    } catch (cause) { fail(cause) } finally { setBusy('') }
+  }
+
+  async function resolveTarget(): Promise<void> {
+    setBusy('dns')
+    try {
+      const loaded = await networkToolsApi.resolve(target.trim())
+      setDnsResults(loaded)
+      succeed('notice.resolved', { count: loaded.length })
+      recordOperation(t('operation.dns'), `${target} · ${loaded.join(', ')}`, 'success')
+    } catch (cause) { fail(cause); recordOperation(t('operation.dns'), String(cause), 'error') } finally { setBusy('') }
+  }
+
+  async function pingTarget(): Promise<void> {
+    setBusy('ping')
+    try {
+      const loaded = await networkToolsApi.ping(target.trim())
+      setPingResult(loaded)
+      succeed(loaded.success ? 'notice.pingComplete' : 'notice.pingFailed')
+      recordOperation(t('operation.ping'), `${target} · ${loaded.durationMs} ms`, loaded.success ? 'success' : 'error')
+    } catch (cause) { fail(cause); recordOperation(t('operation.ping'), String(cause), 'error') } finally { setBusy('') }
+  }
+
+  async function scanTarget(): Promise<void> {
+    setBusy('scan')
+    try {
+      const loaded = await networkToolsApi.scanPorts(target.trim(), startPort, endPort, 500)
+      setScanResult(loaded)
+      succeed('notice.scanComplete', { count: loaded.openPorts.length })
+      recordOperation(t('operation.scan'), `${target}:${startPort}-${endPort} · ${loaded.openPorts.join(', ') || '—'}`, 'success')
+    } catch (cause) { fail(cause); recordOperation(t('operation.scan'), String(cause), 'error') } finally { setBusy('') }
   }
 
   function succeed(key: NetworkMessageKey, values?: MessageValues): void {
@@ -97,7 +158,11 @@ export function NetworkSurface() {
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
 
-      <section className="network-inputs">
+      <nav className="utility-segments network-tabs" aria-label={t('tabs.aria')}>
+        {(['calculator', 'interfaces', 'diagnostics'] as const).map((value) => <button className={tab === value ? 'utility-segment utility-segment--active' : 'utility-segment'} type="button" key={value} onClick={() => setTab(value)}>{t(`tab.${value}`)}</button>)}
+      </nav>
+
+      {tab === 'calculator' && <section className="network-tab-content network-calculator"><section className="network-inputs">
         <label><Network /><span>IPv4 / CIDR</span><input value={input} onChange={(event) => setInput(event.target.value)} />
           <button className="primary-button" type="button" onClick={analyze}><Play />{t('action.calculate')}</button>
         </label>
@@ -121,7 +186,20 @@ export function NetworkSurface() {
             </button>
           ))}
         </div>
-      </section>
+      </section></section>}
+
+      {tab === 'interfaces' && <section className="network-native-panel">
+        <header><div><Server /><strong>{t('interfaces.title')}</strong></div><button className="secondary-button" type="button" disabled={Boolean(busy)} onClick={() => void loadInterfaces()}><RefreshCw />{t('action.refresh')}</button></header>
+        <div className="network-interface-list">{interfaces.length ? interfaces.map((item) => <article key={item.name}><header><strong>{item.name}</strong><code>{item.macAddress}</code></header><p>{item.addresses.join(' · ') || '—'}</p><dl><div><dt>MTU</dt><dd>{item.mtu}</dd></div><div><dt>{t('interfaces.received')}</dt><dd>{formatBytes(item.receivedBytes)}</dd></div><div><dt>{t('interfaces.transmitted')}</dt><dd>{formatBytes(item.transmittedBytes)}</dd></div></dl></article>) : <p>{t('interfaces.empty')}</p>}</div>
+      </section>}
+
+      {tab === 'diagnostics' && <section className="network-native-panel network-diagnostics">
+        <header><div><Radio /><strong>{t('diagnostics.title')}</strong></div></header>
+        <label className="network-target"><span>{t('diagnostics.host')}</span><input value={target} spellCheck={false} onChange={(event) => setTarget(event.target.value)} /></label>
+        <div className="network-diagnostic-actions"><button className="secondary-button" type="button" disabled={Boolean(busy) || !target.trim()} onClick={() => void resolveTarget()}><Globe2 />{t('action.dns')}</button><button className="secondary-button" type="button" disabled={Boolean(busy) || !target.trim()} onClick={() => void pingTarget()}><Radio />{t('action.ping')}</button></div>
+        <section className="network-scan"><header><ScanLine /><strong>{t('scan.title')}</strong></header><label>{t('scan.start')}<input type="number" min="1" max="65535" value={startPort} onChange={(event) => setStartPort(event.target.valueAsNumber)} /></label><label>{t('scan.end')}<input type="number" min="1" max="65535" value={endPort} onChange={(event) => setEndPort(event.target.valueAsNumber)} /></label><button className="primary-button" type="button" disabled={Boolean(busy) || !target.trim()} onClick={() => void scanTarget()}>{t('action.scan')}</button></section>
+        <div className="network-diagnostic-results">{dnsResults.length > 0 && <article><strong>DNS</strong><code>{dnsResults.join('\n')}</code></article>}{pingResult && <article><strong>Ping · {pingResult.durationMs} ms</strong><pre>{pingResult.output}</pre></article>}{scanResult && <article><strong>{t('scan.openPorts', { count: scanResult.openPorts.length })}</strong><code>{scanResult.openPorts.join(', ') || '—'}</code><small>{scanResult.resolvedAddress} · {scanResult.durationMs} ms</small></article>}</div>
+      </section>}
 
       <footer className={failed ? 'utility-status utility-status--error' : 'utility-status'}>
         <span>{failed ? <TriangleAlert /> : <CheckCircle2 />}{noticeText}</span>
@@ -135,4 +213,11 @@ export function NetworkSurface() {
 
 function categoryMessageKey(category: Ipv4Category): NetworkMessageKey {
   return `category.${category}`
+}
+
+function formatBytes(value: number): string {
+  if (value < 1024) return `${value} B`
+  if (value < 1024 ** 2) return `${(value / 1024).toFixed(1)} KiB`
+  if (value < 1024 ** 3) return `${(value / 1024 ** 2).toFixed(1)} MiB`
+  return `${(value / 1024 ** 3).toFixed(2)} GiB`
 }

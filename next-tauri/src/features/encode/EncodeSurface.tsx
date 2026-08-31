@@ -14,6 +14,7 @@ import { clipboardApi } from '../../platform/api/clipboardApi'
 import { CodeEditor } from '../../shared/CodeEditor'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
+import { useOperationHistory } from '../history/useOperationHistory'
 import {
   convertEncoding,
   encodeTabs,
@@ -71,6 +72,7 @@ export function EncodeSurface() {
     summary: t('session.summary', { tab: tabLabels[tab], left: pair.left.length, right: pair.right.length })
   }), [asciiFormat, charset, pair.left, pair.right, t, tab])
   const { sessionId, reportError } = useToolSessionReport('encode', session.digest, session.summary)
+  const recordOperation = useOperationHistory('encode')
 
   function updatePair(patch: Partial<Pair>): void {
     setPairs((current) => ({ ...current, [tab]: { ...current[tab], ...patch } }))
@@ -83,11 +85,13 @@ export function EncodeSurface() {
       updatePair(direction === 'forward' ? { right: output } : { left: output })
       setNotice({ key: 'notice.done', values: { action: direction === 'forward' ? labels.forward : labels.reverse } })
       setFailed(false)
+      recordOperation(direction === 'forward' ? labels.forward : labels.reverse, `${tabLabels[tab]} · ${input.length} → ${output.length}`, 'success')
     } catch (cause) {
       setNotice(cause instanceof EncodeToolError
         ? { key: `error.${cause.code}`, values: cause.values }
         : { raw: cause instanceof Error ? cause.message : String(cause) })
       setFailed(true)
+      recordOperation(direction === 'forward' ? labels.forward : labels.reverse, cause instanceof Error ? cause.message : String(cause), 'error')
     }
   }
 

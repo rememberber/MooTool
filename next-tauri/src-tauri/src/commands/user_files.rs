@@ -1,6 +1,7 @@
-use std::{fs, path::Path};
+use std::{fs, io::Read, path::Path};
 
 use serde::Serialize;
+use sha2::{Digest, Sha256, Sha384, Sha512};
 use tauri_plugin_dialog::DialogExt;
 
 use crate::contracts::error::AppResult;
@@ -13,6 +14,77 @@ pub struct UserTextFile {
     name: String,
     path: String,
     content: String,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct UserFileDigest {
+    name: String,
+    path: String,
+    digest: String,
+}
+
+#[tauri::command]
+pub async fn digest_user_file(
+    app: tauri::AppHandle,
+    algorithm: String,
+) -> AppResult<Option<UserFileDigest>> {
+    if !matches!(algorithm.as_str(), "sha256" | "sha384" | "sha512") {
+        return Err("file digest supports SHA-256, SHA-384, or SHA-512".into());
+    }
+    let selection = app.dialog().file().blocking_pick_file();
+    let Some(selection) = selection else {
+        return Ok(None);
+    };
+    let path = selection
+        .into_path()
+        .map_err(|_| "selected digest file is not a local filesystem path")?;
+    let metadata = fs::symlink_metadata(&path)
+        .map_err(|error| format!("failed to inspect digest file: {error}"))?;
+    if !metadata.is_file()
+        || metadata.file_type().is_symlink()
+        || metadata.len() > 2 * 1024 * 1024 * 1024
+    {
+        return Err("digest source must be a regular non-symlink file up to 2 GiB".into());
+    }
+    let digest = digest_path(&path, &algorithm)?;
+    let name = path
+        .file_name()
+        .and_then(|value| value.to_str())
+        .ok_or_else(|| "digest filename must be valid UTF-8".to_string())?
+        .to_string();
+    Ok(Some(UserFileDigest {
+        name,
+        path: path.display().to_string(),
+        digest,
+    }))
+}
+
+fn digest_path(path: &Path, algorithm: &str) -> Result<String, String> {
+    let mut file =
+        fs::File::open(path).map_err(|error| format!("failed to open digest file: {error}"))?;
+    let mut buffer = [0_u8; 64 * 1024];
+    macro_rules! hash_file {
+        ($hasher:expr) => {{
+            let mut hasher = $hasher;
+            loop {
+                let count = file
+                    .read(&mut buffer)
+                    .map_err(|error| format!("failed to read digest file: {error}"))?;
+                if count == 0 {
+                    break;
+                }
+                hasher.update(&buffer[..count]);
+            }
+            format!("{:x}", hasher.finalize())
+        }};
+    }
+    Ok(match algorithm {
+        "sha256" => hash_file!(Sha256::new()),
+        "sha384" => hash_file!(Sha384::new()),
+        "sha512" => hash_file!(Sha512::new()),
+        _ => return Err("unsupported file digest algorithm".into()),
+    })
 }
 
 #[tauri::command]
@@ -122,5 +194,16 @@ mod tests {
         assert!(validate_default_name("hosts.txt").is_ok());
         assert!(validate_default_name("../hosts").is_err());
         assert!(validate_default_name("C:hosts").is_err());
+    }
+
+    #[test]
+    fn digests_files_with_streaming_sha2() {
+        let directory = tempfile::TempDir::new().expect("digest directory");
+        let path = directory.path().join("sample.bin");
+        fs::write(&path, b"abc").expect("digest fixture");
+        assert_eq!(
+            digest_path(&path, "sha256").expect("digest"),
+            "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad"
+        );
     }
 }

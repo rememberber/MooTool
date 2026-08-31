@@ -7,6 +7,7 @@ import { CalculatorToolSurface } from './features/calculator/CalculatorToolSurfa
 import { SettingsProvider } from './features/settings/SettingsProvider'
 import { SettingsSurface } from './features/settings/SettingsSurface'
 import { ToolProbePage } from './features/webviewLab/ToolProbePage'
+import { DesktopDialogProvider } from './shared/DesktopDialogProvider'
 import './styles.css'
 
 const surface = new URLSearchParams(window.location.search).get('surface')
@@ -101,6 +102,7 @@ function SurfaceFallback() {
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <SettingsProvider>
+      <DesktopDialogProvider>
       {surface === 'calculator'
         ? <CalculatorToolSurface />
         : surface === 'editor-lab'
@@ -228,6 +230,7 @@ createRoot(document.getElementById('root')!).render(
         : surface === 'tool-probe'
           ? <ToolProbePage />
           : <App />}
+      </DesktopDialogProvider>
     </SettingsProvider>
   </StrictMode>
 )
