@@ -35,6 +35,7 @@ const MENU_HIDE: &str = "mootool-hide-to-tray";
 const MENU_QUIT: &str = "mootool-quit";
 const TRAY_ID: &str = "mootool-next-tauri-tray";
 const AUTOSTART_ARGUMENT: &str = "--mootool-autostart";
+const TRAY_ICON_BYTES: &[u8] = include_bytes!("../../icons/tray-icon.png");
 
 #[derive(Default)]
 pub struct DesktopLifecycle {
@@ -89,6 +90,18 @@ fn menu_labels(language: AppLanguage) -> MenuLabels {
             window: "ウィンドウ",
         },
     }
+}
+
+fn load_tray_icon() -> Result<tauri::image::Image<'static>, String> {
+    let rgba = image::load_from_memory_with_format(TRAY_ICON_BYTES, image::ImageFormat::Png)
+        .map_err(|error| format!("failed to decode system tray icon: {error}"))?
+        .to_rgba8();
+    let (width, height) = rgba.dimensions();
+    Ok(tauri::image::Image::new_owned(
+        rgba.into_raw(),
+        width,
+        height,
+    ))
 }
 
 pub fn build_application_menu(app: &AppHandle) -> tauri::Result<Menu<tauri::Wry>> {
@@ -194,14 +207,12 @@ pub fn setup(
         ],
     )
     .map_err(|error| format!("failed to create tray menu: {error}"))?;
-    let mut tray = TrayIconBuilder::with_id(TRAY_ID)
+    let tray = TrayIconBuilder::with_id(TRAY_ID)
         .menu(&tray_menu)
+        .icon(load_tray_icon()?)
+        .icon_as_template(cfg!(target_os = "macos"))
         .tooltip("MooTool Next Tauri")
-        .show_menu_on_left_click(false);
-    if let Some(icon) = app.default_window_icon() {
-        tray = tray.icon(icon.clone());
-    }
-    let tray = tray
+        .show_menu_on_left_click(false)
         .build(app)
         .map_err(|error| format!("failed to create system tray icon: {error}"))?;
     tray.set_visible(settings.general.tray_enabled)
@@ -470,5 +481,12 @@ mod tests {
             .close_prompt_active
             .store(false, Ordering::Release);
         assert!(!lifecycle.close_prompt_active.load(Ordering::Acquire));
+    }
+
+    #[test]
+    fn tray_icon_preserves_high_dpi_source() {
+        let icon = load_tray_icon().expect("tray icon should decode");
+        assert_eq!(icon.width(), 512);
+        assert_eq!(icon.height(), 512);
     }
 }
