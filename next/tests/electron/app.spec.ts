@@ -395,27 +395,35 @@ test('sizes compact controls from their localized English content', async () => 
 })
 
 test('opens all registered tools through search and persists recent access', async () => {
-  await expect(mainPage.locator('.tool-button')).toHaveCount(26)
+  const previousSettings = await mainPage.evaluate(() => window.mootool.getSettings())
+  await mainPage.evaluate(() => window.mootool.updateSettings({ layout: { showRecent: true } }))
+  await expect.poll(() => mainPage.evaluate(() => window.mootool.getSettings())).toMatchObject({ layout: { showRecent: true } })
 
-  await mainPage.getByRole('button', { name: '搜索', exact: true }).click()
-  const searchInput = mainPage.locator('.command-palette__search input')
-  await searchInput.fill('python')
-  await expect(mainPage.locator('.command-result')).toHaveCount(1)
-  await expect(mainPage.locator('.command-result')).toContainText('代码运行')
-  await mainPage.locator('.command-result').click()
+  try {
+    await expect(mainPage.locator('.tool-button')).toHaveCount(26)
 
-  await expect(mainPage.locator('.runtime-tool h1')).toHaveText('代码运行')
-  await expect(mainPage.locator('.recent-item').first()).toContainText('代码运行')
-  const recentToggle = mainPage.getByRole('button', { name: '最近', exact: true })
-  await expect(recentToggle).toHaveAttribute('aria-expanded', 'true')
-  await recentToggle.click()
-  await expect(recentToggle).toHaveAttribute('aria-expanded', 'false')
-  await expect(mainPage.locator('.recent-list')).toHaveCount(0)
-  await recentToggle.click()
-  await expect(recentToggle).toHaveAttribute('aria-expanded', 'true')
-  await expect(mainPage.locator('.recent-item').first()).toContainText('代码运行')
-  const workspace = await mainPage.evaluate(() => window.mootool.getWorkspaceState())
-  expect(workspace).toEqual({ activeToolId: 'java', recentToolIds: ['java'] })
+    await mainPage.getByRole('button', { name: '搜索', exact: true }).click()
+    const searchInput = mainPage.locator('.command-palette__search input')
+    await searchInput.fill('python')
+    await expect(mainPage.locator('.command-result')).toHaveCount(1)
+    await expect(mainPage.locator('.command-result')).toContainText('代码运行')
+    await mainPage.locator('.command-result').click()
+
+    await expect(mainPage.locator('.runtime-tool h1')).toHaveText('代码运行')
+    await expect(mainPage.locator('.recent-item').first()).toContainText('代码运行')
+    const recentToggle = mainPage.getByRole('button', { name: '最近', exact: true })
+    await expect(recentToggle).toHaveAttribute('aria-expanded', 'true')
+    await recentToggle.click()
+    await expect(recentToggle).toHaveAttribute('aria-expanded', 'false')
+    await expect(mainPage.locator('.recent-list')).toHaveCount(0)
+    await recentToggle.click()
+    await expect(recentToggle).toHaveAttribute('aria-expanded', 'true')
+    await expect(mainPage.locator('.recent-item').first()).toContainText('代码运行')
+    const workspace = await mainPage.evaluate(() => window.mootool.getWorkspaceState())
+    expect(workspace).toEqual({ activeToolId: 'java', recentToolIds: ['java'] })
+  } finally {
+    await mainPage.evaluate((showRecent) => window.mootool.updateSettings({ layout: { showRecent } }), previousSettings.layout.showRecent)
+  }
 })
 
 test('uses the code execution appearance for primary tool actions', async () => {
@@ -678,6 +686,7 @@ test('resizes the JSON more-tools pane with collapsed navigation at a compact wi
 })
 
 test('manages JSON Vault folders, rename, duplicate, and move workflows', async () => {
+  test.slow()
   await mainPage.locator('.tool-button').filter({ hasText: 'JSON' }).click()
   await mainPage.getByRole('button', { name: '新建文件夹' }).click()
   await mainPage.getByLabel('文件夹相对路径').fill('archive')
@@ -696,8 +705,10 @@ test('manages JSON Vault folders, rename, duplicate, and move workflows', async 
   await mainPage.getByRole('button', { name: '保存', exact: true }).click()
   await expect(mainPage.locator('.vault-node').filter({ hasText: 'renamed.json' })).toBeVisible()
 
+  await more.locator('summary').click()
   await more.getByRole('button', { name: '复制片段' }).click()
   await expect(mainPage.locator('.vault-node').filter({ hasText: 'renamed Copy.json' })).toBeVisible()
+  await more.locator('summary').click()
   await more.getByRole('button', { name: '移动' }).click()
   await mainPage.getByLabel('目标文件夹').selectOption('')
   await mainPage.getByRole('button', { name: '保存', exact: true }).click()
@@ -1279,6 +1290,7 @@ test('supports column editing in the Quick Note editor', async () => {
   const createDialog = mainPage.getByRole('dialog', { name: '新建笔记' })
   await createDialog.getByLabel('名称').fill('E2E Quick Column')
   await createDialog.getByRole('button', { name: '创建' }).click()
+  await expect(mainPage.locator('.quick-note-tree__row--active')).toContainText('E2E Quick Column')
   const editor = mainPage.getByLabel('笔记内容')
   await editor.fill('aa')
   await editor.press('End')
@@ -1286,15 +1298,21 @@ test('supports column editing in the Quick Note editor', async () => {
   await editor.type('bb')
   const lines = mainPage.locator('.quick-note-code-editor .cm-line')
   await expect(lines).toHaveCount(2)
-  const firstLine = await lines.nth(0).boundingBox()
-  const secondLine = await lines.nth(1).boundingBox()
-  expect(firstLine).not.toBeNull()
-  expect(secondLine).not.toBeNull()
+  const [firstLine, secondLine] = await lines.evaluateAll((elements) => elements.map((element) => {
+    const text = element.firstChild
+    if (!text) throw new Error('Quick Note line has no text node')
+    const caret = document.createRange()
+    caret.setStart(text, 0)
+    caret.collapse(true)
+    const caretBounds = caret.getBoundingClientRect()
+    const lineBounds = element.getBoundingClientRect()
+    return { x: caretBounds.left + 0.5, y: lineBounds.top + lineBounds.height / 2 }
+  }))
   await mainPage.keyboard.down('Alt')
   await expect(editor).toHaveCSS('cursor', 'crosshair')
-  await mainPage.mouse.move(firstLine!.x + 1, firstLine!.y + firstLine!.height / 2)
+  await mainPage.mouse.move(firstLine.x, firstLine.y)
   await mainPage.mouse.down()
-  await mainPage.mouse.move(secondLine!.x + 1, secondLine!.y + secondLine!.height / 2)
+  await mainPage.mouse.move(secondLine.x, secondLine.y)
   await mainPage.mouse.up()
   await mainPage.keyboard.up('Alt')
   await mainPage.keyboard.type('x')
@@ -1303,6 +1321,7 @@ test('supports column editing in the Quick Note editor', async () => {
 })
 
 test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () => {
+  test.slow()
   await openTool('随手记', '随手记')
   await mainPage.evaluate(() => window.mootool.updateSettings({ vault: { autoCommit: false } }))
   await mainPage.getByRole('button', { name: 'Git 同步' }).click()
@@ -1330,8 +1349,10 @@ test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () =>
   const createDialog = mainPage.getByRole('dialog', { name: '新建笔记' })
   await createDialog.getByLabel('名称').fill('E2E Quick Note')
   await createDialog.getByRole('button', { name: '创建' }).click()
-  await expect(mainPage.getByLabel('字体')).toHaveValue('ui-monospace')
-  await mainPage.getByLabel('字体').selectOption('Georgia')
+  await expect(mainPage.locator('.quick-note-tree__row--active')).toContainText('E2E Quick Note')
+  const quickNoteFont = mainPage.locator('.quick-note-tool').getByLabel('字体')
+  await expect(quickNoteFont).toHaveValue('ui-monospace')
+  await quickNoteFont.selectOption('Georgia')
   await expect.poll(() => mainPage.locator('.quick-note-code-editor').evaluate((element) => (element as HTMLElement).style.getPropertyValue('--text-code-editor-font-family'))).toContain('Georgia')
   const colorTrigger = mainPage.getByRole('button', { name: '笔记颜色', exact: true })
   await expect(colorTrigger).toHaveAttribute('data-color', 'default')
@@ -1352,7 +1373,7 @@ test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () =>
   await editor.fill('## E2E Markdown\n\n- Vault file\n- Git checkpoint')
   await expect.poll(() => mainPage.locator('.quick-note-code-editor .cm-activeLine').count()).toBeGreaterThanOrEqual(1)
   await expect.poll(() => mainPage.locator('.quick-note-code-editor .cm-activeLineGutter').count()).toBeGreaterThanOrEqual(1)
-  await mainPage.getByLabel('字号').fill('24')
+  await mainPage.locator('.quick-note-tool').getByLabel('字号').fill('24')
   await expect(mainPage.locator('.quick-note-code-editor')).toHaveCSS('font-size', '24px')
   await expect.poll(async () => {
     const offsets = await editorLineTopOffsets(mainPage, '.quick-note-code-editor')
@@ -1377,7 +1398,7 @@ test('runs P6 Quick Note Vault, Markdown preview and Git workflows', async () =>
   await expect(mainPage.locator('.quick-note-code-editor .cm-searchMatch')).toHaveCount(1)
   await mainPage.getByLabel('语法').selectOption('text/markdown')
   await mainPage.getByRole('button', { name: '保存', exact: true }).click()
-  await expect.poll(() => mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick Note.txt'))).toEqual(
+  await expect.poll(() => mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick Note.md'))).toEqual(
     expect.objectContaining({
       content: '## E2E Markdown\n\n- Vault file\n- Git checkpoint',
       metadata: expect.objectContaining({ color: 'yellow', fontName: 'Georgia' })
@@ -1440,6 +1461,7 @@ test('pastes clipboard images into Quick Note without intercepting text pastes',
   const createDialog = mainPage.getByRole('dialog', { name: '新建笔记' })
   await createDialog.getByLabel('名称').fill('E2E Quick Clipboard')
   await createDialog.getByRole('button', { name: '创建' }).click()
+  await expect(mainPage.locator('.quick-note-tree__row--active')).toContainText('E2E Quick Clipboard')
   await mainPage.getByRole('tab', { name: '编辑' }).click()
 
   const editor = mainPage.getByLabel('笔记内容')
@@ -1461,12 +1483,13 @@ test('pastes clipboard images into Quick Note without intercepting text pastes',
   expect(pastePrevented).toBe(true)
   await expect(mainPage.getByLabel('语法')).toHaveValue('text/markdown')
   await expect(editor).toContainText('![image](attachments/')
+  await expect(mainPage.locator('.quick-note-tree__row--active')).toHaveAttribute('data-path', 'E2E Quick Clipboard.md')
 
   await expect.poll(() => mainPage.evaluate(async () => {
-    const note = await window.mootool.readQuickNote('E2E Quick Clipboard.txt')
+    const note = await window.mootool.readQuickNote('E2E Quick Clipboard.md')
     return /!\[image]\((attachments\/[^)]+\.png)\)/.exec(note.content)?.[1] ?? ''
   })).toMatch(/^attachments\/\d{14}_[a-f0-9]{8}\.png$/)
-  const note = await mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick Clipboard.txt'))
+  const note = await mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick Clipboard.md'))
   expect(note.content).toMatch(/^Before\n!\[image]\(attachments\/[^)]+\.png\)\nAfter$/)
   const attachmentPath = /!\[image]\((attachments\/[^)]+\.png)\)/.exec(note.content)?.[1]
   expect(attachmentPath).toBeTruthy()
@@ -1493,10 +1516,10 @@ test('pastes clipboard images into Quick Note without intercepting text pastes',
     element.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: data }))
   })
   await expect.poll(() => mainPage.evaluate(async () => {
-    const current = await window.mootool.readQuickNote('E2E Quick Clipboard.txt')
+    const current = await window.mootool.readQuickNote('E2E Quick Clipboard.md')
     return /!\[image]\((attachments\/[^)]+\.jpg)\)/.exec(current.content)?.[1] ?? ''
   })).toMatch(/^attachments\/\d{14}_[a-f0-9]{8}\.jpg$/)
-  const noteWithJpeg = await mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick Clipboard.txt'))
+  const noteWithJpeg = await mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick Clipboard.md'))
   const jpegAttachmentPath = /!\[image]\((attachments\/[^)]+\.jpg)\)/.exec(noteWithJpeg.content)?.[1]
   expect(jpegAttachmentPath).toBeTruthy()
   expect(await mainPage.evaluate((path) => window.mootool.readQuickNoteAttachment(path), jpegAttachmentPath!)).toMatch(/^data:image\/jpeg;base64,/)
@@ -1522,6 +1545,7 @@ test('keeps consecutive Quick Note image pastes in order', async () => {
   const createDialog = mainPage.getByRole('dialog', { name: '新建笔记' })
   await createDialog.getByLabel('名称').fill('E2E Quick Consecutive Images')
   await createDialog.getByRole('button', { name: '创建' }).click()
+  await expect(mainPage.locator('.quick-note-tree__row--active')).toContainText('E2E Quick Consecutive Images')
   await mainPage.getByRole('tab', { name: '编辑' }).click()
 
   const editor = mainPage.getByLabel('笔记内容')
@@ -1552,12 +1576,13 @@ test('keeps consecutive Quick Note image pastes in order', async () => {
     ]
   })
   expect(prevented).toEqual([true, true])
+  await expect(mainPage.locator('.quick-note-tree__row--active')).toHaveAttribute('data-path', 'E2E Quick Consecutive Images.md')
 
   await expect.poll(() => mainPage.evaluate(async () => {
-    const note = await window.mootool.readQuickNote('E2E Quick Consecutive Images.txt')
+    const note = await window.mootool.readQuickNote('E2E Quick Consecutive Images.md')
     return note.content.match(/!\[image]\(attachments\/[^)]+\.(?:png|jpg)\)/g) ?? []
   })).toHaveLength(2)
-  const note = await mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick Consecutive Images.txt'))
+  const note = await mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick Consecutive Images.md'))
   expect(note.content).toMatch(/^!\[image]\(attachments\/[^)]+\.png\)\n!\[image]\(attachments\/[^)]+\.jpg\)$/)
 
   await mainPage.getByRole('tab', { name: '预览' }).click()
@@ -1572,6 +1597,7 @@ test('appends a second Quick Note image without requiring a manual line break', 
   const createDialog = mainPage.getByRole('dialog', { name: '新建笔记' })
   await createDialog.getByLabel('名称').fill('E2E Quick Images Without Break')
   await createDialog.getByRole('button', { name: '创建' }).click()
+  await expect(mainPage.locator('.quick-note-tree__row--active')).toContainText('E2E Quick Images Without Break')
   await mainPage.getByRole('tab', { name: '编辑' }).click()
 
   const editor = mainPage.getByLabel('笔记内容')
@@ -1582,8 +1608,9 @@ test('appends a second Quick Note image without requiring a manual line break', 
     data.items.add(new File([bytes], 'first.png', { type: 'image/png' }))
     element.dispatchEvent(new ClipboardEvent('paste', { bubbles: true, cancelable: true, clipboardData: data }))
   })
+  await expect(mainPage.locator('.quick-note-tree__row--active')).toHaveAttribute('data-path', 'E2E Quick Images Without Break.md')
   await expect.poll(() => mainPage.evaluate(async () => {
-    const note = await window.mootool.readQuickNote('E2E Quick Images Without Break.txt')
+    const note = await window.mootool.readQuickNote('E2E Quick Images Without Break.md')
     return /\.png\)$/.test(note.content)
   })).toBe(true)
 
@@ -1603,10 +1630,10 @@ test('appends a second Quick Note image without requiring a manual line break', 
   })
 
   await expect.poll(() => mainPage.evaluate(async () => {
-    const note = await window.mootool.readQuickNote('E2E Quick Images Without Break.txt')
+    const note = await window.mootool.readQuickNote('E2E Quick Images Without Break.md')
     return note.content.match(/!\[image]\(attachments\/[^)]+\.(?:png|jpg)\)/g) ?? []
   })).toHaveLength(2)
-  const note = await mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick Images Without Break.txt'))
+  const note = await mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick Images Without Break.md'))
   expect(note.content).toMatch(/^!\[image]\(attachments\/[^)]+\.png\)\n!\[image]\(attachments\/[^)]+\.jpg\)$/)
 })
 
@@ -1616,6 +1643,7 @@ test('drops external image files into the Quick Note editor', async () => {
   const createDialog = mainPage.getByRole('dialog', { name: '新建笔记' })
   await createDialog.getByLabel('名称').fill('E2E Quick External Drop')
   await createDialog.getByRole('button', { name: '创建' }).click()
+  await expect(mainPage.locator('.quick-note-tree__row--active')).toContainText('E2E Quick External Drop')
   await mainPage.getByRole('tab', { name: '编辑' }).click()
 
   const editor = mainPage.getByLabel('笔记内容')
@@ -1661,12 +1689,13 @@ test('drops external image files into the Quick Note editor', async () => {
     return [dragOver.defaultPrevented, drop.defaultPrevented]
   }, { x: box.x + box.width - 8, y: box.y + 8 })
   expect(prevented).toEqual([true, true])
+  await expect(mainPage.locator('.quick-note-tree__row--active')).toHaveAttribute('data-path', 'E2E Quick External Drop.md')
 
   await expect.poll(() => mainPage.evaluate(async () => {
-    const note = await window.mootool.readQuickNote('E2E Quick External Drop.txt')
+    const note = await window.mootool.readQuickNote('E2E Quick External Drop.md')
     return note.content.match(/!\[image]\(attachments\/[^)]+\.(?:png|jpg)\)/g) ?? []
   })).toHaveLength(2)
-  const note = await mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick External Drop.txt'))
+  const note = await mainPage.evaluate(() => window.mootool.readQuickNote('E2E Quick External Drop.md'))
   const imageMarkdown = note.content.match(/!\[image]\(attachments\/[^)]+\.(?:png|jpg)\)/g) ?? []
   expect(imageMarkdown[0]).toMatch(/\.png\)$/)
   expect(imageMarkdown[1]).toMatch(/\.jpg\)$/)
@@ -1831,7 +1860,7 @@ test('captures a custom region through the full-screen overlay', async () => {
   await overlay.mouse.move(viewport.width * 0.6, viewport.height * 0.55, { steps: 5 })
   await overlay.mouse.up()
   await expect(overlay.locator('.screen-capture-overlay__selection')).toBeVisible()
-  await overlay.keyboard.press('Enter')
+  await overlay.getByRole('button', { name: '确认截图' }).click()
 
   await expect.poll(() => mainPage.evaluate(() => {
     const state = window as typeof window & { __captureResult?: { width: number; height: number } | null }

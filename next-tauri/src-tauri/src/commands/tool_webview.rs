@@ -20,6 +20,34 @@ use crate::{
 const MAIN_WINDOW_LABEL: &str = "main";
 const SHELL_WEBVIEW_LABEL: &str = "main";
 
+pub(crate) const PRODUCT_TOOLS: [ManagedToolId; 25] = [
+    ManagedToolId::Calculator,
+    ManagedToolId::Color,
+    ManagedToolId::Config,
+    ManagedToolId::Cron,
+    ManagedToolId::Crypto,
+    ManagedToolId::Host,
+    ManagedToolId::Http,
+    ManagedToolId::Image,
+    ManagedToolId::Encode,
+    ManagedToolId::Json,
+    ManagedToolId::MessageBoard,
+    ManagedToolId::Network,
+    ManagedToolId::Pdf,
+    ManagedToolId::Protobuf,
+    ManagedToolId::QuickNote,
+    ManagedToolId::Qrcode,
+    ManagedToolId::Reformat,
+    ManagedToolId::Regex,
+    ManagedToolId::Runtime,
+    ManagedToolId::Timestamp,
+    ManagedToolId::TextDiff,
+    ManagedToolId::Translation,
+    ManagedToolId::Ua,
+    ManagedToolId::Variables,
+    ManagedToolId::System,
+];
+
 #[tauri::command]
 pub async fn get_tool_webview_snapshot(
     caller: Webview,
@@ -39,12 +67,21 @@ pub async fn open_tool_webview(
     bounds: ToolWebviewBounds,
 ) -> AppResult<ToolWebviewSnapshot> {
     require_shell(&caller)?;
+    open_tool_webview_owned(&app, state.inner(), tool_id, bounds)
+}
+
+pub(crate) fn open_tool_webview_owned(
+    app: &AppHandle,
+    state: &ToolWebviewManager,
+    tool_id: ManagedToolId,
+    bounds: ToolWebviewBounds,
+) -> AppResult<ToolWebviewSnapshot> {
     let bounds = bounds.validate()?;
     if app.get_webview(tool_id.webview_label()).is_some() {
         return Ok(state.snapshot(tool_id));
     }
 
-    let main = main_window(&app)?;
+    let main = main_window(app)?;
     state.begin_open(tool_id, bounds);
     let builder = WebviewBuilder::new(
         tool_id.webview_label(),
@@ -86,10 +123,19 @@ pub async fn update_tool_webview_bounds(
     bounds: ToolWebviewBounds,
 ) -> AppResult<ToolWebviewSnapshot> {
     require_shell(&caller)?;
+    update_tool_webview_bounds_owned(&app, state.inner(), tool_id, bounds)
+}
+
+pub(crate) fn update_tool_webview_bounds_owned(
+    app: &AppHandle,
+    state: &ToolWebviewManager,
+    tool_id: ManagedToolId,
+    bounds: ToolWebviewBounds,
+) -> AppResult<ToolWebviewSnapshot> {
     let bounds = bounds.validate()?;
     let snapshot = state.snapshot(tool_id);
     if snapshot.exists && snapshot.placement == ToolWebviewPlacement::Docked {
-        let webview = tool_webview(&app, tool_id)?;
+        let webview = tool_webview(app, tool_id)?;
         apply_docked_bounds(&webview, bounds)?;
         state.update_bounds(tool_id, bounds);
     }
@@ -105,9 +151,18 @@ pub async fn set_tool_webview_visible(
     visible: bool,
 ) -> AppResult<ToolWebviewSnapshot> {
     require_shell(&caller)?;
+    set_tool_webview_visible_owned(&app, state.inner(), tool_id, visible)
+}
+
+pub(crate) fn set_tool_webview_visible_owned(
+    app: &AppHandle,
+    state: &ToolWebviewManager,
+    tool_id: ManagedToolId,
+    visible: bool,
+) -> AppResult<ToolWebviewSnapshot> {
     let snapshot = state.snapshot(tool_id);
     if snapshot.exists && snapshot.placement == ToolWebviewPlacement::Docked {
-        let webview = tool_webview(&app, tool_id)?;
+        let webview = tool_webview(app, tool_id)?;
         if visible {
             webview
                 .show()
@@ -130,6 +185,14 @@ pub async fn detach_tool_webview(
     tool_id: ManagedToolId,
 ) -> AppResult<ToolWebviewSnapshot> {
     require_shell(&caller)?;
+    detach_tool_webview_owned(&app, state.inner(), tool_id)
+}
+
+pub(crate) fn detach_tool_webview_owned(
+    app: &AppHandle,
+    state: &ToolWebviewManager,
+    tool_id: ManagedToolId,
+) -> AppResult<ToolWebviewSnapshot> {
     let snapshot = state.snapshot(tool_id);
     if !snapshot.exists {
         return Err("tool WebView has not been created".into());
@@ -138,8 +201,8 @@ pub async fn detach_tool_webview(
         return Ok(snapshot);
     }
 
-    let detached = ensure_detached_window(&app, tool_id)?;
-    let webview = tool_webview(&app, tool_id)?;
+    let detached = ensure_detached_window(app, tool_id)?;
+    let webview = tool_webview(app, tool_id)?;
     detached
         .set_size(
             webview
@@ -172,20 +235,29 @@ pub async fn dock_tool_webview(
     bounds: ToolWebviewBounds,
 ) -> AppResult<ToolWebviewSnapshot> {
     require_shell(&caller)?;
+    dock_tool_webview_owned(&app, state.inner(), tool_id, bounds)
+}
+
+pub(crate) fn dock_tool_webview_owned(
+    app: &AppHandle,
+    state: &ToolWebviewManager,
+    tool_id: ManagedToolId,
+    bounds: ToolWebviewBounds,
+) -> AppResult<ToolWebviewSnapshot> {
     let bounds = bounds.validate()?;
     let snapshot = state.snapshot(tool_id);
     if !snapshot.exists {
         return Err("tool WebView has not been created".into());
     }
     if snapshot.placement == ToolWebviewPlacement::Docked {
-        let webview = tool_webview(&app, tool_id)?;
+        let webview = tool_webview(app, tool_id)?;
         apply_docked_bounds(&webview, bounds)?;
         state.mark_docked(tool_id, bounds);
         return Ok(state.snapshot(tool_id));
     }
 
-    let main = main_window(&app)?;
-    let webview = tool_webview(&app, tool_id)?;
+    let main = main_window(app)?;
+    let webview = tool_webview(app, tool_id)?;
     webview
         .set_auto_resize(false)
         .map_err(|error| format!("failed to disable detached auto-resize: {error}"))?;
@@ -214,6 +286,16 @@ pub async fn stress_tool_webview_reparent(
     cycles: u32,
 ) -> AppResult<ToolWebviewSnapshot> {
     require_shell(&caller)?;
+    stress_tool_webview_reparent_owned(&app, state.inner(), tool_id, bounds, cycles)
+}
+
+pub(crate) fn stress_tool_webview_reparent_owned(
+    app: &AppHandle,
+    state: &ToolWebviewManager,
+    tool_id: ManagedToolId,
+    bounds: ToolWebviewBounds,
+    cycles: u32,
+) -> AppResult<ToolWebviewSnapshot> {
     let bounds = bounds.validate()?;
     if !(1..=500).contains(&cycles) {
         return Err("stress cycles must be between 1 and 500".into());
@@ -223,9 +305,9 @@ pub async fn stress_tool_webview_reparent(
         return Err("tool WebView has not been created".into());
     }
 
-    let main = main_window(&app)?;
-    let detached = ensure_detached_window(&app, tool_id)?;
-    let webview = tool_webview(&app, tool_id)?;
+    let main = main_window(app)?;
+    let detached = ensure_detached_window(app, tool_id)?;
+    let webview = tool_webview(app, tool_id)?;
 
     if before.placement == ToolWebviewPlacement::Detached {
         webview
@@ -281,6 +363,14 @@ pub async fn close_tool_webview(
     tool_id: ManagedToolId,
 ) -> AppResult<ToolWebviewSnapshot> {
     require_shell(&caller)?;
+    close_tool_webview_owned(&app, state.inner(), tool_id)
+}
+
+pub(crate) fn close_tool_webview_owned(
+    app: &AppHandle,
+    state: &ToolWebviewManager,
+    tool_id: ManagedToolId,
+) -> AppResult<ToolWebviewSnapshot> {
     if let Some(webview) = app.get_webview(tool_id.webview_label()) {
         webview
             .close()
@@ -317,7 +407,39 @@ pub async fn report_tool_webview_session(
 }
 
 impl ManagedToolId {
-    fn webview_label(self) -> &'static str {
+    pub(crate) fn as_str(self) -> &'static str {
+        match self {
+            Self::Calculator => "calculator",
+            Self::Color => "color",
+            Self::Config => "config",
+            Self::Cron => "cron",
+            Self::Crypto => "crypto",
+            Self::Host => "host",
+            Self::Http => "http",
+            Self::Image => "image",
+            Self::Encode => "encode",
+            Self::EditorLab => "editor-lab",
+            Self::Json => "json",
+            Self::MessageBoard => "message-board",
+            Self::Network => "network",
+            Self::Pdf => "pdf",
+            Self::Protobuf => "protobuf",
+            Self::QuickNote => "quick-note",
+            Self::Qrcode => "qrcode",
+            Self::Reformat => "reformat",
+            Self::Regex => "regex",
+            Self::Runtime => "runtime",
+            Self::Timestamp => "timestamp",
+            Self::TextDiff => "text-diff",
+            Self::Translation => "translation",
+            Self::Ua => "ua",
+            Self::Variables => "variables",
+            Self::System => "system",
+            Self::WebviewProbe => "webview-probe",
+        }
+    }
+
+    pub(crate) fn webview_label(self) -> &'static str {
         match self {
             Self::Calculator => "tool-calculator",
             Self::Color => "tool-color",

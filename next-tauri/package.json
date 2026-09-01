@@ -23,6 +23,7 @@
     "test": "vitest run",
     "test:e2e": "playwright test",
     "test:e2e:update": "playwright test --update-snapshots=all",
+    "test:native-acceptance": "node scripts/native-acceptance.mjs",
     "test:native-smoke": "node scripts/native-smoke.mjs",
     "release:rehearse": "node scripts/rehearse-release.mjs",
     "check:boundaries": "node scripts/check-product-boundaries.mjs",

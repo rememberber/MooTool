@@ -6,6 +6,7 @@ pub mod history;
 pub mod http;
 pub mod images;
 pub mod local_data;
+pub mod native_acceptance;
 pub mod native_desktop;
 pub mod network_tools;
 pub mod pdf_files;

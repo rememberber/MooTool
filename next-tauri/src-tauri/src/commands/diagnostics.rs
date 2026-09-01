@@ -53,11 +53,17 @@ struct DiagnosticsSnapshot {
     window_state: crate::contracts::desktop::WindowStateFile,
 }
 
-pub fn initialize_logging<R: Runtime>(app: &tauri::App<R>) -> Result<LoggingGuard, String> {
-    let log_directory = app
-        .path()
-        .app_log_dir()
-        .map_err(|error| format!("failed to resolve application log directory: {error}"))?;
+pub fn initialize_logging<R: Runtime>(
+    app: &tauri::App<R>,
+    directory_override: Option<&Path>,
+) -> Result<LoggingGuard, String> {
+    let log_directory = match directory_override {
+        Some(directory) => directory.to_path_buf(),
+        None => app
+            .path()
+            .app_log_dir()
+            .map_err(|error| format!("failed to resolve application log directory: {error}"))?,
+    };
     fs::create_dir_all(&log_directory).map_err(|error| {
         format!(
             "failed to create application log directory {}: {error}",

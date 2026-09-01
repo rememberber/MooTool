@@ -293,7 +293,14 @@ export function QuickNoteTool() {
   const editorRef = useRef<QuickNoteCodeEditorHandle>(null)
   const treeScrollRef = useRef<HTMLDivElement>(null)
   const findIndexRef = useRef(quickNoteFindIndex)
-  const [state, update] = useReducer(updateState, undefined, createQuickNoteState)
+  const [state, dispatch] = useReducer(updateState, undefined, createQuickNoteState)
+  const selectedNotePathRef = useRef(state.note?.relativePath ?? '')
+  const documentRevisionRef = useRef(0)
+  const update = useCallback((patch: Partial<QuickNoteState>) => {
+    if ('note' in patch) selectedNotePathRef.current = patch.note?.relativePath ?? ''
+    if ('note' in patch || 'content' in patch || 'metadataDirty' in patch) documentRevisionRef.current += 1
+    dispatch(patch)
+  }, [])
   const latestStateRef = useRef(state)
   const saveQueueRef = useRef<Promise<void>>(Promise.resolve())
   const attachmentInsertionQueueRef = useRef<Promise<QueuedAttachmentInsertion | null>>(Promise.resolve(null))
@@ -355,8 +362,10 @@ export function QuickNoteTool() {
   const reloadCurrentNoteFromDisk = useCallback(async (): Promise<void> => {
     const path = state.note?.relativePath
     if (!path) return
+    const revisionBeforeRead = documentRevisionRef.current
     try {
       const note = await window.mootool.readQuickNote(path)
+      if (selectedNotePathRef.current !== path || documentRevisionRef.current !== revisionBeforeRead) return
       update({
         selectedPath: note.relativePath,
         selectedKind: 'file',
@@ -366,6 +375,7 @@ export function QuickNoteTool() {
         expanded: ensureAncestorsExpanded(latestStateRef.current.expanded, note.relativePath)
       })
     } catch {
+      if (selectedNotePathRef.current !== path || documentRevisionRef.current !== revisionBeforeRead) return
       update({ selectedPath: '', selectedKind: '', note: null, content: '', metadataDirty: false })
     }
   }, [state.note?.relativePath])
@@ -381,6 +391,7 @@ export function QuickNoteTool() {
 
   useEffect(() => {
     let cancelled = false
+    const selectionPathBeforeLoad = selectedNotePathRef.current
     void loadTree().then(async (nodes) => {
       if (cancelled) return
       let selectedPath = latestStateRef.current.selectedPath
@@ -397,7 +408,7 @@ export function QuickNoteTool() {
           return
         }
         const note = await window.mootool.readQuickNote(first.relativePath)
-        if (cancelled) return
+        if (cancelled || selectedNotePathRef.current !== selectionPathBeforeLoad) return
         selectedPath = note.relativePath
         update({ selectedPath: note.relativePath, selectedKind: 'file', note, content: note.content, metadataDirty: false })
       }
@@ -634,8 +645,8 @@ export function QuickNoteTool() {
           fontSize: settings.editor.quickNoteFontSize,
           lineWrap: settings.editor.softWrap
         })
-        await loadTree()
         update({ actionMode: null, actionValue: '', selectedPath: note.relativePath, selectedKind: 'file', note, content: note.content, busy: false, metadataDirty: false })
+        await loadTree()
         return
       }
       if (mode === 'createFolder') {

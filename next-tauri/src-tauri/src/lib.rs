@@ -32,13 +32,26 @@ pub fn run() {
         .setup(|app| {
             use tauri::Manager;
 
-            let logging = commands::diagnostics::initialize_logging(app)?;
+            let native_acceptance = commands::native_acceptance::configuration_from_environment()?;
+            let logging_directory = native_acceptance
+                .as_ref()
+                .map(|config| config.data_root.join("logs"));
+            let logging =
+                commands::diagnostics::initialize_logging(app, logging_directory.as_deref())?;
             app.manage(logging);
-            let settings_path = app
-                .path()
-                .app_config_dir()
-                .map_err(|error| format!("failed to resolve Tauri settings directory: {error}"))?
-                .join(repositories::settings::SETTINGS_FILE_NAME);
+            let settings_path = match &native_acceptance {
+                Some(config) => config
+                    .data_root
+                    .join("config")
+                    .join(repositories::settings::SETTINGS_FILE_NAME),
+                None => app
+                    .path()
+                    .app_config_dir()
+                    .map_err(|error| {
+                        format!("failed to resolve Tauri settings directory: {error}")
+                    })?
+                    .join(repositories::settings::SETTINGS_FILE_NAME),
+            };
             let repository = repositories::settings::SettingsRepository::open(settings_path)
                 .map_err(|error| format!("failed to initialize settings: {error}"))?;
             let settings_snapshot = repository.snapshot();
@@ -48,15 +61,31 @@ pub fn run() {
                 app.state::<repositories::vault::VaultRepository>().inner(),
                 &settings_snapshot,
             );
-            let database_path = app
-                .path()
-                .app_data_dir()
-                .map_err(|error| format!("failed to resolve Tauri data directory: {error}"))?
-                .join(repositories::local_data::DATABASE_FILE_NAME);
+            let database_path = match &native_acceptance {
+                Some(config) => config
+                    .data_root
+                    .join("data")
+                    .join(repositories::local_data::DATABASE_FILE_NAME),
+                None => app
+                    .path()
+                    .app_data_dir()
+                    .map_err(|error| format!("failed to resolve Tauri data directory: {error}"))?
+                    .join(repositories::local_data::DATABASE_FILE_NAME),
+            };
             let local_data = repositories::local_data::LocalDataRepository::open(database_path)
                 .map_err(|error| format!("failed to initialize local data: {error}"))?;
             app.manage(local_data);
-            commands::desktop::setup(app)?;
+            let window_state_directory = native_acceptance
+                .as_ref()
+                .map(|config| config.data_root.join("config"));
+            commands::desktop::setup(
+                app,
+                window_state_directory.as_deref(),
+                native_acceptance.is_none(),
+            )?;
+            if let Some(config) = native_acceptance {
+                commands::native_acceptance::start(app.handle().clone(), config);
+            }
             Ok(())
         })
         .invoke_handler(tauri::generate_handler![

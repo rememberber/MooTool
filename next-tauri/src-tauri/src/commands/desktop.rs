@@ -1,5 +1,6 @@
 use std::{
     collections::BTreeSet,
+    path::Path,
     sync::{
         Mutex,
         atomic::{AtomicBool, Ordering},
@@ -147,13 +148,20 @@ fn build_application_menu_for(
     Menu::with_items(app, &[&application, &edit, &window])
 }
 
-pub fn setup(app: &mut App) -> Result<(), String> {
+pub fn setup(
+    app: &mut App,
+    state_directory_override: Option<&Path>,
+    synchronize_autostart: bool,
+) -> Result<(), String> {
     let settings = app.state::<SettingsRepository>().snapshot();
-    let state_path = app
-        .path()
-        .app_config_dir()
-        .map_err(|error| format!("failed to resolve Tauri window state directory: {error}"))?
-        .join(WINDOW_STATE_FILE_NAME);
+    let state_path = match state_directory_override {
+        Some(directory) => directory.join(WINDOW_STATE_FILE_NAME),
+        None => app
+            .path()
+            .app_config_dir()
+            .map_err(|error| format!("failed to resolve Tauri window state directory: {error}"))?
+            .join(WINDOW_STATE_FILE_NAME),
+    };
     let window_state = WindowStateRepository::open(state_path)?;
     if let Some(main) = app.get_webview_window("main") {
         window_state.restore_window(&main)?;
@@ -200,7 +208,9 @@ pub fn setup(app: &mut App) -> Result<(), String> {
         .map_err(|error| format!("failed to apply system tray visibility: {error}"))?;
 
     sync_desktop_preferences(app.handle(), &settings)?;
-    sync_autostart(app.handle(), &settings)?;
+    if synchronize_autostart {
+        sync_autostart(app.handle(), &settings)?;
+    }
     if std::env::args().any(|argument| argument == AUTOSTART_ARGUMENT) {
         hide_product_windows(app.handle())?;
     }

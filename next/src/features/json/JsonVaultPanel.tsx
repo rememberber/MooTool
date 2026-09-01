@@ -104,6 +104,7 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
   const [query, setQuery] = useState(jsonVaultSessionState.query)
   const [includeContent, setIncludeContent] = useState(jsonVaultSessionState.includeContent)
   const contextMenuRef = useRef<HTMLDivElement>(null)
+  const moreMenuRef = useRef<HTMLDetailsElement>(null)
   const treeRef = useRef<HTMLDivElement>(null)
   const [sort, setSort] = useState<'name' | 'modified'>(jsonVaultSessionState.sort)
   const latestSelectionRef = useRef({ selectedPath, content })
@@ -449,6 +450,11 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
     ? t('json.vault.newFolder')
     : textAction?.type === 'rename' ? t('json.vault.rename') : t('json.vault.new')
 
+  const runMoreAction = (action: () => void): void => {
+    if (moreMenuRef.current) moreMenuRef.current.open = false
+    action()
+  }
+
   return (
     <aside className="vault-panel">
       <h2 className="visually-hidden">{t('json.vault.title')}</h2>
@@ -464,14 +470,14 @@ export function JsonVaultPanel({ content, onOpen }: JsonVaultPanelProps) {
           <option value="name">{t('json.vault.sortName')}</option>
           <option value="modified">{t('json.vault.sortModified')}</option>
         </select>
-        <details className="vault-more-menu">
+        <details ref={moreMenuRef} className="vault-more-menu">
           <summary aria-label={t('json.vault.more')} title={t('json.vault.more')}><MoreHorizontal size={14} /></summary>
           <div>
-            <MenuAction icon={Pencil} label={t('json.vault.rename')} disabled={!selectedEntry} onClick={() => beginRename()} />
-            <MenuAction icon={Move} label={t('json.vault.move')} disabled={!selectedEntry} onClick={() => beginMove()} />
-            <MenuAction icon={Copy} label={t('json.vault.duplicate')} disabled={selectedEntry?.kind !== 'file'} onClick={() => { void duplicateSelected() }} />
-            <MenuAction icon={RefreshCw} label={t('json.vault.refresh')} onClick={() => { void load() }} />
-            <MenuAction icon={FolderOpen} label={t('json.vault.openFolder')} onClick={() => { void window.mootool.openJsonVault() }} />
+            <MenuAction icon={Pencil} label={t('json.vault.rename')} disabled={!selectedEntry} onClick={() => runMoreAction(beginRename)} />
+            <MenuAction icon={Move} label={t('json.vault.move')} disabled={!selectedEntry} onClick={() => runMoreAction(beginMove)} />
+            <MenuAction icon={Copy} label={t('json.vault.duplicate')} disabled={selectedEntry?.kind !== 'file'} onClick={() => runMoreAction(() => { void duplicateSelected() })} />
+            <MenuAction icon={RefreshCw} label={t('json.vault.refresh')} onClick={() => runMoreAction(() => { void load() })} />
+            <MenuAction icon={FolderOpen} label={t('json.vault.openFolder')} onClick={() => runMoreAction(() => { void window.mootool.openJsonVault() })} />
           </div>
         </details>
       </div>

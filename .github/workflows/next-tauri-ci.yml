@@ -70,9 +70,9 @@ jobs:
       - name: Run browser E2E and visual regression
         if: matrix.name == 'macOS arm64'
         run: npm run test:e2e
-      - name: Build and launch the native Tauri application
+      - name: Run native WKWebView lifecycle acceptance
         if: matrix.name == 'macOS arm64'
-        run: npm run test:native-smoke
+        run: npm run test:native-acceptance
       - name: Upload Playwright diagnostics
         if: failure() && matrix.name == 'macOS arm64'
         uses: actions/upload-artifact@v4
