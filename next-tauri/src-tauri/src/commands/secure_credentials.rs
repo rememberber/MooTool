@@ -3,7 +3,7 @@ use serde::Serialize;
 
 use crate::contracts::error::AppResult;
 
-const CREDENTIAL_SERVICE: &str = "com.rememberber.mootool";
+const CREDENTIAL_SERVICE: &str = "com.rememberber.mootool.next.tauri";
 const PROXY_PASSWORD_ACCOUNT: &str = "network.proxy.password";
 const MAX_PASSWORD_BYTES: usize = 4_096;
 
@@ -68,7 +68,11 @@ pub async fn load_proxy_password() -> Result<Option<String>, String> {
 }
 
 fn proxy_entry() -> Result<Entry, String> {
-    Entry::new(CREDENTIAL_SERVICE, PROXY_PASSWORD_ACCOUNT)
+    credential_entry(PROXY_PASSWORD_ACCOUNT)
+}
+
+fn credential_entry(account: &str) -> Result<Entry, String> {
+    Entry::new(CREDENTIAL_SERVICE, account)
         .map_err(|error| format!("OS credential store is unavailable: {error}"))
 }
 
@@ -96,8 +100,26 @@ mod tests {
 
     #[test]
     fn bounds_proxy_password_size_without_inspecting_contents() {
+        assert_eq!(CREDENTIAL_SERVICE, "com.rememberber.mootool.next.tauri");
         assert!(validate_password("p@ss\nword").is_ok());
         assert!(validate_password(&"a".repeat(MAX_PASSWORD_BYTES)).is_ok());
         assert!(validate_password(&"a".repeat(MAX_PASSWORD_BYTES + 1)).is_err());
+    }
+
+    #[test]
+    #[ignore = "requires an unlocked interactive OS credential store"]
+    fn native_keyring_round_trip() {
+        let account = format!("native-acceptance.{}", std::process::id());
+        let entry = credential_entry(&account).expect("create isolated credential entry");
+        entry
+            .set_password("mootool-native-acceptance")
+            .expect("write isolated credential");
+        let loaded = entry.get_password();
+        let removed = entry.delete_credential();
+        assert_eq!(
+            loaded.expect("read isolated credential"),
+            "mootool-native-acceptance"
+        );
+        removed.expect("remove isolated credential");
     }
 }

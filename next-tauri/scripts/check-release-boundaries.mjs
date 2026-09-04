@@ -4,8 +4,8 @@ const root = new URL('../', import.meta.url)
 const packageJson = JSON.parse(await readFile(new URL('package.json', root), 'utf8'))
 const tauriConfig = JSON.parse(await readFile(new URL('src-tauri/tauri.conf.json', root), 'utf8'))
 const cargoToml = await readFile(new URL('src-tauri/Cargo.toml', root), 'utf8')
-const workflow = await readFile(new URL('../.github/workflows/next-tauri-release.yml', root), 'utf8')
-const promotionWorkflow = await readFile(new URL('../.github/workflows/next-tauri-promote-update.yml', root), 'utf8')
+const workflow = normalizeNewlines(await readFile(new URL('../.github/workflows/next-tauri-release.yml', root), 'utf8'))
+const promotionWorkflow = normalizeNewlines(await readFile(new URL('../.github/workflows/next-tauri-promote-update.yml', root), 'utf8'))
 const productManifest = JSON.parse(await readFile(new URL('../update-manifest.json', root), 'utf8'))
 const violations = []
 const updaterManifestUrl = 'https://github.com/rememberber/MooTool/releases/download/next-tauri-updater/latest.json'
@@ -63,4 +63,8 @@ if (violations.length) {
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function normalizeNewlines(value) {
+  return value.replaceAll('\r\n', '\n')
 }
