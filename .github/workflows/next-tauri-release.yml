@@ -105,7 +105,7 @@ jobs:
           cache-dependency-path: next-tauri/package-lock.json
       - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: '1.87'
+          toolchain: '1.88'
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
         with:

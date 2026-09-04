@@ -13,7 +13,7 @@
 
 四个平台都会构建并启动原生 Tauri 应用，遍历 25 个正式工具，验证进程隔离、工具 WebView 生命周期，并完成 100 次 detach/dock 重挂载压力循环。Linux 在 Xvfb 下运行。浏览器视觉门禁覆盖全部 25 个正式工具，使用 1440/1080 两档宽度、亮/暗主题以及中文、英文、日文组合；同时检查根节点横向溢出、重复 H1、可见工程标签和无可访问名称的按钮。
 
-每个原生作业还会上传性能报告，包含冷启动、工具打开与重挂载、0/1/10/25 工具内存、10 MiB JSON、10,000 条 Quick Note、100 MiB SHA-256 和可执行文件大小。发布作业另行记录各安装包体积；指标定义见 [`performance-baseline.md`](./performance-baseline.md)。Linux 构建固定使用 Ubuntu 24.04，因为当前截图实现依赖的 `xcap 0.9.8` / `pipewire-rs 0.10` 需要 PipeWire 1.0 系统头文件，Ubuntu 22.04 的 PipeWire 0.3.48 无法编译该版本。
+每个原生作业还会上传性能报告，包含冷启动、工具打开与重挂载、0/1/10/25 工具内存、10 MiB JSON、10,000 条 Quick Note、100 MiB SHA-256 和可执行文件大小。发布作业另行记录各安装包体积；指标定义见 [`performance-baseline.md`](./performance-baseline.md)。Linux 构建固定使用 Ubuntu 24.04，因为当前截图实现依赖的 `xcap 0.9.8` / `pipewire-rs 0.10` 需要 PipeWire 1.0 系统头文件，Ubuntu 22.04 的 PipeWire 0.3.48 无法编译该版本。`libwayshot-xcap 0.3.3` 同时使用 Rust 1.88 稳定的 let-chain 与 `slice::as_chunks_mut`，所以工程与四平台工作流统一声明 Rust 1.88 为 MSRV。
 
 ## 自动化运行记录
 

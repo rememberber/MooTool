@@ -6,7 +6,7 @@ authors = ["Zhou Bo <rememberber@163.com>"]
 license = "MIT"
 repository = "https://github.com/rememberber/MooTool"
 edition = "2024"
-rust-version = "1.87"
+rust-version = "1.88"
 
 [lib]
 name = "mootool_next_tauri_lib"

@@ -120,7 +120,7 @@ npm run build:desktop
 
 ## 7. 2026-09-04 P0/P1 收口回归
 
-- `rustc 1.87.0` 下执行锁文件构建检查通过；SQLite 依赖固定为仍兼容该 MSRV 的 `rusqlite 0.39.0` / `libsqlite3-sys 0.37.0`。
+- 锁文件最初在 `rustc 1.87.0` 下通过构建检查；RC 跨平台回归发现 Linux 截图依赖 `libwayshot-xcap 0.3.3` 使用 Rust 1.88 稳定能力，因此正式 MSRV 已统一提升到 1.88。SQLite 依赖仍固定为 `rusqlite 0.39.0` / `libsqlite3-sys 0.37.0`。
 - `npm run check` 通过：71 个 Vitest 文件、148 个前端测试、生产构建、Rust 格式、Clippy `-D warnings`、78 个 Rust 测试通过；交互式屏幕录制权限测试按设计忽略 1 项。
 - `npm run test:e2e` 通过 107 项：25 个正式工具的 75 张中文/英文/日文、亮/暗、1440/1080 视觉基线，以及 25 个 720 像素宽度的沉浸式、横向溢出和可访问名称契约。
 - `npm run test:native-acceptance -- --cycles=100` 在 macOS x86_64 通过：25/25 正式工具加载与会话隔离通过，100 个往返、200 次 reparent 后会话保持。
