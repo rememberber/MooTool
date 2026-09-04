@@ -551,7 +551,7 @@ fn parse_connections(output: &str) -> Vec<NetworkConnectionInfo> {
             {
                 return Some(NetworkConnectionInfo {
                     protocol: columns[0].to_ascii_uppercase(),
-                    state: columns[1].to_string(),
+                    state: normalize_connection_state(columns[1]),
                     local_address: columns[4].to_string(),
                     remote_address: columns[5].to_string(),
                     process: columns.get(6).copied().unwrap_or("").to_string(),
@@ -577,8 +577,8 @@ fn parse_connections(output: &str) -> Vec<NetworkConnectionInfo> {
                     state: columns
                         .get(remote_index + 1)
                         .copied()
-                        .unwrap_or("")
-                        .to_string(),
+                        .map(normalize_connection_state)
+                        .unwrap_or_default(),
                     process: if cfg!(target_os = "macos") {
                         columns.get(10).copied().unwrap_or("")
                     } else {
@@ -591,6 +591,13 @@ fn parse_connections(output: &str) -> Vec<NetworkConnectionInfo> {
         })
         .take(10_000)
         .collect()
+}
+
+fn normalize_connection_state(state: &str) -> String {
+    match state.to_ascii_uppercase().as_str() {
+        "ESTAB" => "ESTABLISHED".to_string(),
+        normalized => normalized.to_string(),
+    }
 }
 
 #[cfg(test)]
@@ -637,5 +644,6 @@ mod tests {
         assert_eq!(connections.len(), 1);
         assert_eq!(connections[0].state, "ESTABLISHED");
         assert!(connections[0].process.contains("21749"));
+        assert_eq!(normalize_connection_state("estab"), "ESTABLISHED");
     }
 }
