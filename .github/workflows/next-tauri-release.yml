@@ -72,7 +72,7 @@ jobs:
             os: windows-2022
           - name: Linux-x64
             target: linux-x86_64
-            os: ubuntu-22.04
+            os: ubuntu-24.04
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -213,6 +213,8 @@ jobs:
           trap cleanup EXIT
           sleep 8
           kill -0 "${app_pid}"
+      - name: Record bundle size baseline
+        run: node scripts/report-bundle-sizes.mjs --report=reports/release/${{ matrix.target }}.json
       - uses: actions/upload-artifact@v4
         with:
           name: MooTool-Next-Tauri-${{ matrix.target }}
@@ -228,6 +230,7 @@ jobs:
             next-tauri/src-tauri/target/release/bundle/**/*.msi.sig
             next-tauri/src-tauri/target/release/bundle/**/*.exe
             next-tauri/src-tauri/target/release/bundle/**/*.exe.sig
+            next-tauri/reports/release/${{ matrix.target }}.json
           if-no-files-found: error
 
   draft-release:

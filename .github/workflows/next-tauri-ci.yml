@@ -10,6 +10,8 @@ on:
     branches:
       - master
       - main
+      - develop
+      - 'develop-*'
       - 'codex/**'
     paths:
       - 'next-tauri/**'
@@ -32,13 +34,17 @@ jobs:
       matrix:
         include:
           - name: macOS x64
+            key: macos-x64
             os: macos-15-intel
           - name: macOS arm64
+            key: macos-arm64
             os: macos-15
           - name: Windows x64
+            key: windows-x64
             os: windows-2022
           - name: Linux x64
-            os: ubuntu-22.04
+            key: linux-x64
+            os: ubuntu-24.04
     runs-on: ${{ matrix.os }}
     defaults:
       run:
@@ -72,10 +78,17 @@ jobs:
         run: npm run test:e2e
       - name: Run native lifecycle acceptance (100 reparent cycles)
         if: runner.os != 'Linux'
-        run: npm run test:native-acceptance -- --cycles=100
+        run: npm run test:native-acceptance -- --cycles=100 --report=reports/performance/${{ matrix.key }}.json
       - name: Run native lifecycle acceptance under Xvfb (100 reparent cycles)
         if: runner.os == 'Linux'
-        run: xvfb-run -a npm run test:native-acceptance -- --cycles=100
+        run: xvfb-run -a npm run test:native-acceptance -- --cycles=100 --report=reports/performance/${{ matrix.key }}.json
+      - name: Upload native acceptance and performance baseline
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: next-tauri-performance-${{ matrix.key }}
+          path: next-tauri/reports/performance/${{ matrix.key }}.json
+          if-no-files-found: warn
       - name: Upload Playwright diagnostics
         if: failure() && matrix.name == 'macOS arm64'
         uses: actions/upload-artifact@v4

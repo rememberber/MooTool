@@ -62,7 +62,7 @@ pub async fn digest_user_file(
     }))
 }
 
-fn digest_path(path: &Path, algorithm: &str) -> Result<String, String> {
+pub(super) fn digest_path(path: &Path, algorithm: &str) -> Result<String, String> {
     let mut file =
         fs::File::open(path).map_err(|error| format!("failed to open digest file: {error}"))?;
     let mut buffer = [0_u8; 64 * 1024];

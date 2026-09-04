@@ -7,7 +7,7 @@ const featuresRoot = join(root, 'src', 'features')
 const failures = []
 
 for (const file of await sourceFiles(featuresRoot)) {
-  const projectPath = relative(root, file)
+  const projectPath = relative(root, file).replaceAll('\\', '/')
   if (isAllowedCatalogOrEngineeringFile(projectPath)) continue
   const source = await readFile(file, 'utf8')
   source.split(/\r?\n/).forEach((line, index) => {

@@ -1,6 +1,6 @@
 [package]
 name = "mootool-next-tauri"
-version = "0.1.0"
+version = "0.1.0-rc.1"
 description = "MooTool Next Tauri independent desktop product"
 authors = ["Zhou Bo <rememberber@163.com>"]
 license = "MIT"

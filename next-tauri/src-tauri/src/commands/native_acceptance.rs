@@ -1,10 +1,12 @@
 use std::{
+    collections::HashSet,
     fs,
     path::{Path, PathBuf},
-    time::{Duration, Instant},
+    time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 
 use serde::Serialize;
+use sysinfo::{Pid, System};
 use tauri::{AppHandle, Manager};
 use tokio::time::sleep;
 
@@ -17,21 +19,27 @@ use crate::{
     contracts::tool_webview::{
         ManagedToolId, ToolWebviewBounds, ToolWebviewPlacement, ToolWebviewSnapshot,
     },
+    contracts::{local_data::QuickNote, product_import::ProductImportRecords},
+    repositories::local_data::LocalDataRepository,
     state::ToolWebviewManager,
 };
 
 const RESULT_ENV: &str = "MOOTOOL_NATIVE_ACCEPTANCE_RESULT";
 const DATA_ENV: &str = "MOOTOOL_NATIVE_ACCEPTANCE_DATA";
 const CYCLES_ENV: &str = "MOOTOOL_NATIVE_ACCEPTANCE_CYCLES";
+const SPAWN_EPOCH_ENV: &str = "MOOTOOL_NATIVE_ACCEPTANCE_SPAWN_EPOCH_MS";
 const SESSION_TIMEOUT: Duration = Duration::from_secs(15);
 const SESSION_STABILITY: Duration = Duration::from_millis(750);
 const CLOSE_TIMEOUT: Duration = Duration::from_secs(5);
+const QUICK_NOTE_BENCHMARK_COUNT: usize = 10_000;
+const DIGEST_BENCHMARK_BYTES: u64 = 100 * 1024 * 1024;
 
 #[derive(Clone)]
 pub struct NativeAcceptanceConfig {
     pub result_path: PathBuf,
     pub data_root: PathBuf,
     stress_cycles: u32,
+    spawn_epoch_ms: Option<u128>,
 }
 
 #[derive(Serialize)]
@@ -46,6 +54,7 @@ struct NativeAcceptanceReport {
     tools: Vec<ToolAcceptanceResult>,
     isolation: CheckResult,
     stress: CheckResult,
+    performance: PerformanceReport,
     failures: Vec<String>,
 }
 
@@ -57,6 +66,8 @@ struct ToolAcceptanceResult {
     page_loads: u32,
     session_id: Option<String>,
     reparent_operations: u32,
+    open_duration_ms: u128,
+    detach_dock_duration_ms: u128,
     failure: Option<String>,
 }
 
@@ -65,6 +76,36 @@ struct ToolAcceptanceResult {
 struct CheckResult {
     passed: bool,
     detail: String,
+}
+
+#[derive(Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct PerformanceReport {
+    acceptance_start_to_first_tool_ready_ms: u128,
+    median_tool_open_ms: u128,
+    maximum_tool_open_ms: u128,
+    median_detach_dock_ms: u128,
+    stress_duration_ms: u128,
+    memory: MemoryScalingReport,
+    quick_note: QuickNotePerformanceReport,
+    digest_100_mib_ms: u128,
+}
+
+#[derive(Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct MemoryScalingReport {
+    idle_bytes: u64,
+    one_tool_bytes: u64,
+    ten_tools_bytes: u64,
+    all_tools_bytes: u64,
+}
+
+#[derive(Default, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct QuickNotePerformanceReport {
+    records: usize,
+    seed_ms: u128,
+    list_ms: u128,
 }
 
 pub fn configuration_from_environment() -> Result<Option<NativeAcceptanceConfig>, String> {
@@ -87,10 +128,19 @@ pub fn configuration_from_environment() -> Result<Option<NativeAcceptanceConfig>
             if !(1..=500).contains(&stress_cycles) {
                 return Err(format!("{CYCLES_ENV} must be between 1 and 500"));
             }
+            let spawn_epoch_ms = std::env::var(SPAWN_EPOCH_ENV)
+                .ok()
+                .map(|value| {
+                    value.parse::<u128>().map_err(|_| {
+                        format!("{SPAWN_EPOCH_ENV} must be a Unix epoch in milliseconds")
+                    })
+                })
+                .transpose()?;
             Ok(Some(NativeAcceptanceConfig {
                 result_path,
                 data_root,
                 stress_cycles,
+                spawn_epoch_ms,
             }))
         }
         _ => Err(format!(
@@ -123,9 +173,18 @@ async fn run_acceptance(
 
     let mut tools = Vec::with_capacity(PRODUCT_TOOLS.len());
     let mut failures = Vec::new();
+    let mut start_to_first_tool_ready_ms = 0;
     for tool_id in PRODUCT_TOOLS {
         match exercise_tool(app, tool_id).await {
-            Ok(result) => tools.push(result),
+            Ok(result) => {
+                if start_to_first_tool_ready_ms == 0 {
+                    start_to_first_tool_ready_ms = config
+                        .spawn_epoch_ms
+                        .and_then(elapsed_since_epoch_ms)
+                        .unwrap_or_else(|| started_at.elapsed().as_millis());
+                }
+                tools.push(result);
+            }
             Err(error) => {
                 let message = format!("{}: {error}", tool_id.as_str());
                 failures.push(message.clone());
@@ -136,6 +195,8 @@ async fn run_acceptance(
                     page_loads: snapshot.page_loads,
                     session_id: snapshot.session_id,
                     reparent_operations: snapshot.reparent_operations,
+                    open_duration_ms: 0,
+                    detach_dock_duration_ms: 0,
                     failure: Some(error),
                 });
                 close_and_wait(app, tool_id).await;
@@ -158,6 +219,7 @@ async fn run_acceptance(
     };
     cleanup_all_tool_webviews(app).await;
 
+    let stress_started_at = Instant::now();
     let stress = match exercise_stress(app, config.stress_cycles).await {
         Ok(detail) => CheckResult {
             passed: true,
@@ -173,8 +235,45 @@ async fn run_acceptance(
     };
     cleanup_all_tool_webviews(app).await;
 
+    let memory = match measure_memory_scaling(app).await {
+        Ok(report) => report,
+        Err(error) => {
+            failures.push(format!("performance memory: {error}"));
+            MemoryScalingReport::default()
+        }
+    };
+    cleanup_all_tool_webviews(app).await;
+
+    let (quick_note, digest_100_mib_ms) = match measure_data_performance(app, config) {
+        Ok(report) => report,
+        Err(error) => {
+            failures.push(format!("performance data: {error}"));
+            (QuickNotePerformanceReport::default(), 0)
+        }
+    };
+    let open_durations = tools
+        .iter()
+        .filter(|tool| tool.passed)
+        .map(|tool| tool.open_duration_ms)
+        .collect::<Vec<_>>();
+    let detach_dock_durations = tools
+        .iter()
+        .filter(|tool| tool.passed)
+        .map(|tool| tool.detach_dock_duration_ms)
+        .collect::<Vec<_>>();
+    let performance = PerformanceReport {
+        acceptance_start_to_first_tool_ready_ms: start_to_first_tool_ready_ms,
+        median_tool_open_ms: median(&open_durations),
+        maximum_tool_open_ms: open_durations.iter().copied().max().unwrap_or_default(),
+        median_detach_dock_ms: median(&detach_dock_durations),
+        stress_duration_ms: stress_started_at.elapsed().as_millis(),
+        memory,
+        quick_note,
+        digest_100_mib_ms,
+    };
+
     NativeAcceptanceReport {
-        schema_version: 1,
+        schema_version: 2,
         passed: failures.is_empty(),
         platform: std::env::consts::OS,
         architecture: std::env::consts::ARCH,
@@ -183,6 +282,7 @@ async fn run_acceptance(
         tools,
         isolation,
         stress,
+        performance,
         failures,
     }
 }
@@ -193,9 +293,11 @@ async fn exercise_tool(
 ) -> Result<ToolAcceptanceResult, String> {
     let state = app.state::<ToolWebviewManager>();
     let initial_bounds = acceptance_bounds();
+    let open_started_at = Instant::now();
     open_tool_webview_owned(app, state.inner(), tool_id, initial_bounds)
         .map_err(|error| error.to_string())?;
     let initial = wait_for_session(state.inner(), tool_id).await?;
+    let open_duration_ms = open_started_at.elapsed().as_millis();
 
     let resized_bounds = ToolWebviewBounds {
         x: initial_bounds.x + 8.0,
@@ -212,6 +314,7 @@ async fn exercise_tool(
         .map_err(|error| error.to_string())?;
     require(shown.visible, "show did not update native visibility")?;
 
+    let detach_dock_started_at = Instant::now();
     let detached = detach_tool_webview_owned(app, state.inner(), tool_id)
         .map_err(|error| error.to_string())?;
     require(
@@ -248,8 +351,161 @@ async fn exercise_tool(
         page_loads: final_snapshot.page_loads,
         session_id: final_snapshot.session_id,
         reparent_operations: final_snapshot.reparent_operations,
+        open_duration_ms,
+        detach_dock_duration_ms: detach_dock_started_at.elapsed().as_millis(),
         failure: None,
     })
+}
+
+async fn measure_memory_scaling(app: &AppHandle) -> Result<MemoryScalingReport, String> {
+    sleep(Duration::from_millis(750)).await;
+    let idle_bytes = process_tree_memory_bytes()?;
+    let mut one_tool_bytes = 0;
+    let mut ten_tools_bytes = 0;
+    let mut all_tools_bytes = 0;
+    let bounds = acceptance_bounds();
+    for (index, tool_id) in PRODUCT_TOOLS.into_iter().enumerate() {
+        let state = app.state::<ToolWebviewManager>();
+        open_tool_webview_owned(app, state.inner(), tool_id, bounds)
+            .map_err(|error| error.to_string())?;
+        wait_for_session(state.inner(), tool_id).await?;
+        let opened = index + 1;
+        if opened == 1 {
+            one_tool_bytes = process_tree_memory_bytes()?;
+        } else if opened == 10 {
+            ten_tools_bytes = process_tree_memory_bytes()?;
+        } else if opened == PRODUCT_TOOLS.len() {
+            all_tools_bytes = process_tree_memory_bytes()?;
+        }
+    }
+    require(
+        one_tool_bytes > 0,
+        "could not measure one-tool process memory",
+    )?;
+    require(
+        ten_tools_bytes > 0,
+        "could not measure ten-tool process memory",
+    )?;
+    require(
+        all_tools_bytes > 0,
+        "could not measure all-tool process memory",
+    )?;
+    Ok(MemoryScalingReport {
+        idle_bytes,
+        one_tool_bytes,
+        ten_tools_bytes,
+        all_tools_bytes,
+    })
+}
+
+fn process_tree_memory_bytes() -> Result<u64, String> {
+    let root = Pid::from_u32(std::process::id());
+    let mut system = System::new_all();
+    system.refresh_all();
+    let mut owned = HashSet::from([root]);
+    loop {
+        let previous = owned.len();
+        for (pid, process) in system.processes() {
+            if process
+                .parent()
+                .is_some_and(|parent| owned.contains(&parent))
+            {
+                owned.insert(*pid);
+            }
+        }
+        if owned.len() == previous {
+            break;
+        }
+    }
+    let bytes = owned
+        .iter()
+        .filter_map(|pid| system.process(*pid))
+        .map(|process| process.memory())
+        .sum();
+    require(bytes > 0, "process tree memory was unavailable")?;
+    Ok(bytes)
+}
+
+fn measure_data_performance(
+    app: &AppHandle,
+    config: &NativeAcceptanceConfig,
+) -> Result<(QuickNotePerformanceReport, u128), String> {
+    let notes = (0..QUICK_NOTE_BENCHMARK_COUNT)
+        .map(|index| QuickNote {
+            id: format!("performance-note-{index:05}"),
+            title: format!("Performance note {index}"),
+            content: "Quick Note performance baseline content".repeat(4),
+            tags: vec!["performance".into()],
+            color: "default".into(),
+            folder_path: format!("Performance/{:02}", index % 100),
+            editor_font: "default".into(),
+            line_height: "normal".into(),
+            line_wrapping: true,
+            syntax: "markdown".into(),
+            pinned: index % 50 == 0,
+            created_at: index as i64,
+            updated_at: index as i64,
+        })
+        .collect();
+    let repository = app.state::<LocalDataRepository>();
+    let seed_started_at = Instant::now();
+    repository.import_product_records(
+        "performance",
+        "native-acceptance-performance",
+        &"b".repeat(64),
+        ProductImportRecords {
+            quick_notes: notes,
+            ..ProductImportRecords::default()
+        },
+        500,
+        QUICK_NOTE_BENCHMARK_COUNT as i64,
+    )?;
+    let seed_ms = seed_started_at.elapsed().as_millis();
+    let list_started_at = Instant::now();
+    let records = repository.list_notes()?.len();
+    let list_ms = list_started_at.elapsed().as_millis();
+    require(
+        records >= QUICK_NOTE_BENCHMARK_COUNT,
+        "Quick Note benchmark did not return every seeded record",
+    )?;
+
+    let performance_directory = config.data_root.join("performance");
+    fs::create_dir_all(&performance_directory)
+        .map_err(|error| format!("failed to create performance directory: {error}"))?;
+    let digest_path = performance_directory.join("digest-100-mib.bin");
+    let digest_file = fs::File::create(&digest_path)
+        .map_err(|error| format!("failed to create digest benchmark file: {error}"))?;
+    digest_file
+        .set_len(DIGEST_BENCHMARK_BYTES)
+        .map_err(|error| format!("failed to size digest benchmark file: {error}"))?;
+    let digest_started_at = Instant::now();
+    let digest = super::user_files::digest_path(&digest_path, "sha256")?;
+    let digest_100_mib_ms = digest_started_at.elapsed().as_millis();
+    require(digest.len() == 64, "100 MiB SHA-256 digest was incomplete")?;
+    Ok((
+        QuickNotePerformanceReport {
+            records,
+            seed_ms,
+            list_ms,
+        },
+        digest_100_mib_ms,
+    ))
+}
+
+fn median(values: &[u128]) -> u128 {
+    if values.is_empty() {
+        return 0;
+    }
+    let mut sorted = values.to_vec();
+    sorted.sort_unstable();
+    sorted[sorted.len() / 2]
+}
+
+fn elapsed_since_epoch_ms(started_at_ms: u128) -> Option<u128> {
+    SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .ok()
+        .map(|duration| duration.as_millis().saturating_sub(started_at_ms))
 }
 
 async fn exercise_isolation(app: &AppHandle) -> Result<String, String> {
@@ -445,5 +701,12 @@ mod tests {
         assert_eq!(PRODUCT_TOOLS.len(), 25);
         assert!(!PRODUCT_TOOLS.contains(&ManagedToolId::EditorLab));
         assert!(!PRODUCT_TOOLS.contains(&ManagedToolId::WebviewProbe));
+    }
+
+    #[test]
+    fn calculates_stable_performance_medians() {
+        assert_eq!(median(&[]), 0);
+        assert_eq!(median(&[30, 10, 20]), 20);
+        assert_eq!(median(&[40, 10, 30, 20]), 30);
     }
 }
