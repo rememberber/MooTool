@@ -66,9 +66,12 @@ try {
   child.stdout.on('data', (chunk) => { stdout += String(chunk) })
   child.stderr.on('data', (chunk) => { stderr += String(chunk) })
 
-  // Xvfb software rendering is substantially slower than a hardware-backed desktop.
-  // Keep the full stress count and scale the deadline instead of weakening acceptance.
-  const timeoutMs = 240_000 + cycles * (process.platform === 'linux' ? 4_000 : 1_000)
+  // Xvfb software rendering and serial WebView2 startup on hosted runners are
+  // substantially slower than a hardware-backed desktop. Keep the full stress
+  // count and scale the deadline instead of weakening acceptance.
+  const timeoutBaseMs = process.platform === 'win32' ? 600_000 : 240_000
+  const timeoutPerCycleMs = process.platform === 'linux' ? 4_000 : 1_000
+  const timeoutMs = timeoutBaseMs + cycles * timeoutPerCycleMs
   let timeout
   const exit = new Promise((resolveExit) => child.once('exit', (code, signal) => resolveExit({ code, signal })))
   const timedOut = new Promise((resolveTimeout) => {
