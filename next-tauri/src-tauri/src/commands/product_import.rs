@@ -689,6 +689,10 @@ fn read_database_notes(
             tags: Vec::new(),
             color: "default".into(),
             folder_path: String::new(),
+            editor_font: "default".into(),
+            line_height: "normal".into(),
+            line_wrapping: true,
+            syntax: "markdown".into(),
             pinned: false,
             created_at: base_time.saturating_add(index as i64),
             updated_at: base_time.saturating_add(index as i64),
@@ -910,6 +914,10 @@ fn append_quick_note_files(
                 .and_then(|path| path.to_str())
                 .unwrap_or_default()
                 .replace('\\', "/"),
+            editor_font: "default".into(),
+            line_height: "normal".into(),
+            line_wrapping: true,
+            syntax: "markdown".into(),
             pinned: false,
             created_at: base_time.saturating_add(index as i64),
             updated_at: base_time.saturating_add(index as i64),

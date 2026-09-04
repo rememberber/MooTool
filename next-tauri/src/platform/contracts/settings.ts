@@ -1,4 +1,4 @@
-export const SETTINGS_SCHEMA_VERSION = 7 as const
+export const SETTINGS_SCHEMA_VERSION = 8 as const
 
 export type AppLanguage = 'zh-CN' | 'en-US' | 'ja-JP'
 export type ThemePreference = 'system' | 'light' | 'dark'
@@ -6,6 +6,13 @@ export type AccentColor = 'blue' | 'indigo' | 'teal' | 'orange'
 export type CloseBehavior = 'ask' | 'minimizeToTray' | 'quit'
 export type InterfaceDensity = 'compact' | 'comfortable'
 export type ProxyMode = 'system' | 'direct' | 'manual'
+export type RuntimeSettingsId = 'java' | 'groovy' | 'python' | 'node'
+export type TranslationProvider = 'google' | 'bing'
+
+export interface RuntimeRunOption {
+  argumentsText: string
+  workingDirectory: string
+}
 
 export interface CustomToolGroup {
   id: string
@@ -27,6 +34,7 @@ export interface AppSettings {
     launchAtLogin: boolean
     closeBehavior: CloseBehavior
     autoCheckUpdates: boolean
+    autoDownloadUpdates: boolean
     startMaximized: boolean
     trayEnabled: boolean
   }
@@ -49,7 +57,9 @@ export interface AppSettings {
     fontSize: number
     tabSize: 2 | 4 | 8
     wordWrap: boolean
+    jsonFontFamily: 'system' | 'mono'
     jsonFontSize: number
+    quickNoteFontFamily: 'system' | 'mono'
     quickNoteFontSize: number
   }
   network: {
@@ -67,6 +77,9 @@ export interface AppSettings {
     pythonPath: string
     nodePath: string
     environment: Record<string, string>
+    drafts: Record<RuntimeSettingsId, string>
+    options: Record<RuntimeSettingsId, RuntimeRunOption>
+    timeoutSeconds: number
   }
   data: {
     historyLimit: number
@@ -82,6 +95,13 @@ export interface AppSettings {
   tools: {
     favorites: string[]
     recent: string[]
+    qrCodeSize: number
+    qrErrorCorrection: 'L' | 'M' | 'Q' | 'H'
+    randomStringLength: number
+    exportDirectory: string
+    translationProvider: TranslationProvider
+    translationSourceLang: string
+    translationTargetLang: string
   }
 }
 
@@ -105,6 +125,7 @@ export function defaultAppSettings(): AppSettings {
       launchAtLogin: false,
       closeBehavior: 'ask',
       autoCheckUpdates: true,
+      autoDownloadUpdates: false,
       startMaximized: false,
       trayEnabled: true
     },
@@ -127,7 +148,9 @@ export function defaultAppSettings(): AppSettings {
       fontSize: 13,
       tabSize: 2,
       wordWrap: true,
+      jsonFontFamily: 'mono',
       jsonFontSize: 13,
+      quickNoteFontFamily: 'system',
       quickNoteFontSize: 13
     },
     network: {
@@ -144,7 +167,15 @@ export function defaultAppSettings(): AppSettings {
       groovyPath: '',
       pythonPath: '',
       nodePath: '',
-      environment: {}
+      environment: {},
+      drafts: { java: '', groovy: '', python: '', node: '' },
+      options: {
+        java: { argumentsText: '', workingDirectory: '' },
+        groovy: { argumentsText: '', workingDirectory: '' },
+        python: { argumentsText: '', workingDirectory: '' },
+        node: { argumentsText: '', workingDirectory: '' }
+      },
+      timeoutSeconds: 30
     },
     data: {
       historyLimit: 500
@@ -159,7 +190,14 @@ export function defaultAppSettings(): AppSettings {
     },
     tools: {
       favorites: [],
-      recent: []
+      recent: [],
+      qrCodeSize: 300,
+      qrErrorCorrection: 'M',
+      randomStringLength: 16,
+      exportDirectory: '',
+      translationProvider: 'google',
+      translationSourceLang: 'auto',
+      translationTargetLang: 'zh-CN'
     }
   }
 }

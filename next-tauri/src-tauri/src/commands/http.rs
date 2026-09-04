@@ -208,7 +208,10 @@ async fn execute(
             let mut proxy = reqwest::Proxy::all(&endpoint)
                 .map_err(|error| format!("invalid proxy endpoint: {error}"))?;
             if !network.proxy_username.trim().is_empty() {
-                proxy = proxy.basic_auth(network.proxy_username.trim(), "");
+                let password = super::secure_credentials::load_proxy_password()
+                    .await?
+                    .unwrap_or_default();
+                proxy = proxy.basic_auth(network.proxy_username.trim(), &password);
             }
             client_builder = client_builder.proxy(proxy);
         }

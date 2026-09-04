@@ -103,7 +103,7 @@ export function CustomGroupDialog({ open, onClose }: { open: boolean; onClose():
       <section className="custom-groups-dialog" role="dialog" aria-modal="true" aria-labelledby="custom-groups-title">
         <header>
           <div>
-            <span className="eyebrow">TAURI WORKSPACE</span>
+            <span className="eyebrow">WORKSPACE</span>
             <h2 id="custom-groups-title">{t('groups.title')}</h2>
             <p>{t('groups.subtitle')}</p>
           </div>

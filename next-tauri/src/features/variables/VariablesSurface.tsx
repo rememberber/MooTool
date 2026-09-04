@@ -131,7 +131,7 @@ export function VariablesSurface() {
   return (
     <main className="utility-workbench variables-workbench">
       <header className="utility-header">
-        <div><span className="eyebrow">TAURI ENVIRONMENT VIEWER</span><h1>{t('title')}</h1></div>
+        <h1 className="visually-hidden">{t('title')}</h1>
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
 

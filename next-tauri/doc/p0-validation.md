@@ -76,6 +76,9 @@
 4. 补齐 macOS 浅色、最小窗口和英文/日文布局验证。
 
 以上事项按对应功能和发布里程碑安排，不再要求在 P1/P2 开发前集中完成。
+自动化门禁与发布前真实设备场景的分界、平台记录字段和未验证项标注规则见
+[`platform-acceptance.md`](./platform-acceptance.md)。四平台 CI 只证明相应作业已配置；
+在目标机器上取得成功报告前，不把 Windows、Linux 或未覆盖的 macOS 场景写成“通过”。
 
 ## 6. 本轮命令结果
 
@@ -114,3 +117,11 @@ npm run build:desktop
 - 随后执行 100 个分离/收回往返周期，Rust Manager 记录累计 `202` 次 reparent，页面加载始终为 `1`，压力结论为通过。
 - 从实验台切到 Calculator 时，停靠子 WebView 正确隐藏；返回实验台后恢复，状态和压力结论不变。
 - 关闭工具子 WebView 后，原生内容消失且生命周期按钮回到未创建状态。
+
+## 7. 2026-09-04 P0/P1 收口回归
+
+- `rustc 1.87.0` 下执行锁文件构建检查通过；SQLite 依赖固定为仍兼容该 MSRV 的 `rusqlite 0.39.0` / `libsqlite3-sys 0.37.0`。
+- `npm run check` 通过：71 个 Vitest 文件、148 个前端测试、生产构建、Rust 格式、Clippy `-D warnings`、78 个 Rust 测试通过；交互式屏幕录制权限测试按设计忽略 1 项。
+- `npm run test:e2e` 通过 107 项：25 个正式工具的 75 张中文/英文/日文、亮/暗、1440/1080 视觉基线，以及 25 个 720 像素宽度的沉浸式、横向溢出和可访问名称契约。
+- `npm run test:native-acceptance -- --cycles=100` 在 macOS x86_64 通过：25/25 正式工具加载与会话隔离通过，100 个往返、200 次 reparent 后会话保持。
+- Windows、Linux、macOS arm64 及真实多显示器、DPI、IME、权限场景仍必须按 [`platform-acceptance.md`](./platform-acceptance.md) 在目标设备验收；本轮没有把 CI 配置或浏览器截图当作这些实机结论。

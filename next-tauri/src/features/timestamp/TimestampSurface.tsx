@@ -166,10 +166,7 @@ export function TimestampSurface() {
   return (
     <main className="utility-workbench time-workbench">
       <header className="utility-header">
-        <div>
-          <span className="eyebrow">TAURI TIME CONVERTER</span>
-          <h1>{t('title')}</h1>
-        </div>
+        <h1 className="visually-hidden">{t('title')}</h1>
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
 
@@ -270,11 +267,12 @@ function TimeValue({ label, value, copied, onCopy }: {
   copied: boolean
   onCopy(): void
 }) {
+  const { t } = useLocalizedMessages(timestampMessages)
   return (
     <div className="time-current-value">
       <span>{label}</span>
       <strong>{value}</strong>
-      <button className="utility-copy" type="button" onClick={onCopy}>
+      <button className="utility-copy" type="button" aria-label={t('action.copyValue', { label })} title={t('action.copyValue', { label })} onClick={onCopy}>
         {copied ? <Clipboard /> : <Copy />}
       </button>
     </div>

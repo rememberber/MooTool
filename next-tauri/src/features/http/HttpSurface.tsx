@@ -1,5 +1,7 @@
 import {
   Braces,
+  ChevronDown,
+  ChevronUp,
   CheckCircle2,
   Clipboard,
   Copy,
@@ -15,7 +17,8 @@ import {
   TriangleAlert,
   X
 } from 'lucide-react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { EditorView } from '@codemirror/view'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
 import { httpApi } from '../../platform/api/httpApi'
@@ -68,6 +71,8 @@ export function HttpSurface() {
   const [copied, setCopied] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
   const [responseSearch, setResponseSearch] = useState('')
+  const [responseMatchIndex, setResponseMatchIndex] = useState(-1)
+  const responseEditor = useRef<EditorView | undefined>(undefined)
   const progressText = localize(progress, t)
   const noticeText = localize(notice, t)
 
@@ -109,7 +114,25 @@ export function HttpSurface() {
     : responseTab === 'cookies'
       ? response?.headers.filter(([name]) => name.toLowerCase() === 'set-cookie').map(([, value]) => value).join('\n') ?? ''
       : response?.bodyText || (response?.bodyBase64 ? `${t('response.binary')}\n${response.bodyBase64}` : '')
-  const responseMatches = useMemo(() => countMatches(responseOutput, responseSearch), [responseOutput, responseSearch])
+  const responseMatches = useMemo(() => findMatches(responseOutput, responseSearch), [responseOutput, responseSearch])
+
+  useEffect(() => {
+    setResponseMatchIndex(-1)
+  }, [responseOutput, responseSearch])
+
+  function navigateResponseMatch(direction: 1 | -1) {
+    if (!responseMatches.length || !responseEditor.current) return
+    const nextIndex = responseMatchIndex < 0
+      ? direction > 0 ? 0 : responseMatches.length - 1
+      : (responseMatchIndex + direction + responseMatches.length) % responseMatches.length
+    const match = responseMatches[nextIndex]
+    setResponseMatchIndex(nextIndex)
+    responseEditor.current.dispatch({
+      selection: { anchor: match.from, head: match.to },
+      effects: EditorView.scrollIntoView(match.from, { y: 'center' })
+    })
+    responseEditor.current.focus()
+  }
 
   async function send() {
     if (running) return
@@ -261,7 +284,7 @@ export function HttpSurface() {
 
   return (
     <main className="utility-workbench http-workbench">
-      <header className="utility-header"><div><span className="eyebrow">TAURI RUST HTTP CLIENT</span><h1>{t('title')}</h1></div><div className="http-header-actions"><button type="button" onClick={() => setHistoryOpen(true)}><History />{t('action.history')}</button><span className="utility-session">{t('session.label')} <code>{sessionId}</code></span></div></header>
+      <header className="utility-header"><h1 className="visually-hidden">{t('title')}</h1><div className="http-header-actions"><button type="button" onClick={() => setHistoryOpen(true)}><History />{t('action.history')}</button><span className="utility-session">{t('session.label')} <code>{sessionId}</code></span></div></header>
       <ResizableColumns id="http-collection" className="http-workspace-layout" initialPrimary={220} minPrimary={170} minSecondary={430}>
         <aside className="http-collection-panel">
           <header><label><Search /><input value={savedQuery} placeholder={t('search.saved')} onChange={(event) => setSavedQuery(event.target.value)} /></label><button type="button" title={t('action.new')} onClick={createNew}><Plus /></button></header>
@@ -284,8 +307,8 @@ export function HttpSurface() {
             {requestTab === 'body' && <div className="http-body-pane"><header><select value={request.bodyType} onChange={(event) => setRequest({ ...request, bodyType: event.target.value })}>{['application/json', 'text/plain', 'application/xml', 'text/xml', 'text/html', 'application/javascript'].map((value) => <option key={value}>{value}</option>)}</select><button type="button" disabled={!request.body.trim()} onClick={formatBody}><Braces />{t('action.format')}</button><button type="button" disabled={!request.body} onClick={() => setRequest({ ...request, body: '' })}><Eraser />{t('action.clear')}</button></header><CodeEditor ariaLabel={t('aria.requestBody')} value={request.body} onChange={(body) => setRequest({ ...request, body })} className="utility-code-editor" lineWrapping={false} /></div>}
           </section>
           <section className="http-response-card">
-            <header><Tabs values={['body', 'headers', 'cookies']} active={responseTab} labels={[t('tab.responseBody'), t('tab.responseHeaders'), t('tab.cookies')]} onChange={(value) => setResponseTab(value as ResponseTab)} /><div className="http-response-meta">{response && <><span className={response.status < 400 ? 'http-status http-status--ok' : 'http-status http-status--error'}>{response.status}</span><span>{formatBytes(response.sizeBytes)} · {response.durationMs} ms{response.truncated ? ` · ${t('response.truncated')}` : ''}</span><label><Search /><input value={responseSearch} placeholder={t('search.response')} onChange={(event) => setResponseSearch(event.target.value)} /><em>{responseSearch ? responseMatches : ''}</em></label><button type="button" title={t('action.copyResponse')} onClick={() => void clipboardApi.writeText(responseOutput).catch(fail)}><Copy /></button></>}</div></header>
-            <CodeEditor ariaLabel={t('aria.response')} value={responseOutput} readOnly className="utility-code-editor" lineWrapping={false} />
+            <header><Tabs values={['body', 'headers', 'cookies']} active={responseTab} labels={[t('tab.responseBody'), t('tab.responseHeaders'), t('tab.cookies')]} onChange={(value) => setResponseTab(value as ResponseTab)} /><div className="http-response-meta">{response && <><span className={response.status < 400 ? 'http-status http-status--ok' : 'http-status http-status--error'}>{response.status}</span><span>{formatBytes(response.sizeBytes)} · {response.durationMs} ms{response.truncated ? ` · ${t('response.truncated')}` : ''}</span><label><Search /><input value={responseSearch} placeholder={t('search.response')} onChange={(event) => setResponseSearch(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); navigateResponseMatch(event.shiftKey ? -1 : 1) } }} /><em>{responseSearch ? `${responseMatchIndex < 0 ? 0 : responseMatchIndex + 1}/${responseMatches.length}` : ''}</em></label><button type="button" disabled={!responseMatches.length} title={t('action.previousMatch')} aria-label={t('action.previousMatch')} onClick={() => navigateResponseMatch(-1)}><ChevronUp /></button><button type="button" disabled={!responseMatches.length} title={t('action.nextMatch')} aria-label={t('action.nextMatch')} onClick={() => navigateResponseMatch(1)}><ChevronDown /></button><button type="button" title={t('action.copyResponse')} onClick={() => void clipboardApi.writeText(responseOutput).catch(fail)}><Copy /></button></>}</div></header>
+            <CodeEditor ariaLabel={t('aria.response')} value={responseOutput} readOnly className="utility-code-editor" lineWrapping={false} onReady={(view) => { responseEditor.current = view }} />
           </section>
         </section>
       </ResizableColumns>
@@ -335,13 +358,13 @@ function Tabs({ values, labels, active, onChange }: { values: string[]; labels: 
 function EntryEditor({ values, onChange }: { values: HttpEntry[]; onChange: (values: HttpEntry[]) => void }) {
   const { t } = useLocalizedMessages(httpMessages)
   function update(id: string, patch: Partial<HttpEntry>) { onChange(values.map((item) => item.id === id ? { ...item, ...patch } : item)) }
-  return <div className="http-entry-editor"><header><span /><span>{t('editor.name')}</span><span>{t('editor.value')}</span><button type="button" onClick={() => onChange([...values, entry()])}><Plus /></button></header>{values.length ? values.map((item) => <div key={item.id}><input type="checkbox" checked={item.enabled} onChange={(event) => update(item.id, { enabled: event.target.checked })} /><input value={item.name} placeholder={t('editor.name')} onChange={(event) => update(item.id, { name: event.target.value })} /><input value={item.value} placeholder={t('editor.value')} onChange={(event) => update(item.id, { value: event.target.value })} /><button type="button" onClick={() => onChange(values.filter((value) => value.id !== item.id))}><X /></button></div>) : <button className="http-add-first" type="button" onClick={() => onChange([entry()])}><Plus />{t('editor.add')}</button>}</div>
+  return <div className="http-entry-editor"><header><span /><span>{t('editor.name')}</span><span>{t('editor.value')}</span><button type="button" aria-label={t('editor.add')} title={t('editor.add')} onClick={() => onChange([...values, entry()])}><Plus /></button></header>{values.length ? values.map((item) => <div key={item.id}><input type="checkbox" checked={item.enabled} onChange={(event) => update(item.id, { enabled: event.target.checked })} /><input value={item.name} placeholder={t('editor.name')} onChange={(event) => update(item.id, { name: event.target.value })} /><input value={item.value} placeholder={t('editor.value')} onChange={(event) => update(item.id, { value: event.target.value })} /><button type="button" aria-label={t('editor.remove')} title={t('editor.remove')} onClick={() => onChange(values.filter((value) => value.id !== item.id))}><X /></button></div>) : <button className="http-add-first" type="button" onClick={() => onChange([entry()])}><Plus />{t('editor.add')}</button>}</div>
 }
 
 function CookieEditor({ values, onChange }: { values: HttpCookieEntry[]; onChange: (values: HttpCookieEntry[]) => void }) {
   const { t } = useLocalizedMessages(httpMessages)
   function update(id: string, patch: Partial<HttpCookieEntry>) { onChange(values.map((item) => item.id === id ? { ...item, ...patch } : item)) }
-  return <div className="http-cookie-editor"><header><span /><span>{t('editor.name')}</span><span>{t('editor.value')}</span><span>Domain</span><span>Path</span><span>Expires</span><button type="button" onClick={() => onChange([...values, cookie()])}><Plus /></button></header>{values.length ? values.map((item) => <div key={item.id}><input type="checkbox" checked={item.enabled} onChange={(event) => update(item.id, { enabled: event.target.checked })} />{(['name', 'value', 'domain', 'path', 'expires'] as const).map((key) => <input key={key} value={item[key]} placeholder={key === 'name' ? t('editor.name') : key === 'value' ? t('editor.value') : key} onChange={(event) => update(item.id, { [key]: event.target.value })} />)}<button type="button" onClick={() => onChange(values.filter((value) => value.id !== item.id))}><X /></button></div>) : <button className="http-add-first" type="button" onClick={() => onChange([cookie()])}><Plus />{t('editor.addCookie')}</button>}</div>
+  return <div className="http-cookie-editor"><header><span /><span>{t('editor.name')}</span><span>{t('editor.value')}</span><span>Domain</span><span>Path</span><span>Expires</span><button type="button" aria-label={t('editor.addCookie')} title={t('editor.addCookie')} onClick={() => onChange([...values, cookie()])}><Plus /></button></header>{values.length ? values.map((item) => <div key={item.id}><input type="checkbox" checked={item.enabled} onChange={(event) => update(item.id, { enabled: event.target.checked })} />{(['name', 'value', 'domain', 'path', 'expires'] as const).map((key) => <input key={key} value={item[key]} placeholder={key === 'name' ? t('editor.name') : key === 'value' ? t('editor.value') : key} onChange={(event) => update(item.id, { [key]: event.target.value })} />)}<button type="button" aria-label={t('editor.removeCookie')} title={t('editor.removeCookie')} onClick={() => onChange(values.filter((value) => value.id !== item.id))}><X /></button></div>) : <button className="http-add-first" type="button" onClick={() => onChange([cookie()])}><Plus />{t('editor.addCookie')}</button>}</div>
 }
 
 function HttpHistoryDialog({ onClose, onApply }: { onClose: () => void; onApply: (item: HttpRequestHistory) => void }) {
@@ -372,4 +395,15 @@ function errorText(cause: unknown, t: (key: HttpMessageKey, values?: MessageValu
 
 function clampTimeout(value: number) { return Math.max(1_000, Math.min(120_000, Number.isFinite(value) ? Math.round(value) : 30_000)) }
 function formatBytes(value: number) { return value < 1024 ? `${value} B` : value < 1024 ** 2 ? `${(value / 1024).toFixed(1)} KiB` : `${(value / 1024 ** 2).toFixed(2)} MiB` }
-function countMatches(value: string, query: string) { if (!query) return 0; const needle = query.toLowerCase(); let count = 0; let index = 0; while ((index = value.toLowerCase().indexOf(needle, index)) >= 0) { count += 1; index += Math.max(1, needle.length) } return count }
+export function findMatches(value: string, query: string): Array<{ from: number; to: number }> {
+  if (!query) return []
+  const haystack = value.toLocaleLowerCase()
+  const needle = query.toLocaleLowerCase()
+  const matches: Array<{ from: number; to: number }> = []
+  let index = 0
+  while ((index = haystack.indexOf(needle, index)) >= 0) {
+    matches.push({ from: index, to: index + query.length })
+    index += Math.max(1, needle.length)
+  }
+  return matches
+}

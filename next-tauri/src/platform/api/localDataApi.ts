@@ -134,7 +134,11 @@ function normalizeQuickNote(note: QuickNote): QuickNote {
     ...note,
     tags: Array.isArray(note.tags) ? note.tags.filter((tag) => typeof tag === 'string') : [],
     color: ['default', 'coral', 'yellow', 'green', 'blue', 'purple', 'red'].includes(note.color) ? note.color : 'default',
-    folderPath: typeof note.folderPath === 'string' ? note.folderPath : ''
+    folderPath: typeof note.folderPath === 'string' ? note.folderPath : '',
+    editorFont: ['default', 'mono', 'serif'].includes(note.editorFont) ? note.editorFont : 'default',
+    lineHeight: ['compact', 'normal', 'relaxed'].includes(note.lineHeight) ? note.lineHeight : 'normal',
+    lineWrapping: typeof note.lineWrapping === 'boolean' ? note.lineWrapping : true,
+    syntax: ['markdown', 'plain', 'json', 'yaml'].includes(note.syntax) ? note.syntax : 'markdown'
   }
 }
 

@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 
 use crate::{
@@ -6,6 +8,15 @@ use crate::{
 };
 
 pub const SETTINGS_CHANGED_EVENT: &str = "mootool://settings-changed";
+
+pub fn configured_export_directory(repository: &SettingsRepository) -> Option<PathBuf> {
+    let value = repository.snapshot().tools.export_directory;
+    if value.is_empty() {
+        return None;
+    }
+    let path = PathBuf::from(value);
+    path.is_dir().then_some(path)
+}
 
 #[tauri::command]
 pub fn get_settings(repository: tauri::State<'_, SettingsRepository>) -> AppSettings {

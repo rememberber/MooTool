@@ -184,10 +184,7 @@ export function ProtobufSurface() {
   return (
     <main className="utility-workbench protobuf-workbench">
       <header className="utility-header">
-        <div>
-          <span className="eyebrow">TAURI PROTOBUF WORKBENCH</span>
-          <h1>Protobuf</h1>
-        </div>
+        <h1 className="visually-hidden">Protobuf</h1>
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
 

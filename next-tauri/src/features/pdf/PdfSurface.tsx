@@ -177,7 +177,7 @@ export function PdfSurface() {
   return (
     <main className="utility-workbench pdf-workbench">
       <header className="utility-header">
-        <div><span className="eyebrow">LOCAL PDF-LIB WORKBENCH</span><h1>{t('title')}</h1></div>
+        <h1 className="visually-hidden">{t('title')}</h1>
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
       <nav className="utility-segments pdf-tabs">

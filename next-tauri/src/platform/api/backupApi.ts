@@ -4,7 +4,7 @@ import type { BackupApi, BackupExportResult, BackupImportResult } from '../contr
 
 export const backupApi: BackupApi = typeof window !== 'undefined' && window.__TAURI_INTERNALS__
   ? {
-      chooseExportDirectory: async () => normalizeSelection(await open({ directory: true, multiple: false, title: '选择 MooTool Next Tauri 备份保存目录' })),
+      chooseExportDirectory: async (defaultDirectory) => normalizeSelection(await open({ directory: true, multiple: false, defaultPath: defaultDirectory || undefined, title: '选择 MooTool Next Tauri 备份保存目录' })),
       chooseImportDirectory: async () => normalizeSelection(await open({ directory: true, multiple: false, title: '选择 MooTool Next Tauri 备份文件夹' })),
       exportTo: (destinationDirectory) => invoke<BackupExportResult>('export_product_backup', { destinationDirectory }),
       importFrom: (sourceDirectory) => invoke<BackupImportResult>('import_product_backup', { sourceDirectory })

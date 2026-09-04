@@ -708,10 +708,7 @@ export function JsonToolSurface() {
   return (
     <main className="json-workbench">
       <header className="json-workbench__header">
-        <div>
-          <span className="eyebrow">TAURI JSON WORKBENCH</span>
-          <h1>JSON</h1>
-        </div>
+        <h1 className="visually-hidden">JSON</h1>
         <span className="json-workbench__session">
           {t('session.label')} <code>{sessionId.current}</code>
         </span>

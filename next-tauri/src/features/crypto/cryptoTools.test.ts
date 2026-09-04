@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
+  compatibilityDecrypt,
+  compatibilityEncrypt,
   decryptAesGcm,
   encryptAesGcm,
   generateRandom,
@@ -8,10 +10,15 @@ import {
   decodeBase,
   encodeBase,
   generateRsaKeyPair,
+  generateSm2KeyPair,
   rsaDecrypt,
   rsaEncrypt,
   rsaSign,
   rsaVerify,
+  sm2Decrypt,
+  sm2Encrypt,
+  sm2Sign,
+  sm2Verify,
   CryptoToolError
 } from './cryptoTools'
 
@@ -22,6 +29,22 @@ describe('crypto tools', () => {
     expect(hashText('abc', 'sha256')).toBe(
       'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad'
     )
+    expect(hashText('abc', 'sm3')).toBe('66c7f0f462eeedd9d1f2d46bdc10e4e24167c4875cf2f7a2297da02b8f4ba8e0')
+  })
+
+  it.each(['des', 'sm4'] as const)('round-trips %s compatibility encryption', (algorithm) => {
+    const encrypted = compatibilityEncrypt(algorithm, 'MooTool 兼容', '1234567890abcdef')
+    expect(encrypted).toMatch(/^[0-9a-f]+$/i)
+    expect(compatibilityDecrypt(algorithm, encrypted, '1234567890abcdef')).toBe('MooTool 兼容')
+  })
+
+  it('supports SM2 encryption and signatures', () => {
+    const keys = generateSm2KeyPair()
+    const encrypted = sm2Encrypt('MooTool SM2', keys.publicKey)
+    expect(sm2Decrypt(encrypted, keys.privateKey)).toBe('MooTool SM2')
+    const signature = sm2Sign('signed content', keys.privateKey, keys.publicKey)
+    expect(sm2Verify('signed content', signature, keys.publicKey)).toBe(true)
+    expect(sm2Verify('changed', signature, keys.publicKey)).toBe(false)
   })
 
   it('calculates HMAC-SHA256', () => {

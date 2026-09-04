@@ -133,10 +133,7 @@ export function CronSurface() {
   return (
     <main className="utility-workbench cron-workbench">
       <header className="utility-header">
-        <div>
-          <span className="eyebrow">TAURI CRON EXPLORER</span>
-          <h1>Cron</h1>
-        </div>
+        <h1 className="visually-hidden">Cron</h1>
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
 

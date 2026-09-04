@@ -56,7 +56,7 @@ export function HistoryPanel({ limit, onClose, onRestore }: { limit: number; onC
   return (
     <div className="history-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
       <aside className="history-panel" role="dialog" aria-modal="true" aria-label={t('aria.dialog')}>
-        <header><div><span className="eyebrow">TAURI SQLITE HISTORY</span><h2>{t('title')}</h2><p>{t('description')}</p></div><button type="button" aria-label={t('action.close')} onClick={onClose}><X /></button></header>
+        <header><div><span className="eyebrow">LOCAL HISTORY</span><h2>{t('title')}</h2><p>{t('description')}</p></div><button type="button" aria-label={t('action.close')} onClick={onClose}><X /></button></header>
         <div className="history-toolbar"><label><Search /><input autoFocus value={query} placeholder={t('search.placeholder')} onChange={(event) => setQuery(event.target.value)} /></label><select value={status} onChange={(event) => setStatus(event.target.value as OperationStatus | 'all')}><option value="all">{t('status.all')}</option><option value="info">{t('status.info')}</option><option value="success">{t('status.success')}</option><option value="error">{t('status.error')}</option></select><button type="button" disabled={!items.length} onClick={() => void clearHistory()}><Trash2 />{t('action.clear')}</button></div>
         <div className="history-list">{visible.length ? visible.map((item) => {
           const hasPayload = Boolean(item.inputText || item.outputText)

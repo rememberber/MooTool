@@ -12,9 +12,9 @@ use tauri_plugin_dialog::DialogExt;
 use crate::{
     contracts::{
         error::AppResult,
-        image::{ImageAsset, ImageAssetInput, ImageAssetSummary},
+        image::{ImageAsset, ImageAssetInput, ImageAssetSummary, ImageVectorizeOptions},
     },
-    repositories::local_data::LocalDataRepository,
+    repositories::{local_data::LocalDataRepository, settings::SettingsRepository},
 };
 
 const MAX_IMAGE_BYTES: usize = 20 * 1024 * 1024;
@@ -213,6 +213,7 @@ pub fn read_image_asset(
 pub async fn export_image_assets(
     app: tauri::AppHandle,
     repository: tauri::State<'_, LocalDataRepository>,
+    settings: tauri::State<'_, SettingsRepository>,
     names: Vec<String>,
 ) -> AppResult<Option<Vec<String>>> {
     if names.is_empty() || names.len() > 50 {
@@ -240,12 +241,15 @@ pub async fn export_image_assets(
 
     if sources.len() == 1 {
         let (summary, source) = &sources[0];
-        let selection = app
+        let mut dialog = app
             .dialog()
             .file()
             .add_filter("Image", &[image_extension(&summary.mime_type)?])
-            .set_file_name(&summary.name)
-            .blocking_save_file();
+            .set_file_name(&summary.name);
+        if let Some(directory) = super::settings::configured_export_directory(&settings) {
+            dialog = dialog.set_directory(directory);
+        }
+        let selection = dialog.blocking_save_file();
         let Some(selection) = selection else {
             return Ok(None);
         };
@@ -258,7 +262,11 @@ pub async fn export_image_assets(
         return Ok(Some(vec![target.display().to_string()]));
     }
 
-    let selection = app.dialog().file().blocking_pick_folder();
+    let mut dialog = app.dialog().file();
+    if let Some(directory) = super::settings::configured_export_directory(&settings) {
+        dialog = dialog.set_directory(directory);
+    }
+    let selection = dialog.blocking_pick_folder();
     let Some(selection) = selection else {
         return Ok(None);
     };
@@ -283,6 +291,185 @@ pub async fn export_image_assets(
             .map(|path| path.display().to_string())
             .collect(),
     ))
+}
+
+#[tauri::command]
+pub async fn vectorize_image_assets(
+    app: tauri::AppHandle,
+    repository: tauri::State<'_, LocalDataRepository>,
+    settings: tauri::State<'_, SettingsRepository>,
+    names: Vec<String>,
+    options: ImageVectorizeOptions,
+) -> AppResult<Option<Vec<String>>> {
+    validate_vectorize_options(&options)?;
+    if names.is_empty() || names.len() > 50 {
+        return Err("select between 1 and 50 images to vectorize".into());
+    }
+
+    let source_directory = image_directory(&app)?;
+    let mut sources = Vec::with_capacity(names.len());
+    for name in names {
+        validate_file_name(&name)?;
+        let summary = repository
+            .get_image_asset(&name)?
+            .ok_or_else(|| format!("image asset not found: {name}"))?;
+        let path = source_directory.join(&summary.name);
+        let metadata = fs::symlink_metadata(&path)
+            .map_err(|error| format!("failed to inspect stored image: {error}"))?;
+        if !metadata.is_file()
+            || metadata.file_type().is_symlink()
+            || metadata.len() == 0
+            || metadata.len() > MAX_IMAGE_BYTES as u64
+        {
+            return Err("stored image must be a regular 1 byte to 20 MiB file".into());
+        }
+        let stem = Path::new(&summary.name)
+            .file_stem()
+            .and_then(|value| value.to_str())
+            .ok_or_else(|| "image filename is not valid UTF-8".to_string())?;
+        sources.push((format!("{stem}.svg"), path));
+    }
+
+    let targets = if sources.len() == 1 {
+        let mut dialog = app
+            .dialog()
+            .file()
+            .add_filter("SVG vector image", &["svg"])
+            .set_file_name(&sources[0].0);
+        if let Some(directory) = super::settings::configured_export_directory(&settings) {
+            dialog = dialog.set_directory(directory);
+        }
+        let selection = dialog.blocking_save_file();
+        let Some(selection) = selection else {
+            return Ok(None);
+        };
+        let mut target = selection
+            .into_path()
+            .map_err(|_| "selected SVG export target is not a local filesystem path")?;
+        target.set_extension("svg");
+        validate_export_file_target(&target)?;
+        vec![target]
+    } else {
+        let mut dialog = app.dialog().file();
+        if let Some(directory) = super::settings::configured_export_directory(&settings) {
+            dialog = dialog.set_directory(directory);
+        }
+        let selection = dialog.blocking_pick_folder();
+        let Some(selection) = selection else {
+            return Ok(None);
+        };
+        let destination = selection
+            .into_path()
+            .map_err(|_| "selected SVG export directory is not a local filesystem path")?;
+        validate_export_directory(&destination)?;
+        sources
+            .iter()
+            .map(|(name, _)| unique_export_path(&destination, name))
+            .collect::<Result<Vec<_>, _>>()?
+    };
+
+    let replace_existing = sources.len() == 1;
+    let exported = tauri::async_runtime::spawn_blocking(move || {
+        vectorize_sources(sources, targets, options, replace_existing)
+    })
+    .await
+    .map_err(|error| format!("image vectorization task failed: {error}"))??;
+    Ok(Some(
+        exported
+            .into_iter()
+            .map(|path| path.display().to_string())
+            .collect(),
+    ))
+}
+
+fn validate_vectorize_options(options: &ImageVectorizeOptions) -> Result<(), String> {
+    if !matches!(options.preset.as_str(), "poster" | "photo" | "bw")
+        || !matches!(options.detail.as_str(), "low" | "medium" | "high")
+        || !(2..=64).contains(&options.color_count)
+        || options.filter_speckle > 128
+    {
+        return Err("invalid image vectorization options".into());
+    }
+    Ok(())
+}
+
+fn vectorize_sources(
+    sources: Vec<(String, PathBuf)>,
+    targets: Vec<PathBuf>,
+    options: ImageVectorizeOptions,
+    replace_existing: bool,
+) -> Result<Vec<PathBuf>, String> {
+    let mut exported = Vec::with_capacity(sources.len());
+    for ((_, source), target) in sources.into_iter().zip(targets) {
+        let result = (|| {
+            let bytes = fs::read(&source)
+                .map_err(|error| format!("failed to read image for vectorization: {error}"))?;
+            let svg = vectorize_bytes(&bytes, &options)?;
+            if svg.len() > 20 * 1024 * 1024 {
+                return Err("vectorized SVG exceeds the 20 MiB export limit".into());
+            }
+            if replace_existing {
+                atomic_write(&target, svg.as_bytes())
+            } else {
+                write_new_file(&target, svg.as_bytes())
+            }
+        })();
+        if let Err(error) = result {
+            for path in &exported {
+                let _ = fs::remove_file(path);
+            }
+            return Err(error);
+        }
+        exported.push(target);
+    }
+    Ok(exported)
+}
+
+fn vectorize_bytes(bytes: &[u8], options: &ImageVectorizeOptions) -> Result<String, String> {
+    validate_vectorize_options(options)?;
+    let decoded = image::load_from_memory(bytes)
+        .map_err(|error| format!("failed to decode image for vectorization: {error}"))?
+        .to_rgba8();
+    let (width, height) = decoded.dimensions();
+    validate_dimensions(width, height)?;
+    if u64::from(width) * u64::from(height) > 50_000_000 {
+        return Err("vectorization supports images up to 50 megapixels".into());
+    }
+    let preset = match options.preset.as_str() {
+        "poster" => vtracer::Preset::Poster,
+        "photo" => vtracer::Preset::Photo,
+        "bw" => vtracer::Preset::Bw,
+        _ => return Err("invalid vectorization preset".into()),
+    };
+    let mut config = vtracer::Config::from_preset(preset);
+    config.hierarchical = if options.preset == "photo" {
+        vtracer::Hierarchical::Stacked
+    } else {
+        vtracer::Hierarchical::Cutout
+    };
+    config.filter_speckle = options.filter_speckle;
+    config.max_colors = (options.preset != "bw").then_some(options.color_count as usize);
+    config.simplify = Some(match options.detail.as_str() {
+        "low" => 2.5,
+        "high" => 0.5,
+        _ => 1.25,
+    });
+    config.path_precision = Some(if options.detail == "high" { 3 } else { 2 });
+    config.optimize = 2;
+    let image = vtracer::ColorImage {
+        pixels: decoded.into_raw(),
+        width: width as usize,
+        height: height as usize,
+    };
+    let svg = config
+        .build()
+        .map_err(|error| format!("failed to configure vectorizer: {error}"))?
+        .to_svg(&image)
+        .map_err(|error| format!("failed to vectorize image: {error}"))?;
+    if !svg.contains("<svg") || !svg.contains("<path") || svg.contains("<image") {
+        return Err("vectorizer returned invalid SVG path output".into());
+    }
+    Ok(svg)
 }
 
 #[tauri::command]
@@ -546,10 +733,10 @@ fn validate_export_file_target(path: &Path) -> Result<(), String> {
     if !path.is_absolute() {
         return Err("image export target must be absolute".into());
     }
-    if let Ok(metadata) = fs::symlink_metadata(path)
-        && (metadata.file_type().is_symlink() || !metadata.is_file())
-    {
-        return Err("image export target must be a regular non-symlink file".into());
+    if let Ok(metadata) = fs::symlink_metadata(path) {
+        if metadata.file_type().is_symlink() || !metadata.is_file() {
+            return Err("image export target must be a regular non-symlink file".into());
+        }
     }
     let parent = path
         .parent()
@@ -558,20 +745,24 @@ fn validate_export_file_target(path: &Path) -> Result<(), String> {
 }
 
 fn atomic_copy(source: &Path, target: &Path) -> Result<(), String> {
+    let bytes = fs::read(source)
+        .map_err(|error| format!("failed to read stored image for export: {error}"))?;
+    atomic_write(target, &bytes)
+}
+
+fn atomic_write(target: &Path, bytes: &[u8]) -> Result<(), String> {
     let parent = target
         .parent()
         .ok_or_else(|| "image export target has no parent directory".to_string())?;
     let mut temporary = tempfile::NamedTempFile::new_in(parent)
         .map_err(|error| format!("failed to create temporary export file: {error}"))?;
-    let bytes = fs::read(source)
-        .map_err(|error| format!("failed to read stored image for export: {error}"))?;
     temporary
-        .write_all(&bytes)
+        .write_all(bytes)
         .and_then(|()| temporary.flush())
-        .map_err(|error| format!("failed to write temporary export image: {error}"))?;
+        .map_err(|error| format!("failed to write temporary export file: {error}"))?;
     temporary
         .persist(target)
-        .map_err(|error| format!("failed to save exported image: {}", error.error))?;
+        .map_err(|error| format!("failed to save exported file: {}", error.error))?;
     Ok(())
 }
 
@@ -602,6 +793,10 @@ fn unique_export_path(directory: &Path, name: &str) -> Result<PathBuf, String> {
 fn copy_new_file(source: &Path, target: &Path) -> Result<(), String> {
     let bytes = fs::read(source)
         .map_err(|error| format!("failed to read stored image for export: {error}"))?;
+    write_new_file(target, &bytes)
+}
+
+fn write_new_file(target: &Path, bytes: &[u8]) -> Result<(), String> {
     let mut file = fs::OpenOptions::new()
         .write(true)
         .create_new(true)
@@ -612,7 +807,7 @@ fn copy_new_file(source: &Path, target: &Path) -> Result<(), String> {
                 target.display()
             )
         })?;
-    if let Err(error) = file.write_all(&bytes).and_then(|()| file.flush()) {
+    if let Err(error) = file.write_all(bytes).and_then(|()| file.flush()) {
         drop(file);
         let _ = fs::remove_file(target);
         return Err(format!(
@@ -671,5 +866,42 @@ mod tests {
         assert_eq!(fs::read(&target).unwrap(), b"source image bytes");
         assert!(copy_new_file(&source, &target).is_err());
         assert_eq!(fs::read(&target).unwrap(), b"source image bytes");
+    }
+
+    #[test]
+    fn vectorizes_bitmap_to_svg_paths() {
+        let mut source = image::RgbaImage::new(16, 16);
+        for (x, y, pixel) in source.enumerate_pixels_mut() {
+            *pixel = if x < 8 || y < 8 {
+                image::Rgba([220, 40, 40, 255])
+            } else {
+                image::Rgba([30, 80, 220, 255])
+            };
+        }
+        let mut encoded = Cursor::new(Vec::new());
+        image::DynamicImage::ImageRgba8(source)
+            .write_to(&mut encoded, image::ImageFormat::Png)
+            .unwrap();
+        let options = ImageVectorizeOptions {
+            preset: "poster".into(),
+            color_count: 8,
+            detail: "medium".into(),
+            filter_speckle: 0,
+        };
+        let svg = vectorize_bytes(encoded.get_ref(), &options).unwrap();
+        assert!(svg.contains("<svg"));
+        assert!(svg.contains("<path"));
+        assert!(!svg.contains("<image"));
+    }
+
+    #[test]
+    fn rejects_invalid_vectorization_options() {
+        let invalid = ImageVectorizeOptions {
+            preset: "unknown".into(),
+            color_count: 1,
+            detail: "extreme".into(),
+            filter_speckle: 129,
+        };
+        assert!(validate_vectorize_options(&invalid).is_err());
     }
 }

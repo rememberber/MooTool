@@ -13,6 +13,8 @@ import {
   CheckCircle2,
   Clipboard,
   Copy,
+  ChevronDown,
+  ChevronUp,
   Eraser,
   FileDiff,
   Search,
@@ -46,14 +48,28 @@ export function TextDiffSurface() {
     ignoreWhitespace: false
   })
   const [context, setContext] = useState(3)
+  const [viewMode, setViewMode] = useState<'split' | 'unified'>('split')
+  const [activeDifference, setActiveDifference] = useState(-1)
   const [copied, setCopied] = useState(false)
   const [actionError, setActionError] = useState('')
+  const resultHost = useRef<HTMLElement>(null)
 
   const result = useMemo(() => compareText(left, right, options), [left, options, right])
   const visibleRows = useMemo(
     () => limitRenderedRows(collapseUnchangedRows(result.rows, context)),
     [context, result.rows]
   )
+  const differenceIndexes = useMemo(() => {
+    const indexes = new Map<DiffRow, number>()
+    let index = 0
+    for (const row of result.rows) {
+      if (row.kind === 'equal') continue
+      indexes.set(row, index)
+      index += 1
+    }
+    return indexes
+  }, [result.rows])
+  const differenceCount = differenceIndexes.size
   const session = useMemo(() => describeTextDiffSession({
     left,
     right,
@@ -84,13 +100,25 @@ export function TextDiffSurface() {
     setRight(left)
   }
 
+  function navigateDifference(direction: 1 | -1): void {
+    if (!differenceCount) return
+    const next = activeDifference < 0
+      ? direction > 0 ? 0 : differenceCount - 1
+      : (activeDifference + direction + differenceCount) % differenceCount
+    setActiveDifference(next)
+    window.requestAnimationFrame(() => {
+      resultHost.current?.querySelector<HTMLElement>(`[data-diff-index="${next}"]`)?.scrollIntoView({ block: 'center' })
+    })
+  }
+
+  useEffect(() => {
+    setActiveDifference(-1)
+  }, [left, options, right])
+
   return (
     <main className="text-diff-workbench">
       <header className="text-diff-header">
-        <div>
-          <span className="eyebrow">TAURI TEXT DIFF</span>
-          <h1>{t('title')}</h1>
-        </div>
+        <h1 className="visually-hidden">{t('title')}</h1>
         <span className="text-diff-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
 
@@ -147,6 +175,15 @@ export function TextDiffSurface() {
             <option value={-1}>{t('option.all')}</option>
           </select>
         </label>
+        <div className="utility-segments text-diff-view-toggle" aria-label={t('aria.viewMode')}>
+          <button className={viewMode === 'split' ? 'utility-segment utility-segment--active' : 'utility-segment'} type="button" onClick={() => setViewMode('split')}>{t('view.split')}</button>
+          <button className={viewMode === 'unified' ? 'utility-segment utility-segment--active' : 'utility-segment'} type="button" onClick={() => setViewMode('unified')}>{t('view.unified')}</button>
+        </div>
+        <div className="text-diff-navigation">
+          <button type="button" disabled={!differenceCount} aria-label={t('action.previousDifference')} title={t('action.previousDifference')} onClick={() => navigateDifference(-1)}><ChevronUp /></button>
+          <span>{differenceCount ? `${activeDifference < 0 ? 0 : activeDifference + 1}/${differenceCount}` : '0/0'}</span>
+          <button type="button" disabled={!differenceCount} aria-label={t('action.nextDifference')} title={t('action.nextDifference')} onClick={() => navigateDifference(1)}><ChevronDown /></button>
+        </div>
         <button className="secondary-button" type="button" onClick={() => void copyUnifiedDiff()}>
           {copied ? <Clipboard /> : <Copy />}{copied ? t('action.copied') : t('action.copyDiff')}
         </button>
@@ -193,25 +230,27 @@ export function TextDiffSurface() {
         <span>{t('summary.unchanged')} <strong>{result.stats.unchanged}</strong></span>
       </section>
 
-      <section className="text-diff-result" aria-label={t('aria.result')}>
-        <div className="text-diff-result__heading">
-          <span>{t('pane.original')}</span>
-          <span>{t('pane.target')}</span>
-        </div>
-        <div className="text-diff-rows">
-          {visibleRows.map((row, index) => row.kind === 'collapsed'
-            ? (
-                <div className="text-diff-collapsed" key={`collapsed-${index}`}>
-                  {row.reason === 'limit'
-                    ? t('result.limit', { count: row.hiddenRows })
-                    : t('result.collapsed', { count: row.hiddenRows })}
-                </div>
-              )
-            : <DiffResultRow row={row} key={`${row.left?.lineNumber ?? '-'}:${row.right?.lineNumber ?? '-'}`} />)}
-          {visibleRows.length === 0 && (
-            <div className="text-diff-empty">{t('result.empty')}</div>
-          )}
-        </div>
+      <section ref={resultHost} className={`text-diff-result text-diff-result--${viewMode}`} aria-label={t('aria.result')}>
+        {viewMode === 'split' ? <>
+          <div className="text-diff-result__heading">
+            <span>{t('pane.original')}</span>
+            <span>{t('pane.target')}</span>
+          </div>
+          <div className="text-diff-rows">
+            {visibleRows.map((row, index) => row.kind === 'collapsed'
+              ? <CollapsedRow row={row} key={`collapsed-${index}`} />
+              : <DiffResultRow row={row} diffIndex={differenceIndexes.get(row)} active={differenceIndexes.get(row) === activeDifference} key={`${row.left?.lineNumber ?? '-'}:${row.right?.lineNumber ?? '-'}`} />)}
+            {visibleRows.length === 0 && <div className="text-diff-empty">{t('result.empty')}</div>}
+          </div>
+        </> : <>
+          <div className="text-diff-result__heading text-diff-result__heading--unified"><span>{t('view.unifiedHeading')}</span></div>
+          <div className="text-diff-rows text-diff-unified-rows">
+            {visibleRows.map((row, index) => row.kind === 'collapsed'
+              ? <CollapsedRow row={row} key={`collapsed-${index}`} />
+              : <UnifiedDiffRow row={row} diffIndex={differenceIndexes.get(row)} active={differenceIndexes.get(row) === activeDifference} key={`${row.left?.lineNumber ?? '-'}:${row.right?.lineNumber ?? '-'}`} />)}
+            {visibleRows.length === 0 && <div className="text-diff-empty">{t('result.empty')}</div>}
+          </div>
+        </>}
       </section>
 
       <footer className="text-diff-footer">
@@ -297,14 +336,30 @@ function EditorPane({ label, value, onChange, onReady }: {
   )
 }
 
-function DiffResultRow({ row }: { row: DiffRow }) {
+function CollapsedRow({ row }: { row: { kind: 'collapsed'; hiddenRows: number; reason: 'unchanged' | 'limit' } }) {
+  const { t } = useLocalizedMessages(textDiffMessages)
+  return <div className="text-diff-collapsed">{row.reason === 'limit' ? t('result.limit', { count: row.hiddenRows }) : t('result.collapsed', { count: row.hiddenRows })}</div>
+}
+
+function DiffResultRow({ row, diffIndex, active }: { row: DiffRow; diffIndex?: number; active: boolean }) {
   const { t } = useLocalizedMessages(textDiffMessages)
   return (
-    <div className={`text-diff-row text-diff-row--${row.kind}`}>
+    <div className={`text-diff-row text-diff-row--${row.kind}${active ? ' text-diff-row--active' : ''}`} data-diff-index={diffIndex}>
       <DiffCell side={row.left} emptyLabel={row.kind === 'added' ? t('row.added') : ''} />
       <DiffCell side={row.right} emptyLabel={row.kind === 'removed' ? t('row.removed') : ''} />
     </div>
   )
+}
+
+function UnifiedDiffRow({ row, diffIndex, active }: { row: DiffRow; diffIndex?: number; active: boolean }) {
+  const lines = row.kind === 'changed'
+    ? [{ prefix: '-', side: row.left }, { prefix: '+', side: row.right }]
+    : row.kind === 'removed'
+      ? [{ prefix: '-', side: row.left }]
+      : row.kind === 'added'
+        ? [{ prefix: '+', side: row.right }]
+        : [{ prefix: ' ', side: row.left }]
+  return <div className={`text-diff-unified-row text-diff-unified-row--${row.kind}${active ? ' text-diff-row--active' : ''}`} data-diff-index={diffIndex}>{lines.map((line, index) => <div key={index}><span>{line.side?.lineNumber ?? ''}</span><b>{line.prefix}</b><code>{line.side?.text ?? ''}</code></div>)}</div>
 }
 
 function DiffCell({ side, emptyLabel }: { side?: DiffSide; emptyLabel: string }) {

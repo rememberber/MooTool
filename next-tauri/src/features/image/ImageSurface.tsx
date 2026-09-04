@@ -7,12 +7,14 @@ import {
   FileImage,
   FolderOpen,
   ImageDown,
+  ImageUp,
   Maximize2,
   Minus,
   Monitor,
   Pencil,
   Plus,
   ScanLine,
+  Shapes,
   Trash2,
   TriangleAlert,
   Type,
@@ -31,8 +33,9 @@ import {
 } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
 import { imageApi } from '../../platform/api/imageApi'
+import { userFilesApi } from '../../platform/api/userFilesApi'
 import { nativeDesktopApi } from '../../platform/api/nativeDesktopApi'
-import type { ImageAsset, ImageAssetSummary } from '../../platform/contracts/image'
+import type { ImageAsset, ImageAssetSummary, ImageVectorizeOptions } from '../../platform/contracts/image'
 import type { ReactNode } from 'react'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
@@ -71,8 +74,9 @@ export function ImageSurface() {
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<ImageNotice>({ key: 'notice.ready' })
   const [failed, setFailed] = useState(false)
-  const [panel, setPanel] = useState<'compress' | 'watermark' | 'base64' | null>(null)
+  const [panel, setPanel] = useState<'compress' | 'watermark' | 'base64-import' | 'base64-export' | 'svg' | null>(null)
   const [base64Input, setBase64Input] = useState('')
+  const [base64DataUrl, setBase64DataUrl] = useState(true)
   const [quality, setQuality] = useState(0.82)
   const [scale, setScale] = useState(1)
   const [format, setFormat] = useState<ImageFormat>('auto')
@@ -82,9 +86,18 @@ export function ImageSurface() {
   const [watermarkSize, setWatermarkSize] = useState(36)
   const [watermarkPosition, setWatermarkPosition] = useState<WatermarkPosition>('bottom-right')
   const [watermarkDiagonal, setWatermarkDiagonal] = useState(false)
+  const [vectorizeOptions, setVectorizeOptions] = useState<ImageVectorizeOptions>({
+    preset: 'poster',
+    colorCount: 16,
+    detail: 'medium',
+    filterSpeckle: 8
+  })
   const [nativeDragActive, setNativeDragActive] = useState(false)
   const [captureAssets, setCaptureAssets] = useState<ImageAsset[]>([])
   const noticeText = 'raw' in notice ? notice.raw : t(notice.key, notice.values)
+  const base64ExportValue = current
+    ? base64DataUrl ? current.dataUrl : current.dataUrl.slice(current.dataUrl.indexOf(',') + 1)
+    : ''
 
   const load = useCallback(async (preferredName?: string) => {
     try {
@@ -272,6 +285,36 @@ export function ImageSurface() {
     } catch (cause) { fail(cause) } finally { setBusy(false) }
   }
 
+  async function copyBase64() {
+    if (!base64ExportValue) return
+    try {
+      await clipboardApi.writeText(base64ExportValue)
+      succeed('notice.base64Copied')
+    } catch (cause) { fail(cause) }
+  }
+
+  async function saveBase64() {
+    if (!current || !base64ExportValue) return
+    try {
+      const stem = current.name.replace(/\.[^.]+$/, '')
+      const path = await userFilesApi.exportText(`${stem}.base64.txt`, base64ExportValue)
+      if (path) succeed('notice.base64Exported', { path })
+    } catch (cause) { fail(cause) }
+  }
+
+  async function vectorizeSelected() {
+    if (!processingNames.length) return
+    setBusy(true)
+    try {
+      const paths = await imageApi.vectorize(processingNames, vectorizeOptions)
+      if (!paths) return
+      setPanel(null)
+      succeed(paths.length === 1 ? 'notice.svgExportedOne' : 'notice.svgExported',
+        paths.length === 1 ? { path: paths[0] ?? '' } : { count: paths.length })
+      recordOperation(t('operation.vectorize'), t('operation.imageCount', { count: paths.length }), 'success')
+    } catch (cause) { fail(cause) } finally { setBusy(false) }
+  }
+
   async function processSelected(mode: 'compress' | 'watermark') {
     if (!processingNames.length) return
     setBusy(true)
@@ -425,19 +468,21 @@ export function ImageSurface() {
       onDrop={window.__TAURI_INTERNALS__ ? undefined : (event) => { event.preventDefault(); void importFiles([...event.dataTransfer.files]) }}
     >
       <header className="utility-header">
-        <div><span className="eyebrow">TAURI OWNED IMAGE LIBRARY</span><h1>{t('title')}</h1></div>
+        <h1 className="visually-hidden">{t('title')}</h1>
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
       <div className="image-toolbar">
         <button type="button" disabled={busy} onClick={() => void captureScreen()}><ScanLine />{t('action.screenshot')}</button>
         <button type="button" disabled={busy} onClick={() => void importClipboard()}><ClipboardPaste />{t('action.clipboard')}</button>
         <button type="button" disabled={busy} onClick={() => fileInput.current?.click()}><FolderOpen />{t('action.importImages')}</button>
-        <button type="button" onClick={() => setPanel('base64')}><ImageDown />{t('action.importBase64')}</button>
+        <button type="button" onClick={() => setPanel('base64-import')}><ImageDown />{t('action.importBase64')}</button>
         <input ref={fileInput} hidden multiple type="file" accept="image/png,image/jpeg,image/webp,image/gif" onChange={(event) => { void importFiles([...event.target.files ?? []]); event.target.value = '' }} />
         <span />
         <button type="button" disabled={!processingNames.length || busy} onClick={() => setPanel('compress')}><Minus />{t('action.compress')}</button>
         <button type="button" disabled={!processingNames.length || busy} onClick={() => setPanel('watermark')}><Type />{t('action.watermark')}</button>
+        <button type="button" disabled={!processingNames.length || busy} onClick={() => setPanel('svg')}><Shapes />{t('action.vectorize')}</button>
         <button type="button" disabled={!current} onClick={() => void copyImage()}><ClipboardCopy />{t('action.copy')}</button>
+        <button type="button" disabled={!current} onClick={() => setPanel('base64-export')}><ImageUp />{t('action.exportBase64')}</button>
         <button type="button" disabled={!processingNames.length} onClick={() => void exportSelected()}><Download />{t('action.export')}</button>
       </div>
       <section className="image-layout">
@@ -476,9 +521,23 @@ export function ImageSurface() {
         </section>
         {panel && (
           <ProcessingPanel mode={panel} onClose={() => setPanel(null)}>
-            {panel === 'base64' ? <>
+            {panel === 'base64-import' ? <>
               <textarea value={base64Input} placeholder={t('base64.placeholder')} onChange={(event) => setBase64Input(event.target.value)} />
               <button className="primary-button" type="button" disabled={!base64Input.trim() || busy} onClick={() => void importBase64()}><Upload />{t('action.import')}</button>
+            </> : panel === 'base64-export' ? <>
+              <label className="image-base64-mode"><input type="checkbox" checked={base64DataUrl} onChange={(event) => setBase64DataUrl(event.target.checked)} />{t('base64.includePrefix')}</label>
+              <textarea readOnly value={base64ExportValue} aria-label={t('base64.output')} />
+              <div className="image-processing-actions">
+                <button type="button" disabled={!base64ExportValue} onClick={() => void copyBase64()}><ClipboardCopy />{t('base64.copy')}</button>
+                <button className="primary-button" type="button" disabled={!base64ExportValue} onClick={() => void saveBase64()}><Download />{t('base64.save')}</button>
+              </div>
+            </> : panel === 'svg' ? <>
+              <label>{t('svg.preset')} <select value={vectorizeOptions.preset} onChange={(event) => setVectorizeOptions((value) => ({ ...value, preset: event.target.value as ImageVectorizeOptions['preset'] }))}><option value="poster">{t('svg.poster')}</option><option value="photo">{t('svg.photo')}</option><option value="bw">{t('svg.bw')}</option></select></label>
+              <label>{t('svg.colors')} <input type="number" min="2" max="64" disabled={vectorizeOptions.preset === 'bw'} value={vectorizeOptions.colorCount} onChange={(event) => setVectorizeOptions((value) => ({ ...value, colorCount: Math.min(64, Math.max(2, Number(event.target.value) || 2)) }))} /></label>
+              <label>{t('svg.detail')} <select value={vectorizeOptions.detail} onChange={(event) => setVectorizeOptions((value) => ({ ...value, detail: event.target.value as ImageVectorizeOptions['detail'] }))}><option value="low">{t('svg.low')}</option><option value="medium">{t('svg.medium')}</option><option value="high">{t('svg.high')}</option></select></label>
+              <label>{t('svg.speckle')} <input type="number" min="0" max="128" value={vectorizeOptions.filterSpeckle} onChange={(event) => setVectorizeOptions((value) => ({ ...value, filterSpeckle: Math.min(128, Math.max(0, Number(event.target.value) || 0)) }))} /></label>
+              <p className="image-vectorize-hint">{t('svg.hint')}</p>
+              <button className="primary-button" type="button" disabled={busy} onClick={() => void vectorizeSelected()}><Shapes />{t('svg.start')}</button>
             </> : panel === 'compress' ? <>
               <label>{t('compress.quality')} <input type="range" min="5" max="100" value={Math.round(quality * 100)} onChange={(event) => setQuality(Number(event.target.value) / 100)} /><span>{Math.round(quality * 100)}%</span></label>
               <label>{t('compress.scale')} <input type="range" min="10" max="100" value={Math.round(scale * 100)} onChange={(event) => setScale(Number(event.target.value) / 100)} /><span>{Math.round(scale * 100)}%</span></label>
@@ -591,9 +650,10 @@ function CaptureEditor({ assets, busy, onCancel, onKeepFull, onSave }: {
   )
 }
 
-function ProcessingPanel({ mode, onClose, children }: { mode: 'compress' | 'watermark' | 'base64'; onClose: () => void; children: ReactNode }) {
+function ProcessingPanel({ mode, onClose, children }: { mode: 'compress' | 'watermark' | 'base64-import' | 'base64-export' | 'svg'; onClose: () => void; children: ReactNode }) {
   const { t } = useLocalizedMessages(imageMessages)
-  return <aside className="image-processing"><header><strong>{t(mode === 'compress' ? 'panel.compress' : mode === 'watermark' ? 'panel.watermark' : 'panel.base64')}</strong><button type="button" aria-label={t('panel.close')} onClick={onClose}>×</button></header>{children}</aside>
+  const title = mode === 'compress' ? 'panel.compress' : mode === 'watermark' ? 'panel.watermark' : mode === 'base64-import' ? 'panel.base64Import' : mode === 'base64-export' ? 'panel.base64Export' : 'panel.svg'
+  return <aside className="image-processing"><header><strong>{t(title)}</strong><button type="button" aria-label={t('panel.close')} onClick={onClose}>×</button></header>{children}</aside>
 }
 
 function fileToDataUrl(file: File): Promise<string> {

@@ -31,9 +31,7 @@ export const defaultQrOptions: QrOptions = {
 }
 
 export async function generateQrSvg(value: string, options: QrOptions): Promise<string> {
-  const text = value.trim()
-  if (!text) throw new QrToolError('empty')
-  if (text.length > 16_384) throw new QrToolError('contentLimit')
+  const text = validateContent(value)
   validateOptions(options)
   try {
     return await QRCode.toString(text, {
@@ -44,6 +42,39 @@ export async function generateQrSvg(value: string, options: QrOptions): Promise<
       color: { dark: options.dark, light: options.light }
     })
   } catch (cause) {
+    throw new QrToolError('generate', { error: cause instanceof Error ? cause.message : String(cause) })
+  }
+}
+
+export async function generateQrPngDataUrl(value: string, options: QrOptions, logoDataUrl = ''): Promise<string> {
+  const text = validateContent(value)
+  validateOptions(options)
+  try {
+    const dataUrl = await QRCode.toDataURL(text, {
+      type: 'image/png',
+      width: options.size,
+      margin: options.margin,
+      errorCorrectionLevel: options.errorCorrection,
+      color: { dark: options.dark, light: options.light }
+    })
+    if (!logoDataUrl) return dataUrl
+    const [base, logo] = await Promise.all([loadImage(dataUrl), loadImage(logoDataUrl)])
+    const canvas = document.createElement('canvas')
+    canvas.width = options.size
+    canvas.height = options.size
+    const context = canvas.getContext('2d')
+    if (!context) throw new Error('Canvas is unavailable')
+    context.drawImage(base, 0, 0, options.size, options.size)
+    const logoSize = Math.max(32, Math.round(options.size * 0.2))
+    const padding = Math.max(5, Math.round(logoSize * 0.12))
+    const x = Math.round((options.size - logoSize) / 2)
+    const y = Math.round((options.size - logoSize) / 2)
+    context.fillStyle = options.light
+    context.fillRect(x - padding, y - padding, logoSize + padding * 2, logoSize + padding * 2)
+    context.drawImage(logo, x, y, logoSize, logoSize)
+    return canvas.toDataURL('image/png')
+  } catch (cause) {
+    if (cause instanceof QrToolError) throw cause
     throw new QrToolError('generate', { error: cause instanceof Error ? cause.message : String(cause) })
   }
 }
@@ -65,6 +96,33 @@ export async function decodeQrImage(file: File): Promise<string> {
   } finally {
     URL.revokeObjectURL(url)
   }
+}
+
+export function readQrLogo(file: File): Promise<string> {
+  if (!file.type.startsWith('image/')) throw new QrToolError('imageType')
+  if (file.size > 5 * 1024 * 1024) throw new QrToolError('imageLimit')
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result))
+    reader.onerror = () => reject(new QrToolError('imageType'))
+    reader.readAsDataURL(file)
+  })
+}
+
+function validateContent(value: string): string {
+  const text = value.trim()
+  if (!text) throw new QrToolError('empty')
+  if (text.length > 16_384) throw new QrToolError('contentLimit')
+  return text
+}
+
+function loadImage(source: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const image = new Image()
+    image.onload = () => resolve(image)
+    image.onerror = () => reject(new Error('Unable to decode QR image'))
+    image.src = source
+  })
 }
 
 function validateOptions(options: QrOptions): void {

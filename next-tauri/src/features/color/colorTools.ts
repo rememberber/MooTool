@@ -32,6 +32,18 @@ export interface ColorFormats {
   rgb: string
 }
 
+export type ColorOperation = 'invert' | 'multiply' | 'add' | 'difference' | 'average'
+
+export const colorThemes = [
+  { id: 'default', colors: ['#000000', '#FFFFFF', '#880015', '#ED1C24', '#FF7F27', '#FFF200', '#22B14C', '#00A2E8', '#3F48CC', '#A349A4'] },
+  { id: 'theme1', colors: ['#FFFFFF', '#000000', '#1F497D', '#EEECE1', '#4F81BD', '#C0504D', '#9BBB59', '#8064A2', '#4BACC6', '#F79646'] },
+  { id: 'theme2', colors: ['#FFFFFF', '#000000', '#69676D', '#C9C2D1', '#CEB966', '#9CB084', '#6BB1C9', '#6585CF', '#7E6BC9', '#A379BB'] },
+  { id: 'theme3', colors: ['#FFFFFF', '#000000', '#323232', '#E3DED1', '#F07F09', '#9F2936', '#1B587C', '#4E8542', '#604878', '#C19859'] },
+  { id: 'theme4', colors: ['#FFFFFF', '#000000', '#646B86', '#C5D1D7', '#D16349', '#CCB400', '#8CADAE', '#8C7B70', '#8FB08C', '#D19049'] },
+  { id: 'theme5', colors: ['#FFFFFF', '#000000', '#464646', '#DEF5FA', '#2DA2BF', '#DA1F28', '#EB641B', '#39639D', '#474B78', '#7D3C4A'] },
+  { id: 'china', colors: ['#FFFEF9', '#3D3B4F', '#9D2933', '#FF461F', '#C91F37', '#CA6924', '#F0C239', '#789262', '#177CB0', '#815463'] }
+] as const
+
 export class ColorToolError extends Error {
   readonly code = 'invalidHex' as const
 
@@ -153,6 +165,21 @@ export function bestTextColor(background: RgbaColor): '#000000' | '#FFFFFF' {
 export function randomColor(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(3))
   return rgbToHex({ r: bytes[0], g: bytes[1], b: bytes[2], a: 1 })
+}
+
+export function applyColorOperation(operation: ColorOperation, primary: RgbaColor, secondary: RgbaColor): RgbaColor {
+  if (operation === 'invert') return { r: 255 - primary.r, g: 255 - primary.g, b: 255 - primary.b, a: primary.a }
+  if (operation === 'multiply') return { r: primary.r * secondary.r / 255, g: primary.g * secondary.g / 255, b: primary.b * secondary.b / 255, a: 1 }
+  if (operation === 'add') return { r: clampByte(primary.r + secondary.r), g: clampByte(primary.g + secondary.g), b: clampByte(primary.b + secondary.b), a: 1 }
+  if (operation === 'difference') return { r: Math.abs(primary.r - secondary.r), g: Math.abs(primary.g - secondary.g), b: Math.abs(primary.b - secondary.b), a: 1 }
+  return { r: (primary.r + secondary.r) / 2, g: (primary.g + secondary.g) / 2, b: (primary.b + secondary.b) / 2, a: 1 }
+}
+
+export function themeShadeColumns(colors: readonly string[]): string[][] {
+  return colors.map((color) => {
+    const scale = createColorScale(parseHexColor(color))
+    return [scale[1], scale[3], scale[5], scale[7], scale[9]]
+  })
 }
 
 function composite(foreground: RgbaColor, background: RgbaColor): RgbaColor {

@@ -11,6 +11,10 @@ describe('local data API', () => {
       tags: [],
       color: 'default',
       folderPath: '',
+      editorFont: 'default',
+      lineHeight: 'normal',
+      lineWrapping: true,
+      syntax: 'markdown',
       pinned: false,
       createdAt: 1,
       updatedAt: 1

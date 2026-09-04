@@ -1,12 +1,14 @@
 use std::{fs, io::Read, path::Path};
 
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use serde::Serialize;
 use sha2::{Digest, Sha256, Sha384, Sha512};
 use tauri_plugin_dialog::DialogExt;
 
-use crate::contracts::error::AppResult;
+use crate::{contracts::error::AppResult, repositories::settings::SettingsRepository};
 
 const MAX_TEXT_BYTES: u64 = 5 * 1024 * 1024;
+const MAX_BINARY_BYTES: usize = 20 * 1024 * 1024;
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
@@ -124,6 +126,7 @@ pub async fn pick_text_file(app: tauri::AppHandle) -> AppResult<Option<UserTextF
 #[tauri::command]
 pub async fn export_text_file(
     app: tauri::AppHandle,
+    settings: tauri::State<'_, SettingsRepository>,
     default_name: String,
     content: String,
 ) -> AppResult<Option<String>> {
@@ -131,15 +134,18 @@ pub async fn export_text_file(
     if content.len() as u64 > MAX_TEXT_BYTES {
         return Err("exported text cannot exceed 5 MiB".into());
     }
-    let selection = app
+    let mut dialog = app
         .dialog()
         .file()
         .add_filter(
             "Text files",
             &["txt", "hosts", "conf", "md", "json", "yaml", "yml", "svg"],
         )
-        .set_file_name(&default_name)
-        .blocking_save_file();
+        .set_file_name(&default_name);
+    if let Some(directory) = super::settings::configured_export_directory(&settings) {
+        dialog = dialog.set_directory(directory);
+    }
+    let selection = dialog.blocking_save_file();
     let Some(selection) = selection else {
         return Ok(None);
     };
@@ -149,6 +155,54 @@ pub async fn export_text_file(
     validate_export_target(&path)?;
     fs::write(&path, content)
         .map_err(|error| format!("failed to export text file {}: {error}", path.display()))?;
+    Ok(Some(path.display().to_string()))
+}
+
+#[tauri::command]
+pub async fn export_binary_data_url(
+    app: tauri::AppHandle,
+    settings: tauri::State<'_, SettingsRepository>,
+    default_name: String,
+    data_url: String,
+) -> AppResult<Option<String>> {
+    validate_default_name(&default_name)?;
+    let (media_type, encoded) = data_url
+        .split_once(",")
+        .ok_or_else(|| "binary export requires a base64 data URL".to_string())?;
+    if !media_type.ends_with(";base64")
+        || !matches!(
+            media_type
+                .trim_start_matches("data:")
+                .trim_end_matches(";base64"),
+            "image/png" | "image/jpeg" | "image/webp"
+        )
+    {
+        return Err("binary export only accepts PNG, JPEG, or WebP data URLs".into());
+    }
+    let bytes = BASE64
+        .decode(encoded)
+        .map_err(|_| "binary export data URL is not valid base64".to_string())?;
+    if bytes.is_empty() || bytes.len() > MAX_BINARY_BYTES {
+        return Err("binary export must contain 1 byte to 20 MiB".into());
+    }
+    let mut dialog = app
+        .dialog()
+        .file()
+        .add_filter("Images", &["png", "jpg", "jpeg", "webp"])
+        .set_file_name(&default_name);
+    if let Some(directory) = super::settings::configured_export_directory(&settings) {
+        dialog = dialog.set_directory(directory);
+    }
+    let selection = dialog.blocking_save_file();
+    let Some(selection) = selection else {
+        return Ok(None);
+    };
+    let path = selection
+        .into_path()
+        .map_err(|_| "selected binary export target is not a local filesystem path")?;
+    validate_export_target(&path)?;
+    fs::write(&path, bytes)
+        .map_err(|error| format!("failed to export binary file {}: {error}", path.display()))?;
     Ok(Some(path.display().to_string()))
 }
 
@@ -169,10 +223,10 @@ fn validate_export_target(path: &Path) -> Result<(), String> {
     if !path.is_absolute() {
         return Err("export target must be an absolute path".into());
     }
-    if let Ok(metadata) = fs::symlink_metadata(path)
-        && (metadata.file_type().is_symlink() || !metadata.is_file())
-    {
-        return Err("export target must be a regular non-symlink file".into());
+    if let Ok(metadata) = fs::symlink_metadata(path) {
+        if metadata.file_type().is_symlink() || !metadata.is_file() {
+            return Err("export target must be a regular non-symlink file".into());
+        }
     }
     let parent = path
         .parent()

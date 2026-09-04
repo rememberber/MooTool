@@ -5,6 +5,10 @@ export interface QuickNote {
   tags: string[]
   color: 'default' | 'coral' | 'yellow' | 'green' | 'blue' | 'purple' | 'red'
   folderPath: string
+  editorFont: 'default' | 'mono' | 'serif'
+  lineHeight: 'compact' | 'normal' | 'relaxed'
+  lineWrapping: boolean
+  syntax: 'markdown' | 'plain' | 'json' | 'yaml'
   pinned: boolean
   createdAt: number
   updatedAt: number

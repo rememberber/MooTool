@@ -1,5 +1,21 @@
 import { expect, test, type Page } from '@playwright/test'
 
+type Locale = 'zh-CN' | 'en-US' | 'ja-JP'
+type Theme = 'light' | 'dark'
+
+const productSurfaces = [
+  'quick-note', 'text-diff', 'reformat', 'json', 'config', 'runtime', 'protobuf',
+  'variables', 'http', 'host', 'network', 'ua', 'encode', 'crypto', 'regex',
+  'cron', 'qrcode', 'timestamp', 'message-board', 'translation', 'calculator',
+  'color', 'image', 'pdf', 'system'
+] as const
+
+const visualMatrix: Array<{ key: string; locale: Locale; theme: Theme; width: 1080 | 1440 }> = [
+  { key: 'zh-light-wide', locale: 'zh-CN', theme: 'light', width: 1440 },
+  { key: 'en-dark-compact', locale: 'en-US', theme: 'dark', width: 1080 },
+  { key: 'ja-light-compact', locale: 'ja-JP', theme: 'light', width: 1080 }
+]
+
 const stableCss = `
   *, *::before, *::after { animation: none !important; transition: none !important; caret-color: transparent !important; }
   .utility-session, .json-workbench__session, .json-workbench__footer code,
@@ -7,22 +23,27 @@ const stableCss = `
 `
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => window.localStorage.clear())
+  await page.clock.install({ time: new Date('2025-06-15T08:30:00.000Z') })
 })
 
-async function open(page: Page, path: string, width = 1366, height = 820) {
+async function open(
+  page: Page,
+  path: string,
+  width = 1366,
+  height = 820,
+  appearance: { locale: Locale; theme: Theme; uiScale?: 90 | 100 | 110 } = { locale: 'zh-CN', theme: 'light' }
+) {
+  await page.addInitScript((value) => {
+    window.localStorage.clear()
+    window.localStorage.setItem('mootool-next-tauri:settings', JSON.stringify({
+      general: { language: value.locale },
+      appearance: { theme: value.theme, uiScale: value.uiScale ?? 100 }
+    }))
+  }, appearance)
   await page.setViewportSize({ width, height })
   await page.goto(path)
   await page.addStyleTag({ content: stableCss })
   await page.waitForLoadState('networkidle')
-}
-
-async function useAppearance(page: Page, theme: 'light' | 'dark', uiScale: 90 | 100 | 110) {
-  await page.addInitScript(({ theme: nextTheme, uiScale: nextScale }) => {
-    window.localStorage.setItem('mootool-next-tauri:settings', JSON.stringify({
-      appearance: { theme: nextTheme, uiScale: nextScale }
-    }))
-  }, { theme, uiScale })
 }
 
 test('main shell and compact navigation remain usable', async ({ page }) => {
@@ -40,19 +61,39 @@ test('main shell and compact navigation remain usable', async ({ page }) => {
   await expect(page.locator('.app-shell')).toHaveScreenshot('shell-compact.png')
 })
 
-for (const [name, path] of [
-  ['json-workbench', '/?surface=json'],
-  ['http-workbench', '/?surface=http'],
-  ['quick-note', '/?surface=quick-note'],
-  ['crypto', '/?surface=crypto'],
-  ['network', '/?surface=network'],
-  ['settings', '/?surface=settings']
-] as const) {
-  test(`${name} visual baseline`, async ({ page }) => {
-    await open(page, path)
-    await expect(page.locator('#root')).toHaveScreenshot(`${name}.png`, { maxDiffPixelRatio: 0.01 })
+for (const surface of productSurfaces) {
+  for (const visual of visualMatrix) {
+    test(`${surface} visual baseline · ${visual.key}`, async ({ page }) => {
+      await open(page, `/?surface=${surface}`, visual.width, 900, visual)
+      await expect(page.locator('#root')).toHaveScreenshot(`${surface}-${visual.key}.png`, { maxDiffPixelRatio: 0.01 })
+    })
+  }
+
+  test(`${surface} immersive, responsive, and accessible DOM contract`, async ({ page }) => {
+    await open(page, `/?surface=${surface}`, 720, 760)
+    await expect(page.locator('h1')).toHaveCount(1)
+    await expect(page.locator('h1.visually-hidden')).toHaveCount(1)
+    expect(await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth)).toBeLessThanOrEqual(1)
+    expect(await page.locator('.eyebrow').allTextContents()).not.toContainEqual(expect.stringMatching(/tauri/i))
+    expect(await page.locator('button').evaluateAll((buttons) => buttons
+      .filter((button) => (button as HTMLElement).getClientRects().length > 0 && !(button.getAttribute('aria-label')
+        || button.getAttribute('aria-labelledby')
+        || button.getAttribute('title')
+        || button.textContent?.trim()))
+      .map((button) => ({
+        button: button.outerHTML.slice(0, 180),
+        icon: button.querySelector('svg')?.getAttribute('class') || '',
+        text: button.textContent || '',
+        ancestors: [button.parentElement, button.parentElement?.parentElement, button.parentElement?.parentElement?.parentElement]
+          .map((element) => element?.className || element?.tagName || '').join(' > ')
+      })))).toEqual([])
   })
 }
+
+test('settings visual baseline', async ({ page }) => {
+  await open(page, '/?surface=settings')
+  await expect(page.locator('#root')).toHaveScreenshot('settings.png', { maxDiffPixelRatio: 0.01 })
+})
 
 test('JSON resizers and conversion menu are keyboard reachable', async ({ page }) => {
   await open(page, '/?surface=json')
@@ -80,15 +121,13 @@ test('tool surfaces load on first visit instead of at shell startup', async ({ p
 })
 
 test('dark theme visual baseline', async ({ page }) => {
-  await useAppearance(page, 'dark', 100)
-  await open(page, '/?surface=json')
+  await open(page, '/?surface=json', 1366, 820, { locale: 'zh-CN', theme: 'dark' })
   await expect(page.locator('#root')).toHaveScreenshot('json-workbench-dark.png', { maxDiffPixelRatio: 0.01 })
 })
 
 for (const scale of [90, 110] as const) {
   test(`shell remains usable at ${scale}% interface scale`, async ({ page }) => {
-    await useAppearance(page, 'light', scale)
-    await open(page, '/', 1280, 760)
+    await open(page, '/', 1280, 760, { locale: 'zh-CN', theme: 'light', uiScale: scale })
     await expect(page.locator('.app-shell')).toHaveScreenshot(`shell-scale-${scale}.png`, { maxDiffPixelRatio: 0.01 })
   })
 }

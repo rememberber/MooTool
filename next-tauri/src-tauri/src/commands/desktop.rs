@@ -262,8 +262,10 @@ pub fn handle_tray_event(app: &AppHandle, event: TrayIconEvent) {
             ..
         }
     );
-    if should_show && let Err(error) = show_main_window(app) {
-        eprintln!("MooTool Next Tauri tray restore failed: {error}");
+    if should_show {
+        if let Err(error) = show_main_window(app) {
+            eprintln!("MooTool Next Tauri tray restore failed: {error}");
+        }
     }
 }
 
@@ -272,10 +274,12 @@ pub fn handle_window_event<R: Runtime>(window: &Window<R>, event: &WindowEvent) 
     if matches!(
         event,
         WindowEvent::Moved(_) | WindowEvent::Resized(_) | WindowEvent::ScaleFactorChanged { .. }
-    ) && let Some(repository) = app.try_state::<WindowStateRepository>()
-        && let Err(error) = repository.remember_window(window)
-    {
-        eprintln!("MooTool Next Tauri window state capture failed: {error}");
+    ) {
+        if let Some(repository) = app.try_state::<WindowStateRepository>() {
+            if let Err(error) = repository.remember_window(window) {
+                eprintln!("MooTool Next Tauri window state capture failed: {error}");
+            }
+        }
     }
 
     if window.label() != "main" {
@@ -312,10 +316,10 @@ pub fn handle_window_event<R: Runtime>(window: &Window<R>, event: &WindowEvent) 
 }
 
 pub fn flush_window_state(app: &AppHandle) {
-    if let Some(repository) = app.try_state::<WindowStateRepository>()
-        && let Err(error) = repository.flush()
-    {
-        eprintln!("MooTool Next Tauri could not flush window state: {error}");
+    if let Some(repository) = app.try_state::<WindowStateRepository>() {
+        if let Err(error) = repository.flush() {
+            eprintln!("MooTool Next Tauri could not flush window state: {error}");
+        }
     }
 }
 

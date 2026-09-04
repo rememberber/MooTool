@@ -3,6 +3,7 @@ import {
   Clipboard,
   Copy,
   Eraser,
+  FileDown,
   FileUp,
   Paintbrush,
   Sparkles,
@@ -11,7 +12,9 @@ import {
 import { useMemo, useRef, useState } from 'react'
 import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
+import { userFilesApi } from '../../platform/api/userFilesApi'
 import { CodeEditor } from '../../shared/CodeEditor'
+import { ResizableColumns } from '../../shared/ResizableColumns'
 import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
@@ -38,6 +41,7 @@ export function ReformatSurface() {
   const [type, setType] = useState<ReformatType>('nginx')
   const [indent, setIndent] = useState(4)
   const [source, setSource] = useState(reformatSamples.nginx)
+  const [result, setResult] = useState('')
   const [fileName, setFileName] = useState('')
   const [busy, setBusy] = useState(false)
   const [notice, setNotice] = useState<ReformatNotice>({ key: 'notice.ready', values: { type: 'Nginx' } })
@@ -65,7 +69,8 @@ export function ReformatSurface() {
     if (typeof metadata.type === 'string' && reformatTypes.includes(metadata.type as ReformatType)) setType(metadata.type as ReformatType)
     if (typeof metadata.indent === 'number') setIndent(metadata.indent)
     setFileName(typeof metadata.fileName === 'string' ? metadata.fileName : '')
-    setSource(entry.outputText || entry.inputText)
+    setSource(entry.inputText)
+    setResult(entry.outputText)
     setFailed(false)
   })
 
@@ -74,7 +79,7 @@ export function ReformatSurface() {
     setFailed(false)
     try {
       const output = await formatCode(source, type, indent)
-      setSource(output)
+      setResult(output)
       setNotice({ key: 'notice.formatted', values: { type: typeLabel(type) } })
       recordOperation(t('action.format'), `${typeLabel(type)} · ${output.length}`, 'success', {
         inputText: source, outputText: output, metadata: { type, indent, fileName }
@@ -96,6 +101,7 @@ export function ReformatSurface() {
     setType(next)
     if (!source.trim() || Object.values(reformatSamples).includes(source)) {
       setSource(reformatSamples[next])
+      setResult('')
       setFileName('')
     }
     setNotice({ key: 'notice.ready', values: { type: typeLabel(next) } })
@@ -106,6 +112,7 @@ export function ReformatSurface() {
     if (!file) return
     try {
       setSource(await file.text())
+      setResult('')
       setFileName(file.name)
       setNotice({ key: 'notice.loaded', values: { file: file.name } })
       setFailed(false)
@@ -117,7 +124,7 @@ export function ReformatSurface() {
 
   async function copy(): Promise<void> {
     try {
-      await clipboardApi.writeText(source)
+      await clipboardApi.writeText(result || source)
       setCopied(true)
       window.setTimeout(() => setCopied(false), 1200)
     } catch {
@@ -126,13 +133,26 @@ export function ReformatSurface() {
     }
   }
 
+  async function exportResult(): Promise<void> {
+    if (!result) return
+    const extension = type === 'nginx' ? 'conf' : type === 'html' ? 'html' : type
+    const baseName = fileName ? fileName.replace(/\.[^.]+$/, '') : 'formatted'
+    try {
+      const path = await userFilesApi.exportText(`${baseName}.${extension}`, result)
+      if (path) {
+        setNotice({ key: 'notice.exported', values: { path } })
+        setFailed(false)
+      }
+    } catch (cause) {
+      setNotice({ raw: cause instanceof Error ? cause.message : String(cause) })
+      setFailed(true)
+    }
+  }
+
   return (
     <main className="utility-workbench reformat-workbench">
       <header className="utility-header">
-        <div>
-          <span className="eyebrow">TAURI REFORMAT</span>
-          <h1>{t('title')}</h1>
-        </div>
+        <h1 className="visually-hidden">{t('title')}</h1>
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
 
@@ -178,12 +198,14 @@ export function ReformatSurface() {
         <button className="secondary-button" type="button" onClick={() => void copy()}>
           {copied ? <Clipboard /> : <Copy />}{t(copied ? 'action.copied' : 'action.copy')}
         </button>
+        <button className="secondary-button" type="button" disabled={!result} onClick={() => void exportResult()}><FileDown />{t('action.export')}</button>
         <button
           className="icon-button"
           type="button"
           aria-label={t('action.clear')}
           onClick={() => {
             setSource('')
+            setResult('')
             setFileName('')
             setNotice({ key: 'notice.cleared' })
           }}
@@ -192,19 +214,16 @@ export function ReformatSurface() {
         </button>
       </section>
 
-      <section className="utility-editor-card">
-        <header>
-          <span>{fileName || t('editor.pending')}</span>
-          <code>{t('editor.stats', { lines: source.split('\n').length, length: source.length })}</code>
-        </header>
-        <CodeEditor
-          key={type}
-          ariaLabel={t('editor.label', { type: typeLabel(type) })}
-          value={source}
-          onChange={setSource}
-          className="utility-code-editor"
-        />
-      </section>
+      <ResizableColumns id="reformat-result" className="reformat-editor-grid" initialPrimary={520} minPrimary={280} minSecondary={280}>
+        <section className="utility-editor-card">
+          <header><span>{t('editor.original')} · {fileName || t('editor.pending')}</span><code>{t('editor.stats', { lines: source.split('\n').length, length: source.length })}</code></header>
+          <CodeEditor key={`${type}-source`} ariaLabel={t('editor.original')} value={source} onChange={(value) => { setSource(value); setResult('') }} className="utility-code-editor" />
+        </section>
+        <section className="utility-editor-card">
+          <header><span>{t('editor.result')}</span><code>{t('editor.stats', { lines: result ? result.split('\n').length : 0, length: result.length })}</code></header>
+          <CodeEditor key={`${type}-result`} ariaLabel={t('editor.result')} value={result} readOnly className="utility-code-editor" />
+        </section>
+      </ResizableColumns>
 
       <footer className={failed ? 'utility-status utility-status--error' : 'utility-status'}>
         <span>{failed ? <TriangleAlert /> : <CheckCircle2 />}{'raw' in notice ? notice.raw : t(notice.key, notice.values)}</span>

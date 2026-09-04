@@ -342,10 +342,10 @@ fn save_document_at(root: &Path, request: VaultSaveRequest) -> Result<VaultDocum
             .ok_or_else(|| "JSON Vault document name is invalid".to_string())?,
     );
     let existing = path.symlink_metadata().ok();
-    if let Some(metadata) = &existing
-        && (metadata.file_type().is_symlink() || !metadata.is_file())
-    {
-        return Err("JSON Vault document target is not a regular file".into());
+    if let Some(metadata) = &existing {
+        if metadata.file_type().is_symlink() || !metadata.is_file() {
+            return Err("JSON Vault document target is not a regular file".into());
+        }
     }
     match (&request.expected_fingerprint, existing.is_some()) {
         (None, true) => return Err("JSON Vault document already exists".into()),

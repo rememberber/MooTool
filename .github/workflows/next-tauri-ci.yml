@@ -49,7 +49,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libclang-dev libxcb1-dev libxrandr-dev libdbus-1-dev libpipewire-0.3-dev libwayland-dev libegl-dev
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libappindicator3-dev librsvg2-dev patchelf pkg-config libclang-dev libxcb1-dev libxrandr-dev libdbus-1-dev libpipewire-0.3-dev libwayland-dev libegl-dev xvfb
       - uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -70,9 +70,12 @@ jobs:
       - name: Run browser E2E and visual regression
         if: matrix.name == 'macOS arm64'
         run: npm run test:e2e
-      - name: Run native WKWebView lifecycle acceptance
-        if: matrix.name == 'macOS arm64'
-        run: npm run test:native-acceptance
+      - name: Run native lifecycle acceptance (100 reparent cycles)
+        if: runner.os != 'Linux'
+        run: npm run test:native-acceptance -- --cycles=100
+      - name: Run native lifecycle acceptance under Xvfb (100 reparent cycles)
+        if: runner.os == 'Linux'
+        run: xvfb-run -a npm run test:native-acceptance -- --cycles=100
       - name: Upload Playwright diagnostics
         if: failure() && matrix.name == 'macOS arm64'
         uses: actions/upload-artifact@v4

@@ -19,11 +19,12 @@ tauri-build = { version = "2", features = [] }
 base64 = "0.23.0"
 futures-util = "0.3.33"
 image = { version = "0.25", default-features = false, features = ["gif", "jpeg", "png", "webp"] }
+keyring = { version = "=3.6.3", features = ["apple-native", "crypto-rust", "sync-secret-service", "windows-native"] }
 keepawake = "0.6.0"
 mouse_position = "0.1.4"
 notify = "8"
 reqwest = { version = "0.13.4", default-features = false, features = ["rustls-no-provider", "stream", "json", "form"] }
-rusqlite = { version = "0.40.1", features = ["bundled", "backup"] }
+rusqlite = { version = "=0.39.0", features = ["bundled", "backup"] }
 rustls = { version = "0.23.43", default-features = false, features = ["ring", "std", "tls12"] }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
@@ -39,4 +40,5 @@ tokio = { version = "1.53.1", features = ["process", "io-util", "time", "sync", 
 tracing = "0.1"
 tracing-appender = "0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+vtracer = "=1.0.0-alpha.3"
 xcap = "0.9.8"

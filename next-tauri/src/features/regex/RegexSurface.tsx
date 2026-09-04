@@ -128,10 +128,7 @@ export function RegexSurface() {
   return (
     <main className="utility-workbench regex-workbench">
       <header className="utility-header">
-        <div>
-          <span className="eyebrow">TAURI REGEX LAB</span>
-          <h1>Regex</h1>
-        </div>
+        <h1 className="visually-hidden">Regex</h1>
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
 

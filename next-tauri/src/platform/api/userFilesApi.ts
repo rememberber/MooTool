@@ -23,12 +23,20 @@ const browserApi: UserFilesApi = {
     anchor.click()
     window.setTimeout(() => URL.revokeObjectURL(anchor.href), 1_000)
     return defaultName
+  },
+  exportDataUrl: async (defaultName, dataUrl) => {
+    const anchor = document.createElement('a')
+    anchor.href = dataUrl
+    anchor.download = defaultName
+    anchor.click()
+    return defaultName
   }
 }
 
 export const userFilesApi: UserFilesApi = typeof window !== 'undefined' && window.__TAURI_INTERNALS__
   ? {
       pickText: () => invoke<UserTextFile | null>('pick_text_file'),
-      exportText: (defaultName, content) => invoke<string | null>('export_text_file', { defaultName, content })
+      exportText: (defaultName, content) => invoke<string | null>('export_text_file', { defaultName, content }),
+      exportDataUrl: (defaultName, dataUrl) => invoke<string | null>('export_binary_data_url', { defaultName, dataUrl })
     }
   : browserApi

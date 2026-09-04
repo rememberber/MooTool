@@ -27,3 +27,12 @@ pub struct ImageAsset {
     pub summary: ImageAssetSummary,
     pub data_url: String,
 }
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ImageVectorizeOptions {
+    pub preset: String,
+    pub color_count: u8,
+    pub detail: String,
+    pub filter_speckle: usize,
+}

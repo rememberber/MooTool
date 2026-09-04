@@ -10,6 +10,7 @@ export const imageApi: ImageApi = typeof window !== 'undefined' && window.__TAUR
       importPaths: (paths) => invoke<ImageAssetSummary[]>('import_image_files', { paths }),
       read: (name) => invoke<ImageAsset>('read_image_asset', { name }),
       export: (names) => invoke<string[] | null>('export_image_assets', { names }),
+      vectorize: (names, options) => invoke<string[] | null>('vectorize_image_assets', { names, options }),
       rename: (name, nextName) => invoke<ImageAssetSummary>('rename_image_asset', { name, nextName }),
       delete: (names) => invoke<number>('delete_image_assets', { names })
     }
@@ -47,6 +48,7 @@ export const imageApi: ImageApi = typeof window !== 'undefined' && window.__TAUR
         }
         return names
       },
+      vectorize: async () => { throw new Error('浏览器预览不支持原生 SVG 矢量化') },
       rename: async (name, nextName) => {
         const asset = previewAssets.get(name)
         if (!asset) throw new Error('图片不存在')

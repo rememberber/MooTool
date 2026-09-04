@@ -98,10 +98,7 @@ export function ConfigSurface() {
   return (
     <main className="utility-workbench config-workbench">
       <header className="utility-header">
-        <div>
-          <span className="eyebrow">TAURI CONFIG CONVERTER</span>
-          <h1>YAML / Properties</h1>
-        </div>
+        <h1 className="visually-hidden">YAML / Properties</h1>
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
 
