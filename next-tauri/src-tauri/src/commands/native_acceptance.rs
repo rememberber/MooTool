@@ -693,7 +693,12 @@ mod tests {
     #[test]
     fn requires_absolute_acceptance_paths() {
         assert!(validate_absolute_path(RESULT_ENV, Path::new("result.json")).is_err());
-        assert!(validate_absolute_path(RESULT_ENV, Path::new("/tmp/result.json")).is_ok());
+        let absolute = if cfg!(windows) {
+            Path::new(r"C:\temp\result.json")
+        } else {
+            Path::new("/tmp/result.json")
+        };
+        assert!(validate_absolute_path(RESULT_ENV, absolute).is_ok());
     }
 
     #[test]

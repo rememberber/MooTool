@@ -502,7 +502,9 @@ fn trash_document_at(
         .map_err(|error| format!("failed to create Vault recovery directory: {error}"))?;
     fs::copy(&source, &target)
         .map_err(|error| format!("failed to preserve deleted Vault document: {error}"))?;
-    fs::File::open(&target)
+    fs::OpenOptions::new()
+        .write(true)
+        .open(&target)
         .and_then(|file| file.sync_all())
         .map_err(|error| format!("failed to sync recovered Vault document: {error}"))?;
     fs::remove_file(&source)
