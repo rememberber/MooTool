@@ -39,8 +39,8 @@ const dataRoot = join(temporaryRoot, 'app-data')
 let child
 
 try {
-  const vitestExecutable = process.platform === 'win32' ? 'npx.cmd' : 'npx'
-  const jsonPerformance = spawnSync(vitestExecutable, ['vitest', 'run', 'scripts/json-performance.test.ts'], {
+  const vitestCli = resolve(root, 'node_modules', 'vitest', 'vitest.mjs')
+  const jsonPerformance = spawnSync(process.execPath, [vitestCli, 'run', 'scripts/json-performance.test.ts'], {
     cwd: root,
     env: { ...process.env, MOOTOOL_JSON_PERFORMANCE_REPORT: jsonPerformancePath },
     stdio: 'inherit'
@@ -66,7 +66,9 @@ try {
   child.stdout.on('data', (chunk) => { stdout += String(chunk) })
   child.stderr.on('data', (chunk) => { stderr += String(chunk) })
 
-  const timeoutMs = 240_000
+  // Xvfb software rendering is substantially slower than a hardware-backed desktop.
+  // Keep the full stress count and scale the deadline instead of weakening acceptance.
+  const timeoutMs = 240_000 + cycles * (process.platform === 'linux' ? 4_000 : 1_000)
   let timeout
   const exit = new Promise((resolveExit) => child.once('exit', (code, signal) => resolveExit({ code, signal })))
   const timedOut = new Promise((resolveTimeout) => {

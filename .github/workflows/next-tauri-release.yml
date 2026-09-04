@@ -165,8 +165,8 @@ jobs:
           mounted_app="$(find "${mount_dir}" -maxdepth 1 -type d -name '*.app' -print -quit)"
           test -n "${mounted_app}"
           codesign --verify --deep --strict --verbose=2 "${mounted_app}"
-          executable="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "${app}/Contents/Info.plist")"
-          "${app}/Contents/MacOS/${executable}" >"${RUNNER_TEMP}/mootool-next-tauri-first-launch.log" 2>&1 &
+          executable="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "${mounted_app}/Contents/Info.plist")"
+          "${mounted_app}/Contents/MacOS/${executable}" >"${RUNNER_TEMP}/mootool-next-tauri-first-launch.log" 2>&1 &
           app_pid=$!
           sleep 8
           kill -0 "${app_pid}"
