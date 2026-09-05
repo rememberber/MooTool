@@ -30,6 +30,9 @@ if (tauriConfig.plugins?.updater?.windows?.installMode !== 'passive') violations
 if (!workflow.includes('next-tauri-v*')) violations.push('release workflow must use the independent next-tauri-v* tag namespace')
 if (!workflow.includes('--latest=false')) violations.push('release workflow must not claim the repository-wide Latest release')
 if (!workflow.includes('TAURI_SIGNING_PRIVATE_KEY')) violations.push('release workflow must inject the updater signing key')
+if (!workflow.includes('git show -s --format=%cI "${tag}^{commit}"')) {
+  violations.push('release workflow must resolve annotated tags to a single commit date')
+}
 if (!workflow.includes('.app.tar.gz.sig') || !workflow.includes('.AppImage.sig') || !workflow.includes('.exe.sig')) {
   violations.push('release workflow must retain every primary updater signature')
 }

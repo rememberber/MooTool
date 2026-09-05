@@ -52,7 +52,7 @@ jobs:
           printf 'tag=%s\n' "${tag}" >> "${GITHUB_OUTPUT}"
           printf 'version=%s\n' "${version}" >> "${GITHUB_OUTPUT}"
           printf 'notes=next-tauri/release-notes/%s.md\n' "${version}" >> "${GITHUB_OUTPUT}"
-          printf 'pub_date=%s\n' "$(git show -s --format=%cI "${tag}")" >> "${GITHUB_OUTPUT}"
+          printf 'pub_date=%s\n' "$(git show -s --format=%cI "${tag}^{commit}")" >> "${GITHUB_OUTPUT}"
 
   build:
     name: Bundle (${{ matrix.name }})
