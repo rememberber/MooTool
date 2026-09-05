@@ -20,7 +20,6 @@ import {
 import { clipboardApi } from '../../platform/api/clipboardApi'
 import { userFilesApi } from '../../platform/api/userFilesApi'
 import { CodeEditor } from '../../shared/CodeEditor'
-import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
 import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
@@ -37,6 +36,7 @@ import {
   type QrOptions
 } from './qrTools'
 import { qrcodeMessages } from './qrcodeMessages'
+import { qrcodeSessionDigest } from './qrcodeSession'
 
 type QrcodeMessageKey = LocalizedMessageKey<typeof qrcodeMessages>
 type Notice = { key: QrcodeMessageKey; values?: MessageValues } | { raw: string }
@@ -58,12 +58,7 @@ export function QrcodeSurface() {
   const [copied, setCopied] = useState(false)
   const noticeText = 'raw' in notice ? notice.raw : t(notice.key, notice.values)
   const session = useMemo(() => ({
-    digest: JSON.stringify({
-      sourceHash: contentFingerprint(source),
-      decodedHash: contentFingerprint(decoded),
-      options,
-      generated: Boolean(svg)
-    }),
+    digest: qrcodeSessionDigest(source, decoded, options),
     summary: t('session.summary', {
       generate: t(svg ? 'session.done' : 'session.waitGenerate'),
       decode: t(decoded ? 'session.done' : 'session.waitDecode')

@@ -42,3 +42,7 @@ tracing-appender = "0.2"
 tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 vtracer = "=1.0.0-alpha.3"
 xcap = "0.9.8"
+
+[patch.crates-io]
+# Remove this override after tauri-apps/tauri#15489 ships in tauri-runtime-wry.
+tauri-runtime-wry = { path = "vendor/tauri-runtime-wry" }
