@@ -168,13 +168,24 @@ async fn run_acceptance(
     config: &NativeAcceptanceConfig,
     started_at: Instant,
 ) -> NativeAcceptanceReport {
+    eprintln!(
+        "[native-acceptance] starting {} tools with {} stress cycles",
+        PRODUCT_TOOLS.len(),
+        config.stress_cycles
+    );
     sleep(Duration::from_millis(1_500)).await;
     cleanup_all_tool_webviews(app).await;
 
     let mut tools = Vec::with_capacity(PRODUCT_TOOLS.len());
     let mut failures = Vec::new();
     let mut start_to_first_tool_ready_ms = 0;
-    for tool_id in PRODUCT_TOOLS {
+    for (index, tool_id) in PRODUCT_TOOLS.into_iter().enumerate() {
+        eprintln!(
+            "[native-acceptance] tool {}/{} {}: start",
+            index + 1,
+            PRODUCT_TOOLS.len(),
+            tool_id.as_str()
+        );
         match exercise_tool(app, tool_id).await {
             Ok(result) => {
                 if start_to_first_tool_ready_ms == 0 {
@@ -183,10 +194,22 @@ async fn run_acceptance(
                         .and_then(elapsed_since_epoch_ms)
                         .unwrap_or_else(|| started_at.elapsed().as_millis());
                 }
+                eprintln!(
+                    "[native-acceptance] tool {}/{} {}: passed",
+                    index + 1,
+                    PRODUCT_TOOLS.len(),
+                    tool_id.as_str()
+                );
                 tools.push(result);
             }
             Err(error) => {
                 let message = format!("{}: {error}", tool_id.as_str());
+                eprintln!(
+                    "[native-acceptance] tool {}/{} {}: failed: {error}",
+                    index + 1,
+                    PRODUCT_TOOLS.len(),
+                    tool_id.as_str()
+                );
                 failures.push(message.clone());
                 let snapshot = app.state::<ToolWebviewManager>().snapshot(tool_id);
                 tools.push(ToolAcceptanceResult {
@@ -204,12 +227,17 @@ async fn run_acceptance(
         }
     }
 
+    eprintln!("[native-acceptance] isolation: start");
     let isolation = match exercise_isolation(app).await {
-        Ok(detail) => CheckResult {
-            passed: true,
-            detail,
-        },
+        Ok(detail) => {
+            eprintln!("[native-acceptance] isolation: passed");
+            CheckResult {
+                passed: true,
+                detail,
+            }
+        }
         Err(error) => {
+            eprintln!("[native-acceptance] isolation: failed: {error}");
             failures.push(format!("isolation: {error}"));
             CheckResult {
                 passed: false,
@@ -219,13 +247,18 @@ async fn run_acceptance(
     };
     cleanup_all_tool_webviews(app).await;
 
+    eprintln!("[native-acceptance] stress: start");
     let stress_started_at = Instant::now();
     let stress = match exercise_stress(app, config.stress_cycles).await {
-        Ok(detail) => CheckResult {
-            passed: true,
-            detail,
-        },
+        Ok(detail) => {
+            eprintln!("[native-acceptance] stress: passed");
+            CheckResult {
+                passed: true,
+                detail,
+            }
+        }
         Err(error) => {
+            eprintln!("[native-acceptance] stress: failed: {error}");
             failures.push(format!("stress: {error}"));
             CheckResult {
                 passed: false,
@@ -235,18 +268,28 @@ async fn run_acceptance(
     };
     cleanup_all_tool_webviews(app).await;
 
+    eprintln!("[native-acceptance] memory: start");
     let memory = match measure_memory_scaling(app).await {
-        Ok(report) => report,
+        Ok(report) => {
+            eprintln!("[native-acceptance] memory: passed");
+            report
+        }
         Err(error) => {
+            eprintln!("[native-acceptance] memory: failed: {error}");
             failures.push(format!("performance memory: {error}"));
             MemoryScalingReport::default()
         }
     };
     cleanup_all_tool_webviews(app).await;
 
+    eprintln!("[native-acceptance] data: start");
     let (quick_note, digest_100_mib_ms) = match measure_data_performance(app, config) {
-        Ok(report) => report,
+        Ok(report) => {
+            eprintln!("[native-acceptance] data: passed");
+            report
+        }
         Err(error) => {
+            eprintln!("[native-acceptance] data: failed: {error}");
             failures.push(format!("performance data: {error}"));
             (QuickNotePerformanceReport::default(), 0)
         }
@@ -272,6 +315,10 @@ async fn run_acceptance(
         digest_100_mib_ms,
     };
 
+    eprintln!(
+        "[native-acceptance] complete with {} failure(s)",
+        failures.len()
+    );
     NativeAcceptanceReport {
         schema_version: 2,
         passed: failures.is_empty(),
@@ -294,9 +341,11 @@ async fn exercise_tool(
     let state = app.state::<ToolWebviewManager>();
     let initial_bounds = acceptance_bounds();
     let open_started_at = Instant::now();
+    eprintln!("[native-acceptance] {}: open", tool_id.as_str());
     open_tool_webview_owned(app, state.inner(), tool_id, initial_bounds)
         .map_err(|error| error.to_string())?;
     let initial = wait_for_session(state.inner(), tool_id).await?;
+    eprintln!("[native-acceptance] {}: ready", tool_id.as_str());
     let open_duration_ms = open_started_at.elapsed().as_millis();
 
     let resized_bounds = ToolWebviewBounds {
@@ -315,6 +364,7 @@ async fn exercise_tool(
     require(shown.visible, "show did not update native visibility")?;
 
     let detach_dock_started_at = Instant::now();
+    eprintln!("[native-acceptance] {}: detach", tool_id.as_str());
     let detached = detach_tool_webview_owned(app, state.inner(), tool_id)
         .map_err(|error| error.to_string())?;
     require(
@@ -324,6 +374,7 @@ async fn exercise_tool(
     sleep(Duration::from_millis(250)).await;
     assert_session_preserved(&initial, &state.snapshot(tool_id), "detach")?;
 
+    eprintln!("[native-acceptance] {}: dock", tool_id.as_str());
     let docked = dock_tool_webview_owned(app, state.inner(), tool_id, initial_bounds)
         .map_err(|error| error.to_string())?;
     require(
@@ -338,6 +389,7 @@ async fn exercise_tool(
         "detach/dock operation count was not 2",
     )?;
 
+    eprintln!("[native-acceptance] {}: close", tool_id.as_str());
     close_and_wait(app, tool_id).await;
     let closed = state.snapshot(tool_id);
     require(
