@@ -33,13 +33,26 @@ if (!workflow.includes('TAURI_SIGNING_PRIVATE_KEY')) violations.push('release wo
 if (!workflow.includes('git show -s --format=%cI "${tag}^{commit}"')) {
   violations.push('release workflow must resolve annotated tags to a single commit date')
 }
+if (!workflow.includes('unset APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD') ||
+    !workflow.includes('unset APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID')) {
+  violations.push('release workflow must remove absent optional Apple signing variables')
+}
+if (!workflow.includes("macOS) bundles='app,dmg'") ||
+    !workflow.includes("Windows) bundles='nsis'") ||
+    !workflow.includes("Linux) bundles='appimage,deb'")) {
+  violations.push('release workflow must build the supported platform-specific bundle set')
+}
 if (!workflow.includes('.app.tar.gz.sig') || !workflow.includes('.AppImage.sig') || !workflow.includes('.exe.sig')) {
   violations.push('release workflow must retain every primary updater signature')
 }
 if (!workflow.includes('Verify macOS updater, DMG, and first launch') ||
     !workflow.includes('Verify Windows updater, install, first launch, and uninstall') ||
-    !workflow.includes('Verify Linux updater, packages, and first launch')) {
+    !workflow.includes('Verify Linux updater, AppImage, deb install, first launch, and uninstall')) {
   violations.push('release workflow must retain platform installer and first-launch smoke checks')
+}
+if (!workflow.includes('sudo apt-get install -y "$(realpath "${deb}")"') ||
+    !workflow.includes("test \"${package_status}\" != 'install ok installed'")) {
+  violations.push('release workflow must install, launch, and uninstall the Linux deb package')
 }
 if (/electron/i.test(workflow)) violations.push('Tauri release workflow must not invoke Electron build or release steps')
 if (!promotionWorkflow.includes("types:\n      - published")) violations.push('updater promotion must wait for a published release')

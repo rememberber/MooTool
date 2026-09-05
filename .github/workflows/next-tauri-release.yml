@@ -135,7 +135,22 @@ jobs:
           $config = @{ bundle = @{ windows = @{ certificateThumbprint = $certificate.Thumbprint; digestAlgorithm = 'sha256'; timestampUrl = $timestampUrl } } }
           $config | ConvertTo-Json -Depth 5 | Set-Content -Path src-tauri/tauri.windows.conf.json -Encoding UTF8
       - name: Build signed independent Tauri bundles
-        run: npx tauri build
+        shell: bash
+        run: |
+          set -euo pipefail
+          if test -z "${APPLE_CERTIFICATE:-}"; then
+            unset APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD
+          fi
+          if test -z "${APPLE_ID:-}"; then
+            unset APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID
+          fi
+          case "${RUNNER_OS}" in
+            macOS) bundles='app,dmg' ;;
+            Windows) bundles='nsis' ;;
+            Linux) bundles='appimage,deb' ;;
+            *) echo "Unsupported release runner: ${RUNNER_OS}" >&2; exit 1 ;;
+          esac
+          npx tauri build --bundles "${bundles}"
         env:
           APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
           APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
@@ -197,7 +212,7 @@ jobs:
           if ($null -eq $uninstaller) { throw 'NSIS uninstaller is missing' }
           $uninstall = Start-Process -FilePath $uninstaller.FullName -ArgumentList '/S' -Wait -PassThru
           if ($uninstall.ExitCode -ne 0) { throw "NSIS uninstall failed with exit code $($uninstall.ExitCode)" }
-      - name: Verify Linux updater, packages, and first launch
+      - name: Verify Linux updater, AppImage, deb install, first launch, and uninstall
         if: runner.os == 'Linux'
         shell: bash
         run: |
@@ -206,13 +221,40 @@ jobs:
           deb="$(find src-tauri/target/release/bundle/deb -maxdepth 1 -type f -name '*.deb' -print -quit)"
           test -n "${appimage}" && test -s "${appimage}.sig" && test -n "${deb}"
           dpkg-deb --info "${deb}" >/dev/null
-          chmod +x "${appimage}"
-          APPIMAGE_EXTRACT_AND_RUN=1 xvfb-run -a "${appimage}" >"${RUNNER_TEMP}/mootool-next-tauri-first-launch.log" 2>&1 &
-          app_pid=$!
-          cleanup() { kill "${app_pid}" >/dev/null 2>&1 || true; }
+          package_name=''
+          app_pid=''
+          cleanup() {
+            if test -n "${app_pid}" && kill -0 "${app_pid}" 2>/dev/null; then kill "${app_pid}" || true; fi
+            if test -n "${package_name}"; then sudo apt-get remove -y "${package_name}" >/dev/null 2>&1 || true; fi
+          }
           trap cleanup EXIT
+
+          chmod +x "${appimage}"
+          APPIMAGE_EXTRACT_AND_RUN=1 xvfb-run -a "${appimage}" >"${RUNNER_TEMP}/mootool-next-tauri-appimage-launch.log" 2>&1 &
+          app_pid=$!
           sleep 8
           kill -0 "${app_pid}"
+          kill "${app_pid}"
+          wait "${app_pid}" || true
+          app_pid=''
+
+          package_name="$(dpkg-deb --field "${deb}" Package)"
+          test -n "${package_name}"
+          sudo apt-get install -y "$(realpath "${deb}")"
+          installed_executable="$(dpkg-query -L "${package_name}" | awk '/^\/usr\/bin\/[^/]+$/ { print; exit }')"
+          test -n "${installed_executable}" && test -x "${installed_executable}"
+          xvfb-run -a "${installed_executable}" >"${RUNNER_TEMP}/mootool-next-tauri-deb-launch.log" 2>&1 &
+          app_pid=$!
+          sleep 8
+          kill -0 "${app_pid}"
+          kill "${app_pid}"
+          wait "${app_pid}" || true
+          app_pid=''
+
+          sudo apt-get remove -y "${package_name}"
+          package_status="$(dpkg-query -W -f='${Status}' "${package_name}" 2>/dev/null || true)"
+          test "${package_status}" != 'install ok installed'
+          package_name=''
       - name: Record bundle size baseline
         run: node scripts/report-bundle-sizes.mjs --report=reports/release/${{ matrix.target }}.json
       - uses: actions/upload-artifact@v4
