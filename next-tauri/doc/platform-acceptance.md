@@ -21,12 +21,13 @@
 | --- | --- | --- | --- |
 | 2026-09-04 | `344765a2` | [run 33845624852](https://github.com/rememberber/MooTool/actions/runs/33845624852) | macOS x64 的完整检查与 100 轮原生验收通过；Windows 暴露路径分隔符问题，Linux 暴露 Ubuntu 22.04/PipeWire 版本不兼容，macOS arm64 暴露同版系统字体的 1.57% 稳定栅格差异。三项均作为 RC 前修复输入，不能把本次运行记为四平台通过。 |
 | 2026-09-06 | `03ac809f` | [run 33972861338](https://github.com/rememberber/MooTool/actions/runs/33972861338) | macOS x64、macOS arm64、Windows x64、Linux x64 全部通过；每个平台完成完整门禁、25/25 正式工具、会话隔离及 100 轮、200 次 reparent 状态保持。Windows 配置工具不再在 detach 时死锁，macOS arm64 QR Code 不再因异步派生输出误报状态变化。 |
+| 2026-09-06 | `e45326a5` | [run 34023516533](https://github.com/rememberber/MooTool/actions/runs/34023516533) | 发布后回归在四个平台全部通过；新增校验按平台、架构与格式验证 5 个必需安装包，不再把可选 MSI/RPM 误计为发布前提，同时仍拒绝“总数足够但缺少必需格式”的清单。四个平台继续完成完整门禁和 100 轮、200 次 reparent 状态保持。 |
 
 ## RC 安装包运行记录
 
 | 日期 | 标签 / 提交 | GitHub Actions | 结果与结论 |
 | --- | --- | --- | --- |
-| 2026-09-06 | `next-tauri-v0.1.0-rc.1` / `c03ef5c0` | [run 34008294955](https://github.com/rememberber/MooTool/actions/runs/34008294955) | macOS x64/arm64 DMG 均完成代码签名校验、只读挂载和挂载卷首次启动；Windows x64 NSIS 完成静默安装、首次启动和静默卸载；Linux x64 AppImage 完成首次启动，deb 完成实际安装、从系统路径首次启动和卸载状态检查。四平台 updater 签名文件、规范化资产、`latest.json` 和 `next-tauri-release.json` 均已生成；五个安装包逐文件 SHA-512 校验通过；已创建不占用仓库 Latest 的 Draft Pre-release。 |
+| 2026-09-06 | [`next-tauri-v0.1.0-rc.1`](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.1) / `c03ef5c0` | [构建 run 34008294955](https://github.com/rememberber/MooTool/actions/runs/34008294955)、[提升 run 34022927538](https://github.com/rememberber/MooTool/actions/runs/34022927538) | macOS x64/arm64 DMG 均完成代码签名校验、只读挂载和挂载卷首次启动；Windows x64 NSIS 完成静默安装、首次启动和静默卸载；Linux x64 AppImage 完成首次启动，deb 完成实际安装、从系统路径首次启动和卸载状态检查。四平台 updater 签名文件、规范化资产、`latest.json` 和 `next-tauri-release.json` 均已生成；五个安装包逐文件 SHA-512 校验通过。RC1 已发布为不占用仓库 Latest 的 Pre-release；提升任务第 2 次执行成功，公开 URL 全部可达，`next-tauri-updater/latest.json` 与版本 Release 中的清单逐字节一致（SHA-256 `a0aac585b23aaee0f364a8114657db31f1fd7eac1c9585271a1499761b602c5a`），根清单仅将 `products.next-tauri` 激活并登记 RC1。 |
 
 ## 本机交互运行记录
 
@@ -35,8 +36,11 @@
 | 2026-09-04 | `0.1.0-rc.1` | macOS 26.7 x86_64 | 当前屏幕录制授权下枚举显示器并捕获画面 | `native_screen_capture_smoke` 通过 |
 | 2026-09-04 | `0.1.0-rc.1` | macOS 26.7 x86_64 | 一次性账户写入、读取并删除系统 Keychain 凭据 | `native_keyring_round_trip` 通过；服务名为 `com.rememberber.mootool.next.tauri`，未覆盖真实代理密码 |
 | 2026-09-04 | `0.1.0-rc.1` | macOS 26.7 x86_64 | 构建 DMG、只读挂载并从挂载卷首次启动 | 应用保持运行 8 秒后正常结束，DMG 可卸载 |
+| 2026-09-06 | 公开 `next-tauri-v0.1.0-rc.1` DMG | macOS 26.7 x86_64 | 从公开 Release 重新下载、比对根清单 SHA-512、只读挂载、代码签名与内置原生验收 | SHA-512 和代码签名通过；25/25 工具、会话隔离、10 轮/20 次 reparent 状态保持均通过，总时长 101,906 ms；测试数据使用独立临时目录，挂载卷已卸载 |
 
-## 发布前真实设备验收
+RC1 是首个公开的 Tauri 版本，因此不存在可安装的上一公开版本。稳定 updater 通道、签名和同版本清单边界已经验证；“上一版本 → RC1”的下载取消、重试、替换安装与重启不能据此记为通过，必须在发布下一 RC 时使用本 RC1 作为旧版本完成。
+
+## 真实设备验收
 
 以下项目依赖窗口管理器、输入法、显示器或系统授权状态，不能由无头 CI 替代。每项必须记录操作系统版本、设备、显示协议、缩放比例和结果；未执行时标记为“未验证”，不能写成“通过”。
 

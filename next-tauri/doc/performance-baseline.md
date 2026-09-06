@@ -75,5 +75,11 @@ Windows 数字直接比较，也不能解释为整机已提交内存。
 | Linux x64 deb | 13,546,506 | 12.9 |
 
 发布工作流还生成并上传 macOS `.app.tar.gz`、Windows NSIS 和 Linux AppImage 的独立 updater
-签名文件，以及覆盖四个平台的 `latest.json`。Draft 中五个安装包的实际字节数与
+签名文件，以及覆盖四个平台的 `latest.json`。已发布 Pre-release 中五个安装包的实际字节数与
 `next-tauri-release.json` 一致，逐文件 SHA-512 校验通过。
+
+发布后从公开 Release 重新下载 macOS x64 DMG，并在 macOS 26.7 x86_64 上运行相同的内置原生
+验收。公开文件 SHA-512 与根产品清单一致，代码签名通过；25/25 工具、会话隔离以及 10 轮、
+20 次 reparent 状态保持通过。该次总时长为 101.906 s，首工具稳定 6,497 ms，工具打开中位数
+1,642 ms，detach/dock 中位数 533 ms；空闲、1、10、25 工具 RSS 分别为 97.9、99.0、101.9、
+107.9 MiB，10,000 条 Quick Note 导入/读取为 421/33 ms，100 MiB SHA-256 为 121 ms。
