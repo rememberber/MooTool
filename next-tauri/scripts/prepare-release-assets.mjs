@@ -183,11 +183,54 @@ export async function validatePromotion({ latestPath, releasePath, tag }) {
 function validateRegistryRelease(release) {
   if (!isRecord(release) || !SEMVER.test(String(release.version ?? ''))) throw new Error('Invalid Tauri release version')
   if (release.title !== `${PRODUCT_NAME} ${release.version}`) throw new Error('Invalid Tauri release title')
+  if (typeof release.notes !== 'string' || !release.notes.trim()) throw new Error('Invalid Tauri release notes')
+  if (release.prerelease !== true) throw new Error('Tauri registry releases must remain prereleases')
   if (release.releaseUrl !== `https://github.com/${REPOSITORY}/releases/tag/next-tauri-v${release.version}`) {
     throw new Error('Invalid Tauri release URL')
   }
   if (release.updaterManifestUrl !== UPDATE_MANIFEST_URL) throw new Error('Invalid Tauri updater manifest URL')
-  if (!Array.isArray(release.assets) || release.assets.length < 6) throw new Error('Tauri release assets are incomplete')
+  if (!Array.isArray(release.assets)) throw new Error('Tauri release assets are incomplete')
+
+  const installerRules = new Map()
+  const requiredKeys = new Set()
+  for (const rule of targetRules) {
+    for (const installer of rule.installers) {
+      const key = installerKey(rule.platform, rule.architecture, installer.packageType)
+      installerRules.set(key, { ...installer, platform: rule.platform, architecture: rule.architecture })
+      if (!installer.optional) requiredKeys.add(key)
+    }
+  }
+
+  const seenKeys = new Set()
+  const tag = `next-tauri-v${release.version}`
+  for (const asset of release.assets) {
+    if (!isRecord(asset)) throw new Error('Invalid Tauri release asset')
+    const key = installerKey(asset.platform, asset.architecture, asset.packageType)
+    const rule = installerRules.get(key)
+    if (!rule) throw new Error(`Unsupported Tauri release asset: ${key}`)
+    if (seenKeys.has(key)) throw new Error(`Duplicate Tauri release asset: ${key}`)
+    seenKeys.add(key)
+
+    const expectedFileName = releaseFileName(release.version, rule.suffix)
+    if (asset.fileName !== expectedFileName) throw new Error(`Invalid Tauri release asset filename: ${key}`)
+    if (asset.url !== releaseAssetUrl(tag, expectedFileName)) throw new Error(`Invalid Tauri release asset URL: ${key}`)
+    if (asset.priority !== (rule.optional ? 20 : 10)) throw new Error(`Invalid Tauri release asset priority: ${key}`)
+    if (!Number.isSafeInteger(asset.size) || asset.size <= 0) throw new Error(`Invalid Tauri release asset size: ${key}`)
+    if (!isSha512(asset.sha512)) throw new Error(`Invalid Tauri release asset SHA-512: ${key}`)
+  }
+
+  const missingKeys = [...requiredKeys].filter((key) => !seenKeys.has(key))
+  if (missingKeys.length) throw new Error(`Tauri release assets are incomplete: missing ${missingKeys.join(', ')}`)
+}
+
+function installerKey(platform, architecture, packageType) {
+  return `${String(platform ?? '')}:${String(architecture ?? '')}:${String(packageType ?? '')}`
+}
+
+function isSha512(value) {
+  if (typeof value !== 'string' || !/^[A-Za-z0-9+/]{86}==$/.test(value)) return false
+  const bytes = Buffer.from(value, 'base64')
+  return bytes.length === 64 && bytes.toString('base64') === value
 }
 
 function validateVersionAndTag(version, tag) {
