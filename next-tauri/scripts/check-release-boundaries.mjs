@@ -4,8 +4,8 @@ const root = new URL('../', import.meta.url)
 const packageJson = JSON.parse(await readFile(new URL('package.json', root), 'utf8'))
 const tauriConfig = JSON.parse(await readFile(new URL('src-tauri/tauri.conf.json', root), 'utf8'))
 const cargoToml = await readFile(new URL('src-tauri/Cargo.toml', root), 'utf8')
-const workflow = await readFile(new URL('../.github/workflows/next-tauri-release.yml', root), 'utf8')
-const promotionWorkflow = await readFile(new URL('../.github/workflows/next-tauri-promote-update.yml', root), 'utf8')
+const workflow = normalizeNewlines(await readFile(new URL('../.github/workflows/next-tauri-release.yml', root), 'utf8'))
+const promotionWorkflow = normalizeNewlines(await readFile(new URL('../.github/workflows/next-tauri-promote-update.yml', root), 'utf8'))
 const productManifest = JSON.parse(await readFile(new URL('../update-manifest.json', root), 'utf8'))
 const violations = []
 const updaterManifestUrl = 'https://github.com/rememberber/MooTool/releases/download/next-tauri-updater/latest.json'
@@ -30,13 +30,29 @@ if (tauriConfig.plugins?.updater?.windows?.installMode !== 'passive') violations
 if (!workflow.includes('next-tauri-v*')) violations.push('release workflow must use the independent next-tauri-v* tag namespace')
 if (!workflow.includes('--latest=false')) violations.push('release workflow must not claim the repository-wide Latest release')
 if (!workflow.includes('TAURI_SIGNING_PRIVATE_KEY')) violations.push('release workflow must inject the updater signing key')
+if (!workflow.includes('git show -s --format=%cI "${tag}^{commit}"')) {
+  violations.push('release workflow must resolve annotated tags to a single commit date')
+}
+if (!workflow.includes('unset APPLE_CERTIFICATE APPLE_CERTIFICATE_PASSWORD') ||
+    !workflow.includes('unset APPLE_ID APPLE_PASSWORD APPLE_TEAM_ID')) {
+  violations.push('release workflow must remove absent optional Apple signing variables')
+}
+if (!workflow.includes("macOS) bundles='app,dmg'") ||
+    !workflow.includes("Windows) bundles='nsis'") ||
+    !workflow.includes("Linux) bundles='appimage,deb'")) {
+  violations.push('release workflow must build the supported platform-specific bundle set')
+}
 if (!workflow.includes('.app.tar.gz.sig') || !workflow.includes('.AppImage.sig') || !workflow.includes('.exe.sig')) {
   violations.push('release workflow must retain every primary updater signature')
 }
 if (!workflow.includes('Verify macOS updater, DMG, and first launch') ||
     !workflow.includes('Verify Windows updater, install, first launch, and uninstall') ||
-    !workflow.includes('Verify Linux updater, packages, and first launch')) {
+    !workflow.includes('Verify Linux updater, AppImage, deb install, first launch, and uninstall')) {
   violations.push('release workflow must retain platform installer and first-launch smoke checks')
+}
+if (!workflow.includes('sudo apt-get install -y "$(realpath "${deb}")"') ||
+    !workflow.includes("test \"${package_status}\" != 'install ok installed'")) {
+  violations.push('release workflow must install, launch, and uninstall the Linux deb package')
 }
 if (/electron/i.test(workflow)) violations.push('Tauri release workflow must not invoke Electron build or release steps')
 if (!promotionWorkflow.includes("types:\n      - published")) violations.push('updater promotion must wait for a published release')
@@ -63,4 +79,8 @@ if (violations.length) {
 
 function escapeRegExp(value) {
   return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+}
+
+function normalizeNewlines(value) {
+  return value.replaceAll('\r\n', '\n')
 }

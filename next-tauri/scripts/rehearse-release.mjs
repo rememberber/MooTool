@@ -7,6 +7,9 @@ const packageJson = JSON.parse(await readFile(join(root, 'package.json'), 'utf8'
 const version = packageJson.version
 const tag = `next-tauri-v${version}`
 const startedAt = Date.now()
+const reportArgument = process.argv.find((argument) => argument.startsWith('--report='))
+const reportPath = reportArgument?.slice('--report='.length)
+if (reportArgument && !reportPath?.trim()) throw new Error('--report must point to a JSON file')
 
 run('npm', ['run', 'check:release'])
 run('npx', ['vitest', 'run', 'scripts/prepare-release-assets.test.ts'])
@@ -37,10 +40,23 @@ for (const path of artifacts) {
 if (!freshArtifacts.length) {
   throw new Error(`Release rehearsal did not create a fresh ${bundleTargets.join('/')} artifact`)
 }
+if (process.platform === 'darwin') {
+  const dmg = freshArtifacts.find((path) => path.toLowerCase().endsWith('.dmg'))
+  if (!dmg) throw new Error('Release rehearsal did not create a DMG to verify')
+  run('node', ['scripts/verify-macos-dmg.mjs', `--dmg=${dmg}`])
+}
+if (reportPath) {
+  run('node', [
+    'scripts/report-bundle-sizes.mjs',
+    `--report=${reportPath}`,
+    `--fresh-after=${startedAt - 5_000}`
+  ])
+}
 
 process.stdout.write([
   `Release rehearsal passed for ${tag}.`,
   ...freshArtifacts.map((path) => `- ${path}`),
+  ...(reportPath ? [`Bundle size report: ${resolve(root, reportPath)}`] : []),
   'Updater metadata generation and promotion validation are covered by the release asset tests.',
   'No tag, GitHub Release, updater channel, or product registry was changed.'
 ].join('\n') + '\n')

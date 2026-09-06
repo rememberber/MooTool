@@ -12,6 +12,7 @@ pub mod network_tools;
 pub mod pdf_files;
 pub mod product_import;
 pub mod runtime;
+pub mod secure_credentials;
 pub mod settings;
 pub mod tool_webview;
 pub mod translation;

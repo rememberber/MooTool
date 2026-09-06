@@ -21,9 +21,10 @@ export function createDiagnosticsApi(invokeCommand: Invoke = invoke): Diagnostic
       'report_frontend_error',
       { report }
     ),
-    chooseExportDirectory: async () => normalizeSelection(await open({
+    chooseExportDirectory: async (defaultDirectory) => normalizeSelection(await open({
       directory: true,
       multiple: false,
+      defaultPath: defaultDirectory || undefined,
       title: '选择 MooTool Next Tauri 诊断包保存目录'
     })),
     exportBundle: (destinationDirectory) => invokeCommand<DiagnosticsExportResult>(

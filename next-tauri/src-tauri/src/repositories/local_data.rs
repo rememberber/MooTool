@@ -56,7 +56,7 @@ impl LocalDataRepository {
         let connection = self.lock()?;
         let mut statement = connection
             .prepare(
-                "SELECT id, title, content, tags_json, color, folder_path, pinned, created_at, updated_at
+                "SELECT id, title, content, tags_json, color, folder_path, editor_font, line_height, line_wrapping, syntax, pinned, created_at, updated_at
                  FROM quick_notes
                  ORDER BY pinned DESC, updated_at DESC, id ASC",
             )
@@ -70,9 +70,13 @@ impl LocalDataRepository {
                     tags: serde_json::from_str(&row.get::<_, String>(3)?).unwrap_or_default(),
                     color: row.get(4)?,
                     folder_path: row.get(5)?,
-                    pinned: row.get(6)?,
-                    created_at: row.get(7)?,
-                    updated_at: row.get(8)?,
+                    editor_font: row.get(6)?,
+                    line_height: row.get(7)?,
+                    line_wrapping: row.get(8)?,
+                    syntax: row.get(9)?,
+                    pinned: row.get(10)?,
+                    created_at: row.get(11)?,
+                    updated_at: row.get(12)?,
                 })
             })
             .map_err(database_error)?;
@@ -86,14 +90,18 @@ impl LocalDataRepository {
         let connection = self.lock()?;
         connection
             .execute(
-                "INSERT INTO quick_notes (id, title, content, tags_json, color, folder_path, pinned, created_at, updated_at)
-                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
+                "INSERT INTO quick_notes (id, title, content, tags_json, color, folder_path, editor_font, line_height, line_wrapping, syntax, pinned, created_at, updated_at)
+                 VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)
                  ON CONFLICT(id) DO UPDATE SET
                    title = excluded.title,
                    content = excluded.content,
                    tags_json = excluded.tags_json,
                    color = excluded.color,
                    folder_path = excluded.folder_path,
+                   editor_font = excluded.editor_font,
+                   line_height = excluded.line_height,
+                   line_wrapping = excluded.line_wrapping,
+                   syntax = excluded.syntax,
                    pinned = excluded.pinned,
                    updated_at = excluded.updated_at",
                 params![
@@ -103,6 +111,10 @@ impl LocalDataRepository {
                     tags_json,
                     note.color,
                     note.folder_path,
+                    note.editor_font,
+                    note.line_height,
+                    note.line_wrapping,
+                    note.syntax,
                     note.pinned,
                     note.created_at,
                     note.updated_at
@@ -1112,9 +1124,9 @@ impl LocalDataRepository {
         for note in records.quick_notes {
             imported.quick_notes += transaction
                 .execute(
-                    "INSERT OR IGNORE INTO quick_notes (id, title, content, tags_json, color, folder_path, pinned, created_at, updated_at)
-                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
-                    params![note.id, note.title, note.content, serde_json::to_string(&note.tags).map_err(|error| format!("failed to encode imported note tags: {error}"))?, note.color, note.folder_path, note.pinned, note.created_at, note.updated_at],
+                    "INSERT OR IGNORE INTO quick_notes (id, title, content, tags_json, color, folder_path, editor_font, line_height, line_wrapping, syntax, pinned, created_at, updated_at)
+                     VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13)",
+                    params![note.id, note.title, note.content, serde_json::to_string(&note.tags).map_err(|error| format!("failed to encode imported note tags: {error}"))?, note.color, note.folder_path, note.editor_font, note.line_height, note.line_wrapping, note.syntax, note.pinned, note.created_at, note.updated_at],
                 )
                 .map_err(database_error)?;
         }
@@ -1302,6 +1314,10 @@ fn initialize(connection: &Connection) -> Result<(), String> {
                tags_json TEXT NOT NULL DEFAULT '[]',
                color TEXT NOT NULL DEFAULT 'default',
                folder_path TEXT NOT NULL DEFAULT '',
+               editor_font TEXT NOT NULL DEFAULT 'default',
+               line_height TEXT NOT NULL DEFAULT 'normal',
+               line_wrapping INTEGER NOT NULL DEFAULT 1,
+               syntax TEXT NOT NULL DEFAULT 'markdown',
                pinned INTEGER NOT NULL DEFAULT 0,
                created_at INTEGER NOT NULL,
                updated_at INTEGER NOT NULL
@@ -1425,7 +1441,7 @@ fn initialize(connection: &Connection) -> Result<(), String> {
                imported_at INTEGER NOT NULL,
                report_json TEXT NOT NULL
              );
-             PRAGMA user_version = 11;",
+             PRAGMA user_version = 12;",
         )
         .map_err(database_error)?;
     ensure_column(
@@ -1445,6 +1461,30 @@ fn initialize(connection: &Connection) -> Result<(), String> {
         "quick_notes",
         "color",
         "TEXT NOT NULL DEFAULT 'default'",
+    )?;
+    ensure_column(
+        connection,
+        "quick_notes",
+        "editor_font",
+        "TEXT NOT NULL DEFAULT 'default'",
+    )?;
+    ensure_column(
+        connection,
+        "quick_notes",
+        "line_height",
+        "TEXT NOT NULL DEFAULT 'normal'",
+    )?;
+    ensure_column(
+        connection,
+        "quick_notes",
+        "line_wrapping",
+        "INTEGER NOT NULL DEFAULT 1",
+    )?;
+    ensure_column(
+        connection,
+        "quick_notes",
+        "syntax",
+        "TEXT NOT NULL DEFAULT 'markdown'",
     )?;
     connection
         .execute(
@@ -1472,7 +1512,7 @@ fn initialize(connection: &Connection) -> Result<(), String> {
         "TEXT NOT NULL DEFAULT '{}'",
     )?;
     connection
-        .pragma_update(None, "user_version", 11)
+        .pragma_update(None, "user_version", 12)
         .map_err(database_error)
 }
 
@@ -1577,6 +1617,10 @@ mod tests {
             tags: Vec::new(),
             color: "default".into(),
             folder_path: String::new(),
+            editor_font: "default".into(),
+            line_height: "normal".into(),
+            line_wrapping: true,
+            syntax: "markdown".into(),
             pinned,
             created_at: 1,
             updated_at,
@@ -1851,7 +1895,7 @@ mod tests {
                 .expect("lock database")
                 .query_row("PRAGMA user_version", [], |row| row.get::<_, u32>(0))
                 .expect("read schema version"),
-            11
+            12
         );
     }
 

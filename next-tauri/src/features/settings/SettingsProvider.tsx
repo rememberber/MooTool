@@ -137,6 +137,8 @@ function applyDocumentAppearance(settings: AppSettings): () => void {
     root.style.setProperty('--editor-font-size', `${settings.editor.fontSize}px`)
     root.style.setProperty('--json-editor-font-size', `${settings.editor.jsonFontSize}px`)
     root.style.setProperty('--quick-note-editor-font-size', `${settings.editor.quickNoteFontSize}px`)
+    root.style.setProperty('--json-editor-font-family', settings.editor.jsonFontFamily === 'mono' ? 'var(--font-mono)' : 'inherit')
+    root.style.setProperty('--quick-note-editor-font-family', settings.editor.quickNoteFontFamily === 'mono' ? 'var(--font-mono)' : 'inherit')
     root.style.setProperty('--editor-tab-size', String(settings.editor.tabSize))
     root.style.setProperty('--interface-font-family', settings.appearance.fontFamily === 'mono'
       ? 'var(--font-mono)'

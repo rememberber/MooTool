@@ -8,7 +8,7 @@ export const timestampMessages = defineMessages({
     'error.invalidTimestamp': '无效时间戳：{detail}', 'error.localFormat': '本地时间必须使用 YYYY-MM-DD HH:mm:ss，并且在所选时区中有效',
     'error.invalidZone': '无效时区：{zone}', 'timezone.invalid': '无效', 'current.title': '当前时间 · {zone}', 'current.unix': 'Unix 秒',
     'current.local': '本地时间', 'field.timezone': 'IANA 时区', 'field.timestamp': 'Unix 时间戳', 'action.toLocal': '转本地时间',
-    'action.toTimestamp': '转时间戳', 'action.now': '使用现在', 'field.local': '本地时间 · {zone}', 'detail.weekday': '星期',
+    'action.toTimestamp': '转时间戳', 'action.now': '使用现在', 'action.copyValue': '复制{label}', 'field.local': '本地时间 · {zone}', 'detail.weekday': '星期',
     'detail.offset': 'UTC 偏移', 'footer.capabilities': 'Unix 秒/毫秒自动识别 · IANA 时区 · DST 感知',
     'report.error': '时间转换状态上报失败：{error}', 'host.loading': '正在加载时间转换…'
   },
@@ -19,7 +19,7 @@ export const timestampMessages = defineMessages({
     'error.invalidTimestamp': 'Invalid timestamp: {detail}', 'error.localFormat': 'Local time must use YYYY-MM-DD HH:mm:ss and be valid in the selected timezone',
     'error.invalidZone': 'Invalid timezone: {zone}', 'timezone.invalid': 'invalid', 'current.title': 'Current time · {zone}', 'current.unix': 'Unix seconds',
     'current.local': 'Local time', 'field.timezone': 'IANA timezone', 'field.timestamp': 'Unix timestamp', 'action.toLocal': 'To local time',
-    'action.toTimestamp': 'To timestamp', 'action.now': 'Use now', 'field.local': 'Local time · {zone}', 'detail.weekday': 'Weekday',
+    'action.toTimestamp': 'To timestamp', 'action.now': 'Use now', 'action.copyValue': 'Copy {label}', 'field.local': 'Local time · {zone}', 'detail.weekday': 'Weekday',
     'detail.offset': 'UTC offset', 'footer.capabilities': 'Automatic Unix second/millisecond detection · IANA timezones · DST aware',
     'report.error': 'Time Converter status reporting failed: {error}', 'host.loading': 'Loading Time Converter…'
   },
@@ -30,7 +30,7 @@ export const timestampMessages = defineMessages({
     'error.invalidTimestamp': '無効なタイムスタンプです：{detail}', 'error.localFormat': 'ローカル時刻は YYYY-MM-DD HH:mm:ss を使用し、選択したタイムゾーンで有効な必要があります',
     'error.invalidZone': '無効なタイムゾーンです：{zone}', 'timezone.invalid': '無効', 'current.title': '現在時刻 · {zone}', 'current.unix': 'Unix 秒',
     'current.local': 'ローカル時刻', 'field.timezone': 'IANA タイムゾーン', 'field.timestamp': 'Unix タイムスタンプ', 'action.toLocal': 'ローカル時刻へ',
-    'action.toTimestamp': 'タイムスタンプへ', 'action.now': '現在時刻を使用', 'field.local': 'ローカル時刻 · {zone}', 'detail.weekday': '曜日',
+    'action.toTimestamp': 'タイムスタンプへ', 'action.now': '現在時刻を使用', 'action.copyValue': '{label} をコピー', 'field.local': 'ローカル時刻 · {zone}', 'detail.weekday': '曜日',
     'detail.offset': 'UTC オフセット', 'footer.capabilities': 'Unix 秒/ミリ秒の自動判定 · IANA タイムゾーン · DST 対応',
     'report.error': '時刻変換状態の報告に失敗しました：{error}', 'host.loading': '時刻変換を読み込み中…'
   }

@@ -13,7 +13,7 @@ use std::{
 use serde::Serialize;
 use tauri_plugin_dialog::DialogExt;
 
-use crate::contracts::error::AppResult;
+use crate::{contracts::error::AppResult, repositories::settings::SettingsRepository};
 
 const MAX_FILES: usize = 20;
 const MAX_FILE_BYTES: usize = 200 * 1024 * 1024;
@@ -50,6 +50,7 @@ pub struct PdfExportPlan {
 pub async fn begin_pdf_export(
     app: tauri::AppHandle,
     manager: tauri::State<'_, PdfExportManager>,
+    settings: tauri::State<'_, SettingsRepository>,
     names: Vec<String>,
 ) -> AppResult<Option<PdfExportPlan>> {
     if names.is_empty() || names.len() > MAX_FILES {
@@ -60,12 +61,15 @@ pub async fn begin_pdf_export(
     }
 
     let targets = if names.len() == 1 {
-        let selection = app
+        let mut dialog = app
             .dialog()
             .file()
             .add_filter("PDF document", &["pdf"])
-            .set_file_name(&names[0])
-            .blocking_save_file();
+            .set_file_name(&names[0]);
+        if let Some(directory) = super::settings::configured_export_directory(&settings) {
+            dialog = dialog.set_directory(directory);
+        }
+        let selection = dialog.blocking_save_file();
         let Some(selection) = selection else {
             return Ok(None);
         };
@@ -76,7 +80,11 @@ pub async fn begin_pdf_export(
         validate_export_file_target(&target)?;
         vec![target]
     } else {
-        let selection = app.dialog().file().blocking_pick_folder();
+        let mut dialog = app.dialog().file();
+        if let Some(directory) = super::settings::configured_export_directory(&settings) {
+            dialog = dialog.set_directory(directory);
+        }
+        let selection = dialog.blocking_pick_folder();
         let Some(selection) = selection else {
             return Ok(None);
         };
@@ -316,10 +324,10 @@ fn validate_export_file_target(path: &Path) -> Result<(), String> {
     if !path.is_absolute() {
         return Err("PDF export target must be absolute".into());
     }
-    if let Ok(metadata) = fs::symlink_metadata(path)
-        && (metadata.file_type().is_symlink() || !metadata.is_file())
-    {
-        return Err("PDF export target must be a regular non-symlink file".into());
+    if let Ok(metadata) = fs::symlink_metadata(path) {
+        if metadata.file_type().is_symlink() || !metadata.is_file() {
+            return Err("PDF export target must be a regular non-symlink file".into());
+        }
     }
     let parent = path
         .parent()

@@ -100,7 +100,7 @@ export function SystemSurface() {
   return (
     <main className="utility-workbench system-workbench">
       <header className="utility-header">
-        <div><span className="eyebrow">TAURI SYSTEM SNAPSHOT</span><h1>{t('title')}</h1></div>
+        <h1 className="visually-hidden">{t('title')}</h1>
         <div className="system-header-actions">
           <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
           <button className="secondary-button" type="button" disabled={busy} onClick={() => void refresh()}>

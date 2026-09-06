@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use tauri::{Emitter, Manager, WebviewUrl, WebviewWindowBuilder};
 
 use crate::{
@@ -6,6 +8,15 @@ use crate::{
 };
 
 pub const SETTINGS_CHANGED_EVENT: &str = "mootool://settings-changed";
+
+pub fn configured_export_directory(repository: &SettingsRepository) -> Option<PathBuf> {
+    let value = repository.snapshot().tools.export_directory;
+    if value.is_empty() {
+        return None;
+    }
+    let path = PathBuf::from(value);
+    path.is_dir().then_some(path)
+}
 
 #[tauri::command]
 pub fn get_settings(repository: tauri::State<'_, SettingsRepository>) -> AppSettings {
@@ -55,18 +66,23 @@ pub fn open_settings_window(app: tauri::AppHandle) -> AppResult<()> {
         return Ok(());
     }
 
-    WebviewWindowBuilder::new(
+    let builder = WebviewWindowBuilder::new(
         &app,
         "settings",
         WebviewUrl::App("index.html?surface=settings".into()),
     )
-    .title("MooTool Next Tauri Settings")
-    .title_bar_style(tauri::TitleBarStyle::Overlay)
-    .hidden_title(true)
-    .inner_size(760.0, 720.0)
-    .min_inner_size(660.0, 600.0)
-    .center()
-    .build()
-    .map_err(|error| format!("failed to open settings window: {error}"))?;
+    .title("MooTool Next Tauri Settings");
+
+    #[cfg(target_os = "macos")]
+    let builder = builder
+        .title_bar_style(tauri::TitleBarStyle::Overlay)
+        .hidden_title(true);
+
+    builder
+        .inner_size(760.0, 720.0)
+        .min_inner_size(660.0, 600.0)
+        .center()
+        .build()
+        .map_err(|error| format!("failed to open settings window: {error}"))?;
     Ok(())
 }

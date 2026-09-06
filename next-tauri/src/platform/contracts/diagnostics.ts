@@ -60,6 +60,6 @@ export interface DiagnosticsApi {
   environment(revealSensitive: boolean): Promise<EnvironmentVariable[]>
   system(): Promise<SystemSnapshot>
   reportError(report: FrontendErrorReport): Promise<void>
-  chooseExportDirectory(): Promise<string | null>
+  chooseExportDirectory(defaultDirectory?: string): Promise<string | null>
   exportBundle(destinationDirectory: string): Promise<DiagnosticsExportResult>
 }

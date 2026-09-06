@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-04T12:35:59.403Z",
+  "platform": "darwin",
+  "architecture": "x64",
+  "executable": {
+    "path": "src-tauri/target/release/mootool-next-tauri",
+    "bytes": 28047820
+  },
+  "artifacts": [
+    {
+      "path": "src-tauri/target/release/bundle/dmg/MooTool Next Tauri_0.1.0-rc.1_x64.dmg",
+      "bytes": 11089392
+    },
+    {
+      "path": "src-tauri/target/release/bundle/macos/MooTool Next Tauri.app",
+      "bytes": 28568232
+    }
+  ]
+}

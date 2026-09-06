@@ -1,4 +1,5 @@
 import {
+  ArrowLeftRight,
   Check,
   CheckCircle2,
   Clipboard,
@@ -27,13 +28,18 @@ import { useOperationHistory } from '../history/useOperationHistory'
 import { useOperationRestore } from '../history/operationRestore'
 import { ToolFavoriteBar } from '../favorites/ToolFavoriteBar'
 import {
+  applyColorOperation,
   bestTextColor,
   ColorToolError,
+  type ColorOperation,
   colorFormats,
+  colorThemes,
   contrastRatio,
   createColorScale,
   parseHexColor,
-  randomColor
+  randomColor,
+  rgbToHex,
+  themeShadeColumns
 } from './colorTools'
 import { colorMessages } from './colorMessages'
 
@@ -55,6 +61,8 @@ export function ColorSurface() {
   const [copied, setCopied] = useState('')
   const [sampling, setSampling] = useState(false)
   const [screenAssets, setScreenAssets] = useState<ImageAsset[]>([])
+  const [themeId, setThemeId] = useState<(typeof colorThemes)[number]['id']>('default')
+  const [operation, setOperation] = useState<ColorOperation>('average')
   const parsed = useMemo(() => {
     try {
       return parseHexColor(hex)
@@ -72,6 +80,8 @@ export function ColorSurface() {
   const formats = useMemo(() => colorFormats(parsed), [parsed])
   const scale = useMemo(() => createColorScale(parsed), [parsed])
   const ratio = useMemo(() => contrastRatio(parsed, comparison), [comparison, parsed])
+  const selectedTheme = colorThemes.find((theme) => theme.id === themeId) ?? colorThemes[0]
+  const themeShades = useMemo(() => themeShadeColumns(selectedTheme.colors), [selectedTheme])
   const noticeText = 'raw' in notice ? notice.raw : t(notice.key, notice.values)
   const session = useMemo(() => ({
     digest: JSON.stringify({
@@ -120,6 +130,33 @@ export function ColorSurface() {
     recordOperation(t('action.random'), value, 'success', {
       inputText: JSON.stringify({ hex, contrastHex }), outputText: value, metadata: { source: 'random' }
     })
+  }
+
+  function selectLibraryColor(value: string, comparisonTarget = false): void {
+    if (comparisonTarget) {
+      setContrastHex(value)
+      succeed('notice.comparisonUpdated', { value })
+    } else {
+      updateHex(value)
+    }
+  }
+
+  function runColorOperation(): void {
+    const value = rgbToHex(applyColorOperation(operation, parsed, comparison))
+    setHex(value)
+    succeed('notice.operationApplied', { operation: t(`operation.${operation}`), value })
+    recordOperation(t(`operation.${operation}`), value, 'success', {
+      inputText: JSON.stringify({ hex, contrastHex, operation }), outputText: value,
+      metadata: { operation, secondary: contrastHex }
+    })
+  }
+
+  function swapColors(): void {
+    const nextPrimary = colorFormats(comparison).hex
+    const nextComparison = formats.hex
+    setHex(nextPrimary)
+    setContrastHex(nextComparison)
+    succeed('notice.swapped')
   }
 
   async function sampleScreen(): Promise<void> {
@@ -188,10 +225,7 @@ export function ColorSurface() {
   return (
     <main className="utility-workbench color-workbench">
       <header className="utility-header">
-        <div>
-          <span className="eyebrow">TAURI COLOR WORKBENCH</span>
-          <h1>{t('title')}</h1>
-        </div>
+        <h1 className="visually-hidden">{t('title')}</h1>
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
 
@@ -255,6 +289,52 @@ export function ColorSurface() {
                 <code>{value}</code>
               </button>
             ))}
+          </div>
+        </section>
+
+        <section className="color-library-card">
+          <header>
+            <div><Palette /><strong>{t('library.title')}</strong></div>
+            <label>{t('library.theme')}
+              <select value={themeId} onChange={(event) => setThemeId(event.target.value as typeof themeId)}>
+                {colorThemes.map((theme) => <option key={theme.id} value={theme.id}>{t(`theme.${theme.id}`)}</option>)}
+              </select>
+            </label>
+            <span>{t('library.hint')}</span>
+          </header>
+          <div className="color-library-main" aria-label={t('library.mainColors')}>
+            {selectedTheme.colors.map((value) => (
+              <button
+                type="button"
+                key={value}
+                className={value === formats.hex || value === colorFormats(comparison).hex ? 'color-library-swatch color-library-swatch--active' : 'color-library-swatch'}
+                style={{ background: value }}
+                title={t('library.select', { value })}
+                aria-label={t('library.select', { value })}
+                onClick={(event) => selectLibraryColor(value, event.shiftKey)}
+              />
+            ))}
+          </div>
+          <div className="color-library-shades" aria-label={t('library.shades')}>
+            {themeShades.flatMap((column, columnIndex) => column.map((value, shadeIndex) => (
+              <button
+                type="button"
+                key={`${columnIndex}-${shadeIndex}-${value}`}
+                style={{ background: value }}
+                title={t('library.select', { value })}
+                aria-label={t('library.select', { value })}
+                onClick={(event) => selectLibraryColor(value, event.shiftKey)}
+              />
+            )))}
+          </div>
+          <div className="color-operation-bar">
+            <span className="color-operation-preview" style={{ background: formats.hex }}><code>{formats.hex}</code></span>
+            <select aria-label={t('operation.label')} value={operation} onChange={(event) => setOperation(event.target.value as ColorOperation)}>
+              {(['average', 'multiply', 'add', 'difference', 'invert'] as ColorOperation[]).map((item) => <option key={item} value={item}>{t(`operation.${item}`)}</option>)}
+            </select>
+            <button type="button" className="secondary-button" onClick={runColorOperation}>{t('operation.apply')}</button>
+            <button type="button" className="icon-button" aria-label={t('operation.swap')} title={t('operation.swap')} onClick={swapColors}><ArrowLeftRight /></button>
+            <span className="color-operation-preview" style={{ background: colorFormats(comparison).hex }}><code>{colorFormats(comparison).hex}</code></span>
           </div>
         </section>
 

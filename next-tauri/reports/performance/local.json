@@ -1,0 +1,299 @@
+{
+  "schemaVersion": 2,
+  "passed": true,
+  "platform": "macos",
+  "architecture": "x86_64",
+  "durationMs": 93827,
+  "stressCycles": 10,
+  "tools": [
+    {
+      "toolId": "calculator",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "73c723c3-0cfe-413d-99f4-f9911e4fcbec",
+      "reparentOperations": 2,
+      "openDurationMs": 1100,
+      "detachDockDurationMs": 556,
+      "failure": null
+    },
+    {
+      "toolId": "color",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "5fc55059-219d-4a3d-a0f1-4f3705ce482a",
+      "reparentOperations": 2,
+      "openDurationMs": 1494,
+      "detachDockDurationMs": 546,
+      "failure": null
+    },
+    {
+      "toolId": "config",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "3cde0314-631c-4330-b00e-f9afe0c792a2",
+      "reparentOperations": 2,
+      "openDurationMs": 1500,
+      "detachDockDurationMs": 545,
+      "failure": null
+    },
+    {
+      "toolId": "cron",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "66fba94d-eee3-4594-bea2-13444f70a730",
+      "reparentOperations": 2,
+      "openDurationMs": 1402,
+      "detachDockDurationMs": 541,
+      "failure": null
+    },
+    {
+      "toolId": "crypto",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "2fe83d8e-00bc-41c4-9864-a1773c15a655",
+      "reparentOperations": 2,
+      "openDurationMs": 1503,
+      "detachDockDurationMs": 551,
+      "failure": null
+    },
+    {
+      "toolId": "host",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "6d2176ab-9315-491d-b1b9-7aaaa67dbfdd",
+      "reparentOperations": 2,
+      "openDurationMs": 1507,
+      "detachDockDurationMs": 546,
+      "failure": null
+    },
+    {
+      "toolId": "http",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "09820386-11a1-45b1-88a9-a4d209619635",
+      "reparentOperations": 2,
+      "openDurationMs": 1400,
+      "detachDockDurationMs": 544,
+      "failure": null
+    },
+    {
+      "toolId": "image",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "8b0d9dcb-790f-4b48-8d86-b06106b901c5",
+      "reparentOperations": 2,
+      "openDurationMs": 1393,
+      "detachDockDurationMs": 549,
+      "failure": null
+    },
+    {
+      "toolId": "encode",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "bfb90bc0-df9c-457c-80ff-d2369bd02327",
+      "reparentOperations": 2,
+      "openDurationMs": 1390,
+      "detachDockDurationMs": 545,
+      "failure": null
+    },
+    {
+      "toolId": "json",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "3ea380c5-63c3-424f-bd33-c3e47cfdd491",
+      "reparentOperations": 2,
+      "openDurationMs": 1505,
+      "detachDockDurationMs": 551,
+      "failure": null
+    },
+    {
+      "toolId": "message-board",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "fe950020-cb79-471c-8a46-28f25ee6884c",
+      "reparentOperations": 2,
+      "openDurationMs": 1505,
+      "detachDockDurationMs": 557,
+      "failure": null
+    },
+    {
+      "toolId": "network",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "5fabf6dd-863b-437b-ba98-6323e4ec41e7",
+      "reparentOperations": 2,
+      "openDurationMs": 1401,
+      "detachDockDurationMs": 562,
+      "failure": null
+    },
+    {
+      "toolId": "pdf",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "60ca3557-9574-4935-abf5-da9b3df14a96",
+      "reparentOperations": 2,
+      "openDurationMs": 1397,
+      "detachDockDurationMs": 552,
+      "failure": null
+    },
+    {
+      "toolId": "protobuf",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "07fd3b50-5bda-431c-ba00-c309204b24fe",
+      "reparentOperations": 2,
+      "openDurationMs": 1507,
+      "detachDockDurationMs": 557,
+      "failure": null
+    },
+    {
+      "toolId": "quick-note",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "0e2e3bba-2b3a-4935-be3e-df07aa5dfbce",
+      "reparentOperations": 2,
+      "openDurationMs": 1499,
+      "detachDockDurationMs": 542,
+      "failure": null
+    },
+    {
+      "toolId": "qrcode",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "cd946709-d094-4b74-9d31-07713ed7884c",
+      "reparentOperations": 2,
+      "openDurationMs": 1714,
+      "detachDockDurationMs": 552,
+      "failure": null
+    },
+    {
+      "toolId": "reformat",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "68df6249-374f-447a-9476-e82f74bb64b2",
+      "reparentOperations": 2,
+      "openDurationMs": 1488,
+      "detachDockDurationMs": 551,
+      "failure": null
+    },
+    {
+      "toolId": "regex",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "376744c0-384e-4b52-9b73-347008d40dc9",
+      "reparentOperations": 2,
+      "openDurationMs": 1491,
+      "detachDockDurationMs": 548,
+      "failure": null
+    },
+    {
+      "toolId": "runtime",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "05cf0a48-4a60-4db6-bd4f-94991030333b",
+      "reparentOperations": 2,
+      "openDurationMs": 1490,
+      "detachDockDurationMs": 540,
+      "failure": null
+    },
+    {
+      "toolId": "timestamp",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "d00a52cf-a58e-45dc-a91e-1de08a5c9653",
+      "reparentOperations": 2,
+      "openDurationMs": 1408,
+      "detachDockDurationMs": 549,
+      "failure": null
+    },
+    {
+      "toolId": "text-diff",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "87e34bb4-7767-4857-b938-06edf3c438e6",
+      "reparentOperations": 2,
+      "openDurationMs": 1510,
+      "detachDockDurationMs": 550,
+      "failure": null
+    },
+    {
+      "toolId": "translation",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "2ef34456-921f-4840-97da-dc0234e01431",
+      "reparentOperations": 2,
+      "openDurationMs": 1507,
+      "detachDockDurationMs": 552,
+      "failure": null
+    },
+    {
+      "toolId": "ua",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "afb988f6-2372-46c1-9fa7-175afbea3c16",
+      "reparentOperations": 2,
+      "openDurationMs": 1498,
+      "detachDockDurationMs": 549,
+      "failure": null
+    },
+    {
+      "toolId": "variables",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "5c273029-7863-4259-8f51-3b6d4cd1ad13",
+      "reparentOperations": 2,
+      "openDurationMs": 1503,
+      "detachDockDurationMs": 551,
+      "failure": null
+    },
+    {
+      "toolId": "system",
+      "passed": true,
+      "pageLoads": 1,
+      "sessionId": "55ef466f-b837-4874-86d8-368583a71dea",
+      "reparentOperations": 2,
+      "openDurationMs": 1594,
+      "detachDockDurationMs": 549,
+      "failure": null
+    }
+  ],
+  "isolation": {
+    "passed": true,
+    "detail": "isolated sessions dd6c97ef-b394-4eb7-af88-d72abca52c14 and 44e3f80c-9214-415c-92f4-1efb40b28007"
+  },
+  "stress": {
+    "passed": true,
+    "detail": "10 cycles, 20 reparent operations, session preserved"
+  },
+  "performance": {
+    "acceptanceStartToFirstToolReadyMs": 7578,
+    "medianToolOpenMs": 1498,
+    "maximumToolOpenMs": 1714,
+    "medianDetachDockMs": 549,
+    "stressDurationMs": 39551,
+    "memory": {
+      "idleBytes": 112091136,
+      "oneToolBytes": 113459200,
+      "tenToolsBytes": 115556352,
+      "allToolsBytes": 122466304
+    },
+    "quickNote": {
+      "records": 10000,
+      "seedMs": 413,
+      "listMs": 32
+    },
+    "digest100MibMs": 114,
+    "json10Mib": {
+      "inputBytes": 10485760,
+      "outputBytes": 10485765,
+      "validationMs": 12.756,
+      "formatMs": 28.189
+    }
+  },
+  "failures": [],
+  "artifact": {
+    "executable": "mootool-next-tauri",
+    "executableBytes": 28047820
+  },
+  "recordedAt": "2026-09-04T07:12:29.993Z"
+}

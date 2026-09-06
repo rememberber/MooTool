@@ -255,7 +255,7 @@ export function NetworkSurface() {
   return (
     <main className="utility-workbench network-workbench">
       <header className="utility-header">
-        <div><span className="eyebrow">TAURI NETWORK TOOLBOX</span><h1>{t('title')}</h1></div>
+        <h1 className="visually-hidden">{t('title')}</h1>
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
 

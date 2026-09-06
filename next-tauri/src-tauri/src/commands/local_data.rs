@@ -5,12 +5,13 @@ use std::{
     time::{SystemTime, UNIX_EPOCH},
 };
 
+use base64::{Engine as _, engine::general_purpose::STANDARD as BASE64};
 use tauri::{Emitter, Manager};
 
 use crate::{
     contracts::error::AppResult,
     contracts::local_data::{
-        BoardMessage, HostProfile, QuickNote, QuickNoteAttachment,
+        BoardMessage, HostProfile, QuickNote, QuickNoteAttachment, QuickNoteAttachmentDataRequest,
         QuickNoteAttachmentImportRequest, QuickNoteFolder, SystemHostsFile, ToolFavorite,
         TranslationHistory, TranslationWord,
     },
@@ -167,6 +168,52 @@ pub fn import_quick_note_attachment(
 }
 
 #[tauri::command]
+pub fn import_quick_note_attachment_data(
+    app: tauri::AppHandle,
+    repository: tauri::State<'_, LocalDataRepository>,
+    request: QuickNoteAttachmentDataRequest,
+) -> AppResult<QuickNoteAttachment> {
+    if request.data_base64.len() > 14 * 1024 * 1024 {
+        return Err("attachment cannot exceed 10 MiB".into());
+    }
+    let data = BASE64
+        .decode(&request.data_base64)
+        .map_err(|_| "attachment data is not valid Base64".to_string())?;
+    if data.is_empty() || data.len() > 10 * 1024 * 1024 {
+        return Err("attachment must contain 1 byte to 10 MiB".into());
+    }
+    let expected_mime_type = attachment_mime_type(&request.name);
+    if !request.mime_type.starts_with("image/") || expected_mime_type != request.mime_type {
+        return Err("pasted and dropped attachment data must be a supported image".into());
+    }
+    validate_image_attachment_signature(&request.mime_type, &data)?;
+    let attachment = QuickNoteAttachment {
+        id: request.id,
+        note_id: request.note_id,
+        name: request.name,
+        mime_type: request.mime_type,
+        size_bytes: data.len() as u64,
+        created_at: request.created_at,
+    };
+    let saved = repository.save_note_attachment(attachment, &data)?;
+    emit_changed(&app, "quick-note-attachment")?;
+    Ok(saved)
+}
+
+fn validate_image_attachment_signature(mime_type: &str, data: &[u8]) -> Result<(), String> {
+    let valid = match mime_type {
+        "image/png" => data.starts_with(b"\x89PNG\r\n\x1a\n"),
+        "image/jpeg" => data.starts_with(&[0xff, 0xd8, 0xff]),
+        "image/gif" => data.starts_with(b"GIF87a") || data.starts_with(b"GIF89a"),
+        "image/webp" => data.starts_with(b"RIFF") && data.get(8..12) == Some(b"WEBP"),
+        _ => false,
+    };
+    valid
+        .then_some(())
+        .ok_or_else(|| "image attachment bytes do not match the declared format".into())
+}
+
+#[tauri::command]
 pub fn export_quick_note_attachment(
     repository: tauri::State<'_, LocalDataRepository>,
     id: String,
@@ -177,10 +224,10 @@ pub fn export_quick_note_attachment(
     let parent = destination
         .parent()
         .ok_or_else(|| "attachment destination has no parent directory".to_string())?;
-    if let Ok(metadata) = fs::symlink_metadata(&destination)
-        && metadata.file_type().is_symlink()
-    {
-        return Err("attachment destination cannot be a symbolic link".into());
+    if let Ok(metadata) = fs::symlink_metadata(&destination) {
+        if metadata.file_type().is_symlink() {
+            return Err("attachment destination cannot be a symbolic link".into());
+        }
     }
     let mut temporary = tempfile::NamedTempFile::new_in(parent)
         .map_err(|error| format!("failed to create temporary attachment export: {error}"))?;

@@ -198,7 +198,7 @@ export function HostSurface() {
   return (
     <main className="utility-workbench host-workbench">
       <header className="utility-header">
-        <div><span className="eyebrow">TAURI HOST PROFILE & DNS</span><h1>{t('title')}</h1></div>
+        <h1 className="visually-hidden">{t('title')}</h1>
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
       <section className="host-toolbar">

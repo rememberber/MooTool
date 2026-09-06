@@ -10,7 +10,7 @@ import {
   Star,
   Settings
 } from 'lucide-react'
-import { useEffect, useMemo, useState, type ComponentType } from 'react'
+import { useEffect, useMemo, useRef, useState, type ComponentType } from 'react'
 import brandLogo from '../assets/brand/mootool-logo.png'
 import { CalculatorHost } from '../features/calculator/CalculatorHost'
 import { ColorHost } from '../features/color/ColorHost'
@@ -107,6 +107,7 @@ export function App() {
   const [historyOpen, setHistoryOpen] = useState(false)
   const [closeRequest, setCloseRequest] = useState<DesktopCloseRequest>()
   const [rememberCloseChoice, setRememberCloseChoice] = useState(false)
+  const automaticUpdateActive = useRef(false)
 
   useEffect(() => {
     if (!notice) return
@@ -136,7 +137,18 @@ export function App() {
       try {
         const result = await productUpdateApi.check()
         if (!cancelled && result.status === 'available') {
-          setNotice(t('settings.updateAvailable', { version: result.latestVersion ?? '' }))
+          if (settings.general.autoDownloadUpdates && !automaticUpdateActive.current) {
+            automaticUpdateActive.current = true
+            setNotice(t('settings.updateDownloadingBackground', { version: result.latestVersion ?? '' }))
+            try {
+              await productUpdateApi.install(() => undefined)
+              if (!cancelled) setNotice(t('settings.updateReadyRestart', { version: result.latestVersion ?? '' }))
+            } finally {
+              automaticUpdateActive.current = false
+            }
+          } else {
+            setNotice(t('settings.updateAvailable', { version: result.latestVersion ?? '' }))
+          }
         }
       } catch (cause) {
         await reportProductError(toProductError(cause), 'application.update.scheduled-check')
@@ -149,7 +161,7 @@ export function App() {
       window.clearTimeout(startupTimer)
       window.clearInterval(interval)
     }
-  }, [settings.general.autoCheckUpdates, settingsReady, t])
+  }, [settings.general.autoCheckUpdates, settings.general.autoDownloadUpdates, settingsReady, t])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {

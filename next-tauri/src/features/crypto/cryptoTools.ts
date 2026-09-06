@@ -2,10 +2,13 @@ import { md5, sha1 } from '@noble/hashes/legacy.js'
 import { sha256, sha384, sha512 } from '@noble/hashes/sha2.js'
 import { hmac } from '@noble/hashes/hmac.js'
 import { Buffer } from 'buffer'
+import CryptoJS from 'crypto-js'
+import { sm2, sm3, sm4 } from 'sm-crypto'
 
-export type HashAlgorithm = 'md5' | 'sha1' | 'sha256' | 'sha384' | 'sha512'
+export type HashAlgorithm = 'md5' | 'sha1' | 'sha256' | 'sha384' | 'sha512' | 'sm3'
 export type BaseAlgorithm = 'base64' | 'base32'
 export type CryptoToolErrorCode = 'hmacSecret' | 'invalidCiphertext' | 'decryptFailed' | 'randomLength' | 'passphraseEmpty' | 'passphraseLong' | 'baseInvalid' | 'rsaKey' | 'rsaOperation'
+export type CompatibilityAlgorithm = 'des' | 'sm4' | 'sm2'
 
 export class CryptoToolError extends Error {
   constructor(readonly code: CryptoToolErrorCode) {
@@ -27,7 +30,55 @@ interface AesEnvelope {
 }
 
 export function hashText(value: string, algorithm: HashAlgorithm): string {
+  if (algorithm === 'sm3') return sm3(value)
   return Buffer.from(hashers[algorithm](encoder.encode(value))).toString('hex')
+}
+
+export function compatibilityEncrypt(algorithm: Exclude<CompatibilityAlgorithm, 'sm2'>, value: string, key: string): string {
+  if (algorithm === 'sm4') return String(sm4.encrypt(value, utf8KeyHex(key, 16), { mode: 'ecb', padding: 'pkcs#7' }))
+  const keyWords = CryptoJS.enc.Utf8.parse(normalizeCompatibilityKey(key, 8))
+  return CryptoJS.DES.encrypt(CryptoJS.enc.Utf8.parse(value), keyWords, {
+    mode: CryptoJS.mode.ECB,
+    padding: CryptoJS.pad.Pkcs7
+  }).ciphertext.toString(CryptoJS.enc.Hex)
+}
+
+export function compatibilityDecrypt(algorithm: Exclude<CompatibilityAlgorithm, 'sm2'>, value: string, key: string): string {
+  const cleaned = cleanHex(value)
+  if (algorithm === 'sm4') return String(sm4.decrypt(cleaned, utf8KeyHex(key, 16), { mode: 'ecb', padding: 'pkcs#7' }))
+  const keyWords = CryptoJS.enc.Utf8.parse(normalizeCompatibilityKey(key, 8))
+  const params = CryptoJS.lib.CipherParams.create({ ciphertext: CryptoJS.enc.Hex.parse(cleaned) })
+  const output = CryptoJS.DES.decrypt(params, keyWords, {
+    mode: CryptoJS.mode.ECB,
+    padding: CryptoJS.pad.Pkcs7
+  }).toString(CryptoJS.enc.Utf8)
+  if (!output && value.trim()) throw new CryptoToolError('decryptFailed')
+  return output
+}
+
+export function generateSm2KeyPair(): RsaKeyPair {
+  const pair = sm2.generateKeyPairHex()
+  return { publicKey: hexToBase64(pair.publicKey), privateKey: hexToBase64(pair.privateKey) }
+}
+
+export function sm2Encrypt(value: string, publicKey: string): string {
+  return hexToBase64(sm2.doEncrypt(value, base64ToHex(publicKey), 1))
+}
+
+export function sm2Decrypt(value: string, privateKey: string): string {
+  return String(sm2.doDecrypt(base64ToHex(value), base64ToHex(privateKey), 1))
+}
+
+export function sm2Sign(value: string, privateKey: string, publicKey: string): string {
+  return hexToBase64(sm2.doSignature(value, base64ToHex(privateKey), {
+    hash: true,
+    der: true,
+    publicKey: base64ToHex(publicKey)
+  }))
+}
+
+export function sm2Verify(value: string, signature: string, publicKey: string): boolean {
+  return sm2.doVerifySignature(value, base64ToHex(signature), base64ToHex(publicKey), { hash: true, der: true })
 }
 
 export function hmacSha256(value: string, secret: string): string {
@@ -255,6 +306,35 @@ function decodeBase64(value: string): Uint8Array<ArrayBuffer> {
   const normalized = value.replace(/\s+/g, '')
   if (!normalized || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(normalized)) throw new Error('invalid base64')
   return Uint8Array.from(Buffer.from(normalized, 'base64'))
+}
+
+function normalizeCompatibilityKey(key: string, length: number): string {
+  const characters = Array.from(key)
+  return characters.length >= length
+    ? characters.slice(0, length).join('')
+    : `${key}${'0'.repeat(length)}`.slice(0, length)
+}
+
+function utf8KeyHex(key: string, length: number): string {
+  return CryptoJS.enc.Utf8.parse(normalizeCompatibilityKey(key, length)).toString(CryptoJS.enc.Hex)
+}
+
+function cleanHex(value: string): string {
+  const normalized = value.replace(/\s+/g, '')
+  if (!/^(?:[0-9a-f]{2})*$/i.test(normalized)) throw new CryptoToolError('invalidCiphertext')
+  return normalized
+}
+
+function hexToBase64(value: string): string {
+  return Buffer.from(cleanHex(value), 'hex').toString('base64')
+}
+
+function base64ToHex(value: string): string {
+  const normalized = value.replace(/\s+/g, '')
+  if (!normalized || !/^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/.test(normalized)) {
+    throw new CryptoToolError('invalidCiphertext')
+  }
+  return Buffer.from(normalized, 'base64').toString('hex')
 }
 
 function pem(label: string, data: ArrayBuffer): string {

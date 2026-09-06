@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  applyColorOperation,
   bestTextColor,
   ColorToolError,
   colorFormats,
@@ -8,7 +9,8 @@ import {
   hslToRgb,
   parseHexColor,
   rgbToHex,
-  rgbToHsl
+  rgbToHsl,
+  themeShadeColumns
 } from './colorTools'
 
 describe('color tools', () => {
@@ -44,5 +46,20 @@ describe('color tools', () => {
 
   it('rejects malformed colors', () => {
     expect(() => parseHexColor('blue')).toThrow(ColorToolError)
+  })
+
+  it('applies two-color operations with channel clamping', () => {
+    const primary = parseHexColor('#804020')
+    const secondary = parseHexColor('#4080FF')
+    expect(rgbToHex(applyColorOperation('average', primary, secondary))).toBe('#606090')
+    expect(rgbToHex(applyColorOperation('difference', primary, secondary))).toBe('#4040DF')
+    expect(rgbToHex(applyColorOperation('add', primary, secondary))).toBe('#C0C0FF')
+    expect(rgbToHex(applyColorOperation('invert', primary, secondary))).toBe('#7FBFDF')
+  })
+
+  it('builds five shades for every theme color', () => {
+    const shades = themeShadeColumns(['#2F6FED', '#FFFFFF'])
+    expect(shades).toHaveLength(2)
+    expect(shades.every((column) => column.length === 5)).toBe(true)
   })
 })

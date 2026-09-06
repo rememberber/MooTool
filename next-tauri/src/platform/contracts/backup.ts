@@ -13,7 +13,7 @@ export interface BackupImportResult {
 }
 
 export interface BackupApi {
-  chooseExportDirectory(): Promise<string | null>
+  chooseExportDirectory(defaultDirectory?: string): Promise<string | null>
   chooseImportDirectory(): Promise<string | null>
   exportTo(destinationDirectory: string): Promise<BackupExportResult>
   importFrom(sourceDirectory: string): Promise<BackupImportResult>

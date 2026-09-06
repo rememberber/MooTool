@@ -14,6 +14,14 @@ pub struct QuickNote {
     pub color: String,
     #[serde(default)]
     pub folder_path: String,
+    #[serde(default = "default_note_editor_font")]
+    pub editor_font: String,
+    #[serde(default = "default_note_line_height")]
+    pub line_height: String,
+    #[serde(default = "default_true")]
+    pub line_wrapping: bool,
+    #[serde(default = "default_note_syntax")]
+    pub syntax: String,
     pub pinned: bool,
     pub created_at: i64,
     pub updated_at: i64,
@@ -45,6 +53,12 @@ impl QuickNote {
             return Err("unsupported note color".into());
         }
         validate_note_folder_path(&self.folder_path, true)?;
+        if !matches!(self.editor_font.as_str(), "default" | "mono" | "serif")
+            || !matches!(self.line_height.as_str(), "compact" | "normal" | "relaxed")
+            || !matches!(self.syntax.as_str(), "markdown" | "plain" | "json" | "yaml")
+        {
+            return Err("unsupported note editor preferences".into());
+        }
         validate_timestamps(self.created_at, self.updated_at)
     }
 }
@@ -91,6 +105,22 @@ fn default_note_color() -> String {
     "default".into()
 }
 
+fn default_note_editor_font() -> String {
+    "default".into()
+}
+
+fn default_note_line_height() -> String {
+    "normal".into()
+}
+
+fn default_note_syntax() -> String {
+    "markdown".into()
+}
+
+fn default_true() -> bool {
+    true
+}
+
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct QuickNoteAttachment {
@@ -132,6 +162,17 @@ pub struct QuickNoteAttachmentImportRequest {
     pub id: String,
     pub note_id: String,
     pub source_path: String,
+    pub created_at: i64,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct QuickNoteAttachmentDataRequest {
+    pub id: String,
+    pub note_id: String,
+    pub name: String,
+    pub mime_type: String,
+    pub data_base64: String,
     pub created_at: i64,
 }
 
@@ -394,6 +435,10 @@ mod tests {
             tags: vec!["desktop".into()],
             color: "blue".into(),
             folder_path: "work/tauri".into(),
+            editor_font: "mono".into(),
+            line_height: "normal".into(),
+            line_wrapping: true,
+            syntax: "markdown".into(),
             pinned: true,
             created_at: 10,
             updated_at: 11,

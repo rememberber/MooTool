@@ -137,10 +137,7 @@ export function EncodeSurface() {
   return (
     <main className="utility-workbench encode-workbench">
       <header className="utility-header">
-        <div>
-          <span className="eyebrow">TAURI ENCODE &amp; DECODE</span>
-          <h1>{t('title')}</h1>
-        </div>
+        <h1 className="visually-hidden">{t('title')}</h1>
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
 

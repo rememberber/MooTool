@@ -12,7 +12,7 @@ import {
   TriangleAlert,
   UnlockKeyhole
 } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useLocalizedMessages, type LocalizedMessageKey, type MessageValues } from '../../app/localizedMessages'
 import { clipboardApi } from '../../platform/api/clipboardApi'
 import { fileDigestApi } from '../../platform/api/fileDigestApi'
@@ -21,32 +21,42 @@ import { contentFingerprint } from '../../shared/fingerprint'
 import { useToolSessionReport } from '../toolWebview/useToolSessionReport'
 import { useOperationHistory } from '../history/useOperationHistory'
 import { parseOperationMetadata, useOperationRestore } from '../history/operationRestore'
+import { useSettings } from '../settings/SettingsProvider'
 import {
+  compatibilityDecrypt,
+  compatibilityEncrypt,
   decodeBase,
   decryptAesGcm,
   encodeBase,
   encryptAesGcm,
   generateRsaKeyPair,
   generateRandom,
+  generateSm2KeyPair,
   hashText,
   hmacSha256,
   rsaDecrypt,
   rsaEncrypt,
   rsaSign,
   rsaVerify,
+  sm2Decrypt,
+  sm2Encrypt,
+  sm2Sign,
+  sm2Verify,
   CryptoToolError,
   type BaseAlgorithm,
+  type CompatibilityAlgorithm,
   type HashAlgorithm,
   type RandomKind
 } from './cryptoTools'
 import { cryptoMessages } from './cryptoMessages'
 
-type CryptoTab = 'digest' | 'aes' | 'rsa' | 'base' | 'random'
+type CryptoTab = 'digest' | 'aes' | 'rsa' | 'compatibility' | 'base' | 'random'
 type CryptoMessageKey = LocalizedMessageKey<typeof cryptoMessages>
 type CryptoNotice = { key: CryptoMessageKey; values?: MessageValues } | { raw: string }
 
 export function CryptoSurface() {
   const { t } = useLocalizedMessages(cryptoMessages)
+  const { settings, ready: settingsReady, save: saveSettings } = useSettings()
   const [tab, setTab] = useState<CryptoTab>('digest')
   const [source, setSource] = useState('MooTool Next Tauri')
   const [output, setOutput] = useState('')
@@ -58,6 +68,10 @@ export function CryptoSurface() {
   const [rsaPublicKey, setRsaPublicKey] = useState('')
   const [rsaPrivateKey, setRsaPrivateKey] = useState('')
   const [rsaBusy, setRsaBusy] = useState(false)
+  const [compatibilityAlgorithm, setCompatibilityAlgorithm] = useState<CompatibilityAlgorithm>('sm4')
+  const [compatibilityKey, setCompatibilityKey] = useState('1234567890abcdef')
+  const [sm2PublicKey, setSm2PublicKey] = useState('')
+  const [sm2PrivateKey, setSm2PrivateKey] = useState('')
   const [randomKind, setRandomKind] = useState<RandomKind>('password')
   const [randomLength, setRandomLength] = useState(32)
   const [notice, setNotice] = useState<CryptoNotice>({ key: 'notice.ready', values: { tab: 'SHA-256' } })
@@ -77,14 +91,18 @@ export function CryptoSurface() {
   }), [hashAlgorithm, output, source, t, tab])
   const { sessionId, reportError } = useToolSessionReport('crypto', session.digest, session.summary)
   const recordOperation = useOperationHistory('crypto')
+  useEffect(() => {
+    if (settingsReady) setRandomLength(settings.tools.randomStringLength)
+  }, [settings.tools.randomStringLength, settingsReady])
   useOperationRestore('crypto', (entry) => {
     const metadata = parseOperationMetadata(entry)
     const nextTab = metadata.tab
-    if (nextTab === 'digest' || nextTab === 'base' || nextTab === 'random') setTab(nextTab)
+    if (nextTab === 'digest' || nextTab === 'base' || nextTab === 'random' || nextTab === 'compatibility') setTab(nextTab)
     if (typeof metadata.hashAlgorithm === 'string') setHashAlgorithm(metadata.hashAlgorithm as HashAlgorithm)
     if (typeof metadata.baseAlgorithm === 'string') setBaseAlgorithm(metadata.baseAlgorithm as BaseAlgorithm)
     if (typeof metadata.randomKind === 'string') setRandomKind(metadata.randomKind as RandomKind)
     if (typeof metadata.randomLength === 'number') setRandomLength(metadata.randomLength)
+    if (metadata.compatibilityAlgorithm === 'des' || metadata.compatibilityAlgorithm === 'sm4' || metadata.compatibilityAlgorithm === 'sm2') setCompatibilityAlgorithm(metadata.compatibilityAlgorithm)
     setSource(entry.inputText)
     setOutput(entry.outputText)
     setFailed(false)
@@ -171,6 +189,45 @@ export function CryptoSurface() {
     } catch (cause) { fail(cause) }
   }
 
+  function generateSm2Keys(): void {
+    try {
+      const pair = generateSm2KeyPair()
+      setSm2PublicKey(pair.publicKey)
+      setSm2PrivateKey(pair.privateKey)
+      succeed('notice.sm2KeysGenerated')
+      recordOperation(t('operation.keyPair'), 'SM2', 'success', { metadata: { tab: 'compatibility', sensitive: true } })
+    } catch (cause) { fail(cause) }
+  }
+
+  function runCompatibility(mode: 'encrypt' | 'decrypt' | 'sign' | 'verify'): void {
+    try {
+      if (compatibilityAlgorithm === 'sm2') {
+        if (mode === 'verify') {
+          const valid = sm2Verify(source, output, sm2PublicKey)
+          succeed(valid ? 'notice.sm2Verified' : 'notice.sm2NotVerified')
+          return
+        }
+        const result = mode === 'encrypt'
+          ? sm2Encrypt(source, sm2PublicKey)
+          : mode === 'decrypt'
+            ? sm2Decrypt(source, sm2PrivateKey)
+            : sm2Sign(source, sm2PrivateKey, sm2PublicKey)
+        setOutput(result)
+        succeed(mode === 'encrypt' ? 'notice.compatEncrypted' : mode === 'decrypt' ? 'notice.compatDecrypted' : 'notice.sm2Signed', { algorithm: 'SM2' })
+      } else {
+        if (mode === 'sign' || mode === 'verify') return
+        const result = mode === 'encrypt'
+          ? compatibilityEncrypt(compatibilityAlgorithm, source, compatibilityKey)
+          : compatibilityDecrypt(compatibilityAlgorithm, source, compatibilityKey)
+        setOutput(result)
+        succeed(mode === 'encrypt' ? 'notice.compatEncrypted' : 'notice.compatDecrypted', { algorithm: compatibilityAlgorithm.toUpperCase() })
+      }
+      recordOperation(t(mode === 'encrypt' ? 'operation.encrypt' : mode === 'decrypt' ? 'operation.decrypt' : 'operation.sign'), `${compatibilityAlgorithm.toUpperCase()} · ${source.length}`, 'success', {
+        metadata: { tab: 'compatibility', compatibilityAlgorithm, sensitive: true }
+      })
+    } catch (cause) { fail(cause) }
+  }
+
   function runRandom(): void {
     try {
       const result = generateRandom(randomKind, randomLength)
@@ -208,16 +265,13 @@ export function CryptoSurface() {
   return (
     <main className="utility-workbench crypto-workbench">
       <header className="utility-header">
-        <div>
-          <span className="eyebrow">TAURI CRYPTO WORKBENCH</span>
-          <h1>{t('title')}</h1>
-        </div>
+        <h1 className="visually-hidden">{t('title')}</h1>
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
 
       <section className="utility-toolbar">
         <div className="utility-segments" role="tablist">
-          {(['digest', 'aes', 'rsa', 'base', 'random'] as const).map((item) => (
+          {(['digest', 'aes', 'rsa', 'compatibility', 'base', 'random'] as const).map((item) => (
             <button
               className={tab === item ? 'utility-segment utility-segment--active' : 'utility-segment'}
               type="button"
@@ -230,7 +284,7 @@ export function CryptoSurface() {
                 succeed('notice.ready', { tab: tabLabel(item) })
               }}
             >
-              {item === 'digest' ? <ShieldCheck /> : item === 'aes' || item === 'rsa' ? <KeyRound /> : item === 'base' ? <RefreshCw /> : <Dices />}
+              {item === 'digest' ? <ShieldCheck /> : item === 'aes' || item === 'rsa' || item === 'compatibility' ? <KeyRound /> : item === 'base' ? <RefreshCw /> : <Dices />}
               {tabLabel(item)}
             </button>
           ))}
@@ -249,9 +303,10 @@ export function CryptoSurface() {
                 <option value="sha512">SHA-512</option>
                 <option value="sha1">SHA-1 ({t('option.compatible')})</option>
                 <option value="md5">MD5 ({t('option.compatible')})</option>
+                <option value="sm3">SM3</option>
               </select>
             </label>
-            <button className="secondary-button crypto-file-digest" type="button" disabled={hashAlgorithm === 'md5' || hashAlgorithm === 'sha1' || Boolean(hmacSecret)} onClick={() => void runFileDigest()}><FileSearch />{t('action.fileDigest')}</button>
+            <button className="secondary-button crypto-file-digest" type="button" disabled={!['sha256', 'sha384', 'sha512'].includes(hashAlgorithm) || Boolean(hmacSecret)} onClick={() => void runFileDigest()}><FileSearch />{t('action.fileDigest')}</button>
             <label className="crypto-inline-field">
               {t('field.hmac')}
               <input
@@ -281,6 +336,13 @@ export function CryptoSurface() {
             <details className="crypto-key-store"><summary className="secondary-button">{t('action.keys')}</summary><div><label>{t('field.publicKey')}<textarea value={rsaPublicKey} spellCheck={false} onChange={(event) => setRsaPublicKey(event.target.value)} /></label><label>{t('field.privateKey')}<textarea value={rsaPrivateKey} spellCheck={false} onChange={(event) => setRsaPrivateKey(event.target.value)} /></label></div></details>
           </>
         )}
+        {tab === 'compatibility' && (
+          <>
+            <label className="utility-select">{t('field.compatibilityAlgorithm')}<select value={compatibilityAlgorithm} onChange={(event) => { setCompatibilityAlgorithm(event.target.value as CompatibilityAlgorithm); setOutput('') }}><option value="sm4">SM4</option><option value="sm2">SM2</option><option value="des">DES ({t('option.compatible')})</option></select></label>
+            {compatibilityAlgorithm === 'sm2' ? <><button className="primary-button" type="button" onClick={generateSm2Keys}><KeyRound />{t('action.generateKeys')}</button><details className="crypto-key-store"><summary className="secondary-button">{t('action.keys')}</summary><div><label>{t('field.sm2PublicKey')}<textarea value={sm2PublicKey} spellCheck={false} onChange={(event) => setSm2PublicKey(event.target.value)} /></label><label>{t('field.sm2PrivateKey')}<textarea value={sm2PrivateKey} spellCheck={false} onChange={(event) => setSm2PrivateKey(event.target.value)} /></label></div></details></> : <label className="crypto-inline-field">{t('field.compatibilityKey')}<input type="password" value={compatibilityKey} onChange={(event) => setCompatibilityKey(event.target.value)} /></label>}
+            <span className="crypto-compatibility-warning"><TriangleAlert />{t('compatibility.warning')}</span>
+          </>
+        )}
         {tab === 'base' && <label className="utility-select">{t('field.encoding')}<select value={baseAlgorithm} onChange={(event) => setBaseAlgorithm(event.target.value as BaseAlgorithm)}><option value="base64">Base64</option><option value="base32">Base32</option></select></label>}
         {tab === 'random' && (
           <>
@@ -303,6 +365,11 @@ export function CryptoSurface() {
                 disabled={randomKind === 'uuid'}
                 value={randomLength}
                 onChange={(event) => setRandomLength(Number(event.target.value))}
+                onBlur={() => {
+                  const nextLength = Math.min(4096, Math.max(1, Math.round(randomLength) || 1))
+                  setRandomLength(nextLength)
+                  if (settingsReady && nextLength !== settings.tools.randomStringLength) void saveSettings({ ...settings, tools: { ...settings.tools, randomStringLength: nextLength } })
+                }}
               />
             </label>
           </>
@@ -311,7 +378,7 @@ export function CryptoSurface() {
 
       <section className="utility-editor-grid crypto-editor-grid">
         <section className="utility-editor-card">
-          <header><span>{t(tab === 'random' ? 'pane.settings' : tab === 'aes' ? 'pane.aesInput' : tab === 'rsa' ? 'pane.rsaInput' : 'pane.source')}</span></header>
+          <header><span>{t(tab === 'random' ? 'pane.settings' : tab === 'aes' ? 'pane.aesInput' : tab === 'rsa' ? 'pane.rsaInput' : tab === 'compatibility' ? 'pane.compatibilityInput' : 'pane.source')}</span></header>
           {tab === 'random' ? (
             <div className="crypto-random-hero">
               <Dices />
@@ -344,6 +411,11 @@ export function CryptoSurface() {
           )}
           {tab === 'rsa' && (
             <><button type="button" onClick={() => void runRsa('encrypt')}><LockKeyhole />{t('action.publicEncrypt')}</button><button type="button" onClick={() => void runRsa('decrypt')}><UnlockKeyhole />{t('action.privateDecrypt')}</button><button type="button" onClick={() => void runRsa('sign')}><KeyRound />{t('action.sign')}</button><button type="button" disabled={!output} onClick={() => void runRsa('verify')}><ShieldCheck />{t('action.verify')}</button></>
+          )}
+          {tab === 'compatibility' && (
+            compatibilityAlgorithm === 'sm2'
+              ? <><button type="button" onClick={() => runCompatibility('encrypt')}><LockKeyhole />{t('action.publicEncrypt')}</button><button type="button" onClick={() => runCompatibility('decrypt')}><UnlockKeyhole />{t('action.privateDecrypt')}</button><button type="button" onClick={() => runCompatibility('sign')}><KeyRound />{t('action.sign')}</button><button type="button" disabled={!output} onClick={() => runCompatibility('verify')}><ShieldCheck />{t('action.verify')}</button></>
+              : <><button type="button" onClick={() => runCompatibility('encrypt')}><LockKeyhole />{t('action.encrypt')}</button><button type="button" onClick={() => runCompatibility('decrypt')}><UnlockKeyhole />{t('action.decrypt')}</button></>
           )}
           {tab === 'base' && (
             <><button type="button" onClick={() => runBase('encode')}><LockKeyhole />{t('action.encode')}</button><button type="button" onClick={() => runBase('decode')}><UnlockKeyhole />{t('action.decode')}</button></>
@@ -378,5 +450,5 @@ export function CryptoSurface() {
 }
 
 function tabMessageKey(tab: CryptoTab): CryptoMessageKey {
-  return { digest: 'tab.digest', aes: 'tab.aes', rsa: 'tab.rsa', base: 'tab.base', random: 'tab.random' }[tab] as CryptoMessageKey
+  return { digest: 'tab.digest', aes: 'tab.aes', rsa: 'tab.rsa', compatibility: 'tab.compatibility', base: 'tab.base', random: 'tab.random' }[tab] as CryptoMessageKey
 }

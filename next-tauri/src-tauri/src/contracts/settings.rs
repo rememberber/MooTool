@@ -2,7 +2,7 @@ use std::collections::{BTreeMap, HashSet};
 
 use serde::{Deserialize, Serialize};
 
-pub const SETTINGS_SCHEMA_VERSION: u32 = 7;
+pub const SETTINGS_SCHEMA_VERSION: u32 = 8;
 
 const PRODUCT_TOOL_IDS: [&str; 25] = [
     "quick-note",
@@ -100,6 +100,7 @@ pub struct GeneralSettings {
     pub close_behavior: CloseBehavior,
     #[serde(default = "default_true")]
     pub auto_check_updates: bool,
+    pub auto_download_updates: bool,
     pub start_maximized: bool,
     #[serde(default = "default_true")]
     pub tray_enabled: bool,
@@ -112,6 +113,7 @@ impl Default for GeneralSettings {
             launch_at_login: false,
             close_behavior: CloseBehavior::default(),
             auto_check_updates: true,
+            auto_download_updates: false,
             start_maximized: false,
             tray_enabled: true,
         }
@@ -180,7 +182,9 @@ pub struct EditorSettings {
     pub font_size: u8,
     pub tab_size: u8,
     pub word_wrap: bool,
+    pub json_font_family: String,
     pub json_font_size: u8,
+    pub quick_note_font_family: String,
     pub quick_note_font_size: u8,
 }
 
@@ -190,7 +194,9 @@ impl Default for EditorSettings {
             font_size: 13,
             tab_size: 2,
             word_wrap: true,
+            json_font_family: "mono".into(),
             json_font_size: 13,
+            quick_note_font_family: "system".into(),
             quick_note_font_size: 13,
         }
     }
@@ -229,6 +235,16 @@ pub struct RuntimeSettings {
     pub python_path: String,
     pub node_path: String,
     pub environment: BTreeMap<String, String>,
+    pub drafts: BTreeMap<String, String>,
+    pub options: BTreeMap<String, RuntimeRunOptionSettings>,
+    pub timeout_seconds: u16,
+}
+
+#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[serde(default, rename_all = "camelCase")]
+pub struct RuntimeRunOptionSettings {
+    pub arguments_text: String,
+    pub working_directory: String,
 }
 
 impl Default for RuntimeSettings {
@@ -240,6 +256,13 @@ impl Default for RuntimeSettings {
             python_path: String::new(),
             node_path: String::new(),
             environment: BTreeMap::new(),
+            drafts: runtime_keys()
+                .map(|key| (key.into(), String::new()))
+                .collect(),
+            options: runtime_keys()
+                .map(|key| (key.into(), RuntimeRunOptionSettings::default()))
+                .collect(),
+            timeout_seconds: 30,
         }
     }
 }
@@ -279,11 +302,34 @@ impl Default for ShortcutSettings {
     }
 }
 
-#[derive(Clone, Debug, Default, Deserialize, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
 #[serde(default, rename_all = "camelCase")]
 pub struct ToolSettings {
     pub favorites: Vec<String>,
     pub recent: Vec<String>,
+    pub qr_code_size: u16,
+    pub qr_error_correction: String,
+    pub random_string_length: u16,
+    pub export_directory: String,
+    pub translation_provider: String,
+    pub translation_source_lang: String,
+    pub translation_target_lang: String,
+}
+
+impl Default for ToolSettings {
+    fn default() -> Self {
+        Self {
+            favorites: Vec::new(),
+            recent: Vec::new(),
+            qr_code_size: 300,
+            qr_error_correction: "M".into(),
+            random_string_length: 16,
+            export_directory: String::new(),
+            translation_provider: "google".into(),
+            translation_source_lang: "auto".into(),
+            translation_target_lang: "zh-CN".into(),
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize, PartialEq, Serialize)]
@@ -337,6 +383,15 @@ impl AppSettings {
             || !(10..=24).contains(&self.editor.quick_note_font_size)
         {
             return Err("tool editor font sizes must be between 10 and 24".into());
+        }
+        if ![
+            &self.editor.json_font_family,
+            &self.editor.quick_note_font_family,
+        ]
+        .into_iter()
+        .all(|family| family == "system" || family == "mono")
+        {
+            return Err("tool editor font family is invalid".into());
         }
         if ![2, 4, 8].contains(&self.editor.tab_size) {
             return Err("editor tab size must be 2, 4, or 8".into());
@@ -434,10 +489,69 @@ impl AppSettings {
         {
             return Err("runtime environment overrides are invalid".into());
         }
+        validate_runtime_persistence(&self.runtime)?;
+        if !(1..=300).contains(&self.runtime.timeout_seconds) {
+            return Err("runtime timeout must be between 1 and 300 seconds".into());
+        }
         validate_tool_ids("favorites", &self.tools.favorites, 50)?;
         validate_tool_ids("recent", &self.tools.recent, 20)?;
+        validate_tool_defaults(&self.tools)?;
         Ok(())
     }
+}
+
+fn runtime_keys() -> impl Iterator<Item = &'static str> {
+    ["java", "groovy", "python", "node"].into_iter()
+}
+
+fn validate_runtime_persistence(settings: &RuntimeSettings) -> Result<(), String> {
+    let valid_keys = runtime_keys().collect::<HashSet<_>>();
+    if settings.drafts.len() != valid_keys.len()
+        || settings.options.len() != valid_keys.len()
+        || settings
+            .drafts
+            .keys()
+            .any(|key| !valid_keys.contains(key.as_str()))
+        || settings
+            .options
+            .keys()
+            .any(|key| !valid_keys.contains(key.as_str()))
+        || settings
+            .drafts
+            .values()
+            .any(|value| value.len() > 1_000_000)
+        || settings.options.values().any(|option| {
+            option.arguments_text.len() > 8_192
+                || option.working_directory.len() > 4_096
+                || option.arguments_text.contains('\0')
+                || option.working_directory.chars().any(char::is_control)
+        })
+    {
+        return Err("runtime drafts or options are invalid".into());
+    }
+    Ok(())
+}
+
+fn validate_tool_defaults(settings: &ToolSettings) -> Result<(), String> {
+    if !(120..=2_000).contains(&settings.qr_code_size)
+        || !matches!(settings.qr_error_correction.as_str(), "L" | "M" | "Q" | "H")
+        || !(1..=4_096).contains(&settings.random_string_length)
+        || !matches!(settings.translation_provider.as_str(), "google" | "bing")
+        || settings.translation_source_lang.is_empty()
+        || settings.translation_source_lang.len() > 32
+        || settings.translation_target_lang.is_empty()
+        || settings.translation_target_lang.len() > 32
+        || settings.export_directory.len() > 4_096
+        || settings.export_directory.chars().any(char::is_control)
+    {
+        return Err("tool defaults are invalid".into());
+    }
+    if !settings.export_directory.is_empty()
+        && !std::path::Path::new(&settings.export_directory).is_absolute()
+    {
+        return Err("tool export directory must be empty or absolute".into());
+    }
+    Ok(())
 }
 
 fn validate_tool_ids(label: &str, ids: &[String], limit: usize) -> Result<(), String> {

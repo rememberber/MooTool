@@ -274,10 +274,10 @@ fn restore_windows(app: &tauri::AppHandle, hidden: &[HiddenWindow]) {
             }
         }
     }
-    if let Some(item) = hidden.iter().find(|item| item.focused)
-        && let Some(window) = app.get_webview_window(&item.label)
-    {
-        let _ = window.set_focus();
+    if let Some(item) = hidden.iter().find(|item| item.focused) {
+        if let Some(window) = app.get_webview_window(&item.label) {
+            let _ = window.set_focus();
+        }
     }
 }
 

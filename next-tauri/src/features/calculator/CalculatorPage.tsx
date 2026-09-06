@@ -101,8 +101,7 @@ export function CalculatorPage({ onStateChange }: {
     <section className="tool-page">
       <header className="tool-header">
         <div>
-          <span className="eyebrow">DAILY TOOL</span>
-          <h1>{t('title')}</h1>
+          <h1 className="visually-hidden">{t('title')}</h1>
         </div>
         <button className="secondary-button" type="button" onClick={() => setHistory([])}>
           <RotateCcw />{t('action.clearHistory')}

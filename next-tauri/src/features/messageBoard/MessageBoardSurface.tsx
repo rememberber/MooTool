@@ -243,7 +243,7 @@ export function MessageBoardSurface() {
   return (
     <main className="utility-workbench message-board-workbench message-board-workbench--display">
       <header className="utility-header">
-        <div><span className="eyebrow">TAURI MESSAGE DISPLAY</span><h1>{t('title')}</h1></div>
+        <h1 className="visually-hidden">{t('title')}</h1>
         <div className="message-display-header-actions">
           <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
           <button className="primary-button" type="button" onClick={() => void enterPresentation()}>

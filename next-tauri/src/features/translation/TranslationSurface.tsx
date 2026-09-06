@@ -39,7 +39,7 @@ type TranslationMessageKey = LocalizedMessageKey<typeof translationMessages>
 type TranslationNotice = { key: TranslationMessageKey; values?: MessageValues } | { raw: string }
 
 export function TranslationSurface() {
-  const { settings } = useSettings()
+  const { settings, ready: settingsReady, save: saveSettings } = useSettings()
   const { t, locale } = useLocalizedMessages(translationMessages)
   const [tab, setTab] = useState<TranslationTab>('translate')
   const [source, setSource] = useState('')
@@ -55,6 +55,7 @@ export function TranslationSurface() {
   const activeRequest = useRef('')
   const requestSequence = useRef(0)
   const suppressNextAutomaticTranslation = useRef(false)
+  const hydratedDefaults = useRef(false)
   const languageName = useCallback(
     (code: string) => languageLabel(code, locale, t('language.auto')),
     [locale, t]
@@ -74,6 +75,13 @@ export function TranslationSurface() {
   }), [languageName, provider, source, sourceLang, t, tab, target, targetLang])
   const { sessionId, reportError } = useToolSessionReport('translation', session.digest, session.summary)
   const recordOperation = useOperationHistory('translation')
+  useEffect(() => {
+    if (!settingsReady || hydratedDefaults.current) return
+    hydratedDefaults.current = true
+    if (translationLanguages.some((code) => code === settings.tools.translationSourceLang)) setSourceLang(settings.tools.translationSourceLang)
+    if (translationLanguages.some((code) => code === settings.tools.translationTargetLang) && settings.tools.translationTargetLang !== 'auto') setTargetLang(settings.tools.translationTargetLang)
+    setProvider(settings.tools.translationProvider)
+  }, [settings.tools.translationProvider, settings.tools.translationSourceLang, settings.tools.translationTargetLang, settingsReady])
   useOperationRestore('translation', (entry) => {
     const metadata = parseOperationMetadata(entry)
     suppressNextAutomaticTranslation.current = true
@@ -165,15 +173,28 @@ export function TranslationSurface() {
     setTargetLang(nextTargetLang)
     setSource(target)
     setTarget(source)
+    persistDefaults({ translationSourceLang: nextSourceLang, translationTargetLang: nextTargetLang })
   }
 
   function updateSourceLanguage(value: string) {
     setSourceLang(value)
-    if (value !== 'auto' && value === targetLang) setTargetLang(alternateTargetLanguage(value))
+    const nextTarget = value !== 'auto' && value === targetLang ? alternateTargetLanguage(value) : targetLang
+    if (nextTarget !== targetLang) setTargetLang(nextTarget)
+    persistDefaults({ translationSourceLang: value, translationTargetLang: nextTarget })
   }
 
   function updateTargetLanguage(value: string) {
-    setTargetLang(value === sourceLang ? alternateTargetLanguage(value) : value)
+    const nextTarget = value === sourceLang ? alternateTargetLanguage(value) : value
+    setTargetLang(nextTarget)
+    persistDefaults({ translationTargetLang: nextTarget })
+  }
+
+  function persistDefaults(patch: Partial<typeof settings.tools>) {
+    if (!settingsReady) return
+    void saveSettings({ ...settings, tools: { ...settings.tools, ...patch } }).catch((cause: unknown) => {
+      setFailed(true)
+      setNotice({ raw: errorMessage(cause) })
+    })
   }
 
   async function copyTarget() {
@@ -222,7 +243,7 @@ export function TranslationSurface() {
   return (
     <main className="utility-workbench translation-workbench">
       <header className="utility-header">
-        <div><span className="eyebrow">TAURI RUST TRANSLATION</span><h1>{t('title')}</h1></div>
+        <h1 className="visually-hidden">{t('title')}</h1>
         <span className="utility-session">{t('session.label')} <code>{sessionId}</code></span>
       </header>
       <nav className="utility-segments translation-tabs">
@@ -237,7 +258,7 @@ export function TranslationSurface() {
             <button type="button" title={t('action.exchange')} onClick={exchange}><ArrowLeftRight /></button>
             <LanguageSelect value={targetLang} onChange={updateTargetLanguage} />
             <span />
-            <label>{t('option.provider')}<select value={provider} onChange={(event) => setProvider(event.target.value as TranslationProvider)}><option value="google">Google</option><option value="bing">Bing</option></select></label>
+            <label>{t('option.provider')}<select value={provider} onChange={(event) => { const nextProvider = event.target.value as TranslationProvider; setProvider(nextProvider); persistDefaults({ translationProvider: nextProvider }) }}><option value="google">Google</option><option value="bing">Bing</option></select></label>
             <button type="button" disabled={!target} onClick={() => void copyTarget()}><Copy />{t('action.copy')}</button>
             <button type="button" disabled={!source.trim()} onClick={() => void saveCurrentWord()}><Star />{t('action.favorite')}</button>
             <button type="button" onClick={() => { cancelActive(); setSource(''); setTarget('') }}><X />{t('action.clear')}</button>

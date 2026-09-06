@@ -34,7 +34,7 @@ export function ManagedToolHost({ active, toolId, title, children }: ManagedTool
 
   return (
     <section className="calculator-host managed-tool-host">
-      <header className="managed-tool-host__toolbar">
+      <header className="managed-tool-host__toolbar" data-tauri-drag-region>
         <strong>{title}</strong>
         <span className={error ? 'managed-tool-host__notice managed-tool-host__notice--error' : 'managed-tool-host__notice'} role="status" aria-live="polite">
           {error || (busy ? `${busy}…` : '')}
