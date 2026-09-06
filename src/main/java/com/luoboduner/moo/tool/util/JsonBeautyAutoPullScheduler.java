@@ -6,8 +6,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 
 import javax.swing.SwingWorker;
-import javax.swing.Timer;
 import java.io.File;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /**
  * JSON Vault 后台定时从远程拉取更新。
@@ -19,8 +21,8 @@ public final class JsonBeautyAutoPullScheduler {
 
     private static volatile long lastPullAt;
     private static volatile boolean pullInProgress;
-    private static Timer tickTimer;
     private static boolean started;
+    private static ScheduledExecutorService scheduler;
 
     private JsonBeautyAutoPullScheduler() {
     }
@@ -31,15 +33,32 @@ public final class JsonBeautyAutoPullScheduler {
         }
         started = true;
         lastPullAt = System.currentTimeMillis();
-        tickTimer = new Timer(TICK_MS, e -> evaluatePull());
-        tickTimer.setRepeats(true);
-        tickTimer.start();
+        scheduler= Executors.newSingleThreadScheduledExecutor(r->{
+            Thread thread = new Thread(r, "JsonBeautyAutoPullScheduler");
+            thread.setDaemon(true);
+            return thread;
+        });
+        scheduler.scheduleWithFixedDelay(()->{
+            try {
+                evaluatePull();
+            }catch (Throwable ex){
+                log.debug("JSON auto git pull failed: {}", ex.getMessage());
+            }
+        },TICK_MS,TICK_MS, TimeUnit.MILLISECONDS);
     }
 
     public static void stop() {
-        if (tickTimer != null) {
-            tickTimer.stop();
-            tickTimer = null;
+        if(scheduler !=null){
+            scheduler.shutdown();
+            try {
+                if(!scheduler.awaitTermination(TICK_MS,TimeUnit.MILLISECONDS)){
+                    scheduler.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                scheduler.shutdownNow();
+            }finally {
+                scheduler=null;
+            }
         }
         started = false;
         pullInProgress = false;
