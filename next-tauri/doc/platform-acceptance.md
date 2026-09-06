@@ -20,6 +20,13 @@
 | 日期 | 提交 | GitHub Actions | 结果与结论 |
 | --- | --- | --- | --- |
 | 2026-09-04 | `344765a2` | [run 33845624852](https://github.com/rememberber/MooTool/actions/runs/33845624852) | macOS x64 的完整检查与 100 轮原生验收通过；Windows 暴露路径分隔符问题，Linux 暴露 Ubuntu 22.04/PipeWire 版本不兼容，macOS arm64 暴露同版系统字体的 1.57% 稳定栅格差异。三项均作为 RC 前修复输入，不能把本次运行记为四平台通过。 |
+| 2026-09-06 | `03ac809f` | [run 33972861338](https://github.com/rememberber/MooTool/actions/runs/33972861338) | macOS x64、macOS arm64、Windows x64、Linux x64 全部通过；每个平台完成完整门禁、25/25 正式工具、会话隔离及 100 轮、200 次 reparent 状态保持。Windows 配置工具不再在 detach 时死锁，macOS arm64 QR Code 不再因异步派生输出误报状态变化。 |
+
+## RC 安装包运行记录
+
+| 日期 | 标签 / 提交 | GitHub Actions | 结果与结论 |
+| --- | --- | --- | --- |
+| 2026-09-06 | `next-tauri-v0.1.0-rc.1` / `c03ef5c0` | [run 34008294955](https://github.com/rememberber/MooTool/actions/runs/34008294955) | macOS x64/arm64 DMG 均完成代码签名校验、只读挂载和挂载卷首次启动；Windows x64 NSIS 完成静默安装、首次启动和静默卸载；Linux x64 AppImage 完成首次启动，deb 完成实际安装、从系统路径首次启动和卸载状态检查。四平台 updater 签名文件、规范化资产、`latest.json` 和 `next-tauri-release.json` 均已生成；五个安装包逐文件 SHA-512 校验通过；已创建不占用仓库 Latest 的 Draft Pre-release。 |
 
 ## 本机交互运行记录
 
