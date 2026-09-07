@@ -1,6 +1,6 @@
 [package]
 name = "mootool-next-tauri"
-version = "0.1.0-rc.1"
+version = "0.1.0-rc.2"
 description = "MooTool Next Tauri independent desktop product"
 authors = ["Zhou Bo <rememberber@163.com>"]
 license = "MIT"
@@ -36,6 +36,7 @@ tauri-plugin-clipboard-manager = "2"
 tauri-plugin-dialog = "2"
 tauri-plugin-updater = "2"
 tempfile = "3"
+time = { version = "=0.3.47", features = ["formatting"] }
 tokio = { version = "1.53.1", features = ["process", "io-util", "time", "sync", "fs", "net", "macros"] }
 tracing = "0.1"
 tracing-appender = "0.2"
@@ -43,6 +44,11 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
 vtracer = "=1.0.0-alpha.3"
 xcap = "0.9.8"
 
+[target.'cfg(target_os = "linux")'.dev-dependencies]
+glib = "=0.18.5"
+
 [patch.crates-io]
 # Remove this override after tauri-apps/tauri#15489 ships in tauri-runtime-wry.
 tauri-runtime-wry = { path = "vendor/tauri-runtime-wry" }
+# Backport gtk-rs/gtk-rs-core#1343 while the GTK3 dependency chain requires GLib 0.18.
+glib = { path = "vendor/glib" }

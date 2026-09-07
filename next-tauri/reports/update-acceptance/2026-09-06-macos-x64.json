@@ -1,0 +1,56 @@
+{
+  "schemaVersion": 1,
+  "recordedAt": "2026-09-06T14:21:54.881Z",
+  "upgradeMechanicsPassed": true,
+  "rc1UpdaterUiContractPassed": false,
+  "platform": "macOS 26.7 x86_64",
+  "fixtureVersion": "0.1.0-rc.0",
+  "fixtureSource": "3a200191151011785bc719034a9e68bd2653ddae",
+  "target": "next-tauri-v0.1.0-rc.1",
+  "releaseUrl": "https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.1",
+  "method": "Test-only lower-version app invokes unchanged production check/install/cancel/relaunch commands with the public feed and embedded updater key. After replacement, the unmodified public RC1 binary runs its built-in native acceptance.",
+  "checks": {
+    "available": true,
+    "cancelledAfterBytes": 1378,
+    "cancelEventAndError": true,
+    "retryWithoutRecheck": true,
+    "signatureVerifiedByProductionUpdater": true,
+    "installed": true,
+    "pendingCleared": true,
+    "restartCommandExecuted": true,
+    "publicBinarySha256": "fa7d43ff06e0fae6fb357b66769ace6ebaf197f8cca9db9255b4f8a3a11acf26",
+    "matchesPublicArchive": true,
+    "codesignVerified": true,
+    "unicodeQuickNotePreservedAfterRestart": true,
+    "nativeAcceptance": {
+      "passed": true,
+      "tools": 25,
+      "stressCycles": 10,
+      "durationMs": 95137
+    }
+  },
+  "observedDefects": {
+    "progressKeys": [
+      "chunk_length",
+      "content_length",
+      "downloaded_bytes"
+    ],
+    "expectedProgressKeys": [
+      "chunkLength",
+      "downloadedBytes",
+      "contentLength"
+    ],
+    "publishedAt": "2026-09-05 22:31:09.0 +00:00:00",
+    "publicationDateParseable": false
+  },
+  "observerNotes": [
+    "Initial launch through /tmp was rejected by the upstream executable symlink guard; successful run used canonical /private/tmp paths.",
+    "The first supervisor reached post-restart validation, then failed its camelCase byte-count assertion. This read-only verifier evaluates the saved raw events; the field mismatch is retained as a real RC1 UI defect, not hidden as a passing contract."
+  ],
+  "limitations": [
+    "The old version is a test-only fixture, not a previously released binary.",
+    "Programmatic native commands; no manual updater UI acceptance.",
+    "No Windows/Linux/macOS arm64 upgrade test.",
+    "No public-binary same-version update check."
+  ]
+}

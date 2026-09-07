@@ -6,6 +6,7 @@ use serde::Deserialize;
 use serde_json::Value;
 use tauri::{AppHandle, ipc::Channel};
 use tauri_plugin_updater::{Update, UpdaterExt};
+use time::{OffsetDateTime, format_description::well_known::Rfc3339};
 use tokio::sync::Notify;
 
 use crate::contracts::{
@@ -149,7 +150,7 @@ pub async fn check_for_product_update(
         current_version,
         latest_version: Some(update.version.clone()),
         release_notes: update.body.as_deref().map(limit_release_notes),
-        published_at: update.date.map(|date| date.to_string()),
+        published_at: update_publication_date(update.date)?,
         release_url: update
             .raw_json
             .get("release_url")
@@ -363,6 +364,12 @@ fn send_event(channel: &Channel<ProductUpdateEvent>, event: ProductUpdateEvent) 
     }
 }
 
+fn update_publication_date(date: Option<OffsetDateTime>) -> AppResult<Option<String>> {
+    date.map(|date| date.format(&Rfc3339))
+        .transpose()
+        .map_err(update_error)
+}
+
 fn limit_release_notes(value: &str) -> String {
     if value.len() <= MAX_RELEASE_NOTES_BYTES {
         return value.to_owned();
@@ -475,5 +482,20 @@ mod tests {
         let limited = limit_release_notes(&notes);
         assert!(limited.ends_with('…'));
         assert!(limited.len() <= MAX_RELEASE_NOTES_BYTES + '…'.len_utf8());
+    }
+
+    #[test]
+    fn publication_date_uses_javascript_compatible_rfc3339() {
+        let date = OffsetDateTime::from_unix_timestamp(1_788_647_469).expect("release timestamp");
+        assert_eq!(
+            update_publication_date(Some(date)).expect("UTC date"),
+            Some("2026-09-05T22:31:09Z".to_owned())
+        );
+        let offset = time::UtcOffset::from_hms(8, 0, 0).expect("offset");
+        assert_eq!(
+            update_publication_date(Some(date.to_offset(offset))).expect("offset date"),
+            Some("2026-09-06T06:31:09+08:00".to_owned())
+        );
+        assert_eq!(update_publication_date(None).expect("absent date"), None);
     }
 }
