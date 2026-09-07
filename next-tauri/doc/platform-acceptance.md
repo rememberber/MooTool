@@ -48,9 +48,19 @@ RC1 是首个公开的 Tauri 版本。没有上一公开版本并不阻止升级
 - 进度事件：Rust 枚举的 `rename_all` 只转换变体名称，字段仍输出 `chunk_length`、`downloaded_bytes`、`content_length`；前端读取 camelCase，导致进度与字节数显示异常。源码修复采用 `rename_all_fields = "camelCase"`，并为已知/未知下载长度和全部生命周期事件增加序列化测试。
 - 发布时间：`OffsetDateTime::to_string()` 输出的 `2026-09-05 22:31:09.0 +00:00:00` 不能被 JavaScript 正确解析；源码修复显式输出 RFC 3339，并覆盖 UTC、非零时区与缺失时间。
 
-2026-09-07 源码回归：两项缺陷测试在修复前均失败，修复后 Rust 82 项通过、2 项交互测试保持忽略；前端 151 项通过、1 项跳过，产品/本地化/发布边界、TypeScript、Rust 格式与固定 Rust 1.88 的 Clippy 检查通过。新增直接依赖沿用锁文件已有的 `time 0.3.45`，未升级依赖树。默认 Rust 1.97 的 Clippy 会对现存文件提出额外的 `collapsible_if` 诊断；本轮未为此改动无关代码，发布检查仍使用工作流指定的 1.88。
+2026-09-07 源码回归：两项缺陷测试在修复前均失败，修复后 Rust 82 项通过、2 项交互测试保持忽略；前端 151 项通过、1 项跳过，产品/本地化/发布边界、TypeScript、Rust 格式与固定 Rust 1.88 的 Clippy 检查通过。默认 Rust 1.97 的 Clippy 会对现存文件提出额外的 `collapsible_if` 诊断；本轮未为此改动无关代码，发布检查仍使用工作流指定的 1.88。
 
 这两项修复尚未包含在已发布的 RC1 安装包中，需要随下一版本发布。后续仍需使用公开 RC1 → 下一候选版本验证真实版本升级，并完成各平台人工更新 UI、同版本不更新及卸载检查；尚未直接执行公开二进制的同版本更新检查，不能将该项记为通过。
+
+### RC1 依赖告警核实
+
+2026-09-07 推送时核实到 3 条属于 `next-tauri/src-tauri/Cargo.lock` 的中等级别告警，不能将仓库中其他产品线的告警混入本产品结论：
+
+- `time 0.3.45` 的 RFC 2822 解析存在栈耗尽风险。更新界面使用 RFC 3339，不代表依赖本身不受影响；源码已选择兼容 Rust 1.88 的首个修复版 `0.3.47`。[上游公告](https://github.com/time-rs/time/security/advisories/GHSA-r6v5-fh4h-64xc)
+- `serde_with 3.17.0` 的 `KeyValueMap` 序列化空条目可能触发 panic；锁文件已更新到兼容 Rust 1.88 的首个修复版 `3.21.0`，并更新其关联宏依赖。[上游公告](https://github.com/jonasbb/serde_with/security/advisories/GHSA-7gcf-g7xr-8hxj)
+- `glib 0.18.5` 的 `VariantStrIter` 存在未定义行为风险，仍未解决。Tauri 2.11.5 在 Linux 使用 GTK 0.18，而 GTK 0.18 依赖 GLib 0.18；公告的修复版本从 0.20 开始，不能仅替换锁文件中的版本跨越这条 API 依赖链。需要独立评估上游补丁回移或运行时升级，并在 Linux 重做验收；未验证不可达，未关闭或豁免告警。[RustSec 公告](https://rustsec.org/advisories/RUSTSEC-2024-0429.html)
+
+依赖升级后使用 Rust 1.88 重跑全量 Rust 测试（82 项通过、2 项交互测试忽略）、Clippy 和格式检查，均通过。上述依赖变更只进入后续源码，不会修改公开 RC1 中已经锁定的依赖；不能据此宣称 RC1 的安全告警已经消除。
 
 ## 真实设备验收
 
