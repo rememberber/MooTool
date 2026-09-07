@@ -25,6 +25,12 @@
 
 ## RC 安装包运行记录
 
+RC2 发布提交 `949280c1` 的[四平台 CI](https://github.com/rememberber/MooTool/actions/runs/34090663655) 全部通过，下载的四份报告均验证了 25/25 工具、会话隔离和 100 轮/200 次 reparent。合并提交 `e699cb87` 的[主干 CI](https://github.com/rememberber/MooTool/actions/runs/34090761808) 首轮在 macOS arm64 的环境变量摘要比较失败；只重跑失败作业后通过，原始失败不能因重跑成功而抹去，见下文竞态记录。
+
+2026-09-07，[`next-tauri-v0.1.0-rc.2`](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2) 已公开为 Pre-release。[发布构建](https://github.com/rememberber/MooTool/actions/runs/34090663749) 四平台安装包与首次启动检查全部通过，Windows NSIS 和 Linux deb 的安装、卸载也通过；下载后独立验证 13 个文件的 SHA-256、5 个安装包的 SHA-512 及 4 个更新包的 Minisign 签名，公钥与 RC1 相同。[通道提升](https://github.com/rememberber/MooTool/actions/runs/34123458315) 成功，公开通道与版本清单逐字节相同（SHA-256 `d1a1c2e42de10d9cc8b9b98d5faece4efb5487fcc93766ab7c13ab3ebb690d2a`）；根清单仅更新 Tauri 节点，RC1 标签及 13 个资产未变，仓库 Latest 仍为 Electron。
+
+RC2 原样 macOS x64 DMG 在本机完成只读挂载、代码签名校验和隔离数据目录下的内置原生验收：25/25 工具、10 轮/20 次 reparent 通过，用时 92,862 ms；可执行文件与签名更新压缩包中的文件一致（SHA-256 `b9d9e5ad15802388158a56eddc6d6e4f49b45e1641d498b529b58b93f8e21575`），挂载卷已卸载。这不是人工交互或公开 RC1 → RC2 的升级验收。
+
 | 日期 | 标签 / 提交 | GitHub Actions | 结果与结论 |
 | --- | --- | --- | --- |
 | 2026-09-06 | [`next-tauri-v0.1.0-rc.1`](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.1) / `c03ef5c0` | [构建 run 34008294955](https://github.com/rememberber/MooTool/actions/runs/34008294955)、[提升 run 34022927538](https://github.com/rememberber/MooTool/actions/runs/34022927538) | macOS x64/arm64 DMG 均完成代码签名校验、只读挂载和挂载卷首次启动；Windows x64 NSIS 完成静默安装、首次启动和静默卸载；Linux x64 AppImage 完成首次启动，deb 完成实际安装、从系统路径首次启动和卸载状态检查。四平台 updater 签名文件、规范化资产、`latest.json` 和 `next-tauri-release.json` 均已生成；五个安装包逐文件 SHA-512 校验通过。RC1 已发布为不占用仓库 Latest 的 Pre-release；提升任务第 2 次执行成功，公开 URL 全部可达，`next-tauri-updater/latest.json` 与版本 Release 中的清单逐字节一致（SHA-256 `a0aac585b23aaee0f364a8114657db31f1fd7eac1c9585271a1499761b602c5a`），根清单仅将 `products.next-tauri` 激活并登记 RC1。 |
@@ -50,7 +56,7 @@ RC1 是首个公开的 Tauri 版本。没有上一公开版本并不阻止升级
 
 2026-09-07 源码回归：两项缺陷测试在修复前均失败，修复后 Rust 82 项通过、2 项交互测试保持忽略；前端 151 项通过、1 项跳过，产品/本地化/发布边界、TypeScript、Rust 格式与固定 Rust 1.88 的 Clippy 检查通过。默认 Rust 1.97 的 Clippy 会对现存文件提出额外的 `collapsible_if` 诊断；本轮未为此改动无关代码，发布检查仍使用工作流指定的 1.88。
 
-这两项修复尚未包含在已发布的 RC1 安装包中，需要随下一版本发布。后续仍需使用公开 RC1 → 下一候选版本验证真实版本升级，并完成各平台人工更新 UI、同版本不更新及卸载检查；尚未直接执行公开二进制的同版本更新检查，不能将该项记为通过。
+这两项修复已随 RC2 发布，公开 RC1 安装包保持不变。后续仍需使用公开 RC1 → RC2 验证真实版本升级，并完成各平台人工更新 UI、同版本不更新及卸载检查；尚未直接执行公开二进制的同版本更新检查，不能将该项记为通过。
 
 ### RC1 依赖告警核实
 
@@ -60,7 +66,15 @@ RC1 是首个公开的 Tauri 版本。没有上一公开版本并不阻止升级
 - `serde_with 3.17.0` 的 `KeyValueMap` 序列化空条目可能触发 panic；锁文件已更新到兼容 Rust 1.88 的首个修复版 `3.21.0`，并更新其关联宏依赖。[上游公告](https://github.com/jonasbb/serde_with/security/advisories/GHSA-7gcf-g7xr-8hxj)
 - `glib 0.18.5` 的 `VariantStrIter` 存在未定义行为风险。Tauri 2.11.5 在 Linux 使用 GTK 0.18，而 GTK 0.18 依赖 GLib 0.18；公告的修复版本从 0.20 开始，不能仅替换锁文件中的版本跨越这条 API 依赖链。此次源码采用本地依赖覆盖，原样回移上游 PR #1343 的两行指针可变性修复，保留原版本、许可证和来源校验值；详见 [`vendor/README.md`](../src-tauri/vendor/README.md)。新增 Linux 专用回归测试覆盖全部受影响的迭代入口及空数组、越界、Unicode 场景，并在 CI 中强制以 Release 优化模式执行；必须以该步骤及 Linux 原生验收的成功结果作为验证证据，不能用 macOS 的测试通过代替。[RustSec 公告](https://rustsec.org/advisories/RUSTSEC-2024-0429.html)、[上游补丁](https://github.com/gtk-rs/gtk-rs-core/pull/1343)
 
-依赖升级后使用 Rust 1.88 重跑全量 Rust 测试（82 项通过、2 项交互测试忽略）、Clippy 和格式检查，均通过。上述依赖变更只进入后续源码，不会修改公开 RC1 中已经锁定的依赖；不能据此宣称 RC1 的安全告警已经消除。
+依赖升级后使用 Rust 1.88 重跑全量 Rust 测试（82 项通过、2 项交互测试忽略）、Clippy 和格式检查，均通过。上述依赖变更已随 RC2 发布，不会修改公开 RC1 中已经锁定的依赖；不能据此宣称 RC1 的安全告警已经消除。
+
+### RC2 发布后的环境变量会话就绪竞态
+
+主干 CI 首轮的错误为 `variables: detach changed the reported state digest`；页面加载次数和会话 ID 检查已通过。源码首次渲染会立即上报空列表摘要，环境变量请求稍后完成时改变数量，可能越过原生验收的 1 秒稳定窗口。仅重跑失败作业后 25/25 工具及 100 轮压力测试通过，但这不足以证明竞态消失。
+
+新增浏览器回归测试只延迟诊断传输层，仍运行真实组件与上报 hook：让请求保持未完成超过 2.5 秒，旧源码在成功和失败两条路径均过早上报空摘要，测试先失败。后续源码改为初始 `busy=true`，并在会话上报 hook 中增加默认开启的 `ready` 门禁；环境变量工具等待加载结束后才上报，其他工具保持原行为。成功与失败两条回归均通过，仍保留环境变量数量、敏感项数量及用户状态的摘要，不放宽原生比较或压力次数。
+
+这项就绪竞态修复属于 RC2 之后的源码，**不包含在已公开的 RC2 安装包中**。不得改写 RC2 标签或资产来掩盖这一版本边界；后续源码的四平台原生验收需以相应 CI 结果单独确认。
 
 ## 真实设备验收
 
