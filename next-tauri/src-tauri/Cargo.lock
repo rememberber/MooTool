@@ -2948,7 +2948,7 @@ dependencies = [
 
 [[package]]
 name = "mootool-next-tauri"
-version = "0.1.0-rc.1"
+version = "0.1.0-rc.2"
 dependencies = [
  "base64 0.23.0",
  "futures-util",
