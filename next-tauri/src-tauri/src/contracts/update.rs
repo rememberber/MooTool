@@ -44,7 +44,12 @@ impl ProductUpdateCheck {
 }
 
 #[derive(Clone, Debug, PartialEq, Serialize)]
-#[serde(rename_all = "camelCase", tag = "event", content = "data")]
+#[serde(
+    rename_all = "camelCase",
+    rename_all_fields = "camelCase",
+    tag = "event",
+    content = "data"
+)]
 pub enum ProductUpdateEvent {
     Started,
     Progress {
@@ -55,4 +60,47 @@ pub enum ProductUpdateEvent {
     Finished,
     Cancelled,
     Installed,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use serde_json::json;
+
+    #[test]
+    fn progress_event_serializes_the_frontend_field_names() {
+        for content_length in [Some(16_384), None] {
+            let event = ProductUpdateEvent::Progress {
+                chunk_length: 1_024,
+                downloaded_bytes: 4_096,
+                content_length,
+            };
+            assert_eq!(
+                serde_json::to_value(event).expect("progress event"),
+                json!({
+                    "event": "progress",
+                    "data": {
+                        "chunkLength": 1_024,
+                        "downloadedBytes": 4_096,
+                        "contentLength": content_length
+                    }
+                })
+            );
+        }
+    }
+
+    #[test]
+    fn lifecycle_events_keep_the_frontend_tags_without_payloads() {
+        for (event, tag) in [
+            (ProductUpdateEvent::Started, "started"),
+            (ProductUpdateEvent::Finished, "finished"),
+            (ProductUpdateEvent::Cancelled, "cancelled"),
+            (ProductUpdateEvent::Installed, "installed"),
+        ] {
+            assert_eq!(
+                serde_json::to_value(event).expect("lifecycle event"),
+                json!({ "event": tag })
+            );
+        }
+    }
 }

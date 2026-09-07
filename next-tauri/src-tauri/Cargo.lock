@@ -2965,6 +2965,7 @@ dependencies = [
  "tauri-plugin-dialog",
  "tauri-plugin-updater",
  "tempfile",
+ "time",
  "tokio",
  "tracing",
  "tracing-appender",
