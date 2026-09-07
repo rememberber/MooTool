@@ -1111,6 +1111,66 @@
               "size": 7354550
             }
           ]
+        },
+        {
+          "version": "0.1.0-rc.2",
+          "title": "MooTool Next Tauri 0.1.0-rc.2",
+          "notes": "## English\n\nMooTool Next Tauri is an independent desktop product with its own installation, data and update channel. This release does not replace MooTool Java or MooTool Next Electron.\n\n- Fix updater progress event fields so the frontend receives downloaded bytes and total size correctly instead of displaying invalid progress.\n- Serialize update publication dates as RFC 3339 so the release date can be displayed correctly.\n- Update `time` to 0.3.47 and `serde_with` to 3.21.0 to address their known security advisories.\n- Backport the upstream GLib string-variant iterator safety fix to the GTK3-compatible 0.18.5 dependency, with Linux debug and optimized regression tests.\n- Retain all 25 tools, native WebView lifecycle features and the independent signed updater identity. The RC1 tag and published assets remain unchanged.\n\nThis is a pre-release. The fixes passed macOS x64/arm64, Windows x64 and Linux x64 CI, including 25-tool acceptance and 100 detach/dock stress cycles per platform. CI is not a substitute for real-device DPI, multi-display, IME, permission, credential-store or interactive installation/upgrade acceptance. Those checks remain separately tracked; a public RC1-to-RC2 upgrade is not claimed as completed by these release notes.\n\nUpdater artifacts are signed with the existing product-specific key. macOS packages use ad-hoc signing without Apple notarization, and Windows packages do not have Authenticode signing; operating-system trust warnings are expected. This candidate does not claim trusted stable-distribution readiness.\n\n## 中文\n\nMooTool Next Tauri 是独立安装、独立存储、独立更新的桌面产品线，不替代 MooTool Java 或 MooTool Next Electron。\n\n- 修复更新进度事件的字段命名，使前端正确接收已下载字节数和总大小，避免进度显示异常。\n- 将更新发布日期统一输出为 RFC 3339，修复发布日期无法正常显示的问题。\n- 将 `time` 升级至 0.3.47、`serde_with` 升级至 3.21.0，修复对应的已知安全公告问题。\n- 为 GTK3 依赖的 GLib 0.18.5 回移上游字符串 Variant 迭代器安全补丁，并增加 Linux 调试版和优化版回归测试。\n- 保留全部 25 个工具、原生 WebView 生命周期能力及现有独立签名更新身份。RC1 标签和已公开的安装包保持不变。\n\n本版本为候选预发布版。上述修复已通过 macOS x64/arm64、Windows x64、Linux x64 四平台 CI，每个平台均通过 25 工具验收及 100 轮分离/停靠压力测试。CI 不代表真实设备的 DPI、多屏、输入法、权限、凭据库及交互式安装/升级验收已完成；这些项目单独跟踪。本发布说明不将公开 RC1 到 RC2 的升级标为已验收。\n\n更新包使用现有产品专属密钥签名。macOS 安装包为 ad-hoc 签名、未经 Apple 公证；Windows 安装包未使用 Authenticode 签名，操作系统可能显示信任警告。本候选版不代表已具备受信任正式发行条件。\n\n## 日本語\n\nMooTool Next Tauri は、インストール、データ保存、更新チャネルが独立したデスクトップ製品です。MooTool Java または MooTool Next Electron を置き換えるものではありません。\n\n- 更新進捗イベントのフィールド名を修正し、ダウンロード済みバイト数と合計サイズを正しく表示できるようにしました。\n- 更新の公開日時を RFC 3339 形式に統一し、日付表示の不具合を修正しました。\n- `time` を 0.3.47、`serde_with` を 3.21.0 に更新し、対応する既知のセキュリティ問題を修正しました。\n- GTK3 が使用する GLib 0.18.5 に上流の文字列 Variant イテレーター安全性修正をバックポートし、Linux のデバッグ・最適化ビルド両方に回帰テストを追加しました。\n- 25 個のツール、ネイティブ WebView のライフサイクル機能、既存の製品専用更新署名を維持します。RC1 のタグと公開済み配布物は変更しません。\n\n本バージョンはプレリリースです。修正は macOS x64/arm64、Windows x64、Linux x64 の CI を通過し、各環境で 25 ツールと 100 回の分離・再ドッキングを検証しました。実機の DPI、複数画面、IME、権限、資格情報ストア、対話的なインストール・更新確認は CI と分けて管理し、未完了項目を残しています。公開 RC1 から RC2 への更新検証が完了したとはしていません。\n\n更新配布物は既存の製品専用鍵で署名します。macOS は ad-hoc 署名で Apple 公証なし、Windows は Authenticode 署名なしのため、OS の信頼性警告が表示される場合があります。信頼済みの正式配布版ではありません。",
+          "prerelease": true,
+          "releaseUrl": "https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2",
+          "updaterManifestUrl": "https://github.com/rememberber/MooTool/releases/download/next-tauri-updater/latest.json",
+          "assets": [
+            {
+              "platform": "darwin",
+              "architecture": "arm64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Tauri-0.1.0-rc.2-mac-arm64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-tauri-v0.1.0-rc.2/MooTool-Next-Tauri-0.1.0-rc.2-mac-arm64.dmg",
+              "sha512": "IdtOJDVlQDArriOF8GAyAv7ef3zN5OU7sYFDJGnOxThlIJRY0skhgcIUPfWIzkfUEgqgBO+RLtbVEdSYVCcvSA==",
+              "size": 11266540
+            },
+            {
+              "platform": "darwin",
+              "architecture": "x64",
+              "packageType": "dmg",
+              "priority": 10,
+              "fileName": "MooTool-Next-Tauri-0.1.0-rc.2-mac-x64.dmg",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-tauri-v0.1.0-rc.2/MooTool-Next-Tauri-0.1.0-rc.2-mac-x64.dmg",
+              "sha512": "EFZee4Juqo9Kow56vQZPXpvTj3eNC9/GNorCh2tuvNbMwLnnoIwmHGhEAnzoj1RrYpcslmIgtXsiwU+b44ZW+g==",
+              "size": 11836649
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "appimage",
+              "priority": 10,
+              "fileName": "MooTool-Next-Tauri-0.1.0-rc.2-linux-x64.AppImage",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-tauri-v0.1.0-rc.2/MooTool-Next-Tauri-0.1.0-rc.2-linux-x64.AppImage",
+              "sha512": "XKgKk5UrA2wxMNLexuKtNtJOYCpDmu9zF8q+ec9u0/pXjafWXpugpuXnffWfLrbe2b9htMmAB0qwLhxcPie30Q==",
+              "size": 87919096
+            },
+            {
+              "platform": "linux",
+              "architecture": "x64",
+              "packageType": "deb",
+              "priority": 10,
+              "fileName": "MooTool-Next-Tauri-0.1.0-rc.2-linux-x64.deb",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-tauri-v0.1.0-rc.2/MooTool-Next-Tauri-0.1.0-rc.2-linux-x64.deb",
+              "sha512": "elH6VyME9t+/DHlFy/fQKwAEX4boYsrd0PaukVc174u8tdlXH52BMJCaRuThy8gR/pAyRdpE0I5dOtih5kAfSg==",
+              "size": 13564154
+            },
+            {
+              "platform": "win32",
+              "architecture": "x64",
+              "packageType": "nsis",
+              "priority": 10,
+              "fileName": "MooTool-Next-Tauri-0.1.0-rc.2-win-x64-setup.exe",
+              "url": "https://github.com/rememberber/MooTool/releases/download/next-tauri-v0.1.0-rc.2/MooTool-Next-Tauri-0.1.0-rc.2-win-x64-setup.exe",
+              "sha512": "VyFbQw5BA3rv6fpEmi/0xSJkwRjBRBjrcVTww9xbT8cA7miBl6CRx7VlTufJuIAevtSPya35VKJqBsXVBGmtqw==",
+              "size": 7343437
+            }
+          ]
         }
       ]
     },
