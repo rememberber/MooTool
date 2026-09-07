@@ -58,7 +58,7 @@ RC1 是首个公开的 Tauri 版本。没有上一公开版本并不阻止升级
 
 - `time 0.3.45` 的 RFC 2822 解析存在栈耗尽风险。更新界面使用 RFC 3339，不代表依赖本身不受影响；源码已选择兼容 Rust 1.88 的首个修复版 `0.3.47`。[上游公告](https://github.com/time-rs/time/security/advisories/GHSA-r6v5-fh4h-64xc)
 - `serde_with 3.17.0` 的 `KeyValueMap` 序列化空条目可能触发 panic；锁文件已更新到兼容 Rust 1.88 的首个修复版 `3.21.0`，并更新其关联宏依赖。[上游公告](https://github.com/jonasbb/serde_with/security/advisories/GHSA-7gcf-g7xr-8hxj)
-- `glib 0.18.5` 的 `VariantStrIter` 存在未定义行为风险，仍未解决。Tauri 2.11.5 在 Linux 使用 GTK 0.18，而 GTK 0.18 依赖 GLib 0.18；公告的修复版本从 0.20 开始，不能仅替换锁文件中的版本跨越这条 API 依赖链。需要独立评估上游补丁回移或运行时升级，并在 Linux 重做验收；未验证不可达，未关闭或豁免告警。[RustSec 公告](https://rustsec.org/advisories/RUSTSEC-2024-0429.html)
+- `glib 0.18.5` 的 `VariantStrIter` 存在未定义行为风险。Tauri 2.11.5 在 Linux 使用 GTK 0.18，而 GTK 0.18 依赖 GLib 0.18；公告的修复版本从 0.20 开始，不能仅替换锁文件中的版本跨越这条 API 依赖链。此次源码采用本地依赖覆盖，原样回移上游 PR #1343 的两行指针可变性修复，保留原版本、许可证和来源校验值；详见 [`vendor/README.md`](../src-tauri/vendor/README.md)。新增 Linux 专用回归测试覆盖全部受影响的迭代入口及空数组、越界、Unicode 场景，并在 CI 中强制以 Release 优化模式执行；必须以该步骤及 Linux 原生验收的成功结果作为验证证据，不能用 macOS 的测试通过代替。[RustSec 公告](https://rustsec.org/advisories/RUSTSEC-2024-0429.html)、[上游补丁](https://github.com/gtk-rs/gtk-rs-core/pull/1343)
 
 依赖升级后使用 Rust 1.88 重跑全量 Rust 测试（82 项通过、2 项交互测试忽略）、Clippy 和格式检查，均通过。上述依赖变更只进入后续源码，不会修改公开 RC1 中已经锁定的依赖；不能据此宣称 RC1 的安全告警已经消除。
 

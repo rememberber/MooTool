@@ -70,6 +70,9 @@ jobs:
           workspaces: next-tauri/src-tauri
       - run: npm ci
       - run: npm run check
+      - name: Test GLib string iterator safety with release optimization
+        if: runner.os == 'Linux'
+        run: cargo test --manifest-path src-tauri/Cargo.toml --locked --release --test glib_variant_str_iter
       - name: Install Chromium for desktop visual regression
         if: matrix.name == 'macOS arm64'
         run: npx playwright install chromium
