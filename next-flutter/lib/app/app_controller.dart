@@ -10,6 +10,7 @@ import 'product.dart';
 import 'settings.dart';
 import 'tool_registry.dart';
 import '../core/desktop/desktop_host.dart';
+import '../core/desktop/window_policy.dart';
 import '../core/editor/editor_document.dart';
 import '../core/editor/find_replace.dart';
 import '../core/git/git_service.dart';
@@ -164,10 +165,16 @@ class JsonSession {
 
 class AppController extends ChangeNotifier {
   AppController(this.paths, {DesktopHost? desktopHost})
-      : desktopHost = desktopHost ?? ChannelDesktopHost();
+      : desktopHost = desktopHost ?? ChannelDesktopHost() {
+    this.desktopHost.onCloseRequested = () {
+      unawaited(handleNativeCloseRequested());
+    };
+  }
 
   final AppPaths paths;
   final DesktopHost desktopHost;
+  DesktopCapabilities desktopCaps = DesktopCapabilities();
+  bool closePrompt = false;
   String? lastBackupPath;
   String dataNotice = '';
   final GitService git = GitService();
@@ -260,6 +267,10 @@ class AppController extends ChangeNotifier {
     }
     coordinator.claim('json');
     coordinator.claim('quickNote');
+    for (final id in detachedToolIds) {
+      coordinator.forceOwner(id, 'detached-$id');
+    }
+    await applyDesktopPolicy(launch: true);
     notifyListeners();
   }
 
@@ -327,6 +338,15 @@ class AppController extends ChangeNotifier {
               FavoriteRecord.fromJson(Map<String, Object?>.from(item)),
         ]);
     }
+    detachedToolIds
+      ..clear()
+      ..addAll([
+        for (final item in workspace['detachedToolIds'] as List? ?? const [])
+          if (item is String && item != 'mootool') item
+      ]);
+    for (final id in detachedToolIds) {
+      coordinator.forceOwner(id, 'detached-$id');
+    }
   }
 
   Map<String, Object?> _workspaceJson() => {
@@ -355,6 +375,7 @@ class AppController extends ChangeNotifier {
           for (final entry in locals.entries) entry.key: entry.value.toJson(),
         },
         'favorites': [for (final item in favorites) item.toJson()],
+        'detachedToolIds': detachedToolIds.toList(),
       };
 
   void scheduleSave() {
@@ -855,9 +876,33 @@ class AppController extends ChangeNotifier {
   Future<void> importNoteImage(File source) async {
     final id = note.documentId ?? createNoteDocument();
     final relative = await attachments.importFile(id, source);
-    final alt = source.uri.pathSegments.isEmpty
-        ? relative
-        : source.uri.pathSegments.last;
+    _insertNoteMarkdownImage(
+        source.uri.pathSegments.isEmpty
+            ? relative
+            : source.uri.pathSegments.last,
+        relative);
+  }
+
+  Future<void> pasteNoteImageFromClipboard() async {
+    final bytes = await desktopHost.readClipboardImage();
+    if (bytes == null || bytes.isEmpty) {
+      note.notice = t('note.clipboardEmpty');
+      notifyListeners();
+      return;
+    }
+    try {
+      final id = note.documentId ?? createNoteDocument();
+      final name = clipboardImageFileName(bytes);
+      final relative =
+          await attachments.importBytes(id, name: name, bytes: bytes);
+      _insertNoteMarkdownImage(name, relative);
+    } catch (error) {
+      note.notice = error.toString();
+      notifyListeners();
+    }
+  }
+
+  void _insertNoteMarkdownImage(String alt, String relative) {
     final insertion = prepareMarkdownImageInsertion(
       note.document.text,
       TextSelectionRange(
@@ -871,11 +916,6 @@ class AppController extends ChangeNotifier {
       selectionEnd: insertion.caret,
     );
     saveNoteDocument();
-  }
-
-  void pasteNoteImageFromClipboard() {
-    note.notice = '剪贴板图片需要平台通道，本轮未实现。普通文本粘贴仍走编辑器，不会被拦截成图片。';
-    notifyListeners();
   }
 
   void importNoteMarkdown(String source, {String name = 'imported.md'}) {
@@ -944,20 +984,24 @@ class AppController extends ChangeNotifier {
     return copyId;
   }
 
-  Future<void> _exportNoteFile(VaultDocument file) async {
-    await paths.noteVaultDir.create(recursive: true);
-    final target = File('${paths.noteVaultDir.path}/${file.id}.md');
-    if (!target.path.startsWith(paths.noteVaultDir.path)) return;
-    final packed = serializeNoteDocument(NoteDocument(
-      metadata: NoteMetadata.fromJson({
-        ...file.metadata,
-        'title': file.title,
-      }),
-      body: file.content.startsWith('---\n')
-          ? parseNoteDocument(file.content).body
-          : file.content,
-    ));
-    await writeAtomicFile(target, packed);
+  Future<void> _exportNoteFile(VaultDocument file) {
+    final done = _writeQueue.then((_) async {
+      await paths.noteVaultDir.create(recursive: true);
+      final target = File('${paths.noteVaultDir.path}/${file.id}.md');
+      if (!target.path.startsWith(paths.noteVaultDir.path)) return;
+      final packed = serializeNoteDocument(NoteDocument(
+        metadata: NoteMetadata.fromJson({
+          ...file.metadata,
+          'title': file.title,
+        }),
+        body: file.content.startsWith('---\n')
+            ? parseNoteDocument(file.content).body
+            : file.content,
+      ));
+      await writeAtomicFile(target, packed);
+    });
+    _writeQueue = done.catchError((_) {});
+    return done;
   }
 
   void newHttpDraft() {
@@ -1420,8 +1464,81 @@ class AppController extends ChangeNotifier {
     });
   }
 
+  Future<void> importClipboardImageToLibrary() async {
+    final bytes = await desktopHost.readClipboardImage();
+    if (bytes == null || bytes.isEmpty) {
+      noteImageDesktopGap(t('image.clipboardEmpty'));
+      return;
+    }
+    try {
+      final saved = await imageLibrary.save(
+          name: clipboardImageFileName(bytes), bytes: bytes);
+      await refreshImages(preferred: saved.name);
+    } catch (error) {
+      noteImageDesktopGap(error.toString());
+    }
+  }
+
   void noteImageDesktopGap(String message) {
     imageNotice = message;
+    notifyListeners();
+  }
+
+  Future<void> applyDesktopPolicy({bool launch = false}) async {
+    await desktopHost.applyWindowPolicy(
+      closeBehavior: settings.closeBehavior.name,
+      trayEnabled: settings.trayEnabled,
+      startMaximized: launch && settings.startMaximized,
+    );
+    desktopCaps = await desktopHost.capabilities();
+    notifyListeners();
+  }
+
+  CloseBehavior get effectiveCloseBehavior => WindowPolicy.effectiveClose(
+        requested: settings.closeBehavior,
+        trayEnabled: settings.trayEnabled,
+        trayAvailable: desktopCaps.tray,
+      );
+
+  Future<void> handleNativeCloseRequested() async {
+    switch (effectiveCloseBehavior) {
+      case CloseBehavior.ask:
+        closePrompt = true;
+        notifyListeners();
+      case CloseBehavior.hide:
+        await confirmClose(CloseDecision.hide);
+      case CloseBehavior.quit:
+        await confirmClose(CloseDecision.quit);
+    }
+  }
+
+  Future<void> confirmClose(CloseDecision decision) async {
+    closePrompt = false;
+    if (decision == CloseDecision.cancel) {
+      await desktopHost.performCloseAction('cancel');
+      notifyListeners();
+      return;
+    }
+    if (decision == CloseDecision.hide &&
+        WindowPolicy.effectiveClose(
+              requested: CloseBehavior.hide,
+              trayEnabled: settings.trayEnabled,
+              trayAvailable: desktopCaps.tray,
+            ) !=
+            CloseBehavior.hide) {
+      toast = t('settings.hideNeedsTray');
+      closePrompt = true;
+      notifyListeners();
+      return;
+    }
+    await persist();
+    await desktopHost.performCloseAction(decision.name);
+    notifyListeners();
+  }
+
+  void cancelClosePrompt() {
+    closePrompt = false;
+    unawaited(desktopHost.performCloseAction('cancel'));
     notifyListeners();
   }
 
@@ -1594,6 +1711,7 @@ class AppController extends ChangeNotifier {
       return;
     }
     detachedToolIds.add(id);
+    scheduleSave();
     notifyListeners();
   }
 
@@ -1615,6 +1733,7 @@ class AppController extends ChangeNotifier {
     ));
     if (begin.ok) coordinator.ack(id, 'main', session.revision);
     detachedToolIds.remove(id);
+    scheduleSave();
     notifyListeners();
   }
 

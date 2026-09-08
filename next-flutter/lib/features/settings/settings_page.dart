@@ -113,6 +113,7 @@ class SettingsPage extends StatelessWidget {
             onSelected: (_) {
               controller.settings.closeBehavior = behavior;
               controller.scheduleSave();
+              controller.applyDesktopPolicy();
               controller.refresh();
             },
           ),
@@ -141,11 +142,16 @@ class SettingsPage extends StatelessWidget {
       SwitchListTile(
         contentPadding: EdgeInsets.zero,
         title: Text(controller.t('settings.trayEnabled')),
-        subtitle: Text(controller.t('settings.trayPending'),
+        subtitle: Text(
+            controller.t(controller.desktopCaps.tray
+                ? 'settings.trayReady'
+                : 'settings.trayPending'),
             style: const TextStyle(fontSize: 12)),
         value: controller.settings.trayEnabled,
         onChanged: (value) => _set(() => controller.settings.trayEnabled = value),
       ),
+      Text(controller.t('settings.hideNeedsTray'),
+          style: const TextStyle(fontSize: 12)),
     ]);
   }
 
@@ -445,6 +451,7 @@ class SettingsPage extends StatelessWidget {
   void _set(VoidCallback action) {
     action();
     controller.scheduleSave();
+    controller.applyDesktopPolicy();
     controller.refresh();
   }
 }

@@ -39,7 +39,12 @@ class NoteAttachmentStore {
       Directory(p.join(root.path, 'attachments', _safeId(noteId)));
 
   Future<String> importFile(String noteId, File source) async {
-    final name = p.basename(source.path);
+    return importBytes(noteId,
+        name: p.basename(source.path), bytes: await source.readAsBytes());
+  }
+
+  Future<String> importBytes(String noteId,
+      {required String name, required List<int> bytes}) async {
     if (!_isImageName(name)) {
       throw const FormatException('Only image attachments are accepted');
     }
@@ -50,7 +55,7 @@ class NoteAttachmentStore {
     if (!_isInside(dir, target)) {
       throw const FormatException('Attachment path escaped the note directory');
     }
-    await source.copy(target.path);
+    await target.writeAsBytes(bytes, flush: true);
     return 'attachments/$targetName';
   }
 

@@ -17,7 +17,7 @@ Dart 重写 Electron `jsonTools.ts`：格式化/压缩、重复 Key 扫描（解
 - **UA**：规则表解析预设 Chrome/Firefox/Safari/Android/curl 与 bot，不是只判断是否包含 Chrome。
 - **配置**：Properties ↔ YAML，校验/格式化。
 - **加解密**：AES/DES 为 ECB+PKCS#7+Hex，key 字符截断/补零后 UTF-8；AES 固定密文 `504a3eb1fee7af3af9561f37a6f12fa8` 与 Electron CryptoJS 一致。摘要含 MD5/SHA/SM3。Base32 对齐 hi-base32。SM4/RSA/SM2 本轮未实现，页面明确说明。
-- **调色板**：主题色表 SHA-256 与 Electron 冻结值一致；运算与 `colorTools.ts` 对齐。屏幕取色未做。
+- 调色板：主题色表 SHA-256 与 Electron 冻结值一致；运算与 `colorTools.ts` 对齐。屏幕取色走 DesktopHost，本机通道尚未实现拾取。
 - **文本对比**：行级 LCS + 字符级补丁 + 三行上下文 unified，对齐 `diffTools.ts` fixtures。
 - **二维码**：`qr` 生成真实 PNG；文件/剪贴板识别尚未接入解码器。
 - **格式化**：Nginx 对齐 `formatNginx`；XML/HTML 为标签感知缩进，不是 Prettier；Java 为字符串感知花括号整理，不是 prettier-plugin-java。
@@ -29,7 +29,7 @@ Dart 重写 Electron `jsonTools.ts`：格式化/压缩、重复 Key 扫描（解
 - **frontmatter**：磁盘文件使用 Java 兼容键 `title`/`syntax`/`font_name`/`font_size`/`line_spacing`/`line_wrap`；编辑器内存只保留正文。
 - **列编辑**：`EditorDocument` 矩形插入/删除；列坐标按 Dart `String` UTF-16 code unit，与 `TextField` 一致。Emoji 可能占 2 个单位，测试已说明。
 - **附件**：写入 `vaults/quick-note/attachments/<noteId>/`，拒绝 `..` 与绝对路径。预览剥 `<script>`/`<iframe>`，不执行脚本。
-- **明确未做**：剪贴板图片（无平台通道）、文档树拖放、Git watcher UI、5MiB 冲突提示。
+- **明确未做**：剪贴板图片曾缺平台通道；现已通过 DesktopHost 接入。文档树拖放、Git watcher UI、5MiB 冲突提示仍未做。
 
 ## P5 网络
 
@@ -47,6 +47,6 @@ Dart 重写 Electron `jsonTools.ts`：格式化/压缩、重复 Key 扫描（解
 
 ## P6 媒体
 
-- **留言板**：80 字符 UTF-16 上限、8 预设、6 主题色、左/中对齐、70–130% 字号；演示模式隐藏左侧控制，Esc 先退出演示。未接系统防休眠 API，不假装常亮成功。
-- **图片**：库文件在本产品 `images/`；压缩/水印用 `package:image` 真实改像素；SVG 为阈值/量化后的轮廓 `path`，禁止内嵌 bitmap。不是 vtracer。截图与系统剪贴板图片未接平台通道。
-- **明确未做**：多窗口全部工具分离、托盘、屏幕取色、截图、防休眠。
+- **留言板**：80 字符 UTF-16 上限、8 预设、6 主题色、左/中对齐、70–130% 字号；演示模式隐藏左侧控制，Esc 先退出演示。防休眠走 DesktopHost / IOPM，失败不假装常亮。
+- **图片**：库文件在本产品 `images/`；压缩/水印用 `package:image` 真实改像素；SVG 为阈值/量化后的轮廓 `path`，禁止内嵌 bitmap。不是 vtracer。剪贴板图片走 DesktopHost（macOS `NSPasteboard`）；屏幕截图/取色仍未实现。
+- **窗口**：关闭 ask/hide/quit 由 DesktopHost 执行；hide 在托盘不可用时强制改为询问。分离状态写入 workspace，仍是同一 Flutter engine，不是第二 engine。

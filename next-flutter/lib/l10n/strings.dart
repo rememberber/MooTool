@@ -172,6 +172,7 @@ const _zh = {
   'note.mode.preview': '预览',
   'note.image': '插入图片',
   'note.clipboardImage': '剪贴板图片',
+  'note.clipboardEmpty': '剪贴板中没有可用图片。普通文本粘贴仍走编辑器。',
   'note.list': '列表',
   'note.column': '列选区',
   'note.columnDelete': '列删除',
@@ -317,6 +318,7 @@ const _zh = {
   'image.base64Hint': '粘贴 data URL 或 Base64',
   'image.screenshotPending': '截图需要平台权限与多屏坐标，本轮未接。',
   'image.clipboardPending': '系统剪贴板图片需要平台通道，本轮未接。',
+  'image.clipboardEmpty': '剪贴板中没有可用图片。',
   'settings.category.general': '通用',
   'settings.category.appearance': '外观',
   'settings.category.layout': '布局',
@@ -352,6 +354,9 @@ const _zh = {
   'settings.startMaximized': '启动时最大化',
   'settings.trayEnabled': '启用托盘',
   'settings.trayPending': '系统托盘本轮未接，开关只保存偏好。',
+  'settings.trayReady': '托盘已接到本机状态栏。关闭为隐藏时可通过托盘或程序坞恢复窗口。',
+  'settings.hideNeedsTray': '未启用或未接上托盘时，关闭隐藏会改为询问，以免窗口无法恢复。',
+  'settings.close.askBody': '关闭主窗口时：隐藏到后台，或退出应用。',
   'settings.style': '界面风格',
   'settings.accentColor': '强调色',
   'settings.uiFontSize': '界面字号',
@@ -563,6 +568,8 @@ const _en = {
   'note.mode.preview': 'Preview',
   'note.image': 'Insert image',
   'note.clipboardImage': 'Clipboard image',
+  'note.clipboardEmpty':
+      'No usable image in the clipboard. Ordinary text paste still goes to the editor.',
   'note.list': 'List',
   'note.column': 'Column',
   'note.columnDelete': 'Delete column',
@@ -713,6 +720,7 @@ const _en = {
       'Screenshot needs platform permissions and is not wired this round.',
   'image.clipboardPending':
       'Clipboard images need a platform channel and are not wired this round.',
+  'image.clipboardEmpty': 'No usable image in the clipboard.',
   'settings.category.general': 'General',
   'settings.category.appearance': 'Appearance',
   'settings.category.layout': 'Layout',
@@ -742,6 +750,12 @@ const _en = {
   'settings.startMaximized': 'Start maximized',
   'settings.trayEnabled': 'Enable tray',
   'settings.trayPending': 'System tray is not wired; this only stores the preference.',
+  'settings.trayReady':
+      'Tray is attached to the status item. Hide-on-close can restore the window from the tray or dock.',
+  'settings.hideNeedsTray':
+      'Hide-on-close becomes Ask when the tray is off or unavailable, so the window cannot vanish.',
+  'settings.close.askBody':
+      'Close the main window by hiding it, or quit the app.',
   'settings.style': 'Interface style',
   'settings.accentColor': 'Accent color',
   'settings.uiFontSize': 'UI font size',

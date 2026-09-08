@@ -33,7 +33,7 @@ performance.json    # 如本轮有性能测试，含原始测量
 | ID | 入口 | 当前状态 | 证据 |
 | --- | --- | --- | --- |
 | F00 | mootool / 首页 | 开发中 | 三语言首页与外链已实现；桌面截图未跑（缺完整 Xcode） |
-| F01 | quickNote / 随手记 | 开发中 | `test/unit/quick_note_test.dart`；列编辑/24 项替换/frontmatter/附件路径；剪贴板图片、拖放树、Git watcher、5MiB 冲突 UI 未完 |
+| F01 | quickNote / 随手记 | 开发中 | 列编辑/24 项替换/附件路径；剪贴板图片走 DesktopHost；拖放树、Git watcher、5MiB 冲突 UI 未完 |
 | F02 | textDiff / 文本对比 | 开发中 | `test/unit/local_tools_test.dart` 对齐 unified/segment fixtures；同步滚动与字符高亮 UI 未完 |
 | F03 | reformat / 格式化 | 开发中 | Nginx 对齐；XML/HTML/Java 为自写整理，非 Prettier，见 ADR 004 |
 | F04 | json / JSON | 开发中 | `test/unit/json_engine_test.dart`、`workspace_test.dart`；Git 主流程有服务，冲突 UI 未完 |
@@ -55,12 +55,12 @@ performance.json    # 如本轮有性能测试，含原始测量
 | F20 | translation / 翻译 | 开发中 | Google gtx 客户端 + 分段/取消单测；Bing/单词本/自动翻译未做 |
 | F21 | calculator / 计算器 | 开发中 | 表达式/进制/GCD/排列组合单测通过 |
 | F22 | colorBoard / 调色板 | 开发中 | 解析/运算/主题色 SHA 对齐；取色走 DesktopHost，本机通道尚未实现屏幕拾取 |
-| F23 | image / 图片 | 开发中 | 本产品图片库导入/压缩/水印/轮廓 SVG；截图走 DesktopHost，剪贴板图片未接 |
+| F23 | image / 图片 | 开发中 | 本产品图片库导入/压缩/水印/轮廓 SVG；剪贴板图片走 DesktopHost；截图通道仍未实现 |
 | F24 | pdf / PDF | 开发中 | 页码规则对齐 Electron；SimplePdf 拆合可提取文本；任意加密 PDF 拒绝 |
 | F25 | hardware / 系统信息 | 开发中 | Platform/内存/网卡真实采集；非 systeminformation 全量；CPU% 未做 |
-| A01 | 11 类设置 | 开发中 | 11 类页可持久化；托盘/更新/关闭策略只存偏好；quiet 等风格无独立视觉 |
+| A01 | 11 类设置 | 开发中 | 11 类页可持久化；关闭 hide 无托盘时改为询问；托盘 macOS 已写 NSStatusItem，本机未用 Xcode 验证；quiet 等风格无独立视觉 |
 | A02 | 历史/收藏/搜索 | 开发中 | JSON 与本地工具历史；regex/cron/color 收藏入口；⌘K 搜索 |
-| A03 | 数据/Git/窗口/平台/更新 | 开发中 | 原子 workspace、损坏保护、快照备份/恢复；Git token 仍在 settings.json；更新/托盘/多窗口未做 |
+| A03 | 数据/Git/窗口/平台/更新 | 开发中 | 原子 workspace、损坏保护、快照备份、分离 ID 持久化；关闭策略走 DesktopHost；真实第二 engine / 更新未做 |
 
 每个复杂工具再维护子能力状态。比如随手记正文编辑完成、列编辑未完成时，F01 不能标记已验收。
 

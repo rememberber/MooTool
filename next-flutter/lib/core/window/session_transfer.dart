@@ -39,6 +39,9 @@ class SessionCoordinator {
 
   void claim(String sessionId) => _owners[sessionId] = windowId;
 
+  void forceOwner(String sessionId, String windowId) =>
+      _owners[sessionId] = windowId;
+
   TransferResult beginTransfer(TransferRequest request) {
     if (_locks.containsKey(request.sessionId)) {
       return TransferResult(
