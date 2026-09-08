@@ -81,7 +81,8 @@ const toolRegistry = <ToolDefinition>[
       groupId: ToolGroupId.dev,
       titleKey: 'app.nav.java',
       icon: 'runtime',
-      keywords: ['java', 'groovy', 'python', 'node', 'console', '运行', 'コード']),
+      keywords: ['java', 'groovy', 'python', 'node', 'console', '运行', 'コード'],
+      status: ToolStatus.inProgress),
   ToolDefinition(
       id: 'ymlProperties',
       groupId: ToolGroupId.dev,
@@ -101,7 +102,8 @@ const toolRegistry = <ToolDefinition>[
       groupId: ToolGroupId.dev,
       titleKey: 'app.nav.variables',
       icon: 'env',
-      keywords: ['env', 'environment', 'variable', '环境变量', '環境']),
+      keywords: ['env', 'environment', 'variable', '环境变量', '環境'],
+      status: ToolStatus.inProgress),
   ToolDefinition(
       id: 'http',
       groupId: ToolGroupId.network,
@@ -186,7 +188,8 @@ const toolRegistry = <ToolDefinition>[
       groupId: ToolGroupId.daily,
       titleKey: 'app.nav.translation',
       icon: 'translate',
-      keywords: ['translate', 'translation', 'word', '翻译', '翻訳']),
+      keywords: ['translate', 'translation', 'word', '翻译', '翻訳'],
+      status: ToolStatus.inProgress),
   ToolDefinition(
       id: 'calculator',
       groupId: ToolGroupId.daily,
@@ -220,7 +223,8 @@ const toolRegistry = <ToolDefinition>[
       titleKey: 'app.nav.hardware',
       icon: 'cpu',
       keywords: ['hardware', 'system', 'cpu', 'memory', '系统', 'ハードウェア'],
-      supportsHistory: false),
+      supportsHistory: false,
+      status: ToolStatus.inProgress),
 ];
 
 final toolGroups = [

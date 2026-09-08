@@ -6,6 +6,7 @@ import '../../app/settings.dart';
 import '../../app/tool_registry.dart';
 import '../../design/theme.dart';
 import '../../design/widgets.dart';
+import '../hardware/hardware_page.dart';
 import '../home/home_page.dart';
 import '../host/host_page.dart';
 import '../http/http_page.dart';
@@ -13,8 +14,11 @@ import '../json/json_tool.dart';
 import '../local/local_tool_pages.dart';
 import '../net/net_page.dart';
 import '../quick_note/quick_note_page.dart';
+import '../runtime/runtime_page.dart';
 import '../settings/settings_page.dart';
 import '../tools/pending_tool_page.dart';
+import '../translation/translation_page.dart';
+import '../variables/variables_page.dart';
 
 class Workbench extends StatelessWidget {
   const Workbench({super.key, required this.controller});
@@ -272,6 +276,10 @@ class Workbench extends StatelessWidget {
       'http' => HttpToolPage(controller: controller),
       'host' => HostToolPage(controller: controller),
       'net' => NetToolPage(controller: controller),
+      'java' => RuntimeToolPage(controller: controller),
+      'variables' => VariablesToolPage(controller: controller),
+      'translation' => TranslationToolPage(controller: controller),
+      'hardware' => HardwareToolPage(controller: controller),
       _ => PendingToolPage(controller: controller, toolId: tool.id),
     };
   }

@@ -35,7 +35,11 @@ Dart 重写 Electron `jsonTools.ts`：格式化/压缩、重复 Key 扫描（解
 
 - **HTTP**：Dart `HttpClient` 真实请求；重复 Query 按表格顺序追加，不用 Map 去重。响应上限 10MiB（含解压后）。cURL 只解析，不执行；`-u`/`--proxy` 拒绝导入。取消关闭对应 client。
 - **Host**：方案存在本产品 workspace；应用到系统需提权，本轮不假装成功。
-- **网络/IP**：IPv4↔Long 与 Electron `127.0.0.1` / `2130706433` 一致；DNS 用 `InternetAddress.lookup`，ping 用 `Process.run` argv。WHOIS 未做。
+- **网络/IP**：IPv4↔Long 与 Electron `127.0.0.1` / `2130706433` 一致；DNS 用 `InternetAddress.lookup`，ping 用 `Process.run` argv。WHOIS 先查 `whois.iana.org:43`，跟随 `refer`/`whois`，本机地址来自 `NetworkInterface.list`。无网时返回真实连接错误，不填示例 IP。
+- **代码运行**：受控 `Process.start`，参数数组不经 shell；源 1MiB、输出 2MiB；停止 SIGTERM 后 SIGKILL。Java 走源文件 `java File.java`。Node 格式化只做 tab→空格，不是 Prettier。
+- **环境变量**：进程环境只读；运行属性为本产品/Dart/OS；用户变量写入 `environment/user.json`，不改系统环境、shell rc 或 launchctl。
+- **翻译**：Google `translate.googleapis.com/translate_a/single?client=gtx`；分段与 `googleLanguage` 对齐 Electron。Bing、单词本、自动翻译 debounce 未做。失败显示真实错误。
+- **系统信息**：`Platform` / `Abi` / `ProcessInfo.currentRss` / macOS `sysctl hw.memsize` / 网卡列表。不是 systeminformation 全量，无 CPU%、序列号等字段时不填 0。
 
 ## PDF
 

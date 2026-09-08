@@ -15,6 +15,7 @@ import '../core/git/git_service.dart';
 import '../core/storage/atomic_file.dart';
 import '../core/storage/document_vault.dart';
 import '../core/window/session_transfer.dart';
+import '../features/hardware/system_info.dart';
 import '../features/host/host_session.dart';
 import '../features/http/http_client.dart';
 import '../features/http/http_models.dart';
@@ -25,6 +26,10 @@ import '../features/quick_note/note_attachments.dart';
 import '../features/quick_note/note_frontmatter.dart';
 import '../features/quick_note/quick_note_session.dart';
 import '../features/quick_note/quick_replace.dart';
+import '../features/runtime/runtime_service.dart';
+import '../features/runtime/runtime_tools.dart';
+import '../features/translation/translation_client.dart';
+import '../features/variables/environment_store.dart';
 import '../l10n/strings.dart';
 
 const jsonSample = '''
@@ -174,6 +179,17 @@ class AppController extends ChangeNotifier {
   final HttpSession http = HttpSession();
   final HttpSender httpSender = HttpSender();
   final HostSession host = HostSession();
+  final RuntimeSession runtime = RuntimeSession();
+  final TranslationSession translation = TranslationSession();
+  final TranslationClient translationClient = TranslationClient();
+  late final EnvironmentStore environmentStore = EnvironmentStore(
+      File('${paths.dataRoot.path}/environment/user.json'));
+  late final RuntimeExecutionService runtimeService =
+      RuntimeExecutionService(Directory('${paths.cacheRoot.path}/runtime'));
+  List<EnvironmentEntry> environmentProcess = [];
+  List<EnvironmentEntry> environmentRuntime = [];
+  List<EnvironmentEntry> environmentUser = [];
+  HardwareSnapshot? hardwareSnapshot;
   late final NoteAttachmentStore attachments = NoteAttachmentStore(paths.noteVaultDir);
   DocumentVault vault = DocumentVault();
   VaultPreferences jsonVaultPrefs = VaultPreferences();
@@ -181,6 +197,7 @@ class AppController extends ChangeNotifier {
   final List<HistoryRecord> histories = [];
   Timer? _saveTimer;
   bool _pauseAutosave = false;
+  bool _closed = false;
   Future<void> _writeQueue = Future.value();
 
   L10n get l10n => L10n(settings.language);
@@ -233,6 +250,11 @@ class AppController extends ChangeNotifier {
       http.restore(Map<String, Object?>.from(workspace['http'] as Map));
     if (workspace['host'] is Map)
       host.restore(Map<String, Object?>.from(workspace['host'] as Map));
+    if (workspace['runtime'] is Map)
+      runtime.restore(Map<String, Object?>.from(workspace['runtime'] as Map));
+    if (workspace['translation'] is Map)
+      translation.restore(
+          Map<String, Object?>.from(workspace['translation'] as Map));
     if (workspace['vault'] is Map)
       vault = DocumentVault.fromJson(
           Map<String, Object?>.from(workspace['vault'] as Map));
@@ -287,6 +309,8 @@ class AppController extends ChangeNotifier {
         'note': note.toJson(),
         'http': http.toJson(),
         'host': host.toJson(),
+        'runtime': runtime.toJson(),
+        'translation': translation.toJson(),
         'vault': vault.toJson(),
         'jsonVaultPrefs': jsonVaultPrefs.toJson(),
         'noteVaultPrefs': noteVaultPrefs.toJson(),
@@ -366,6 +390,15 @@ class AppController extends ChangeNotifier {
       recentToolIds =
           [id, ...recentToolIds.where((item) => item != id)].take(5).toList();
     }
+    if (id == 'java' && runtime.statuses.isEmpty) {
+      unawaited(detectRuntimes());
+    }
+    if (id == 'hardware' && hardwareSnapshot == null) {
+      unawaited(refreshHardware());
+    }
+    if (id == 'variables' && environmentProcess.isEmpty) {
+      unawaited(refreshEnvironment());
+    }
     scheduleSave();
     notifyListeners();
   }
@@ -428,6 +461,8 @@ class AppController extends ChangeNotifier {
         'ymlProperties' => 'properties',
         'colorBoard' => 'hex',
         'net' => 'ipv4',
+        'variables' => 'process',
+        'hardware' => 'system',
         _ => '',
       };
 
@@ -1008,6 +1043,169 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
+  Future<void> refreshEnvironment() async {
+    environmentProcess = await environmentStore.processEntries();
+    environmentRuntime = environmentStore.runtimeEntries();
+    final user = await environmentStore.readUser();
+    environmentUser = [
+      for (final entry in user.entries)
+        EnvironmentEntry(key: entry.key, value: entry.value, scope: 'user')
+    ]..sort((a, b) => a.key.compareTo(b.key));
+    if (_closed) return;
+    notifyListeners();
+  }
+
+  void editUserVariable(String key, String value) {
+    final session = localFor('variables');
+    session.options['userKey'] = key;
+    session.options['userValue'] = value;
+    notifyListeners();
+  }
+
+  Future<void> saveUserVariable() async {
+    final session = localFor('variables');
+    final key = (session.options['userKey'] ?? '').trim();
+    if (key.isEmpty || key.contains('\u0000') || key.contains('=')) {
+      session.notice = t('variables.invalidKey');
+      notifyListeners();
+      return;
+    }
+    final values = await environmentStore.readUser();
+    values[key] = session.options['userValue'] ?? '';
+    await environmentStore.writeUser(values);
+    await refreshEnvironment();
+    scheduleSave();
+  }
+
+  Future<void> deleteUserVariable(String key) async {
+    final values = await environmentStore.readUser();
+    values.remove(key);
+    await environmentStore.writeUser(values);
+    await refreshEnvironment();
+    scheduleSave();
+  }
+
+  Future<void> detectRuntimes() async {
+    runtime.statuses = await runtimeService.detect();
+    if (_closed) return;
+    notifyListeners();
+  }
+
+  Future<void> runRuntime() async {
+    final session = runtime;
+    final requestId =
+        'run-${DateTime.now().millisecondsSinceEpoch}-${session.runtime}';
+    session.requestId = requestId;
+    session.running = true;
+    session.notice = '';
+    session.stdout = '';
+    session.stderr = '';
+    notifyListeners();
+    try {
+      final args =
+          parseRuntimeArguments(session.arguments[session.runtime] ?? '');
+      final result = await runtimeService.run(
+        requestId: requestId,
+        runtime: session.runtime,
+        code: session.code,
+        arguments: args,
+        workingDirectory: session.workingDirectories[session.runtime] ?? '',
+      );
+      if (session.requestId != requestId) return;
+      session.result = result;
+      session.stdout = result.stdout;
+      session.stderr = result.stderr;
+      if (result.timedOut ||
+          result.cancelled ||
+          result.truncated ||
+          result.exitCode != 0) {
+        session.notice = [
+          if (result.timedOut) 'TIMEOUT',
+          if (result.cancelled) 'CANCELLED',
+          if (result.truncated) 'TRUNCATED',
+          if (result.exitCode != 0) 'exit ${result.exitCode}',
+        ].join(' ');
+      }
+      recordToolHistory(
+          toolId: 'java',
+          title: '${session.runtime} ${result.exitCode}',
+          input: session.code,
+          output: '${result.stdout}\n${result.stderr}');
+    } catch (error) {
+      if (session.requestId == requestId) {
+        session.notice = error.toString();
+      }
+    } finally {
+      if (session.requestId == requestId) session.running = false;
+      if (!_closed) {
+        scheduleSave();
+        notifyListeners();
+      }
+    }
+  }
+
+  Future<void> stopRuntime() async {
+    await runtimeService.cancel(runtime.requestId);
+    runtime.requestId = '';
+    runtime.running = false;
+    runtime.notice = 'CANCELLED';
+    notifyListeners();
+  }
+
+  Future<void> translateText() async {
+    final session = translation;
+    final requestId = 'tr-${DateTime.now().millisecondsSinceEpoch}';
+    session.requestId = requestId;
+    session.translating = true;
+    session.notice = '';
+    notifyListeners();
+    try {
+      final result = await translationClient.translate(
+        requestId: requestId,
+        text: session.source,
+        sourceLang: session.sourceLang,
+        targetLang: session.targetLang,
+      );
+      if (session.requestId != requestId) return;
+      session.target = result.text;
+      session.provider = result.provider;
+      session.history.insert(0, {
+        'source': session.source,
+        'target': result.text,
+        'from': session.sourceLang,
+        'to': session.targetLang,
+      });
+      if (session.history.length > 50) {
+        session.history.removeRange(50, session.history.length);
+      }
+    } catch (error) {
+      if (session.requestId == requestId) {
+        session.notice = error.toString();
+        session.target = '';
+      }
+    } finally {
+      if (session.requestId == requestId) session.translating = false;
+      if (!_closed) {
+        scheduleSave();
+        notifyListeners();
+      }
+    }
+  }
+
+  void cancelTranslation() {
+    translationClient.cancel(translation.requestId);
+    translation.requestId = '';
+    translation.translating = false;
+    translation.notice = 'ABORTED';
+    notifyListeners();
+  }
+
+  Future<void> refreshHardware() async {
+    hardwareSnapshot = await collectSystemInfo();
+    if (_closed) return;
+    notifyListeners();
+  }
+
   void detachTool(String id) {
     if (id == 'mootool') return;
     final session = id == 'json'
@@ -1135,6 +1333,7 @@ class AppController extends ChangeNotifier {
 
   @override
   void dispose() {
+    _closed = true;
     _saveTimer?.cancel();
     super.dispose();
   }

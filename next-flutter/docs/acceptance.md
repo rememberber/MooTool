@@ -37,13 +37,13 @@ performance.json    # 如本轮有性能测试，含原始测量
 | F02 | textDiff / 文本对比 | 开发中 | `test/unit/local_tools_test.dart` 对齐 unified/segment fixtures；同步滚动与字符高亮 UI 未完 |
 | F03 | reformat / 格式化 | 开发中 | Nginx 对齐；XML/HTML/Java 为自写整理，非 Prettier，见 ADR 004 |
 | F04 | json / JSON | 开发中 | `test/unit/json_engine_test.dart`、`workspace_test.dart`；Git 主流程有服务，冲突 UI 未完 |
-| F05 | java / 代码运行 | 未开始 | — |
+| F05 | java / 代码运行 | 开发中 | `test/unit/p5_system_test.dart`；探测/子进程/取消；Node 非 Prettier；桌面 UI 未跑 |
 | F06 | ymlProperties / 配置转换 | 开发中 | Properties↔YAML 单测通过 |
 | F07 | protobuf / Protobuf | 开发中 | 粘贴 proto3 JSON↔Hex/Wire 单测通过；嵌套/map/oneof 未做 |
-| F08 | variables / 环境变量 | 未开始 | — |
+| F08 | variables / 环境变量 | 开发中 | 用户变量写入本产品 `environment/user.json`；不改系统环境；OS 持久未做 |
 | F09 | http / HTTP | 开发中 | `test/unit/network_test.dart` 本地服务确认 method/重复 query/body/超时/过大响应；cURL 导入不执行命令；代理 UI 未完 |
 | F10 | host / Host | 开发中 | 方案 CRUD 持久化；系统 hosts 提权写入明确未实现 |
-| F11 | net / 网络/IP | 开发中 | IPv4↔Long 对齐 Electron；DNS/`ping` 走真实查找与进程；WHOIS 未做 |
+| F11 | net / 网络/IP | 开发中 | IPv4↔Long 对齐 Electron；DNS/`ping` 真实查找；WHOIS 走 :43 并跟随 refer；本机地址来自网卡列表 |
 | F12 | uaParse / UA | 开发中 | 预设 Chrome/Safari/bot 单测通过 |
 | F13 | encode / 编码 | 开发中 | Unicode/URL UTF-8+GB2312/Hex/ASCII 单测通过 |
 | F14 | crypto / 加解密/随机 | 开发中 | AES ECB PKCS7 固定密文与 Electron 一致；DES/摘要/Base32/随机已做；SM4/RSA/SM2 明确未实现 |
@@ -52,12 +52,12 @@ performance.json    # 如本轮有性能测试，含原始测量
 | F17 | qrCode / 二维码 | 开发中 | 生成 PNG；识别未接入解码器 |
 | F18 | timeConvert / 时间 | 开发中 | 时区往返与非法日期单测通过；全屏时钟未做 |
 | F19 | messageBoard / 留言板 | 未开始 | — |
-| F20 | translation / 翻译 | 未开始 | — |
+| F20 | translation / 翻译 | 开发中 | Google gtx 客户端 + 分段/取消单测；Bing/单词本/自动翻译未做 |
 | F21 | calculator / 计算器 | 开发中 | 表达式/进制/GCD/排列组合单测通过 |
 | F22 | colorBoard / 调色板 | 开发中 | 解析/运算/主题色 SHA 对齐；屏幕取色未做 |
 | F23 | image / 图片 | 未开始 | — |
 | F24 | pdf / PDF | 未开始 | P0 SimplePdf 拆合样例已通过；任意 PDF/pdfium 未做 |
-| F25 | hardware / 系统信息 | 未开始 | — |
+| F25 | hardware / 系统信息 | 开发中 | Platform/内存/网卡真实采集；非 systeminformation 全量；CPU% 未做 |
 | A01 | 11 类设置 | 开发中 | 通用/外观/布局/关于；其余分类待补 |
 | A02 | 历史/收藏/搜索 | 开发中 | JSON 与本地工具历史；regex/cron/color 收藏入口；⌘K 搜索 |
 | A03 | 数据/Git/窗口/平台/更新 | 开发中 | 原子 workspace、损坏保护、同 engine 分离；更新未做 |
