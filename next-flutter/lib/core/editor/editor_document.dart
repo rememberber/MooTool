@@ -66,6 +66,11 @@ class EditorDocument {
 
   void markSaved() => savedRevision = revision;
 
+  void resetHistory() {
+    _undo.clear();
+    _redo.clear();
+  }
+
   TextRangeValue get selection => TextRangeValue(
         _selectionStart <= _selectionEnd ? _selectionStart : _selectionEnd,
         _selectionStart <= _selectionEnd ? _selectionEnd : _selectionStart,
@@ -93,6 +98,62 @@ class EditorDocument {
     _selectionEnd = (selectionEnd ?? _selectionStart).clamp(0, next.length);
     column = null;
     revision += 1;
+  }
+
+  void transformSelectionOrAll(String Function(String value) transform) {
+    final range = selection;
+    if (range.isCollapsed) {
+      final next = transform(_text);
+      apply(next, selectionStart: 0, selectionEnd: 0);
+      return;
+    }
+    final next = transform(_text.substring(range.start, range.end));
+    apply(
+      '${_text.substring(0, range.start)}$next${_text.substring(range.end)}',
+      selectionStart: range.start,
+      selectionEnd: range.start + next.length,
+    );
+  }
+
+  void deleteInColumn() {
+    final box = column;
+    if (box == null) return;
+    final lines = _text.split('\n');
+    for (var line = box.top; line <= box.bottom && line < lines.length; line++) {
+      final start = box.left.clamp(0, lines[line].length);
+      final end = box.right.clamp(start, lines[line].length);
+      lines[line] = '${lines[line].substring(0, start)}${lines[line].substring(end)}';
+    }
+    apply(lines.join('\n'),
+        selectionStart: _offset(lines, box.top, box.left),
+        selectionEnd: _offset(lines, box.bottom, box.left));
+    column = ColumnSelection(
+      startLine: box.startLine,
+      startColumn: box.left,
+      endLine: box.endLine,
+      endColumn: box.left,
+    );
+  }
+
+  void setColumnFromSelection() {
+    final start = _lineColumn(selection.start);
+    final end = _lineColumn(selection.end);
+    column = ColumnSelection(
+      startLine: start.$1,
+      startColumn: start.$2,
+      endLine: end.$1,
+      endColumn: end.$2,
+    );
+  }
+
+  (int, int) _lineColumn(int offset) {
+    final lines = _text.split('\n');
+    var remaining = offset.clamp(0, _text.length);
+    for (var i = 0; i < lines.length; i++) {
+      if (remaining <= lines[i].length) return (i, remaining);
+      remaining -= lines[i].length + 1;
+    }
+    return (lines.length - 1, lines.isEmpty ? 0 : lines.last.length);
   }
 
   void replaceSelection(String insertion) {

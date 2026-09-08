@@ -9,6 +9,7 @@ import '../../design/widgets.dart';
 import '../home/home_page.dart';
 import '../json/json_tool.dart';
 import '../local/local_tool_pages.dart';
+import '../quick_note/quick_note_page.dart';
 import '../settings/settings_page.dart';
 import '../tools/pending_tool_page.dart';
 
@@ -250,6 +251,7 @@ class Workbench extends StatelessWidget {
     }
     return switch (tool.id) {
       'mootool' => HomePage(l10n: controller.l10n),
+      'quickNote' => QuickNotePage(controller: controller),
       'json' => JsonToolPage(controller: controller),
       'encode' => EncodeToolPage(controller: controller),
       'calculator' => CalculatorToolPage(controller: controller),

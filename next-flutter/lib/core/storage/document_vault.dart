@@ -55,10 +55,12 @@ class VaultDocument {
     this.parentId,
     this.query = '',
     this.output = '',
+    Map<String, Object?>? metadata,
     DateTime? created,
     DateTime? modified,
   })  : created = created ?? DateTime.now(),
-        modified = modified ?? DateTime.now();
+        modified = modified ?? DateTime.now(),
+        metadata = metadata ?? {};
 
   final String id;
   final String toolId;
@@ -67,6 +69,7 @@ class VaultDocument {
   String content;
   String query;
   String output;
+  final Map<String, Object?> metadata;
   DateTime created;
   DateTime modified;
 
@@ -78,6 +81,7 @@ class VaultDocument {
         'content': content,
         'query': query,
         'output': output,
+        'metadata': metadata,
         'created': created.toIso8601String(),
         'modified': modified.toIso8601String(),
       };
@@ -90,6 +94,7 @@ class VaultDocument {
         parentId: json['parentId'] as String?,
         query: json['query'] as String? ?? '',
         output: json['output'] as String? ?? '',
+        metadata: Map<String, Object?>.from(json['metadata'] as Map? ?? {}),
         created: DateTime.tryParse(json['created'] as String? ?? '') ??
             DateTime.now(),
         modified: DateTime.tryParse(json['modified'] as String? ?? '') ??
@@ -379,11 +384,16 @@ class DocumentVault {
         .cast<VaultDocument?>()
         .firstWhere((item) => item!.id == id, orElse: () => null);
     if (file == null) throw VaultException('只能复制文档。');
-    return createDocument(
+    final copyId = createDocument(
         toolId: file.toolId,
         name: uniqueName(file.title, file.toolId, file.parentId),
         content: file.content,
         parent: file.parentId);
+    documents
+        .firstWhere((item) => item.id == copyId)
+        .metadata
+        .addAll(file.metadata);
+    return copyId;
   }
 
   Set<String> delete(String id) {

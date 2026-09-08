@@ -13,6 +13,16 @@ void main() {
     expect(document.text, 'one\ntwo\nthree');
   });
 
+  test('column delete is one undo and keeps a zero-width column', () {
+    final document = EditorDocument(text: 'abcd\nefgh');
+    document.column = const ColumnSelection(
+        startLine: 0, startColumn: 1, endLine: 1, endColumn: 3);
+    document.deleteInColumn();
+    expect(document.text, 'ad\neh');
+    expect(document.undo(), isTrue);
+    expect(document.text, 'abcd\nefgh');
+  });
+
   test('switching documents does not share undo', () {
     final first = EditorDocument(id: 'a', text: 'alpha');
     final second = EditorDocument(id: 'b', text: 'beta');

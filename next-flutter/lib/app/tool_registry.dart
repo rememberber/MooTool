@@ -53,7 +53,8 @@ const toolRegistry = <ToolDefinition>[
       groupId: ToolGroupId.text,
       titleKey: 'app.nav.quickNote',
       icon: 'note',
-      keywords: ['note', 'memo', 'markdown', '随手记', '笔记', '記']),
+      keywords: ['note', 'memo', 'markdown', '随手记', '笔记', '記'],
+      status: ToolStatus.inProgress),
   ToolDefinition(
       id: 'textDiff',
       groupId: ToolGroupId.text,

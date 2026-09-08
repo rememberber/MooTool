@@ -17,6 +17,10 @@ import '../core/storage/document_vault.dart';
 import '../core/window/session_transfer.dart';
 import '../features/json/json_engine.dart';
 import '../features/json/json_path.dart';
+import '../features/quick_note/note_attachments.dart';
+import '../features/quick_note/note_frontmatter.dart';
+import '../features/quick_note/quick_note_session.dart';
+import '../features/quick_note/quick_replace.dart';
 import '../l10n/strings.dart';
 
 const jsonSample = '''
@@ -162,8 +166,11 @@ class AppController extends ChangeNotifier {
   final Map<String, LocalSession> locals = {};
   final List<FavoriteRecord> favorites = [];
   final JsonSession json = JsonSession();
+  final QuickNoteSession note = QuickNoteSession();
+  late final NoteAttachmentStore attachments = NoteAttachmentStore(paths.noteVaultDir);
   DocumentVault vault = DocumentVault();
   VaultPreferences jsonVaultPrefs = VaultPreferences();
+  VaultPreferences noteVaultPrefs = VaultPreferences();
   final List<HistoryRecord> histories = [];
   Timer? _saveTimer;
   bool _pauseAutosave = false;
@@ -203,6 +210,7 @@ class AppController extends ChangeNotifier {
       _pauseAutosave = true;
     }
     coordinator.claim('json');
+    coordinator.claim('quickNote');
     notifyListeners();
   }
 
@@ -212,12 +220,17 @@ class AppController extends ChangeNotifier {
     sidebarCollapsed = workspace['sidebarCollapsed'] as bool? ?? false;
     if (workspace['json'] is Map)
       json.restore(Map<String, Object?>.from(workspace['json'] as Map));
+    if (workspace['note'] is Map)
+      note.restore(Map<String, Object?>.from(workspace['note'] as Map));
     if (workspace['vault'] is Map)
       vault = DocumentVault.fromJson(
           Map<String, Object?>.from(workspace['vault'] as Map));
     if (workspace['jsonVaultPrefs'] is Map)
       jsonVaultPrefs = VaultPreferences.fromJson(
           Map<String, Object?>.from(workspace['jsonVaultPrefs'] as Map));
+    if (workspace['noteVaultPrefs'] is Map)
+      noteVaultPrefs = VaultPreferences.fromJson(
+          Map<String, Object?>.from(workspace['noteVaultPrefs'] as Map));
     histories
       ..clear()
       ..addAll([
@@ -260,8 +273,10 @@ class AppController extends ChangeNotifier {
         'recentToolIds': recentToolIds,
         'sidebarCollapsed': sidebarCollapsed,
         'json': json.toJson(),
+        'note': note.toJson(),
         'vault': vault.toJson(),
         'jsonVaultPrefs': jsonVaultPrefs.toJson(),
+        'noteVaultPrefs': noteVaultPrefs.toJson(),
         'histories': [for (final item in histories.take(100)) item.toJson()],
         'drafts': {
           for (final entry in drafts.entries)
@@ -301,6 +316,16 @@ class AppController extends ChangeNotifier {
           file.query = json.jsonPath;
           file.modified = DateTime.now();
           json.document.markSaved();
+        }
+      }
+      if (note.documentId != null) {
+        final file = _document(note.documentId);
+        if (file != null && file.content != note.document.text) {
+          file.content = note.document.text;
+          file.metadata.addAll(note.metadata.toJson());
+          file.modified = DateTime.now();
+          await _exportNoteFile(file);
+          note.document.markSaved();
         }
       }
     } catch (error) {
@@ -613,14 +638,242 @@ class AppController extends ChangeNotifier {
     if (json.documentId != null && removed.contains(json.documentId)) {
       json.documentId = null;
     }
+    if (note.documentId != null && removed.contains(note.documentId)) {
+      note.documentId = null;
+    }
     jsonVaultPrefs.expanded.removeAll(removed);
+    noteVaultPrefs.expanded.removeAll(removed);
+    for (final removedId in removed) {
+      final dir = attachments.directoryFor(removedId);
+      if (dir.existsSync()) {
+        unawaited(dir.delete(recursive: true));
+      }
+    }
     scheduleSave();
     notifyListeners();
   }
 
+  String createNoteDocument({String name = 'untitled.md', String? parent}) {
+    if (note.documentId != null && note.document.dirty) {
+      saveNoteDocument();
+    }
+    final id = vault.createDocument(
+        toolId: 'quickNote',
+        name: name,
+        content: note.document.text,
+        parent: parent);
+    final file = _document(id);
+    if (file == null) throw StateError('Failed to create note $id');
+    file.metadata.addAll(note.metadata.toJson());
+    note.metadata.title = name;
+    file.metadata['title'] = name;
+    note.documentId = id;
+    noteVaultPrefs.selectedEntryId = id;
+    note.document.markSaved();
+    unawaited(_exportNoteFile(file));
+    scheduleSave();
+    notifyListeners();
+    return id;
+  }
+
+  String createNoteFolder({String name = 'folder', String? parent}) {
+    final id =
+        vault.createFolder(toolId: 'quickNote', name: name, parent: parent);
+    noteVaultPrefs.expanded.add(id);
+    scheduleSave();
+    notifyListeners();
+    return id;
+  }
+
+  void openNoteDocument(String id) {
+    final file = _document(id);
+    if (file == null) return;
+    if (note.documentId != id && note.documentId != null) {
+      if (note.document.dirty) {
+        final current = _document(note.documentId);
+        if (current == null) {
+          note.notice = '当前笔记保存失败，未切换。';
+          notifyListeners();
+          return;
+        }
+        saveNoteDocument();
+      }
+    }
+    note.documentId = id;
+    final parsed = parseNoteDocument(file.content);
+    final packed = file.content.startsWith('---\n');
+    final body = packed ? parsed.body : file.content;
+    note.metadata = packed
+        ? parsed.metadata
+        : NoteMetadata.fromJson({
+            ...file.metadata,
+            'title': file.title,
+          });
+    note.document.apply(body, recordUndo: false);
+    note.document.resetHistory();
+    note.document.markSaved();
+    noteVaultPrefs.selectedEntryId = id;
+    noteVaultPrefs.expanded.addAll(vault.ancestorsOf(id));
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void saveNoteDocument() {
+    if (note.documentId == null) {
+      createNoteDocument();
+      return;
+    }
+    final file = _document(note.documentId);
+    if (file == null) return;
+    file.content = note.document.text;
+    file.metadata
+      ..clear()
+      ..addAll(note.metadata.toJson());
+    file.modified = DateTime.now();
+    note.document.markSaved();
+    unawaited(_exportNoteFile(file));
+    unawaited(attachments.deleteOrphans(file.id, file.content));
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void setNoteText(String value,
+      {int? selectionStart, int? selectionEnd, bool recordUndo = true}) {
+    note.document.apply(value,
+        selectionStart: selectionStart ?? note.document.selectionStart,
+        selectionEnd: selectionEnd ?? note.document.selectionEnd,
+        recordUndo: recordUndo);
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void applyQuickReplace(String action) {
+    try {
+      note.document.transformSelectionOrAll(
+          (value) => runQuickReplace(value, action));
+      note.notice = action;
+    } catch (error) {
+      note.notice = error.toString();
+    }
+    scheduleSave();
+    notifyListeners();
+  }
+
+  Future<void> importNoteImage(File source) async {
+    final id = note.documentId ?? createNoteDocument();
+    final relative = await attachments.importFile(id, source);
+    final alt = source.uri.pathSegments.isEmpty
+        ? relative
+        : source.uri.pathSegments.last;
+    final insertion = prepareMarkdownImageInsertion(
+      note.document.text,
+      TextSelectionRange(
+          start: note.document.selectionStart,
+          end: note.document.selectionEnd),
+      '![$alt]($relative)',
+    );
+    note.document.apply(
+      '${note.document.text.substring(0, insertion.start)}${insertion.text}${note.document.text.substring(insertion.end)}',
+      selectionStart: insertion.caret,
+      selectionEnd: insertion.caret,
+    );
+    saveNoteDocument();
+  }
+
+  void pasteNoteImageFromClipboard() {
+    note.notice = '剪贴板图片需要平台通道，本轮未实现。普通文本粘贴仍走编辑器，不会被拦截成图片。';
+    notifyListeners();
+  }
+
+  void importNoteMarkdown(String source, {String name = 'imported.md'}) {
+    final parsed = parseNoteDocument(source);
+    if (source.startsWith('---\n')) {
+      note.metadata = parsed.metadata;
+      note.document.apply(parsed.body);
+    } else {
+      note.document.apply(source);
+    }
+    createNoteDocument(name: name);
+  }
+
+  Future<void> copyNote() async {
+    await Clipboard.setData(ClipboardData(text: note.document.text));
+    toast = t('json.action.copied');
+    notifyListeners();
+  }
+
+  void wrapNoteLines(String prefix) {
+    note.document.transformSelectionOrAll((value) => value
+        .split('\n')
+        .map((line) => line.trim().isEmpty ? line : '$prefix$line')
+        .join('\n'));
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void insertNoteColumn(String insertion) {
+    if (note.document.column == null) {
+      note.document.setColumnFromSelection();
+    }
+    note.document.insertInColumn(insertion);
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void deleteNoteColumn() {
+    if (note.document.column == null) {
+      note.document.setColumnFromSelection();
+    }
+    note.document.deleteInColumn();
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void markNoteColumn() {
+    note.document.setColumnFromSelection();
+    notifyListeners();
+  }
+
+  void renameVaultEntry(String id, String name) {
+    vault.rename(id, name);
+    final file = _document(id);
+    if (file?.toolId == 'quickNote' && note.documentId == id) {
+      note.metadata.title = name;
+    }
+    scheduleSave();
+    notifyListeners();
+  }
+
+  String duplicateVaultEntry(String id) {
+    final copyId = vault.duplicate(id);
+    scheduleSave();
+    notifyListeners();
+    return copyId;
+  }
+
+  Future<void> _exportNoteFile(VaultDocument file) async {
+    await paths.noteVaultDir.create(recursive: true);
+    final target = File('${paths.noteVaultDir.path}/${file.id}.md');
+    if (!target.path.startsWith(paths.noteVaultDir.path)) return;
+    final packed = serializeNoteDocument(NoteDocument(
+      metadata: NoteMetadata.fromJson({
+        ...file.metadata,
+        'title': file.title,
+      }),
+      body: file.content.startsWith('---\n')
+          ? parseNoteDocument(file.content).body
+          : file.content,
+    ));
+    await writeAtomicFile(target, packed);
+  }
+
   void detachTool(String id) {
     if (id == 'mootool') return;
-    final session = id == 'json' ? json.document : draftFor(id);
+    final session = id == 'json'
+        ? json.document
+        : id == 'quickNote'
+            ? note.document
+            : draftFor(id);
     final begin = coordinator.beginTransfer(TransferRequest(
       sessionId: id,
       sourceWindowId: 'main',
@@ -648,7 +901,11 @@ class AppController extends ChangeNotifier {
   }
 
   void dockTool(String id) {
-    final session = id == 'json' ? json.document : draftFor(id);
+    final session = id == 'json'
+        ? json.document
+        : id == 'quickNote'
+            ? note.document
+            : draftFor(id);
     final begin = coordinator.beginTransfer(TransferRequest(
       sessionId: id,
       sourceWindowId: 'detached-$id',
@@ -701,6 +958,29 @@ class AppController extends ChangeNotifier {
     await _exportVaultFiles();
     await git.commitAll(paths.jsonVaultDir, message);
     notifyListeners();
+  }
+
+  Future<GitStatus> noteGitStatus() => git.status(paths.noteVaultDir);
+
+  Future<void> initNoteGit() async {
+    await persist();
+    await _exportNoteFiles();
+    await git.init(paths.noteVaultDir);
+    notifyListeners();
+  }
+
+  Future<void> commitNoteGit(String message) async {
+    await persist();
+    await _exportNoteFiles();
+    await git.commitAll(paths.noteVaultDir, message);
+    notifyListeners();
+  }
+
+  Future<void> _exportNoteFiles() async {
+    for (final file
+        in vault.documents.where((item) => item.toolId == 'quickNote')) {
+      await _exportNoteFile(file);
+    }
   }
 
   Future<void> _exportVaultFiles() async {

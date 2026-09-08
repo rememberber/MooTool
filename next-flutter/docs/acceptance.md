@@ -33,7 +33,7 @@ performance.json    # 如本轮有性能测试，含原始测量
 | ID | 入口 | 当前状态 | 证据 |
 | --- | --- | --- | --- |
 | F00 | mootool / 首页 | 开发中 | 三语言首页与外链已实现；桌面截图未跑（缺完整 Xcode） |
-| F01 | quickNote / 随手记 | 未开始 | 已注册；列编辑模型在 `EditorDocument` 有单测，页面未接 |
+| F01 | quickNote / 随手记 | 开发中 | `test/unit/quick_note_test.dart`；列编辑/24 项替换/frontmatter/附件路径；剪贴板图片、拖放树、Git watcher、5MiB 冲突 UI 未完 |
 | F02 | textDiff / 文本对比 | 开发中 | `test/unit/local_tools_test.dart` 对齐 unified/segment fixtures；同步滚动与字符高亮 UI 未完 |
 | F03 | reformat / 格式化 | 开发中 | Nginx 对齐；XML/HTML/Java 为自写整理，非 Prettier，见 ADR 004 |
 | F04 | json / JSON | 开发中 | `test/unit/json_engine_test.dart`、`workspace_test.dart`；Git 主流程有服务，冲突 UI 未完 |
