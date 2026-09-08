@@ -20,8 +20,14 @@ import '../features/host/host_session.dart';
 import '../features/http/http_client.dart';
 import '../features/http/http_models.dart';
 import '../features/http/http_session.dart';
+import '../features/image/image_library.dart';
+import '../features/image/image_process.dart';
+import '../features/image/image_tools.dart';
 import '../features/json/json_engine.dart';
 import '../features/json/json_path.dart';
+import '../features/message_board/message_board.dart';
+import '../features/pdf/pdf_service.dart';
+import '../features/pdf/pdf_session.dart';
 import '../features/quick_note/note_attachments.dart';
 import '../features/quick_note/note_frontmatter.dart';
 import '../features/quick_note/quick_note_session.dart';
@@ -190,6 +196,19 @@ class AppController extends ChangeNotifier {
   List<EnvironmentEntry> environmentRuntime = [];
   List<EnvironmentEntry> environmentUser = [];
   HardwareSnapshot? hardwareSnapshot;
+  final MessageBoardSession messageBoard = MessageBoardSession();
+  final PdfSession pdf = PdfSession();
+  late final ImageLibrary imageLibrary = ImageLibrary(paths.imagesDir);
+  List<ImageAssetSummary> imageAssets = [];
+  final Set<String> imageSelected = {};
+  String? imageCurrentName;
+  ImageAsset? imageCurrent;
+  bool imageListVisible = true;
+  bool imageFit = true;
+  String imagePanel = '';
+  String imageNotice = '';
+  String imageBase64Draft = '';
+  String imageRenameDraft = '';
   late final NoteAttachmentStore attachments = NoteAttachmentStore(paths.noteVaultDir);
   DocumentVault vault = DocumentVault();
   VaultPreferences jsonVaultPrefs = VaultPreferences();
@@ -255,6 +274,11 @@ class AppController extends ChangeNotifier {
     if (workspace['translation'] is Map)
       translation.restore(
           Map<String, Object?>.from(workspace['translation'] as Map));
+    if (workspace['messageBoard'] is Map)
+      messageBoard.restore(
+          Map<String, Object?>.from(workspace['messageBoard'] as Map));
+    if (workspace['pdf'] is Map)
+      pdf.restore(Map<String, Object?>.from(workspace['pdf'] as Map));
     if (workspace['vault'] is Map)
       vault = DocumentVault.fromJson(
           Map<String, Object?>.from(workspace['vault'] as Map));
@@ -311,6 +335,8 @@ class AppController extends ChangeNotifier {
         'host': host.toJson(),
         'runtime': runtime.toJson(),
         'translation': translation.toJson(),
+        'messageBoard': messageBoard.toJson(),
+        'pdf': pdf.toJson(),
         'vault': vault.toJson(),
         'jsonVaultPrefs': jsonVaultPrefs.toJson(),
         'noteVaultPrefs': noteVaultPrefs.toJson(),
@@ -390,6 +416,7 @@ class AppController extends ChangeNotifier {
       recentToolIds =
           [id, ...recentToolIds.where((item) => item != id)].take(5).toList();
     }
+    if (id != 'messageBoard') messageBoard.presenting = false;
     if (id == 'java' && runtime.statuses.isEmpty) {
       unawaited(detectRuntimes());
     }
@@ -398,6 +425,9 @@ class AppController extends ChangeNotifier {
     }
     if (id == 'variables' && environmentProcess.isEmpty) {
       unawaited(refreshEnvironment());
+    }
+    if (id == 'image' && imageAssets.isEmpty) {
+      unawaited(refreshImages());
     }
     scheduleSave();
     notifyListeners();
@@ -433,6 +463,11 @@ class AppController extends ChangeNotifier {
   }
 
   void closeOverlays() {
+    if (messageBoard.presenting) {
+      messageBoard.presenting = false;
+      notifyListeners();
+      return;
+    }
     searchOpen = false;
     settingsCategory = null;
     groupManagerOpen = false;
@@ -463,6 +498,8 @@ class AppController extends ChangeNotifier {
         'net' => 'ipv4',
         'variables' => 'process',
         'hardware' => 'system',
+        'pdf' => 'split',
+        'image' => 'library',
         _ => '',
       };
 
@@ -1204,6 +1241,243 @@ class AppController extends ChangeNotifier {
     hardwareSnapshot = await collectSystemInfo();
     if (_closed) return;
     notifyListeners();
+  }
+
+  List<String> get imageTargets => imageSelected.isNotEmpty
+      ? imageSelected.toList()
+      : [if (imageCurrentName != null) imageCurrentName!];
+
+  Future<void> refreshImages({String? preferred}) async {
+    imageAssets = await imageLibrary.list();
+    final name = preferred ??
+        imageCurrentName ??
+        (imageAssets.isEmpty ? null : imageAssets.first.name);
+    if (name == null) {
+      imageCurrent = null;
+      imageCurrentName = null;
+      imageSelected.clear();
+    } else {
+      await selectImage(name);
+      imageSelected.removeWhere(
+          (item) => imageAssets.every((asset) => asset.name != item));
+    }
+    if (_closed) return;
+    notifyListeners();
+  }
+
+  Future<void> selectImage(String name) async {
+    imageCurrent = await imageLibrary.read(name);
+    imageCurrentName = name;
+    imageFit = true;
+    if (imageSelected.isEmpty) imageSelected.add(name);
+    notifyListeners();
+  }
+
+  void toggleImageSelection(String name, bool selected) {
+    if (selected) {
+      imageSelected.add(name);
+    } else {
+      imageSelected.remove(name);
+    }
+    notifyListeners();
+  }
+
+  Future<void> importImageFiles(List<File> files) async {
+    ImageAsset? last;
+    for (final file in files) {
+      last = await imageLibrary.save(
+          name: file.uri.pathSegments.last, bytes: await file.readAsBytes());
+    }
+    await refreshImages(preferred: last?.name);
+  }
+
+  Future<void> importImageBase64(String value) async {
+    try {
+      final dataUrl = ensureImageDataUrl(value);
+      final saved = await imageLibrary.saveDataUrl(
+          name:
+              'Base64-${DateTime.now().millisecondsSinceEpoch}.png',
+          dataUrl: dataUrl);
+      imagePanel = '';
+      imageNotice = '';
+      await refreshImages(preferred: saved.name);
+    } catch (error) {
+      imageNotice = error.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> exportCurrentImageBase64() async {
+    final current = imageCurrent;
+    if (current == null) return;
+    imageNotice = imageToDataUrl(current.bytes);
+    imagePanel = 'base64';
+    notifyListeners();
+  }
+
+  Future<void> renameCurrentImage() async {
+    final current = imageCurrentName;
+    final next = (localFor('image').options['rename'] ?? '').trim();
+    if (current == null || next.isEmpty) return;
+    final renamed = await imageLibrary.rename(current, next);
+    await refreshImages(preferred: renamed.name);
+  }
+
+  Future<void> deleteSelectedImages() async {
+    await imageLibrary.delete(imageTargets);
+    imageCurrent = null;
+    imageCurrentName = null;
+    imageSelected.clear();
+    await refreshImages();
+  }
+
+  Future<void> exportImages(Directory directory) async {
+    imageNotice = await imageLibrary.exportTo(imageTargets, directory);
+    notifyListeners();
+  }
+
+  void noteImageDesktopGap(String message) {
+    imageNotice = message;
+    notifyListeners();
+  }
+
+  Future<void> compressSelectedImages(
+      CompressImageOptions options, String mode) async {
+    await _processImages((bytes) => compressImageBytes(bytes, options),
+        'compressed', mode, options.format);
+  }
+
+  Future<void> watermarkSelectedImages(WatermarkImageOptions options) async {
+    await _processImages((bytes) => watermarkImageBytes(bytes, options),
+        'watermarked', 'keep', 'auto');
+  }
+
+  Future<void> vectorizeSelectedImages(VectorizeOptions options) async {
+    try {
+      String? preferred;
+      for (final name in imageTargets) {
+        final asset = await imageLibrary.read(name);
+        final svg = vectorizeImage(asset.bytes, options);
+        final saved = await imageLibrary.save(
+            name: processedImageName(name, 'svg', 'png').replaceAll('.png', '.svg'),
+            bytes: Uint8List.fromList(svg.codeUnits));
+        preferred ??= saved.name;
+      }
+      imageNotice = t('image.svgComplete', {'count': '${imageTargets.length}'});
+      await refreshImages(preferred: preferred);
+    } catch (error) {
+      imageNotice = error.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> _processImages(Uint8List Function(Uint8List bytes) transform,
+      String suffix, String mode, String format) async {
+    try {
+      String? preferred;
+      for (final name in imageTargets) {
+        final asset = await imageLibrary.read(name);
+        final bytes = transform(asset.bytes);
+        final outputName = mode == 'overwrite'
+            ? overwriteName(asset.name, format)
+            : processedImageName(asset.name, suffix, format);
+        final saved = await imageLibrary.save(name: outputName, bytes: bytes);
+        if (mode == 'overwrite' && saved.name != asset.name) {
+          await imageLibrary.delete([asset.name]);
+        }
+        preferred ??= saved.name;
+      }
+      imageNotice = t('image.processComplete', {'count': '${imageTargets.length}'});
+      await refreshImages(preferred: preferred);
+    } catch (error) {
+      imageNotice = error.toString();
+      notifyListeners();
+    }
+  }
+
+  Future<void> addPdfFiles(List<File> files) async {
+    try {
+      final additions = [for (final file in files) inspectPdfFile(file)];
+      if (pdf.tab == 'split') {
+        final next = appendPdfTasks([...pdf.splitRows], additions);
+        pdf.splitRows
+          ..clear()
+          ..addAll(next);
+      } else {
+        final next = appendPdfTasks([...pdf.mergeRows], additions);
+        pdf.mergeRows
+          ..clear()
+          ..addAll(next);
+      }
+      pdf.notice = '';
+    } catch (error) {
+      pdf.notice = error.toString();
+    }
+    scheduleSave();
+    notifyListeners();
+  }
+
+  Future<void> splitSelectedPdfs() async {
+    final selected = [for (final row in pdf.splitRows) if (row.selected) row];
+    if (selected.isEmpty) {
+      pdf.notice = t('pdf.selectTask');
+      notifyListeners();
+      return;
+    }
+    pdf.busy = true;
+    notifyListeners();
+    try {
+      final outputDir = Directory('${paths.dataRoot.path}/pdf-output');
+      final result = splitPdfTasks(selected, outputDirectory: outputDir.path);
+      pdf.lastOutputs
+        ..clear()
+        ..addAll(result.outputs);
+      for (final row in pdf.splitRows) {
+        if (row.selected) row.status = 'done';
+      }
+      pdf.notice = t('pdf.splitComplete', {'count': '${result.pageCount}'});
+    } catch (error) {
+      for (final row in pdf.splitRows) {
+        if (row.selected) row.status = 'error';
+      }
+      pdf.notice = error.toString();
+    } finally {
+      pdf.busy = false;
+      scheduleSave();
+      notifyListeners();
+    }
+  }
+
+  Future<void> mergeSelectedPdfs() async {
+    final selected = [for (final row in pdf.mergeRows) if (row.selected) row];
+    if (selected.length < 2) {
+      pdf.notice = t('pdf.selectTwo');
+      notifyListeners();
+      return;
+    }
+    pdf.busy = true;
+    notifyListeners();
+    try {
+      final output = File(
+          '${paths.dataRoot.path}/pdf-output/merged_${DateTime.now().millisecondsSinceEpoch}.pdf');
+      final result = mergePdfTasks(selected, output.path);
+      pdf.lastOutputs
+        ..clear()
+        ..addAll(result.outputs);
+      for (final row in pdf.mergeRows) {
+        if (row.selected) row.status = 'done';
+      }
+      pdf.notice = t('pdf.mergeComplete', {'count': '${result.pageCount}'});
+    } catch (error) {
+      for (final row in pdf.mergeRows) {
+        if (row.selected) row.status = 'error';
+      }
+      pdf.notice = error.toString();
+    } finally {
+      pdf.busy = false;
+      scheduleSave();
+      notifyListeners();
+    }
   }
 
   void detachTool(String id) {

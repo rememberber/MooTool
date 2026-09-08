@@ -12,6 +12,7 @@ dependencies:
   crypto: ^3.0.6
   file_selector: ^1.0.3
   gbk_codec: ^0.4.0
+  image: ^4.5.4
   path: ^1.9.1
   pointycastle: ^3.9.1
   qr: ^3.0.2

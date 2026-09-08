@@ -43,4 +43,10 @@ Dart 重写 Electron `jsonTools.ts`：格式化/压缩、重复 Key 扫描（解
 
 ## PDF
 
-未使用 `package:pdf` 冒充拆合。`SimplePdf` 读写本产品生成的未压缩 PDF 1.4 页面对象，可按页提取和合并并保留可提取文本。加密、ObjStm、任意外部 PDF 会拒绝。完整工具需要随包 pdfium/qpdf helper，见 P6。
+未使用 `package:pdf` 冒充拆合。`SimplePdf` 读写本产品生成的未压缩 PDF 1.4 页面对象，可按页提取和合并并保留可提取文本。页码解析对齐 Electron `pageRanges.ts`（含中文逗号、去重保序、奇偶/自定义规则）。加密、ObjStm、任意外部 PDF 会拒绝。完整任意 PDF 需要随包 pdfium/qpdf helper。
+
+## P6 媒体
+
+- **留言板**：80 字符 UTF-16 上限、8 预设、6 主题色、左/中对齐、70–130% 字号；演示模式隐藏左侧控制，Esc 先退出演示。未接系统防休眠 API，不假装常亮成功。
+- **图片**：库文件在本产品 `images/`；压缩/水印用 `package:image` 真实改像素；SVG 为阈值/量化后的轮廓 `path`，禁止内嵌 bitmap。不是 vtracer。截图与系统剪贴板图片未接平台通道。
+- **明确未做**：多窗口全部工具分离、托盘、屏幕取色、截图、防休眠。

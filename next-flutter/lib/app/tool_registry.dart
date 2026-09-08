@@ -182,7 +182,8 @@ const toolRegistry = <ToolDefinition>[
       titleKey: 'app.nav.messageBoard',
       icon: 'board',
       keywords: ['message', 'sign', 'notice', 'board', '留言', '告示'],
-      supportsHistory: false),
+      supportsHistory: false,
+      status: ToolStatus.inProgress),
   ToolDefinition(
       id: 'translation',
       groupId: ToolGroupId.daily,
@@ -210,13 +211,15 @@ const toolRegistry = <ToolDefinition>[
       groupId: ToolGroupId.daily,
       titleKey: 'app.nav.image',
       icon: 'image',
-      keywords: ['image', 'watermark', 'compress', 'svg', '图片', '画像']),
+      keywords: ['image', 'watermark', 'compress', 'svg', '图片', '画像'],
+      status: ToolStatus.inProgress),
   ToolDefinition(
       id: 'pdf',
       groupId: ToolGroupId.daily,
       titleKey: 'app.nav.pdf',
       icon: 'pdf',
-      keywords: ['pdf', 'merge', 'split', '合并', '拆分']),
+      keywords: ['pdf', 'merge', 'split', '合并', '拆分'],
+      status: ToolStatus.inProgress),
   ToolDefinition(
       id: 'hardware',
       groupId: ToolGroupId.system,
