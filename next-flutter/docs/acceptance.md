@@ -51,16 +51,16 @@ performance.json    # 如本轮有性能测试，含原始测量
 | F16 | cron / Cron | 开发中 | 下次运行与年字段单测通过；`L`/`#` 未做 |
 | F17 | qrCode / 二维码 | 开发中 | 生成 PNG；识别未接入解码器 |
 | F18 | timeConvert / 时间 | 开发中 | 时区往返与非法日期单测通过；全屏时钟未做 |
-| F19 | messageBoard / 留言板 | 开发中 | 8 预设/6 主题/80 字/对齐/比例/Esc 退出演示；防休眠 API 未接 |
+| F19 | messageBoard / 留言板 | 开发中 | 8 预设/6 主题/80 字/对齐/比例/Esc 退出演示；防休眠走 DesktopHost，失败不假装常亮 |
 | F20 | translation / 翻译 | 开发中 | Google gtx 客户端 + 分段/取消单测；Bing/单词本/自动翻译未做 |
 | F21 | calculator / 计算器 | 开发中 | 表达式/进制/GCD/排列组合单测通过 |
-| F22 | colorBoard / 调色板 | 开发中 | 解析/运算/主题色 SHA 对齐；屏幕取色未做 |
-| F23 | image / 图片 | 开发中 | 本产品图片库导入/压缩/水印/轮廓 SVG；截图与剪贴板图片未接 |
+| F22 | colorBoard / 调色板 | 开发中 | 解析/运算/主题色 SHA 对齐；取色走 DesktopHost，本机通道尚未实现屏幕拾取 |
+| F23 | image / 图片 | 开发中 | 本产品图片库导入/压缩/水印/轮廓 SVG；截图走 DesktopHost，剪贴板图片未接 |
 | F24 | pdf / PDF | 开发中 | 页码规则对齐 Electron；SimplePdf 拆合可提取文本；任意加密 PDF 拒绝 |
 | F25 | hardware / 系统信息 | 开发中 | Platform/内存/网卡真实采集；非 systeminformation 全量；CPU% 未做 |
-| A01 | 11 类设置 | 开发中 | 通用/外观/布局/关于；其余分类待补 |
+| A01 | 11 类设置 | 开发中 | 11 类页可持久化；托盘/更新/关闭策略只存偏好；quiet 等风格无独立视觉 |
 | A02 | 历史/收藏/搜索 | 开发中 | JSON 与本地工具历史；regex/cron/color 收藏入口；⌘K 搜索 |
-| A03 | 数据/Git/窗口/平台/更新 | 开发中 | 原子 workspace、损坏保护、同 engine 分离；更新未做 |
+| A03 | 数据/Git/窗口/平台/更新 | 开发中 | 原子 workspace、损坏保护、快照备份/恢复；Git token 仍在 settings.json；更新/托盘/多窗口未做 |
 
 每个复杂工具再维护子能力状态。比如随手记正文编辑完成、列编辑未完成时，F01 不能标记已验收。
 

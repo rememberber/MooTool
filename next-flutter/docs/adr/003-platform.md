@@ -19,3 +19,5 @@
 | Wayland 截图/托盘 | 未做 | 未验证 |
 
 Intel Mac 主机构建已收到 Flutter 上游淘汰警告，不作为发行阻塞，但要写进证据。
+
+P6 桌面通道：`com.rememberber.mootool.next.flutter/desktop`。macOS `MainFlutterWindow.swift` 用 `IOPMAssertionCreateWithName` 请求禁止显示器休眠；截图/取色返回 `UNIMPLEMENTED`。本机无完整 Xcode，该 Swift 代码未在本机编译运行。

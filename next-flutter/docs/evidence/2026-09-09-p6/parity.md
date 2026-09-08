@@ -8,5 +8,5 @@
 
 - PDF 只处理本产品 SimplePdf，不是 pdf-lib 任意文档。
 - SVG 为轮廓矢量化，不是 vtracer。
-- 截图、剪贴板图片、防休眠、屏幕取色、托盘未做。
+- 截图、屏幕取色、防休眠已有 DesktopHost 接口；macOS 仅防休眠有 IOPM 实现草稿，截图/取色仍返回未实现。剪贴板图片、托盘未做。
 - 本机缺完整 Xcode，未跑 `flutter run -d macos`。

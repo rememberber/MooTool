@@ -26,6 +26,7 @@ class MessageBoardSession {
   String alignment = 'center';
   int size = 100;
   bool presenting = false;
+  bool displayAwake = false;
 
   String clampMessage(String value) =>
       value.length <= maxMessageLength ? value : value.substring(0, maxMessageLength);

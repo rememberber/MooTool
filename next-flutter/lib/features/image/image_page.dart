@@ -90,8 +90,7 @@ class ImageToolPage extends StatelessWidget {
                         : () => controller.exportCurrentImageBase64()),
                 CompactButton(
                     label: controller.t('image.screenshot'),
-                    onPressed: () => controller.noteImageDesktopGap(
-                        controller.t('image.screenshotPending'))),
+                    onPressed: () => controller.captureScreenshotToLibrary()),
                 CompactButton(
                     label: controller.t('image.fromClipboard'),
                     onPressed: () => controller.noteImageDesktopGap(

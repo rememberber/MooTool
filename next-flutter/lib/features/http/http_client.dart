@@ -5,6 +5,20 @@ import 'dart:typed_data';
 
 import 'http_models.dart';
 
+class HttpProxyConfig {
+  HttpProxyConfig(
+      {this.enabled = false,
+      this.host = '',
+      this.port = '',
+      this.username = '',
+      this.password = ''});
+  final bool enabled;
+  final String host;
+  final String port;
+  final String username;
+  final String password;
+}
+
 class HttpSender {
   final Map<String, HttpClient> _clients = {};
   final Set<String> _cancelled = {};
@@ -13,6 +27,7 @@ class HttpSender {
     required String requestId,
     required HttpRequestDraft request,
     int timeoutMs = 30000,
+    HttpProxyConfig? proxy,
   }) async {
     final started = DateTime.now();
     if (request.url.trim().isEmpty) {
@@ -33,6 +48,18 @@ class HttpSender {
     client.autoUncompress = true;
     client.connectionTimeout =
         Duration(milliseconds: timeoutMs.clamp(1000, 120000));
+    final directive = httpFindProxy(proxy);
+    if (directive != null) {
+      client.findProxy = (_) => directive;
+      final proxyPort = int.parse(proxy!.port);
+      if (proxy.username.isNotEmpty) {
+        client.addProxyCredentials(
+            proxy.host.trim(),
+            proxyPort,
+            '',
+            HttpClientBasicCredentials(proxy.username, proxy.password));
+      }
+    }
     try {
       final uri = Uri.parse(buildRequestUrl(
           request.url, request.method, request.params));
@@ -152,6 +179,18 @@ class HttpSender {
     });
     return found;
   }
+}
+
+String? httpFindProxy(HttpProxyConfig? proxy) {
+  final proxyPort = int.tryParse(proxy?.port ?? '');
+  if (proxy == null ||
+      !proxy.enabled ||
+      proxy.host.trim().isEmpty ||
+      proxyPort == null ||
+      proxyPort <= 0) {
+    return null;
+  }
+  return 'PROXY ${proxy.host.trim()}:$proxyPort';
 }
 
 String buildRequestUrl(

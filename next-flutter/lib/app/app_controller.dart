@@ -9,11 +9,13 @@ import 'local_session.dart';
 import 'product.dart';
 import 'settings.dart';
 import 'tool_registry.dart';
+import '../core/desktop/desktop_host.dart';
 import '../core/editor/editor_document.dart';
 import '../core/editor/find_replace.dart';
 import '../core/git/git_service.dart';
 import '../core/storage/atomic_file.dart';
 import '../core/storage/document_vault.dart';
+import '../core/storage/snapshot_backup.dart';
 import '../core/window/session_transfer.dart';
 import '../features/hardware/system_info.dart';
 import '../features/host/host_session.dart';
@@ -161,9 +163,13 @@ class JsonSession {
 }
 
 class AppController extends ChangeNotifier {
-  AppController(this.paths);
+  AppController(this.paths, {DesktopHost? desktopHost})
+      : desktopHost = desktopHost ?? ChannelDesktopHost();
 
   final AppPaths paths;
+  final DesktopHost desktopHost;
+  String? lastBackupPath;
+  String dataNotice = '';
   final GitService git = GitService();
   final SessionCoordinator coordinator = SessionCoordinator();
   AppSettings settings = AppSettings();
@@ -416,7 +422,9 @@ class AppController extends ChangeNotifier {
       recentToolIds =
           [id, ...recentToolIds.where((item) => item != id)].take(5).toList();
     }
-    if (id != 'messageBoard') messageBoard.presenting = false;
+    if (id != 'messageBoard' && messageBoard.presenting) {
+      unawaited(setMessageBoardPresenting(false));
+    }
     if (id == 'java' && runtime.statuses.isEmpty) {
       unawaited(detectRuntimes());
     }
@@ -464,8 +472,7 @@ class AppController extends ChangeNotifier {
 
   void closeOverlays() {
     if (messageBoard.presenting) {
-      messageBoard.presenting = false;
-      notifyListeners();
+      unawaited(setMessageBoardPresenting(false));
       return;
     }
     searchOpen = false;
@@ -1024,7 +1031,14 @@ class AppController extends ChangeNotifier {
     final result = await httpSender.send(
       requestId: requestId,
       request: http.draft,
-      timeoutMs: http.timeoutMs,
+      timeoutMs: http.timeoutMs > 0 ? http.timeoutMs : settings.httpTimeoutMs,
+      proxy: HttpProxyConfig(
+        enabled: settings.proxyEnabled,
+        host: settings.proxyHost,
+        port: settings.proxyPort,
+        username: settings.proxyUsername,
+        password: settings.proxyPassword,
+      ),
     );
     if (http.activeRequestId != requestId) return;
     http.response = result;
@@ -1123,7 +1137,12 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> detectRuntimes() async {
-    runtime.statuses = await runtimeService.detect();
+    runtime.statuses = await runtimeService.detect(
+      javaPath: settings.javaPath,
+      groovyPath: settings.groovyPath,
+      pythonPath: settings.pythonPath,
+      nodePath: settings.nodePath,
+    );
     if (_closed) return;
     notifyListeners();
   }
@@ -1147,6 +1166,10 @@ class AppController extends ChangeNotifier {
         code: session.code,
         arguments: args,
         workingDirectory: session.workingDirectories[session.runtime] ?? '',
+        javaPath: settings.javaPath,
+        groovyPath: settings.groovyPath,
+        pythonPath: settings.pythonPath,
+        nodePath: settings.nodePath,
       );
       if (session.requestId != requestId) return;
       session.result = result;
@@ -1202,6 +1225,7 @@ class AppController extends ChangeNotifier {
         text: session.source,
         sourceLang: session.sourceLang,
         targetLang: session.targetLang,
+        timeoutMs: settings.translationTimeoutMs,
       );
       if (session.requestId != requestId) return;
       session.target = result.text;
@@ -1334,6 +1358,66 @@ class AppController extends ChangeNotifier {
   Future<void> exportImages(Directory directory) async {
     imageNotice = await imageLibrary.exportTo(imageTargets, directory);
     notifyListeners();
+  }
+
+  Future<void> setMessageBoardPresenting(bool value) async {
+    messageBoard.presenting = value;
+    final awake = await desktopHost.setPreventDisplaySleep(value);
+    messageBoard.displayAwake = awake;
+    if (value && !awake) {
+      toast = t('messageBoard.sleepHint');
+    }
+    notifyListeners();
+  }
+
+  Future<void> createBackup() async {
+    try {
+      final dest = await SnapshotBackup.create(paths);
+      lastBackupPath = dest.path;
+      dataNotice = t('settings.backupDone');
+    } catch (error) {
+      dataNotice = error.toString();
+    }
+    notifyListeners();
+  }
+
+  Future<void> restoreBackup(Directory snapshot) async {
+    try {
+      await persist();
+      await SnapshotBackup.restore(snapshot, paths);
+      dataNotice = t('settings.restoreDone');
+    } catch (error) {
+      dataNotice = error.toString();
+    }
+    notifyListeners();
+  }
+
+  Future<void> captureScreenshotToLibrary() async {
+    final bytes = await desktopHost.captureScreenRegion();
+    if (bytes == null) {
+      noteImageDesktopGap(t('image.screenshotPending'));
+      return;
+    }
+    try {
+      final saved = await imageLibrary.save(
+          name: 'Screenshot-${DateTime.now().millisecondsSinceEpoch}.png',
+          bytes: bytes);
+      await refreshImages(preferred: saved.name);
+    } catch (error) {
+      noteImageDesktopGap(error.toString());
+    }
+  }
+
+  Future<void> pickScreenColorInto(String toolId) async {
+    final color = await desktopHost.pickScreenColor();
+    if (color == null) {
+      toast = t('color.pickPending');
+      notifyListeners();
+      return;
+    }
+    runLocal(toolId, (session) {
+      session.left = color;
+    });
   }
 
   void noteImageDesktopGap(String message) {

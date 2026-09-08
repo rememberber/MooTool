@@ -521,6 +521,10 @@ class ColorBoardToolPage extends StatelessWidget {
           onPressed: () =>
               controller.addFavorite('colorBoard', session.left, session.right),
         ),
+        CompactButton(
+          label: controller.t('color.pick'),
+          onPressed: () => controller.pickScreenColorInto('colorBoard'),
+        ),
       ],
       actions: [
         ToolActionButton(

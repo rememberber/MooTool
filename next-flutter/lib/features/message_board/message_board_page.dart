@@ -188,7 +188,9 @@ class MessageBoardPage extends StatelessWidget {
                 const Spacer(),
                 Text(
                     presenting
-                        ? controller.t('messageBoard.sleepHint')
+                        ? controller.t(session.displayAwake
+                            ? 'messageBoard.displayAwake'
+                            : 'messageBoard.sleepHint')
                         : controller.t('messageBoard.badgeEnglish'),
                     style: TextStyle(color: Color(colors.$2), fontSize: 11)),
                 const SizedBox(width: 8),
@@ -197,8 +199,7 @@ class MessageBoardPage extends StatelessWidget {
                       ? controller.t('messageBoard.exitHint')
                       : controller.t('messageBoard.display'),
                   onPressed: () {
-                    session.presenting = !presenting;
-                    controller.refresh();
+                    controller.setMessageBoardPresenting(!presenting);
                   },
                 ),
               ],

@@ -31,10 +31,12 @@ class MooToolApp extends StatelessWidget {
           debugShowCheckedModeBanner: false,
           theme: buildTheme(
               brightness: Brightness.light,
-              uiFontSize: controller.settings.uiFontSize),
+              uiFontSize: controller.settings.uiFontSize,
+              accent: _accent(controller.settings.accentColor)),
           darkTheme: buildTheme(
               brightness: Brightness.dark,
-              uiFontSize: controller.settings.uiFontSize),
+              uiFontSize: controller.settings.uiFontSize,
+              accent: _accent(controller.settings.accentColor)),
           themeMode: switch (controller.settings.theme) {
             ThemePreference.light => ThemeMode.light,
             ThemePreference.dark => ThemeMode.dark,
@@ -55,4 +57,9 @@ class MooToolApp extends StatelessWidget {
       },
     );
   }
+}
+
+Color _accent(String value) {
+  final hex = resolveAccentHex(value).substring(1);
+  return Color(int.parse('FF$hex', radix: 16));
 }
