@@ -1,0 +1,16 @@
+# 独立产品的本地构建输出
+/.gradle/
+/.kotlin/
+**/build/
+/dist/
+/local.properties
+.DS_Store
+
+# 仓库根忽略了 docs 和 .cursor；本产品的开发规格与规则需要进入版本控制。
+!/docs/
+!/docs/**
+!/.cursor/
+/.cursor/*
+!/.cursor/rules/
+/.cursor/rules/*
+!/.cursor/rules/next-compose.mdc
