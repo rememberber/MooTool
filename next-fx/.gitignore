@@ -1,0 +1,13 @@
+# Keep product documentation and Cursor rules visible despite root ignore rules.
+!docs/
+!docs/**
+!.cursor/
+!.cursor/rules/
+!.cursor/rules/**
+/target/
+/dist/
+/.runtime/
+/.local-data/
+/node_modules/
+*.log
+.DS_Store

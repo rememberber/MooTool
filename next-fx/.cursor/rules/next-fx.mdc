@@ -1,0 +1,14 @@
+---
+description: MooTool Next FX 独立 OpenJDK JavaFX 产品的开发入口与边界
+alwaysApply: true
+---
+
+在 next-fx 工作时先读取本目录 AGENTS.md、README.md、docs/cursor-development-guide.md，以及任务对应的 UI、功能、架构和验收文档。
+
+- 默认只修改 next-fx；next Electron 是行为/布局参考，根 Java Swing 是算法参考。
+- 各产品独立构建、安装、数据与更新，允许重复代码和独立演进；不得形成跨目录源码/运行依赖。
+- 使用 JavaFX 主界面和自带 OpenJDK 运行时；编辑器、线程、多窗口按 architecture.md 实现。
+- 保留首页和 25 个工具及其稳定 ID，按 feature-parity.md 验收；不能用占位实现声称完成。
+- 所有结果和完成状态必须有真实证据；每轮更新 acceptance.md，不改写其他产品的工作树。
+
+如果从仓库根打开而规则未自动匹配，主动读取 next-fx/AGENTS.md；本规则不要求修改相邻产品。
