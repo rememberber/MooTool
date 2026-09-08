@@ -31,6 +31,12 @@ Dart 重写 Electron `jsonTools.ts`：格式化/压缩、重复 Key 扫描（解
 - **附件**：写入 `vaults/quick-note/attachments/<noteId>/`，拒绝 `..` 与绝对路径。预览剥 `<script>`/`<iframe>`，不执行脚本。
 - **明确未做**：剪贴板图片（无平台通道）、文档树拖放、Git watcher UI、5MiB 冲突提示。
 
+## P5 网络
+
+- **HTTP**：Dart `HttpClient` 真实请求；重复 Query 按表格顺序追加，不用 Map 去重。响应上限 10MiB（含解压后）。cURL 只解析，不执行；`-u`/`--proxy` 拒绝导入。取消关闭对应 client。
+- **Host**：方案存在本产品 workspace；应用到系统需提权，本轮不假装成功。
+- **网络/IP**：IPv4↔Long 与 Electron `127.0.0.1` / `2130706433` 一致；DNS 用 `InternetAddress.lookup`，ping 用 `Process.run` argv。WHOIS 未做。
+
 ## PDF
 
 未使用 `package:pdf` 冒充拆合。`SimplePdf` 读写本产品生成的未压缩 PDF 1.4 页面对象，可按页提取和合并并保留可提取文本。加密、ObjStm、任意外部 PDF 会拒绝。完整工具需要随包 pdfium/qpdf helper，见 P6。

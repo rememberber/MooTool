@@ -15,6 +15,10 @@ import '../core/git/git_service.dart';
 import '../core/storage/atomic_file.dart';
 import '../core/storage/document_vault.dart';
 import '../core/window/session_transfer.dart';
+import '../features/host/host_session.dart';
+import '../features/http/http_client.dart';
+import '../features/http/http_models.dart';
+import '../features/http/http_session.dart';
 import '../features/json/json_engine.dart';
 import '../features/json/json_path.dart';
 import '../features/quick_note/note_attachments.dart';
@@ -167,6 +171,9 @@ class AppController extends ChangeNotifier {
   final List<FavoriteRecord> favorites = [];
   final JsonSession json = JsonSession();
   final QuickNoteSession note = QuickNoteSession();
+  final HttpSession http = HttpSession();
+  final HttpSender httpSender = HttpSender();
+  final HostSession host = HostSession();
   late final NoteAttachmentStore attachments = NoteAttachmentStore(paths.noteVaultDir);
   DocumentVault vault = DocumentVault();
   VaultPreferences jsonVaultPrefs = VaultPreferences();
@@ -222,6 +229,10 @@ class AppController extends ChangeNotifier {
       json.restore(Map<String, Object?>.from(workspace['json'] as Map));
     if (workspace['note'] is Map)
       note.restore(Map<String, Object?>.from(workspace['note'] as Map));
+    if (workspace['http'] is Map)
+      http.restore(Map<String, Object?>.from(workspace['http'] as Map));
+    if (workspace['host'] is Map)
+      host.restore(Map<String, Object?>.from(workspace['host'] as Map));
     if (workspace['vault'] is Map)
       vault = DocumentVault.fromJson(
           Map<String, Object?>.from(workspace['vault'] as Map));
@@ -274,6 +285,8 @@ class AppController extends ChangeNotifier {
         'sidebarCollapsed': sidebarCollapsed,
         'json': json.toJson(),
         'note': note.toJson(),
+        'http': http.toJson(),
+        'host': host.toJson(),
         'vault': vault.toJson(),
         'jsonVaultPrefs': jsonVaultPrefs.toJson(),
         'noteVaultPrefs': noteVaultPrefs.toJson(),
@@ -414,6 +427,7 @@ class AppController extends ChangeNotifier {
         'protobuf' => 'json',
         'ymlProperties' => 'properties',
         'colorBoard' => 'hex',
+        'net' => 'ipv4',
         _ => '',
       };
 
@@ -865,6 +879,133 @@ class AppController extends ChangeNotifier {
           : file.content,
     ));
     await writeAtomicFile(target, packed);
+  }
+
+  void newHttpDraft() {
+    http.draft = HttpSession.emptyDraft();
+    http.response = null;
+    http.notice = '';
+    notifyListeners();
+  }
+
+  void saveHttpDraft() {
+    http.draft.id ??= 'http-${DateTime.now().microsecondsSinceEpoch}';
+    SavedHttpRequest? existing;
+    for (final item in http.collection) {
+      if (item.request.id == http.draft.id) {
+        existing = item;
+        break;
+      }
+    }
+    final snapshot = SavedHttpRequest(
+      request: http.draft.copy(),
+      responseBody: http.response?.body ?? '',
+      responseHeaders: http.response?.headers ?? '',
+      responseCookies: http.response?.cookies ?? '',
+    );
+    if (existing != null) {
+      existing.request = snapshot.request;
+      existing.responseBody = snapshot.responseBody;
+      existing.responseHeaders = snapshot.responseHeaders;
+      existing.responseCookies = snapshot.responseCookies;
+      existing.modified = DateTime.now();
+    } else {
+      http.collection.add(snapshot);
+    }
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void openHttpSaved(SavedHttpRequest item) {
+    http.draft = item.request.copy();
+    http.response = HttpResponseResult(
+      requestId: 'saved',
+      ok: true,
+      status: 0,
+      statusText: '',
+      url: item.request.url,
+      durationMs: 0,
+      body: item.responseBody,
+      headers: item.responseHeaders,
+      cookies: item.responseCookies,
+    );
+    notifyListeners();
+  }
+
+  void deleteHttpSaved(String? id) {
+    http.collection.removeWhere((item) => item.request.id == id);
+    scheduleSave();
+    notifyListeners();
+  }
+
+  Future<void> sendHttp() async {
+    if (http.draft.url.trim().isEmpty) {
+      http.notice = t('http.urlRequired');
+      notifyListeners();
+      return;
+    }
+    http.activeRequestId = 'http-${DateTime.now().microsecondsSinceEpoch}';
+    http.sending = true;
+    http.notice = '';
+    notifyListeners();
+    final requestId = http.activeRequestId;
+    final result = await httpSender.send(
+      requestId: requestId,
+      request: http.draft,
+      timeoutMs: http.timeoutMs,
+    );
+    if (http.activeRequestId != requestId) return;
+    http.response = result;
+    http.sending = false;
+    if (!result.ok) {
+      http.notice = result.statusText;
+    } else {
+      recordToolHistory(
+          toolId: 'http',
+          title: '${http.draft.method} ${http.draft.url}',
+          input: http.draft.url,
+          output: result.body);
+    }
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void cancelHttp() {
+    httpSender.cancel(http.activeRequestId);
+    http.activeRequestId = '';
+    http.sending = false;
+    http.notice = 'ABORTED';
+    notifyListeners();
+  }
+
+  void createHostProfile() {
+    final profile = HostProfile(
+        id: 'host-${DateTime.now().microsecondsSinceEpoch}',
+        name: 'untitled',
+        content: '127.0.0.1 localhost\n');
+    host.profiles.add(profile);
+    host.selectedId = profile.id;
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void saveHostProfile() {
+    host.selected?.modified = DateTime.now();
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void deleteHostProfile() {
+    host.profiles.removeWhere((item) => item.id == host.selectedId);
+    host.selectedId = host.profiles.isEmpty ? null : host.profiles.first.id;
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void applyHostToSystem() {
+    host.notice =
+        '系统 hosts 写入需要提权助手，本轮未实现。方案只保存在本产品数据目录，拒绝授权时不会标记为已应用到系统。';
+    notifyListeners();
   }
 
   void detachTool(String id) {

@@ -7,8 +7,11 @@ import '../../app/tool_registry.dart';
 import '../../design/theme.dart';
 import '../../design/widgets.dart';
 import '../home/home_page.dart';
+import '../host/host_page.dart';
+import '../http/http_page.dart';
 import '../json/json_tool.dart';
 import '../local/local_tool_pages.dart';
+import '../net/net_page.dart';
 import '../quick_note/quick_note_page.dart';
 import '../settings/settings_page.dart';
 import '../tools/pending_tool_page.dart';
@@ -266,6 +269,9 @@ class Workbench extends StatelessWidget {
       'qrCode' => QrCodeToolPage(controller: controller),
       'reformat' => ReformatToolPage(controller: controller),
       'protobuf' => ProtobufToolPage(controller: controller),
+      'http' => HttpToolPage(controller: controller),
+      'host' => HostToolPage(controller: controller),
+      'net' => NetToolPage(controller: controller),
       _ => PendingToolPage(controller: controller, toolId: tool.id),
     };
   }

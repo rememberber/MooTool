@@ -41,9 +41,9 @@ performance.json    # 如本轮有性能测试，含原始测量
 | F06 | ymlProperties / 配置转换 | 开发中 | Properties↔YAML 单测通过 |
 | F07 | protobuf / Protobuf | 开发中 | 粘贴 proto3 JSON↔Hex/Wire 单测通过；嵌套/map/oneof 未做 |
 | F08 | variables / 环境变量 | 未开始 | — |
-| F09 | http / HTTP | 未开始 | — |
-| F10 | host / Host | 未开始 | — |
-| F11 | net / 网络/IP | 未开始 | — |
+| F09 | http / HTTP | 开发中 | `test/unit/network_test.dart` 本地服务确认 method/重复 query/body/超时/过大响应；cURL 导入不执行命令；代理 UI 未完 |
+| F10 | host / Host | 开发中 | 方案 CRUD 持久化；系统 hosts 提权写入明确未实现 |
+| F11 | net / 网络/IP | 开发中 | IPv4↔Long 对齐 Electron；DNS/`ping` 走真实查找与进程；WHOIS 未做 |
 | F12 | uaParse / UA | 开发中 | 预设 Chrome/Safari/bot 单测通过 |
 | F13 | encode / 编码 | 开发中 | Unicode/URL UTF-8+GB2312/Hex/ASCII 单测通过 |
 | F14 | crypto / 加解密/随机 | 开发中 | AES ECB PKCS7 固定密文与 Electron 一致；DES/摘要/Base32/随机已做；SM4/RSA/SM2 明确未实现 |
