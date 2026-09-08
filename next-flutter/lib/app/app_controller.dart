@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 import 'app_paths.dart';
+import 'local_session.dart';
 import 'product.dart';
 import 'settings.dart';
 import 'tool_registry.dart';
@@ -158,6 +159,8 @@ class AppController extends ChangeNotifier {
   String? storeError;
   final Set<String> detachedToolIds = {};
   final Map<String, EditorDocument> drafts = {};
+  final Map<String, LocalSession> locals = {};
+  final List<FavoriteRecord> favorites = [];
   final JsonSession json = JsonSession();
   DocumentVault vault = DocumentVault();
   VaultPreferences jsonVaultPrefs = VaultPreferences();
@@ -231,6 +234,23 @@ class AppController extends ChangeNotifier {
         }
       });
     }
+    if (workspace['locals'] is Map) {
+      final raw = Map<String, Object?>.from(workspace['locals'] as Map);
+      raw.forEach((id, value) {
+        if (value is Map) {
+          locals[id] = LocalSession.fromJson(Map<String, Object?>.from(value));
+        }
+      });
+    }
+    if (workspace['favorites'] is List) {
+      favorites
+        ..clear()
+        ..addAll([
+          for (final item in workspace['favorites'] as List)
+            if (item is Map)
+              FavoriteRecord.fromJson(Map<String, Object?>.from(item)),
+        ]);
+    }
   }
 
   Map<String, Object?> _workspaceJson() => {
@@ -247,6 +267,10 @@ class AppController extends ChangeNotifier {
           for (final entry in drafts.entries)
             entry.key: {'text': entry.value.text},
         },
+        'locals': {
+          for (final entry in locals.entries) entry.key: entry.value.toJson(),
+        },
+        'favorites': [for (final item in favorites) item.toJson()],
       };
 
   void scheduleSave() {
@@ -350,8 +374,94 @@ class AppController extends ChangeNotifier {
     notifyListeners();
   }
 
-  EditorDocument draftFor(String toolId) =>
-      drafts.putIfAbsent(toolId, () => EditorDocument(id: toolId));
+  EditorDocument draftFor(String toolId) => drafts.putIfAbsent(
+      toolId, () => EditorDocument(id: toolId, text: localFor(toolId).left));
+
+  LocalSession localFor(String toolId) =>
+      locals.putIfAbsent(toolId, () => LocalSession(tab: _defaultTab(toolId)));
+
+  String _defaultTab(String toolId) => switch (toolId) {
+        'encode' => 'unicode',
+        'crypto' => 'symmetric',
+        'calculator' => 'expr',
+        'reformat' => 'nginx',
+        'qrCode' => 'generate',
+        'protobuf' => 'json',
+        'ymlProperties' => 'properties',
+        'colorBoard' => 'hex',
+        _ => '',
+      };
+
+  void setLocalTab(String toolId, String tab) {
+    final session = localFor(toolId);
+    if (toolId == 'encode' && session.tab.isNotEmpty) {
+      session.pairs[session.tab] = {
+        'left': session.left,
+        'right': session.right
+      };
+    }
+    session.tab = tab;
+    if (toolId == 'encode') {
+      final pair = session.pairs[tab];
+      session.left = pair?['left'] ?? session.left;
+      session.right = pair?['right'] ?? '';
+    }
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void runLocal(String toolId, void Function(LocalSession session) action) {
+    final session = localFor(toolId);
+    try {
+      action(session);
+      session.notice = '';
+    } catch (error) {
+      session.notice = error.toString().replaceFirst('FormatException: ', '');
+    }
+    draftFor(toolId).apply(session.left, recordUndo: false);
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void recordToolHistory(
+      {required String toolId,
+      required String title,
+      required String input,
+      required String output}) {
+    histories.insert(
+        0,
+        HistoryRecord(
+            id: 'h-${DateTime.now().microsecondsSinceEpoch}',
+            toolId: toolId,
+            title: title,
+            input: input,
+            output: output));
+    if (histories.length > 200) histories.removeRange(200, histories.length);
+  }
+
+  Future<void> copyText(String text) async {
+    await Clipboard.setData(ClipboardData(text: text));
+    toast = t('json.action.copied');
+    notifyListeners();
+  }
+
+  void addFavorite(String toolId, String name, String value) {
+    favorites.insert(
+        0,
+        FavoriteRecord(
+            id: 'f-${DateTime.now().microsecondsSinceEpoch}',
+            toolId: toolId,
+            name: name,
+            value: value));
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void removeFavorite(String id) {
+    favorites.removeWhere((item) => item.id == id);
+    scheduleSave();
+    notifyListeners();
+  }
 
   void setJsonText(String value,
       {int? selectionStart, int? selectionEnd, bool recordUndo = true}) {
@@ -408,21 +518,25 @@ class AppController extends ChangeNotifier {
   }
 
   void _recordHistory(String title, String output) {
-    histories.insert(
-        0,
-        HistoryRecord(
-            id: 'h-${DateTime.now().microsecondsSinceEpoch}',
-            toolId: 'json',
-            title: title,
-            input: json.document.text,
-            output: output));
-    if (histories.length > 100) histories.removeRange(100, histories.length);
+    recordToolHistory(
+        toolId: 'json',
+        title: title,
+        input: json.document.text,
+        output: output);
   }
 
   void restoreHistory(HistoryRecord record) {
-    json.document.apply(record.input);
-    json.outputBody = record.output;
-    json.historyOpen = false;
+    if (record.toolId == 'json') {
+      json.document.apply(record.input);
+      json.outputBody = record.output;
+      json.historyOpen = false;
+    } else {
+      final session = localFor(record.toolId);
+      session.left = record.input;
+      session.right = record.output;
+      session.historyOpen = false;
+      activeToolId = record.toolId;
+    }
     scheduleSave();
     notifyListeners();
   }

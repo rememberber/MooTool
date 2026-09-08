@@ -8,6 +8,7 @@ import '../../design/theme.dart';
 import '../../design/widgets.dart';
 import '../home/home_page.dart';
 import '../json/json_tool.dart';
+import '../local/local_tool_pages.dart';
 import '../settings/settings_page.dart';
 import '../tools/pending_tool_page.dart';
 
@@ -250,6 +251,19 @@ class Workbench extends StatelessWidget {
     return switch (tool.id) {
       'mootool' => HomePage(l10n: controller.l10n),
       'json' => JsonToolPage(controller: controller),
+      'encode' => EncodeToolPage(controller: controller),
+      'calculator' => CalculatorToolPage(controller: controller),
+      'timeConvert' => TimeConvertToolPage(controller: controller),
+      'regex' => RegexToolPage(controller: controller),
+      'cron' => CronToolPage(controller: controller),
+      'uaParse' => UaParseToolPage(controller: controller),
+      'ymlProperties' => ConfigConvertToolPage(controller: controller),
+      'crypto' => CryptoToolPage(controller: controller),
+      'colorBoard' => ColorBoardToolPage(controller: controller),
+      'textDiff' => TextDiffToolPage(controller: controller),
+      'qrCode' => QrCodeToolPage(controller: controller),
+      'reformat' => ReformatToolPage(controller: controller),
+      'protobuf' => ProtobufToolPage(controller: controller),
       _ => PendingToolPage(controller: controller, toolId: tool.id),
     };
   }

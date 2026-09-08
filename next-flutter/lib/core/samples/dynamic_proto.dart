@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:typed_data';
 
 /// Minimal proto3 subset: runtime schema from pasted text, JSON <-> binary.
@@ -90,7 +91,7 @@ class DynamicProto {
       case 'string' || 'bytes':
         final data = value is List<int>
             ? Uint8List.fromList(value)
-            : Uint8List.fromList((value as String).codeUnits);
+            : Uint8List.fromList(utf8.encode('$value'));
         _writeVarint(builder, (field.number << 3) | 2);
         _writeVarint(builder, data.length);
         builder.add(data);
@@ -151,8 +152,7 @@ void _writeVarint(BytesBuilder builder, int value) {
     final length = _readVarint(bytes, offset);
     final end = length.next + length.value;
     final slice = bytes.sublist(length.next, end);
-    if (type == 'string')
-      return (value: String.fromCharCodes(slice), next: end);
+    if (type == 'string') return (value: utf8.decode(slice), next: end);
     return (value: slice, next: end);
   }
   throw FormatException('Unsupported wire type $wire');
