@@ -17,6 +17,7 @@ class DesktopCapabilities {
 
 abstract class DesktopHost {
   void Function()? onCloseRequested;
+  void Function(String action)? onTrayAction;
 
   Future<DesktopCapabilities> capabilities();
   Future<bool> setPreventDisplaySleep(bool enabled);
@@ -51,9 +52,14 @@ class ChannelDesktopHost implements DesktopHost {
     channel.setMethodCallHandler((call) async {
       if (call.method == 'closeRequested') {
         onCloseRequested?.call();
+      } else if (call.method == 'trayAction') {
+        onTrayAction?.call('${call.arguments ?? ''}');
       }
     });
   }
+
+  @override
+  void Function(String action)? onTrayAction;
 
   bool get _channelReady => BindingBase.debugBindingType() != null;
 
@@ -154,6 +160,9 @@ class MemoryDesktopHost implements DesktopHost {
 
   @override
   void Function()? onCloseRequested;
+
+  @override
+  void Function(String action)? onTrayAction;
 
   @override
   Future<DesktopCapabilities> capabilities() async => DesktopCapabilities(

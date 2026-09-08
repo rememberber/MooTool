@@ -148,7 +148,10 @@ void main() {
     addTearDown(controller.dispose);
     await controller.load();
     await controller.captureScreenshotToLibrary();
+    expect(controller.screenshotDraft, isNotNull);
+    await controller.confirmScreenshotDraft(crop: false);
     expect(controller.imageAssets, isNotEmpty);
+    expect(controller.screenshotDraft, isNull);
 
     final colorHost = MemoryDesktopHost(pickedColor: '#FF00AA');
     final colors = AppController(AppPaths(root), desktopHost: colorHost);

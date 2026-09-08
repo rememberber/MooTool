@@ -173,7 +173,7 @@ class SettingsPage extends StatelessWidget {
       Wrap(spacing: 8, runSpacing: 8, children: [
         for (final style in InterfaceStyle.values)
           ChoiceChip(
-            label: Text(style.name),
+            label: Text(controller.t('settings.style.${style.name}')),
             selected: controller.settings.interfaceStyle == style,
             onSelected: (_) =>
                 _set(() => controller.settings.interfaceStyle = style),

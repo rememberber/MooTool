@@ -33,11 +33,13 @@ class MooToolApp extends StatelessWidget {
           theme: buildTheme(
               brightness: Brightness.light,
               uiFontSize: controller.settings.uiFontSize,
-              accent: _accent(controller.settings.accentColor)),
+              accent: _accent(controller.settings.accentColor),
+              style: controller.settings.interfaceStyle),
           darkTheme: buildTheme(
               brightness: Brightness.dark,
               uiFontSize: controller.settings.uiFontSize,
-              accent: _accent(controller.settings.accentColor)),
+              accent: _accent(controller.settings.accentColor),
+              style: controller.settings.interfaceStyle),
           themeMode: switch (controller.settings.theme) {
             ThemePreference.light => ThemeMode.light,
             ThemePreference.dark => ThemeMode.dark,

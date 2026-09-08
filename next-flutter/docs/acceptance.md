@@ -54,11 +54,11 @@ performance.json    # 如本轮有性能测试，含原始测量
 | F19 | messageBoard / 留言板 | 开发中 | 8 预设/6 主题/80 字/对齐/比例/Esc 退出演示；防休眠走 DesktopHost，失败不假装常亮 |
 | F20 | translation / 翻译 | 开发中 | Google gtx 客户端 + 分段/取消单测；Bing/单词本/自动翻译未做 |
 | F21 | calculator / 计算器 | 开发中 | 表达式/进制/GCD/排列组合单测通过 |
-| F22 | colorBoard / 调色板 | 开发中 | 解析/运算/主题色 SHA 对齐；取色走 DesktopHost，本机通道尚未实现屏幕拾取 |
-| F23 | image / 图片 | 开发中 | 本产品图片库导入/压缩/水印/轮廓 SVG；剪贴板图片走 DesktopHost；截图通道仍未实现 |
+| F22 | colorBoard / 调色板 | 开发中 | 解析/运算/主题色 SHA 对齐；取色走 DesktopHost / NSColorSampler，本机未用 Xcode 验证 |
+| F23 | image / 图片 | 开发中 | 图片库导入/压缩/水印/轮廓 SVG；剪贴板与截图走 DesktopHost；截图可裁剪，取消不写库 |
 | F24 | pdf / PDF | 开发中 | 页码规则对齐 Electron；SimplePdf 拆合可提取文本；任意加密 PDF 拒绝 |
 | F25 | hardware / 系统信息 | 开发中 | Platform/内存/网卡真实采集；非 systeminformation 全量；CPU% 未做 |
-| A01 | 11 类设置 | 开发中 | 11 类页可持久化；关闭 hide 无托盘时改为询问；托盘 macOS 已写 NSStatusItem，本机未用 Xcode 验证；quiet 等风格无独立视觉 |
+| A01 | 11 类设置 | 开发中 | 11 类页可持久化；六种风格有独立 token；关闭 hide 无托盘时改为询问；托盘/截图/取色 Swift 未用 Xcode 验证 |
 | A02 | 历史/收藏/搜索 | 开发中 | JSON 与本地工具历史；regex/cron/color 收藏入口；⌘K 搜索 |
 | A03 | 数据/Git/窗口/平台/更新 | 开发中 | 原子 workspace、损坏保护、快照备份、分离 ID 持久化；关闭策略走 DesktopHost；真实第二 engine / 更新未做 |
 

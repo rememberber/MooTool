@@ -106,6 +106,34 @@ Uint8List _encode(
   return Uint8List.fromList(img.encodePng(image));
 }
 
+({int width, int height}) imagePixelSize(Uint8List bytes) {
+  final decoded = _decode(bytes);
+  return (width: decoded.width, height: decoded.height);
+}
+
+Uint8List cropImageBytes(Uint8List bytes,
+    {required int left,
+    required int top,
+    required int width,
+    required int height}) {
+  final decoded = _decode(bytes);
+  if (width <= 0 || height <= 0) {
+    throw const FormatException('Crop region is empty');
+  }
+  final x = left.clamp(0, decoded.width);
+  final y = top.clamp(0, decoded.height);
+  final maxW = decoded.width - x;
+  final maxH = decoded.height - y;
+  if (maxW <= 0 || maxH <= 0) {
+    throw const FormatException('Crop region is outside the image');
+  }
+  final w = width.clamp(1, maxW);
+  final h = height.clamp(1, maxH);
+  final cropped =
+      img.copyCrop(decoded, x: x, y: y, width: w, height: h);
+  return Uint8List.fromList(img.encodePng(cropped));
+}
+
 bool _looksJpeg(Uint8List bytes) =>
     bytes.length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF;
 

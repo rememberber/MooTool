@@ -241,6 +241,37 @@ class ImageToolPage extends StatelessWidget {
 
   Widget _panel(tokens, String panel) {
     final session = controller.localFor('image');
+    if (panel == 'screenshot') {
+      return Padding(
+        padding: const EdgeInsets.all(8),
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 6,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          children: [
+            _cropField('X', controller.screenshotCropLeft,
+                (value) => controller.screenshotCropLeft = value),
+            _cropField('Y', controller.screenshotCropTop,
+                (value) => controller.screenshotCropTop = value),
+            _cropField('W', controller.screenshotCropWidth,
+                (value) => controller.screenshotCropWidth = value),
+            _cropField('H', controller.screenshotCropHeight,
+                (value) => controller.screenshotCropHeight = value),
+            CompactButton(
+                label: controller.t('image.keepFull'),
+                onPressed: () =>
+                    controller.confirmScreenshotDraft(crop: false)),
+            CompactButton(
+                label: controller.t('image.cropConfirm'),
+                onPressed: () =>
+                    controller.confirmScreenshotDraft(crop: true)),
+            CompactButton(
+                label: controller.t('common.cancel'),
+                onPressed: controller.cancelScreenshotDraft),
+          ],
+        ),
+      );
+    }
     if (panel == 'base64') {
       return Padding(
         padding: const EdgeInsets.all(8),
@@ -411,6 +442,18 @@ class ImageToolPage extends StatelessWidget {
           Text(controller.t('image.svgHint'),
               style: TextStyle(fontSize: 11, color: tokens.textSecondary)),
         ],
+      ),
+    );
+  }
+
+  Widget _cropField(String label, int value, ValueChanged<int> onChanged) {
+    return SizedBox(
+      width: 72,
+      child: TextField(
+        controller: TextEditingController(text: '$value')
+          ..selection = TextSelection.collapsed(offset: '$value'.length),
+        decoration: InputDecoration(isDense: true, labelText: label),
+        onChanged: (next) => onChanged(int.tryParse(next) ?? value),
       ),
     );
   }

@@ -169,6 +169,14 @@ class AppController extends ChangeNotifier {
     this.desktopHost.onCloseRequested = () {
       unawaited(handleNativeCloseRequested());
     };
+    this.desktopHost.onTrayAction = (action) {
+      if (action == 'screenshot') {
+        unawaited(captureScreenshotToLibrary());
+      } else if (action == 'color') {
+        openTool('colorBoard');
+        unawaited(pickScreenColorInto('colorBoard'));
+      }
+    };
   }
 
   final AppPaths paths;
@@ -222,6 +230,11 @@ class AppController extends ChangeNotifier {
   String imageNotice = '';
   String imageBase64Draft = '';
   String imageRenameDraft = '';
+  Uint8List? screenshotDraft;
+  int screenshotCropLeft = 0;
+  int screenshotCropTop = 0;
+  int screenshotCropWidth = 0;
+  int screenshotCropHeight = 0;
   late final NoteAttachmentStore attachments = NoteAttachmentStore(paths.noteVaultDir);
   DocumentVault vault = DocumentVault();
   VaultPreferences jsonVaultPrefs = VaultPreferences();
@@ -1439,23 +1452,62 @@ class AppController extends ChangeNotifier {
   Future<void> captureScreenshotToLibrary() async {
     final bytes = await desktopHost.captureScreenRegion();
     if (bytes == null) {
-      noteImageDesktopGap(t('image.screenshotPending'));
+      noteImageDesktopGap(desktopCaps.screenshot
+          ? t('image.screenshotDenied')
+          : t('image.screenshotPending'));
       return;
     }
     try {
+      final size = imagePixelSize(bytes);
+      screenshotDraft = bytes;
+      screenshotCropLeft = 0;
+      screenshotCropTop = 0;
+      screenshotCropWidth = size.width;
+      screenshotCropHeight = size.height;
+      imagePanel = 'screenshot';
+      imageNotice = t('image.screenshotCropHint', {
+        'width': '${size.width}',
+        'height': '${size.height}',
+      });
+      notifyListeners();
+    } catch (error) {
+      noteImageDesktopGap(error.toString());
+    }
+  }
+
+  Future<void> confirmScreenshotDraft({required bool crop}) async {
+    final draft = screenshotDraft;
+    if (draft == null) return;
+    try {
+      final bytes = crop
+          ? cropImageBytes(draft,
+              left: screenshotCropLeft,
+              top: screenshotCropTop,
+              width: screenshotCropWidth,
+              height: screenshotCropHeight)
+          : draft;
       final saved = await imageLibrary.save(
           name: 'Screenshot-${DateTime.now().millisecondsSinceEpoch}.png',
           bytes: bytes);
+      cancelScreenshotDraft();
       await refreshImages(preferred: saved.name);
     } catch (error) {
       noteImageDesktopGap(error.toString());
     }
   }
 
+  void cancelScreenshotDraft() {
+    screenshotDraft = null;
+    if (imagePanel == 'screenshot') imagePanel = '';
+    notifyListeners();
+  }
+
   Future<void> pickScreenColorInto(String toolId) async {
     final color = await desktopHost.pickScreenColor();
     if (color == null) {
-      toast = t('color.pickPending');
+      toast = desktopCaps.screenColor
+          ? t('color.pickDenied')
+          : t('color.pickPending');
       notifyListeners();
       return;
     }
