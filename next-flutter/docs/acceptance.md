@@ -32,14 +32,14 @@ performance.json    # 如本轮有性能测试，含原始测量
 
 | ID | 入口 | 当前状态 | 证据 |
 | --- | --- | --- | --- |
-| F00 | mootool / 首页 | 未开始 | — |
-| F01 | quickNote / 随手记 | 未开始 | — |
+| F00 | mootool / 首页 | 开发中 | 三语言首页与外链已实现；桌面截图未跑（缺完整 Xcode） |
+| F01 | quickNote / 随手记 | 未开始 | 已注册；列编辑模型在 `EditorDocument` 有单测，页面未接 |
 | F02 | textDiff / 文本对比 | 未开始 | — |
 | F03 | reformat / 格式化 | 未开始 | — |
-| F04 | json / JSON | 未开始 | — |
+| F04 | json / JSON | 开发中 | `test/unit/json_engine_test.dart`、`workspace_test.dart`；Git 主流程有服务，冲突 UI 未完 |
 | F05 | java / 代码运行 | 未开始 | — |
 | F06 | ymlProperties / 配置转换 | 未开始 | — |
-| F07 | protobuf / Protobuf | 未开始 | — |
+| F07 | protobuf / Protobuf | 未开始 | P0 动态 proto 样例已通过；工具页未做 |
 | F08 | variables / 环境变量 | 未开始 | — |
 | F09 | http / HTTP | 未开始 | — |
 | F10 | host / Host | 未开始 | — |
@@ -56,11 +56,11 @@ performance.json    # 如本轮有性能测试，含原始测量
 | F21 | calculator / 计算器 | 未开始 | — |
 | F22 | colorBoard / 调色板 | 未开始 | — |
 | F23 | image / 图片 | 未开始 | — |
-| F24 | pdf / PDF | 未开始 | — |
+| F24 | pdf / PDF | 未开始 | P0 SimplePdf 拆合样例已通过；任意 PDF/pdfium 未做 |
 | F25 | hardware / 系统信息 | 未开始 | — |
-| A01 | 11 类设置 | 未开始 | — |
-| A02 | 历史/收藏/搜索 | 未开始 | — |
-| A03 | 数据/Git/窗口/平台/更新 | 未开始 | — |
+| A01 | 11 类设置 | 开发中 | 通用/外观/布局/关于；其余分类待补 |
+| A02 | 历史/收藏/搜索 | 开发中 | JSON 历史与 ⌘K 搜索；收藏未做 |
+| A03 | 数据/Git/窗口/平台/更新 | 开发中 | 原子 workspace、损坏保护、同 engine 分离；更新未做 |
 
 每个复杂工具再维护子能力状态。比如随手记正文编辑完成、列编辑未完成时，F01 不能标记已验收。
 

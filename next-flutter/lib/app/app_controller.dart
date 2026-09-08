@@ -1,0 +1,606 @@
+import 'dart:async';
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
+
+import 'app_paths.dart';
+import 'product.dart';
+import 'settings.dart';
+import 'tool_registry.dart';
+import '../core/editor/editor_document.dart';
+import '../core/editor/find_replace.dart';
+import '../core/git/git_service.dart';
+import '../core/storage/atomic_file.dart';
+import '../core/storage/document_vault.dart';
+import '../core/window/session_transfer.dart';
+import '../features/json/json_engine.dart';
+import '../features/json/json_path.dart';
+import '../l10n/strings.dart';
+
+const jsonSample = '''
+{
+  "name": "MooTool Next Flutter",
+  "stack": ["Flutter", "Dart"],
+  "desktop": {
+    "style": "modern desktop workspace",
+    "theme": "light"
+  }
+}
+''';
+
+class HistoryRecord {
+  HistoryRecord(
+      {required this.id,
+      required this.toolId,
+      required this.title,
+      required this.input,
+      required this.output,
+      DateTime? at})
+      : at = at ?? DateTime.now();
+
+  final String id;
+  final String toolId;
+  final String title;
+  final String input;
+  final String output;
+  final DateTime at;
+
+  Map<String, Object?> toJson() => {
+        'id': id,
+        'toolId': toolId,
+        'title': title,
+        'input': input,
+        'output': output,
+        'at': at.toIso8601String(),
+      };
+
+  factory HistoryRecord.fromJson(Map<String, Object?> json) => HistoryRecord(
+        id: json['id'] as String,
+        toolId: json['toolId'] as String,
+        title: json['title'] as String? ?? '',
+        input: json['input'] as String? ?? '',
+        output: json['output'] as String? ?? '',
+        at: DateTime.tryParse(json['at'] as String? ?? '') ?? DateTime.now(),
+      );
+}
+
+class JsonSession {
+  JsonSession()
+      : document = EditorDocument(id: 'json-draft', text: jsonSample),
+        formatOptions = const JsonFormatOptions();
+
+  final EditorDocument document;
+  JsonFormatOptions formatOptions;
+  bool wrap = true;
+  bool inspectorOpen = true;
+  bool findOpen = false;
+  bool historyOpen = false;
+  bool pathPickerOpen = false;
+  bool gitOpen = false;
+  String findQuery = '';
+  String replaceText = '';
+  FindReplaceOptions findOptions = const FindReplaceOptions();
+  String jsonPath = r'$';
+  String className = 'Root';
+  String notice = '';
+  String conversionInput = '';
+  String outputTitle = '';
+  String outputBody = '';
+  double vaultWidth = 220;
+  double inspectorWidth = 280;
+  String? documentId;
+
+  Map<String, Object?> toJson() => {
+        'text': document.text,
+        'selectionStart': document.selectionStart,
+        'selectionEnd': document.selectionEnd,
+        'scrollX': document.scrollX,
+        'scrollY': document.scrollY,
+        'revision': document.revision,
+        'savedRevision': document.savedRevision,
+        'formatOptions': formatOptions.toJson(),
+        'wrap': wrap,
+        'inspectorOpen': inspectorOpen,
+        'findOpen': findOpen,
+        'jsonPath': jsonPath,
+        'className': className,
+        'notice': notice,
+        'vaultWidth': vaultWidth,
+        'inspectorWidth': inspectorWidth,
+        'documentId': documentId,
+        'findQuery': findQuery,
+        'replaceText': replaceText,
+        'findOptions': findOptions.toJson(),
+      };
+
+  void restore(Map<String, Object?> json) {
+    document.apply(json['text'] as String? ?? jsonSample,
+        selectionStart: json['selectionStart'] as int? ?? 0,
+        selectionEnd: json['selectionEnd'] as int? ?? 0,
+        recordUndo: false);
+    document.scrollX = (json['scrollX'] as num?)?.toDouble() ?? 0;
+    document.scrollY = (json['scrollY'] as num?)?.toDouble() ?? 0;
+    document.savedRevision = json['savedRevision'] as int? ?? document.revision;
+    formatOptions = JsonFormatOptions.fromJson(
+        Map<String, Object?>.from(json['formatOptions'] as Map? ?? {}));
+    wrap = json['wrap'] as bool? ?? true;
+    inspectorOpen = json['inspectorOpen'] as bool? ?? true;
+    findOpen = json['findOpen'] as bool? ?? false;
+    jsonPath = json['jsonPath'] as String? ?? r'$';
+    className = json['className'] as String? ?? 'Root';
+    notice = json['notice'] as String? ?? '';
+    vaultWidth = (json['vaultWidth'] as num?)?.toDouble() ?? 220;
+    inspectorWidth = (json['inspectorWidth'] as num?)?.toDouble() ?? 280;
+    documentId = json['documentId'] as String?;
+    findQuery = json['findQuery'] as String? ?? '';
+    replaceText = json['replaceText'] as String? ?? '';
+    findOptions = FindReplaceOptions.fromJson(
+        Map<String, Object?>.from(json['findOptions'] as Map? ?? {}));
+  }
+}
+
+class AppController extends ChangeNotifier {
+  AppController(this.paths);
+
+  final AppPaths paths;
+  final GitService git = GitService();
+  final SessionCoordinator coordinator = SessionCoordinator();
+  AppSettings settings = AppSettings();
+  String activeToolId = 'mootool';
+  List<String> recentToolIds = [];
+  bool sidebarCollapsed = false;
+  bool searchOpen = false;
+  String? settingsCategory;
+  bool groupManagerOpen = false;
+  String searchQuery = '';
+  String toast = '';
+  String? storeError;
+  final Set<String> detachedToolIds = {};
+  final Map<String, EditorDocument> drafts = {};
+  final JsonSession json = JsonSession();
+  DocumentVault vault = DocumentVault();
+  VaultPreferences jsonVaultPrefs = VaultPreferences();
+  final List<HistoryRecord> histories = [];
+  Timer? _saveTimer;
+  bool _pauseAutosave = false;
+  Future<void> _writeQueue = Future.value();
+
+  L10n get l10n => L10n(settings.language);
+  String t(String key, [Map<String, String>? params]) => l10n.t(key, params);
+  JsonEngine get jsonEngine => JsonEngine(t);
+  JsonPathQuery get jsonPath => JsonPathQuery(t);
+  bool get settingsOpen => settingsCategory != null;
+  bool get overlayOpen => searchOpen || settingsOpen || groupManagerOpen;
+
+  void refresh() => notifyListeners();
+
+  Future<void> load() async {
+    await paths.ensure();
+    paths.verifyIsolation();
+    if (!await paths.productFile.exists()) {
+      await writeAtomicJson(paths.productFile, {
+        'productId': Product.id,
+        'schemaVersion': Product.schemaVersion,
+        'createdAt': DateTime.now().toUtc().toIso8601String(),
+      });
+    }
+    try {
+      final settingsJson = await readJsonObject(paths.settingsFile);
+      if (settingsJson != null) settings = AppSettings.fromJson(settingsJson);
+    } on CorruptStoreException catch (error) {
+      storeError = error.toString();
+      _pauseAutosave = true;
+    }
+    try {
+      final workspace = await readJsonObject(paths.workspaceFile);
+      if (workspace != null) _restoreWorkspace(workspace);
+    } on CorruptStoreException catch (error) {
+      storeError = error.toString();
+      _pauseAutosave = true;
+    }
+    coordinator.claim('json');
+    notifyListeners();
+  }
+
+  void _restoreWorkspace(Map<String, Object?> workspace) {
+    activeToolId = workspace['activeToolId'] as String? ?? 'mootool';
+    recentToolIds = [...?workspace['recentToolIds'] as List?];
+    sidebarCollapsed = workspace['sidebarCollapsed'] as bool? ?? false;
+    if (workspace['json'] is Map)
+      json.restore(Map<String, Object?>.from(workspace['json'] as Map));
+    if (workspace['vault'] is Map)
+      vault = DocumentVault.fromJson(
+          Map<String, Object?>.from(workspace['vault'] as Map));
+    if (workspace['jsonVaultPrefs'] is Map)
+      jsonVaultPrefs = VaultPreferences.fromJson(
+          Map<String, Object?>.from(workspace['jsonVaultPrefs'] as Map));
+    histories
+      ..clear()
+      ..addAll([
+        for (final item in workspace['histories'] as List? ?? const [])
+          if (item is Map)
+            HistoryRecord.fromJson(Map<String, Object?>.from(item)),
+      ]);
+    if (workspace['drafts'] is Map) {
+      final raw = Map<String, Object?>.from(workspace['drafts'] as Map);
+      raw.forEach((id, value) {
+        if (value is Map) {
+          drafts[id] =
+              EditorDocument(id: id, text: value['text'] as String? ?? '');
+        }
+      });
+    }
+  }
+
+  Map<String, Object?> _workspaceJson() => {
+        'schemaVersion': Product.schemaVersion,
+        'productId': Product.id,
+        'activeToolId': activeToolId,
+        'recentToolIds': recentToolIds,
+        'sidebarCollapsed': sidebarCollapsed,
+        'json': json.toJson(),
+        'vault': vault.toJson(),
+        'jsonVaultPrefs': jsonVaultPrefs.toJson(),
+        'histories': [for (final item in histories.take(100)) item.toJson()],
+        'drafts': {
+          for (final entry in drafts.entries)
+            entry.key: {'text': entry.value.text},
+        },
+      };
+
+  void scheduleSave() {
+    if (_pauseAutosave) return;
+    _saveTimer?.cancel();
+    _saveTimer = Timer(const Duration(milliseconds: 400), () {
+      unawaited(persist());
+    });
+  }
+
+  Future<void> persist() {
+    _saveTimer?.cancel();
+    _saveTimer = null;
+    if (_pauseAutosave) return Future.value();
+    _writeQueue = _writeQueue.then((_) => _persistNow());
+    return _writeQueue;
+  }
+
+  Future<void> _persistNow() async {
+    if (_pauseAutosave) return;
+    try {
+      await writeAtomicJson(paths.settingsFile, settings.toJson());
+      await writeAtomicJson(paths.workspaceFile, _workspaceJson());
+      if (json.documentId != null) {
+        final file = _document(json.documentId);
+        if (file != null && file.content != json.document.text) {
+          file.content = json.document.text;
+          file.query = json.jsonPath;
+          file.modified = DateTime.now();
+          json.document.markSaved();
+        }
+      }
+    } catch (error) {
+      storeError = error.toString();
+      notifyListeners();
+      rethrow;
+    }
+  }
+
+  VaultDocument? _document(String? id) {
+    if (id == null) return null;
+    for (final item in vault.documents) {
+      if (item.id == id) return item;
+    }
+    return null;
+  }
+
+  void openTool(String id) {
+    if (!isToolId(id)) return;
+    settingsCategory = null;
+    searchOpen = false;
+    groupManagerOpen = false;
+    activeToolId = id;
+    if (id != 'mootool') {
+      recentToolIds =
+          [id, ...recentToolIds.where((item) => item != id)].take(5).toList();
+    }
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void setLanguage(AppLanguage language) {
+    settings.language = language;
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void setTheme(ThemePreference theme) {
+    settings.theme = theme;
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void setNavigationStyle(NavigationStyle style) {
+    settings.navigationStyle = style;
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void toggleSidebar() {
+    sidebarCollapsed = !sidebarCollapsed;
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void openSearch() {
+    searchOpen = true;
+    notifyListeners();
+  }
+
+  void closeOverlays() {
+    searchOpen = false;
+    settingsCategory = null;
+    groupManagerOpen = false;
+    notifyListeners();
+  }
+
+  void openSettings([String category = 'general']) {
+    settingsCategory = category;
+    searchOpen = false;
+    notifyListeners();
+  }
+
+  EditorDocument draftFor(String toolId) =>
+      drafts.putIfAbsent(toolId, () => EditorDocument(id: toolId));
+
+  void setJsonText(String value,
+      {int? selectionStart, int? selectionEnd, bool recordUndo = true}) {
+    json.document.apply(value,
+        selectionStart: selectionStart ?? json.document.selectionStart,
+        selectionEnd: selectionEnd ?? json.document.selectionEnd,
+        recordUndo: recordUndo);
+    json.notice = jsonEngine.validate(value).message;
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void runJson(void Function() action) {
+    try {
+      action();
+    } catch (error) {
+      json.notice = error.toString();
+    }
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void formatJson({bool advanced = false}) => runJson(() {
+        final next = advanced
+            ? jsonEngine.formatAdvanced(json.document.text, json.formatOptions)
+            : jsonEngine.format(json.document.text,
+                spaces: json.formatOptions.spaces);
+        json.document.apply(next, selectionStart: 0, selectionEnd: 0);
+        json.notice = jsonEngine.validate(next).message;
+        _recordHistory('format', next);
+      });
+
+  void compressJson() => runJson(() {
+        final next = jsonEngine.compress(json.document.text);
+        json.document.apply(next, selectionStart: 0, selectionEnd: 0);
+        json.notice = jsonEngine.validate(next).message;
+        _recordHistory('compress', next);
+      });
+
+  void convertJson(String title, String Function(String input) convert,
+          {String? source}) =>
+      runJson(() {
+        json.outputTitle = title;
+        json.outputBody = convert(source ?? json.document.text);
+      });
+
+  void queryJsonPath() => convertJson(t('json.panel.jsonPath'),
+      (input) => jsonPath.query(input, json.jsonPath));
+
+  void applyJsonPath(String path) {
+    json.jsonPath = path;
+    json.pathPickerOpen = false;
+    notifyListeners();
+  }
+
+  void _recordHistory(String title, String output) {
+    histories.insert(
+        0,
+        HistoryRecord(
+            id: 'h-${DateTime.now().microsecondsSinceEpoch}',
+            toolId: 'json',
+            title: title,
+            input: json.document.text,
+            output: output));
+    if (histories.length > 100) histories.removeRange(100, histories.length);
+  }
+
+  void restoreHistory(HistoryRecord record) {
+    json.document.apply(record.input);
+    json.outputBody = record.output;
+    json.historyOpen = false;
+    scheduleSave();
+    notifyListeners();
+  }
+
+  Future<void> copyJson() async {
+    await Clipboard.setData(ClipboardData(text: json.document.text));
+    toast = t('json.action.copied');
+    notifyListeners();
+  }
+
+  void clearJson() => runJson(() {
+        json.document.apply('');
+        json.notice = jsonEngine.validate('').message;
+      });
+
+  String createJsonDocument({String name = 'untitled.json', String? parent}) {
+    final id = vault.createDocument(
+        toolId: 'json',
+        name: name,
+        content: json.document.text,
+        parent: parent);
+    json.documentId = id;
+    jsonVaultPrefs.selectedEntryId = id;
+    json.document.markSaved();
+    scheduleSave();
+    notifyListeners();
+    return id;
+  }
+
+  String createJsonFolder({String name = 'folder', String? parent}) {
+    final id = vault.createFolder(toolId: 'json', name: name, parent: parent);
+    jsonVaultPrefs.expanded.add(id);
+    scheduleSave();
+    notifyListeners();
+    return id;
+  }
+
+  void openJsonDocument(String id) {
+    final file = _document(id);
+    if (file == null) return;
+    if (json.documentId != id &&
+        json.document.dirty &&
+        json.documentId != null) {
+      final current = _document(json.documentId);
+      current?.content = json.document.text;
+    }
+    json.documentId = id;
+    json.document.apply(file.content, recordUndo: false);
+    json.document.markSaved();
+    json.jsonPath = file.query.isEmpty ? json.jsonPath : file.query;
+    jsonVaultPrefs.selectedEntryId = id;
+    jsonVaultPrefs.expanded.addAll(vault.ancestorsOf(id));
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void saveJsonDocument() {
+    if (json.documentId == null) {
+      createJsonDocument();
+      return;
+    }
+    final file = _document(json.documentId);
+    if (file == null) return;
+    file.content = json.document.text;
+    file.query = json.jsonPath;
+    file.modified = DateTime.now();
+    json.document.markSaved();
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void deleteVaultEntry(String id) {
+    final removed = vault.delete(id);
+    if (json.documentId != null && removed.contains(json.documentId)) {
+      json.documentId = null;
+    }
+    jsonVaultPrefs.expanded.removeAll(removed);
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void detachTool(String id) {
+    if (id == 'mootool') return;
+    final session = id == 'json' ? json.document : draftFor(id);
+    final begin = coordinator.beginTransfer(TransferRequest(
+      sessionId: id,
+      sourceWindowId: 'main',
+      targetWindowId: 'detached-$id',
+      revision: session.revision,
+      text: session.text,
+      selectionStart: session.selectionStart,
+      selectionEnd: session.selectionEnd,
+      undoDepth: 0,
+    ));
+    if (!begin.ok) {
+      toast = begin.error ?? '';
+      notifyListeners();
+      return;
+    }
+    final ack = coordinator.ack(id, 'detached-$id', session.revision);
+    if (!ack.ok) {
+      coordinator.abort(id);
+      toast = ack.error ?? '';
+      notifyListeners();
+      return;
+    }
+    detachedToolIds.add(id);
+    notifyListeners();
+  }
+
+  void dockTool(String id) {
+    final session = id == 'json' ? json.document : draftFor(id);
+    final begin = coordinator.beginTransfer(TransferRequest(
+      sessionId: id,
+      sourceWindowId: 'detached-$id',
+      targetWindowId: 'main',
+      revision: session.revision,
+      text: session.text,
+      selectionStart: session.selectionStart,
+      selectionEnd: session.selectionEnd,
+      undoDepth: 0,
+    ));
+    if (begin.ok) coordinator.ack(id, 'main', session.revision);
+    detachedToolIds.remove(id);
+    notifyListeners();
+  }
+
+  void addCustomGroup() {
+    final number = settings.customGroups.length + 1;
+    settings.customGroups.add(CustomToolGroup(
+        id: 'group-$number-${DateTime.now().millisecondsSinceEpoch}',
+        name: t('groups.defaultName', {'number': '$number'}),
+        toolIds: []));
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void hideTool(String id) {
+    if (!settings.hiddenNavigationToolIds.contains(id))
+      settings.hiddenNavigationToolIds.add(id);
+    scheduleSave();
+    notifyListeners();
+  }
+
+  void showTool(String id) {
+    settings.hiddenNavigationToolIds.remove(id);
+    scheduleSave();
+    notifyListeners();
+  }
+
+  Future<GitStatus> jsonGitStatus() => git.status(paths.jsonVaultDir);
+
+  Future<void> initJsonGit() async {
+    await persist();
+    await _exportVaultFiles();
+    await git.init(paths.jsonVaultDir);
+    notifyListeners();
+  }
+
+  Future<void> commitJsonGit(String message) async {
+    await persist();
+    await _exportVaultFiles();
+    await git.commitAll(paths.jsonVaultDir, message);
+    notifyListeners();
+  }
+
+  Future<void> _exportVaultFiles() async {
+    final root = Directory('${paths.jsonVaultDir.path}/files');
+    await root.create(recursive: true);
+    for (final file in vault.documents.where((item) => item.toolId == 'json')) {
+      final target = File('${root.path}/${file.id}.json');
+      await writeAtomicFile(target, file.content);
+    }
+  }
+
+  @override
+  void dispose() {
+    _saveTimer?.cancel();
+    super.dispose();
+  }
+}
