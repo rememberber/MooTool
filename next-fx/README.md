@@ -42,4 +42,4 @@ export JAVA_HOME=/Users/zhoubo/Library/Java/JavaVirtualMachines/azul-25.0.4.1/Co
 - **允许重复代码，允许各自演进。** 禁止 parent POM、源码目录、符号链接或共享数据库依赖。
 - 安装包自带匹配架构的 OpenJDK 运行时与 JavaFX；普通用户无需安装 Java。
 
-下一步：在真实桌面补 IME / 50 次窗口转移证据，再做 P1 首页与导航视觉（1440×920 / 1080×720 截图）。不要把 24 个占位工具做成假页面。
+下一步：P2 JSON 历史/Vault/重启恢复；补 1440×920 与 1080×720 截图。不要把 24 个占位工具做成假页面。

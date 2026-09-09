@@ -17,3 +17,33 @@
     -fx-background-color: -mt-window;
     -fx-base: -mt-surface;
 }
+
+.root.accent-yellow {
+    -mt-accent: #E7BC70;
+    -mt-on-accent: #241C00;
+    -mt-accent-soft: #3A3018;
+}
+
+.root.accent-coral {
+    -mt-accent: #DE8F7D;
+    -mt-on-accent: #2A1210;
+    -mt-accent-soft: #3A2724;
+}
+
+.root.accent-green {
+    -mt-accent: #82CCA8;
+    -mt-on-accent: #0F241C;
+    -mt-accent-soft: #1F332C;
+}
+
+.root.accent-red {
+    -mt-accent: #F0A39B;
+    -mt-on-accent: #2A1210;
+    -mt-accent-soft: #3A2422;
+}
+
+.root.accent-purple {
+    -mt-accent: #B8A2D8;
+    -mt-on-accent: #1C1428;
+    -mt-accent-soft: #2E2740;
+}

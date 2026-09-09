@@ -52,8 +52,28 @@
     -fx-border-radius: 8;
 }
 
-.mt-nav-item.selected {
-    -fx-background-color: -mt-accent-soft;
+.mt-nav-item.compact {
+    -fx-padding: 4 0;
+    -fx-alignment: CENTER;
+}
+
+.mt-sidebar.compact .mt-nav-item {
+    -fx-padding: 6 4;
+}
+
+.mt-nav-separator {
+    -fx-padding: 4 8;
+}
+
+.mt-settings-nav {
+    -fx-background-color: -mt-sidebar;
+    -fx-border-color: -mt-border-soft;
+    -fx-border-width: 0 1 0 0;
+    -fx-pref-width: 220;
+}
+
+.mt-settings {
+    -fx-background-color: -mt-workspace;
 }
 
 .mt-badge {

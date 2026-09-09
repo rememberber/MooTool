@@ -2,14 +2,14 @@
 
 ## 1. 当前状态与证据规则
 
-2026-09-09：**P0 工程与 macOS x64 app-image 已可运行。** 证据目录 `docs/evidence/2026-09-09-p0/`。桌面 IME、窗口转移录像和跨平台包仍待测，故 P0 整体为待验收而非通过。
+2026-09-09：**P0 待验收（macOS x64 可运行）；P1 壳层与设置框架已接上。** 证据：`docs/evidence/2026-09-09-p0/`、`docs/evidence/2026-09-09-p1/`。1440/1080 截图与桌面 IME 仍未拍。
 
 状态：`未开始`、`开发中`、`待验收`、`通过`、`受阻`。每项附平台范围；无法访问某平台可写受阻/未测，不能让本机通过自动代表三平台。`通过`要求链接到实际代码、fixture/命令、结果及必要截图。
 
 | 阶段 | 状态 | 证据/待完成 |
 | --- | --- | --- |
-| P0 工程与高风险验证 | 待验收 | Maven Wrapper、JDK25/OpenJFX26、JSON 算法、SQLite、RichTextFX、macOS x64 app-image 与无 JAVA_HOME 启动 smoke 见 `docs/evidence/2026-09-09-p0/` 与 ADR 001–004。剩余：桌面 IME、50 次窗口转移、截图、protoc/Crypto/regex 样本、Windows/Linux 包 |
-| P1 应用壳与设计系统 | 开发中 | 26 入口、首页、搜索、浅/深主题、设置（主题/语言）已有实现；视觉对齐与 1440/1080 截图待验收 |
+| P0 工程与高风险验证 | 待验收 | app-image 与算法见 P0 证据。`./mvnw -Pui-tests test` 完成同一 Node 50 次分离/收回。剩余：桌面 IME 候选窗、视觉截图、protoc/Crypto/regex 样本、Windows/Linux 包 |
+| P1 应用壳与设计系统 | 待验收 | 26 入口、6 分组、搜索、最近、248/84 导航、11 类设置框架、modern 浅/深与强调色。1440×920/1080×720 成对截图未拍 |
 | P2 JSON完整纵向流程 | 未开始 | 核心操作、历史、简单Vault、会话、独立窗口 |
 | P3 本地文本/数值工具 | 未开始 | 对齐fixtures、算法与交互 |
 | P4 二进制/媒体 | 未开始 | Protobuf/Crypto/QR/图片/PDF实产物 |
@@ -55,7 +55,7 @@ F04/F22/F23等跨阶段条目，完成核心也只填“开发中”或“核心
 
 ## 3. 检查命令契约
 
-下面命令已在 P0 建立。macOS x64 `app-image` 与 `verify-package.sh` 本机 exit 0。Windows 打包入口存在但本机未跑。`ui-tests` profile 已声明，尚无 TestFX 用例。
+下面命令已在 P0 建立。macOS x64 `app-image` 与 `verify-package.sh` 本机 exit 0。Windows 打包入口存在但本机未跑。`./mvnw -Pui-tests test` 本机已跑过窗口转移；尚无 TestFX 页面用例。
 
 | 命令（在next-fx执行） | 期望含义 | 首次建立阶段 |
 | --- | --- | --- |
@@ -150,4 +150,4 @@ OS/arch/DPI/语言/主题：
 
 结束每轮时写清下一轮应从哪个具体未完成子项开始；避免重复搭壳、重选已通过技术路线或直接跳到发布。可以复制提示词，见 [Cursor提示词](cursor-prompts.md)。
 
-**2026-09-09 下一轮：** 真实桌面补 E01 IME 与 E03 五十次窗口转移（RichTextFX 仍为选定路线），再做 P1 首页/导航 1440×920 与 1080×720 浅/深截图。不要重建 Maven 工程，也不要把 24 个 PLACEHOLDER 做成假工具页。
+**2026-09-09 下一轮：** P2 JSON 完整纵向（历史、简单 Vault、重启恢复）。视觉上补 1440×920 / 1080×720 浅/深截图；桌面补 IME 候选窗。不要重建工程，也不要把 24 个 PLACEHOLDER 做成假工具页。

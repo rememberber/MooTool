@@ -108,11 +108,12 @@ public final class AppServices implements AutoCloseable {
     }
 
     private ThemeSnapshot resolveTheme(SettingsStore.Settings current) {
-        return switch (current.theme()) {
-            case LIGHT -> new ThemeSnapshot(ThemeSnapshot.Appearance.LIGHT);
-            case DARK -> new ThemeSnapshot(ThemeSnapshot.Appearance.DARK);
-            case SYSTEM -> new ThemeSnapshot(detectSystemDark() ? ThemeSnapshot.Appearance.DARK : ThemeSnapshot.Appearance.LIGHT);
+        ThemeSnapshot.Appearance appearance = switch (current.theme()) {
+            case LIGHT -> ThemeSnapshot.Appearance.LIGHT;
+            case DARK -> ThemeSnapshot.Appearance.DARK;
+            case SYSTEM -> detectSystemDark() ? ThemeSnapshot.Appearance.DARK : ThemeSnapshot.Appearance.LIGHT;
         };
+        return new ThemeSnapshot(appearance, current.accent(), current.fontSize());
     }
 
     private static boolean detectSystemDark() {

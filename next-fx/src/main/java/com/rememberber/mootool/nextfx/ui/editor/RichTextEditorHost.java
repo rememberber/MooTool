@@ -6,6 +6,7 @@ import com.rememberber.mootool.nextfx.domain.editor.FindMatch;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.scene.Node;
+import javafx.scene.input.InputMethodEvent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseEvent;
@@ -29,6 +30,7 @@ public final class RichTextEditorHost implements EditorHost {
     private boolean applying;
     private Integer columnAnchorLine;
     private Integer columnAnchorColumn;
+    private boolean composing;
 
     public RichTextEditorHost() {
         area.setParagraphGraphicFactory(LineNumberFactory.get(area));
@@ -37,11 +39,14 @@ public final class RichTextEditorHost implements EditorHost {
         root.getStyleClass().add("mt-editor-host");
         StackPane.setMargin(scroll, Insets.EMPTY);
         area.plainTextChanges().subscribe(change -> {
-            if (applying || document == null) {
+            if (applying || composing || document == null) {
                 return;
             }
             document.replaceText(area.getText(), area.getCaretPosition(), area.getAnchor());
             publish();
+        });
+        area.addEventFilter(InputMethodEvent.INPUT_METHOD_TEXT_CHANGED, event -> {
+            composing = event.getComposed() != null && !event.getComposed().isEmpty();
         });
         area.addEventFilter(KeyEvent.KEY_PRESSED, this::onKeyPressed);
         area.addEventFilter(MouseEvent.MOUSE_PRESSED, event -> {

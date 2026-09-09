@@ -37,3 +37,12 @@
 - 原因：JDK 25 macOS jpackage 拒绝首位为 `0` 的 `app-version`。
 - 验证：`dist/MooTool Next FX.app` 的 `CFBundleShortVersionString` 为 `1.0.0`；jar 内 `version.properties` 仍为 `0.1.0-SNAPSHOT`。
 - 后续：正式发 1.x 时取消映射或改为同一数字。
+
+## FX-D005 六风格未实现
+
+- 类型：延期
+- 源行为：modern/quiet/hero/smartisan/miui-v5/claude。
+- 本版行为：P1 仅 modern 浅/深 + 六强调色。其他风格在设置里说明原因，没有无效果下拉项。
+- 原因：P6 才要求完整风格。
+- 验证：外观页文案 `settings.pending.style`。
+- 后续：P6 为每种风格提供独立 Token，禁止六名一色。
