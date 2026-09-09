@@ -7,6 +7,8 @@ import com.rememberber.mootool.next.compose.domain.JsonFormatOptions
 import com.rememberber.mootool.next.compose.domain.DiffEngine
 import com.rememberber.mootool.next.compose.domain.DiffResult
 import com.rememberber.mootool.next.compose.domain.DiffSegment
+import com.rememberber.mootool.next.compose.domain.ReformatEngine
+import com.rememberber.mootool.next.compose.domain.ReformatType
 import com.rememberber.mootool.next.compose.domain.CronFields
 import com.rememberber.mootool.next.compose.domain.CronEngine
 import com.rememberber.mootool.next.compose.domain.RegexMatch
@@ -502,6 +504,61 @@ class DiffSession {
         if (highlightMode == "characters") result.segments.filter { !it.wholeLine } else result.segments
 }
 
+@Serializable
+data class ReformatSessionSnapshot(
+    val tab: String = "text",
+    val type: String = "nginx",
+    val indent: Int = 4,
+    val text: String = "",
+    val fileName: String = "",
+    val fileSource: String = "",
+    val fileResult: String = ""
+)
+
+class ReformatSession {
+    var tab: String = "text"
+    var type: ReformatType = ReformatType.Nginx
+    var indent: Int = 4
+    var text: String = ReformatEngine.samples.getValue(ReformatType.Nginx)
+    var fileName: String = ""
+    var fileSource: String = ""
+    var fileResult: String = ""
+    var historyOpen: Boolean = false
+    var notice: String = ""
+    var error: String = ""
+    var busy: Boolean = false
+    var formatGeneration: Long = 0
+
+    fun snapshot(): ReformatSessionSnapshot = ReformatSessionSnapshot(
+        tab = tab,
+        type = type.name.lowercase(),
+        indent = indent,
+        text = text,
+        fileName = fileName,
+        fileSource = fileSource,
+        fileResult = fileResult
+    )
+
+    fun restore(snapshot: ReformatSessionSnapshot) {
+        tab = if (snapshot.tab == "file") "file" else "text"
+        type = ReformatType.entries.firstOrNull { it.name.equals(snapshot.type, ignoreCase = true) } ?: ReformatType.Nginx
+        indent = snapshot.indent.coerceIn(2, 6)
+        text = snapshot.text
+        fileName = snapshot.fileName
+        fileSource = snapshot.fileSource
+        fileResult = snapshot.fileResult
+        historyOpen = false
+        notice = ""
+        error = ""
+        busy = false
+        formatGeneration += 1
+    }
+
+    companion object {
+        fun defaultSample(type: ReformatType): String = ReformatEngine.samples.getValue(type)
+    }
+}
+
 enum class WindowRole { Main, Detached }
 
 data class HostedSession(
@@ -519,6 +576,7 @@ class SessionManager(private val store: SessionStore) {
     private var regexSessionCache: RegexSession? = null
     private var cronSessionCache: CronSession? = null
     private var diffSessionCache: DiffSession? = null
+    private var reformatSessionCache: ReformatSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
     val detached: StateFlow<Set<ToolId>> = _detached
     private val _revision = MutableStateFlow(0L)
@@ -648,6 +706,22 @@ class SessionManager(private val store: SessionStore) {
 
     fun persistDiff() {
         store.save(ToolId.TextDiff.id, jsonCodec.encodeToString(diffSession().snapshot()))
+    }
+
+    fun reformatSession(): ReformatSession {
+        reformatSessionCache?.let { return it }
+        val session = ReformatSession()
+        store.load(ToolId.Reformat.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<ReformatSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        }
+        reformatSessionCache = session
+        return session
+    }
+
+    fun persistReformat() {
+        store.save(ToolId.Reformat.id, jsonCodec.encodeToString(reformatSession().snapshot()))
     }
 
     fun detach(toolId: ToolId) {

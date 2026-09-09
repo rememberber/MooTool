@@ -29,6 +29,7 @@ import com.rememberber.mootool.next.compose.features.diff.TextDiffScreen
 import com.rememberber.mootool.next.compose.features.encode.EncodeScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
 import com.rememberber.mootool.next.compose.features.regex.RegexScreen
+import com.rememberber.mootool.next.compose.features.reformat.ReformatScreen
 import com.rememberber.mootool.next.compose.features.time.TimeConvertScreen
 import com.rememberber.mootool.next.compose.features.ua.UaParseScreen
 import com.rememberber.mootool.next.compose.model.ToolId
@@ -109,6 +110,18 @@ fun main() = application {
             ) {
                 MooTheme(container.themePreference(), systemDark) {
                     TextDiffScreen(container, detached = true)
+                }
+            }
+        }
+
+        if (ToolId.Reformat in detached) {
+            Window(
+                onCloseRequest = { container.sessionManager.reattach(ToolId.Reformat) },
+                title = "${container.t("app.nav.reformat")} · ${ProductIdentity.DISPLAY_NAME}",
+                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
+            ) {
+                MooTheme(container.themePreference(), systemDark) {
+                    ReformatScreen(container, detached = true)
                 }
             }
         }

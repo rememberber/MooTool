@@ -60,6 +60,8 @@ kotlin {
                 implementation(libs.uap.java)
                 implementation(libs.cron.utils)
                 implementation(libs.java.diff.utils)
+                implementation(libs.javaparser.core)
+                implementation(libs.jsoup)
             }
         }
         val desktopTest by getting {

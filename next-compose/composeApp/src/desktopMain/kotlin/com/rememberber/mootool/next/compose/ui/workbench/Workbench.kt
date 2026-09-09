@@ -39,6 +39,7 @@ import com.rememberber.mootool.next.compose.features.encode.EncodeScreen
 import com.rememberber.mootool.next.compose.features.home.HomeScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
 import com.rememberber.mootool.next.compose.features.regex.RegexScreen
+import com.rememberber.mootool.next.compose.features.reformat.ReformatScreen
 import com.rememberber.mootool.next.compose.features.placeholder.DetachedNotice
 import com.rememberber.mootool.next.compose.features.placeholder.PlaceholderScreen
 import com.rememberber.mootool.next.compose.features.settings.SettingsScreen
@@ -93,6 +94,10 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
                     TextDiffScreen(container, detached = false)
                 active == ToolId.TextDiff && detached.contains(ToolId.TextDiff) ->
                     DetachedNotice(container, ToolId.TextDiff)
+                active == ToolId.Reformat && !detached.contains(ToolId.Reformat) ->
+                    ReformatScreen(container, detached = false)
+                active == ToolId.Reformat && detached.contains(ToolId.Reformat) ->
+                    DetachedNotice(container, ToolId.Reformat)
                 active == ToolId.Json && !detached.contains(ToolId.Json) -> JsonScreen(container, detached = false)
                 active == ToolId.Json && detached.contains(ToolId.Json) -> DetachedNotice(container, ToolId.Json)
                 active == ToolId.TimeConvert && !detached.contains(ToolId.TimeConvert) ->

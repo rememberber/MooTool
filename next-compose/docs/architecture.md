@@ -146,8 +146,8 @@ SwingPanel 默认处于 Compose 内容前方；菜单、命令搜索、对话框
 | JSONPath | Jayway 候选 + Electron 样本适配 | filter/union/slice/escape；禁止执行任意 JS |
 | XML / YAML | JAXP + 经验证的 YAML 解析器 | 禁用外部实体、限制深度/别名膨胀；不声明注释无损 |
 | Diff | java-diff-utils 或同类成熟实现 | 行与字符差异、统一模式、重复行、偏移 |
-| Java 格式化 | 独立声明的成熟 Java formatter | 语法处理、错误不改原文；无外部 Node 依赖 |
-| HTML/XML/Nginx | 专用解析/格式化器；可移植现有 Java 算法 | 保留字符串、注释、文本节点语义，幂等 |
+| Java 格式化 | JavaParser 3.26.4 PrettyPrinter | 语法处理、错误不改原文；无外部 Node 依赖；见 DIFF-005 |
+| HTML/XML/Nginx | Jsoup + JAXP 自写缩进 + Electron Nginx tokenizer | 保留字符串、注释、文本节点语义，幂等 |
 | Cron | cron-utils / Quartz 语义适配器候选 | 6/7 字段、周编号、?、L/#、year、IANA zone/DST |
 | 正则 | Java Pattern 为首选引擎 | 显示 Java 语义差异；独立 worker 超时/终止；不能宣称完全 JS 兼容 |
 | UA | 维护中的 UA 规则库 | 浏览器/OS/设备/bot 样本与版本记录 |

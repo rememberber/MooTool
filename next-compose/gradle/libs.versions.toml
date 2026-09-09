@@ -12,6 +12,8 @@ junit = "4.13.2"
 uapJava = "1.6.1"
 cronUtils = "9.2.1"
 javaDiffUtils = "4.15"
+javaParser = "3.26.4"
+jsoup = "1.18.3"
 
 [libraries]
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
@@ -36,6 +38,8 @@ slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4j" }
 uap-java = { module = "com.github.ua-parser:uap-java", version.ref = "uapJava" }
 cron-utils = { module = "com.cronutils:cron-utils", version.ref = "cronUtils" }
 java-diff-utils = { module = "io.github.java-diff-utils:java-diff-utils", version.ref = "javaDiffUtils" }
+javaparser-core = { module = "com.github.javaparser:javaparser-core", version.ref = "javaParser" }
+jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 junit = { module = "junit:junit", version.ref = "junit" }
 
 [plugins]
