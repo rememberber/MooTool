@@ -10,6 +10,7 @@ rsyntaxtextarea = "3.6.0"
 slf4j = "2.0.17"
 junit = "4.13.2"
 uapJava = "1.6.1"
+cronUtils = "9.2.1"
 
 [libraries]
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
@@ -32,6 +33,7 @@ sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite" }
 rsyntaxtextarea = { module = "com.fifesoft:rsyntaxtextarea", version.ref = "rsyntaxtextarea" }
 slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4j" }
 uap-java = { module = "com.github.ua-parser:uap-java", version.ref = "uapJava" }
+cron-utils = { module = "com.cronutils:cron-utils", version.ref = "cronUtils" }
 junit = { module = "junit:junit", version.ref = "junit" }
 
 [plugins]

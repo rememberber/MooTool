@@ -24,6 +24,7 @@ import androidx.compose.ui.window.rememberWindowState
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.app.ProductIdentity
 import com.rememberber.mootool.next.compose.features.calculator.CalculatorScreen
+import com.rememberber.mootool.next.compose.features.cron.CronScreen
 import com.rememberber.mootool.next.compose.features.encode.EncodeScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
 import com.rememberber.mootool.next.compose.features.regex.RegexScreen
@@ -167,6 +168,18 @@ fun main() = application {
             ) {
                 MooTheme(container.themePreference(), systemDark) {
                     RegexScreen(container, detached = true)
+                }
+            }
+        }
+
+        if (ToolId.Cron in detached) {
+            Window(
+                onCloseRequest = { container.sessionManager.reattach(ToolId.Cron) },
+                title = "${container.t("app.nav.cron")} · ${ProductIdentity.DISPLAY_NAME}",
+                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
+            ) {
+                MooTheme(container.themePreference(), systemDark) {
+                    CronScreen(container, detached = true)
                 }
             }
         }

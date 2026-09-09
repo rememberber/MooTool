@@ -33,6 +33,7 @@ import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.app.ToolRegistry
 import com.rememberber.mootool.next.compose.features.calculator.CalculatorScreen
+import com.rememberber.mootool.next.compose.features.cron.CronScreen
 import com.rememberber.mootool.next.compose.features.encode.EncodeScreen
 import com.rememberber.mootool.next.compose.features.home.HomeScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
@@ -109,6 +110,10 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
                     RegexScreen(container, detached = false)
                 active == ToolId.Regex && detached.contains(ToolId.Regex) ->
                     DetachedNotice(container, ToolId.Regex)
+                active == ToolId.Cron && !detached.contains(ToolId.Cron) ->
+                    CronScreen(container, detached = false)
+                active == ToolId.Cron && detached.contains(ToolId.Cron) ->
+                    DetachedNotice(container, ToolId.Cron)
                 else -> PlaceholderScreen(container, active)
             }
         }

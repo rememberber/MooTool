@@ -48,6 +48,18 @@ class StorageIsolationTest {
     }
 
     @Test
+    fun cronFavoritesPersistAcrossStoreInstances() {
+        val root = createTempDirectory("mootool-compose-cron-fav")
+        val directories = AppPaths.resolve(root.toString()).also { it.ensureCreated() }
+        val first = CronFavoriteStore(directories)
+        val saved = first.add("每分钟", "0 * * * * ?")
+        val second = CronFavoriteStore(directories)
+        assertEquals(saved.expression, second.list().single().expression)
+        second.delete(saved.id)
+        assertTrue(CronFavoriteStore(directories).list().isEmpty())
+    }
+
+    @Test
     fun vaultRejectsPathEscape() {
         val root = createTempDirectory("mootool-compose-vault")
         val vault = JsonVault(AppPaths.resolve(root.toString()).also { it.ensureCreated() })

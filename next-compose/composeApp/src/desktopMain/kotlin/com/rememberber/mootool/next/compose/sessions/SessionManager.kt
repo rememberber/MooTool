@@ -4,6 +4,8 @@ import com.rememberber.mootool.next.compose.domain.AsciiFormat
 import com.rememberber.mootool.next.compose.domain.EncodeTab
 import com.rememberber.mootool.next.compose.domain.FindReplaceOptions
 import com.rememberber.mootool.next.compose.domain.JsonFormatOptions
+import com.rememberber.mootool.next.compose.domain.CronFields
+import com.rememberber.mootool.next.compose.domain.CronEngine
 import com.rememberber.mootool.next.compose.domain.RegexMatch
 import com.rememberber.mootool.next.compose.domain.RegexOptions
 import com.rememberber.mootool.next.compose.domain.TimeEngine
@@ -406,6 +408,57 @@ class RegexSession {
     }
 }
 
+@Serializable
+data class CronSessionSnapshot(
+    val second: String = "0",
+    val minute: String = "*",
+    val hour: String = "*",
+    val day: String = "*",
+    val month: String = "*",
+    val week: String = "?",
+    val year: String = "",
+    val expression: String = "0 * * * * ?",
+    val zone: String = "UTC"
+)
+
+class CronSession {
+    var fields: CronFields = CronEngine.defaultFields
+    var expression: String = CronEngine.build(CronEngine.defaultFields)
+    var zone: String = TimeEngine.systemZone()
+    var runs: List<String> = emptyList()
+    var description: String = ""
+    var historyOpen: Boolean = false
+    var favoritesOpen: Boolean = false
+    var favoriteName: String = ""
+    var notice: String = ""
+    var error: String = ""
+
+    fun snapshot(): CronSessionSnapshot = CronSessionSnapshot(
+        second = fields.second,
+        minute = fields.minute,
+        hour = fields.hour,
+        day = fields.day,
+        month = fields.month,
+        week = fields.week,
+        year = fields.year,
+        expression = expression,
+        zone = zone
+    )
+
+    fun restore(snapshot: CronSessionSnapshot) {
+        fields = CronFields(snapshot.second, snapshot.minute, snapshot.hour, snapshot.day, snapshot.month, snapshot.week, snapshot.year)
+        expression = snapshot.expression
+        zone = snapshot.zone
+        runs = emptyList()
+        description = ""
+        historyOpen = false
+        favoritesOpen = false
+        favoriteName = ""
+        notice = ""
+        error = ""
+    }
+}
+
 enum class WindowRole { Main, Detached }
 
 data class HostedSession(
@@ -421,6 +474,7 @@ class SessionManager(private val store: SessionStore) {
     private var encodeSessionCache: EncodeSession? = null
     private var uaSessionCache: UaSession? = null
     private var regexSessionCache: RegexSession? = null
+    private var cronSessionCache: CronSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
     val detached: StateFlow<Set<ToolId>> = _detached
     private val _revision = MutableStateFlow(0L)
@@ -518,6 +572,22 @@ class SessionManager(private val store: SessionStore) {
 
     fun persistRegex() {
         store.save(ToolId.Regex.id, jsonCodec.encodeToString(regexSession().snapshot()))
+    }
+
+    fun cronSession(): CronSession {
+        cronSessionCache?.let { return it }
+        val session = CronSession()
+        store.load(ToolId.Cron.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<CronSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        }
+        cronSessionCache = session
+        return session
+    }
+
+    fun persistCron() {
+        store.save(ToolId.Cron.id, jsonCodec.encodeToString(cronSession().snapshot()))
     }
 
     fun detach(toolId: ToolId) {

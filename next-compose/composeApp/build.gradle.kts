@@ -58,6 +58,7 @@ kotlin {
                 implementation(libs.rsyntaxtextarea)
                 implementation(libs.slf4j.nop)
                 implementation(libs.uap.java)
+                implementation(libs.cron.utils)
             }
         }
         val desktopTest by getting {

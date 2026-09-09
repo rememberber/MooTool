@@ -2,7 +2,7 @@
 
 面向 macOS、Windows、Linux 的 **Compose Multiplatform Desktop 独立产品线**。布局、操作习惯和功能以当前 Electron 版为主要参考，Java 版补充算法与桌面能力；在此基础上改善层级、密度、键盘操作、窗口适配和可访问性。
 
-**当前状态：0.1.0 开发切片。** 已有独立 Gradle Wrapper 工程，本机可构建、测试，并生成带自有 runtime 的 macOS app-image。已实现桌面壳、26 个入口、modern 明暗、基础设置，JSON 切片，编码解码，UA 分析，正则，时间转换，以及计算器。其余工具明确显示尚未实现。这不是完整 P2/F04，也不是三平台发行验收。
+**当前状态：0.1.0 开发切片。** 已有独立 Gradle Wrapper 工程，本机可构建、测试，并生成带自有 runtime 的 macOS app-image。已实现桌面壳、26 个入口、modern 明暗、基础设置，JSON 切片，编码解码，UA 分析，正则，Cron，时间转换，以及计算器。其余工具明确显示尚未实现。这不是完整 P2/F04，也不是三平台发行验收。
 
 ## 给 Cursor 的阅读入口
 
@@ -67,7 +67,7 @@ composeApp/build/compose/binaries/main/app/MooTool Next Compose.app
 
 bundle ID 为 `com.rememberber.mootool.next.compose`，应用名为 `MooTool Next Compose.app`，不会写成 `MooTool.app`。Windows MSI / Linux DEB 需在对应 OS 执行 `packageDistributionForCurrentOS`。
 
-常用操作：`⌘/Ctrl+K` 搜索工具，`⌘/Ctrl+,` 打开设置。JSON 支持格式化、压缩、查找替换、导入导出、历史和左侧 Vault。编码解码支持 Unicode、URL（UTF-8/GB2312）、UTF-8 Hex 与 ASCII 码点列表。UA 分析使用 `uap-java` 规则并归一 Chrome/Safari/Firefox 名称（引擎推断见 [DIFF-002](docs/diff/002-ua-engine-inference.md)）。正则使用 Java Pattern，经独立 worker 超时终止，并带 21 条常用模式与收藏（引擎差异见 [DIFF-003](docs/diff/003-regex-java-pattern.md)）。时间转换支持显式秒/毫秒、IANA 时区、历史和大屏时钟（单位语义见 [DIFF-001](docs/diff/001-time-explicit-unit.md)）。计算器支持四则表达式、2/10/16 进制、GCD/LCM 与排列组合，不用 eval。
+常用操作：`⌘/Ctrl+K` 搜索工具，`⌘/Ctrl+,` 打开设置。JSON 支持格式化、压缩、查找替换、导入导出、历史和左侧 Vault。编码解码支持 Unicode、URL（UTF-8/GB2312）、UTF-8 Hex 与 ASCII 码点列表。UA 分析使用 `uap-java` 规则并归一 Chrome/Safari/Firefox 名称（引擎推断见 [DIFF-002](docs/diff/002-ua-engine-inference.md)）。正则使用 Java Pattern，经独立 worker 超时终止，并带 21 条常用模式与收藏（引擎差异见 [DIFF-003](docs/diff/003-regex-java-pattern.md)）。Cron 使用 Quartz 6/7 字段、IANA 时区与未来 10 次运行（与 Electron 差异见 [DIFF-004](docs/diff/004-cron-quartz.md)）。时间转换支持显式秒/毫秒、IANA 时区、历史和大屏时钟（单位语义见 [DIFF-001](docs/diff/001-time-explicit-unit.md)）。计算器支持四则表达式、2/10/16 进制、GCD/LCM 与排列组合，不用 eval。
 
 ## 产品独立原则
 
