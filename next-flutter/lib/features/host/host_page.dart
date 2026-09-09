@@ -17,7 +17,7 @@ class HostToolPage extends StatelessWidget {
       children: [
         SizedBox(
           width: 220,
-          child: ColoredBox(
+          child: Material(
             color: tokens.sidebar,
             child: Column(
               children: [
@@ -49,7 +49,7 @@ class HostToolPage extends StatelessWidget {
         Expanded(
           child: Column(
             children: [
-              ColoredBox(
+              Material(
                 color: tokens.toolbar,
                 child: Padding(
                   padding: const EdgeInsets.all(8),
@@ -94,7 +94,7 @@ class HostToolPage extends StatelessWidget {
                         onChanged: (value) => selected.content = value,
                       ),
               ),
-              ColoredBox(
+              Material(
                 color: tokens.toolbar,
                 child: SizedBox(
                   height: 26,

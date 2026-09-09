@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:path/path.dart' as p;
 
 import 'product.dart';
+import '../core/storage/atomic_file.dart';
 
 class AppPaths {
   AppPaths(this.dataRoot);
@@ -23,6 +24,7 @@ class AppPaths {
   File get productFile => File(p.join(dataRoot.path, 'product.json'));
   File get settingsFile => File(p.join(dataRoot.path, 'settings.json'));
   File get workspaceFile => File(p.join(dataRoot.path, 'workspace.json'));
+  File get secretsFile => File(p.join(dataRoot.path, 'secrets.json'));
   File get previousSettingsFile =>
       File(p.join(dataRoot.path, 'settings.json.prev'));
 
@@ -71,22 +73,43 @@ class AppPaths {
     }
   }
 
-  void verifyIsolation() {
-    final path = p.normalize(dataRoot.absolute.path);
+  Future<void> verifyIsolation() async {
+    final path = await _canonicalPath(dataRoot);
     const foreign = [
       'com.rememberber.mootool.next.macos-native',
       'MooToolNextElectron',
       'mootool-next-electron',
       'MooToolNextTauri',
+      '.MooTool',
+      'MooTool',
     ];
+    final base = p.basename(path);
     for (final marker in foreign) {
-      if (path.endsWith(marker) ||
+      if (base == marker ||
+          path.endsWith('${Platform.pathSeparator}$marker') ||
           path.contains(
               '${Platform.pathSeparator}$marker${Platform.pathSeparator}')) {
         throw StateError(
             'Flutter data path must not reuse another product directory: $path');
       }
     }
+    final marker = File(p.join(path, 'product.json'));
+    if (await marker.exists()) {
+      final json = await readJsonObject(marker);
+      final productId = json?['productId'] as String?;
+      if (productId != null && productId != Product.id) {
+        throw StateError(
+            'Data directory belongs to $productId, not ${Product.id}: $path');
+      }
+    }
+  }
+
+  static Future<String> _canonicalPath(Directory directory) async {
+    final absolute = p.normalize(directory.absolute.path);
+    if (await directory.exists()) {
+      return p.normalize(await directory.resolveSymbolicLinks());
+    }
+    return absolute;
   }
 }
 

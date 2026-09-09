@@ -177,11 +177,29 @@ class RuntimeExecutionService {
     _cancelled.add(requestId);
     final process = _active.remove(requestId);
     if (process == null) return false;
+    await _killProcessTree(process.pid);
     process.kill(ProcessSignal.sigterm);
     Future<void>.delayed(const Duration(milliseconds: 1200), () {
       process.kill(ProcessSignal.sigkill);
+      unawaited(_killProcessTree(process.pid));
     });
     return true;
+  }
+
+  Future<void> _killProcessTree(int pid) async {
+    if (Platform.isWindows) {
+      await Process.run('taskkill', ['/T', '/F', '/PID', '$pid']);
+      return;
+    }
+    final children = await Process.run('pgrep', ['-P', '$pid']);
+    for (final line in '${children.stdout}'.split(RegExp(r'\s+'))) {
+      final child = int.tryParse(line.trim());
+      if (child != null && child > 1) {
+        await _killProcessTree(child);
+      }
+    }
+    Process.killPid(pid, ProcessSignal.sigterm);
+    Process.killPid(pid, ProcessSignal.sigkill);
   }
 
   ({String command, List<String> args, String file}) _definition(

@@ -100,7 +100,7 @@ class JsonToolPage extends StatelessWidget {
 
   Widget _toolbar(BuildContext context, tokens) {
     final session = controller.json;
-    return ColoredBox(
+    return Material(
       color: tokens.toolbar,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -167,7 +167,7 @@ class JsonToolPage extends StatelessWidget {
     final session = controller.json;
     final matches = findAllMatches(
         session.document.text, session.findQuery, session.findOptions);
-    return ColoredBox(
+    return Material(
       color: tokens.toolbar,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
@@ -272,7 +272,7 @@ class JsonToolPage extends StatelessWidget {
         sort: prefs.sort,
         query: prefs.query,
         includeContent: prefs.includeContent);
-    return ColoredBox(
+    return Material(
       color: tokens.sidebar,
       child: Column(
         children: [
@@ -374,7 +374,7 @@ class JsonToolPage extends StatelessWidget {
   Widget _inspector(tokens) {
     final session = controller.json;
     final options = session.formatOptions;
-    return ColoredBox(
+    return Material(
       color: tokens.surface,
       child: ListView(
         padding: const EdgeInsets.all(12),
@@ -505,7 +505,7 @@ class JsonToolPage extends StatelessWidget {
   Widget _status(tokens) {
     final status =
         controller.jsonEngine.validate(controller.json.document.text);
-    return ColoredBox(
+    return Material(
       color: tokens.toolbar,
       child: SizedBox(
         height: 26,

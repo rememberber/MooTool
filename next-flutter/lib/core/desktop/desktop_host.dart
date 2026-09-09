@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 class DesktopCapabilities {
@@ -47,7 +46,7 @@ class ChannelDesktopHost implements DesktopHost {
 
   void _listenIfPossible() {
     if (_listening) return;
-    if (BindingBase.debugBindingType() == null) return;
+    if (!_channelReady) return;
     _listening = true;
     channel.setMethodCallHandler((call) async {
       if (call.method == 'closeRequested') {
@@ -61,7 +60,14 @@ class ChannelDesktopHost implements DesktopHost {
   @override
   void Function(String action)? onTrayAction;
 
-  bool get _channelReady => BindingBase.debugBindingType() != null;
+  bool get _channelReady {
+    try {
+      ServicesBinding.instance.defaultBinaryMessenger;
+      return true;
+    } on Object {
+      return false;
+    }
+  }
 
   Future<T?> _invoke<T>(String method, [dynamic arguments]) async {
     if (!_channelReady) return null;

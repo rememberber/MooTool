@@ -35,9 +35,9 @@ class SimplePdf {
       throw const FormatException(
           'Unsupported PDF: only uncompressed SimplePdf documents can be split or merged');
     }
-    final texts = RegExp(r'\(([^\\()]*)\) Tj')
+    final texts = RegExp(r'\(((?:\\.|[^\\()])*)\) Tj')
         .allMatches(source)
-        .map((match) => match.group(1)!)
+        .map((match) => _unescape(match.group(1)!))
         .toList();
     if (texts.isEmpty) throw const FormatException('No extractable text pages');
     return SimplePdf(texts);
@@ -56,6 +56,11 @@ class SimplePdf {
     }
     return SimplePdf(pages).encode();
   }
+
+  static String _unescape(String text) => text
+      .replaceAll(r'\)', ')')
+      .replaceAll(r'\(', '(')
+      .replaceAll(r'\\', r'\');
 
   static String _escape(String text) => text
       .replaceAll('\\', r'\\')

@@ -1,0 +1,9 @@
+Source: /Users/zhoubo/sdk/flutter/packages/flutter/lib/src/foundation/binding.dart
+Flutter 3.47.2, local SDK source excerpt
+
+423:   /// This method only returns a useful value in debug builds. In release builds, the
+424:   /// return value is always null; to improve startup performance, the type of the
+425:   /// binding is not tracked in release builds.
+432:   static Type? debugBindingType() {
+433:     return _debugInitializedType;
+434:   }

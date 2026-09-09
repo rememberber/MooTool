@@ -242,18 +242,42 @@ ThemeData buildTheme(
     brightness: brightness,
     surface: tokens.surface,
   );
+  final base = ThemeData(brightness: brightness).textTheme;
+  final factor = uiFontSize / 13;
+  final color = tokens.textPrimary;
   return ThemeData(
     useMaterial3: true,
     brightness: brightness,
     colorScheme: scheme,
     scaffoldBackgroundColor: tokens.workspace,
     fontFamily: null,
-    textTheme: ThemeData(brightness: brightness).textTheme.apply(
-          fontSizeFactor: uiFontSize / 13,
-          bodyColor: tokens.textPrimary,
-          displayColor: tokens.textPrimary,
-        ),
+    textTheme: base.copyWith(
+      displayLarge: _scaleStyle(base.displayLarge, 57, factor, color),
+      displayMedium: _scaleStyle(base.displayMedium, 45, factor, color),
+      displaySmall: _scaleStyle(base.displaySmall, 36, factor, color),
+      headlineLarge: _scaleStyle(base.headlineLarge, 32, factor, color),
+      headlineMedium: _scaleStyle(base.headlineMedium, 28, factor, color),
+      headlineSmall: _scaleStyle(base.headlineSmall, 24, factor, color),
+      titleLarge: _scaleStyle(base.titleLarge, 22, factor, color),
+      titleMedium: _scaleStyle(base.titleMedium, 16, factor, color),
+      titleSmall: _scaleStyle(base.titleSmall, 14, factor, color),
+      bodyLarge: _scaleStyle(base.bodyLarge, 16, factor, color),
+      bodyMedium: _scaleStyle(base.bodyMedium, 14, factor, color),
+      bodySmall: _scaleStyle(base.bodySmall, 12, factor, color),
+      labelLarge: _scaleStyle(base.labelLarge, 14, factor, color),
+      labelMedium: _scaleStyle(base.labelMedium, 12, factor, color),
+      labelSmall: _scaleStyle(base.labelSmall, 11, factor, color),
+    ),
     extensions: [tokens.copyWith(accent: accent ?? tokens.accent)],
+  );
+}
+
+TextStyle _scaleStyle(
+    TextStyle? style, double fallback, double factor, Color color) {
+  final fontSize = style?.fontSize ?? fallback;
+  return (style ?? const TextStyle()).copyWith(
+    fontSize: fontSize * factor,
+    color: color,
   );
 }
 

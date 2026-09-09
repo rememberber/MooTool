@@ -1,0 +1,114 @@
+00:00 +0: loading /tmp/mootool-flutter-review.6VnMrU/review_probes_test.dart
+00:00 +0: R02 note auto-save must complete rather than await its own queue
+00:02 +0 -1: R02 note auto-save must complete rather than await its own queue [E]
+  TimeoutException after 0:00:02.000000: Future not completed
+  dart:async  _startMicrotaskLoop
+  
+00:02 +0 -1: R03 backup restore must replace in-memory state before next save
+00:03 +0 -2: R03 backup restore must replace in-memory state before next save [E]
+  Expected: 'light'
+    Actual: 'dark'
+     Which: is different.
+            Expected: light
+              Actual: dark
+                      ^
+             Differ at offset 0
+  
+  package:matcher                                                  expect
+  package:flutter_test/src/widget_tester.dart 473:18               expect
+  /tmp/mootool-flutter-review.6VnMrU/review_probes_test.dart 48:5  main.<fn>
+  
+00:03 +0 -2: R04 importing a note must not overwrite the selected existing note
+00:03 +0 -3: R04 importing a note must not overwrite the selected existing note [E]
+  Expected: 'ORIGINAL NOTE'
+    Actual: 'IMPORTED NOTE'
+     Which: is different.
+            Expected: ORIGINAL N ...
+              Actual: IMPORTED N ...
+                      ^
+             Differ at offset 0
+  
+  package:matcher                                                  expect
+  package:flutter_test/src/widget_tester.dart 473:18               expect
+  /tmp/mootool-flutter-review.6VnMrU/review_probes_test.dart 58:5  main.<fn>
+  
+00:04 +0 -3: R05 JSON undo after document switch must not insert another document
+00:04 +0 -4: R05 JSON undo after document switch must not insert another document [E]
+  Expected: '{"b":1}'
+    Actual: '{"a":1}'
+     Which: is different.
+            Expected: {"b":1}
+              Actual: {"a":1}
+                        ^
+             Differ at offset 2
+  
+  package:matcher                                                  expect
+  package:flutter_test/src/widget_tester.dart 473:18               expect
+  /tmp/mootool-flutter-review.6VnMrU/review_probes_test.dart 69:5  main.<fn>
+  
+00:04 +0 -4: R06 a transient settings write failure must not poison future saves
+00:04 +0 -5: R06 a transient settings write failure must not poison future saves [E]
+  FileSystemException: Cannot rename file to '/var/folders/nc/j84xfhs13pv1nxvtgxsk2m3w0000gn/T/mootool-review-data-4qjeSl/settings.json', path = '/var/folders/nc/j84xfhs13pv1nxvtgxsk2m3w0000gn/T/mootool-review-data-4qjeSl/settings.json.tmp' (OS Error: Is a directory, errno = 21)
+  dart:io                                                           _File.rename
+  package:mootool_next_flutter/core/storage/atomic_file.dart 16:14  writeAtomicFile
+  ===== asynchronous gap ===========================
+  dart:async                                                        _CustomZone.registerUnaryCallback
+  package:mootool_next_flutter/core/storage/atomic_file.dart 6:3    writeAtomicFile
+  package:mootool_next_flutter/core/storage/atomic_file.dart 20:9   writeAtomicJson
+  package:mootool_next_flutter/app/app_controller.dart 431:13       AppController._persistNow
+  package:mootool_next_flutter/app/app_controller.dart 424:43       AppController.persist.<fn>
+  ===== asynchronous gap ===========================
+  dart:async                                                        Future.then
+  package:mootool_next_flutter/app/app_controller.dart 424:31       AppController.persist
+  /tmp/mootool-flutter-review.6VnMrU/review_probes_test.dart 76:25  main.<fn>
+  ===== asynchronous gap ===========================
+  dart:async                                                        _CustomZone.registerUnaryCallback
+  /tmp/mootool-flutter-review.6VnMrU/review_probes_test.dart 73:15  main.<fn>
+  
+00:04 +0 -5: R07 credentials must not be serialized into settings JSON
+00:04 +0 -6: R07 credentials must not be serialized into settings JSON [E]
+  Expected: false
+    Actual: <true>
+  
+  package:matcher                                                  expect
+  package:flutter_test/src/widget_tester.dart 473:18               expect
+  /tmp/mootool-flutter-review.6VnMrU/review_probes_test.dart 84:5  main.<fn>
+  
+00:04 +0 -6: R08 valid SimplePdf text containing parentheses must round-trip
+00:04 +0 -7: R08 valid SimplePdf text containing parentheses must round-trip [E]
+  FormatException: No extractable text pages
+  package:mootool_next_flutter/core/samples/simple_pdf.dart 42:24   SimplePdf.parse
+  /tmp/mootool-flutter-review.6VnMrU/review_probes_test.dart 90:22  main.<fn>
+  
+00:04 +0 -7: R09 a start anchor must not match again at every substring
+00:04 +0 -8: R09 a start anchor must not match again at every substring [E]
+  Expected: [0]
+    Actual: [0, 1, 2]
+     Which: at location [1] is [0, 1, 2] which longer than expected
+  
+  package:matcher                                                  expect
+  package:flutter_test/src/widget_tester.dart 473:18               expect
+  /tmp/mootool-flutter-review.6VnMrU/review_probes_test.dart 95:5  main.<fn>
+  
+00:04 +0 -8: R10 final JSON autosave must persist latest Vault content before marking saved
+00:05 +0 -9: R10 final JSON autosave must persist latest Vault content before marking saved [E]
+  Expected: '{"version":2}'
+    Actual: '{"version":1}'
+     Which: is different.
+            Expected: ... "version":2}
+              Actual: ... "version":1}
+                                    ^
+             Differ at offset 11
+  
+  package:matcher                                                   expect
+  package:flutter_test/src/widget_tester.dart 473:18                expect
+  /tmp/mootool-flutter-review.6VnMrU/review_probes_test.dart 108:5  main.<fn>
+  
+00:05 +0 -9: Some tests failed.
+
+Failing tests:
+  /tmp/mootool-flutter-review.6VnMrU/review_probes_test.dart: R02 note auto-save must complete rather than await its own queue
+  /tmp/mootool-flutter-review.6VnMrU/review_probes_test.dart: R03 backup restore must replace in-memory state before next save
+  /tmp/mootool-flutter-review.6VnMrU/review_probes_test.dart: R04 importing a note must not overwrite the selected existing note
+  /tmp/mootool-flutter-review.6VnMrU/review_probes_test.dart: R05 JSON undo after document switch must not insert another document
+  ... and 5 more

@@ -45,7 +45,7 @@ class HttpToolPage extends StatelessWidget {
 
   Widget _toolbar(MooTokens tokens) {
     final session = controller.http;
-    return ColoredBox(
+    return Material(
       color: tokens.toolbar,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -84,7 +84,7 @@ class HttpToolPage extends StatelessWidget {
 
   Widget _urlBar(MooTokens tokens) {
     final session = controller.http;
-    return ColoredBox(
+    return Material(
       color: tokens.toolbar,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
@@ -156,7 +156,7 @@ class HttpToolPage extends StatelessWidget {
                 .contains(session.search.toLowerCase()))
           item
     ];
-    return ColoredBox(
+    return Material(
       color: tokens.sidebar,
       child: Column(
         children: [
@@ -205,7 +205,7 @@ class HttpToolPage extends StatelessWidget {
 
   Widget _requestPane(MooTokens tokens) {
     final session = controller.http;
-    return ColoredBox(
+    return Material(
       color: tokens.surface,
       child: Column(
         children: [
@@ -334,7 +334,7 @@ class HttpToolPage extends StatelessWidget {
       'cookies' => result?.cookies ?? '',
       _ => result?.body ?? '',
     };
-    return ColoredBox(
+    return Material(
       color: tokens.workspace,
       child: Column(
         children: [
@@ -364,7 +364,7 @@ class HttpToolPage extends StatelessWidget {
 
   Widget _status(MooTokens tokens) {
     final session = controller.http;
-    return ColoredBox(
+    return Material(
       color: tokens.toolbar,
       child: SizedBox(
         height: 26,

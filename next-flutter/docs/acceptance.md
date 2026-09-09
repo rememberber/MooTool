@@ -32,12 +32,12 @@ performance.json    # 如本轮有性能测试，含原始测量
 
 | ID | 入口 | 当前状态 | 证据 |
 | --- | --- | --- | --- |
-| F00 | mootool / 首页 | 开发中 | 三语言首页与外链已实现；桌面截图未跑（缺完整 Xcode） |
+| F00 | mootool / 首页 | 开发中 | 三语言首页与外链已实现；与 Electron 并排桌面截图未跑 |
 | F01 | quickNote / 随手记 | 开发中 | 列编辑/24 项替换/附件路径；剪贴板图片走 DesktopHost；拖放树、Git watcher、5MiB 冲突 UI 未完 |
 | F02 | textDiff / 文本对比 | 开发中 | `test/unit/local_tools_test.dart` 对齐 unified/segment fixtures；同步滚动与字符高亮 UI 未完 |
 | F03 | reformat / 格式化 | 开发中 | Nginx 对齐；XML/HTML/Java 为自写整理，非 Prettier，见 ADR 004 |
 | F04 | json / JSON | 开发中 | `test/unit/json_engine_test.dart`、`workspace_test.dart`；Git 主流程有服务，冲突 UI 未完 |
-| F05 | java / 代码运行 | 开发中 | `test/unit/p5_system_test.dart`；探测/子进程/取消；Node 非 Prettier；桌面 UI 未跑 |
+| F05 | java / 代码运行 | 开发中 | `test/unit/p5_system_test.dart`、`review_runtime_test.dart` R13 杀进程树；Node 非 Prettier；桌面 UI 未跑 |
 | F06 | ymlProperties / 配置转换 | 开发中 | Properties↔YAML 单测通过 |
 | F07 | protobuf / Protobuf | 开发中 | 粘贴 proto3 JSON↔Hex/Wire 单测通过；嵌套/map/oneof 未做 |
 | F08 | variables / 环境变量 | 开发中 | 用户变量写入本产品 `environment/user.json`；不改系统环境；OS 持久未做 |
@@ -47,20 +47,20 @@ performance.json    # 如本轮有性能测试，含原始测量
 | F12 | uaParse / UA | 开发中 | 预设 Chrome/Safari/bot 单测通过 |
 | F13 | encode / 编码 | 开发中 | Unicode/URL UTF-8+GB2312/Hex/ASCII 单测通过 |
 | F14 | crypto / 加解密/随机 | 开发中 | AES ECB PKCS7 固定密文与 Electron 一致；DES/摘要/Base32/随机已做；SM4/RSA/SM2 明确未实现 |
-| F15 | regex / 正则 | 开发中 | 分组与零宽匹配单测通过；超时取消未做 |
+| F15 | regex / 正则 | 开发中 | 分组与零宽匹配；`^` 锚点不再因 substring 重跑而失真；超时取消未做 |
 | F16 | cron / Cron | 开发中 | 下次运行与年字段单测通过；`L`/`#` 未做 |
 | F17 | qrCode / 二维码 | 开发中 | 生成 PNG；识别未接入解码器 |
 | F18 | timeConvert / 时间 | 开发中 | 时区往返与非法日期单测通过；全屏时钟未做 |
 | F19 | messageBoard / 留言板 | 开发中 | 8 预设/6 主题/80 字/对齐/比例/Esc 退出演示；防休眠走 DesktopHost，失败不假装常亮 |
 | F20 | translation / 翻译 | 开发中 | Google gtx 客户端 + 分段/取消单测；Bing/单词本/自动翻译未做 |
 | F21 | calculator / 计算器 | 开发中 | 表达式/进制/GCD/排列组合单测通过 |
-| F22 | colorBoard / 调色板 | 开发中 | 解析/运算/主题色 SHA 对齐；取色走 DesktopHost / NSColorSampler，本机未用 Xcode 验证 |
+| F22 | colorBoard / 调色板 | 开发中 | 解析/运算/主题色 SHA 对齐；取色走 DesktopHost / NSColorSampler；Release 安装包未验收 |
 | F23 | image / 图片 | 开发中 | 图片库导入/压缩/水印/轮廓 SVG；剪贴板与截图走 DesktopHost；截图可裁剪，取消不写库 |
-| F24 | pdf / PDF | 开发中 | 页码规则对齐 Electron；SimplePdf 拆合可提取文本；任意加密 PDF 拒绝 |
+| F24 | pdf / PDF | 开发中 | 页码规则对齐 Electron；SimplePdf 可提取含括号文本；任意/加密 PDF 拒绝；**不是**真实页对象复制 |
 | F25 | hardware / 系统信息 | 开发中 | Platform/内存/网卡真实采集；非 systeminformation 全量；CPU% 未做 |
-| A01 | 11 类设置 | 开发中 | 11 类页可持久化；六种风格有独立 token；关闭 hide 无托盘时改为询问；托盘/截图/取色 Swift 未用 Xcode 验证 |
+| A01 | 11 类设置 | 开发中 | 11 类页可持久化；六种风格有独立 token；凭据不进 settings/备份；关闭 hide 无托盘时改为询问；托盘/截图/取色 Release 实机未验收 |
 | A02 | 历史/收藏/搜索 | 开发中 | JSON 与本地工具历史；regex/cron/color 收藏入口；⌘K 搜索 |
-| A03 | 数据/Git/窗口/平台/更新 | 开发中 | 更新只读 next-flutter；本机未签名 mac-x64 DMG 已构建（p7b）；Windows/Linux 包与清单节点未做 |
+| A03 | 数据/Git/窗口/平台/更新 | 开发中 | 保存队列/恢复内存/文档边界/原子回退/隔离见 `test/unit/review_regression_test.dart`；分离窗口诚实失败；更新只读 next-flutter；本机未签名 DMG 见 p7b；Windows/Linux 包与清单节点未做；R01 Release 原生通信未用安装包验收 |
 
 每个复杂工具再维护子能力状态。比如随手记正文编辑完成、列编辑未完成时，F01 不能标记已验收。
 

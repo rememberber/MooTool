@@ -20,7 +20,7 @@ class ImageToolPage extends StatelessWidget {
     final panel = controller.imagePanel;
     return Column(
       children: [
-        ColoredBox(
+        Material(
           color: tokens.toolbar,
           child: Padding(
             padding: const EdgeInsets.all(8),
@@ -110,7 +110,7 @@ class ImageToolPage extends StatelessWidget {
               if (controller.imageListVisible)
                 SizedBox(
                   width: 240,
-                  child: ColoredBox(
+                  child: Material(
                     color: tokens.surface,
                     child: Column(
                       children: [

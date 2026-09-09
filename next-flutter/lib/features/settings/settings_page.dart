@@ -36,13 +36,13 @@ class SettingsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = tokensOf(context);
     final category = controller.settingsCategory ?? 'general';
-    return ColoredBox(
+    return Material(
       color: tokens.workspace,
       child: Row(
         children: [
           SizedBox(
             width: 220,
-            child: ColoredBox(
+            child: Material(
               color: tokens.sidebar,
               child: ListView(
                 children: [

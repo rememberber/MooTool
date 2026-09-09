@@ -13,7 +13,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = tokensOf(context);
-    return ColoredBox(
+    return Material(
       color: tokens.workspace,
       child: Center(
         child: ConstrainedBox(

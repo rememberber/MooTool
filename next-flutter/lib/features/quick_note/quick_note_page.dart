@@ -83,7 +83,7 @@ class QuickNotePage extends StatelessWidget {
 
   Widget _toolbar(MooTokens tokens, bool compact) {
     final session = controller.note;
-    return ColoredBox(
+    return Material(
       color: tokens.toolbar,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
@@ -193,7 +193,7 @@ class QuickNotePage extends StatelessWidget {
     final session = controller.note;
     final matches = findAllMatches(
         session.document.text, session.findQuery, session.findOptions);
-    return ColoredBox(
+    return Material(
       color: tokens.toolbar,
       child: Padding(
         padding: const EdgeInsets.fromLTRB(8, 0, 8, 8),
@@ -329,7 +329,7 @@ class QuickNotePage extends StatelessWidget {
         sort: prefs.sort,
         query: prefs.query,
         includeContent: prefs.includeContent);
-    return ColoredBox(
+    return Material(
       color: tokens.sidebar,
       child: Column(
         children: [
@@ -427,7 +427,7 @@ class QuickNotePage extends StatelessWidget {
   }
 
   Widget _replacePane(MooTokens tokens) {
-    return ColoredBox(
+    return Material(
       color: tokens.surface,
       child: ListView(
         padding: const EdgeInsets.all(8),
@@ -463,7 +463,7 @@ class QuickNotePage extends StatelessWidget {
         ? controller.t('note.unsaved')
         : controller.vault.pathOf(file.id);
     final column = session.document.column;
-    return ColoredBox(
+    return Material(
       color: tokens.toolbar,
       child: SizedBox(
         height: 26,

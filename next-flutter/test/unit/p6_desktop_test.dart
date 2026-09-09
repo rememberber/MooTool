@@ -104,8 +104,11 @@ void main() {
     expect(restored.proxyHost, '127.0.0.1');
     expect(restored.httpTimeoutMs, 5000);
     expect(restored.javaPath, '/opt/java/bin/java');
-    expect(restored.gitToken, 'secret-token');
-    expect(settings.toJson().containsKey('gitToken'), isTrue);
+    expect(settings.gitToken, 'secret-token');
+    expect(restored.gitToken, isEmpty);
+    expect(settings.toJson().containsKey('gitToken'), isFalse);
+    expect(AppSettings.fromJson({'gitToken': 'legacy-token'}).gitToken,
+        'legacy-token');
     expect(AppSettings().toJson().containsKey('gitToken'), isFalse);
     expect(AppSettings().toJson().containsKey('proxyPassword'), isFalse);
     expect(AppSettings.fromJson(<String, Object?>{'theme': 'neon'}).theme,

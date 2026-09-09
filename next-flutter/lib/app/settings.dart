@@ -252,8 +252,6 @@ class AppSettings {
         'gitAutoCommit': gitAutoCommit,
         'gitAutoPull': gitAutoPull,
         'vaultExpand': vaultExpand,
-        if (gitToken.isNotEmpty) 'gitToken': gitToken,
-        if (proxyPassword.isNotEmpty) 'proxyPassword': proxyPassword,
       };
 
   static AppSettings fromJson(Map<String, Object?> json) {

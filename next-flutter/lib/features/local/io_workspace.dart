@@ -30,7 +30,7 @@ class IoWorkspace extends StatelessWidget {
   Widget build(BuildContext context) {
     final tokens = tokensOf(context);
     final session = controller.localFor(toolId);
-    return ColoredBox(
+    return Material(
       color: tokens.workspace,
       child: Column(
         children: [
@@ -39,20 +39,24 @@ class IoWorkspace extends StatelessWidget {
             child: Row(
               children: [
                 if (tabs.isNotEmpty)
-                  Wrap(
-                    spacing: 6,
-                    children: [
-                      for (final tab in tabs)
-                        CompactButton(
-                          label: tab.$2,
-                          primary: session.tab == tab.$1,
-                          onPressed: () {
-                            controller.setLocalTab(toolId, tab.$1);
-                          },
-                        ),
-                    ],
-                  ),
-                const Spacer(),
+                  Expanded(
+                    child: Wrap(
+                      spacing: 6,
+                      runSpacing: 6,
+                      children: [
+                        for (final tab in tabs)
+                          CompactButton(
+                            label: tab.$2,
+                            primary: session.tab == tab.$1,
+                            onPressed: () {
+                              controller.setLocalTab(toolId, tab.$1);
+                            },
+                          ),
+                      ],
+                    ),
+                  )
+                else
+                  const Spacer(),
                 ...?headerActions,
                 CompactButton(
                   label: controller.t('json.action.history'),
@@ -106,7 +110,7 @@ class IoWorkspace extends StatelessWidget {
                           controller.scheduleSave();
                         })),
                 SizedBox(
-                  width: 168,
+                  width: 220,
                   child: Padding(
                     padding:
                         const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
@@ -114,7 +118,7 @@ class IoWorkspace extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         for (final action in actions) ...[
-                          action,
+                          SizedBox(width: double.infinity, child: action),
                           const SizedBox(height: 8),
                         ],
                       ],
@@ -146,7 +150,7 @@ class IoWorkspace extends StatelessWidget {
     ];
     return SizedBox(
       height: 160,
-      child: ColoredBox(
+      child: Material(
         color: tokens.surface,
         child: ListView(
           children: [

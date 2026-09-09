@@ -168,7 +168,7 @@ void main() {
     expect(host.windowMaximized, isFalse);
   });
 
-  test('detached tools persist and do not cancel in-flight HTTP', () async {
+  test('detach is refused until a real second window exists', () async {
     final root = Directory.systemTemp.createTempSync('mootool-detach-');
     addTearDown(() => root.deleteSync(recursive: true));
     final host = MemoryDesktopHost();
@@ -179,17 +179,16 @@ void main() {
     first.detachTool('http');
     first.detachTool('json');
     expect(first.http.sending, isTrue);
-    expect(first.coordinator.ownerOf('json'), 'detached-json');
+    expect(first.detachedToolIds, isEmpty);
+    expect(first.coordinator.ownerOf('json'), isNot('detached-json'));
+    expect(first.toast, isNotEmpty);
     await first.persist();
 
     final second =
         AppController(AppPaths(root), desktopHost: MemoryDesktopHost());
     addTearDown(second.dispose);
     await second.load();
-    expect(second.detachedToolIds, containsAll(['http', 'json']));
-    expect(second.coordinator.ownerOf('json'), 'detached-json');
-    second.dockTool('json');
-    expect(second.detachedToolIds.contains('json'), isFalse);
-    expect(second.coordinator.ownerOf('json'), 'main');
+    expect(second.detachedToolIds, isEmpty);
+    expect(second.coordinator.ownerOf('json'), isNot('detached-json'));
   });
 }

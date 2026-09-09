@@ -91,6 +91,8 @@ const _zh = {
   'common.delete': '删除',
   'common.rename': '重命名',
   'common.move': '移动',
+  'common.retry': '重试保存',
+  'window.detachUnavailable': '独立窗口尚未实现，工具仍留在主窗口。',
   'tool.pending.title': '尚未实现',
   'tool.pending.body': '{name} 已注册，功能按 feature-parity 规格推进；当前阶段未提供可冒充完成的占位操作。',
   'tool.detached': '已在独立窗口打开',
@@ -557,6 +559,9 @@ const _en = {
   'common.confirm': 'Confirm',
   'common.save': 'Save',
   'common.create': 'Create',
+  'common.retry': 'Retry save',
+  'window.detachUnavailable':
+      'A separate window is not available yet; the tool stays in the main window.',
   'tool.pending.title': 'Not implemented yet',
   'tool.pending.body':
       '{name} is registered. This phase does not ship a fake success button for it.',
@@ -909,6 +914,8 @@ const _ja = {
   'app.home.tagline': '開発者のためのデスクトップツール',
   'app.home.about.line2Note': 'これは独立した Flutter デスクトップ製品です。',
   'tool.pending.title': '未実装',
+  'common.retry': '保存を再試行',
+  'window.detachUnavailable': '独立ウィンドウは未実装です。ツールはメインウィンドウに残ります。',
   'tool.pending.body': '{name} は登録済みです。この段階では偽の成功操作は提供しません。',
   'json.action.format': '整形',
   'json.action.compress': '圧縮',

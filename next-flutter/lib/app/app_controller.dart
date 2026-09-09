@@ -19,6 +19,7 @@ import '../core/editor/find_replace.dart';
 import '../core/git/git_service.dart';
 import '../core/storage/atomic_file.dart';
 import '../core/storage/document_vault.dart';
+import '../core/storage/secret_store.dart';
 import '../core/storage/snapshot_backup.dart';
 import '../core/window/session_transfer.dart';
 import '../features/hardware/system_info.dart';
@@ -270,9 +271,15 @@ class AppController extends ChangeNotifier {
   void refresh() => notifyListeners();
 
   Future<void> load() async {
+    await paths.verifyIsolation();
     await paths.ensure();
-    paths.verifyIsolation();
-    if (!await paths.productFile.exists()) {
+    await _hydrateFromDisk(createProduct: true, launch: true);
+  }
+
+  Future<void> _hydrateFromDisk(
+      {bool createProduct = false, bool launch = false}) async {
+    storeError = null;
+    if (createProduct && !await paths.productFile.exists()) {
       await writeAtomicJson(paths.productFile, {
         'productId': Product.id,
         'schemaVersion': Product.schemaVersion,
@@ -281,7 +288,36 @@ class AppController extends ChangeNotifier {
     }
     try {
       final settingsJson = await readJsonObject(paths.settingsFile);
-      if (settingsJson != null) settings = AppSettings.fromJson(settingsJson);
+      if (settingsJson != null) {
+        final migrated = SecretStore.takeFromSettingsJson(settingsJson);
+        settings = AppSettings.fromJson(settingsJson);
+        final stored = await SecretStore(paths.secretsFile).load();
+        if (settings.gitToken.isEmpty) settings.gitToken = stored.gitToken;
+        if (settings.proxyPassword.isEmpty) {
+          settings.proxyPassword = stored.proxyPassword;
+        }
+        if (migrated.gitToken.isNotEmpty) settings.gitToken = migrated.gitToken;
+        if (migrated.proxyPassword.isNotEmpty) {
+          settings.proxyPassword = migrated.proxyPassword;
+        }
+        if (!migrated.isEmpty) {
+          await SecretStore(paths.secretsFile).save(ProductSecrets(
+            gitToken: settings.gitToken,
+            proxyPassword: settings.proxyPassword,
+          ));
+          await writeAtomicJson(paths.settingsFile, settings.toJson());
+        } else {
+          settings.gitToken =
+              stored.gitToken.isEmpty ? settings.gitToken : stored.gitToken;
+          settings.proxyPassword = stored.proxyPassword.isEmpty
+              ? settings.proxyPassword
+              : stored.proxyPassword;
+        }
+      } else {
+        final stored = await SecretStore(paths.secretsFile).load();
+        settings.gitToken = stored.gitToken;
+        settings.proxyPassword = stored.proxyPassword;
+      }
     } on CorruptStoreException catch (error) {
       storeError = error.toString();
       _pauseAutosave = true;
@@ -293,13 +329,11 @@ class AppController extends ChangeNotifier {
       storeError = error.toString();
       _pauseAutosave = true;
     }
+    detachedToolIds.clear();
     coordinator.claim('json');
     coordinator.claim('quickNote');
-    for (final id in detachedToolIds) {
-      coordinator.forceOwner(id, 'detached-$id');
-    }
-    await applyDesktopPolicy(launch: true);
-    if (settings.autoCheckUpdates) {
+    await applyDesktopPolicy(launch: launch);
+    if (launch && settings.autoCheckUpdates) {
       unawaited(checkForUpdates(quiet: true));
     }
     notifyListeners();
@@ -369,15 +403,7 @@ class AppController extends ChangeNotifier {
               FavoriteRecord.fromJson(Map<String, Object?>.from(item)),
         ]);
     }
-    detachedToolIds
-      ..clear()
-      ..addAll([
-        for (final item in workspace['detachedToolIds'] as List? ?? const [])
-          if (item is String && item != 'mootool') item
-      ]);
-    for (final id in detachedToolIds) {
-      coordinator.forceOwner(id, 'detached-$id');
-    }
+    detachedToolIds.clear();
   }
 
   Map<String, Object?> _workspaceJson() => {
@@ -421,38 +447,65 @@ class AppController extends ChangeNotifier {
     _saveTimer?.cancel();
     _saveTimer = null;
     if (_pauseAutosave) return Future.value();
-    _writeQueue = _writeQueue.then((_) => _persistNow());
-    return _writeQueue;
+    final run = _writeQueue.catchError((_) {}).then((_) => _persistNow());
+    _writeQueue = run.then((_) {
+      if (storeError != null) {
+        storeError = null;
+        notifyListeners();
+      }
+    }, onError: (Object error) {
+      storeError = error.toString();
+      notifyListeners();
+    });
+    return run;
+  }
+
+  Future<void> retryPersist() async {
+    storeError = null;
+    _pauseAutosave = false;
+    try {
+      await persist();
+    } catch (error) {
+      storeError = error.toString();
+    }
+    notifyListeners();
   }
 
   Future<void> _persistNow() async {
     if (_pauseAutosave) return;
-    try {
-      await writeAtomicJson(paths.settingsFile, settings.toJson());
-      await writeAtomicJson(paths.workspaceFile, _workspaceJson());
-      if (json.documentId != null) {
-        final file = _document(json.documentId);
-        if (file != null && file.content != json.document.text) {
-          file.content = json.document.text;
-          file.query = json.jsonPath;
-          file.modified = DateTime.now();
-          json.document.markSaved();
-        }
+    _syncSessionsIntoVault();
+    await writeAtomicJson(paths.settingsFile, settings.toJson());
+    await SecretStore(paths.secretsFile).save(ProductSecrets(
+      gitToken: settings.gitToken,
+      proxyPassword: settings.proxyPassword,
+    ));
+    await writeAtomicJson(paths.workspaceFile, _workspaceJson());
+    if (note.documentId != null) {
+      final file = _document(note.documentId);
+      if (file != null) {
+        await _writeNoteFile(file);
       }
-      if (note.documentId != null) {
-        final file = _document(note.documentId);
-        if (file != null && file.content != note.document.text) {
-          file.content = note.document.text;
-          file.metadata.addAll(note.metadata.toJson());
-          file.modified = DateTime.now();
-          await _exportNoteFile(file);
-          note.document.markSaved();
-        }
+    }
+    json.document.markSaved();
+    note.document.markSaved();
+  }
+
+  void _syncSessionsIntoVault() {
+    if (json.documentId != null) {
+      final file = _document(json.documentId);
+      if (file != null) {
+        file.content = json.document.text;
+        file.query = json.jsonPath;
+        file.modified = DateTime.now();
       }
-    } catch (error) {
-      storeError = error.toString();
-      notifyListeners();
-      rethrow;
+    }
+    if (note.documentId != null) {
+      final file = _document(note.documentId);
+      if (file != null) {
+        file.content = note.document.text;
+        file.metadata.addAll(note.metadata.toJson());
+        file.modified = DateTime.now();
+      }
     }
   }
 
@@ -747,14 +800,14 @@ class AppController extends ChangeNotifier {
   void openJsonDocument(String id) {
     final file = _document(id);
     if (file == null) return;
-    if (json.documentId != id &&
-        json.document.dirty &&
-        json.documentId != null) {
+    final switching = json.documentId != id;
+    if (switching && json.document.dirty && json.documentId != null) {
       final current = _document(json.documentId);
       current?.content = json.document.text;
     }
     json.documentId = id;
     json.document.apply(file.content, recordUndo: false);
+    if (switching) json.document.resetHistory();
     json.document.markSaved();
     json.jsonPath = file.query.isEmpty ? json.jsonPath : file.query;
     jsonVaultPrefs.selectedEntryId = id;
@@ -949,13 +1002,18 @@ class AppController extends ChangeNotifier {
   }
 
   void importNoteMarkdown(String source, {String name = 'imported.md'}) {
+    if (note.documentId != null && note.document.dirty) {
+      saveNoteDocument();
+    }
+    note.documentId = null;
     final parsed = parseNoteDocument(source);
     if (source.startsWith('---\n')) {
       note.metadata = parsed.metadata;
-      note.document.apply(parsed.body);
+      note.document.apply(parsed.body, recordUndo: false);
     } else {
-      note.document.apply(source);
+      note.document.apply(source, recordUndo: false);
     }
+    note.document.resetHistory();
     createNoteDocument(name: name);
   }
 
@@ -1014,24 +1072,27 @@ class AppController extends ChangeNotifier {
     return copyId;
   }
 
+  Future<void> _writeNoteFile(VaultDocument file) async {
+    await paths.noteVaultDir.create(recursive: true);
+    final target = File('${paths.noteVaultDir.path}/${file.id}.md');
+    if (!target.path.startsWith(paths.noteVaultDir.path)) return;
+    final packed = serializeNoteDocument(NoteDocument(
+      metadata: NoteMetadata.fromJson({
+        ...file.metadata,
+        'title': file.title,
+      }),
+      body: file.content.startsWith('---\n')
+          ? parseNoteDocument(file.content).body
+          : file.content,
+    ));
+    await writeAtomicFile(target, packed);
+  }
+
   Future<void> _exportNoteFile(VaultDocument file) {
-    final done = _writeQueue.then((_) async {
-      await paths.noteVaultDir.create(recursive: true);
-      final target = File('${paths.noteVaultDir.path}/${file.id}.md');
-      if (!target.path.startsWith(paths.noteVaultDir.path)) return;
-      final packed = serializeNoteDocument(NoteDocument(
-        metadata: NoteMetadata.fromJson({
-          ...file.metadata,
-          'title': file.title,
-        }),
-        body: file.content.startsWith('---\n')
-            ? parseNoteDocument(file.content).body
-            : file.content,
-      ));
-      await writeAtomicFile(target, packed);
-    });
-    _writeQueue = done.catchError((_) {});
-    return done;
+    final run =
+        _writeQueue.catchError((_) {}).then((_) => _writeNoteFile(file));
+    _writeQueue = run.catchError((_) {});
+    return run;
   }
 
   void newHttpDraft() {
@@ -1454,12 +1515,16 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> restoreBackup(Directory snapshot) async {
+    _pauseAutosave = true;
     try {
-      await persist();
+      await _writeQueue.catchError((_) {});
       await SnapshotBackup.restore(snapshot, paths);
+      await _hydrateFromDisk();
       dataNotice = t('settings.restoreDone');
+      _pauseAutosave = storeError != null;
     } catch (error) {
       dataNotice = error.toString();
+      _pauseAutosave = false;
     }
     notifyListeners();
   }
@@ -1758,35 +1823,7 @@ class AppController extends ChangeNotifier {
 
   void detachTool(String id) {
     if (id == 'mootool') return;
-    final session = id == 'json'
-        ? json.document
-        : id == 'quickNote'
-            ? note.document
-            : draftFor(id);
-    final begin = coordinator.beginTransfer(TransferRequest(
-      sessionId: id,
-      sourceWindowId: 'main',
-      targetWindowId: 'detached-$id',
-      revision: session.revision,
-      text: session.text,
-      selectionStart: session.selectionStart,
-      selectionEnd: session.selectionEnd,
-      undoDepth: 0,
-    ));
-    if (!begin.ok) {
-      toast = begin.error ?? '';
-      notifyListeners();
-      return;
-    }
-    final ack = coordinator.ack(id, 'detached-$id', session.revision);
-    if (!ack.ok) {
-      coordinator.abort(id);
-      toast = ack.error ?? '';
-      notifyListeners();
-      return;
-    }
-    detachedToolIds.add(id);
-    scheduleSave();
+    toast = t('window.detachUnavailable');
     notifyListeners();
   }
 

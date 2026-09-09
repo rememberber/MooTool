@@ -4,13 +4,15 @@ import 'dart:io';
 Future<void> writeAtomicFile(File file, String contents,
     {int permission = 384}) async {
   await file.parent.create(recursive: true);
-  final temp = File('${file.path}.tmp');
+  final temp = File('${file.path}.tmp.$pid');
   await temp.writeAsString(contents, flush: true);
   if (!Platform.isWindows) {
     await Process.run('chmod', [permission.toRadixString(8), temp.path]);
   }
   if (await file.exists()) {
     await file.copy('${file.path}.prev');
+  }
+  if (Platform.isWindows && await file.exists()) {
     await file.delete();
   }
   await temp.rename(file.path);
@@ -30,7 +32,24 @@ class CorruptStoreException implements Exception {
 }
 
 Future<Map<String, Object?>?> readJsonObject(File file) async {
-  if (!await file.exists()) return null;
+  final previous = File('${file.path}.prev');
+  if (!await file.exists()) {
+    if (await previous.exists()) {
+      return _decodeJsonFile(previous);
+    }
+    return null;
+  }
+  try {
+    return await _decodeJsonFile(file);
+  } on CorruptStoreException {
+    if (await previous.exists()) {
+      return _decodeJsonFile(previous);
+    }
+    rethrow;
+  }
+}
+
+Future<Map<String, Object?>?> _decodeJsonFile(File file) async {
   try {
     final decoded = jsonDecode(await file.readAsString());
     if (decoded is Map<String, Object?>) return decoded;

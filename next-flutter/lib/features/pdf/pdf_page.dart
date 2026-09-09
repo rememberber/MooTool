@@ -19,7 +19,7 @@ class PdfToolPage extends StatelessWidget {
     final rows = session.tab == 'split' ? session.splitRows : session.mergeRows;
     return Column(
       children: [
-        ColoredBox(
+        Material(
           color: tokens.toolbar,
           child: Padding(
             padding: const EdgeInsets.all(8),
@@ -92,7 +92,7 @@ class PdfToolPage extends StatelessWidget {
                       _row(tokens, session, rows[index]),
                 ),
         ),
-        ColoredBox(
+        Material(
           color: tokens.toolbar,
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),

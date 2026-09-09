@@ -60,25 +60,14 @@ class RegexEngine {
     );
     if (!options.global) {
       final match = expression.firstMatch(source);
-      return match == null ? const [] : [_hit(match, 0)];
+      return match == null ? const [] : [_hit(match)];
     }
-    final matches = <RegexMatchHit>[];
-    var index = 0;
-    while (index <= source.length) {
-      final match = expression.firstMatch(source.substring(index));
-      if (match == null) break;
-      matches.add(_hit(match, index));
-      final consumed = match.group(0)?.length ?? 0;
-      final next = index + match.start + (consumed == 0 ? 1 : consumed);
-      if (next <= index) break;
-      index = next;
-    }
-    return matches;
+    return [for (final match in expression.allMatches(source)) _hit(match)];
   }
 
-  RegexMatchHit _hit(RegExpMatch match, int base) {
+  RegexMatchHit _hit(RegExpMatch match) {
     return RegexMatchHit(
-      index: base + match.start,
+      index: match.start,
       value: match.group(0) ?? '',
       groups: [
         for (var i = 1; i <= match.groupCount; i++) match.group(i) ?? ''

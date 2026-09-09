@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -95,7 +97,7 @@ class Workbench extends StatelessWidget {
     final hidden = controller.settings.hiddenNavigationToolIds.toSet();
     return SizedBox(
       width: width,
-      child: ColoredBox(
+      child: Material(
         color: tokens.sidebar,
         child: Column(
           children: [
@@ -172,24 +174,37 @@ class Workbench extends StatelessWidget {
                 ],
               ),
             ),
-            ListTile(
-              dense: true,
-              leading: Image.asset('assets/brand/mootool-logo.png',
-                  width: 20, height: 20),
-              title: collapsed
-                  ? null
-                  : const Text('MooTool', style: TextStyle(fontSize: 12)),
-              trailing: collapsed
-                  ? null
-                  : Row(mainAxisSize: MainAxisSize.min, children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8, 4, 8, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Row(children: [
+                    Image.asset('assets/brand/mootool-logo.png',
+                        width: 20, height: 20),
+                    if (!collapsed) ...[
+                      const SizedBox(width: 8),
+                      const Expanded(
+                        child: Text('MooTool',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(fontSize: 12)),
+                      ),
+                    ] else
+                      const Spacer(),
+                    IconButton(
+                        tooltip: controller.t('app.nav.settings'),
+                        icon: const Icon(Icons.settings_outlined, size: 16),
+                        onPressed: controller.openSettings),
+                  ]),
+                  if (!collapsed)
+                    Row(children: [
                       _langButton('中', AppLanguage.zhCN),
                       _langButton('EN', AppLanguage.enUS),
                       _langButton('日', AppLanguage.jaJP),
-                      IconButton(
-                          tooltip: controller.t('app.nav.settings'),
-                          icon: const Icon(Icons.settings_outlined, size: 16),
-                          onPressed: controller.openSettings),
                     ]),
+                ],
+              ),
             ),
           ],
         ),
@@ -202,10 +217,13 @@ class Workbench extends StatelessWidget {
     return TextButton(
       onPressed: () => controller.setLanguage(language),
       style: TextButton.styleFrom(
-          minimumSize: const Size(28, 28),
-          padding: EdgeInsets.zero,
+          minimumSize: const Size(36, 32),
+          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          padding: const EdgeInsets.symmetric(horizontal: 6),
+          visualDensity: VisualDensity.compact,
           foregroundColor: selected ? null : Colors.grey),
-      child: Text(label, style: const TextStyle(fontSize: 11)),
+      child: Text(label,
+          maxLines: 1, softWrap: false, style: const TextStyle(fontSize: 11)),
     );
   }
 
@@ -220,7 +238,8 @@ class Workbench extends StatelessWidget {
       leading: Icon(_iconFor(tool.icon), size: 16),
       title: collapsed || controller.settings.hideNavigationTitles
           ? null
-          : Text(controller.t(tool.titleKey), overflow: TextOverflow.ellipsis),
+          : Text(controller.t(tool.titleKey),
+              maxLines: 1, overflow: TextOverflow.ellipsis),
       trailing: detached ? const Icon(Icons.open_in_new, size: 12) : null,
       onTap: () => controller.openTool(tool.id),
       onLongPress: tool.id == 'mootool'
@@ -238,9 +257,19 @@ class Workbench extends StatelessWidget {
   Widget _workspace(tokens) {
     if (controller.storeError != null) {
       return Center(
-          child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Text(controller.storeError!)));
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text(controller.storeError!),
+            const SizedBox(height: 12),
+            CompactButton(
+                label: controller.t('common.retry'),
+                onPressed: () {
+                  unawaited(controller.retryPersist());
+                }),
+          ]),
+        ),
+      );
     }
     if (controller.searchOpen) return _search(tokens);
     if (controller.settingsOpen)
@@ -292,7 +321,7 @@ class Workbench extends StatelessWidget {
 
   Widget _search(tokens) {
     final hits = searchTools(controller.searchQuery);
-    return ColoredBox(
+    return Material(
       color: tokens.workspace,
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -335,7 +364,7 @@ class Workbench extends StatelessWidget {
   }
 
   Widget _groups(tokens) {
-    return ColoredBox(
+    return Material(
       color: tokens.workspace,
       child: Padding(
         padding: const EdgeInsets.all(24),

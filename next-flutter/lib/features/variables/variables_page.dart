@@ -16,7 +16,7 @@ class VariablesToolPage extends StatelessWidget {
     if (session.tab.isEmpty) session.tab = 'process';
     return Column(
       children: [
-        ColoredBox(
+        Material(
           color: tokens.toolbar,
           child: Padding(
             padding: const EdgeInsets.all(8),

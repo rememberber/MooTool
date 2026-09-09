@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -48,22 +50,14 @@ class _MooCodeEditorState extends State<MooCodeEditor> {
   @override
   void didUpdateWidget(covariant MooCodeEditor oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (_controller.value.composing.isValid) return;
+    final selectionChanged =
+        widget.document.selectionStart != _controller.selection.start ||
+            widget.document.selectionEnd != _controller.selection.end;
     if (oldWidget.document != widget.document ||
-        widget.document.text != _controller.text) {
-      final composing = _controller.value.composing;
-      if (!composing.isValid) {
-        _controller.value = TextEditingValue(
-          text: widget.document.text,
-          selection: TextSelection(
-            baseOffset: widget.document.selectionStart
-                .clamp(0, widget.document.text.length)
-                .toInt(),
-            extentOffset: widget.document.selectionEnd
-                .clamp(0, widget.document.text.length)
-                .toInt(),
-          ),
-        );
-      }
+        widget.document.text != _controller.text ||
+        selectionChanged) {
+      _syncFromDocument();
     }
   }
 
@@ -152,34 +146,52 @@ class _MooCodeEditorState extends State<MooCodeEditor> {
                   ),
                 ),
               ),
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  focusNode: _focus,
-                  autofocus: widget.autofocus,
-                  readOnly: widget.readOnly,
-                  maxLines: null,
-                  expands: true,
-                  style: TextStyle(
-                      fontFamily: widget.fontFamily ?? 'monospace',
-                      fontSize: widget.fontSize,
-                      height: 1.5,
-                      color: tokens.textPrimary),
-                  decoration: const InputDecoration(
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.fromLTRB(12, 8, 12, 8),
-                      isCollapsed: false),
-                  keyboardType: TextInputType.multiline,
-                  textAlignVertical: TextAlignVertical.top,
-                  smartDashesType: SmartDashesType.disabled,
-                  smartQuotesType: SmartQuotesType.disabled,
-                ),
-              ),
+              Expanded(child: _editorField(tokens)),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Widget _editorField(MooTokens tokens) {
+    final field = TextField(
+      controller: _controller,
+      focusNode: _focus,
+      autofocus: widget.autofocus,
+      readOnly: widget.readOnly,
+      maxLines: null,
+      expands: true,
+      style: TextStyle(
+          fontFamily: widget.fontFamily ?? 'monospace',
+          fontSize: widget.fontSize,
+          height: 1.5,
+          color: tokens.textPrimary),
+      decoration: const InputDecoration(
+          border: InputBorder.none,
+          contentPadding: EdgeInsets.fromLTRB(12, 8, 12, 8),
+          isCollapsed: false),
+      keyboardType: TextInputType.multiline,
+      textAlignVertical: TextAlignVertical.top,
+      smartDashesType: SmartDashesType.disabled,
+      smartQuotesType: SmartQuotesType.disabled,
+    );
+    if (widget.wrap) return field;
+    return LayoutBuilder(builder: (context, constraints) {
+      final longest = widget.document.text
+          .split('\n')
+          .fold<int>(1, (max, line) => math.max(max, line.length));
+      final width =
+          math.max(constraints.maxWidth, longest * widget.fontSize * 0.62 + 24);
+      return SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: SizedBox(
+          width: width,
+          height: constraints.maxHeight,
+          child: field,
+        ),
+      );
+    });
   }
 
   void _syncFromDocument() {
@@ -236,10 +248,16 @@ class CompactButton extends StatelessWidget {
               borderRadius: BorderRadius.circular(6),
               side: BorderSide(color: primary ? tokens.accent : tokens.border)),
         ),
-        child: Row(mainAxisSize: MainAxisSize.min, children: [
-          if (icon != null) ...[Icon(icon, size: 14), const SizedBox(width: 6)],
-          Text(label, style: const TextStyle(fontSize: 12)),
-        ]),
+        child: FittedBox(
+          fit: BoxFit.scaleDown,
+          child: Row(mainAxisSize: MainAxisSize.min, children: [
+            if (icon != null) ...[
+              Icon(icon, size: 14),
+              const SizedBox(width: 6)
+            ],
+            Text(label, style: const TextStyle(fontSize: 12)),
+          ]),
+        ),
       ),
     );
     return tooltip == null ? child : Tooltip(message: tooltip!, child: child);

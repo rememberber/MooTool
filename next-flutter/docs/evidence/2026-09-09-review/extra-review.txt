@@ -1,0 +1,29 @@
+00:00 +0: loading /tmp/mootool-flutter-review.6VnMrU/extra_review_test.dart
+00:00 +0: R13 cancelling runtime must terminate child processes too
+00:02 +0 -1: R13 cancelling runtime must terminate child processes too [E]
+  Expected: not <0>
+    Actual: <0>
+  spawned child 44049 is still alive after cancellation
+  
+  package:matcher                                                 expect
+  package:flutter_test/src/widget_tester.dart 473:18              expect
+  /tmp/mootool-flutter-review.6VnMrU/extra_review_test.dart 30:7  main.<fn>
+  
+00:02 +0 -1: R15 foreign product data must be rejected before any write
+00:02 +0 -2: R15 foreign product data must be rejected before any write [E]
+  Expected: throws <Instance of 'StateError'>
+    Actual: <Instance of 'Future<void>'>
+     Which: emitted <null>
+  
+  package:matcher                                                  expectLater
+  package:flutter_test/src/widget_tester.dart 507:8                expectLater
+  /tmp/mootool-flutter-review.6VnMrU/extra_review_test.dart 44:13  main.<fn>
+  ===== asynchronous gap ===========================
+  dart:async                                                       _CustomZone.registerUnaryCallback
+  /tmp/mootool-flutter-review.6VnMrU/extra_review_test.dart 39:18  main.<fn>
+  
+00:02 +0 -2: Some tests failed.
+
+Failing tests:
+  /tmp/mootool-flutter-review.6VnMrU/extra_review_test.dart: R13 cancelling runtime must terminate child processes too
+  /tmp/mootool-flutter-review.6VnMrU/extra_review_test.dart: R15 foreign product data must be rejected before any write
