@@ -31,7 +31,7 @@ object ToolRegistry {
         tool(ToolId.Java, ToolGroupId.Dev, "app.nav.java", ">_", listOf("java", "groovy", "python", "node", "运行")),
         tool(ToolId.YmlProperties, ToolGroupId.Dev, "app.nav.ymlProperties", "☰", listOf("yaml", "yml", "properties", "配置"), ToolStatus.Available),
         tool(ToolId.Protobuf, ToolGroupId.Dev, "app.nav.protobuf", "⬡", listOf("protobuf", "proto"), ToolStatus.Available),
-        tool(ToolId.Variables, ToolGroupId.Dev, "app.nav.variables", "∑", listOf("env", "environment", "环境变量")),
+        tool(ToolId.Variables, ToolGroupId.Dev, "app.nav.variables", "∑", listOf("env", "environment", "环境变量"), ToolStatus.Available),
         tool(ToolId.Http, ToolGroupId.Network, "app.nav.http", "⇄", listOf("http", "curl", "api", "请求")),
         tool(ToolId.Host, ToolGroupId.Network, "app.nav.host", "◎", listOf("host", "dns", "域名")),
         tool(ToolId.Net, ToolGroupId.Network, "app.nav.net", "◈", listOf("network", "ip", "ping", "网络"), ToolStatus.Available),
@@ -77,7 +77,7 @@ object ToolRegistry {
         keywords: List<String>,
         status: ToolStatus = if (id == ToolId.Mootool) ToolStatus.Available else ToolStatus.NotImplemented
     ): ToolDefinition {
-        val history = id != ToolId.Mootool && id != ToolId.Hardware && id != ToolId.MessageBoard
+        val history = id != ToolId.Mootool && id != ToolId.Hardware && id != ToolId.MessageBoard && id != ToolId.Variables
         val favorites = id == ToolId.Regex || id == ToolId.Cron || id == ToolId.ColorBoard
         return ToolDefinition(id, group, titleKey, keywords, glyph, status, history, favorites)
     }

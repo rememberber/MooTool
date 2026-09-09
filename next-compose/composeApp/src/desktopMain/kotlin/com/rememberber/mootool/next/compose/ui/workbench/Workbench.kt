@@ -55,6 +55,7 @@ import com.rememberber.mootool.next.compose.features.qrcode.QrCodeScreen
 import com.rememberber.mootool.next.compose.features.settings.SettingsScreen
 import com.rememberber.mootool.next.compose.features.time.TimeConvertScreen
 import com.rememberber.mootool.next.compose.features.ua.UaParseScreen
+import com.rememberber.mootool.next.compose.features.variables.VariablesScreen
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
@@ -118,6 +119,10 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
                     ProtobufScreen(container, detached = false)
                 active == ToolId.Protobuf && detached.contains(ToolId.Protobuf) ->
                     DetachedNotice(container, ToolId.Protobuf)
+                active == ToolId.Variables && !detached.contains(ToolId.Variables) ->
+                    VariablesScreen(container, detached = false)
+                active == ToolId.Variables && detached.contains(ToolId.Variables) ->
+                    DetachedNotice(container, ToolId.Variables)
                 active == ToolId.TimeConvert && !detached.contains(ToolId.TimeConvert) ->
                     TimeConvertScreen(container, detached = false, active = true)
                 active == ToolId.TimeConvert && detached.contains(ToolId.TimeConvert) ->

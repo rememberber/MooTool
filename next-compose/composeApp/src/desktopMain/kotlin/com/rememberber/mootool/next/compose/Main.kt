@@ -42,6 +42,7 @@ import com.rememberber.mootool.next.compose.features.regex.RegexScreen
 import com.rememberber.mootool.next.compose.features.reformat.ReformatScreen
 import com.rememberber.mootool.next.compose.features.time.TimeConvertScreen
 import com.rememberber.mootool.next.compose.features.ua.UaParseScreen
+import com.rememberber.mootool.next.compose.features.variables.VariablesScreen
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
@@ -168,6 +169,18 @@ fun main() = application {
             ) {
                 MooTheme(container.themePreference(), systemDark) {
                     ProtobufScreen(container, detached = true)
+                }
+            }
+        }
+
+        if (ToolId.Variables in detached) {
+            Window(
+                onCloseRequest = { container.sessionManager.reattach(ToolId.Variables) },
+                title = "${container.t("app.nav.variables")} · ${ProductIdentity.DISPLAY_NAME}",
+                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
+            ) {
+                MooTheme(container.themePreference(), systemDark) {
+                    VariablesScreen(container, detached = true)
                 }
             }
         }

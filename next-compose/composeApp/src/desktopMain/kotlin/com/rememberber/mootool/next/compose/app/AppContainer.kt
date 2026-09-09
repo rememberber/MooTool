@@ -120,6 +120,7 @@ class AppContainer(
         sessionManager.persistPdf()
         sessionManager.persistImage()
         sessionManager.persistNet()
+        sessionManager.persistVariables()
         sessionManager.persistHardware()
         settingsRepository.save(_settings.value)
     }

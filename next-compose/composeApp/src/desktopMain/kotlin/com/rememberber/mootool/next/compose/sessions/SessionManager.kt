@@ -24,6 +24,10 @@ import com.rememberber.mootool.next.compose.domain.ColorEngine
 import com.rememberber.mootool.next.compose.domain.ColorFormat
 import com.rememberber.mootool.next.compose.domain.ColorThemeId
 import com.rememberber.mootool.next.compose.domain.MessageBoardEngine
+import com.rememberber.mootool.next.compose.domain.EnvDisplayScope
+import com.rememberber.mootool.next.compose.domain.EnvPersistScope
+import com.rememberber.mootool.next.compose.domain.EnvSnapshot
+import com.rememberber.mootool.next.compose.domain.EnvTab
 import com.rememberber.mootool.next.compose.domain.HardwareSnapshot
 import com.rememberber.mootool.next.compose.domain.HardwareTab
 import com.rememberber.mootool.next.compose.domain.NetworkAction
@@ -1215,6 +1219,53 @@ class NetSession {
 }
 
 @Serializable
+data class VariablesSessionSnapshot(
+    val tab: String = "environment",
+    val scope: String = "process",
+    val query: String = ""
+)
+
+class VariablesSession {
+    var tab: EnvTab = EnvTab.Environment
+    var scope: EnvDisplayScope = EnvDisplayScope.Process
+    var query: String = ""
+    var snapshot: EnvSnapshot? = null
+    var loading: Boolean = false
+    var saving: Boolean = false
+    var error: String = ""
+    var notice: String = ""
+    var editorOpen: Boolean = false
+    var editorExisting: Boolean = false
+    var editorKey: String = ""
+    var editorValue: String = ""
+    var targetScope: EnvPersistScope = EnvPersistScope.User
+    var deleteKey: String = ""
+    var lastBackup: String = ""
+    var lastDiff: String = ""
+
+    fun snapshotState(): VariablesSessionSnapshot = VariablesSessionSnapshot(
+        tab = tab.name.lowercase(),
+        scope = scope.name.lowercase(),
+        query = query
+    )
+
+    fun restore(snapshot: VariablesSessionSnapshot) {
+        tab = EnvTab.entries.find { it.name.equals(snapshot.tab, ignoreCase = true) } ?: EnvTab.Environment
+        scope = EnvDisplayScope.entries.find { it.name.equals(snapshot.scope, ignoreCase = true) } ?: EnvDisplayScope.Process
+        query = snapshot.query
+        this.snapshot = null
+        loading = false
+        saving = false
+        error = ""
+        notice = ""
+        editorOpen = false
+        deleteKey = ""
+        lastBackup = ""
+        lastDiff = ""
+    }
+}
+
+@Serializable
 data class HardwareSessionSnapshot(
     val tab: String = "system",
     val revealSensitive: Boolean = false
@@ -1268,6 +1319,7 @@ class SessionManager(private val store: SessionStore) {
     private var pdfSessionCache: PdfSession? = null
     private var imageSessionCache: ImageSession? = null
     private var netSessionCache: NetSession? = null
+    private var variablesSessionCache: VariablesSession? = null
     private var hardwareSessionCache: HardwareSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
     val detached: StateFlow<Set<ToolId>> = _detached
@@ -1570,6 +1622,22 @@ class SessionManager(private val store: SessionStore) {
     fun cancelNetCommands() {
         netSessionCache?.commandScope?.cancel()
         netSessionCache?.running = null
+    }
+
+    fun variablesSession(): VariablesSession {
+        variablesSessionCache?.let { return it }
+        val session = VariablesSession()
+        store.load(ToolId.Variables.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<VariablesSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        }
+        variablesSessionCache = session
+        return session
+    }
+
+    fun persistVariables() {
+        store.save(ToolId.Variables.id, jsonCodec.encodeToString(variablesSession().snapshotState()))
     }
 
     fun hardwareSession(): HardwareSession {

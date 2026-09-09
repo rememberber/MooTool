@@ -160,6 +160,7 @@ SwingPanel 默认处于 Compose 内容前方；菜单、命令搜索、对话框
 | PDF | PDFBox **3.0.4** | 真页面 importPage；页码顺序/去重对齐 Electron；加密 PDF 拒绝；取消删除本批半成品。见 DIFF-012 |
 | 系统信息 | OSHI **6.8.2** | 真机采集；序列号默认遮蔽；OS 与本产品 JVM 信息分区；切走工具取消采集。见 DIFF-014 |
 | 网络/IP | 自有 `NetEngine` + 平台进程 argv | IPv4↔Long fixture；`InetAddress` DNS；ping/ifconfig/netstat 可取消；WHOIS 端口 43。见 DIFF-015 |
+| 环境变量 | 自有 `EnvEngine` + 本产品 `data/environment` | 用户/系统文件备份后写入；进程/JVM 只读；Unix 钩子使用 Compose 标记。见 DIFF-016 |
 | Git | 本产品 GitService 封装外部 Git CLI，缺失引导配置；JGit 可作验证后的替代 | 仓库锁、冲突、stash/操作状态、凭据、Git 不存在时仍可记笔记 |
 | 时间/计算 | java.time、BigInteger/BigDecimal、自有表达式 AST | 时区、DST、精度、算符、溢出；不 eval 用户文本 |
 

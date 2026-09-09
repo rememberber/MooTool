@@ -75,7 +75,7 @@ class RegexWorkerClientTest {
         val elapsed = System.currentTimeMillis() - started
         assertEquals("timeout", timedOut.code)
         assertTrue(elapsed < 8_000, "worker was not killed in time: ${elapsed}ms")
-        val invalid = client.match("(", "a", RegexOptions())
+        val invalid = RegexWorkerClient(timeoutMs = 5_000).match("(", "a", RegexOptions())
         assertEquals("invalid", invalid.code)
         assertTrue(!invalid.ok)
     }
