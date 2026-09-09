@@ -31,20 +31,17 @@ class ImageToolPage extends StatelessWidget {
                 CompactButton(
                     label: controller.t('image.toggleList'),
                     onPressed: () {
-                      controller.imageListVisible = !controller.imageListVisible;
+                      controller.imageListVisible =
+                          !controller.imageListVisible;
                       controller.refresh();
                     }),
                 CompactButton(
                     label: controller.t('image.import'),
                     onPressed: () async {
                       final files = await openFiles(acceptedTypeGroups: [
-                        const XTypeGroup(label: 'Images', extensions: [
-                          'png',
-                          'jpg',
-                          'jpeg',
-                          'gif',
-                          'webp'
-                        ])
+                        const XTypeGroup(
+                            label: 'Images',
+                            extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp'])
                       ]);
                       await controller.importImageFiles(
                           [for (final file in files) File(file.path)]);
@@ -52,8 +49,7 @@ class ImageToolPage extends StatelessWidget {
                 CompactButton(
                     label: controller.t('image.fromBase64'),
                     onPressed: () {
-                      controller.imagePanel =
-                          panel == 'base64' ? '' : 'base64';
+                      controller.imagePanel = panel == 'base64' ? '' : 'base64';
                       controller.refresh();
                     }),
                 CompactButton(
@@ -79,8 +75,7 @@ class ImageToolPage extends StatelessWidget {
                     onPressed: controller.imageTargets.isEmpty
                         ? null
                         : () {
-                            controller.imagePanel =
-                                panel == 'svg' ? '' : 'svg';
+                            controller.imagePanel = panel == 'svg' ? '' : 'svg';
                             controller.refresh();
                           }),
                 CompactButton(
@@ -93,7 +88,8 @@ class ImageToolPage extends StatelessWidget {
                     onPressed: () => controller.captureScreenshotToLibrary()),
                 CompactButton(
                     label: controller.t('image.fromClipboard'),
-                    onPressed: () => controller.importClipboardImageToLibrary()),
+                    onPressed: () =>
+                        controller.importClipboardImageToLibrary()),
               ],
             ),
           ),
@@ -140,8 +136,8 @@ class ImageToolPage extends StatelessWidget {
                                         leading: Checkbox(
                                           value: controller.imageSelected
                                               .contains(asset.name),
-                                          onChanged: (value) => controller
-                                              .toggleImageSelection(
+                                          onChanged: (value) =>
+                                              controller.toggleImageSelection(
                                                   asset.name, value ?? false),
                                         ),
                                         title: Text(asset.name,
@@ -190,7 +186,8 @@ class ImageToolPage extends StatelessWidget {
                                   label: controller.t('host.delete'),
                                   onPressed: controller.imageTargets.isEmpty
                                       ? null
-                                      : () => controller.deleteSelectedImages()),
+                                      : () =>
+                                          controller.deleteSelectedImages()),
                             ],
                           ),
                         ),
@@ -210,7 +207,8 @@ class ImageToolPage extends StatelessWidget {
                                     child: SelectableText(
                                       utf8.decode(current.bytes),
                                       style: const TextStyle(
-                                          fontFamily: 'monospace', fontSize: 12),
+                                          fontFamily: 'monospace',
+                                          fontSize: 12),
                                     ),
                                   )
                                 : InteractiveViewer(
@@ -263,8 +261,7 @@ class ImageToolPage extends StatelessWidget {
                     controller.confirmScreenshotDraft(crop: false)),
             CompactButton(
                 label: controller.t('image.cropConfirm'),
-                onPressed: () =>
-                    controller.confirmScreenshotDraft(crop: true)),
+                onPressed: () => controller.confirmScreenshotDraft(crop: true)),
             CompactButton(
                 label: controller.t('common.cancel'),
                 onPressed: controller.cancelScreenshotDraft),
@@ -281,16 +278,15 @@ class ImageToolPage extends StatelessWidget {
               child: TextField(
                 maxLines: 3,
                 decoration: InputDecoration(
-                    isDense: true,
-                    hintText: controller.t('image.base64Hint')),
+                    isDense: true, hintText: controller.t('image.base64Hint')),
                 onChanged: (value) => controller.imageBase64Draft = value,
               ),
             ),
             const SizedBox(width: 8),
             CompactButton(
                 label: controller.t('image.import'),
-                onPressed: () => controller.importImageBase64(
-                    controller.imageBase64Draft)),
+                onPressed: () =>
+                    controller.importImageBase64(controller.imageBase64Draft)),
           ],
         ),
       );
@@ -309,7 +305,8 @@ class ImageToolPage extends StatelessWidget {
               child: Slider(
                 min: 10,
                 max: 100,
-                value: double.tryParse(session.options['quality'] ?? '80') ?? 80,
+                value:
+                    double.tryParse(session.options['quality'] ?? '80') ?? 80,
                 onChanged: (value) {
                   session.options['quality'] = '${value.round()}';
                   controller.refresh();
@@ -322,7 +319,8 @@ class ImageToolPage extends StatelessWidget {
               child: Slider(
                 min: 10,
                 max: 100,
-                value: double.tryParse(session.options['scale'] ?? '100') ?? 100,
+                value:
+                    double.tryParse(session.options['scale'] ?? '100') ?? 100,
                 onChanged: (value) {
                   session.options['scale'] = '${value.round()}';
                   controller.refresh();
@@ -345,17 +343,19 @@ class ImageToolPage extends StatelessWidget {
                 primary: true,
                 onPressed: () => controller.compressSelectedImages(
                       CompressImageOptions(
-                        quality:
-                            (double.tryParse(session.options['quality'] ?? '80') ??
-                                    80) /
-                                100,
-                        scale:
-                            (double.tryParse(session.options['scale'] ?? '100') ??
-                                    100) /
-                                100,
+                        quality: (double.tryParse(
+                                    session.options['quality'] ?? '80') ??
+                                80) /
+                            100,
+                        scale: (double.tryParse(
+                                    session.options['scale'] ?? '100') ??
+                                100) /
+                            100,
                         format: session.options['format'] ?? 'auto',
                       ),
-                      session.options['mode'] == 'overwrite' ? 'overwrite' : 'keep',
+                      session.options['mode'] == 'overwrite'
+                          ? 'overwrite'
+                          : 'keep',
                     )),
           ],
         ),
@@ -373,7 +373,8 @@ class ImageToolPage extends StatelessWidget {
               width: 180,
               child: TextField(
                 decoration: InputDecoration(
-                    isDense: true, hintText: controller.t('image.watermarkText')),
+                    isDense: true,
+                    hintText: controller.t('image.watermarkText')),
                 controller: TextEditingController(
                     text: session.options['watermark'] ?? 'MooTool'),
                 onChanged: (value) => session.options['watermark'] = value,
@@ -434,9 +435,9 @@ class ImageToolPage extends StatelessWidget {
               onPressed: () => controller.vectorizeSelectedImages(
                     VectorizeOptions(
                       preset: session.options['preset'] ?? 'bw',
-                      colorCount: int.tryParse(
-                              session.options['colorCount'] ?? '16') ??
-                          16,
+                      colorCount:
+                          int.tryParse(session.options['colorCount'] ?? '16') ??
+                              16,
                     ),
                   )),
           Text(controller.t('image.svgHint'),

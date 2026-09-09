@@ -39,11 +39,10 @@ class VariablesToolPage extends StatelessWidget {
                 CompactButton(
                     label: controller.t('json.action.copy'),
                     onPressed: () {
-                      final rows = _visible(
-                          session.tab, session.options['query'] ?? '');
+                      final rows =
+                          _visible(session.tab, session.options['query'] ?? '');
                       controller.copyText([
-                        for (final entry in rows)
-                          '${entry.key}=${entry.value}'
+                        for (final entry in rows) '${entry.key}=${entry.value}'
                       ].join('\n'));
                     }),
                 if (session.tab == 'user') ...[
@@ -98,15 +97,18 @@ class VariablesToolPage extends StatelessWidget {
         Expanded(
           child: ListView(
             children: [
-              for (final entry in _visible(session.tab, session.options['query'] ?? ''))
+              for (final entry
+                  in _visible(session.tab, session.options['query'] ?? ''))
                 ListTile(
                   dense: true,
                   title: Text(entry.key,
-                      style: const TextStyle(fontFamily: 'monospace', fontSize: 12)),
+                      style: const TextStyle(
+                          fontFamily: 'monospace', fontSize: 12)),
                   subtitle: Text(entry.value,
                       maxLines: 2, overflow: TextOverflow.ellipsis),
                   onTap: session.tab == 'user'
-                      ? () => controller.editUserVariable(entry.key, entry.value)
+                      ? () =>
+                          controller.editUserVariable(entry.key, entry.value)
                       : null,
                   trailing: session.tab == 'user'
                       ? IconButton(

@@ -2,10 +2,12 @@ import 'dart:io';
 
 import 'package:file_selector/file_selector.dart';
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../app/app_controller.dart';
 import '../../app/product.dart';
 import '../../app/settings.dart';
+import '../../core/update/update_models.dart';
 import '../../design/theme.dart';
 import '../../design/widgets.dart';
 
@@ -122,22 +124,63 @@ class SettingsPage extends StatelessWidget {
         contentPadding: EdgeInsets.zero,
         title: Text(controller.t('settings.autoCheckUpdates')),
         value: controller.settings.autoCheckUpdates,
-        onChanged: (value) => _set(() => controller.settings.autoCheckUpdates = value),
+        onChanged: (value) =>
+            _set(() => controller.settings.autoCheckUpdates = value),
       ),
       SwitchListTile(
         contentPadding: EdgeInsets.zero,
         title: Text(controller.t('settings.autoDownloadUpdates')),
-        subtitle: Text(controller.t('settings.updatePending'),
+        subtitle: Text(controller.t('settings.updateUnsignedHint'),
             style: const TextStyle(fontSize: 12)),
         value: controller.settings.autoDownloadUpdates,
         onChanged: (value) =>
             _set(() => controller.settings.autoDownloadUpdates = value),
       ),
+      Wrap(spacing: 8, runSpacing: 8, children: [
+        FilledButton(
+          onPressed: () => controller.checkForUpdates(),
+          child: Text(controller.t('settings.updateCheck')),
+        ),
+        OutlinedButton(
+          onPressed: controller.updateResult?.download == null
+              ? null
+              : () => controller.downloadUpdate(),
+          child: Text(controller.t('settings.updateDownload')),
+        ),
+        OutlinedButton(
+          onPressed: controller.updateLocalPath == null
+              ? null
+              : () => controller.openDownloadedUpdate(),
+          child: Text(controller.t('settings.updateOpen')),
+        ),
+        TextButton(
+          onPressed: () async {
+            final url = controller.updateResult?.releaseUrl;
+            if (url == null || url.isEmpty) return;
+            await launchUrl(Uri.parse(url),
+                mode: LaunchMode.externalApplication);
+          },
+          child: Text(controller.t('settings.updateRelease')),
+        ),
+      ]),
+      if (controller.updateNotice.isNotEmpty) ...[
+        const SizedBox(height: 8),
+        Text(controller.updateNotice, style: const TextStyle(fontSize: 12)),
+      ],
+      if (controller.updateDownloadStatus == UpdateDownloadStatus.downloading)
+        Padding(
+          padding: const EdgeInsets.only(top: 8),
+          child: LinearProgressIndicator(
+              value: controller.updatePercent <= 0
+                  ? null
+                  : (controller.updatePercent / 100).clamp(0, 1)),
+        ),
       SwitchListTile(
         contentPadding: EdgeInsets.zero,
         title: Text(controller.t('settings.startMaximized')),
         value: controller.settings.startMaximized,
-        onChanged: (value) => _set(() => controller.settings.startMaximized = value),
+        onChanged: (value) =>
+            _set(() => controller.settings.startMaximized = value),
       ),
       SwitchListTile(
         contentPadding: EdgeInsets.zero,
@@ -148,7 +191,8 @@ class SettingsPage extends StatelessWidget {
                 : 'settings.trayPending'),
             style: const TextStyle(fontSize: 12)),
         value: controller.settings.trayEnabled,
-        onChanged: (value) => _set(() => controller.settings.trayEnabled = value),
+        onChanged: (value) =>
+            _set(() => controller.settings.trayEnabled = value),
       ),
       Text(controller.t('settings.hideNeedsTray'),
           style: const TextStyle(fontSize: 12)),
@@ -185,27 +229,32 @@ class SettingsPage extends StatelessWidget {
       Wrap(spacing: 8, children: [
         for (final entry in accentColorPresets.entries)
           InkWell(
-            onTap: () => _set(() => controller.settings.accentColor = entry.key),
+            onTap: () =>
+                _set(() => controller.settings.accentColor = entry.key),
             child: Container(
               width: 28,
               height: 28,
               decoration: BoxDecoration(
-                color: Color(int.parse('FF${entry.value.substring(1)}', radix: 16)),
+                color: Color(
+                    int.parse('FF${entry.value.substring(1)}', radix: 16)),
                 shape: BoxShape.circle,
                 border: Border.all(
-                    width: controller.settings.accentColor == entry.key ? 3 : 1),
+                    width:
+                        controller.settings.accentColor == entry.key ? 3 : 1),
               ),
             ),
           ),
       ]),
       const SizedBox(height: 16),
-      Text('${controller.t('settings.uiFontSize')} ${controller.settings.uiFontSize.round()}'),
+      Text(
+          '${controller.t('settings.uiFontSize')} ${controller.settings.uiFontSize.round()}'),
       Slider(
         min: 11,
         max: 18,
         divisions: 7,
         value: controller.settings.uiFontSize.clamp(11, 18),
-        onChanged: (value) => _set(() => controller.settings.uiFontSize = value),
+        onChanged: (value) =>
+            _set(() => controller.settings.uiFontSize = value),
       ),
     ]);
   }
@@ -227,7 +276,8 @@ class SettingsPage extends StatelessWidget {
         contentPadding: EdgeInsets.zero,
         title: Text(controller.t('settings.showRecent')),
         value: controller.settings.showRecent,
-        onChanged: (value) => _set(() => controller.settings.showRecent = value),
+        onChanged: (value) =>
+            _set(() => controller.settings.showRecent = value),
       ),
       SwitchListTile(
         contentPadding: EdgeInsets.zero,
@@ -267,7 +317,8 @@ class SettingsPage extends StatelessWidget {
           (value) => controller.settings.noteFontName = value),
       _field('settings.sqlDialect', controller.settings.sqlDialect,
           (value) => controller.settings.sqlDialect = value),
-      Text('${controller.t('settings.editorFontSize')} ${controller.settings.editorFontSize.round()}'),
+      Text(
+          '${controller.t('settings.editorFontSize')} ${controller.settings.editorFontSize.round()}'),
       Slider(
         min: 11,
         max: 22,
@@ -285,7 +336,8 @@ class SettingsPage extends StatelessWidget {
         contentPadding: EdgeInsets.zero,
         title: Text(controller.t('settings.proxyEnabled')),
         value: controller.settings.proxyEnabled,
-        onChanged: (value) => _set(() => controller.settings.proxyEnabled = value),
+        onChanged: (value) =>
+            _set(() => controller.settings.proxyEnabled = value),
       ),
       _field('settings.proxyHost', controller.settings.proxyHost,
           (value) => controller.settings.proxyHost = value),
@@ -296,7 +348,9 @@ class SettingsPage extends StatelessWidget {
       _field('settings.proxyPassword', controller.settings.proxyPassword,
           (value) => controller.settings.proxyPassword = value,
           obscure: true),
-      _field('settings.httpTimeout', '${controller.settings.httpTimeoutMs}',
+      _field(
+          'settings.httpTimeout',
+          '${controller.settings.httpTimeoutMs}',
           (value) => controller.settings.httpTimeoutMs =
               int.tryParse(value) ?? controller.settings.httpTimeoutMs),
       _field(
@@ -352,13 +406,15 @@ class SettingsPage extends StatelessWidget {
         contentPadding: EdgeInsets.zero,
         title: Text(controller.t('settings.gitAutoCommit')),
         value: controller.settings.gitAutoCommit,
-        onChanged: (value) => _set(() => controller.settings.gitAutoCommit = value),
+        onChanged: (value) =>
+            _set(() => controller.settings.gitAutoCommit = value),
       ),
       SwitchListTile(
         contentPadding: EdgeInsets.zero,
         title: Text(controller.t('settings.gitAutoPull')),
         value: controller.settings.gitAutoPull,
-        onChanged: (value) => _set(() => controller.settings.gitAutoPull = value),
+        onChanged: (value) =>
+            _set(() => controller.settings.gitAutoPull = value),
       ),
     ]);
   }
@@ -381,17 +437,23 @@ class SettingsPage extends StatelessWidget {
 
   Widget _tools() {
     return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _field('settings.qrSize', '${controller.settings.qrSize}',
+      _field(
+          'settings.qrSize',
+          '${controller.settings.qrSize}',
           (value) => controller.settings.qrSize =
               int.tryParse(value) ?? controller.settings.qrSize),
       _field('settings.qrLevel', controller.settings.qrLevel,
           (value) => controller.settings.qrLevel = value),
-      _field('settings.randomLength', '${controller.settings.randomLength}',
+      _field(
+          'settings.randomLength',
+          '${controller.settings.randomLength}',
           (value) => controller.settings.randomLength =
               int.tryParse(value) ?? controller.settings.randomLength),
       _field('settings.exportDirectory', controller.settings.exportDirectory,
           (value) => controller.settings.exportDirectory = value),
-      _field('settings.defaultTranslator', controller.settings.defaultTranslator,
+      _field(
+          'settings.defaultTranslator',
+          controller.settings.defaultTranslator,
           (value) => controller.settings.defaultTranslator = value),
     ]);
   }
@@ -423,7 +485,16 @@ class SettingsPage extends StatelessWidget {
       Text(Product.applicationId,
           style: TextStyle(color: tokens.textSecondary, fontSize: 12)),
       const SizedBox(height: 12),
-      Text(controller.t('settings.updatePending')),
+      Text(controller.t('settings.updateUnsignedHint')),
+      if (controller.updateNotice.isNotEmpty) ...[
+        const SizedBox(height: 8),
+        Text(controller.updateNotice, style: const TextStyle(fontSize: 12)),
+      ],
+      const SizedBox(height: 12),
+      FilledButton(
+        onPressed: () => controller.checkForUpdates(),
+        child: Text(controller.t('settings.updateCheck')),
+      ),
     ]);
   }
 

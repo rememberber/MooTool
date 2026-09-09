@@ -57,7 +57,8 @@ second
   test('selection quick replace is a single undo', () {
     final document = EditorDocument(text: 'aaaBBB');
     document.restoreView(start: 3, end: 6);
-    document.transformSelectionOrAll((value) => runQuickReplace(value, 'lowercase'));
+    document.transformSelectionOrAll(
+        (value) => runQuickReplace(value, 'lowercase'));
     expect(document.text, 'aaabbb');
     expect(document.undo(), isTrue);
     expect(document.text, 'aaaBBB');

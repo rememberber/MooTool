@@ -80,7 +80,6 @@ class PdfSession {
 
   List<PdfTaskRow> _rows(Object? raw) => [
         for (final item in raw as List? ?? const [])
-          if (item is Map)
-            PdfTaskRow.fromJson(Map<String, Object?>.from(item)),
+          if (item is Map) PdfTaskRow.fromJson(Map<String, Object?>.from(item)),
       ];
 }

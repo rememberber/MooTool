@@ -43,7 +43,8 @@ Future<HardwareSnapshot> collectSystemInfo() async {
       ],
       'memory': [
         HardwareGroup('Physical memory', [
-          HardwareItem('Total', memory == null ? 'unavailable' : _formatBytes(memory)),
+          HardwareItem(
+              'Total', memory == null ? 'unavailable' : _formatBytes(memory)),
           HardwareItem('Process RSS', _formatBytes(ProcessInfo.currentRss)),
         ]),
       ],
@@ -68,7 +69,8 @@ Future<HardwareSnapshot> collectSystemInfo() async {
 Future<int?> _memoryBytes() async {
   try {
     if (Platform.isMacOS) {
-      final result = await Process.run('/usr/sbin/sysctl', ['-n', 'hw.memsize']);
+      final result =
+          await Process.run('/usr/sbin/sysctl', ['-n', 'hw.memsize']);
       return int.tryParse('${result.stdout}'.trim());
     }
     if (Platform.isLinux) {

@@ -16,7 +16,8 @@ class MessageBoardPage extends StatelessWidget {
   Widget build(BuildContext context) {
     final session = controller.messageBoard;
     final tokens = tokensOf(context);
-    final colors = messageBoardColors[session.theme] ?? messageBoardColors['sunbeam']!;
+    final colors =
+        messageBoardColors[session.theme] ?? messageBoardColors['sunbeam']!;
     final visible = session.message.trim().isEmpty
         ? controller.t('messageBoard.empty')
         : session.message;
@@ -47,8 +48,8 @@ class MessageBoardPage extends StatelessWidget {
                   maxLines: 3,
                   maxLength: maxMessageLength,
                   controller: TextEditingController(text: session.message)
-                    ..selection = TextSelection.collapsed(
-                        offset: session.message.length),
+                    ..selection =
+                        TextSelection.collapsed(offset: session.message.length),
                   inputFormatters: [
                     LengthLimitingTextInputFormatter(maxMessageLength)
                   ],
@@ -160,7 +161,8 @@ class MessageBoardPage extends StatelessWidget {
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(4),
           border: Border.all(
-              color: active ? Colors.white : Colors.black26, width: active ? 2 : 1),
+              color: active ? Colors.white : Colors.black26,
+              width: active ? 2 : 1),
         ),
         child: Row(children: [
           Expanded(child: ColoredBox(color: Color(colors.$1))),
@@ -225,7 +227,8 @@ class MessageBoardPage extends StatelessWidget {
                         ? Alignment.centerLeft
                         : Alignment.center,
                     child: ConstrainedBox(
-                      constraints: BoxConstraints(maxWidth: constraints.maxWidth),
+                      constraints:
+                          BoxConstraints(maxWidth: constraints.maxWidth),
                       child: Text(
                         visible,
                         textAlign: session.alignment == 'left'

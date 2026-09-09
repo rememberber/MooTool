@@ -42,7 +42,8 @@ List<PdfTaskRow> appendPdfTasks(
 
 PdfOperationResult splitPdfTasks(List<PdfTaskRow> tasks,
     {String? outputDirectory}) {
-  if (tasks.isEmpty) throw const FormatException('Select at least one PDF task');
+  if (tasks.isEmpty)
+    throw const FormatException('Select at least one PDF task');
   final outputs = <String>[];
   var pageCount = 0;
   for (final task in tasks) {
@@ -76,10 +77,12 @@ PdfOperationResult mergePdfTasks(List<PdfTaskRow> tasks, String outputPath) {
   for (final task in tasks) {
     final source = File(task.path).readAsBytesSync();
     final pdf = SimplePdf.parse(source);
-    final range = task.pageRange.isEmpty ? '1-${pdf.pages.length}' : task.pageRange;
+    final range =
+        task.pageRange.isEmpty ? '1-${pdf.pages.length}' : task.pageRange;
     final pages = parsePageSelection(range, pdf.pages.length);
     if (pages.isEmpty) continue;
-    documents.add(SimplePdf.split(source, [for (final page in pages) page - 1]));
+    documents
+        .add(SimplePdf.split(source, [for (final page in pages) page - 1]));
     pageCount += pages.length;
   }
   if (pageCount == 0) throw const FormatException('No pages selected');

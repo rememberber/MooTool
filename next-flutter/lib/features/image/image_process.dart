@@ -24,7 +24,8 @@ Uint8List watermarkImageBytes(Uint8List bytes, WatermarkImageOptions options) {
   final color = _color(options.color, options.opacity);
   final metricsWidth = text.length * (font.size * 0.6);
   final textHeight = font.size.toDouble();
-  final margin = math.max(8, (math.min(decoded.width, decoded.height) * 0.02).round());
+  final margin =
+      math.max(8, (math.min(decoded.width, decoded.height) * 0.02).round());
   if (options.position == 'tile') {
     final stepX = (metricsWidth + margin * 3).round();
     final stepY = (textHeight + margin * 3).round();
@@ -66,22 +67,24 @@ String vectorizeImage(Uint8List bytes, VectorizeOptions options) {
           : 2;
   final paths = <String>[];
   if (options.preset == 'bw') {
-    paths.addAll(_traceColor(decoded, const _Rgb(0, 0, 0), true,
-        options.filterSpeckle, simplify));
+    paths.addAll(_traceColor(
+        decoded, const _Rgb(0, 0, 0), true, options.filterSpeckle, simplify));
   } else {
     final palette = _quantize(decoded, options.colorCount);
     for (final color in palette) {
-      paths.addAll(_traceColor(
-          decoded, color, false, options.filterSpeckle, simplify));
+      paths.addAll(
+          _traceColor(decoded, color, false, options.filterSpeckle, simplify));
     }
   }
-  if (paths.isEmpty) throw const FormatException('Vectorizer returned invalid SVG output');
+  if (paths.isEmpty)
+    throw const FormatException('Vectorizer returned invalid SVG output');
   final svg =
       '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${decoded.width} ${decoded.height}" width="${decoded.width}" height="${decoded.height}">\n${paths.join('\n')}\n</svg>';
   if (!svg.contains('<path') ||
       svg.contains('<image') ||
       svg.contains('data:image/')) {
-    throw const FormatException('Vectorizer returned an embedded bitmap instead of vector paths');
+    throw const FormatException(
+        'Vectorizer returned an embedded bitmap instead of vector paths');
   }
   return svg;
 }
@@ -97,8 +100,7 @@ img.Image _decode(Uint8List bytes) {
 
 Uint8List _encode(
     img.Image image, String format, Uint8List source, double quality) {
-  final jpeg = format == 'jpeg' ||
-      (format == 'auto' && _looksJpeg(source));
+  final jpeg = format == 'jpeg' || (format == 'auto' && _looksJpeg(source));
   if (jpeg) {
     return Uint8List.fromList(
         img.encodeJpg(image, quality: (quality.clamp(0.01, 1) * 100).round()));
@@ -129,13 +131,15 @@ Uint8List cropImageBytes(Uint8List bytes,
   }
   final w = width.clamp(1, maxW);
   final h = height.clamp(1, maxH);
-  final cropped =
-      img.copyCrop(decoded, x: x, y: y, width: w, height: h);
+  final cropped = img.copyCrop(decoded, x: x, y: y, width: w, height: h);
   return Uint8List.fromList(img.encodePng(cropped));
 }
 
 bool _looksJpeg(Uint8List bytes) =>
-    bytes.length >= 3 && bytes[0] == 0xFF && bytes[1] == 0xD8 && bytes[2] == 0xFF;
+    bytes.length >= 3 &&
+    bytes[0] == 0xFF &&
+    bytes[1] == 0xD8 &&
+    bytes[2] == 0xFF;
 
 img.BitmapFont _watermarkFont(int width, int height, String mode) {
   final base = (math.min(width, height) * 0.05).round();
@@ -147,7 +151,8 @@ img.BitmapFont _watermarkFont(int width, int height, String mode) {
 img.ColorRgba8 _color(String hex, double opacity) {
   final value = hex.replaceAll('#', '');
   if (!RegExp(r'^[0-9a-fA-F]{6}$').hasMatch(value)) {
-    return img.ColorRgba8(255, 255, 255, (opacity.clamp(0.01, 1) * 255).round());
+    return img.ColorRgba8(
+        255, 255, 255, (opacity.clamp(0.01, 1) * 255).round());
   }
   return img.ColorRgba8(
     int.parse(value.substring(0, 2), radix: 16),
@@ -164,10 +169,13 @@ void _stamp(img.Image image, String text, img.BitmapFont font, img.Color color,
         font: font, x: x.round(), y: (y - font.size).round(), color: color);
     return;
   }
-  final stamp = img.Image(width: font.size * (text.length + 2), height: font.size * 3);
-  img.drawString(stamp, text, font: font, x: font.size, y: font.size, color: color);
+  final stamp =
+      img.Image(width: font.size * (text.length + 2), height: font.size * 3);
+  img.drawString(stamp, text,
+      font: font, x: font.size, y: font.size, color: color);
   final rotated = img.copyRotate(stamp, angle: -45);
-  img.compositeImage(image, rotated, dstX: x.round(), dstY: (y - font.size).round());
+  img.compositeImage(image, rotated,
+      dstX: x.round(), dstY: (y - font.size).round());
 }
 
 class _Rgb {
@@ -185,14 +193,17 @@ class _Rgb {
 List<_Rgb> _quantize(img.Image image, int count) {
   final buckets = <int, _Rgb>{};
   final tallies = <int, int>{};
-  final shift = count <= 8 ? 5 : count <= 16 ? 4 : 3;
+  final shift = count <= 8
+      ? 5
+      : count <= 16
+          ? 4
+          : 3;
   for (final pixel in image) {
     final key = ((pixel.r.toInt() >> shift) << 10) |
         ((pixel.g.toInt() >> shift) << 5) |
         (pixel.b.toInt() >> shift);
     buckets.putIfAbsent(
-        key,
-        () => _Rgb(pixel.r.toInt(), pixel.g.toInt(), pixel.b.toInt()));
+        key, () => _Rgb(pixel.r.toInt(), pixel.g.toInt(), pixel.b.toInt()));
     tallies[key] = (tallies[key] ?? 0) + 1;
   }
   final ranked = buckets.keys.toList()
@@ -200,8 +211,8 @@ List<_Rgb> _quantize(img.Image image, int count) {
   return [for (final key in ranked.take(count)) buckets[key]!];
 }
 
-List<String> _traceColor(img.Image image, _Rgb color, bool bw, int speckle,
-    int simplify) {
+List<String> _traceColor(
+    img.Image image, _Rgb color, bool bw, int speckle, int simplify) {
   final width = image.width;
   final height = image.height;
   final mask = List<bool>.filled(width * height, false);
@@ -250,7 +261,8 @@ List<String> _traceColor(img.Image image, _Rgb color, bool bw, int speckle,
         if (ay != by) return ay < by ? a : b;
         return (a % width) <= (b % width) ? a : b;
       });
-      final contour = _moore(mask, width, height, start % width, start ~/ width);
+      final contour =
+          _moore(mask, width, height, start % width, start ~/ width);
       if (contour.length < 3) continue;
       final simplified = [
         for (var i = 0; i < contour.length; i += simplify) contour[i]
@@ -268,7 +280,8 @@ List<String> _traceColor(img.Image image, _Rgb color, bool bw, int speckle,
   return paths;
 }
 
-List<(int, int)> _moore(List<bool> mask, int width, int height, int startX, int startY) {
+List<(int, int)> _moore(
+    List<bool> mask, int width, int height, int startX, int startY) {
   const dirs = [
     (-1, 0),
     (-1, -1),

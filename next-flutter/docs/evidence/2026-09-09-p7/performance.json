@@ -1,0 +1,9 @@
+{
+  "mode": "debug unit tests",
+  "note": "These are assertion budgets from dart tests, not release/profile UI measurements. Do not treat them as shipping metrics.",
+  "host": "macOS darwin 25.6 x86_64",
+  "assertions": {
+    "searchToolsJson200": "elapsedMilliseconds < 1000",
+    "jsonFormat100KiB": "elapsedMilliseconds < 3000"
+  }
+}

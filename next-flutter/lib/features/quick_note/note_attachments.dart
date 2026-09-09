@@ -25,7 +25,8 @@ MarkdownImageInsertion prepareMarkdownImageInsertion(
   final start = requested.start.clamp(0, content.length);
   final end = requested.end.clamp(start, content.length);
   final leadingBreak = start > 0 && content[start - 1] != '\n' ? '\n' : '';
-  final trailingBreak = end < content.length && content[end] != '\n' ? '\n' : '';
+  final trailingBreak =
+      end < content.length && content[end] != '\n' ? '\n' : '';
   final text = '$leadingBreak$markdown$trailingBreak';
   return MarkdownImageInsertion(
       start: start, end: end, text: text, caret: start + text.length);
@@ -104,6 +105,7 @@ class NoteAttachmentStore {
   bool _isInside(Directory root, File file) {
     final rootPath = p.normalize(root.absolute.path);
     final filePath = p.normalize(file.absolute.path);
-    return filePath == rootPath || filePath.startsWith('$rootPath${p.separator}');
+    return filePath == rootPath ||
+        filePath.startsWith('$rootPath${p.separator}');
   }
 }

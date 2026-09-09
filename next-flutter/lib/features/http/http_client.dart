@@ -53,18 +53,16 @@ class HttpSender {
       client.findProxy = (_) => directive;
       final proxyPort = int.parse(proxy!.port);
       if (proxy.username.isNotEmpty) {
-        client.addProxyCredentials(
-            proxy.host.trim(),
-            proxyPort,
-            '',
+        client.addProxyCredentials(proxy.host.trim(), proxyPort, '',
             HttpClientBasicCredentials(proxy.username, proxy.password));
       }
     }
     try {
-      final uri = Uri.parse(buildRequestUrl(
-          request.url, request.method, request.params));
-      final httpRequest =
-          await client.openUrl(request.method, uri).timeout(client.connectionTimeout!);
+      final uri = Uri.parse(
+          buildRequestUrl(request.url, request.method, request.params));
+      final httpRequest = await client
+          .openUrl(request.method, uri)
+          .timeout(client.connectionTimeout!);
       httpRequest.followRedirects = true;
       httpRequest.maxRedirects = 20;
       _applyHeaders(httpRequest, request);
@@ -74,9 +72,7 @@ class HttpSender {
         if (!_hasHeader(httpRequest.headers, 'content-type')) {
           httpRequest.headers.contentType = ContentType.parse(
               request.body.isNotEmpty
-                  ? (request.bodyType.isEmpty
-                      ? 'text/plain'
-                      : request.bodyType)
+                  ? (request.bodyType.isEmpty ? 'text/plain' : request.bodyType)
                   : 'application/x-www-form-urlencoded');
         }
         final bytes = utf8.encode(body);
@@ -100,9 +96,7 @@ class HttpSender {
         durationMs: DateTime.now().difference(started).inMilliseconds,
         body: text,
         headers: _formatHeaders(response.headers),
-        cookies: response.cookies
-            .map((cookie) => cookie.toString())
-            .join('\n'),
+        cookies: response.cookies.map((cookie) => cookie.toString()).join('\n'),
       );
     } on TimeoutException {
       return HttpResponseResult(
@@ -161,8 +155,8 @@ class HttpSender {
   }
 
   void _applyHeaders(HttpClientRequest httpRequest, HttpRequestDraft request) {
-    for (final header in request.headers.where(
-        (item) => item.enabled && item.name.trim().isNotEmpty)) {
+    for (final header in request.headers
+        .where((item) => item.enabled && item.name.trim().isNotEmpty)) {
       httpRequest.headers.add(header.name, header.value);
     }
     final cookie = request.cookies
@@ -196,15 +190,16 @@ String? httpFindProxy(HttpProxyConfig? proxy) {
 String buildRequestUrl(
     String value, String method, List<KeyValueEntry> params) {
   final trimmed = value.trim();
-  final normalized = RegExp(r'^https?://', caseSensitive: false).hasMatch(trimmed)
-      ? trimmed
-      : 'http://$trimmed';
+  final normalized =
+      RegExp(r'^https?://', caseSensitive: false).hasMatch(trimmed)
+          ? trimmed
+          : 'http://$trimmed';
   if (method != 'GET' && method != 'HEAD' && method != 'OPTIONS') {
     return normalized;
   }
   final extra = [
-    for (final entry in params.where(
-        (item) => item.enabled && item.name.trim().isNotEmpty))
+    for (final entry
+        in params.where((item) => item.enabled && item.name.trim().isNotEmpty))
       '${Uri.encodeQueryComponent(entry.name)}=${Uri.encodeQueryComponent(entry.value)}'
   ];
   if (extra.isEmpty) return normalized;
@@ -212,13 +207,13 @@ String buildRequestUrl(
   return '$normalized$separator${extra.join('&')}';
 }
 
-String? buildRequestBody(String method, String body, String bodyType,
-    List<KeyValueEntry> params) {
+String? buildRequestBody(
+    String method, String body, String bodyType, List<KeyValueEntry> params) {
   if (method == 'GET' || method == 'HEAD' || method == 'OPTIONS') return null;
   if (body.isNotEmpty) return body;
   final form = [
-    for (final entry in params.where(
-        (item) => item.enabled && item.name.trim().isNotEmpty))
+    for (final entry
+        in params.where((item) => item.enabled && item.name.trim().isNotEmpty))
       '${Uri.encodeQueryComponent(entry.name)}=${Uri.encodeQueryComponent(entry.value)}'
   ];
   if (form.isEmpty) return null;
@@ -246,13 +241,17 @@ String _decodeBody(Uint8List bytes, ContentType? type) {
       mime == 'application/octet-stream' ||
       bytes.contains(0);
   if (binary) {
-    final preview = bytes.take(64).map((b) => b.toRadixString(16).padLeft(2, '0')).join(' ');
+    final preview = bytes
+        .take(64)
+        .map((b) => b.toRadixString(16).padLeft(2, '0'))
+        .join(' ');
     return '[binary ${bytes.length} bytes]\n$preview';
   }
   final charset = type?.charset ?? 'utf-8';
-  final text = charset.toLowerCase() == 'utf-8' || charset.toLowerCase() == 'utf8'
-      ? utf8.decode(bytes, allowMalformed: true)
-      : latin1.decode(bytes);
+  final text =
+      charset.toLowerCase() == 'utf-8' || charset.toLowerCase() == 'utf8'
+          ? utf8.decode(bytes, allowMalformed: true)
+          : latin1.decode(bytes);
   return _prettyJson(text);
 }
 

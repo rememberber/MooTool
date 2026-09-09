@@ -15,7 +15,8 @@ Uint8List _rgbPng({required int width, required int height}) {
   final image = img.Image(width: width, height: height);
   for (var y = 0; y < height; y++) {
     for (var x = 0; x < width; x++) {
-      image.setPixelRgb(x, y, x < width / 2 ? 255 : 0, y < height / 2 ? 255 : 0, 80);
+      image.setPixelRgb(
+          x, y, x < width / 2 ? 255 : 0, y < height / 2 ? 255 : 0, 80);
     }
   }
   return Uint8List.fromList(img.encodePng(image));
@@ -24,12 +25,12 @@ Uint8List _rgbPng({required int width, required int height}) {
 void main() {
   test('crop keeps the requested region and rejects empty crops', () {
     final source = _rgbPng(width: 8, height: 6);
-    final cropped = cropImageBytes(source, left: 4, top: 0, width: 4, height: 3);
+    final cropped =
+        cropImageBytes(source, left: 4, top: 0, width: 4, height: 3);
     final decoded = img.decodeImage(cropped)!;
     expect(decoded.width, 4);
     expect(decoded.height, 3);
-    expect(
-        () => cropImageBytes(source, left: 0, top: 0, width: 0, height: 2),
+    expect(() => cropImageBytes(source, left: 0, top: 0, width: 0, height: 2),
         throwsA(isA<FormatException>()));
   });
 
@@ -52,7 +53,8 @@ void main() {
     await controller.confirmScreenshotDraft(crop: true);
     expect(controller.screenshotDraft, isNull);
     expect(controller.imageAssets, hasLength(1));
-    final saved = await controller.imageLibrary.read(controller.imageAssets.first.name);
+    final saved =
+        await controller.imageLibrary.read(controller.imageAssets.first.name);
     final decoded = img.decodeImage(saved.bytes)!;
     expect(decoded.width, 4);
     expect(decoded.height, 6);
@@ -91,8 +93,7 @@ void main() {
     expect(smartisan.accent, isNot(modern.accent));
     expect(miui.accent, isNot(modern.accent));
     expect(claude.workspace, isNot(modern.workspace));
-    expect(
-        tokensFor(InterfaceStyle.quiet, Brightness.dark).workspace,
+    expect(tokensFor(InterfaceStyle.quiet, Brightness.dark).workspace,
         isNot(tokensFor(InterfaceStyle.modern, Brightness.dark).workspace));
   });
 }

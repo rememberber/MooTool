@@ -34,9 +34,8 @@ class RuntimeToolPage extends StatelessWidget {
               children: [
                 for (final tab in ['java', 'python', 'node'])
                   CompactButton(
-                    label: tab == 'java'
-                        ? 'Java/Groovy'
-                        : runtimeDisplayName(tab),
+                    label:
+                        tab == 'java' ? 'Java/Groovy' : runtimeDisplayName(tab),
                     primary: session.tab == tab,
                     onPressed: () {
                       session.tab = tab;
@@ -60,9 +59,8 @@ class RuntimeToolPage extends StatelessWidget {
                     label: controller.t('runtime.run'),
                     icon: Icons.play_arrow,
                     primary: true,
-                    onPressed: session.running
-                        ? null
-                        : () => controller.runRuntime()),
+                    onPressed:
+                        session.running ? null : () => controller.runRuntime()),
                 CompactButton(
                     label: controller.t('runtime.stop'),
                     icon: Icons.stop,
@@ -87,8 +85,8 @@ class RuntimeToolPage extends StatelessWidget {
                             ? '${status.command} ${status.version}'
                             : controller.t('runtime.missing',
                                 {'name': runtimeDisplayName(runtime)}),
-                    style: TextStyle(
-                        fontSize: 12, color: tokens.textSecondary)),
+                    style:
+                        TextStyle(fontSize: 12, color: tokens.textSecondary)),
               ],
             ),
           ),
@@ -111,8 +109,7 @@ class RuntimeToolPage extends StatelessWidget {
               Expanded(
                 child: TextField(
                   decoration: InputDecoration(
-                      isDense: true,
-                      labelText: controller.t('runtime.cwd')),
+                      isDense: true, labelText: controller.t('runtime.cwd')),
                   controller: TextEditingController(
                       text: session.workingDirectories[runtime] ?? ''),
                   onChanged: (value) =>
@@ -131,8 +128,7 @@ class RuntimeToolPage extends StatelessWidget {
                   TextSelection.collapsed(offset: session.code.length),
             style: const TextStyle(fontFamily: 'monospace', fontSize: 13),
             decoration: const InputDecoration(
-                border: InputBorder.none,
-                contentPadding: EdgeInsets.all(12)),
+                border: InputBorder.none, contentPadding: EdgeInsets.all(12)),
             onChanged: (value) {
               session.code = value;
               controller.scheduleSave();

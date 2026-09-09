@@ -20,4 +20,4 @@
 
 Intel Mac 主机构建已收到 Flutter 上游淘汰警告，不作为发行阻塞，但要写进证据。
 
-P6 桌面通道：`com.rememberber.mootool.next.flutter/desktop`。macOS `MainFlutterWindow.swift` 提供：IOPM 防休眠、NSPasteboard 剪贴板、NSStatusItem 托盘、关闭策略、`CGDisplayCreateImage` 截图、`NSColorSampler` 取色。截图前会暂时隐藏主窗口。本机无完整 Xcode，Swift 未在本机编译运行。ScreenCaptureKit 未用，记为后续项。
+P6 桌面通道：`com.rememberber.mootool.next.flutter/desktop`。macOS `MainFlutterWindow.swift` 提供：IOPM 防休眠、NSPasteboard 剪贴板、NSStatusItem 托盘、关闭策略、`CGDisplayCreateImage` 截图、`NSColorSampler` 取色。截图前会暂时隐藏主窗口。本机无完整 Xcode，Swift 未在本机编译运行。ScreenCaptureKit 未用，记为后续项。Release entitlements 关闭 App Sandbox 并允许出站网络；安装包不签名。

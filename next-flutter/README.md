@@ -2,7 +2,7 @@
 
 独立桌面产品线，使用 Flutter 实现。功能与布局以 `next/` Electron 1.1.4 为参照，产品身份、数据、安装和更新与 Java / Electron / Tauri / macOS Native 隔离。
 
-当前版本 **0.1.0**：完成 P0 工程基线、P1 工作台壳，以及 JSON 工具的可运行纵向闭环。其余 24 个工具已注册并可搜索，但按规格尚未实现，页面不会提供假成功操作。
+当前版本 **0.1.0**：P0–P6 工具与桌面通道已在代码侧落地；P7 更新只读 `next-flutter`，安装包脚本未签名。其余缺口见 [差异审查](docs/p7-gap-review.md)。页面不会提供假成功操作。
 
 开发文档：
 
@@ -45,3 +45,15 @@ flutter run -d macos -- --data-dir /tmp/mootool-next-flutter-dev
 | 应用 ID | `com.rememberber.mootool.next.flutter` |
 | 版本 | `pubspec.yaml` → `0.1.0+1` |
 | Tag | `next-flutter-v0.1.0` |
+
+## 打包（未签名）
+
+```bash
+python3 scripts/check-release.py --root .
+./scripts/package.sh macos     # 需要完整 Xcode；本机 Command Line Tools 会失败
+./scripts/package.sh windows   # 在 Windows 上
+./scripts/package.sh linux     # 在 Linux 上
+```
+
+产物命名见 [docs/release.md](docs/release.md)。更新检查只读 `next-flutter`，下载校验后手动打开安装包，不会提示自动安装成功。
+

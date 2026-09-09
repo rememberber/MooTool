@@ -25,7 +25,13 @@ class HardwareToolPage extends StatelessWidget {
             child: Wrap(
               spacing: 6,
               children: [
-                for (final tab in ['system', 'cpu', 'memory', 'storage', 'network'])
+                for (final tab in [
+                  'system',
+                  'cpu',
+                  'memory',
+                  'storage',
+                  'network'
+                ])
                   CompactButton(
                     label: controller.t('hardware.tab.$tab'),
                     primary: session.tab == tab,

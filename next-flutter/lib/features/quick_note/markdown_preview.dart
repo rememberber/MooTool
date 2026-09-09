@@ -36,11 +36,14 @@ class MarkdownPreview extends StatelessWidget {
   Widget _block(_MdBlock block, MooTokens tokens) {
     switch (block.type) {
       case 'h1':
-        return Text(block.text, style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700));
+        return Text(block.text,
+            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w700));
       case 'h2':
-        return Text(block.text, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600));
+        return Text(block.text,
+            style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w600));
       case 'h3':
-        return Text(block.text, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600));
+        return Text(block.text,
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600));
       case 'code':
         return DecoratedBox(
           decoration: BoxDecoration(
@@ -57,7 +60,8 @@ class MarkdownPreview extends StatelessWidget {
               border: Border(left: BorderSide(color: tokens.accent, width: 3))),
           child: Padding(
             padding: const EdgeInsets.only(left: 10),
-            child: Text(block.text, style: TextStyle(color: tokens.textSecondary)),
+            child:
+                Text(block.text, style: TextStyle(color: tokens.textSecondary)),
           ),
         );
       case 'hr':
@@ -113,8 +117,7 @@ class MarkdownPreview extends StatelessWidget {
       }
       if (match[1] != null) {
         spans.add(TextSpan(
-            text: match[1],
-            style: const TextStyle(fontFamily: 'monospace')));
+            text: match[1], style: const TextStyle(fontFamily: 'monospace')));
       } else if (match[2] != null) {
         spans.add(TextSpan(
             text: match[2],
@@ -128,7 +131,8 @@ class MarkdownPreview extends StatelessWidget {
             child: GestureDetector(
           onTap: () => onOpenLink?.call(match[5]!),
           child: Text(match[4]!,
-              style: TextStyle(color: tokens.accent, decoration: TextDecoration.underline)),
+              style: TextStyle(
+                  color: tokens.accent, decoration: TextDecoration.underline)),
         )));
       } else if (match[7] != null) {
         spans.add(TextSpan(text: match[6] ?? 'image'));
@@ -147,7 +151,10 @@ String sanitizeMarkdownSource(String source) => source
 
 class _MdBlock {
   _MdBlock(this.type,
-      {this.text = '', this.items = const [], this.rows = const [], this.alt = ''});
+      {this.text = '',
+      this.items = const [],
+      this.rows = const [],
+      this.alt = ''});
   final String type;
   final String text;
   final List<String> items;
@@ -178,7 +185,8 @@ List<_MdBlock> _blocks(String source) {
           : line.startsWith('##')
               ? 'h2'
               : 'h1';
-      blocks.add(_MdBlock(level, text: line.replaceFirst(RegExp(r'^#{1,3} '), '')));
+      blocks.add(
+          _MdBlock(level, text: line.replaceFirst(RegExp(r'^#{1,3} '), '')));
       index += 1;
       continue;
     }
@@ -197,7 +205,8 @@ List<_MdBlock> _blocks(String source) {
       while (index < lines.length &&
           RegExp(r'^[-*] \[[ xX]\] ').hasMatch(lines[index])) {
         final checked = RegExp(r'^[-*] \[[xX]\] ').hasMatch(lines[index]);
-        items.add('${checked ? '☑' : '☐'} ${lines[index].replaceFirst(RegExp(r'^[-*] \[[ xX]\] '), '')}');
+        items.add(
+            '${checked ? '☑' : '☐'} ${lines[index].replaceFirst(RegExp(r'^[-*] \[[ xX]\] '), '')}');
         index += 1;
       }
       blocks.add(_MdBlock('task', items: items));
@@ -215,8 +224,10 @@ List<_MdBlock> _blocks(String source) {
     if (RegExp(r'^\d+\. ').hasMatch(line)) {
       final items = <String>[];
       var number = 1;
-      while (index < lines.length && RegExp(r'^\d+\. ').hasMatch(lines[index])) {
-        items.add('$number. ${lines[index].replaceFirst(RegExp(r'^\d+\. '), '')}');
+      while (
+          index < lines.length && RegExp(r'^\d+\. ').hasMatch(lines[index])) {
+        items.add(
+            '$number. ${lines[index].replaceFirst(RegExp(r'^\d+\. '), '')}');
         number += 1;
         index += 1;
       }

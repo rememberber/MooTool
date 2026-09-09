@@ -45,21 +45,21 @@ class ImageLibrary {
       final name = p.basename(entity.path);
       if (name.startsWith('.') || name == 'library.json') continue;
       if (!_allowedName(name)) continue;
-        if (name.toLowerCase().endsWith('.svg')) {
-          items.add(ImageAssetSummary(
-              name: name, width: 0, height: 0, size: await entity.length()));
-          continue;
-        }
-        try {
-          final bytes = await entity.readAsBytes();
-          final decoded = img.decodeImage(bytes);
-          if (decoded == null) continue;
-          items.add(ImageAssetSummary(
-              name: name,
-              width: decoded.width,
-              height: decoded.height,
-              size: bytes.length));
-        } catch (_) {}
+      if (name.toLowerCase().endsWith('.svg')) {
+        items.add(ImageAssetSummary(
+            name: name, width: 0, height: 0, size: await entity.length()));
+        continue;
+      }
+      try {
+        final bytes = await entity.readAsBytes();
+        final decoded = img.decodeImage(bytes);
+        if (decoded == null) continue;
+        items.add(ImageAssetSummary(
+            name: name,
+            width: decoded.width,
+            height: decoded.height,
+            size: bytes.length));
+      } catch (_) {}
     }
     items.sort((a, b) => a.name.compareTo(b.name));
     return items;
@@ -71,7 +71,10 @@ class ImageLibrary {
     final bytes = await file.readAsBytes();
     if (name.toLowerCase().endsWith('.svg')) {
       return ImageAsset(
-          name: _safeName(name), width: 0, height: 0, bytes: Uint8List.fromList(bytes));
+          name: _safeName(name),
+          width: 0,
+          height: 0,
+          bytes: Uint8List.fromList(bytes));
     }
     final decoded = img.decodeImage(bytes);
     if (decoded == null) throw const FormatException('Unable to load image');
@@ -98,10 +101,7 @@ class ImageLibrary {
     }
     await _file(safe).writeAsBytes(bytes, flush: true);
     return ImageAsset(
-        name: safe,
-        width: decoded.width,
-        height: decoded.height,
-        bytes: bytes);
+        name: safe, width: decoded.width, height: decoded.height, bytes: bytes);
   }
 
   Future<ImageAsset> saveDataUrl(
@@ -156,7 +156,10 @@ class ImageLibrary {
   }
 
   bool _allowedName(String name) {
-    if (name.isEmpty || name.contains('..') || name.contains('/') || name.contains('\\')) {
+    if (name.isEmpty ||
+        name.contains('..') ||
+        name.contains('/') ||
+        name.contains('\\')) {
       return false;
     }
     return RegExp(r'^[\w .+\-()\[\]]{1,180}\.(png|jpe?g|gif|webp|svg)$',

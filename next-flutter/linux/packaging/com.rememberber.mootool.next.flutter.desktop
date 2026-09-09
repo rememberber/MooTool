@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=MooTool Next Flutter
+Comment=Independent desktop developer toolbox
+Exec=mootool-next-flutter
+Icon=mootool-next-flutter
+Terminal=false
+Categories=Development;Utility;
+StartupWMClass=mootool-next-flutter
+X-GNOME-UsesNotifications=false

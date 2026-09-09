@@ -79,8 +79,10 @@ String runQuickReplace(String input, String action) {
       return input.replaceAllMapped(
           RegExp(r'_([a-zA-Z0-9])'), (match) => match[1]!.toUpperCase());
     case 'camelToUnderscore':
-      return input.replaceAllMapped(
-          RegExp(r'([a-z0-9])([A-Z])'), (match) => '${match[1]}_${match[2]}').toLowerCase();
+      return input
+          .replaceAllMapped(RegExp(r'([a-z0-9])([A-Z])'),
+              (match) => '${match[1]}_${match[2]}')
+          .toLowerCase();
     case 'uppercase':
       return input.toUpperCase();
     case 'lowercase':
@@ -136,13 +138,14 @@ String runQuickReplace(String input, String action) {
 List<String> _normalizeLines(String value) =>
     value.replaceAll('\r\n', '\n').replaceAll('\r', '\n').split('\n');
 
-List<String> _nonEmpty(List<String> lines) =>
-    [for (final line in lines) line.trim()].where((line) => line.isNotEmpty).toList();
+List<String> _nonEmpty(List<String> lines) => [
+      for (final line in lines) line.trim()
+    ].where((line) => line.isNotEmpty).toList();
 
 String _replaceNumbers(String input, String Function(String value) transform) {
   return input.replaceAllMapped(
-      RegExp(r'[-+]?(?:\d[\d,]*\.?\d*|\.\d+)(?:e[-+]?\d+)?', caseSensitive: false),
-      (match) {
+      RegExp(r'[-+]?(?:\d[\d,]*\.?\d*|\.\d+)(?:e[-+]?\d+)?',
+          caseSensitive: false), (match) {
     final value = match[0]!;
     final parsed = num.tryParse(value.replaceAll(',', ''));
     return parsed != null && parsed.isFinite ? transform(value) : value;
@@ -176,10 +179,11 @@ String _addThousands(String value) {
   final pieces = normalized.split('.');
   final integer = pieces[0];
   final fraction = pieces.length > 1 ? pieces[1] : null;
-  final sign = integer.startsWith('-') || integer.startsWith('+') ? integer[0] : '';
+  final sign =
+      integer.startsWith('-') || integer.startsWith('+') ? integer[0] : '';
   final digits = sign.isEmpty ? integer : integer.substring(1);
-  final grouped = digits.replaceAllMapped(
-      RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => ',');
+  final grouped =
+      digits.replaceAllMapped(RegExp(r'\B(?=(\d{3})+(?!\d))'), (match) => ',');
   return '$sign$grouped${fraction == null ? '' : '.$fraction'}';
 }
 

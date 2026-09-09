@@ -88,13 +88,13 @@ class MooToolApp extends StatelessWidget {
                                     TextButton(
                                         onPressed: () => controller
                                             .confirmClose(CloseDecision.hide),
-                                        child: Text(
-                                            controller.t('settings.close.hide'))),
+                                        child: Text(controller
+                                            .t('settings.close.hide'))),
                                     FilledButton(
                                         onPressed: () => controller
                                             .confirmClose(CloseDecision.quit),
-                                        child: Text(
-                                            controller.t('settings.close.quit'))),
+                                        child: Text(controller
+                                            .t('settings.close.quit'))),
                                   ],
                                 ),
                               ],

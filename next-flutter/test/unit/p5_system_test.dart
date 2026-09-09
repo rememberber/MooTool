@@ -36,8 +36,8 @@ void main() {
   });
 
   test('python format only expands tabs and is not Prettier', () {
-    expect(formatRuntimeSource('\tprint("moo")  ', 'python'),
-        '    print("moo")');
+    expect(
+        formatRuntimeSource('\tprint("moo")  ', 'python'), '    print("moo")');
     expect(formatRuntimeSource('const x={a:1};console.log(x)', 'node'),
         'const x={a:1};console.log(x)');
   });
@@ -51,10 +51,13 @@ void main() {
     await store.writeUser({marker: 'isolated'});
     expect(await store.readUser(), {marker: 'isolated'});
     expect(Platform.environment.containsKey(marker), isFalse);
-    expect(store.runtimeEntries().any((item) => item.key == 'product.id'),
-        isTrue);
     expect(
-        store.runtimeEntries().singleWhere((item) => item.key == 'product.id').value,
+        store.runtimeEntries().any((item) => item.key == 'product.id'), isTrue);
+    expect(
+        store
+            .runtimeEntries()
+            .singleWhere((item) => item.key == 'product.id')
+            .value,
         Product.id);
   });
 
@@ -78,8 +81,8 @@ void main() {
     await second.load();
     await second.refreshEnvironment();
     expect(
-        second.environmentUser.any(
-            (item) => item.key == 'FLUTTER_P5' && item.value == 'ok'),
+        second.environmentUser
+            .any((item) => item.key == 'FLUTTER_P5' && item.value == 'ok'),
         isTrue);
     expect(second.runtime.tab, 'python');
     expect(second.runtime.code, 'print(40 + 2)');
@@ -89,7 +92,8 @@ void main() {
   });
 
   test('splitTranslationText and googleLanguage match Electron helpers', () {
-    expect(() => splitTranslationText('text', 1), throwsA(isA<FormatException>()));
+    expect(
+        () => splitTranslationText('text', 1), throwsA(isA<FormatException>()));
     final text = '${'a' * 8}\n${'b' * 8}';
     expect(splitTranslationText(text, 10).join(), text);
     expect(splitTranslationText(text, 10).every((chunk) => chunk.length <= 10),
@@ -97,8 +101,11 @@ void main() {
     final words = 'hello ' * 10;
     final wordChunks = splitTranslationText(words, 20);
     expect(wordChunks.join(), words);
-    expect(wordChunks.sublist(0, wordChunks.length - 1).every((chunk) =>
-        RegExp(r'\s$').hasMatch(chunk)), isTrue);
+    expect(
+        wordChunks
+            .sublist(0, wordChunks.length - 1)
+            .every((chunk) => RegExp(r'\s$').hasMatch(chunk)),
+        isTrue);
     final emoji = '${'a' * 9}😀${'b' * 9}';
     final emojiChunks = splitTranslationText(emoji, 10);
     expect(emojiChunks.join(), emoji);
@@ -149,21 +156,24 @@ void main() {
           sourceLang: 'auto',
           targetLang: 'zh-CN',
         ),
-        throwsA(predicate(
-            (error) => error is FormatException && '$error'.contains('ABORTED'))));
+        throwsA(predicate((error) =>
+            error is FormatException && '$error'.contains('ABORTED'))));
     expect(calls, 1);
   });
 
   test('WHOIS rejects invalid targets and follows IANA referral', () async {
     expect(() => normalizeWhoisTarget(''), throwsA(isA<FormatException>()));
-    expect(() => normalizeWhoisTarget('bad host'), throwsA(isA<FormatException>()));
+    expect(() => normalizeWhoisTarget('bad host'),
+        throwsA(isA<FormatException>()));
     final calls = <String>[];
-    final result = await queryWhois('Example.COM', query: (server, target) async {
+    final result =
+        await queryWhois('Example.COM', query: (server, target) async {
       calls.add('$server:$target');
       if (server == 'whois.iana.org') return 'refer: whois.example.net\n';
       return 'Domain Name: EXAMPLE.COM';
     });
-    expect(calls, ['whois.iana.org:example.com', 'whois.example.net:example.com']);
+    expect(
+        calls, ['whois.iana.org:example.com', 'whois.example.net:example.com']);
     expect(result, contains('EXAMPLE.COM'));
   });
 
@@ -171,7 +181,9 @@ void main() {
       () async {
     final snapshot = await collectSystemInfo();
     final system = snapshot.sections['system']!.expand((group) => group.items);
-    expect(system.any((item) => item.label == 'Platform' && item.value == Platform.operatingSystem),
+    expect(
+        system.any((item) =>
+            item.label == 'Platform' && item.value == Platform.operatingSystem),
         isTrue);
     expect(snapshot.sections['cpu']!.first.items.first.label, 'Logical cores');
     expect(snapshot.sections['cpu']!.first.items.first.value,

@@ -15,7 +15,8 @@ import 'package:mootool_next_flutter/features/pdf/page_ranges.dart';
 import 'package:mootool_next_flutter/features/pdf/pdf_service.dart';
 import 'package:mootool_next_flutter/features/pdf/pdf_session.dart';
 
-Uint8List _solidPng({int width = 16, int height = 16, int r = 0, int g = 0, int b = 0}) {
+Uint8List _solidPng(
+    {int width = 16, int height = 16, int r = 0, int g = 0, int b = 0}) {
   final image = img.Image(width: width, height: height);
   img.fill(image, color: img.ColorRgb8(r, g, b));
   return Uint8List.fromList(img.encodePng(image));
@@ -28,7 +29,12 @@ void main() {
     expect(session.message.length, maxMessageLength);
     session.applyPreset('closed', '暂停营业');
     expect(session.theme, 'coral');
-    session.restore({'message': 'x' * 12, 'theme': 'midnight', 'alignment': 'left', 'size': 125});
+    session.restore({
+      'message': 'x' * 12,
+      'theme': 'midnight',
+      'alignment': 'left',
+      'size': 125
+    });
     expect(session.alignment, 'left');
     expect(session.size, 125);
     expect(session.theme, 'midnight');
@@ -38,7 +44,8 @@ void main() {
     expect(parsePageSelection('1-3;2;7;9-10', 10), [1, 2, 3, 7, 9, 10]);
     expect(parsePageSelection('1-2, 4，6', 10), [1, 2, 4, 6]);
     expect(() => parsePageSelection('3-1', 5), throwsA(isA<FormatException>()));
-    expect(() => parsePageSelection('1;;2', 5), throwsA(isA<FormatException>()));
+    expect(
+        () => parsePageSelection('1;;2', 5), throwsA(isA<FormatException>()));
     expect(() => parsePageSelection('1-6', 5), throwsA(isA<FormatException>()));
     expect(selectSplitPages('2-8', 'odd', '', 10), [3, 5, 7]);
     expect(selectSplitPages('2-8', 'even', '', 10), [2, 4, 6, 8]);
@@ -54,7 +61,8 @@ void main() {
     expect(inspected.pageCount, 4);
     inspected.rule = 'odd';
     inspected.pageRange = '1-4';
-    final split = splitPdfTasks([inspected], outputDirectory: '${root.path}/out');
+    final split =
+        splitPdfTasks([inspected], outputDirectory: '${root.path}/out');
     expect(split.pageCount, 2);
     expect(SimplePdf.parse(File(split.outputs.single).readAsBytesSync()).pages,
         ['one', 'three']);
@@ -73,7 +81,8 @@ void main() {
   test('image helpers match Electron fixtures', () {
     expect(scaledDimensions(1200, 800, 0.5), (width: 600, height: 400));
     expect(scaledDimensions(3, 3, 0), (width: 1, height: 1));
-    expect(processedImageName('photo.jpg', 'compressed'), 'photo_compressed.jpg');
+    expect(
+        processedImageName('photo.jpg', 'compressed'), 'photo_compressed.jpg');
     expect(processedImageName('logo.png', 'watermarked', 'jpeg'),
         'logo_watermarked.jpg');
     expect(ensureImageDataUrl('YWJj'), 'data:image/png;base64,YWJj');
@@ -99,8 +108,8 @@ void main() {
     expect(decoded.width, 20);
     expect(decoded.height, 10);
     expect(compressed.length, isNot(original.size));
-    final marked = watermarkImageBytes(
-        original.bytes, WatermarkImageOptions(text: 'Moo'));
+    final marked =
+        watermarkImageBytes(original.bytes, WatermarkImageOptions(text: 'Moo'));
     expect(marked, isNot(original.bytes));
     final svg = vectorizeImage(_solidPng(), VectorizeOptions(preset: 'bw'));
     expect(svg.contains('<path'), isTrue);
@@ -110,7 +119,8 @@ void main() {
         name: 'block_svg.svg', bytes: Uint8List.fromList(utf8.encode(svg)));
     expect((await library.list()).map((item) => item.name),
         contains('block_svg.svg'));
-    await expectLater(library.save(name: '../escape.png', bytes: original.bytes),
+    await expectLater(
+        library.save(name: '../escape.png', bytes: original.bytes),
         throwsA(isA<FormatException>()));
   });
 
@@ -125,8 +135,8 @@ void main() {
     first.messageBoard.alignment = 'left';
     first.messageBoard.size = 110;
     first.pdf.tab = 'merge';
-    first.pdf.splitRows.add(PdfTaskRow(
-        path: '/tmp/a.pdf', name: 'a.pdf', size: 12, pageCount: 2));
+    first.pdf.splitRows.add(
+        PdfTaskRow(path: '/tmp/a.pdf', name: 'a.pdf', size: 12, pageCount: 2));
     await first.persist();
 
     final second = AppController(AppPaths(root));

@@ -45,19 +45,18 @@ class NetToolPage extends StatelessWidget {
         case 'lookup':
           final results = await InternetAddress.lookup(session.left.trim());
           controller.runLocal('net', (current) {
-            current.right = [
-              for (final item in results) item.address
-            ].join('\n');
-            if (current.right.isEmpty) current.right = controller.t('net.empty');
+            current.right =
+                [for (final item in results) item.address].join('\n');
+            if (current.right.isEmpty)
+              current.right = controller.t('net.empty');
           });
         case 'ping':
           final host = session.left.trim();
           if (!RegExp(r'^[A-Za-z0-9.:_-]+$').hasMatch(host)) {
             throw const FormatException('INVALID_TARGET');
           }
-          final args = Platform.isWindows
-              ? ['-n', '1', host]
-              : ['-c', '1', host];
+          final args =
+              Platform.isWindows ? ['-n', '1', host] : ['-c', '1', host];
           final result = await Process.run('ping', args);
           controller.runLocal('net', (current) {
             current.right = '${result.stdout}\n${result.stderr}'.trim();

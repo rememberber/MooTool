@@ -57,7 +57,8 @@ HttpRequestDraft parseCurlCommand(String command) {
     }
     if (['-H', '--header'].contains(token) && next != null) {
       final separator = next.indexOf(':');
-      final name = separator < 0 ? next.trim() : next.substring(0, separator).trim();
+      final name =
+          separator < 0 ? next.trim() : next.substring(0, separator).trim();
       final value = separator < 0 ? '' : next.substring(separator + 1).trim();
       headers.add(KeyValueEntry(name: name, value: value));
       if (name.toLowerCase() == 'content-type') bodyType = value;
@@ -160,8 +161,7 @@ List<String> tokenizeCurl(String value) {
   return tokens;
 }
 
-String shellQuote(String value) =>
-    "'${value.replaceAll("'", "'\"'\"'")}'";
+String shellQuote(String value) => "'${value.replaceAll("'", "'\"'\"'")}'";
 
 bool _active(KeyValueEntry value) =>
     value.enabled && value.name.trim().isNotEmpty;

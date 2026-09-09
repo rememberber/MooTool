@@ -69,7 +69,8 @@ class PdfToolPage extends StatelessWidget {
                             ? controller.splitSelectedPdfs()
                             : controller.mergeSelectedPdfs()),
                 Text(controller.t('pdf.simpleHint'),
-                    style: TextStyle(fontSize: 11, color: tokens.textSecondary)),
+                    style:
+                        TextStyle(fontSize: 11, color: tokens.textSecondary)),
               ],
             ),
           ),
@@ -126,7 +127,8 @@ class PdfToolPage extends StatelessWidget {
       subtitle: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('${row.pageCount} ${controller.t('pdf.pages')} · ${_bytes(row.size)}'),
+          Text(
+              '${row.pageCount} ${controller.t('pdf.pages')} · ${_bytes(row.size)}'),
           Wrap(
             spacing: 8,
             runSpacing: 4,
@@ -136,8 +138,8 @@ class PdfToolPage extends StatelessWidget {
                 width: 140,
                 child: TextField(
                   controller: TextEditingController(text: row.pageRange)
-                    ..selection = TextSelection.collapsed(
-                        offset: row.pageRange.length),
+                    ..selection =
+                        TextSelection.collapsed(offset: row.pageRange.length),
                   decoration: InputDecoration(
                       isDense: true,
                       labelText: session.tab == 'split'

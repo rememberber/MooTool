@@ -108,8 +108,8 @@ class HttpToolPage extends StatelessWidget {
             Expanded(
               child: TextField(
                 controller: TextEditingController(text: session.draft.url)
-                  ..selection = TextSelection.collapsed(
-                      offset: session.draft.url.length),
+                  ..selection =
+                      TextSelection.collapsed(offset: session.draft.url.length),
                 decoration: InputDecoration(
                     isDense: true, hintText: controller.t('http.url')),
                 onChanged: (value) => session.draft.url = value,
@@ -121,8 +121,7 @@ class HttpToolPage extends StatelessWidget {
               child: TextField(
                 decoration: InputDecoration(
                     isDense: true, labelText: controller.t('http.timeout')),
-                controller:
-                    TextEditingController(text: '${session.timeoutMs}'),
+                controller: TextEditingController(text: '${session.timeoutMs}'),
                 onSubmitted: (value) {
                   session.timeoutMs =
                       (int.tryParse(value) ?? 30000).clamp(1000, 120000);
@@ -149,8 +148,12 @@ class HttpToolPage extends StatelessWidget {
     final items = [
       for (final item in session.collection)
         if (session.search.isEmpty ||
-            item.request.name.toLowerCase().contains(session.search.toLowerCase()) ||
-            item.request.url.toLowerCase().contains(session.search.toLowerCase()))
+            item.request.name
+                .toLowerCase()
+                .contains(session.search.toLowerCase()) ||
+            item.request.url
+                .toLowerCase()
+                .contains(session.search.toLowerCase()))
           item
     ];
     return ColoredBox(
@@ -222,8 +225,8 @@ class HttpToolPage extends StatelessWidget {
               padding: const EdgeInsets.all(8),
               child: TextField(
                 maxLines: 4,
-                decoration: InputDecoration(
-                    hintText: controller.t('http.curlPrompt')),
+                decoration:
+                    InputDecoration(hintText: controller.t('http.curlPrompt')),
                 onChanged: (value) => session.curlText = value,
                 onSubmitted: (value) {
                   try {
@@ -346,7 +349,8 @@ class HttpToolPage extends StatelessWidget {
                 },
               ),
             if (result != null)
-              Text('${result.status} ${result.statusText}  ${result.durationMs}ms',
+              Text(
+                  '${result.status} ${result.statusText}  ${result.durationMs}ms',
                   style: const TextStyle(fontSize: 12)),
           ]),
           Expanded(

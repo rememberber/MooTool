@@ -88,8 +88,8 @@ class TranslationToolPage extends StatelessWidget {
                   maxLines: null,
                   expands: true,
                   controller: TextEditingController(text: session.source)
-                    ..selection = TextSelection.collapsed(
-                        offset: session.source.length),
+                    ..selection =
+                        TextSelection.collapsed(offset: session.source.length),
                   decoration: InputDecoration(
                       hintText: controller.t('translation.source'),
                       border: InputBorder.none,

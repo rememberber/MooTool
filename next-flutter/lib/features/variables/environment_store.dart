@@ -4,7 +4,8 @@ import 'dart:io';
 import '../../app/product.dart';
 
 class EnvironmentEntry {
-  EnvironmentEntry({required this.key, required this.value, this.scope = 'process'});
+  EnvironmentEntry(
+      {required this.key, required this.value, this.scope = 'process'});
   final String key;
   String value;
   final String scope;
@@ -18,9 +19,7 @@ class EnvironmentStore {
     if (!await file.exists()) return {};
     final json = jsonDecode(await file.readAsString());
     if (json is! Map) return {};
-    return {
-      for (final entry in json.entries) '${entry.key}': '${entry.value}'
-    };
+    return {for (final entry in json.entries) '${entry.key}': '${entry.value}'};
   }
 
   Future<void> writeUser(Map<String, String> values) async {
@@ -63,7 +62,9 @@ class EnvironmentStore {
           value: '${Platform.numberOfProcessors}',
           scope: 'runtime'),
       EnvironmentEntry(
-          key: 'executable', value: Platform.resolvedExecutable, scope: 'runtime'),
+          key: 'executable',
+          value: Platform.resolvedExecutable,
+          scope: 'runtime'),
     ];
   }
 }

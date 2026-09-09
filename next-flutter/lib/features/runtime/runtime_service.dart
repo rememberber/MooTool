@@ -28,16 +28,18 @@ class RuntimeExecutionService {
       await _detect(
           'groovy', groovyPath.isEmpty ? 'groovy' : groovyPath, ['--version']),
       await _detect('python', python, ['--version']),
-      await _detect('node', nodePath.isEmpty ? 'node' : nodePath, ['--version']),
+      await _detect(
+          'node', nodePath.isEmpty ? 'node' : nodePath, ['--version']),
     ];
   }
 
   Future<RuntimeStatus> _detect(
       String id, String command, List<String> args) async {
     try {
-      final result = await Process.run(command, args,
-          runInShell: false).timeout(const Duration(seconds: 3));
-      final output = '${result.stdout}\n${result.stderr}'.trim().split('\n').first;
+      final result = await Process.run(command, args, runInShell: false)
+          .timeout(const Duration(seconds: 3));
+      final output =
+          '${result.stdout}\n${result.stderr}'.trim().split('\n').first;
       return RuntimeStatus(
           id: id,
           available: result.exitCode == 0 || output.isNotEmpty,
@@ -71,7 +73,8 @@ class RuntimeExecutionService {
       throw const FormatException('Code exceeds 1 MB limit');
     }
     if (arguments.length > 40 ||
-        arguments.any((item) => item.length > 1000 || item.contains('\u0000'))) {
+        arguments
+            .any((item) => item.length > 1000 || item.contains('\u0000'))) {
       throw const FormatException('Invalid runtime arguments');
     }
     await tempRoot.create(recursive: true);
@@ -87,7 +90,8 @@ class RuntimeExecutionService {
         ? directory.path
         : Directory(workingDirectory.trim()).resolveSymbolicLinksSync();
     if (!Directory(cwd).existsSync()) {
-      throw const FormatException('Runtime working directory is not a directory');
+      throw const FormatException(
+          'Runtime working directory is not a directory');
     }
     final args = [...definition.args, ...arguments];
     final started = DateTime.now();
@@ -108,8 +112,8 @@ class RuntimeExecutionService {
         runInShell: false,
       );
       _active[requestId] = process;
-      final timeout = Timer(Duration(milliseconds: timeoutMs.clamp(1000, 120000)),
-          () {
+      final timeout =
+          Timer(Duration(milliseconds: timeoutMs.clamp(1000, 120000)), () {
         _timedOut.add(requestId);
         unawaited(cancel(requestId));
       });
@@ -121,7 +125,8 @@ class RuntimeExecutionService {
           unawaited(cancel(requestId));
           return;
         }
-        final used = chunk.length > remaining ? chunk.sublist(0, remaining) : chunk;
+        final used =
+            chunk.length > remaining ? chunk.sublist(0, remaining) : chunk;
         final text = utf8.decode(used, allowMalformed: true);
         outputBytes += used.length;
         if (stream == 'stdout') {
@@ -139,11 +144,9 @@ class RuntimeExecutionService {
       final stdoutDone = Completer<void>();
       final stderrDone = Completer<void>();
       process.stdout.listen((chunk) => append('stdout', chunk),
-          onDone: stdoutDone.complete,
-          onError: (_) => stdoutDone.complete());
+          onDone: stdoutDone.complete, onError: (_) => stdoutDone.complete());
       process.stderr.listen((chunk) => append('stderr', chunk),
-          onDone: stderrDone.complete,
-          onError: (_) => stderrDone.complete());
+          onDone: stderrDone.complete, onError: (_) => stderrDone.complete());
       process.stdin.close();
       final exitCode = await process.exitCode;
       timeout.cancel();

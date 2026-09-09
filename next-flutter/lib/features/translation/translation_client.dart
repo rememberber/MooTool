@@ -76,15 +76,14 @@ class TranslationSession {
       ..addAll([
         for (final item in json['history'] as List? ?? [])
           if (item is Map)
-            {
-              for (final entry in item.entries) '${entry.key}': '${entry.value}'
-            }
+            {for (final entry in item.entries) '${entry.key}': '${entry.value}'}
       ]);
   }
 }
 
 List<String> splitTranslationText(String text, int maxLength) {
-  if (maxLength < 2) throw const FormatException('Invalid translation chunk size');
+  if (maxLength < 2)
+    throw const FormatException('Invalid translation chunk size');
   if (text.length <= maxLength) return [text];
   final chunks = <String>[];
   var offset = 0;
@@ -197,12 +196,14 @@ class TranslationClient {
   Future<String> _defaultFetch(Uri uri, int timeoutMs) async {
     final client = HttpClient();
     try {
-      final request = await client.getUrl(uri).timeout(
-          Duration(milliseconds: timeoutMs.clamp(1000, 120000)));
+      final request = await client
+          .getUrl(uri)
+          .timeout(Duration(milliseconds: timeoutMs.clamp(1000, 120000)));
       request.headers.set('user-agent',
           'Mozilla/5.0 (MooTool Next Flutter) AppleWebKit/537.36 Chrome/138 Safari/537.36');
-      final response = await request.close().timeout(
-          Duration(milliseconds: timeoutMs.clamp(1000, 120000)));
+      final response = await request
+          .close()
+          .timeout(Duration(milliseconds: timeoutMs.clamp(1000, 120000)));
       if (response.statusCode < 200 || response.statusCode >= 300) {
         throw FormatException('Google HTTP ${response.statusCode}');
       }

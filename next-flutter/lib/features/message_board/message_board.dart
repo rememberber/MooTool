@@ -1,5 +1,12 @@
 const maxMessageLength = 80;
-const messageBoardThemes = ['sunbeam', 'coral', 'cobalt', 'forest', 'paper', 'midnight'];
+const messageBoardThemes = [
+  'sunbeam',
+  'coral',
+  'cobalt',
+  'forest',
+  'paper',
+  'midnight'
+];
 const messageBoardPresets = [
   ('away', 'sunbeam'),
   ('closed', 'coral'),
@@ -28,8 +35,9 @@ class MessageBoardSession {
   bool presenting = false;
   bool displayAwake = false;
 
-  String clampMessage(String value) =>
-      value.length <= maxMessageLength ? value : value.substring(0, maxMessageLength);
+  String clampMessage(String value) => value.length <= maxMessageLength
+      ? value
+      : value.substring(0, maxMessageLength);
 
   void applyPreset(String id, String text) {
     message = clampMessage(text);

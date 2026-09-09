@@ -82,9 +82,10 @@ class HostToolPage extends StatelessWidget {
                     : TextField(
                         maxLines: null,
                         expands: true,
-                        controller: TextEditingController(text: selected.content)
-                          ..selection = TextSelection.collapsed(
-                              offset: selected.content.length),
+                        controller:
+                            TextEditingController(text: selected.content)
+                              ..selection = TextSelection.collapsed(
+                                  offset: selected.content.length),
                         style: const TextStyle(
                             fontFamily: 'monospace', fontSize: 13),
                         decoration: const InputDecoration(

@@ -39,7 +39,8 @@ class VectorizeOptions {
   final int filterSpeckle;
 }
 
-({int width, int height}) scaledDimensions(int width, int height, double scale) {
+({int width, int height}) scaledDimensions(
+    int width, int height, double scale) {
   final normalized = scale.clamp(0.1, 1.0);
   return (
     width: (width * normalized).round().clamp(1, width),
@@ -47,13 +48,17 @@ class VectorizeOptions {
   );
 }
 
-String processedImageName(String name, String suffix, [String format = 'auto']) {
+String processedImageName(String name, String suffix,
+    [String format = 'auto']) {
   final extensionIndex = name.lastIndexOf('.');
   final base = extensionIndex > 0 ? name.substring(0, extensionIndex) : name;
-  final currentExtension =
-      extensionIndex > 0 ? name.substring(extensionIndex + 1).toLowerCase() : 'png';
+  final currentExtension = extensionIndex > 0
+      ? name.substring(extensionIndex + 1).toLowerCase()
+      : 'png';
   final extension = format == 'auto'
-      ? (currentExtension == 'jpg' || currentExtension == 'jpeg' ? 'jpg' : 'png')
+      ? (currentExtension == 'jpg' || currentExtension == 'jpeg'
+          ? 'jpg'
+          : 'png')
       : format == 'jpeg'
           ? 'jpg'
           : 'png';

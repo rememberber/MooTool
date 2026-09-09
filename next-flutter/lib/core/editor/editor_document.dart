@@ -119,10 +119,13 @@ class EditorDocument {
     final box = column;
     if (box == null) return;
     final lines = _text.split('\n');
-    for (var line = box.top; line <= box.bottom && line < lines.length; line++) {
+    for (var line = box.top;
+        line <= box.bottom && line < lines.length;
+        line++) {
       final start = box.left.clamp(0, lines[line].length);
       final end = box.right.clamp(start, lines[line].length);
-      lines[line] = '${lines[line].substring(0, start)}${lines[line].substring(end)}';
+      lines[line] =
+          '${lines[line].substring(0, start)}${lines[line].substring(end)}';
     }
     apply(lines.join('\n'),
         selectionStart: _offset(lines, box.top, box.left),

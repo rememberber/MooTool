@@ -10,6 +10,7 @@ class AppPaths {
   final Directory dataRoot;
 
   Directory get cacheRoot => Directory(p.join(dataRoot.path, 'cache'));
+  Directory get updatesDir => Directory(p.join(cacheRoot.path, 'updates'));
   Directory get databaseDir => Directory(p.join(dataRoot.path, 'database'));
   Directory get workspaceDir => Directory(p.join(dataRoot.path, 'workspace'));
   Directory get jsonVaultDir =>
@@ -54,6 +55,7 @@ class AppPaths {
     for (final directory in [
       dataRoot,
       cacheRoot,
+      updatesDir,
       databaseDir,
       workspaceDir,
       jsonVaultDir,

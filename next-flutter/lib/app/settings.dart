@@ -282,7 +282,8 @@ class AppSettings {
         _enum(CloseBehavior.values, json['closeBehavior'], CloseBehavior.ask);
     settings.trayEnabled = json['trayEnabled'] as bool? ?? true;
     settings.autoCheckUpdates = json['autoCheckUpdates'] as bool? ?? false;
-    settings.autoDownloadUpdates = json['autoDownloadUpdates'] as bool? ?? false;
+    settings.autoDownloadUpdates =
+        json['autoDownloadUpdates'] as bool? ?? false;
     settings.startMaximized = json['startMaximized'] as bool? ?? false;
     settings.showSidebarDivider = json['showSidebarDivider'] as bool? ?? true;
     settings.sqlDialect = json['sqlDialect'] as String? ?? 'mysql';
@@ -314,7 +315,8 @@ class AppSettings {
     settings.qrLevel = json['qrLevel'] as String? ?? 'M';
     settings.randomLength = (json['randomLength'] as num?)?.toInt() ?? 16;
     settings.exportDirectory = json['exportDirectory'] as String? ?? '';
-    settings.defaultTranslator = json['defaultTranslator'] as String? ?? 'google';
+    settings.defaultTranslator =
+        json['defaultTranslator'] as String? ?? 'google';
     settings.defaultSourceLang = json['defaultSourceLang'] as String? ?? 'auto';
     settings.defaultTargetLang =
         json['defaultTargetLang'] as String? ?? 'zh-CN';

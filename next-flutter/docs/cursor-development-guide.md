@@ -3,7 +3,7 @@
 > 文档日期：2026-09-08  
 > 产品 ID：`next-flutter`  
 > 产品名称：MooTool Next Flutter  
-> 状态：P0–P2 可运行工程已落地（见 `docs/evidence/2026-09-08-p0-p2/`）；P3–P7 未开始。  
+> 状态：P0–P6 功能与桌面通道已在代码侧落地（见 `docs/evidence/`）；P7 更新通道与未签名打包脚本已写，本机未产出安装包、未改 `update-manifest.json`。  
 > 功能参考：`next/` Electron 版 1.1.4，仓库基线以本机 `git rev-parse HEAD` 为准。
 
 ## 1. 目标与范围

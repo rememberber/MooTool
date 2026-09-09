@@ -33,8 +33,8 @@ class SnapshotBackup {
         await _copyDirectory(directory, Directory(p.join(dest.path, name)));
       }
     }
-    await File(p.join(dest.path, 'manifest.json')).writeAsString(
-        const JsonEncoder.withIndent('  ').convert({
+    await File(p.join(dest.path, 'manifest.json'))
+        .writeAsString(const JsonEncoder.withIndent('  ').convert({
       'productId': Product.id,
       'schemaVersion': Product.schemaVersion,
       'createdAt': DateTime.now().toUtc().toIso8601String(),
@@ -70,7 +70,8 @@ class SnapshotBackup {
 
   static Future<void> _copyDirectory(Directory from, Directory to) async {
     await to.create(recursive: true);
-    await for (final entity in from.list(recursive: false, followLinks: false)) {
+    await for (final entity
+        in from.list(recursive: false, followLinks: false)) {
       final name = p.basename(entity.path);
       if (name == '.' || name == '..') continue;
       if (entity is File) {

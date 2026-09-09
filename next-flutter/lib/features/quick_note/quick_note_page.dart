@@ -58,7 +58,8 @@ class QuickNotePage extends StatelessWidget {
             Expanded(
               child: Row(
                 children: [
-                  if (session.treeOpen && (!compact || session.viewMode != 'preview'))
+                  if (session.treeOpen &&
+                      (!compact || session.viewMode != 'preview'))
                     SizedBox(
                       width: session.vaultWidth.clamp(180.0, 320.0).toDouble(),
                       child: _vault(tokens),
@@ -153,8 +154,7 @@ class QuickNotePage extends StatelessWidget {
               width: 88,
               child: TextField(
                 decoration: InputDecoration(
-                    isDense: true,
-                    hintText: controller.t('note.columnInsert')),
+                    isDense: true, hintText: controller.t('note.columnInsert')),
                 onSubmitted: (value) {
                   if (value.isNotEmpty) controller.insertNoteColumn(value);
                 },
@@ -300,9 +300,8 @@ class QuickNotePage extends StatelessWidget {
       document: session.document,
       wrap: session.wrap,
       fontSize: session.metadata.fontSize,
-      fontFamily: session.metadata.fontName.isEmpty
-          ? null
-          : session.metadata.fontName,
+      fontFamily:
+          session.metadata.fontName.isEmpty ? null : session.metadata.fontName,
       onChanged: (value) {
         controller.scheduleSave();
         controller.refresh();
@@ -434,7 +433,8 @@ class QuickNotePage extends StatelessWidget {
         padding: const EdgeInsets.all(8),
         children: [
           Text(controller.t('note.replace.title'),
-              style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
+              style:
+                  const TextStyle(fontWeight: FontWeight.w600, fontSize: 12)),
           const SizedBox(height: 6),
           Text(controller.t('note.replace.hint'),
               style: TextStyle(color: tokens.textSecondary, fontSize: 11)),
@@ -456,10 +456,9 @@ class QuickNotePage extends StatelessWidget {
     final session = controller.note;
     final file = session.documentId == null
         ? null
-        : controller.vault.documents
-            .cast<VaultDocument?>()
-            .firstWhere((item) => item!.id == session.documentId,
-                orElse: () => null);
+        : controller.vault.documents.cast<VaultDocument?>().firstWhere(
+            (item) => item!.id == session.documentId,
+            orElse: () => null);
     final path = file == null
         ? controller.t('note.unsaved')
         : controller.vault.pathOf(file.id);
@@ -513,7 +512,8 @@ class QuickNotePage extends StatelessWidget {
   Future<void> _importImage() async {
     final file = await openFile(acceptedTypeGroups: [
       const XTypeGroup(
-          label: 'Image', extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'])
+          label: 'Image',
+          extensions: ['png', 'jpg', 'jpeg', 'gif', 'webp', 'bmp'])
     ]);
     if (file == null) return;
     await controller.importNoteImage(File(file.path));

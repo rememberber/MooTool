@@ -33,8 +33,7 @@ void main() {
   });
 
   test('rejects curl authentication instead of dropping it', () {
-    expect(
-        () => parseCurlCommand("curl https://example.com -u user:pass"),
+    expect(() => parseCurlCommand("curl https://example.com -u user:pass"),
         throwsA(isA<FormatException>()));
   });
 

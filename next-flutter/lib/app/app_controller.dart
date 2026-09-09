@@ -11,6 +11,9 @@ import 'settings.dart';
 import 'tool_registry.dart';
 import '../core/desktop/desktop_host.dart';
 import '../core/desktop/window_policy.dart';
+import '../core/update/update_downloader.dart';
+import '../core/update/update_models.dart';
+import '../core/update/update_service.dart';
 import '../core/editor/editor_document.dart';
 import '../core/editor/find_replace.dart';
 import '../core/git/git_service.dart';
@@ -164,8 +167,10 @@ class JsonSession {
 }
 
 class AppController extends ChangeNotifier {
-  AppController(this.paths, {DesktopHost? desktopHost})
-      : desktopHost = desktopHost ?? ChannelDesktopHost() {
+  AppController(this.paths,
+      {DesktopHost? desktopHost, UpdateService? updateService})
+      : desktopHost = desktopHost ?? ChannelDesktopHost(),
+        updateService = updateService ?? UpdateService() {
     this.desktopHost.onCloseRequested = () {
       unawaited(handleNativeCloseRequested());
     };
@@ -181,6 +186,7 @@ class AppController extends ChangeNotifier {
 
   final AppPaths paths;
   final DesktopHost desktopHost;
+  final UpdateService updateService;
   DesktopCapabilities desktopCaps = DesktopCapabilities();
   bool closePrompt = false;
   String? lastBackupPath;
@@ -209,8 +215,8 @@ class AppController extends ChangeNotifier {
   final RuntimeSession runtime = RuntimeSession();
   final TranslationSession translation = TranslationSession();
   final TranslationClient translationClient = TranslationClient();
-  late final EnvironmentStore environmentStore = EnvironmentStore(
-      File('${paths.dataRoot.path}/environment/user.json'));
+  late final EnvironmentStore environmentStore =
+      EnvironmentStore(File('${paths.dataRoot.path}/environment/user.json'));
   late final RuntimeExecutionService runtimeService =
       RuntimeExecutionService(Directory('${paths.cacheRoot.path}/runtime'));
   List<EnvironmentEntry> environmentProcess = [];
@@ -235,7 +241,8 @@ class AppController extends ChangeNotifier {
   int screenshotCropTop = 0;
   int screenshotCropWidth = 0;
   int screenshotCropHeight = 0;
-  late final NoteAttachmentStore attachments = NoteAttachmentStore(paths.noteVaultDir);
+  late final NoteAttachmentStore attachments =
+      NoteAttachmentStore(paths.noteVaultDir);
   DocumentVault vault = DocumentVault();
   VaultPreferences jsonVaultPrefs = VaultPreferences();
   VaultPreferences noteVaultPrefs = VaultPreferences();
@@ -244,6 +251,14 @@ class AppController extends ChangeNotifier {
   bool _pauseAutosave = false;
   bool _closed = false;
   Future<void> _writeQueue = Future.value();
+  UpdateCheckResult? updateResult;
+  UpdateDownloadStatus updateDownloadStatus = UpdateDownloadStatus.idle;
+  String updateNotice = '';
+  double updatePercent = 0;
+  String? updateLocalPath;
+  UpdateDownloader? _updateDownloader;
+  UpdateBytesFetcher? updateBytesFetcher;
+  Future<bool> Function(String path)? updateOpener;
 
   L10n get l10n => L10n(settings.language);
   String t(String key, [Map<String, String>? params]) => l10n.t(key, params);
@@ -284,6 +299,9 @@ class AppController extends ChangeNotifier {
       coordinator.forceOwner(id, 'detached-$id');
     }
     await applyDesktopPolicy(launch: true);
+    if (settings.autoCheckUpdates) {
+      unawaited(checkForUpdates(quiet: true));
+    }
     notifyListeners();
   }
 
@@ -302,11 +320,11 @@ class AppController extends ChangeNotifier {
     if (workspace['runtime'] is Map)
       runtime.restore(Map<String, Object?>.from(workspace['runtime'] as Map));
     if (workspace['translation'] is Map)
-      translation.restore(
-          Map<String, Object?>.from(workspace['translation'] as Map));
+      translation
+          .restore(Map<String, Object?>.from(workspace['translation'] as Map));
     if (workspace['messageBoard'] is Map)
-      messageBoard.restore(
-          Map<String, Object?>.from(workspace['messageBoard'] as Map));
+      messageBoard
+          .restore(Map<String, Object?>.from(workspace['messageBoard'] as Map));
     if (workspace['pdf'] is Map)
       pdf.restore(Map<String, Object?>.from(workspace['pdf'] as Map));
     if (workspace['vault'] is Map)
@@ -876,8 +894,8 @@ class AppController extends ChangeNotifier {
 
   void applyQuickReplace(String action) {
     try {
-      note.document.transformSelectionOrAll(
-          (value) => runQuickReplace(value, action));
+      note.document
+          .transformSelectionOrAll((value) => runQuickReplace(value, action));
       note.notice = action;
     } catch (error) {
       note.notice = error.toString();
@@ -919,8 +937,7 @@ class AppController extends ChangeNotifier {
     final insertion = prepareMarkdownImageInsertion(
       note.document.text,
       TextSelectionRange(
-          start: note.document.selectionStart,
-          end: note.document.selectionEnd),
+          start: note.document.selectionStart, end: note.document.selectionEnd),
       '![$alt]($relative)',
     );
     note.document.apply(
@@ -1146,8 +1163,7 @@ class AppController extends ChangeNotifier {
   }
 
   void applyHostToSystem() {
-    host.notice =
-        '系统 hosts 写入需要提权助手，本轮未实现。方案只保存在本产品数据目录，拒绝授权时不会标记为已应用到系统。';
+    host.notice = '系统 hosts 写入需要提权助手，本轮未实现。方案只保存在本产品数据目录，拒绝授权时不会标记为已应用到系统。';
     notifyListeners();
   }
 
@@ -1376,8 +1392,7 @@ class AppController extends ChangeNotifier {
     try {
       final dataUrl = ensureImageDataUrl(value);
       final saved = await imageLibrary.saveDataUrl(
-          name:
-              'Base64-${DateTime.now().millisecondsSinceEpoch}.png',
+          name: 'Base64-${DateTime.now().millisecondsSinceEpoch}.png',
           dataUrl: dataUrl);
       imagePanel = '';
       imageNotice = '';
@@ -1612,7 +1627,8 @@ class AppController extends ChangeNotifier {
         final asset = await imageLibrary.read(name);
         final svg = vectorizeImage(asset.bytes, options);
         final saved = await imageLibrary.save(
-            name: processedImageName(name, 'svg', 'png').replaceAll('.png', '.svg'),
+            name: processedImageName(name, 'svg', 'png')
+                .replaceAll('.png', '.svg'),
             bytes: Uint8List.fromList(svg.codeUnits));
         preferred ??= saved.name;
       }
@@ -1640,7 +1656,8 @@ class AppController extends ChangeNotifier {
         }
         preferred ??= saved.name;
       }
-      imageNotice = t('image.processComplete', {'count': '${imageTargets.length}'});
+      imageNotice =
+          t('image.processComplete', {'count': '${imageTargets.length}'});
       await refreshImages(preferred: preferred);
     } catch (error) {
       imageNotice = error.toString();
@@ -1671,7 +1688,10 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> splitSelectedPdfs() async {
-    final selected = [for (final row in pdf.splitRows) if (row.selected) row];
+    final selected = [
+      for (final row in pdf.splitRows)
+        if (row.selected) row
+    ];
     if (selected.isEmpty) {
       pdf.notice = t('pdf.selectTask');
       notifyListeners();
@@ -1702,7 +1722,10 @@ class AppController extends ChangeNotifier {
   }
 
   Future<void> mergeSelectedPdfs() async {
-    final selected = [for (final row in pdf.mergeRows) if (row.selected) row];
+    final selected = [
+      for (final row in pdf.mergeRows)
+        if (row.selected) row
+    ];
     if (selected.length < 2) {
       pdf.notice = t('pdf.selectTwo');
       notifyListeners();
@@ -1829,6 +1852,98 @@ class AppController extends ChangeNotifier {
   }
 
   Future<GitStatus> noteGitStatus() => git.status(paths.noteVaultDir);
+
+  Future<void> checkForUpdates({bool quiet = false}) async {
+    updateNotice = '';
+    notifyListeners();
+    try {
+      final result = await updateService.check(Product.version);
+      if (_closed) return;
+      updateResult = result;
+      if (result.status == UpdateCheckStatus.available &&
+          result.download != null) {
+        updateDownloadStatus = UpdateDownloadStatus.available;
+      } else {
+        updateDownloadStatus = UpdateDownloadStatus.idle;
+        updateLocalPath = null;
+      }
+      if (!quiet) {
+        updateNotice = switch (result.status) {
+          UpdateCheckStatus.unpublished => t('settings.updateUnpublished'),
+          UpdateCheckStatus.latest => t('settings.updateLatest'),
+          UpdateCheckStatus.available => result.download == null
+              ? t('settings.updateNoAsset')
+              : t('settings.updateAvailable',
+                  {'version': result.latestVersion}),
+        };
+      }
+      if (result.status == UpdateCheckStatus.available &&
+          result.download != null &&
+          settings.autoDownloadUpdates) {
+        await downloadUpdate();
+      }
+    } catch (error) {
+      updateDownloadStatus = UpdateDownloadStatus.error;
+      updateNotice = t('settings.updateError', {'error': '$error'});
+    }
+    notifyListeners();
+  }
+
+  Future<void> downloadUpdate() async {
+    final download = updateResult?.download;
+    if (download == null) {
+      updateNotice = t('settings.updateNoAsset');
+      notifyListeners();
+      return;
+    }
+    _updateDownloader = UpdateDownloader(
+      directory: paths.updatesDir,
+      fetcher: updateBytesFetcher ?? defaultUpdateBytesFetcher,
+      opener: updateOpener ?? openLocalPath,
+    );
+    updateDownloadStatus = UpdateDownloadStatus.downloading;
+    updatePercent = 0;
+    updateNotice = t('settings.updateDownloading');
+    notifyListeners();
+    try {
+      final file =
+          await _updateDownloader!.download(download, onProgress: (progress) {
+        updatePercent = progress.percent;
+        notifyListeners();
+      });
+      updateLocalPath = file.path;
+      updateDownloadStatus = UpdateDownloadStatus.ready;
+      updateNotice = t('settings.updateReadyUnsigned');
+    } on UpdateCancelled {
+      updateDownloadStatus = UpdateDownloadStatus.available;
+      updateLocalPath = null;
+      updateNotice = t('settings.updateCancelled');
+    } catch (error) {
+      updateDownloadStatus = UpdateDownloadStatus.error;
+      updateLocalPath = null;
+      updateNotice = t('settings.updateError', {'error': '$error'});
+    }
+    notifyListeners();
+  }
+
+  void cancelUpdateDownload() {
+    _updateDownloader?.cancel();
+  }
+
+  Future<void> openDownloadedUpdate() async {
+    final path = updateLocalPath;
+    if (path == null) {
+      updateNotice = t('settings.updateNotReady');
+      notifyListeners();
+      return;
+    }
+    final opened = await (_updateDownloader ??
+            UpdateDownloader(directory: paths.updatesDir))
+        .openInstaller(File(path));
+    updateNotice =
+        opened ? t('settings.updateOpened') : t('settings.updateOpenFailed');
+    notifyListeners();
+  }
 
   Future<void> initNoteGit() async {
     await persist();

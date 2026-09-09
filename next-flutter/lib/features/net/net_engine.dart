@@ -43,10 +43,9 @@ Future<String> queryWhois(String rawTarget, {WhoisQuery? query}) async {
   final target = normalizeWhoisTarget(rawTarget);
   final lookup = query ?? whoisServerQuery;
   final first = await lookup('whois.iana.org', target);
-  final referral =
-      RegExp(r'^(?:refer|whois):\s*(\S+)', multiLine: true, caseSensitive: false)
-          .firstMatch(first)
-          ?[1];
+  final referral = RegExp(r'^(?:refer|whois):\s*(\S+)',
+          multiLine: true, caseSensitive: false)
+      .firstMatch(first)?[1];
   if (referral == null || referral == 'whois.iana.org') return first;
   return lookup(referral, target);
 }
