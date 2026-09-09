@@ -20,6 +20,7 @@ bouncyCastle = "1.80"
 zxing = "3.5.4"
 pdfbox = "3.0.4"
 oshi = "6.8.2"
+okhttp = "4.12.0"
 
 [libraries]
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
@@ -54,6 +55,7 @@ bouncy-castle = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bou
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
 pdfbox = { module = "org.apache.pdfbox:pdfbox", version.ref = "pdfbox" }
 oshi-core = { module = "com.github.oshi:oshi-core", version.ref = "oshi" }
+okhttp = { module = "com.squareup.okhttp3:okhttp", version.ref = "okhttp" }
 junit = { module = "junit:junit", version.ref = "junit" }
 
 [plugins]

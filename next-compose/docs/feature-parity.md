@@ -182,6 +182,7 @@ JSON 文本编辑保留大整数与小数字面量；不能先转 Double 再声�
 - 集合新建、命名、搜索、保存覆盖、删除及历史回填；请求所有字段、选项和必要响应快照完整持久化。
 - cURL 导入/导出是文本解析/生成，支持范围逐项列明；**绝不执行粘贴命令**，未知参数不能悄悄丢失认证/正文。
 - 验收：本地服务器核对 method/query/body/重复参数/headers/cookies、重定向、超时、取消、超限响应；重启集合恢复；无网不能显示成功示例。
+- 集合存在本产品 `data/http/requests.json`。客户端为 OkHttp 4.12.0；同名 Header 按多值发送，Cookie 表覆盖 Cookie 头。见 [DIFF-018](diff/018-http-okhttp-repeat-headers.md)。
 
 ### F10 Host
 

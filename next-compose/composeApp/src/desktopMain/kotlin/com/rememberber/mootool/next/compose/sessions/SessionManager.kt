@@ -24,6 +24,14 @@ import com.rememberber.mootool.next.compose.domain.ColorEngine
 import com.rememberber.mootool.next.compose.domain.ColorFormat
 import com.rememberber.mootool.next.compose.domain.ColorThemeId
 import com.rememberber.mootool.next.compose.domain.MessageBoardEngine
+import com.rememberber.mootool.next.compose.domain.HttpEngine
+import com.rememberber.mootool.next.compose.domain.HttpCookie
+import com.rememberber.mootool.next.compose.domain.HttpMethod
+import com.rememberber.mootool.next.compose.domain.HttpPair
+import com.rememberber.mootool.next.compose.domain.HttpRequestDraft
+import com.rememberber.mootool.next.compose.domain.HttpRequestTab
+import com.rememberber.mootool.next.compose.domain.HttpResponseResult
+import com.rememberber.mootool.next.compose.domain.HttpResponseTab
 import com.rememberber.mootool.next.compose.domain.EnvDisplayScope
 import com.rememberber.mootool.next.compose.domain.EnvPersistScope
 import com.rememberber.mootool.next.compose.domain.EnvSnapshot
@@ -1356,6 +1364,116 @@ class HostSession {
 }
 
 @Serializable
+data class HttpSessionSnapshot(
+    val selectedId: String = "",
+    val name: String = "",
+    val method: String = "GET",
+    val url: String = "",
+    val params: List<HttpPair> = emptyList(),
+    val headers: List<HttpPair> = emptyList(),
+    val cookies: List<HttpCookie> = emptyList(),
+    val body: String = "",
+    val bodyType: String = "application/json",
+    val query: String = "",
+    val requestTab: String = "params",
+    val responseTab: String = "body",
+    val timeoutMs: Int = 30_000
+)
+
+class HttpSession {
+    var selectedId: String = ""
+    var name: String = ""
+    var method: HttpMethod = HttpMethod.GET
+    var url: String = ""
+    var params: List<HttpPair> = emptyList()
+    var headers: List<HttpPair> = emptyList()
+    var cookies: List<HttpCookie> = emptyList()
+    var body: String = ""
+    var bodyType: String = "application/json"
+    var query: String = ""
+    var requestTab: HttpRequestTab = HttpRequestTab.Params
+    var responseTab: HttpResponseTab = HttpResponseTab.Body
+    var timeoutMs: Int = 30_000
+    var sending: Boolean = false
+    var requestId: String = ""
+    var response: HttpResponseResult? = null
+    var previousResponse: HttpResponseResult? = null
+    var notice: String = ""
+    var error: String = ""
+    var historyOpen: Boolean = false
+    var curlOpen: Boolean = false
+    var curlValue: String = ""
+    var saveOpen: Boolean = false
+    var saveName: String = ""
+    var deleteConfirm: Boolean = false
+
+    fun draft(): HttpRequestDraft = HttpRequestDraft(
+        id = selectedId,
+        name = name,
+        method = method,
+        url = url,
+        params = params,
+        headers = headers,
+        cookies = cookies,
+        body = body,
+        bodyType = bodyType
+    )
+
+    fun loadDraft(draft: HttpRequestDraft) {
+        selectedId = draft.id
+        name = draft.name
+        method = draft.method
+        url = draft.url
+        params = draft.params
+        headers = draft.headers
+        cookies = draft.cookies
+        body = draft.body
+        bodyType = draft.bodyType
+    }
+
+    fun snapshotState(): HttpSessionSnapshot = HttpSessionSnapshot(
+        selectedId = selectedId,
+        name = name,
+        method = method.name,
+        url = url,
+        params = params,
+        headers = headers,
+        cookies = cookies,
+        body = body.take(256_000),
+        bodyType = bodyType,
+        query = query,
+        requestTab = requestTab.name.lowercase(),
+        responseTab = responseTab.name.lowercase(),
+        timeoutMs = timeoutMs
+    )
+
+    fun restore(snapshot: HttpSessionSnapshot) {
+        selectedId = snapshot.selectedId
+        name = snapshot.name
+        method = HttpMethod.entries.find { it.name.equals(snapshot.method, ignoreCase = true) } ?: HttpMethod.GET
+        url = snapshot.url
+        params = snapshot.params
+        headers = snapshot.headers
+        cookies = snapshot.cookies
+        body = snapshot.body
+        bodyType = snapshot.bodyType.ifBlank { "application/json" }
+        query = snapshot.query
+        requestTab = HttpRequestTab.entries.find { it.name.equals(snapshot.requestTab, ignoreCase = true) } ?: HttpRequestTab.Params
+        responseTab = HttpResponseTab.entries.find { it.name.equals(snapshot.responseTab, ignoreCase = true) } ?: HttpResponseTab.Body
+        timeoutMs = HttpEngine.clampTimeout(snapshot.timeoutMs)
+        sending = false
+        requestId = ""
+        response = null
+        previousResponse = null
+        notice = ""
+        error = ""
+        historyOpen = false
+        curlOpen = false
+        deleteConfirm = false
+    }
+}
+
+@Serializable
 data class HardwareSessionSnapshot(
     val tab: String = "system",
     val revealSensitive: Boolean = false
@@ -1411,6 +1529,7 @@ class SessionManager(private val store: SessionStore) {
     private var netSessionCache: NetSession? = null
     private var variablesSessionCache: VariablesSession? = null
     private var hostSessionCache: HostSession? = null
+    private var httpSessionCache: HttpSession? = null
     private var hardwareSessionCache: HardwareSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
     val detached: StateFlow<Set<ToolId>> = _detached
@@ -1745,6 +1864,28 @@ class SessionManager(private val store: SessionStore) {
 
     fun persistHost() {
         store.save(ToolId.Host.id, jsonCodec.encodeToString(hostSession().snapshotState()))
+    }
+
+    fun httpSession(): HttpSession {
+        httpSessionCache?.let { return it }
+        val session = HttpSession()
+        store.load(ToolId.Http.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<HttpSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        }
+        httpSessionCache = session
+        return session
+    }
+
+    fun persistHttp() {
+        store.save(ToolId.Http.id, jsonCodec.encodeToString(httpSession().snapshotState()))
+    }
+
+    fun cancelHttp() {
+        val session = httpSessionCache ?: return
+        if (session.requestId.isNotBlank()) HttpEngine.cancel(session.requestId)
+        session.sending = false
     }
 
     fun hardwareSession(): HardwareSession {

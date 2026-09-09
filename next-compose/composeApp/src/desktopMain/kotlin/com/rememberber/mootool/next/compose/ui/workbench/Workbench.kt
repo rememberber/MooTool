@@ -41,6 +41,7 @@ import com.rememberber.mootool.next.compose.features.diff.TextDiffScreen
 import com.rememberber.mootool.next.compose.features.encode.EncodeScreen
 import com.rememberber.mootool.next.compose.features.hardware.HardwareScreen
 import com.rememberber.mootool.next.compose.features.host.HostScreen
+import com.rememberber.mootool.next.compose.features.http.HttpScreen
 import com.rememberber.mootool.next.compose.features.home.HomeScreen
 import com.rememberber.mootool.next.compose.features.image.ImageScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
@@ -172,6 +173,10 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
                     PdfScreen(container, detached = false)
                 active == ToolId.Pdf && detached.contains(ToolId.Pdf) ->
                     DetachedNotice(container, ToolId.Pdf)
+                active == ToolId.Http && !detached.contains(ToolId.Http) ->
+                    HttpScreen(container, detached = false)
+                active == ToolId.Http && detached.contains(ToolId.Http) ->
+                    DetachedNotice(container, ToolId.Http)
                 active == ToolId.Host && !detached.contains(ToolId.Host) ->
                     HostScreen(container, detached = false)
                 active == ToolId.Host && detached.contains(ToolId.Host) ->

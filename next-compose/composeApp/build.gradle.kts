@@ -91,6 +91,7 @@ kotlin {
                 implementation(libs.zxing.core)
                 implementation(libs.pdfbox)
                 implementation(libs.oshi.core)
+                implementation(libs.okhttp)
             }
         }
         val desktopTest by getting {

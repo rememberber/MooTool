@@ -81,6 +81,7 @@ data class NetworkSettings(
     val proxyHost: String = "",
     val proxyPort: String = "",
     val proxyUsername: String = "",
+    val proxyPassword: String = "",
     val requestTimeoutMs: Int = 30_000,
     val translationTimeoutMs: Int = 15_000
 )

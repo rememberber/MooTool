@@ -141,7 +141,7 @@ SwingPanel 默认处于 Compose 内容前方；菜单、命令搜索、对话框
 | --- | --- | --- |
 | 设置/DTO | kotlinx.serialization | schema v1、默认值、未知/损坏数据、原子写 |
 | DB | SQLite JDBC + 显式 SQL repository | 三平台 native 解包、WAL、事务、迁移与备份 |
-| HTTP | OkHttp JVM，由 HttpService 封装 | 代理、证书验证、重复字段、流式上限/取消；不用裸 Map 替换请求模型 |
+| HTTP | OkHttp **4.12.0** + 自有 `HttpEngine` | 冻结 GET/表单语义；重复 Header 按多值发送；10 MiB 解压上限；可取消。见 DIFF-018 |
 | JSON | Jackson 流式/token/树 + 自有适配 | 重复 Key、数字字面量、深度上限；普通 Map 不保留重复 Key |
 | JSONPath | Jayway 候选 + Electron 样本适配 | filter/union/slice/escape；禁止执行任意 JS |
 | XML / YAML | JAXP + SnakeYAML 2.3 SafeConstructor | 禁用外部实体、限制深度/别名膨胀；不声明注释无损；配置转换见 DIFF-006 |
