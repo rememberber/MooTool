@@ -11,6 +11,7 @@ import com.rememberber.mootool.next.compose.storage.HistoryRepository
 import com.rememberber.mootool.next.compose.storage.JsonVault
 import com.rememberber.mootool.next.compose.domain.DisplayWakeLock
 import com.rememberber.mootool.next.compose.storage.ColorFavoriteStore
+import com.rememberber.mootool.next.compose.storage.ImageLibraryStore
 import com.rememberber.mootool.next.compose.storage.CronFavoriteStore
 import com.rememberber.mootool.next.compose.storage.RegexFavoriteStore
 import com.rememberber.mootool.next.compose.storage.SessionStore
@@ -36,6 +37,7 @@ class AppContainer(
     val regexFavorites = RegexFavoriteStore(directories)
     val cronFavorites = CronFavoriteStore(directories)
     val colorFavorites = ColorFavoriteStore(directories)
+    val imageLibrary = ImageLibraryStore(directories)
     val displayWake = DisplayWakeLock()
     val regexWorker = RegexWorkerClient()
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -116,6 +118,7 @@ class AppContainer(
         sessionManager.persistColor()
         sessionManager.persistMessageBoard()
         sessionManager.persistPdf()
+        sessionManager.persistImage()
         settingsRepository.save(_settings.value)
     }
 

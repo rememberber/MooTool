@@ -24,9 +24,15 @@ import com.rememberber.mootool.next.compose.domain.ColorEngine
 import com.rememberber.mootool.next.compose.domain.ColorFormat
 import com.rememberber.mootool.next.compose.domain.ColorThemeId
 import com.rememberber.mootool.next.compose.domain.MessageBoardEngine
+import com.rememberber.mootool.next.compose.domain.ImageOutputFormat
+import com.rememberber.mootool.next.compose.domain.ImageOutputMode
+import com.rememberber.mootool.next.compose.domain.ImageSvgDetail
+import com.rememberber.mootool.next.compose.domain.ImageSvgPreset
 import com.rememberber.mootool.next.compose.domain.PdfSplitRule
 import com.rememberber.mootool.next.compose.domain.PdfTab
 import com.rememberber.mootool.next.compose.domain.PdfTaskStatus
+import com.rememberber.mootool.next.compose.domain.WatermarkFontSize
+import com.rememberber.mootool.next.compose.domain.WatermarkPosition
 import com.rememberber.mootool.next.compose.domain.QrEngine
 import com.rememberber.mootool.next.compose.domain.QrErrorCorrection
 import com.rememberber.mootool.next.compose.domain.QrTab
@@ -1060,6 +1066,81 @@ class PdfSession {
     }
 }
 
+@Serializable
+data class ImageSessionSnapshot(
+    val listVisible: Boolean = true,
+    val currentName: String = "",
+    val selectedNames: List<String> = emptyList(),
+    val zoom: Float = 1f,
+    val fit: Boolean = true,
+    val lastOutputs: List<String> = emptyList()
+)
+
+class ImageSession {
+    var listVisible: Boolean = true
+    var currentName: String = ""
+    var selectedNames: List<String> = emptyList()
+    var zoom: Float = 1f
+    var fit: Boolean = true
+    var lastOutputs: List<String> = emptyList()
+    var busy: Boolean = false
+    var cancelled: Boolean = false
+    var notice: String = ""
+    var error: String = ""
+    var base64Mode: String? = null
+    var base64Text: String = ""
+    var compressOpen: Boolean = false
+    var watermarkOpen: Boolean = false
+    var svgOpen: Boolean = false
+    var renameOpen: Boolean = false
+    var saveOpen: Boolean = false
+    var deleteOpen: Boolean = false
+    var promptValue: String = ""
+    var compressQuality: Int = 80
+    var compressScale: Int = 100
+    var compressFormat: ImageOutputFormat = ImageOutputFormat.Auto
+    var outputMode: ImageOutputMode = ImageOutputMode.Keep
+    var watermarkText: String = "MooTool"
+    var watermarkOpacity: Int = 50
+    var watermarkColor: String = "#FFFFFF"
+    var watermarkPosition: WatermarkPosition = WatermarkPosition.BottomRight
+    var watermarkFont: WatermarkFontSize = WatermarkFontSize.Auto
+    var watermarkDiagonal: Boolean = false
+    var svgPreset: ImageSvgPreset = ImageSvgPreset.Poster
+    var svgColors: Int = 16
+    var svgDetail: ImageSvgDetail = ImageSvgDetail.Medium
+    var svgSpeckle: Int = 8
+
+    fun snapshot(): ImageSessionSnapshot = ImageSessionSnapshot(
+        listVisible = listVisible,
+        currentName = currentName,
+        selectedNames = selectedNames,
+        zoom = zoom,
+        fit = fit,
+        lastOutputs = lastOutputs
+    )
+
+    fun restore(snapshot: ImageSessionSnapshot) {
+        listVisible = snapshot.listVisible
+        currentName = snapshot.currentName
+        selectedNames = snapshot.selectedNames
+        zoom = snapshot.zoom.coerceIn(0.1f, 5f)
+        fit = snapshot.fit
+        lastOutputs = snapshot.lastOutputs
+        busy = false
+        cancelled = false
+        notice = ""
+        error = ""
+        base64Mode = null
+        compressOpen = false
+        watermarkOpen = false
+        svgOpen = false
+        renameOpen = false
+        saveOpen = false
+        deleteOpen = false
+    }
+}
+
 enum class WindowRole { Main, Detached }
 
 data class HostedSession(
@@ -1085,6 +1166,7 @@ class SessionManager(private val store: SessionStore) {
     private var colorSessionCache: ColorSession? = null
     private var messageBoardSessionCache: MessageBoardSession? = null
     private var pdfSessionCache: PdfSession? = null
+    private var imageSessionCache: ImageSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
     val detached: StateFlow<Set<ToolId>> = _detached
     private val _revision = MutableStateFlow(0L)
@@ -1349,6 +1431,22 @@ class SessionManager(private val store: SessionStore) {
 
     fun persistPdf() {
         store.save(ToolId.Pdf.id, jsonCodec.encodeToString(pdfSession().snapshot()))
+    }
+
+    fun imageSession(): ImageSession {
+        imageSessionCache?.let { return it }
+        val session = ImageSession()
+        store.load(ToolId.Image.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<ImageSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        }
+        imageSessionCache = session
+        return session
+    }
+
+    fun persistImage() {
+        store.save(ToolId.Image.id, jsonCodec.encodeToString(imageSession().snapshot()))
     }
 
     fun detach(toolId: ToolId) {

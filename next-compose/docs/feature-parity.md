@@ -320,7 +320,7 @@ Tab：翻译、单词本、历史；源/目标语言、Google/Bing、交换、�
 - 更换 tracer 可产生合理视觉差异，但参数必须映射到真实处理；输出含矢量 path，不在 SVG 内嵌原 bitmap 冒充。
 - EXIF 方向、透明度、色彩、最大像素/内存、批量限制、取消及临时文件清理；持久图片库属于 Compose。
 - 不添加 OCR。截图/取色按平台权限实现，尤其不能把黑图当截取成功。
-- 验收：重启图片库、批量重命名/导出、水印可见、压缩改变文件、PNG alpha、截图多屏、SVG path/渲染、写失败不损坏原件。
+- 验收：重启图片库、批量重命名/导出、水印可见、压缩改变文件、PNG alpha、截图多屏、SVG path/渲染、写失败不损坏原件。矢量化使用本产品内嵌 ImageTracer.java 1.1.2，而非 Electron `@visioncortex/vtracer`，见 [DIFF-013](diff/013-imagetracer-svg.md)。
 
 ### F24 PDF
 

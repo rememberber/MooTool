@@ -155,8 +155,8 @@ SwingPanel 默认处于 Compose 内容前方；菜单、命令搜索、对话框
 | QR | ZXing 3.5.4 | PNG/剪贴板真回读、Logo/纠错、坏图；历史见 DIFF-009 |
 | 调色板 | 自有 ColorEngine + AWT Robot 冻结截图 | 主题/标准色 SHA-256、五运算、Shift 选对比色；权限/全黑拒绝见 DIFF-010 |
 | 留言板 | 自有 MessageBoardEngine + OS 唤醒进程 | 80 字 UTF-16、8 预设/6 主题、自动适配字号；演示唤醒见 DIFF-011 |
-| 图像 | ImageIO/Java2D + 自有图片库 | EXIF、alpha、解码像素限额、压缩/水印 |
-| SVG | 本产品移植 ImageTracer 或自带经验证的 tracer helper | 真正 vector path；批量/质量/参数可解释，不嵌原图冒充 |
+| 图像 | ImageIO/Java2D + 自有 `data/images` 图片库 | EXIF 方向、alpha 棋盘格、1600 万像素上限、压缩/水印、区域截图。见 DIFF-013 |
+| SVG | 本产品内嵌 ImageTracer.java **1.1.2**（Unlicense） | poster/photo/bw 参数映射到 ltres/pathomit 等；输出含 path，禁止嵌入 bitmap。见 DIFF-013 |
 | PDF | PDFBox **3.0.4** | 真页面 importPage；页码顺序/去重对齐 Electron；加密 PDF 拒绝；取消删除本批半成品。见 DIFF-012 |
 | 系统信息 | OSHI/JNA 候选 | 实际字段、权限/不支持状态、脱敏、失活暂停 |
 | Git | 本产品 GitService 封装外部 Git CLI，缺失引导配置；JGit 可作验证后的替代 | 仓库锁、冲突、stash/操作状态、凭据、Git 不存在时仍可记笔记 |

@@ -40,6 +40,7 @@ import com.rememberber.mootool.next.compose.features.cron.CronScreen
 import com.rememberber.mootool.next.compose.features.diff.TextDiffScreen
 import com.rememberber.mootool.next.compose.features.encode.EncodeScreen
 import com.rememberber.mootool.next.compose.features.home.HomeScreen
+import com.rememberber.mootool.next.compose.features.image.ImageScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
 import com.rememberber.mootool.next.compose.features.messageboard.MessageBoardScreen
 import com.rememberber.mootool.next.compose.features.pdf.PdfScreen
@@ -155,6 +156,10 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
                     MessageBoardScreen(container, detached = false)
                 active == ToolId.MessageBoard && detached.contains(ToolId.MessageBoard) ->
                     DetachedNotice(container, ToolId.MessageBoard)
+                active == ToolId.Image && !detached.contains(ToolId.Image) ->
+                    ImageScreen(container, detached = false)
+                active == ToolId.Image && detached.contains(ToolId.Image) ->
+                    DetachedNotice(container, ToolId.Image)
                 active == ToolId.Pdf && !detached.contains(ToolId.Pdf) ->
                     PdfScreen(container, detached = false)
                 active == ToolId.Pdf && detached.contains(ToolId.Pdf) ->
