@@ -40,6 +40,7 @@ import com.rememberber.mootool.next.compose.features.translation.TranslationScre
 import com.rememberber.mootool.next.compose.features.net.NetScreen
 import com.rememberber.mootool.next.compose.features.pdf.PdfScreen
 import com.rememberber.mootool.next.compose.features.protobuf.ProtobufScreen
+import com.rememberber.mootool.next.compose.features.runtime.CodeRunScreen
 import com.rememberber.mootool.next.compose.features.qrcode.QrCodeScreen
 import com.rememberber.mootool.next.compose.features.regex.RegexScreen
 import com.rememberber.mootool.next.compose.features.reformat.ReformatScreen
@@ -172,6 +173,18 @@ fun main() = application {
             ) {
                 MooTheme(container.themePreference(), systemDark) {
                     ProtobufScreen(container, detached = true)
+                }
+            }
+        }
+
+        if (ToolId.Java in detached) {
+            Window(
+                onCloseRequest = { container.sessionManager.reattach(ToolId.Java) },
+                title = "${container.t("app.nav.java")} · ${ProductIdentity.DISPLAY_NAME}",
+                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
+            ) {
+                MooTheme(container.themePreference(), systemDark) {
+                    CodeRunScreen(container, detached = true)
                 }
             }
         }

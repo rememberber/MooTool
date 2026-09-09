@@ -34,6 +34,9 @@ import com.rememberber.mootool.next.compose.domain.HttpResponseResult
 import com.rememberber.mootool.next.compose.domain.HttpResponseTab
 import com.rememberber.mootool.next.compose.domain.TranslationEngine
 import com.rememberber.mootool.next.compose.domain.TranslationTab
+import com.rememberber.mootool.next.compose.domain.CodeRunEngine
+import com.rememberber.mootool.next.compose.domain.CodeRunResult
+import com.rememberber.mootool.next.compose.domain.CodeRuntime
 import com.rememberber.mootool.next.compose.domain.EnvDisplayScope
 import com.rememberber.mootool.next.compose.domain.EnvPersistScope
 import com.rememberber.mootool.next.compose.domain.EnvSnapshot
@@ -1584,6 +1587,138 @@ class TranslationSession {
     }
 }
 
+@Serializable
+data class CodeRunSessionSnapshot(
+    val tab: String = "java",
+    val javaMode: String = "java",
+    val javaCode: String = "",
+    val groovyCode: String = "",
+    val pythonCode: String = "",
+    val nodeCode: String = "",
+    val javaArguments: String = "",
+    val groovyArguments: String = "",
+    val pythonArguments: String = "",
+    val nodeArguments: String = "",
+    val javaWorkingDirectory: String = "",
+    val groovyWorkingDirectory: String = "",
+    val pythonWorkingDirectory: String = "",
+    val nodeWorkingDirectory: String = ""
+)
+
+class CodeRunSession {
+    var tab: String = "java"
+    var javaMode: String = "java"
+    val javaEditor = EditorBuffer(CodeRunEngine.SAMPLES.getValue(CodeRuntime.Java), CodeRunEngine.syntax(CodeRuntime.Java))
+    val groovyEditor = EditorBuffer(CodeRunEngine.SAMPLES.getValue(CodeRuntime.Groovy), CodeRunEngine.syntax(CodeRuntime.Groovy))
+    val pythonEditor = EditorBuffer(CodeRunEngine.SAMPLES.getValue(CodeRuntime.Python), CodeRunEngine.syntax(CodeRuntime.Python))
+    val nodeEditor = EditorBuffer(CodeRunEngine.SAMPLES.getValue(CodeRuntime.Node), CodeRunEngine.syntax(CodeRuntime.Node))
+    var javaArguments: String = ""
+    var groovyArguments: String = ""
+    var pythonArguments: String = ""
+    var nodeArguments: String = ""
+    var javaWorkingDirectory: String = ""
+    var groovyWorkingDirectory: String = ""
+    var pythonWorkingDirectory: String = ""
+    var nodeWorkingDirectory: String = ""
+    var stdout: String = ""
+    var stderr: String = ""
+    var running: Boolean = false
+    var detecting: Boolean = false
+    var requestId: String = ""
+    var result: CodeRunResult? = null
+    var error: String = ""
+    var historyOpen: Boolean = false
+    var optionsOpen: Boolean = false
+
+    fun currentRuntime(): CodeRuntime =
+        if (tab == "java") CodeRunEngine.parseProvider(javaMode) else CodeRunEngine.parseProvider(tab)
+
+    fun editor(runtime: CodeRuntime): EditorBuffer = when (runtime) {
+        CodeRuntime.Java -> javaEditor
+        CodeRuntime.Groovy -> groovyEditor
+        CodeRuntime.Python -> pythonEditor
+        CodeRuntime.Node -> nodeEditor
+    }
+
+    fun arguments(runtime: CodeRuntime): String = when (runtime) {
+        CodeRuntime.Java -> javaArguments
+        CodeRuntime.Groovy -> groovyArguments
+        CodeRuntime.Python -> pythonArguments
+        CodeRuntime.Node -> nodeArguments
+    }
+
+    fun setArguments(runtime: CodeRuntime, value: String) {
+        when (runtime) {
+            CodeRuntime.Java -> javaArguments = value
+            CodeRuntime.Groovy -> groovyArguments = value
+            CodeRuntime.Python -> pythonArguments = value
+            CodeRuntime.Node -> nodeArguments = value
+        }
+    }
+
+    fun workingDirectory(runtime: CodeRuntime): String = when (runtime) {
+        CodeRuntime.Java -> javaWorkingDirectory
+        CodeRuntime.Groovy -> groovyWorkingDirectory
+        CodeRuntime.Python -> pythonWorkingDirectory
+        CodeRuntime.Node -> nodeWorkingDirectory
+    }
+
+    fun setWorkingDirectory(runtime: CodeRuntime, value: String) {
+        when (runtime) {
+            CodeRuntime.Java -> javaWorkingDirectory = value
+            CodeRuntime.Groovy -> groovyWorkingDirectory = value
+            CodeRuntime.Python -> pythonWorkingDirectory = value
+            CodeRuntime.Node -> nodeWorkingDirectory = value
+        }
+    }
+
+    fun snapshotState(): CodeRunSessionSnapshot {
+        val limit = CodeRunEngine.MAX_CODE_BYTES
+        return CodeRunSessionSnapshot(
+            tab = tab,
+            javaMode = javaMode,
+            javaCode = javaEditor.text.take(limit),
+            groovyCode = groovyEditor.text.take(limit),
+            pythonCode = pythonEditor.text.take(limit),
+            nodeCode = nodeEditor.text.take(limit),
+            javaArguments = javaArguments,
+            groovyArguments = groovyArguments,
+            pythonArguments = pythonArguments,
+            nodeArguments = nodeArguments,
+            javaWorkingDirectory = javaWorkingDirectory,
+            groovyWorkingDirectory = groovyWorkingDirectory,
+            pythonWorkingDirectory = pythonWorkingDirectory,
+            nodeWorkingDirectory = nodeWorkingDirectory
+        )
+    }
+
+    fun restore(snapshot: CodeRunSessionSnapshot) {
+        tab = snapshot.tab
+        javaMode = snapshot.javaMode
+        if (snapshot.javaCode.isNotEmpty()) javaEditor.setText(snapshot.javaCode, recordUndo = false)
+        if (snapshot.groovyCode.isNotEmpty()) groovyEditor.setText(snapshot.groovyCode, recordUndo = false)
+        if (snapshot.pythonCode.isNotEmpty()) pythonEditor.setText(snapshot.pythonCode, recordUndo = false)
+        if (snapshot.nodeCode.isNotEmpty()) nodeEditor.setText(snapshot.nodeCode, recordUndo = false)
+        javaArguments = snapshot.javaArguments
+        groovyArguments = snapshot.groovyArguments
+        pythonArguments = snapshot.pythonArguments
+        nodeArguments = snapshot.nodeArguments
+        javaWorkingDirectory = snapshot.javaWorkingDirectory
+        groovyWorkingDirectory = snapshot.groovyWorkingDirectory
+        pythonWorkingDirectory = snapshot.pythonWorkingDirectory
+        nodeWorkingDirectory = snapshot.nodeWorkingDirectory
+        stdout = ""
+        stderr = ""
+        running = false
+        detecting = false
+        requestId = ""
+        result = null
+        error = ""
+        historyOpen = false
+        optionsOpen = false
+    }
+}
+
 enum class WindowRole { Main, Detached }
 
 data class HostedSession(
@@ -1615,6 +1750,7 @@ class SessionManager(private val store: SessionStore) {
     private var hostSessionCache: HostSession? = null
     private var httpSessionCache: HttpSession? = null
     private var translationSessionCache: TranslationSession? = null
+    private var codeRunSessionCache: CodeRunSession? = null
     private var hardwareSessionCache: HardwareSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
     val detached: StateFlow<Set<ToolId>> = _detached
@@ -1994,6 +2130,29 @@ class SessionManager(private val store: SessionStore) {
         if (session.requestId.isNotBlank()) TranslationEngine.cancel(session.requestId)
         session.requestId = ""
         session.translating = false
+    }
+
+    fun codeRunSession(): CodeRunSession {
+        codeRunSessionCache?.let { return it }
+        val session = CodeRunSession()
+        store.load(ToolId.Java.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<CodeRunSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        }
+        codeRunSessionCache = session
+        return session
+    }
+
+    fun persistCodeRun() {
+        store.save(ToolId.Java.id, jsonCodec.encodeToString(codeRunSession().snapshotState()))
+    }
+
+    fun cancelCodeRun() {
+        CodeRunEngine.cancelAll()
+        val session = codeRunSessionCache ?: return
+        session.requestId = ""
+        session.running = false
     }
 
     fun hardwareSession(): HardwareSession {

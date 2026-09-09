@@ -130,6 +130,7 @@ class AppContainer(
         sessionManager.persistHost()
         sessionManager.persistHttp()
         sessionManager.persistTranslation()
+        sessionManager.persistCodeRun()
         sessionManager.persistHardware()
         settingsRepository.save(_settings.value)
     }
@@ -140,6 +141,7 @@ class AppContainer(
         sessionManager.cancelNetCommands()
         sessionManager.cancelHttp()
         sessionManager.cancelTranslation()
+        sessionManager.cancelCodeRun()
         persistWorkspace()
         database.close()
     }

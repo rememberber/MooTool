@@ -27,6 +27,7 @@ import com.rememberber.mootool.next.compose.model.AppLanguage
 import com.rememberber.mootool.next.compose.model.CloseBehavior
 import com.rememberber.mootool.next.compose.model.InterfaceStyle
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 
 private enum class SettingsCategory { General, Appearance, Layout, Editor, Network, Data, Vault, Runtime, Tools, Shortcuts, About }
@@ -132,7 +133,27 @@ fun SettingsScreen(container: AppContainer) {
                     Text(ProductIdentity.APPLICATION_ID, color = colors.textSecondary)
                     Text(container.t("settings.style.unsupported"), color = colors.textSecondary, fontSize = 12.sp)
                 }
-                SettingsCategory.Network, SettingsCategory.Vault, SettingsCategory.Runtime, SettingsCategory.Tools, SettingsCategory.Shortcuts -> {
+                SettingsCategory.Runtime -> {
+                    Text(container.t("settings.runtime.hint"), color = colors.textSecondary, fontSize = 12.sp)
+                    Label("Java")
+                    MooTextField(settings.runtime.javaPath, {
+                        container.updateSettings { current -> current.copy(runtime = current.runtime.copy(javaPath = it)) }
+                    }, placeholder = container.t("settings.runtime.auto"))
+                    Label("Groovy")
+                    MooTextField(settings.runtime.groovyPath, {
+                        container.updateSettings { current -> current.copy(runtime = current.runtime.copy(groovyPath = it)) }
+                    }, placeholder = container.t("settings.runtime.auto"))
+                    Label("Python")
+                    MooTextField(settings.runtime.pythonPath, {
+                        container.updateSettings { current -> current.copy(runtime = current.runtime.copy(pythonPath = it)) }
+                    }, placeholder = container.t("settings.runtime.auto"))
+                    Label("Node.js")
+                    MooTextField(settings.runtime.nodePath, {
+                        container.updateSettings { current -> current.copy(runtime = current.runtime.copy(nodePath = it)) }
+                    }, placeholder = container.t("settings.runtime.auto"))
+                    Text(container.t("settings.runtime.jvmNote"), color = colors.warning, fontSize = 12.sp)
+                }
+                SettingsCategory.Network, SettingsCategory.Vault, SettingsCategory.Tools, SettingsCategory.Shortcuts -> {
                     Text(container.t("common.notImplemented"), color = colors.warning)
                     Text(container.t("app.tool.unimplemented"), color = colors.textSecondary)
                 }

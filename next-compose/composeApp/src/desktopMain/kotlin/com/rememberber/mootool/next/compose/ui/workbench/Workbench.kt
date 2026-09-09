@@ -52,6 +52,7 @@ import com.rememberber.mootool.next.compose.features.pdf.PdfScreen
 import com.rememberber.mootool.next.compose.features.regex.RegexScreen
 import com.rememberber.mootool.next.compose.features.reformat.ReformatScreen
 import com.rememberber.mootool.next.compose.features.protobuf.ProtobufScreen
+import com.rememberber.mootool.next.compose.features.runtime.CodeRunScreen
 import com.rememberber.mootool.next.compose.features.placeholder.DetachedNotice
 import com.rememberber.mootool.next.compose.features.placeholder.PlaceholderScreen
 import com.rememberber.mootool.next.compose.features.qrcode.QrCodeScreen
@@ -122,6 +123,10 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
                     ProtobufScreen(container, detached = false)
                 active == ToolId.Protobuf && detached.contains(ToolId.Protobuf) ->
                     DetachedNotice(container, ToolId.Protobuf)
+                active == ToolId.Java && !detached.contains(ToolId.Java) ->
+                    CodeRunScreen(container, detached = false)
+                active == ToolId.Java && detached.contains(ToolId.Java) ->
+                    DetachedNotice(container, ToolId.Java)
                 active == ToolId.Variables && !detached.contains(ToolId.Variables) ->
                     VariablesScreen(container, detached = false)
                 active == ToolId.Variables && detached.contains(ToolId.Variables) ->

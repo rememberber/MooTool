@@ -28,7 +28,7 @@ object ToolRegistry {
         tool(ToolId.TextDiff, ToolGroupId.Text, "app.nav.textDiff", "⇄", listOf("diff", "compare", "对比"), ToolStatus.Available),
         tool(ToolId.Reformat, ToolGroupId.Text, "app.nav.reformat", "✦", listOf("format", "java", "xml", "html", "nginx", "格式化"), ToolStatus.Available),
         tool(ToolId.Json, ToolGroupId.Dev, "app.nav.json", "{}", listOf("json", "xml", "javabean", "jsonpath", "格式化"), ToolStatus.Available),
-        tool(ToolId.Java, ToolGroupId.Dev, "app.nav.java", ">_", listOf("java", "groovy", "python", "node", "运行")),
+        tool(ToolId.Java, ToolGroupId.Dev, "app.nav.java", ">_", listOf("java", "groovy", "python", "node", "运行"), ToolStatus.Available),
         tool(ToolId.YmlProperties, ToolGroupId.Dev, "app.nav.ymlProperties", "☰", listOf("yaml", "yml", "properties", "配置"), ToolStatus.Available),
         tool(ToolId.Protobuf, ToolGroupId.Dev, "app.nav.protobuf", "⬡", listOf("protobuf", "proto"), ToolStatus.Available),
         tool(ToolId.Variables, ToolGroupId.Dev, "app.nav.variables", "∑", listOf("env", "environment", "环境变量"), ToolStatus.Available),
