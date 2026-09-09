@@ -157,6 +157,10 @@ public final class AppPaths {
         return configRoot.resolve("bootstrap.json");
     }
 
+    public Path jsonVaultRoot() {
+        return dataRoot.resolve("vaults").resolve("json");
+    }
+
     public Path lockFile() {
         return stateRoot.resolve("instance.lock");
     }

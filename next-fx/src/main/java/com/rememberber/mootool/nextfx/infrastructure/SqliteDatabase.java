@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  */
 public final class SqliteDatabase implements AutoCloseable {
 
-    private static final int SCHEMA_VERSION = 1;
+    private static final int SCHEMA_VERSION = 2;
     private final AppPaths paths;
     private final BlockingQueue<WriteTask<?>> writes = new ArrayBlockingQueue<>(256);
     private final Thread writer;
@@ -111,6 +111,13 @@ public final class SqliteDatabase implements AutoCloseable {
                       created_at TEXT NOT NULL
                     )
                     """);
+            statement.execute("""
+                    CREATE TABLE IF NOT EXISTS tool_draft (
+                      tool_id TEXT PRIMARY KEY,
+                      payload TEXT NOT NULL,
+                      updated_at TEXT NOT NULL
+                    )
+                    """);
         }
         int current = read(connection -> {
             try (Statement statement = connection.createStatement();
@@ -189,6 +196,10 @@ public final class SqliteDatabase implements AutoCloseable {
 
     public HistoryStore history() {
         return new HistoryStore(this);
+    }
+
+    public DraftStore drafts() {
+        return new DraftStore(this);
     }
 
     @FunctionalInterface
@@ -307,5 +318,40 @@ public final class SqliteDatabase implements AutoCloseable {
     }
 
     public record HistoryRow(String summary, String input, String output, String createdAt) {
+    }
+
+    public static final class DraftStore {
+        private final SqliteDatabase database;
+
+        private DraftStore(SqliteDatabase database) {
+            this.database = database;
+        }
+
+        public void save(String toolId, String payload) {
+            database.writeNow(connection -> {
+                try (PreparedStatement statement = connection.prepareStatement("""
+                        INSERT INTO tool_draft(tool_id, payload, updated_at) VALUES (?, ?, ?)
+                        ON CONFLICT(tool_id) DO UPDATE SET payload = excluded.payload, updated_at = excluded.updated_at
+                        """)) {
+                    statement.setString(1, toolId);
+                    statement.setString(2, payload);
+                    statement.setString(3, Instant.now().toString());
+                    statement.executeUpdate();
+                }
+                return null;
+            });
+        }
+
+        public String load(String toolId) {
+            return database.read(connection -> {
+                try (PreparedStatement statement = connection.prepareStatement(
+                        "SELECT payload FROM tool_draft WHERE tool_id = ?")) {
+                    statement.setString(1, toolId);
+                    try (ResultSet result = statement.executeQuery()) {
+                        return result.next() ? result.getString(1) : null;
+                    }
+                }
+            });
+        }
     }
 }

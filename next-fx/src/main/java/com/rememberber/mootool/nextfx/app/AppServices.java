@@ -98,7 +98,7 @@ public final class AppServices implements AutoCloseable {
     private Node createView(ToolId toolId, ToolSession session) {
         return switch (toolId) {
             case MOOTOOL -> new HomeView(identity, translator);
-            case JSON -> new JsonView(translator, executors, database, session);
+            case JSON -> new JsonView(translator, executors, database, paths, session);
             default -> new PlaceholderView(ToolRegistry.require(toolId), translator);
         };
     }

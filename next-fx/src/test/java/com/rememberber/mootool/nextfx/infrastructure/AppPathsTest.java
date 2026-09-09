@@ -36,5 +36,6 @@ class AppPathsTest {
         AppPaths paths = AppPaths.isolated(identity, temp.resolve("fx-test"));
         assertThat(paths.dataRoot().toString()).startsWith(temp.toAbsolutePath().toString());
         assertThat(paths.dataRoot().toString()).doesNotContain(".MooTool");
+        assertThat(paths.jsonVaultRoot()).isEqualTo(paths.dataRoot().resolve("vaults").resolve("json"));
     }
 }

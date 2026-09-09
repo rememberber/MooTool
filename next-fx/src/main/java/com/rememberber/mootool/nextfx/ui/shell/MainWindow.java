@@ -72,7 +72,6 @@ public final class MainWindow {
         scene.getAccelerators().put(new KeyCodeCombination(KeyCode.K, KeyCombination.SHORTCUT_DOWN), sidebar::focusSearch);
         scene.getAccelerators().put(new KeyCodeCombination(KeyCode.COMMA, KeyCombination.SHORTCUT_DOWN), this::openSettings);
         scene.getAccelerators().put(new KeyCodeCombination(KeyCode.F, KeyCombination.SHORTCUT_DOWN), this::focusFind);
-        scene.getAccelerators().put(new KeyCodeCombination(KeyCode.S, KeyCombination.SHORTCUT_DOWN), () -> {});
         scene.addEventFilter(JsonView.ToolActionEvent.DETACH, event -> {
             detachTool(active);
             event.consume();

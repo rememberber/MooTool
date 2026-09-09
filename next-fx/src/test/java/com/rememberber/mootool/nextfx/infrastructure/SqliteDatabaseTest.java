@@ -25,6 +25,8 @@ class SqliteDatabaseTest {
             assertThat(database.windowState().load("main")).contains("1440");
             database.history().save("json", "format", "{\"a\":1}", "{\n  \"a\": 1\n}");
             assertThat(database.history().latest("json", 10)).hasSize(1);
+            database.drafts().save("json", "{\"text\":\"{}\"}");
+            assertThat(database.drafts().load("json")).contains("{}");
             assertThat(Files.readString(paths.productMarker())).contains("next-fx");
         }
     }
