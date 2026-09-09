@@ -1,0 +1,7 @@
+.root {
+    -mt-radius-control: 8;
+    -mt-radius-dialog: 12;
+    -mt-pad: 12;
+    -fx-font-size: 13px;
+    -fx-font-family: "SF Pro Text", "PingFang SC", "Hiragino Sans GB", "Noto Sans CJK SC", "Segoe UI", system;
+}

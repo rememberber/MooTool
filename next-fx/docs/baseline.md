@@ -2,7 +2,7 @@
 
 ## 1. 本次核实范围
 
-日期：2026-09-09。开始读取时仓库 HEAD：`3416c70e7a23fb1d5dcbf6244073dae490e8912d`；读取的是当时工作树。其他产品和根发布文档有未提交修改，本次不改动；并行工作可能继续改变仓库HEAD。检查范围为注册表、布局/CSS、设置、窗口管理、若干算法/服务及既有产品规格，**未启动 Electron 做实时截图验收，也未构建 JavaFX**。
+日期：2026-09-09。规格起草时仓库 HEAD：`3416c70e7a23fb1d5dcbf6244073dae490e8912d`。P0 取证时 HEAD：`fa4910eef1bda86a5eaa549fcc1d5086607b1770`。其他产品和根发布文档可能有未提交修改，本产品不改动它们。检查范围为注册表、布局/CSS、设置、窗口管理、若干算法/服务及既有产品规格。**未启动 Electron 做实时截图验收。** JavaFX P0 构建与 macOS x64 app-image 见 [验收](acceptance.md) 与 `docs/evidence/2026-09-09-p0/`。
 
 逐工具规格是开发要求，不能解释为每个原版操作已在本次运行验证。详细实现开始前要补源码审计和同环境实测；静态源码、原版测试、旧文档不一致时，先复现再决定。
 
@@ -10,7 +10,7 @@
 | --- | --- | --- |
 | Electron 版本 | 1.1.4 | `next/package.json` |
 | 原 Java 产品 | Maven 1.8.6，Java 21，Swing/FlatLaf；不是 JavaFX | `pom.xml`、`src/main/java/com/luoboduner/moo/tool/ui/` |
-| next-fx 初始状态 | 空目录；现在只有本次开发规格 | `next-fx/` |
+| next-fx 工程 | 独立 Maven `0.1.0-SNAPSHOT`，P0 待验收 | `next-fx/pom.xml`、`docs/evidence/2026-09-09-p0/` |
 | 入口 | 首页 `mootool` + 25 工具，6 分组 | `next/src/app/toolRegistry.ts` |
 | 沉浸布局 | 所有非首页工具 | `next/src/features/workbench/immersiveTools.ts` |
 | 主窗口 | 默认 bounds 1440×920，最小 1080×720 | `next/electron/main/index.ts` |
@@ -70,7 +70,7 @@
 
 ## 5. 官方资料与版本决策
 
-以下在 2026-09-09 查询。采用 **OpenJDK 25 + OpenJFX 26.0.2 + Maven 3.9.16** 作为 P0 输入组合；不声称本次编译验证过。JDK 的长期更新依赖所选发行商，不能把 Oracle JDK 的授权或 Gluon 商业支持条件套到所有 OpenJDK/OpenJFX 包上。P0 从发行商官方源选定可再分发构建并记录 patch、架构、SHA-256 与许可。
+以下在 2026-09-09 查询。本机已锁定 **Azul Zulu 25.0.4.1 x86_64 + OpenJFX 26.0.2 + Maven 3.9.16**。JDK 的长期更新依赖所选发行商，不能把 Oracle JDK 的授权或 Gluon 商业支持条件套到所有 OpenJDK/OpenJFX 包上。其他平台仍需各自锁定可再分发构建。
 
 | 官方资料 | 本规格依据 |
 | --- | --- |

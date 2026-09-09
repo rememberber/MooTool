@@ -1,0 +1,173 @@
+.mt-root {
+    -fx-background-color: -mt-window;
+    -fx-text-fill: -mt-text;
+}
+
+.label {
+    -fx-text-fill: -mt-text;
+}
+
+.mt-muted {
+    -fx-text-fill: -mt-text-secondary;
+}
+
+.mt-sidebar {
+    -fx-background-color: -mt-sidebar;
+    -fx-border-color: -mt-border-soft;
+    -fx-border-width: 0 1 0 0;
+}
+
+.mt-workspace {
+    -fx-background-color: -mt-workspace;
+}
+
+.mt-search {
+    -fx-background-color: -mt-surface;
+    -fx-background-radius: 8;
+    -fx-border-color: -mt-border-control;
+    -fx-border-radius: 8;
+    -fx-padding: 6 10;
+}
+
+.mt-nav-group {
+    -fx-font-size: 12px;
+    -fx-text-fill: -mt-text-secondary;
+}
+
+.mt-nav-item {
+    -fx-background-color: transparent;
+    -fx-background-radius: 8;
+    -fx-padding: 6 10;
+    -fx-alignment: CENTER_LEFT;
+    -fx-text-fill: -mt-text;
+}
+
+.mt-nav-item:hover {
+    -fx-background-color: -mt-surface-soft;
+}
+
+.mt-nav-item:focused {
+    -fx-border-color: -mt-accent;
+    -fx-border-width: 2;
+    -fx-border-radius: 8;
+}
+
+.mt-nav-item.selected {
+    -fx-background-color: -mt-accent-soft;
+}
+
+.mt-badge {
+    -fx-font-size: 11px;
+    -fx-text-fill: -mt-text-secondary;
+    -fx-background-color: -mt-surface-soft;
+    -fx-background-radius: 8;
+    -fx-padding: 1 6;
+}
+
+.button {
+    -fx-background-color: -mt-surface;
+    -fx-text-fill: -mt-text;
+    -fx-background-radius: 8;
+    -fx-padding: 6 12;
+    -fx-border-color: -mt-border-soft;
+    -fx-border-radius: 8;
+    -fx-cursor: hand;
+}
+
+.button:hover {
+    -fx-background-color: -mt-surface-soft;
+}
+
+.button:focused {
+    -fx-border-color: -mt-accent;
+    -fx-border-width: 2;
+}
+
+.button.primary {
+    -fx-background-color: -mt-accent;
+    -fx-text-fill: -mt-on-accent;
+    -fx-border-color: transparent;
+}
+
+.button.danger {
+    -fx-text-fill: -mt-danger;
+}
+
+.tool-bar {
+    -fx-background-color: -mt-workspace;
+    -fx-padding: 8 12;
+    -fx-border-color: -mt-border-soft;
+    -fx-border-width: 0 0 1 0;
+}
+
+.mt-panel {
+    -fx-background-color: -mt-surface;
+    -fx-border-color: -mt-border-soft;
+}
+
+.mt-home-title {
+    -fx-font-size: 28px;
+    -fx-font-weight: bold;
+}
+
+.mt-home-version {
+    -fx-text-fill: -mt-text-secondary;
+    -fx-font-size: 14px;
+}
+
+.mt-section-title {
+    -fx-font-size: 16px;
+    -fx-font-weight: bold;
+}
+
+.mt-placeholder-title {
+    -fx-font-size: 22px;
+}
+
+.mt-status-bar {
+    -fx-background-color: -mt-sidebar;
+    -fx-border-color: -mt-border-soft;
+    -fx-border-width: 1 0 0 0;
+}
+
+.mt-status:valid {
+    -fx-text-fill: -mt-success;
+}
+
+.mt-status:error, .mt-error {
+    -fx-text-fill: -mt-danger;
+}
+
+.hyperlink {
+    -fx-text-fill: -mt-accent;
+}
+
+.text-field, .text-area, .combo-box {
+    -fx-background-color: -mt-surface;
+    -fx-border-color: -mt-border-control;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+}
+
+.split-pane > .split-pane-divider {
+    -fx-padding: 0 4;
+    -fx-background-color: -mt-border-soft;
+}
+
+.mt-editor-host, .mt-code-area, .styled-text-area {
+    -fx-background-color: -mt-surface;
+    -fx-font-family: "Menlo", "SF Mono", "JetBrains Mono", monospace;
+    -fx-font-size: 14px;
+}
+
+.scroll-pane {
+    -fx-background-color: transparent;
+}
+
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+.check-box {
+    -fx-text-fill: -mt-text;
+}

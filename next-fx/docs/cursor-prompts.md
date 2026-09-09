@@ -5,7 +5,7 @@
 ```text
 请在 /Users/zhoubo/IdeaProjectsCE/MooTool/next-fx 开发 MooTool Next FX。
 
-先读 next-fx/AGENTS.md、README.md 和 docs/cursor-development-guide.md，再读 baseline.md、ui-spec.md、feature-parity.md、architecture.md、data-platform-release.md、acceptance.md。当前只有开发规格，没有现成工程；不要把文档里的拟建脚本/API当成存在。
+先读 next-fx/AGENTS.md、README.md 和 docs/cursor-development-guide.md，再读 baseline.md、ui-spec.md、feature-parity.md、architecture.md、data-platform-release.md、acceptance.md。P0 Maven 工程已存在时沿用，不要重建；文档里尚未落地的拟建 API 仍不能当成已实现。
 
 目标是 OpenJDK + JavaFX 桌面产品，布局、样式、功能尽量对齐 next/ Electron 1.1.4，同时改善现代桌面 UI。首页和25工具、11类设置、编辑器、多窗口、文件库、Git、平台与发行都在最终范围。
 

@@ -1,0 +1,64 @@
+package com.rememberber.mootool.nextfx.infrastructure;
+
+import com.rememberber.mootool.nextfx.app.ProductIdentity;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+
+class SqliteDatabaseTest {
+
+    @TempDir
+    Path temp;
+
+    @Test
+    void roundTripsWindowStateAndHistoryWithoutTouchingUserData() throws Exception {
+        ProductIdentity identity = ProductIdentity.load(ProductIdentity.Profile.DEV);
+        AppPaths paths = AppPaths.isolated(identity, temp);
+        try (SqliteDatabase database = new SqliteDatabase(paths)) {
+            database.open();
+            database.windowState().save("main", "{\"width\":1440}");
+            assertThat(database.windowState().load("main")).contains("1440");
+            database.history().save("json", "format", "{\"a\":1}", "{\n  \"a\": 1\n}");
+            assertThat(database.history().latest("json", 10)).hasSize(1);
+            assertThat(Files.readString(paths.productMarker())).contains("next-fx");
+        }
+    }
+
+    @Test
+    void reopensJacksonPrettyPrintedOwnMarker() throws Exception {
+        ProductIdentity identity = ProductIdentity.load(ProductIdentity.Profile.RELEASE);
+        AppPaths paths = AppPaths.isolated(identity, temp.resolve("release"));
+        try (SqliteDatabase database = new SqliteDatabase(paths)) {
+            database.open();
+        }
+        assertThat(Files.readString(paths.productMarker())).contains("\"productId\" : \"next-fx\"");
+        try (SqliteDatabase database = new SqliteDatabase(paths)) {
+            database.open();
+            database.windowState().save("main", "{\"width\":1100}");
+            assertThat(database.windowState().load("main")).contains("1100");
+        }
+    }
+
+    @Test
+    void refusesForeignProductMarker() throws Exception {
+        ProductIdentity identity = ProductIdentity.load(ProductIdentity.Profile.DEV);
+        AppPaths paths = AppPaths.isolated(identity, temp.resolve("foreign"));
+        Files.createDirectories(paths.dataRoot());
+        Files.writeString(paths.productMarker(), """
+                {
+                  "productId" : "next-electron",
+                  "schema" : 1
+                }
+                """);
+        try (SqliteDatabase database = new SqliteDatabase(paths)) {
+            assertThatThrownBy(database::open)
+                    .isInstanceOf(IllegalStateException.class)
+                    .hasMessageContaining("another product");
+        }
+    }
+}

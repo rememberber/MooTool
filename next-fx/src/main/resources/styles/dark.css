@@ -1,0 +1,19 @@
+.root {
+    -mt-window: #18191C;
+    -mt-sidebar: #202126;
+    -mt-workspace: #1B1C20;
+    -mt-surface: #24262B;
+    -mt-surface-soft: #2B2D33;
+    -mt-text: #F0F1F3;
+    -mt-text-secondary: #B6BAC4;
+    -mt-border-soft: #373A43;
+    -mt-border-control: #808898;
+    -mt-accent: #90BAFA;
+    -mt-on-accent: #14223A;
+    -mt-accent-soft: #293C5A;
+    -mt-success: #82CCA8;
+    -mt-warning: #E7BC70;
+    -mt-danger: #F0A39B;
+    -fx-background-color: -mt-window;
+    -fx-base: -mt-surface;
+}

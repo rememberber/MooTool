@@ -1,0 +1,20 @@
+WARNING: A restricted method in java.lang.System has been called
+WARNING: java.lang.System::load has been called by com.sun.glass.utils.NativeLibLoader in module javafx.graphics (jrt:/javafx.graphics)
+WARNING: Use --enable-native-access=javafx.graphics to avoid a warning for callers in this module
+WARNING: Restricted methods will be blocked in a future release unless native access is enabled
+
+Exception in Application start method
+Exception in thread "main" java.lang.RuntimeException: Exception in Application start method
+	at javafx.graphics@26.0.2/com.sun.javafx.application.LauncherImpl.launchApplication1(Unknown Source)
+	at javafx.graphics@26.0.2/com.sun.javafx.application.LauncherImpl.lambda$launchApplication$0(Unknown Source)
+	at java.base/java.lang.Thread.run(Unknown Source)
+Caused by: java.lang.IllegalStateException: Data root belongs to another product: /Users/zhoubo/Library/Application Support/com.rememberber.mootool.next.fx/data/product.json
+	at com.rememberber.mootool.nextfx.infrastructure.SqliteDatabase.writeProductMarker(SqliteDatabase.java:138)
+	at com.rememberber.mootool.nextfx.infrastructure.SqliteDatabase.open(SqliteDatabase.java:47)
+	at com.rememberber.mootool.nextfx.app.AppServices.<init>(AppServices.java:38)
+	at com.rememberber.mootool.nextfx.app.MooToolFxApplication.start(MooToolFxApplication.java:25)
+	at javafx.graphics@26.0.2/com.sun.javafx.application.LauncherImpl.lambda$launchApplication1$4(Unknown Source)
+	at javafx.graphics@26.0.2/com.sun.javafx.application.PlatformImpl.lambda$runAndWait$0(Unknown Source)
+	at javafx.graphics@26.0.2/com.sun.javafx.application.PlatformImpl.lambda$runLater$0(Unknown Source)
+	at javafx.graphics@26.0.2/com.sun.glass.ui.InvokeLaterDispatcher$Future.run(Unknown Source)
+Failed to launch JVM

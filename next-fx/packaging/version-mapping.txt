@@ -1,0 +1,3 @@
+productVersion=0.1.0-SNAPSHOT
+jpackageAppVersion=1.0.0
+reason=JDK 25 jpackage on macOS rejects app-version whose first integer is 0.
