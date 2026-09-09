@@ -278,7 +278,7 @@ Tab：生成、识别。参数、预览、保存/复制/历史关系保留。
 - 文案、主题、对齐、比例持久化。若 Compose 改为字素计数，记录 Unicode 差异并更新界面长度提示。
 - 演示保持屏幕唤醒，按持有者 token 管理；退出、关闭、异常释放，不影响别的演示会话。
 - Esc 先退出演示；按钮和文本不能被拖动窗口区域遮挡。
-- 验收：长中文/多行、窗口缩小、预设/重启恢复、唤醒 token 释放和显示器切换。
+- 验收：长中文/多行、窗口缩小、预设/重启恢复、唤醒 token 释放和显示器切换。演示唤醒使用本机 `caffeinate` / `systemd-inhibit` / Windows `SetThreadExecutionState` 进程，而非 Electron `powerSaveBlocker`，见 [DIFF-011](diff/011-message-board-wake.md)。
 
 ### F20 翻译
 

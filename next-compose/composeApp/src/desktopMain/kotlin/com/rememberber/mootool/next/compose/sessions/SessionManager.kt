@@ -18,9 +18,12 @@ import com.rememberber.mootool.next.compose.domain.DigestAlgorithm
 import com.rememberber.mootool.next.compose.domain.SymmetricAlgorithm
 import com.rememberber.mootool.next.compose.domain.ProtobufBinaryFormat
 import com.rememberber.mootool.next.compose.domain.ProtobufEngine
+import com.rememberber.mootool.next.compose.domain.BoardAlignment
+import com.rememberber.mootool.next.compose.domain.BoardTheme
 import com.rememberber.mootool.next.compose.domain.ColorEngine
 import com.rememberber.mootool.next.compose.domain.ColorFormat
 import com.rememberber.mootool.next.compose.domain.ColorThemeId
+import com.rememberber.mootool.next.compose.domain.MessageBoardEngine
 import com.rememberber.mootool.next.compose.domain.QrEngine
 import com.rememberber.mootool.next.compose.domain.QrErrorCorrection
 import com.rememberber.mootool.next.compose.domain.QrTab
@@ -912,6 +915,45 @@ class ColorSession {
     }
 }
 
+@Serializable
+data class MessageBoardSessionSnapshot(
+    val message: String = "",
+    val theme: String = "sunbeam",
+    val alignment: String = "center",
+    val size: Int = MessageBoardEngine.DEFAULT_SIZE
+)
+
+class MessageBoardSession {
+    var message: String = ""
+    var theme: BoardTheme = BoardTheme.Sunbeam
+    var alignment: BoardAlignment = BoardAlignment.Center
+    var size: Int = MessageBoardEngine.DEFAULT_SIZE
+    var restored: Boolean = false
+    var presenting: Boolean = false
+    var displayAwake: Boolean = false
+    var notice: String = ""
+    var error: String = ""
+
+    fun snapshot(): MessageBoardSessionSnapshot = MessageBoardSessionSnapshot(
+        message = MessageBoardEngine.clip(message),
+        theme = theme.name.lowercase(),
+        alignment = alignment.name.lowercase(),
+        size = MessageBoardEngine.normalizeSize(size)
+    )
+
+    fun restore(snapshot: MessageBoardSessionSnapshot) {
+        message = MessageBoardEngine.clip(snapshot.message)
+        theme = MessageBoardEngine.themeId(snapshot.theme)
+        alignment = MessageBoardEngine.alignmentId(snapshot.alignment)
+        size = MessageBoardEngine.normalizeSize(snapshot.size)
+        restored = true
+        presenting = false
+        displayAwake = false
+        notice = ""
+        error = ""
+    }
+}
+
 enum class WindowRole { Main, Detached }
 
 data class HostedSession(
@@ -935,6 +977,7 @@ class SessionManager(private val store: SessionStore) {
     private var cryptoSessionCache: CryptoSession? = null
     private var qrSessionCache: QrSession? = null
     private var colorSessionCache: ColorSession? = null
+    private var messageBoardSessionCache: MessageBoardSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
     val detached: StateFlow<Set<ToolId>> = _detached
     private val _revision = MutableStateFlow(0L)
@@ -1167,6 +1210,22 @@ class SessionManager(private val store: SessionStore) {
 
     fun persistColor() {
         store.save(ToolId.ColorBoard.id, jsonCodec.encodeToString(colorSession().snapshot()))
+    }
+
+    fun messageBoardSession(): MessageBoardSession {
+        messageBoardSessionCache?.let { return it }
+        val session = MessageBoardSession()
+        store.load(ToolId.MessageBoard.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<MessageBoardSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        }
+        messageBoardSessionCache = session
+        return session
+    }
+
+    fun persistMessageBoard() {
+        store.save(ToolId.MessageBoard.id, jsonCodec.encodeToString(messageBoardSession().snapshot()))
     }
 
     fun detach(toolId: ToolId) {

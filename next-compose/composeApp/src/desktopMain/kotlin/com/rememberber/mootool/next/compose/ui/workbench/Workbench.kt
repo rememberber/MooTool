@@ -41,6 +41,7 @@ import com.rememberber.mootool.next.compose.features.diff.TextDiffScreen
 import com.rememberber.mootool.next.compose.features.encode.EncodeScreen
 import com.rememberber.mootool.next.compose.features.home.HomeScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
+import com.rememberber.mootool.next.compose.features.messageboard.MessageBoardScreen
 import com.rememberber.mootool.next.compose.features.regex.RegexScreen
 import com.rememberber.mootool.next.compose.features.reformat.ReformatScreen
 import com.rememberber.mootool.next.compose.features.protobuf.ProtobufScreen
@@ -149,6 +150,10 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
                     ColorBoardScreen(container, detached = false)
                 active == ToolId.ColorBoard && detached.contains(ToolId.ColorBoard) ->
                     DetachedNotice(container, ToolId.ColorBoard)
+                active == ToolId.MessageBoard && !detached.contains(ToolId.MessageBoard) ->
+                    MessageBoardScreen(container, detached = false)
+                active == ToolId.MessageBoard && detached.contains(ToolId.MessageBoard) ->
+                    DetachedNotice(container, ToolId.MessageBoard)
                 else -> PlaceholderScreen(container, active)
             }
         }

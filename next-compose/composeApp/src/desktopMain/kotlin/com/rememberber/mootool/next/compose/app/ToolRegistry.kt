@@ -42,7 +42,7 @@ object ToolRegistry {
         tool(ToolId.Cron, ToolGroupId.Encode, "app.nav.cron", "⏱", listOf("cron", "schedule", "定时"), ToolStatus.Available),
         tool(ToolId.QrCode, ToolGroupId.Encode, "app.nav.qrCode", "▦", listOf("qr", "qrcode", "二维码"), ToolStatus.Available),
         tool(ToolId.TimeConvert, ToolGroupId.Daily, "app.nav.timeConvert", "◷", listOf("time", "timestamp", "时间"), ToolStatus.Available),
-        tool(ToolId.MessageBoard, ToolGroupId.Daily, "app.nav.messageBoard", "✉", listOf("message", "board", "留言")),
+        tool(ToolId.MessageBoard, ToolGroupId.Daily, "app.nav.messageBoard", "✉", listOf("message", "board", "留言"), ToolStatus.Available),
         tool(ToolId.Translation, ToolGroupId.Daily, "app.nav.translation", "文", listOf("translate", "word", "翻译")),
         tool(ToolId.Calculator, ToolGroupId.Daily, "app.nav.calculator", "=", listOf("calculator", "calc", "计算"), ToolStatus.Available),
         tool(ToolId.ColorBoard, ToolGroupId.Daily, "app.nav.colorBoard", "◐", listOf("color", "palette", "调色"), ToolStatus.Available),
