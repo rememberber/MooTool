@@ -41,6 +41,7 @@ import com.rememberber.mootool.next.compose.features.home.HomeScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
 import com.rememberber.mootool.next.compose.features.regex.RegexScreen
 import com.rememberber.mootool.next.compose.features.reformat.ReformatScreen
+import com.rememberber.mootool.next.compose.features.protobuf.ProtobufScreen
 import com.rememberber.mootool.next.compose.features.placeholder.DetachedNotice
 import com.rememberber.mootool.next.compose.features.placeholder.PlaceholderScreen
 import com.rememberber.mootool.next.compose.features.settings.SettingsScreen
@@ -105,6 +106,10 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
                     ConfigConvertScreen(container, detached = false)
                 active == ToolId.YmlProperties && detached.contains(ToolId.YmlProperties) ->
                     DetachedNotice(container, ToolId.YmlProperties)
+                active == ToolId.Protobuf && !detached.contains(ToolId.Protobuf) ->
+                    ProtobufScreen(container, detached = false)
+                active == ToolId.Protobuf && detached.contains(ToolId.Protobuf) ->
+                    DetachedNotice(container, ToolId.Protobuf)
                 active == ToolId.TimeConvert && !detached.contains(ToolId.TimeConvert) ->
                     TimeConvertScreen(container, detached = false, active = true)
                 active == ToolId.TimeConvert && detached.contains(ToolId.TimeConvert) ->

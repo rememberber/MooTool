@@ -29,6 +29,7 @@ import com.rememberber.mootool.next.compose.features.cron.CronScreen
 import com.rememberber.mootool.next.compose.features.diff.TextDiffScreen
 import com.rememberber.mootool.next.compose.features.encode.EncodeScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
+import com.rememberber.mootool.next.compose.features.protobuf.ProtobufScreen
 import com.rememberber.mootool.next.compose.features.regex.RegexScreen
 import com.rememberber.mootool.next.compose.features.reformat.ReformatScreen
 import com.rememberber.mootool.next.compose.features.time.TimeConvertScreen
@@ -147,6 +148,18 @@ fun main() = application {
             ) {
                 MooTheme(container.themePreference(), systemDark) {
                     ConfigConvertScreen(container, detached = true)
+                }
+            }
+        }
+
+        if (ToolId.Protobuf in detached) {
+            Window(
+                onCloseRequest = { container.sessionManager.reattach(ToolId.Protobuf) },
+                title = "${container.t("app.nav.protobuf")} · ${ProductIdentity.DISPLAY_NAME}",
+                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
+            ) {
+                MooTheme(container.themePreference(), systemDark) {
+                    ProtobufScreen(container, detached = true)
                 }
             }
         }

@@ -30,7 +30,7 @@ object ToolRegistry {
         tool(ToolId.Json, ToolGroupId.Dev, "app.nav.json", "{}", listOf("json", "xml", "javabean", "jsonpath", "格式化"), ToolStatus.Available),
         tool(ToolId.Java, ToolGroupId.Dev, "app.nav.java", ">_", listOf("java", "groovy", "python", "node", "运行")),
         tool(ToolId.YmlProperties, ToolGroupId.Dev, "app.nav.ymlProperties", "☰", listOf("yaml", "yml", "properties", "配置"), ToolStatus.Available),
-        tool(ToolId.Protobuf, ToolGroupId.Dev, "app.nav.protobuf", "⬡", listOf("protobuf", "proto")),
+        tool(ToolId.Protobuf, ToolGroupId.Dev, "app.nav.protobuf", "⬡", listOf("protobuf", "proto"), ToolStatus.Available),
         tool(ToolId.Variables, ToolGroupId.Dev, "app.nav.variables", "∑", listOf("env", "environment", "环境变量")),
         tool(ToolId.Http, ToolGroupId.Network, "app.nav.http", "⇄", listOf("http", "curl", "api", "请求")),
         tool(ToolId.Host, ToolGroupId.Network, "app.nav.host", "◎", listOf("host", "dns", "域名")),

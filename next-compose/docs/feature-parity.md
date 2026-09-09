@@ -155,7 +155,7 @@ JSON 文本编辑保留大整数与小数字面量；不能先转 Double 再声�
 - Wire 输出字段号、wire type、varint/64-bit/length-delimited/32-bit 内容，处理 group、截断、越界与非法 tag。
 - nested、repeated、enum、map、oneof、int64/uint64、bytes、默认字段、未知字段及 import 支持范围逐项建样本。
 - Electron `keepCase` 和默认/long/enum/bytes 映射作为兼容参照；Java JsonFormat 不同部分通过适配或明确差异解决。
-- 动态解析具体走 [架构](architecture.md) 的 protoc + Descriptor 路线；不能只带生成式 protobuf runtime 或几种写死 message。
+- 动态解析具体走 [架构](architecture.md) 的 protoc + Descriptor 路线；不能只带生成式 protobuf runtime 或几种写死 message。JSON 映射与 protobufjs 差异见 [DIFF-007](diff/007-protobuf-jsonformat.md)。
 - 验收：用户粘贴全新 message 无须重编译即可往返；输入错误具体；恶意二进制有上限；确定性样本按 bytes 比较，map 顺序差异按协议结构比较。
 
 ### F08 环境变量

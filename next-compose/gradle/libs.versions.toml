@@ -15,6 +15,7 @@ javaDiffUtils = "4.15"
 javaParser = "3.26.4"
 jsoup = "1.18.3"
 snakeyaml = "2.3"
+protobuf = "4.29.3"
 
 [libraries]
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
@@ -42,6 +43,9 @@ java-diff-utils = { module = "io.github.java-diff-utils:java-diff-utils", versio
 javaparser-core = { module = "com.github.javaparser:javaparser-core", version.ref = "javaParser" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
 snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
+protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
+protobuf-java-util = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protobuf" }
+protoc = { module = "com.google.protobuf:protoc", version.ref = "protobuf" }
 junit = { module = "junit:junit", version.ref = "junit" }
 
 [plugins]

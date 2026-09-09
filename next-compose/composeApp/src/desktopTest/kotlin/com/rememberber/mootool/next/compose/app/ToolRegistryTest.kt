@@ -21,6 +21,7 @@ class ToolRegistryTest {
         assertTrue(ToolRegistry.byId.getValue(ToolId.TextDiff).status.name == "Available")
         assertTrue(ToolRegistry.byId.getValue(ToolId.Reformat).status.name == "Available")
         assertTrue(ToolRegistry.byId.getValue(ToolId.YmlProperties).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.Protobuf).status.name == "Available")
     }
 
     @Test

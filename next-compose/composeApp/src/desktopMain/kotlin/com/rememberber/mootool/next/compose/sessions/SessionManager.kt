@@ -10,6 +10,8 @@ import com.rememberber.mootool.next.compose.domain.DiffSegment
 import com.rememberber.mootool.next.compose.domain.ReformatEngine
 import com.rememberber.mootool.next.compose.domain.ReformatType
 import com.rememberber.mootool.next.compose.domain.ConfigEngine
+import com.rememberber.mootool.next.compose.domain.ProtobufBinaryFormat
+import com.rememberber.mootool.next.compose.domain.ProtobufEngine
 import com.rememberber.mootool.next.compose.domain.CronFields
 import com.rememberber.mootool.next.compose.domain.CronEngine
 import com.rememberber.mootool.next.compose.domain.RegexMatch
@@ -595,6 +597,78 @@ class ConfigSession {
     }
 }
 
+@Serializable
+data class ProtobufSessionSnapshot(
+    val tab: String = "json",
+    val proto: String = ProtobufEngine.SAMPLE_PROTO,
+    val messageName: String = ProtobufEngine.SAMPLE_MESSAGE,
+    val format: String = "Hex",
+    val json: String = ProtobufEngine.SAMPLE_JSON,
+    val binary: String = "",
+    val wireInput: String = "",
+    val wireFormat: String = "Hex",
+    val wireOutput: String = "",
+    val hex: String = "",
+    val base64: String = ""
+)
+
+class ProtobufSession {
+    var tab: String = "json"
+    var proto: String = ProtobufEngine.SAMPLE_PROTO
+    var messageName: String = ProtobufEngine.SAMPLE_MESSAGE
+    var format: ProtobufBinaryFormat = ProtobufBinaryFormat.Hex
+    var json: String = ProtobufEngine.SAMPLE_JSON
+    var binary: String = ""
+    var wireInput: String = ""
+    var wireFormat: ProtobufBinaryFormat = ProtobufBinaryFormat.Hex
+    var wireOutput: String = ""
+    var hex: String = ""
+    var base64: String = ""
+    var historyOpen: Boolean = false
+    var notice: String = ""
+    var error: String = ""
+
+    fun snapshot(): ProtobufSessionSnapshot = ProtobufSessionSnapshot(
+        tab = tab,
+        proto = proto,
+        messageName = messageName,
+        format = format.name,
+        json = json,
+        binary = binary,
+        wireInput = wireInput,
+        wireFormat = wireFormat.name,
+        wireOutput = wireOutput,
+        hex = hex,
+        base64 = base64
+    )
+
+    fun restore(snapshot: ProtobufSessionSnapshot) {
+        tab = when (snapshot.tab) {
+            "wire" -> "wire"
+            "convert" -> "convert"
+            else -> "json"
+        }
+        proto = snapshot.proto
+        messageName = snapshot.messageName
+        format = formatOf(snapshot.format)
+        json = snapshot.json
+        binary = snapshot.binary
+        wireInput = snapshot.wireInput
+        wireFormat = formatOf(snapshot.wireFormat)
+        wireOutput = snapshot.wireOutput
+        hex = snapshot.hex
+        base64 = snapshot.base64
+        historyOpen = false
+        notice = ""
+        error = ""
+    }
+
+    companion object {
+        fun formatOf(value: String): ProtobufBinaryFormat =
+            if (value.equals("Base64", ignoreCase = true)) ProtobufBinaryFormat.Base64 else ProtobufBinaryFormat.Hex
+    }
+}
+
 enum class WindowRole { Main, Detached }
 
 data class HostedSession(
@@ -614,6 +688,7 @@ class SessionManager(private val store: SessionStore) {
     private var diffSessionCache: DiffSession? = null
     private var reformatSessionCache: ReformatSession? = null
     private var configSessionCache: ConfigSession? = null
+    private var protobufSessionCache: ProtobufSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
     val detached: StateFlow<Set<ToolId>> = _detached
     private val _revision = MutableStateFlow(0L)
@@ -775,6 +850,22 @@ class SessionManager(private val store: SessionStore) {
 
     fun persistConfig() {
         store.save(ToolId.YmlProperties.id, jsonCodec.encodeToString(configSession().snapshot()))
+    }
+
+    fun protobufSession(): ProtobufSession {
+        protobufSessionCache?.let { return it }
+        val session = ProtobufSession()
+        store.load(ToolId.Protobuf.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<ProtobufSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        }
+        protobufSessionCache = session
+        return session
+    }
+
+    fun persistProtobuf() {
+        store.save(ToolId.Protobuf.id, jsonCodec.encodeToString(protobufSession().snapshot()))
     }
 
     fun detach(toolId: ToolId) {

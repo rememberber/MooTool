@@ -162,7 +162,7 @@ SwingPanel 默认处于 Compose 内容前方；菜单、命令搜索、对话框
 
 ## 8. 动态 Protobuf 的具体路线
 
-首选随本产品分发对应 OS/arch 的 `protoc`，启动受控子进程输出 descriptor set，再由 JVM `DynamicMessage` 编解码。这样用户临时粘贴 `.proto` 不需要重新编译应用，也不要求用户自己安装 protoc。精确 protoc/runtime 版本、许可证、校验、资源路径与权限在 P0 固定。
+首选随本产品分发对应 OS/arch 的 `protoc` 4.29.3（构建时从 Maven 分类器复制到 classpath `helpers/`），启动受控子进程输出 descriptor set，再由 JVM `DynamicMessage` 编解码。这样用户临时粘贴 `.proto` 不需要重新编译应用，也不要求用户自己安装 protoc。JSON 适配见 [DIFF-007](diff/007-protobuf-jsonformat.md)。
 
 仅允许临时工作目录及用户明确选择的 import roots；禁止通过 import 跳出授权根、自动联网下载未知 schema。超时、大小、递归深度、编译 stderr 和临时文件清理统一处理。well-known types 需要随包带所需定义或明确支持策略。
 
