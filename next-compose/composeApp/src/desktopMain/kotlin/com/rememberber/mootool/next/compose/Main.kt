@@ -26,6 +26,7 @@ import com.rememberber.mootool.next.compose.app.ProductIdentity
 import com.rememberber.mootool.next.compose.features.config.ConfigConvertScreen
 import com.rememberber.mootool.next.compose.features.calculator.CalculatorScreen
 import com.rememberber.mootool.next.compose.features.cron.CronScreen
+import com.rememberber.mootool.next.compose.features.crypto.CryptoScreen
 import com.rememberber.mootool.next.compose.features.diff.TextDiffScreen
 import com.rememberber.mootool.next.compose.features.encode.EncodeScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
@@ -196,6 +197,18 @@ fun main() = application {
             ) {
                 MooTheme(container.themePreference(), systemDark) {
                     EncodeScreen(container, detached = true)
+                }
+            }
+        }
+
+        if (ToolId.Crypto in detached) {
+            Window(
+                onCloseRequest = { container.sessionManager.reattach(ToolId.Crypto) },
+                title = "${container.t("app.nav.crypto")} · ${ProductIdentity.DISPLAY_NAME}",
+                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
+            ) {
+                MooTheme(container.themePreference(), systemDark) {
+                    CryptoScreen(container, detached = true)
                 }
             }
         }

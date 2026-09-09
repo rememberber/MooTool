@@ -87,6 +87,7 @@ kotlin {
                 implementation(libs.snakeyaml)
                 implementation(libs.protobuf.java)
                 implementation(libs.protobuf.java.util)
+                implementation(libs.bouncy.castle)
             }
         }
         val desktopTest by getting {

@@ -16,6 +16,7 @@ javaParser = "3.26.4"
 jsoup = "1.18.3"
 snakeyaml = "2.3"
 protobuf = "4.29.3"
+bouncyCastle = "1.80"
 
 [libraries]
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
@@ -46,6 +47,7 @@ snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
 protobuf-java = { module = "com.google.protobuf:protobuf-java", version.ref = "protobuf" }
 protobuf-java-util = { module = "com.google.protobuf:protobuf-java-util", version.ref = "protobuf" }
 protoc = { module = "com.google.protobuf:protoc", version.ref = "protobuf" }
+bouncy-castle = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncyCastle" }
 junit = { module = "junit:junit", version.ref = "junit" }
 
 [plugins]

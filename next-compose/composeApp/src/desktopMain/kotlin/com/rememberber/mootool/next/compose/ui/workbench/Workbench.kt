@@ -34,6 +34,7 @@ import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.app.ToolRegistry
 import com.rememberber.mootool.next.compose.features.calculator.CalculatorScreen
 import com.rememberber.mootool.next.compose.features.config.ConfigConvertScreen
+import com.rememberber.mootool.next.compose.features.crypto.CryptoScreen
 import com.rememberber.mootool.next.compose.features.cron.CronScreen
 import com.rememberber.mootool.next.compose.features.diff.TextDiffScreen
 import com.rememberber.mootool.next.compose.features.encode.EncodeScreen
@@ -122,6 +123,10 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
                     EncodeScreen(container, detached = false)
                 active == ToolId.Encode && detached.contains(ToolId.Encode) ->
                     DetachedNotice(container, ToolId.Encode)
+                active == ToolId.Crypto && !detached.contains(ToolId.Crypto) ->
+                    CryptoScreen(container, detached = false)
+                active == ToolId.Crypto && detached.contains(ToolId.Crypto) ->
+                    DetachedNotice(container, ToolId.Crypto)
                 active == ToolId.UaParse && !detached.contains(ToolId.UaParse) ->
                     UaParseScreen(container, detached = false)
                 active == ToolId.UaParse && detached.contains(ToolId.UaParse) ->

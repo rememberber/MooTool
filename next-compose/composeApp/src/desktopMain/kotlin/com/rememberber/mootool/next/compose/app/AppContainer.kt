@@ -107,6 +107,7 @@ class AppContainer(
         sessionManager.persistReformat()
         sessionManager.persistConfig()
         sessionManager.persistProtobuf()
+        sessionManager.persistCrypto()
         settingsRepository.save(_settings.value)
     }
 

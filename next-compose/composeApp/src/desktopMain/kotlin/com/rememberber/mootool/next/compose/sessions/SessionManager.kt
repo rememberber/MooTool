@@ -9,7 +9,13 @@ import com.rememberber.mootool.next.compose.domain.DiffResult
 import com.rememberber.mootool.next.compose.domain.DiffSegment
 import com.rememberber.mootool.next.compose.domain.ReformatEngine
 import com.rememberber.mootool.next.compose.domain.ReformatType
+import com.rememberber.mootool.next.compose.domain.AsymmetricAlgorithm
+import com.rememberber.mootool.next.compose.domain.BaseAlgorithm
 import com.rememberber.mootool.next.compose.domain.ConfigEngine
+import com.rememberber.mootool.next.compose.domain.CryptoEngine
+import com.rememberber.mootool.next.compose.domain.CryptoTab
+import com.rememberber.mootool.next.compose.domain.DigestAlgorithm
+import com.rememberber.mootool.next.compose.domain.SymmetricAlgorithm
 import com.rememberber.mootool.next.compose.domain.ProtobufBinaryFormat
 import com.rememberber.mootool.next.compose.domain.ProtobufEngine
 import com.rememberber.mootool.next.compose.domain.CronFields
@@ -669,6 +675,115 @@ class ProtobufSession {
     }
 }
 
+@Serializable
+data class CryptoSessionSnapshot(
+    val tab: String = "symmetric",
+    val symAlgorithm: String = "AES",
+    val symKey: String = CryptoEngine.SAMPLE_KEY,
+    val symPlain: String = CryptoEngine.SAMPLE_PLAIN,
+    val symCipher: String = "",
+    val asymAlgorithm: String = "RSA",
+    val publicKey: String = "",
+    val privateKey: String = "",
+    val asymPlain: String = CryptoEngine.SAMPLE_PLAIN,
+    val asymCipher: String = "",
+    val digestAlgorithm: String = "SHA256",
+    val digestInput: String = CryptoEngine.SAMPLE_PLAIN,
+    val digestOutput: String = "",
+    val digestFileName: String = "",
+    val baseAlgorithm: String = "Base64",
+    val basePlain: String = CryptoEngine.SAMPLE_PLAIN,
+    val baseCipher: String = "",
+    val randomLength: Int = 16,
+    val uuid: String = "",
+    val digits: String = "",
+    val randomText: String = "",
+    val password: String = ""
+)
+
+class CryptoSession {
+    var tab: CryptoTab = CryptoTab.Symmetric
+    var symAlgorithm: SymmetricAlgorithm = SymmetricAlgorithm.AES
+    var symKey: String = CryptoEngine.SAMPLE_KEY
+    var symPlain: String = CryptoEngine.SAMPLE_PLAIN
+    var symCipher: String = ""
+    var asymAlgorithm: AsymmetricAlgorithm = AsymmetricAlgorithm.RSA
+    var publicKey: String = ""
+    var privateKey: String = ""
+    var asymPlain: String = CryptoEngine.SAMPLE_PLAIN
+    var asymCipher: String = ""
+    var digestAlgorithm: DigestAlgorithm = DigestAlgorithm.SHA256
+    var digestInput: String = CryptoEngine.SAMPLE_PLAIN
+    var digestOutput: String = ""
+    var digestFileName: String = ""
+    var baseAlgorithm: BaseAlgorithm = BaseAlgorithm.Base64
+    var basePlain: String = CryptoEngine.SAMPLE_PLAIN
+    var baseCipher: String = ""
+    var randomLength: Int = 16
+    var uuid: String = ""
+    var digits: String = ""
+    var randomText: String = ""
+    var password: String = ""
+    var asymBusy: Boolean = false
+    var historyOpen: Boolean = false
+    var notice: String = ""
+    var error: String = ""
+
+    fun snapshot(): CryptoSessionSnapshot = CryptoSessionSnapshot(
+        tab = tab.name.lowercase(),
+        symAlgorithm = symAlgorithm.name,
+        symKey = symKey,
+        symPlain = symPlain,
+        symCipher = symCipher,
+        asymAlgorithm = asymAlgorithm.name,
+        publicKey = publicKey,
+        privateKey = privateKey,
+        asymPlain = asymPlain,
+        asymCipher = asymCipher,
+        digestAlgorithm = digestAlgorithm.name,
+        digestInput = digestInput,
+        digestOutput = digestOutput,
+        digestFileName = digestFileName,
+        baseAlgorithm = baseAlgorithm.name,
+        basePlain = basePlain,
+        baseCipher = baseCipher,
+        randomLength = randomLength,
+        uuid = uuid,
+        digits = digits,
+        randomText = randomText,
+        password = password
+    )
+
+    fun restore(snapshot: CryptoSessionSnapshot) {
+        tab = CryptoTab.entries.find { it.name.equals(snapshot.tab, ignoreCase = true) } ?: CryptoTab.Symmetric
+        symAlgorithm = SymmetricAlgorithm.entries.find { it.name == snapshot.symAlgorithm } ?: SymmetricAlgorithm.AES
+        symKey = snapshot.symKey
+        symPlain = snapshot.symPlain
+        symCipher = snapshot.symCipher
+        asymAlgorithm = AsymmetricAlgorithm.entries.find { it.name == snapshot.asymAlgorithm } ?: AsymmetricAlgorithm.RSA
+        publicKey = snapshot.publicKey
+        privateKey = snapshot.privateKey
+        asymPlain = snapshot.asymPlain
+        asymCipher = snapshot.asymCipher
+        digestAlgorithm = DigestAlgorithm.entries.find { it.name == snapshot.digestAlgorithm } ?: DigestAlgorithm.SHA256
+        digestInput = snapshot.digestInput
+        digestOutput = snapshot.digestOutput
+        digestFileName = snapshot.digestFileName
+        baseAlgorithm = BaseAlgorithm.entries.find { it.name == snapshot.baseAlgorithm } ?: BaseAlgorithm.Base64
+        basePlain = snapshot.basePlain
+        baseCipher = snapshot.baseCipher
+        randomLength = snapshot.randomLength.coerceIn(CryptoEngine.MIN_RANDOM_LENGTH, CryptoEngine.MAX_RANDOM_LENGTH)
+        uuid = snapshot.uuid
+        digits = snapshot.digits
+        randomText = snapshot.randomText
+        password = snapshot.password
+        asymBusy = false
+        historyOpen = false
+        notice = ""
+        error = ""
+    }
+}
+
 enum class WindowRole { Main, Detached }
 
 data class HostedSession(
@@ -689,6 +804,7 @@ class SessionManager(private val store: SessionStore) {
     private var reformatSessionCache: ReformatSession? = null
     private var configSessionCache: ConfigSession? = null
     private var protobufSessionCache: ProtobufSession? = null
+    private var cryptoSessionCache: CryptoSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
     val detached: StateFlow<Set<ToolId>> = _detached
     private val _revision = MutableStateFlow(0L)
@@ -866,6 +982,25 @@ class SessionManager(private val store: SessionStore) {
 
     fun persistProtobuf() {
         store.save(ToolId.Protobuf.id, jsonCodec.encodeToString(protobufSession().snapshot()))
+    }
+
+    fun cryptoSession(defaultRandomLength: Int = 16): CryptoSession {
+        cryptoSessionCache?.let { return it }
+        val session = CryptoSession()
+        val raw = store.load(ToolId.Crypto.id)
+        if (raw != null) {
+            runCatching { jsonCodec.decodeFromString<CryptoSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        } else {
+            session.randomLength = defaultRandomLength.coerceIn(CryptoEngine.MIN_RANDOM_LENGTH, CryptoEngine.MAX_RANDOM_LENGTH)
+        }
+        cryptoSessionCache = session
+        return session
+    }
+
+    fun persistCrypto() {
+        store.save(ToolId.Crypto.id, jsonCodec.encodeToString(cryptoSession().snapshot()))
     }
 
     fun detach(toolId: ToolId) {
