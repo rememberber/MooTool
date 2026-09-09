@@ -108,6 +108,7 @@ class AppContainer(
         sessionManager.persistConfig()
         sessionManager.persistProtobuf()
         sessionManager.persistCrypto()
+        sessionManager.persistQr()
         settingsRepository.save(_settings.value)
     }
 

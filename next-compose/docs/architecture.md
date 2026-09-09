@@ -152,7 +152,7 @@ SwingPanel 默认处于 Compose 内容前方；菜单、命令搜索、对话框
 | 正则 | Java Pattern 为首选引擎 | 显示 Java 语义差异；独立 worker 超时/终止；不能宣称完全 JS 兼容 |
 | UA | 维护中的 UA 规则库 | 浏览器/OS/设备/bot 样本与版本记录 |
 | 加密 | JCA/JCE + Bouncy Castle 1.80 | 精确 key/模式/padding/字节/DER/SM2 参数，跨实现验签；对称路径见 DIFF-008 |
-| QR | ZXing | PNG/剪贴板真回读、Logo/纠错、坏图 |
+| QR | ZXing 3.5.4 | PNG/剪贴板真回读、Logo/纠错、坏图；历史见 DIFF-009 |
 | 图像 | ImageIO/Java2D + 自有图片库 | EXIF、alpha、解码像素限额、压缩/水印 |
 | SVG | 本产品移植 ImageTracer 或自带经验证的 tracer helper | 真正 vector path；批量/质量/参数可解释，不嵌原图冒充 |
 | PDF | PDFBox 候选 | 真 PDF 页面复制；表单/书签/签名影响实测；不直接照搬 Java iText 依赖 |

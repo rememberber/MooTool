@@ -45,6 +45,7 @@ import com.rememberber.mootool.next.compose.features.reformat.ReformatScreen
 import com.rememberber.mootool.next.compose.features.protobuf.ProtobufScreen
 import com.rememberber.mootool.next.compose.features.placeholder.DetachedNotice
 import com.rememberber.mootool.next.compose.features.placeholder.PlaceholderScreen
+import com.rememberber.mootool.next.compose.features.qrcode.QrCodeScreen
 import com.rememberber.mootool.next.compose.features.settings.SettingsScreen
 import com.rememberber.mootool.next.compose.features.time.TimeConvertScreen
 import com.rememberber.mootool.next.compose.features.ua.UaParseScreen
@@ -139,6 +140,10 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
                     CronScreen(container, detached = false)
                 active == ToolId.Cron && detached.contains(ToolId.Cron) ->
                     DetachedNotice(container, ToolId.Cron)
+                active == ToolId.QrCode && !detached.contains(ToolId.QrCode) ->
+                    QrCodeScreen(container, detached = false)
+                active == ToolId.QrCode && detached.contains(ToolId.QrCode) ->
+                    DetachedNotice(container, ToolId.QrCode)
                 else -> PlaceholderScreen(container, active)
             }
         }

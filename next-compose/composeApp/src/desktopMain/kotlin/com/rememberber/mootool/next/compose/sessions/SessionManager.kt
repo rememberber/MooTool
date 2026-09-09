@@ -18,6 +18,9 @@ import com.rememberber.mootool.next.compose.domain.DigestAlgorithm
 import com.rememberber.mootool.next.compose.domain.SymmetricAlgorithm
 import com.rememberber.mootool.next.compose.domain.ProtobufBinaryFormat
 import com.rememberber.mootool.next.compose.domain.ProtobufEngine
+import com.rememberber.mootool.next.compose.domain.QrEngine
+import com.rememberber.mootool.next.compose.domain.QrErrorCorrection
+import com.rememberber.mootool.next.compose.domain.QrTab
 import com.rememberber.mootool.next.compose.domain.CronFields
 import com.rememberber.mootool.next.compose.domain.CronEngine
 import com.rememberber.mootool.next.compose.domain.RegexMatch
@@ -784,6 +787,67 @@ class CryptoSession {
     }
 }
 
+@Serializable
+data class QrSessionSnapshot(
+    val tab: String = "generate",
+    val content: String = QrEngine.SAMPLE_CONTENT,
+    val size: Int = QrEngine.DEFAULT_SIZE,
+    val correction: String = "M",
+    val logoName: String = "",
+    val logoPath: String = "",
+    val recognitionName: String = "",
+    val recognitionResult: String = ""
+)
+
+class QrSession {
+    var tab: QrTab = QrTab.Generate
+    var content: String = QrEngine.SAMPLE_CONTENT
+    var size: Int = QrEngine.DEFAULT_SIZE
+    var correction: QrErrorCorrection = QrErrorCorrection.M
+    var logoName: String = ""
+    var logoPath: String = ""
+    var logoImage: java.awt.image.BufferedImage? = null
+    var pngBytes: ByteArray? = null
+    var recognitionName: String = ""
+    var recognitionBytes: ByteArray? = null
+    var recognitionResult: String = ""
+    var busy: Boolean = false
+    var historyTick: Long = 0
+    var notice: String = ""
+    var error: String = ""
+
+    fun snapshot(): QrSessionSnapshot = QrSessionSnapshot(
+        tab = tab.name.lowercase(),
+        content = content,
+        size = size,
+        correction = correction.name,
+        logoName = logoName,
+        logoPath = logoPath,
+        recognitionName = recognitionName,
+        recognitionResult = recognitionResult
+    )
+
+    fun restore(snapshot: QrSessionSnapshot) {
+        tab = QrTab.entries.find { it.name.equals(snapshot.tab, ignoreCase = true) } ?: QrTab.Generate
+        content = snapshot.content
+        size = QrEngine.normalizeSize(snapshot.size)
+        correction = QrErrorCorrection.entries.find { it.name == snapshot.correction } ?: QrErrorCorrection.M
+        logoName = snapshot.logoName
+        logoPath = snapshot.logoPath
+        logoImage = snapshot.logoPath.takeIf { it.isNotBlank() }?.let { path ->
+            runCatching { QrEngine.readImageFile(java.nio.file.Path.of(path)) }.getOrNull()
+        }
+        pngBytes = null
+        recognitionName = snapshot.recognitionName
+        recognitionBytes = null
+        recognitionResult = snapshot.recognitionResult
+        busy = false
+        historyTick = 0
+        notice = ""
+        error = ""
+    }
+}
+
 enum class WindowRole { Main, Detached }
 
 data class HostedSession(
@@ -805,6 +869,7 @@ class SessionManager(private val store: SessionStore) {
     private var configSessionCache: ConfigSession? = null
     private var protobufSessionCache: ProtobufSession? = null
     private var cryptoSessionCache: CryptoSession? = null
+    private var qrSessionCache: QrSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
     val detached: StateFlow<Set<ToolId>> = _detached
     private val _revision = MutableStateFlow(0L)
@@ -1001,6 +1066,26 @@ class SessionManager(private val store: SessionStore) {
 
     fun persistCrypto() {
         store.save(ToolId.Crypto.id, jsonCodec.encodeToString(cryptoSession().snapshot()))
+    }
+
+    fun qrSession(defaultSize: Int = QrEngine.DEFAULT_SIZE, defaultCorrection: String = "M"): QrSession {
+        qrSessionCache?.let { return it }
+        val session = QrSession()
+        val raw = store.load(ToolId.QrCode.id)
+        if (raw != null) {
+            runCatching { jsonCodec.decodeFromString<QrSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        } else {
+            session.size = QrEngine.normalizeSize(defaultSize)
+            session.correction = QrErrorCorrection.entries.find { it.name == defaultCorrection } ?: QrErrorCorrection.M
+        }
+        qrSessionCache = session
+        return session
+    }
+
+    fun persistQr() {
+        store.save(ToolId.QrCode.id, jsonCodec.encodeToString(qrSession().snapshot()))
     }
 
     fun detach(toolId: ToolId) {

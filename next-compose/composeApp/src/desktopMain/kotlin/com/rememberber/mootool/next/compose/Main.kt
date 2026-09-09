@@ -31,6 +31,7 @@ import com.rememberber.mootool.next.compose.features.diff.TextDiffScreen
 import com.rememberber.mootool.next.compose.features.encode.EncodeScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
 import com.rememberber.mootool.next.compose.features.protobuf.ProtobufScreen
+import com.rememberber.mootool.next.compose.features.qrcode.QrCodeScreen
 import com.rememberber.mootool.next.compose.features.regex.RegexScreen
 import com.rememberber.mootool.next.compose.features.reformat.ReformatScreen
 import com.rememberber.mootool.next.compose.features.time.TimeConvertScreen
@@ -245,6 +246,18 @@ fun main() = application {
             ) {
                 MooTheme(container.themePreference(), systemDark) {
                     CronScreen(container, detached = true)
+                }
+            }
+        }
+
+        if (ToolId.QrCode in detached) {
+            Window(
+                onCloseRequest = { container.sessionManager.reattach(ToolId.QrCode) },
+                title = "${container.t("app.nav.qrCode")} · ${ProductIdentity.DISPLAY_NAME}",
+                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
+            ) {
+                MooTheme(container.themePreference(), systemDark) {
+                    QrCodeScreen(container, detached = true)
                 }
             }
         }

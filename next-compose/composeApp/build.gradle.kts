@@ -88,6 +88,7 @@ kotlin {
                 implementation(libs.protobuf.java)
                 implementation(libs.protobuf.java.util)
                 implementation(libs.bouncy.castle)
+                implementation(libs.zxing.core)
             }
         }
         val desktopTest by getting {
