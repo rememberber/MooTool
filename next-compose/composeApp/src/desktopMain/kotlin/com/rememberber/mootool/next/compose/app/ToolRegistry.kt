@@ -33,7 +33,7 @@ object ToolRegistry {
         tool(ToolId.Protobuf, ToolGroupId.Dev, "app.nav.protobuf", "⬡", listOf("protobuf", "proto"), ToolStatus.Available),
         tool(ToolId.Variables, ToolGroupId.Dev, "app.nav.variables", "∑", listOf("env", "environment", "环境变量"), ToolStatus.Available),
         tool(ToolId.Http, ToolGroupId.Network, "app.nav.http", "⇄", listOf("http", "curl", "api", "请求")),
-        tool(ToolId.Host, ToolGroupId.Network, "app.nav.host", "◎", listOf("host", "dns", "域名")),
+        tool(ToolId.Host, ToolGroupId.Network, "app.nav.host", "◎", listOf("host", "dns", "域名"), ToolStatus.Available),
         tool(ToolId.Net, ToolGroupId.Network, "app.nav.net", "◈", listOf("network", "ip", "ping", "网络"), ToolStatus.Available),
         tool(ToolId.UaParse, ToolGroupId.Network, "app.nav.uaParse", "UA", listOf("ua", "user-agent", "浏览器"), ToolStatus.Available),
         tool(ToolId.Encode, ToolGroupId.Encode, "app.nav.encode", "⌁", listOf("encode", "decode", "base64", "编码"), ToolStatus.Available),

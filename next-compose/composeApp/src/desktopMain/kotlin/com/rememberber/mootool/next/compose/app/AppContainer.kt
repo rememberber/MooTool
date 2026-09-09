@@ -13,6 +13,7 @@ import com.rememberber.mootool.next.compose.domain.DisplayWakeLock
 import com.rememberber.mootool.next.compose.storage.ColorFavoriteStore
 import com.rememberber.mootool.next.compose.storage.ImageLibraryStore
 import com.rememberber.mootool.next.compose.storage.CronFavoriteStore
+import com.rememberber.mootool.next.compose.storage.HostProfileStore
 import com.rememberber.mootool.next.compose.storage.RegexFavoriteStore
 import com.rememberber.mootool.next.compose.storage.SessionStore
 import com.rememberber.mootool.next.compose.storage.SettingsRepository
@@ -38,6 +39,7 @@ class AppContainer(
     val cronFavorites = CronFavoriteStore(directories)
     val colorFavorites = ColorFavoriteStore(directories)
     val imageLibrary = ImageLibraryStore(directories)
+    val hostProfiles = HostProfileStore(directories)
     val displayWake = DisplayWakeLock()
     val regexWorker = RegexWorkerClient()
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -121,6 +123,7 @@ class AppContainer(
         sessionManager.persistImage()
         sessionManager.persistNet()
         sessionManager.persistVariables()
+        sessionManager.persistHost()
         sessionManager.persistHardware()
         settingsRepository.save(_settings.value)
     }

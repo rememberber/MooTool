@@ -190,6 +190,7 @@ JSON 文本编辑保留大整数与小数字面量；不能先转 Double 再声�
 - 方案新增、复制、命名、保存、删除、导入/导出、查找替换；读取系统、应用方案与 DNS 刷新。
 - “保存方案”只写 Compose 数据；“应用到系统”才修改全局 hosts。先 diff、备份，提交时校验系统文件未被别人改动。
 - 校验 NUL、无效条目、编码/换行；提权失败/拒绝不能标成成功；备份与恢复真实可用。
+- 方案存在本产品 `data/hosts/profiles.json`，不读写 Electron `t_host`。系统路径仍是 `/etc/hosts` 或 Windows `drivers\etc\hosts`。并发指纹校验与默认模板注释见 [DIFF-017](diff/017-host-compose-profiles.md)。
 - 验收：临时文件模拟错误；隔离 VM 实测应用/恢复/DNS 结果；应用关闭不自动恢复旧方案或覆盖其他程序变更。
 
 ### F11 网络/IP

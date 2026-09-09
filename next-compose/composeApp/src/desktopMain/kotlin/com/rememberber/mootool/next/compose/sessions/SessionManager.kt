@@ -1266,6 +1266,96 @@ class VariablesSession {
 }
 
 @Serializable
+data class HostSessionSnapshot(
+    val selectedId: String = "",
+    val name: String = "",
+    val content: String = "",
+    val query: String = "",
+    val includeContent: Boolean = true,
+    val findOpen: Boolean = false,
+    val findQuery: String = "",
+    val replaceText: String = "",
+    val matchCase: Boolean = false,
+    val wholeWord: Boolean = false,
+    val regex: Boolean = false
+)
+
+class HostSession {
+    var selectedId: String = ""
+    var name: String = ""
+    var content: String = ""
+    var savedName: String = ""
+    var savedContent: String = ""
+    var query: String = ""
+    var includeContent: Boolean = true
+    var findOpen: Boolean = false
+    var findQuery: String = ""
+    var replaceText: String = ""
+    var findOptions: FindReplaceOptions = FindReplaceOptions()
+    var notice: String = ""
+    var error: String = ""
+    var applying: Boolean = false
+    var systemOpen: Boolean = false
+    var systemPath: String = ""
+    var systemContent: String = ""
+    var systemWritable: Boolean = false
+    var systemFingerprint: String = ""
+    var applyConfirm: Boolean = false
+    var applyDiff: String = ""
+    var deleteConfirm: Boolean = false
+    var renameOpen: Boolean = false
+    var renameValue: String = ""
+    var lastBackup: String = ""
+    var historyOpen: Boolean = false
+    val dirty: Boolean get() = name != savedName || content != savedContent
+
+    fun snapshotState(): HostSessionSnapshot = HostSessionSnapshot(
+        selectedId = selectedId,
+        name = name,
+        content = content,
+        query = query,
+        includeContent = includeContent,
+        findOpen = findOpen,
+        findQuery = findQuery,
+        replaceText = replaceText,
+        matchCase = findOptions.matchCase,
+        wholeWord = findOptions.wholeWord,
+        regex = findOptions.regex
+    )
+
+    fun restore(snapshot: HostSessionSnapshot) {
+        selectedId = snapshot.selectedId
+        name = snapshot.name
+        content = snapshot.content
+        savedName = snapshot.name
+        savedContent = snapshot.content
+        query = snapshot.query
+        includeContent = snapshot.includeContent
+        findOpen = snapshot.findOpen
+        findQuery = snapshot.findQuery
+        replaceText = snapshot.replaceText
+        findOptions = FindReplaceOptions(snapshot.matchCase, snapshot.wholeWord, snapshot.regex)
+        notice = ""
+        error = ""
+        applying = false
+        systemOpen = false
+        applyConfirm = false
+        deleteConfirm = false
+        renameOpen = false
+        lastBackup = ""
+        historyOpen = false
+    }
+
+    fun markSaved(id: String, nextName: String, nextContent: String) {
+        selectedId = id
+        name = nextName
+        content = nextContent
+        savedName = nextName
+        savedContent = nextContent
+    }
+}
+
+@Serializable
 data class HardwareSessionSnapshot(
     val tab: String = "system",
     val revealSensitive: Boolean = false
@@ -1320,6 +1410,7 @@ class SessionManager(private val store: SessionStore) {
     private var imageSessionCache: ImageSession? = null
     private var netSessionCache: NetSession? = null
     private var variablesSessionCache: VariablesSession? = null
+    private var hostSessionCache: HostSession? = null
     private var hardwareSessionCache: HardwareSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
     val detached: StateFlow<Set<ToolId>> = _detached
@@ -1638,6 +1729,22 @@ class SessionManager(private val store: SessionStore) {
 
     fun persistVariables() {
         store.save(ToolId.Variables.id, jsonCodec.encodeToString(variablesSession().snapshotState()))
+    }
+
+    fun hostSession(): HostSession {
+        hostSessionCache?.let { return it }
+        val session = HostSession()
+        store.load(ToolId.Host.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<HostSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        }
+        hostSessionCache = session
+        return session
+    }
+
+    fun persistHost() {
+        store.save(ToolId.Host.id, jsonCodec.encodeToString(hostSession().snapshotState()))
     }
 
     fun hardwareSession(): HardwareSession {

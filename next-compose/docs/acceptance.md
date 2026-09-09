@@ -1,6 +1,6 @@
 # 验收标准、进度与证据
 
-> 更新：2026-09-09。P0/P1/JSON 之后已接入 F02 文本对比、F03 格式化、F06 配置转换、F07 Protobuf、F12 UA、F13 编码、F14 加解密、F15 正则、F16 Cron、F17 二维码、F18 时间、F19 留言板、F21 计算器、F22 调色板、F23 图片助手、F24 PDF、F25 系统信息、F11 网络/IP、F08 环境变量；完整产品与三平台发行仍未验收。
+> 更新：2026-09-09。P0/P1/JSON 之后已接入 F02 文本对比、F03 格式化、F06 配置转换、F07 Protobuf、F12 UA、F13 编码、F14 加解密、F15 正则、F16 Cron、F17 二维码、F18 时间、F19 留言板、F21 计算器、F22 调色板、F23 图片助手、F24 PDF、F25 系统信息、F11 网络/IP、F08 环境变量、F10 Host；完整产品与三平台发行仍未验收。
 
 ## 1. 状态规则
 
@@ -17,7 +17,7 @@
 | P2 | 完整 JSON 基础工作流 | 开发中 | 仅最小切片：格式化/压缩/查找/历史/Vault CRUD/转换。Git、冲突监视、完整检查器弹层未完成，**不能标 F04 已验收** |
 | P3 | 文本与本地算法 | 开发中 | F02/F03/F06/F07/F12/F13/F15/F16/F18/F21 已有引擎单测与 UI；F04 Git 仍未做 |
 | P4 | 媒体/加密 | 开发中 | F14/F17/F19/F22/F23/F24 已有引擎单测与 UI；截图权限、WebP、安装镜像未测 |
-| P5 | 网络/系统 | 开发中 | F25 系统信息、F11 网络/IP、F08 环境变量已有引擎单测与 UI；F09/F10/F20 未做 |
+| P5 | 网络/系统 | 开发中 | F25 系统信息、F11 网络/IP、F08 环境变量、F10 Host 已有引擎单测与 UI；F09/F20 未做 |
 | P6 | 文档/Git/运行台/备份 | 未开始 | — |
 | P7 | 完整产品/平台安装发行验收 | 未开始 | — |
 | F00 | 首页 | 待验收 | 已实现 Compose 品牌/0.1.0/链接；无运行截图 |
@@ -30,7 +30,7 @@
 | F07 | Protobuf | 待验收 | 捆绑 protoc 4.29.3 + DynamicMessage；JSON↔Hex/Base64、Wire 无 schema、定义格式化、nested/map/oneof/int64 单测、历史与分离窗口。差异见 [DIFF-007](diff/007-protobuf-jsonformat.md)。无运行截图；安装镜像内解出未测 |
 | F08 | 环境变量 | 待验收 | 用户/系统/进程作用域、JVM 运行时 Tab、搜索/刷新/复制/导出、改前 diff 与备份、无权限保持原文件、无通用历史、分离窗口。用户路径为本产品 `data/environment`。差异见 [DIFF-016](diff/016-environment-compose-namespace.md)。无运行截图；系统提权对话框、Windows 注册表、新终端读取未测 |
 | F09 | HTTP | 未开始 | 入口显示尚未实现 |
-| F10 | Host | 未开始 | 入口显示尚未实现 |
+| F10 | Host | 待验收 | 左方案列表/右编辑，方案 CRUD 与导入导出、查找替换、查看系统 hosts、应用前 diff/备份/指纹冲突、无权限保持原文件、备份恢复、历史与分离窗口。方案在本产品 `data/hosts/profiles.json`。差异见 [DIFF-017](diff/017-host-compose-profiles.md)。无运行截图；真实 `/etc/hosts`、管理员对话框、Windows hosts、安装镜像未测 |
 | F11 | 网络/IP | 待验收 | 左输出/右功能区，IPv4↔Long fixture、ping/网段/端口扫描/DNS/WHOIS/本机地址、argv 进程、流式输出可停止、历史与分离窗口。失败显示真原因。差异见 [DIFF-015](diff/015-net-process-charset.md)。无运行截图；WHOIS 在线、中文 Windows ping 编码、安装镜像未测 |
 | F12 | UA | 待验收 | 预设 Chrome/Safari/Firefox/iPhone/Android、Googlebot、空/未知；版本与设备字段有单测。引擎推断见 [DIFF-002](diff/002-ua-engine-inference.md)。无运行截图 |
 | F13 | 编码解码 | 待验收 | 引擎覆盖 Unicode/emoji、URL UTF-8 与 GB2312 往返、Hex/ASCII、非法 Hex、截断字节、GB2312 不可映射拒绝问号。UI 含四分区、历史、分离窗口。无运行截图。安装镜像需 `jdk.charsets`（已加入 jlink modules） |
@@ -47,7 +47,7 @@
 | F24 | PDF | 待验收 | 拆分/合并 Tab、最多 20 项、奇偶/自定义页码、token 顺序去重、`_split.pdf` 覆盖写出、合并保存对话框、历史与分离窗口、取消删除半成品。差异见 [DIFF-012](diff/012-pdfbox-import-page.md)。无运行截图；加密样本、表单/书签/签名、安装镜像未测 |
 | F25 | 系统信息 | 待验收 | 系统/CPU/内存/存储/网络 Tab、OSHI 真机采集、序列号默认遮蔽、JVM 与 OS 分区、复制当前 Tab、切走取消采集、无通用历史、分离窗口。差异见 [DIFF-014](diff/014-oshi-system-info.md)。无运行截图；安装镜像 JNA 未测 |
 | A01 | 11 类设置 | 开发中 | general/appearance/layout/editor/data/about 基础项生效；其余类别明确未实现 |
-| A02 | 历史/收藏/搜索 | 开发中 | JSON、编码、UA、正则、Cron、文本对比、格式化、配置转换、Protobuf、加解密、二维码、调色板、时间转换、计算器、PDF、图片助手与网络/IP 历史已有；环境变量/系统信息/留言板无通用历史；正则/Cron/调色板收藏已落地 |
+| A02 | 历史/收藏/搜索 | 开发中 | JSON、编码、UA、正则、Cron、文本对比、格式化、配置转换、Protobuf、加解密、二维码、调色板、时间转换、计算器、PDF、图片助手、网络/IP 与 Host 应用历史已有；环境变量/系统信息/留言板无通用历史；正则/Cron/调色板收藏已落地 |
 | A03 | 桌面/存储/备份/Git/更新 | 开发中 | 独立路径与 SQLite 已有；备份/Git/更新未做 |
 
 ## 3. 工程检查入口
@@ -66,7 +66,7 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 21)"   # macOS 示例
 ./gradlew :composeApp:packageDistributionForCurrentOS
 ```
 
-本机 2026-09-09 结果：F08 接入后 `desktopTest` **100/100** 通过（含 EnvEngineTest 3；此前 F11 为 97/97）。`createDistributable` 此前生成 `MooTool Next Compose.app`；本轮未重跑打包。`runDistributable` 与 `packageDistributionForCurrentOS` 未跑完。
+本机 2026-09-09 结果：F10 接入后 `desktopTest` **105/105** 通过（含 HostEngineTest 5；此前 F08 为 100/100）。`createDistributable` 此前生成 `MooTool Next Compose.app`；本轮未重跑打包。`runDistributable` 与 `packageDistributionForCurrentOS` 未跑完。
 
 测试层级：
 
