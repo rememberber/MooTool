@@ -23,6 +23,7 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.app.ProductIdentity
+import com.rememberber.mootool.next.compose.features.calculator.CalculatorScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
 import com.rememberber.mootool.next.compose.features.time.TimeConvertScreen
 import com.rememberber.mootool.next.compose.model.ToolId
@@ -115,6 +116,18 @@ fun main() = application {
             ) {
                 MooTheme(container.themePreference(), systemDark) {
                     TimeConvertScreen(container, detached = true, active = true)
+                }
+            }
+        }
+
+        if (ToolId.Calculator in detached) {
+            Window(
+                onCloseRequest = { container.sessionManager.reattach(ToolId.Calculator) },
+                title = "${container.t("app.nav.calculator")} · ${ProductIdentity.DISPLAY_NAME}",
+                state = rememberWindowState(size = DpSize(960.dp, 760.dp))
+            ) {
+                MooTheme(container.themePreference(), systemDark) {
+                    CalculatorScreen(container, detached = true)
                 }
             }
         }

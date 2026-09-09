@@ -15,7 +15,7 @@
 | P0 | 工具链/编辑器/窗口/动态 proto 等实验 | 开发中 | 本机 Wrapper/JDK21/Compose1.12 构建与 app-image 启动见 `docs/evidence/2026-09-09-p0-p1/`。RSTA 已接入，IME/列编辑未做桌面交互验收。protoc 未捆绑。ADR-001/002/003 |
 | P1 | 桌面壳/搜索/设置基础 | 开发中 | 26 入口、搜索、modern 明暗、语言、基础设置、JSON 分离窗口代码已有；视觉截图与完整键盘流程待验收 |
 | P2 | 完整 JSON 基础工作流 | 开发中 | 仅最小切片：格式化/压缩/查找/历史/Vault CRUD/转换。Git、冲突监视、完整检查器弹层未完成，**不能标 F04 已验收** |
-| P3 | 文本与本地算法 | 开发中 | 仅 F18 时间转换有引擎单测与 UI；其余 P3 工具仍显示尚未实现 |
+| P3 | 文本与本地算法 | 开发中 | F18 时间转换、F21 计算器已有引擎单测与 UI；其余 P3 工具仍显示尚未实现 |
 | P4 | 媒体/加密 | 未开始 | — |
 | P5 | 网络/系统 | 未开始 | — |
 | P6 | 文档/Git/运行台/备份 | 未开始 | — |
@@ -41,13 +41,13 @@
 | F18 | 时间 | 待验收 | 引擎单测覆盖 epoch/负值/毫秒/DST/闰年/显式单位；UI 含双向转换、时区、历史、大屏时钟、分离窗口。无运行截图。单位语义见 [DIFF-001](diff/001-time-explicit-unit.md) |
 | F19 | 留言板 | 未开始 | 入口显示尚未实现 |
 | F20 | 翻译 | 未开始 | 入口显示尚未实现 |
-| F21 | 计算器 | 未开始 | 入口显示尚未实现 |
+| F21 | 计算器 | 待验收 | 引擎单测覆盖 `2*(3+4)=14`、负数、进制、GCD/LCM、排列组合与非法输入；UI 含等号计算、结果复制、会话与历史。无运行截图。表达式按 IEEE Double 再按 14 位有效数字展示，与 Electron 一致，未改用任意精度小数 |
 | F22 | 调色板 | 未开始 | 入口显示尚未实现 |
 | F23 | 图片 | 未开始 | 入口显示尚未实现 |
 | F24 | PDF | 未开始 | 入口显示尚未实现 |
 | F25 | 系统信息 | 未开始 | 入口显示尚未实现 |
 | A01 | 11 类设置 | 开发中 | general/appearance/layout/editor/data/about 基础项生效；其余类别明确未实现 |
-| A02 | 历史/收藏/搜索 | 开发中 | JSON 与时间转换历史已有；收藏未做 |
+| A02 | 历史/收藏/搜索 | 开发中 | JSON、时间转换与计算器历史已有；收藏未做 |
 | A03 | 桌面/存储/备份/Git/更新 | 开发中 | 独立路径与 SQLite 已有；备份/Git/更新未做 |
 
 ## 3. 工程检查入口
@@ -66,7 +66,7 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 21)"   # macOS 示例
 ./gradlew :composeApp:packageDistributionForCurrentOS
 ```
 
-本机 2026-09-09 结果：F18 接入后 `desktopTest` **20/20** 通过（含 TimeEngine 7）。`createDistributable` 此前生成 `MooTool Next Compose.app`；本轮未重跑打包。`runDistributable` 与 `packageDistributionForCurrentOS` 未跑完。
+本机 2026-09-09 结果：F18 与 F21 接入后 `desktopTest` **24/24** 通过（含 TimeEngine 7、CalculatorEngine 4）。`createDistributable` 此前生成 `MooTool Next Compose.app`；本轮未重跑打包。`runDistributable` 与 `packageDistributionForCurrentOS` 未跑完。
 
 测试层级：
 
@@ -109,7 +109,7 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 21)"   # macOS 示例
 
 ## 7. 证据记录模板
 
-后续每阶段建立 `docs/evidence/YYYY-MM-DD-阶段/`。本轮见 `docs/evidence/2026-09-09-p0-p1/` 与 `docs/evidence/2026-09-09-f18/`。
+后续每阶段建立 `docs/evidence/YYYY-MM-DD-阶段/`。见 `docs/evidence/2026-09-09-p0-p1/`、`docs/evidence/2026-09-09-f18/`、`docs/evidence/2026-09-09-f21/`。
 
 ## 8. 完成定义
 

@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.app.ToolRegistry
+import com.rememberber.mootool.next.compose.features.calculator.CalculatorScreen
 import com.rememberber.mootool.next.compose.features.home.HomeScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
 import com.rememberber.mootool.next.compose.features.placeholder.DetachedNotice
@@ -89,6 +90,10 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
                     TimeConvertScreen(container, detached = false, active = true)
                 active == ToolId.TimeConvert && detached.contains(ToolId.TimeConvert) ->
                     DetachedNotice(container, ToolId.TimeConvert)
+                active == ToolId.Calculator && !detached.contains(ToolId.Calculator) ->
+                    CalculatorScreen(container, detached = false)
+                active == ToolId.Calculator && detached.contains(ToolId.Calculator) ->
+                    DetachedNotice(container, ToolId.Calculator)
                 else -> PlaceholderScreen(container, active)
             }
         }

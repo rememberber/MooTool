@@ -148,6 +148,69 @@ class TimeSession {
     }
 }
 
+@Serializable
+data class CalculatorSessionSnapshot(
+    val expression: String = "2 * (3 + 4)",
+    val result: String = "14",
+    val decimal: String = "255",
+    val hex: String = "ff",
+    val binary: String = "11111111",
+    val gcdFirst: String = "54",
+    val gcdSecond: String = "24",
+    val lcmFirst: String = "54",
+    val lcmSecond: String = "24",
+    val permutationN: String = "5",
+    val permutationM: String = "2",
+    val combinationN: String = "5",
+    val combinationM: String = "2",
+    val log: List<String> = listOf("2 * (3 + 4) = 14")
+)
+
+class CalculatorSession {
+    var expression: String = "2 * (3 + 4)"
+    var result: String = "14"
+    var decimal: String = "255"
+    var hex: String = "ff"
+    var binary: String = "11111111"
+    var gcdFirst: String = "54"
+    var gcdSecond: String = "24"
+    var lcmFirst: String = "54"
+    var lcmSecond: String = "24"
+    var permutationN: String = "5"
+    var permutationM: String = "2"
+    var combinationN: String = "5"
+    var combinationM: String = "2"
+    var log: List<String> = listOf("2 * (3 + 4) = 14")
+    var historyOpen: Boolean = false
+    var notice: String = ""
+    var error: String = ""
+
+    fun snapshot(): CalculatorSessionSnapshot = CalculatorSessionSnapshot(
+        expression, result, decimal, hex, binary, gcdFirst, gcdSecond, lcmFirst, lcmSecond,
+        permutationN, permutationM, combinationN, combinationM, log
+    )
+
+    fun restore(snapshot: CalculatorSessionSnapshot) {
+        expression = snapshot.expression
+        result = snapshot.result
+        decimal = snapshot.decimal
+        hex = snapshot.hex
+        binary = snapshot.binary
+        gcdFirst = snapshot.gcdFirst
+        gcdSecond = snapshot.gcdSecond
+        lcmFirst = snapshot.lcmFirst
+        lcmSecond = snapshot.lcmSecond
+        permutationN = snapshot.permutationN
+        permutationM = snapshot.permutationM
+        combinationN = snapshot.combinationN
+        combinationM = snapshot.combinationM
+        log = snapshot.log
+        historyOpen = false
+        notice = ""
+        error = ""
+    }
+}
+
 enum class WindowRole { Main, Detached }
 
 data class HostedSession(
@@ -159,6 +222,7 @@ class SessionManager(private val store: SessionStore) {
     private val jsonCodec = Json { ignoreUnknownKeys = true }
     private val sessions = HashMap<ToolId, JsonSession>()
     private var timeSessionCache: TimeSession? = null
+    private var calculatorSessionCache: CalculatorSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
     val detached: StateFlow<Set<ToolId>> = _detached
     private val _revision = MutableStateFlow(0L)
@@ -192,6 +256,22 @@ class SessionManager(private val store: SessionStore) {
 
     fun persistTime() {
         store.save(ToolId.TimeConvert.id, jsonCodec.encodeToString(timeSession().snapshot()))
+    }
+
+    fun calculatorSession(): CalculatorSession {
+        calculatorSessionCache?.let { return it }
+        val session = CalculatorSession()
+        store.load(ToolId.Calculator.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<CalculatorSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        }
+        calculatorSessionCache = session
+        return session
+    }
+
+    fun persistCalculator() {
+        store.save(ToolId.Calculator.id, jsonCodec.encodeToString(calculatorSession().snapshot()))
     }
 
     fun detach(toolId: ToolId) {
