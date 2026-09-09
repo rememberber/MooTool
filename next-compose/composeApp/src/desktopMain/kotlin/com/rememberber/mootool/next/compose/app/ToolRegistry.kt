@@ -38,7 +38,7 @@ object ToolRegistry {
         tool(ToolId.UaParse, ToolGroupId.Network, "app.nav.uaParse", "UA", listOf("ua", "user-agent", "浏览器"), ToolStatus.Available),
         tool(ToolId.Encode, ToolGroupId.Encode, "app.nav.encode", "⌁", listOf("encode", "decode", "base64", "编码"), ToolStatus.Available),
         tool(ToolId.Crypto, ToolGroupId.Encode, "app.nav.crypto", "🔒", listOf("crypto", "hash", "md5", "加密")),
-        tool(ToolId.Regex, ToolGroupId.Encode, "app.nav.regex", ".*", listOf("regex", "regular", "正则")),
+        tool(ToolId.Regex, ToolGroupId.Encode, "app.nav.regex", ".*", listOf("regex", "regular", "正则"), ToolStatus.Available),
         tool(ToolId.Cron, ToolGroupId.Encode, "app.nav.cron", "⏱", listOf("cron", "schedule", "定时")),
         tool(ToolId.QrCode, ToolGroupId.Encode, "app.nav.qrCode", "▦", listOf("qr", "qrcode", "二维码")),
         tool(ToolId.TimeConvert, ToolGroupId.Daily, "app.nav.timeConvert", "◷", listOf("time", "timestamp", "时间"), ToolStatus.Available),

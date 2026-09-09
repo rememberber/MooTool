@@ -4,6 +4,8 @@ import com.rememberber.mootool.next.compose.domain.AsciiFormat
 import com.rememberber.mootool.next.compose.domain.EncodeTab
 import com.rememberber.mootool.next.compose.domain.FindReplaceOptions
 import com.rememberber.mootool.next.compose.domain.JsonFormatOptions
+import com.rememberber.mootool.next.compose.domain.RegexMatch
+import com.rememberber.mootool.next.compose.domain.RegexOptions
 import com.rememberber.mootool.next.compose.domain.TimeEngine
 import com.rememberber.mootool.next.compose.domain.TimestampUnit
 import com.rememberber.mootool.next.compose.domain.UaEngine
@@ -353,6 +355,57 @@ class UaSession {
 
 private val uaResultCodec = Json { ignoreUnknownKeys = true; encodeDefaults = true }
 
+@Serializable
+data class RegexSessionSnapshot(
+    val tab: String = "test",
+    val pattern: String = "(moo)(\\d+)",
+    val source: String = "moo1\nMOO22\nmoo333",
+    val global: Boolean = true,
+    val ignoreCase: Boolean = false,
+    val multiline: Boolean = false,
+    val dotAll: Boolean = false
+)
+
+class RegexSession {
+    var tab: String = "test"
+    var pattern: String = "(moo)(\\d+)"
+    var source: String = "moo1\nMOO22\nmoo333"
+    var options: RegexOptions = RegexOptions()
+    var matches: List<RegexMatch> = emptyList()
+    var historyOpen: Boolean = false
+    var favoritesOpen: Boolean = false
+    var running: Boolean = false
+    var notice: String = ""
+    var error: String = ""
+    var favoriteName: String = ""
+    var matchGeneration: Long = 0
+
+    fun snapshot(): RegexSessionSnapshot = RegexSessionSnapshot(
+        tab = tab,
+        pattern = pattern,
+        source = source,
+        global = options.global,
+        ignoreCase = options.ignoreCase,
+        multiline = options.multiline,
+        dotAll = options.dotAll
+    )
+
+    fun restore(snapshot: RegexSessionSnapshot) {
+        tab = snapshot.tab
+        pattern = snapshot.pattern
+        source = snapshot.source
+        options = RegexOptions(snapshot.global, snapshot.ignoreCase, snapshot.multiline, snapshot.dotAll)
+        matches = emptyList()
+        historyOpen = false
+        favoritesOpen = false
+        running = false
+        notice = ""
+        error = ""
+        favoriteName = ""
+        matchGeneration += 1
+    }
+}
+
 enum class WindowRole { Main, Detached }
 
 data class HostedSession(
@@ -367,6 +420,7 @@ class SessionManager(private val store: SessionStore) {
     private var calculatorSessionCache: CalculatorSession? = null
     private var encodeSessionCache: EncodeSession? = null
     private var uaSessionCache: UaSession? = null
+    private var regexSessionCache: RegexSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
     val detached: StateFlow<Set<ToolId>> = _detached
     private val _revision = MutableStateFlow(0L)
@@ -448,6 +502,22 @@ class SessionManager(private val store: SessionStore) {
 
     fun persistUa() {
         store.save(ToolId.UaParse.id, jsonCodec.encodeToString(uaSession().snapshot()))
+    }
+
+    fun regexSession(): RegexSession {
+        regexSessionCache?.let { return it }
+        val session = RegexSession()
+        store.load(ToolId.Regex.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<RegexSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        }
+        regexSessionCache = session
+        return session
+    }
+
+    fun persistRegex() {
+        store.save(ToolId.Regex.id, jsonCodec.encodeToString(regexSession().snapshot()))
     }
 
     fun detach(toolId: ToolId) {

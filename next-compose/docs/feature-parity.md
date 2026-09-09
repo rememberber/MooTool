@@ -238,7 +238,7 @@ Tab 顺序：对称、非对称、摘要、Base64/Base32、随机。
 布局：表达式/flags、测试文本、匹配/捕获结果，常用/收藏及历史入口。
 
 - 保留 global/ignoreCase/multiline/dotAll 操作与 21 个常用模式；常用模式源自 `regexTools.ts`，复制名称/语义/样例并本地化。
-- 默认引擎 Java Pattern，显式显示引擎；JS/Java 的 named group、转义、Unicode、替换引用差异建立表与 fixtures；global 是遍历策略，不假作 Java flag。
+- 默认引擎 Java Pattern，显式显示引擎；JS/Java 差异见 [DIFF-003](diff/003-regex-java-pattern.md)；global 是遍历策略，不假作 Java flag。
 - 匹配范围和捕获分组正确；空匹配能前进，emoji 不错位；坏表达式保留原文。
 - 灾难性回溯必须可终止：独立 worker、时间和结果数上限；仅 coroutine timeout 不够。
 - 验收：捕获/零长度/命名组、中文 emoji、非法模式、超时取消、收藏增删与重启恢复。

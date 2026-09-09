@@ -34,6 +34,20 @@ class StorageIsolationTest {
     }
 
     @Test
+    fun regexFavoritesPersistAcrossStoreInstances() {
+        val root = createTempDirectory("mootool-compose-regex-fav")
+        val directories = AppPaths.resolve(root.toString()).also { it.ensureCreated() }
+        val first = RegexFavoriteStore(directories)
+        val saved = first.add("手机号", "1[3-9]\\d{9}")
+        assertEquals(1, first.list().size)
+        val second = RegexFavoriteStore(directories)
+        assertEquals(saved.id, second.list().single().id)
+        assertEquals("手机号", second.list().single().name)
+        second.delete(saved.id)
+        assertTrue(RegexFavoriteStore(directories).list().isEmpty())
+    }
+
+    @Test
     fun vaultRejectsPathEscape() {
         val root = createTempDirectory("mootool-compose-vault")
         val vault = JsonVault(AppPaths.resolve(root.toString()).also { it.ensureCreated() })

@@ -9,8 +9,10 @@ import com.rememberber.mootool.next.compose.sessions.SessionManager
 import com.rememberber.mootool.next.compose.storage.AppDatabase
 import com.rememberber.mootool.next.compose.storage.HistoryRepository
 import com.rememberber.mootool.next.compose.storage.JsonVault
+import com.rememberber.mootool.next.compose.storage.RegexFavoriteStore
 import com.rememberber.mootool.next.compose.storage.SessionStore
 import com.rememberber.mootool.next.compose.storage.SettingsRepository
+import com.rememberber.mootool.next.compose.services.RegexWorkerClient
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -28,6 +30,8 @@ class AppContainer(
     val sessions: SessionStore,
     val jsonVault: JsonVault
 ) {
+    val regexFavorites = RegexFavoriteStore(directories)
+    val regexWorker = RegexWorkerClient()
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val translator = Translator(AppLanguage.fromCode(settingsRepository.current.general.language))
     val sessionManager = SessionManager(sessions)
@@ -95,10 +99,12 @@ class AppContainer(
         sessionManager.persistCalculator()
         sessionManager.persistEncode()
         sessionManager.persistUa()
+        sessionManager.persistRegex()
         settingsRepository.save(_settings.value)
     }
 
     fun close() {
+        regexWorker.cancel()
         persistWorkspace()
         database.close()
     }

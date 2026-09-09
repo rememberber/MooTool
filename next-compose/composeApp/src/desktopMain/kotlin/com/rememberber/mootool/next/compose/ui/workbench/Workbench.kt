@@ -36,6 +36,7 @@ import com.rememberber.mootool.next.compose.features.calculator.CalculatorScreen
 import com.rememberber.mootool.next.compose.features.encode.EncodeScreen
 import com.rememberber.mootool.next.compose.features.home.HomeScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
+import com.rememberber.mootool.next.compose.features.regex.RegexScreen
 import com.rememberber.mootool.next.compose.features.placeholder.DetachedNotice
 import com.rememberber.mootool.next.compose.features.placeholder.PlaceholderScreen
 import com.rememberber.mootool.next.compose.features.settings.SettingsScreen
@@ -104,6 +105,10 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
                     UaParseScreen(container, detached = false)
                 active == ToolId.UaParse && detached.contains(ToolId.UaParse) ->
                     DetachedNotice(container, ToolId.UaParse)
+                active == ToolId.Regex && !detached.contains(ToolId.Regex) ->
+                    RegexScreen(container, detached = false)
+                active == ToolId.Regex && detached.contains(ToolId.Regex) ->
+                    DetachedNotice(container, ToolId.Regex)
                 else -> PlaceholderScreen(container, active)
             }
         }

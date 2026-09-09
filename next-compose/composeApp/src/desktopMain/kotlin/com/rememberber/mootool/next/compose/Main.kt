@@ -26,6 +26,7 @@ import com.rememberber.mootool.next.compose.app.ProductIdentity
 import com.rememberber.mootool.next.compose.features.calculator.CalculatorScreen
 import com.rememberber.mootool.next.compose.features.encode.EncodeScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
+import com.rememberber.mootool.next.compose.features.regex.RegexScreen
 import com.rememberber.mootool.next.compose.features.time.TimeConvertScreen
 import com.rememberber.mootool.next.compose.features.ua.UaParseScreen
 import com.rememberber.mootool.next.compose.model.ToolId
@@ -154,6 +155,18 @@ fun main() = application {
             ) {
                 MooTheme(container.themePreference(), systemDark) {
                     UaParseScreen(container, detached = true)
+                }
+            }
+        }
+
+        if (ToolId.Regex in detached) {
+            Window(
+                onCloseRequest = { container.sessionManager.reattach(ToolId.Regex) },
+                title = "${container.t("app.nav.regex")} · ${ProductIdentity.DISPLAY_NAME}",
+                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
+            ) {
+                MooTheme(container.themePreference(), systemDark) {
+                    RegexScreen(container, detached = true)
                 }
             }
         }

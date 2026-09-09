@@ -16,6 +16,7 @@ class ToolRegistryTest {
         assertTrue(ToolRegistry.byId.getValue(ToolId.Calculator).status.name == "Available")
         assertTrue(ToolRegistry.byId.getValue(ToolId.Encode).status.name == "Available")
         assertTrue(ToolRegistry.byId.getValue(ToolId.UaParse).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.Regex).status.name == "Available")
     }
 
     @Test
