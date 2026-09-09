@@ -1,6 +1,6 @@
 # MooTool Next Compose：Cursor 编码开发主指南
 
-> 2026-09-08 · 产品 ID `next-compose` · 状态：仅规格，全部开发阶段未开始。
+> 2026-09-08 · 产品 ID `next-compose` · 状态：0.1.0 开发切片已开始（见 README / acceptance）；完整阶段未完成。
 
 ## 1. 要交付什么
 

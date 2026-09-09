@@ -4,6 +4,7 @@
 **/build/
 /dist/
 /local.properties
+/local.properties.d/
 .DS_Store
 
 # 仓库根忽略了 docs 和 .cursor；本产品的开发规格与规则需要进入版本控制。
