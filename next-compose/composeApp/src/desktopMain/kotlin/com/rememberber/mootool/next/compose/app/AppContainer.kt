@@ -9,6 +9,7 @@ import com.rememberber.mootool.next.compose.sessions.SessionManager
 import com.rememberber.mootool.next.compose.storage.AppDatabase
 import com.rememberber.mootool.next.compose.storage.HistoryRepository
 import com.rememberber.mootool.next.compose.storage.JsonVault
+import com.rememberber.mootool.next.compose.storage.NoteVault
 import com.rememberber.mootool.next.compose.domain.DisplayWakeLock
 import com.rememberber.mootool.next.compose.storage.ColorFavoriteStore
 import com.rememberber.mootool.next.compose.storage.ImageLibraryStore
@@ -99,6 +100,8 @@ class AppContainer(
         _status.value = value
     }
 
+    fun noteVault(): NoteVault = NoteVault(directories, _settings.value.vault.quickNotePath)
+
     fun openExternal(uri: String) {
         runCatching { Desktop.getDesktop().browse(URI(uri)) }
     }
@@ -109,6 +112,7 @@ class AppContainer(
 
     fun persistWorkspace() {
         sessionManager.persistJson()
+        sessionManager.persistQuickNote()
         sessionManager.persistTime()
         sessionManager.persistCalculator()
         sessionManager.persistEncode()

@@ -40,6 +40,7 @@ import com.rememberber.mootool.next.compose.features.translation.TranslationScre
 import com.rememberber.mootool.next.compose.features.net.NetScreen
 import com.rememberber.mootool.next.compose.features.pdf.PdfScreen
 import com.rememberber.mootool.next.compose.features.protobuf.ProtobufScreen
+import com.rememberber.mootool.next.compose.features.quicknote.QuickNoteScreen
 import com.rememberber.mootool.next.compose.features.runtime.CodeRunScreen
 import com.rememberber.mootool.next.compose.features.qrcode.QrCodeScreen
 import com.rememberber.mootool.next.compose.features.regex.RegexScreen
@@ -137,6 +138,18 @@ fun main() = application {
             ) {
                 MooTheme(container.themePreference(), systemDark) {
                     ReformatScreen(container, detached = true)
+                }
+            }
+        }
+
+        if (ToolId.QuickNote in detached) {
+            Window(
+                onCloseRequest = { container.sessionManager.reattach(ToolId.QuickNote) },
+                title = "${container.t("app.nav.quickNote")} · ${ProductIdentity.DISPLAY_NAME}",
+                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
+            ) {
+                MooTheme(container.themePreference(), systemDark) {
+                    QuickNoteScreen(container, detached = true)
                 }
             }
         }

@@ -66,4 +66,15 @@ class StorageIsolationTest {
         val escaped = runCatching { vault.resolve("../secret.json") }
         assertTrue(escaped.isFailure)
     }
+
+    @Test
+    fun noteVaultRejectsPathEscapeAndCreatesMarkdown() {
+        val root = createTempDirectory("mootool-compose-note-vault")
+        val vault = NoteVault(AppPaths.resolve(root.toString()).also { it.ensureCreated() })
+        assertTrue(runCatching { vault.resolve("../secret.md") }.isFailure)
+        vault.createFile("hello.md", "# hi")
+        assertEquals("# hi", vault.read("hello.md"))
+        vault.rename("hello.md", "renamed.md")
+        assertEquals("# hi", vault.read("renamed.md"))
+    }
 }

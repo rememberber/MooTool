@@ -1,6 +1,6 @@
 # 验收标准、进度与证据
 
-> 更新：2026-09-09。P0/P1/JSON 之后已接入 F02 文本对比、F03 格式化、F06 配置转换、F07 Protobuf、F12 UA、F13 编码、F14 加解密、F15 正则、F16 Cron、F17 二维码、F18 时间、F19 留言板、F21 计算器、F22 调色板、F23 图片助手、F24 PDF、F25 系统信息、F11 网络/IP、F08 环境变量、F10 Host、F09 HTTP、F20 翻译、F05 代码运行；完整产品与三平台发行仍未验收。
+> 更新：2026-09-09。P0/P1/JSON 之后已接入 F02 文本对比、F03 格式化、F06 配置转换、F07 Protobuf、F12 UA、F13 编码、F14 加解密、F15 正则、F16 Cron、F17 二维码、F18 时间、F19 留言板、F21 计算器、F22 调色板、F23 图片助手、F24 PDF、F25 系统信息、F11 网络/IP、F08 环境变量、F10 Host、F09 HTTP、F20 翻译、F05 代码运行、F01 随手记切片；完整产品与三平台发行仍未验收。
 
 ## 1. 状态规则
 
@@ -18,10 +18,10 @@
 | P3 | 文本与本地算法 | 开发中 | F02/F03/F06/F07/F12/F13/F15/F16/F18/F21 已有引擎单测与 UI；F04 Git 仍未做 |
 | P4 | 媒体/加密 | 开发中 | F14/F17/F19/F22/F23/F24 已有引擎单测与 UI；截图权限、WebP、安装镜像未测 |
 | P5 | 网络/系统 | 开发中 | F25 系统信息、F11 网络/IP、F08 环境变量、F10 Host、F09 HTTP、F20 翻译已有引擎单测与 UI；P5 引擎层闭环，截图/真实联网未测 |
-| P6 | 文档/Git/运行台/备份 | 开发中 | F05 代码运行待验收；F01 随手记、Git、备份未开始 |
+| P6 | 文档/Git/运行台/备份 | 开发中 | F05 待验收；F01 为文档库+编辑+24 项快速替换切片，Git/预览/列编辑/附件未做；备份未开始 |
 | P7 | 完整产品/平台安装发行验收 | 未开始 | — |
 | F00 | 首页 | 待验收 | 已实现 Compose 品牌/0.1.0/链接；无运行截图 |
-| F01 | 随手记 | 未开始 | 入口显示尚未实现 |
+| F01 | 随手记 | 待验收 | 左库/中编辑/右 24 项快速替换、保存与切换写入、查找替换、历史与分离窗口。默认 `data/vaults/quick-note`。差异见 [DIFF-021](diff/021-quick-note-replace-vault.md)。无运行截图；预览/列编辑/附件/Git/冲突未做，不能标完整 F01 |
 | F02 | 文本对比 | 待验收 | 行/字符 Myers 差异、三种高亮、忽略空白、统一补丁、上/下差异、导入/复制/清空/交换、历史与分离窗口。与 Electron `diff` 样本对齐。无运行截图 |
 | F03 | 格式化 | 待验收 | 文本/文件 Tab，Nginx/Java/XML/HTML，缩进 2–6，真实解析格式化、语法错误定位、另存不覆盖原文件、历史与分离窗口、Cmd/Ctrl+Shift+F。引擎差异见 [DIFF-005](diff/005-reformat-jvm.md)。无运行截图 |
 | F04 | JSON | 开发中 | 算法 7 项单测通过；UI 切片已能启动；非完整 F04 |
@@ -46,8 +46,8 @@
 | F23 | 图片 | 待验收 | 图片库文件持久化、导入/剪贴板/Base64、压缩与水印、ImageTracer SVG path、区域截图拒绝全黑、缩放/适应、历史与分离窗口。差异见 [DIFF-013](diff/013-imagetracer-svg.md)。无运行截图；多屏权限对话框、WebP、超 16MP、安装镜像未测 |
 | F24 | PDF | 待验收 | 拆分/合并 Tab、最多 20 项、奇偶/自定义页码、token 顺序去重、`_split.pdf` 覆盖写出、合并保存对话框、历史与分离窗口、取消删除半成品。差异见 [DIFF-012](diff/012-pdfbox-import-page.md)。无运行截图；加密样本、表单/书签/签名、安装镜像未测 |
 | F25 | 系统信息 | 待验收 | 系统/CPU/内存/存储/网络 Tab、OSHI 真机采集、序列号默认遮蔽、JVM 与 OS 分区、复制当前 Tab、切走取消采集、无通用历史、分离窗口。差异见 [DIFF-014](diff/014-oshi-system-info.md)。无运行截图；安装镜像 JNA 未测 |
-| A01 | 11 类设置 | 开发中 | general/appearance/layout/editor/data/about/runtime 基础项生效；Network/Vault/Tools/Shortcuts 明确未实现 |
-| A02 | 历史/收藏/搜索 | 开发中 | JSON、编码、UA、正则、Cron、文本对比、格式化、配置转换、Protobuf、加解密、二维码、调色板、时间转换、计算器、PDF、图片助手、网络/IP、Host 应用、HTTP 发送与代码运行历史已有；环境变量/系统信息/留言板/翻译无通用历史（翻译用自有单词本与历史）；正则/Cron/调色板收藏已落地 |
+| A01 | 11 类设置 | 开发中 | general/appearance/layout/editor/data/about/runtime 基础项生效；Vault 仅随手记目录；Network/Tools/Shortcuts 与 Vault Git 明确未实现 |
+| A02 | 历史/收藏/搜索 | 开发中 | JSON、编码、UA、正则、Cron、文本对比、格式化、配置转换、Protobuf、加解密、二维码、调色板、时间转换、计算器、PDF、图片助手、网络/IP、Host 应用、HTTP 发送、代码运行与随手记保存历史已有；环境变量/系统信息/留言板/翻译无通用历史（翻译用自有单词本与历史）；正则/Cron/调色板收藏已落地 |
 | A03 | 桌面/存储/备份/Git/更新 | 开发中 | 独立路径与 SQLite 已有；备份/Git/更新未做 |
 
 ## 3. 工程检查入口
@@ -66,7 +66,7 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 21)"   # macOS 示例
 ./gradlew :composeApp:packageDistributionForCurrentOS
 ```
 
-本机 2026-09-09 结果：F05 接入后 `desktopTest` **116/116** 通过（含 CodeRunEngineTest 4；此前 F20 为 112/112）。`createDistributable` 此前生成 `MooTool Next Compose.app`；本轮未重跑打包。`runDistributable` 与 `packageDistributionForCurrentOS` 未跑完。
+本机 2026-09-09 结果：F01 切片接入后 `desktopTest` **120/120** 通过（含 QuickReplaceEngineTest 3；此前 F05 为 116/116）。`createDistributable` 此前生成 `MooTool Next Compose.app`；本轮未重跑打包。`runDistributable` 与 `packageDistributionForCurrentOS` 未跑完。
 
 测试层级：
 
@@ -109,7 +109,7 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 21)"   # macOS 示例
 
 ## 7. 证据记录模板
 
-后续每阶段建立 `docs/evidence/YYYY-MM-DD-阶段/`。见 `docs/evidence/2026-09-09-p0-p1/`、`docs/evidence/2026-09-09-f18/`、`docs/evidence/2026-09-09-f21/`、`docs/evidence/2026-09-09-f13/`、`docs/evidence/2026-09-09-f12/`、`docs/evidence/2026-09-09-f15/`、`docs/evidence/2026-09-09-f16/`、`docs/evidence/2026-09-09-f02/`、`docs/evidence/2026-09-09-f03/`、`docs/evidence/2026-09-09-f06/`、`docs/evidence/2026-09-09-f07/`、`docs/evidence/2026-09-09-f14/`、`docs/evidence/2026-09-09-f17/`、`docs/evidence/2026-09-09-f22/`、`docs/evidence/2026-09-09-f19/`、`docs/evidence/2026-09-09-f24/`、`docs/evidence/2026-09-09-f23/`、`docs/evidence/2026-09-09-f25/`、`docs/evidence/2026-09-09-f11/`、`docs/evidence/2026-09-09-f08/`、`docs/evidence/2026-09-09-f20/`、`docs/evidence/2026-09-09-f09/`、`docs/evidence/2026-09-09-f05/`。
+后续每阶段建立 `docs/evidence/YYYY-MM-DD-阶段/`。见 `docs/evidence/2026-09-09-p0-p1/`、`docs/evidence/2026-09-09-f18/`、`docs/evidence/2026-09-09-f21/`、`docs/evidence/2026-09-09-f13/`、`docs/evidence/2026-09-09-f12/`、`docs/evidence/2026-09-09-f15/`、`docs/evidence/2026-09-09-f16/`、`docs/evidence/2026-09-09-f02/`、`docs/evidence/2026-09-09-f03/`、`docs/evidence/2026-09-09-f06/`、`docs/evidence/2026-09-09-f07/`、`docs/evidence/2026-09-09-f14/`、`docs/evidence/2026-09-09-f17/`、`docs/evidence/2026-09-09-f22/`、`docs/evidence/2026-09-09-f19/`、`docs/evidence/2026-09-09-f24/`、`docs/evidence/2026-09-09-f23/`、`docs/evidence/2026-09-09-f25/`、`docs/evidence/2026-09-09-f11/`、`docs/evidence/2026-09-09-f08/`、`docs/evidence/2026-09-09-f20/`、`docs/evidence/2026-09-09-f09/`、`docs/evidence/2026-09-09-f05/`、`docs/evidence/2026-09-09-f01/`。
 
 ## 8. 完成定义
 

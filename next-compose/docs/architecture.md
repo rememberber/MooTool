@@ -164,6 +164,7 @@ SwingPanel 默认处于 Compose 内容前方；菜单、命令搜索、对话框
 | 环境变量 | 自有 `EnvEngine` + 本产品 `data/environment` | 用户/系统文件备份后写入；进程/JVM 只读；Unix 钩子使用 Compose 标记。见 DIFF-016 |
 | Host | 自有 `HostEngine` + `data/hosts/profiles.json` | 保存方案不改系统文件；应用前 diff/备份/指纹冲突；提权失败保持原 hosts。见 DIFF-017 |
 | 代码运行 | 自有 `CodeRunEngine` + `ProcessBuilder` argv | Java 源文件模式；白名单环境；1 MiB/2 MiB 上限；ProcessHandle 杀树。见 DIFF-020 |
+| 随手记 | 自有 `NoteVault` + `QuickReplaceEngine` | 默认 `data/vaults/quick-note`；24 项替换对齐 Electron 样本。见 DIFF-021 |
 | Git | 本产品 GitService 封装外部 Git CLI，缺失引导配置；JGit 可作验证后的替代 | 仓库锁、冲突、stash/操作状态、凭据、Git 不存在时仍可记笔记 |
 | 时间/计算 | java.time、BigInteger/BigDecimal、自有表达式 AST | 时区、DST、精度、算符、溢出；不 eval 用户文本 |
 

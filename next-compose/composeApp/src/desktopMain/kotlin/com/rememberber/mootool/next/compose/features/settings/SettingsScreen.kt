@@ -153,7 +153,16 @@ fun SettingsScreen(container: AppContainer) {
                     }, placeholder = container.t("settings.runtime.auto"))
                     Text(container.t("settings.runtime.jvmNote"), color = colors.warning, fontSize = 12.sp)
                 }
-                SettingsCategory.Network, SettingsCategory.Vault, SettingsCategory.Tools, SettingsCategory.Shortcuts -> {
+                SettingsCategory.Vault -> {
+                    Text(container.t("settings.vault.hint"), color = colors.textSecondary, fontSize = 12.sp)
+                    Label(container.t("settings.vault.quickNote"))
+                    MooTextField(settings.vault.quickNotePath, {
+                        container.updateSettings { current -> current.copy(vault = current.vault.copy(quickNotePath = it)) }
+                    }, placeholder = container.t("settings.vault.default"))
+                    MooButton(container.t("quickNote.openVault"), onClick = { container.openDirectory(container.noteVault().root()) })
+                    Text(container.t("settings.vault.gitLater"), color = colors.warning, fontSize = 12.sp)
+                }
+                SettingsCategory.Network, SettingsCategory.Tools, SettingsCategory.Shortcuts -> {
                     Text(container.t("common.notImplemented"), color = colors.warning)
                     Text(container.t("app.tool.unimplemented"), color = colors.textSecondary)
                 }

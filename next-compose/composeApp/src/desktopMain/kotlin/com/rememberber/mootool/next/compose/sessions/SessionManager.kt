@@ -1588,6 +1588,78 @@ class TranslationSession {
 }
 
 @Serializable
+data class QuickNoteSessionSnapshot(
+    val content: String = "",
+    val wrap: Boolean = true,
+    val findOpen: Boolean = false,
+    val findQuery: String = "",
+    val replaceText: String = "",
+    val matchCase: Boolean = false,
+    val wholeWord: Boolean = false,
+    val regex: Boolean = false,
+    val currentFile: String = "",
+    val vaultQuery: String = "",
+    val replaceOpen: Boolean = true
+)
+
+class QuickNoteSession {
+    val editor = EditorBuffer(SAMPLE, org.fife.ui.rsyntaxtextarea.SyntaxConstants.SYNTAX_STYLE_MARKDOWN)
+    var wrap: Boolean = true
+    var findOpen: Boolean = false
+    var findQuery: String = ""
+    var replaceText: String = ""
+    var findOptions: FindReplaceOptions = FindReplaceOptions()
+    var currentFile: String = ""
+    var savedText: String = SAMPLE
+    var vaultQuery: String = ""
+    var replaceOpen: Boolean = true
+    var notice: String = ""
+    var error: String = ""
+    var historyOpen: Boolean = false
+    var dialogMode: String = ""
+    var dialogValue: String = ""
+
+    fun snapshot(): QuickNoteSessionSnapshot = QuickNoteSessionSnapshot(
+        content = editor.text,
+        wrap = wrap,
+        findOpen = findOpen,
+        findQuery = findQuery,
+        replaceText = replaceText,
+        matchCase = findOptions.matchCase,
+        wholeWord = findOptions.wholeWord,
+        regex = findOptions.regex,
+        currentFile = currentFile,
+        vaultQuery = vaultQuery,
+        replaceOpen = replaceOpen
+    )
+
+    fun restore(snapshot: QuickNoteSessionSnapshot) {
+        editor.setText(snapshot.content.ifBlank { SAMPLE }, recordUndo = false)
+        wrap = snapshot.wrap
+        findOpen = snapshot.findOpen
+        findQuery = snapshot.findQuery
+        replaceText = snapshot.replaceText
+        findOptions = FindReplaceOptions(snapshot.matchCase, snapshot.wholeWord, snapshot.regex)
+        currentFile = snapshot.currentFile
+        savedText = snapshot.content.ifBlank { SAMPLE }
+        vaultQuery = snapshot.vaultQuery
+        replaceOpen = snapshot.replaceOpen
+        notice = ""
+        error = ""
+        historyOpen = false
+        dialogMode = ""
+        dialogValue = ""
+    }
+
+    companion object {
+        const val SAMPLE = """# MooTool Next Compose
+
+随手记保存在本产品 `data/vaults/quick-note`。
+"""
+    }
+}
+
+@Serializable
 data class CodeRunSessionSnapshot(
     val tab: String = "java",
     val javaMode: String = "java",
@@ -1750,6 +1822,7 @@ class SessionManager(private val store: SessionStore) {
     private var hostSessionCache: HostSession? = null
     private var httpSessionCache: HttpSession? = null
     private var translationSessionCache: TranslationSession? = null
+    private var quickNoteSessionCache: QuickNoteSession? = null
     private var codeRunSessionCache: CodeRunSession? = null
     private var hardwareSessionCache: HardwareSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
@@ -1769,6 +1842,22 @@ class SessionManager(private val store: SessionStore) {
 
     fun persistJson() {
         store.save(ToolId.Json.id, jsonCodec.encodeToString(jsonSession().snapshot()))
+    }
+
+    fun quickNoteSession(): QuickNoteSession {
+        quickNoteSessionCache?.let { return it }
+        val session = QuickNoteSession()
+        store.load(ToolId.QuickNote.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<QuickNoteSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        }
+        quickNoteSessionCache = session
+        return session
+    }
+
+    fun persistQuickNote() {
+        store.save(ToolId.QuickNote.id, jsonCodec.encodeToString(quickNoteSession().snapshot()))
     }
 
     fun timeSession(): TimeSession {

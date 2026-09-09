@@ -38,6 +38,7 @@ class ToolRegistryTest {
         assertTrue(ToolRegistry.byId.getValue(ToolId.Translation).status.name == "Available")
         assertTrue(!ToolRegistry.byId.getValue(ToolId.Translation).supportsHistory)
         assertTrue(ToolRegistry.byId.getValue(ToolId.Java).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.QuickNote).status.name == "Available")
     }
 
     @Test

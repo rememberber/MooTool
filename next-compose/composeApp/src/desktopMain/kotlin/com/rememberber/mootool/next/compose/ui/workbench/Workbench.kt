@@ -52,6 +52,7 @@ import com.rememberber.mootool.next.compose.features.pdf.PdfScreen
 import com.rememberber.mootool.next.compose.features.regex.RegexScreen
 import com.rememberber.mootool.next.compose.features.reformat.ReformatScreen
 import com.rememberber.mootool.next.compose.features.protobuf.ProtobufScreen
+import com.rememberber.mootool.next.compose.features.quicknote.QuickNoteScreen
 import com.rememberber.mootool.next.compose.features.runtime.CodeRunScreen
 import com.rememberber.mootool.next.compose.features.placeholder.DetachedNotice
 import com.rememberber.mootool.next.compose.features.placeholder.PlaceholderScreen
@@ -105,6 +106,10 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
             when {
                 showSettings -> SettingsScreen(container)
                 active == ToolId.Mootool -> HomeScreen(container)
+                active == ToolId.QuickNote && !detached.contains(ToolId.QuickNote) ->
+                    QuickNoteScreen(container, detached = false)
+                active == ToolId.QuickNote && detached.contains(ToolId.QuickNote) ->
+                    DetachedNotice(container, ToolId.QuickNote)
                 active == ToolId.TextDiff && !detached.contains(ToolId.TextDiff) ->
                     TextDiffScreen(container, detached = false)
                 active == ToolId.TextDiff && detached.contains(ToolId.TextDiff) ->
