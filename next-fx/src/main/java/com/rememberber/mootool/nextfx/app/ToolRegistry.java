@@ -39,7 +39,7 @@ public final class ToolRegistry {
             tool(ToolId.HOST, ToolGroupId.NETWORK, "app.nav.host", List.of("host", "dns", "域名"), "🖥", ToolStatus.PLACEHOLDER),
             tool(ToolId.NET, ToolGroupId.NETWORK, "app.nav.net", List.of("network", "ip", "ping", "whois", "网络"), "⌁", ToolStatus.PLACEHOLDER),
             tool(ToolId.UA_PARSE, ToolGroupId.NETWORK, "app.nav.uaParse", List.of("ua", "user-agent", "browser", "浏览器", "分析"), "UA", ToolStatus.PLACEHOLDER),
-            tool(ToolId.ENCODE, ToolGroupId.ENCODE, "app.nav.encode", List.of("encode", "decode", "base64", "url", "编码", "解码"), "⇄", ToolStatus.PLACEHOLDER),
+            tool(ToolId.ENCODE, ToolGroupId.ENCODE, "app.nav.encode", List.of("encode", "decode", "base64", "url", "编码", "解码"), "⇄", ToolStatus.IN_PROGRESS),
             tool(ToolId.CRYPTO, ToolGroupId.ENCODE, "app.nav.crypto", List.of("crypto", "hash", "md5", "sha", "random", "加密", "随机"), "🔒", ToolStatus.PLACEHOLDER),
             tool(ToolId.REGEX, ToolGroupId.ENCODE, "app.nav.regex", List.of("regex", "regexp", "regular", "正则", "匹配"), ".*", ToolStatus.PLACEHOLDER),
             tool(ToolId.CRON, ToolGroupId.ENCODE, "app.nav.cron", List.of("cron", "schedule", "定时", "表达式"), "⏱", ToolStatus.PLACEHOLDER),

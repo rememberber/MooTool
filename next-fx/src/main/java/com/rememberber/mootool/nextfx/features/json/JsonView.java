@@ -18,6 +18,7 @@ import com.rememberber.mootool.nextfx.infrastructure.JsonVaultStore;
 import com.rememberber.mootool.nextfx.infrastructure.SqliteDatabase;
 import com.rememberber.mootool.nextfx.ui.editor.RichTextEditorHost;
 import com.rememberber.mootool.nextfx.ui.i18n.Translator;
+import com.rememberber.mootool.nextfx.ui.shell.ToolActionEvent;
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -478,15 +479,6 @@ public final class JsonView extends BorderPane {
     ) {
         static JsonDraft sample() {
             return new JsonDraft("json-scratch", SAMPLE, true, "", SAMPLE, "$", false, false, true);
-        }
-    }
-
-    public static final class ToolActionEvent extends javafx.event.Event {
-        public static final javafx.event.EventType<ToolActionEvent> DETACH =
-                new javafx.event.EventType<>(javafx.event.Event.ANY, "TOOL_DETACH");
-
-        public ToolActionEvent(javafx.event.EventType<ToolActionEvent> type) {
-            super(type);
         }
     }
 }

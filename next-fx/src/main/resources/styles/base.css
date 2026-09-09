@@ -191,3 +191,15 @@
 .check-box {
     -fx-text-fill: -mt-text;
 }
+
+.mt-io-actions {
+    -fx-background-color: -mt-surface;
+    -fx-border-color: -mt-border-soft;
+    -fx-border-width: 0 1 0 1;
+}
+
+.mt-encode .toggle-button:selected {
+    -fx-background-color: -mt-accent;
+    -fx-text-fill: -mt-on-accent;
+    -fx-border-color: transparent;
+}

@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  */
 public final class SqliteDatabase implements AutoCloseable {
 
-    private static final int SCHEMA_VERSION = 2;
+    private static final int SCHEMA_VERSION = 3;
     private final AppPaths paths;
     private final BlockingQueue<WriteTask<?>> writes = new ArrayBlockingQueue<>(256);
     private final Thread writer;
@@ -108,6 +108,7 @@ public final class SqliteDatabase implements AutoCloseable {
                       summary TEXT NOT NULL,
                       input_text TEXT NOT NULL,
                       output_text TEXT NOT NULL,
+                      extra_data TEXT NOT NULL DEFAULT '',
                       created_at TEXT NOT NULL
                     )
                     """);
@@ -125,6 +126,11 @@ public final class SqliteDatabase implements AutoCloseable {
                 return result.next() ? result.getInt(1) : 0;
             }
         });
+        if (current < 3 && !hasColumn("history_entry", "extra_data")) {
+            try (Statement statement = connection.createStatement()) {
+                statement.execute("ALTER TABLE history_entry ADD COLUMN extra_data TEXT NOT NULL DEFAULT ''");
+            }
+        }
         if (current < SCHEMA_VERSION) {
             try (PreparedStatement statement = connection.prepareStatement(
                     "INSERT INTO schema_version(version, applied_at) VALUES (?, ?)")) {
@@ -133,6 +139,18 @@ public final class SqliteDatabase implements AutoCloseable {
                 statement.executeUpdate();
             }
         }
+    }
+
+    private boolean hasColumn(String table, String column) throws SQLException {
+        try (Statement statement = connection.createStatement();
+             ResultSet result = statement.executeQuery("PRAGMA table_info(" + table + ")")) {
+            while (result.next()) {
+                if (column.equalsIgnoreCase(result.getString("name"))) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     private void writeProductMarker() throws IOException {
@@ -267,16 +285,21 @@ public final class SqliteDatabase implements AutoCloseable {
         }
 
         public void save(String toolId, String summary, String input, String output) {
+            save(toolId, summary, input, output, "");
+        }
+
+        public void save(String toolId, String summary, String input, String output, String extra) {
             database.writeNow(connection -> {
                 try (PreparedStatement insert = connection.prepareStatement("""
-                        INSERT INTO history_entry(tool_id, summary, input_text, output_text, created_at)
-                        VALUES (?, ?, ?, ?, ?)
+                        INSERT INTO history_entry(tool_id, summary, input_text, output_text, extra_data, created_at)
+                        VALUES (?, ?, ?, ?, ?, ?)
                         """)) {
                     insert.setString(1, toolId);
                     insert.setString(2, summary);
                     insert.setString(3, input);
                     insert.setString(4, output);
-                    insert.setString(5, Instant.now().toString());
+                    insert.setString(5, extra == null ? "" : extra);
+                    insert.setString(6, Instant.now().toString());
                     insert.executeUpdate();
                 }
                 try (PreparedStatement trim = connection.prepareStatement("""
@@ -295,7 +318,7 @@ public final class SqliteDatabase implements AutoCloseable {
         public List<HistoryRow> latest(String toolId, int limit) {
             return database.read(connection -> {
                 try (PreparedStatement statement = connection.prepareStatement("""
-                        SELECT summary, input_text, output_text, created_at
+                        SELECT summary, input_text, output_text, created_at, extra_data
                         FROM history_entry WHERE tool_id = ? ORDER BY id DESC LIMIT ?
                         """)) {
                     statement.setString(1, toolId);
@@ -307,7 +330,8 @@ public final class SqliteDatabase implements AutoCloseable {
                                     result.getString(1),
                                     result.getString(2),
                                     result.getString(3),
-                                    result.getString(4)
+                                    result.getString(4),
+                                    result.getString(5)
                             ));
                         }
                         return List.copyOf(rows);
@@ -317,7 +341,14 @@ public final class SqliteDatabase implements AutoCloseable {
         }
     }
 
-    public record HistoryRow(String summary, String input, String output, String createdAt) {
+    public record HistoryRow(String summary, String input, String output, String createdAt, String extra) {
+        public HistoryRow {
+            extra = extra == null ? "" : extra;
+        }
+
+        public HistoryRow(String summary, String input, String output, String createdAt) {
+            this(summary, input, output, createdAt, "");
+        }
     }
 
     public static final class DraftStore {

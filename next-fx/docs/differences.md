@@ -46,3 +46,12 @@
 - 原因：P6 才要求完整风格。
 - 验证：外观页文案 `settings.pending.style`。
 - 后续：P6 为每种风格提供独立 Token，禁止六名一色。
+
+## FX-D006 URL 编码字符集实现
+
+- 类型：技术等价
+- 源行为：Electron `iconv-lite` 的 `utf-8` / `gb2312`，只对 RFC 3986 unreserved 以外的字节做 `%HH`。
+- 本版行为：Java `StandardCharsets.UTF_8` 与 `Charset.forName("GB2312")`，同一套 unreserved 规则。
+- 原因：不在 JavaFX 进程里引入 iconv-lite/Node。
+- 验证：`EncodeEngineTest.roundTripsUrlTextInUtf8AndGb2312`；UTF-8 fixture `%E4%BD%A0%E5%A5%BD%20a%2Fb`。
+- 后续：若发现生僻 GB 码位与 iconv-lite 不一致，补差异样本，不以静默替换冒充成功。

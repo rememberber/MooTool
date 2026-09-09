@@ -34,10 +34,11 @@ class ToolRegistryTest {
     }
 
     @Test
-    void onlyHomeAndJsonAreInProgressForP0() {
+    void homeJsonAndEncodeAreInProgress() {
         assertThat(ToolRegistry.require(ToolId.MOOTOOL).status()).isEqualTo(ToolStatus.IN_PROGRESS);
         assertThat(ToolRegistry.require(ToolId.JSON).status()).isEqualTo(ToolStatus.IN_PROGRESS);
-        assertThat(ToolRegistry.all().stream().filter(item -> item.status() == ToolStatus.PLACEHOLDER)).hasSize(24);
+        assertThat(ToolRegistry.require(ToolId.ENCODE).status()).isEqualTo(ToolStatus.IN_PROGRESS);
+        assertThat(ToolRegistry.all().stream().filter(item -> item.status() == ToolStatus.PLACEHOLDER)).hasSize(23);
     }
 
     @Test

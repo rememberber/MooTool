@@ -6,7 +6,6 @@ import com.rememberber.mootool.nextfx.application.RecentTools;
 import com.rememberber.mootool.nextfx.application.ToolSession;
 import com.rememberber.mootool.nextfx.application.ToolWindowCoordinator;
 import com.rememberber.mootool.nextfx.domain.ToolId;
-import com.rememberber.mootool.nextfx.features.json.JsonView;
 import com.rememberber.mootool.nextfx.infrastructure.SettingsStore;
 import javafx.application.Platform;
 import javafx.scene.Node;
@@ -72,7 +71,7 @@ public final class MainWindow {
         scene.getAccelerators().put(new KeyCodeCombination(KeyCode.K, KeyCombination.SHORTCUT_DOWN), sidebar::focusSearch);
         scene.getAccelerators().put(new KeyCodeCombination(KeyCode.COMMA, KeyCombination.SHORTCUT_DOWN), this::openSettings);
         scene.getAccelerators().put(new KeyCodeCombination(KeyCode.F, KeyCombination.SHORTCUT_DOWN), this::focusFind);
-        scene.addEventFilter(JsonView.ToolActionEvent.DETACH, event -> {
+        scene.addEventFilter(ToolActionEvent.DETACH, event -> {
             detachTool(active);
             event.consume();
         });
