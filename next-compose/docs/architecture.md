@@ -158,7 +158,7 @@ SwingPanel 默认处于 Compose 内容前方；菜单、命令搜索、对话框
 | 图像 | ImageIO/Java2D + 自有 `data/images` 图片库 | EXIF 方向、alpha 棋盘格、1600 万像素上限、压缩/水印、区域截图。见 DIFF-013 |
 | SVG | 本产品内嵌 ImageTracer.java **1.1.2**（Unlicense） | poster/photo/bw 参数映射到 ltres/pathomit 等；输出含 path，禁止嵌入 bitmap。见 DIFF-013 |
 | PDF | PDFBox **3.0.4** | 真页面 importPage；页码顺序/去重对齐 Electron；加密 PDF 拒绝；取消删除本批半成品。见 DIFF-012 |
-| 系统信息 | OSHI/JNA 候选 | 实际字段、权限/不支持状态、脱敏、失活暂停 |
+| 系统信息 | OSHI **6.8.2** | 真机采集；序列号默认遮蔽；OS 与本产品 JVM 信息分区；切走工具取消采集。见 DIFF-014 |
 | Git | 本产品 GitService 封装外部 Git CLI，缺失引导配置；JGit 可作验证后的替代 | 仓库锁、冲突、stash/操作状态、凭据、Git 不存在时仍可记笔记 |
 | 时间/计算 | java.time、BigInteger/BigDecimal、自有表达式 AST | 时区、DST、精度、算符、溢出；不 eval 用户文本 |
 

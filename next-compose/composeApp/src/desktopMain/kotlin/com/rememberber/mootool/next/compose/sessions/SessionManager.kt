@@ -24,6 +24,8 @@ import com.rememberber.mootool.next.compose.domain.ColorEngine
 import com.rememberber.mootool.next.compose.domain.ColorFormat
 import com.rememberber.mootool.next.compose.domain.ColorThemeId
 import com.rememberber.mootool.next.compose.domain.MessageBoardEngine
+import com.rememberber.mootool.next.compose.domain.HardwareSnapshot
+import com.rememberber.mootool.next.compose.domain.HardwareTab
 import com.rememberber.mootool.next.compose.domain.ImageOutputFormat
 import com.rememberber.mootool.next.compose.domain.ImageOutputMode
 import com.rememberber.mootool.next.compose.domain.ImageSvgDetail
@@ -1141,6 +1143,33 @@ class ImageSession {
     }
 }
 
+@Serializable
+data class HardwareSessionSnapshot(
+    val tab: String = "system",
+    val revealSensitive: Boolean = false
+)
+
+class HardwareSession {
+    var tab: HardwareTab = HardwareTab.System
+    var revealSensitive: Boolean = false
+    var snapshot: HardwareSnapshot? = null
+    var loading: Boolean = false
+    var error: String = ""
+
+    fun snapshotState(): HardwareSessionSnapshot = HardwareSessionSnapshot(
+        tab = tab.name.lowercase(),
+        revealSensitive = revealSensitive
+    )
+
+    fun restore(snapshot: HardwareSessionSnapshot) {
+        tab = HardwareTab.entries.find { it.name.equals(snapshot.tab, ignoreCase = true) } ?: HardwareTab.System
+        revealSensitive = snapshot.revealSensitive
+        this.snapshot = null
+        loading = false
+        error = ""
+    }
+}
+
 enum class WindowRole { Main, Detached }
 
 data class HostedSession(
@@ -1167,6 +1196,7 @@ class SessionManager(private val store: SessionStore) {
     private var messageBoardSessionCache: MessageBoardSession? = null
     private var pdfSessionCache: PdfSession? = null
     private var imageSessionCache: ImageSession? = null
+    private var hardwareSessionCache: HardwareSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
     val detached: StateFlow<Set<ToolId>> = _detached
     private val _revision = MutableStateFlow(0L)
@@ -1447,6 +1477,22 @@ class SessionManager(private val store: SessionStore) {
 
     fun persistImage() {
         store.save(ToolId.Image.id, jsonCodec.encodeToString(imageSession().snapshot()))
+    }
+
+    fun hardwareSession(): HardwareSession {
+        hardwareSessionCache?.let { return it }
+        val session = HardwareSession()
+        store.load(ToolId.Hardware.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<HardwareSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        }
+        hardwareSessionCache = session
+        return session
+    }
+
+    fun persistHardware() {
+        store.save(ToolId.Hardware.id, jsonCodec.encodeToString(hardwareSession().snapshotState()))
     }
 
     fun detach(toolId: ToolId) {

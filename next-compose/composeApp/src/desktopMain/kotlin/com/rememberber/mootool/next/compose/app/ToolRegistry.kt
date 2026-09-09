@@ -48,7 +48,7 @@ object ToolRegistry {
         tool(ToolId.ColorBoard, ToolGroupId.Daily, "app.nav.colorBoard", "◐", listOf("color", "palette", "调色"), ToolStatus.Available),
         tool(ToolId.Image, ToolGroupId.Daily, "app.nav.image", "▣", listOf("image", "图片", "svg", "截图"), ToolStatus.Available),
         tool(ToolId.Pdf, ToolGroupId.Daily, "app.nav.pdf", "▤", listOf("pdf", "merge", "拆分"), ToolStatus.Available),
-        tool(ToolId.Hardware, ToolGroupId.System, "app.nav.hardware", "⚙", listOf("hardware", "system", "cpu", "系统"))
+        tool(ToolId.Hardware, ToolGroupId.System, "app.nav.hardware", "⚙", listOf("hardware", "system", "cpu", "系统", "oshi"), ToolStatus.Available)
     )
 
     val groups: List<ToolGroupDefinition> = listOf(

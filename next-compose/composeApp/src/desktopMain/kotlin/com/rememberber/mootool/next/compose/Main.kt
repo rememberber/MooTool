@@ -30,6 +30,7 @@ import com.rememberber.mootool.next.compose.features.cron.CronScreen
 import com.rememberber.mootool.next.compose.features.crypto.CryptoScreen
 import com.rememberber.mootool.next.compose.features.diff.TextDiffScreen
 import com.rememberber.mootool.next.compose.features.encode.EncodeScreen
+import com.rememberber.mootool.next.compose.features.hardware.HardwareScreen
 import com.rememberber.mootool.next.compose.features.image.ImageScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
 import com.rememberber.mootool.next.compose.features.messageboard.MessageBoardScreen
@@ -310,6 +311,18 @@ fun main() = application {
             ) {
                 MooTheme(container.themePreference(), systemDark) {
                     PdfScreen(container, detached = true)
+                }
+            }
+        }
+
+        if (ToolId.Hardware in detached) {
+            Window(
+                onCloseRequest = { container.sessionManager.reattach(ToolId.Hardware) },
+                title = "${container.t("app.nav.hardware")} · ${ProductIdentity.DISPLAY_NAME}",
+                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
+            ) {
+                MooTheme(container.themePreference(), systemDark) {
+                    HardwareScreen(container, detached = true)
                 }
             }
         }

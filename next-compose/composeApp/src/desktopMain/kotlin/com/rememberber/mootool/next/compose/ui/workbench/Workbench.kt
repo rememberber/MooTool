@@ -39,6 +39,7 @@ import com.rememberber.mootool.next.compose.features.crypto.CryptoScreen
 import com.rememberber.mootool.next.compose.features.cron.CronScreen
 import com.rememberber.mootool.next.compose.features.diff.TextDiffScreen
 import com.rememberber.mootool.next.compose.features.encode.EncodeScreen
+import com.rememberber.mootool.next.compose.features.hardware.HardwareScreen
 import com.rememberber.mootool.next.compose.features.home.HomeScreen
 import com.rememberber.mootool.next.compose.features.image.ImageScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
@@ -164,6 +165,10 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
                     PdfScreen(container, detached = false)
                 active == ToolId.Pdf && detached.contains(ToolId.Pdf) ->
                     DetachedNotice(container, ToolId.Pdf)
+                active == ToolId.Hardware && !detached.contains(ToolId.Hardware) ->
+                    HardwareScreen(container, detached = false)
+                active == ToolId.Hardware && detached.contains(ToolId.Hardware) ->
+                    DetachedNotice(container, ToolId.Hardware)
                 else -> PlaceholderScreen(container, active)
             }
         }

@@ -90,6 +90,7 @@ kotlin {
                 implementation(libs.bouncy.castle)
                 implementation(libs.zxing.core)
                 implementation(libs.pdfbox)
+                implementation(libs.oshi.core)
             }
         }
         val desktopTest by getting {

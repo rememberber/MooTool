@@ -119,6 +119,7 @@ class AppContainer(
         sessionManager.persistMessageBoard()
         sessionManager.persistPdf()
         sessionManager.persistImage()
+        sessionManager.persistHardware()
         settingsRepository.save(_settings.value)
     }
 
