@@ -6,6 +6,7 @@ import com.rememberber.mootool.nextfx.application.ToolWindowCoordinator;
 import com.rememberber.mootool.nextfx.domain.ToolId;
 import com.rememberber.mootool.nextfx.features.encode.EncodeView;
 import com.rememberber.mootool.nextfx.features.json.JsonView;
+import com.rememberber.mootool.nextfx.features.regex.RegexView;
 import com.rememberber.mootool.nextfx.infrastructure.AppPaths;
 import com.rememberber.mootool.nextfx.infrastructure.SettingsStore;
 import com.rememberber.mootool.nextfx.infrastructure.SqliteDatabase;
@@ -101,6 +102,7 @@ public final class AppServices implements AutoCloseable {
             case MOOTOOL -> new HomeView(identity, translator);
             case JSON -> new JsonView(translator, executors, database, paths, session);
             case ENCODE -> new EncodeView(translator, executors, database);
+            case REGEX -> new RegexView(translator, executors, database);
             default -> new PlaceholderView(ToolRegistry.require(toolId), translator);
         };
     }

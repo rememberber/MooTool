@@ -30,6 +30,10 @@ class SqliteDatabaseTest {
             assertThat(database.history().latest("json", 10)).hasSize(1);
             database.history().save("encode", "URL 编码", "你好 a/b", "%E4%BD%A0%E5%A5%BD%20a%2Fb", "{\"tab\":\"url\"}");
             assertThat(database.history().latest("encode", 1).getFirst().extra()).contains("url");
+            database.favorites().save("regex", "手机号", "1[3-9]\\d{9}");
+            assertThat(database.favorites().list("regex")).hasSize(1);
+            database.favorites().delete(database.favorites().list("regex").getFirst().id());
+            assertThat(database.favorites().list("regex")).isEmpty();
             database.drafts().save("json", "{\"text\":\"{}\"}");
             assertThat(database.drafts().load("json")).contains("{}");
             assertThat(Files.readString(paths.productMarker())).contains("next-fx");

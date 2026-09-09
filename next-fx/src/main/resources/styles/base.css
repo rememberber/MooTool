@@ -198,7 +198,7 @@
     -fx-border-width: 0 1 0 1;
 }
 
-.mt-encode .toggle-button:selected {
+.mt-encode .toggle-button:selected, .mt-regex .toggle-button:selected {
     -fx-background-color: -mt-accent;
     -fx-text-fill: -mt-on-accent;
     -fx-border-color: transparent;

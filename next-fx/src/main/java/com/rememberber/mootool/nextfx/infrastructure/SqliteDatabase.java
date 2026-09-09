@@ -27,7 +27,7 @@ import java.util.concurrent.TimeUnit;
  */
 public final class SqliteDatabase implements AutoCloseable {
 
-    private static final int SCHEMA_VERSION = 3;
+    private static final int SCHEMA_VERSION = 4;
     private final AppPaths paths;
     private final BlockingQueue<WriteTask<?>> writes = new ArrayBlockingQueue<>(256);
     private final Thread writer;
@@ -117,6 +117,15 @@ public final class SqliteDatabase implements AutoCloseable {
                       tool_id TEXT PRIMARY KEY,
                       payload TEXT NOT NULL,
                       updated_at TEXT NOT NULL
+                    )
+                    """);
+            statement.execute("""
+                    CREATE TABLE IF NOT EXISTS favorite_entry (
+                      id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      kind TEXT NOT NULL,
+                      name TEXT NOT NULL,
+                      value TEXT NOT NULL,
+                      created_at TEXT NOT NULL
                     )
                     """);
         }
@@ -218,6 +227,10 @@ public final class SqliteDatabase implements AutoCloseable {
 
     public DraftStore drafts() {
         return new DraftStore(this);
+    }
+
+    public FavoriteStore favorites() {
+        return new FavoriteStore(this);
     }
 
     @FunctionalInterface
@@ -384,5 +397,66 @@ public final class SqliteDatabase implements AutoCloseable {
                 }
             });
         }
+    }
+
+    public static final class FavoriteStore {
+        private final SqliteDatabase database;
+
+        private FavoriteStore(SqliteDatabase database) {
+            this.database = database;
+        }
+
+        public void save(String kind, String name, String value) {
+            database.writeNow(connection -> {
+                try (PreparedStatement statement = connection.prepareStatement("""
+                        INSERT INTO favorite_entry(kind, name, value, created_at) VALUES (?, ?, ?, ?)
+                        """)) {
+                    statement.setString(1, kind);
+                    statement.setString(2, name);
+                    statement.setString(3, value);
+                    statement.setString(4, Instant.now().toString());
+                    statement.executeUpdate();
+                }
+                return null;
+            });
+        }
+
+        public void delete(long id) {
+            database.writeNow(connection -> {
+                try (PreparedStatement statement = connection.prepareStatement(
+                        "DELETE FROM favorite_entry WHERE id = ?")) {
+                    statement.setLong(1, id);
+                    statement.executeUpdate();
+                }
+                return null;
+            });
+        }
+
+        public List<FavoriteRow> list(String kind) {
+            return database.read(connection -> {
+                try (PreparedStatement statement = connection.prepareStatement("""
+                        SELECT id, kind, name, value, created_at
+                        FROM favorite_entry WHERE kind = ? ORDER BY id DESC
+                        """)) {
+                    statement.setString(1, kind);
+                    try (ResultSet result = statement.executeQuery()) {
+                        List<FavoriteRow> rows = new ArrayList<>();
+                        while (result.next()) {
+                            rows.add(new FavoriteRow(
+                                    result.getLong(1),
+                                    result.getString(2),
+                                    result.getString(3),
+                                    result.getString(4),
+                                    result.getString(5)
+                            ));
+                        }
+                        return List.copyOf(rows);
+                    }
+                }
+            });
+        }
+    }
+
+    public record FavoriteRow(long id, String kind, String name, String value, String createdAt) {
     }
 }

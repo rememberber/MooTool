@@ -1,5 +1,12 @@
 # 结果
 
-`./mvnw test` exit 0（37 tests）。新增 `EncodeEngineTest`（Unicode/emoji、URL UTF-8/GB2312、ASCII 十进制/十六进制、非法 hex/码点）与 schema v2→v3 历史 `extra_data` 迁移。
+编码解码提交 `f835fb3e`：`./mvnw test` 37 tests exit 0。
 
-P3 交付：F13 编码解码四 Tab（Unicode / URL / Hex / ASCII）真实双向转换，历史带 extra 恢复 Tab/方向，草稿写入 SQLite。未实现 Base64（与源产品一样属于加密工具）。未拍成对截图。
+正则接入后 `./mvnw test` 44 tests exit 0。新增 `RegexEngineTest`（Electron 捕获 fixture、零宽匹配、21 常用模式、lookbehind/命名组、JS `\u{…}` 非法转义、限时 CharSequence 超时）与 `favorite_entry` 增删。
+
+P3 交付：
+
+- F13 编码解码四 Tab 真实双向转换，历史 extra 恢复，草稿写入 SQLite。未实现 Base64。
+- F15 正则：Java Pattern、global 遍历、21 常用模式、收藏增删、历史恢复。独立 worker 进程未做（FX-D007）。
+
+未拍成对截图。
