@@ -15,6 +15,7 @@ import com.rememberber.mootool.next.compose.storage.ImageLibraryStore
 import com.rememberber.mootool.next.compose.storage.CronFavoriteStore
 import com.rememberber.mootool.next.compose.storage.HostProfileStore
 import com.rememberber.mootool.next.compose.storage.HttpCollectionStore
+import com.rememberber.mootool.next.compose.storage.TranslationStore
 import com.rememberber.mootool.next.compose.storage.RegexFavoriteStore
 import com.rememberber.mootool.next.compose.storage.SessionStore
 import com.rememberber.mootool.next.compose.storage.SettingsRepository
@@ -42,6 +43,7 @@ class AppContainer(
     val imageLibrary = ImageLibraryStore(directories)
     val hostProfiles = HostProfileStore(directories)
     val httpCollections = HttpCollectionStore(directories)
+    val translations = TranslationStore(directories)
     val displayWake = DisplayWakeLock()
     val regexWorker = RegexWorkerClient()
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
@@ -127,6 +129,7 @@ class AppContainer(
         sessionManager.persistVariables()
         sessionManager.persistHost()
         sessionManager.persistHttp()
+        sessionManager.persistTranslation()
         sessionManager.persistHardware()
         settingsRepository.save(_settings.value)
     }
@@ -136,6 +139,7 @@ class AppContainer(
         displayWake.releaseAll()
         sessionManager.cancelNetCommands()
         sessionManager.cancelHttp()
+        sessionManager.cancelTranslation()
         persistWorkspace()
         database.close()
     }

@@ -43,7 +43,7 @@ object ToolRegistry {
         tool(ToolId.QrCode, ToolGroupId.Encode, "app.nav.qrCode", "▦", listOf("qr", "qrcode", "二维码"), ToolStatus.Available),
         tool(ToolId.TimeConvert, ToolGroupId.Daily, "app.nav.timeConvert", "◷", listOf("time", "timestamp", "时间"), ToolStatus.Available),
         tool(ToolId.MessageBoard, ToolGroupId.Daily, "app.nav.messageBoard", "✉", listOf("message", "board", "留言"), ToolStatus.Available),
-        tool(ToolId.Translation, ToolGroupId.Daily, "app.nav.translation", "文", listOf("translate", "word", "翻译")),
+        tool(ToolId.Translation, ToolGroupId.Daily, "app.nav.translation", "文", listOf("translate", "word", "翻译"), ToolStatus.Available),
         tool(ToolId.Calculator, ToolGroupId.Daily, "app.nav.calculator", "=", listOf("calculator", "calc", "计算"), ToolStatus.Available),
         tool(ToolId.ColorBoard, ToolGroupId.Daily, "app.nav.colorBoard", "◐", listOf("color", "palette", "调色"), ToolStatus.Available),
         tool(ToolId.Image, ToolGroupId.Daily, "app.nav.image", "▣", listOf("image", "图片", "svg", "截图"), ToolStatus.Available),
@@ -77,7 +77,7 @@ object ToolRegistry {
         keywords: List<String>,
         status: ToolStatus = if (id == ToolId.Mootool) ToolStatus.Available else ToolStatus.NotImplemented
     ): ToolDefinition {
-        val history = id != ToolId.Mootool && id != ToolId.Hardware && id != ToolId.MessageBoard && id != ToolId.Variables
+        val history = id != ToolId.Mootool && id != ToolId.Hardware && id != ToolId.MessageBoard && id != ToolId.Variables && id != ToolId.Translation
         val favorites = id == ToolId.Regex || id == ToolId.Cron || id == ToolId.ColorBoard
         return ToolDefinition(id, group, titleKey, keywords, glyph, status, history, favorites)
     }

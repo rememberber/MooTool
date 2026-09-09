@@ -78,7 +78,7 @@ data/
 | history | id、tool_id、operation、summary、input/output/options、created_at；每工具保留上限 |
 | favorites | id、tool_id、group/name、payload、排序；唯一/重复策略明确 |
 | http_requests / http_history | 完整有序行数组、body/type、请求选项、响应摘要 |
-| translation_words / translation_history | 原文、译文、语言、服务、编辑时间 |
+| translation_words / translation_history | 本产品 `data/translation/words.json` 与 `history.json`：原文、译文、语言、服务、时间；UUID id；历史最多 500 |
 | host_profiles | 名称、内容、创建/修改时间；区别系统生效状态 |
 | image_assets | 相对文件路径、类型、尺寸、摘要、时间；事务协调文件 |
 | import_runs | 来源产品/版本、内容 hash、导入映射、状态、回滚信息 |

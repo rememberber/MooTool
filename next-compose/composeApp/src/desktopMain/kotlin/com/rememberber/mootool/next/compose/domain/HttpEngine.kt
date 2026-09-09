@@ -439,10 +439,9 @@ object HttpEngine {
 
     private fun classify(error: Exception, call: okhttp3.Call): HttpErrorCode {
         if (error is HttpException) return error.code
+        val timedOut = error is InterruptedIOException || error.message?.contains("timeout", ignoreCase = true) == true
+        if (timedOut) return HttpErrorCode.TIMEOUT
         if (call.isCanceled() || error.message?.contains("Canceled", ignoreCase = true) == true) return HttpErrorCode.ABORTED
-        if (error is InterruptedIOException || error.message?.contains("timeout", ignoreCase = true) == true) {
-            return HttpErrorCode.TIMEOUT
-        }
         return HttpErrorCode.NETWORK
     }
 

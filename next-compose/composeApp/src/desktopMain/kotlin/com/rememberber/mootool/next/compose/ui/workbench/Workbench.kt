@@ -46,6 +46,7 @@ import com.rememberber.mootool.next.compose.features.home.HomeScreen
 import com.rememberber.mootool.next.compose.features.image.ImageScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
 import com.rememberber.mootool.next.compose.features.messageboard.MessageBoardScreen
+import com.rememberber.mootool.next.compose.features.translation.TranslationScreen
 import com.rememberber.mootool.next.compose.features.net.NetScreen
 import com.rememberber.mootool.next.compose.features.pdf.PdfScreen
 import com.rememberber.mootool.next.compose.features.regex.RegexScreen
@@ -165,6 +166,10 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
                     MessageBoardScreen(container, detached = false)
                 active == ToolId.MessageBoard && detached.contains(ToolId.MessageBoard) ->
                     DetachedNotice(container, ToolId.MessageBoard)
+                active == ToolId.Translation && !detached.contains(ToolId.Translation) ->
+                    TranslationScreen(container, detached = false)
+                active == ToolId.Translation && detached.contains(ToolId.Translation) ->
+                    DetachedNotice(container, ToolId.Translation)
                 active == ToolId.Image && !detached.contains(ToolId.Image) ->
                     ImageScreen(container, detached = false)
                 active == ToolId.Image && detached.contains(ToolId.Image) ->

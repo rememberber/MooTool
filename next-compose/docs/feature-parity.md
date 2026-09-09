@@ -39,7 +39,7 @@
 
 所有工具适用的共同行为：切页/窗口转移保留输入输出、选项、Tab、选区与滚动；正确处理空态、执行、成功、失败和取消；输出可选择复制；错误保留输入与标明的上次有效结果。不要自动把每次按键记为一次历史。
 
-注册表中 `mootool/hardware/messageBoard` 不声明通用历史，其余声明支持。通用收藏仅 `regex/cron/colorBoard`；请求集合、单词本、Vault 有各自数据模型。
+注册表中 `mootool/hardware/messageBoard/variables/translation` 不声明通用历史，其余声明支持。通用收藏仅 `regex/cron/colorBoard`；请求集合、单词本、Vault 有各自数据模型。
 
 ## 2. 逐工具规格
 
@@ -288,7 +288,7 @@ Tab：翻译、单词本、历史；源/目标语言、Google/Bing、交换、�
 
 - 自动翻译约 500 ms debounce，手动立即发；过期响应不覆盖；历史/单词本回填不重复触发请求。
 - 代理、默认 15 秒超时、取消、长文分段、服务 fallback；实际使用服务及 fallback 可辨。
-- 单词本新增/编辑/删除/搜索/重译；历史持久化；离线能看本地数据。
+- 单词本新增/编辑/删除/搜索/重译；历史持久化；离线能看本地数据。单词本与历史在本产品 `data/translation/words.json`、`history.json`。客户端为 OkHttp 4.12.0。见 [DIFF-019](diff/019-translation-okhttp-json.md)。
 - 服务端适配在实施时核验实际可用接口及要求，不把测试 stub 当线上实现。
 - 验收：受控 HTTP 服务验证分段/并发顺序/取消/失败；另做注明日期/服务的真实联网检查；无网报告失败。
 

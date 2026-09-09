@@ -35,6 +35,8 @@ class ToolRegistryTest {
         assertTrue(!ToolRegistry.byId.getValue(ToolId.Variables).supportsHistory)
         assertTrue(ToolRegistry.byId.getValue(ToolId.Hardware).status.name == "Available")
         assertTrue(!ToolRegistry.byId.getValue(ToolId.Hardware).supportsHistory)
+        assertTrue(ToolRegistry.byId.getValue(ToolId.Translation).status.name == "Available")
+        assertTrue(!ToolRegistry.byId.getValue(ToolId.Translation).supportsHistory)
     }
 
     @Test

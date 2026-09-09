@@ -32,6 +32,8 @@ import com.rememberber.mootool.next.compose.domain.HttpRequestDraft
 import com.rememberber.mootool.next.compose.domain.HttpRequestTab
 import com.rememberber.mootool.next.compose.domain.HttpResponseResult
 import com.rememberber.mootool.next.compose.domain.HttpResponseTab
+import com.rememberber.mootool.next.compose.domain.TranslationEngine
+import com.rememberber.mootool.next.compose.domain.TranslationTab
 import com.rememberber.mootool.next.compose.domain.EnvDisplayScope
 import com.rememberber.mootool.next.compose.domain.EnvPersistScope
 import com.rememberber.mootool.next.compose.domain.EnvSnapshot
@@ -1500,6 +1502,88 @@ class HardwareSession {
     }
 }
 
+@Serializable
+data class TranslationSessionSnapshot(
+    val tab: String = "translate",
+    val source: String = "",
+    val target: String = "",
+    val autoEnabled: Boolean = true,
+    val wordQuery: String = "",
+    val historyQuery: String = "",
+    val selectedWordId: String = "",
+    val wordSource: String = "",
+    val wordTarget: String = "",
+    val wordRemark: String = "",
+    val wordSourceLang: String = "auto",
+    val wordTargetLang: String = "zh-CN"
+)
+
+class TranslationSession {
+    var tab: TranslationTab = TranslationTab.Translate
+    var source: String = ""
+    var target: String = ""
+    var autoEnabled: Boolean = true
+    var translating: Boolean = false
+    var requestId: String = ""
+    var sequence: Int = 0
+    var restoredSource: String? = null
+    var providerUsed: String = ""
+    var fallbackUsed: Boolean = false
+    var error: String = ""
+    var notice: String = ""
+    var wordQuery: String = ""
+    var historyQuery: String = ""
+    var selectedWordId: String = ""
+    var wordSource: String = ""
+    var wordTarget: String = ""
+    var wordRemark: String = ""
+    var wordSourceLang: String = "auto"
+    var wordTargetLang: String = "zh-CN"
+    var languagePicker: String = ""
+    var deleteWordConfirm: Boolean = false
+    var clearHistoryConfirm: Boolean = false
+
+    fun snapshotState(): TranslationSessionSnapshot = TranslationSessionSnapshot(
+        tab = tab.name.lowercase(),
+        source = source.take(TranslationEngine.MAX_TEXT_UNITS),
+        target = target.take(TranslationEngine.MAX_TEXT_UNITS),
+        autoEnabled = autoEnabled,
+        wordQuery = wordQuery,
+        historyQuery = historyQuery,
+        selectedWordId = selectedWordId,
+        wordSource = wordSource.take(TranslationEngine.MAX_TEXT_UNITS),
+        wordTarget = wordTarget.take(TranslationEngine.MAX_TEXT_UNITS),
+        wordRemark = wordRemark,
+        wordSourceLang = wordSourceLang,
+        wordTargetLang = wordTargetLang
+    )
+
+    fun restore(snapshot: TranslationSessionSnapshot) {
+        tab = TranslationTab.entries.find { it.name.equals(snapshot.tab, ignoreCase = true) } ?: TranslationTab.Translate
+        source = snapshot.source.take(TranslationEngine.MAX_TEXT_UNITS)
+        target = snapshot.target.take(TranslationEngine.MAX_TEXT_UNITS)
+        autoEnabled = snapshot.autoEnabled
+        wordQuery = snapshot.wordQuery
+        historyQuery = snapshot.historyQuery
+        selectedWordId = snapshot.selectedWordId
+        wordSource = snapshot.wordSource
+        wordTarget = snapshot.wordTarget
+        wordRemark = snapshot.wordRemark
+        wordSourceLang = snapshot.wordSourceLang
+        wordTargetLang = snapshot.wordTargetLang
+        translating = false
+        requestId = ""
+        restoredSource = if (source.isNotEmpty()) source else null
+        providerUsed = ""
+        fallbackUsed = false
+        error = ""
+        notice = ""
+        languagePicker = ""
+        deleteWordConfirm = false
+        clearHistoryConfirm = false
+    }
+}
+
 enum class WindowRole { Main, Detached }
 
 data class HostedSession(
@@ -1530,6 +1614,7 @@ class SessionManager(private val store: SessionStore) {
     private var variablesSessionCache: VariablesSession? = null
     private var hostSessionCache: HostSession? = null
     private var httpSessionCache: HttpSession? = null
+    private var translationSessionCache: TranslationSession? = null
     private var hardwareSessionCache: HardwareSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
     val detached: StateFlow<Set<ToolId>> = _detached
@@ -1886,6 +1971,29 @@ class SessionManager(private val store: SessionStore) {
         val session = httpSessionCache ?: return
         if (session.requestId.isNotBlank()) HttpEngine.cancel(session.requestId)
         session.sending = false
+    }
+
+    fun translationSession(): TranslationSession {
+        translationSessionCache?.let { return it }
+        val session = TranslationSession()
+        store.load(ToolId.Translation.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<TranslationSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        }
+        translationSessionCache = session
+        return session
+    }
+
+    fun persistTranslation() {
+        store.save(ToolId.Translation.id, jsonCodec.encodeToString(translationSession().snapshotState()))
+    }
+
+    fun cancelTranslation() {
+        val session = translationSessionCache ?: return
+        if (session.requestId.isNotBlank()) TranslationEngine.cancel(session.requestId)
+        session.requestId = ""
+        session.translating = false
     }
 
     fun hardwareSession(): HardwareSession {
