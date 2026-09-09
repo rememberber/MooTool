@@ -33,6 +33,7 @@ import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.app.ToolRegistry
 import com.rememberber.mootool.next.compose.features.calculator.CalculatorScreen
+import com.rememberber.mootool.next.compose.features.config.ConfigConvertScreen
 import com.rememberber.mootool.next.compose.features.cron.CronScreen
 import com.rememberber.mootool.next.compose.features.diff.TextDiffScreen
 import com.rememberber.mootool.next.compose.features.encode.EncodeScreen
@@ -100,6 +101,10 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
                     DetachedNotice(container, ToolId.Reformat)
                 active == ToolId.Json && !detached.contains(ToolId.Json) -> JsonScreen(container, detached = false)
                 active == ToolId.Json && detached.contains(ToolId.Json) -> DetachedNotice(container, ToolId.Json)
+                active == ToolId.YmlProperties && !detached.contains(ToolId.YmlProperties) ->
+                    ConfigConvertScreen(container, detached = false)
+                active == ToolId.YmlProperties && detached.contains(ToolId.YmlProperties) ->
+                    DetachedNotice(container, ToolId.YmlProperties)
                 active == ToolId.TimeConvert && !detached.contains(ToolId.TimeConvert) ->
                     TimeConvertScreen(container, detached = false, active = true)
                 active == ToolId.TimeConvert && detached.contains(ToolId.TimeConvert) ->

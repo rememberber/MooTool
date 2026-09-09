@@ -14,6 +14,7 @@ cronUtils = "9.2.1"
 javaDiffUtils = "4.15"
 javaParser = "3.26.4"
 jsoup = "1.18.3"
+snakeyaml = "2.3"
 
 [libraries]
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
@@ -40,6 +41,7 @@ cron-utils = { module = "com.cronutils:cron-utils", version.ref = "cronUtils" }
 java-diff-utils = { module = "io.github.java-diff-utils:java-diff-utils", version.ref = "javaDiffUtils" }
 javaparser-core = { module = "com.github.javaparser:javaparser-core", version.ref = "javaParser" }
 jsoup = { module = "org.jsoup:jsoup", version.ref = "jsoup" }
+snakeyaml = { module = "org.yaml:snakeyaml", version.ref = "snakeyaml" }
 junit = { module = "junit:junit", version.ref = "junit" }
 
 [plugins]

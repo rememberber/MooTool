@@ -62,6 +62,7 @@ kotlin {
                 implementation(libs.java.diff.utils)
                 implementation(libs.javaparser.core)
                 implementation(libs.jsoup)
+                implementation(libs.snakeyaml)
             }
         }
         val desktopTest by getting {

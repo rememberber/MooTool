@@ -105,6 +105,7 @@ class AppContainer(
         sessionManager.persistCron()
         sessionManager.persistDiff()
         sessionManager.persistReformat()
+        sessionManager.persistConfig()
         settingsRepository.save(_settings.value)
     }
 

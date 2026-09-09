@@ -23,6 +23,7 @@ import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.app.ProductIdentity
+import com.rememberber.mootool.next.compose.features.config.ConfigConvertScreen
 import com.rememberber.mootool.next.compose.features.calculator.CalculatorScreen
 import com.rememberber.mootool.next.compose.features.cron.CronScreen
 import com.rememberber.mootool.next.compose.features.diff.TextDiffScreen
@@ -134,6 +135,18 @@ fun main() = application {
             ) {
                 MooTheme(container.themePreference(), systemDark) {
                     JsonScreen(container, detached = true)
+                }
+            }
+        }
+
+        if (ToolId.YmlProperties in detached) {
+            Window(
+                onCloseRequest = { container.sessionManager.reattach(ToolId.YmlProperties) },
+                title = "${container.t("app.nav.ymlProperties")} · ${ProductIdentity.DISPLAY_NAME}",
+                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
+            ) {
+                MooTheme(container.themePreference(), systemDark) {
+                    ConfigConvertScreen(container, detached = true)
                 }
             }
         }

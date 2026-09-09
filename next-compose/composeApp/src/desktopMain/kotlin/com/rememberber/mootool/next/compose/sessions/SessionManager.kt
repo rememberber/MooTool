@@ -9,6 +9,7 @@ import com.rememberber.mootool.next.compose.domain.DiffResult
 import com.rememberber.mootool.next.compose.domain.DiffSegment
 import com.rememberber.mootool.next.compose.domain.ReformatEngine
 import com.rememberber.mootool.next.compose.domain.ReformatType
+import com.rememberber.mootool.next.compose.domain.ConfigEngine
 import com.rememberber.mootool.next.compose.domain.CronFields
 import com.rememberber.mootool.next.compose.domain.CronEngine
 import com.rememberber.mootool.next.compose.domain.RegexMatch
@@ -559,6 +560,41 @@ class ReformatSession {
     }
 }
 
+@Serializable
+data class ConfigSessionSnapshot(
+    val tab: String = "convert",
+    val properties: String = ConfigEngine.SAMPLE_PROPERTIES,
+    val yaml: String = "",
+    val validateSource: String = ConfigEngine.SAMPLE_YAML,
+    val validation: String = ""
+)
+
+class ConfigSession {
+    var tab: String = "convert"
+    var properties: String = ConfigEngine.SAMPLE_PROPERTIES
+    var yaml: String = ""
+    var validateSource: String = ConfigEngine.SAMPLE_YAML
+    var validation: String = ""
+    var valid: Boolean? = null
+    var historyOpen: Boolean = false
+    var notice: String = ""
+    var error: String = ""
+
+    fun snapshot(): ConfigSessionSnapshot = ConfigSessionSnapshot(tab, properties, yaml, validateSource, validation)
+
+    fun restore(snapshot: ConfigSessionSnapshot) {
+        tab = if (snapshot.tab == "validate") "validate" else "convert"
+        properties = snapshot.properties
+        yaml = snapshot.yaml
+        validateSource = snapshot.validateSource
+        validation = snapshot.validation
+        valid = null
+        historyOpen = false
+        notice = ""
+        error = ""
+    }
+}
+
 enum class WindowRole { Main, Detached }
 
 data class HostedSession(
@@ -577,6 +613,7 @@ class SessionManager(private val store: SessionStore) {
     private var cronSessionCache: CronSession? = null
     private var diffSessionCache: DiffSession? = null
     private var reformatSessionCache: ReformatSession? = null
+    private var configSessionCache: ConfigSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
     val detached: StateFlow<Set<ToolId>> = _detached
     private val _revision = MutableStateFlow(0L)
@@ -722,6 +759,22 @@ class SessionManager(private val store: SessionStore) {
 
     fun persistReformat() {
         store.save(ToolId.Reformat.id, jsonCodec.encodeToString(reformatSession().snapshot()))
+    }
+
+    fun configSession(): ConfigSession {
+        configSessionCache?.let { return it }
+        val session = ConfigSession()
+        store.load(ToolId.YmlProperties.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<ConfigSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        }
+        configSessionCache = session
+        return session
+    }
+
+    fun persistConfig() {
+        store.save(ToolId.YmlProperties.id, jsonCodec.encodeToString(configSession().snapshot()))
     }
 
     fun detach(toolId: ToolId) {
