@@ -10,20 +10,42 @@ import kotlin.concurrent.withLock
 import kotlin.io.path.createDirectories
 import kotlin.io.path.pathString
 
-class AppDatabase(directories: AppDirectories) : AutoCloseable {
+class AppDatabase(private val directories: AppDirectories) : AutoCloseable {
     private val lock = ReentrantLock()
-    val connection: Connection
+    @Volatile
+    var connection: Connection = openConnection()
+        private set
 
     init {
+        migrate()
+    }
+
+    fun checkpoint() {
+        lock.withLock {
+            connection.createStatement().use { statement ->
+                statement.execute("PRAGMA wal_checkpoint(FULL)")
+            }
+        }
+    }
+
+    fun reopen() {
+        lock.withLock {
+            runCatching { if (!connection.isClosed) connection.close() }
+            connection = openConnection()
+            migrate()
+        }
+    }
+
+    private fun openConnection(): Connection {
         directories.dataRoot.createDirectories()
         Class.forName("org.sqlite.JDBC")
-        connection = DriverManager.getConnection("jdbc:sqlite:${directories.databaseFile.pathString}")
-        connection.createStatement().use { statement ->
+        val next = DriverManager.getConnection("jdbc:sqlite:${directories.databaseFile.pathString}")
+        next.createStatement().use { statement ->
             statement.execute("PRAGMA foreign_keys = ON")
             statement.execute("PRAGMA journal_mode = WAL")
             statement.execute("PRAGMA busy_timeout = 5000")
         }
-        migrate()
+        return next
     }
 
     fun <T> write(block: (Connection) -> T): T = lock.withLock {

@@ -358,7 +358,7 @@ Tab：系统、CPU、内存、存储、网络；结构化字段/表格、刷新�
 | layout | 最近、紧凑、分隔线、隐藏标题、classic/card/grouped、自定义组/隐藏工具、面板尺寸 |
 | editor | SQL 方言、JSON/随手记字体字号、软换行；适用操作实际读取这些设置 |
 | network | 代理开关/地址/端口/用户名/密码、HTTP/翻译超时 |
-| data | 实际数据路径、打开目录、备份/恢复、显式导入、报告 |
+| data | 实际数据路径、打开目录、备份/恢复 zip（见 [DIFF-022](diff/022-backup-zip-manifest.md)）；跨产品显式导入未做 |
 | vault | JSON/随手记路径、Git remote/用户名/token、自动提交/拉取、忽略规则、树展开策略 |
 | runtime | Java/Groovy/Python/Node 路径、检测、草稿/参数/工作目录 |
 | tools | QR 尺寸/纠错、随机长度、导出目录、默认翻译器与语言 |

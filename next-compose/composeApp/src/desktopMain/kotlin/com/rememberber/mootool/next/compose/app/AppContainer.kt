@@ -10,6 +10,9 @@ import com.rememberber.mootool.next.compose.storage.AppDatabase
 import com.rememberber.mootool.next.compose.storage.HistoryRepository
 import com.rememberber.mootool.next.compose.storage.JsonVault
 import com.rememberber.mootool.next.compose.storage.NoteVault
+import com.rememberber.mootool.next.compose.storage.BackupEngine
+import com.rememberber.mootool.next.compose.storage.BackupExportResult
+import com.rememberber.mootool.next.compose.storage.BackupRestoreResult
 import com.rememberber.mootool.next.compose.domain.DisplayWakeLock
 import com.rememberber.mootool.next.compose.storage.ColorFavoriteStore
 import com.rememberber.mootool.next.compose.storage.ImageLibraryStore
@@ -108,6 +111,22 @@ class AppContainer(
 
     fun openDirectory(path: Path) {
         runCatching { Desktop.getDesktop().open(path.toFile()) }
+    }
+
+    fun exportBackup(zipPath: Path): BackupExportResult {
+        persistWorkspace()
+        return BackupEngine.export(directories, zipPath, database)
+    }
+
+    fun previewBackup(zipPath: Path) = BackupEngine.preview(zipPath)
+
+    fun restoreBackup(zipPath: Path): BackupRestoreResult {
+        persistWorkspace()
+        val result = BackupEngine.restore(zipPath, directories, database)
+        val loaded = settingsRepository.load()
+        translator.setLanguage(AppLanguage.fromCode(loaded.general.language))
+        _settings.value = loaded
+        return result
     }
 
     fun persistWorkspace() {

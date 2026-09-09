@@ -126,6 +126,60 @@ fun SettingsScreen(container: AppContainer) {
                     Label(container.t("settings.dataPath"))
                     Text(container.directories.dataRoot.toString(), color = colors.textSecondary)
                     MooButton(container.t("settings.openData"), onClick = { container.openDirectory(container.directories.dataRoot) })
+                    Text(container.t("settings.backup.hint"), color = colors.textSecondary, fontSize = 12.sp)
+                    var backupNotice by remember { mutableStateOf("") }
+                    var backupError by remember { mutableStateOf("") }
+                    if (backupError.isNotBlank()) Text(backupError, color = colors.danger, fontSize = 12.sp)
+                    if (backupNotice.isNotBlank()) Text(backupNotice, color = colors.textSecondary, fontSize = 12.sp)
+                    MooButton(container.t("settings.backup.export"), onClick = {
+                        val dialog = java.awt.FileDialog(null as java.awt.Frame?, container.t("settings.backup.export"), java.awt.FileDialog.SAVE)
+                        dialog.file = com.rememberber.mootool.next.compose.storage.BackupEngine.defaultZipName()
+                        dialog.isVisible = true
+                        val directory = dialog.directory
+                        val file = dialog.file
+                        if (!directory.isNullOrBlank() && !file.isNullOrBlank()) {
+                            runCatching {
+                                val name = if (file.endsWith(".zip")) file else "$file.zip"
+                                container.exportBackup(java.nio.file.Path.of(directory, name))
+                            }.onSuccess {
+                                backupError = ""
+                                backupNotice = container.t("settings.backup.exported", mapOf("count" to it.manifest.files.size.toString()))
+                            }.onFailure {
+                                backupNotice = ""
+                                backupError = it.message ?: container.t("settings.backup.failed")
+                            }
+                        }
+                    })
+                    MooButton(container.t("settings.backup.preview"), onClick = {
+                        chooseBackupZip()?.let { zip ->
+                            runCatching { container.previewBackup(zip) }
+                                .onSuccess {
+                                    backupError = ""
+                                    backupNotice = container.t(
+                                        "settings.backup.previewResult",
+                                        mapOf("product" to it.productId, "version" to it.appVersion, "count" to it.files.size.toString())
+                                    )
+                                }
+                                .onFailure {
+                                    backupNotice = ""
+                                    backupError = it.message ?: container.t("settings.backup.failed")
+                                }
+                        }
+                    })
+                    MooButton(container.t("settings.backup.restore"), onClick = {
+                        chooseBackupZip()?.let { zip ->
+                            runCatching { container.restoreBackup(zip) }
+                                .onSuccess {
+                                    backupError = ""
+                                    backupNotice = container.t("settings.backup.restored")
+                                }
+                                .onFailure {
+                                    backupNotice = ""
+                                    backupError = it.message ?: container.t("settings.backup.failed")
+                                }
+                        }
+                    })
+                    Text(container.t("settings.backup.credentials"), color = colors.warning, fontSize = 12.sp)
                 }
                 SettingsCategory.About -> {
                     Text(ProductIdentity.DISPLAY_NAME, fontSize = 16.sp, color = colors.textPrimary)
@@ -179,4 +233,12 @@ private fun Label(text: String) {
 @Composable
 private fun Toggle(container: AppContainer, label: String, value: Boolean, onClick: () -> Unit) {
     MooButton("$label: $value", onClick = onClick)
+}
+
+private fun chooseBackupZip(): java.nio.file.Path? {
+    val dialog = java.awt.FileDialog(null as java.awt.Frame?, "Backup", java.awt.FileDialog.LOAD)
+    dialog.isVisible = true
+    val directory = dialog.directory ?: return null
+    val file = dialog.file ?: return null
+    return java.nio.file.Path.of(directory, file)
 }
