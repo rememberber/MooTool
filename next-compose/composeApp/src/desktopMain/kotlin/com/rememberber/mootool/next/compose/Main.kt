@@ -25,6 +25,7 @@ import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.app.ProductIdentity
 import com.rememberber.mootool.next.compose.features.calculator.CalculatorScreen
 import com.rememberber.mootool.next.compose.features.cron.CronScreen
+import com.rememberber.mootool.next.compose.features.diff.TextDiffScreen
 import com.rememberber.mootool.next.compose.features.encode.EncodeScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
 import com.rememberber.mootool.next.compose.features.regex.RegexScreen
@@ -97,6 +98,18 @@ fun main() = application {
                 state = windowState
             ) {
                 Workbench(container, showSidebar = true)
+            }
+        }
+
+        if (ToolId.TextDiff in detached) {
+            Window(
+                onCloseRequest = { container.sessionManager.reattach(ToolId.TextDiff) },
+                title = "${container.t("app.nav.textDiff")} · ${ProductIdentity.DISPLAY_NAME}",
+                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
+            ) {
+                MooTheme(container.themePreference(), systemDark) {
+                    TextDiffScreen(container, detached = true)
+                }
             }
         }
 

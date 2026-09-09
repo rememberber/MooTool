@@ -1,6 +1,6 @@
 # 验收标准、进度与证据
 
-> 更新：2026-09-09。P0/P1/JSON 之后已接入 F12 UA、F13 编码、F15 正则、F16 Cron、F18 时间、F21 计算器；完整产品与三平台发行仍未验收。
+> 更新：2026-09-09。P0/P1/JSON 之后已接入 F02 文本对比、F12 UA、F13 编码、F15 正则、F16 Cron、F18 时间、F21 计算器；完整产品与三平台发行仍未验收。
 
 ## 1. 状态规则
 
@@ -15,14 +15,14 @@
 | P0 | 工具链/编辑器/窗口/动态 proto 等实验 | 开发中 | 本机 Wrapper/JDK21/Compose1.12 构建与 app-image 启动见 `docs/evidence/2026-09-09-p0-p1/`。RSTA 已接入，IME/列编辑未做桌面交互验收。protoc 未捆绑。ADR-001/002/003 |
 | P1 | 桌面壳/搜索/设置基础 | 开发中 | 26 入口、搜索、modern 明暗、语言、基础设置、JSON 分离窗口代码已有；视觉截图与完整键盘流程待验收 |
 | P2 | 完整 JSON 基础工作流 | 开发中 | 仅最小切片：格式化/压缩/查找/历史/Vault CRUD/转换。Git、冲突监视、完整检查器弹层未完成，**不能标 F04 已验收** |
-| P3 | 文本与本地算法 | 开发中 | F12 UA、F13 编码、F15 正则、F16 Cron、F18 时间、F21 计算器已有引擎单测与 UI；其余 P3 工具仍显示尚未实现 |
+| P3 | 文本与本地算法 | 开发中 | F02 文本对比、F12 UA、F13 编码、F15 正则、F16 Cron、F18 时间、F21 计算器已有引擎单测与 UI；其余 P3 工具仍显示尚未实现 |
 | P4 | 媒体/加密 | 未开始 | — |
 | P5 | 网络/系统 | 未开始 | — |
 | P6 | 文档/Git/运行台/备份 | 未开始 | — |
 | P7 | 完整产品/平台安装发行验收 | 未开始 | — |
 | F00 | 首页 | 待验收 | 已实现 Compose 品牌/0.1.0/链接；无运行截图 |
 | F01 | 随手记 | 未开始 | 入口显示尚未实现 |
-| F02 | 文本对比 | 未开始 | 入口显示尚未实现 |
+| F02 | 文本对比 | 待验收 | 行/字符 Myers 差异、三种高亮、忽略空白、统一补丁、上/下差异、导入/复制/清空/交换、历史与分离窗口。与 Electron `diff` 样本对齐。无运行截图 |
 | F03 | 格式化 | 未开始 | 入口显示尚未实现 |
 | F04 | JSON | 开发中 | 算法 7 项单测通过；UI 切片已能启动；非完整 F04 |
 | F05 | 代码运行 | 未开始 | 入口显示尚未实现 |
@@ -47,7 +47,7 @@
 | F24 | PDF | 未开始 | 入口显示尚未实现 |
 | F25 | 系统信息 | 未开始 | 入口显示尚未实现 |
 | A01 | 11 类设置 | 开发中 | general/appearance/layout/editor/data/about 基础项生效；其余类别明确未实现 |
-| A02 | 历史/收藏/搜索 | 开发中 | JSON、编码、UA、正则、Cron、时间转换与计算器历史已有；正则/Cron 收藏已落地；调色板收藏未做 |
+| A02 | 历史/收藏/搜索 | 开发中 | JSON、编码、UA、正则、Cron、文本对比、时间转换与计算器历史已有；正则/Cron 收藏已落地；调色板收藏未做 |
 | A03 | 桌面/存储/备份/Git/更新 | 开发中 | 独立路径与 SQLite 已有；备份/Git/更新未做 |
 
 ## 3. 工程检查入口
@@ -66,7 +66,7 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 21)"   # macOS 示例
 ./gradlew :composeApp:packageDistributionForCurrentOS
 ```
 
-本机 2026-09-09 结果：F16 接入后 `desktopTest` **44/44** 通过（含 CronEngine 4、Cron 收藏持久化 1；此前 F15 为 39/39）。`createDistributable` 此前生成 `MooTool Next Compose.app`；本轮未重跑打包。`runDistributable` 与 `packageDistributionForCurrentOS` 未跑完。
+本机 2026-09-09 结果：F02 接入后 `desktopTest` **50/50** 通过（含 DiffEngine 6；此前 F16 为 44/44）。`createDistributable` 此前生成 `MooTool Next Compose.app`；本轮未重跑打包。`runDistributable` 与 `packageDistributionForCurrentOS` 未跑完。
 
 测试层级：
 
@@ -109,7 +109,7 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 21)"   # macOS 示例
 
 ## 7. 证据记录模板
 
-后续每阶段建立 `docs/evidence/YYYY-MM-DD-阶段/`。见 `docs/evidence/2026-09-09-p0-p1/`、`docs/evidence/2026-09-09-f18/`、`docs/evidence/2026-09-09-f21/`、`docs/evidence/2026-09-09-f13/`、`docs/evidence/2026-09-09-f12/`、`docs/evidence/2026-09-09-f15/`、`docs/evidence/2026-09-09-f16/`。
+后续每阶段建立 `docs/evidence/YYYY-MM-DD-阶段/`。见 `docs/evidence/2026-09-09-p0-p1/`、`docs/evidence/2026-09-09-f18/`、`docs/evidence/2026-09-09-f21/`、`docs/evidence/2026-09-09-f13/`、`docs/evidence/2026-09-09-f12/`、`docs/evidence/2026-09-09-f15/`、`docs/evidence/2026-09-09-f16/`、`docs/evidence/2026-09-09-f02/`。
 
 ## 8. 完成定义
 

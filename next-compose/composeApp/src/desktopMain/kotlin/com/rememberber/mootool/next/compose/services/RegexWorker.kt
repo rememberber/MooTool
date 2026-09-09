@@ -51,15 +51,20 @@ class RegexWorkerClient(
 
     fun match(pattern: String, source: String, options: RegexOptions, maxMatches: Int = RegexEngine.DEFAULT_MAX_MATCHES): RegexWorkerResponse {
         val java = javaBinary(javaHome)
-        val builder = ProcessBuilder(
-            java.toString(),
-            "-Xmx64m",
-            "-Dfile.encoding=UTF-8",
-            "-cp",
-            classpath,
-            RegexWorker::class.java.name
+        val argFile = Files.createTempFile("regex-worker", ".args")
+        val errFile = Files.createTempFile("regex-worker", ".err")
+        Files.writeString(
+            argFile,
+            buildString {
+                appendLine("-Xmx64m")
+                appendLine("-Dfile.encoding=UTF-8")
+                appendLine("-cp")
+                appendLine(quoteArgument(classpath))
+                appendLine(RegexWorker::class.java.name)
+            }
         )
-        builder.redirectError(ProcessBuilder.Redirect.DISCARD)
+        val builder = ProcessBuilder(java.toString(), "@${argFile.toAbsolutePath()}")
+        builder.redirectError(errFile.toFile())
         synchronized(lock) { cancelled = false }
         val process = builder.start()
         synchronized(lock) { current = process }
@@ -80,11 +85,18 @@ class RegexWorkerClient(
                 return RegexWorkerResponse(ok = false, code = "timeout", error = "timeout")
             }
             val output = process.inputStream.bufferedReader(Charsets.UTF_8).readText()
+            val err = runCatching { Files.readString(errFile) }.getOrDefault("").trim()
             if (process.exitValue() != 0 && output.isBlank()) {
-                return RegexWorkerResponse(ok = false, code = "failed", error = "worker-exit-${process.exitValue()}")
+                return RegexWorkerResponse(ok = false, code = "failed", error = "worker-exit-${process.exitValue()} ${err.take(300)}")
             }
             return runCatching { codec.decodeFromString<RegexWorkerResponse>(output) }
-                .getOrElse { RegexWorkerResponse(ok = false, code = "failed", error = output.take(300).ifBlank { it.message ?: "failed" }) }
+                .getOrElse {
+                    RegexWorkerResponse(
+                        ok = false,
+                        code = "failed",
+                        error = output.take(300).ifBlank { listOfNotNull(it.message, err.take(200)).joinToString(" ").ifBlank { "failed" } }
+                    )
+                }
         } catch (error: Exception) {
             process.destroyForcibly()
             return RegexWorkerResponse(ok = false, code = "worker-unavailable", error = error.message ?: "worker-unavailable")
@@ -92,6 +104,8 @@ class RegexWorkerClient(
             synchronized(lock) {
                 if (current === process) current = null
             }
+            Files.deleteIfExists(argFile)
+            Files.deleteIfExists(errFile)
         }
     }
 
@@ -108,6 +122,11 @@ class RegexWorkerClient(
             val executable = Path.of(javaHome, "bin", name)
             check(Files.isRegularFile(executable)) { "Bundled Java not found: $executable" }
             return executable
+        }
+
+        private fun quoteArgument(value: String): String {
+            if (value.none { it.isWhitespace() }) return value
+            return "\"" + value.replace("\\", "\\\\").replace("\"", "\\\"") + "\""
         }
     }
 }

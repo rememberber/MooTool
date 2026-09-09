@@ -25,7 +25,7 @@ object ToolRegistry {
     val tools: List<ToolDefinition> = listOf(
         tool(ToolId.Mootool, ToolGroupId.Home, "app.nav.home", "⌂", listOf("home", "about", "首页", "主页", "ホーム")),
         tool(ToolId.QuickNote, ToolGroupId.Text, "app.nav.quickNote", "✎", listOf("note", "memo", "markdown", "随手记", "笔记")),
-        tool(ToolId.TextDiff, ToolGroupId.Text, "app.nav.textDiff", "⇄", listOf("diff", "compare", "对比")),
+        tool(ToolId.TextDiff, ToolGroupId.Text, "app.nav.textDiff", "⇄", listOf("diff", "compare", "对比"), ToolStatus.Available),
         tool(ToolId.Reformat, ToolGroupId.Text, "app.nav.reformat", "✦", listOf("format", "java", "xml", "html", "格式化")),
         tool(ToolId.Json, ToolGroupId.Dev, "app.nav.json", "{}", listOf("json", "xml", "javabean", "jsonpath", "格式化"), ToolStatus.Available),
         tool(ToolId.Java, ToolGroupId.Dev, "app.nav.java", ">_", listOf("java", "groovy", "python", "node", "运行")),

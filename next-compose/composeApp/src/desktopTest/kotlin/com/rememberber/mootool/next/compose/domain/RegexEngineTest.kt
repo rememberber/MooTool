@@ -67,7 +67,7 @@ class RegexWorkerClientTest {
     fun workerMatchesAndKillsCatastrophicBacktracking() {
         val client = RegexWorkerClient(timeoutMs = 800)
         val ok = client.match("(moo)(\\d+)", "moo1 moo22", RegexOptions(global = true))
-        assertTrue(ok.ok)
+        assertTrue(ok.ok, "worker failed: code=${ok.code} error=${ok.error}")
         assertEquals(2, ok.matches.size)
         assertEquals(RegexEngine.ENGINE_NAME, ok.engine)
         val started = System.currentTimeMillis()

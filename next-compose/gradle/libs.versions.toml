@@ -11,6 +11,7 @@ slf4j = "2.0.17"
 junit = "4.13.2"
 uapJava = "1.6.1"
 cronUtils = "9.2.1"
+javaDiffUtils = "4.15"
 
 [libraries]
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
@@ -34,6 +35,7 @@ rsyntaxtextarea = { module = "com.fifesoft:rsyntaxtextarea", version.ref = "rsyn
 slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4j" }
 uap-java = { module = "com.github.ua-parser:uap-java", version.ref = "uapJava" }
 cron-utils = { module = "com.cronutils:cron-utils", version.ref = "cronUtils" }
+java-diff-utils = { module = "io.github.java-diff-utils:java-diff-utils", version.ref = "javaDiffUtils" }
 junit = { module = "junit:junit", version.ref = "junit" }
 
 [plugins]

@@ -34,6 +34,7 @@ import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.app.ToolRegistry
 import com.rememberber.mootool.next.compose.features.calculator.CalculatorScreen
 import com.rememberber.mootool.next.compose.features.cron.CronScreen
+import com.rememberber.mootool.next.compose.features.diff.TextDiffScreen
 import com.rememberber.mootool.next.compose.features.encode.EncodeScreen
 import com.rememberber.mootool.next.compose.features.home.HomeScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
@@ -88,6 +89,10 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
             when {
                 showSettings -> SettingsScreen(container)
                 active == ToolId.Mootool -> HomeScreen(container)
+                active == ToolId.TextDiff && !detached.contains(ToolId.TextDiff) ->
+                    TextDiffScreen(container, detached = false)
+                active == ToolId.TextDiff && detached.contains(ToolId.TextDiff) ->
+                    DetachedNotice(container, ToolId.TextDiff)
                 active == ToolId.Json && !detached.contains(ToolId.Json) -> JsonScreen(container, detached = false)
                 active == ToolId.Json && detached.contains(ToolId.Json) -> DetachedNotice(container, ToolId.Json)
                 active == ToolId.TimeConvert && !detached.contains(ToolId.TimeConvert) ->

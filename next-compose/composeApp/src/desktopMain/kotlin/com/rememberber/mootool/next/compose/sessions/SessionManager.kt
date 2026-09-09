@@ -4,6 +4,9 @@ import com.rememberber.mootool.next.compose.domain.AsciiFormat
 import com.rememberber.mootool.next.compose.domain.EncodeTab
 import com.rememberber.mootool.next.compose.domain.FindReplaceOptions
 import com.rememberber.mootool.next.compose.domain.JsonFormatOptions
+import com.rememberber.mootool.next.compose.domain.DiffEngine
+import com.rememberber.mootool.next.compose.domain.DiffResult
+import com.rememberber.mootool.next.compose.domain.DiffSegment
 import com.rememberber.mootool.next.compose.domain.CronFields
 import com.rememberber.mootool.next.compose.domain.CronEngine
 import com.rememberber.mootool.next.compose.domain.RegexMatch
@@ -459,6 +462,46 @@ class CronSession {
     }
 }
 
+@Serializable
+data class DiffSessionSnapshot(
+    val left: String = "MooTool\nquiet desktop tools\nold line\n",
+    val right: String = "MooTool\nquiet desktop toolkit\nnew line\n",
+    val mode: String = "side",
+    val highlightMode: String = "both",
+    val ignoreWhitespace: Boolean = false
+)
+
+class DiffSession {
+    var left: String = "MooTool\nquiet desktop tools\nold line\n"
+    var right: String = "MooTool\nquiet desktop toolkit\nnew line\n"
+    var mode: String = "side"
+    var highlightMode: String = "both"
+    var ignoreWhitespace: Boolean = false
+    var result: DiffResult = DiffEngine.compare(left, right, false)
+    var historyOpen: Boolean = false
+    var notice: String = ""
+    var navIndex: Int = -1
+    var compareGeneration: Long = 0
+
+    fun snapshot(): DiffSessionSnapshot = DiffSessionSnapshot(left, right, mode, highlightMode, ignoreWhitespace)
+
+    fun restore(snapshot: DiffSessionSnapshot) {
+        left = snapshot.left
+        right = snapshot.right
+        mode = snapshot.mode
+        highlightMode = snapshot.highlightMode
+        ignoreWhitespace = snapshot.ignoreWhitespace
+        result = DiffEngine.compare(left, right, ignoreWhitespace)
+        historyOpen = false
+        notice = ""
+        navIndex = -1
+        compareGeneration += 1
+    }
+
+    fun visibleSegments(): List<DiffSegment> =
+        if (highlightMode == "characters") result.segments.filter { !it.wholeLine } else result.segments
+}
+
 enum class WindowRole { Main, Detached }
 
 data class HostedSession(
@@ -475,6 +518,7 @@ class SessionManager(private val store: SessionStore) {
     private var uaSessionCache: UaSession? = null
     private var regexSessionCache: RegexSession? = null
     private var cronSessionCache: CronSession? = null
+    private var diffSessionCache: DiffSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
     val detached: StateFlow<Set<ToolId>> = _detached
     private val _revision = MutableStateFlow(0L)
@@ -588,6 +632,22 @@ class SessionManager(private val store: SessionStore) {
 
     fun persistCron() {
         store.save(ToolId.Cron.id, jsonCodec.encodeToString(cronSession().snapshot()))
+    }
+
+    fun diffSession(): DiffSession {
+        diffSessionCache?.let { return it }
+        val session = DiffSession()
+        store.load(ToolId.TextDiff.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<DiffSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        }
+        diffSessionCache = session
+        return session
+    }
+
+    fun persistDiff() {
+        store.save(ToolId.TextDiff.id, jsonCodec.encodeToString(diffSession().snapshot()))
     }
 
     fun detach(toolId: ToolId) {

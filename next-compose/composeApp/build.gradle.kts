@@ -59,6 +59,7 @@ kotlin {
                 implementation(libs.slf4j.nop)
                 implementation(libs.uap.java)
                 implementation(libs.cron.utils)
+                implementation(libs.java.diff.utils)
             }
         }
         val desktopTest by getting {
