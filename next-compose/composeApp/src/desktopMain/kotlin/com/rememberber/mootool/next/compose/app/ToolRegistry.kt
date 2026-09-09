@@ -45,7 +45,7 @@ object ToolRegistry {
         tool(ToolId.MessageBoard, ToolGroupId.Daily, "app.nav.messageBoard", "✉", listOf("message", "board", "留言")),
         tool(ToolId.Translation, ToolGroupId.Daily, "app.nav.translation", "文", listOf("translate", "word", "翻译")),
         tool(ToolId.Calculator, ToolGroupId.Daily, "app.nav.calculator", "=", listOf("calculator", "calc", "计算"), ToolStatus.Available),
-        tool(ToolId.ColorBoard, ToolGroupId.Daily, "app.nav.colorBoard", "◐", listOf("color", "palette", "调色")),
+        tool(ToolId.ColorBoard, ToolGroupId.Daily, "app.nav.colorBoard", "◐", listOf("color", "palette", "调色"), ToolStatus.Available),
         tool(ToolId.Image, ToolGroupId.Daily, "app.nav.image", "▣", listOf("image", "图片")),
         tool(ToolId.Pdf, ToolGroupId.Daily, "app.nav.pdf", "▤", listOf("pdf", "merge", "拆分")),
         tool(ToolId.Hardware, ToolGroupId.System, "app.nav.hardware", "⚙", listOf("hardware", "system", "cpu", "系统"))

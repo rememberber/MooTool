@@ -34,6 +34,7 @@ import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.app.ToolRegistry
 import com.rememberber.mootool.next.compose.features.calculator.CalculatorScreen
 import com.rememberber.mootool.next.compose.features.config.ConfigConvertScreen
+import com.rememberber.mootool.next.compose.features.color.ColorBoardScreen
 import com.rememberber.mootool.next.compose.features.crypto.CryptoScreen
 import com.rememberber.mootool.next.compose.features.cron.CronScreen
 import com.rememberber.mootool.next.compose.features.diff.TextDiffScreen
@@ -144,6 +145,10 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
                     QrCodeScreen(container, detached = false)
                 active == ToolId.QrCode && detached.contains(ToolId.QrCode) ->
                     DetachedNotice(container, ToolId.QrCode)
+                active == ToolId.ColorBoard && !detached.contains(ToolId.ColorBoard) ->
+                    ColorBoardScreen(container, detached = false)
+                active == ToolId.ColorBoard && detached.contains(ToolId.ColorBoard) ->
+                    DetachedNotice(container, ToolId.ColorBoard)
                 else -> PlaceholderScreen(container, active)
             }
         }

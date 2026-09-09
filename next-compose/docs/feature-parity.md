@@ -308,7 +308,7 @@ Tab：翻译、单词本、历史；源/目标语言、Google/Bing、交换、�
 - 运算五种：invert、intersect、add、difference、average；语义按函数逐通道实现，保留边界截断规则。
 - 屏幕取色显示放大像素/位置/颜色，Esc 取消还原；本身遮罩不影响采样；多屏负坐标与 DPI 处理。
 - 输出颜色空间明确，初版用 sRGB；ICC/广色域影响需实测，不直接把所有屏幕原始值当一致色彩。
-- 验收：颜色格式往返、上下界/运算、收藏、真实屏幕取色/拒绝权限/多屏。
+- 验收：颜色格式往返、上下界/运算、收藏、真实屏幕取色/拒绝权限/多屏。屏幕取色使用 AWT Robot 冻结截图而非 Electron `desktopCapturer`，见 [DIFF-010](diff/010-color-screen-picker.md)。
 
 ### F23 图片助手
 

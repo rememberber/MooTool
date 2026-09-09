@@ -18,9 +18,13 @@ import com.rememberber.mootool.next.compose.domain.DigestAlgorithm
 import com.rememberber.mootool.next.compose.domain.SymmetricAlgorithm
 import com.rememberber.mootool.next.compose.domain.ProtobufBinaryFormat
 import com.rememberber.mootool.next.compose.domain.ProtobufEngine
+import com.rememberber.mootool.next.compose.domain.ColorEngine
+import com.rememberber.mootool.next.compose.domain.ColorFormat
+import com.rememberber.mootool.next.compose.domain.ColorThemeId
 import com.rememberber.mootool.next.compose.domain.QrEngine
 import com.rememberber.mootool.next.compose.domain.QrErrorCorrection
 import com.rememberber.mootool.next.compose.domain.QrTab
+import com.rememberber.mootool.next.compose.domain.RgbColor
 import com.rememberber.mootool.next.compose.domain.CronFields
 import com.rememberber.mootool.next.compose.domain.CronEngine
 import com.rememberber.mootool.next.compose.domain.RegexMatch
@@ -848,6 +852,66 @@ class QrSession {
     }
 }
 
+@Serializable
+data class ColorSessionSnapshot(
+    val primaryHex: String = "#DE8F7D",
+    val secondaryHex: String = "#4F83CC",
+    val format: String = "HEX_UPPER",
+    val code: String = "#DE8F7D",
+    val theme: String = "default",
+    val favoriteName: String = "",
+    val favoriteFolderId: String = ""
+)
+
+class ColorSession {
+    var primary: RgbColor = ColorEngine.DEFAULT_PRIMARY
+    var secondary: RgbColor = ColorEngine.DEFAULT_SECONDARY
+    var format: ColorFormat = ColorFormat.HEX_UPPER
+    var code: String = ColorEngine.formatColor(ColorEngine.DEFAULT_PRIMARY, ColorFormat.HEX_UPPER)
+    var theme: ColorThemeId = ColorThemeId.Default
+    var favoriteName: String = ""
+    var favoriteFolderId: String = ""
+    var folderTitle: String = ""
+    var historyOpen: Boolean = false
+    var favoritesOpen: Boolean = false
+    var saveFavoriteOpen: Boolean = false
+    var picking: Boolean = false
+    var historyTick: Long = 0
+    var notice: String = ""
+    var error: String = ""
+
+    val primaryHex: String get() = ColorEngine.formatColor(primary, ColorFormat.HEX_UPPER)
+    val secondaryHex: String get() = ColorEngine.formatColor(secondary, ColorFormat.HEX_UPPER)
+
+    fun snapshot(): ColorSessionSnapshot = ColorSessionSnapshot(
+        primaryHex = primaryHex,
+        secondaryHex = secondaryHex,
+        format = format.name,
+        code = code,
+        theme = ColorEngine.canonicalThemeId(theme),
+        favoriteName = favoriteName,
+        favoriteFolderId = favoriteFolderId
+    )
+
+    fun restore(snapshot: ColorSessionSnapshot) {
+        primary = runCatching { ColorEngine.parseColor(snapshot.primaryHex) }.getOrDefault(ColorEngine.DEFAULT_PRIMARY)
+        secondary = runCatching { ColorEngine.parseColor(snapshot.secondaryHex) }.getOrDefault(ColorEngine.DEFAULT_SECONDARY)
+        format = ColorFormat.entries.find { it.name.equals(snapshot.format, ignoreCase = true) } ?: ColorFormat.HEX_UPPER
+        code = snapshot.code.ifBlank { ColorEngine.formatColor(primary, format) }
+        theme = ColorEngine.themeId(snapshot.theme)
+        favoriteName = snapshot.favoriteName
+        favoriteFolderId = snapshot.favoriteFolderId
+        folderTitle = ""
+        historyOpen = false
+        favoritesOpen = false
+        saveFavoriteOpen = false
+        picking = false
+        historyTick = 0
+        notice = ""
+        error = ""
+    }
+}
+
 enum class WindowRole { Main, Detached }
 
 data class HostedSession(
@@ -870,6 +934,7 @@ class SessionManager(private val store: SessionStore) {
     private var protobufSessionCache: ProtobufSession? = null
     private var cryptoSessionCache: CryptoSession? = null
     private var qrSessionCache: QrSession? = null
+    private var colorSessionCache: ColorSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
     val detached: StateFlow<Set<ToolId>> = _detached
     private val _revision = MutableStateFlow(0L)
@@ -1086,6 +1151,22 @@ class SessionManager(private val store: SessionStore) {
 
     fun persistQr() {
         store.save(ToolId.QrCode.id, jsonCodec.encodeToString(qrSession().snapshot()))
+    }
+
+    fun colorSession(): ColorSession {
+        colorSessionCache?.let { return it }
+        val session = ColorSession()
+        store.load(ToolId.ColorBoard.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<ColorSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        }
+        colorSessionCache = session
+        return session
+    }
+
+    fun persistColor() {
+        store.save(ToolId.ColorBoard.id, jsonCodec.encodeToString(colorSession().snapshot()))
     }
 
     fun detach(toolId: ToolId) {

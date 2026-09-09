@@ -9,6 +9,7 @@ import com.rememberber.mootool.next.compose.sessions.SessionManager
 import com.rememberber.mootool.next.compose.storage.AppDatabase
 import com.rememberber.mootool.next.compose.storage.HistoryRepository
 import com.rememberber.mootool.next.compose.storage.JsonVault
+import com.rememberber.mootool.next.compose.storage.ColorFavoriteStore
 import com.rememberber.mootool.next.compose.storage.CronFavoriteStore
 import com.rememberber.mootool.next.compose.storage.RegexFavoriteStore
 import com.rememberber.mootool.next.compose.storage.SessionStore
@@ -33,6 +34,7 @@ class AppContainer(
 ) {
     val regexFavorites = RegexFavoriteStore(directories)
     val cronFavorites = CronFavoriteStore(directories)
+    val colorFavorites = ColorFavoriteStore(directories)
     val regexWorker = RegexWorkerClient()
     val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     val translator = Translator(AppLanguage.fromCode(settingsRepository.current.general.language))
@@ -109,6 +111,7 @@ class AppContainer(
         sessionManager.persistProtobuf()
         sessionManager.persistCrypto()
         sessionManager.persistQr()
+        sessionManager.persistColor()
         settingsRepository.save(_settings.value)
     }
 
