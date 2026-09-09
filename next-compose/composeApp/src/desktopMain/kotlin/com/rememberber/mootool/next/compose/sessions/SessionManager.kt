@@ -26,6 +26,7 @@ import com.rememberber.mootool.next.compose.domain.ColorThemeId
 import com.rememberber.mootool.next.compose.domain.MessageBoardEngine
 import com.rememberber.mootool.next.compose.domain.HardwareSnapshot
 import com.rememberber.mootool.next.compose.domain.HardwareTab
+import com.rememberber.mootool.next.compose.domain.NetworkAction
 import com.rememberber.mootool.next.compose.domain.ImageOutputFormat
 import com.rememberber.mootool.next.compose.domain.ImageOutputMode
 import com.rememberber.mootool.next.compose.domain.ImageSvgDetail
@@ -51,6 +52,10 @@ import com.rememberber.mootool.next.compose.domain.UrlCharset
 import com.rememberber.mootool.next.compose.editor.EditorBuffer
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.storage.SessionStore
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
@@ -1144,6 +1149,72 @@ class ImageSession {
 }
 
 @Serializable
+data class NetSessionSnapshot(
+    val ipv4: String = "127.0.0.1",
+    val longValue: String = "2130706433",
+    val pingTarget: String = "127.0.0.1",
+    val ipRange: String = "192.168.10",
+    val portScanTarget: String = "127.0.0.1",
+    val portSpec: String = "",
+    val hostTarget: String = "localhost",
+    val whoisTarget: String = "example.com",
+    val output: String = "",
+    val ipv4Addresses: String = "",
+    val ipv6Addresses: String = ""
+)
+
+class NetSession {
+    val commandScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
+    var ipv4: String = "127.0.0.1"
+    var longValue: String = "2130706433"
+    var pingTarget: String = "127.0.0.1"
+    var ipRange: String = "192.168.10"
+    var portScanTarget: String = "127.0.0.1"
+    var portSpec: String = ""
+    var hostTarget: String = "localhost"
+    var whoisTarget: String = "example.com"
+    var output: String = ""
+    var ipv4Addresses: String = ""
+    var ipv6Addresses: String = ""
+    var running: NetworkAction? = null
+    var error: String = ""
+    var notice: String = ""
+    var historyOpen: Boolean = false
+
+    fun snapshot(): NetSessionSnapshot = NetSessionSnapshot(
+        ipv4 = ipv4,
+        longValue = longValue,
+        pingTarget = pingTarget,
+        ipRange = ipRange,
+        portScanTarget = portScanTarget,
+        portSpec = portSpec,
+        hostTarget = hostTarget,
+        whoisTarget = whoisTarget,
+        output = output.take(256_000),
+        ipv4Addresses = ipv4Addresses,
+        ipv6Addresses = ipv6Addresses
+    )
+
+    fun restore(snapshot: NetSessionSnapshot) {
+        ipv4 = snapshot.ipv4
+        longValue = snapshot.longValue
+        pingTarget = snapshot.pingTarget
+        ipRange = snapshot.ipRange
+        portScanTarget = snapshot.portScanTarget
+        portSpec = snapshot.portSpec
+        hostTarget = snapshot.hostTarget
+        whoisTarget = snapshot.whoisTarget
+        output = snapshot.output
+        ipv4Addresses = snapshot.ipv4Addresses
+        ipv6Addresses = snapshot.ipv6Addresses
+        running = null
+        error = ""
+        notice = ""
+        historyOpen = false
+    }
+}
+
+@Serializable
 data class HardwareSessionSnapshot(
     val tab: String = "system",
     val revealSensitive: Boolean = false
@@ -1196,6 +1267,7 @@ class SessionManager(private val store: SessionStore) {
     private var messageBoardSessionCache: MessageBoardSession? = null
     private var pdfSessionCache: PdfSession? = null
     private var imageSessionCache: ImageSession? = null
+    private var netSessionCache: NetSession? = null
     private var hardwareSessionCache: HardwareSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
     val detached: StateFlow<Set<ToolId>> = _detached
@@ -1477,6 +1549,27 @@ class SessionManager(private val store: SessionStore) {
 
     fun persistImage() {
         store.save(ToolId.Image.id, jsonCodec.encodeToString(imageSession().snapshot()))
+    }
+
+    fun netSession(): NetSession {
+        netSessionCache?.let { return it }
+        val session = NetSession()
+        store.load(ToolId.Net.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<NetSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        }
+        netSessionCache = session
+        return session
+    }
+
+    fun persistNet() {
+        store.save(ToolId.Net.id, jsonCodec.encodeToString(netSession().snapshot()))
+    }
+
+    fun cancelNetCommands() {
+        netSessionCache?.commandScope?.cancel()
+        netSessionCache?.running = null
     }
 
     fun hardwareSession(): HardwareSession {

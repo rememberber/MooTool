@@ -199,7 +199,7 @@ JSON 文本编辑保留大整数与小数字面量；不能先转 Double 再声�
 - 输出可选择/复制，命令流式展示可停止；主机名与参数以 argv 传递。
 - IPv4 0/最大值/越界/非法段正确；IPv6 在 DNS/本机地址结果保留，不强行进入 IPv4 数值转换。
 - 命令/WHOIS 服务不存在或离线时显示真实原因，不填示例 IP。
-- 验收：localhost、受控 DNS、本机地址、停止 ping、无网/超时/非法主机名与中文系统输出。
+- 验收：localhost、受控 DNS、本机地址、停止 ping、无网/超时/非法主机名与中文系统输出。命令经 argv 启动，DNS 用 `InetAddress`，子进程编码见 [DIFF-015](diff/015-net-process-charset.md)。
 
 ### F12 UA 分析
 

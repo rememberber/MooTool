@@ -30,6 +30,7 @@ class ToolRegistryTest {
         assertTrue(!ToolRegistry.byId.getValue(ToolId.MessageBoard).supportsHistory)
         assertTrue(ToolRegistry.byId.getValue(ToolId.Pdf).status.name == "Available")
         assertTrue(ToolRegistry.byId.getValue(ToolId.Image).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.Net).status.name == "Available")
         assertTrue(ToolRegistry.byId.getValue(ToolId.Hardware).status.name == "Available")
         assertTrue(!ToolRegistry.byId.getValue(ToolId.Hardware).supportsHistory)
     }

@@ -119,6 +119,7 @@ class AppContainer(
         sessionManager.persistMessageBoard()
         sessionManager.persistPdf()
         sessionManager.persistImage()
+        sessionManager.persistNet()
         sessionManager.persistHardware()
         settingsRepository.save(_settings.value)
     }
@@ -126,6 +127,7 @@ class AppContainer(
     fun close() {
         regexWorker.cancel()
         displayWake.releaseAll()
+        sessionManager.cancelNetCommands()
         persistWorkspace()
         database.close()
     }
