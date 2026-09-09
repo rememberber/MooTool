@@ -165,6 +165,10 @@ class MainFlutterWindow: NSWindow, NSWindowDelegate {
     DesktopRuntime.shared.channel?.invokeMethod("trayAction", arguments: "color")
   }
 
+  @objc func quitFromTray() {
+    NSApp.terminate(nil)
+  }
+
   private func captureScreenPng() -> Data? {
     let wasVisible = isVisible && !isMiniaturized
     if wasVisible {

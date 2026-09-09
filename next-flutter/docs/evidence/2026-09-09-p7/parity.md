@@ -5,7 +5,7 @@
 已知差异：
 
 - 仓库 `update-manifest.json` 尚未增加 `next-flutter` 节点（等资产可访问）。
-- 本机未构建 DMG/exe/deb。
+- 本机已产出未签名 `MooTool-Next-Flutter-0.1.0-mac-x64.dmg`（见 `docs/evidence/2026-09-09-p7b/`）；Windows/Linux 未在本机构建。
 - AppImage / Windows setup.exe 依赖 CI 上的 appimagetool / Inno Setup，缺工具时脚本跳过该产物并说明。
 - 未做五产品并存实机安装/卸载。
 - 仍无第二 Flutter engine。

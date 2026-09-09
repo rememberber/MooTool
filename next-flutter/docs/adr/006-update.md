@@ -1,6 +1,6 @@
 # ADR 006：更新与安装包
 
-- 状态：采纳（客户端与打包脚本已落地；本机未产出安装包，未改仓库 `update-manifest.json`，未创建 GitHub Release）
+- 状态：采纳（客户端与打包脚本已落地；本机已产出未签名 macOS x64 DMG；未改仓库 `update-manifest.json`，未创建 GitHub Release）
 - 日期：2026-09-09
 
 ## 决定
@@ -15,6 +15,5 @@
 
 ## 未验证
 
-- 本机无完整 Xcode，`scripts/build-macos.sh` 会诚实失败。
 - Windows / Linux 安装包未在本机构建。
-- 未跑 tag 发布流水线，未实机安装/卸载。
+- 未跑 tag 发布流水线，未实机拖入 /Applications 安装与卸载。

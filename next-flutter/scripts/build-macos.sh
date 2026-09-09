@@ -9,8 +9,29 @@ if ! command -v flutter >/dev/null; then
   exit 1
 fi
 
-if ! command -v xcodebuild >/dev/null || ! xcodebuild -version >/dev/null 2>&1; then
-  echo "Complete Xcode is required to build a macOS .app/.dmg. This host only has Command Line Tools or xcodebuild failed." >&2
+# Prefer a full Xcode.app even when xcode-select still points at Command Line Tools.
+if [[ -z "${DEVELOPER_DIR:-}" ]]; then
+  if [[ -d /Applications/Xcode.app/Contents/Developer ]]; then
+    export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer
+  elif [[ -d "${HOME}/Applications/Xcode.app/Contents/Developer" ]]; then
+    export DEVELOPER_DIR="${HOME}/Applications/Xcode.app/Contents/Developer"
+  fi
+fi
+if [[ -n "${DEVELOPER_DIR:-}" ]]; then
+  export PATH="${DEVELOPER_DIR}/usr/bin:$PATH"
+fi
+
+if ! command -v xcodebuild >/dev/null; then
+  echo "xcodebuild not found." >&2
+  exit 1
+fi
+if ! xcodebuild -version >/dev/null 2>&1; then
+  echo "Xcode is installed but not ready. Agree to the license and finish first launch:" >&2
+  echo "  sudo xcodebuild -license accept" >&2
+  echo "  sudo xcodebuild -runFirstLaunch" >&2
+  echo "Active developer dir: $(xcode-select -p 2>/dev/null || true)" >&2
+  echo "DEVELOPER_DIR=${DEVELOPER_DIR:-unset}" >&2
+  xcodebuild -version >&2 || true
   exit 1
 fi
 

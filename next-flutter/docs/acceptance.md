@@ -60,7 +60,7 @@ performance.json    # 如本轮有性能测试，含原始测量
 | F25 | hardware / 系统信息 | 开发中 | Platform/内存/网卡真实采集；非 systeminformation 全量；CPU% 未做 |
 | A01 | 11 类设置 | 开发中 | 11 类页可持久化；六种风格有独立 token；关闭 hide 无托盘时改为询问；托盘/截图/取色 Swift 未用 Xcode 验证 |
 | A02 | 历史/收藏/搜索 | 开发中 | JSON 与本地工具历史；regex/cron/color 收藏入口；⌘K 搜索 |
-| A03 | 数据/Git/窗口/平台/更新 | 开发中 | 原子 workspace、损坏保护、快照备份、分离 ID 持久化；关闭策略走 DesktopHost；更新只读 next-flutter，下载校验后手动打开安装包；未签名；真实第二 engine 未做 |
+| A03 | 数据/Git/窗口/平台/更新 | 开发中 | 更新只读 next-flutter；本机未签名 mac-x64 DMG 已构建（p7b）；Windows/Linux 包与清单节点未做 |
 
 每个复杂工具再维护子能力状态。比如随手记正文编辑完成、列编辑未完成时，F01 不能标记已验收。
 

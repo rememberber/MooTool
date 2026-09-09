@@ -50,7 +50,7 @@ flutter run -d macos -- --data-dir /tmp/mootool-next-flutter-dev
 
 ```bash
 python3 scripts/check-release.py --root .
-./scripts/package.sh macos     # 需要完整 Xcode；本机 Command Line Tools 会失败
+./scripts/package.sh macos     # 使用 /Applications/Xcode.app（即使 xcode-select 仍指向 CLT）
 ./scripts/package.sh windows   # 在 Windows 上
 ./scripts/package.sh linux     # 在 Linux 上
 ```
