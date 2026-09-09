@@ -1,6 +1,6 @@
 # 验收标准、进度与证据
 
-> 更新：2026-09-09。P0/P1/JSON 切片已在 Intel macOS 开发机落地；完整产品与三平台发行仍未验收。
+> 更新：2026-09-09。P0/P1/JSON 切片之后，F18 时间转换已接入引擎、工作区与历史；完整产品与三平台发行仍未验收。
 
 ## 1. 状态规则
 
@@ -15,7 +15,7 @@
 | P0 | 工具链/编辑器/窗口/动态 proto 等实验 | 开发中 | 本机 Wrapper/JDK21/Compose1.12 构建与 app-image 启动见 `docs/evidence/2026-09-09-p0-p1/`。RSTA 已接入，IME/列编辑未做桌面交互验收。protoc 未捆绑。ADR-001/002/003 |
 | P1 | 桌面壳/搜索/设置基础 | 开发中 | 26 入口、搜索、modern 明暗、语言、基础设置、JSON 分离窗口代码已有；视觉截图与完整键盘流程待验收 |
 | P2 | 完整 JSON 基础工作流 | 开发中 | 仅最小切片：格式化/压缩/查找/历史/Vault CRUD/转换。Git、冲突监视、完整检查器弹层未完成，**不能标 F04 已验收** |
-| P3 | 文本与本地算法 | 未开始 | — |
+| P3 | 文本与本地算法 | 开发中 | 仅 F18 时间转换有引擎单测与 UI；其余 P3 工具仍显示尚未实现 |
 | P4 | 媒体/加密 | 未开始 | — |
 | P5 | 网络/系统 | 未开始 | — |
 | P6 | 文档/Git/运行台/备份 | 未开始 | — |
@@ -38,7 +38,7 @@
 | F15 | 正则 | 未开始 | 入口显示尚未实现 |
 | F16 | Cron | 未开始 | 入口显示尚未实现 |
 | F17 | 二维码 | 未开始 | 入口显示尚未实现 |
-| F18 | 时间 | 未开始 | 入口显示尚未实现 |
+| F18 | 时间 | 待验收 | 引擎单测覆盖 epoch/负值/毫秒/DST/闰年/显式单位；UI 含双向转换、时区、历史、大屏时钟、分离窗口。无运行截图。单位语义见 [DIFF-001](diff/001-time-explicit-unit.md) |
 | F19 | 留言板 | 未开始 | 入口显示尚未实现 |
 | F20 | 翻译 | 未开始 | 入口显示尚未实现 |
 | F21 | 计算器 | 未开始 | 入口显示尚未实现 |
@@ -47,7 +47,7 @@
 | F24 | PDF | 未开始 | 入口显示尚未实现 |
 | F25 | 系统信息 | 未开始 | 入口显示尚未实现 |
 | A01 | 11 类设置 | 开发中 | general/appearance/layout/editor/data/about 基础项生效；其余类别明确未实现 |
-| A02 | 历史/收藏/搜索 | 开发中 | JSON 历史与命令搜索已有；收藏未做 |
+| A02 | 历史/收藏/搜索 | 开发中 | JSON 与时间转换历史已有；收藏未做 |
 | A03 | 桌面/存储/备份/Git/更新 | 开发中 | 独立路径与 SQLite 已有；备份/Git/更新未做 |
 
 ## 3. 工程检查入口
@@ -66,7 +66,7 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 21)"   # macOS 示例
 ./gradlew :composeApp:packageDistributionForCurrentOS
 ```
 
-本机 2026-09-09 结果：`desktopTest` 13/13 通过；`createDistributable` 生成 `MooTool Next Compose.app`；隔离 profile 启动成功。`runDistributable` 与 `packageDistributionForCurrentOS`（DMG/MSI/DEB）未跑完。
+本机 2026-09-09 结果：F18 接入后 `desktopTest` **20/20** 通过（含 TimeEngine 7）。`createDistributable` 此前生成 `MooTool Next Compose.app`；本轮未重跑打包。`runDistributable` 与 `packageDistributionForCurrentOS` 未跑完。
 
 测试层级：
 
@@ -86,7 +86,7 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 21)"   # macOS 示例
 | T01 | 只取出本产品目录构建 | 不读取相邻源码/资源/构建产物，正常第三方依赖可下载 | 本机构建通过；未做“拷贝到仓库外”复测 |
 | T02 | 无外部 Java 安装的干净系统启动镜像 | 自带 runtime 可运行常规工具 | 本机 app-image 使用捆绑 runtime 启动成功；不是干净机器 |
 | T03 | 26 项导航/搜索/隐藏/分组 | 不漏工具，隐藏仍可搜，分组删除不删数据 | 注册表单测通过；UI 待验收 |
-| T04 | 切工具再返回、重启 | 输入/选项/Tab/路径恢复 | JSON 会话可持久化；完整重启 UI 未测 |
+| T04 | 切工具再返回、重启 | 输入/选项/Tab/路径恢复 | JSON 与时间转换会话可持久化；完整重启 UI 未测 |
 | T05–T07 | 编辑器分离/IME/列编辑 | 见规格 | 未测 |
 | T08 | JSON 重复 key/大整数/filter | 真实执行 | 单测覆盖重复 key 与 9007199254740993；JSONPath filter 未单列 |
 | T09–T20 | 其余关键场景 | 见规格 | 未测 |
@@ -109,7 +109,7 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 21)"   # macOS 示例
 
 ## 7. 证据记录模板
 
-后续每阶段建立 `docs/evidence/YYYY-MM-DD-阶段/`。本轮见 `docs/evidence/2026-09-09-p0-p1/`。
+后续每阶段建立 `docs/evidence/YYYY-MM-DD-阶段/`。本轮见 `docs/evidence/2026-09-09-p0-p1/` 与 `docs/evidence/2026-09-09-f18/`。
 
 ## 8. 完成定义
 

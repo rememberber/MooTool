@@ -37,8 +37,8 @@ import com.rememberber.mootool.next.compose.features.json.JsonScreen
 import com.rememberber.mootool.next.compose.features.placeholder.DetachedNotice
 import com.rememberber.mootool.next.compose.features.placeholder.PlaceholderScreen
 import com.rememberber.mootool.next.compose.features.settings.SettingsScreen
+import com.rememberber.mootool.next.compose.features.time.TimeConvertScreen
 import com.rememberber.mootool.next.compose.model.ToolId
-import com.rememberber.mootool.next.compose.model.ToolStatus
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 
@@ -85,7 +85,10 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
                 active == ToolId.Mootool -> HomeScreen(container)
                 active == ToolId.Json && !detached.contains(ToolId.Json) -> JsonScreen(container, detached = false)
                 active == ToolId.Json && detached.contains(ToolId.Json) -> DetachedNotice(container, ToolId.Json)
-                ToolRegistry.byId[active]?.status == ToolStatus.Available -> PlaceholderScreen(container, active)
+                active == ToolId.TimeConvert && !detached.contains(ToolId.TimeConvert) ->
+                    TimeConvertScreen(container, detached = false, active = true)
+                active == ToolId.TimeConvert && detached.contains(ToolId.TimeConvert) ->
+                    DetachedNotice(container, ToolId.TimeConvert)
                 else -> PlaceholderScreen(container, active)
             }
         }

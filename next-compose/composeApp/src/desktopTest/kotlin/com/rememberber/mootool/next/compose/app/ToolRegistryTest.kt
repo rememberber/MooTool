@@ -12,6 +12,7 @@ class ToolRegistryTest {
         assertEquals(ToolId.ordered, ToolRegistry.tools.map { it.id })
         assertEquals(6, ToolRegistry.groups.size)
         assertTrue(ToolRegistry.byId.getValue(ToolId.Json).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.TimeConvert).status.name == "Available")
     }
 
     @Test

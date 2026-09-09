@@ -24,6 +24,7 @@ import androidx.compose.ui.window.rememberWindowState
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.app.ProductIdentity
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
+import com.rememberber.mootool.next.compose.features.time.TimeConvertScreen
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
@@ -102,6 +103,18 @@ fun main() = application {
             ) {
                 MooTheme(container.themePreference(), systemDark) {
                     JsonScreen(container, detached = true)
+                }
+            }
+        }
+
+        if (ToolId.TimeConvert in detached) {
+            Window(
+                onCloseRequest = { container.sessionManager.reattach(ToolId.TimeConvert) },
+                title = "${container.t("app.nav.timeConvert")} · ${ProductIdentity.DISPLAY_NAME}",
+                state = rememberWindowState(size = DpSize(880.dp, 720.dp))
+            ) {
+                MooTheme(container.themePreference(), systemDark) {
+                    TimeConvertScreen(container, detached = true, active = true)
                 }
             }
         }

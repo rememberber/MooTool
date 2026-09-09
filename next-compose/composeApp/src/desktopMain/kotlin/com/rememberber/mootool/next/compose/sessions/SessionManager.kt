@@ -2,6 +2,8 @@ package com.rememberber.mootool.next.compose.sessions
 
 import com.rememberber.mootool.next.compose.domain.FindReplaceOptions
 import com.rememberber.mootool.next.compose.domain.JsonFormatOptions
+import com.rememberber.mootool.next.compose.domain.TimeEngine
+import com.rememberber.mootool.next.compose.domain.TimestampUnit
 import com.rememberber.mootool.next.compose.editor.EditorBuffer
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.storage.SessionStore
@@ -101,6 +103,51 @@ class JsonSession {
     }
 }
 
+@Serializable
+data class TimeSessionSnapshot(
+    val timestamp: String,
+    val localTime: String,
+    val unit: String = "second",
+    val zone: String
+)
+
+class TimeSession {
+    var timestamp: String
+    var localTime: String
+    var unit: TimestampUnit
+    var zone: String
+    var historyOpen: Boolean = false
+    var clockOpen: Boolean = false
+    var notice: String = ""
+    var error: String = ""
+
+    init {
+        val now = System.currentTimeMillis()
+        zone = TimeEngine.systemZone()
+        unit = TimestampUnit.Second
+        timestamp = (now / 1000).toString()
+        localTime = TimeEngine.formatLocalTime(now, zone)
+    }
+
+    fun snapshot(): TimeSessionSnapshot = TimeSessionSnapshot(
+        timestamp = timestamp,
+        localTime = localTime,
+        unit = if (unit == TimestampUnit.Millisecond) "millisecond" else "second",
+        zone = zone
+    )
+
+    fun restore(snapshot: TimeSessionSnapshot) {
+        timestamp = snapshot.timestamp
+        localTime = snapshot.localTime
+        unit = if (snapshot.unit == "millisecond") TimestampUnit.Millisecond else TimestampUnit.Second
+        zone = snapshot.zone.ifBlank { TimeEngine.systemZone() }
+        historyOpen = false
+        clockOpen = false
+        notice = ""
+        error = ""
+    }
+}
+
 enum class WindowRole { Main, Detached }
 
 data class HostedSession(
@@ -111,6 +158,7 @@ data class HostedSession(
 class SessionManager(private val store: SessionStore) {
     private val jsonCodec = Json { ignoreUnknownKeys = true }
     private val sessions = HashMap<ToolId, JsonSession>()
+    private var timeSessionCache: TimeSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
     val detached: StateFlow<Set<ToolId>> = _detached
     private val _revision = MutableStateFlow(0L)
@@ -128,6 +176,22 @@ class SessionManager(private val store: SessionStore) {
 
     fun persistJson() {
         store.save(ToolId.Json.id, jsonCodec.encodeToString(jsonSession().snapshot()))
+    }
+
+    fun timeSession(): TimeSession {
+        timeSessionCache?.let { return it }
+        val session = TimeSession()
+        store.load(ToolId.TimeConvert.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<TimeSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        }
+        timeSessionCache = session
+        return session
+    }
+
+    fun persistTime() {
+        store.save(ToolId.TimeConvert.id, jsonCodec.encodeToString(timeSession().snapshot()))
     }
 
     fun detach(toolId: ToolId) {

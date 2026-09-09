@@ -91,6 +91,7 @@ class AppContainer(
 
     fun persistWorkspace() {
         sessionManager.persistJson()
+        sessionManager.persistTime()
         settingsRepository.save(_settings.value)
     }
 
