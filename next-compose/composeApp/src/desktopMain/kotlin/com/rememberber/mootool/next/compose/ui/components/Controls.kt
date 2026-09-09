@@ -93,7 +93,7 @@ fun MooTextField(
     val colors = MooTheme.colors
     Box(
         modifier = modifier
-            .height(if (singleLine) 32.dp else 120.dp)
+            .then(if (singleLine) Modifier.height(32.dp) else Modifier.defaultMinSize(minHeight = 120.dp))
             .clip(RoundedCornerShape(8.dp))
             .background(colors.workspace)
             .border(1.dp, colors.border, RoundedCornerShape(8.dp))

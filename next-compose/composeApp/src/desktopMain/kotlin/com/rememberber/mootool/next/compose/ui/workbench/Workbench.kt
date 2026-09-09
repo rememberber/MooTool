@@ -33,12 +33,14 @@ import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.app.ToolRegistry
 import com.rememberber.mootool.next.compose.features.calculator.CalculatorScreen
+import com.rememberber.mootool.next.compose.features.encode.EncodeScreen
 import com.rememberber.mootool.next.compose.features.home.HomeScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
 import com.rememberber.mootool.next.compose.features.placeholder.DetachedNotice
 import com.rememberber.mootool.next.compose.features.placeholder.PlaceholderScreen
 import com.rememberber.mootool.next.compose.features.settings.SettingsScreen
 import com.rememberber.mootool.next.compose.features.time.TimeConvertScreen
+import com.rememberber.mootool.next.compose.features.ua.UaParseScreen
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
@@ -94,6 +96,14 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
                     CalculatorScreen(container, detached = false)
                 active == ToolId.Calculator && detached.contains(ToolId.Calculator) ->
                     DetachedNotice(container, ToolId.Calculator)
+                active == ToolId.Encode && !detached.contains(ToolId.Encode) ->
+                    EncodeScreen(container, detached = false)
+                active == ToolId.Encode && detached.contains(ToolId.Encode) ->
+                    DetachedNotice(container, ToolId.Encode)
+                active == ToolId.UaParse && !detached.contains(ToolId.UaParse) ->
+                    UaParseScreen(container, detached = false)
+                active == ToolId.UaParse && detached.contains(ToolId.UaParse) ->
+                    DetachedNotice(container, ToolId.UaParse)
                 else -> PlaceholderScreen(container, active)
             }
         }

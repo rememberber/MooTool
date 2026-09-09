@@ -1,9 +1,14 @@
 package com.rememberber.mootool.next.compose.sessions
 
+import com.rememberber.mootool.next.compose.domain.AsciiFormat
+import com.rememberber.mootool.next.compose.domain.EncodeTab
 import com.rememberber.mootool.next.compose.domain.FindReplaceOptions
 import com.rememberber.mootool.next.compose.domain.JsonFormatOptions
 import com.rememberber.mootool.next.compose.domain.TimeEngine
 import com.rememberber.mootool.next.compose.domain.TimestampUnit
+import com.rememberber.mootool.next.compose.domain.UaEngine
+import com.rememberber.mootool.next.compose.domain.UaResult
+import com.rememberber.mootool.next.compose.domain.UrlCharset
 import com.rememberber.mootool.next.compose.editor.EditorBuffer
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.storage.SessionStore
@@ -211,6 +216,143 @@ class CalculatorSession {
     }
 }
 
+@Serializable
+data class EncodeSessionSnapshot(
+    val tab: String = "unicode",
+    val unicodeLeft: String = "MooTool 编码转换",
+    val unicodeRight: String = "",
+    val urlLeft: String = "https://mootool.app/search?q=编码",
+    val urlRight: String = "",
+    val hexLeft: String = "MooTool",
+    val hexRight: String = "",
+    val asciiLeft: String = "MooTool",
+    val asciiRight: String = "",
+    val charset: String = "utf-8",
+    val asciiFormat: String = "decimal"
+)
+
+class EncodeSession {
+    var tab: EncodeTab = EncodeTab.Unicode
+    var unicodeLeft: String = "MooTool 编码转换"
+    var unicodeRight: String = ""
+    var urlLeft: String = "https://mootool.app/search?q=编码"
+    var urlRight: String = ""
+    var hexLeft: String = "MooTool"
+    var hexRight: String = ""
+    var asciiLeft: String = "MooTool"
+    var asciiRight: String = ""
+    var charset: UrlCharset = UrlCharset.Utf8
+    var asciiFormat: AsciiFormat = AsciiFormat.Decimal
+    var historyOpen: Boolean = false
+    var notice: String = ""
+    var error: String = ""
+
+    fun left(): String = when (tab) {
+        EncodeTab.Unicode -> unicodeLeft
+        EncodeTab.Url -> urlLeft
+        EncodeTab.Hex -> hexLeft
+        EncodeTab.Ascii -> asciiLeft
+    }
+
+    fun right(): String = when (tab) {
+        EncodeTab.Unicode -> unicodeRight
+        EncodeTab.Url -> urlRight
+        EncodeTab.Hex -> hexRight
+        EncodeTab.Ascii -> asciiRight
+    }
+
+    fun setLeft(value: String) {
+        when (tab) {
+            EncodeTab.Unicode -> unicodeLeft = value
+            EncodeTab.Url -> urlLeft = value
+            EncodeTab.Hex -> hexLeft = value
+            EncodeTab.Ascii -> asciiLeft = value
+        }
+    }
+
+    fun setRight(value: String) {
+        when (tab) {
+            EncodeTab.Unicode -> unicodeRight = value
+            EncodeTab.Url -> urlRight = value
+            EncodeTab.Hex -> hexRight = value
+            EncodeTab.Ascii -> asciiRight = value
+        }
+    }
+
+    fun clearCurrent() {
+        setLeft("")
+        setRight("")
+        error = ""
+    }
+
+    fun snapshot(): EncodeSessionSnapshot = EncodeSessionSnapshot(
+        tab = tab.name.lowercase(),
+        unicodeLeft = unicodeLeft,
+        unicodeRight = unicodeRight,
+        urlLeft = urlLeft,
+        urlRight = urlRight,
+        hexLeft = hexLeft,
+        hexRight = hexRight,
+        asciiLeft = asciiLeft,
+        asciiRight = asciiRight,
+        charset = if (charset == UrlCharset.Gb2312) "gb2312" else "utf-8",
+        asciiFormat = if (asciiFormat == AsciiFormat.Hex) "hex" else "decimal"
+    )
+
+    fun restore(snapshot: EncodeSessionSnapshot) {
+        tab = when (snapshot.tab) {
+            "url" -> EncodeTab.Url
+            "hex" -> EncodeTab.Hex
+            "ascii" -> EncodeTab.Ascii
+            else -> EncodeTab.Unicode
+        }
+        unicodeLeft = snapshot.unicodeLeft
+        unicodeRight = snapshot.unicodeRight
+        urlLeft = snapshot.urlLeft
+        urlRight = snapshot.urlRight
+        hexLeft = snapshot.hexLeft
+        hexRight = snapshot.hexRight
+        asciiLeft = snapshot.asciiLeft
+        asciiRight = snapshot.asciiRight
+        charset = if (snapshot.charset == "gb2312") UrlCharset.Gb2312 else UrlCharset.Utf8
+        asciiFormat = if (snapshot.asciiFormat == "hex") AsciiFormat.Hex else AsciiFormat.Decimal
+        historyOpen = false
+        notice = ""
+        error = ""
+    }
+}
+
+@Serializable
+data class UaSessionSnapshot(
+    val source: String,
+    val resultJson: String = ""
+)
+
+class UaSession {
+    var source: String = UaEngine.presets.first().second
+    var result: UaResult? = runCatching { UaEngine.parse(source) }.getOrNull()
+    var historyOpen: Boolean = false
+    var notice: String = ""
+    var error: String = ""
+
+    fun snapshot(): UaSessionSnapshot = UaSessionSnapshot(
+        source = source,
+        resultJson = result?.let { uaResultCodec.encodeToString(it) }.orEmpty()
+    )
+
+    fun restore(snapshot: UaSessionSnapshot) {
+        source = snapshot.source
+        result = snapshot.resultJson.takeIf { it.isNotBlank() }?.let { raw ->
+            runCatching { uaResultCodec.decodeFromString<UaResult>(raw) }.getOrNull()
+        }
+        historyOpen = false
+        notice = ""
+        error = ""
+    }
+}
+
+private val uaResultCodec = Json { ignoreUnknownKeys = true; encodeDefaults = true }
+
 enum class WindowRole { Main, Detached }
 
 data class HostedSession(
@@ -223,6 +365,8 @@ class SessionManager(private val store: SessionStore) {
     private val sessions = HashMap<ToolId, JsonSession>()
     private var timeSessionCache: TimeSession? = null
     private var calculatorSessionCache: CalculatorSession? = null
+    private var encodeSessionCache: EncodeSession? = null
+    private var uaSessionCache: UaSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
     val detached: StateFlow<Set<ToolId>> = _detached
     private val _revision = MutableStateFlow(0L)
@@ -272,6 +416,38 @@ class SessionManager(private val store: SessionStore) {
 
     fun persistCalculator() {
         store.save(ToolId.Calculator.id, jsonCodec.encodeToString(calculatorSession().snapshot()))
+    }
+
+    fun encodeSession(): EncodeSession {
+        encodeSessionCache?.let { return it }
+        val session = EncodeSession()
+        store.load(ToolId.Encode.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<EncodeSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        }
+        encodeSessionCache = session
+        return session
+    }
+
+    fun persistEncode() {
+        store.save(ToolId.Encode.id, jsonCodec.encodeToString(encodeSession().snapshot()))
+    }
+
+    fun uaSession(): UaSession {
+        uaSessionCache?.let { return it }
+        val session = UaSession()
+        store.load(ToolId.UaParse.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<UaSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        }
+        uaSessionCache = session
+        return session
+    }
+
+    fun persistUa() {
+        store.save(ToolId.UaParse.id, jsonCodec.encodeToString(uaSession().snapshot()))
     }
 
     fun detach(toolId: ToolId) {

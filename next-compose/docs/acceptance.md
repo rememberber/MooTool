@@ -1,6 +1,6 @@
 # 验收标准、进度与证据
 
-> 更新：2026-09-09。P0/P1/JSON 切片之后，F18 时间转换已接入引擎、工作区与历史；完整产品与三平台发行仍未验收。
+> 更新：2026-09-09。P0/P1/JSON 之后已接入 F12 UA、F13 编码、F18 时间、F21 计算器；完整产品与三平台发行仍未验收。
 
 ## 1. 状态规则
 
@@ -15,7 +15,7 @@
 | P0 | 工具链/编辑器/窗口/动态 proto 等实验 | 开发中 | 本机 Wrapper/JDK21/Compose1.12 构建与 app-image 启动见 `docs/evidence/2026-09-09-p0-p1/`。RSTA 已接入，IME/列编辑未做桌面交互验收。protoc 未捆绑。ADR-001/002/003 |
 | P1 | 桌面壳/搜索/设置基础 | 开发中 | 26 入口、搜索、modern 明暗、语言、基础设置、JSON 分离窗口代码已有；视觉截图与完整键盘流程待验收 |
 | P2 | 完整 JSON 基础工作流 | 开发中 | 仅最小切片：格式化/压缩/查找/历史/Vault CRUD/转换。Git、冲突监视、完整检查器弹层未完成，**不能标 F04 已验收** |
-| P3 | 文本与本地算法 | 开发中 | F18 时间转换、F21 计算器已有引擎单测与 UI；其余 P3 工具仍显示尚未实现 |
+| P3 | 文本与本地算法 | 开发中 | F12 UA、F13 编码、F18 时间、F21 计算器已有引擎单测与 UI；其余 P3 工具仍显示尚未实现 |
 | P4 | 媒体/加密 | 未开始 | — |
 | P5 | 网络/系统 | 未开始 | — |
 | P6 | 文档/Git/运行台/备份 | 未开始 | — |
@@ -32,8 +32,8 @@
 | F09 | HTTP | 未开始 | 入口显示尚未实现 |
 | F10 | Host | 未开始 | 入口显示尚未实现 |
 | F11 | 网络/IP | 未开始 | 入口显示尚未实现 |
-| F12 | UA | 未开始 | 入口显示尚未实现 |
-| F13 | 编码解码 | 未开始 | 入口显示尚未实现 |
+| F12 | UA | 待验收 | 预设 Chrome/Safari/Firefox/iPhone/Android、Googlebot、空/未知；版本与设备字段有单测。引擎推断见 [DIFF-002](diff/002-ua-engine-inference.md)。无运行截图 |
+| F13 | 编码解码 | 待验收 | 引擎覆盖 Unicode/emoji、URL UTF-8 与 GB2312 往返、Hex/ASCII、非法 Hex、截断字节、GB2312 不可映射拒绝问号。UI 含四分区、历史、分离窗口。无运行截图。安装镜像需 `jdk.charsets`（已加入 jlink modules） |
 | F14 | 加解密/随机 | 未开始 | 入口显示尚未实现 |
 | F15 | 正则 | 未开始 | 入口显示尚未实现 |
 | F16 | Cron | 未开始 | 入口显示尚未实现 |
@@ -47,7 +47,7 @@
 | F24 | PDF | 未开始 | 入口显示尚未实现 |
 | F25 | 系统信息 | 未开始 | 入口显示尚未实现 |
 | A01 | 11 类设置 | 开发中 | general/appearance/layout/editor/data/about 基础项生效；其余类别明确未实现 |
-| A02 | 历史/收藏/搜索 | 开发中 | JSON、时间转换与计算器历史已有；收藏未做 |
+| A02 | 历史/收藏/搜索 | 开发中 | JSON、编码、UA、时间转换与计算器历史已有；收藏未做 |
 | A03 | 桌面/存储/备份/Git/更新 | 开发中 | 独立路径与 SQLite 已有；备份/Git/更新未做 |
 
 ## 3. 工程检查入口
@@ -66,7 +66,7 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 21)"   # macOS 示例
 ./gradlew :composeApp:packageDistributionForCurrentOS
 ```
 
-本机 2026-09-09 结果：F18 与 F21 接入后 `desktopTest` **24/24** 通过（含 TimeEngine 7、CalculatorEngine 4）。`createDistributable` 此前生成 `MooTool Next Compose.app`；本轮未重跑打包。`runDistributable` 与 `packageDistributionForCurrentOS` 未跑完。
+本机 2026-09-09 结果：F12/F13/F18/F21 接入后 `desktopTest` **32/32** 通过（含 UaEngine 3、EncodeEngine 5、TimeEngine 7、CalculatorEngine 4）。`createDistributable` 此前生成 `MooTool Next Compose.app`；本轮未重跑打包。`runDistributable` 与 `packageDistributionForCurrentOS` 未跑完。
 
 测试层级：
 
@@ -109,7 +109,7 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 21)"   # macOS 示例
 
 ## 7. 证据记录模板
 
-后续每阶段建立 `docs/evidence/YYYY-MM-DD-阶段/`。见 `docs/evidence/2026-09-09-p0-p1/`、`docs/evidence/2026-09-09-f18/`、`docs/evidence/2026-09-09-f21/`。
+后续每阶段建立 `docs/evidence/YYYY-MM-DD-阶段/`。见 `docs/evidence/2026-09-09-p0-p1/`、`docs/evidence/2026-09-09-f18/`、`docs/evidence/2026-09-09-f21/`、`docs/evidence/2026-09-09-f13/`、`docs/evidence/2026-09-09-f12/`。
 
 ## 8. 完成定义
 

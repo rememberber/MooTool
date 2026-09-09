@@ -93,6 +93,8 @@ class AppContainer(
         sessionManager.persistJson()
         sessionManager.persistTime()
         sessionManager.persistCalculator()
+        sessionManager.persistEncode()
+        sessionManager.persistUa()
         settingsRepository.save(_settings.value)
     }
 

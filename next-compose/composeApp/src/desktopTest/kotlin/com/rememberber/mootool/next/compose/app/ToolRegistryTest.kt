@@ -14,6 +14,8 @@ class ToolRegistryTest {
         assertTrue(ToolRegistry.byId.getValue(ToolId.Json).status.name == "Available")
         assertTrue(ToolRegistry.byId.getValue(ToolId.TimeConvert).status.name == "Available")
         assertTrue(ToolRegistry.byId.getValue(ToolId.Calculator).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.Encode).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.UaParse).status.name == "Available")
     }
 
     @Test

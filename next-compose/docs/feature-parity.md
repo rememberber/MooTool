@@ -206,7 +206,7 @@ JSON 文本编辑保留大整数与小数字面量；不能先转 Double 再声�
 布局：原文输入、样例/预设、解析操作、浏览器/引擎/OS/设备等结构化结果。
 
 - 真实维护的 UA 规则，移动/Bot 分类、原文和结果复制、历史；未知字段显示未知。
-- 不只检测 Chrome 字符串；不同库名称归一由 fixtures 定义。
+- 不只检测 Chrome 字符串；不同库名称归一由 fixtures 定义。引擎字段见 [DIFF-002](diff/002-ua-engine-inference.md)。
 - 验收：Chrome/Safari/Firefox、iPhone/Android、bot、空/未知 UA；版本与设备字段有证据。
 
 ### F13 编码解码

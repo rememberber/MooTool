@@ -9,6 +9,7 @@ sqlite = "3.49.1.0"
 rsyntaxtextarea = "3.6.0"
 slf4j = "2.0.17"
 junit = "4.13.2"
+uapJava = "1.6.1"
 
 [libraries]
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
@@ -30,6 +31,7 @@ json-path = { module = "com.jayway.jsonpath:json-path", version.ref = "jsonPath"
 sqlite-jdbc = { module = "org.xerial:sqlite-jdbc", version.ref = "sqlite" }
 rsyntaxtextarea = { module = "com.fifesoft:rsyntaxtextarea", version.ref = "rsyntaxtextarea" }
 slf4j-nop = { module = "org.slf4j:slf4j-nop", version.ref = "slf4j" }
+uap-java = { module = "com.github.ua-parser:uap-java", version.ref = "uapJava" }
 junit = { module = "junit:junit", version.ref = "junit" }
 
 [plugins]

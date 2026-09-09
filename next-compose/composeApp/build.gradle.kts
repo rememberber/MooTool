@@ -57,6 +57,7 @@ kotlin {
                 implementation(libs.sqlite.jdbc)
                 implementation(libs.rsyntaxtextarea)
                 implementation(libs.slf4j.nop)
+                implementation(libs.uap.java)
             }
         }
         val desktopTest by getting {
@@ -90,7 +91,8 @@ compose.desktop {
                 "java.net.http",
                 "jdk.crypto.ec",
                 "jdk.unsupported",
-                "jdk.accessibility"
+                "jdk.accessibility",
+                "jdk.charsets"
             )
             appResourcesRootDir.set(rootProject.layout.projectDirectory.dir("resources"))
             macOS {

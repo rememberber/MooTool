@@ -24,8 +24,10 @@ import androidx.compose.ui.window.rememberWindowState
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.app.ProductIdentity
 import com.rememberber.mootool.next.compose.features.calculator.CalculatorScreen
+import com.rememberber.mootool.next.compose.features.encode.EncodeScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
 import com.rememberber.mootool.next.compose.features.time.TimeConvertScreen
+import com.rememberber.mootool.next.compose.features.ua.UaParseScreen
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
@@ -128,6 +130,30 @@ fun main() = application {
             ) {
                 MooTheme(container.themePreference(), systemDark) {
                     CalculatorScreen(container, detached = true)
+                }
+            }
+        }
+
+        if (ToolId.Encode in detached) {
+            Window(
+                onCloseRequest = { container.sessionManager.reattach(ToolId.Encode) },
+                title = "${container.t("app.nav.encode")} · ${ProductIdentity.DISPLAY_NAME}",
+                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
+            ) {
+                MooTheme(container.themePreference(), systemDark) {
+                    EncodeScreen(container, detached = true)
+                }
+            }
+        }
+
+        if (ToolId.UaParse in detached) {
+            Window(
+                onCloseRequest = { container.sessionManager.reattach(ToolId.UaParse) },
+                title = "${container.t("app.nav.uaParse")} · ${ProductIdentity.DISPLAY_NAME}",
+                state = rememberWindowState(size = DpSize(960.dp, 720.dp))
+            ) {
+                MooTheme(container.themePreference(), systemDark) {
+                    UaParseScreen(container, detached = true)
                 }
             }
         }
