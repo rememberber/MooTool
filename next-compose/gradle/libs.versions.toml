@@ -18,6 +18,7 @@ snakeyaml = "2.3"
 protobuf = "4.29.3"
 bouncyCastle = "1.80"
 zxing = "3.5.4"
+pdfbox = "3.0.4"
 
 [libraries]
 compose-runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "composeMultiplatform" }
@@ -50,6 +51,7 @@ protobuf-java-util = { module = "com.google.protobuf:protobuf-java-util", versio
 protoc = { module = "com.google.protobuf:protoc", version.ref = "protobuf" }
 bouncy-castle = { module = "org.bouncycastle:bcprov-jdk18on", version.ref = "bouncyCastle" }
 zxing-core = { module = "com.google.zxing:core", version.ref = "zxing" }
+pdfbox = { module = "org.apache.pdfbox:pdfbox", version.ref = "pdfbox" }
 junit = { module = "junit:junit", version.ref = "junit" }
 
 [plugins]

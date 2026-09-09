@@ -115,6 +115,7 @@ class AppContainer(
         sessionManager.persistQr()
         sessionManager.persistColor()
         sessionManager.persistMessageBoard()
+        sessionManager.persistPdf()
         settingsRepository.save(_settings.value)
     }
 

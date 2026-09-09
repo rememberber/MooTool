@@ -1,6 +1,6 @@
 # 验收标准、进度与证据
 
-> 更新：2026-09-09。P0/P1/JSON 之后已接入 F02 文本对比、F03 格式化、F06 配置转换、F07 Protobuf、F12 UA、F13 编码、F14 加解密、F15 正则、F16 Cron、F17 二维码、F18 时间、F19 留言板、F21 计算器、F22 调色板；完整产品与三平台发行仍未验收。
+> 更新：2026-09-09。P0/P1/JSON 之后已接入 F02 文本对比、F03 格式化、F06 配置转换、F07 Protobuf、F12 UA、F13 编码、F14 加解密、F15 正则、F16 Cron、F17 二维码、F18 时间、F19 留言板、F21 计算器、F22 调色板、F24 PDF；完整产品与三平台发行仍未验收。
 
 ## 1. 状态规则
 
@@ -16,7 +16,7 @@
 | P1 | 桌面壳/搜索/设置基础 | 开发中 | 26 入口、搜索、modern 明暗、语言、基础设置、JSON 分离窗口代码已有；视觉截图与完整键盘流程待验收 |
 | P2 | 完整 JSON 基础工作流 | 开发中 | 仅最小切片：格式化/压缩/查找/历史/Vault CRUD/转换。Git、冲突监视、完整检查器弹层未完成，**不能标 F04 已验收** |
 | P3 | 文本与本地算法 | 开发中 | F02/F03/F06/F07/F12/F13/F15/F16/F18/F21 已有引擎单测与 UI；F04 Git 仍未做 |
-| P4 | 媒体/加密 | 开发中 | F14 加解密、F17 二维码、F19 留言板、F22 调色板已有引擎单测与 UI；图片/PDF 未做 |
+| P4 | 媒体/加密 | 开发中 | F14 加解密、F17 二维码、F19 留言板、F22 调色板、F24 PDF 已有引擎单测与 UI；F23 图片助手未做 |
 | P5 | 网络/系统 | 未开始 | — |
 | P6 | 文档/Git/运行台/备份 | 未开始 | — |
 | P7 | 完整产品/平台安装发行验收 | 未开始 | — |
@@ -44,10 +44,10 @@
 | F21 | 计算器 | 待验收 | 引擎单测覆盖 `2*(3+4)=14`、负数、进制、GCD/LCM、排列组合与非法输入；UI 含等号计算、结果复制、会话与历史。无运行截图。表达式按 IEEE Double 再按 14 位有效数字展示，与 Electron 一致，未改用任意精度小数 |
 | F22 | 调色板 | 待验收 | HEX/RGB 往返、7 主题 + 10 标准色 SHA-256、五运算、主色/对比色、Shift 选对比色、Robot 冻结截图取色、JColorChooser、文件夹收藏、历史与分离窗口。差异见 [DIFF-010](diff/010-color-screen-picker.md)。无运行截图；多屏/录屏权限对话框未测 |
 | F23 | 图片 | 未开始 | 入口显示尚未实现 |
-| F24 | PDF | 未开始 | 入口显示尚未实现 |
+| F24 | PDF | 待验收 | 拆分/合并 Tab、最多 20 项、奇偶/自定义页码、token 顺序去重、`_split.pdf` 覆盖写出、合并保存对话框、历史与分离窗口、取消删除半成品。差异见 [DIFF-012](diff/012-pdfbox-import-page.md)。无运行截图；加密样本、表单/书签/签名、安装镜像未测 |
 | F25 | 系统信息 | 未开始 | 入口显示尚未实现 |
 | A01 | 11 类设置 | 开发中 | general/appearance/layout/editor/data/about 基础项生效；其余类别明确未实现 |
-| A02 | 历史/收藏/搜索 | 开发中 | JSON、编码、UA、正则、Cron、文本对比、格式化、配置转换、Protobuf、加解密、二维码、调色板、时间转换与计算器历史已有；正则/Cron/调色板收藏已落地 |
+| A02 | 历史/收藏/搜索 | 开发中 | JSON、编码、UA、正则、Cron、文本对比、格式化、配置转换、Protobuf、加解密、二维码、调色板、时间转换、计算器与 PDF 历史已有；正则/Cron/调色板收藏已落地 |
 | A03 | 桌面/存储/备份/Git/更新 | 开发中 | 独立路径与 SQLite 已有；备份/Git/更新未做 |
 
 ## 3. 工程检查入口
@@ -66,7 +66,7 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 21)"   # macOS 示例
 ./gradlew :composeApp:packageDistributionForCurrentOS
 ```
 
-本机 2026-09-09 结果：F19 接入后 `desktopTest` **84/84** 通过（含 MessageBoardEngine 3、DisplayWakeLock 1；此前 F22 为 80/80）。`createDistributable` 此前生成 `MooTool Next Compose.app`；本轮未重跑打包。`runDistributable` 与 `packageDistributionForCurrentOS` 未跑完。
+本机 2026-09-09 结果：F24 接入后 `desktopTest` **87/87** 通过（含 PdfEngineTest 3；此前 F19 为 84/84）。`createDistributable` 此前生成 `MooTool Next Compose.app`；本轮未重跑打包。`runDistributable` 与 `packageDistributionForCurrentOS` 未跑完。
 
 测试层级：
 
@@ -109,7 +109,7 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 21)"   # macOS 示例
 
 ## 7. 证据记录模板
 
-后续每阶段建立 `docs/evidence/YYYY-MM-DD-阶段/`。见 `docs/evidence/2026-09-09-p0-p1/`、`docs/evidence/2026-09-09-f18/`、`docs/evidence/2026-09-09-f21/`、`docs/evidence/2026-09-09-f13/`、`docs/evidence/2026-09-09-f12/`、`docs/evidence/2026-09-09-f15/`、`docs/evidence/2026-09-09-f16/`、`docs/evidence/2026-09-09-f02/`、`docs/evidence/2026-09-09-f03/`、`docs/evidence/2026-09-09-f06/`、`docs/evidence/2026-09-09-f07/`、`docs/evidence/2026-09-09-f14/`、`docs/evidence/2026-09-09-f17/`、`docs/evidence/2026-09-09-f22/`、`docs/evidence/2026-09-09-f19/`。
+后续每阶段建立 `docs/evidence/YYYY-MM-DD-阶段/`。见 `docs/evidence/2026-09-09-p0-p1/`、`docs/evidence/2026-09-09-f18/`、`docs/evidence/2026-09-09-f21/`、`docs/evidence/2026-09-09-f13/`、`docs/evidence/2026-09-09-f12/`、`docs/evidence/2026-09-09-f15/`、`docs/evidence/2026-09-09-f16/`、`docs/evidence/2026-09-09-f02/`、`docs/evidence/2026-09-09-f03/`、`docs/evidence/2026-09-09-f06/`、`docs/evidence/2026-09-09-f07/`、`docs/evidence/2026-09-09-f14/`、`docs/evidence/2026-09-09-f17/`、`docs/evidence/2026-09-09-f22/`、`docs/evidence/2026-09-09-f19/`、`docs/evidence/2026-09-09-f24/`。
 
 ## 8. 完成定义
 

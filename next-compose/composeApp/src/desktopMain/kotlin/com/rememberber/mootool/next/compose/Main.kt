@@ -32,6 +32,7 @@ import com.rememberber.mootool.next.compose.features.diff.TextDiffScreen
 import com.rememberber.mootool.next.compose.features.encode.EncodeScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
 import com.rememberber.mootool.next.compose.features.messageboard.MessageBoardScreen
+import com.rememberber.mootool.next.compose.features.pdf.PdfScreen
 import com.rememberber.mootool.next.compose.features.protobuf.ProtobufScreen
 import com.rememberber.mootool.next.compose.features.qrcode.QrCodeScreen
 import com.rememberber.mootool.next.compose.features.regex.RegexScreen
@@ -284,6 +285,18 @@ fun main() = application {
             ) {
                 MooTheme(container.themePreference(), systemDark) {
                     MessageBoardScreen(container, detached = true)
+                }
+            }
+        }
+
+        if (ToolId.Pdf in detached) {
+            Window(
+                onCloseRequest = { container.sessionManager.reattach(ToolId.Pdf) },
+                title = "${container.t("app.nav.pdf")} · ${ProductIdentity.DISPLAY_NAME}",
+                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
+            ) {
+                MooTheme(container.themePreference(), systemDark) {
+                    PdfScreen(container, detached = true)
                 }
             }
         }

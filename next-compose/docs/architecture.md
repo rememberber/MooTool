@@ -157,7 +157,7 @@ SwingPanel 默认处于 Compose 内容前方；菜单、命令搜索、对话框
 | 留言板 | 自有 MessageBoardEngine + OS 唤醒进程 | 80 字 UTF-16、8 预设/6 主题、自动适配字号；演示唤醒见 DIFF-011 |
 | 图像 | ImageIO/Java2D + 自有图片库 | EXIF、alpha、解码像素限额、压缩/水印 |
 | SVG | 本产品移植 ImageTracer 或自带经验证的 tracer helper | 真正 vector path；批量/质量/参数可解释，不嵌原图冒充 |
-| PDF | PDFBox 候选 | 真 PDF 页面复制；表单/书签/签名影响实测；不直接照搬 Java iText 依赖 |
+| PDF | PDFBox **3.0.4** | 真页面 importPage；页码顺序/去重对齐 Electron；加密 PDF 拒绝；取消删除本批半成品。见 DIFF-012 |
 | 系统信息 | OSHI/JNA 候选 | 实际字段、权限/不支持状态、脱敏、失活暂停 |
 | Git | 本产品 GitService 封装外部 Git CLI，缺失引导配置；JGit 可作验证后的替代 | 仓库锁、冲突、stash/操作状态、凭据、Git 不存在时仍可记笔记 |
 | 时间/计算 | java.time、BigInteger/BigDecimal、自有表达式 AST | 时区、DST、精度、算符、溢出；不 eval 用户文本 |

@@ -28,6 +28,7 @@ class ToolRegistryTest {
         assertTrue(ToolRegistry.byId.getValue(ToolId.ColorBoard).supportsFavorites)
         assertTrue(ToolRegistry.byId.getValue(ToolId.MessageBoard).status.name == "Available")
         assertTrue(!ToolRegistry.byId.getValue(ToolId.MessageBoard).supportsHistory)
+        assertTrue(ToolRegistry.byId.getValue(ToolId.Pdf).status.name == "Available")
     }
 
     @Test

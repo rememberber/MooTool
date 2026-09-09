@@ -42,6 +42,7 @@ import com.rememberber.mootool.next.compose.features.encode.EncodeScreen
 import com.rememberber.mootool.next.compose.features.home.HomeScreen
 import com.rememberber.mootool.next.compose.features.json.JsonScreen
 import com.rememberber.mootool.next.compose.features.messageboard.MessageBoardScreen
+import com.rememberber.mootool.next.compose.features.pdf.PdfScreen
 import com.rememberber.mootool.next.compose.features.regex.RegexScreen
 import com.rememberber.mootool.next.compose.features.reformat.ReformatScreen
 import com.rememberber.mootool.next.compose.features.protobuf.ProtobufScreen
@@ -154,6 +155,10 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
                     MessageBoardScreen(container, detached = false)
                 active == ToolId.MessageBoard && detached.contains(ToolId.MessageBoard) ->
                     DetachedNotice(container, ToolId.MessageBoard)
+                active == ToolId.Pdf && !detached.contains(ToolId.Pdf) ->
+                    PdfScreen(container, detached = false)
+                active == ToolId.Pdf && detached.contains(ToolId.Pdf) ->
+                    DetachedNotice(container, ToolId.Pdf)
                 else -> PlaceholderScreen(container, active)
             }
         }

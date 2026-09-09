@@ -24,6 +24,9 @@ import com.rememberber.mootool.next.compose.domain.ColorEngine
 import com.rememberber.mootool.next.compose.domain.ColorFormat
 import com.rememberber.mootool.next.compose.domain.ColorThemeId
 import com.rememberber.mootool.next.compose.domain.MessageBoardEngine
+import com.rememberber.mootool.next.compose.domain.PdfSplitRule
+import com.rememberber.mootool.next.compose.domain.PdfTab
+import com.rememberber.mootool.next.compose.domain.PdfTaskStatus
 import com.rememberber.mootool.next.compose.domain.QrEngine
 import com.rememberber.mootool.next.compose.domain.QrErrorCorrection
 import com.rememberber.mootool.next.compose.domain.QrTab
@@ -954,6 +957,109 @@ class MessageBoardSession {
     }
 }
 
+@Serializable
+data class PdfSplitRowSnapshot(
+    val path: String,
+    val name: String,
+    val size: Long,
+    val pageCount: Int,
+    val selected: Boolean = true,
+    val pageRange: String,
+    val rule: String = "odd",
+    val customRule: String = ""
+)
+
+@Serializable
+data class PdfMergeRowSnapshot(
+    val path: String,
+    val name: String,
+    val size: Long,
+    val pageCount: Int,
+    val selected: Boolean = true,
+    val pages: String
+)
+
+@Serializable
+data class PdfSessionSnapshot(
+    val tab: String = "split",
+    val splitRows: List<PdfSplitRowSnapshot> = emptyList(),
+    val mergeRows: List<PdfMergeRowSnapshot> = emptyList(),
+    val lastOutputs: List<String> = emptyList()
+)
+
+class PdfSplitRow(
+    val path: String,
+    val name: String,
+    val size: Long,
+    val pageCount: Int,
+    var selected: Boolean = true,
+    var pageRange: String,
+    var rule: PdfSplitRule = PdfSplitRule.Odd,
+    var customRule: String = "",
+    var status: PdfTaskStatus = PdfTaskStatus.Ready
+)
+
+class PdfMergeRow(
+    val path: String,
+    val name: String,
+    val size: Long,
+    val pageCount: Int,
+    var selected: Boolean = true,
+    var pages: String,
+    var status: PdfTaskStatus = PdfTaskStatus.Ready
+)
+
+class PdfSession {
+    var tab: PdfTab = PdfTab.Split
+    var splitRows: List<PdfSplitRow> = emptyList()
+    var mergeRows: List<PdfMergeRow> = emptyList()
+    var lastOutputs: List<String> = emptyList()
+    var helpOpen: Boolean = false
+    var confirmSplit: Boolean = false
+    var busy: Boolean = false
+    var cancelled: Boolean = false
+    var notice: String = ""
+    var error: String = ""
+
+    fun snapshot(): PdfSessionSnapshot = PdfSessionSnapshot(
+        tab = tab.name.lowercase(),
+        splitRows = splitRows.map {
+            PdfSplitRowSnapshot(it.path, it.name, it.size, it.pageCount, it.selected, it.pageRange, it.rule.name.lowercase(), it.customRule)
+        },
+        mergeRows = mergeRows.map {
+            PdfMergeRowSnapshot(it.path, it.name, it.size, it.pageCount, it.selected, it.pages)
+        },
+        lastOutputs = lastOutputs
+    )
+
+    fun restore(snapshot: PdfSessionSnapshot) {
+        tab = PdfTab.entries.find { it.name.equals(snapshot.tab, ignoreCase = true) } ?: PdfTab.Split
+        splitRows = snapshot.splitRows.map {
+            PdfSplitRow(
+                path = it.path,
+                name = it.name,
+                size = it.size,
+                pageCount = it.pageCount,
+                selected = it.selected,
+                pageRange = it.pageRange,
+                rule = PdfSplitRule.entries.find { rule -> rule.name.equals(it.rule, ignoreCase = true) } ?: PdfSplitRule.Odd,
+                customRule = it.customRule,
+                status = PdfTaskStatus.Ready
+            )
+        }
+        mergeRows = snapshot.mergeRows.map {
+            PdfMergeRow(it.path, it.name, it.size, it.pageCount, it.selected, it.pages, PdfTaskStatus.Ready)
+        }
+        lastOutputs = snapshot.lastOutputs
+        helpOpen = false
+        confirmSplit = false
+        busy = false
+        cancelled = false
+        notice = ""
+        error = ""
+    }
+}
+
 enum class WindowRole { Main, Detached }
 
 data class HostedSession(
@@ -978,6 +1084,7 @@ class SessionManager(private val store: SessionStore) {
     private var qrSessionCache: QrSession? = null
     private var colorSessionCache: ColorSession? = null
     private var messageBoardSessionCache: MessageBoardSession? = null
+    private var pdfSessionCache: PdfSession? = null
     private val _detached = MutableStateFlow<Set<ToolId>>(emptySet())
     val detached: StateFlow<Set<ToolId>> = _detached
     private val _revision = MutableStateFlow(0L)
@@ -1226,6 +1333,22 @@ class SessionManager(private val store: SessionStore) {
 
     fun persistMessageBoard() {
         store.save(ToolId.MessageBoard.id, jsonCodec.encodeToString(messageBoardSession().snapshot()))
+    }
+
+    fun pdfSession(): PdfSession {
+        pdfSessionCache?.let { return it }
+        val session = PdfSession()
+        store.load(ToolId.Pdf.id)?.let { raw ->
+            runCatching { jsonCodec.decodeFromString<PdfSessionSnapshot>(raw) }
+                .getOrNull()
+                ?.let(session::restore)
+        }
+        pdfSessionCache = session
+        return session
+    }
+
+    fun persistPdf() {
+        store.save(ToolId.Pdf.id, jsonCodec.encodeToString(pdfSession().snapshot()))
     }
 
     fun detach(toolId: ToolId) {
