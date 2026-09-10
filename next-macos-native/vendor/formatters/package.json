@@ -1,0 +1,13 @@
+{
+  "name": "mootool-native-formatters",
+  "version": "0.7.0",
+  "private": true,
+  "type": "module",
+  "scripts": { "build": "node build.mjs" },
+  "dependencies": {
+    "@prettier/plugin-xml": "3.4.2",
+    "prettier": "3.9.6",
+    "prettier-plugin-java": "2.10.3"
+  },
+  "devDependencies": { "esbuild": "0.25.12" }
+}

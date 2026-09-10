@@ -98,6 +98,7 @@ public enum JSONEngine {
               request.query.utf8.count <= 16_384, request.replacement.utf8.count <= 1024 * 1024,
               request.className.utf8.count <= 240 else { throw ToolError("输入、查询或替换内容超过限制。") }
         if request.action == "formatXML" { return JSONEngineReply(value: try TextServices.formatXML(request.input)) }
+        if request.action == "reformat" { return try ReformatEngine.evaluate(request) }
         guard let context = JSContext() else { throw ToolError("无法初始化系统 JavaScriptCore。") }
         for name in ["jsonpath-plus", "fast-xml-parser", "JSONTools", "QuickNoteTools", "JSONDispatch"] {
             guard let url = resources.url(forResource: name, withExtension: "js") else { throw ToolError("缺少 JSON 解析资源：\(name)") }

@@ -10,6 +10,7 @@ public struct DraftRecord: Codable, Equatable {
     public var http: HTTPOptions?
     public var httpResult: HTTPResultMetadata?
     public var json: JSONOptions?
+    public var reformat: ReformatOptions?
     public var noteOptions: QuickNoteOptions?
     public var noteWorkspace: QuickNoteWorkspaceOptions?
     public var inputEditor: EditorViewState?
@@ -76,6 +77,7 @@ public struct WorkspaceSnapshot: Codable, Equatable {
               Set((httpRequests ?? []).map(\.id)).count == (httpRequests ?? []).count else { throw ToolError("备份包含重复记录。") }
         for draft in Array(drafts.values) + history.map(\.draft) + (httpRequests ?? []).map(\.draft) + Array((scratchDrafts ?? [:]).values) {
             try draft.noteOptions?.validate(); try draft.noteWorkspace?.validate()
+            try draft.reformat?.validate()
             if let http = draft.http {
                 guard http.timeout.isFinite, (1...120).contains(http.timeout) else { throw ToolError("HTTP 超时设置无效。") }
                 for fields in [http.params, http.cookies, http.form] {

@@ -2,6 +2,7 @@
 .swiftpm/
 dist/
 .DS_Store
+vendor/formatters/node_modules/
 
 !docs/
 !docs/**
