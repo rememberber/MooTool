@@ -41,9 +41,11 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.FindReplace
+import com.rememberber.mootool.next.compose.domain.NoteAttachmentEngine
 import com.rememberber.mootool.next.compose.domain.QuickReplaceAction
 import com.rememberber.mootool.next.compose.domain.QuickReplaceEngine
 import com.rememberber.mootool.next.compose.editor.EditorHost
+import com.rememberber.mootool.next.compose.model.AppSettings
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.QuickNoteSession
@@ -53,10 +55,19 @@ import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import java.awt.FileDialog
 import java.awt.Frame
+import java.awt.Image as AwtImage
 import java.awt.Toolkit
+import java.awt.datatransfer.DataFlavor
 import java.awt.datatransfer.StringSelection
+import java.awt.image.BufferedImage
+import java.io.ByteArrayOutputStream
 import java.io.File
+import java.nio.file.Files
+import javax.imageio.ImageIO
+import kotlinx.coroutines.awaitCancellation
 import javax.swing.SwingUtilities
+import javax.swing.event.DocumentEvent
+import javax.swing.event.DocumentListener
 
 @Composable
 fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
@@ -74,10 +85,26 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
     var historyItems by remember { mutableStateOf(emptyList<HistoryRecord>()) }
     val colors = MooTheme.colors
     LaunchedEffect(session.vaultQuery, tick, settings.vault.quickNotePath) {
-        vaultItems = vault.list(session.vaultQuery)
+        vaultItems = vault.list(session.vaultQuery).filter { item ->
+            val path = item.relativePath.replace('\\', '/')
+            path != "attachments" && !path.startsWith("attachments/")
+        }
     }
     LaunchedEffect(session.historyOpen, tick) {
         if (session.historyOpen) historyItems = container.history.list(ToolId.QuickNote.id)
+    }
+    LaunchedEffect(session) {
+        val listener = object : DocumentListener {
+            override fun insertUpdate(e: DocumentEvent) { container.sessionManager.bump() }
+            override fun removeUpdate(e: DocumentEvent) { container.sessionManager.bump() }
+            override fun changedUpdate(e: DocumentEvent) = Unit
+        }
+        session.editor.document.addDocumentListener(listener)
+        try {
+            awaitCancellation()
+        } finally {
+            session.editor.document.removeDocumentListener(listener)
+        }
     }
 
     Column(
@@ -101,6 +128,26 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
             })
             MooButton(if (session.wrap) container.t("quickNote.wrap") else container.t("json.action.nowrap"), onClick = {
                 session.wrap = !session.wrap
+                refresh()
+            })
+            MooButton(container.t("quickNote.view.edit"), primary = session.viewMode == "edit", onClick = {
+                session.viewMode = "edit"
+                refresh()
+            })
+            MooButton(container.t("quickNote.view.split"), primary = session.viewMode == "split", onClick = {
+                session.viewMode = "split"
+                refresh()
+            })
+            MooButton(container.t("quickNote.view.preview"), primary = session.viewMode == "preview", onClick = {
+                session.viewMode = "preview"
+                refresh()
+            })
+            MooButton(container.t("quickNote.pasteImage"), onClick = {
+                pasteClipboardImage(container, session, vault)
+                refresh()
+            })
+            MooButton(container.t("quickNote.insertImage"), onClick = {
+                insertImageFile(container, session, vault)
                 refresh()
             })
             MooButton(container.t("quickNote.find"), onClick = { session.findOpen = !session.findOpen; refresh() })
@@ -162,6 +209,17 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                     MooButton(container.t("quickNote.newFolder"), onClick = { session.dialogMode = "folder"; session.dialogValue = "folder"; refresh() })
                 }
                 MooButton(container.t("quickNote.openVault"), onClick = { container.openDirectory(vault.root()) })
+                MooButton(container.t("quickNote.cleanOrphans"), onClick = {
+                    val orphans = NoteAttachmentEngine.unreferenced(vault)
+                    if (orphans.isEmpty()) {
+                        session.notice = container.t("quickNote.orphans.empty")
+                    } else {
+                        runCatching { orphans.forEach { NoteAttachmentEngine.deleteIfUnreferenced(vault, it) } }
+                            .onSuccess { session.notice = container.t("quickNote.orphans.removed", mapOf("count" to orphans.size.toString())) }
+                            .onFailure { session.error = it.message ?: container.t("quickNote.saveFailed") }
+                    }
+                    refresh()
+                })
                 if (vaultItems.isEmpty()) {
                     Text(container.t("quickNote.empty"), color = colors.textSecondary, fontSize = 12.sp)
                 } else {
@@ -203,26 +261,35 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                 }
             }
             Box(Modifier.weight(1f).fillMaxHeight()) {
-                if (session.currentFile.isBlank() && session.editor.text == QuickNoteSession.SAMPLE) {
-                    Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(container.t("quickNote.select"), color = colors.textSecondary)
-                        EditorHost(
-                            buffer = session.editor,
-                            dark = MooTheme.dark,
-                            fontName = settings.editor.quickNoteFontName.ifBlank { "Monospaced" },
-                            fontSize = settings.editor.quickNoteFontSize,
-                            wrap = session.wrap,
-                            modifier = Modifier.fillMaxSize()
-                        )
+                val showEditor = session.viewMode != "preview"
+                val showPreview = session.viewMode != "edit"
+                val previewText = remember(revision) { session.editor.text }
+                if (showEditor && showPreview) {
+                    Row(Modifier.fillMaxSize()) {
+                        Box(Modifier.weight(1f).fillMaxHeight()) {
+                            QuickNoteEditor(container, session, settings)
+                        }
+                        Box(Modifier.width(1.dp).fillMaxHeight().background(colors.border))
+                        Box(Modifier.weight(1f).fillMaxHeight()) {
+                            MarkdownPreviewPane(
+                                markdown = previewText,
+                                vault = vault,
+                                missingLabel = container.t("quickNote.image.missing"),
+                                remoteLabel = container.t("quickNote.image.remote"),
+                                unsafeLabel = container.t("quickNote.image.unsafe")
+                            )
+                        }
                     }
-                } else {
-                    EditorHost(
-                        buffer = session.editor,
-                        dark = MooTheme.dark,
-                        fontName = settings.editor.quickNoteFontName.ifBlank { "Monospaced" },
-                        fontSize = settings.editor.quickNoteFontSize,
-                        wrap = session.wrap
+                } else if (showPreview) {
+                    MarkdownPreviewPane(
+                        markdown = previewText,
+                        vault = vault,
+                        missingLabel = container.t("quickNote.image.missing"),
+                        remoteLabel = container.t("quickNote.image.remote"),
+                        unsafeLabel = container.t("quickNote.image.unsafe")
                     )
+                } else {
+                    QuickNoteEditor(container, session, settings)
                 }
             }
             if (session.replaceOpen) {
@@ -340,6 +407,106 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
         }
     }
 }
+
+@Composable
+private fun QuickNoteEditor(container: AppContainer, session: QuickNoteSession, settings: AppSettings) {
+    if (session.currentFile.isBlank() && session.editor.text == QuickNoteSession.SAMPLE) {
+        Column(Modifier.fillMaxSize().padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(container.t("quickNote.select"), color = MooTheme.colors.textSecondary)
+            EditorHost(
+                buffer = session.editor,
+                dark = MooTheme.dark,
+                fontName = settings.editor.quickNoteFontName.ifBlank { "Monospaced" },
+                fontSize = settings.editor.quickNoteFontSize,
+                wrap = session.wrap,
+                modifier = Modifier.fillMaxSize()
+            )
+        }
+    } else {
+        EditorHost(
+            buffer = session.editor,
+            dark = MooTheme.dark,
+            fontName = settings.editor.quickNoteFontName.ifBlank { "Monospaced" },
+            fontSize = settings.editor.quickNoteFontSize,
+            wrap = session.wrap
+        )
+    }
+}
+
+private fun pasteClipboardImage(container: AppContainer, session: QuickNoteSession, vault: NoteVault) {
+    val image = readClipboardImage()
+    if (image == null) {
+        session.error = container.t("quickNote.image.clipboardEmpty")
+        session.notice = ""
+        return
+    }
+    insertAttachmentBytes(container, session, vault, pngBytes(image), "png")
+}
+
+private fun insertImageFile(container: AppContainer, session: QuickNoteSession, vault: NoteVault) {
+    val file = chooseFile(false) ?: return
+    val extension = file.extension
+    runCatching {
+        check(NoteAttachmentEngine.extensions.contains(extension.lowercase()) || extension.lowercase() == "jpeg") {
+            container.t("quickNote.image.unsupported")
+        }
+        val bytes = Files.readAllBytes(file.toPath())
+        insertAttachmentBytes(container, session, vault, bytes, extension)
+    }.onFailure {
+        session.error = it.message ?: container.t("quickNote.saveFailed")
+        session.notice = ""
+    }
+}
+
+private fun insertAttachmentBytes(
+    container: AppContainer,
+    session: QuickNoteSession,
+    vault: NoteVault,
+    bytes: ByteArray,
+    extension: String
+) {
+    runCatching { NoteAttachmentEngine.store(vault, bytes, extension) }
+        .onSuccess { stored ->
+            val area = session.editor.area
+            val insertion = NoteAttachmentEngine.prepareInsertion(
+                session.editor.text,
+                area.selectionStart,
+                area.selectionEnd,
+                stored.markdown
+            )
+            onEdt { session.editor.replaceRange(insertion.start, insertion.end, insertion.text) }
+            session.error = ""
+            session.notice = container.t("quickNote.image.inserted")
+        }
+        .onFailure {
+            session.error = it.message ?: container.t("quickNote.saveFailed")
+            session.notice = ""
+        }
+}
+
+private fun pngBytes(image: BufferedImage): ByteArray {
+    val output = ByteArrayOutputStream()
+    check(ImageIO.write(image, "png", output)) { "PNG writer is unavailable" }
+    val bytes = output.toByteArray()
+    check(bytes.isNotEmpty()) { "PNG writer is unavailable" }
+    return bytes
+}
+
+private fun readClipboardImage(): BufferedImage? = runCatching {
+    val contents = Toolkit.getDefaultToolkit().systemClipboard.getContents(null) ?: return null
+    if (!contents.isDataFlavorSupported(DataFlavor.imageFlavor)) return null
+    when (val data = contents.getTransferData(DataFlavor.imageFlavor)) {
+        is BufferedImage -> data
+        is AwtImage -> {
+            val buffered = BufferedImage(data.getWidth(null), data.getHeight(null), BufferedImage.TYPE_INT_ARGB)
+            val graphics = buffered.createGraphics()
+            graphics.drawImage(data, 0, 0, null)
+            graphics.dispose()
+            buffered
+        }
+        else -> null
+    }
+}.getOrNull()
 
 private fun applyReplace(session: QuickNoteSession, action: QuickReplaceAction) {
     val area = session.editor.area

@@ -115,9 +115,7 @@ SwingPanel 默认处于 Compose 内容前方；菜单、命令搜索、对话框
 
 ### 5.4 Markdown
 
-解析为结构化 AST，Compose 预览渲染标题、列表、表格、任务、代码、链接、相对附件；大文档异步解析并复用分块。禁止执行正文脚本/任意 HTML；外部图片加载必须明确策略，默认本地文档不无提示发起外部请求。
-
-若选 HTML renderer，需验证表格、代码、图片的实际覆盖与渲染包体；Swing JEditorPane 的旧 HTML 支持不能直接等同完整浏览器预览。附件解析统一经过 Vault 路径边界。
+解析为结构化 AST，Compose 预览渲染标题、列表、表格、任务、代码、链接、相对附件；大文档在后台线程解析。禁止执行正文脚本/任意 HTML；外部图片默认不请求。实现锁定 **commonmark-java 0.24.0** + GFM 表格/删除线/任务列表，见 [DIFF-023](diff/023-markdown-commonmark-preview.md)。不使用 JEditorPane HTML 冒充完整预览。附件解析统一经过 Vault 路径边界。
 
 ## 6. 多窗口和会话转移
 
@@ -165,7 +163,7 @@ SwingPanel 默认处于 Compose 内容前方；菜单、命令搜索、对话框
 | 环境变量 | 自有 `EnvEngine` + 本产品 `data/environment` | 用户/系统文件备份后写入；进程/JVM 只读；Unix 钩子使用 Compose 标记。见 DIFF-016 |
 | Host | 自有 `HostEngine` + `data/hosts/profiles.json` | 保存方案不改系统文件；应用前 diff/备份/指纹冲突；提权失败保持原 hosts。见 DIFF-017 |
 | 代码运行 | 自有 `CodeRunEngine` + `ProcessBuilder` argv | Java 源文件模式；白名单环境；1 MiB/2 MiB 上限；ProcessHandle 杀树。见 DIFF-020 |
-| 随手记 | 自有 `NoteVault` + `QuickReplaceEngine` | 默认 `data/vaults/quick-note`；24 项替换对齐 Electron 样本。见 DIFF-021 |
+| 随手记 | 自有 `NoteVault` + `QuickReplaceEngine` + `MarkdownPreviewEngine` | 默认 `data/vaults/quick-note`；24 项替换对齐 Electron 样本。预览见 DIFF-023；替换见 DIFF-021 |
 | Git | 本产品 GitService 封装外部 Git CLI，缺失引导配置；JGit 可作验证后的替代 | 仓库锁、冲突、stash/操作状态、凭据、Git 不存在时仍可记笔记 |
 | 时间/计算 | java.time、BigInteger/BigDecimal、自有表达式 AST | 时区、DST、精度、算符、溢出；不 eval 用户文本 |
 

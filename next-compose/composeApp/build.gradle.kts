@@ -92,6 +92,10 @@ kotlin {
                 implementation(libs.pdfbox)
                 implementation(libs.oshi.core)
                 implementation(libs.okhttp)
+                implementation(libs.commonmark)
+                implementation(libs.commonmark.ext.gfm.tables)
+                implementation(libs.commonmark.ext.gfm.strikethrough)
+                implementation(libs.commonmark.ext.task.list.items)
             }
         }
         val desktopTest by getting {

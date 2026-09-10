@@ -89,7 +89,7 @@
 
 验收：5 MiB 文档、连续图片粘贴、列编辑 undo/redo、双击选词后自动保存、分栏切换/分离收回后 undo、磁盘满、外部修改冲突、重启恢复。
 
-本轮已落地左文档库/中编辑器/右 24 项快速替换、保存与切换时写入、查找替换、历史与分离窗口。**尚未实现** Markdown 预览/分栏、列编辑、附件与剪贴板图片、frontmatter、全文索引、Git、外部修改冲突监视。快速替换与目录差异见 [DIFF-021](diff/021-quick-note-replace-vault.md)。
+本轮已落地左文档库/中编辑或预览/右 24 项快速替换、保存与切换时写入、查找替换、历史与分离窗口、编辑/分栏/预览三模式、commonmark Compose 预览、剪贴板/文件图片附件与孤立清理。**尚未实现** 列编辑、frontmatter、全文索引、Git、外部修改冲突监视、拖入编辑器内部。快速替换见 [DIFF-021](diff/021-quick-note-replace-vault.md)，预览与附件见 [DIFF-023](diff/023-markdown-commonmark-preview.md)。
 
 ### F02 文本对比
 

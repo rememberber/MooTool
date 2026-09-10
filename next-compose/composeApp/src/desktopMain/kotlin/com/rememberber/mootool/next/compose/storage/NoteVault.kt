@@ -60,6 +60,16 @@ class NoteVault(
         return target
     }
 
+    fun writeBytes(relativePath: String, bytes: ByteArray): Path {
+        val target = resolve(relativePath)
+        check(!target.exists()) { "File already exists: $relativePath" }
+        target.parent.createDirectories()
+        val temp = target.resolveSibling(".${target.name}.tmp")
+        Files.write(temp, bytes)
+        Files.move(temp, target, StandardCopyOption.ATOMIC_MOVE)
+        return target
+    }
+
     fun createFile(relativePath: String, content: String = ""): Path {
         val target = resolve(relativePath)
         check(!target.exists()) { "File already exists: $relativePath" }
@@ -107,10 +117,15 @@ class NoteVault(
     fun resolve(relativePath: String): Path {
         val base = root().toAbsolutePath().normalize()
         val target = base.resolve(relativePath).toAbsolutePath().normalize()
-        val canonicalBase = if (base.exists()) base.toRealPath() else base
-        val canonicalTargetParent = if (target.parent.exists()) target.parent.toRealPath() else target.parent.normalize()
-        val allowed = canonicalTargetParent == canonicalBase || canonicalTargetParent.startsWith(canonicalBase)
-        check(allowed) { "Path escapes note vault: $relativePath" }
+        check(target.startsWith(base) && target != base) { "Path escapes note vault: $relativePath" }
+        if (base.exists()) {
+            val canonicalBase = base.toRealPath()
+            val existing = generateSequence(target) { it.parent }.first { it.exists() }
+            val canonicalExisting = existing.toRealPath()
+            check(canonicalExisting == canonicalBase || canonicalExisting.startsWith(canonicalBase)) {
+                "Path escapes note vault: $relativePath"
+            }
+        }
         return target
     }
 }
