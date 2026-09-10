@@ -28,18 +28,28 @@ Swing で開発する Java 開発者は減りましたが、今でもその開�
 <a href="https://hellogithub.com/repository/4e5f287079734f98890a69d56000b361" target="_blank"><img src="https://api.hellogithub.com/v1/widgets/recommend.svg?rid=4e5f287079734f98890a69d56000b361&claim_uid=0UhXFJvP9ndHtiB" alt="Featured｜HelloGitHub" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 
 ## 対応プラットフォーム
-Windows • Linux • macOS
+
+Windows • Linux • macOS。各製品の対象プラットフォームと現在の状況は下表をご覧ください。開発中の製品は、すべての対象プラットフォームでのリリース受け入れ確認を完了していません。
 
 ## 製品ライン
 
-| 製品 | 概要 | ダウンロード |
-| --- | --- | --- |
-| **MooTool Next Electron** | Electron、Vite、React、TypeScript で再構築した推奨クロスプラットフォーム版です。Java 版とは独立してインストール、データ保存、更新が行われます。 | [1.1.4 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.4) |
-| **MooTool Java** | Swing ベースの従来のクロスプラットフォーム版で、Windows、Linux、macOS 向けの独立した製品ラインとして保守を継続しています。 | [1.8.6 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/v1.8.6) · [Gitee ミラー](https://gitee.com/zhoubochina/MooTool/releases) |
-| [**MooTool Next Tauri**](next-tauri/README.md) | Tauri 2、Rust、React、TypeScript で構築した独立デスクトップ版で、現在開発中です。 | 現在は提供していません |
-| [**MooTool Next macOS Native**](macos/README.md) | SwiftUI ベースの macOS ネイティブプレビュー版で、現在はプロジェクト構成と最小限のアプリシェルを提供しています。 | 現在は提供していません |
+MooTool には現在 7 つの独立した製品ラインがあり、コード、ビルド、バージョン、インストール識別子、データ、更新チャネルを個別に管理しています。並行してインストールでき、それぞれ独立して開発を進めています。製品間でバージョン番号を比較せず、機能の対応状況は各製品のドキュメントをご確認ください。
+
+| 製品 / ソース | 技術と概要 | 対象プラットフォーム | 状況 / ダウンロード |
+| --- | --- | --- | --- |
+| [**MooTool Next Electron**](next/README.md) | Electron、Vite、React、TypeScript。現在推奨する主力デスクトップ版。 | Windows / Linux / macOS | 安定版：[1.1.4 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.4) |
+| [**MooTool Java**](src/) | Java、Swing。保守を継続している従来のデスクトップ版。 | Windows / Linux / macOS | 安定版：[1.8.6 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/v1.8.6) · [Gitee ミラー](https://gitee.com/zhoubochina/MooTool/releases) |
+| [**MooTool Next Tauri**](next-tauri/README.md) | Tauri 2、Rust、React、TypeScript。25 個のツールと独立したデータ保存・更新を実装。 | Windows / Linux / macOS | リリース候補版：[0.1.0-rc.2 をダウンロード](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2) |
+| [**MooTool Next macOS Native**](next-macos-native/README.md) | SwiftUI、AppKit、システムフレームワーク。ネイティブワークスペース、JSON ライブラリ、クイックメモ、画像添付。 | macOS 14+ | 0.6.0 開発版。ソースから `.app` / DMG をビルド可能。 |
+| [**MooTool Next Flutter**](next-flutter/README.md) | Flutter、Dart。ツールとデスクトップチャネルを実装済み。プラットフォーム検証と一部機能は対応中。 | Windows / Linux / macOS | 0.1.0 開発版。ローカル実行・未署名パッケージ作成スクリプトあり。 |
+| [**MooTool Next Compose**](next-compose/README.md) | Kotlin、Compose Multiplatform Desktop。複数のツール、クイックメモ、バックアップ・復元を実装。 | Windows / Linux / macOS | 0.1.0 開発版。JVM 同梱の macOS app-image をローカルでビルド確認済み。 |
+| [**MooTool Next FX**](next-fx/README.md) | OpenJDK、OpenJFX（JavaFX）。アプリシェル、JSON ライブラリ、エンコード・デコード、正規表現ツールを実装。 | Windows / Linux / macOS | 0.1.0-SNAPSHOT 初期開発版。ローカルでの macOS app-image 作成に対応。 |
+
+製品名のリンクからソースまたは製品 README を開けます。各 README に開発環境、実行、パッケージ作成、検証の説明があります。現在の macOS ネイティブ製品は `next-macos-native/` にあり、`macos/` は初期の SwiftUI プロトタイプです。
 
 ## スクリーンショット
+
+> 以下は MooTool Java のスクリーンショットです。他の製品の画面と検証記録は各 README をご覧ください。
 
 > 主要機能のスクリーンショットは以下の通りです。翻訳、UA 分析、画像アシスタント、PDF、環境変数、システム情報、設定ファイル変換、Protobuf などのモジュールは個別の画像がありません。インストール後、該当タブでお試しください。
 
@@ -85,8 +95,11 @@ Windows • Linux • macOS
 
 - [MooTool Next Electron 1.1.4（推奨）](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.4)
 - [MooTool Java 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6)
+- [MooTool Next Tauri 0.1.0-rc.2（リリース候補版）](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2)
 - [GitHub Releases 一覧](https://github.com/rememberber/MooTool/releases)
 - [Gitee の MooTool Java Releases](https://gitee.com/zhoubochina/MooTool/releases)
+
+macOS Native、Flutter、Compose、FX のソースビルドについては、上の製品表にある README をご覧ください。開発版のバージョン番号は、公開安定版のインストーラーがあることを意味しません。
 
 ## 支援 / スポンサー
 
@@ -95,6 +108,8 @@ Windows • Linux • macOS
 ![zanshang](assets/material/wx-zanshang.jpg)
 
 # MooTool 機能一覧
+
+> 以下は MooTool Java の機能一覧です。他の製品の実装済み機能、差異、今後の予定は各ドキュメントをご覧ください。
 
 > 多くのモジュールに **履歴** サブタブがあり、検索・適用・入出力のコピー・削除・全消去に対応しています。
 
@@ -357,6 +372,8 @@ MooTool
 ## 開発者向けメモ
 
 複数製品のバージョン、Git tag、GitHub Release、`Latest`、CI 分離ルールについては、[複数製品のリリース規約](RELEASE_CONVENTIONS.md)を参照してください。
+
+各製品は独立したプロジェクトです。製品表の README を読み、対応するディレクトリで開発してください。以下の JDK、IntelliJ IDEA、Maven、パッケージ作成の説明は、リポジトリ直下の MooTool Java にのみ適用されます。
 
 最低 JDK：**21**  
 開発を始める前に、**下図のとおり IntelliJ IDEA を設定**し、**maven clean** を実行してください：
