@@ -28,18 +28,28 @@
 <a href="https://hellogithub.com/repository/4e5f287079734f98890a69d56000b361" target="_blank"><img src="https://api.hellogithub.com/v1/widgets/recommend.svg?rid=4e5f287079734f98890a69d56000b361&claim_uid=0UhXFJvP9ndHtiB" alt="Featured｜HelloGitHub" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 
 ## 支持的平台
-Windows • Linux • macOS
+
+Windows • Linux • macOS。各产品的目标平台与当前状态见下表；开发中的版本尚未完成全部目标平台的发行验收。
 
 ## 产品线
 
-| 产品 | 介绍 | 下载 |
-| --- | --- | --- |
-| **MooTool Next Electron** | 推荐的跨平台版本，基于 Electron、Vite、React 和 TypeScript 重写，与 Java 版独立安装、存储和更新。 | [下载 1.1.4](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.4) |
-| **MooTool Java** | 原始的 Swing 跨平台版本，作为独立产品线继续维护，支持 Windows、Linux 和 macOS。 | [下载 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6) · [Gitee 镜像](https://gitee.com/zhoubochina/MooTool/releases) |
-| [**MooTool Next Tauri**](next-tauri/README.md) | 基于 Tauri 2、Rust、React 和 TypeScript 构建的独立桌面版本，目前正在开发中。 | 暂未提供 |
-| [**MooTool Next macOS Native**](macos/README.md) | 基于 SwiftUI 的 macOS 原生预览版，目前包含项目骨架和最小化应用外壳。 | 暂未提供 |
+MooTool 目前包含 7 条独立产品线，各自维护代码、构建、版本、安装身份、数据和更新通道，可并行安装与独立演进。不同产品的版本号不作横向比较，功能覆盖以各自文档为准。
+
+| 产品 / 源码 | 技术与介绍 | 目标平台 | 当前状态 / 下载 |
+| --- | --- | --- | --- |
+| [**MooTool Next Electron**](next/README.md) | Electron、Vite、React、TypeScript；当前推荐的主力桌面版本。 | Windows / Linux / macOS | 稳定版：[下载 1.1.4](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.4) |
+| [**MooTool Java**](src/) | Java、Swing；持续维护的原始桌面版本。 | Windows / Linux / macOS | 稳定版：[下载 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6) · [Gitee 镜像](https://gitee.com/zhoubochina/MooTool/releases) |
+| [**MooTool Next Tauri**](next-tauri/README.md) | Tauri 2、Rust、React、TypeScript；已实现 25 个工具、独立存储与更新。 | Windows / Linux / macOS | 候选预发布版：[下载 0.1.0-rc.2](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2) |
+| [**MooTool Next macOS Native**](next-macos-native/README.md) | SwiftUI、AppKit、系统框架；原生工作区、JSON 文档库、随手记与图片附件。 | macOS 14+ | 0.6.0 开发版；可从源码构建 `.app` / DMG。 |
+| [**MooTool Next Flutter**](next-flutter/README.md) | Flutter、Dart；工具与桌面通道已实现，平台验收和部分能力仍在完善。 | Windows / Linux / macOS | 0.1.0 开发版；提供本地运行与未签名打包脚本。 |
+| [**MooTool Next Compose**](next-compose/README.md) | Kotlin、Compose Multiplatform Desktop；已实现多项工具、随手记及备份恢复。 | Windows / Linux / macOS | 0.1.0 开发版；已验证本机 macOS app-image 构建，自带 JVM 运行时。 |
+| [**MooTool Next FX**](next-fx/README.md) | OpenJDK、OpenJFX（JavaFX）；已有应用壳、JSON 文档库、编码解码和正则工具。 | Windows / Linux / macOS | 0.1.0-SNAPSHOT 早期开发版；已实现本机 macOS app-image 打包。 |
+
+点击产品名查看源码或产品 README；各产品 README 提供开发环境、运行、打包和验收说明。当前 macOS 原生产品位于 `next-macos-native/`，`macos/` 是早期 SwiftUI 原型。
 
 ## 截图速览
+
+> 以下截图来自 MooTool Java；其他产品的界面与验收记录请查看各自 README。
 
 > 以下为主要功能界面截图。翻译、UA分析、图片助手、PDF、环境变量、系统信息、配置文件转换、Protobuf 等模块暂未单独配图，可在安装后于对应 Tab 中体验。
 
@@ -85,8 +95,11 @@ Windows • Linux • macOS
 
 - [MooTool Next Electron 1.1.4（推荐）](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.4)
 - [MooTool Java 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6)
+- [MooTool Next Tauri 0.1.0-rc.2（候选预发布版）](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2)
 - [全部 GitHub Releases](https://github.com/rememberber/MooTool/releases)
 - [MooTool Java Gitee Releases](https://gitee.com/zhoubochina/MooTool/releases)
+
+macOS Native、Flutter、Compose 和 FX 当前提供源码构建入口，详见上方产品表中的 README。开发版本号不代表已提供公开稳定安装包。
 
 ## 鼓励/赞赏
 
@@ -97,6 +110,8 @@ Windows • Linux • macOS
 ![zanshang](assets/material/wx-zanshang.jpg)
 
 # MooTool全功能地图
+
+> 以下为 MooTool Java 的功能地图；其他产品的已实现功能、差异和待办请查看各自文档。
 
 > 多个工具模块提供统一的「历史记录」子 Tab，支持搜索、应用、复制输入/输出、删除与清空。
 
@@ -359,6 +374,8 @@ MooTool
 ## 开发温馨提示
 
 多产品的版本号、Git tag、GitHub Release、`Latest` 标记及 CI 隔离规则统一见[多产品发布约定](RELEASE_CONVENTIONS.md)。
+
+各产品使用独立工程，请先阅读上方产品表链接的 README，并在对应目录开发。以下 JDK、IntelliJ IDEA、Maven 和打包说明仅适用于仓库根目录的 MooTool Java。
 
 最低JDK版本要求：**21**  
 在你开始开发之前, **请按下图设置IntelliJ IDEA**, 然后 **maven clean**:

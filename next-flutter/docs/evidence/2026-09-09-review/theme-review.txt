@@ -1,0 +1,16 @@
+Waiting for another flutter command to release the startup lock...
+00:00 +0: loading /tmp/mootool-flutter-review.6VnMrU/theme_review_test.dart
+00:00 +0: R17 non-default UI font size must build a usable theme
+00:00 +0 -1: R17 non-default UI font size must build a usable theme [E]
+  Expected: return normally
+    Actual: <Closure: () => ThemeData>
+     Which: threw _AssertionError:<'package:flutter/src/painting/text_style.dart': Failed assertion: line 996 pos 12: 'fontSize != null || (fontSizeFactor == 1.0 && fontSizeDelta == 0.0)': is not true.>
+  
+  package:matcher                                                expect
+  package:flutter_test/src/widget_tester.dart 473:18             expect
+  /tmp/mootool-flutter-review.6VnMrU/theme_review_test.dart 6:5  main.<fn>
+  
+00:00 +0 -1: Some tests failed.
+
+Failing tests:
+  /tmp/mootool-flutter-review.6VnMrU/theme_review_test.dart: R17 non-default UI font size must build a usable theme

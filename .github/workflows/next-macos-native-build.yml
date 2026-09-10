@@ -1,0 +1,51 @@
+name: Next macOS Native
+on:
+  push:
+    paths:
+      - 'next-macos-native/**'
+      - '.github/workflows/next-macos-native-build.yml'
+    tags:
+      - 'next-macos-native-v*'
+  pull_request:
+    paths:
+      - 'next-macos-native/**'
+      - '.github/workflows/next-macos-native-build.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-15
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_26.2.app/Contents/Developer
+    defaults:
+      run:
+        working-directory: next-macos-native
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate native product version
+        env:
+          NATIVE_REF_TYPE: ${{ github.ref_type }}
+          NATIVE_REF_NAME: ${{ github.ref_name }}
+        run: |
+          python3 - <<'PY'
+          import os, pathlib, re
+          version = pathlib.Path('VERSION').read_text().strip()
+          assert re.fullmatch(r'\d+\.\d+\.\d+', version), 'Invalid native VERSION'
+          assert pathlib.Path(f'release-notes/{version}.md').is_file(), 'Missing native release notes'
+          if os.environ['NATIVE_REF_TYPE'] == 'tag':
+              assert os.environ['NATIVE_REF_NAME'] == f'next-macos-native-v{version}', 'Native tag/version mismatch'
+          PY
+      - name: Core checks
+        run: ./scripts/check-core.sh
+      - name: XCTest
+        run: swift test
+      - name: Build universal app and DMG
+        run: ./scripts/build-app.sh --arch universal --dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MooTool-Next-macOS-Native-universal
+          path: |
+            next-macos-native/dist/universal/*.dmg
+            next-macos-native/dist/universal/build-info.json
+          if-no-files-found: error

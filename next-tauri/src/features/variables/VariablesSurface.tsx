@@ -38,7 +38,7 @@ export function VariablesSurface() {
   const [notice, setNotice] = useState<VariablesNotice>({ key: 'notice.loading' })
   const [failed, setFailed] = useState(false)
   const [copied, setCopied] = useState('')
-  const [busy, setBusy] = useState(false)
+  const [busy, setBusy] = useState(true)
   const [scope, setScope] = useState<'process' | 'runtime'>('process')
   const runtimeVariables = useMemo<EnvironmentVariable[]>(() => Object.entries(settings.runtime.environment).map(([name, value]) => ({ name, value: isSensitiveName(name) && !revealed ? '••••••••' : value, sensitive: isSensitiveName(name) })).sort((left, right) => left.name.localeCompare(right.name)), [revealed, settings.runtime.environment])
   const scopedVariables = scope === 'process' ? variables : runtimeVariables
@@ -54,7 +54,7 @@ export function VariablesSurface() {
     digest: JSON.stringify({ count: scopedVariables.length, sensitiveCount, revealed, queryLength: query.length, scope }),
     summary: t('session.summary', { count: scopedVariables.length, sensitive: sensitiveCount, state: t(revealed ? 'state.revealed' : 'state.redacted') })
   }), [query.length, revealed, scope, scopedVariables.length, sensitiveCount, t])
-  const { sessionId, reportError } = useToolSessionReport('variables', session.digest, session.summary)
+  const { sessionId, reportError } = useToolSessionReport('variables', session.digest, session.summary, !busy)
 
   useEffect(() => {
     void load(false)

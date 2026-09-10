@@ -1,0 +1,31 @@
+00:00 +0: loading /tmp/mootool-flutter-review.6VnMrU/widget_review_test.dart
+00:00 +0: R12 selection-only find result reaches visible editor
+══╡ EXCEPTION CAUGHT BY FLUTTER TEST FRAMEWORK ╞════════════════════════════════════════════════════
+The following TestFailure was thrown running a test:
+Expected: TextSelection:<TextSelection(baseOffset: 6, extentOffset: 10, isDirectional: false)>
+  Actual: TextSelection:<TextSelection.collapsed(offset: 0, affinity: TextAffinity.downstream,
+isDirectional: false)>
+
+When the exception was thrown, this was the stack:
+#4      main.<anonymous closure> (file:///tmp/mootool-flutter-review.6VnMrU/widget_review_test.dart:79:5)
+<asynchronous suspension>
+#5      testWidgets.<anonymous closure>.<anonymous closure> (package:flutter_test/src/widget_tester.dart:192:15)
+<asynchronous suspension>
+#6      TestWidgetsFlutterBinding._runTestBody (package:flutter_test/src/binding.dart:1953:5)
+<asynchronous suspension>
+<asynchronous suspension>
+(elided one frame from package:stack_trace)
+
+This was caught by the test expectation on the following line:
+  file:///tmp/mootool-flutter-review.6VnMrU/widget_review_test.dart line 79
+The test description was:
+  R12 selection-only find result reaches visible editor
+════════════════════════════════════════════════════════════════════════════════════════════════════
+00:05 +0 -1: R12 selection-only find result reaches visible editor [E]
+  Test failed. See exception logs above.
+  The test description was: R12 selection-only find result reaches visible editor
+  
+00:05 +0 -1: Some tests failed.
+
+Failing tests:
+  /tmp/mootool-flutter-review.6VnMrU/widget_review_test.dart: R12 selection-only find result reaches visible editor

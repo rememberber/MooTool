@@ -1,0 +1,7 @@
+ImageTracer.java is a public-domain port of imagetracer.js by András Jankovics.
+
+Copied into next-compose from the Unlicense / public domain header in
+https://github.com/jankovicsandras/imagetracerjava (version 1.1.2).
+
+The Unlicense text is retained at the top of
+composeApp/src/desktopMain/java/jankovicsandras/imagetracer/ImageTracer.java.

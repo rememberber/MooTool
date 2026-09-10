@@ -1,0 +1,31 @@
+Resolving dependencies...
+Downloading packages...
+  flutter_lints 5.0.0 (6.0.0 available)
+  lints 5.1.1 (6.1.0 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  meta 1.18.3 (1.19.0 available)
+  pointycastle 3.9.1 (4.0.0 available)
+  qr 3.0.2 (4.0.0 available)
+  test_api 0.7.12 (0.7.14 available)
+  timezone 0.10.1 (0.11.1 available)
+  vector_math 2.4.0 (2.4.2 available)
+Got dependencies!
+9 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Building macOS application...                                   
+/Users/zhoubo/IdeaProjectsCE/MooTool/next-flutter/macos/Runner.xcodeproj: Runner: ld: warning: Could not find or use auto-linked framework 'CoreAudioTypes': framework 'CoreAudioTypes' not found
+/Users/zhoubo/IdeaProjectsCE/MooTool/next-flutter/macos/Runner.xcodeproj: Runner: ld: warning: Could not parse or use implicit file '/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/System/Library/Frameworks/SwiftUICore.framework/Versions/A/SwiftUICore.tbd': cannot link directly with 'SwiftUICore' because product being built is not an allowed client of it
+Undefined symbols for architecture x86_64:
+  "static url_launcher_macos.UrlLauncherPlugin.register(with: __C.FlutterPluginRegistrar) -> ()", referenced from:
+      generic specialization <__C.FlutterViewController> of function signature specialization <Arg[0] = Existential To Protocol Constrained Generic> of MooTool_Next_Flutter.RegisterGeneratedPlugins(registry: __C.FlutterPluginRegistry) -> () in MainFlutterWindow.o
+  "type metadata accessor for url_launcher_macos.UrlLauncherPlugin", referenced from:
+      generic specialization <__C.FlutterViewController> of function signature specialization <Arg[0] = Existential To Protocol Constrained Generic> of MooTool_Next_Flutter.RegisterGeneratedPlugins(registry: __C.FlutterPluginRegistry) -> () in MainFlutterWindow.o
+  "static file_selector_macos.FileSelectorPlugin.register(with: __C.FlutterPluginRegistrar) -> ()", referenced from:
+      generic specialization <__C.FlutterViewController> of function signature specialization <Arg[0] = Existential To Protocol Constrained Generic> of MooTool_Next_Flutter.RegisterGeneratedPlugins(registry: __C.FlutterPluginRegistry) -> () in MainFlutterWindow.o
+  "type metadata accessor for file_selector_macos.FileSelectorPlugin", referenced from:
+      generic specialization <__C.FlutterViewController> of function signature specialization <Arg[0] = Existential To Protocol Constrained Generic> of MooTool_Next_Flutter.RegisterGeneratedPlugins(registry: __C.FlutterPluginRegistry) -> () in MainFlutterWindow.o
+ld: symbol(s) not found for architecture x86_64
+/Users/zhoubo/IdeaProjectsCE/MooTool/next-flutter/macos/Runner.xcodeproj: Runner: clang: error: linker command failed with exit code 1 (use -v to see invocation)
+** BUILD FAILED **
+
+Build process failed

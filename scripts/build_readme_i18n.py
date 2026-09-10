@@ -69,6 +69,50 @@ BADGES = """\
 
 # Longer phrases first.
 EN_MAP = [
+    ("## 关于",
+     "## About"),
+    ("你好！感谢使用 MooTool。「Moo」是我女儿的小名。",
+     "Hi! Thanks for using MooTool. \"Moo\" is named after my daughter."),
+    ("我持续构建和改进 MooTool，来支撑自己的日常开发工作。",
+     "I keep building and improving MooTool to support my own day-to-day development work."),
+    ("现在用 Swing 做项目的 Java 开发者越来越少了，但我依然热爱它。所以每当有一点空闲时间，我都会投入到开发中。最终做出了一些成果，尽管网上已有很多类似工具。",
+     "Fewer Java developers build with Swing nowadays, but I still enjoy it. So in every bit of free time, I kept working on this project. I finally shipped something, though many similar tools exist on the web."),
+    ("希望你使用它的愉快程度，不亚于我开发它时的投入。",
+     "Hope you enjoy using it as much as I enjoyed building it."),
+    ("Windows • Linux • macOS。各产品的目标平台与当前状态见下表；开发中的版本尚未完成全部目标平台的发行验收。",
+     "Windows • Linux • macOS. Target platforms and current status are listed below; editions under development have not completed release acceptance on every target platform."),
+    ("## 产品线",
+     "## Product lines"),
+    ("MooTool 目前包含 7 条独立产品线，各自维护代码、构建、版本、安装身份、数据和更新通道，可并行安装与独立演进。不同产品的版本号不作横向比较，功能覆盖以各自文档为准。",
+     "MooTool now has 7 independent product lines, each with its own code, build, version, installation identity, data, and update channel. They can be installed side by side and evolve independently. Version numbers are specific to each product; see its documentation for feature coverage."),
+    ("| 产品 / 源码 | 技术与介绍 | 目标平台 | 当前状态 / 下载 |",
+     "| Product / source | Technology and overview | Target platforms | Status / download |"),
+    ("| [**MooTool Next Electron**](next/README.md) | Electron、Vite、React、TypeScript；当前推荐的主力桌面版本。 | Windows / Linux / macOS | 稳定版：[下载 1.1.4](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.4) |",
+     "| [**MooTool Next Electron**](next/README.md) | Electron, Vite, React, TypeScript; the currently recommended desktop edition. | Windows / Linux / macOS | Stable: [Download 1.1.4](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.4) |"),
+    ("| [**MooTool Java**](src/) | Java、Swing；持续维护的原始桌面版本。 | Windows / Linux / macOS | 稳定版：[下载 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6) · [Gitee 镜像](https://gitee.com/zhoubochina/MooTool/releases) |",
+     "| [**MooTool Java**](src/) | Java, Swing; the original desktop edition, still maintained. | Windows / Linux / macOS | Stable: [Download 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6) · [Gitee mirror](https://gitee.com/zhoubochina/MooTool/releases) |"),
+    ("| [**MooTool Next Tauri**](next-tauri/README.md) | Tauri 2、Rust、React、TypeScript；已实现 25 个工具、独立存储与更新。 | Windows / Linux / macOS | 候选预发布版：[下载 0.1.0-rc.2](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2) |",
+     "| [**MooTool Next Tauri**](next-tauri/README.md) | Tauri 2, Rust, React, TypeScript; 25 tools with independent storage and updates. | Windows / Linux / macOS | Release candidate: [Download 0.1.0-rc.2](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2) |"),
+    ("| [**MooTool Next macOS Native**](next-macos-native/README.md) | SwiftUI、AppKit、系统框架；原生工作区、JSON 文档库、随手记与图片附件。 | macOS 14+ | 0.6.0 开发版；可从源码构建 `.app` / DMG。 |",
+     "| [**MooTool Next macOS Native**](next-macos-native/README.md) | SwiftUI, AppKit, system frameworks; native workspaces, JSON vault, quick notes, and image attachments. | macOS 14+ | 0.6.0 development build; build `.app` / DMG from source. |"),
+    ("| [**MooTool Next Flutter**](next-flutter/README.md) | Flutter、Dart；工具与桌面通道已实现，平台验收和部分能力仍在完善。 | Windows / Linux / macOS | 0.1.0 开发版；提供本地运行与未签名打包脚本。 |",
+     "| [**MooTool Next Flutter**](next-flutter/README.md) | Flutter, Dart; tools and desktop channels are implemented, with platform acceptance and some capabilities still in progress. | Windows / Linux / macOS | 0.1.0 development build; local run and unsigned packaging scripts available. |"),
+    ("| [**MooTool Next Compose**](next-compose/README.md) | Kotlin、Compose Multiplatform Desktop；已实现多项工具、随手记及备份恢复。 | Windows / Linux / macOS | 0.1.0 开发版；已验证本机 macOS app-image 构建，自带 JVM 运行时。 |",
+     "| [**MooTool Next Compose**](next-compose/README.md) | Kotlin, Compose Multiplatform Desktop; multiple tools, quick notes, and backup/restore implemented. | Windows / Linux / macOS | 0.1.0 development build; local macOS app-image build verified, with its own JVM runtime. |"),
+    ("| [**MooTool Next FX**](next-fx/README.md) | OpenJDK、OpenJFX（JavaFX）；已有应用壳、JSON 文档库、编码解码和正则工具。 | Windows / Linux / macOS | 0.1.0-SNAPSHOT 早期开发版；已实现本机 macOS app-image 打包。 |",
+     "| [**MooTool Next FX**](next-fx/README.md) | OpenJDK, OpenJFX (JavaFX); application shell, JSON vault, encoding/decoding, and regex tools implemented. | Windows / Linux / macOS | 0.1.0-SNAPSHOT early development build; local macOS app-image packaging implemented. |"),
+    ("点击产品名查看源码或产品 README；各产品 README 提供开发环境、运行、打包和验收说明。当前 macOS 原生产品位于 `next-macos-native/`，`macos/` 是早期 SwiftUI 原型。",
+     "Follow the product links for source code or the product README, including development setup, running, packaging, and acceptance notes. The current macOS native product lives in `next-macos-native/`; `macos/` contains the early SwiftUI prototype."),
+    ("> 以下截图来自 MooTool Java；其他产品的界面与验收记录请查看各自 README。",
+     "> The screenshots below show MooTool Java. See each product's README for its UI and acceptance records."),
+    ("- [MooTool Next Tauri 0.1.0-rc.2（候选预发布版）](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2)",
+     "- [MooTool Next Tauri 0.1.0-rc.2 (release candidate)](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2)"),
+    ("macOS Native、Flutter、Compose 和 FX 当前提供源码构建入口，详见上方产品表中的 README。开发版本号不代表已提供公开稳定安装包。",
+     "For macOS Native, Flutter, Compose, and FX, see the product READMEs above for source builds. A development version number does not imply that a public stable installer is available."),
+    ("> 以下为 MooTool Java 的功能地图；其他产品的已实现功能、差异和待办请查看各自文档。",
+     "> This feature map describes MooTool Java. See each product's documentation for implemented features, differences, and planned work."),
+    ("各产品使用独立工程，请先阅读上方产品表链接的 README，并在对应目录开发。以下 JDK、IntelliJ IDEA、Maven 和打包说明仅适用于仓库根目录的 MooTool Java。",
+     "Each product has an independent project. Read its README linked in the product table and work in the corresponding directory. The JDK, IntelliJ IDEA, Maven, and packaging instructions below apply only to MooTool Java at the repository root."),
     ("Handy tool set for developers.   \n开发者常备小工具", "Handy desktop toolset for developers."),
     ("## 支持的平台", "## Supported platforms"),
     ("## 截图速览", "## Screenshots"),
@@ -509,13 +553,14 @@ def prepend_header(body: str, lang: str) -> str:
         "zh": "开发者常备小工具",
         "ja": "開発者向けデスクトップツールセット",
     }[lang]
+    badges = "" if BADGES in body else f"{BADGES}\n\n"
     return (
         f"{LOGO}\n\n"
         f"{SWITCHER[lang]}"
         f"# MooTool\n\n"
         f"{tagline}\n\n"
-        f"{BADGES}\n\n"
-        f"{body.lstrip()}"
+        f"{badges}"
+        f"{body.strip()}\n"
     )
 
 

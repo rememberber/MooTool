@@ -1,0 +1,35 @@
+Resolving dependencies...
+Downloading packages...
+  flutter_lints 5.0.0 (6.0.0 available)
+  lints 5.1.1 (6.1.0 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  meta 1.18.3 (1.19.0 available)
+  pointycastle 3.9.1 (4.0.0 available)
+  qr 3.0.2 (4.0.0 available)
+  test_api 0.7.12 (0.7.14 available)
+  timezone 0.10.1 (0.11.1 available)
+  vector_math 2.4.0 (2.4.2 available)
+Got dependencies!
+9 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Resolving dependencies...
+Downloading packages...
+  flutter_lints 5.0.0 (6.0.0 available)
+  lints 5.1.1 (6.1.0 available)
+  material_color_utilities 0.13.0 (0.13.1 available)
+  meta 1.18.3 (1.19.0 available)
+  pointycastle 3.9.1 (4.0.0 available)
+  qr 3.0.2 (4.0.0 available)
+  test_api 0.7.12 (0.7.14 available)
+  timezone 0.10.1 (0.11.1 available)
+  vector_math 2.4.0 (2.4.2 available)
+Got dependencies!
+9 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Building macOS application...                                   
+warning: Run script build phase 'Run Script' will be run during every build because it does not specify any outputs. To address this issue, either add output dependencies to the script phase, or configure it to run in every build by unchecking "Based on dependency analysis" in the script phase. (in target 'Flutter Assemble' from project 'Runner')
+✓ Built build/macos/Build/Products/Release/MooTool Next Flutter.app (56.5MB)
+created: /private/var/folders/nc/j84xfhs13pv1nxvtgxsk2m3w0000gn/T/mootool-flutter-clean-review-vwat9ad5/next-flutter/dist/MooTool-Next-Flutter-0.1.0-mac-x64.dmg
+ok MooTool-Next-Flutter-0.1.0-mac-x64.dmg sha512-b64=tZ02CuPmGFjFv9EI/EGJxBfY51DLSHHWkE5xo2I5iXMXDahoU0iNKLk1+lrbfAUJAlD3B5WM6VxYEC3m3qBu1g== size=25420217
+unsigned dmg: /private/var/folders/nc/j84xfhs13pv1nxvtgxsk2m3w0000gn/T/mootool-flutter-clean-review-vwat9ad5/next-flutter/dist/MooTool-Next-Flutter-0.1.0-mac-x64.dmg
+Gatekeeper will warn; users must open the app from Finder. This product does not auto-install.

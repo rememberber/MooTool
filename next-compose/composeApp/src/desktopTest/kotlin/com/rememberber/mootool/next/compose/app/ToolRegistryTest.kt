@@ -1,0 +1,51 @@
+package com.rememberber.mootool.next.compose.app
+
+import com.rememberber.mootool.next.compose.model.ToolId
+import kotlin.test.Test
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
+
+class ToolRegistryTest {
+    @Test
+    fun registryHasHomeAndTwentyFiveTools() {
+        assertEquals(26, ToolRegistry.tools.size)
+        assertEquals(ToolId.ordered, ToolRegistry.tools.map { it.id })
+        assertEquals(6, ToolRegistry.groups.size)
+        assertTrue(ToolRegistry.byId.getValue(ToolId.Json).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.TimeConvert).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.Calculator).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.Encode).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.UaParse).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.Regex).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.Cron).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.TextDiff).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.Reformat).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.YmlProperties).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.Protobuf).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.Crypto).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.QrCode).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.ColorBoard).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.ColorBoard).supportsFavorites)
+        assertTrue(ToolRegistry.byId.getValue(ToolId.MessageBoard).status.name == "Available")
+        assertTrue(!ToolRegistry.byId.getValue(ToolId.MessageBoard).supportsHistory)
+        assertTrue(ToolRegistry.byId.getValue(ToolId.Pdf).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.Image).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.Net).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.Variables).status.name == "Available")
+        assertTrue(!ToolRegistry.byId.getValue(ToolId.Variables).supportsHistory)
+        assertTrue(ToolRegistry.byId.getValue(ToolId.Hardware).status.name == "Available")
+        assertTrue(!ToolRegistry.byId.getValue(ToolId.Hardware).supportsHistory)
+        assertTrue(ToolRegistry.byId.getValue(ToolId.Translation).status.name == "Available")
+        assertTrue(!ToolRegistry.byId.getValue(ToolId.Translation).supportsHistory)
+        assertTrue(ToolRegistry.byId.getValue(ToolId.Java).status.name == "Available")
+        assertTrue(ToolRegistry.byId.getValue(ToolId.QuickNote).status.name == "Available")
+    }
+
+    @Test
+    fun searchMatchesLocalizedKeywordsAndHiddenToolsStillSearchable() {
+        val results = ToolRegistry.search("jsonpath") { it }
+        assertEquals(listOf(ToolId.Json), results.map { it.id })
+        val home = ToolRegistry.search("首页") { key -> if (key == "app.nav.home") "主页" else key }
+        assertTrue(home.any { it.id == ToolId.Mootool })
+    }
+}

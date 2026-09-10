@@ -11,6 +11,7 @@
 Handy desktop toolset for developers.
 
 ## About
+
 Hi! Thanks for using MooTool. "Moo" is named after my daughter.
 
 I keep building and improving MooTool to support my own day-to-day development work.
@@ -27,18 +28,28 @@ Hope you enjoy using it as much as I enjoyed building it.
 <a href="https://hellogithub.com/repository/4e5f287079734f98890a69d56000b361" target="_blank"><img src="https://api.hellogithub.com/v1/widgets/recommend.svg?rid=4e5f287079734f98890a69d56000b361&claim_uid=0UhXFJvP9ndHtiB" alt="Featured｜HelloGitHub" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 
 ## Supported platforms
-Windows • Linux • macOS
+
+Windows • Linux • macOS. Target platforms and current status are listed below; editions under development have not completed release acceptance on every target platform.
 
 ## Product lines
 
-| Product | Introduction | Download |
-| --- | --- | --- |
-| **MooTool Next Electron** | Recommended cross-platform edition, rebuilt with Electron, Vite, React, and TypeScript. It is installed, stored, and updated independently from the Java edition. | [Download 1.1.4](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.4) |
-| **MooTool Java** | The original Swing-based cross-platform edition, maintained as an independent product line for Windows, Linux, and macOS. | [Download 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6) · [Gitee mirror](https://gitee.com/zhoubochina/MooTool/releases) |
-| [**MooTool Next Tauri**](next-tauri/README.md) | Independent desktop edition built with Tauri 2, Rust, React, and TypeScript; currently under development. | Not available yet |
-| [**MooTool Next macOS Native**](macos/README.md) | SwiftUI-based native macOS preview, currently providing the project skeleton and a minimal application shell. | Not available yet |
+MooTool now has 7 independent product lines, each with its own code, build, version, installation identity, data, and update channel. They can be installed side by side and evolve independently. Version numbers are specific to each product; see its documentation for feature coverage.
+
+| Product / source | Technology and overview | Target platforms | Status / download |
+| --- | --- | --- | --- |
+| [**MooTool Next Electron**](next/README.md) | Electron, Vite, React, TypeScript; the currently recommended desktop edition. | Windows / Linux / macOS | Stable: [Download 1.1.4](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.4) |
+| [**MooTool Java**](src/) | Java, Swing; the original desktop edition, still maintained. | Windows / Linux / macOS | Stable: [Download 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6) · [Gitee mirror](https://gitee.com/zhoubochina/MooTool/releases) |
+| [**MooTool Next Tauri**](next-tauri/README.md) | Tauri 2, Rust, React, TypeScript; 25 tools with independent storage and updates. | Windows / Linux / macOS | Release candidate: [Download 0.1.0-rc.2](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2) |
+| [**MooTool Next macOS Native**](next-macos-native/README.md) | SwiftUI, AppKit, system frameworks; native workspaces, JSON vault, quick notes, and image attachments. | macOS 14+ | 0.6.0 development build; build `.app` / DMG from source. |
+| [**MooTool Next Flutter**](next-flutter/README.md) | Flutter, Dart; tools and desktop channels are implemented, with platform acceptance and some capabilities still in progress. | Windows / Linux / macOS | 0.1.0 development build; local run and unsigned packaging scripts available. |
+| [**MooTool Next Compose**](next-compose/README.md) | Kotlin, Compose Multiplatform Desktop; multiple tools, quick notes, and backup/restore implemented. | Windows / Linux / macOS | 0.1.0 development build; local macOS app-image build verified, with its own JVM runtime. |
+| [**MooTool Next FX**](next-fx/README.md) | OpenJDK, OpenJFX (JavaFX); application shell, JSON vault, encoding/decoding, and regex tools implemented. | Windows / Linux / macOS | 0.1.0-SNAPSHOT early development build; local macOS app-image packaging implemented. |
+
+Follow the product links for source code or the product README, including development setup, running, packaging, and acceptance notes. The current macOS native product lives in `next-macos-native/`; `macos/` contains the early SwiftUI prototype.
 
 ## Screenshots
+
+> The screenshots below show MooTool Java. See each product's README for its UI and acceptance records.
 
 > Main feature screenshots below. Translation, UA analysis, Image assistant, PDF, environment variables, system info, config conversion, Protobuf, and other modules do not have dedicated screenshots yet — open the corresponding tabs after install.
 
@@ -84,8 +95,11 @@ Windows • Linux • macOS
 
 - [MooTool Next Electron 1.1.4 (recommended)](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.4)
 - [MooTool Java 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6)
+- [MooTool Next Tauri 0.1.0-rc.2 (release candidate)](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2)
 - [All GitHub Releases](https://github.com/rememberber/MooTool/releases)
 - [MooTool Java releases on Gitee](https://gitee.com/zhoubochina/MooTool/releases)
+
+For macOS Native, Flutter, Compose, and FX, see the product READMEs above for source builds. A development version number does not imply that a public stable installer is available.
 
 ## Support the author
 
@@ -94,6 +108,8 @@ Windows • Linux • macOS
 ![zanshang](assets/material/wx-zanshang.jpg)
 
 # MooTool feature map
+
+> This feature map describes MooTool Java. See each product's documentation for implemented features, differences, and planned work.
 
 > Many modules include a **History** sub-tab: search, apply, copy input/output, delete, and clear all.
 
@@ -356,6 +372,8 @@ MooTool
 ## Developer notes
 
 See the [multi-product release conventions](RELEASE_CONVENTIONS.md) for version, Git tag, GitHub Release, `Latest`, and CI isolation rules.
+
+Each product has an independent project. Read its README linked in the product table and work in the corresponding directory. The JDK, IntelliJ IDEA, Maven, and packaging instructions below apply only to MooTool Java at the repository root.
 
 Minimum JDK: **21**  
 Before you start, **configure IntelliJ IDEA as shown below**, then run **maven clean**:

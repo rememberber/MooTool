@@ -17,7 +17,7 @@ MooTool 采用“同一仓库、多个独立产品线”的发布方式。本文
 | `java` | MooTool Java | `pom.xml`、`UiConsts.APP_VERSION`、`version_summary.json` | `v{version}` | `MooTool Java 1.7.10` |
 | `next-electron` | MooTool Next Electron | `next/package.json` | `next-electron-v{version}` | `MooTool Next Electron 1.0.0` |
 | `next-tauri` | MooTool Next Tauri | 启用产品时确定 | `next-tauri-v{version}` | `MooTool Next Tauri 1.0.0` |
-| `next-macos-native` | MooTool Next macOS Native | 启用产品时确定 | `next-macos-native-v{version}` | `MooTool Next macOS Native 1.0.0` |
+| `next-macos-native` | MooTool Next macOS Native | `next-macos-native/VERSION` | `next-macos-native-v{version}` | `MooTool Next macOS Native 1.0.0` |
 
 示例：
 
@@ -87,6 +87,7 @@ Java 的历史更新协议没有预发布通道，因此 Java 发布工具只接
 | --- | --- | --- |
 | `.github/workflows/build-installers.yml` | `v*` | MooTool Java |
 | `.github/workflows/next-build-installers.yml` | `next-electron-v*` | MooTool Next Electron |
+| `.github/workflows/next-macos-native-build.yml` | `next-macos-native-v*` | MooTool Next macOS Native（构建工件，尚不自动发布） |
 
 每条发布流水线至少应完成以下校验：
 

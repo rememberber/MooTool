@@ -35,6 +35,8 @@ dist/
 .vscode/
 
 docs
+!next-flutter/docs/
+!next-flutter/docs/**
 
 logs/
 .codegraph/

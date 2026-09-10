@@ -1,0 +1,8 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:mootool_next_flutter/design/theme.dart';
+void main() {
+  test('R17 non-default UI font size must build a usable theme', () {
+    expect(() => buildTheme(brightness:Brightness.light,uiFontSize:14), returnsNormally);
+  });
+}
