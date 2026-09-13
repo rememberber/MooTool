@@ -1,6 +1,6 @@
 {
   "name": "mootool-next",
-  "version": "1.1.4",
+  "version": "1.2.0",
   "private": true,
   "description": "MooTool rewritten with Electron, Vite, React, and TypeScript.",
   "license": "MIT",
@@ -45,6 +45,7 @@
     "@codemirror/state": "^6.7.1",
     "@codemirror/view": "^6.43.7",
     "@lezer/highlight": "^1.2.3",
+    "@modelcontextprotocol/sdk": "^1.30.0",
     "@prettier/plugin-xml": "^3.4.2",
     "@visioncortex/vtracer": "1.0.0-alpha.3",
     "@zxing/browser": "^0.2.1",
@@ -61,6 +62,7 @@
     "hi-base32": "^0.5.1",
     "iconv-lite": "^0.7.3",
     "ignore": "^7.0.6",
+    "jsonc-parser": "^3.3.1",
     "jsonpath-plus": "^10.4.0",
     "lucide-react": "^1.27.0",
     "luxon": "^3.7.2",
@@ -74,11 +76,13 @@
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "sm-crypto": "^0.5.3",
+    "smol-toml": "^1.8.0",
     "sql-formatter": "^15.8.2",
     "systeminformation": "^5.33.1",
     "ua-parser-js": "^2.0.10",
     "undici": "^8.9.0",
     "yaml": "^2.9.0",
+    "zod": "^4.6.4",
     "zustand": "^5.0.14"
   },
   "devDependencies": {

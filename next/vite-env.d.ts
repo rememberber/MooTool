@@ -17,10 +17,17 @@ import type { RuntimeExecutionInput, RuntimeExecutionResult, RuntimeOutputEvent 
 import type { BackupExportResult, BackupInfo, BackupKind, BackupLocation } from './src/shared/contracts/backup'
 import type { LegacyMigrationInput, LegacyMigrationPreview, LegacyMigrationResult } from './src/shared/contracts/migration'
 import type { UpdateCheckEvent, UpdateCheckResult, UpdateDownloadState } from './src/shared/contracts/update'
+import type { AiClient, AiConnectionResult, AiDataAccess, AiDataAccessRequest, AiInstallPreview, AiInstallRequest, AiInstallResult, AiIntegrationStatus } from './src/shared/contracts/aiIntegration'
 
 declare global {
   interface Window {
     mootool: {
+      getAiIntegrationStatus: (client: AiClient) => Promise<AiIntegrationStatus>
+      getAiDataAccess: () => Promise<AiDataAccess>
+      setAiDataAccess: (input: AiDataAccessRequest) => Promise<AiDataAccess>
+      previewAiIntegration: (input: AiInstallRequest) => Promise<AiInstallPreview>
+      installAiIntegration: (id: string) => Promise<AiInstallResult>
+      testAiIntegration: () => Promise<AiConnectionResult>
       platform: string
       toolWindowsEnabled: boolean
       getAppVersion: () => Promise<string>

@@ -7,7 +7,10 @@ export default defineConfig({
     plugins: [externalizeDepsPlugin({ exclude: ['electron-store'] })],
     build: {
       rollupOptions: {
-        input: resolve(__dirname, 'electron/main/index.ts')
+        input: {
+          index: resolve(__dirname, 'electron/main/index.ts'),
+          mcp: resolve(__dirname, 'electron/mcp/index.ts')
+        }
       }
     }
   },

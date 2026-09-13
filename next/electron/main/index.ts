@@ -122,6 +122,7 @@ import { VaultGitCheckpointScheduler } from './vaultGitCheckpointScheduler'
 import { ToolWindowManager } from './toolWindowManager'
 import { buildTrayMenuTemplate } from './trayMenu'
 import { DisplaySleepService } from './displaySleepService'
+import type { AiIntegrationService } from './aiIntegrationService'
 
 type PersistedStore = {
   settings: AppSettings
@@ -434,6 +435,42 @@ async function confirmClose(window: BrowserWindow): Promise<void> {
 }
 
 function registerIpc(): void {
+  let aiIntegration: Promise<AiIntegrationService> | undefined
+  const getAiIntegration = () => aiIntegration ??= import('./aiIntegrationService').then(({ AiIntegrationService }) => new AiIntegrationService({
+    home: app.getPath('home'),
+    codexHome: process.env.CODEX_HOME,
+    claudeConfigDir: process.env.CLAUDE_CONFIG_DIR,
+    stateDirectory: join(app.getPath('userData'), 'ai-integration'),
+    getRoots: () => ({ notes: getQuickNoteRoot(), json: getJsonVaultRoot() }),
+    command: process.execPath,
+    entry: join(__dirname, 'mcp.js'),
+    unavailableReason: process.env.APPIMAGE || process.env.PORTABLE_EXECUTABLE_DIR || process.execPath.includes('/AppTranslocation/')
+      ? 'Install MooTool in a permanent location (macOS Applications, Windows installer or Linux deb) before adding AI integration.' : undefined
+  }))
+  ipcMain.handle('ai-integration:preview', async (event, input: unknown) => {
+    assertMainRenderer(event.sender)
+    return (await getAiIntegration()).preview(input)
+  })
+  ipcMain.handle('ai-integration:status', async (event, client: unknown) => {
+    assertMainRenderer(event.sender)
+    return (await getAiIntegration()).getStatus(client)
+  })
+  ipcMain.handle('ai-integration:access', async (event) => {
+    assertMainRenderer(event.sender)
+    return (await getAiIntegration()).getDataAccess()
+  })
+  ipcMain.handle('ai-integration:set-access', async (event, input: unknown) => {
+    assertMainRenderer(event.sender)
+    return (await getAiIntegration()).setDataAccess(input)
+  })
+  ipcMain.handle('ai-integration:install', async (event, id: unknown) => {
+    assertMainRenderer(event.sender)
+    return (await getAiIntegration()).install(id)
+  })
+  ipcMain.handle('ai-integration:test', async (event) => {
+    assertMainRenderer(event.sender)
+    return (await getAiIntegration()).testConnection()
+  })
   ipcMain.handle('app:get-version', () => app.getVersion())
   ipcMain.handle('app:get-paths', (): AppPaths => ({
     userData: app.getPath('userData'),
@@ -456,9 +493,12 @@ function registerIpc(): void {
     return displaySleepService.set(senderId, enabled)
   })
   ipcMain.handle('settings:get', () => store.get('settings'))
-  ipcMain.handle('settings:update', (_event, patch: SettingsPatch) => {
+  ipcMain.handle('settings:update', async (_event, patch: SettingsPatch) => {
     const previous = store.get('settings')
     const settings = mergeSettings(previous, isRecord(patch) ? patch : {})
+    if (previous.data.directory !== settings.data.directory || previous.vault.quickNotePath !== settings.vault.quickNotePath || previous.vault.jsonPath !== settings.vault.jsonPath) {
+      await (await getAiIntegration()).setDataAccess({ notes: false, json: false })
+    }
     store.set('settings', settings)
     if (previous.data.directory !== settings.data.directory) {
       closeDataRepositories()
