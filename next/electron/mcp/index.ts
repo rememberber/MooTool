@@ -22,7 +22,9 @@ async function main(): Promise<void> {
       if (size > 1_000_000) throw new Error('Input exceeds 1 MB')
       chunks.push(bytes)
     }
-    const input = JSON.parse(Buffer.concat(chunks).toString('utf8'))
+    // PowerShell 5.1 may prefix native stdin with a UTF-8 BOM. TextDecoder
+    // accepts that marker and rejects malformed UTF-8 instead of replacing bytes.
+    const input = JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(Buffer.concat(chunks)))
     const result = isVaultTool(args[1]) ? await callVaultTool(args[1], input, accessFile) : callMooTool(args[1], input)
     process.stdout.write(`${JSON.stringify(result)}\n`)
     if (result.isError) process.exitCode = 1

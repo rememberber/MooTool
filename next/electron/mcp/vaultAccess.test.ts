@@ -63,6 +63,14 @@ describe('read-only vault tools', () => {
     expect((await service.search('notes', '', 20, 0)).entries.map((item) => item.path)).toEqual(['note.md'])
   })
 
+  it('refuses document access when ignore rules cannot be read safely', async () => {
+    await writeFile(join(notes, '.gitignore'), '#'.repeat(100_001))
+    await expect(service.search('notes', '', 10, 0)).rejects.toThrow('Cannot safely read')
+    await expect(service.read('notes', 'note.md', 0, 100)).rejects.toThrow('Cannot safely read')
+    await writeFile(join(notes, '.gitignore'), Buffer.from([0xff]))
+    await expect(service.read('notes', 'note.md', 0, 100)).rejects.toThrow()
+  })
+
   it('pages search results without dropping matches', async () => {
     for (let index = 0; index < 4; index++) await writeFile(join(json, `file-${index}.json`), `{"index":${index}}`)
     const first = await service.search('json', 'index', 2, 0)

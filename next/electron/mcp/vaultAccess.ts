@@ -112,7 +112,8 @@ export class VaultReadService {
     try {
       const path = join(root, '.gitignore')
       const info = await lstat(path)
-      if (info.isFile() && !info.isSymbolicLink() && info.size <= 100_000) matcher.add(await readFile(path, 'utf8'))
+      if (!info.isFile() || info.isSymbolicLink() || info.size > 100_000) throw new Error('Cannot safely read the vault .gitignore; use a regular file under 100 KB')
+      matcher.add(new TextDecoder('utf-8', { fatal: true }).decode(await readFile(path)))
     } catch (error) { if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error }
     return matcher
   }

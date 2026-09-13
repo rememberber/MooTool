@@ -118,6 +118,12 @@ test('installs from Settings and runs the resulting MCP and standalone Skill', a
     expect(called.status, called.stderr).toBe(0)
     expect(JSON.parse(called.stdout).content[0].text).toBe('{"牛":"🐮"}')
 
+    const bomCall = spawnSync(installed.command, [...installed.args, '--call', 'mootool_json_format'], {
+      env: { ...process.env, ...installed.env }, input: '\ufeff' + JSON.stringify({ text: '{\"牛\":\"🐮\"}', spaces: 0 }), encoding: 'utf8', timeout: 20_000
+    })
+    expect(bomCall.status, bomCall.stderr).toBe(0)
+    expect(JSON.parse(bomCall.stdout).content[0].text).toBe('{"牛":"🐮"}')
+
     await writeFile(join(home, 'arguments.json'), JSON.stringify({ text: '{bad}' }))
     const failed = run(snippets[1])
     expect(failed.status).not.toBe(0)
