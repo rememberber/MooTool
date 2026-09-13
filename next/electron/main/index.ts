@@ -493,27 +493,33 @@ function registerIpc(): void {
     return displaySleepService.set(senderId, enabled)
   })
   ipcMain.handle('settings:get', () => store.get('settings'))
-  ipcMain.handle('settings:update', async (_event, patch: SettingsPatch) => {
-    const previous = store.get('settings')
-    const settings = mergeSettings(previous, isRecord(patch) ? patch : {})
-    if (previous.data.directory !== settings.data.directory || previous.vault.quickNotePath !== settings.vault.quickNotePath || previous.vault.jsonPath !== settings.vault.jsonPath) {
-      await (await getAiIntegration()).setDataAccess({ notes: false, json: false })
-    }
-    store.set('settings', settings)
-    if (previous.data.directory !== settings.data.directory) {
-      closeDataRepositories()
-      try {
-        openDataRepositories(settings)
-        store.set('activeHostId', null)
-      } catch (error) {
-        store.set('settings', previous)
-        openDataRepositories(previous)
-        throw error
+  // Vault changes await access revocation; serialize patches to avoid lost settings.
+  let settingsUpdates: Promise<unknown> = Promise.resolve()
+  ipcMain.handle('settings:update', (_event, patch: SettingsPatch) => {
+    const update = settingsUpdates.then(async () => {
+      const previous = store.get('settings')
+      const settings = mergeSettings(previous, isRecord(patch) ? patch : {})
+      if (previous.data.directory !== settings.data.directory || previous.vault.quickNotePath !== settings.vault.quickNotePath || previous.vault.jsonPath !== settings.vault.jsonPath) {
+        await (await getAiIntegration()).setDataAccess({ notes: false, json: false })
       }
-    }
-    applySettings(settings)
-    broadcast('settings:changed', settings)
-    return settings
+      store.set('settings', settings)
+      if (previous.data.directory !== settings.data.directory) {
+        closeDataRepositories()
+        try {
+          openDataRepositories(settings)
+          store.set('activeHostId', null)
+        } catch (error) {
+          store.set('settings', previous)
+          openDataRepositories(previous)
+          throw error
+        }
+      }
+      applySettings(settings)
+      broadcast('settings:changed', settings)
+      return settings
+    })
+    settingsUpdates = update.catch(() => undefined)
+    return update
   })
   ipcMain.handle('settings:open', (_event, category?: unknown) => {
     openSettingsPage(typeof category === 'string' ? category : undefined)

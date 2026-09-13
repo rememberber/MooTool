@@ -33,8 +33,12 @@ test('installs from Settings and runs the resulting MCP and standalone Skill', a
     await app.evaluate(({ app }, isolatedHome) => app.setPath('home', isolatedHome), home)
     const page = await app.firstWindow()
     await page.waitForLoadState('domcontentloaded')
-    await page.evaluate(() => window.mootool.updateSettings({ general: { language: 'en-US', autoCheckUpdates: false } }))
-    await page.evaluate((roots) => window.mootool.updateSettings({ vault: { quickNotePath: roots.notes, jsonPath: roots.documents } }), { notes, documents })
+    await page.evaluate(() => window.mootool.updateSettings({ general: { language: 'ja-JP', autoCheckUpdates: false } }))
+    await page.evaluate((roots) => Promise.all([
+      window.mootool.updateSettings({ vault: { quickNotePath: roots.notes, jsonPath: roots.documents } }),
+      window.mootool.updateSettings({ general: { language: 'en-US' } })
+    ]), { notes, documents })
+    expect((await page.evaluate(() => window.mootool.getSettings())).general.language).toBe('en-US')
     const preview = await page.evaluate(() => window.mootool.previewAiIntegration({ client: 'codex', mode: 'both' }))
     // Never click Install unless every destination is inside our isolated test home.
     expect(preview.files.every((file) => file.path.startsWith(`${home}/`) || file.path.startsWith(`${home}\\`))).toBe(true)
@@ -79,7 +83,10 @@ test('installs from Settings and runs the resulting MCP and standalone Skill', a
           '-c', `mcp_servers.mootool.args=${JSON.stringify(installed.args)}`,
           '-c', 'mcp_servers.mootool.env={ELECTRON_RUN_AS_NODE="1"}',
           'This is an integration test. Use only the mootool MCP server. Call mootool_json_format on {"b":2,"a":1} with sortKeys true. Call mootool_notes_search for 验收, then mootool_notes_read for fixture.md. Call mootool_json_documents_read for fixture.json. Do not use shell or other tools. Report the returned values briefly.']
-        const live = await promisify(execFile)(process.env.MOOTOOL_CODEX_EXECUTABLE, args, { encoding: 'utf8', timeout: 180_000, maxBuffer: 10_000_000 })
+        const invocation = promisify(execFile)(process.env.MOOTOOL_CODEX_EXECUTABLE, args, { encoding: 'utf8', timeout: 180_000, maxBuffer: 10_000_000 })
+        // Codex accepts additional stdin even with a prompt argument; close it.
+        invocation.child.stdin?.end()
+        const live = await invocation
         const events = live.stdout.split('\n').filter((line) => line.startsWith('{')).map((line) => JSON.parse(line))
         const calls = events.filter((event) => event.type === 'item.completed' && event.item?.type === 'mcp_tool_call').map((event) => event.item)
         await writeFile(testInfo.outputPath('codex-mcp-calls.json'), JSON.stringify(calls, null, 2))
@@ -110,6 +117,11 @@ test('installs from Settings and runs the resulting MCP and standalone Skill', a
     const called = run(snippets[1])
     expect(called.status, called.stderr).toBe(0)
     expect(JSON.parse(called.stdout).content[0].text).toBe('{"牛":"🐮"}')
+
+    await writeFile(join(home, 'arguments.json'), JSON.stringify({ text: '{bad}' }))
+    const failed = run(snippets[1])
+    expect(failed.status).not.toBe(0)
+    expect(JSON.parse(failed.stdout).isError).toBe(true)
 
     // Missing installer-owned files are repairable without altering user files.
     await rm(runtimeFile)

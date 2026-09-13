@@ -54,7 +54,7 @@ MCP 名称为 `mootool`。其他支持本地 stdio MCP 的客户端可使用页�
 
 ## Skill 独立使用
 
-Skill 安装包含 `SKILL.md` 与按安装路径生成的 `runtime.md`。没有 MCP 连接时，Agent 读取后者，执行 `--list` 获取实时参数 Schema，再把 JSON 参数传入 `--call TOOL_NAME` 的标准输入。命令返回 MCP 结果 JSON；失败退出码为非零。macOS/Linux 的路径按 POSIX Shell 转义，Windows 提供 PowerShell 命令和 UTF-8 编码设置。
+Skill 安装包含 `SKILL.md` 与按安装路径生成的 `runtime.md`。没有 MCP 连接时，Agent 读取后者，执行 `--list` 获取实时参数 Schema，再把 JSON 参数传入 `--call TOOL_NAME` 的标准输入。命令返回 MCP 结果 JSON；失败退出码为非零。macOS/Linux 的路径按 POSIX Shell 转义，Windows 提供 PowerShell 命令和 UTF-8 编码设置，输出管道确保等待 GUI 子系统进程完成，并显式检查退出码，参见 [PowerShell 进程等待行为](https://devblogs.microsoft.com/powershell/managing-processes-in-powershell/)。
 
 ## 开发验证
 
