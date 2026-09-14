@@ -214,6 +214,14 @@ fun SettingsScreen(container: AppContainer) {
                         container.updateSettings { current -> current.copy(vault = current.vault.copy(quickNotePath = it)) }
                     }, placeholder = container.t("settings.vault.default"))
                     MooButton(container.t("quickNote.openVault"), onClick = { container.openDirectory(container.noteVault().root()) })
+                    Label(container.t("settings.vault.gitUsername"))
+                    MooTextField(settings.vault.gitUsername, {
+                        container.updateSettings { current -> current.copy(vault = current.vault.copy(gitUsername = it)) }
+                    }, placeholder = "MooTool Next Compose")
+                    Label(container.t("settings.vault.gitRemote"))
+                    MooTextField(settings.vault.gitRemote, {
+                        container.updateSettings { current -> current.copy(vault = current.vault.copy(gitRemote = it)) }
+                    }, placeholder = container.t("git.remotePlaceholder"))
                     Text(container.t("settings.vault.gitLater"), color = colors.warning, fontSize = 12.sp)
                 }
                 SettingsCategory.Network, SettingsCategory.Tools, SettingsCategory.Shortcuts -> {

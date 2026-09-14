@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
+import com.rememberber.mootool.next.compose.features.git.VaultGitDialog
 import com.rememberber.mootool.next.compose.domain.FindReplace
 import com.rememberber.mootool.next.compose.domain.NoteAttachmentEngine
 import com.rememberber.mootool.next.compose.domain.QuickReplaceAction
@@ -83,6 +84,7 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
     }
     var vaultItems by remember { mutableStateOf(vault.list(session.vaultQuery)) }
     var historyItems by remember { mutableStateOf(emptyList<HistoryRecord>()) }
+    var gitOpen by remember { mutableStateOf(false) }
     val colors = MooTheme.colors
     LaunchedEffect(session.vaultQuery, tick, settings.vault.quickNotePath) {
         vaultItems = vault.list(session.vaultQuery).filter { item ->
@@ -187,6 +189,7 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                 refresh()
             })
             MooButton(container.t("common.action.history"), onClick = { session.historyOpen = true; refresh() })
+            MooButton(container.t("git.action"), onClick = { gitOpen = true })
             Spacer(Modifier.weight(1f))
             if (!detached) MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.QuickNote) })
         }
@@ -384,6 +387,27 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                 }
             }
         }
+    }
+    if (gitOpen) {
+        VaultGitDialog(
+            container = container,
+            title = container.t("quickNote.git.title"),
+            defaultMessage = container.t("quickNote.git.defaultMessage"),
+            root = vault.root(),
+            onDismiss = { gitOpen = false },
+            onFlush = {
+                if (session.currentFile.isBlank()) {
+                    if (session.editor.text.isNotBlank() && session.editor.text != QuickNoteSession.SAMPLE) {
+                        container.t("git.flush.untitled")
+                    } else {
+                        null
+                    }
+                } else {
+                    saveIfNeeded(container, session, vault)
+                    session.error.takeIf { it.isNotBlank() }
+                }
+            }
+        )
     }
     if (session.historyOpen) {
         Dialog(onDismissRequest = { session.historyOpen = false; refresh() }) {

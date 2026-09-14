@@ -122,6 +122,8 @@ GitService 按规范化仓库根串行调度。优先 Git CLI，运行前检测�
 
 明确区分“本地备份”“Git 提交”“推送远程”。提交成功不能显示同步成功，远程失败不应删掉本地内容。
 
+本轮 Compose 实现见 [DIFF-025](diff/025-git-cli-local-checkpoint.md)：CLI 检查点已落地；pull/push/discard/冲突继续中止/自动提交定时器尚未实现。
+
 ## 6. 备份、恢复、数据迁移
 
 备份包含 productId、appVersion、schemaVersion、时间、内容清单/hash、设置、SQLite 一致性快照、Vault/附件及图片。缓存/下载/日志不默认打包，凭据不默认导出。大型文件后台处理，显示数量/大小/进度。

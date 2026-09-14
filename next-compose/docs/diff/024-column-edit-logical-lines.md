@@ -26,4 +26,4 @@ RSTA 没有对等的矩形选区。本产品用 `ColumnEditEngine` 在**逻辑�
 
 - 与 CodeMirror 像素列、软换行视觉列可能不一致。
 - 等宽字体下 CJK 若未占两格，高亮条可能与字形不完全重合。
-- JSON/代码运行、拖入编辑器、frontmatter、Git、外部冲突仍未做。
+- JSON/代码运行、拖入编辑器、frontmatter、外部冲突仍未做。pull/push 见 [DIFF-025](025-git-cli-local-checkpoint.md)。

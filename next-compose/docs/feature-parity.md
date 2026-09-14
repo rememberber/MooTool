@@ -89,7 +89,7 @@
 
 验收：5 MiB 文档、连续图片粘贴、列编辑 undo/redo、双击选词后自动保存、分栏切换/分离收回后 undo、磁盘满、外部修改冲突、重启恢复。
 
-本轮已落地左文档库/中编辑或预览/右 24 项快速替换、保存与切换时写入、查找替换、历史与分离窗口、编辑/分栏/预览三模式、commonmark Compose 预览、剪贴板/文件图片附件与孤立清理、逻辑行列编辑（Alt+拖动或锁定拖选）。**尚未实现** frontmatter、全文索引、Git、外部修改冲突监视、拖入编辑器内部。快速替换见 [DIFF-021](diff/021-quick-note-replace-vault.md)，预览与附件见 [DIFF-023](diff/023-markdown-commonmark-preview.md)，列编辑见 [DIFF-024](diff/024-column-edit-logical-lines.md)。
+本轮已落地左文档库/中编辑或预览/右 24 项快速替换、保存与切换时写入、查找替换、历史与分离窗口、编辑/分栏/预览三模式、commonmark Compose 预览、剪贴板/文件图片附件与孤立清理、逻辑行列编辑（Alt+拖动或锁定拖选）、Vault Git 最小闭环（状态/初始化/提交/日志）。**尚未实现** frontmatter、全文索引、pull/push/冲突继续中止、外部修改冲突监视、拖入编辑器内部。快速替换见 [DIFF-021](diff/021-quick-note-replace-vault.md)，预览与附件见 [DIFF-023](diff/023-markdown-commonmark-preview.md)，列编辑见 [DIFF-024](diff/024-column-edit-logical-lines.md)，Git 见 [DIFF-025](diff/025-git-cli-local-checkpoint.md)。
 
 ### F02 文本对比
 
@@ -123,7 +123,7 @@
 5. JSONPath 输入、查询结果、路径树选择、路径/值预览及双击行为；递归、数组索引/切片、联合、filter、路径转义需真实可用。
 6. 查找/替换：大小写、全词、正则、计数、前后导航；字体、换行、复制、文件操作与历史恢复。
 7. Vault 文件/目录 CRUD、重命名、复制、移动/拖放、排序、忽略文件、树状态、当前文件恢复、外部监视。
-8. Git 工作流与冲突，P6 补齐后才可将完整 F04 标记通过。
+8. Git 工作流与冲突，P6 补齐后才可将完整 F04 标记通过。本轮已落地 JSON Vault 的状态/初始化/提交/日志/diff/保存 remote，见 [DIFF-025](diff/025-git-cli-local-checkpoint.md)；pull/push/丢弃/冲突继续中止未做，不能标完整 F04。
 
 JSON 文本编辑保留大整数与小数字面量；不能先转 Double 再声称无损。格式化与转换分别定义数值策略。JSONPath 不执行任意 JS；不支持的语法明确错误，不能只做 `$.a.b` 冒充全部功能。
 
@@ -359,7 +359,7 @@ Tab：系统、CPU、内存、存储、网络；结构化字段/表格、刷新�
 | editor | SQL 方言、JSON/随手记字体字号、软换行；适用操作实际读取这些设置 |
 | network | 代理开关/地址/端口/用户名/密码、HTTP/翻译超时 |
 | data | 实际数据路径、打开目录、备份/恢复 zip（见 [DIFF-022](diff/022-backup-zip-manifest.md)）；跨产品显式导入未做 |
-| vault | JSON/随手记路径、Git remote/用户名/token、自动提交/拉取、忽略规则、树展开策略 |
+| vault | 随手记目录、Git 用户名/remote（本轮可存）；自动提交/拉取、token、JSON 路径与忽略规则未做。Git 对话框见 [DIFF-025](diff/025-git-cli-local-checkpoint.md) |
 | runtime | Java/Groovy/Python/Node 路径、检测、草稿/参数/工作目录 |
 | tools | QR 尺寸/纠错、随机长度、导出目录、默认翻译器与语言 |
 | shortcuts | 搜索/设置键绑定、冲突检查、完整平台快捷键帮助 |
@@ -376,7 +376,7 @@ Tab：系统、CPU、内存、存储、网络；结构化字段/表格、刷新�
 
 ### A03 桌面、存储、备份、Git、更新
 
-全部遵循 [数据、平台与发布](data-platform-release.md)。这些不额外计入 25 工具，但缺少它们不能把项目标成完整产品。
+全部遵循 [数据、平台与发布](data-platform-release.md)。这些不额外计入 25 工具，但缺少它们不能把项目标成完整产品。Git 本轮为 Vault 本地检查点（CLI status/init/commit/log），不含 pull/push 与更新通道，见 [DIFF-025](diff/025-git-cli-local-checkpoint.md)。
 
 ## 4. 兼容样本格式
 

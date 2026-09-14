@@ -37,6 +37,7 @@ import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.FindReplace
 import com.rememberber.mootool.next.compose.domain.JsonEngine
 import com.rememberber.mootool.next.compose.domain.JsonTranslator
+import com.rememberber.mootool.next.compose.features.git.VaultGitDialog
 import com.rememberber.mootool.next.compose.editor.EditorHost
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
@@ -71,6 +72,7 @@ fun JsonScreen(container: AppContainer, detached: Boolean) {
     }
     var vaultItems by remember { mutableStateOf(container.jsonVault.list(session.vaultQuery)) }
     var historyItems by remember { mutableStateOf(emptyList<HistoryRecord>()) }
+    var gitOpen by remember { mutableStateOf(false) }
     val colors = MooTheme.colors
     LaunchedEffect(session.vaultQuery, tick) {
         vaultItems = container.jsonVault.list(session.vaultQuery)
@@ -80,7 +82,7 @@ fun JsonScreen(container: AppContainer, detached: Boolean) {
     }
 
     Column(Modifier.fillMaxSize().background(colors.workspace)) {
-        JsonToolbar(container, session, translator, onChanged = { refresh() })
+        JsonToolbar(container, session, translator, onChanged = { refresh() }, onGit = { gitOpen = true })
         if (session.findOpen) {
             FindBar(container, session, onChanged = { refresh() })
         }
@@ -114,6 +116,27 @@ fun JsonScreen(container: AppContainer, detached: Boolean) {
         }
     }
 
+    if (gitOpen) {
+        VaultGitDialog(
+            container = container,
+            title = container.t("json.git.title"),
+            defaultMessage = container.t("json.git.defaultMessage"),
+            root = container.jsonVault.root(),
+            onDismiss = { gitOpen = false },
+            onFlush = {
+                if (session.currentFile.isBlank()) {
+                    if (session.editor.text.isNotBlank() && session.editor.text != JsonSession.SAMPLE_JSON) {
+                        container.t("git.flush.untitled")
+                    } else {
+                        null
+                    }
+                } else {
+                    runCatching { container.jsonVault.write(session.currentFile, session.editor.text) }
+                        .fold(onSuccess = { null }, onFailure = { it.message ?: container.t("quickNote.saveFailed") })
+                }
+            }
+        )
+    }
     if (session.historyOpen) {
         HistoryDialog(container, session, historyItems) { refresh() }
     }
@@ -130,7 +153,8 @@ private fun JsonToolbar(
     container: AppContainer,
     session: JsonSession,
     translator: JsonTranslator,
-    onChanged: () -> Unit
+    onChanged: () -> Unit,
+    onGit: () -> Unit
 ) {
     val colors = MooTheme.colors
     Row(
@@ -182,6 +206,7 @@ private fun JsonToolbar(
             session.historyOpen = true
             onChanged()
         })
+        MooButton(container.t("git.action"), onClick = onGit)
         MooButton(container.t("json.action.more"), onClick = {
             session.inspectorOpen = !session.inspectorOpen
             onChanged()
