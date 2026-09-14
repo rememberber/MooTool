@@ -47,6 +47,29 @@ MooTool 目前包含 7 条独立产品线，各自维护代码、构建、版本
 
 点击产品名查看源码或产品 README；各产品 README 提供开发环境、运行、打包和验收说明。当前 macOS 原生产品位于 `next-macos-native/`，`macos/` 是早期 SwiftUI 原型。
 
+## 让 AI 使用 MooTool（Next Electron）
+
+**MooTool Next Electron 1.2.0** 支持通过 MCP 或独立 Skill 向本地 AI 客户端提供工具能力。复用应用自带运行时，无需另装 Node.js，关闭 MooTool 窗口后仍可调用。
+
+| 客户端 | 一键接入方式 |
+| --- | --- |
+| Codex | MCP、Skill，或同时安装 |
+| Claude Code | MCP、Skill，或同时安装 |
+| Cursor | MCP |
+
+- **11 个工具**：JSON 格式化与 JSONPath 查询、编解码、时间戳、文本比较、摘要、UUID，以及随手记和 JSON 文档的搜索、读取。
+- **安装维护**：预览配置、测试连接、查看安装状态、一键修复／更新和卸载。修改前备份已有配置，发现用户修改冲突时提示并保留。
+- **文档只读访问**：默认关闭，两个文档库分别授权；关闭后下一次调用即失效，更换库位置会撤销授权。支持分页，排除隐藏文件、符号链接及库根目录 `.gitignore` 忽略的文件。
+
+开始使用：
+
+1. 将应用安装到固定位置：macOS「应用程序」、Windows 安装版或 Linux deb。AppImage 和 Windows portable 运行时不支持注册一键 AI 接入。
+2. 打开 **设置 → AI 接入**，选择客户端和方式，检查预览后点击 **一键安装**。
+3. 重启 AI 客户端或重新加载 MCP / Skill，并按提示启用工具。例如：「用 MooTool 把这段 JSON 按键排序」。
+4. 如需访问已保存的文档，在同一页面开启 **允许读取随手记** 或 **允许读取 JSON 文档**，再让 AI 搜索对应文档库。
+
+其他支持本地 stdio MCP 的客户端可使用 **复制 MCP 配置**。安装位置、调用限制、独立 Skill 用法及验收记录见 [AI 接入指南](next/doc/mootool-ai-integration.md)。
+
 ## 截图速览
 
 > 以下截图来自 MooTool Java；其他产品的界面与验收记录请查看各自 README。
