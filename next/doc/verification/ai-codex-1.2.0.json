@@ -1,0 +1,98 @@
+{
+  "appVersion": "1.2.0",
+  "sourceCommit": "3946a4903510e77565ee9467c3505b39ac99d648",
+  "codexVersion": "codex-cli 0.154.0-alpha.6.2",
+  "platform": "macOS x64",
+  "method": "Packaged app Settings installation in an isolated home, followed by codex exec with the generated MCP stanza and fixture-only vault grants.",
+  "calls": [
+    {
+      "id": "item_2",
+      "type": "mcp_tool_call",
+      "server": "mootool",
+      "tool": "mootool_json_format",
+      "arguments": {
+        "text": "{\"b\":2,\"a\":1}",
+        "sortKeys": true,
+        "spaces": 2,
+        "checkDuplicateKeys": false
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\n  \"a\": 1,\n  \"b\": 2\n}"
+          }
+        ],
+        "structured_content": null
+      },
+      "error": null,
+      "status": "completed"
+    },
+    {
+      "id": "item_3",
+      "type": "mcp_tool_call",
+      "server": "mootool",
+      "tool": "mootool_notes_search",
+      "arguments": {
+        "query": "验收",
+        "limit": 20,
+        "offset": 0
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"entries\":[{\"path\":\"fixture.md\",\"title\":\"MooTool验收\",\"excerpt\":\"MooTool integration fixture 🐮\",\"modifiedAt\":\"2026-09-13T23:58:08.635Z\"}],\"nextOffset\":null,\"truncated\":false}"
+          }
+        ],
+        "structured_content": null
+      },
+      "error": null,
+      "status": "completed"
+    },
+    {
+      "id": "item_4",
+      "type": "mcp_tool_call",
+      "server": "mootool",
+      "tool": "mootool_notes_read",
+      "arguments": {
+        "path": "fixture.md",
+        "offset": 0,
+        "length": 10000
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"path\":\"fixture.md\",\"title\":\"MooTool验收\",\"content\":\"MooTool integration fixture 🐮\",\"modifiedAt\":\"2026-09-13T23:58:08.635Z\",\"totalCharacters\":30,\"nextOffset\":null}"
+          }
+        ],
+        "structured_content": null
+      },
+      "error": null,
+      "status": "completed"
+    },
+    {
+      "id": "item_5",
+      "type": "mcp_tool_call",
+      "server": "mootool",
+      "tool": "mootool_json_documents_read",
+      "arguments": {
+        "path": "fixture.json",
+        "offset": 0,
+        "length": 10000
+      },
+      "result": {
+        "content": [
+          {
+            "type": "text",
+            "text": "{\"path\":\"fixture.json\",\"title\":\"fixture.json\",\"content\":\"{\\\"acceptance\\\":42}\",\"modifiedAt\":\"2026-09-13T23:58:08.636Z\",\"totalCharacters\":17,\"nextOffset\":null}"
+          }
+        ],
+        "structured_content": null
+      },
+      "error": null,
+      "status": "completed"
+    }
+  ]
+}

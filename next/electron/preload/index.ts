@@ -26,8 +26,15 @@ import type { RuntimeExecutionInput, RuntimeExecutionResult, RuntimeOutputEvent 
 import type { BackupExportResult, BackupInfo, BackupKind, BackupLocation } from '../../src/shared/contracts/backup'
 import type { LegacyMigrationInput, LegacyMigrationPreview, LegacyMigrationResult } from '../../src/shared/contracts/migration'
 import type { UpdateCheckEvent, UpdateCheckResult, UpdateDownloadState } from '../../src/shared/contracts/update'
+import type { AiClient, AiConnectionResult, AiDataAccess, AiDataAccessRequest, AiInstallPreview, AiInstallRequest, AiInstallResult, AiIntegrationStatus } from '../../src/shared/contracts/aiIntegration'
 
 contextBridge.exposeInMainWorld('mootool', {
+  getAiIntegrationStatus: (client: AiClient): Promise<AiIntegrationStatus> => ipcRenderer.invoke('ai-integration:status', client),
+  getAiDataAccess: (): Promise<AiDataAccess> => ipcRenderer.invoke('ai-integration:access'),
+  setAiDataAccess: (input: AiDataAccessRequest): Promise<AiDataAccess> => ipcRenderer.invoke('ai-integration:set-access', input),
+  previewAiIntegration: (input: AiInstallRequest): Promise<AiInstallPreview> => ipcRenderer.invoke('ai-integration:preview', input),
+  installAiIntegration: (id: string): Promise<AiInstallResult> => ipcRenderer.invoke('ai-integration:install', id),
+  testAiIntegration: (): Promise<AiConnectionResult> => ipcRenderer.invoke('ai-integration:test'),
   platform: process.platform,
   toolWindowsEnabled: process.env.NODE_ENV !== 'test' || process.env.MOOTOOL_TOOL_VIEWS === '1',
   getAppVersion: (): Promise<string> => ipcRenderer.invoke('app:get-version'),

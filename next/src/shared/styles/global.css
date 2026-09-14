@@ -12333,3 +12333,15 @@ textarea:focus {
   min-height: 48px;
   padding: 0;
 }
+
+.ai-integration__body { padding: 16px 20px; }
+.ai-integration__body > p { line-height: 1.6; margin: 0 0 14px; }
+.ai-integration__hint { color: var(--text-muted); font-size: 12px; }
+.ai-integration__actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 16px 0; }
+.ai-integration__error { color: var(--danger, #c44); overflow-wrap: anywhere; }
+.ai-integration details { margin: 10px 0; }
+.ai-integration summary { cursor: pointer; line-height: 1.6; overflow-wrap: anywhere; }
+.ai-integration summary span { margin-right: 8px; color: var(--text-muted); }
+.ai-integration pre { max-height: 320px; overflow: auto; padding: 12px; font-size: 12px; line-height: 1.6; background: var(--surface-soft); border-radius: 6px; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ai-integration code { font-size: 12px; overflow-wrap: anywhere; }
+.ai-integration__path { display: block; margin: 8px 0; }

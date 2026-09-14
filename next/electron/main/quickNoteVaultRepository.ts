@@ -407,7 +407,7 @@ export class QuickNoteVaultRepository {
   }
 }
 
-function parseNote(raw: string, fallbackTitle: string, fileStat: { birthtime: Date; mtime: Date }): { content: string; metadata: QuickNoteMetadata } {
+export function parseNote(raw: string, fallbackTitle: string, fileStat: { birthtime: Date; mtime: Date }): { content: string; metadata: QuickNoteMetadata } {
   const match = /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n)?/.exec(raw)
   let values: Record<string, unknown> = {}
   if (match) {

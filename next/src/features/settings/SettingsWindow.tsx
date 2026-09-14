@@ -11,6 +11,7 @@ import {
   Info,
   Network,
   PanelLeft,
+  Plug,
   RefreshCw,
   Settings2,
   SlidersHorizontal,
@@ -42,8 +43,9 @@ import { ResizableColumns } from '@/shared/components/ResizableColumns'
 import { useI18n } from '@/shared/i18n/I18nProvider'
 import type { MessageKey } from '@/shared/i18n/messages'
 import { useSettings } from './SettingsProvider'
+import { AiIntegrationSettings } from './AiIntegrationSettings'
 
-type SettingsCategory = 'general' | 'appearance' | 'layout' | 'editor' | 'network' | 'data' | 'vault' | 'runtime' | 'tools' | 'shortcuts' | 'about'
+type SettingsCategory = 'general' | 'appearance' | 'layout' | 'editor' | 'network' | 'data' | 'vault' | 'runtime' | 'ai' | 'tools' | 'shortcuts' | 'about'
 
 function isSettingsCategory(value: string | null): value is SettingsCategory {
   return categories.some((category) => category.id === value)
@@ -63,6 +65,7 @@ const categories: Array<{ id: SettingsCategory; labelKey: MessageKey; icon: Luci
   { id: 'data', labelKey: 'settings.category.data', icon: Database },
   { id: 'vault', labelKey: 'settings.category.vault', icon: FolderGit2 },
   { id: 'runtime', labelKey: 'settings.category.runtime', icon: SquareTerminal },
+  { id: 'ai', labelKey: 'settings.category.ai', icon: Plug },
   { id: 'tools', labelKey: 'settings.category.tools', icon: SlidersHorizontal },
   { id: 'shortcuts', labelKey: 'settings.category.shortcuts', icon: Command },
   { id: 'about', labelKey: 'settings.category.about', icon: Info }
@@ -151,6 +154,8 @@ function SettingsCategoryContent({ category, settings, commit }: {
       return <VaultSettings settings={settings} commit={commit} />
     case 'runtime':
       return <RuntimeSettings settings={settings} commit={commit} />
+    case 'ai':
+      return <AiIntegrationSettings />
     case 'tools':
       return <ToolDefaults settings={settings} commit={commit} />
     case 'shortcuts':
