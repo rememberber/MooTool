@@ -16,11 +16,14 @@ fun EditorHost(
     fontName: String,
     fontSize: Int,
     wrap: Boolean,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    columnEditing: Boolean = false,
+    columnDragWithoutAlt: Boolean = false
 ) {
     val background = if (dark) Color(0xFF1C1C1E) else Color.White
-    remember(buffer, dark, fontName, fontSize, wrap) {
+    remember(buffer, dark, fontName, fontSize, wrap, columnEditing, columnDragWithoutAlt) {
         buffer.applyTheme(dark, fontName, fontSize, wrap)
+        buffer.setColumnEditing(columnEditing, columnDragWithoutAlt)
         buffer
     }
     SwingPanel(
@@ -30,6 +33,7 @@ fun EditorHost(
         modifier = modifier.fillMaxSize(),
         update = {
             buffer.applyTheme(dark, fontName, fontSize, wrap)
+            buffer.setColumnEditing(columnEditing, columnDragWithoutAlt)
         }
     )
     DisposableEffect(buffer) {

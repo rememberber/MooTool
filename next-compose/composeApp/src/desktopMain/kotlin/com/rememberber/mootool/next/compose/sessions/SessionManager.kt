@@ -1600,7 +1600,8 @@ data class QuickNoteSessionSnapshot(
     val currentFile: String = "",
     val vaultQuery: String = "",
     val replaceOpen: Boolean = true,
-    val viewMode: String = "edit"
+    val viewMode: String = "edit",
+    val columnLatch: Boolean = false
 )
 
 class QuickNoteSession {
@@ -1620,6 +1621,7 @@ class QuickNoteSession {
     var dialogMode: String = ""
     var dialogValue: String = ""
     var viewMode: String = "edit"
+    var columnLatch: Boolean = false
 
     fun snapshot(): QuickNoteSessionSnapshot = QuickNoteSessionSnapshot(
         content = editor.text,
@@ -1633,7 +1635,8 @@ class QuickNoteSession {
         currentFile = currentFile,
         vaultQuery = vaultQuery,
         replaceOpen = replaceOpen,
-        viewMode = viewMode
+        viewMode = viewMode,
+        columnLatch = columnLatch
     )
 
     fun restore(snapshot: QuickNoteSessionSnapshot) {
@@ -1648,6 +1651,7 @@ class QuickNoteSession {
         vaultQuery = snapshot.vaultQuery
         replaceOpen = snapshot.replaceOpen
         viewMode = snapshot.viewMode.ifBlank { "edit" }
+        columnLatch = snapshot.columnLatch
         notice = ""
         error = ""
         historyOpen = false

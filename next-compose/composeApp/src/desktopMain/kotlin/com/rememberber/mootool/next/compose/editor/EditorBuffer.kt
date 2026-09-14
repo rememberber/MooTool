@@ -4,6 +4,7 @@ import java.util.ArrayDeque
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 import javax.swing.text.Document
+import javax.swing.undo.CompoundEdit
 import javax.swing.undo.UndoManager
 import org.fife.ui.rsyntaxtextarea.RSyntaxTextArea
 import org.fife.ui.rsyntaxtextarea.SyntaxConstants
@@ -31,20 +32,24 @@ class EditorBuffer(
     }
     val scrollPane: RTextScrollPane = RTextScrollPane(area, true)
     val undoManager: UndoManager = UndoManager().apply { limit = 400 }
+    val columnEdits: ColumnEditBinder
     var revision: Long = 0
         private set
     var dirty: Boolean = false
         private set
+    private var grouping: CompoundEdit? = null
 
     init {
         area.document.addUndoableEditListener { event ->
-            undoManager.addEdit(event.edit)
+            val group = grouping
+            if (group != null) group.addEdit(event.edit) else undoManager.addEdit(event.edit)
         }
         area.document.addDocumentListener(object : DocumentListener {
             override fun insertUpdate(e: DocumentEvent) = markChanged()
             override fun removeUpdate(e: DocumentEvent) = markChanged()
             override fun changedUpdate(e: DocumentEvent) = Unit
         })
+        columnEdits = ColumnEditBinder(this)
     }
 
     val text: String get() = area.text.orEmpty()
@@ -56,25 +61,30 @@ class EditorBuffer(
             area.text = value
             undoManager.discardAllEdits()
         } else {
-            area.beginAtomicEdit()
-            try {
-                area.text = value
-            } finally {
-                area.endAtomicEdit()
+            atomicDocument {
+                val length = area.document.length
+                if (length > 0) area.document.remove(0, length)
+                area.document.insertString(0, value, null)
             }
         }
         markChanged()
     }
 
     fun replaceRange(start: Int, end: Int, value: String) {
-        area.beginAtomicEdit()
-        try {
+        atomicDocument {
             area.document.remove(start, end - start)
             area.document.insertString(start, value, null)
-        } finally {
-            area.endAtomicEdit()
         }
         area.caretPosition = start + value.length
+        markChanged()
+    }
+
+    fun replaceAllText(value: String) {
+        atomicDocument {
+            val length = area.document.length
+            if (length > 0) area.document.remove(0, length)
+            area.document.insertString(0, value, null)
+        }
         markChanged()
     }
 
@@ -139,9 +149,26 @@ class EditorBuffer(
         area.requestFocusInWindow()
     }
 
+    fun setColumnEditing(enabled: Boolean, dragWithoutAlt: Boolean = false) {
+        columnEdits.enabled = enabled
+        columnEdits.dragWithoutAlt = dragWithoutAlt
+    }
+
     private fun markChanged() {
         revision += 1
         dirty = true
+    }
+
+    private fun atomicDocument(block: () -> Unit) {
+        val group = CompoundEdit()
+        grouping = group
+        try {
+            block()
+        } finally {
+            grouping = null
+            group.end()
+            undoManager.addEdit(group)
+        }
     }
 }
 

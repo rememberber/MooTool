@@ -107,9 +107,9 @@ SwingPanel 默认处于 Compose 内容前方；菜单、命令搜索、对话框
 
 ### 5.3 列编辑不能省略
 
-矩形选择基于可视行列处理；明确软换行开启时使用逻辑行还是视觉行。本产品建议列编辑暂时按逻辑行并明确提示，列单位按等宽网格，Tab 展开遵循 tabSize，宽字符按实际布局映射，不能截断 surrogate/组合字符。
+矩形选择基于可视行列处理；明确软换行开启时使用逻辑行还是视觉行。本产品列编辑按**逻辑行**并在开启换行时提示；列单位按等宽网格，Tab 展开遵循 tabSize，宽字符按 Unicode 宽/窄启发式（汉字/emoji 为 2），不截断 surrogate/组合字符。实现见 [DIFF-024](diff/024-column-edit-logical-lines.md)。
 
-需要实现多行输入、删除、粘贴；每次动作统一 undo；短行补齐策略与换行分发策略固定测试。多行块与单行粘贴分别验证。普通选择和 IME composition 不受列模式破坏。
+需要实现多行输入、删除、粘贴；每次动作统一 undo；短行补齐策略与换行分发策略固定测试。多行块与单行粘贴分别验证。普通选择和 IME composition 不受列模式破坏（IME 进行中不拦截列输入）。
 
 实验若无法满足这些条件，替代方案为本产品自有 Compose 增量编辑器或其他经验证成熟组件；由 ADR 明确成本和覆盖度。WebView/CodeMirror 只能作为显式备选，需自带资源、加载/通信/安全边界和包体证据；不默认引入整个 Electron/JCEF，也不悄悄改成网页壳。
 
@@ -163,7 +163,7 @@ SwingPanel 默认处于 Compose 内容前方；菜单、命令搜索、对话框
 | 环境变量 | 自有 `EnvEngine` + 本产品 `data/environment` | 用户/系统文件备份后写入；进程/JVM 只读；Unix 钩子使用 Compose 标记。见 DIFF-016 |
 | Host | 自有 `HostEngine` + `data/hosts/profiles.json` | 保存方案不改系统文件；应用前 diff/备份/指纹冲突；提权失败保持原 hosts。见 DIFF-017 |
 | 代码运行 | 自有 `CodeRunEngine` + `ProcessBuilder` argv | Java 源文件模式；白名单环境；1 MiB/2 MiB 上限；ProcessHandle 杀树。见 DIFF-020 |
-| 随手记 | 自有 `NoteVault` + `QuickReplaceEngine` + `MarkdownPreviewEngine` | 默认 `data/vaults/quick-note`；24 项替换对齐 Electron 样本。预览见 DIFF-023；替换见 DIFF-021 |
+| 随手记 | 自有 `NoteVault` + `QuickReplaceEngine` + `MarkdownPreviewEngine` + `ColumnEditEngine` | 默认 `data/vaults/quick-note`；24 项替换对齐 Electron 样本。预览见 DIFF-023；替换见 DIFF-021；列编辑见 DIFF-024 |
 | Git | 本产品 GitService 封装外部 Git CLI，缺失引导配置；JGit 可作验证后的替代 | 仓库锁、冲突、stash/操作状态、凭据、Git 不存在时仍可记笔记 |
 | 时间/计算 | java.time、BigInteger/BigDecimal、自有表达式 AST | 时区、DST、精度、算符、溢出；不 eval 用户文本 |
 

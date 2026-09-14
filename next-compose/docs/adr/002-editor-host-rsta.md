@@ -11,9 +11,9 @@
 
 - 文档模型为 `EditorBuffer`，持有 RSyntaxTextArea、Document 与 UndoManager。
 - Compose `SwingPanel` 只托管已有 `RTextScrollPane`，不因重组重建文档。
-- 格式化/替换通过 `beginAtomicEdit`/`endAtomicEdit` 记为一次 undo。
+- 格式化/替换/列编辑通过 `CompoundEdit` 记为一次 undo。
 - 命令搜索与对话框使用独立 Compose Dialog/Window，避免被 Swing 编辑器遮挡。
 
 ## 尚未用真实桌面交互验证
 
-中文预编辑、矩形列编辑、5 MiB 文本、DPI 与分离/收回后的 undo。这些保持待验收，不以编译通过代替 T05/T07。
+中文预编辑、5 MiB 文本、DPI 与分离/收回后的 undo。列编辑已有引擎与 Alt 拖选实现，窗口手势/IME 仍待验收。这些不以编译通过代替 T05/T07。

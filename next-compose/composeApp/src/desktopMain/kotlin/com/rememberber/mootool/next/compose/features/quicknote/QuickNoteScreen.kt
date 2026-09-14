@@ -130,6 +130,13 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                 session.wrap = !session.wrap
                 refresh()
             })
+            MooButton(container.t("quickNote.columnEdit"), primary = session.columnLatch, onClick = {
+                session.columnLatch = !session.columnLatch
+                session.notice = if (session.columnLatch) {
+                    if (session.wrap) container.t("quickNote.columnEdit.wrap") else container.t("quickNote.columnEdit.hint")
+                } else ""
+                refresh()
+            })
             MooButton(container.t("quickNote.view.edit"), primary = session.viewMode == "edit", onClick = {
                 session.viewMode = "edit"
                 refresh()
@@ -419,7 +426,9 @@ private fun QuickNoteEditor(container: AppContainer, session: QuickNoteSession, 
                 fontName = settings.editor.quickNoteFontName.ifBlank { "Monospaced" },
                 fontSize = settings.editor.quickNoteFontSize,
                 wrap = session.wrap,
-                modifier = Modifier.fillMaxSize()
+                modifier = Modifier.fillMaxSize(),
+                columnEditing = true,
+                columnDragWithoutAlt = session.columnLatch
             )
         }
     } else {
@@ -428,7 +437,9 @@ private fun QuickNoteEditor(container: AppContainer, session: QuickNoteSession, 
             dark = MooTheme.dark,
             fontName = settings.editor.quickNoteFontName.ifBlank { "Monospaced" },
             fontSize = settings.editor.quickNoteFontSize,
-            wrap = session.wrap
+            wrap = session.wrap,
+            columnEditing = true,
+            columnDragWithoutAlt = session.columnLatch
         )
     }
 }
