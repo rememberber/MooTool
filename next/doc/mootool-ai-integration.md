@@ -72,3 +72,9 @@ node scripts/test-packaged-ai.mjs
 协议测试覆盖初始化、发现、调用和错误；安装测试覆盖 TOML/JSONC 保留、幂等、备份、冲突、预览失效、失败回滚、移动路径修复和卸载。文档测试覆盖分页、元数据、权限撤销及路径限制。Electron E2E 使用临时用户目录，先检查安装目标，再执行真实一键安装、连接测试、UTF-8 Skill 命令、授权/撤销、修复与卸载；不会修改开发者的实际客户端配置。
 
 设置 `MOOTOOL_CODEX_EXECUTABLE` 为已登录的 Codex CLI 绝对路径，可额外运行真实 `codex exec` 验收。它保留当前认证，仅注入安装器生成的 MooTool MCP 配置，使用临时示例文档，核对实际 `mcp_tool_call` 完成事件，并保存 `codex-mcp-calls.json` 作为证据。默认 CI 不调用收费模型；四个平台打包任务均执行 SDK 与打包版界面验收，Windows 还执行生成的 PowerShell 命令。
+
+## 1.2.0 验收记录
+
+- [完整跨平台 CI](https://github.com/rememberber/MooTool/actions/runs/34791117801)：267 项单元测试、类型检查、构建、发布元数据检查，以及 macOS Intel / Apple Silicon、Windows x64、Linux x64 的打包版 E2E 全部通过。
+- macOS 最终打包版的真实 Codex CLI 验收通过，使用安装器生成的 MCP 配置及临时示例文档，完成 JSON 格式化、笔记搜索、笔记读取和 JSON 文档读取。原始完成事件见 [调用记录](verification/ai-codex-1.2.0.json)。
+- 同一 E2E 还验证了默认拒绝读取、授权与即时撤销、修改库位置后撤权、UTF-8/BOM 输入、错误退出码、缺失 Skill 修复，以及卸载后保留原配置和用户文件。真实模型验收针对 Codex CLI；Claude Code 和 Cursor 验收覆盖配置生成、保留及 MCP 协议，没有声称完成其模型端调用。
