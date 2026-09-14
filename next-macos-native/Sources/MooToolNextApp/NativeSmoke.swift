@@ -39,7 +39,8 @@ import MooToolNextCore
             guard let window = NSApp.windows.first(where: { $0.isVisible && $0.frame.width > 700 }), let hosting = window.contentView else { throw ToolError("找不到主窗口。") }
             window.center()
             let noteLayoutsOnly = CommandLine.arguments.contains("--note-layouts-only")
-            if !noteLayoutsOnly {
+            let formatOnly = CommandLine.arguments.contains("--format-only")
+            if !noteLayoutsOnly && !formatOnly {
                 try await NativeAttachmentAcceptance.run(store: store, window: window)
                 try await NativeNoteAcceptance.run(store: store, window: window)
             }
@@ -50,9 +51,16 @@ import MooToolNextCore
                 try WorkspaceRepository.encode(store.snapshot()).write(to: store.repository.directory.appendingPathComponent("restart-expectation.json"), options: .atomic)
                 print("PASS: focused native note and attachment acceptance"); NSApp.terminate(nil); return
             }
-            if !noteLayoutsOnly {
+            if !noteLayoutsOnly && !formatOnly {
                 try await NativeJSONAcceptance.run(store: store, window: window)
                 try await NativeVaultAcceptance.run(store: store, window: window)
+            }
+            if !noteLayoutsOnly { try await NativeReformatAcceptance.run(store: store, window: window) }
+            if formatOnly {
+                reports += try await captureReformatVariants(store: store, window: window, hosting: hosting, output: output)
+                try finish(store: store, reports: reports, output: output)
+                print("PASS: \(reports.count) reformat captures, actual editor actions and restart persistence.")
+                NSApp.terminate(nil); return
             }
             let previewAttachments = try NativeAttachmentAcceptance.seed(store)
             store.editorRestoreGeneration += 1
@@ -61,6 +69,8 @@ import MooToolNextCore
             store.draft("quickNote").noteOptions = QuickNoteOptions()
             store.draft("quickNote").noteWorkspace = QuickNoteWorkspaceOptions()
             store.draft("quickNote").inputEditor = EditorViewState(); store.draft("quickNote").editorRevision += 1
+            store.draft("reformat").input = ReformatType.nginx.sample
+            store.draft("reformat").reformat = ReformatOptions()
             for scheme in [ColorScheme.light, .dark] {
                 for tool in Catalog.tools where !noteLayoutsOnly {
                     store.selected = tool.id
@@ -125,19 +135,59 @@ import MooToolNextCore
                 }
                 reports.append(["tool": id, "variant": variant, "width": bitmap.pixelsWide, "height": bitmap.pixelsHigh, "screenshot": name])
             }
+            if !noteLayoutsOnly { reports += try await captureReformatVariants(store: store, window: window, hosting: hosting, output: output) }
             store.selected = "mootool"
             try await Task.sleep(for: .milliseconds(200))
             store.saveNow()
             guard try store.repository.load() == store.snapshot() else { throw ToolError("工作区持久化验证失败。") }
             let restored = AppStore(directory: store.repository.directory)
             guard restored.httpRequests == store.httpRequests, restored.draft("http").record == store.draft("http").record,
-                  restored.draft("json").record == store.draft("json").record, restored.draft("quickNote").record == store.draft("quickNote").record else { throw ToolError("HTTP / JSON 工作区恢复验证失败。") }
+                  restored.draft("json").record == store.draft("json").record, restored.draft("quickNote").record == store.draft("quickNote").record,
+                  restored.draft("reformat").record == store.draft("reformat").record else { throw ToolError("HTTP / JSON / 格式化工作区恢复验证失败。") }
             try JSONSerialization.data(withJSONObject: reports, options: [.prettyPrinted, .sortedKeys]).write(to: output.appendingPathComponent("report.json"))
             try WorkspaceRepository.encode(store.snapshot()).write(to: store.repository.directory.appendingPathComponent("restart-expectation.json"), options: .atomic)
             if noteLayoutsOnly { print("PASS: \(reports.count) note layout captures, image split widths and persistence round trip.") }
             else { print("PASS: \(reports.count) view captures, document vault interactions, JSON tree, compact layouts, extended persistence round trip.") }
             NSApp.terminate(nil)
         } catch { fputs("Smoke test failed: \(error)\n", stderr); exit(1) }
+    }
+    private static func captureReformatVariants(store: AppStore, window: NSWindow, hosting: NSView, output: URL) async throws -> [[String: Any]] {
+        var reports: [[String: Any]] = []
+        let fileResult = try await ReformatEngine.format(ReformatType.java.sample, type: .java, indent: 2)
+        for variant in ["reformat-text-light", "reformat-text-dark", "reformat-file-light", "reformat-file-dark", "reformat-compact"] {
+            let file = variant.contains("file") || variant.contains("compact")
+            var options = ReformatOptions()
+            if file {
+                options.type = .java; options.tab = .file; options.indent = 2
+                options.fileName = "Demo.java"; options.fileSource = ReformatType.java.sample; options.fileResult = fileResult
+            }
+            store.selected = "reformat"; store.draft("reformat").reformat = options
+            store.draft("reformat").input = ReformatType.nginx.sample
+            nativeDefaults.set(variant.hasSuffix("dark") ? "dark" : "light", forKey: "appearance")
+            window.setContentSize(variant == "reformat-compact" ? NSSize(width: 940, height: 630) : NSSize(width: 1200, height: 800))
+            NSApp.activate(ignoringOtherApps: true); window.makeKeyAndOrderFront(nil)
+            hosting.layoutSubtreeIfNeeded(); window.displayIfNeeded()
+            try await Task.sleep(for: .milliseconds(550)); hosting.layoutSubtreeIfNeeded()
+            guard let bitmap = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds) else { throw ToolError("无法捕获 \(variant)") }
+            hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
+            guard let data = bitmap.representation(using: .png, properties: [:]) else { throw ToolError("无法编码 \(variant)") }
+            let destination = output.appendingPathComponent(variant + ".png")
+            try data.write(to: destination)
+            if CommandLine.arguments.contains("--window-capture") {
+                let capture = Process(); capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+                capture.arguments = ["-x", "-o", "-l", String((window.attachedSheet ?? window).windowNumber), destination.path]
+                try capture.run(); capture.waitUntilExit()
+                guard capture.terminationStatus == 0 else { throw ToolError("\(variant) 窗口截图不可用。") }
+            }
+            reports.append(["tool": "reformat", "variant": variant, "width": bitmap.pixelsWide, "height": bitmap.pixelsHigh, "screenshot": variant + ".png"])
+        }
+        return reports
+    }
+    private static func finish(store: AppStore, reports: [[String: Any]], output: URL) throws {
+        store.saveNow()
+        guard try store.repository.load() == store.snapshot() else { throw ToolError("格式化工作区持久化验证失败。") }
+        try JSONSerialization.data(withJSONObject: reports, options: [.prettyPrinted, .sortedKeys]).write(to: output.appendingPathComponent("report.json"))
+        try WorkspaceRepository.encode(store.snapshot()).write(to: store.repository.directory.appendingPathComponent("restart-expectation.json"), options: .atomic)
     }
     static func verifyRestart(store: AppStore) {
         guard ProcessInfo.processInfo.environment["MOOTOOL_NATIVE_TEST_DATA"] != nil else { fputs("Restart check requires isolated data.\n", stderr); exit(2) }

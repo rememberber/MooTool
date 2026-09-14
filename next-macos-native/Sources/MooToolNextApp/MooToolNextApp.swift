@@ -53,6 +53,11 @@ struct MooToolNextApp: App {
                     guard result.value == "{\"standalone\":true}" else { throw ToolError("Bundled JSON helper returned an unexpected result.") }
                     var note = JSONEngineRequest("quickReplace", input: "a\nb"); note.path = "linesToComma"
                     guard try await JSONEngine.execute(note).value == "a,b" else { throw ToolError("Bundled note helper returned an unexpected result.") }
+                    for type in [ReformatType.nginx, .java, .xml, .html] {
+                        guard try await ReformatEngine.format(type.sample, type: type).contains("\n") else {
+                            throw ToolError("Bundled \(type.title) formatter returned an unexpected result.")
+                        }
+                    }
                     guard let path = ProcessInfo.processInfo.environment["MOOTOOL_NATIVE_TEST_DATA"] else { throw ToolError("Bundle verification requires isolated test data.") }
                     let repository = WorkspaceRepository(directory: URL(fileURLWithPath: path))
                     let payload = try NoteImagePayload(data: NativeAttachmentAcceptance.fixture())
@@ -63,8 +68,8 @@ struct MooToolNextApp: App {
                     let restored = WorkspaceRepository(directory: repository.directory.appendingPathComponent("restored-bundle-test"))
                     _ = try restored.installBackup(backup)
                     guard try restored.attachmentRepository.thumbnail(payload.attachment).width > 0 else { throw ToolError("Restored attachment cannot be decoded.") }
-                    print("PASS: standalone bundle identity, embedded resources and JSON helper execution, note quick replacement, attachment backup/restore and image decoding"); exit(0)
-                } catch { fputs("Installed JSON helper failed: \(error)\n", stderr); exit(1) }
+                    print("PASS: standalone bundle identity, embedded resources, JSON helper, four formatters, note quick replacement, attachment backup/restore and image decoding"); exit(0)
+                } catch { fputs("Installed bundle verification failed: \(error)\n", stderr); exit(1) }
             }
             return
         }

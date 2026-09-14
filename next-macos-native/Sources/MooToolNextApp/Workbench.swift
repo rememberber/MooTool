@@ -144,7 +144,18 @@ struct HistoryView: View {
             List {
                 ForEach(store.history.filter { $0.toolID == toolID }) { item in
                     HStack {
-                        VStack(alignment: .leading, spacing: 5) { Text(item.draft.input.isEmpty ? item.draft.output : item.draft.input).lineLimit(2).font(.system(.body, design: .monospaced)); Text(item.date.formatted()).font(.caption).foregroundStyle(.secondary) }
+                        VStack(alignment: .leading, spacing: 5) {
+                            if toolID == "reformat" {
+                                let options = ReformatOptions.migrating(item.draft)
+                                Text(options.tab == .file ? (options.fileSource.isEmpty ? item.draft.output : options.fileSource) : (item.draft.input.isEmpty ? item.draft.output : item.draft.input))
+                                    .lineLimit(2).font(.system(.body, design: .monospaced))
+                                Text("\(options.type.title) · \(options.tab == .file ? "文件" : "文本") · \(item.date.formatted())")
+                                    .font(.caption).foregroundStyle(.secondary)
+                            } else {
+                                Text(item.draft.input.isEmpty ? item.draft.output : item.draft.input).lineLimit(2).font(.system(.body, design: .monospaced))
+                                Text(item.date.formatted()).font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
                         Spacer()
                         Button { if let index = store.history.firstIndex(where: { $0.id == item.id }) { store.history[index].favorite.toggle(); store.scheduleSave() } } label: { Image(systemName: item.favorite ? "star.fill" : "star") }
                         Button("恢复") { store.restoreDraft(toolID, record: item.draft); dismiss() }.disabled(store.draft(toolID).busy)

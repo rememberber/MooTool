@@ -33,6 +33,8 @@ func XCTAssertThrowsError<T>(_ expression: @autoclosure () throws -> T, _ messag
     static func main() async {
         let suite = CoreTests()
         let tests: [(String, () throws -> Void)] = [
+            ("Reformat parsers and migration", suite.testReformatParsersAndLegacyWorkspace),
+            ("Reformat files and history", suite.testReformatFileBoundariesAndHistory),
             ("Attachment insertion", suite.testNoteAttachmentInsertionMatchesElectron),
             ("Attachment images and files", suite.testNoteImageValidationAndIndependentFiles),
             ("Attachment backup and restore", suite.testNoteAttachmentBackupRestoreAndFailureAtomicity),
@@ -87,7 +89,8 @@ func XCTAssertThrowsError<T>(_ expression: @autoclosure () throws -> T, _ messag
         do { try await suite.testLocalHTTPResponse() } catch { XCTFail("Local HTTP: \(error)") }
         do { try await suite.testHTTPRedirectPolicyAndSessionIsolation() } catch { XCTFail("HTTP redirects: \(error)") }
         do { try await suite.testJSONWorkerTimeoutCancellationAndIsolation() } catch { XCTFail("JSON worker: \(error)") }
-        print("\(tests.count + 4) test groups completed; \(failures) failures")
+        do { try await suite.testReformatWorkerIsolation() } catch { XCTFail("Reformat worker: \(error)") }
+        print("\(tests.count + 5) test groups completed; \(failures) failures")
         exit(failures == 0 ? 0 : 1)
     }
 }

@@ -13,6 +13,7 @@ final class ToolDraft {
     var http: HTTPOptions? { didSet { changed?() } }
     var httpResult: HTTPResultMetadata? { didSet { changed?() } }
     var json: JSONOptions? { didSet { changed?() } }
+    var reformat: ReformatOptions? { didSet { changed?() } }
     var noteOptions: QuickNoteOptions? { didSet { documentChanged?(); changed?() } }
     var noteWorkspace: QuickNoteWorkspaceOptions? { didSet { changed?() } }
     var inputEditor: EditorViewState? { didSet { changed?() } }
@@ -28,6 +29,8 @@ final class ToolDraft {
     @ObservationIgnored var jsonOperationID: UUID?
     @ObservationIgnored var noteTask: Task<Void, Never>?
     @ObservationIgnored var noteOperationID: UUID?
+    @ObservationIgnored var reformatTask: Task<Void, Never>?
+    @ObservationIgnored var reformatOperationID: UUID?
     init(_ record: DraftRecord = DraftRecord()) {
         apply(record)
     }
@@ -35,9 +38,11 @@ final class ToolDraft {
         httpTask?.cancel()
         if noteTask != nil { noteTask?.cancel(); noteTask = nil; noteOperationID = nil; busy = false }
         if jsonTask != nil { jsonTask?.cancel(); jsonTask = nil; jsonOperationID = nil; busy = false }
+        if reformatTask != nil { reformatTask?.cancel(); reformatTask = nil; reformatOperationID = nil; busy = false }
         documentID = record.documentID
         input = record.input; secondary = record.secondary; output = record.output; mode = record.mode; option = record.option
         http = record.http; httpResult = record.httpResult; json = record.json
+        reformat = record.reformat
         noteOptions = record.noteOptions; noteWorkspace = record.noteWorkspace
         inputEditor = record.inputEditor; outputEditor = record.outputEditor
         editorRevision += 1
@@ -47,6 +52,7 @@ final class ToolDraft {
         var value = DraftRecord(); value.input = input; value.secondary = secondary; value.output = output
         value.mode = mode; value.option = option; value.documentID = documentID
         value.http = http; value.httpResult = httpResult; value.json = json
+        value.reformat = reformat
         value.noteOptions = noteOptions; value.noteWorkspace = noteWorkspace
         value.inputEditor = inputEditor; value.outputEditor = outputEditor; return value
     }

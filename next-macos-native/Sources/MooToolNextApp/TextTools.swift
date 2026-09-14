@@ -9,6 +9,7 @@ struct ToolRouter: View {
             switch id {
             case "mootool": HomeView()
             case "quickNote", "json": DocumentsTool(id: id, draft: store.draft(id))
+            case "reformat": ReformatWorkspace(draft: store.draft(id))
             case "http": HTTPTool(draft: store.draft(id))
             case "java", "net", "hardware": SystemTool(id: id, draft: store.draft(id))
             case "qrCode": QRTool(draft: store.draft(id))
@@ -48,7 +49,7 @@ struct TextTool: View {
                     }
                 } else {
                     HSplitView {
-                        EditorPane(title: inputTitle, text: $draft.input, syntax: id == "json" || id == "reformat" || id == "ymlProperties", persistence: id == "json" ? store.editorPersistence(id) : nil)
+                        EditorPane(title: inputTitle, text: $draft.input, syntax: id == "json" || id == "ymlProperties", persistence: id == "json" ? store.editorPersistence(id) : nil)
                             .frame(minWidth: id == "json" ? 240 : 180)
                         if id == "json" && draft.json?.showsTree == true { JSONTreePane(text: draft.input, path: $draft.option).frame(minWidth: 240) }
                         else { EditorPane(title: "结果", text: $draft.output, editable: false, syntax: ["json", "uaParse", "ymlProperties", "protobuf", "regex"].contains(id), persistence: id == "json" ? store.editorPersistence(id, output: true) : nil).frame(minWidth: id == "json" ? 240 : 180) }
@@ -67,7 +68,6 @@ struct TextTool: View {
         case "crypto": return ["SHA-256", "SHA-512", "MD5", "SHA-1", "HMAC-SHA256", "AES-GCM 加密", "AES-GCM 解密", "UUID", "随机 32 字节"]
         case "regex": return ["匹配", "替换"]
         case "ymlProperties": return ["YAML → JSON", "JSON → YAML", "YAML → Properties", "Properties → YAML", "JSON → Properties", "Properties → JSON"]
-        case "reformat": return ["JSON", "XML / XHTML"]
         case "protobuf": return ["Hex", "Base64"]
         case "calculator": return ["表达式", "十进制 → 其他进制", "十六进制 → 十进制", "二进制 → 十进制"]
         default: return []
@@ -110,7 +110,7 @@ struct TextTool: View {
         case "cron":
             PrimaryButton(title: "预览执行时间", symbol: "calendar") { execute() }
             Menu("常用表达式") { ForEach(["*/5 * * * *", "0 9 * * 1-5", "0 0 1 * *"], id: \.self) { expression in Button(expression) { draft.input = expression; execute() } } }
-        default: PrimaryButton(title: id == "textDiff" ? "比较" : id == "reformat" ? "格式化" : id == "regex" ? draft.mode : "运行") { execute() }
+        default: PrimaryButton(title: id == "textDiff" ? "比较" : id == "regex" ? draft.mode : "运行") { execute() }
         }
         Button("示例") { draft.input = example; if id == "regex" { draft.secondary = #"([\w.]+)@([\w.]+)"# }; if id == "textDiff" { draft.secondary = "MooTool\nNative for macOS\nHello, SwiftUI" } }
         Spacer(minLength: 0)
@@ -118,7 +118,7 @@ struct TextTool: View {
     }
     private var example: String {
         switch id {
-        case "json", "reformat": return "{\"name\":\"MooTool\",\"native\":true,\"tools\":[\"JSON\",\"HTTP\",\"随手记\"]}"
+        case "json": return "{\"name\":\"MooTool\",\"native\":true,\"tools\":[\"JSON\",\"HTTP\",\"随手记\"]}"
         case "regex": return "hello@mootool.dev\ncontact@example.com"
         case "cron": return "*/15 * * * *"
         case "calculator": return "sqrt(144) + 2^3 * sin(pi / 2)"
@@ -144,7 +144,6 @@ struct TextTool: View {
                     guard let text = try JSONSerialization.jsonObject(with: Data(d.input.utf8), options: [.fragmentsAllowed]) as? String else { throw ToolError("输入需为 JSON 字符串，例如 \"hello\\nworld\"。") }; return text
                 }
                 return try TextServices.json(d.input, pretty: action != "minify", sorted: d.json?.sortKeys ?? true, indent: d.json?.indent ?? 2)
-            case "reformat": return d.mode == "JSON" ? try TextServices.json(d.input) : try TextServices.formatXML(d.input)
             case "encode": return try TextServices.encode(d.input, format: d.mode, decode: action == "decode")
             case "crypto": return try TextServices.digest(d.input, algorithm: d.mode, key: d.secondary)
             case "regex": return try TextServices.regex(d.input, pattern: d.secondary, replacement: d.mode == "替换" ? d.option : nil, flags: flags)

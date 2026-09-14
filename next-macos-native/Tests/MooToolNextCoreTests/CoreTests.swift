@@ -8,6 +8,53 @@ import ImageIO
 
 final class CoreTests: XCTestCase {
 
+    func testReformatParsersAndLegacyWorkspace() throws {
+        for type in [ReformatType.nginx, .java, .xml, .html, .json] {
+            var request = JSONEngineRequest("reformat", input: type.sample)
+            request.path = type.rawValue; request.indent = 4
+            let output = try JSONEngine.evaluateLocally(request).value ?? ""
+            XCTAssertTrue(output.contains("\n"), "\(type.title) should format onto multiple lines")
+            XCTAssertTrue(output.utf8.count > type.sample.utf8.count / 2)
+        }
+        var old = DraftRecord(); old.mode = "XML / XHTML"; old.input = "<root><a/></root>"; old.output = "<root>\n  <a/>\n</root>"
+        let options = ReformatOptions.migrating(old)
+        XCTAssertEqual(options.type, .xml)
+        XCTAssertEqual(options.fileSource, old.input)
+        XCTAssertEqual(options.fileResult, old.output)
+        let restored = ReformatOptions.restoringHistory(old)
+        XCTAssertEqual(restored.input, old.output)
+        XCTAssertEqual(restored.output, "")
+        XCTAssertEqual(restored.reformat?.type, .xml)
+    }
+    func testReformatFileBoundariesAndHistory() throws {
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: root, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: root) }
+        let valid = root.appendingPathComponent("server.conf")
+        try ReformatType.nginx.sample.write(to: valid, atomically: true, encoding: .utf8)
+        XCTAssertEqual(try ReformatEngine.readFile(valid), ReformatType.nginx.sample)
+        let invalid = root.appendingPathComponent("invalid.conf")
+        try Data([0xff, 0xfe]).write(to: invalid)
+        XCTAssertThrowsError(try ReformatEngine.readFile(invalid))
+        try Data(count: ReformatEngine.maximumInputBytes + 1).write(to: invalid)
+        XCTAssertThrowsError(try ReformatEngine.readFile(invalid))
+        var options = ReformatOptions(); options.type = .nginx; options.tab = .file
+        options.fileName = "server.conf"; options.fileSource = ReformatType.nginx.sample; options.fileResult = "server {\n    listen 80;\n}"
+        XCTAssertEqual(options.exportName, "server.conf")
+        var record = DraftRecord(); record.reformat = options; record.output = options.fileResult
+        let restored = ReformatOptions.restoringHistory(record)
+        XCTAssertEqual(restored.reformat?.fileSource, options.fileSource)
+        XCTAssertEqual(restored.reformat?.fileResult, options.fileResult)
+        XCTAssertEqual(restored.reformat?.tab, .file)
+        XCTAssertThrowsError(try JSONEngine.evaluateLocally(JSONEngineRequest("reformat", input: String(repeating: "a", count: ReformatEngine.maximumInputBytes + 1))))
+    }
+    func testReformatWorkerIsolation() async throws {
+        for type in [ReformatType.nginx, .java, .xml, .html] {
+            let output = try await ReformatEngine.format(type.sample, type: type)
+            XCTAssertTrue(output.contains("\n"), "\(type.title) did not format through the isolated worker")
+        }
+    }
+
     private func noteImageData() throws -> Data {
         let context = CGContext(data: nil, width: 16, height: 8, bitsPerComponent: 8, bytesPerRow: 0, space: CGColorSpaceCreateDeviceRGB(), bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)!
         context.setFillColor(CGColor(red: 0.1, green: 0.5, blue: 0.8, alpha: 1)); context.fill(CGRect(x: 0, y: 0, width: 16, height: 8))

@@ -31,7 +31,7 @@ public enum Catalog {
         Tool("mootool", "首页", "house", "首页", "触手可及的开发与日常工具", "home about"),
         Tool("quickNote", "随手记", "square.and.pencil", "笔记与文本", "记录想法，整理 Markdown 笔记", "note memo markdown"),
         Tool("textDiff", "文本对比", "rectangle.split.2x1", "笔记与文本", "逐行比较文本，查看新增与删除", "diff compare"),
-        Tool("reformat", "格式化", "paintbrush", "笔记与文本", "整理 JSON、XML 和 HTML 文档", "format xml html"),
+        Tool("reformat", "格式化", "paintbrush", "笔记与文本", "整理 Nginx、Java、XML、HTML 和 JSON 文本与文件", "format nginx java xml html json"),
         Tool("json", "JSON", "curlybraces", "开发与格式", "格式化、压缩、校验与路径查询", "jsonpath xml"),
         Tool("java", "代码运行", "terminal", "开发与格式", "运行本机的 JavaScript、Python、Swift 与 Java", "node python swift groovy"),
         Tool("ymlProperties", "配置转换", "doc.badge.gearshape", "开发与格式", "YAML、JSON 与 Properties 互转", "yaml yml properties"),

@@ -1,6 +1,6 @@
 import Foundation
 
-public struct EditorViewState: Codable, Equatable {
+public struct EditorViewState: Codable, Equatable, Sendable {
     public var location = 0
     public var length = 0
     public var scrollX = 0.0

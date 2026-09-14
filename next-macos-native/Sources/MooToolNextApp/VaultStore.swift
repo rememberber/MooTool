@@ -44,7 +44,7 @@ extension AppStore {
     }
     func restoreDraft(_ toolID: String, record: DraftRecord) {
         editorRestoreGeneration += 1
-        suppressDocumentSync = true; draft(toolID).apply(record); suppressDocumentSync = false
+        suppressDocumentSync = true; draft(toolID).apply(toolID == "reformat" ? ReformatOptions.restoringHistory(record) : record); suppressDocumentSync = false
         synchronizeDocument(toolID)
         if let id = draft(toolID).documentID { updateVaultPreference(toolID) { $0.selectedEntryID = id; $0.expanded.formUnion(vault.ancestors(of: id)) } }
     }
