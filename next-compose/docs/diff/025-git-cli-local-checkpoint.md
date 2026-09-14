@@ -27,4 +27,4 @@
 - 与 Electron 比：不写 local `user.name`；邮箱为 `next-compose@local` 而非 `mootool@local`。
 - 未 fetch 时 ahead/behind 通常为 0。
 - 无 Git 时对话框说明可见，文档库编辑不受阻。
-- 更新通道、JSON 冲突监视、完整检查器弹层仍未做。
+- 更新通道、完整 JSON 检查器弹层仍未做。

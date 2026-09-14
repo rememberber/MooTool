@@ -107,6 +107,8 @@ JSON/随手记默认分别使用自有根，可以由用户设置。路径 norma
 
 文件导入支持 UTF-8/BOM、CRLF/LF、无末尾换行等明确策略；不能无说明改变二进制或未知编码。用户原文件默认只读导入/另存，覆盖通过明确动作。
 
+本轮 Compose 外部冲突见 [DIFF-026](diff/026-vault-external-conflict.md)：内容哈希轮询 + 保存前比较；不做三方合并编辑器。
+
 ## 5. Git 工作流
 
 GitService 按规范化仓库根串行调度。优先 Git CLI，运行前检测版本/路径；远程、用户名、token 属于本产品设置。不要全局修改用户 git config 或将 token 嵌入 remote URL。

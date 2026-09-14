@@ -1,6 +1,6 @@
 # 验收标准、进度与证据
 
-> 更新：2026-09-14。P0/P1/JSON 之后已接入 F02 文本对比、F03 格式化、F06 配置转换、F07 Protobuf、F12 UA、F13 编码、F14 加解密、F15 正则、F16 Cron、F17 二维码、F18 时间、F19 留言板、F21 计算器、F22 调色板、F23 图片助手、F24 PDF、F25 系统信息、F11 网络/IP、F08 环境变量、F10 Host、F09 HTTP、F20 翻译、F05 代码运行、F01 随手记（文档库 + Markdown 预览/附件 + 列编辑 + Vault Git 检查点切片）、A03 备份/恢复切片与 Git CLI 检查点；完整产品与三平台发行仍未验收。
+> 更新：2026-09-14。P0/P1/JSON 之后已接入 F02 文本对比、F03 格式化、F06 配置转换、F07 Protobuf、F12 UA、F13 编码、F14 加解密、F15 正则、F16 Cron、F17 二维码、F18 时间、F19 留言板、F21 计算器、F22 调色板、F23 图片助手、F24 PDF、F25 系统信息、F11 网络/IP、F08 环境变量、F10 Host、F09 HTTP、F20 翻译、F05 代码运行、F01 随手记（文档库 + Markdown 预览/附件 + 列编辑 + Vault Git 检查点 + 外部冲突切片）、A03 备份/恢复切片与 Git CLI 检查点；完整产品与三平台发行仍未验收。
 
 ## 1. 状态规则
 
@@ -14,17 +14,17 @@
 | --- | --- | --- | --- |
 | P0 | 工具链/编辑器/窗口/动态 proto 等实验 | 开发中 | 本机 Wrapper/JDK21/Compose1.12 构建与 app-image 启动见 `docs/evidence/2026-09-09-p0-p1/`。RSTA 已接入；列编辑引擎与 Alt 拖选已落地，IME/桌面拖动手势未做窗口验收。protoc 4.29.3 已随 F07 按 OS/arch 捆绑。ADR-001/002/003 |
 | P1 | 桌面壳/搜索/设置基础 | 开发中 | 26 入口、搜索、modern 明暗、语言、基础设置、JSON 分离窗口代码已有；视觉截图与完整键盘流程待验收 |
-| P2 | 完整 JSON 基础工作流 | 开发中 | 仅最小切片：格式化/压缩/查找/历史/Vault CRUD/转换 + Vault Git 检查点。pull/push、冲突监视、完整检查器弹层未完成，**不能标 F04 已验收** |
+| P2 | 完整 JSON 基础工作流 | 开发中 | 仅最小切片：格式化/压缩/查找/历史/Vault CRUD/转换 + Vault Git 检查点 + 外部冲突。pull/push、完整检查器弹层未完成，**不能标 F04 已验收** |
 | P3 | 文本与本地算法 | 开发中 | F02/F03/F06/F07/F12/F13/F15/F16/F18/F21 已有引擎单测与 UI；F04 pull/push 仍未做 |
 | P4 | 媒体/加密 | 开发中 | F14/F17/F19/F22/F23/F24 已有引擎单测与 UI；截图权限、WebP、安装镜像未测 |
 | P5 | 网络/系统 | 开发中 | F25 系统信息、F11 网络/IP、F08 环境变量、F10 Host、F09 HTTP、F20 翻译已有引擎单测与 UI；P5 引擎层闭环，截图/真实联网未测 |
-| P6 | 文档/Git/运行台/备份 | 开发中 | F05 待验收；F01 为文档库+编辑+24 项快速替换+Markdown 预览/附件+列编辑+Git 检查点切片；A03 备份/恢复切片待验收；Git pull/push 与更新未做 |
+| P6 | 文档/Git/运行台/备份 | 开发中 | F05 待验收；F01 为文档库+编辑+24 项快速替换+Markdown 预览/附件+列编辑+Git 检查点+外部冲突切片；A03 备份/恢复切片待验收；Git pull/push 与更新未做 |
 | P7 | 完整产品/平台安装发行验收 | 未开始 | — |
 | F00 | 首页 | 待验收 | 已实现 Compose 品牌/0.1.0/链接；无运行截图 |
-| F01 | 随手记 | 待验收 | 左库/中编辑或预览/右 24 项快速替换、保存与切换写入、查找替换、历史与分离窗口。编辑/分栏/预览三模式；commonmark AST Compose 预览；附件相对引用与孤立清理；逻辑行列编辑（Alt+拖动）；Vault Git 检查点（status/init/commit/log）。默认 `data/vaults/quick-note`。差异见 [DIFF-021](diff/021-quick-note-replace-vault.md)、[DIFF-023](diff/023-markdown-commonmark-preview.md)、[DIFF-024](diff/024-column-edit-logical-lines.md)、[DIFF-025](diff/025-git-cli-local-checkpoint.md)。无运行截图；pull/push/冲突/frontmatter/全文索引/IME 列模式未做窗口验收，不能标完整 F01 |
+| F01 | 随手记 | 待验收 | 左库/中编辑或预览/右 24 项快速替换、保存与切换写入、查找替换、历史与分离窗口。编辑/分栏/预览三模式；commonmark AST Compose 预览；附件相对引用与孤立清理；逻辑行列编辑（Alt+拖动）；Vault Git 检查点（status/init/commit/log）；外部修改冲突（重载/另存/拒绝覆盖）。默认 `data/vaults/quick-note`。差异见 [DIFF-021](diff/021-quick-note-replace-vault.md)、[DIFF-023](diff/023-markdown-commonmark-preview.md)、[DIFF-024](diff/024-column-edit-logical-lines.md)、[DIFF-025](diff/025-git-cli-local-checkpoint.md)、[DIFF-026](diff/026-vault-external-conflict.md)。无运行截图；pull/push/frontmatter/全文索引/IME 列模式未做窗口验收，不能标完整 F01 |
 | F02 | 文本对比 | 待验收 | 行/字符 Myers 差异、三种高亮、忽略空白、统一补丁、上/下差异、导入/复制/清空/交换、历史与分离窗口。与 Electron `diff` 样本对齐。无运行截图 |
 | F03 | 格式化 | 待验收 | 文本/文件 Tab，Nginx/Java/XML/HTML，缩进 2–6，真实解析格式化、语法错误定位、另存不覆盖原文件、历史与分离窗口、Cmd/Ctrl+Shift+F。引擎差异见 [DIFF-005](diff/005-reformat-jvm.md)。无运行截图 |
-| F04 | JSON | 开发中 | 算法 7 项单测通过；UI 切片已能启动；Vault Git 检查点已接入，见 [DIFF-025](diff/025-git-cli-local-checkpoint.md)；非完整 F04 |
+| F04 | JSON | 开发中 | 算法 7 项单测通过；UI 切片已能启动；Vault Git 检查点与外部冲突已接入，见 [DIFF-025](diff/025-git-cli-local-checkpoint.md)、[DIFF-026](diff/026-vault-external-conflict.md)；非完整 F04 |
 | F05 | 代码运行 | 待验收 | 三 Tab + Java/Groovy、独立草稿、检测/手动路径、真运行停止与流式输出、参数 argv、超时/取消/截断、历史与分离窗口。本机 Java/Python/Node 打印 42；Groovy 未安装标明不可用。差异见 [DIFF-020](diff/020-code-run-processbuilder.md)。无运行截图；安装镜像与关闭应用杀树手工未测 |
 | F06 | 配置转换 | 待验收 | Properties ↔ YAML、点路径/`[index]`、标量列表逗号合并、YAML 校验/格式化、导入导出、历史与分离窗口。类型冲突显式报错。差异见 [DIFF-006](diff/006-config-snakeyaml.md)。无运行截图 |
 | F07 | Protobuf | 待验收 | 捆绑 protoc 4.29.3 + DynamicMessage；JSON↔Hex/Base64、Wire 无 schema、定义格式化、nested/map/oneof/int64 单测、历史与分离窗口。差异见 [DIFF-007](diff/007-protobuf-jsonformat.md)。无运行截图；安装镜像内解出未测 |
@@ -48,7 +48,7 @@
 | F25 | 系统信息 | 待验收 | 系统/CPU/内存/存储/网络 Tab、OSHI 真机采集、序列号默认遮蔽、JVM 与 OS 分区、复制当前 Tab、切走取消采集、无通用历史、分离窗口。差异见 [DIFF-014](diff/014-oshi-system-info.md)。无运行截图；安装镜像 JNA 未测 |
 | A01 | 11 类设置 | 开发中 | general/appearance/layout/editor/data/about/runtime 基础项生效；Data 含备份导出/预览/恢复；Vault 含随手记目录与 Git 用户名/remote；Network/Tools/Shortcuts 与 pull/push 明确未实现 |
 | A02 | 历史/收藏/搜索 | 开发中 | JSON、编码、UA、正则、Cron、文本对比、格式化、配置转换、Protobuf、加解密、二维码、调色板、时间转换、计算器、PDF、图片助手、网络/IP、Host 应用、HTTP 发送、代码运行与随手记保存历史已有；环境变量/系统信息/留言板/翻译无通用历史（翻译用自有单词本与历史）；正则/Cron/调色板收藏已落地 |
-| A03 | 桌面/存储/备份/Git/更新 | 开发中 | 独立路径与 SQLite 已有；备份/恢复 zip 待验收，见 [DIFF-022](diff/022-backup-zip-manifest.md)；Git CLI 检查点见 [DIFF-025](diff/025-git-cli-local-checkpoint.md)；pull/push 与更新未做 |
+| A03 | 桌面/存储/备份/Git/更新 | 开发中 | 独立路径与 SQLite 已有；备份/恢复 zip 待验收，见 [DIFF-022](diff/022-backup-zip-manifest.md)；Git CLI 检查点见 [DIFF-025](diff/025-git-cli-local-checkpoint.md)；Vault 外部冲突见 [DIFF-026](diff/026-vault-external-conflict.md)；pull/push 与更新未做 |
 
 ## 3. 工程检查入口
 
@@ -66,7 +66,7 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 21)"   # macOS 示例
 ./gradlew :composeApp:packageDistributionForCurrentOS
 ```
 
-本机 2026-09-14 结果：Vault Git 检查点接入后 `desktopTest` **139/139** 通过（含 GitEngineTest 3；此前列编辑切片为 136/136）。本机 Git CLI 2.45.1，集成用例未跳过。`createDistributable` 此前生成 `MooTool Next Compose.app`；本轮未重跑打包。`runDistributable` 与 `packageDistributionForCurrentOS` 未跑完。
+本机 2026-09-14 结果：Vault 外部冲突切片接入后 `desktopTest` **143/143** 通过（含 VaultConflictEngineTest 4；此前 Git 检查点为 139/139）。本机 Git CLI 2.45.1。`createDistributable` 此前生成 `MooTool Next Compose.app`；本轮未重跑打包。`runDistributable` 与 `packageDistributionForCurrentOS` 未跑完。
 
 测试层级：
 
@@ -109,7 +109,7 @@ export JAVA_HOME="$(/usr/libexec/java_home -v 21)"   # macOS 示例
 
 ## 7. 证据记录模板
 
-后续每阶段建立 `docs/evidence/YYYY-MM-DD-阶段/`。见 `docs/evidence/2026-09-09-p0-p1/`、`docs/evidence/2026-09-09-f18/`、`docs/evidence/2026-09-09-f21/`、`docs/evidence/2026-09-09-f13/`、`docs/evidence/2026-09-09-f12/`、`docs/evidence/2026-09-09-f15/`、`docs/evidence/2026-09-09-f16/`、`docs/evidence/2026-09-09-f02/`、`docs/evidence/2026-09-09-f03/`、`docs/evidence/2026-09-09-f06/`、`docs/evidence/2026-09-09-f07/`、`docs/evidence/2026-09-09-f14/`、`docs/evidence/2026-09-09-f17/`、`docs/evidence/2026-09-09-f22/`、`docs/evidence/2026-09-09-f19/`、`docs/evidence/2026-09-09-f24/`、`docs/evidence/2026-09-09-f23/`、`docs/evidence/2026-09-09-f25/`、`docs/evidence/2026-09-09-f11/`、`docs/evidence/2026-09-09-f08/`、`docs/evidence/2026-09-09-f20/`、`docs/evidence/2026-09-09-f09/`、`docs/evidence/2026-09-09-f05/`、`docs/evidence/2026-09-09-f01/`、`docs/evidence/2026-09-09-a03-backup/`、`docs/evidence/2026-09-09-f01-preview/`、`docs/evidence/2026-09-14-f01-column/`、`docs/evidence/2026-09-14-git/`。
+后续每阶段建立 `docs/evidence/YYYY-MM-DD-阶段/`。见 `docs/evidence/2026-09-09-p0-p1/`、`docs/evidence/2026-09-09-f18/`、`docs/evidence/2026-09-09-f21/`、`docs/evidence/2026-09-09-f13/`、`docs/evidence/2026-09-09-f12/`、`docs/evidence/2026-09-09-f15/`、`docs/evidence/2026-09-09-f16/`、`docs/evidence/2026-09-09-f02/`、`docs/evidence/2026-09-09-f03/`、`docs/evidence/2026-09-09-f06/`、`docs/evidence/2026-09-09-f07/`、`docs/evidence/2026-09-09-f14/`、`docs/evidence/2026-09-09-f17/`、`docs/evidence/2026-09-09-f22/`、`docs/evidence/2026-09-09-f19/`、`docs/evidence/2026-09-09-f24/`、`docs/evidence/2026-09-09-f23/`、`docs/evidence/2026-09-09-f25/`、`docs/evidence/2026-09-09-f11/`、`docs/evidence/2026-09-09-f08/`、`docs/evidence/2026-09-09-f20/`、`docs/evidence/2026-09-09-f09/`、`docs/evidence/2026-09-09-f05/`、`docs/evidence/2026-09-09-f01/`、`docs/evidence/2026-09-09-a03-backup/`、`docs/evidence/2026-09-09-f01-preview/`、`docs/evidence/2026-09-14-f01-column/`、`docs/evidence/2026-09-14-git/`、`docs/evidence/2026-09-14-vault-conflict/`。
 
 ## 8. 完成定义
 

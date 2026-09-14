@@ -20,6 +20,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -40,11 +41,16 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
-import com.rememberber.mootool.next.compose.features.git.VaultGitDialog
 import com.rememberber.mootool.next.compose.domain.FindReplace
 import com.rememberber.mootool.next.compose.domain.NoteAttachmentEngine
 import com.rememberber.mootool.next.compose.domain.QuickReplaceAction
 import com.rememberber.mootool.next.compose.domain.QuickReplaceEngine
+import com.rememberber.mootool.next.compose.domain.VaultChangeKind
+import com.rememberber.mootool.next.compose.domain.VaultConflictEngine
+import com.rememberber.mootool.next.compose.domain.VaultConflictState
+import com.rememberber.mootool.next.compose.domain.VaultRevisionMonitor
+import com.rememberber.mootool.next.compose.features.git.VaultGitDialog
+import com.rememberber.mootool.next.compose.features.vault.VaultConflictDialog
 import com.rememberber.mootool.next.compose.editor.EditorHost
 import com.rememberber.mootool.next.compose.model.AppSettings
 import com.rememberber.mootool.next.compose.model.HistoryRecord
@@ -85,7 +91,22 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
     var vaultItems by remember { mutableStateOf(vault.list(session.vaultQuery)) }
     var historyItems by remember { mutableStateOf(emptyList<HistoryRecord>()) }
     var gitOpen by remember { mutableStateOf(false) }
+    var conflict by remember { mutableStateOf<VaultConflictState?>(null) }
+    var monitor by remember { mutableStateOf<VaultRevisionMonitor?>(null) }
     val colors = MooTheme.colors
+    DisposableEffect(vault.root()) {
+        val next = VaultRevisionMonitor(vault.root(), ignoreAttachments = true) { paths ->
+            SwingUtilities.invokeLater {
+                handleQuickNoteVaultChange(container, session, vault, paths, { conflict = it }, { refresh() })
+            }
+        }
+        next.start()
+        monitor = next
+        onDispose {
+            next.close()
+            if (monitor === next) monitor = null
+        }
+    }
     LaunchedEffect(session.vaultQuery, tick, settings.vault.quickNotePath) {
         vaultItems = vault.list(session.vaultQuery).filter { item ->
             val path = item.relativePath.replace('\\', '/')
@@ -112,7 +133,7 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
     Column(
         Modifier.fillMaxSize().background(colors.workspace).onPreviewKeyEvent { event ->
             if (event.type == KeyEventType.KeyDown && event.key == Key.S && (event.isMetaPressed || event.isCtrlPressed)) {
-                saveCurrent(container, session, vault)
+                saveCurrent(container, session, vault, monitor) { conflict = it }
                 refresh()
                 true
             } else false
@@ -125,7 +146,7 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
         ) {
             Text(container.t("quickNote.title"), color = colors.textPrimary, fontSize = 16.sp)
             MooButton(container.t("quickNote.save"), primary = true, onClick = {
-                saveCurrent(container, session, vault)
+                saveCurrent(container, session, vault, monitor) { conflict = it }
                 refresh()
             })
             MooButton(if (session.wrap) container.t("quickNote.wrap") else container.t("json.action.nowrap"), onClick = {
@@ -241,8 +262,9 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                                 fontSize = 12.sp,
                                 modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).clickable {
                                     if (!item.directory) {
-                                        saveIfNeeded(container, session, vault)
-                                        openFile(session, vault, item.relativePath)
+                                        if (saveIfNeeded(container, session, vault, monitor) { conflict = it }) {
+                                            openFile(session, vault, item.relativePath)
+                                        }
                                         refresh()
                                     }
                                 }.padding(6.dp)
@@ -328,6 +350,7 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                 listOfNotNull(
                     session.currentFile.ifBlank { container.t("quickNote.select") },
                     if (dirty) container.t("quickNote.unsaved") else if (session.currentFile.isNotBlank()) container.t("quickNote.saved") else null,
+                    if (conflict != null) container.t("vault.conflict.banner") else null,
                     container.t("quickNote.stats", mapOf("chars" to chars.toString(), "words" to words.toString(), "lines" to lines.toString()))
                 ).joinToString(" · "),
                 color = colors.textSecondary,
@@ -370,7 +393,7 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                                     }
                                     else -> {
                                         val fileName = if (name.contains('.')) name else "$name.md"
-                                        saveIfNeeded(container, session, vault)
+                                        saveIfNeeded(container, session, vault, monitor) { conflict = it }
                                         vault.createFile(fileName, session.editor.text.ifBlank { "" })
                                         openFile(session, vault, fileName)
                                     }
@@ -403,10 +426,47 @@ fun QuickNoteScreen(container: AppContainer, detached: Boolean) {
                         null
                     }
                 } else {
-                    saveIfNeeded(container, session, vault)
+                    saveIfNeeded(container, session, vault, monitor) { conflict = it }
                     session.error.takeIf { it.isNotBlank() }
                 }
             }
+        )
+    }
+    conflict?.let { pending ->
+        VaultConflictDialog(
+            container = container,
+            conflict = pending,
+            onReload = {
+                if (pending.deleted) {
+                    session.currentFile = ""
+                    session.savedText = session.editor.text
+                } else {
+                    openFile(session, vault, pending.relativePath)
+                }
+                conflict = null
+                session.error = ""
+                session.notice = container.t("vault.conflict.reloaded")
+                refresh()
+            },
+            onSaveCopy = {
+                val copy = VaultConflictEngine.conflictCopyName(pending.relativePath, System.currentTimeMillis())
+                runCatching { vault.write(copy, pending.editorText) }
+                    .onSuccess {
+                        monitor?.noteOwnWrite(copy, VaultConflictEngine.sha256Text(pending.editorText))
+                        if (pending.deleted) {
+                            session.currentFile = copy
+                            session.savedText = pending.editorText
+                        } else {
+                            openFile(session, vault, pending.relativePath)
+                        }
+                        conflict = null
+                        session.error = ""
+                        session.notice = container.t("vault.conflict.savedCopy", mapOf("path" to copy))
+                    }
+                    .onFailure { session.error = it.message ?: container.t("quickNote.saveFailed") }
+                refresh()
+            },
+            onKeep = { conflict = null; refresh() }
         )
     }
     if (session.historyOpen) {
@@ -557,10 +617,25 @@ private fun applyReplace(session: QuickNoteSession, action: QuickReplaceAction) 
     }
 }
 
-private fun saveCurrent(container: AppContainer, session: QuickNoteSession, vault: NoteVault) {
+private fun saveCurrent(
+    container: AppContainer,
+    session: QuickNoteSession,
+    vault: NoteVault,
+    monitor: VaultRevisionMonitor?,
+    onConflict: (VaultConflictState) -> Unit
+): Boolean {
     val name = session.currentFile.ifBlank { "note-${System.currentTimeMillis()}.md" }
-    runCatching { vault.write(name, session.editor.text) }
+    if (session.currentFile.isNotBlank()) {
+        val disk = runCatching { vault.readOrNull(name) }.getOrNull()
+        if (!VaultConflictEngine.canOverwrite(session.savedText, disk, session.editor.text)) {
+            onConflict(VaultConflictState(name, session.editor.text, disk, disk == null))
+            session.error = container.t("vault.conflict.blocked")
+            return false
+        }
+    }
+    return runCatching { vault.write(name, session.editor.text) }
         .onSuccess {
+            monitor?.noteOwnWrite(name, VaultConflictEngine.sha256Text(session.editor.text))
             session.currentFile = name
             session.savedText = session.editor.text
             session.error = ""
@@ -568,11 +643,48 @@ private fun saveCurrent(container: AppContainer, session: QuickNoteSession, vaul
             container.history.save(ToolId.QuickNote.id, name, name, session.editor.text.take(8_000), "")
         }
         .onFailure { session.error = it.message ?: container.t("quickNote.saveFailed") }
+        .isSuccess
 }
 
-private fun saveIfNeeded(container: AppContainer, session: QuickNoteSession, vault: NoteVault) {
+private fun saveIfNeeded(
+    container: AppContainer,
+    session: QuickNoteSession,
+    vault: NoteVault,
+    monitor: VaultRevisionMonitor?,
+    onConflict: (VaultConflictState) -> Unit
+): Boolean {
     if (session.currentFile.isNotBlank() && session.editor.text != session.savedText) {
-        saveCurrent(container, session, vault)
+        return saveCurrent(container, session, vault, monitor, onConflict)
+    }
+    return session.error.isBlank()
+}
+
+private fun handleQuickNoteVaultChange(
+    container: AppContainer,
+    session: QuickNoteSession,
+    vault: NoteVault,
+    paths: List<String>,
+    onConflict: (VaultConflictState) -> Unit,
+    refresh: () -> Unit
+) {
+    refresh()
+    val current = session.currentFile
+    if (current.isBlank() || current !in paths) return
+    val disk = runCatching { vault.readOrNull(current) }.getOrNull()
+    when (VaultConflictEngine.decide(current, current, session.editor.text, session.savedText, disk)) {
+        VaultChangeKind.Reload -> {
+            openFile(session, vault, current)
+            session.notice = container.t("vault.conflict.reloaded")
+            refresh()
+        }
+        VaultChangeKind.Deleted -> {
+            session.currentFile = ""
+            session.savedText = session.editor.text
+            session.notice = container.t("vault.conflict.deleted")
+            refresh()
+        }
+        VaultChangeKind.Conflict -> onConflict(VaultConflictState(current, session.editor.text, disk, disk == null))
+        VaultChangeKind.Ignored, VaultChangeKind.TreeChanged -> Unit
     }
 }
 

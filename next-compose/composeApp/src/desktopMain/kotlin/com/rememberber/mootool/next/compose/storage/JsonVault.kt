@@ -52,6 +52,11 @@ class JsonVault(private val directories: AppDirectories) {
 
     fun read(relativePath: String): String = resolve(relativePath).readText(Charsets.UTF_8)
 
+    fun readOrNull(relativePath: String): String? {
+        val target = resolve(relativePath)
+        return if (Files.isRegularFile(target)) target.readText(Charsets.UTF_8) else null
+    }
+
     fun write(relativePath: String, content: String): Path {
         val target = resolve(relativePath)
         target.parent.createDirectories()

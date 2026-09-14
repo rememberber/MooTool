@@ -109,6 +109,7 @@ class JsonSession {
     var findOptions: FindReplaceOptions = FindReplaceOptions()
     var jsonPath: String = "$"
     var currentFile: String = ""
+    var savedText: String = SAMPLE_JSON
     var formatOptions: JsonFormatOptions = JsonFormatOptions()
     var vaultQuery: String = ""
     var notice: String = ""
@@ -155,6 +156,7 @@ class JsonSession {
             checkDuplicateKeys = snapshot.checkDuplicateKeys
         )
         vaultQuery = snapshot.vaultQuery
+        savedText = snapshot.content
     }
 
     companion object {

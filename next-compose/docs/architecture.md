@@ -163,7 +163,7 @@ SwingPanel 默认处于 Compose 内容前方；菜单、命令搜索、对话框
 | 环境变量 | 自有 `EnvEngine` + 本产品 `data/environment` | 用户/系统文件备份后写入；进程/JVM 只读；Unix 钩子使用 Compose 标记。见 DIFF-016 |
 | Host | 自有 `HostEngine` + `data/hosts/profiles.json` | 保存方案不改系统文件；应用前 diff/备份/指纹冲突；提权失败保持原 hosts。见 DIFF-017 |
 | 代码运行 | 自有 `CodeRunEngine` + `ProcessBuilder` argv | Java 源文件模式；白名单环境；1 MiB/2 MiB 上限；ProcessHandle 杀树。见 DIFF-020 |
-| 随手记 | 自有 `NoteVault` + `QuickReplaceEngine` + `MarkdownPreviewEngine` + `ColumnEditEngine` | 默认 `data/vaults/quick-note`；24 项替换对齐 Electron 样本。预览见 DIFF-023；替换见 DIFF-021；列编辑见 DIFF-024；Git 检查点见 DIFF-025 |
+| 随手记 | 自有 `NoteVault` + `QuickReplaceEngine` + `MarkdownPreviewEngine` + `ColumnEditEngine` | 默认 `data/vaults/quick-note`；24 项替换对齐 Electron 样本。预览见 DIFF-023；替换见 DIFF-021；列编辑见 DIFF-024；Git 检查点见 DIFF-025；外部冲突见 DIFF-026 |
 | Git | 自有 `GitEngine` + 外部 Git CLI argv | 仓库根串行锁；`-c` 身份不改 global config；无 Git 仍可记笔记。本轮无 pull/push。见 DIFF-025 |
 | 时间/计算 | java.time、BigInteger/BigDecimal、自有表达式 AST | 时区、DST、精度、算符、溢出；不 eval 用户文本 |
 

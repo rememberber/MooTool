@@ -21,6 +21,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -37,7 +38,12 @@ import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.FindReplace
 import com.rememberber.mootool.next.compose.domain.JsonEngine
 import com.rememberber.mootool.next.compose.domain.JsonTranslator
+import com.rememberber.mootool.next.compose.domain.VaultChangeKind
+import com.rememberber.mootool.next.compose.domain.VaultConflictEngine
+import com.rememberber.mootool.next.compose.domain.VaultConflictState
+import com.rememberber.mootool.next.compose.domain.VaultRevisionMonitor
 import com.rememberber.mootool.next.compose.features.git.VaultGitDialog
+import com.rememberber.mootool.next.compose.features.vault.VaultConflictDialog
 import com.rememberber.mootool.next.compose.editor.EditorHost
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
@@ -73,7 +79,22 @@ fun JsonScreen(container: AppContainer, detached: Boolean) {
     var vaultItems by remember { mutableStateOf(container.jsonVault.list(session.vaultQuery)) }
     var historyItems by remember { mutableStateOf(emptyList<HistoryRecord>()) }
     var gitOpen by remember { mutableStateOf(false) }
+    var conflict by remember { mutableStateOf<VaultConflictState?>(null) }
+    var monitor by remember { mutableStateOf<VaultRevisionMonitor?>(null) }
     val colors = MooTheme.colors
+    DisposableEffect(container.jsonVault.root()) {
+        val next = VaultRevisionMonitor(container.jsonVault.root(), ignoreAttachments = false) { paths ->
+            SwingUtilities.invokeLater {
+                handleJsonVaultChange(container, session, paths, { conflict = it }, { refresh() })
+            }
+        }
+        next.start()
+        monitor = next
+        onDispose {
+            next.close()
+            if (monitor === next) monitor = null
+        }
+    }
     LaunchedEffect(session.vaultQuery, tick) {
         vaultItems = container.jsonVault.list(session.vaultQuery)
     }
@@ -87,7 +108,7 @@ fun JsonScreen(container: AppContainer, detached: Boolean) {
             FindBar(container, session, onChanged = { refresh() })
         }
         Row(Modifier.weight(1f).fillMaxWidth()) {
-            VaultPane(container, session, vaultItems, onChanged = { refresh() })
+            VaultPane(container, session, vaultItems, monitor, { conflict = it }, onChanged = { refresh() })
             Box(Modifier.weight(1f).fillMaxHeight()) {
                 EditorHost(
                     buffer = session.editor,
@@ -112,6 +133,7 @@ fun JsonScreen(container: AppContainer, detached: Boolean) {
             }, fontSize = 12.sp)
             Spacer(Modifier.weight(1f))
             Text(session.notice, color = colors.textSecondary, fontSize = 12.sp)
+            if (conflict != null) Text(" · ${container.t("vault.conflict.banner")}", color = colors.warning, fontSize = 12.sp)
             if (detached) Text(" · detached", color = colors.textSecondary, fontSize = 12.sp)
         }
     }
@@ -131,10 +153,49 @@ fun JsonScreen(container: AppContainer, detached: Boolean) {
                         null
                     }
                 } else {
-                    runCatching { container.jsonVault.write(session.currentFile, session.editor.text) }
+                    saveJsonVault(container, session, monitor) { conflict = it }
                         .fold(onSuccess = { null }, onFailure = { it.message ?: container.t("quickNote.saveFailed") })
                 }
             }
+        )
+    }
+    conflict?.let { pending ->
+        VaultConflictDialog(
+            container = container,
+            conflict = pending,
+            onReload = {
+                if (pending.deleted) {
+                    session.currentFile = ""
+                    session.savedText = session.editor.text
+                } else {
+                    onEdt { session.editor.setText(container.jsonVault.read(pending.relativePath), recordUndo = false) }
+                    session.currentFile = pending.relativePath
+                    session.savedText = session.editor.text
+                }
+                conflict = null
+                session.notice = container.t("vault.conflict.reloaded")
+                refresh()
+            },
+            onSaveCopy = {
+                val copy = VaultConflictEngine.conflictCopyName(pending.relativePath, System.currentTimeMillis())
+                runCatching { container.jsonVault.write(copy, pending.editorText) }
+                    .onSuccess {
+                        monitor?.noteOwnWrite(copy, VaultConflictEngine.sha256Text(pending.editorText))
+                        if (pending.deleted) {
+                            session.currentFile = copy
+                            session.savedText = pending.editorText
+                        } else {
+                            onEdt { session.editor.setText(container.jsonVault.read(pending.relativePath), recordUndo = false) }
+                            session.currentFile = pending.relativePath
+                            session.savedText = session.editor.text
+                        }
+                        conflict = null
+                        session.notice = container.t("vault.conflict.savedCopy", mapOf("path" to copy))
+                    }
+                    .onFailure { session.notice = it.message ?: container.t("json.notice.failed") }
+                refresh()
+            },
+            onKeep = { conflict = null; refresh() }
         )
     }
     if (session.historyOpen) {
@@ -262,7 +323,14 @@ private fun FindBar(container: AppContainer, session: JsonSession, onChanged: ()
 }
 
 @Composable
-private fun VaultPane(container: AppContainer, session: JsonSession, items: List<VaultEntry>, onChanged: () -> Unit) {
+private fun VaultPane(
+    container: AppContainer,
+    session: JsonSession,
+    items: List<VaultEntry>,
+    monitor: VaultRevisionMonitor?,
+    onConflict: (VaultConflictState) -> Unit,
+    onChanged: () -> Unit
+) {
     val colors = MooTheme.colors
     Column(Modifier.width(240.dp).fillMaxHeight().background(colors.sidebar).padding(8.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Text(container.t("json.vault.title"), color = colors.textPrimary, fontSize = 12.sp)
@@ -272,13 +340,14 @@ private fun VaultPane(container: AppContainer, session: JsonSession, items: List
                 val name = "snippet-${System.currentTimeMillis()}.json"
                 container.jsonVault.createFile(name, session.editor.text.ifBlank { "{\n}\n" })
                 session.currentFile = name
+                session.savedText = session.editor.text.ifBlank { "{\n}\n" }
+                monitor?.noteOwnWrite(name, VaultConflictEngine.sha256Text(session.savedText))
                 onChanged()
             })
             MooButton(container.t("json.vault.save"), onClick = {
-                val name = session.currentFile.ifBlank { "draft.json" }
-                container.jsonVault.write(name, session.editor.text)
-                session.currentFile = name
-                session.notice = container.t("common.save")
+                saveJsonVault(container, session, monitor, onConflict)
+                    .onSuccess { session.notice = container.t("common.save") }
+                    .onFailure { session.notice = it.message ?: container.t("json.notice.failed") }
                 onChanged()
             })
         }
@@ -292,8 +361,16 @@ private fun VaultPane(container: AppContainer, session: JsonSession, items: List
                         color = if (item.relativePath == session.currentFile) colors.accent else colors.textPrimary,
                         fontSize = 12.sp,
                         modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).clickable {
+                            if (session.currentFile.isNotBlank() && session.editor.text != session.savedText) {
+                                val saved = saveJsonVault(container, session, monitor, onConflict)
+                                if (saved.isFailure) {
+                                    onChanged()
+                                    return@clickable
+                                }
+                            }
                             onEdt { session.editor.setText(container.jsonVault.read(item.relativePath), recordUndo = false) }
                             session.currentFile = item.relativePath
+                            session.savedText = session.editor.text
                             onChanged()
                         }.padding(6.dp)
                     )
@@ -304,6 +381,7 @@ private fun VaultPane(container: AppContainer, session: JsonSession, items: List
             MooButton(container.t("json.vault.delete"), onClick = {
                 container.jsonVault.delete(session.currentFile)
                 session.currentFile = ""
+                session.savedText = session.editor.text
                 onChanged()
             })
         }
@@ -542,6 +620,57 @@ private fun chooseFile(save: Boolean): File? {
     val file = dialog.file ?: return null
     val directory = dialog.directory ?: return null
     return File(directory, file)
+}
+
+private fun saveJsonVault(
+    container: AppContainer,
+    session: JsonSession,
+    monitor: VaultRevisionMonitor?,
+    onConflict: (VaultConflictState) -> Unit
+): Result<Unit> {
+    val name = session.currentFile.ifBlank { "draft.json" }
+    if (session.currentFile.isNotBlank()) {
+        val disk = runCatching { container.jsonVault.readOrNull(name) }.getOrNull()
+        if (!VaultConflictEngine.canOverwrite(session.savedText, disk, session.editor.text)) {
+            onConflict(VaultConflictState(name, session.editor.text, disk, disk == null))
+            return Result.failure(IllegalStateException(container.t("vault.conflict.blocked")))
+        }
+    }
+    return runCatching {
+        container.jsonVault.write(name, session.editor.text)
+        monitor?.noteOwnWrite(name, VaultConflictEngine.sha256Text(session.editor.text))
+        session.currentFile = name
+        session.savedText = session.editor.text
+    }
+}
+
+private fun handleJsonVaultChange(
+    container: AppContainer,
+    session: JsonSession,
+    paths: List<String>,
+    onConflict: (VaultConflictState) -> Unit,
+    refresh: () -> Unit
+) {
+    refresh()
+    val current = session.currentFile
+    if (current.isBlank() || current !in paths) return
+    val disk = runCatching { container.jsonVault.readOrNull(current) }.getOrNull()
+    when (VaultConflictEngine.decide(current, current, session.editor.text, session.savedText, disk)) {
+        VaultChangeKind.Reload -> {
+            onEdt { session.editor.setText(disk.orEmpty(), recordUndo = false) }
+            session.savedText = disk.orEmpty()
+            session.notice = container.t("vault.conflict.reloaded")
+            refresh()
+        }
+        VaultChangeKind.Deleted -> {
+            session.currentFile = ""
+            session.savedText = session.editor.text
+            session.notice = container.t("vault.conflict.deleted")
+            refresh()
+        }
+        VaultChangeKind.Conflict -> onConflict(VaultConflictState(current, session.editor.text, disk, disk == null))
+        VaultChangeKind.Ignored, VaultChangeKind.TreeChanged -> Unit
+    }
 }
 
 private fun onEdt(block: () -> Unit) {
