@@ -47,6 +47,29 @@ MooTool now has 7 independent product lines, each with its own code, build, vers
 
 Follow the product links for source code or the product README, including development setup, running, packaging, and acceptance notes. The current macOS native product lives in `next-macos-native/`; `macos/` contains the early SwiftUI prototype.
 
+## Use MooTool with AI (Next Electron)
+
+**MooTool Next Electron 1.2.0** lets local AI clients use MooTool through MCP or a standalone Skill. Tools use the bundled runtime, so no separate Node.js installation is needed and calls work with the MooTool window closed.
+
+| Client | One-click integration |
+| --- | --- |
+| Codex | MCP, Skill, or both |
+| Claude Code | MCP, Skill, or both |
+| Cursor | MCP |
+
+- **11 tools:** JSON formatting and JSONPath queries, encoding/decoding, timestamps, text diffs, hashes, UUIDs, plus search and read tools for Quick Notes and JSON documents.
+- **Installation management:** preview generated configuration, test the connection, inspect installation status, repair/update, and uninstall. Existing configuration is backed up; conflicting user edits are reported and preserved.
+- **Read-only document access:** off by default, with a separate grant for each vault. Disabling access takes effect on the next call; moving a vault revokes access. Reads are paginated and exclude hidden files, symbolic links and files ignored by the vault root's `.gitignore`.
+
+To get started:
+
+1. Install MooTool at a permanent location: macOS Applications, the Windows installer, or Linux deb. AppImage and Windows portable runtimes cannot be registered for one-click AI integration.
+2. Open **Settings → AI integration**, choose the client and integration mode, review the preview, then click **Install in one click**.
+3. Restart the AI client or reload its MCP / Skills, enabling the tools if prompted. Try “Use MooTool to sort the keys in this JSON.”
+4. For saved documents, enable **Allow reading Quick Notes** or **Allow reading JSON documents** in the same settings page, then ask the AI to search the corresponding vault.
+
+Other local stdio MCP clients can use **Copy MCP configuration**. See the [AI integration guide](next/doc/mootool-ai-integration.md) for installation paths, limits, standalone Skill usage and verification records.
+
 ## Screenshots
 
 > The screenshots below show MooTool Java. See each product's README for its UI and acceptance records.
