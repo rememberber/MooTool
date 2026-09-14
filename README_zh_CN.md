@@ -37,7 +37,7 @@ MooTool 目前包含 7 条独立产品线，各自维护代码、构建、版本
 
 | 产品 / 源码 | 技术与介绍 | 目标平台 | 当前状态 / 下载 |
 | --- | --- | --- | --- |
-| [**MooTool Next Electron**](next/README.md) | Electron、Vite、React、TypeScript；当前推荐的主力桌面版本。 | Windows / Linux / macOS | 稳定版：[下载 1.1.4](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.4) |
+| [**MooTool Next Electron**](next/README.md) | Electron、Vite、React、TypeScript；当前推荐的主力桌面版本。 | Windows / Linux / macOS | 稳定版：[下载 1.2.0](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.2.0) |
 | [**MooTool Java**](src/) | Java、Swing；持续维护的原始桌面版本。 | Windows / Linux / macOS | 稳定版：[下载 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6) · [Gitee 镜像](https://gitee.com/zhoubochina/MooTool/releases) |
 | [**MooTool Next Tauri**](next-tauri/README.md) | Tauri 2、Rust、React、TypeScript；已实现 25 个工具、独立存储与更新。 | Windows / Linux / macOS | 候选预发布版：[下载 0.1.0-rc.2](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2) |
 | [**MooTool Next macOS Native**](next-macos-native/README.md) | SwiftUI、AppKit、系统框架；原生工作区、JSON 文档库、随手记与图片附件。 | macOS 14+ | 0.6.0 开发版；可从源码构建 `.app` / DMG。 |
@@ -93,7 +93,7 @@ MooTool 目前包含 7 条独立产品线，各自维护代码、构建、版本
 
 ## 下载
 
-- [MooTool Next Electron 1.1.4（推荐）](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.4)
+- [MooTool Next Electron 1.2.0（推荐）](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.2.0)
 - [MooTool Java 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6)
 - [MooTool Next Tauri 0.1.0-rc.2（候选预发布版）](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2)
 - [全部 GitHub Releases](https://github.com/rememberber/MooTool/releases)

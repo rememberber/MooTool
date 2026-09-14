@@ -37,7 +37,7 @@ MooTool now has 7 independent product lines, each with its own code, build, vers
 
 | Product / source | Technology and overview | Target platforms | Status / download |
 | --- | --- | --- | --- |
-| [**MooTool Next Electron**](next/README.md) | Electron, Vite, React, TypeScript; the currently recommended desktop edition. | Windows / Linux / macOS | Stable: [Download 1.1.4](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.4) |
+| [**MooTool Next Electron**](next/README.md) | Electron, Vite, React, TypeScript; the currently recommended desktop edition. | Windows / Linux / macOS | Stable: [Download 1.2.0](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.2.0) |
 | [**MooTool Java**](src/) | Java, Swing; the original desktop edition, still maintained. | Windows / Linux / macOS | Stable: [Download 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6) · [Gitee mirror](https://gitee.com/zhoubochina/MooTool/releases) |
 | [**MooTool Next Tauri**](next-tauri/README.md) | Tauri 2, Rust, React, TypeScript; 25 tools with independent storage and updates. | Windows / Linux / macOS | Release candidate: [Download 0.1.0-rc.2](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2) |
 | [**MooTool Next macOS Native**](next-macos-native/README.md) | SwiftUI, AppKit, system frameworks; native workspaces, JSON vault, quick notes, and image attachments. | macOS 14+ | 0.6.0 development build; build `.app` / DMG from source. |
@@ -93,7 +93,7 @@ Follow the product links for source code or the product README, including develo
 
 ## Download
 
-- [MooTool Next Electron 1.1.4 (recommended)](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.1.4)
+- [MooTool Next Electron 1.2.0 (recommended)](https://github.com/rememberber/MooTool/releases/tag/next-electron-v1.2.0)
 - [MooTool Java 1.8.6](https://github.com/rememberber/MooTool/releases/tag/v1.8.6)
 - [MooTool Next Tauri 0.1.0-rc.2 (release candidate)](https://github.com/rememberber/MooTool/releases/tag/next-tauri-v0.1.0-rc.2)
 - [All GitHub Releases](https://github.com/rememberber/MooTool/releases)
