@@ -2,7 +2,7 @@
 
 `next-macos-native` 是独立的 macOS 产品线，使用 SwiftUI、AppKit 和系统框架实现。它沿用 `next` Electron 版的 26 个工具入口、分组导航和编辑工作区，并采用系统侧边栏、统一工具栏、原生菜单、深浅色和独立工具窗口。
 
-当前版本为 **0.7.0**：格式化工具改为与 Electron 对应的文本 / 文件工作区，支持 Nginx、Java、XML、HTML；额外保留 JSON 以兼容原生版旧草稿。文本模式直接格式化正文且可撤销，文件模式保留原文并并排显示结果，类型、缩进、历史、导出和工作区状态均在原生版独立保存。细节见 [格式化工作区与边界](docs/reformat-workspace.md)；其余工具见 [功能对齐清单](docs/parity.md)。
+当前版本为 **0.8.0**：文本对比改为与 Electron 对应的双编辑器工作区，支持字符与行高亮、统一补丁、忽略空白、差异导航、同步滚动、交换、复制和历史恢复；窄窗口采用两行工具栏。详见 [文本对比工作区与边界](docs/text-diff-workspace.md)。0.7.0 的文本 / 文件格式化工作区继续保留；其余工具见 [功能对齐清单](docs/parity.md)。
 
 功能和布局以 `next` Electron 版为基准：开发前对照对应页面与测试，保留功能入口、面板顺序及操作语义，再使用原生控件适配 macOS。这项约束已记录在 [AGENTS.md](AGENTS.md)。
 
@@ -23,6 +23,8 @@
 [图片分栏](docs/screenshots/quickNote-images-light.png) · [深色图片预览](docs/screenshots/quickNote-images-dark.png) · [窄窗口图片](docs/screenshots/quickNote-images-compact.png)
 
 [格式化文本](docs/screenshots/reformat-text-light.png) · [文件双栏与深色外观](docs/screenshots/reformat-file-dark.png) · [窄窗口文件布局](docs/screenshots/reformat-compact.png)
+
+[文本对比双栏](docs/screenshots/textDiff-side-light.png) · [深色统一差异](docs/screenshots/textDiff-unified-dark.png) · [窄窗口布局](docs/screenshots/textDiff-compact.png)
 
 ## 环境
 
@@ -60,6 +62,7 @@ swift build
 - JSON：左侧文档库、中间主编辑器、右侧可折叠检查器。格式化/压缩直接更新正文且可撤销；高级格式化支持 2/4 空格、排序、忽略大小写和重复键检测。
 - JSON：工具栏提供字体、换行、复制、查找替换、导入导出和历史。JSONPath 查询及 JSON → XML/JavaBean 在弹窗中显示结果；XML/JavaBean → JSON 先输入来源内容。支持筛选、递归、切片、联合查询和路径选择。详见 [JSON 工作区与解析边界](docs/json-engine.md)。
 - 格式化：文本模式支持 Nginx、Java、XML、HTML，以及兼容旧原生草稿的 JSON；选择 2–6 空格缩进，结果直接写回可撤销编辑器。文件模式打开最多 2 MB 的 UTF-8 文件，在可编辑原文旁显示只读结果；复制、导出、清空与历史按当前模式处理。原文件不被改写，结果导出为新文件。详见 [格式化工作区与边界](docs/reformat-workspace.md)。
+- 文本对比：左右可编辑文本自动计算差异；工具栏可比较并保存历史、清空、交换、复制统一补丁、跳转上一处/下一处，选择忽略空白、行/字符高亮和左右/统一视图。左右滚动同步，统一补丁在下方只读显示；选项与光标/滚动位置随原生工作区恢复。详见 [文本对比工作区与边界](docs/text-diff-workspace.md)。
 - HTTP：在参数、请求头、Cookie、正文之间切换；正文支持原始文本、JSON 和 URL 编码表单。URL 已有参数与编辑表格中的参数会合并，重复键保持顺序。
 - HTTP 的 `…` 菜单可导入/复制 cURL、新建请求；点击“请求集合”打开本地保存的请求。保存包含所有请求参数和当前响应，同名替换需要在应用内确认。
 - HTTP 响应可查看正文、响应头和 Cookie，支持 JSON 格式化显示、复制和导出。超时、重定向及正文类型随草稿、集合、历史与备份保存，切换工具后仍可取消进行中的请求。
@@ -77,7 +80,7 @@ swift build
 
 ```text
 dist/{arch}/MooTool Next Native.app
-dist/{arch}/MooTool-Next-macOS-Native-0.7.0-mac-{arch}.dmg
+dist/{arch}/MooTool-Next-macOS-Native-0.8.0-mac-{arch}.dmg
 dist/{arch}/build-info.json
 ```
 
@@ -110,19 +113,20 @@ dist/{arch}/build-info.json
 ```bash
 ./scripts/check-core.sh           # CLT 可运行：与 XCTest 相同的测试用例
 swift test                       # 安装并配置完整 Xcode 后可用
-./scripts/smoke.sh                # 需要登录桌面；81 个界面/主题渲染及实际编辑、重启恢复
+./scripts/smoke.sh                # 需要登录桌面；86 个界面/主题渲染及实际编辑、重启恢复
 ./scripts/smoke.sh --window-capture # 完整窗口截图，包含系统工具栏和材质层
 ./scripts/smoke.sh --notes-only   # 仅随手记、附件交互及新进程恢复
 ./scripts/smoke.sh --window-capture --format-only # 仅格式化交互、5 种布局和重启恢复
+./scripts/smoke.sh --window-capture --diff-only # 仅文本对比交互、5 种布局和重启恢复
 ./scripts/smoke.sh --window-capture --note-layouts-only # 仅随手记布局和图片分栏宽度回归
 python3 scripts/verify-package.py # 构建 Universal DMG 后校验签名、资源和独立运行
 ```
 
 `check-core.sh` 使用 `CoreTests.swift` 的同一组用例，解决 Command Line Tools 不包含 XCTest 的限制。没有接受 Xcode 许可时无需为了运行这些检查更改系统配置。
 
-51 组核心测试覆盖输入输出和边界，包括格式化五种类型、独立辅助程序、UTF-8 文件/大小限制、旧草稿与历史恢复；图片格式/大小/路径校验、插入规则、附件副本/导出/备份恢复、全部 24 项快速替换、Unicode 选区、文档设置兼容和 Markdown 表格/列表。完整窗口模式额外捕获 JSON 结果弹窗的深浅色截图。截图和报告位于 `dist/acceptance/`；验收使用临时数据目录及 `.acceptance` 偏好域，不访问真实工作区。包含全部工具的双主题、JSON 结构树、随手记工具栏/快速替换/Markdown 预览、格式化文件双栏、文档检索和窄窗口。验收还操作实际 NSTextView 与原生按钮，检查格式化文本撤销/重做和文件原文保留、快速切换、选择/滚动、替换/列表撤销、预览切换、撤销隔离、多窗口设置同步、图片选图入口、粘贴/连续插入、附件撤销/重做、图片缩放和缺失占位，并启动第二个应用进程验证完整工作区及图片恢复。核心用例另外验证真实本机 HTTP 请求、重定向及独立 Cookie 会话。
+53 组核心测试覆盖输入输出和边界，包括文本对比的 Electron 样例、统一补丁、字符范围、忽略空白、长行回退及旧草稿；格式化五种类型、独立辅助程序、UTF-8 文件/大小限制、历史恢复；原有图片附件、快速替换、JSON、HTTP 和文档库测试。完整窗口模式额外捕获 JSON 结果弹窗的深浅色截图。截图和报告位于 `dist/acceptance/`；验收使用临时数据目录及 `.acceptance` 偏好域，不访问真实工作区。包含全部工具的双主题、文本对比和格式化的窄窗口布局。验收还操作实际 NSTextView 与原生按钮，检查差异高亮、导航、统一只读补丁、格式化撤销、快速切换、文档与图片附件、独立工作区和新进程恢复。
 
-本机环境、实际验证范围与安装包 SHA-256 见 [0.7.0 验收记录](docs/verification-0.7.0.md)。历史记录：[0.6.0](docs/verification-0.6.0.md) · [0.5.0](docs/verification-0.5.0.md) · [0.4.0](docs/verification-0.4.0.md)。
+本机环境、实际验证范围与安装包 SHA-256 见 [0.8.0 验收记录](docs/verification-0.8.0.md)。历史记录：[0.7.0](docs/verification-0.7.0.md) · [0.6.0](docs/verification-0.6.0.md) · [0.5.0](docs/verification-0.5.0.md) · [0.4.0](docs/verification-0.4.0.md)。
 
 这些检查不等价于所有菜单、拖放及系统对话框的端到端测试。CI 独立构建原生版并上传产物，不使用仓库全局 Latest，也不影响其他产品发布。
 

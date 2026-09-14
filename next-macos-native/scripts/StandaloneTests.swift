@@ -33,6 +33,8 @@ func XCTAssertThrowsError<T>(_ expression: @autoclosure () throws -> T, _ messag
     static func main() async {
         let suite = CoreTests()
         let tests: [(String, () throws -> Void)] = [
+            ("Text diff Electron ranges", suite.testTextDiffElectronRangesAndUnifiedPatch),
+            ("Text diff whitespace and bounds", suite.testTextDiffWhitespaceTrailingLinesAndBounds),
             ("Reformat parsers and migration", suite.testReformatParsersAndLegacyWorkspace),
             ("Reformat files and history", suite.testReformatFileBoundariesAndHistory),
             ("Attachment insertion", suite.testNoteAttachmentInsertionMatchesElectron),

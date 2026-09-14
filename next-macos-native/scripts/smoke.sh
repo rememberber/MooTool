@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 ./scripts/check-toolchain.sh
 for native_option in "$@"; do
-  case "$native_option" in --window-capture|--notes-only|--note-layouts-only|--format-only) ;; *) echo 'Usage: scripts/smoke.sh [--window-capture] [--notes-only|--note-layouts-only|--format-only]' >&2; exit 2 ;; esac
+  case "$native_option" in --window-capture|--notes-only|--note-layouts-only|--format-only|--diff-only) ;; *) echo 'Usage: scripts/smoke.sh [--window-capture] [--notes-only|--note-layouts-only|--format-only|--diff-only]' >&2; exit 2 ;; esac
 done
 swift build
 native_bin=$(swift build --show-bin-path)

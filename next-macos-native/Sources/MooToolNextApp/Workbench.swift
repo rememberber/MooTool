@@ -145,7 +145,11 @@ struct HistoryView: View {
                 ForEach(store.history.filter { $0.toolID == toolID }) { item in
                     HStack {
                         VStack(alignment: .leading, spacing: 5) {
-                            if toolID == "reformat" {
+                            if toolID == "textDiff" {
+                                Text(item.draft.input).lineLimit(1).font(.system(.body, design: .monospaced))
+                                Text("→ " + item.draft.secondary).lineLimit(1).font(.system(.caption, design: .monospaced)).foregroundStyle(.secondary)
+                                Text(item.date.formatted()).font(.caption).foregroundStyle(.secondary)
+                            } else if toolID == "reformat" {
                                 let options = ReformatOptions.migrating(item.draft)
                                 Text(options.tab == .file ? (options.fileSource.isEmpty ? item.draft.output : options.fileSource) : (item.draft.input.isEmpty ? item.draft.output : item.draft.input))
                                     .lineLimit(2).font(.system(.body, design: .monospaced))

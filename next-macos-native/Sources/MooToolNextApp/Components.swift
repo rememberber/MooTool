@@ -17,6 +17,10 @@ struct EditorPersistence {
     let state: EditorViewState
     let onChange: (EditorViewState) -> Void
 }
+struct EditorHighlight {
+    var range: NSRange
+    var color: NSColor
+}
 
 @MainActor final class NativeEditorBridge {
     weak var view: NSTextView?
@@ -58,6 +62,7 @@ struct CodeEditor: NSViewRepresentable {
     var lineHeightMultiple: Double?
     var language: NoteSyntax?
     var imageTransfer: (([NoteImageSource], NSRange) -> Void)?
+    var diffHighlights: [EditorHighlight]?
     @Environment(\.isEnabled) private var isEnabled
     @AppStorage("editorSize", store: nativeDefaults) private var fontSize = 13.0
     @AppStorage("wrapLines", store: nativeDefaults) private var wrapLines = true
@@ -114,6 +119,7 @@ struct CodeEditor: NSViewRepresentable {
             if let persistence { coordinator.restore(persistence, in: scroll) }
         }
         coordinator.highlight(view)
+        coordinator.applyDiffHighlights(view)
         if let storage = view.textStorage { storage.addAttribute(.paragraphStyle, value: paragraph, range: NSRange(location: 0, length: storage.length)) }
     }
     static func dismantleNSView(_ scroll: NSScrollView, coordinator: Coordinator) {
@@ -161,7 +167,15 @@ struct CodeEditor: NSViewRepresentable {
         func textViewDidChangeSelection(_ notification: Notification) { if let view = notification.object as? NSTextView { record(view) } }
         func textDidChange(_ notification: Notification) {
             guard !updating, let view = notification.object as? NSTextView else { return }
-            parent.text = view.string; highlight(view); record(view)
+            parent.text = view.string; highlight(view); applyDiffHighlights(view); record(view)
+        }
+        func applyDiffHighlights(_ view: NSTextView) {
+            guard let highlights = parent.diffHighlights, let layout = view.layoutManager else { return }
+            let full = NSRange(location: 0, length: (view.string as NSString).length)
+            layout.removeTemporaryAttribute(.backgroundColor, forCharacterRange: full)
+            for highlight in highlights where highlight.range.location != NSNotFound && highlight.range.length > 0 && NSMaxRange(highlight.range) <= full.length {
+                layout.addTemporaryAttribute(.backgroundColor, value: highlight.color, forCharacterRange: highlight.range)
+            }
         }
         func highlight(_ view: NSTextView) {
             guard let storage = view.textStorage else { return }

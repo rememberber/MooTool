@@ -11,6 +11,7 @@ public struct DraftRecord: Codable, Equatable {
     public var httpResult: HTTPResultMetadata?
     public var json: JSONOptions?
     public var reformat: ReformatOptions?
+    public var textDiff: TextDiffOptions?
     public var noteOptions: QuickNoteOptions?
     public var noteWorkspace: QuickNoteWorkspaceOptions?
     public var inputEditor: EditorViewState?

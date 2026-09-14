@@ -54,7 +54,7 @@ with tempfile.TemporaryDirectory(prefix='mootool-native-independent-') as tmp:
     env = dict(os.environ, MOOTOOL_NATIVE_TEST_DATA=str(directory / 'workspace'))
     result = run([copied / 'Contents/MacOS/MooToolNextNative', '--verify-bundle'],
                  cwd=directory, env=env)
-    assert 'JSON helper, four formatters, note quick replacement, attachment backup/restore and image decoding' in result
+    assert 'JSON helper, four formatters, text diff, note quick replacement, attachment backup/restore and image decoding' in result
     started = time.monotonic()
     with subprocess.Popen([str(copied / 'Contents/MacOS/MooToolJSONWorker')],
                           stdin=subprocess.PIPE, stdout=subprocess.PIPE,

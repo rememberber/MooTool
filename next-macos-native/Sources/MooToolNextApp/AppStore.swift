@@ -14,6 +14,7 @@ final class ToolDraft {
     var httpResult: HTTPResultMetadata? { didSet { changed?() } }
     var json: JSONOptions? { didSet { changed?() } }
     var reformat: ReformatOptions? { didSet { changed?() } }
+    var textDiff: TextDiffOptions? { didSet { changed?() } }
     var noteOptions: QuickNoteOptions? { didSet { documentChanged?(); changed?() } }
     var noteWorkspace: QuickNoteWorkspaceOptions? { didSet { changed?() } }
     var inputEditor: EditorViewState? { didSet { changed?() } }
@@ -42,7 +43,7 @@ final class ToolDraft {
         documentID = record.documentID
         input = record.input; secondary = record.secondary; output = record.output; mode = record.mode; option = record.option
         http = record.http; httpResult = record.httpResult; json = record.json
-        reformat = record.reformat
+        reformat = record.reformat; textDiff = record.textDiff
         noteOptions = record.noteOptions; noteWorkspace = record.noteWorkspace
         inputEditor = record.inputEditor; outputEditor = record.outputEditor
         editorRevision += 1
@@ -52,7 +53,7 @@ final class ToolDraft {
         var value = DraftRecord(); value.input = input; value.secondary = secondary; value.output = output
         value.mode = mode; value.option = option; value.documentID = documentID
         value.http = http; value.httpResult = httpResult; value.json = json
-        value.reformat = reformat
+        value.reformat = reformat; value.textDiff = textDiff
         value.noteOptions = noteOptions; value.noteWorkspace = noteWorkspace
         value.inputEditor = inputEditor; value.outputEditor = outputEditor; return value
     }

@@ -8,6 +8,43 @@ import ImageIO
 
 final class CoreTests: XCTestCase {
 
+    func testTextDiffElectronRangesAndUnifiedPatch() throws {
+        let result = try TextDiffEngine.compare("one\ntwo\n", "one\nthree\nplus\n")
+        XCTAssertEqual(result.changed, 1); XCTAssertEqual(result.added, 1); XCTAssertEqual(result.removed, 0)
+        XCTAssertEqual(result.segments, [
+            TextDiffSegment(.change, left: NSRange(location: 5, length: 2), right: NSRange(location: 5, length: 4), wholeLine: false),
+            TextDiffSegment(.insert, left: NSRange(location: NSNotFound, length: 0), right: NSRange(location: 10, length: 4), wholeLine: true)
+        ])
+        XCTAssertEqual(result.unified, "--- old\n+++ new\n@@ -1,3 +1,4 @@\n one\n-two\n+three\n+plus\n ")
+        XCTAssertEqual(result.unifiedLines.map(\.kind), [.header, .header, .hunk, .removed, .added, .added])
+        XCTAssertEqual(result.unifiedCharacters.filter { $0.kind == .changed }.count, 2)
+    }
+    func testTextDiffWhitespaceTrailingLinesAndBounds() throws {
+        let whitespace = try TextDiffEngine.compare("one  two\n", "one two\n", ignoreWhitespace: true)
+        XCTAssertTrue(whitespace.segments.isEmpty)
+        XCTAssertTrue(whitespace.unified.contains("-one  two"))
+        XCTAssertTrue(whitespace.unified.contains("+one two"))
+        XCTAssertTrue(whitespace.unifiedCharacters.isEmpty)
+        let inserted = try TextDiffEngine.compare("same\n", "same\nnew\n")
+        XCTAssertTrue(inserted.segments.contains(TextDiffSegment(.insert, left: NSRange(location: NSNotFound, length: 0), right: NSRange(location: 5, length: 3), wholeLine: true)))
+        let deleted = try TextDiffEngine.compare("same\nold\n", "same\n")
+        XCTAssertTrue(deleted.segments.contains(TextDiffSegment(.delete, left: NSRange(location: 5, length: 3), right: NSRange(location: NSNotFound, length: 0), wholeLine: true)))
+        XCTAssertEqual(try TextDiffEngine.compare("", "").unified, "")
+        XCTAssertThrowsError(try TextDiffEngine.compare(String(repeating: "x", count: 500_001), ""))
+        let long = try TextDiffEngine.compare(String(repeating: "a", count: 3_000), String(repeating: "b", count: 3_000))
+        XCTAssertTrue(long.segments.first?.wholeLine == true)
+        XCTAssertTrue(long.unifiedCharacters.isEmpty)
+        var old = DraftRecord(); old.input = "left"; old.secondary = "right"
+        var snapshot = WorkspaceSnapshot(); snapshot.drafts["textDiff"] = old
+        let encoded = try WorkspaceRepository.encode(snapshot)
+        XCTAssertEqual(try WorkspaceRepository.decode(encoded).drafts["textDiff"]?.input, "left")
+        XCTAssertNil(try WorkspaceRepository.decode(encoded).drafts["textDiff"]?.textDiff)
+        var options = TextDiffOptions(); options.display = .unified; options.highlight = .characters; options.ignoreWhitespace = true
+        options.leftEditor = EditorViewState(location: 2, scrollY: 25)
+        old.textDiff = options; snapshot.drafts["textDiff"] = old
+        XCTAssertEqual(try WorkspaceRepository.decode(WorkspaceRepository.encode(snapshot)).drafts["textDiff"]?.textDiff, options)
+    }
+
     func testReformatParsersAndLegacyWorkspace() throws {
         for type in [ReformatType.nginx, .java, .xml, .html, .json] {
             var request = JSONEngineRequest("reformat", input: type.sample)

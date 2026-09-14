@@ -10,6 +10,7 @@ struct ToolRouter: View {
             case "mootool": HomeView()
             case "quickNote", "json": DocumentsTool(id: id, draft: store.draft(id))
             case "reformat": ReformatWorkspace(draft: store.draft(id))
+            case "textDiff": TextDiffWorkspace(draft: store.draft(id))
             case "http": HTTPTool(draft: store.draft(id))
             case "java", "net", "hardware": SystemTool(id: id, draft: store.draft(id))
             case "qrCode": QRTool(draft: store.draft(id))
@@ -42,18 +43,11 @@ struct TextTool: View {
                 if id == "crypto" && (draft.mode.contains("AES") || draft.mode.contains("HMAC")) {
                     SecureField(draft.mode.contains("AES") ? "Hex 密钥 · 16 / 24 / 32 字节" : "HMAC 密钥（UTF-8）", text: $draft.secondary).textFieldStyle(.roundedBorder)
                 }
-                if id == "textDiff" {
-                    VSplitView {
-                        HSplitView { EditorPane(title: "原始文本", text: $draft.input); EditorPane(title: "修改后", text: $draft.secondary) }.frame(minHeight: 160)
-                        EditorPane(title: "对比结果", text: $draft.output, editable: false).frame(minHeight: 160)
-                    }
-                } else {
-                    HSplitView {
-                        EditorPane(title: inputTitle, text: $draft.input, syntax: id == "json" || id == "ymlProperties", persistence: id == "json" ? store.editorPersistence(id) : nil)
-                            .frame(minWidth: id == "json" ? 240 : 180)
-                        if id == "json" && draft.json?.showsTree == true { JSONTreePane(text: draft.input, path: $draft.option).frame(minWidth: 240) }
-                        else { EditorPane(title: "结果", text: $draft.output, editable: false, syntax: ["json", "uaParse", "ymlProperties", "protobuf", "regex"].contains(id), persistence: id == "json" ? store.editorPersistence(id, output: true) : nil).frame(minWidth: id == "json" ? 240 : 180) }
-                    }
+                HSplitView {
+                    EditorPane(title: inputTitle, text: $draft.input, syntax: id == "json" || id == "ymlProperties", persistence: id == "json" ? store.editorPersistence(id) : nil)
+                        .frame(minWidth: id == "json" ? 240 : 180)
+                    if id == "json" && draft.json?.showsTree == true { JSONTreePane(text: draft.input, path: $draft.option).frame(minWidth: 240) }
+                    else { EditorPane(title: "结果", text: $draft.output, editable: false, syntax: ["json", "uaParse", "ymlProperties", "protobuf", "regex"].contains(id), persistence: id == "json" ? store.editorPersistence(id, output: true) : nil).frame(minWidth: id == "json" ? 240 : 180) }
                 }
             }
         }.onAppear { if !modes.isEmpty && !modes.contains(draft.mode) { draft.mode = modes[0] }; if id == "timeConvert" && draft.option.isEmpty { draft.option = TimeZone.current.identifier } }
@@ -110,7 +104,7 @@ struct TextTool: View {
         case "cron":
             PrimaryButton(title: "预览执行时间", symbol: "calendar") { execute() }
             Menu("常用表达式") { ForEach(["*/5 * * * *", "0 9 * * 1-5", "0 0 1 * *"], id: \.self) { expression in Button(expression) { draft.input = expression; execute() } } }
-        default: PrimaryButton(title: id == "textDiff" ? "比较" : id == "regex" ? draft.mode : "运行") { execute() }
+        default: PrimaryButton(title: id == "regex" ? draft.mode : "运行") { execute() }
         }
         Button("示例") { draft.input = example; if id == "regex" { draft.secondary = #"([\w.]+)@([\w.]+)"# }; if id == "textDiff" { draft.secondary = "MooTool\nNative for macOS\nHello, SwiftUI" } }
         Spacer(minLength: 0)
@@ -128,7 +122,6 @@ struct TextTool: View {
         case "timeConvert": return "2026-09-05 12:00:00"
         case "host": return "127.0.0.1 localhost\n::1 localhost\n# Development\n127.0.0.1 api.local"
         case "variables": return "APP_ENV=development\nPORT=8080"
-        case "textDiff": return "MooTool\nDeveloper tools\nHello, SwiftUI"
         default: return "Hello, MooTool! 你好，世界。"
         }
     }
@@ -147,10 +140,6 @@ struct TextTool: View {
             case "encode": return try TextServices.encode(d.input, format: d.mode, decode: action == "decode")
             case "crypto": return try TextServices.digest(d.input, algorithm: d.mode, key: d.secondary)
             case "regex": return try TextServices.regex(d.input, pattern: d.secondary, replacement: d.mode == "替换" ? d.option : nil, flags: flags)
-            case "textDiff":
-                guard d.input.count + d.secondary.count < 500_000,
-                      d.input.components(separatedBy: "\n").count * d.secondary.components(separatedBy: "\n").count < 10_000_000 else { throw ToolError("对比文本总长度请控制在 50 万字符以内。") }
-                return TextServices.diff(d.input, d.secondary)
             case "timeConvert": return try DeveloperServices.timestamp(d.input, zone: d.option)
             case "ymlProperties": let pair = d.mode.components(separatedBy: " → "); guard pair.count == 2 else { throw ToolError("请选择转换格式。") }; return try TextServices.config(d.input, from: pair[0], to: pair[1])
             case "protobuf": return try DeveloperServices.protobuf(d.input, base64: d.mode == "Base64")

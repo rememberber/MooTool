@@ -40,7 +40,8 @@ import MooToolNextCore
             window.center()
             let noteLayoutsOnly = CommandLine.arguments.contains("--note-layouts-only")
             let formatOnly = CommandLine.arguments.contains("--format-only")
-            if !noteLayoutsOnly && !formatOnly {
+            let diffOnly = CommandLine.arguments.contains("--diff-only")
+            if !noteLayoutsOnly && !formatOnly && !diffOnly {
                 try await NativeAttachmentAcceptance.run(store: store, window: window)
                 try await NativeNoteAcceptance.run(store: store, window: window)
             }
@@ -51,15 +52,22 @@ import MooToolNextCore
                 try WorkspaceRepository.encode(store.snapshot()).write(to: store.repository.directory.appendingPathComponent("restart-expectation.json"), options: .atomic)
                 print("PASS: focused native note and attachment acceptance"); NSApp.terminate(nil); return
             }
-            if !noteLayoutsOnly && !formatOnly {
+            if !noteLayoutsOnly && !formatOnly && !diffOnly {
                 try await NativeJSONAcceptance.run(store: store, window: window)
                 try await NativeVaultAcceptance.run(store: store, window: window)
             }
-            if !noteLayoutsOnly { try await NativeReformatAcceptance.run(store: store, window: window) }
+            if !noteLayoutsOnly && !diffOnly { try await NativeReformatAcceptance.run(store: store, window: window) }
             if formatOnly {
                 reports += try await captureReformatVariants(store: store, window: window, hosting: hosting, output: output)
                 try finish(store: store, reports: reports, output: output)
                 print("PASS: \(reports.count) reformat captures, actual editor actions and restart persistence.")
+                NSApp.terminate(nil); return
+            }
+            if !noteLayoutsOnly { try await NativeDiffAcceptance.run(store: store, window: window) }
+            if diffOnly {
+                reports += try await captureDiffVariants(store: store, window: window, hosting: hosting, output: output)
+                try finish(store: store, reports: reports, output: output)
+                print("PASS: \(reports.count) diff captures, real editor actions and restart persistence.")
                 NSApp.terminate(nil); return
             }
             let previewAttachments = try NativeAttachmentAcceptance.seed(store)
@@ -71,6 +79,9 @@ import MooToolNextCore
             store.draft("quickNote").inputEditor = EditorViewState(); store.draft("quickNote").editorRevision += 1
             store.draft("reformat").input = ReformatType.nginx.sample
             store.draft("reformat").reformat = ReformatOptions()
+            store.draft("textDiff").input = "MooTool\nquiet desktop tools\nold line\n"
+            store.draft("textDiff").secondary = "MooTool\nquiet desktop toolkit\nnew line\n"
+            store.draft("textDiff").textDiff = TextDiffOptions()
             for scheme in [ColorScheme.light, .dark] {
                 for tool in Catalog.tools where !noteLayoutsOnly {
                     store.selected = tool.id
@@ -136,6 +147,7 @@ import MooToolNextCore
                 reports.append(["tool": id, "variant": variant, "width": bitmap.pixelsWide, "height": bitmap.pixelsHigh, "screenshot": name])
             }
             if !noteLayoutsOnly { reports += try await captureReformatVariants(store: store, window: window, hosting: hosting, output: output) }
+            if !noteLayoutsOnly { reports += try await captureDiffVariants(store: store, window: window, hosting: hosting, output: output) }
             store.selected = "mootool"
             try await Task.sleep(for: .milliseconds(200))
             store.saveNow()
@@ -143,7 +155,8 @@ import MooToolNextCore
             let restored = AppStore(directory: store.repository.directory)
             guard restored.httpRequests == store.httpRequests, restored.draft("http").record == store.draft("http").record,
                   restored.draft("json").record == store.draft("json").record, restored.draft("quickNote").record == store.draft("quickNote").record,
-                  restored.draft("reformat").record == store.draft("reformat").record else { throw ToolError("HTTP / JSON / 格式化工作区恢复验证失败。") }
+                  restored.draft("reformat").record == store.draft("reformat").record,
+                  restored.draft("textDiff").record == store.draft("textDiff").record else { throw ToolError("HTTP / JSON / 格式化 / 文本对比工作区恢复验证失败。") }
             try JSONSerialization.data(withJSONObject: reports, options: [.prettyPrinted, .sortedKeys]).write(to: output.appendingPathComponent("report.json"))
             try WorkspaceRepository.encode(store.snapshot()).write(to: store.repository.directory.appendingPathComponent("restart-expectation.json"), options: .atomic)
             if noteLayoutsOnly { print("PASS: \(reports.count) note layout captures, image split widths and persistence round trip.") }
@@ -180,6 +193,36 @@ import MooToolNextCore
                 guard capture.terminationStatus == 0 else { throw ToolError("\(variant) 窗口截图不可用。") }
             }
             reports.append(["tool": "reformat", "variant": variant, "width": bitmap.pixelsWide, "height": bitmap.pixelsHigh, "screenshot": variant + ".png"])
+        }
+        return reports
+    }
+    private static func captureDiffVariants(store: AppStore, window: NSWindow, hosting: NSView, output: URL) async throws -> [[String: Any]] {
+        var reports: [[String: Any]] = []
+        let left = "MooTool\nquiet desktop tools\nold line\n"
+        let right = "MooTool\nquiet desktop toolkit\nnew line\n"
+        let result = try TextDiffEngine.compare(left, right)
+        for variant in ["textDiff-side-light", "textDiff-side-dark", "textDiff-unified-light", "textDiff-unified-dark", "textDiff-compact"] {
+            var options = TextDiffOptions(); options.display = variant.contains("unified") || variant.contains("compact") ? .unified : .side
+            store.selected = "textDiff"; store.draft("textDiff").textDiff = options
+            store.draft("textDiff").input = left; store.draft("textDiff").secondary = right; store.draft("textDiff").output = result.unified
+            nativeDefaults.set(variant.hasSuffix("dark") ? "dark" : "light", forKey: "appearance")
+            window.setContentSize(variant == "textDiff-compact" ? NSSize(width: 940, height: 630) : NSSize(width: 1200, height: 800))
+            NSApp.activate(ignoringOtherApps: true); window.makeKeyAndOrderFront(nil)
+            hosting.layoutSubtreeIfNeeded(); window.displayIfNeeded()
+            try await Task.sleep(for: .milliseconds(650)); hosting.layoutSubtreeIfNeeded()
+            if variant == "textDiff-compact" { try NativeDiffAcceptance.verifyCompactLayout(window) }
+            guard let bitmap = hosting.bitmapImageRepForCachingDisplay(in: hosting.bounds) else { throw ToolError("无法捕获 \(variant)") }
+            hosting.cacheDisplay(in: hosting.bounds, to: bitmap)
+            guard let data = bitmap.representation(using: .png, properties: [:]) else { throw ToolError("无法编码 \(variant)") }
+            let destination = output.appendingPathComponent(variant + ".png")
+            try data.write(to: destination)
+            if CommandLine.arguments.contains("--window-capture") {
+                let capture = Process(); capture.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+                capture.arguments = ["-x", "-o", "-l", String((window.attachedSheet ?? window).windowNumber), destination.path]
+                try capture.run(); capture.waitUntilExit()
+                guard capture.terminationStatus == 0 else { throw ToolError("\(variant) 窗口截图不可用。") }
+            }
+            reports.append(["tool": "textDiff", "variant": variant, "width": bitmap.pixelsWide, "height": bitmap.pixelsHigh, "screenshot": variant + ".png"])
         }
         return reports
     }
