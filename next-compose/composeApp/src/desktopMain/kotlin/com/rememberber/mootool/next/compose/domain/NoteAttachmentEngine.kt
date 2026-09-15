@@ -68,10 +68,8 @@ object NoteAttachmentEngine {
 
     fun unreferenced(vault: NoteVault): List<String> {
         val referenced = referencedPaths(vault)
-        return vault.list()
-            .filter { !it.directory && isAttachmentPath(it.relativePath) }
-            .map { it.relativePath }
-            .filter { it !in referenced }
+        return vault.listAttachments()
+            .filter { isAttachmentPath(it) && it !in referenced }
             .sorted()
     }
 

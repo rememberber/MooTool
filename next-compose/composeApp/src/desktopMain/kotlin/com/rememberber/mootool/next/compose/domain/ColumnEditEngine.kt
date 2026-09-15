@@ -67,6 +67,14 @@ object ColumnEditEngine {
         return join(lines, trailing)
     }
 
+    fun pasteIntoSelection(text: String, range: ColumnRange, clipboard: String, tabSize: Int): String {
+        val cleared = if (range.empty) text else delete(text, range.top, range.bottom, range.left, range.right, tabSize)
+        val clipLines = splitClipboard(clipboard)
+        val rowCount = range.bottom - range.top + 1
+        val pieces = if (clipLines.size == 1 && rowCount > 1) List(rowCount) { clipLines[0] } else clipLines
+        return paste(cleared, range.top, range.left, pieces.joinToString("\n"), tabSize)
+    }
+
     fun extract(text: String, range: ColumnRange, tabSize: Int): String {
         val lines = splitKeepLast(text)
         if (lines.isEmpty() || range.empty) return ""

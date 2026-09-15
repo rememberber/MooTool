@@ -3,6 +3,7 @@ package com.rememberber.mootool.next.compose.domain
 import java.awt.image.BufferedImage
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class ScreenColorSamplerTest {
     @Test
@@ -17,5 +18,14 @@ class ScreenColorSamplerTest {
         assertEquals(12, zoomed.width)
         assertEquals(12, zoomed.height)
         assertEquals(0xDE8F7D, zoomed.getRGB(4, 4) and 0xffffff)
+    }
+
+    @Test
+    fun permissionCopyOpensMacScreenCapturePane() {
+        assertTrue(ScreenCaptureAccess.macPrivacySettingsUri().contains("Privacy_ScreenCapture"))
+        val opened = ScreenCaptureAccess.userMessage({ key -> key }, ColorException("permission", "blank", openedSettings = true))
+        assertTrue(opened.contains("color.error.permissionSettings"))
+        val denied = ScreenCaptureAccess.userMessage({ key -> key }, ColorException("permission", "blank"))
+        assertEquals("color.error.permission", denied)
     }
 }

@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -43,9 +44,13 @@ import com.rememberber.mootool.next.compose.domain.CalculatorException
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.CalculatorSession
+import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
+import com.rememberber.mootool.next.compose.ui.components.OverflowAction
+import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 
@@ -53,7 +58,6 @@ import java.awt.datatransfer.StringSelection
 fun CalculatorScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.calculatorSession() }
     val revision by container.sessionManager.revision.collectAsState()
-    var historyItems by remember { mutableStateOf(emptyList<HistoryRecord>()) }
     val colors = MooTheme.colors
 
     fun refresh() {
@@ -61,27 +65,30 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
         container.sessionManager.persistCalculator()
     }
 
-    LaunchedEffect(session.historyOpen, revision) {
-        if (session.historyOpen) historyItems = container.history.list(ToolId.Calculator.id)
-    }
 
-    Column(Modifier.fillMaxSize().background(colors.workspace)) {
+    BoxWithConstraints(Modifier.fillMaxSize().background(colors.workspace)) {
+        val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
+        Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(46.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(container.t("calculator.title"), color = colors.textPrimary, fontSize = 16.sp)
             Spacer(Modifier.weight(1f))
-            MooButton(container.t("common.action.history"), onClick = { session.historyOpen = true; refresh() })
-            MooButton(container.t("time.copy"), onClick = {
-                session.notice = copyText(session.result, container)
-                session.error = ""
-                refresh()
-            })
-            if (!detached) {
-                MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.Calculator) })
-            }
+            OverflowActionCluster(
+                overflow = overflow,
+                moreLabel = container.t("json.action.overflow"),
+                actions = buildList {
+                    add(OverflowAction(container.t("common.action.history")) { session.historyOpen = true; refresh() })
+                    add(OverflowAction(container.t("time.copy")) {
+                        session.notice = copyText(session.result, container)
+                        session.error = ""
+                        refresh()
+                    })
+                    if (!detached) add(OverflowAction(container.t("app.tool.detach")) { container.sessionManager.detach(ToolId.Calculator) })
+                }
+            )
         }
         Row(Modifier.weight(1f).fillMaxWidth()) {
             Column(
@@ -230,7 +237,7 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
             }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(26.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -241,10 +248,23 @@ fun CalculatorScreen(container: AppContainer, detached: Boolean) {
             Spacer(Modifier.weight(1f))
             if (detached) Text("detached", color = colors.textSecondary, fontSize = 12.sp)
         }
+        }
     }
 
     if (session.historyOpen) {
-        CalculatorHistoryDialog(container, session, historyItems) { refresh() }
+        HistoryBrowser(
+            container = container,
+            toolId = ToolId.Calculator.id,
+            title = container.t("calculator.history"),
+            onRestore = { item ->
+                session.expression = item.input
+                session.result = item.output.ifBlank { session.result }
+                session.notice = container.t("json.notice.restored")
+                session.historyOpen = false
+                refresh()
+            },
+            onDismiss = { session.historyOpen = false; refresh() }
+        )
     }
 }
 
@@ -296,47 +316,6 @@ private fun OperationPanel(
     }
 }
 
-@Composable
-private fun CalculatorHistoryDialog(
-    container: AppContainer,
-    session: CalculatorSession,
-    items: List<HistoryRecord>,
-    onChanged: () -> Unit
-) {
-    Dialog(onDismissRequest = { session.historyOpen = false; onChanged() }) {
-        Column(
-            Modifier.width(520.dp).height(420.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(container.t("calculator.history"), color = MooTheme.colors.textPrimary)
-            if (items.isEmpty()) {
-                Text(container.t("json.history.empty"), color = MooTheme.colors.textSecondary)
-            } else {
-                LazyColumn(Modifier.weight(1f)) {
-                    items(items) { item ->
-                        Column(Modifier.fillMaxWidth().clickable {
-                            session.expression = item.input
-                            session.result = item.output.ifBlank { session.result }
-                            session.notice = container.t("json.notice.restored")
-                            session.historyOpen = false
-                            onChanged()
-                        }.padding(8.dp)) {
-                            Text(item.summary, color = MooTheme.colors.textPrimary, fontSize = 13.sp)
-                            Text("${item.input} → ${item.output}", color = MooTheme.colors.textSecondary, fontSize = 12.sp)
-                        }
-                    }
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("common.clear"), onClick = {
-                    container.history.clear(ToolId.Calculator.id)
-                    onChanged()
-                })
-                MooButton(container.t("common.close"), onClick = { session.historyOpen = false; onChanged() })
-            }
-        }
-    }
-}
 
 private fun runCalc(container: AppContainer, session: CalculatorSession, summary: String, input: String, block: () -> String) {
     runCatching(block)

@@ -28,6 +28,10 @@ class StorageIsolationTest {
                 history.save("json", "format", "item-$index", "{\"n\":$index}", "{\"n\":$index}")
             }
             assertEquals(3, history.list("json").size)
+            assertEquals(1, history.list("json", "item-4").size)
+            val kept = history.list("json").first()
+            history.delete(kept.id)
+            assertEquals(2, history.list("json").size)
         }
         assertTrue(directories.dataRoot.toString().contains("data"))
         assertTrue(!directories.dataRoot.toString().contains("MooTool Next Electron"))
@@ -38,11 +42,15 @@ class StorageIsolationTest {
         val root = createTempDirectory("mootool-compose-regex-fav")
         val directories = AppPaths.resolve(root.toString()).also { it.ensureCreated() }
         val first = RegexFavoriteStore(directories)
-        val saved = first.add("手机号", "1[3-9]\\d{9}")
+        val saved = first.add("手机号", "1[3-9]\\d{9}", "常用")
         assertEquals(1, first.list().size)
         val second = RegexFavoriteStore(directories)
         assertEquals(saved.id, second.list().single().id)
         assertEquals("手机号", second.list().single().name)
+        assertEquals("常用", second.list().single().group)
+        assertEquals(1, second.list("手机").size)
+        assertEquals(0, second.list("email").size)
+        assertEquals(1, second.list("", "常用").size)
         second.delete(saved.id)
         assertTrue(RegexFavoriteStore(directories).list().isEmpty())
     }
@@ -73,8 +81,8 @@ class StorageIsolationTest {
         val vault = NoteVault(AppPaths.resolve(root.toString()).also { it.ensureCreated() })
         assertTrue(runCatching { vault.resolve("../secret.md") }.isFailure)
         vault.createFile("hello.md", "# hi")
-        assertEquals("# hi", vault.read("hello.md"))
+        assertEquals("# hi", vault.readNote("hello.md").content)
         vault.rename("hello.md", "renamed.md")
-        assertEquals("# hi", vault.read("renamed.md"))
+        assertEquals("# hi", vault.readNote("renamed.md").content)
     }
 }

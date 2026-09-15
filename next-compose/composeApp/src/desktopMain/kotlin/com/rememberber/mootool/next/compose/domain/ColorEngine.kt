@@ -14,7 +14,11 @@ data class ColorTheme(
     val shades: List<List<String>>
 )
 
-class ColorException(val code: String, message: String) : RuntimeException(message)
+class ColorException(
+    val code: String,
+    message: String,
+    val openedSettings: Boolean = false
+) : RuntimeException(message)
 
 object ColorEngine {
     val DEFAULT_PRIMARY: RgbColor = RgbColor(222, 143, 125)

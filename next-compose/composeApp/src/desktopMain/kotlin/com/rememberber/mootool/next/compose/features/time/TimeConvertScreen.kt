@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -48,9 +49,13 @@ import com.rememberber.mootool.next.compose.domain.TimestampUnit
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.TimeSession
+import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
+import com.rememberber.mootool.next.compose.ui.components.OverflowAction
+import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 import kotlinx.coroutines.delay
@@ -66,8 +71,8 @@ fun TimeConvertScreen(container: AppContainer, detached: Boolean, active: Boolea
     val session = remember { container.sessionManager.timeSession() }
     val revision by container.sessionManager.revision.collectAsState()
     var nowMillis by remember { mutableStateOf(System.currentTimeMillis()) }
-    var historyItems by remember { mutableStateOf(emptyList<HistoryRecord>()) }
     var zoneMenuOpen by remember { mutableStateOf(false) }
+    var unitMenuOpen by remember { mutableStateOf(false) }
     val colors = MooTheme.colors
     val zones = remember { (listOf(TimeEngine.systemZone()) + TimeEngine.commonTimezones).distinct() }
 
@@ -86,21 +91,30 @@ fun TimeConvertScreen(container: AppContainer, detached: Boolean, active: Boolea
             delay(1000)
         }
     }
-    LaunchedEffect(session.historyOpen, revision) {
-        if (session.historyOpen) historyItems = container.history.list(ToolId.TimeConvert.id)
-    }
 
-    Column(
-        modifier = Modifier.fillMaxSize().background(colors.workspace).padding(20.dp).verticalScroll(rememberScrollState()),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Text(container.t("time.title"), color = colors.textPrimary, fontSize = 18.sp)
+    BoxWithConstraints(Modifier.fillMaxSize().background(colors.workspace)) {
+        val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
+        Column(Modifier.fillMaxSize()) {
+        Row(
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            Text(container.t("time.title"), color = colors.textPrimary, fontSize = 16.sp)
             Spacer(Modifier.weight(1f))
-            if (!detached) {
-                MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.TimeConvert) })
-            }
+            OverflowActionCluster(
+                overflow = overflow,
+                moreLabel = container.t("json.action.overflow"),
+                actions = buildList {
+                    add(OverflowAction(container.t("time.history")) { session.historyOpen = true; refresh() })
+                    if (!detached) add(OverflowAction(container.t("app.tool.detach")) { container.sessionManager.detach(ToolId.TimeConvert) })
+                }
+            )
         }
+        Column(
+            modifier = Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
 
         CurrentBand(container, session, nowMillis, onChanged = { refresh() })
 
@@ -155,15 +169,25 @@ fun TimeConvertScreen(container: AppContainer, detached: Boolean, active: Boolea
                         } else false
                     }
                 )
-                MooButton(container.t("time.unit.second"), primary = session.unit == TimestampUnit.Second, onClick = {
-                    session.unit = TimestampUnit.Second
-                    refresh()
-                })
-                MooButton(container.t("time.unit.millisecond"), primary = session.unit == TimestampUnit.Millisecond, onClick = {
-                    session.unit = TimestampUnit.Millisecond
-                    refresh()
-                })
                 MooButton(container.t("time.copy"), onClick = { copyField(container, session, session.timestamp, refresh = { refresh() }) })
+                Box {
+                    MooButton(
+                        if (session.unit == TimestampUnit.Second) container.t("time.unit.second") else container.t("time.unit.millisecond"),
+                        onClick = { unitMenuOpen = true }
+                    )
+                    DropdownMenu(expanded = unitMenuOpen, onDismissRequest = { unitMenuOpen = false }) {
+                        DropdownMenuItem(onClick = {
+                            session.unit = TimestampUnit.Second
+                            unitMenuOpen = false
+                            refresh()
+                        }) { Text(container.t("time.unit.second")) }
+                        DropdownMenuItem(onClick = {
+                            session.unit = TimestampUnit.Millisecond
+                            unitMenuOpen = false
+                            refresh()
+                        }) { Text(container.t("time.unit.millisecond")) }
+                    }
+                }
             }
 
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -203,13 +227,26 @@ fun TimeConvertScreen(container: AppContainer, detached: Boolean, active: Boolea
             Spacer(Modifier.weight(1f))
             if (detached) Text("detached", color = colors.textSecondary, fontSize = 12.sp)
         }
-    }
+        }
+        }
 
-    if (session.historyOpen) {
-        TimeHistoryDialog(container, session, historyItems) { refresh() }
+        if (session.historyOpen) {
+        HistoryBrowser(
+            container = container,
+            toolId = ToolId.TimeConvert.id,
+            title = container.t("time.history"),
+            onRestore = { item ->
+                applyHistory(session, item)
+                session.notice = container.t("json.notice.restored")
+                session.historyOpen = false
+                refresh()
+            },
+            onDismiss = { session.historyOpen = false; refresh() }
+        )
     }
     if (session.clockOpen && active) {
         ClockOverlay(container, session, nowMillis) { refresh() }
+    }
     }
 }
 
@@ -233,7 +270,6 @@ private fun CurrentBand(container: AppContainer, session: TimeSession, nowMillis
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            MooButton(container.t("time.history"), onClick = { session.historyOpen = true; onChanged() })
             MooButton(container.t("time.clock"), onClick = { session.clockOpen = true; onChanged() })
             Text(TimeEngine.formatTimezoneLabel(session.zone, nowMillis), color = colors.textSecondary, fontSize = 12.sp)
         }
@@ -251,47 +287,6 @@ private fun TimeValue(container: AppContainer, label: String, value: String, onC
     }
 }
 
-@Composable
-private fun TimeHistoryDialog(
-    container: AppContainer,
-    session: TimeSession,
-    items: List<HistoryRecord>,
-    onChanged: () -> Unit
-) {
-    Dialog(onDismissRequest = { session.historyOpen = false; onChanged() }) {
-        Column(
-            Modifier.width(520.dp).height(420.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(container.t("time.history"), color = MooTheme.colors.textPrimary)
-            if (items.isEmpty()) {
-                Text(container.t("time.history.empty"), color = MooTheme.colors.textSecondary)
-            } else {
-                LazyColumn(Modifier.weight(1f)) {
-                    items(items) { item ->
-                        Column(Modifier.fillMaxWidth().clickable {
-                            applyHistory(session, item)
-                            session.notice = container.t("json.notice.restored")
-                            session.historyOpen = false
-                            onChanged()
-                        }.padding(8.dp)) {
-                            Text(item.summary, color = MooTheme.colors.textPrimary, fontSize = 13.sp)
-                            Text("${item.input} → ${item.output}", color = MooTheme.colors.textSecondary, fontSize = 12.sp)
-                            Text(item.createdAt, color = MooTheme.colors.textSecondary, fontSize = 11.sp)
-                        }
-                    }
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("common.clear"), onClick = {
-                    container.history.clear(ToolId.TimeConvert.id)
-                    onChanged()
-                })
-                MooButton(container.t("common.close"), onClick = { session.historyOpen = false; onChanged() })
-            }
-        }
-    }
-}
 
 @Composable
 private fun ClockOverlay(container: AppContainer, session: TimeSession, nowMillis: Long, onChanged: () -> Unit) {

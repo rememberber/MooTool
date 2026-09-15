@@ -2,7 +2,10 @@ package com.rememberber.mootool.next.compose.features.reformat
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -14,7 +17,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.DropdownMenu
+import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,10 +49,16 @@ import com.rememberber.mootool.next.compose.domain.ReformatType
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.ReformatSession
+import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
+import com.rememberber.mootool.next.compose.ui.components.OverflowAction
+import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.workbench.CopyFeedbackPolicy
+import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.swing.Swing
 import kotlinx.coroutines.withContext
@@ -61,7 +73,6 @@ import java.nio.charset.StandardCharsets
 fun ReformatScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.reformatSession() }
     val revision by container.sessionManager.revision.collectAsState()
-    var historyItems by remember { mutableStateOf(emptyList<HistoryRecord>()) }
     val colors = MooTheme.colors
 
     fun refresh() {
@@ -69,10 +80,45 @@ fun ReformatScreen(container: AppContainer, detached: Boolean) {
         container.sessionManager.persistReformat()
     }
 
-    LaunchedEffect(session.historyOpen, revision) {
-        if (session.historyOpen) historyItems = container.history.list(ToolId.Reformat.id)
+    LaunchedEffect(session.copyGeneration, session.copyState) {
+        if (session.copyState == CopyFeedbackPolicy.IDLE) return@LaunchedEffect
+        delay(CopyFeedbackPolicy.RESET_MS)
+        session.copyState = CopyFeedbackPolicy.IDLE
+        refresh()
     }
 
+    fun copyOutput() {
+        val content = currentOutput(session)
+        if (content.isEmpty()) {
+            session.notice = container.t("reformat.nothingToCopy")
+            session.copyState = CopyFeedbackPolicy.IDLE
+        } else {
+            val success = copyText(content)
+            session.copyState = CopyFeedbackPolicy.afterCopy(success)
+            session.copyGeneration += 1
+            session.notice = if (success) container.t("common.copied") else container.t("json.notice.copyFailed")
+            session.error = ""
+        }
+        refresh()
+    }
+
+    fun saveOutput() {
+        saveResult(container, session)
+        refresh()
+    }
+
+    fun clearOutput() {
+        clearTab(session)
+        session.notice = container.t("json.notice.cleared")
+        session.error = ""
+        refresh()
+    }
+
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+    val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
+    var typeOpen by remember { mutableStateOf(false) }
+    var indentOpen by remember { mutableStateOf(false) }
+    var moreOpen by remember { mutableStateOf(false) }
     Column(
         Modifier.fillMaxSize().background(colors.workspace).onPreviewKeyEvent { event ->
             if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
@@ -86,19 +132,23 @@ fun ReformatScreen(container: AppContainer, detached: Boolean) {
         }
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(46.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(container.t("reformat.title"), color = colors.textPrimary, fontSize = 16.sp)
             Spacer(Modifier.weight(1f))
-            MooButton(container.t("common.action.history"), onClick = { session.historyOpen = true; refresh() })
-            if (!detached) {
-                MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.Reformat) })
-            }
+            OverflowActionCluster(
+                overflow = overflow,
+                moreLabel = container.t("json.action.overflow"),
+                actions = buildList {
+                    add(OverflowAction(container.t("common.action.history")) { session.historyOpen = true; refresh() })
+                    if (!detached) add(OverflowAction(container.t("app.tool.detach")) { container.sessionManager.detach(ToolId.Reformat) })
+                }
+            )
         }
         Row(
-            modifier = Modifier.fillMaxWidth().background(colors.surfaceSubtle).padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth().background(colors.surfaceSubtle).horizontalScroll(rememberScrollState()).padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
@@ -112,18 +162,33 @@ fun ReformatScreen(container: AppContainer, detached: Boolean) {
                 session.error = ""
                 refresh()
             })
-            ReformatEngine.types.forEach { type ->
-                MooButton(typeLabel(type), primary = session.type == type, onClick = {
-                    changeType(session, type)
-                    refresh()
-                })
+            Box {
+                MooButton("${container.t("reformat.type")}: ${typeLabel(session.type)}", onClick = { typeOpen = true })
+                DropdownMenu(expanded = typeOpen, onDismissRequest = { typeOpen = false }) {
+                    ReformatEngine.types.forEach { type ->
+                        DropdownMenuItem(onClick = {
+                            typeOpen = false
+                            changeType(session, type)
+                            refresh()
+                        }) {
+                            Text(typeLabel(type))
+                        }
+                    }
+                }
             }
-            Text(container.t("reformat.indent"), color = colors.textSecondary, fontSize = 12.sp)
-            listOf(2, 3, 4, 5, 6).forEach { size ->
-                MooButton(size.toString(), primary = session.indent == size, onClick = {
-                    session.indent = size
-                    refresh()
-                })
+            Box {
+                MooButton("${container.t("reformat.indent")}: ${session.indent}", onClick = { indentOpen = true })
+                DropdownMenu(expanded = indentOpen, onDismissRequest = { indentOpen = false }) {
+                    listOf(2, 3, 4, 5, 6).forEach { size ->
+                        DropdownMenuItem(onClick = {
+                            indentOpen = false
+                            session.indent = size
+                            refresh()
+                        }) {
+                            Text(size.toString())
+                        }
+                    }
+                }
             }
             MooButton(
                 if (session.busy) container.t("reformat.processing") else container.t("reformat.format"),
@@ -131,28 +196,29 @@ fun ReformatScreen(container: AppContainer, detached: Boolean) {
                 enabled = !session.busy && currentInput(session).isNotBlank(),
                 onClick = { runFormat(container, session) { refresh() } }
             )
-            Spacer(Modifier.weight(1f))
-            MooButton(container.t("reformat.copy"), onClick = {
-                val content = currentOutput(session)
-                if (content.isEmpty()) {
-                    session.notice = container.t("reformat.nothingToCopy")
-                } else {
-                    copyText(content)
-                    session.notice = container.t("common.copied")
-                    session.error = ""
+            if (!overflow) {
+                MooButton(
+                    container.t(CopyFeedbackPolicy.buttonKey(session.copyState, "reformat.copy")),
+                    onClick = { copyOutput() }
+                )
+                MooButton(container.t("reformat.save"), onClick = { saveOutput() })
+                MooButton(container.t("common.action.clear"), onClick = { clearOutput() })
+            } else {
+                Box {
+                    MooButton(container.t("json.action.overflow"), primary = moreOpen, onClick = { moreOpen = true })
+                    DropdownMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
+                        DropdownMenuItem(onClick = { moreOpen = false; copyOutput() }) {
+                            Text(container.t(CopyFeedbackPolicy.buttonKey(session.copyState, "reformat.copy")))
+                        }
+                        DropdownMenuItem(onClick = { moreOpen = false; saveOutput() }) {
+                            Text(container.t("reformat.save"))
+                        }
+                        DropdownMenuItem(onClick = { moreOpen = false; clearOutput() }) {
+                            Text(container.t("common.action.clear"))
+                        }
+                    }
                 }
-                refresh()
-            })
-            MooButton(container.t("reformat.save"), onClick = {
-                saveResult(container, session)
-                refresh()
-            })
-            MooButton(container.t("common.action.clear"), onClick = {
-                clearTab(session)
-                session.notice = container.t("json.notice.cleared")
-                session.error = ""
-                refresh()
-            })
+            }
         }
         if (session.tab == "text") {
             Column(Modifier.weight(1f).fillMaxWidth().padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -200,7 +266,7 @@ fun ReformatScreen(container: AppContainer, detached: Boolean) {
             }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(26.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -212,9 +278,21 @@ fun ReformatScreen(container: AppContainer, detached: Boolean) {
             if (detached) Text("detached", color = colors.textSecondary, fontSize = 12.sp)
         }
     }
+    }
 
     if (session.historyOpen) {
-        ReformatHistoryDialog(container, session, historyItems) { refresh() }
+        HistoryBrowser(
+            container = container,
+            toolId = ToolId.Reformat.id,
+            title = container.t("common.action.history"),
+            onRestore = { item ->
+                applyHistory(session, item)
+                session.notice = container.t("json.notice.restored")
+                session.historyOpen = false
+                refresh()
+            },
+            onDismiss = { session.historyOpen = false; refresh() }
+        )
     }
 }
 
@@ -341,8 +419,13 @@ private fun saveResult(container: AppContainer, session: ReformatSession) {
         }
 }
 
-private fun copyText(value: String) {
-    Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(value), null)
+private fun copyText(value: String): Boolean {
+    return try {
+        Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(value), null)
+        true
+    } catch (_: Exception) {
+        false
+    }
 }
 
 private fun chooseFile(save: Boolean, title: String, defaultName: String = ""): File? {
@@ -354,47 +437,6 @@ private fun chooseFile(save: Boolean, title: String, defaultName: String = ""): 
     return File(directory, file)
 }
 
-@Composable
-private fun ReformatHistoryDialog(
-    container: AppContainer,
-    session: ReformatSession,
-    items: List<HistoryRecord>,
-    onChanged: () -> Unit
-) {
-    Dialog(onDismissRequest = { session.historyOpen = false; onChanged() }) {
-        Column(
-            Modifier.width(520.dp).height(420.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(container.t("common.action.history"), color = MooTheme.colors.textPrimary)
-            if (items.isEmpty()) {
-                Text(container.t("json.history.empty"), color = MooTheme.colors.textSecondary)
-            } else {
-                LazyColumn(Modifier.weight(1f)) {
-                    items(items) { item ->
-                        Column(Modifier.fillMaxWidth().clickable {
-                            applyHistory(session, item)
-                            session.notice = container.t("json.notice.restored")
-                            session.historyOpen = false
-                            onChanged()
-                        }.padding(8.dp)) {
-                            Text(item.summary, color = MooTheme.colors.textPrimary, fontSize = 13.sp)
-                            Text(item.createdAt, color = MooTheme.colors.textSecondary, fontSize = 12.sp)
-                        }
-                    }
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("common.clear"), onClick = {
-                    container.history.clear(ToolId.Reformat.id)
-                    session.historyOpen = false
-                    onChanged()
-                })
-                MooButton(container.t("common.close"), onClick = { session.historyOpen = false; onChanged() })
-            }
-        }
-    }
-}
 
 private fun applyHistory(session: ReformatSession, item: HistoryRecord) {
     val parts = item.options.split('|')

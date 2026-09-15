@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -20,6 +21,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.DropdownMenu
+import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -39,6 +42,9 @@ import androidx.compose.ui.input.key.isMetaPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.isSecondaryPressed
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -53,9 +59,15 @@ import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.HostSession
 import com.rememberber.mootool.next.compose.storage.HostProfile
+import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
+import com.rememberber.mootool.next.compose.ui.components.OverflowAction
+import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
+import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
+import com.rememberber.mootool.next.compose.ui.components.setPaneSize
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -72,11 +84,11 @@ import java.time.format.DateTimeFormatter
 fun HostScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.hostSession() }
     val revision by container.sessionManager.revision.collectAsState()
+    val settings by container.settings.collectAsState()
     val colors = MooTheme.colors
     val scope = rememberCoroutineScope()
     val config = remember { HostApplyConfig.production(container.directories) }
     var profiles by remember { mutableStateOf(emptyList<HostProfile>()) }
-    var historyItems by remember { mutableStateOf(emptyList<HistoryRecord>()) }
 
     fun persist() {
         container.sessionManager.bump()
@@ -129,10 +141,9 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
         }
         persist()
     }
-    LaunchedEffect(session.historyOpen, revision) {
-        if (session.historyOpen) historyItems = container.history.list(ToolId.Host.id)
-    }
 
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
     Column(
         Modifier.fillMaxSize().background(colors.workspace).onPreviewKeyEvent { event ->
             if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
@@ -145,7 +156,7 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
         }
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(46.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -154,12 +165,17 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
             Spacer(Modifier.weight(1f))
             if (session.error.isNotEmpty()) Text(session.error, color = colors.danger, fontSize = 12.sp)
             else if (session.notice.isNotEmpty()) Text(session.notice, color = colors.textSecondary, fontSize = 12.sp)
-            MooButton(container.t("common.action.history"), onClick = { session.historyOpen = true; persist() })
-            if (!detached) {
-                MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.Host) })
-            }
+            OverflowActionCluster(
+                overflow = overflow,
+                moreLabel = container.t("json.action.overflow"),
+                actions = buildList {
+                    add(OverflowAction(container.t("common.action.history")) { session.historyOpen = true; persist() })
+                    if (!detached) add(OverflowAction(container.t("app.tool.detach")) { container.sessionManager.detach(ToolId.Host) })
+                }
+            )
         }
         Row(Modifier.fillMaxSize()) {
+            val listWidth = settings.layout.pane(ToolId.Host.id, 0, 240f, 200f, 320f)
             ProfileList(
                 container = container,
                 session = session,
@@ -200,7 +216,12 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                     persist()
                 },
                 onDelete = { if (session.selectedId.isNotBlank()) { session.deleteConfirm = true; persist() } },
-                onChanged = { persist(); reloadProfiles() }
+                onChanged = { persist(); reloadProfiles() },
+                width = listWidth
+            )
+            VerticalPaneHandle(
+                onDelta = { container.setPaneSize(ToolId.Host.id, 0, listWidth + it, 1) },
+                onReset = { container.setPaneSize(ToolId.Host.id, 0, 240f, 1) }
             )
             Column(Modifier.weight(1f).fillMaxHeight().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -210,23 +231,29 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                         modifier = Modifier.weight(1f),
                         placeholder = container.t("host.profileName")
                     )
-                    MooButton(container.t("host.current"), onClick = {
-                        scope.launch(Dispatchers.IO) {
-                            val result = runCatching { HostEngine.readSystem(config) }
-                            withContext(Dispatchers.Main) {
-                                result.onSuccess {
-                                    session.systemPath = it.path
-                                    session.systemContent = it.content
-                                    session.systemWritable = it.writable
-                                    session.systemFingerprint = it.fingerprint
-                                    session.systemOpen = true
-                                    session.error = ""
-                                }.onFailure { session.error = messageFor(container, it) }
-                                persist()
-                            }
-                        }
-                    })
-                    MooButton(container.t("host.find"), onClick = { session.findOpen = !session.findOpen; persist() })
+                    OverflowActionCluster(
+                        overflow = overflow,
+                        moreLabel = container.t("json.action.overflow"),
+                        actions = listOf(
+                            OverflowAction(container.t("host.current")) {
+                                scope.launch(Dispatchers.IO) {
+                                    val result = runCatching { HostEngine.readSystem(config) }
+                                    withContext(Dispatchers.Main) {
+                                        result.onSuccess {
+                                            session.systemPath = it.path
+                                            session.systemContent = it.content
+                                            session.systemWritable = it.writable
+                                            session.systemFingerprint = it.fingerprint
+                                            session.systemOpen = true
+                                            session.error = ""
+                                        }.onFailure { session.error = messageFor(container, it) }
+                                        persist()
+                                    }
+                                }
+                            },
+                            OverflowAction(container.t("host.find")) { session.findOpen = !session.findOpen; persist() }
+                        )
+                    )
                     MooButton(container.t("common.save"), onClick = { saveCurrent() }, enabled = session.dirty)
                     MooButton(
                         if (session.applying) container.t("host.applying") else container.t("host.apply"),
@@ -294,6 +321,7 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
                 Text(container.t("host.saveHint"), color = colors.textSecondary, fontSize = 11.sp)
             }
         }
+    }
     }
     if (session.systemOpen) {
         Dialog(onDismissRequest = { session.systemOpen = false; persist() }) {
@@ -374,6 +402,38 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
             }
         }
     }
+    if (session.renameOpen) {
+        Dialog(onDismissRequest = { session.renameOpen = false; persist() }) {
+            Column(
+                Modifier.width(420.dp).background(colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text(container.t("quickNote.rename"), color = colors.textPrimary)
+                MooTextField(session.renameValue, { session.renameValue = it; persist() })
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    MooButton(container.t("common.save"), primary = true, onClick = {
+                        val nextName = session.renameValue.trim()
+                        if (nextName.isEmpty() || session.selectedId.isBlank()) {
+                            session.error = container.t("host.error.name")
+                            persist()
+                            return@MooButton
+                        }
+                        runCatching { container.hostProfiles.save(session.selectedId, nextName, session.content) }
+                            .onSuccess { saved ->
+                                session.markSaved(saved.id, saved.name, saved.content)
+                                session.renameOpen = false
+                                session.notice = container.t("common.save")
+                                session.error = ""
+                                reloadProfiles()
+                            }
+                            .onFailure { session.error = it.message ?: container.t("host.error.generic") }
+                        persist()
+                    })
+                    MooButton(container.t("common.cancel"), onClick = { session.renameOpen = false; persist() })
+                }
+            }
+        }
+    }
     if (session.deleteConfirm) {
         Dialog(onDismissRequest = { session.deleteConfirm = false; persist() }) {
             Column(
@@ -399,9 +459,17 @@ fun HostScreen(container: AppContainer, detached: Boolean) {
             }
         }
     }
-    if (session.historyOpen) {
-        HistoryDialog(container, session, historyItems) { persist() }
-    }
+    if (session.historyOpen) HistoryBrowser(
+        container = container,
+        toolId = ToolId.Host.id,
+        title = container.t("common.action.history"),
+        onRestore = { item ->
+            session.content = item.input
+            session.historyOpen = false
+            persist()
+        },
+        onDismiss = { session.historyOpen = false; persist() }
+    )
 }
 
 @Composable
@@ -415,12 +483,14 @@ private fun ProfileList(
     onImport: () -> Unit,
     onExport: () -> Unit,
     onDelete: () -> Unit,
-    onChanged: () -> Unit
+    onChanged: () -> Unit,
+    width: Float
 ) {
     val colors = MooTheme.colors
     val stamp = remember { DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm").withZone(ZoneId.systemDefault()) }
+    var menuId by remember { mutableStateOf<String?>(null) }
     Column(
-        Modifier.width(240.dp).fillMaxHeight().background(colors.sidebar).padding(8.dp),
+        Modifier.width(width.dp).fillMaxHeight().background(colors.sidebar).padding(8.dp),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         MooTextField(session.query, { session.query = it; onChanged() }, placeholder = container.t("common.search"))
@@ -443,13 +513,51 @@ private fun ProfileList(
         } else {
             LazyColumn(Modifier.weight(1f)) {
                 items(profiles, key = { it.id }) { profile ->
+                    Box {
                     Column(
                         Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp))
                             .background(if (profile.id == session.selectedId) colors.selected else colors.sidebar)
+                            .pointerInput(profile.id) {
+                                awaitPointerEventScope {
+                                    while (true) {
+                                        val event = awaitPointerEvent()
+                                        if (event.type == PointerEventType.Press && event.buttons.isSecondaryPressed) {
+                                            event.changes.forEach { it.consume() }
+                                            onSelect(profile)
+                                            menuId = profile.id
+                                        }
+                                    }
+                                }
+                            }
                             .clickable { onSelect(profile) }.padding(8.dp)
                     ) {
                         Text(profile.name, color = colors.textPrimary, fontSize = 13.sp)
                         Text(stamp.format(Instant.ofEpochMilli(profile.modifiedAt)), color = colors.textSecondary, fontSize = 11.sp)
+                    }
+                    DropdownMenu(expanded = menuId == profile.id, onDismissRequest = { menuId = null }) {
+                        DropdownMenuItem(onClick = {
+                            menuId = null
+                            onSelect(profile)
+                            session.renameValue = profile.name
+                            session.renameOpen = true
+                            onChanged()
+                        }) { Text(container.t("quickNote.rename")) }
+                        DropdownMenuItem(onClick = {
+                            menuId = null
+                            onSelect(profile)
+                            onCopy()
+                        }) { Text(container.t("host.copy")) }
+                        DropdownMenuItem(onClick = {
+                            menuId = null
+                            onSelect(profile)
+                            onExport()
+                        }) { Text(container.t("host.export")) }
+                        DropdownMenuItem(onClick = {
+                            menuId = null
+                            onSelect(profile)
+                            onDelete()
+                        }) { Text(container.t("common.delete")) }
+                    }
                     }
                 }
             }
@@ -491,40 +599,6 @@ private fun FindBar(container: AppContainer, session: HostSession, onChanged: ()
     }
 }
 
-@Composable
-private fun HistoryDialog(container: AppContainer, session: HostSession, items: List<HistoryRecord>, onChanged: () -> Unit) {
-    Dialog(onDismissRequest = { session.historyOpen = false; onChanged() }) {
-        Column(
-            Modifier.width(480.dp).height(420.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(container.t("common.action.history"), color = MooTheme.colors.textPrimary)
-            if (items.isEmpty()) {
-                Text(container.t("json.history.empty"), color = MooTheme.colors.textSecondary)
-            } else {
-                LazyColumn(Modifier.weight(1f)) {
-                    items(items) { item ->
-                        Column(Modifier.fillMaxWidth().clickable {
-                            session.content = item.input
-                            session.historyOpen = false
-                            onChanged()
-                        }.padding(8.dp)) {
-                            Text(item.summary, color = MooTheme.colors.textPrimary, fontSize = 13.sp)
-                            Text(item.createdAt, color = MooTheme.colors.textSecondary, fontSize = 11.sp)
-                        }
-                    }
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("common.clear"), onClick = {
-                    container.history.clear(ToolId.Host.id)
-                    onChanged()
-                })
-                MooButton(container.t("common.close"), onClick = { session.historyOpen = false; onChanged() })
-            }
-        }
-    }
-}
 
 private fun pickHostFile(save: Boolean, defaultName: String = "hosts.txt"): File? {
     val dialog = FileDialog(null as Frame?, if (save) "Export Host" else "Import Host", if (save) FileDialog.SAVE else FileDialog.LOAD)

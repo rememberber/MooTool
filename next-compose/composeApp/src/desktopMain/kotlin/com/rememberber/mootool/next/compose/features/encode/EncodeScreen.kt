@@ -1,8 +1,9 @@
 package com.rememberber.mootool.next.compose.features.encode
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -12,13 +13,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.DropdownMenu
+import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -27,7 +25,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.AsciiFormat
 import com.rememberber.mootool.next.compose.domain.EncodeEngine
@@ -37,9 +34,11 @@ import com.rememberber.mootool.next.compose.domain.UrlCharset
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.EncodeSession
+import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.json.Json
@@ -55,32 +54,55 @@ private data class EncodeHistoryMeta(
 @Composable
 fun EncodeScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.encodeSession() }
-    val revision by container.sessionManager.revision.collectAsState()
-    var historyItems by remember { mutableStateOf(emptyList<HistoryRecord>()) }
     val colors = MooTheme.colors
     val labels = tabLabels(container, session.tab)
+    var charsetOpen by remember { mutableStateOf(false) }
+    var asciiOpen by remember { mutableStateOf(false) }
+    var moreOpen by remember { mutableStateOf(false) }
 
     fun refresh() {
         container.sessionManager.bump()
         container.sessionManager.persistEncode()
     }
 
-    LaunchedEffect(session.historyOpen, revision) {
-        if (session.historyOpen) historyItems = container.history.list(ToolId.Encode.id)
-    }
-
-    Column(Modifier.fillMaxSize().background(colors.workspace)) {
+    BoxWithConstraints(Modifier.fillMaxSize().background(colors.workspace)) {
+        val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
+        Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(46.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(container.t("encode.title"), color = colors.textPrimary, fontSize = 16.sp)
             Spacer(Modifier.weight(1f))
-            MooButton(container.t("common.action.history"), onClick = { session.historyOpen = true; refresh() })
-            MooButton(container.t("common.clear"), onClick = { session.clearCurrent(); session.notice = container.t("json.notice.cleared"); refresh() })
-            if (!detached) {
-                MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.Encode) })
+            if (!overflow) {
+                MooButton(container.t("common.action.history"), onClick = { session.historyOpen = true; refresh() })
+                MooButton(container.t("common.clear"), onClick = { session.clearCurrent(); session.notice = container.t("json.notice.cleared"); refresh() })
+                if (!detached) {
+                    MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.Encode) })
+                }
+            } else {
+                Box {
+                    MooButton(container.t("json.action.overflow"), primary = moreOpen, onClick = { moreOpen = true })
+                    DropdownMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
+                        DropdownMenuItem(onClick = { moreOpen = false; session.historyOpen = true; refresh() }) {
+                            Text(container.t("common.action.history"))
+                        }
+                        DropdownMenuItem(onClick = {
+                            moreOpen = false
+                            session.clearCurrent()
+                            session.notice = container.t("json.notice.cleared")
+                            refresh()
+                        }) {
+                            Text(container.t("common.clear"))
+                        }
+                        if (!detached) {
+                            DropdownMenuItem(onClick = { moreOpen = false; container.sessionManager.detach(ToolId.Encode) }) {
+                                Text(container.t("app.tool.detach"))
+                            }
+                        }
+                    }
+                }
             }
         }
         Row(
@@ -120,24 +142,41 @@ fun EncodeScreen(container: AppContainer, detached: Boolean) {
                 })
                 if (session.tab == EncodeTab.Url) {
                     Text(container.t("encode.charset"), color = colors.textSecondary, fontSize = 12.sp)
-                    MooButton("UTF-8", primary = session.charset == UrlCharset.Utf8, onClick = {
-                        session.charset = UrlCharset.Utf8
-                        refresh()
-                    })
-                    MooButton("GB2312", primary = session.charset == UrlCharset.Gb2312, onClick = {
-                        session.charset = UrlCharset.Gb2312
-                        refresh()
-                    })
+                    Box {
+                        MooButton(if (session.charset == UrlCharset.Utf8) "UTF-8" else "GB2312", onClick = { charsetOpen = true })
+                        DropdownMenu(expanded = charsetOpen, onDismissRequest = { charsetOpen = false }) {
+                            DropdownMenuItem(onClick = {
+                                charsetOpen = false
+                                session.charset = UrlCharset.Utf8
+                                refresh()
+                            }) { Text("UTF-8") }
+                            DropdownMenuItem(onClick = {
+                                charsetOpen = false
+                                session.charset = UrlCharset.Gb2312
+                                refresh()
+                            }) { Text("GB2312") }
+                        }
+                    }
                 }
                 if (session.tab == EncodeTab.Ascii) {
-                    MooButton(container.t("encode.asciiDecimal"), primary = session.asciiFormat == AsciiFormat.Decimal, onClick = {
-                        session.asciiFormat = AsciiFormat.Decimal
-                        refresh()
-                    })
-                    MooButton(container.t("encode.asciiHex"), primary = session.asciiFormat == AsciiFormat.Hex, onClick = {
-                        session.asciiFormat = AsciiFormat.Hex
-                        refresh()
-                    })
+                    Box {
+                        MooButton(
+                            if (session.asciiFormat == AsciiFormat.Decimal) container.t("encode.asciiDecimal") else container.t("encode.asciiHex"),
+                            onClick = { asciiOpen = true }
+                        )
+                        DropdownMenu(expanded = asciiOpen, onDismissRequest = { asciiOpen = false }) {
+                            DropdownMenuItem(onClick = {
+                                asciiOpen = false
+                                session.asciiFormat = AsciiFormat.Decimal
+                                refresh()
+                            }) { Text(container.t("encode.asciiDecimal")) }
+                            DropdownMenuItem(onClick = {
+                                asciiOpen = false
+                                session.asciiFormat = AsciiFormat.Hex
+                                refresh()
+                            }) { Text(container.t("encode.asciiHex")) }
+                        }
+                    }
                 }
             }
             Column(Modifier.weight(1f).fillMaxHeight(), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -151,7 +190,7 @@ fun EncodeScreen(container: AppContainer, detached: Boolean) {
             }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(26.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -162,10 +201,22 @@ fun EncodeScreen(container: AppContainer, detached: Boolean) {
             Spacer(Modifier.weight(1f))
             if (detached) Text("detached", color = colors.textSecondary, fontSize = 12.sp)
         }
+        }
     }
 
     if (session.historyOpen) {
-        EncodeHistoryDialog(container, session, historyItems) { refresh() }
+        HistoryBrowser(
+            container = container,
+            toolId = ToolId.Encode.id,
+            title = container.t("common.action.history"),
+            onRestore = { item ->
+                applyHistory(session, item)
+                session.notice = container.t("json.notice.restored")
+                session.historyOpen = false
+                refresh()
+            },
+            onDismiss = { session.historyOpen = false; refresh() }
+        )
     }
 }
 
@@ -218,47 +269,6 @@ private fun messageFor(container: AppContainer, error: Throwable): String {
         "unmappable" -> container.t("encode.error.unmappable")
         "invalid-code-point" -> container.t("encode.error.codePoint", mapOf("value" to (error.message ?: "")))
         else -> error.message ?: container.t("encode.error.generic")
-    }
-}
-
-@Composable
-private fun EncodeHistoryDialog(
-    container: AppContainer,
-    session: EncodeSession,
-    items: List<HistoryRecord>,
-    onChanged: () -> Unit
-) {
-    Dialog(onDismissRequest = { session.historyOpen = false; onChanged() }) {
-        Column(
-            Modifier.width(520.dp).height(420.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(container.t("common.action.history"), color = MooTheme.colors.textPrimary)
-            if (items.isEmpty()) {
-                Text(container.t("json.history.empty"), color = MooTheme.colors.textSecondary)
-            } else {
-                LazyColumn(Modifier.weight(1f)) {
-                    items(items) { item ->
-                        Column(Modifier.fillMaxWidth().clickable {
-                            applyHistory(session, item)
-                            session.notice = container.t("json.notice.restored")
-                            session.historyOpen = false
-                            onChanged()
-                        }.padding(8.dp)) {
-                            Text(item.summary, color = MooTheme.colors.textPrimary, fontSize = 13.sp)
-                            Text("${item.input} → ${item.output}", color = MooTheme.colors.textSecondary, fontSize = 12.sp)
-                        }
-                    }
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("common.clear"), onClick = {
-                    container.history.clear(ToolId.Encode.id)
-                    onChanged()
-                })
-                MooButton(container.t("common.close"), onClick = { session.historyOpen = false; onChanged() })
-            }
-        }
     }
 }
 

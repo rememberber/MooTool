@@ -17,6 +17,7 @@ private val t = JsonTranslator { key, params ->
         "json.error.noJavaFields" -> "no fields"
         "json.error.emptyXml" -> "empty xml"
         "json.error.emptyPath" -> "empty path"
+        "json.error.invalidPath" -> "invalid path ${params["reason"]}"
         else -> key
     }
     params.forEach { (name, value) -> message = message.replace("{$name}", value) }
@@ -71,6 +72,29 @@ class JsonEngineTest {
         val titles = JsonEngine.queryPath(input, "$.store.books[*].title", t)
         assertTrue(titles.contains("One"))
         assertTrue(JsonEngine.listPaths(input, t).map { it.path }.contains("$.store.books[0].title"))
+    }
+
+    @Test
+    fun queryPathSupportsFilterSliceUnionEscapeAndRejectsScripts() {
+        val catalog = """{"books":[{"title":"Cheap","price":8},{"title":"Dear","price":12}],"foo.bar":1}"""
+        val cheap = JsonEngine.queryPath(catalog, "$.books[?(@.price < 10)]", t)
+        assertTrue(cheap.contains("Cheap"))
+        assertTrue(!cheap.contains("Dear"))
+        assertEquals("[]", JsonEngine.queryPath(catalog, "$.books[?(@.price < 1)]", t).replace(" ", "").replace("\n", ""))
+        val sliced = JsonEngine.queryPath(catalog, "$.books[0:1]", t)
+        assertTrue(sliced.contains("Cheap"))
+        assertTrue(!sliced.contains("Dear"))
+        val union = JsonEngine.queryPath(catalog, "$.books[0,1].title", t)
+        assertTrue(union.contains("Cheap"))
+        assertTrue(union.contains("Dear"))
+        val recursive = JsonEngine.queryPath(catalog, "$..title", t)
+        assertTrue(recursive.contains("Cheap"))
+        assertTrue(recursive.contains("Dear"))
+        assertEquals("1", JsonEngine.queryPath(catalog, "$['foo.bar']", t).trim())
+        assertEquals("[]", JsonEngine.queryPath("[]", "$", t).replace(" ", "").replace("\n", ""))
+        val invalid = runCatching { JsonEngine.queryPath(catalog, "$[?(function(){return true})]", t) }
+        assertTrue(invalid.isFailure)
+        assertTrue(invalid.exceptionOrNull() is JsonException)
     }
 
     @Test

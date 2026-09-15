@@ -114,7 +114,7 @@ compose.desktop {
     application {
         mainClass = "com.rememberber.mootool.next.compose.MainKt"
         nativeDistributions {
-            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb)
+            targetFormats(TargetFormat.Dmg, TargetFormat.Msi, TargetFormat.Deb, TargetFormat.Rpm)
             packageName = "MooTool Next Compose"
             packageVersion = nativePackageVersion
             description = "MooTool Next Compose developer toolbox"
@@ -136,16 +136,39 @@ compose.desktop {
             macOS {
                 bundleID = "com.rememberber.mootool.next.compose"
                 dockName = "MooTool Next Compose"
+                appCategory = "public.app-category.developer-tools"
+                minimumSystemVersion = "12.0"
+                infoPlist {
+                    extraKeysRawXml = """
+                        <key>NSHighResolutionCapable</key>
+                        <true/>
+                        <key>NSSupportsAutomaticGraphicsSwitching</key>
+                        <true/>
+                        <key>LSApplicationCategoryType</key>
+                        <string>public.app-category.developer-tools</string>
+                        <key>NSScreenCaptureUsageDescription</key>
+                        <string>MooTool Next Compose needs Screen Recording permission to pick colors from the screen and capture a region.</string>
+                    """.trimIndent()
+                }
                 val macIcon = rootProject.file("resources/macos/AppIcon.icns")
                 if (macIcon.exists()) iconFile.set(macIcon)
             }
             windows {
                 menuGroup = "MooTool Next Compose"
                 upgradeUuid = "D6574BAD-FF7C-4038-8D17-B9C7988787BA"
+                shortcut = true
+                dirChooser = true
+                perUserInstall = true
+                val winIcon = rootProject.file("resources/windows/AppIcon.ico")
+                if (winIcon.exists()) iconFile.set(winIcon)
             }
             linux {
+                shortcut = true
                 packageName = "mootool-next-compose"
                 debMaintainer = "rememberber@users.noreply.github.com"
+                menuGroup = "Development"
+                appCategory = "Development"
+                rpmLicenseType = "MIT"
                 val linuxIcon = rootProject.file("resources/linux/AppIcon.png")
                 if (linuxIcon.exists()) iconFile.set(linuxIcon)
             }

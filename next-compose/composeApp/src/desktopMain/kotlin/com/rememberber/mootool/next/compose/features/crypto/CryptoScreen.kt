@@ -1,8 +1,9 @@
 package com.rememberber.mootool.next.compose.features.crypto
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +18,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.DropdownMenu
+import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -43,9 +46,11 @@ import com.rememberber.mootool.next.compose.domain.SymmetricAlgorithm
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.CryptoSession
+import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.swing.Swing
@@ -71,30 +76,44 @@ fun CryptoScreen(container: AppContainer, detached: Boolean) {
         container.sessionManager.cryptoSession(container.settings.value.tools.randomStringLength)
     }
     val revision by container.sessionManager.revision.collectAsState()
-    var historyItems by remember { mutableStateOf(emptyList<HistoryRecord>()) }
     val colors = MooTheme.colors
     val scope = rememberCoroutineScope()
+    var moreOpen by remember { mutableStateOf(false) }
 
     fun refresh() {
         container.sessionManager.bump()
         container.sessionManager.persistCrypto()
     }
 
-    LaunchedEffect(session.historyOpen, revision) {
-        if (session.historyOpen) historyItems = container.history.list(ToolId.Crypto.id)
-    }
-
-    Column(Modifier.fillMaxSize().background(colors.workspace)) {
+    BoxWithConstraints(Modifier.fillMaxSize().background(colors.workspace)) {
+        val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
+        Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(46.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(container.t("crypto.title"), color = colors.textPrimary, fontSize = 16.sp)
             Spacer(Modifier.weight(1f))
-            MooButton(container.t("common.action.history"), onClick = { session.historyOpen = true; refresh() })
-            if (!detached) {
-                MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.Crypto) })
+            if (!overflow) {
+                MooButton(container.t("common.action.history"), onClick = { session.historyOpen = true; refresh() })
+                if (!detached) {
+                    MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.Crypto) })
+                }
+            } else {
+                Box {
+                    MooButton(container.t("json.action.overflow"), primary = moreOpen, onClick = { moreOpen = true })
+                    DropdownMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
+                        DropdownMenuItem(onClick = { moreOpen = false; session.historyOpen = true; refresh() }) {
+                            Text(container.t("common.action.history"))
+                        }
+                        if (!detached) {
+                            DropdownMenuItem(onClick = { moreOpen = false; container.sessionManager.detach(ToolId.Crypto) }) {
+                                Text(container.t("app.tool.detach"))
+                            }
+                        }
+                    }
+                }
             }
         }
         Row(
@@ -117,7 +136,7 @@ fun CryptoScreen(container: AppContainer, detached: Boolean) {
             CryptoTab.Random -> RandomPanel(container, session, Modifier.weight(1f).fillMaxWidth()) { refresh() }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(26.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -128,10 +147,22 @@ fun CryptoScreen(container: AppContainer, detached: Boolean) {
             Spacer(Modifier.weight(1f))
             if (detached) Text("detached", color = colors.textSecondary, fontSize = 12.sp)
         }
+        }
     }
 
     if (session.historyOpen) {
-        CryptoHistoryDialog(container, session, historyItems) { refresh() }
+        HistoryBrowser(
+            container = container,
+            toolId = ToolId.Crypto.id,
+            title = container.t("common.action.history"),
+            onRestore = { item ->
+                applyHistory(session, item)
+                session.notice = container.t("json.notice.restored")
+                session.historyOpen = false
+                refresh()
+            },
+            onDismiss = { session.historyOpen = false; refresh() }
+        )
     }
 }
 
@@ -141,13 +172,16 @@ private fun SymmetricPanel(container: AppContainer, session: CryptoSession, modi
     Column(modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(container.t("crypto.algorithm"), color = colors.textSecondary, fontSize = 12.sp)
-            SymmetricAlgorithm.entries.forEach { algorithm ->
-                MooButton(algorithm.name, primary = session.symAlgorithm == algorithm, onClick = {
-                    session.symAlgorithm = algorithm
+            CompactChoice(
+                current = session.symAlgorithm,
+                options = SymmetricAlgorithm.entries,
+                label = { it.name },
+                onSelect = {
+                    session.symAlgorithm = it
                     session.error = ""
                     onChanged()
-                })
-            }
+                }
+            )
             Text(container.t("crypto.key"), color = colors.textSecondary, fontSize = 12.sp)
             MooTextField(session.symKey, { session.symKey = it; session.error = ""; onChanged() }, modifier = Modifier.width(220.dp))
             Text(container.t("crypto.keyHint"), color = colors.textSecondary, fontSize = 12.sp)
@@ -192,13 +226,16 @@ private fun AsymmetricPanel(
     Column(modifier.padding(12.dp).verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(container.t("crypto.algorithm"), color = colors.textSecondary, fontSize = 12.sp)
-            AsymmetricAlgorithm.entries.forEach { algorithm ->
-                MooButton(algorithm.name, primary = session.asymAlgorithm == algorithm, onClick = {
-                    session.asymAlgorithm = algorithm
+            CompactChoice(
+                current = session.asymAlgorithm,
+                options = AsymmetricAlgorithm.entries,
+                label = { it.name },
+                onSelect = {
+                    session.asymAlgorithm = it
                     session.error = ""
                     onChanged()
-                })
-            }
+                }
+            )
             MooButton(
                 if (session.asymBusy) container.t("common.processing") else container.t("crypto.generateKeyPair"),
                 primary = true,
@@ -303,12 +340,15 @@ private fun DigestPanel(
     Column(modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(container.t("crypto.algorithm"), color = colors.textSecondary, fontSize = 12.sp)
-            DigestAlgorithm.entries.forEach { algorithm ->
-                MooButton(digestLabel(algorithm), primary = session.digestAlgorithm == algorithm, onClick = {
-                    session.digestAlgorithm = algorithm
+            CompactChoice(
+                current = session.digestAlgorithm,
+                options = DigestAlgorithm.entries,
+                label = { digestLabel(it) },
+                onSelect = {
+                    session.digestAlgorithm = it
                     onChanged()
-                })
-            }
+                }
+            )
             MooButton(container.t("crypto.textDigest"), primary = true, onClick = {
                 runCrypto(container, session, "digest", "text", digestLabel(session.digestAlgorithm), session.digestInput) {
                     session.digestOutput = CryptoEngine.digestText(session.digestAlgorithm, session.digestInput)
@@ -356,12 +396,15 @@ private fun BasePanel(container: AppContainer, session: CryptoSession, modifier:
     Column(modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
             Text(container.t("crypto.algorithm"), color = MooTheme.colors.textSecondary, fontSize = 12.sp)
-            BaseAlgorithm.entries.forEach { algorithm ->
-                MooButton(algorithm.name, primary = session.baseAlgorithm == algorithm, onClick = {
-                    session.baseAlgorithm = algorithm
+            CompactChoice(
+                current = session.baseAlgorithm,
+                options = BaseAlgorithm.entries,
+                label = { it.name },
+                onSelect = {
+                    session.baseAlgorithm = it
                     onChanged()
-                })
-            }
+                }
+            )
         }
         Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             LabeledField(container.t("crypto.plainText"), session.basePlain, { session.basePlain = it; onChanged() }, Modifier.weight(1f))
@@ -428,6 +471,29 @@ private fun RandomRow(container: AppContainer, label: String, value: String, onG
         Text(value.ifEmpty { "—" }, color = MooTheme.colors.textPrimary, fontSize = 13.sp, modifier = Modifier.weight(1f))
         MooButton(container.t("crypto.copy"), onClick = { copyText(value, container) })
         MooButton(container.t("crypto.generate"), primary = true, onClick = onGenerate)
+    }
+}
+
+@Composable
+private fun <T> CompactChoice(
+    current: T,
+    options: Iterable<T>,
+    label: (T) -> String,
+    onSelect: (T) -> Unit
+) {
+    var open by remember { mutableStateOf(false) }
+    Box {
+        MooButton(label(current), onClick = { open = true })
+        DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
+            options.forEach { option ->
+                DropdownMenuItem(onClick = {
+                    open = false
+                    onSelect(option)
+                }) {
+                    Text(label(option))
+                }
+            }
+        }
     }
 }
 
@@ -504,7 +570,8 @@ private fun saveHistory(
         else -> algorithm
     }
     val meta = CryptoHistoryMeta(tab = tab, operation = operation, algorithm = algorithm)
-    container.history.save(ToolId.Crypto.id, "$algorithm $label", label, input, output, historyCodec.encodeToString(meta))
+    val payload = com.rememberber.mootool.next.compose.storage.HistoryPrivacy.crypto(operation, input, output)
+    container.history.save(ToolId.Crypto.id, "$algorithm $label", label, payload.input, payload.output, historyCodec.encodeToString(meta))
 }
 
 private fun generateRandom(container: AppContainer, session: CryptoSession, kind: RandomKind) {
@@ -566,46 +633,6 @@ private fun chooseFile(title: String): File? {
     return File(directory, file)
 }
 
-@Composable
-private fun CryptoHistoryDialog(
-    container: AppContainer,
-    session: CryptoSession,
-    items: List<HistoryRecord>,
-    onChanged: () -> Unit
-) {
-    Dialog(onDismissRequest = { session.historyOpen = false; onChanged() }) {
-        Column(
-            Modifier.width(560.dp).height(420.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(container.t("common.action.history"), color = MooTheme.colors.textPrimary)
-            if (items.isEmpty()) {
-                Text(container.t("json.history.empty"), color = MooTheme.colors.textSecondary)
-            } else {
-                LazyColumn(Modifier.weight(1f)) {
-                    items(items) { item ->
-                        Column(Modifier.fillMaxWidth().clickable {
-                            applyHistory(session, item)
-                            session.notice = container.t("json.notice.restored")
-                            session.historyOpen = false
-                            onChanged()
-                        }.padding(8.dp)) {
-                            Text(item.summary, color = MooTheme.colors.textPrimary, fontSize = 13.sp)
-                            Text("${item.input} → ${item.output}", color = MooTheme.colors.textSecondary, fontSize = 12.sp)
-                        }
-                    }
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("common.clear"), onClick = {
-                    container.history.clear(ToolId.Crypto.id)
-                    onChanged()
-                })
-                MooButton(container.t("common.close"), onClick = { session.historyOpen = false; onChanged() })
-            }
-        }
-    }
-}
 
 private fun applyHistory(session: CryptoSession, item: HistoryRecord) {
     val meta = runCatching { historyCodec.decodeFromString<CryptoHistoryMeta>(item.options) }.getOrNull()

@@ -3,6 +3,7 @@ package com.rememberber.mootool.next.compose.features.placeholder
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Text
@@ -32,12 +33,20 @@ fun PlaceholderScreen(container: AppContainer, toolId: ToolId) {
 @Composable
 fun DetachedNotice(container: AppContainer, toolId: ToolId) {
     val tool = ToolRegistry.byId.getValue(toolId)
+    val label = container.t(tool.titleKey)
     Column(
         modifier = Modifier.fillMaxSize().background(MooTheme.colors.workspace).padding(24.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
-        Text(container.t(tool.titleKey), fontSize = 18.sp, color = MooTheme.colors.textPrimary)
-        Text(container.t("app.tool.detach"), color = MooTheme.colors.textSecondary)
-        MooButton(container.t("app.tool.reattach"), primary = true, onClick = { container.sessionManager.reattach(toolId) })
+        Text(
+            container.t("app.tool.detachedTitle", mapOf("tool" to label)),
+            fontSize = 18.sp,
+            color = MooTheme.colors.textPrimary
+        )
+        Text(container.t("app.tool.detachedDescription"), color = MooTheme.colors.textSecondary)
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            MooButton(container.t("app.tool.focus"), primary = true, onClick = { container.requestFocusDetached(toolId) })
+            MooButton(container.t("app.tool.reattach"), onClick = { container.sessionManager.reattach(toolId) })
+        }
     }
 }

@@ -17,11 +17,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.border
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.DiffEngine
 import com.rememberber.mootool.next.compose.domain.VaultConflictState
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 
 @Composable
@@ -41,9 +42,12 @@ fun VaultConflictDialog(
             .take(4_000)
             .ifBlank { container.t("vault.conflict.noDiff") }
     }
-    Dialog(onDismissRequest = onKeep) {
+    MooOverlay(onDismiss = onKeep) {
         Column(
-            Modifier.width(640.dp).height(420.dp).background(colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
+            Modifier.width(640.dp).height(420.dp)
+                .background(colors.workspace, RoundedCornerShape(12.dp))
+                .border(1.dp, colors.border, RoundedCornerShape(12.dp))
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(container.t("vault.conflict.title"), color = colors.textPrimary, fontSize = 16.sp)

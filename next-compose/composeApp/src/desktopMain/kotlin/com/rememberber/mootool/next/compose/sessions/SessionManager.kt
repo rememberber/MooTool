@@ -34,6 +34,7 @@ import com.rememberber.mootool.next.compose.domain.HttpResponseResult
 import com.rememberber.mootool.next.compose.domain.HttpResponseTab
 import com.rememberber.mootool.next.compose.domain.TranslationEngine
 import com.rememberber.mootool.next.compose.domain.TranslationTab
+import com.rememberber.mootool.next.compose.domain.VaultSort
 import com.rememberber.mootool.next.compose.domain.CodeRunEngine
 import com.rememberber.mootool.next.compose.domain.CodeRunResult
 import com.rememberber.mootool.next.compose.domain.CodeRuntime
@@ -66,6 +67,7 @@ import com.rememberber.mootool.next.compose.domain.TimestampUnit
 import com.rememberber.mootool.next.compose.domain.UaEngine
 import com.rememberber.mootool.next.compose.domain.UaResult
 import com.rememberber.mootool.next.compose.domain.UrlCharset
+import com.rememberber.mootool.next.compose.domain.NoteMetadata
 import com.rememberber.mootool.next.compose.editor.EditorBuffer
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.storage.SessionStore
@@ -96,7 +98,9 @@ data class JsonSessionSnapshot(
     val sortKeys: Boolean = false,
     val ignoreCase: Boolean = false,
     val checkDuplicateKeys: Boolean = true,
-    val vaultQuery: String = ""
+    val vaultQuery: String = "",
+    val includeContent: Boolean = true,
+    val vaultSort: String = "name"
 )
 
 class JsonSession {
@@ -112,13 +116,22 @@ class JsonSession {
     var savedText: String = SAMPLE_JSON
     var formatOptions: JsonFormatOptions = JsonFormatOptions()
     var vaultQuery: String = ""
+    var includeContent: Boolean = true
+    var vaultSort: String = VaultSort.NAME
+    var compactAux: String = ""
     var notice: String = ""
     var pathResult: String = ""
     var dialogTitle: String = ""
     var dialogBody: String = ""
     var dialogInputMode: String = ""
     var dialogInput: String = ""
+    var dialogTarget: String = ""
     var historyOpen: Boolean = false
+    var className: String = "Root"
+    var pathPickerOpen: Boolean = false
+    var columnLatch: Boolean = false
+    var copyState: String = "idle"
+    var copyGeneration: Int = 0
 
     fun snapshot(): JsonSessionSnapshot = JsonSessionSnapshot(
         content = editor.text,
@@ -136,7 +149,9 @@ class JsonSession {
         sortKeys = formatOptions.sortKeys,
         ignoreCase = formatOptions.ignoreCase,
         checkDuplicateKeys = formatOptions.checkDuplicateKeys,
-        vaultQuery = vaultQuery
+        vaultQuery = vaultQuery,
+        includeContent = includeContent,
+        vaultSort = vaultSort
     )
 
     fun restore(snapshot: JsonSessionSnapshot) {
@@ -156,6 +171,8 @@ class JsonSession {
             checkDuplicateKeys = snapshot.checkDuplicateKeys
         )
         vaultQuery = snapshot.vaultQuery
+        includeContent = snapshot.includeContent
+        vaultSort = VaultSort.normalize(snapshot.vaultSort, allowCreated = false)
         savedText = snapshot.content
     }
 
@@ -439,6 +456,7 @@ class RegexSession {
     var notice: String = ""
     var error: String = ""
     var favoriteName: String = ""
+    var favoriteGroup: String = ""
     var matchGeneration: Long = 0
 
     fun snapshot(): RegexSessionSnapshot = RegexSessionSnapshot(
@@ -463,6 +481,7 @@ class RegexSession {
         notice = ""
         error = ""
         favoriteName = ""
+        favoriteGroup = ""
         matchGeneration += 1
     }
 }
@@ -489,6 +508,7 @@ class CronSession {
     var historyOpen: Boolean = false
     var favoritesOpen: Boolean = false
     var favoriteName: String = ""
+    var favoriteGroup: String = ""
     var notice: String = ""
     var error: String = ""
 
@@ -513,6 +533,7 @@ class CronSession {
         historyOpen = false
         favoritesOpen = false
         favoriteName = ""
+        favoriteGroup = ""
         notice = ""
         error = ""
     }
@@ -582,6 +603,8 @@ class ReformatSession {
     var error: String = ""
     var busy: Boolean = false
     var formatGeneration: Long = 0
+    var copyState: String = "idle"
+    var copyGeneration: Int = 0
 
     fun snapshot(): ReformatSessionSnapshot = ReformatSessionSnapshot(
         tab = tab,
@@ -917,6 +940,8 @@ class ColorSession {
     var historyTick: Long = 0
     var notice: String = ""
     var error: String = ""
+    var copyState: String = "idle"
+    var copyGeneration: Int = 0
 
     val primaryHex: String get() = ColorEngine.formatColor(primary, ColorFormat.HEX_UPPER)
     val secondaryHex: String get() = ColorEngine.formatColor(secondary, ColorFormat.HEX_UPPER)
@@ -1052,6 +1077,7 @@ class PdfSession {
     var cancelled: Boolean = false
     var notice: String = ""
     var error: String = ""
+    var historyOpen: Boolean = false
 
     fun snapshot(): PdfSessionSnapshot = PdfSessionSnapshot(
         tab = tab.name.lowercase(),
@@ -1089,6 +1115,7 @@ class PdfSession {
         cancelled = false
         notice = ""
         error = ""
+        historyOpen = false
     }
 }
 
@@ -1113,6 +1140,7 @@ class ImageSession {
     var cancelled: Boolean = false
     var notice: String = ""
     var error: String = ""
+    var historyOpen: Boolean = false
     var base64Mode: String? = null
     var base64Text: String = ""
     var compressOpen: Boolean = false
@@ -1157,6 +1185,7 @@ class ImageSession {
         cancelled = false
         notice = ""
         error = ""
+        historyOpen = false
         base64Mode = null
         compressOpen = false
         watermarkOpen = false
@@ -1397,6 +1426,10 @@ class HttpSession {
     var cookies: List<HttpCookie> = emptyList()
     var body: String = ""
     var bodyType: String = "application/json"
+    val bodyEditor = EditorBuffer("", org.fife.ui.rsyntaxtextarea.SyntaxConstants.SYNTAX_STYLE_JSON)
+    val responseEditor = EditorBuffer("", org.fife.ui.rsyntaxtextarea.SyntaxConstants.SYNTAX_STYLE_NONE).also {
+        it.setEditable(false)
+    }
     var query: String = ""
     var requestTab: HttpRequestTab = HttpRequestTab.Params
     var responseTab: HttpResponseTab = HttpResponseTab.Body
@@ -1413,18 +1446,27 @@ class HttpSession {
     var saveOpen: Boolean = false
     var saveName: String = ""
     var deleteConfirm: Boolean = false
+    var findOpen: Boolean = false
+    var findQuery: String = ""
+    var findOptions: FindReplaceOptions = FindReplaceOptions()
+    var findIndex: Int = 0
+    var copyState: String = "idle"
+    var copyGeneration: Int = 0
 
-    fun draft(): HttpRequestDraft = HttpRequestDraft(
-        id = selectedId,
-        name = name,
-        method = method,
-        url = url,
-        params = params,
-        headers = headers,
-        cookies = cookies,
-        body = body,
-        bodyType = bodyType
-    )
+    fun draft(): HttpRequestDraft {
+        syncBodyFromEditor()
+        return HttpRequestDraft(
+            id = selectedId,
+            name = name,
+            method = method,
+            url = url,
+            params = params,
+            headers = headers,
+            cookies = cookies,
+            body = body,
+            bodyType = bodyType
+        )
+    }
 
     fun loadDraft(draft: HttpRequestDraft) {
         selectedId = draft.id
@@ -1436,23 +1478,27 @@ class HttpSession {
         cookies = draft.cookies
         body = draft.body
         bodyType = draft.bodyType
+        applyBodyToEditor()
     }
 
-    fun snapshotState(): HttpSessionSnapshot = HttpSessionSnapshot(
-        selectedId = selectedId,
-        name = name,
-        method = method.name,
-        url = url,
-        params = params,
-        headers = headers,
-        cookies = cookies,
-        body = body.take(256_000),
-        bodyType = bodyType,
-        query = query,
-        requestTab = requestTab.name.lowercase(),
-        responseTab = responseTab.name.lowercase(),
-        timeoutMs = timeoutMs
-    )
+    fun snapshotState(): HttpSessionSnapshot {
+        syncBodyFromEditor()
+        return HttpSessionSnapshot(
+            selectedId = selectedId,
+            name = name,
+            method = method.name,
+            url = url,
+            params = params,
+            headers = headers,
+            cookies = cookies,
+            body = body.take(256_000),
+            bodyType = bodyType,
+            query = query,
+            requestTab = requestTab.name.lowercase(),
+            responseTab = responseTab.name.lowercase(),
+            timeoutMs = timeoutMs
+        )
+    }
 
     fun restore(snapshot: HttpSessionSnapshot) {
         selectedId = snapshot.selectedId
@@ -1477,6 +1523,16 @@ class HttpSession {
         historyOpen = false
         curlOpen = false
         deleteConfirm = false
+        applyBodyToEditor()
+    }
+
+    fun syncBodyFromEditor() {
+        body = bodyEditor.text
+    }
+
+    fun applyBodyToEditor() {
+        bodyEditor.applySyntax(HttpEngine.syntaxForMime(bodyType))
+        if (bodyEditor.text != body) bodyEditor.setText(body, recordUndo = false)
     }
 }
 
@@ -1603,7 +1659,16 @@ data class QuickNoteSessionSnapshot(
     val vaultQuery: String = "",
     val replaceOpen: Boolean = true,
     val viewMode: String = "edit",
-    val columnLatch: Boolean = false
+    val columnLatch: Boolean = false,
+    val includeContent: Boolean = true,
+    val vaultSort: String = "modified",
+    val title: String = "",
+    val syntax: String = "text/plain",
+    val fontName: String = "",
+    val fontSize: Int = 14,
+    val lineSpacing: Double = 1.0,
+    val color: String = "default",
+    val createdAt: String = ""
 )
 
 class QuickNoteSession {
@@ -1622,8 +1687,13 @@ class QuickNoteSession {
     var historyOpen: Boolean = false
     var dialogMode: String = ""
     var dialogValue: String = ""
+    var dialogTarget: String = ""
     var viewMode: String = "edit"
     var columnLatch: Boolean = false
+    var includeContent: Boolean = true
+    var vaultSort: String = VaultSort.MODIFIED
+    var compactAux: String = ""
+    var metadata: NoteMetadata = NoteMetadata.defaults("Untitled")
 
     fun snapshot(): QuickNoteSessionSnapshot = QuickNoteSessionSnapshot(
         content = editor.text,
@@ -1638,7 +1708,16 @@ class QuickNoteSession {
         vaultQuery = vaultQuery,
         replaceOpen = replaceOpen,
         viewMode = viewMode,
-        columnLatch = columnLatch
+        columnLatch = columnLatch,
+        includeContent = includeContent,
+        vaultSort = vaultSort,
+        title = metadata.title,
+        syntax = metadata.syntax,
+        fontName = metadata.fontName,
+        fontSize = metadata.fontSize,
+        lineSpacing = metadata.lineSpacing,
+        color = metadata.color,
+        createdAt = metadata.createdAt
     )
 
     fun restore(snapshot: QuickNoteSessionSnapshot) {
@@ -1654,6 +1733,19 @@ class QuickNoteSession {
         replaceOpen = snapshot.replaceOpen
         viewMode = snapshot.viewMode.ifBlank { "edit" }
         columnLatch = snapshot.columnLatch
+        includeContent = snapshot.includeContent
+        vaultSort = VaultSort.normalize(snapshot.vaultSort, allowCreated = true)
+        metadata = NoteMetadata(
+            title = snapshot.title.ifBlank { "Untitled" },
+            syntax = snapshot.syntax.ifBlank { "text/plain" },
+            fontName = snapshot.fontName,
+            fontSize = snapshot.fontSize,
+            lineSpacing = snapshot.lineSpacing,
+            color = snapshot.color.ifBlank { "default" },
+            lineWrap = snapshot.wrap,
+            createdAt = snapshot.createdAt,
+            modifiedAt = snapshot.createdAt
+        )
         notice = ""
         error = ""
         historyOpen = false
@@ -1840,8 +1932,9 @@ class SessionManager(private val store: SessionStore) {
     private val _revision = MutableStateFlow(0L)
     val revision: StateFlow<Long> = _revision
 
-    fun jsonSession(): JsonSession = sessions.getOrPut(ToolId.Json) {
+    fun jsonSession(defaultWrap: Boolean = true): JsonSession = sessions.getOrPut(ToolId.Json) {
         JsonSession().also { session ->
+            session.wrap = defaultWrap
             store.load(ToolId.Json.id)?.let { raw ->
                 runCatching { jsonCodec.decodeFromString<JsonSessionSnapshot>(raw) }
                     .getOrNull()
@@ -1854,9 +1947,10 @@ class SessionManager(private val store: SessionStore) {
         store.save(ToolId.Json.id, jsonCodec.encodeToString(jsonSession().snapshot()))
     }
 
-    fun quickNoteSession(): QuickNoteSession {
+    fun quickNoteSession(defaultWrap: Boolean = true): QuickNoteSession {
         quickNoteSessionCache?.let { return it }
         val session = QuickNoteSession()
+        session.wrap = defaultWrap
         store.load(ToolId.QuickNote.id)?.let { raw ->
             runCatching { jsonCodec.decodeFromString<QuickNoteSessionSnapshot>(raw) }
                 .getOrNull()

@@ -2,6 +2,7 @@ package com.rememberber.mootool.next.compose.editor
 
 import com.rememberber.mootool.next.compose.domain.ColumnEditEngine
 import com.rememberber.mootool.next.compose.domain.ColumnRange
+import java.text.CharacterIterator
 import java.awt.Color
 import java.awt.Cursor
 import java.awt.Graphics
@@ -38,6 +39,7 @@ class ColumnEditBinder(private val buffer: EditorBuffer) {
         private set
 
     private var composing = false
+    private var suppressTypedUntil = 0L
     private var highlightTag: Any? = null
     private val area: RSyntaxTextArea get() = buffer.area
     private val painter = ColumnSelectionPainter()
@@ -138,7 +140,13 @@ class ColumnEditBinder(private val buffer: EditorBuffer) {
                 KeyEvent.VK_V -> if (event.isMetaDown || event.isControlDown) {
                     val clip = clipboardText() ?: return
                     val tab = tabSize()
-                    applyDocument { ColumnEditEngine.paste(it, range.top, range.left, clip, tab) }
+                    applyDocument { ColumnEditEngine.pasteIntoSelection(it, range, clip, tab) }
+                    selection = range.copy(
+                        startColumn = range.left,
+                        endColumn = range.left,
+                        endLine = range.bottom,
+                        startLine = range.top
+                    )
                     event.consume()
                 }
             }
@@ -147,6 +155,7 @@ class ColumnEditBinder(private val buffer: EditorBuffer) {
         override fun keyTyped(event: KeyEvent) {
             val range = selection ?: return
             if (!enabled || composing) return
+            if (System.currentTimeMillis() < suppressTypedUntil) return
             if (event.isControlDown || event.isMetaDown || event.isAltDown) return
             val char = event.keyChar
             if (char == '\t') {
@@ -167,7 +176,27 @@ class ColumnEditBinder(private val buffer: EditorBuffer) {
     private val ime = object : InputMethodListener {
         override fun inputMethodTextChanged(event: InputMethodEvent) {
             val text = event.text
-            composing = text != null && (text.endIndex - text.beginIndex) > event.committedCharacterCount
+            val committed = event.committedCharacterCount
+            composing = text != null && (text.endIndex - text.beginIndex) > committed
+            if (!enabled || selection == null) return
+            if (committed <= 0 || text == null) {
+                event.consume()
+                return
+            }
+            val committedText = buildString {
+                var index = 0
+                var ch = text.first()
+                while (ch != CharacterIterator.DONE && index < committed) {
+                    append(ch)
+                    ch = text.next()
+                    index++
+                }
+            }
+            if (committedText.isNotEmpty()) {
+                typeInto(selection!!, committedText)
+                suppressTypedUntil = System.currentTimeMillis() + 80
+            }
+            event.consume()
         }
 
         override fun caretPositionChanged(event: InputMethodEvent) = Unit

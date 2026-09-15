@@ -3,6 +3,7 @@ package com.rememberber.mootool.next.compose.features.git
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,9 +14,10 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.DropdownMenu
+import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -31,13 +33,20 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.border
 import com.rememberber.mootool.next.compose.app.AppContainer
+import com.rememberber.mootool.next.compose.domain.DiffEngine
 import com.rememberber.mootool.next.compose.domain.GitCommitInfo
+import com.rememberber.mootool.next.compose.domain.GitDiffPreview
+import com.rememberber.mootool.next.compose.domain.GitDiffSelection
 import com.rememberber.mootool.next.compose.domain.GitEngine
+import com.rememberber.mootool.next.compose.domain.GitFileDiff
 import com.rememberber.mootool.next.compose.domain.GitStatus
+import com.rememberber.mootool.next.compose.features.diff.annotateSide
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
+import com.rememberber.mootool.next.compose.ui.components.rememberPairedScrollStates
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 import java.nio.file.Path
 import kotlinx.coroutines.Dispatchers
@@ -60,7 +69,8 @@ fun VaultGitDialog(
     var history by remember { mutableStateOf(emptyList<GitCommitInfo>()) }
     var tab by remember { mutableStateOf("changes") }
     var selected by remember { mutableStateOf("") }
-    var diffText by remember { mutableStateOf("") }
+    var fileDiffs by remember { mutableStateOf<List<GitFileDiff>>(emptyList()) }
+    var selectedDiffPath by remember { mutableStateOf("") }
     var remote by remember { mutableStateOf(settings.vault.gitRemote) }
     var message by remember { mutableStateOf(defaultMessage) }
     var notice by remember { mutableStateOf("") }
@@ -68,6 +78,7 @@ fun VaultGitDialog(
     var busy by remember { mutableStateOf(true) }
 
     fun identity() = GitEngine.identityFrom(settings.vault.gitUsername)
+    fun token() = settings.vault.gitToken.trim()
 
     fun load() {
         scope.launch {
@@ -120,11 +131,26 @@ fun VaultGitDialog(
         }
     }
 
+    fun loadFileDiffs(path: String? = null, commit: String? = null) {
+        scope.launch {
+            busy = true
+            val next = withContext(Dispatchers.IO) {
+                GitEngine.fileDiffs(root, path = path, commit = commit)
+            }
+            fileDiffs = next
+            selectedDiffPath = GitDiffSelection.selected(next, "")?.path.orEmpty()
+            busy = false
+        }
+    }
+
     LaunchedEffect(root) { load() }
 
-    Dialog(onDismissRequest = onDismiss) {
+    MooOverlay(onDismiss = onDismiss) {
         Column(
-            Modifier.width(760.dp).height(560.dp).background(colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
+            Modifier.width(1040.dp).height(620.dp)
+                .background(colors.workspace, RoundedCornerShape(12.dp))
+                .border(1.dp, colors.border, RoundedCornerShape(12.dp))
+                .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(title, color = colors.textPrimary, fontSize = 16.sp)
@@ -145,13 +171,38 @@ fun VaultGitDialog(
             if (status.version.isNotBlank()) {
                 Text(status.version, color = colors.textSecondary, fontSize = 11.sp)
             }
-            Text(container.t("git.later"), color = colors.warning, fontSize = 12.sp)
+            Text(container.t("git.authHint"), color = colors.textSecondary, fontSize = 12.sp)
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 MooButton(container.t("git.refresh"), enabled = !busy, onClick = { load() })
                 if (!status.repository) {
                     MooButton(container.t("git.init"), primary = true, enabled = !busy && status.available, onClick = {
                         runAction { GitEngine.init(root, identity()) }
                     })
+                }
+                if (status.repository) {
+                    MooButton(
+                        container.t("git.fetch"),
+                        enabled = !busy && status.remote.isNotBlank(),
+                        onClick = { runAction { GitEngine.fetch(root, token = token()) } }
+                    )
+                    MooButton(
+                        container.t("git.pull"),
+                        enabled = !busy && status.remote.isNotBlank() && !status.merging,
+                        onClick = { runAction { GitEngine.pull(root, token = token()) } }
+                    )
+                    MooButton(
+                        container.t("git.push"),
+                        enabled = !busy && status.remote.isNotBlank() && !status.merging,
+                        onClick = { runAction { GitEngine.push(root, token = token()) } }
+                    )
+                }
+                if (status.merging) {
+                    MooButton(container.t("git.abort"), enabled = !busy, onClick = { runAction { GitEngine.abortMerge(root) } })
+                    MooButton(
+                        container.t("git.continue"),
+                        enabled = !busy && status.conflicts == 0,
+                        onClick = { runAction { GitEngine.continueOperation(root, identity()) } }
+                    )
                 }
                 MooButton(container.t("common.close"), onClick = onDismiss)
             }
@@ -173,12 +224,12 @@ fun VaultGitDialog(
                             MooButton(
                                 container.t("git.changes") + " ${status.changes.size}",
                                 primary = tab == "changes",
-                                onClick = { tab = "changes"; selected = ""; diffText = "" }
+                                onClick = { tab = "changes"; selected = ""; fileDiffs = emptyList(); selectedDiffPath = "" }
                             )
                             MooButton(
                                 container.t("git.history"),
                                 primary = tab == "history",
-                                onClick = { tab = "history"; selected = ""; diffText = "" }
+                                onClick = { tab = "history"; selected = ""; fileDiffs = emptyList(); selectedDiffPath = "" }
                             )
                         }
                         if (tab == "changes") {
@@ -193,11 +244,7 @@ fun VaultGitDialog(
                                             fontSize = 12.sp,
                                             modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).clickable {
                                                 selected = change.path
-                                                scope.launch {
-                                                    busy = true
-                                                    diffText = withContext(Dispatchers.IO) { GitEngine.diff(root, change.path) }
-                                                    busy = false
-                                                }
+                                                loadFileDiffs(path = change.path)
                                             }.padding(6.dp)
                                         )
                                     }
@@ -211,6 +258,24 @@ fun VaultGitDialog(
                                     enabled = !busy && status.changes.isNotEmpty() && !status.merging && status.conflicts == 0 && message.trim().isNotEmpty(),
                                     onClick = { runAction { GitEngine.commit(root, message, identity()) } }
                                 )
+                                val selectedChange = status.changes.find { it.path == selected }
+                                if (selectedChange != null) {
+                                    MooButton(
+                                        container.t("git.discard") + " " + selectedChange.path,
+                                        enabled = !busy,
+                                        onClick = { runAction { GitEngine.discard(root, selectedChange.path) } }
+                                    )
+                                }
+                                if (selectedChange?.conflict == true) {
+                                    Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                                        MooButton(container.t("git.ours"), enabled = !busy, onClick = {
+                                            runAction { GitEngine.resolveConflict(root, selectedChange.path, "ours") }
+                                        })
+                                        MooButton(container.t("git.theirs"), enabled = !busy, onClick = {
+                                            runAction { GitEngine.resolveConflict(root, selectedChange.path, "theirs") }
+                                        })
+                                    }
+                                }
                             }
                         } else {
                             if (history.isEmpty()) {
@@ -219,7 +284,10 @@ fun VaultGitDialog(
                                 LazyColumn(Modifier.weight(1f)) {
                                     items(history, key = { it.hash }) { commit ->
                                         Column(
-                                            Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).clickable { selected = commit.hash }.padding(6.dp)
+                                            Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp)).clickable {
+                                                selected = commit.hash
+                                                loadFileDiffs(commit = commit.hash)
+                                            }.padding(6.dp)
                                         ) {
                                             Text(
                                                 "${commit.shortHash}  ${commit.message}",
@@ -233,23 +301,93 @@ fun VaultGitDialog(
                             }
                         }
                     }
-                    Column(
-                        Modifier.weight(1f).fillMaxHeight().background(colors.surfaceSubtle, RoundedCornerShape(8.dp)).padding(8.dp).verticalScroll(rememberScrollState())
-                    ) {
-                        Text(
-                            diffText.ifBlank { container.t("git.diffEmpty") },
-                            color = colors.textPrimary,
-                            fontSize = 11.sp,
-                            fontFamily = FontFamily.Monospace
-                        )
+                    GitFileDiffPane(
+                        container = container,
+                        files = fileDiffs,
+                        selectedPath = selectedDiffPath,
+                        onSelectPath = { selectedDiffPath = it },
+                        modifier = Modifier.weight(1f).fillMaxHeight()
+                    )
                     }
-                }
             } else {
                 Spacer(Modifier.weight(1f))
             }
             if (error.isNotBlank()) Text(error, color = colors.danger, fontSize = 12.sp)
             else if (notice.isNotBlank()) Text(notice, color = colors.success, fontSize = 12.sp)
             else if (busy) Text(container.t("git.busy"), color = colors.textSecondary, fontSize = 12.sp)
+        }
+    }
+}
+
+@Composable
+private fun GitFileDiffPane(
+    container: AppContainer,
+    files: List<GitFileDiff>,
+    selectedPath: String,
+    onSelectPath: (String) -> Unit,
+    modifier: Modifier
+) {
+    val colors = MooTheme.colors
+    val (leftScroll, rightScroll) = rememberPairedScrollStates()
+    val fileDiff = GitDiffSelection.selected(files, selectedPath)
+    var fileMenuOpen by remember { mutableStateOf(false) }
+    Column(
+        modifier.background(colors.surfaceSubtle, RoundedCornerShape(8.dp)).padding(8.dp)
+    ) {
+        if (fileDiff == null) {
+            Text(container.t("git.diffEmpty"), color = colors.textSecondary, fontSize = 12.sp)
+            return@Column
+        }
+        if (files.size > 1) {
+            Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(container.t("git.diffFile"), color = colors.textSecondary, fontSize = 11.sp)
+                Box {
+                    MooButton(GitDiffSelection.fileLabel(fileDiff), onClick = { fileMenuOpen = true })
+                    DropdownMenu(expanded = fileMenuOpen, onDismissRequest = { fileMenuOpen = false }) {
+                        files.forEach { item ->
+                            DropdownMenuItem(onClick = {
+                                fileMenuOpen = false
+                                onSelectPath(item.path)
+                            }) {
+                                Text(GitDiffSelection.fileLabel(item))
+                            }
+                        }
+                    }
+                }
+            }
+        } else {
+            Text(GitDiffSelection.fileLabel(fileDiff), color = colors.textSecondary, fontSize = 11.sp)
+        }
+        when (fileDiff.preview) {
+            GitDiffPreview.Binary -> Text(container.t("git.diffBinary"), color = colors.warning, fontSize = 12.sp)
+            GitDiffPreview.TooLarge -> Text(container.t("git.diffTooLarge"), color = colors.warning, fontSize = 12.sp)
+            GitDiffPreview.Text -> {
+                val comparison = remember(fileDiff.before, fileDiff.after) {
+                    DiffEngine.compare(fileDiff.before, fileDiff.after, ignoreWhitespace = false)
+                }
+                Row(Modifier.weight(1f).fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Column(Modifier.weight(1f).fillMaxHeight()) {
+                        Text(container.t("git.diffBefore"), color = colors.textSecondary, fontSize = 11.sp)
+                        Text(
+                            annotateSide(fileDiff.before, comparison.segments, "left", "both", colors.success, colors.danger, colors.accent),
+                            color = colors.textPrimary,
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.Monospace,
+                            modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(leftScroll)
+                        )
+                    }
+                    Column(Modifier.weight(1f).fillMaxHeight()) {
+                        Text(container.t("git.diffAfter"), color = colors.textSecondary, fontSize = 11.sp)
+                        Text(
+                            annotateSide(fileDiff.after, comparison.segments, "right", "both", colors.success, colors.danger, colors.accent),
+                            color = colors.textPrimary,
+                            fontSize = 11.sp,
+                            fontFamily = FontFamily.Monospace,
+                            modifier = Modifier.weight(1f).fillMaxWidth().verticalScroll(rightScroll)
+                        )
+                    }
+                }
+            }
         }
     }
 }

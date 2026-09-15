@@ -4,6 +4,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -19,6 +21,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.DropdownMenu
+import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -53,8 +57,11 @@ import com.rememberber.mootool.next.compose.domain.UnifiedSpanType
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.DiffSession
+import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.rememberPairedScrollStates
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -70,20 +77,17 @@ import java.io.File
 fun TextDiffScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.diffSession() }
     val revision by container.sessionManager.revision.collectAsState()
-    var historyItems by remember { mutableStateOf(emptyList<HistoryRecord>()) }
     var leftField by remember { mutableStateOf(TextFieldValue(session.left)) }
     var rightField by remember { mutableStateOf(TextFieldValue(session.right)) }
     val colors = MooTheme.colors
-    val sharedScroll = rememberScrollState()
+    val (leftScroll, rightScroll) = rememberPairedScrollStates()
+    var moreOpen by remember { mutableStateOf(false) }
 
     fun refresh() {
         container.sessionManager.bump()
         container.sessionManager.persistDiff()
     }
 
-    LaunchedEffect(session.historyOpen, revision) {
-        if (session.historyOpen) historyItems = container.history.list(ToolId.TextDiff.id)
-    }
     LaunchedEffect(session.left, session.right, revision) {
         if (leftField.text != session.left) leftField = TextFieldValue(session.left)
         if (rightField.text != session.right) rightField = TextFieldValue(session.right)
@@ -93,47 +97,17 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
         runCompare(container, session, saveHistory = false) { refresh() }
     }
 
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+    val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
     Column(Modifier.fillMaxSize().background(colors.workspace)) {
         Row(
-            modifier = Modifier.fillMaxWidth().background(colors.toolbar).padding(horizontal = 12.dp, vertical = 8.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Text(container.t("diff.title"), color = colors.textPrimary, fontSize = 16.sp)
             MooButton(container.t("diff.compare"), primary = true, onClick = {
                 runCompare(container, session, saveHistory = true) { refresh() }
-            })
-            MooButton(container.t("common.action.clear"), onClick = {
-                session.left = ""
-                session.right = ""
-                session.result = DiffEngine.compare("", "", session.ignoreWhitespace)
-                session.notice = container.t("diff.status.cleared")
-                session.navIndex = -1
-                refresh()
-            })
-            MooButton(container.t("common.action.swap"), onClick = {
-                val previousLeft = session.left
-                session.left = session.right
-                session.right = previousLeft
-                session.result = DiffEngine.compare(session.left, session.right, session.ignoreWhitespace)
-                session.notice = container.t("diff.status.swapped")
-                session.navIndex = -1
-                refresh()
-            })
-            MooButton(container.t("diff.copy"), onClick = {
-                if (session.result.unified.isEmpty()) {
-                    session.notice = container.t("diff.status.noCopy")
-                } else {
-                    copyText(session.result.unified)
-                    session.notice = container.t("diff.status.copied")
-                }
-                refresh()
-            })
-            MooButton(container.t("diff.importLeft"), onClick = {
-                readImportedText()?.let { session.left = it; session.notice = ""; refresh() }
-            })
-            MooButton(container.t("diff.importRight"), onClick = {
-                readImportedText()?.let { session.right = it; session.notice = ""; refresh() }
             })
             val visible = session.visibleSegments()
             MooButton(container.t("diff.previous"), enabled = visible.isNotEmpty(), onClick = {
@@ -144,10 +118,100 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
                 navigate(session, visible, 1, { leftField = it }, { rightField = it })
                 refresh()
             })
+            if (!overflow) {
+                MooButton(container.t("common.action.clear"), onClick = {
+                    session.left = ""
+                    session.right = ""
+                    session.result = DiffEngine.compare("", "", session.ignoreWhitespace)
+                    session.notice = container.t("diff.status.cleared")
+                    session.navIndex = -1
+                    refresh()
+                })
+                MooButton(container.t("common.action.swap"), onClick = {
+                    val previousLeft = session.left
+                    session.left = session.right
+                    session.right = previousLeft
+                    session.result = DiffEngine.compare(session.left, session.right, session.ignoreWhitespace)
+                    session.notice = container.t("diff.status.swapped")
+                    session.navIndex = -1
+                    refresh()
+                })
+                MooButton(container.t("diff.copy"), onClick = {
+                    if (session.result.unified.isEmpty()) {
+                        session.notice = container.t("diff.status.noCopy")
+                    } else {
+                        copyText(session.result.unified)
+                        session.notice = container.t("diff.status.copied")
+                    }
+                    refresh()
+                })
+                MooButton(container.t("diff.importLeft"), onClick = {
+                    readImportedText()?.let { session.left = it; session.notice = ""; refresh() }
+                })
+                MooButton(container.t("diff.importRight"), onClick = {
+                    readImportedText()?.let { session.right = it; session.notice = ""; refresh() }
+                })
+            }
             Spacer(Modifier.weight(1f))
-            MooButton(container.t("common.action.history"), onClick = { session.historyOpen = true; refresh() })
-            if (!detached) {
-                MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.TextDiff) })
+            if (overflow) {
+                Box {
+                    MooButton(container.t("json.action.overflow"), primary = moreOpen, onClick = { moreOpen = true })
+                    DropdownMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
+                        DropdownMenuItem(onClick = {
+                            moreOpen = false
+                            session.left = ""
+                            session.right = ""
+                            session.result = DiffEngine.compare("", "", session.ignoreWhitespace)
+                            session.notice = container.t("diff.status.cleared")
+                            session.navIndex = -1
+                            refresh()
+                        }) { Text(container.t("common.action.clear")) }
+                        DropdownMenuItem(onClick = {
+                            moreOpen = false
+                            val previousLeft = session.left
+                            session.left = session.right
+                            session.right = previousLeft
+                            session.result = DiffEngine.compare(session.left, session.right, session.ignoreWhitespace)
+                            session.notice = container.t("diff.status.swapped")
+                            session.navIndex = -1
+                            refresh()
+                        }) { Text(container.t("common.action.swap")) }
+                        DropdownMenuItem(onClick = {
+                            moreOpen = false
+                            if (session.result.unified.isEmpty()) {
+                                session.notice = container.t("diff.status.noCopy")
+                            } else {
+                                copyText(session.result.unified)
+                                session.notice = container.t("diff.status.copied")
+                            }
+                            refresh()
+                        }) { Text(container.t("diff.copy")) }
+                        DropdownMenuItem(onClick = {
+                            moreOpen = false
+                            readImportedText()?.let { session.left = it; session.notice = ""; refresh() }
+                        }) { Text(container.t("diff.importLeft")) }
+                        DropdownMenuItem(onClick = {
+                            moreOpen = false
+                            readImportedText()?.let { session.right = it; session.notice = ""; refresh() }
+                        }) { Text(container.t("diff.importRight")) }
+                        DropdownMenuItem(onClick = {
+                            moreOpen = false
+                            session.historyOpen = true
+                            refresh()
+                        }) { Text(container.t("common.action.history")) }
+                        if (!detached) {
+                            DropdownMenuItem(onClick = {
+                                moreOpen = false
+                                container.sessionManager.detach(ToolId.TextDiff)
+                            }) { Text(container.t("app.tool.detach")) }
+                        }
+                    }
+                }
+            } else {
+                MooButton(container.t("common.action.history"), onClick = { session.historyOpen = true; refresh() })
+                if (!detached) {
+                    MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.TextDiff) })
+                }
             }
         }
         Row(
@@ -189,7 +253,7 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
                 segments = session.visibleSegments(),
                 side = "left",
                 highlightMode = session.highlightMode,
-                scrollState = sharedScroll,
+                scrollState = leftScroll,
                 modifier = Modifier.weight(1f)
             )
             DiffEditorPane(
@@ -204,7 +268,7 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
                 segments = session.visibleSegments(),
                 side = "right",
                 highlightMode = session.highlightMode,
-                scrollState = sharedScroll,
+                scrollState = rightScroll,
                 modifier = Modifier.weight(1f)
             )
             if (session.mode == "unified") {
@@ -212,7 +276,7 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
             }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(26.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(statusText(container, session), color = colors.textSecondary, fontSize = 12.sp)
@@ -220,9 +284,22 @@ fun TextDiffScreen(container: AppContainer, detached: Boolean) {
             if (detached) Text("detached", color = colors.textSecondary, fontSize = 12.sp)
         }
     }
+    }
 
     if (session.historyOpen) {
-        DiffHistoryDialog(container, session, historyItems) { refresh() }
+        HistoryBrowser(
+            container = container,
+            toolId = ToolId.TextDiff.id,
+            title = container.t("common.action.history"),
+            onRestore = { item ->
+                session.left = item.input
+                session.right = item.output
+                session.historyOpen = false
+                session.notice = container.t("json.notice.restored")
+                refresh()
+            },
+            onDismiss = { session.historyOpen = false; refresh() }
+        )
     }
 }
 
@@ -270,53 +347,6 @@ private fun UnifiedPane(title: String, session: DiffSession, modifier: Modifier)
             modifier = Modifier.weight(1f).fillMaxWidth().padding(top = 8.dp).verticalScroll(rememberScrollState())
         )
     }
-}
-
-private class DiffHighlightTransformation(
-    private val segments: List<DiffSegment>,
-    private val side: String,
-    private val highlightMode: String,
-    private val added: Color,
-    private val removed: Color,
-    private val changed: Color
-) : VisualTransformation {
-    override fun filter(text: AnnotatedString): TransformedText {
-        return TransformedText(annotateSide(text.text, segments, side, highlightMode, added, removed, changed), OffsetMapping.Identity)
-    }
-}
-
-private fun annotateSide(
-    text: String,
-    segments: List<DiffSegment>,
-    side: String,
-    highlightMode: String,
-    added: Color,
-    removed: Color,
-    changed: Color
-): AnnotatedString {
-    val builder = AnnotatedString.Builder(text)
-    for (segment in segments) {
-        val from = if (side == "left") segment.leftStart else segment.rightStart
-        val to = if (side == "left") segment.leftEnd else segment.rightEnd
-        if (from < 0 || to < 0 || to <= from) continue
-        val color = when (segment.type) {
-            DiffSegmentType.Insert -> added
-            DiffSegmentType.Delete -> removed
-            DiffSegmentType.Change -> changed
-        }
-        val end = to.coerceAtMost(text.length)
-        val start = from.coerceIn(0, text.length)
-        if (start >= end) continue
-        if (highlightMode != "characters") {
-            val lineFrom = lineStartAt(text, start)
-            val lineTo = lineEndAt(text, start)
-            if (lineTo > lineFrom) builder.addStyle(SpanStyle(background = color.copy(alpha = 0.16f)), lineFrom, lineTo)
-        }
-        if (highlightMode != "lines") {
-            builder.addStyle(SpanStyle(background = color.copy(alpha = 0.42f)), start, end)
-        }
-    }
-    return builder.toAnnotatedString()
 }
 
 private fun annotateUnified(
@@ -419,18 +449,6 @@ private fun statusText(container: AppContainer, session: DiffSession): String {
     }
 }
 
-private fun lineStartAt(text: String, offset: Int): Int {
-    val position = offset.coerceIn(0, text.length)
-    if (position == 0) return 0
-    val index = text.lastIndexOf('\n', position - 1)
-    return if (index < 0) 0 else index + 1
-}
-
-private fun lineEndAt(text: String, offset: Int): Int {
-    val index = text.indexOf('\n', offset.coerceIn(0, text.length))
-    return if (index < 0) text.length else index
-}
-
 private fun copyText(value: String) {
     Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(value), null)
 }
@@ -441,46 +459,4 @@ private fun readImportedText(): String? {
     val file = dialog.file ?: return null
     val directory = dialog.directory ?: return null
     return File(directory, file).readText()
-}
-
-@Composable
-private fun DiffHistoryDialog(
-    container: AppContainer,
-    session: DiffSession,
-    items: List<HistoryRecord>,
-    onChanged: () -> Unit
-) {
-    Dialog(onDismissRequest = { session.historyOpen = false; onChanged() }) {
-        Column(
-            Modifier.width(520.dp).height(420.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(container.t("common.action.history"), color = MooTheme.colors.textPrimary)
-            if (items.isEmpty()) {
-                Text(container.t("json.history.empty"), color = MooTheme.colors.textSecondary)
-            } else {
-                LazyColumn(Modifier.weight(1f)) {
-                    items(items) { item ->
-                        Column(Modifier.fillMaxWidth().clickable {
-                            session.left = item.input
-                            session.right = item.output
-                            session.historyOpen = false
-                            session.notice = container.t("json.notice.restored")
-                            onChanged()
-                        }.padding(8.dp)) {
-                            Text(item.summary, color = MooTheme.colors.textPrimary, fontSize = 13.sp)
-                            Text(item.createdAt, color = MooTheme.colors.textSecondary, fontSize = 12.sp)
-                        }
-                    }
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("common.clear"), onClick = {
-                    container.history.clear(ToolId.TextDiff.id)
-                    onChanged()
-                })
-                MooButton(container.t("common.close"), onClick = { session.historyOpen = false; onChanged() })
-            }
-        }
-    }
 }

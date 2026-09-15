@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,6 +19,8 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.DropdownMenu
+import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -44,7 +47,10 @@ import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.QrSession
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
+import com.rememberber.mootool.next.compose.ui.components.OverflowAction
+import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.swing.Swing
@@ -92,17 +98,23 @@ fun QrCodeScreen(container: AppContainer, detached: Boolean) {
         if (session.tab == QrTab.History) historyItems = container.history.list(ToolId.QrCode.id)
     }
 
-    Column(Modifier.fillMaxSize().background(colors.workspace)) {
+    BoxWithConstraints(Modifier.fillMaxSize().background(colors.workspace)) {
+        val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
+        Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(46.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(container.t("qrcode.title"), color = colors.textPrimary, fontSize = 16.sp)
             Spacer(Modifier.weight(1f))
-            if (!detached) {
-                MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.QrCode) })
-            }
+            OverflowActionCluster(
+                overflow = overflow,
+                moreLabel = container.t("json.action.overflow"),
+                actions = buildList {
+                    if (!detached) add(OverflowAction(container.t("app.tool.detach")) { container.sessionManager.detach(ToolId.QrCode) })
+                }
+            )
         }
         Row(
             modifier = Modifier.fillMaxWidth().background(colors.surfaceSubtle).padding(horizontal = 12.dp, vertical = 8.dp),
@@ -123,7 +135,7 @@ fun QrCodeScreen(container: AppContainer, detached: Boolean) {
             QrTab.History -> HistoryPanel(container, session, historyItems, Modifier.weight(1f).fillMaxWidth()) { refresh() }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(26.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -133,6 +145,7 @@ fun QrCodeScreen(container: AppContainer, detached: Boolean) {
             )
             Spacer(Modifier.weight(1f))
             if (detached) Text("detached", color = colors.textSecondary, fontSize = 12.sp)
+        }
         }
     }
 }
@@ -166,11 +179,20 @@ private fun GeneratePanel(
             }
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text(container.t("qrcode.correction"), color = colors.textSecondary, fontSize = 12.sp)
-                QrErrorCorrection.entries.forEach { level ->
-                    MooButton(container.t("qrcode.level.${level.name}"), primary = session.correction == level, onClick = {
-                        session.correction = level
-                        onChanged()
-                    })
+                Box {
+                    var correctionOpen by remember { mutableStateOf(false) }
+                    MooButton(container.t("qrcode.level.${session.correction.name}"), onClick = { correctionOpen = true })
+                    DropdownMenu(expanded = correctionOpen, onDismissRequest = { correctionOpen = false }) {
+                        QrErrorCorrection.entries.forEach { level ->
+                            DropdownMenuItem(onClick = {
+                                correctionOpen = false
+                                session.correction = level
+                                onChanged()
+                            }) {
+                                Text(container.t("qrcode.level.${level.name}"))
+                            }
+                        }
+                    }
                 }
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -297,22 +319,52 @@ private fun HistoryPanel(
     modifier: Modifier,
     onChanged: () -> Unit
 ) {
+    var query by remember { mutableStateOf("") }
+    val visible = remember(items, query) {
+        val keyword = query.trim()
+        if (keyword.isEmpty()) items
+        else items.filter { item ->
+            listOf(item.summary, item.input, item.output, item.operation).any { it.contains(keyword, ignoreCase = true) }
+        }
+    }
     Column(modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (items.isEmpty()) {
-            Text(container.t("json.history.empty"), color = MooTheme.colors.textSecondary)
+        MooTextField(
+            query,
+            { query = it },
+            modifier = Modifier.fillMaxWidth(),
+            placeholder = container.t("history.searchPlaceholder")
+        )
+        if (visible.isEmpty()) {
+            Text(container.t("json.history.empty"), color = MooTheme.colors.textSecondary, modifier = Modifier.weight(1f))
         } else {
             LazyColumn(Modifier.weight(1f)) {
-                items(items) { item ->
-                    Column(Modifier.fillMaxWidth().clickable {
-                        applyHistory(session, item)
-                        session.notice = container.t("json.notice.restored")
-                        onChanged()
-                    }.padding(8.dp)) {
-                        Text(item.summary, color = MooTheme.colors.textPrimary, fontSize = 13.sp)
-                        Text(item.input, color = MooTheme.colors.textSecondary, fontSize = 12.sp)
+                items(visible, key = { it.id }) { item ->
+                    Row(
+                        Modifier.fillMaxWidth().padding(vertical = 4.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Column(
+                            Modifier.weight(1f).clickable {
+                                applyHistory(session, item)
+                                session.notice = container.t("json.notice.restored")
+                                onChanged()
+                            }.padding(4.dp)
+                        ) {
+                            Text(item.summary, color = MooTheme.colors.textPrimary, fontSize = 13.sp)
+                            Text(item.input.take(240), color = MooTheme.colors.textSecondary, fontSize = 12.sp, maxLines = 2)
+                            Text(item.createdAt, color = MooTheme.colors.textSecondary, fontSize = 11.sp)
+                        }
+                        MooButton(container.t("common.delete"), onClick = {
+                            container.history.delete(item.id)
+                            session.historyTick += 1
+                            onChanged()
+                        })
                     }
                 }
             }
+        }
+        if (items.isNotEmpty()) {
             MooButton(container.t("common.clear"), onClick = {
                 container.history.clear(ToolId.QrCode.id)
                 session.historyTick += 1

@@ -12,7 +12,8 @@ import kotlin.io.path.readText
 data class RegexFavorite(
     val id: String,
     val name: String,
-    val pattern: String
+    val pattern: String,
+    val group: String = ""
 )
 
 class RegexFavoriteStore(
@@ -21,20 +22,37 @@ class RegexFavoriteStore(
 ) {
     private val file get() = directories.dataRoot.resolve("favorites").resolve("regex.json")
 
-    fun list(): List<RegexFavorite> {
+    fun list(query: String = "", group: String = ""): List<RegexFavorite> {
+        if (!file.exists()) return emptyList()
+        val all = runCatching { json.decodeFromString<List<RegexFavorite>>(file.readText()) }.getOrDefault(emptyList())
+        val needle = query.trim()
+        val folder = group.trim()
+        return all.filter { item ->
+            (folder.isEmpty() || item.group.equals(folder, ignoreCase = true)) &&
+                (needle.isEmpty() || item.name.contains(needle, ignoreCase = true) ||
+                    item.pattern.contains(needle, ignoreCase = true) || item.group.contains(needle, ignoreCase = true))
+        }
+    }
+
+    fun add(name: String, pattern: String, group: String = ""): RegexFavorite {
+        val trimmedName = name.trim().ifBlank { pattern.take(32) }
+        val favorite = RegexFavorite(
+            id = UUID.randomUUID().toString(),
+            name = trimmedName,
+            pattern = pattern,
+            group = group.trim()
+        )
+        save(loadAll() + favorite)
+        return favorite
+    }
+
+    private fun loadAll(): List<RegexFavorite> {
         if (!file.exists()) return emptyList()
         return runCatching { json.decodeFromString<List<RegexFavorite>>(file.readText()) }.getOrDefault(emptyList())
     }
 
-    fun add(name: String, pattern: String): RegexFavorite {
-        val trimmedName = name.trim().ifBlank { pattern.take(32) }
-        val favorite = RegexFavorite(id = UUID.randomUUID().toString(), name = trimmedName, pattern = pattern)
-        save(list() + favorite)
-        return favorite
-    }
-
     fun delete(id: String) {
-        save(list().filterNot { it.id == id })
+        save(loadAll().filterNot { it.id == id })
     }
 
     private fun save(items: List<RegexFavorite>) {

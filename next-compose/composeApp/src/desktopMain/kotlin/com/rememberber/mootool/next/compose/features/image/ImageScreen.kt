@@ -51,6 +51,7 @@ import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.ColorException
+import com.rememberber.mootool.next.compose.domain.ScreenCaptureAccess
 import com.rememberber.mootool.next.compose.domain.CompressImageOptions
 import com.rememberber.mootool.next.compose.domain.ImageEngine
 import com.rememberber.mootool.next.compose.domain.ImageException
@@ -68,9 +69,13 @@ import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.ImageSession
 import com.rememberber.mootool.next.compose.storage.ImageAsset
 import com.rememberber.mootool.next.compose.storage.ImageAssetSummary
+import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
+import com.rememberber.mootool.next.compose.ui.components.VerticalPaneHandle
+import com.rememberber.mootool.next.compose.ui.components.setPaneSize
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.swing.Swing
@@ -93,6 +98,7 @@ import kotlin.io.path.writeText
 fun ImageScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.imageSession() }
     val revision by container.sessionManager.revision.collectAsState()
+    val settings by container.settings.collectAsState()
     val colors = MooTheme.colors
     val scope = rememberCoroutineScope()
     var assets by remember { mutableStateOf(emptyList<ImageAssetSummary>()) }
@@ -126,42 +132,118 @@ fun ImageScreen(container: AppContainer, detached: Boolean) {
     val processing = session.selectedNames.ifEmpty { listOfNotNull(current?.name) }
     val preview = remember(current?.bytes) { current?.bytes?.toImageBitmap() }
 
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+    val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
+    var moreOpen by remember { mutableStateOf(false) }
+    fun toggleList() {
+        session.listVisible = !session.listVisible
+        refresh()
+    }
+    fun importBase64() {
+        session.base64Mode = "import"
+        session.base64Text = ""
+        refresh()
+    }
+    fun exportBase64() {
+        session.base64Mode = "export"
+        session.base64Text = current?.let {
+            ImageEngine.toDataUrl(it.image, if (ImageEngine.isJpegName(it.name)) ImageOutputFormat.Jpeg else ImageOutputFormat.Png)
+        }.orEmpty()
+        refresh()
+    }
+    fun openHistory() {
+        session.historyOpen = true
+        refresh()
+    }
     Column(Modifier.fillMaxSize().background(colors.workspace)) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(46.dp).background(colors.toolbar).padding(horizontal = 8.dp).horizontalScroll(rememberScrollState()),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 8.dp).horizontalScroll(rememberScrollState()),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(6.dp)
         ) {
             Text(container.t("image.title"), color = colors.textPrimary, fontSize = 16.sp)
             if (revision < 0) Spacer(Modifier.width(0.dp))
-            MooButton(if (session.listVisible) container.t("image.hideList") else container.t("image.showList"), onClick = {
-                session.listVisible = !session.listVisible
-                refresh()
-            })
+            MooButton(if (session.listVisible) container.t("image.hideList") else container.t("image.showList"), onClick = { toggleList() })
             MooButton(container.t("image.screenshot"), onClick = { capture(container, session, scope) { loadAssets(it) } }, enabled = !session.busy)
-            MooButton(container.t("image.fromClipboard"), onClick = { importClipboard(container, session) { loadAssets(it) } }, enabled = !session.busy)
+            if (!overflow) {
+                MooButton(container.t("image.fromClipboard"), onClick = { importClipboard(container, session) { loadAssets(it) } }, enabled = !session.busy)
+            }
             MooButton(container.t("image.import"), onClick = { importFiles(container, session) { loadAssets(it) } }, enabled = !session.busy)
-            MooButton(container.t("image.fromBase64"), onClick = { session.base64Mode = "import"; session.base64Text = ""; refresh() }, enabled = !session.busy)
-            Spacer(Modifier.width(8.dp))
-            MooButton(container.t("image.toSvg"), onClick = { session.svgOpen = true; refresh() }, enabled = processing.isNotEmpty() && !session.busy)
-            MooButton(container.t("image.compress"), onClick = { session.compressOpen = true; refresh() }, enabled = processing.isNotEmpty() && !session.busy)
-            MooButton(container.t("image.watermark"), onClick = { session.watermarkOpen = true; refresh() }, enabled = processing.isNotEmpty() && !session.busy)
+            if (!overflow) {
+                MooButton(container.t("image.fromBase64"), onClick = { importBase64() }, enabled = !session.busy)
+                Spacer(Modifier.width(8.dp))
+                MooButton(container.t("image.toSvg"), onClick = { session.svgOpen = true; refresh() }, enabled = processing.isNotEmpty() && !session.busy)
+                MooButton(container.t("image.compress"), onClick = { session.compressOpen = true; refresh() }, enabled = processing.isNotEmpty() && !session.busy)
+                MooButton(container.t("image.watermark"), onClick = { session.watermarkOpen = true; refresh() }, enabled = processing.isNotEmpty() && !session.busy)
+            }
             MooButton(container.t("common.save"), onClick = {
                 session.saveOpen = true
                 session.promptValue = current?.name.orEmpty()
                 refresh()
             }, enabled = current != null && !session.busy)
             MooButton(container.t("image.copy"), onClick = { copyCurrent(container, session, current) }, enabled = current != null)
-            MooButton(container.t("image.toBase64"), onClick = {
-                session.base64Mode = "export"
-                session.base64Text = current?.let { ImageEngine.toDataUrl(it.image, if (ImageEngine.isJpegName(it.name)) ImageOutputFormat.Jpeg else ImageOutputFormat.Png) }.orEmpty()
-                refresh()
-            }, enabled = current != null)
+            if (!overflow) {
+                MooButton(container.t("image.toBase64"), onClick = { exportBase64() }, enabled = current != null)
+            }
             if (session.busy) {
                 MooButton(container.t("image.cancel"), onClick = { session.cancelled = true; refresh() })
             }
+            if (!overflow) {
+                MooButton(container.t("common.action.history"), onClick = { openHistory() })
+            }
+            if (overflow) {
+                Box {
+                    MooButton(container.t("json.action.overflow"), primary = moreOpen, onClick = { moreOpen = true })
+                    DropdownMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
+                        DropdownMenuItem(
+                            onClick = { moreOpen = false; importClipboard(container, session) { loadAssets(it) } },
+                            enabled = !session.busy
+                        ) {
+                            Text(container.t("image.fromClipboard"))
+                        }
+                        DropdownMenuItem(
+                            onClick = { moreOpen = false; importBase64() },
+                            enabled = !session.busy
+                        ) {
+                            Text(container.t("image.fromBase64"))
+                        }
+                        DropdownMenuItem(
+                            onClick = { moreOpen = false; session.svgOpen = true; refresh() },
+                            enabled = processing.isNotEmpty() && !session.busy
+                        ) {
+                            Text(container.t("image.toSvg"))
+                        }
+                        DropdownMenuItem(
+                            onClick = { moreOpen = false; session.compressOpen = true; refresh() },
+                            enabled = processing.isNotEmpty() && !session.busy
+                        ) {
+                            Text(container.t("image.compress"))
+                        }
+                        DropdownMenuItem(
+                            onClick = { moreOpen = false; session.watermarkOpen = true; refresh() },
+                            enabled = processing.isNotEmpty() && !session.busy
+                        ) {
+                            Text(container.t("image.watermark"))
+                        }
+                        DropdownMenuItem(
+                            onClick = { moreOpen = false; exportBase64() },
+                            enabled = current != null
+                        ) {
+                            Text(container.t("image.toBase64"))
+                        }
+                        DropdownMenuItem(onClick = { moreOpen = false; openHistory() }) {
+                            Text(container.t("common.action.history"))
+                        }
+                        if (!detached) {
+                            DropdownMenuItem(onClick = { moreOpen = false; container.sessionManager.detach(ToolId.Image) }) {
+                                Text(container.t("app.tool.detach"))
+                            }
+                        }
+                    }
+                }
+            }
             Spacer(Modifier.weight(1f))
-            if (!detached) {
+            if (!detached && !overflow) {
                 MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.Image) })
             }
         }
@@ -172,7 +254,8 @@ fun ImageScreen(container: AppContainer, detached: Boolean) {
         }
         Row(Modifier.fillMaxSize().weight(1f)) {
             if (session.listVisible) {
-                Column(Modifier.width(240.dp).fillMaxHeight().background(colors.sidebar)) {
+                val listWidth = settings.layout.pane(ToolId.Image.id, 0, 240f, 200f, 320f)
+                Column(Modifier.width(listWidth.dp).fillMaxHeight().background(colors.sidebar)) {
                     Row(
                         Modifier.fillMaxWidth().padding(12.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -222,6 +305,10 @@ fun ImageScreen(container: AppContainer, detached: Boolean) {
                         MooButton(container.t("common.delete"), onClick = { session.deleteOpen = true; refresh() }, enabled = processing.isNotEmpty() && !session.busy)
                     }
                 }
+                VerticalPaneHandle(
+                    onDelta = { container.setPaneSize(ToolId.Image.id, 0, listWidth + it, 1) },
+                    onReset = { container.setPaneSize(ToolId.Image.id, 0, 240f, 1) }
+                )
             }
             Column(Modifier.weight(1f).fillMaxHeight()) {
                 BoxWithConstraints(Modifier.weight(1f).fillMaxWidth().background(colors.workspace)) {
@@ -294,6 +381,7 @@ fun ImageScreen(container: AppContainer, detached: Boolean) {
                 }
             }
         }
+    }
     }
 
     if (session.base64Mode != null) Base64Dialog(container, session) { loadAssets(it) }
@@ -374,6 +462,28 @@ fun ImageScreen(container: AppContainer, detached: Boolean) {
                 }
             }
         }
+    }
+    if (session.historyOpen) {
+        HistoryBrowser(
+            container = container,
+            toolId = ToolId.Image.id,
+            title = container.t("common.action.history"),
+            onRestore = { item ->
+                val outputs = item.output.lines().map { it.trim() }.filter { it.isNotEmpty() }
+                session.lastOutputs = outputs
+                val preferred = (outputs + item.input.split(',', '，', '\n').map { it.trim() }.filter { it.isNotEmpty() })
+                    .firstOrNull { name -> assets.any { it.name == name } }
+                if (preferred != null) {
+                    loadAssets(preferred)
+                }
+                session.notice = listOf(container.t("json.notice.restored"), item.summary, item.output)
+                    .filter { it.isNotBlank() }
+                    .joinToString(" · ")
+                session.historyOpen = false
+                refresh()
+            },
+            onDismiss = { session.historyOpen = false; refresh() }
+        )
     }
 }
 
@@ -863,7 +973,7 @@ private fun messageFor(container: AppContainer, error: Throwable): String {
         image?.code == "cancelled" -> container.t("image.cancelled")
         image?.code == "missing" -> container.t("image.error.missing")
         image?.code == "exists" -> container.t("image.error.exists")
-        color?.code == "permission" || color?.code == "picker" -> error.message ?: container.t("image.error.capture")
+        color?.code == "permission" || color?.code == "picker" -> ScreenCaptureAccess.userMessage({ container.t(it) }, error)
         else -> error.message ?: container.t("image.error.generic")
     }
 }

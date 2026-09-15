@@ -2,6 +2,7 @@ package com.rememberber.mootool.next.compose.features.hardware
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -32,7 +33,10 @@ import com.rememberber.mootool.next.compose.domain.HardwareEngine
 import com.rememberber.mootool.next.compose.domain.HardwareTab
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.ui.components.MooButton
+import com.rememberber.mootool.next.compose.ui.components.OverflowAction
+import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -88,9 +92,11 @@ fun HardwareScreen(container: AppContainer, detached: Boolean) {
 
     val snapshot = session.snapshot
     val groups = snapshot?.sections?.get(session.tab).orEmpty()
-    Column(Modifier.fillMaxSize().background(colors.workspace)) {
+    BoxWithConstraints(Modifier.fillMaxSize().background(colors.workspace)) {
+        val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
+        Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(46.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -109,18 +115,22 @@ fun HardwareScreen(container: AppContainer, detached: Boolean) {
                 })
                 Text(container.t("hardware.revealSerials"), color = colors.textSecondary, fontSize = 12.sp)
             }
-            MooButton(container.t("hardware.copy"), onClick = {
-                if (snapshot == null) return@MooButton
-                val text = HardwareEngine.plainText(snapshot, session.tab, session.revealSensitive) { container.t(it) }
-                runCatching {
-                    Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(text), null)
-                    container.setStatus(container.t("json.notice.copied"))
-                }.onFailure { session.error = container.t("common.copyFailed"); persist() }
-            }, enabled = groups.isNotEmpty() && !session.loading)
             MooButton(container.t("hardware.refresh"), onClick = { collect() }, enabled = !session.loading)
-            if (!detached) {
-                MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.Hardware) })
-            }
+            OverflowActionCluster(
+                overflow = overflow,
+                moreLabel = container.t("json.action.overflow"),
+                actions = buildList {
+                    add(OverflowAction(container.t("hardware.copy"), enabled = groups.isNotEmpty() && !session.loading) {
+                        if (snapshot == null) return@OverflowAction
+                        val text = HardwareEngine.plainText(snapshot, session.tab, session.revealSensitive) { container.t(it) }
+                        runCatching {
+                            Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(text), null)
+                            container.setStatus(container.t("json.notice.copied"))
+                        }.onFailure { session.error = container.t("common.copyFailed"); persist() }
+                    })
+                    if (!detached) add(OverflowAction(container.t("app.tool.detach")) { container.sessionManager.detach(ToolId.Hardware) })
+                }
+            )
         }
         Row(
             Modifier.fillMaxWidth().background(colors.toolbar).padding(horizontal = 12.dp, vertical = 8.dp),
@@ -162,6 +172,7 @@ fun HardwareScreen(container: AppContainer, detached: Boolean) {
                 }
             }
         }
+    }
     }
 }
 

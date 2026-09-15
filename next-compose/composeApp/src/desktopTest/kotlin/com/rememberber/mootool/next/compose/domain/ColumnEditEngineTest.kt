@@ -54,4 +54,18 @@ class ColumnEditEngineTest {
         val block = ColumnEditEngine.paste("a\nb", 0, 1, "1\n2\n3", 4)
         assertEquals("a1\nb2\n 3", block)
     }
+
+    @Test
+    fun pastePadsShorterLinesToTheVisualColumn() {
+        val pasted = ColumnEditEngine.paste("ab\nc", 0, 4, "X\nY", 4)
+        assertEquals("ab  X\nc   Y", pasted)
+    }
+
+    @Test
+    fun pasteIntoSelectionRepeatsSingleLineAcrossRowsAndClearsRange() {
+        val filled = ColumnEditEngine.pasteIntoSelection("aa\nbb\ncc", ColumnRange(0, 2, 1, 1), "Z", 4)
+        assertEquals("aZa\nbZb\ncZc", filled)
+        val replaced = ColumnEditEngine.pasteIntoSelection("abcd\nefgh", ColumnRange(0, 1, 1, 3), "X\nY", 4)
+        assertEquals("aXd\neYh", replaced)
+    }
 }

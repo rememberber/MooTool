@@ -3,6 +3,7 @@ package com.rememberber.mootool.next.compose.features.protobuf
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -37,9 +38,13 @@ import com.rememberber.mootool.next.compose.domain.ProtobufException
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.ProtobufSession
+import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
+import com.rememberber.mootool.next.compose.ui.components.OverflowAction
+import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import java.awt.Toolkit
 import java.awt.datatransfer.StringSelection
 
@@ -47,7 +52,6 @@ import java.awt.datatransfer.StringSelection
 fun ProtobufScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.protobufSession() }
     val revision by container.sessionManager.revision.collectAsState()
-    var historyItems by remember { mutableStateOf(emptyList<HistoryRecord>()) }
     val colors = MooTheme.colors
 
     fun refresh() {
@@ -55,37 +59,40 @@ fun ProtobufScreen(container: AppContainer, detached: Boolean) {
         container.sessionManager.persistProtobuf()
     }
 
-    LaunchedEffect(session.historyOpen, revision) {
-        if (session.historyOpen) historyItems = container.history.list(ToolId.Protobuf.id)
-    }
 
-    Column(Modifier.fillMaxSize().background(colors.workspace)) {
+    BoxWithConstraints(Modifier.fillMaxSize().background(colors.workspace)) {
+        val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
+        Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(46.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(container.t("protobuf.title"), color = colors.textPrimary, fontSize = 16.sp)
             Spacer(Modifier.weight(1f))
-            MooButton(container.t("common.action.history"), onClick = { session.historyOpen = true; refresh() })
-            MooButton(container.t("protobuf.copy"), onClick = {
-                val content = when (session.tab) {
-                    "wire" -> session.wireOutput
-                    "convert" -> session.base64.ifEmpty { session.hex }
-                    else -> session.binary
+            OverflowActionCluster(
+                overflow = overflow,
+                moreLabel = container.t("json.action.overflow"),
+                actions = buildList {
+                    add(OverflowAction(container.t("common.action.history")) { session.historyOpen = true; refresh() })
+                    add(OverflowAction(container.t("protobuf.copy")) {
+                        val content = when (session.tab) {
+                            "wire" -> session.wireOutput
+                            "convert" -> session.base64.ifEmpty { session.hex }
+                            else -> session.binary
+                        }
+                        if (content.isEmpty()) {
+                            session.notice = container.t("protobuf.nothingToCopy")
+                        } else {
+                            copyText(content)
+                            session.notice = container.t("common.copied")
+                            session.error = ""
+                        }
+                        refresh()
+                    })
+                    if (!detached) add(OverflowAction(container.t("app.tool.detach")) { container.sessionManager.detach(ToolId.Protobuf) })
                 }
-                if (content.isEmpty()) {
-                    session.notice = container.t("protobuf.nothingToCopy")
-                } else {
-                    copyText(content)
-                    session.notice = container.t("common.copied")
-                    session.error = ""
-                }
-                refresh()
-            })
-            if (!detached) {
-                MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.Protobuf) })
-            }
+            )
         }
         Row(
             modifier = Modifier.fillMaxWidth().background(colors.surfaceSubtle).padding(horizontal = 12.dp, vertical = 8.dp),
@@ -105,7 +112,7 @@ fun ProtobufScreen(container: AppContainer, detached: Boolean) {
             else -> JsonTab(container, session, Modifier.weight(1f)) { refresh() }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(26.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -116,10 +123,22 @@ fun ProtobufScreen(container: AppContainer, detached: Boolean) {
             Spacer(Modifier.weight(1f))
             if (detached) Text("detached", color = colors.textSecondary, fontSize = 12.sp)
         }
+        }
     }
 
     if (session.historyOpen) {
-        ProtobufHistoryDialog(container, session, historyItems) { refresh() }
+        HistoryBrowser(
+            container = container,
+            toolId = ToolId.Protobuf.id,
+            title = container.t("common.action.history"),
+            onRestore = { item ->
+                applyHistory(session, item)
+                session.notice = container.t("json.notice.restored")
+                session.historyOpen = false
+                refresh()
+            },
+            onDismiss = { session.historyOpen = false; refresh() }
+        )
     }
 }
 
@@ -273,47 +292,6 @@ private fun copyText(value: String) {
     Toolkit.getDefaultToolkit().systemClipboard.setContents(StringSelection(value), null)
 }
 
-@Composable
-private fun ProtobufHistoryDialog(
-    container: AppContainer,
-    session: ProtobufSession,
-    items: List<HistoryRecord>,
-    onChanged: () -> Unit
-) {
-    Dialog(onDismissRequest = { session.historyOpen = false; onChanged() }) {
-        Column(
-            Modifier.width(520.dp).height(420.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(container.t("common.action.history"), color = MooTheme.colors.textPrimary)
-            if (items.isEmpty()) {
-                Text(container.t("json.history.empty"), color = MooTheme.colors.textSecondary)
-            } else {
-                LazyColumn(Modifier.weight(1f)) {
-                    items(items) { item ->
-                        Column(Modifier.fillMaxWidth().clickable {
-                            applyHistory(session, item)
-                            session.notice = container.t("json.notice.restored")
-                            session.historyOpen = false
-                            onChanged()
-                        }.padding(8.dp)) {
-                            Text(item.summary, color = MooTheme.colors.textPrimary, fontSize = 13.sp)
-                            Text(item.createdAt, color = MooTheme.colors.textSecondary, fontSize = 12.sp)
-                        }
-                    }
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("common.clear"), onClick = {
-                    container.history.clear(ToolId.Protobuf.id)
-                    session.historyOpen = false
-                    onChanged()
-                })
-                MooButton(container.t("common.close"), onClick = { session.historyOpen = false; onChanged() })
-            }
-        }
-    }
-}
 
 private fun applyHistory(session: ProtobufSession, item: HistoryRecord) {
     val parts = item.options.split('|')

@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -50,9 +51,14 @@ import com.rememberber.mootool.next.compose.domain.NetworkErrorCode
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.NetSession
+import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
+import com.rememberber.mootool.next.compose.ui.components.OverflowAction
+import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
+import com.rememberber.mootool.next.compose.ui.components.rememberFollowTailScroll
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.launch
@@ -68,8 +74,10 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
     val scope = rememberCoroutineScope()
     var commandJob by remember { mutableStateOf<Job?>(null) }
     var handle by remember { mutableStateOf(NetCommandHandle()) }
-    var historyItems by remember { mutableStateOf(emptyList<HistoryRecord>()) }
-    val outputScroll = rememberScrollState()
+    val outputScroll = rememberFollowTailScroll(
+        contentKey = session.output.length,
+        resetPinKey = session.running
+    )
 
     fun persist() {
         container.sessionManager.bump()
@@ -152,12 +160,6 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
     LaunchedEffect(Unit) {
         if (session.ipv4Addresses.isEmpty() && session.ipv6Addresses.isEmpty()) refreshAddresses()
     }
-    LaunchedEffect(session.historyOpen, revision) {
-        if (session.historyOpen) historyItems = container.history.list(ToolId.Net.id)
-    }
-    LaunchedEffect(session.output, session.running) {
-        if (session.running != null) outputScroll.animateScrollTo(outputScroll.maxValue)
-    }
     DisposableEffect(Unit) {
         onDispose {
             if (!container.sessionManager.isDetached(ToolId.Net)) {
@@ -167,19 +169,25 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
         }
     }
 
-    Column(Modifier.fillMaxSize().background(colors.workspace)) {
+    BoxWithConstraints(Modifier.fillMaxSize().background(colors.workspace)) {
+        val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
+        Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(46.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(container.t("net.title"), color = colors.textPrimary, fontSize = 16.sp)
             if (revision < 0) Spacer(Modifier.width(0.dp))
             Spacer(Modifier.weight(1f))
-            MooButton(container.t("common.action.history"), onClick = { session.historyOpen = true; persist() })
-            if (!detached) {
-                MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.Net) })
-            }
+            OverflowActionCluster(
+                overflow = overflow,
+                moreLabel = container.t("json.action.overflow"),
+                actions = buildList {
+                    add(OverflowAction(container.t("common.action.history")) { session.historyOpen = true; persist() })
+                    if (!detached) add(OverflowAction(container.t("app.tool.detach")) { container.sessionManager.detach(ToolId.Net) })
+                }
+            )
         }
         if (session.error.isNotEmpty()) {
             Text(session.error, color = colors.danger, modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp), fontSize = 12.sp)
@@ -208,15 +216,21 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
                     if (session.running != null) {
                         MooButton(container.t("common.stop"), onClick = { stop() })
                     }
-                    MooButton(container.t("common.action.copy"), onClick = {
-                        session.notice = copyText(session.output, container)
-                        persist()
-                    }, enabled = session.output.isNotBlank())
-                    MooButton(container.t("common.action.clear"), onClick = {
-                        session.output = ""
-                        session.error = ""
-                        persist()
-                    }, enabled = session.output.isNotBlank())
+                    OverflowActionCluster(
+                        overflow = overflow,
+                        moreLabel = container.t("json.action.overflow"),
+                        actions = listOf(
+                            OverflowAction(container.t("common.action.copy"), enabled = session.output.isNotBlank()) {
+                                session.notice = copyText(session.output, container)
+                                persist()
+                            },
+                            OverflowAction(container.t("common.action.clear"), enabled = session.output.isNotBlank()) {
+                                session.output = ""
+                                session.error = ""
+                                persist()
+                            }
+                        )
+                    )
                 }
                 SelectionContainer {
                     Text(
@@ -353,9 +367,18 @@ fun NetScreen(container: AppContainer, detached: Boolean) {
             }
         }
     }
-    if (session.historyOpen) {
-        NetHistoryDialog(container, session, historyItems) { persist() }
     }
+    if (session.historyOpen) HistoryBrowser(
+        container = container,
+        toolId = ToolId.Net.id,
+        title = container.t("common.action.history"),
+        onRestore = { item ->
+            restoreNetHistory(session, item)
+            session.historyOpen = false
+            persist()
+        },
+        onDismiss = { session.historyOpen = false; persist() }
+    )
 }
 
 @Composable
@@ -406,60 +429,24 @@ private fun LabeledField(label: String, value: String, onChange: (String) -> Uni
     }
 }
 
-@Composable
-private fun NetHistoryDialog(
-    container: AppContainer,
-    session: NetSession,
-    items: List<HistoryRecord>,
-    onChanged: () -> Unit
-) {
-    Dialog(onDismissRequest = { session.historyOpen = false; onChanged() }) {
-        Column(
-            Modifier.width(520.dp).height(420.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(container.t("common.action.history"), color = MooTheme.colors.textPrimary)
-            if (items.isEmpty()) {
-                Text(container.t("json.history.empty"), color = MooTheme.colors.textSecondary)
-            } else {
-                LazyColumn(Modifier.weight(1f)) {
-                    items(items) { item ->
-                        Column(Modifier.fillMaxWidth().clickable {
-                            session.output = item.output
-                            when (item.operation) {
-                                "ipv4-to-long" -> {
-                                    session.ipv4 = item.input
-                                    session.longValue = item.output
-                                }
-                                "long-to-ipv4" -> {
-                                    session.longValue = item.input
-                                    session.ipv4 = item.output
-                                }
-                                else -> if (item.input.isNotBlank()) {
-                                    when (item.options) {
-                                        NetworkAction.Ping.name -> session.pingTarget = item.input
-                                        NetworkAction.PingRange.name -> session.ipRange = item.input
-                                        NetworkAction.PortScan.name -> session.portScanTarget = item.input
-                                        NetworkAction.Resolve.name -> session.hostTarget = item.input
-                                        NetworkAction.Whois.name -> session.whoisTarget = item.input
-                                    }
-                                }
-                            }
-                            session.historyOpen = false
-                            onChanged()
-                        }.padding(8.dp)) {
-                            Text(item.summary, color = MooTheme.colors.textPrimary, fontSize = 13.sp)
-                            Text(item.output.take(80), color = MooTheme.colors.textSecondary, fontSize = 12.sp)
-                        }
-                    }
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("common.clear"), onClick = {
-                    container.history.clear(ToolId.Net.id)
-                    onChanged()
-                })
-                MooButton(container.t("common.close"), onClick = { session.historyOpen = false; onChanged() })
+private fun restoreNetHistory(session: NetSession, item: HistoryRecord) {
+    session.output = item.output
+    when (item.operation) {
+        "ipv4-to-long" -> {
+            session.ipv4 = item.input
+            session.longValue = item.output
+        }
+        "long-to-ipv4" -> {
+            session.longValue = item.input
+            session.ipv4 = item.output
+        }
+        else -> if (item.input.isNotBlank()) {
+            when (item.options) {
+                NetworkAction.Ping.name -> session.pingTarget = item.input
+                NetworkAction.PingRange.name -> session.ipRange = item.input
+                NetworkAction.PortScan.name -> session.portScanTarget = item.input
+                NetworkAction.Resolve.name -> session.hostTarget = item.input
+                NetworkAction.Whois.name -> session.whoisTarget = item.input
             }
         }
     }

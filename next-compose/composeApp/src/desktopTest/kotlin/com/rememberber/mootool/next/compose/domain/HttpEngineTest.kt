@@ -210,4 +210,96 @@ class HttpEngineTest {
         val stored = directories.dataRoot.resolve("http").resolve("requests.json").readText()
         assertFalse(stored.contains("t_msg_http"))
     }
+
+    @Test
+    fun failAndCancelKeepPreviousResponseLabel() {
+        val ok = sampleResponse(ok = true, status = 200, body = "hello")
+        val aborted = sampleResponse(ok = false, status = 0, body = "", error = HttpErrorCode.ABORTED)
+        val timeout = sampleResponse(ok = false, status = 0, body = "", error = HttpErrorCode.TIMEOUT)
+        val tooLarge = sampleResponse(ok = false, status = 200, body = "partial", error = HttpErrorCode.RESPONSE_TOO_LARGE)
+        assertEquals(ok, HttpEngine.usableResponse(ok, null))
+        assertEquals(ok, HttpEngine.usableResponse(aborted, ok))
+        assertTrue(HttpEngine.showPreviousLabel(sending = true, current = ok, previous = ok))
+        assertTrue(HttpEngine.showPreviousLabel(sending = false, current = aborted, previous = ok))
+        assertTrue(HttpEngine.showPreviousLabel(sending = false, current = timeout, previous = ok))
+        assertFalse(HttpEngine.showPreviousLabel(sending = false, current = ok, previous = ok))
+        assertFalse(HttpEngine.showPreviousLabel(sending = false, current = tooLarge, previous = ok))
+        assertEquals(ok, HttpEngine.visibleResponse(sending = false, current = aborted, previous = ok))
+        assertEquals(tooLarge, HttpEngine.visibleResponse(sending = false, current = tooLarge, previous = ok))
+        assertEquals(ok, HttpEngine.visibleResponse(sending = true, current = null, previous = ok))
+    }
+
+    @Test
+    fun responseFindReadsTabPayloadAndWrapsIndex() {
+        val result = sampleResponse(true, 200, "alpha").copy(headers = "X-Test: 1", cookies = "sid=1")
+        assertEquals("alpha", HttpResponseFind.payload(result, HttpResponseTab.Body))
+        assertEquals("X-Test: 1", HttpResponseFind.payload(result, HttpResponseTab.Headers))
+        assertEquals("sid=1", HttpResponseFind.payload(result, HttpResponseTab.Cookies))
+        assertEquals("", HttpResponseFind.payload(null, HttpResponseTab.Body))
+        val matches = FindReplace.findAll("one two one", "one", FindReplaceOptions())
+        assertEquals(2, matches.size)
+        assertEquals(1, HttpResponseFind.nextIndex(matches.size, 0, forward = true))
+        assertEquals(0, HttpResponseFind.nextIndex(matches.size, 1, forward = true))
+        assertEquals(1, HttpResponseFind.nextIndex(matches.size, 0, forward = false))
+        assertEquals(0, HttpResponseFind.nextIndex(0, 3, forward = true))
+        val spans = HttpResponseFind.spans("one two one".length, matches, 1)
+        assertEquals(2, spans.size)
+        assertFalse(spans[0].current)
+        assertTrue(spans[1].current)
+        assertEquals(8, spans[1].start)
+        assertEquals(emptyList(), HttpResponseFind.spans(3, emptyList(), 0))
+    }
+
+    @Test
+    fun binaryResponseKeepsOriginalBytesForDownload() {
+        val png = byteArrayOf(0x89.toByte(), 0x50, 0x4e, 0x47, 0)
+        val (text, binary) = HttpEngine.decodeBody(png, "image/png")
+        assertTrue(binary)
+        assertTrue(text.startsWith("[binary 5 bytes]"))
+        val result = sampleResponse(true, 200, text).copy(binary = true, bodyBytes = png)
+        assertTrue(HttpEngine.downloadBytes(result).contentEquals(png))
+        val json = HttpEngine.decodeBody("""{"ok":true}""".toByteArray(), "application/json")
+        assertFalse(json.second)
+        assertEquals(null, HttpEngine.downloadBytes(sampleResponse(true, 200, json.first)))
+        assertTrue(HttpEngine.decodeBody(byteArrayOf(1, 2, 3), "application/pdf").second)
+    }
+
+    @Test
+    fun bodyAndResponseSyntaxFollowMime() {
+        val json = org.fife.ui.rsyntaxtextarea.SyntaxConstants.SYNTAX_STYLE_JSON
+        val xml = org.fife.ui.rsyntaxtextarea.SyntaxConstants.SYNTAX_STYLE_XML
+        val html = org.fife.ui.rsyntaxtextarea.SyntaxConstants.SYNTAX_STYLE_HTML
+        val js = org.fife.ui.rsyntaxtextarea.SyntaxConstants.SYNTAX_STYLE_JAVASCRIPT
+        val none = org.fife.ui.rsyntaxtextarea.SyntaxConstants.SYNTAX_STYLE_NONE
+        assertEquals(json, HttpEngine.syntaxForMime("application/json"))
+        assertEquals(xml, HttpEngine.syntaxForMime("application/xml; charset=utf-8"))
+        assertEquals(xml, HttpEngine.syntaxForMime("text/xml"))
+        assertEquals(html, HttpEngine.syntaxForMime("text/html"))
+        assertEquals(js, HttpEngine.syntaxForMime("application/javascript"))
+        assertEquals(none, HttpEngine.syntaxForMime("text/plain"))
+        val result = sampleResponse(true, 200, """{"ok":true}""").copy(headers = "Content-Type: application/json\nX-Test: 1")
+        assertEquals(json, HttpEngine.syntaxForResponse(result, HttpResponseTab.Body))
+        assertEquals(none, HttpEngine.syntaxForResponse(result, HttpResponseTab.Headers))
+        assertEquals(none, HttpEngine.syntaxForResponse(result, HttpResponseTab.Cookies))
+        assertEquals("", HttpEngine.contentTypeFromHeaders("X-Test: 1"))
+        assertEquals("application/json; charset=utf-8", HttpEngine.contentTypeFromHeaders("content-type: application/json; charset=utf-8"))
+    }
 }
+
+private fun sampleResponse(
+    ok: Boolean,
+    status: Int,
+    body: String,
+    error: HttpErrorCode? = null
+): HttpResponseResult = HttpResponseResult(
+    requestId = "req",
+    ok = ok,
+    status = status,
+    statusText = if (ok) "OK" else "ERR",
+    url = "https://example.com",
+    durationMs = 12,
+    body = body,
+    headers = "",
+    cookies = "",
+    errorCode = error
+)

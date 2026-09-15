@@ -6,6 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -21,6 +22,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.DropdownMenu
+import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -49,6 +52,7 @@ import com.rememberber.mootool.next.compose.domain.ColorFormat
 import com.rememberber.mootool.next.compose.domain.ColorOperation
 import com.rememberber.mootool.next.compose.domain.ColorThemeId
 import com.rememberber.mootool.next.compose.domain.RgbColor
+import com.rememberber.mootool.next.compose.domain.ScreenCaptureAccess
 import com.rememberber.mootool.next.compose.domain.ScreenColorPicker
 import com.rememberber.mootool.next.compose.domain.ScreenColorSampler
 import com.rememberber.mootool.next.compose.domain.ScreenPickerCopy
@@ -57,10 +61,16 @@ import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.ColorSession
 import com.rememberber.mootool.next.compose.storage.ColorFavoriteFolder
 import com.rememberber.mootool.next.compose.storage.ColorFavoriteItem
+import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
+import com.rememberber.mootool.next.compose.ui.components.OverflowAction
+import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.workbench.CopyFeedbackPolicy
+import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.swing.Swing
 import kotlinx.coroutines.withContext
@@ -73,7 +83,6 @@ import java.awt.Color as AwtColor
 fun ColorBoardScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.colorSession() }
     val revision by container.sessionManager.revision.collectAsState()
-    var historyItems by remember { mutableStateOf(emptyList<HistoryRecord>()) }
     var folders by remember { mutableStateOf(emptyList<ColorFavoriteFolder>()) }
     var favoriteItems by remember { mutableStateOf(emptyList<ColorFavoriteItem>()) }
     val colors = MooTheme.colors
@@ -84,9 +93,42 @@ fun ColorBoardScreen(container: AppContainer, detached: Boolean) {
         container.sessionManager.persistColor()
     }
 
-    LaunchedEffect(session.historyOpen, session.historyTick, revision) {
-        if (session.historyOpen) historyItems = container.history.list(ToolId.ColorBoard.id)
+    LaunchedEffect(session.copyGeneration, session.copyState) {
+        if (session.copyState == CopyFeedbackPolicy.IDLE) return@LaunchedEffect
+        delay(CopyFeedbackPolicy.RESET_MS)
+        session.copyState = CopyFeedbackPolicy.IDLE
+        refresh()
     }
+
+    fun copyCode() {
+        if (session.code.isEmpty()) {
+            session.notice = container.t("color.nothingToCopy")
+            session.copyState = CopyFeedbackPolicy.IDLE
+        } else {
+            session.notice = copyText(session.code, container)
+            session.copyState = CopyFeedbackPolicy.afterCopy(session.notice != container.t("common.copyFailed"))
+            session.copyGeneration += 1
+        }
+        refresh()
+    }
+
+    fun openFavorite() {
+        session.favoriteName = "Color-${session.primaryHex}"
+        session.saveFavoriteOpen = true
+        refresh()
+    }
+
+    fun openFavorites() {
+        session.favoritesOpen = true
+        refresh()
+    }
+
+    fun openHistory() {
+        session.historyOpen = true
+        session.historyTick += 1
+        refresh()
+    }
+
     LaunchedEffect(session.favoritesOpen, session.saveFavoriteOpen, session.favoriteFolderId, revision) {
         if (session.favoritesOpen || session.saveFavoriteOpen) {
             val defaultFolder = container.colorFavorites.ensureDefaultFolder(container.t("color.theme.default"))
@@ -98,17 +140,24 @@ fun ColorBoardScreen(container: AppContainer, detached: Boolean) {
         }
     }
 
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+    val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
+    var moreOpen by remember { mutableStateOf(false) }
     Column(Modifier.fillMaxSize().background(colors.workspace)) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(46.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(container.t("color.title"), color = colors.textPrimary, fontSize = 16.sp)
             Spacer(Modifier.weight(1f))
-            if (!detached) {
-                MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.ColorBoard) })
-            }
+            OverflowActionCluster(
+                overflow = overflow,
+                moreLabel = container.t("json.action.overflow"),
+                actions = buildList {
+                    if (!detached) add(OverflowAction(container.t("app.tool.detach")) { container.sessionManager.detach(ToolId.ColorBoard) })
+                }
+            )
         }
         Row(
             modifier = Modifier.fillMaxWidth().background(colors.surfaceSubtle)
@@ -137,24 +186,40 @@ fun ColorBoardScreen(container: AppContainer, detached: Boolean) {
                 placeholder = container.t("color.code")
             )
             MooButton(container.t("color.apply"), onClick = { applyCode(container, session, ::refresh) })
-            MooButton(container.t("common.action.copy"), onClick = {
-                session.notice = copyText(session.code, container)
-                refresh()
-            })
-            MooButton(container.t("color.favorite"), onClick = {
-                session.favoriteName = "Color-${session.primaryHex}"
-                session.saveFavoriteOpen = true
-                refresh()
-            })
-            MooButton(container.t("color.favorites"), onClick = { session.favoritesOpen = true; refresh() })
-            MooButton(container.t("common.action.history"), onClick = { session.historyOpen = true; session.historyTick += 1; refresh() })
+            if (!overflow) {
+                MooButton(
+                    container.t(CopyFeedbackPolicy.buttonKey(session.copyState, "common.action.copy")),
+                    onClick = { copyCode() }
+                )
+                MooButton(container.t("color.favorite"), onClick = { openFavorite() })
+                MooButton(container.t("color.favorites"), onClick = { openFavorites() })
+                MooButton(container.t("common.action.history"), onClick = { openHistory() })
+            } else {
+                Box {
+                    MooButton(container.t("json.action.overflow"), primary = moreOpen, onClick = { moreOpen = true })
+                    DropdownMenu(expanded = moreOpen, onDismissRequest = { moreOpen = false }) {
+                        DropdownMenuItem(onClick = { moreOpen = false; copyCode() }) {
+                            Text(container.t(CopyFeedbackPolicy.buttonKey(session.copyState, "common.action.copy")))
+                        }
+                        DropdownMenuItem(onClick = { moreOpen = false; openFavorite() }) {
+                            Text(container.t("color.favorite"))
+                        }
+                        DropdownMenuItem(onClick = { moreOpen = false; openFavorites() }) {
+                            Text(container.t("color.favorites"))
+                        }
+                        DropdownMenuItem(onClick = { moreOpen = false; openHistory() }) {
+                            Text(container.t("common.action.history"))
+                        }
+                    }
+                }
+            }
         }
         Row(Modifier.weight(1f).fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             CurrentPanel(container, session, Modifier.width(280.dp).fillMaxHeight(), ::refresh)
             PalettePanel(container, session, Modifier.weight(1f).fillMaxHeight(), ::refresh)
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(26.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -166,9 +231,18 @@ fun ColorBoardScreen(container: AppContainer, detached: Boolean) {
             if (detached) Text("detached", color = colors.textSecondary, fontSize = 12.sp)
         }
     }
+    }
 
     if (session.historyOpen) {
-        ColorHistoryDialog(container, session, historyItems) { refresh() }
+        HistoryBrowser(
+            container = container,
+            toolId = ToolId.ColorBoard.id,
+            title = container.t("common.action.history"),
+            onRestore = { item ->
+                restoreHistory(container, session, item) { refresh() }
+            },
+            onDismiss = { session.historyOpen = false; refresh() }
+        )
     }
     if (session.saveFavoriteOpen) {
         SaveColorFavoriteDialog(container, session, folders) {
@@ -296,44 +370,6 @@ private fun ColorChip(hex: String, size: androidx.compose.ui.unit.Dp, onSelect: 
     )
 }
 
-@Composable
-private fun ColorHistoryDialog(
-    container: AppContainer,
-    session: ColorSession,
-    items: List<HistoryRecord>,
-    onChanged: () -> Unit
-) {
-    Dialog(onDismissRequest = { session.historyOpen = false; onChanged() }) {
-        Column(
-            Modifier.width(520.dp).height(420.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(container.t("common.action.history"), color = MooTheme.colors.textPrimary)
-            if (items.isEmpty()) {
-                Text(container.t("json.history.empty"), color = MooTheme.colors.textSecondary)
-            } else {
-                LazyColumn(Modifier.weight(1f)) {
-                    items(items) { item ->
-                        Column(Modifier.fillMaxWidth().clickable {
-                            restoreHistory(container, session, item, onChanged)
-                        }.padding(8.dp)) {
-                            Text(item.summary, color = MooTheme.colors.textPrimary, fontSize = 13.sp)
-                            Text(item.output.ifBlank { item.input }, color = MooTheme.colors.textSecondary, fontSize = 12.sp)
-                        }
-                    }
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("common.clear"), onClick = {
-                    container.history.clear(ToolId.ColorBoard.id)
-                    session.historyTick += 1
-                    onChanged()
-                })
-                MooButton(container.t("common.close"), onClick = { session.historyOpen = false; onChanged() })
-            }
-        }
-    }
-}
 
 @Composable
 private fun SaveColorFavoriteDialog(
@@ -398,12 +434,23 @@ private fun ColorFavoritesDialog(
     items: List<ColorFavoriteItem>,
     onChanged: () -> Unit
 ) {
+    var favoriteQuery by remember { mutableStateOf("") }
+    val visible = items.filter {
+        val needle = favoriteQuery.trim()
+        needle.isEmpty() || it.name.contains(needle, ignoreCase = true) || it.value.contains(needle, ignoreCase = true)
+    }
     Dialog(onDismissRequest = { session.favoritesOpen = false; onChanged() }) {
         Column(
             Modifier.width(560.dp).height(460.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(container.t("color.favorites"), color = MooTheme.colors.textPrimary)
+            MooTextField(
+                favoriteQuery,
+                { favoriteQuery = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = container.t("favorite.queryPlaceholder")
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(6.dp), modifier = Modifier.horizontalScroll(rememberScrollState())) {
                 folders.forEach { folder ->
                     MooButton(folder.title, primary = session.favoriteFolderId == folder.id, onClick = {
@@ -423,11 +470,11 @@ private fun ColorFavoritesDialog(
                 MooButton(container.t("color.renameFolder"), onClick = { renameFolder(container, session, onChanged) })
                 MooButton(container.t("color.deleteFolder"), onClick = { deleteFolder(container, session, onChanged) })
             }
-            if (items.isEmpty()) {
+            if (visible.isEmpty()) {
                 Text(container.t("favorite.empty"), color = MooTheme.colors.textSecondary, modifier = Modifier.weight(1f))
             } else {
                 LazyColumn(Modifier.weight(1f)) {
-                    items(items) { item ->
+                    items(visible) { item ->
                         Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                             Box(
                                 Modifier.size(22.dp).clip(RoundedCornerShape(4.dp))
@@ -663,7 +710,7 @@ private fun messageFor(container: AppContainer, error: Throwable): String {
     val code = (error as? ColorException)?.code
     return when (code) {
         "invalid-hex", "invalid-rgb" -> container.t("color.error.invalid")
-        "permission", "picker" -> container.t("color.error.permission")
+        "permission", "picker" -> ScreenCaptureAccess.userMessage({ container.t(it) }, error)
         else -> error.message ?: container.t("color.error.generic")
     }
 }

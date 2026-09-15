@@ -69,6 +69,9 @@ object ToolRegistry {
         }
     }
 
+    fun groupTitleKey(id: ToolGroupId): String? =
+        if (id == ToolGroupId.Home) null else "app.group.${id.id}"
+
     private fun tool(
         id: ToolId,
         group: ToolGroupId,

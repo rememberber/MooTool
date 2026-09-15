@@ -2,6 +2,7 @@ package com.rememberber.mootool.next.compose.domain
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 import okhttp3.Credentials
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.OkHttpClient
@@ -73,7 +74,8 @@ data class HttpResponseResult(
     val headers: String,
     val cookies: String,
     val errorCode: HttpErrorCode? = null,
-    val binary: Boolean = false
+    val binary: Boolean = false,
+    @Transient val bodyBytes: ByteArray? = null
 )
 
 data class HttpProxyConfig(
@@ -116,6 +118,32 @@ object HttpEngine {
         HttpCookie(name = name, value = value, enabled = enabled)
 
     fun clampTimeout(value: Int): Int = value.coerceIn(1_000, 120_000)
+
+    fun isTransportFailure(result: HttpResponseResult?): Boolean {
+        val code = result?.errorCode ?: return false
+        return code == HttpErrorCode.ABORTED ||
+            code == HttpErrorCode.TIMEOUT ||
+            code == HttpErrorCode.NETWORK ||
+            code == HttpErrorCode.INVALID_REQUEST
+    }
+
+    fun usableResponse(current: HttpResponseResult?, previous: HttpResponseResult?): HttpResponseResult? =
+        current?.takeUnless { isTransportFailure(it) } ?: previous
+
+    fun showPreviousLabel(
+        sending: Boolean,
+        current: HttpResponseResult?,
+        previous: HttpResponseResult?
+    ): Boolean = previous != null && (sending || isTransportFailure(current))
+
+    fun visibleResponse(
+        sending: Boolean,
+        current: HttpResponseResult?,
+        previous: HttpResponseResult?
+    ): HttpResponseResult? = if (showPreviousLabel(sending, current, previous)) previous else current
+
+    fun downloadBytes(result: HttpResponseResult?): ByteArray? =
+        result?.bodyBytes?.takeIf { result.binary && it.isNotEmpty() }
 
     fun enabledPairs(items: List<HttpPair>): List<HttpPair> =
         items.filter { it.enabled && it.name.isNotBlank() }
@@ -274,6 +302,26 @@ object HttpEngine {
         return body
     }
 
+    fun mimeType(value: String): String = value.substringBefore(';').trim().lowercase()
+
+    fun contentTypeFromHeaders(headers: String): String {
+        headers.lineSequence().forEach { line ->
+            val index = line.indexOf(':')
+            if (index > 0 && line.substring(0, index).equals("Content-Type", ignoreCase = true)) {
+                return line.substring(index + 1).trim()
+            }
+        }
+        return ""
+    }
+
+    fun syntaxForMime(mime: String): String = DocumentFormatEngine.rstaSyntax(mimeType(mime))
+
+    fun syntaxForResponse(result: HttpResponseResult?, tab: HttpResponseTab): String {
+        if (tab != HttpResponseTab.Body) return org.fife.ui.rsyntaxtextarea.SyntaxConstants.SYNTAX_STYLE_NONE
+        val mime = contentTypeFromHeaders(result?.headers.orEmpty())
+        return if (mime.isBlank()) org.fife.ui.rsyntaxtextarea.SyntaxConstants.SYNTAX_STYLE_NONE else syntaxForMime(mime)
+    }
+
     fun send(
         draft: HttpRequestDraft,
         requestId: String,
@@ -335,7 +383,8 @@ object HttpEngine {
                     body = if (binary) text else prettyJson(text),
                     headers = headerText,
                     cookies = cookies,
-                    binary = binary
+                    binary = binary,
+                    bodyBytes = if (binary) bytes else null
                 )
             }
         } catch (error: Exception) {
@@ -414,7 +463,7 @@ object HttpEngine {
         return buffer.readByteArray()
     }
 
-    private fun decodeBody(bytes: ByteArray, contentType: String): Pair<String, Boolean> {
+    internal fun decodeBody(bytes: ByteArray, contentType: String): Pair<String, Boolean> {
         val lower = contentType.lowercase()
         val binaryType = lower.startsWith("image/") || lower.startsWith("audio/") || lower.startsWith("video/") ||
             lower.contains("octet-stream") || lower.contains("application/pdf")
@@ -493,4 +542,34 @@ object HttpEngine {
         URLEncoder.encode(value, StandardCharsets.UTF_8).replace("%20", "+")
 
     internal fun shellQuote(value: String): String = "'" + value.replace("'", "'\"'\"'") + "'"
+}
+
+data class HttpFindSpan(
+    val start: Int,
+    val end: Int,
+    val current: Boolean
+)
+
+object HttpResponseFind {
+    fun payload(result: HttpResponseResult?, tab: HttpResponseTab): String = when (tab) {
+        HttpResponseTab.Body -> result?.body.orEmpty()
+        HttpResponseTab.Headers -> result?.headers.orEmpty()
+        HttpResponseTab.Cookies -> result?.cookies.orEmpty()
+    }
+
+    fun nextIndex(matchCount: Int, current: Int, forward: Boolean): Int {
+        if (matchCount <= 0) return 0
+        val start = current.coerceIn(0, matchCount - 1)
+        return if (forward) (start + 1) % matchCount else (start - 1 + matchCount) % matchCount
+    }
+
+    fun spans(textLength: Int, matches: List<FindMatch>, currentIndex: Int): List<HttpFindSpan> {
+        if (matches.isEmpty() || textLength <= 0) return emptyList()
+        val current = currentIndex.coerceIn(0, matches.size - 1)
+        return matches.mapIndexedNotNull { index, match ->
+            val start = match.start.coerceIn(0, textLength)
+            val end = match.end.coerceIn(start, textLength)
+            if (end > start) HttpFindSpan(start, end, index == current) else null
+        }
+    }
 }

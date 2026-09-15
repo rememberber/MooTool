@@ -58,8 +58,51 @@ class GitEngineTest {
             val remote = GitEngine.setRemote(root, "https://example.invalid/vault.git", isolateConfig = true)
             assertTrue(remote.success, remote.message)
             assertEquals("https://example.invalid/vault.git", GitEngine.status(root, isolateConfig = true).remote)
+            val missingRemote = GitEngine.pull(root, isolateConfig = true)
+            assertFalse(missingRemote.success)
         } finally {
             root.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun discardsChangesAndPushesToLocalRemote() {
+        assumeGit()
+        val work = Files.createTempDirectory("mootool-compose-git-work-")
+        val remote = Files.createTempDirectory("mootool-compose-git-remote-")
+        val clone = Files.createTempDirectory("mootool-compose-git-clone-")
+        try {
+            val identity = GitIdentity("Test User", "test@local")
+            assertTrue(GitEngine.init(work, identity, isolateConfig = true).success)
+            work.resolve("tracked.md").writeText("keep")
+            assertTrue(GitEngine.commit(work, "add tracked", identity, isolateConfig = true).success)
+            work.resolve("tracked.md").writeText("dirty")
+            work.resolve("scratch.md").writeText("tmp")
+            val discarded = GitEngine.discard(work, "tracked.md", isolateConfig = true)
+            assertTrue(discarded.success, discarded.message)
+            assertEquals("keep", Files.readString(work.resolve("tracked.md")))
+            val cleaned = GitEngine.discard(work, "scratch.md", isolateConfig = true)
+            assertTrue(cleaned.success, cleaned.message)
+            assertFalse(Files.exists(work.resolve("scratch.md")))
+            val bare = GitEngine.run(listOf("init", "--bare"), remote, isolateConfig = true)
+            assertEquals(0, bare.exitCode, bare.stderr + bare.stdout)
+            val url = remote.toAbsolutePath().toUri().toString()
+            assertTrue(GitEngine.setRemote(work, url, isolateConfig = true).success)
+            val pushed = GitEngine.push(work, isolateConfig = true)
+            assertTrue(pushed.success, pushed.message)
+            val cloned = GitEngine.run(listOf("clone", url, "."), clone, isolateConfig = true)
+            assertEquals(0, cloned.exitCode, cloned.stderr + cloned.stdout)
+            assertTrue(Files.exists(clone.resolve("tracked.md")))
+            work.resolve("later.md").writeText("from work")
+            assertTrue(GitEngine.commit(work, "later", identity, isolateConfig = true).success)
+            assertTrue(GitEngine.push(work, isolateConfig = true).success)
+            val pulled = GitEngine.pull(clone, isolateConfig = true)
+            assertTrue(pulled.success, pulled.message)
+            assertEquals("from work", Files.readString(clone.resolve("later.md")))
+        } finally {
+            work.toFile().deleteRecursively()
+            remote.toFile().deleteRecursively()
+            clone.toFile().deleteRecursively()
         }
     }
 
@@ -81,6 +124,68 @@ class GitEngineTest {
         } finally {
             parent.toFile().deleteRecursively()
         }
+    }
+
+    @Test
+    fun fileDiffShowsWorkingTreeBeforeAndAfter() {
+        assumeGit()
+        val root = Files.createTempDirectory("mootool-compose-git-diff-")
+        try {
+            val identity = GitIdentity("Test User", "test@local")
+            assertTrue(GitEngine.init(root, identity, isolateConfig = true).success)
+            root.resolve("note.md").writeText("hello")
+            assertTrue(GitEngine.commit(root, "add note", identity, isolateConfig = true).success)
+            root.resolve("note.md").writeText("hello world")
+            val files = GitEngine.fileDiffs(root, "note.md", isolateConfig = true)
+            assertEquals(1, files.size)
+            assertEquals("hello", files[0].before.trim())
+            assertEquals("hello world", files[0].after.trim())
+            assertEquals(GitDiffPreview.Text, files[0].preview)
+            val untracked = root.resolve("new.md")
+            untracked.writeText("fresh")
+            val added = GitEngine.fileDiffs(root, "new.md", isolateConfig = true)
+            assertEquals("", added.single().before)
+            assertEquals("fresh", added.single().after.trim())
+        } finally {
+            root.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun commitDiffListsAllChangedFiles() {
+        assumeGit()
+        val root = Files.createTempDirectory("mootool-compose-git-files-")
+        try {
+            val identity = GitIdentity("Test User", "test@local")
+            assertTrue(GitEngine.init(root, identity, isolateConfig = true).success)
+            root.resolve("a.md").writeText("a1")
+            root.resolve("b.md").writeText("b1")
+            assertTrue(GitEngine.commit(root, "first", identity, isolateConfig = true).success)
+            root.resolve("a.md").writeText("a2")
+            root.resolve("b.md").writeText("b2")
+            assertTrue(GitEngine.commit(root, "second", identity, isolateConfig = true).success)
+            val history = GitEngine.history(root, isolateConfig = true)
+            val latest = history.first()
+            val files = GitEngine.fileDiffs(root, commit = latest.hash, isolateConfig = true)
+            assertEquals(2, files.size)
+            assertEquals(setOf("a.md", "b.md"), files.map { it.path }.toSet())
+            val a = files.first { it.path == "a.md" }
+            assertEquals("a1", a.before.trim())
+            assertEquals("a2", a.after.trim())
+            assertEquals("b.md", GitDiffSelection.selected(files, "b.md")?.path)
+        } finally {
+            root.toFile().deleteRecursively()
+        }
+    }
+
+    @Test
+    fun parseNameStatusAndRejectsPathTraversal() {
+        val renamed = GitEngine.parseNameStatus("R100\u0000old.md\u0000new.md\u0000")
+        assertEquals("new.md", renamed.single().path)
+        assertEquals("old.md", renamed.single().originalPath)
+        assertEquals(null, GitEngine.normalizeGitPath("../secret"))
+        assertEquals(null, GitEngine.normalizeGitPath("/etc/passwd"))
+        assertEquals("folder/note.md", GitEngine.normalizeGitPath("folder/note.md"))
     }
 
     private fun assumeGit() {

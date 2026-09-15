@@ -124,7 +124,7 @@ GitService 按规范化仓库根串行调度。优先 Git CLI，运行前检测�
 
 明确区分“本地备份”“Git 提交”“推送远程”。提交成功不能显示同步成功，远程失败不应删掉本地内容。
 
-本轮 Compose 实现见 [DIFF-025](diff/025-git-cli-local-checkpoint.md)：CLI 检查点已落地；pull/push/discard/冲突继续中止/自动提交定时器尚未实现。
+本轮 Compose 实现见 [DIFF-025](diff/025-git-cli-local-checkpoint.md)、[DIFF-028](diff/028-git-remote-askpass.md)、[DIFF-029](diff/029-frontmatter-vault-git-import.md)：CLI 检查点、远程操作与空闲/失焦自动提交、自动 pull 已落地。
 
 ## 6. 备份、恢复、数据迁移
 
@@ -147,7 +147,7 @@ Java/Electron 数据导入是**用户主动选择的独立适配器能力**，�
 | 文件选择/打开目录 | AWT/原生适配 | 原生或经验证桌面 dialog | portal/桌面 dialog 或可用适配 | Unicode/空格、多选、取消、过滤 |
 | 文本/图片剪贴板 | 系统 clipboard | 系统 clipboard | 桌面 clipboard，验证会话后端 | PNG alpha、DPI、所有权与取消 |
 | 托盘/关闭 | AWT Tray/桌面整合 | 系统托盘 | 环境支持时启用 | 不可用时保持可恢复主窗口，不能 hide 后失联 |
-| 截图/屏幕取色 | 录屏权限、屏幕坐标适配 | 桌面捕获/DPI 适配 | X11 与 Wayland 分开；Wayland 优先 portal | 真实图像、负坐标、多屏、拒绝/取消 |
+| 截图/屏幕取色 | 录屏权限、屏幕坐标适配。Info.plist 已声明 `NSScreenCaptureUsageDescription`，权限失败触发 `screencapture`/系统设置，见 [DIFF-052](diff/052-json-inspector-screencapture-chrome.md)；TCC 对话框手工未测 | 桌面捕获/DPI 适配 | X11 与 Wayland 分开；Wayland 优先 portal | 真实图像、负坐标、多屏、拒绝/取消 |
 | hosts | 受限提权服务 | UAC 受限写入 | polkit/受限服务 | diff、备份、并发变更检测与恢复 |
 | 环境变量 | 明确支持的配置文件/会话 | 用户/系统注册表作用域 | 明确 shell/session/system 配置范围 | 新进程生效、备份、拒绝权限 |
 | 屏幕唤醒 | 原生 assertion 适配 | 系统电源请求适配 | D-Bus/桌面 inhibitor | token 引用计数、退出释放 |
@@ -160,7 +160,7 @@ Java/Electron 数据导入是**用户主动选择的独立适配器能力**，�
 
 使用 Compose Gradle 插件的 jpackage/jlink，安装镜像包含所需 JVM。官方提供 DMG/PKG、MSI/EXE、DEB/RPM，各格式在对应 OS 构建；JAR 不等于独立桌面安装包。[官方打包说明](https://kotlinlang.org/docs/multiplatform/compose-native-distribution.html)
 
-首发包型建议：macOS arm64 DMG、Windows x64 MSI、Linux x64 DEB；RPM/EXE 按测试增加。AppImage 不是 Compose 插件的原生 TargetFormat，若要提供需单独工具链/验收，不能编造 `TargetFormat.AppImage`。
+首发包型建议：macOS arm64 DMG、Windows x64 MSI、Linux x64 DEB；RPM 已列入 `targetFormats`，须在 Linux runner 上执行并验收后才能声称可用。AppImage 不是 Compose 插件的原生 TargetFormat，若要提供需单独工具链/验收，不能编造 `TargetFormat.AppImage`。
 
 JDK 模块至少按实测包含 UI、HTTP、SQLite、加密 provider、命名/日志、可访问性及所需 helper 模块；`suggestModules` 是线索，反射/native 依赖仍要真启动验证。先保证正确，再裁 runtime；不得用完整开发 JDK 下启动成功替代最终镜像检查。
 
@@ -174,6 +174,8 @@ MooTool-Next-Compose-{version}-win-x64-setup.msi
 MooTool-Next-Compose-{version}-linux-x64.deb
 ```
 
+jpackage 默认文件名含空格与 `nativePackageVersion`；发布前在对应 OS 执行 `scripts/rename-dist-artifacts.sh {semver}` 复制为上表名称。未签名/未公证包不得标 P7 安装验收通过。
+
 版本从 appVersion 单一来源生成 UI、安装元信息、tag 校验与说明。首轮稳定安装包按合法三段版本生成；beta/rc 初期只作明确的测试镜像/工件，不进入自动安装通道。若后续发行预发布安装包，先实现各平台单调可升级版本映射与测试，不能直接把 `0.1.0-beta.1` 填入 MSI/DMG 数字字段。
 
 ## 9. 更新与发行
@@ -184,7 +186,7 @@ MooTool-Next-Compose-{version}-linux-x64.deb
 - SemVer 只在同产品内比较，稳定版忽略 prerelease；根全局 `/releases/latest` 不用于版本判断。
 - 只选当前 OS/arch 包，架构按实际进程/安装架构识别；无匹配包只打开本产品 release 页，不下载别的平台包。
 - 下载 HTTPS URL 到自有临时目录，校验字节数与 SHA-512，成功后原子标记 ready；部分下载、取消、断网可重试，校验失败不执行。
-- 首版完整流程为检查→展示同产品说明→下载→校验→打开安装包。不能标“自动安装完成”或调用 Electron updater。
+- 首版完整流程为检查→展示同产品说明→下载→校验→打开安装包。不能标“自动安装完成”或调用 Electron updater。本轮 Compose 实现见 [DIFF-027](diff/027-update-channel-open-installer.md)。
 - 未签名包清楚说明平台安装体验；签名/公证是本产品配置，不能借其他产品证书/元数据假装签名。启用自动安装需另行实现平台退出/替换/失败恢复。
 - Compose 为非主力独立产品，发布使用 `make_latest: false`，不覆盖 Electron 的仓库全局 Latest。
 - tag `next-compose-v*` 只构建本产品；一般 PR 用目录过滤；不要使 `v*` Java 流水线误发布 Compose。

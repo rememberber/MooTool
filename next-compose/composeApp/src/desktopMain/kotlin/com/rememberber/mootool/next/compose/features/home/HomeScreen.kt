@@ -1,8 +1,10 @@
 package com.rememberber.mootool.next.compose.features.home
 
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.VerticalScrollbar
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,17 +19,20 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.rememberScrollbarAdapter
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.app.ProductIdentity
 import com.rememberber.mootool.next.compose.ui.components.loadClasspathImage
+import com.rememberber.mootool.next.compose.ui.components.mooWorkspaceBackground
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 
 @Composable
@@ -36,7 +41,7 @@ fun HomeScreen(container: AppContainer) {
     val scroll = rememberScrollState()
     val logo = remember { loadClasspathImage("brand/mootool-logo.png") }
     val sponsor = remember { loadClasspathImage("brand/wx-zanshang.jpg") }
-    Box(Modifier.fillMaxSize().background(colors.workspace)) {
+    Box(Modifier.fillMaxSize().mooWorkspaceBackground()) {
         Column(
             modifier = Modifier
                 .align(Alignment.TopCenter)
@@ -109,10 +114,21 @@ fun HomeScreen(container: AppContainer) {
 }
 
 @Composable
-private fun Section(title: String, content: @Composable () -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text(title, color = MooTheme.colors.textPrimary, fontSize = 16.sp)
-        content()
+private fun Section(title: String, content: @Composable ColumnScope.() -> Unit) {
+    val colors = MooTheme.colors
+    val radius = MooTheme.dimens.radiusLarge
+    Column(Modifier.fillMaxWidth(), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(title, color = colors.textPrimary, fontSize = 16.sp)
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clip(RoundedCornerShape(radius))
+                .background(colors.surfaceSubtle)
+                .border(1.dp, colors.border, RoundedCornerShape(radius))
+                .padding(14.dp),
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            content = content
+        )
     }
 }
 

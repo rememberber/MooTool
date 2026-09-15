@@ -2,6 +2,7 @@ package com.rememberber.mootool.next.compose.features.runtime
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,7 +11,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -48,9 +48,16 @@ import com.rememberber.mootool.next.compose.editor.EditorHost
 import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.CodeRunSession
+import com.rememberber.mootool.next.compose.ui.components.HorizontalPaneHandle
+import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
+import com.rememberber.mootool.next.compose.ui.components.OverflowAction
+import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
+import com.rememberber.mootool.next.compose.ui.components.rememberFollowTailScroll
+import com.rememberber.mootool.next.compose.ui.components.setPaneSize
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -67,9 +74,12 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
     val colors = MooTheme.colors
     val scope = rememberCoroutineScope()
     var statuses by remember { mutableStateOf(emptyList<CodeRuntimeStatus>()) }
-    var historyItems by remember { mutableStateOf(emptyList<HistoryRecord>()) }
     val runtime = session.currentRuntime()
     val status = statuses.firstOrNull { it.id == runtime }
+    val outputScroll = rememberFollowTailScroll(
+        contentKey = "${session.stdout.length}:${session.stderr.length}:${session.result?.durationMs}",
+        resetPinKey = session.requestId
+    )
 
     fun persist() {
         container.sessionManager.bump()
@@ -95,9 +105,6 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
 
     LaunchedEffect(settings.runtime.javaPath, settings.runtime.groovyPath, settings.runtime.pythonPath, settings.runtime.nodePath) {
         detect()
-    }
-    LaunchedEffect(session.historyOpen, revision) {
-        if (session.historyOpen) historyItems = container.history.list(ToolId.Java.id)
     }
 
     fun run() {
@@ -159,6 +166,8 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
         }
     }
 
+    BoxWithConstraints(Modifier.fillMaxSize()) {
+        val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
     Column(
         Modifier.fillMaxSize().background(colors.workspace).onPreviewKeyEvent { event ->
             if (event.type == KeyEventType.KeyDown && event.key == Key.Enter && (event.isMetaPressed || event.isCtrlPressed)) {
@@ -168,7 +177,7 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
         }
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(46.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -182,8 +191,14 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
                 fontSize = 12.sp
             )
             if (session.error.isNotEmpty()) Text(session.error, color = colors.danger, fontSize = 12.sp)
-            MooButton(container.t("common.action.history"), onClick = { session.historyOpen = true; persist() })
-            if (!detached) MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.Java) })
+            OverflowActionCluster(
+                overflow = overflow,
+                moreLabel = container.t("json.action.overflow"),
+                actions = buildList {
+                    add(OverflowAction(container.t("common.action.history")) { session.historyOpen = true; persist() })
+                    if (!detached) add(OverflowAction(container.t("app.tool.detach")) { container.sessionManager.detach(ToolId.Java) })
+                }
+            )
         }
         Row(
             modifier = Modifier.fillMaxWidth().background(colors.surfaceSubtle).padding(horizontal = 12.dp, vertical = 8.dp),
@@ -213,14 +228,6 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
                 })
             }
             Spacer(Modifier.weight(1f))
-            MooButton(container.t("runtime.detect"), enabled = !session.detecting && !session.running, onClick = { detect() })
-            MooButton(container.t("runtime.options"), onClick = { session.optionsOpen = true; persist() })
-            MooButton(container.t("runtime.format"), enabled = !session.running, onClick = {
-                runCatching {
-                    session.editor(runtime).setText(CodeRunEngine.formatSource(session.editor(runtime).text, runtime), recordUndo = true)
-                    persist()
-                }.onFailure { session.error = it.message ?: container.t("runtime.failed"); persist() }
-            })
             if (session.running) {
                 MooButton(container.t("runtime.stop"), onClick = {
                     if (session.requestId.isNotBlank()) CodeRunEngine.cancel(session.requestId)
@@ -228,12 +235,26 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
             } else {
                 MooButton(container.t("runtime.run"), primary = true, onClick = { run() })
             }
-            MooButton(container.t("runtime.clear"), onClick = {
-                session.stdout = ""
-                session.stderr = ""
-                session.result = null
-                persist()
-            })
+            OverflowActionCluster(
+                overflow = overflow,
+                moreLabel = container.t("json.action.overflow"),
+                actions = listOf(
+                    OverflowAction(container.t("runtime.detect"), enabled = !session.detecting && !session.running) { detect() },
+                    OverflowAction(container.t("runtime.options")) { session.optionsOpen = true; persist() },
+                    OverflowAction(container.t("runtime.format"), enabled = !session.running) {
+                        runCatching {
+                            session.editor(runtime).setText(CodeRunEngine.formatSource(session.editor(runtime).text, runtime), recordUndo = true)
+                            persist()
+                        }.onFailure { session.error = it.message ?: container.t("runtime.failed"); persist() }
+                    },
+                    OverflowAction(container.t("runtime.clear")) {
+                        session.stdout = ""
+                        session.stderr = ""
+                        session.result = null
+                        persist()
+                    }
+                )
+            )
         }
         Column(Modifier.fillMaxSize().padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             Text(
@@ -246,12 +267,17 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
             EditorHost(
                 buffer = session.editor(runtime),
                 dark = MooTheme.dark,
-                fontName = "Monospaced",
+                fontName = com.rememberber.mootool.next.compose.domain.DocumentFormatEngine.editorFont(settings.editor.jsonFontName),
                 fontSize = settings.editor.jsonFontSize,
                 wrap = settings.editor.softWrap,
-                modifier = Modifier.fillMaxWidth().weight(1.2f)
+                modifier = Modifier.fillMaxWidth().weight(1f)
             )
-            SelectionContainer(Modifier.fillMaxWidth().weight(1f).background(colors.sidebar, RoundedCornerShape(8.dp)).padding(10.dp)) {
+            val outputHeight = settings.layout.pane(ToolId.Java.id, 0, 220f, 120f, 480f)
+            HorizontalPaneHandle(
+                onDelta = { container.setPaneSize(ToolId.Java.id, 0, outputHeight - it, 1) },
+                onReset = { container.setPaneSize(ToolId.Java.id, 0, 220f, 1) }
+            )
+            SelectionContainer(Modifier.fillMaxWidth().height(outputHeight.dp).background(colors.sidebar, RoundedCornerShape(8.dp)).padding(10.dp)) {
                 val result = session.result
                 val header = when {
                     session.running -> container.t("runtime.running", mapOf("name" to CodeRunEngine.displayName(runtime)))
@@ -275,10 +301,11 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
                     color = colors.textPrimary,
                     fontSize = 12.sp,
                     fontFamily = FontFamily.Monospace,
-                    modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState())
+                    modifier = Modifier.fillMaxSize().verticalScroll(outputScroll)
                 )
             }
         }
+    }
     }
     if (session.optionsOpen) {
         Dialog(onDismissRequest = { session.optionsOpen = false; persist() }) {
@@ -315,38 +342,17 @@ fun CodeRunScreen(container: AppContainer, detached: Boolean) {
         }
     }
     if (session.historyOpen) {
-        Dialog(onDismissRequest = { session.historyOpen = false; persist() }) {
-            Column(
-                Modifier.width(560.dp).height(420.dp).background(colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(container.t("runtime.history"), color = colors.textPrimary)
-                if (historyItems.isEmpty()) {
-                    Text(container.t("time.history.empty"), color = colors.textSecondary)
-                } else {
-                    androidx.compose.foundation.lazy.LazyColumn(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        items(historyItems.size) { index ->
-                            val item = historyItems[index]
-                            Column(Modifier.fillMaxWidth().background(colors.sidebar, RoundedCornerShape(8.dp)).padding(8.dp)) {
-                                Text(item.summary, color = colors.textPrimary, fontSize = 13.sp)
-                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    MooButton(container.t("common.restore"), onClick = {
-                                        session.editor(runtime).setText(item.input, recordUndo = false)
-                                        session.historyOpen = false
-                                        persist()
-                                    })
-                                    MooButton(container.t("common.delete"), onClick = {
-                                        container.history.delete(item.id)
-                                        historyItems = container.history.list(ToolId.Java.id)
-                                    })
-                                }
-                            }
-                        }
-                    }
-                }
-                MooButton(container.t("common.close"), onClick = { session.historyOpen = false; persist() })
-            }
-        }
+        HistoryBrowser(
+            container = container,
+            toolId = ToolId.Java.id,
+            title = container.t("runtime.history"),
+            onRestore = { item ->
+                session.editor(runtime).setText(item.input, recordUndo = false)
+                session.historyOpen = false
+                persist()
+            },
+            onDismiss = { session.historyOpen = false; persist() }
+        )
     }
 }
 

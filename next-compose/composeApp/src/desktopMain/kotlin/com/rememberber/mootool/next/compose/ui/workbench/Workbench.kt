@@ -1,10 +1,16 @@
 package com.rememberber.mootool.next.compose.ui.workbench
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -13,13 +19,26 @@ import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.unit.Density
 import androidx.compose.ui.input.key.Key
 import androidx.compose.ui.input.key.KeyEventType
 import androidx.compose.ui.input.key.isMetaPressed
@@ -27,9 +46,12 @@ import androidx.compose.ui.input.key.isCtrlPressed
 import androidx.compose.ui.input.key.key
 import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
+import androidx.compose.ui.input.pointer.PointerEventType
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
+import androidx.compose.foundation.layout.PaddingValues
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.app.ToolRegistry
 import com.rememberber.mootool.next.compose.features.calculator.CalculatorScreen
@@ -62,7 +84,10 @@ import com.rememberber.mootool.next.compose.features.time.TimeConvertScreen
 import com.rememberber.mootool.next.compose.features.ua.UaParseScreen
 import com.rememberber.mootool.next.compose.features.variables.VariablesScreen
 import com.rememberber.mootool.next.compose.model.ToolId
+import com.rememberber.mootool.next.compose.ui.components.MooOverlay
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
+import com.rememberber.mootool.next.compose.ui.components.mooWorkspaceBackground
+import com.rememberber.mootool.next.compose.ui.icons.ToolIcon
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
 
 @Composable
@@ -71,31 +96,43 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
     val active by container.activeTool.collectAsState()
     val showSettings by container.showSettings.collectAsState()
     val searchOpen by container.searchOpen.collectAsState()
+    val groupManagerOpen by container.groupManagerOpen.collectAsState()
     val detached by container.sessionManager.detached.collectAsState()
-    val collapsed = settings.layout.sidebarCollapsed || settings.layout.hideNavigationTitles
-    Row(
-        modifier = Modifier.fillMaxSize().background(MooTheme.colors.workspace).onPreviewKeyEvent { event ->
+    val density = LocalDensity.current
+    val fontScale = (settings.appearance.fontSize.coerceIn(12, 18) / 13f)
+    CompositionLocalProvider(LocalDensity provides Density(density.density, density.fontScale * fontScale)) {
+    BoxWithConstraints(Modifier.fillMaxSize().onPreviewKeyEvent { event ->
             if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-            val meta = event.isMetaPressed || event.isCtrlPressed
             when {
-                meta && event.key == Key.K -> {
+                matchesShortcut(event, settings.shortcuts.search) -> {
                     container.setSearchOpen(true)
                     true
                 }
-                meta && event.key == Key.Comma -> {
+                matchesShortcut(event, settings.shortcuts.settings) -> {
                     container.openSettings(true)
                     true
                 }
                 event.key == Key.Escape -> {
                     when {
                         searchOpen -> { container.setSearchOpen(false); true }
+                        groupManagerOpen -> { container.setGroupManagerOpen(false); true }
                         showSettings -> { container.openSettings(false); true }
                         else -> false
                     }
                 }
                 else -> false
             }
-        }
+        }) {
+    val contentWidth = maxWidth.value
+    val contentHeight = maxHeight.value
+    val autoCollapse = LayoutPolicy.collapseNavigation(
+        contentWidth,
+        settings.layout.sidebarCollapsed,
+        settings.layout.hideNavigationTitles
+    )
+    val collapsed = autoCollapse
+    Row(
+        modifier = Modifier.fillMaxSize().mooWorkspaceBackground()
     ) {
         if (showSidebar) {
             Sidebar(container, collapsed) {
@@ -103,6 +140,15 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
             }
         }
         Column(Modifier.weight(1f).fillMaxSize()) {
+            if (LayoutPolicy.showMinSizeHint(contentWidth, contentHeight)) {
+                Text(
+                    container.t("app.layout.minSizeHint"),
+                    color = MooTheme.colors.warning,
+                    fontSize = 12.sp,
+                    modifier = Modifier.fillMaxWidth().background(MooTheme.colors.surfaceSubtle).padding(horizontal = 12.dp, vertical = 6.dp)
+                )
+            }
+            Box(Modifier.weight(1f).fillMaxSize()) {
             when {
                 showSettings -> SettingsScreen(container)
                 active == ToolId.Mootool -> HomeScreen(container)
@@ -206,10 +252,16 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
                     DetachedNotice(container, ToolId.Hardware)
                 else -> PlaceholderScreen(container, active)
             }
+            }
         }
     }
     if (searchOpen) {
         CommandSearch(container)
+    }
+    if (groupManagerOpen) {
+        CustomGroupManager(container)
+    }
+    }
     }
 }
 
@@ -217,43 +269,147 @@ fun Workbench(container: AppContainer, showSidebar: Boolean) {
 private fun CommandSearch(container: AppContainer) {
     var query by remember { mutableStateOf("") }
     var selected by remember { mutableStateOf(0) }
+    val colors = MooTheme.colors
     val results = remember(query, container.settings.value.general.language) {
         ToolRegistry.search(query) { container.t(it) }
     }
-    LaunchedEffect(results) { if (selected >= results.size) selected = 0 }
-    Dialog(onDismissRequest = { container.setSearchOpen(false) }) {
+    val focus = remember { FocusRequester() }
+    LaunchedEffect(results) { selected = nextCommandIndex(selected, results.size, stay = true) }
+    LaunchedEffect(Unit) { focus.requestFocus() }
+    fun choose(index: Int) {
+        results.getOrNull(index)?.let { container.openTool(it.id) }
+        container.setSearchOpen(false)
+    }
+    fun onSearchKey(event: androidx.compose.ui.input.key.KeyEvent): Boolean {
+        if (event.type != KeyEventType.KeyDown) return false
+        return when (event.key) {
+            Key.DirectionDown -> { selected = nextCommandIndex(selected, results.size, down = true); true }
+            Key.DirectionUp -> { selected = nextCommandIndex(selected, results.size, down = false); true }
+            Key.Enter -> { choose(selected); true }
+            Key.Escape -> { container.setSearchOpen(false); true }
+            else -> false
+        }
+    }
+    MooOverlay(
+        onDismiss = { container.setSearchOpen(false) },
+        alignment = Alignment.TopCenter,
+        contentPadding = PaddingValues(top = 96.dp, start = 24.dp, end = 24.dp, bottom = 24.dp)
+    ) {
         Column(
-            Modifier.width(480.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp)
-                .onPreviewKeyEvent { event ->
-                    if (event.type != KeyEventType.KeyDown) return@onPreviewKeyEvent false
-                    when (event.key) {
-                        Key.DirectionDown -> { selected = (selected + 1).coerceAtMost(results.lastIndex.coerceAtLeast(0)); true }
-                        Key.DirectionUp -> { selected = (selected - 1).coerceAtLeast(0); true }
-                        Key.Enter -> {
-                            results.getOrNull(selected)?.let { container.openTool(it.id) }
-                            container.setSearchOpen(false)
-                            true
-                        }
-                        Key.Escape -> { container.setSearchOpen(false); true }
-                        else -> false
-                    }
-                }
+            Modifier
+                .width(620.dp)
+                .shadow(24.dp, RoundedCornerShape(8.dp))
+                .clip(RoundedCornerShape(8.dp))
+                .background(colors.workspace)
+                .border(1.dp, colors.border, RoundedCornerShape(8.dp))
+                .semantics { contentDescription = container.t("app.search.title") }
+                .onPreviewKeyEvent(::onSearchKey)
         ) {
-            MooTextField(query, { query = it }, modifier = Modifier.fillMaxWidth(), placeholder = container.t("app.search.placeholder"))
+            Row(
+                Modifier.fillMaxWidth().height(54.dp).padding(horizontal = 12.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(10.dp)
+            ) {
+                Text("⌕", color = colors.textSecondary, fontSize = 16.sp)
+                MooTextField(
+                    query,
+                    {
+                        query = it
+                        selected = 0
+                    },
+                    modifier = Modifier.weight(1f),
+                    placeholder = container.t("app.search.placeholder"),
+                    fieldModifier = Modifier.focusRequester(focus)
+                )
+                Text(
+                    "×",
+                    color = colors.textSecondary,
+                    fontSize = 18.sp,
+                    modifier = Modifier
+                        .clickable { container.setSearchOpen(false) }
+                        .padding(6.dp)
+                        .semantics {
+                            role = Role.Button
+                            contentDescription = container.t("app.search.close")
+                        }
+                )
+            }
+            Box(Modifier.fillMaxWidth().height(1.dp).background(colors.border))
             if (results.isEmpty()) {
-                Text(container.t("app.search.empty"), color = MooTheme.colors.textSecondary, modifier = Modifier.padding(12.dp))
+                Text(
+                    container.t("app.search.empty"),
+                    color = colors.textSecondary,
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 44.dp),
+                    fontSize = 13.sp,
+                    textAlign = TextAlign.Center
+                )
             } else {
-                LazyColumn(Modifier.heightIn(max = 360.dp).padding(top = 8.dp)) {
+                LazyColumn(Modifier.heightIn(max = 500.dp).padding(8.dp)) {
                     itemsIndexed(results) { index, tool ->
-                        Text(
-                            "${tool.glyph}  ${container.t(tool.titleKey)}  (${tool.id.id})",
-                            color = if (index == selected) MooTheme.colors.accent else MooTheme.colors.textPrimary,
-                            fontSize = 13.sp,
-                            modifier = Modifier.fillMaxWidth().padding(8.dp)
-                        )
+                        val active = index == selected
+                        val groupKey = ToolRegistry.groupTitleKey(tool.groupId)
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clip(RoundedCornerShape(6.dp))
+                                .background(if (active) colors.selected else androidx.compose.ui.graphics.Color.Transparent)
+                                .pointerInput(index) {
+                                    awaitPointerEventScope {
+                                        while (true) {
+                                            val event = awaitPointerEvent()
+                                            if (event.type == PointerEventType.Enter) {
+                                                selected = index
+                                            }
+                                        }
+                                    }
+                                }
+                                .clickable { choose(index) }
+                                .padding(horizontal = 10.dp, vertical = 10.dp)
+                                .semantics {
+                                    role = Role.Button
+                                    this.selected = active
+                                    contentDescription = container.t(tool.titleKey)
+                                },
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp)
+                        ) {
+                            ToolIcon(tool.id, if (active) colors.accent else colors.textSecondary)
+                            Text(
+                                container.t(tool.titleKey),
+                                color = if (active) colors.textPrimary else colors.textPrimary,
+                                fontSize = 13.sp,
+                                modifier = Modifier.weight(1f)
+                            )
+                            if (groupKey != null) {
+                                Text(container.t(groupKey), color = colors.textSecondary, fontSize = 11.sp)
+                            }
+                        }
                     }
                 }
             }
         }
     }
+}
+
+internal fun nextCommandIndex(selected: Int, size: Int, down: Boolean = true, stay: Boolean = false): Int {
+    if (size <= 0) return 0
+    if (stay) return selected.coerceIn(0, size - 1)
+    return if (down) (selected + 1).coerceAtMost(size - 1) else (selected - 1).coerceAtLeast(0)
+}
+
+private fun matchesShortcut(event: androidx.compose.ui.input.key.KeyEvent, binding: String): Boolean {
+    val tokens = binding.lowercase().split('+').map { it.trim() }.filter { it.isNotEmpty() }
+    if (tokens.isEmpty()) return false
+    val keyToken = tokens.last()
+    val needModifier = tokens.any { it in setOf("meta", "cmd", "command", "super", "win", "ctrl", "control") }
+    val hasModifier = event.isMetaPressed || event.isCtrlPressed
+    if (needModifier && !hasModifier) return false
+    val key = when (keyToken) {
+        "k" -> Key.K
+        "comma", "," -> Key.Comma
+        "f" -> Key.F
+        "s" -> Key.S
+        else -> return false
+    }
+    return event.key == key
 }

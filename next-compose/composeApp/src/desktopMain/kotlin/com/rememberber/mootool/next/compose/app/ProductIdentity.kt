@@ -7,6 +7,7 @@ object ProductIdentity {
     const val LINUX_PACKAGE = "mootool-next-compose"
     const val LINUX_DESKTOP_ENTRY = "com.rememberber.mootool.next.compose.desktop"
     const val WINDOWS_INSTALL_NAME = "MooTool Next Compose"
+    const val WINDOWS_UPGRADE_UUID = "D6574BAD-FF7C-4038-8D17-B9C7988787BA"
     const val MACOS_APP_DIR = "MooTool Next Compose.app"
     const val SETTINGS_FILE = "settings.json"
     const val PRODUCT_MARKER = "product.json"

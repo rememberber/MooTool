@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -40,13 +41,16 @@ import androidx.compose.ui.window.Dialog
 import com.rememberber.mootool.next.compose.app.AppContainer
 import com.rememberber.mootool.next.compose.domain.RegexEngine
 import com.rememberber.mootool.next.compose.domain.RegexMatch
-import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.RegexSession
 import com.rememberber.mootool.next.compose.storage.RegexFavorite
+import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
+import com.rememberber.mootool.next.compose.ui.components.OverflowAction
+import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.swing.Swing
@@ -59,7 +63,6 @@ import java.awt.datatransfer.StringSelection
 fun RegexScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.regexSession() }
     val revision by container.sessionManager.revision.collectAsState()
-    var historyItems by remember { mutableStateOf(emptyList<HistoryRecord>()) }
     var favorites by remember { mutableStateOf(container.regexFavorites.list()) }
     val colors = MooTheme.colors
 
@@ -68,27 +71,30 @@ fun RegexScreen(container: AppContainer, detached: Boolean) {
         container.sessionManager.persistRegex()
     }
 
-    LaunchedEffect(session.historyOpen, revision) {
-        if (session.historyOpen) historyItems = container.history.list(ToolId.Regex.id)
-    }
     LaunchedEffect(session.favoritesOpen, revision) {
         if (session.favoritesOpen) favorites = container.regexFavorites.list()
     }
 
-    Column(Modifier.fillMaxSize().background(colors.workspace)) {
+    BoxWithConstraints(Modifier.fillMaxSize().background(colors.workspace)) {
+        val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
+        Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(46.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(container.t("regex.title"), color = colors.textPrimary, fontSize = 16.sp)
             Text(container.t("regex.engine", mapOf("name" to RegexEngine.ENGINE_NAME)), color = colors.textSecondary, fontSize = 12.sp)
             Spacer(Modifier.weight(1f))
-            MooButton(container.t("favorite.title"), onClick = { session.favoritesOpen = true; refresh() })
-            MooButton(container.t("common.action.history"), onClick = { session.historyOpen = true; refresh() })
-            if (!detached) {
-                MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.Regex) })
-            }
+            OverflowActionCluster(
+                overflow = overflow,
+                moreLabel = container.t("json.action.overflow"),
+                actions = buildList {
+                    add(OverflowAction(container.t("favorite.title")) { session.favoritesOpen = true; refresh() })
+                    add(OverflowAction(container.t("common.action.history")) { session.historyOpen = true; refresh() })
+                    if (!detached) add(OverflowAction(container.t("app.tool.detach")) { container.sessionManager.detach(ToolId.Regex) })
+                }
+            )
         }
         Row(
             modifier = Modifier.fillMaxWidth().background(colors.surfaceSubtle).padding(horizontal = 12.dp, vertical = 8.dp),
@@ -103,7 +109,7 @@ fun RegexScreen(container: AppContainer, detached: Boolean) {
             TestWorkspace(container, session) { refresh() }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(26.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -114,10 +120,27 @@ fun RegexScreen(container: AppContainer, detached: Boolean) {
             Spacer(Modifier.weight(1f))
             if (detached) Text("detached", color = colors.textSecondary, fontSize = 12.sp)
         }
+        }
     }
 
     if (session.historyOpen) {
-        RegexHistoryDialog(container, session, historyItems) { refresh() }
+        HistoryBrowser(
+            container = container,
+            toolId = ToolId.Regex.id,
+            title = container.t("common.action.history"),
+            onRestore = { item ->
+                session.pattern = item.input
+                session.source = item.output
+                session.options = runCatching { historyCodec.decodeFromString(com.rememberber.mootool.next.compose.domain.RegexOptions.serializer(), item.options) }
+                    .getOrDefault(session.options)
+                session.tab = "test"
+                session.historyOpen = false
+                session.notice = container.t("json.notice.restored")
+                refresh()
+                runMatch(container, session, { refresh() }, saveHistory = false)
+            },
+            onDismiss = { session.historyOpen = false; refresh() }
+        )
     }
     if (session.favoritesOpen) {
         RegexFavoritesDialog(container, session, favorites) {
@@ -313,64 +336,26 @@ private fun copyToClipboard(value: String) {
 }
 
 @Composable
-private fun RegexHistoryDialog(
-    container: AppContainer,
-    session: RegexSession,
-    items: List<HistoryRecord>,
-    onChanged: () -> Unit
-) {
-    Dialog(onDismissRequest = { session.historyOpen = false; onChanged() }) {
-        Column(
-            Modifier.width(520.dp).height(420.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(container.t("common.action.history"), color = MooTheme.colors.textPrimary)
-            if (items.isEmpty()) {
-                Text(container.t("json.history.empty"), color = MooTheme.colors.textSecondary)
-            } else {
-                LazyColumn(Modifier.weight(1f)) {
-                    items(items) { item ->
-                        Column(Modifier.fillMaxWidth().clickable {
-                            session.pattern = item.input
-                            session.source = item.output
-                            session.options = runCatching { historyCodec.decodeFromString(com.rememberber.mootool.next.compose.domain.RegexOptions.serializer(), item.options) }
-                                .getOrDefault(session.options)
-                            session.tab = "test"
-                            session.historyOpen = false
-                            session.notice = container.t("json.notice.restored")
-                            onChanged()
-                            runMatch(container, session, onChanged, saveHistory = false)
-                        }.padding(8.dp)) {
-                            Text(item.summary, color = MooTheme.colors.textPrimary, fontSize = 13.sp)
-                            Text(item.input, color = MooTheme.colors.textSecondary, fontSize = 12.sp)
-                        }
-                    }
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("common.clear"), onClick = {
-                    container.history.clear(ToolId.Regex.id)
-                    onChanged()
-                })
-                MooButton(container.t("common.close"), onClick = { session.historyOpen = false; onChanged() })
-            }
-        }
-    }
-}
-
-@Composable
 private fun RegexFavoritesDialog(
     container: AppContainer,
     session: RegexSession,
     items: List<RegexFavorite>,
     onChanged: () -> Unit
 ) {
+    var query by remember { mutableStateOf("") }
+    val visible = remember(items, query) { container.regexFavorites.list(query) }
     Dialog(onDismissRequest = { session.favoritesOpen = false; onChanged() }) {
         Column(
-            Modifier.width(520.dp).height(420.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
+            Modifier.width(560.dp).height(460.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(container.t("favorite.title"), color = MooTheme.colors.textPrimary)
+            MooTextField(
+                query,
+                { query = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = container.t("favorite.queryPlaceholder")
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 MooTextField(
                     session.favoriteName,
@@ -378,20 +363,26 @@ private fun RegexFavoritesDialog(
                     modifier = Modifier.weight(1f),
                     placeholder = container.t("favorite.namePlaceholder")
                 )
+                MooTextField(
+                    session.favoriteGroup,
+                    { session.favoriteGroup = it; onChanged() },
+                    modifier = Modifier.weight(1f),
+                    placeholder = container.t("favorite.groupPlaceholder")
+                )
                 MooButton(container.t("favorite.add"), primary = true, onClick = {
                     if (session.pattern.isNotBlank()) {
-                        container.regexFavorites.add(session.favoriteName, session.pattern)
+                        container.regexFavorites.add(session.favoriteName, session.pattern, session.favoriteGroup)
                         session.favoriteName = ""
                         session.notice = container.t("favorite.saved")
                         onChanged()
                     }
                 })
             }
-            if (items.isEmpty()) {
-                Text(container.t("favorite.empty"), color = MooTheme.colors.textSecondary)
+            if (visible.isEmpty()) {
+                Text(container.t("favorite.empty"), color = MooTheme.colors.textSecondary, modifier = Modifier.weight(1f))
             } else {
                 LazyColumn(Modifier.weight(1f)) {
-                    items(items) { item ->
+                    items(visible) { item ->
                         Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f).clickable {
                                 session.pattern = item.pattern
@@ -400,6 +391,9 @@ private fun RegexFavoritesDialog(
                                 onChanged()
                             }) {
                                 Text(item.name, color = MooTheme.colors.textPrimary, fontSize = 13.sp)
+                                if (item.group.isNotBlank()) {
+                                    Text(item.group, color = MooTheme.colors.accent, fontSize = 11.sp)
+                                }
                                 Text(item.pattern, color = MooTheme.colors.textSecondary, fontSize = 12.sp)
                             }
                             MooButton(container.t("common.delete"), onClick = {

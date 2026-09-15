@@ -13,8 +13,11 @@ import com.fasterxml.jackson.databind.node.DecimalNode
 import com.fasterxml.jackson.databind.node.JsonNodeFactory
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.jayway.jsonpath.Configuration
+import com.jayway.jsonpath.InvalidPathException
 import com.jayway.jsonpath.JsonPath
+import com.jayway.jsonpath.JsonPathException
 import com.jayway.jsonpath.Option
+import com.jayway.jsonpath.PathNotFoundException
 import com.jayway.jsonpath.spi.json.JacksonJsonNodeJsonProvider
 import com.jayway.jsonpath.spi.mapper.JacksonMappingProvider
 import java.io.StringWriter
@@ -126,11 +129,21 @@ object JsonEngine {
     fun queryPath(input: String, path: String, t: JsonTranslator): String {
         if (path.isBlank()) throw JsonException(t.t("json.error.emptyPath"))
         val document = parsePreserving(input, t)
-        val result = JsonPath.using(jsonPathConfig).parse(document).read<JsonNode>(path.trim())
-        if (result == null || result.isMissingNode || (result.isArray && result.isEmpty)) {
-            return "undefined"
+        return try {
+            formatPathResult(JsonPath.using(jsonPathConfig).parse(document).read<JsonNode>(path.trim()))
+        } catch (_: PathNotFoundException) {
+            "undefined"
+        } catch (error: InvalidPathException) {
+            throw JsonException(t.t("json.error.invalidPath", mapOf("reason" to (error.message ?: path))))
+        } catch (error: JsonPathException) {
+            throw JsonException(t.t("json.error.invalidPath", mapOf("reason" to (error.message ?: path))))
         }
+    }
+
+    private fun formatPathResult(result: JsonNode?): String {
+        if (result == null || result.isMissingNode) return "undefined"
         val value = if (result.isArray && result.size() == 1) result[0] else result
+        if (value == null || value.isMissingNode) return "undefined"
         return if (value.isTextual) mapper.writeValueAsString(value.textValue())
         else mapper.writerWithDefaultPrettyPrinter().writeValueAsString(value)
     }

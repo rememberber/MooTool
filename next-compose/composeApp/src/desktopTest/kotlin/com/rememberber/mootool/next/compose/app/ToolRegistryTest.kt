@@ -1,5 +1,6 @@
 package com.rememberber.mootool.next.compose.app
 
+import com.rememberber.mootool.next.compose.model.ToolGroupId
 import com.rememberber.mootool.next.compose.model.ToolId
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -47,5 +48,8 @@ class ToolRegistryTest {
         assertEquals(listOf(ToolId.Json), results.map { it.id })
         val home = ToolRegistry.search("首页") { key -> if (key == "app.nav.home") "主页" else key }
         assertTrue(home.any { it.id == ToolId.Mootool })
+        assertEquals(26, ToolRegistry.search("") { it }.size)
+        assertEquals(null, ToolRegistry.groupTitleKey(ToolGroupId.Home))
+        assertEquals("app.group.dev", ToolRegistry.groupTitleKey(ToolGroupId.Dev))
     }
 }

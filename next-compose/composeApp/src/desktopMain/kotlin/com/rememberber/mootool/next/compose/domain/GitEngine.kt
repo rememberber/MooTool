@@ -49,6 +49,22 @@ data class GitActionResult(
     val message: String
 )
 
+enum class GitDiffPreview { Text, Binary, TooLarge }
+
+data class GitFileDiff(
+    val path: String,
+    val originalPath: String? = null,
+    val status: String = "",
+    val before: String = "",
+    val after: String = "",
+    val preview: GitDiffPreview = GitDiffPreview.Text
+)
+
+private data class GitContentPreview(
+    val text: String = "",
+    val state: String = "missing"
+)
+
 internal data class GitCommandResult(
     val exitCode: Int,
     val stdout: String,
@@ -57,6 +73,9 @@ internal data class GitCommandResult(
 
 object GitEngine {
     const val TIMEOUT_MS = 30_000L
+    const val REMOTE_TIMEOUT_MS = 120_000L
+    const val MAX_DIFF_PREVIEW_BYTES = 512 * 1024
+    private val COMMIT_HASH = Regex("^[0-9a-f]{7,40}$", RegexOption.IGNORE_CASE)
     val defaultGitignore: String = ".DS_Store\n.idea/\n.vscode/\n*.tmp\n.migrated-from-db\n"
     private val locks = ConcurrentHashMap<String, Any>()
 
@@ -156,6 +175,28 @@ object GitEngine {
         untracked.stdout.take(64 * 1024)
     }
 
+    fun fileDiffs(root: Path, path: String? = null, commit: String? = null, isolateConfig: Boolean = false): List<GitFileDiff> = locked(root) {
+        val current = status(root, isolateConfig)
+        if (!current.repository) return@locked emptyList()
+        val normalizedCommit = commit?.trim().orEmpty()
+        if (normalizedCommit.isNotEmpty()) {
+            if (!COMMIT_HASH.matches(normalizedCommit)) return@locked emptyList()
+            return@locked commitDiffFiles(root, normalizedCommit, path, isolateConfig)
+        }
+        val wanted = normalizeGitPath(path)
+        val changes = if (wanted == null) current.changes else current.changes.filter { it.path == wanted }
+        if (wanted != null && changes.isEmpty()) {
+            val before = readBlobPreview(root, "HEAD", wanted, isolateConfig)
+            val after = readWorkingPreview(root, wanted)
+            return@locked listOf(toFileDiff(GitChange(wanted, null, " M", false), before, after))
+        }
+        changes.map { change ->
+            val before = readBlobPreview(root, "HEAD", change.originalPath ?: change.path, isolateConfig)
+            val after = readWorkingPreview(root, change.path)
+            toFileDiff(change, before, after)
+        }
+    }
+
     fun setRemote(root: Path, url: String, isolateConfig: Boolean = false): GitActionResult = locked(root) {
         val current = status(root, isolateConfig)
         if (!current.repository) return@locked GitActionResult(false, "Git repository is not initialized in the Vault root")
@@ -166,6 +207,195 @@ object GitEngine {
             remote.isEmpty() -> return@locked GitActionResult(true, "Remote is already removed")
             exists -> run(listOf("remote", "set-url", "origin", remote), root, isolateConfig)
             else -> run(listOf("remote", "add", "origin", remote), root, isolateConfig)
+        }
+        if (result.exitCode == 0) GitActionResult(true, result.stdout.trim().ifBlank { "Done" }) else failure(result)
+    }
+
+    fun fetch(root: Path, isolateConfig: Boolean = false, token: String = ""): GitActionResult = locked(root) {
+        requireRemote(root, isolateConfig) { run(listOf("fetch", "--prune", "origin"), root, isolateConfig, token, REMOTE_TIMEOUT_MS) }
+    }
+
+    fun pull(root: Path, isolateConfig: Boolean = false, token: String = ""): GitActionResult = locked(root) {
+        val current = status(root, isolateConfig)
+        if (!current.repository) return@locked GitActionResult(false, "Git repository is not initialized")
+        if (current.remote.isBlank()) return@locked GitActionResult(false, "No origin remote is configured")
+        if (current.merging) return@locked GitActionResult(false, "Finish or abort the current merge/rebase before pulling")
+        val result = run(listOf("pull", "--no-rebase", "origin"), root, isolateConfig, token, REMOTE_TIMEOUT_MS)
+        if (result.exitCode == 0) GitActionResult(true, result.stdout.trim().ifBlank { result.stderr.trim().ifBlank { "Done" } })
+        else failure(result)
+    }
+
+    fun push(root: Path, isolateConfig: Boolean = false, token: String = ""): GitActionResult = locked(root) {
+        requireRemote(root, isolateConfig) { run(listOf("push", "-u", "origin", "HEAD"), root, isolateConfig, token, REMOTE_TIMEOUT_MS) }
+    }
+
+    fun discard(root: Path, path: String, isolateConfig: Boolean = false): GitActionResult = locked(root) {
+        val normalized = path.trim()
+        if (normalized.isEmpty()) return@locked GitActionResult(false, "Git path is required")
+        val current = status(root, isolateConfig)
+        val change = current.changes.find { it.path == normalized } ?: return@locked GitActionResult(true, "No changes to discard")
+        if (change.status == "??") {
+            val cleaned = run(listOf("clean", "-f", "--", normalized), root, isolateConfig)
+            return@locked if (cleaned.exitCode == 0) GitActionResult(true, cleaned.stdout.trim().ifBlank { "Done" }) else failure(cleaned)
+        }
+        val paths = listOfNotNull(change.originalPath, normalized)
+        var restored = run(listOf("restore", "--staged", "--worktree", "--source=HEAD", "--") + paths, root, isolateConfig)
+        if (restored.exitCode != 0) {
+            run(listOf("reset", "HEAD", "--") + paths, root, isolateConfig)
+            restored = run(listOf("checkout", "HEAD", "--") + paths, root, isolateConfig)
+        }
+        if (restored.exitCode != 0 && change.status.contains('A')) {
+            val cleaned = run(listOf("clean", "-f", "--", normalized), root, isolateConfig)
+            return@locked if (cleaned.exitCode == 0) GitActionResult(true, cleaned.stdout.trim().ifBlank { "Done" }) else failure(cleaned)
+        }
+        if (restored.exitCode == 0) GitActionResult(true, restored.stdout.trim().ifBlank { "Done" }) else failure(restored)
+    }
+
+    private fun commitDiffFiles(root: Path, commit: String, path: String?, isolateConfig: Boolean): List<GitFileDiff> {
+        val parentResult = run(listOf("rev-parse", "--verify", "$commit^"), root, isolateConfig)
+        val parent = if (parentResult.exitCode == 0) parentResult.stdout.trim().ifBlank { null } else null
+        val wanted = normalizeGitPath(path)
+        val pathArgs = if (wanted == null) emptyList() else listOf("--", wanted)
+        val listed = if (parent != null) {
+            run(listOf("diff", "--name-status", "-z", "-M", "-C", parent, commit) + pathArgs, root, isolateConfig)
+        } else {
+            run(listOf("diff-tree", "--root", "--no-commit-id", "--name-status", "-z", "-r", "-M", "-C", commit) + pathArgs, root, isolateConfig)
+        }
+        if (listed.exitCode != 0) return emptyList()
+        return parseNameStatus(listed.stdout).map { change ->
+            val before = if (parent != null) {
+                readBlobPreview(root, parent, change.originalPath ?: change.path, isolateConfig)
+            } else {
+                GitContentPreview()
+            }
+            val after = readBlobPreview(root, commit, change.path, isolateConfig)
+            toFileDiff(change, before, after)
+        }
+    }
+
+    private fun readBlobPreview(root: Path, ref: String, path: String, isolateConfig: Boolean): GitContentPreview {
+        val spec = "$ref:$path"
+        val sizeResult = run(listOf("cat-file", "-s", spec), root, isolateConfig)
+        if (sizeResult.exitCode != 0) return GitContentPreview()
+        val size = sizeResult.stdout.trim().toLongOrNull() ?: return GitContentPreview()
+        if (size > MAX_DIFF_PREVIEW_BYTES) return GitContentPreview(state = "too-large")
+        val content = run(listOf("cat-file", "blob", spec), root, isolateConfig)
+        if (content.exitCode != 0) return GitContentPreview()
+        if (content.stdout.indexOf('\u0000') >= 0) return GitContentPreview(state = "binary")
+        return GitContentPreview(content.stdout, "text")
+    }
+
+    private fun readWorkingPreview(root: Path, path: String): GitContentPreview {
+        val vaultRoot = root.toAbsolutePath().normalize().let { if (it.exists()) it.toRealPath() else it }
+        val file = vaultRoot.resolve(path).normalize()
+        if (!file.startsWith(vaultRoot) || !Files.isRegularFile(file)) return GitContentPreview()
+        val size = Files.size(file)
+        if (size > MAX_DIFF_PREVIEW_BYTES) return GitContentPreview(state = "too-large")
+        val bytes = Files.readAllBytes(file)
+        if (bytes.any { it == 0.toByte() }) return GitContentPreview(state = "binary")
+        return GitContentPreview(bytes.toString(Charsets.UTF_8), "text")
+    }
+
+    private fun toFileDiff(change: GitChange, before: GitContentPreview, after: GitContentPreview): GitFileDiff {
+        val preview = when {
+            before.state == "too-large" || after.state == "too-large" -> GitDiffPreview.TooLarge
+            before.state == "binary" || after.state == "binary" -> GitDiffPreview.Binary
+            else -> GitDiffPreview.Text
+        }
+        return GitFileDiff(
+            path = change.path,
+            originalPath = change.originalPath,
+            status = change.status,
+            before = before.text,
+            after = after.text,
+            preview = preview
+        )
+    }
+
+    internal fun parseNameStatus(output: String): List<GitChange> {
+        val records = output.split('\u0000')
+        val changes = mutableListOf<GitChange>()
+        var index = 0
+        while (index < records.size) {
+            val record = records[index++]
+            if (record.isEmpty()) continue
+            val separator = record.indexOf('\t')
+            val status = if (separator >= 0) record.substring(0, separator) else record
+            val inlinePath = if (separator >= 0) record.substring(separator + 1) else ""
+            val renamed = status.startsWith('R') || status.startsWith('C')
+            val originalPathValue = if (renamed) inlinePath.ifBlank { records.getOrNull(index++) } else null
+            val pathValue = if (renamed) records.getOrNull(index++) else inlinePath.ifBlank { records.getOrNull(index++) }
+            val path = normalizeGitPath(pathValue) ?: continue
+            changes += GitChange(path, normalizeGitPath(originalPathValue), status, conflict = false)
+        }
+        return changes
+    }
+
+    internal fun normalizeGitPath(value: String?): String? {
+        if (value.isNullOrEmpty()) return null
+        val normalized = value.trim().replace('\\', '/')
+        if (normalized.startsWith('/') || normalized.contains('\u0000') || normalized.length > 512) return null
+        if (normalized.split('/').any { it.isEmpty() || it == "." || it == ".." }) return null
+        return normalized
+    }
+
+    fun abortMerge(root: Path, isolateConfig: Boolean = false): GitActionResult = locked(root) {
+        val merge = run(listOf("merge", "--abort"), root, isolateConfig)
+        if (merge.exitCode == 0) return@locked GitActionResult(true, merge.stdout.trim().ifBlank { "Done" })
+        val rebase = run(listOf("rebase", "--abort"), root, isolateConfig)
+        if (rebase.exitCode == 0) GitActionResult(true, rebase.stdout.trim().ifBlank { "Done" }) else failure(rebase)
+    }
+
+    fun resolveConflict(root: Path, path: String, strategy: String, isolateConfig: Boolean = false): GitActionResult = locked(root) {
+        val normalized = path.trim()
+        if (normalized.isEmpty()) return@locked GitActionResult(false, "Git path is required")
+        if (strategy != "ours" && strategy != "theirs") return@locked GitActionResult(false, "Invalid conflict strategy")
+        val current = status(root, isolateConfig)
+        if (current.changes.none { it.path == normalized && it.conflict }) {
+            return@locked GitActionResult(false, "Git path is not conflicted")
+        }
+        val checkout = run(listOf("checkout", "--$strategy", "--", normalized), root, isolateConfig)
+        if (checkout.exitCode != 0) return@locked failure(checkout)
+        val add = run(listOf("add", "--", normalized), root, isolateConfig)
+        if (add.exitCode == 0) GitActionResult(true, add.stdout.trim().ifBlank { "Done" }) else failure(add)
+    }
+
+    fun automaticCheckpoint(
+        root: Path,
+        message: String,
+        identity: GitIdentity = GitIdentity(),
+        isolateConfig: Boolean = false,
+        token: String = ""
+    ): GitActionResult = locked(root) {
+        var current = status(root, isolateConfig)
+        if (!current.available) return@locked GitActionResult(true, "Git is unavailable; checkpoint skipped")
+        if (!current.repository) {
+            val initialized = init(root, identity, isolateConfig)
+            if (!initialized.success) return@locked initialized
+            current = status(root, isolateConfig)
+        }
+        if (current.merging || current.conflicts > 0) {
+            return@locked GitActionResult(true, "Merge/rebase in progress; checkpoint skipped")
+        }
+        var result = GitActionResult(true, "No changes to commit")
+        if (current.changes.isNotEmpty()) {
+            result = commitLocked(root, message, identity, isolateConfig)
+            if (!result.success) return@locked result
+        }
+        if (current.remote.isNotBlank() && (current.changes.isNotEmpty() || current.ahead > 0)) {
+            return@locked push(root, isolateConfig, token)
+        }
+        result
+    }
+
+    fun continueOperation(root: Path, identity: GitIdentity = GitIdentity(), isolateConfig: Boolean = false): GitActionResult = locked(root) {
+        val current = status(root, isolateConfig)
+        if (!current.repository || current.operation == "none") return@locked GitActionResult(false, "No merge or rebase is in progress")
+        if (current.conflicts > 0) return@locked GitActionResult(false, "Resolve all conflicts before continuing")
+        val result = if (current.operation == "rebase") {
+            run(identityArgs(identity) + listOf("-c", "core.editor=true", "rebase", "--continue"), root, isolateConfig)
+        } else {
+            run(identityArgs(identity) + listOf("commit", "--no-edit"), root, isolateConfig)
         }
         if (result.exitCode == 0) GitActionResult(true, result.stdout.trim().ifBlank { "Done" }) else failure(result)
     }
@@ -232,6 +462,15 @@ object GitEngine {
         return Files.exists(path)
     }
 
+    private fun requireRemote(root: Path, isolateConfig: Boolean, block: () -> GitCommandResult): GitActionResult {
+        val current = status(root, isolateConfig)
+        if (!current.repository) return GitActionResult(false, "Git repository is not initialized")
+        if (current.remote.isBlank()) return GitActionResult(false, "No origin remote is configured")
+        val result = block()
+        return if (result.exitCode == 0) GitActionResult(true, result.stdout.trim().ifBlank { result.stderr.trim().ifBlank { "Done" } })
+        else failure(result)
+    }
+
     private fun failure(result: GitCommandResult): GitActionResult =
         GitActionResult(false, result.stderr.trim().ifBlank { result.stdout.trim().ifBlank { "Git command failed" } })
 
@@ -243,16 +482,28 @@ object GitEngine {
         synchronized(lock) { return block() }
     }
 
-    internal fun run(args: List<String>, cwd: Path?, isolateConfig: Boolean): GitCommandResult {
+    internal fun run(
+        args: List<String>,
+        cwd: Path?,
+        isolateConfig: Boolean,
+        token: String = "",
+        timeoutMs: Long = TIMEOUT_MS
+    ): GitCommandResult {
+        val askPass = if (token.isNotBlank()) writeAskPass() else null
         val builder = ProcessBuilder(listOf("git") + args)
         cwd?.let { builder.directory(it.toFile()) }
         val env = builder.environment()
         env["GIT_TERMINAL_PROMPT"] = "0"
         env["GIT_OPTIONAL_LOCKS"] = "0"
         if (isolateConfig) {
-            val empty = if (System.getProperty("os.name").orEmpty().contains("Windows", ignoreCase = true)) "NUL" else "/dev/null"
+            val empty = if (windows) "NUL" else "/dev/null"
             env["GIT_CONFIG_GLOBAL"] = empty
             env["GIT_CONFIG_SYSTEM"] = empty
+        }
+        if (askPass != null) {
+            env["GIT_ASKPASS"] = askPass.toAbsolutePath().toString()
+            env["SSH_ASKPASS"] = askPass.toAbsolutePath().toString()
+            env["MOOTOOL_COMPOSE_GIT_TOKEN"] = token
         }
         return try {
             val process = builder.start()
@@ -262,7 +513,7 @@ object GitEngine {
             val errThread = Thread { process.errorStream.copyTo(stderr) }
             outThread.start()
             errThread.start()
-            if (!process.waitFor(TIMEOUT_MS, TimeUnit.MILLISECONDS)) {
+            if (!process.waitFor(timeoutMs, TimeUnit.MILLISECONDS)) {
                 process.destroyForcibly()
                 outThread.join(1_000)
                 errThread.join(1_000)
@@ -273,6 +524,19 @@ object GitEngine {
             GitCommandResult(process.exitValue(), stdout.toString(Charsets.UTF_8), stderr.toString(Charsets.UTF_8))
         } catch (error: Exception) {
             GitCommandResult(127, "", error.message ?: "Git is not installed")
+        } finally {
+            askPass?.let { Files.deleteIfExists(it) }
         }
+    }
+
+    private fun writeAskPass(): Path {
+        val script = Files.createTempFile("mootool-compose-askpass-", if (windows) ".cmd" else ".sh")
+        if (windows) {
+            script.writeText("@echo off\r\necho %MOOTOOL_COMPOSE_GIT_TOKEN%\r\n")
+        } else {
+            script.writeText("#!/bin/sh\nprintf '%s\\n' \"\$MOOTOOL_COMPOSE_GIT_TOKEN\"\n")
+            script.toFile().setExecutable(true, true)
+        }
+        return script
     }
 }

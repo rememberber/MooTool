@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -44,7 +45,10 @@ import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.VariablesSession
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
+import com.rememberber.mootool.next.compose.ui.components.OverflowAction
+import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -105,9 +109,11 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
     val canEdit = session.tab == EnvTab.Environment
     val canDelete = canEdit && session.scope != EnvDisplayScope.Process
 
-    Column(Modifier.fillMaxSize().background(colors.workspace)) {
+    BoxWithConstraints(Modifier.fillMaxSize().background(colors.workspace)) {
+        val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
+        Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(46.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
@@ -125,17 +131,21 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
                 }, enabled = !session.saving)
             }
             MooButton(container.t("common.refresh"), onClick = { refresh() }, enabled = !session.loading && !session.saving)
-            MooButton(container.t("common.export"), onClick = {
-                val current = session.snapshot ?: return@MooButton
-                val file = chooseSave(container.t("common.export"), "mootool-next-compose-environment.txt") ?: return@MooButton
-                runCatching { file.writeText(EnvEngine.formatExport(current)) }
-                    .onSuccess { session.notice = container.t("variables.exported") }
-                    .onFailure { session.error = it.message ?: container.t("variables.error.generic") }
-                persist()
-            }, enabled = snapshot != null)
-            if (!detached) {
-                MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.Variables) })
-            }
+            OverflowActionCluster(
+                overflow = overflow,
+                moreLabel = container.t("json.action.overflow"),
+                actions = buildList {
+                    add(OverflowAction(container.t("common.export"), enabled = snapshot != null) {
+                        val current = session.snapshot ?: return@OverflowAction
+                        val file = chooseSave(container.t("common.export"), "mootool-next-compose-environment.txt") ?: return@OverflowAction
+                        runCatching { file.writeText(EnvEngine.formatExport(current)) }
+                            .onSuccess { session.notice = container.t("variables.exported") }
+                            .onFailure { session.error = it.message ?: container.t("variables.error.generic") }
+                        persist()
+                    })
+                    if (!detached) add(OverflowAction(container.t("app.tool.detach")) { container.sessionManager.detach(ToolId.Variables) })
+                }
+            )
         }
         Row(
             Modifier.fillMaxWidth().background(colors.toolbar).padding(horizontal = 12.dp, vertical = 8.dp),
@@ -239,6 +249,7 @@ fun VariablesScreen(container: AppContainer, detached: Boolean) {
                 }
             }
         }
+    }
     }
     if (session.editorOpen) {
         EditorDialog(container, session, snapshot, config, ::persist) { refresh() }

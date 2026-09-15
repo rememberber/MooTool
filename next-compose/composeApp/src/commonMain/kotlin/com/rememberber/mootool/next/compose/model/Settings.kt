@@ -63,11 +63,24 @@ data class LayoutSettings(
     val sidebarWidth: Float = 248f,
     val sidebarCollapsed: Boolean = false,
     val paneSizes: Map<String, List<Float>> = emptyMap()
-)
+) {
+    fun pane(toolId: String, index: Int, default: Float, min: Float, max: Float): Float {
+        val stored = paneSizes[toolId]?.getOrNull(index)
+        if (stored == null || stored <= 0f) return default.coerceIn(min, max)
+        return stored.coerceIn(min, max)
+    }
+
+    fun withPane(toolId: String, index: Int, value: Float, slots: Int): LayoutSettings {
+        val existing = (paneSizes[toolId] ?: emptyList()).toMutableList()
+        while (existing.size < maxOf(slots, index + 1)) existing.add(0f)
+        existing[index] = value
+        return copy(paneSizes = paneSizes + (toolId to existing.toList()))
+    }
+}
 
 @Serializable
 data class EditorSettings(
-    val sqlDialect: String = "mysql",
+    val sqlDialect: String = "Standard SQL",
     val jsonFontName: String = "ui-monospace",
     val jsonFontSize: Int = 14,
     val quickNoteFontName: String = "ui-monospace",
@@ -97,12 +110,14 @@ data class VaultSettings(
     val jsonPath: String = "",
     val gitRemote: String = "",
     val gitUsername: String = "",
+    val gitToken: String = "",
     val autoCommit: Boolean = false,
     val autoCommitIdleSeconds: Int = 30,
     val autoCommitInactiveSeconds: Int = 120,
     val autoPullMinutes: Int = 0,
     val hideGitignoredFiles: Boolean = true,
-    val jsonTreeExpandMode: String = "smart"
+    val jsonTreeExpandMode: String = "smart",
+    val quickNoteTreeExpandMode: String = "smart"
 )
 
 @Serializable

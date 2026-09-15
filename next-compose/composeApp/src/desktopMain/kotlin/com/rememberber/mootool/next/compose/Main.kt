@@ -6,6 +6,9 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -16,13 +19,18 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.DpSize
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.ApplicationScope
 import androidx.compose.ui.window.DialogWindow
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.WindowPosition
 import androidx.compose.ui.window.application
 import androidx.compose.ui.window.rememberWindowState
 import com.rememberber.mootool.next.compose.app.AppContainer
+import com.rememberber.mootool.next.compose.app.AppTray
+import com.rememberber.mootool.next.compose.app.AppTrayHostProfile
+import com.rememberber.mootool.next.compose.app.AppTrayModel
 import com.rememberber.mootool.next.compose.app.ProductIdentity
+import com.rememberber.mootool.next.compose.app.TrayDesktopActions
 import com.rememberber.mootool.next.compose.features.config.ConfigConvertScreen
 import com.rememberber.mootool.next.compose.features.calculator.CalculatorScreen
 import com.rememberber.mootool.next.compose.features.color.ColorBoardScreen
@@ -51,25 +59,37 @@ import com.rememberber.mootool.next.compose.features.variables.VariablesScreen
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.workbench.WindowBoundsPolicy
 import com.rememberber.mootool.next.compose.ui.workbench.Workbench
 
 fun main() = application {
     val container = remember { AppContainer.create() }
     val settings by container.settings.collectAsState()
     val detached by container.sessionManager.detached.collectAsState()
+    val revision by container.sessionManager.revision.collectAsState()
     var visible by remember { mutableStateOf(true) }
     var closeDialog by remember { mutableStateOf(false) }
-    val savedX = settings.workspace.windowX
-    val savedY = settings.workspace.windowY
+    val tray = remember { AppTray() }
+    val restored = remember {
+        WindowBoundsPolicy.clamp(
+            x = settings.workspace.windowX,
+            y = settings.workspace.windowY,
+            width = settings.workspace.windowWidth,
+            height = settings.workspace.windowHeight,
+            screens = WindowBoundsPolicy.currentWorkAreas()
+        )
+    }
     val windowState = rememberWindowState(
-        size = DpSize(
-            settings.workspace.windowWidth.coerceAtLeast(1080).dp,
-            settings.workspace.windowHeight.coerceAtLeast(720).dp
-        ),
-        position = if (savedX != null && savedY != null) {
-            WindowPosition(savedX.dp, savedY.dp)
+        size = DpSize(restored.width.dp, restored.height.dp),
+        position = if (restored.x != null && restored.y != null) {
+            WindowPosition(restored.x.dp, restored.y.dp)
         } else {
             WindowPosition(Alignment.Center)
+        },
+        placement = if (settings.general.startMaximized) {
+            androidx.compose.ui.window.WindowPlacement.Maximized
+        } else {
+            androidx.compose.ui.window.WindowPlacement.Floating
         }
     )
     val systemDark = isSystemInDarkTheme()
@@ -82,8 +102,8 @@ fun main() = application {
                 workspace = it.workspace.copy(
                     windowX = x,
                     windowY = y,
-                    windowWidth = windowState.size.width.value.toInt().coerceAtLeast(1080),
-                    windowHeight = windowState.size.height.value.toInt().coerceAtLeast(720)
+                    windowWidth = windowState.size.width.value.toInt().coerceAtLeast(960),
+                    windowHeight = windowState.size.height.value.toInt().coerceAtLeast(640)
                 )
             )
         }
@@ -92,8 +112,41 @@ fun main() = application {
 
     fun quit() {
         persistBounds()
+        tray.remove()
         container.close()
         exitApplication()
+    }
+
+    fun showMain() {
+        visible = true
+    }
+
+    fun trayModel(): AppTrayModel {
+        val host = container.sessionManager.hostSession()
+        return AppTrayModel(
+            openLabel = container.t("app.tray.open"),
+            settingsLabel = container.t("app.tray.settings"),
+            colorLabel = container.t("app.tray.color"),
+            screenshotLabel = container.t("app.tray.screenshot"),
+            translationLabel = container.t("app.tray.translation"),
+            quitLabel = container.t("app.close.quit"),
+            hostProfiles = container.hostProfiles.list().map { profile ->
+                AppTrayHostProfile(profile.id, profile.name, profile.id == host.selectedId)
+            },
+            onOpen = ::showMain,
+            onSettings = {
+                showMain()
+                container.openSettings(true)
+            },
+            onColorPicker = { TrayDesktopActions.pickColor(container, ::showMain) },
+            onScreenshot = { TrayDesktopActions.captureScreenshot(container, ::showMain) },
+            onTranslation = {
+                showMain()
+                container.openTool(ToolId.Translation)
+            },
+            onHost = { id -> TrayDesktopActions.openHostProfile(container, id, ::showMain) },
+            onQuit = ::quit
+        )
     }
 
     fun handleClose() {
@@ -102,319 +155,199 @@ fun main() = application {
             "hide" -> {
                 persistBounds()
                 visible = false
+                if (settings.general.trayEnabled && AppTray.supported()) {
+                    tray.sync(true, trayModel())
+                }
             }
             else -> closeDialog = true
         }
     }
 
-    MooTheme(container.themePreference(), systemDark) {
+    LaunchedEffect(settings.general.trayEnabled, settings.general.language, revision) {
+        tray.sync(settings.general.trayEnabled, trayModel())
+    }
+    DisposableEffect(Unit) {
+        onDispose { tray.remove() }
+    }
+
+    MooTheme(
+        preference = container.themePreference(),
+        systemDark = systemDark,
+        interfaceStyle = settings.appearance.interfaceStyle,
+        accentColor = settings.appearance.accentColor,
+        unifiedBackground = settings.appearance.unifiedBackground,
+        fontFamily = settings.appearance.fontFamily
+    ) {
         if (visible) {
             Window(
                 onCloseRequest = ::handleClose,
                 title = ProductIdentity.DISPLAY_NAME,
                 state = windowState
             ) {
+                DisposableEffect(window) {
+                    window.minimumSize = java.awt.Dimension(960, 640)
+                    val listener = object : java.awt.event.WindowFocusListener {
+                        override fun windowGainedFocus(e: java.awt.event.WindowEvent?) {
+                            container.setWindowActive(true)
+                        }
+                        override fun windowLostFocus(e: java.awt.event.WindowEvent?) {
+                            container.setWindowActive(false)
+                        }
+                    }
+                    window.addWindowFocusListener(listener)
+                    onDispose { window.removeWindowFocusListener(listener) }
+                }
                 Workbench(container, showSidebar = true)
             }
         }
 
         if (ToolId.TextDiff in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.TextDiff) },
-                title = "${container.t("app.nav.textDiff")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    TextDiffScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.TextDiff, container.t("app.nav.textDiff"), DpSize(1100.dp, 760.dp)) {
+                TextDiffScreen(container, detached = true)
             }
         }
 
         if (ToolId.Reformat in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.Reformat) },
-                title = "${container.t("app.nav.reformat")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    ReformatScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.Reformat, container.t("app.nav.reformat"), DpSize(1100.dp, 760.dp)) {
+                ReformatScreen(container, detached = true)
             }
         }
 
         if (ToolId.QuickNote in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.QuickNote) },
-                title = "${container.t("app.nav.quickNote")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    QuickNoteScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.QuickNote, container.t("app.nav.quickNote"), DpSize(1100.dp, 760.dp)) {
+                QuickNoteScreen(container, detached = true)
             }
         }
 
         if (ToolId.Json in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.Json) },
-                title = "${container.t("app.nav.json")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    JsonScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.Json, container.t("app.nav.json"), DpSize(1100.dp, 760.dp)) {
+                JsonScreen(container, detached = true)
             }
         }
 
         if (ToolId.YmlProperties in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.YmlProperties) },
-                title = "${container.t("app.nav.ymlProperties")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    ConfigConvertScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.YmlProperties, container.t("app.nav.ymlProperties"), DpSize(1100.dp, 760.dp)) {
+                ConfigConvertScreen(container, detached = true)
             }
         }
 
         if (ToolId.Protobuf in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.Protobuf) },
-                title = "${container.t("app.nav.protobuf")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    ProtobufScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.Protobuf, container.t("app.nav.protobuf"), DpSize(1100.dp, 760.dp)) {
+                ProtobufScreen(container, detached = true)
             }
         }
 
         if (ToolId.Java in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.Java) },
-                title = "${container.t("app.nav.java")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    CodeRunScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.Java, container.t("app.nav.java"), DpSize(1100.dp, 760.dp)) {
+                CodeRunScreen(container, detached = true)
             }
         }
 
         if (ToolId.Variables in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.Variables) },
-                title = "${container.t("app.nav.variables")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    VariablesScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.Variables, container.t("app.nav.variables"), DpSize(1100.dp, 760.dp)) {
+                VariablesScreen(container, detached = true)
             }
         }
 
         if (ToolId.TimeConvert in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.TimeConvert) },
-                title = "${container.t("app.nav.timeConvert")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(880.dp, 720.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    TimeConvertScreen(container, detached = true, active = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.TimeConvert, container.t("app.nav.timeConvert"), DpSize(880.dp, 720.dp)) {
+                TimeConvertScreen(container, detached = true, active = true)
             }
         }
 
         if (ToolId.Calculator in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.Calculator) },
-                title = "${container.t("app.nav.calculator")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(960.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    CalculatorScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.Calculator, container.t("app.nav.calculator"), DpSize(960.dp, 760.dp)) {
+                CalculatorScreen(container, detached = true)
             }
         }
 
         if (ToolId.Encode in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.Encode) },
-                title = "${container.t("app.nav.encode")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    EncodeScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.Encode, container.t("app.nav.encode"), DpSize(1100.dp, 760.dp)) {
+                EncodeScreen(container, detached = true)
             }
         }
 
         if (ToolId.Crypto in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.Crypto) },
-                title = "${container.t("app.nav.crypto")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    CryptoScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.Crypto, container.t("app.nav.crypto"), DpSize(1100.dp, 760.dp)) {
+                CryptoScreen(container, detached = true)
             }
         }
 
         if (ToolId.UaParse in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.UaParse) },
-                title = "${container.t("app.nav.uaParse")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(960.dp, 720.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    UaParseScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.UaParse, container.t("app.nav.uaParse"), DpSize(960.dp, 720.dp)) {
+                UaParseScreen(container, detached = true)
             }
         }
 
         if (ToolId.Regex in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.Regex) },
-                title = "${container.t("app.nav.regex")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    RegexScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.Regex, container.t("app.nav.regex"), DpSize(1100.dp, 760.dp)) {
+                RegexScreen(container, detached = true)
             }
         }
 
         if (ToolId.Cron in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.Cron) },
-                title = "${container.t("app.nav.cron")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    CronScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.Cron, container.t("app.nav.cron"), DpSize(1100.dp, 760.dp)) {
+                CronScreen(container, detached = true)
             }
         }
 
         if (ToolId.QrCode in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.QrCode) },
-                title = "${container.t("app.nav.qrCode")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    QrCodeScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.QrCode, container.t("app.nav.qrCode"), DpSize(1100.dp, 760.dp)) {
+                QrCodeScreen(container, detached = true)
             }
         }
 
         if (ToolId.ColorBoard in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.ColorBoard) },
-                title = "${container.t("app.nav.colorBoard")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    ColorBoardScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.ColorBoard, container.t("app.nav.colorBoard"), DpSize(1100.dp, 760.dp)) {
+                ColorBoardScreen(container, detached = true)
             }
         }
 
         if (ToolId.MessageBoard in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.MessageBoard) },
-                title = "${container.t("app.nav.messageBoard")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    MessageBoardScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.MessageBoard, container.t("app.nav.messageBoard"), DpSize(1100.dp, 760.dp)) {
+                MessageBoardScreen(container, detached = true)
             }
         }
 
         if (ToolId.Translation in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.Translation) },
-                title = "${container.t("app.nav.translation")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    TranslationScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.Translation, container.t("app.nav.translation"), DpSize(1100.dp, 760.dp)) {
+                TranslationScreen(container, detached = true)
             }
         }
 
         if (ToolId.Image in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.Image) },
-                title = "${container.t("app.nav.image")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    ImageScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.Image, container.t("app.nav.image"), DpSize(1100.dp, 760.dp)) {
+                ImageScreen(container, detached = true)
             }
         }
 
         if (ToolId.Pdf in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.Pdf) },
-                title = "${container.t("app.nav.pdf")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    PdfScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.Pdf, container.t("app.nav.pdf"), DpSize(1100.dp, 760.dp)) {
+                PdfScreen(container, detached = true)
             }
         }
 
         if (ToolId.Http in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.Http) },
-                title = "${container.t("app.nav.http")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    HttpScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.Http, container.t("app.nav.http"), DpSize(1100.dp, 760.dp)) {
+                HttpScreen(container, detached = true)
             }
         }
 
         if (ToolId.Host in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.Host) },
-                title = "${container.t("app.nav.host")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    HostScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.Host, container.t("app.nav.host"), DpSize(1100.dp, 760.dp)) {
+                HostScreen(container, detached = true)
             }
         }
 
         if (ToolId.Net in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.Net) },
-                title = "${container.t("app.nav.net")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    NetScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.Net, container.t("app.nav.net"), DpSize(1100.dp, 760.dp)) {
+                NetScreen(container, detached = true)
             }
         }
 
         if (ToolId.Hardware in detached) {
-            Window(
-                onCloseRequest = { container.sessionManager.reattach(ToolId.Hardware) },
-                title = "${container.t("app.nav.hardware")} · ${ProductIdentity.DISPLAY_NAME}",
-                state = rememberWindowState(size = DpSize(1100.dp, 760.dp))
-            ) {
-                MooTheme(container.themePreference(), systemDark) {
-                    HardwareScreen(container, detached = true)
-                }
+            DetachedToolWindow(container, systemDark, ToolId.Hardware, container.t("app.nav.hardware"), DpSize(1100.dp, 760.dp)) {
+                HardwareScreen(container, detached = true)
             }
         }
 
@@ -435,4 +368,52 @@ fun main() = application {
             }
         }
     }
+}
+
+
+@Composable
+private fun ApplicationScope.DetachedToolWindow(
+    container: AppContainer,
+    systemDark: Boolean,
+    tool: ToolId,
+    title: String,
+    size: DpSize = DpSize(1100.dp, 760.dp),
+    content: @Composable () -> Unit
+) {
+    Window(
+        onCloseRequest = { container.sessionManager.reattach(tool) },
+        title = "$title · ${ProductIdentity.DISPLAY_NAME}",
+        state = rememberWindowState(size = size)
+    ) {
+        val focus by container.detachedFocus.collectAsState()
+        DisposableEffect(window) {
+            window.minimumSize = java.awt.Dimension(960, 640)
+            onDispose { }
+        }
+        LaunchedEffect(focus) {
+            val request = focus ?: return@LaunchedEffect
+            if (request.toolId != tool) return@LaunchedEffect
+            window.isVisible = true
+            if (window.extendedState and java.awt.Frame.ICONIFIED != 0) {
+                window.extendedState = window.extendedState and java.awt.Frame.ICONIFIED.inv()
+            }
+            window.toFront()
+            window.requestFocus()
+        }
+        Themed(container, systemDark, content)
+    }
+}
+
+@Composable
+private fun Themed(container: AppContainer, systemDark: Boolean, content: @Composable () -> Unit) {
+    val settings by container.settings.collectAsState()
+    MooTheme(
+        preference = container.themePreference(),
+        systemDark = systemDark,
+        interfaceStyle = settings.appearance.interfaceStyle,
+        accentColor = settings.appearance.accentColor,
+        unifiedBackground = settings.appearance.unifiedBackground,
+        fontFamily = settings.appearance.fontFamily,
+        content = content
+    )
 }

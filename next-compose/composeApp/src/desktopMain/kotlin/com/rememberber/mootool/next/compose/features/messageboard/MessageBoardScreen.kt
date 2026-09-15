@@ -19,13 +19,17 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.DropdownMenu
+import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.Slider
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -56,7 +60,10 @@ import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.MessageBoardSession
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
+import com.rememberber.mootool.next.compose.ui.components.OverflowAction
+import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 
 private const val WAKE_TOKEN = "message-board"
 
@@ -96,18 +103,24 @@ fun MessageBoardScreen(container: AppContainer, detached: Boolean) {
         onDispose { exitPresentation() }
     }
 
-    Column(Modifier.fillMaxSize().background(colors.workspace)) {
+    BoxWithConstraints(Modifier.fillMaxSize().background(colors.workspace)) {
+        val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
+        Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(46.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(container.t("messageBoard.title"), color = colors.textPrimary, fontSize = 16.sp)
             if (revision < 0) Spacer(Modifier.width(0.dp))
             Spacer(Modifier.weight(1f))
-            if (!detached) {
-                MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.MessageBoard) })
-            }
+            OverflowActionCluster(
+                overflow = overflow,
+                moreLabel = container.t("json.action.overflow"),
+                actions = buildList {
+                    if (!detached) add(OverflowAction(container.t("app.tool.detach")) { container.sessionManager.detach(ToolId.MessageBoard) })
+                }
+            )
         }
         Row(Modifier.weight(1f).fillMaxWidth().padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             if (!session.presenting) {
@@ -116,7 +129,7 @@ fun MessageBoardScreen(container: AppContainer, detached: Boolean) {
             StagePanel(container, session, Modifier.weight(1f).fillMaxHeight(), presenting = false, onPresent = ::enterPresentation)
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(26.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
@@ -127,6 +140,7 @@ fun MessageBoardScreen(container: AppContainer, detached: Boolean) {
             Spacer(Modifier.weight(1f))
             if (detached) Text("detached", color = colors.textSecondary, fontSize = 12.sp)
         }
+    }
     }
 
     if (session.presenting) {
@@ -209,15 +223,28 @@ private fun ControlPanel(
             valueRange = MessageBoardEngine.MIN_SIZE.toFloat()..MessageBoardEngine.MAX_SIZE.toFloat(),
             steps = ((MessageBoardEngine.MAX_SIZE - MessageBoardEngine.MIN_SIZE) / MessageBoardEngine.SIZE_STEP) - 1
         )
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            MooButton(container.t("messageBoard.alignLeft"), primary = session.alignment == BoardAlignment.Left, onClick = {
-                session.alignment = BoardAlignment.Left
-                onChanged()
-            })
-            MooButton(container.t("messageBoard.alignCenter"), primary = session.alignment == BoardAlignment.Center, onClick = {
-                session.alignment = BoardAlignment.Center
-                onChanged()
-            })
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+            Text(container.t("messageBoard.alignment"), color = colors.textSecondary, fontSize = 12.sp)
+            Box {
+                var alignOpen by remember { mutableStateOf(false) }
+                val current = when (session.alignment) {
+                    BoardAlignment.Left -> container.t("messageBoard.alignLeft")
+                    BoardAlignment.Center -> container.t("messageBoard.alignCenter")
+                }
+                MooButton(current, onClick = { alignOpen = true })
+                DropdownMenu(expanded = alignOpen, onDismissRequest = { alignOpen = false }) {
+                    DropdownMenuItem(onClick = {
+                        alignOpen = false
+                        session.alignment = BoardAlignment.Left
+                        onChanged()
+                    }) { Text(container.t("messageBoard.alignLeft")) }
+                    DropdownMenuItem(onClick = {
+                        alignOpen = false
+                        session.alignment = BoardAlignment.Center
+                        onChanged()
+                    }) { Text(container.t("messageBoard.alignCenter")) }
+                }
+            }
         }
     }
 }

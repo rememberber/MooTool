@@ -4,6 +4,7 @@ import java.awt.GraphicsEnvironment
 import java.awt.Rectangle
 import java.awt.Robot
 import java.awt.image.BufferedImage
+import java.nio.file.Files
 
 data class ScreenCapture(
     val originX: Int,
@@ -11,8 +12,69 @@ data class ScreenCapture(
     val image: BufferedImage
 )
 
+object ScreenCaptureAccess {
+    fun macPrivacySettingsUri(): String =
+        "x-apple.systempreferences:com.apple.preference.security?Privacy_ScreenCapture"
+
+    fun isMacOs(): Boolean =
+        System.getProperty("os.name").orEmpty().lowercase().contains("mac")
+
+    fun promptIfNeeded() {
+        if (!isMacOs()) return
+        val tmp = Files.createTempFile("mootool-compose-tcc", ".png")
+        try {
+            ProcessBuilder("screencapture", "-x", "-R", "0,0,1,1", tmp.toAbsolutePath().toString())
+                .redirectErrorStream(true)
+                .start()
+                .waitFor()
+        } catch (_: Exception) {
+        } finally {
+            runCatching { Files.deleteIfExists(tmp) }
+        }
+    }
+
+    fun openPrivacySettingsIfNeeded(): Boolean {
+        if (!isMacOs()) return false
+        return runCatching {
+            ProcessBuilder("open", macPrivacySettingsUri()).start()
+            true
+        }.getOrDefault(false)
+    }
+
+    fun userMessage(t: (String) -> String, error: Throwable): String {
+        val color = error as? ColorException
+        if (color?.code == "permission" || color?.code == "picker") {
+            val base = t("color.error.permission")
+            return if (color.openedSettings) base + "\n" + t("color.error.permissionSettings") else base
+        }
+        return error.message.orEmpty().ifBlank { t("color.error.generic") }
+    }
+}
+
 object ScreenColorSampler {
     fun captureAllScreens(): ScreenCapture {
+        return try {
+            captureAllScreensOnce()
+        } catch (first: ColorException) {
+            if (first.code != "permission") throw first
+            ScreenCaptureAccess.promptIfNeeded()
+            try {
+                captureAllScreensOnce()
+            } catch (retry: ColorException) {
+                val opened = ScreenCaptureAccess.openPrivacySettingsIfNeeded()
+                if (retry.code == "permission") {
+                    throw ColorException(
+                        "permission",
+                        retry.message ?: first.message ?: "Screen capture is unavailable",
+                        openedSettings = opened
+                    )
+                }
+                throw retry
+            }
+        }
+    }
+
+    private fun captureAllScreensOnce(): ScreenCapture {
         val devices = GraphicsEnvironment.getLocalGraphicsEnvironment().screenDevices
         if (devices.isEmpty()) throw ColorException("picker", "No screen is available")
         val union = Rectangle()

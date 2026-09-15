@@ -89,7 +89,7 @@
 
 验收：5 MiB 文档、连续图片粘贴、列编辑 undo/redo、双击选词后自动保存、分栏切换/分离收回后 undo、磁盘满、外部修改冲突、重启恢复。
 
-本轮已落地左文档库/中编辑或预览/右 24 项快速替换、保存与切换时写入、查找替换、历史与分离窗口、编辑/分栏/预览三模式、commonmark Compose 预览、剪贴板/文件图片附件与孤立清理、逻辑行列编辑（Alt+拖动或锁定拖选）、Vault Git 最小闭环（状态/初始化/提交/日志）、外部修改冲突监视（重载/另存/拒绝覆盖）。**尚未实现** frontmatter、全文索引、pull/push/冲突继续中止、拖入编辑器内部。快速替换见 [DIFF-021](diff/021-quick-note-replace-vault.md)，预览与附件见 [DIFF-023](diff/023-markdown-commonmark-preview.md)，列编辑见 [DIFF-024](diff/024-column-edit-logical-lines.md)，Git 见 [DIFF-025](diff/025-git-cli-local-checkpoint.md)，外部冲突见 [DIFF-026](diff/026-vault-external-conflict.md)。
+本轮已落地左文档库/中编辑或预览/右 24 项快速替换、保存与切换时写入、查找替换、历史与分离窗口、编辑/分栏/预览三模式、commonmark Compose 预览、剪贴板/文件图片附件与孤立清理、逻辑行列编辑（Alt+拖动或锁定拖选）、Vault Git（状态/初始化/提交/日志/pull/push/丢弃/冲突/自动检查点与自动 pull、变更前/后分栏预览、提交多文件下拉）、外部修改冲突监视、YAML frontmatter（正文不露出元数据）、路径/标题/正文检索、目录 CRUD/复制/移动、拖入编辑器。内容宽 < 1440 时字号/行距等低频动作收入「更多」，见 [DIFF-040](diff/040-follow-tail-http-overflow.md)。快速替换见 [DIFF-021](diff/021-quick-note-replace-vault.md)，预览与附件见 [DIFF-023](diff/023-markdown-commonmark-preview.md)，列编辑见 [DIFF-024](diff/024-column-edit-logical-lines.md)，Git 见 [DIFF-025](diff/025-git-cli-local-checkpoint.md)、[DIFF-028](diff/028-git-remote-askpass.md)、[DIFF-029](diff/029-frontmatter-vault-git-import.md)、[DIFF-044](diff/044-window-copy-image-git.md)，外部冲突见 [DIFF-026](diff/026-vault-external-conflict.md)。IME/列编辑窗口手势与 5 MiB 手工验收未做。
 
 ### F02 文本对比
 
@@ -102,7 +102,7 @@
 
 ### F03 格式化
 
-布局：文本/文件 Tab；Nginx、Java、XML、HTML 类型及缩进选择，保持输入/操作/结果关系。
+布局：文本/文件 Tab；Nginx、Java、XML、HTML 类型及缩进选择，保持输入/操作/结果关系。类型与缩进使用下拉（对照 Electron compact select）；内容宽 < 1440 时复制/保存/清空收入「更多」，见 [DIFF-045](diff/045-reformat-color-overflow.md)。
 
 - 文本格式化、文件选择、输出复制/保存、清空、历史；键盘格式化与按钮走同一服务。
 - Nginx 识别引号/注释/转义/块；XML/HTML 保留文本节点语义；Java 使用真正语法处理器（JavaParser）。与 Electron Prettier 的差异见 [DIFF-005](diff/005-reformat-jvm.md)。
@@ -114,16 +114,16 @@
 
 布局：左 JSON Vault，中主编辑器，右格式/转换/JSONPath 检查器；窄窗口优先折叠辅助面板。
 
-工具栏以 `JsonToolbar.tsx` 为参照：格式化、压缩、字体、换行、复制、查找、导入、导出、历史、更多、清空。保留主要动作位置与方向。
+工具栏以 `JsonToolbar.tsx` 为参照：格式化、压缩、字体、换行、复制、查找、导入、导出、历史、更多、清空。保留主要动作位置与方向。内容宽 < 1440 时低频动作收入「更多」菜单，见 [DIFF-040](diff/040-follow-tail-http-overflow.md)。复制成功后按钮短暂显示「已复制」，失败显示失败文案，约 1400ms 后恢复，见 [DIFF-044](diff/044-window-copy-image-git.md)。
 
 1. 校验、2/4 空格格式化、压缩、错误定位与结构摘要。
-2. 递归 key 排序、忽略大小写、重复 key 检测；**检测必须在普通 Map 丢弃重复项之前**完成。
+2. 递归 key 排序、忽略大小写、重复 key 检测；**检测必须在普通 Map 丢弃重复项之前**完成。检查器对照 Electron：缩进 2/4 分段、格式选项为开关、转换九动作两列网格、类名在转换区末尾，见 [DIFF-052](diff/052-json-inspector-screencapture-chrome.md)。
 3. JSON ↔ XML、JSON ↔ JavaBean；类名、嵌套、数组、类型推断及结果弹层。JavaBean 支持边界以 fixtures 固定，不宣称编译任意 Java 项目。
 4. Key/Value 互换、JSON 字符串转义/还原、普通/Java 字符串相关转义动作，明确各按钮语义。
 5. JSONPath 输入、查询结果、路径树选择、路径/值预览及双击行为；递归、数组索引/切片、联合、filter、路径转义需真实可用。
 6. 查找/替换：大小写、全词、正则、计数、前后导航；字体、换行、复制、文件操作与历史恢复。
-7. Vault 文件/目录 CRUD、重命名、复制、移动/拖放、排序、忽略文件、树状态、当前文件恢复、外部监视。本轮已落地外部修改冲突（重载/另存/拒绝覆盖），见 [DIFF-026](diff/026-vault-external-conflict.md)；完整检查器弹层仍未做。
-8. Git 工作流与冲突，P6 补齐后才可将完整 F04 标记通过。本轮已落地 JSON Vault 的状态/初始化/提交/日志/diff/保存 remote，见 [DIFF-025](diff/025-git-cli-local-checkpoint.md)；pull/push/丢弃/冲突继续中止未做，不能标完整 F04。
+7. Vault 文件/目录 CRUD、重命名、复制、移动、排序、忽略文件、当前文件恢复、外部监视。目录树右键菜单已落地，拖放手势未做窗口验收，见 [DIFF-029](diff/029-frontmatter-vault-git-import.md)、[DIFF-041](diff/041-context-menu-panes.md)。
+8. Git 工作流与冲突。已落地 status/init/commit/log/pull/push/discard/ours-theirs/继续中止/自动检查点与自动 pull，提交差异可切换该提交全部文件，见 [DIFF-028](diff/028-git-remote-askpass.md)、[DIFF-029](diff/029-frontmatter-vault-git-import.md)、[DIFF-043](diff/043-diff-sync-git-preview.md)、[DIFF-044](diff/044-window-copy-image-git.md)。
 
 JSON 文本编辑保留大整数与小数字面量；不能先转 Double 再声称无损。格式化与转换分别定义数值策略。JSONPath 不执行任意 JS；不支持的语法明确错误，不能只做 `$.a.b` 冒充全部功能。
 
@@ -134,7 +134,7 @@ JSON 文本编辑保留大整数与小数字面量；不能先转 Double 再声�
 布局：Java/Groovy、Python、Node.js 三个主 Tab；首个 Tab 内选择 Java 或 Groovy；上编辑下输出。
 
 - 稳定 Tool ID 仍为 `java`；每种 runtime 独立草稿、代码语言、格式化、参数、工作目录和执行路径；检测安装版本并能手动配置。
-- 真实运行/停止，stdout/stderr 流、退出码、耗时和命令摘要，历史恢复。
+- 真实运行/停止，stdout/stderr 流、退出码、耗时和命令摘要，历史恢复。输出增长默认跟随尾部，用户上翻后暂停，见 [DIFF-040](diff/040-follow-tail-http-overflow.md)。
 - 源代码上限 1 MiB，输出累计上限 2 MiB；到限截断有提示。timeout 统一配置并显示，不让无限循环占住进程。
 - 子进程 argv 传参，不拼 shell；中文空格路径、缺少编译器、非零退出、启动失败、停止全部后代和临时文件清理都需处理。
 - 自带 app JVM 不代表含编译用户 Java 的 javac；Java/Groovy 运行方案在设置中清楚展示。
@@ -175,12 +175,12 @@ JSON 文本编辑保留大整数与小数字面量；不能先转 Double 再声�
 布局见 UI 文档：左请求集合，右 Method+URL+发送/取消，请求上/响应下分栏。
 
 - Method：GET/POST/PUT/PATCH/DELETE/HEAD/OPTIONS；请求 Tab：Params/Headers/Cookies/Body；响应 Tab：Body/Headers/Cookies。
-- 当前 Body MIME：`application/json`、`text/plain`、`application/xml`、`text/xml`、`text/html`、`application/javascript`；正文格式化、语法高亮。
+- 当前 Body MIME：`application/json`、`text/plain`、`application/xml`、`text/xml`、`text/html`、`application/javascript`；正文格式化、语法高亮。请求 Body 与响应正文使用 `EditorHost`，见 [DIFF-050](diff/050-http-editorhost.md)。
 - Params/Headers/Cookies 支持行开关、增删、顺序与空值；Cookies 保留原数据字段。Query/表单重复键不能被 Map 吞掉。
 - **冻结请求语义**：GET/HEAD/OPTIONS 将 Params 追加到 URL，忽略 body；其他方法有非空 body 时发正文，无正文时 Params 编码为 URL 表单。原 URL 自带参数保留。若后续调整为更明确的参数模型，需单独记录差异与迁移。
 - Header 按协议处理；Electron 的同名 Header 合并有局限，Compose 应声明重复字段策略；不静默合并 Set-Cookie 破坏语义。
-- 默认超时 30 秒（服从设置），重定向、代理与代理认证、取消、耗时/状态码/响应地址、大小、复制/导出；HTTP 4xx/5xx 仍是可查看的真实响应。
-- 解压后响应限制 10 MiB；二进制或无法解码时给出字节/下载视图，不强制乱码。连续请求按 requestId 归属，旧结果不覆盖新编辑。
+- 默认超时 30 秒（服从设置），重定向、代理与代理认证、取消、耗时/状态码/响应地址、大小、复制/导出；HTTP 4xx/5xx 仍是可查看的真实响应。响应区只查找（Cmd/Ctrl+F，不含替换），复制按钮有短暂反馈；内容宽 < 1440 时另存收入「更多」。Method 与 Body MIME 为同一行 compact 下拉，见 [DIFF-046](diff/046-http-find-copy-select.md)。
+- 解压后响应限制 10 MiB；二进制或无法解码时给出十六进制摘要，并保留原始字节供另存，不把预览当文件。连续请求按 requestId 归属，旧结果不覆盖新编辑。失败或取消保留上次可用响应并标明「上次响应」，见 [DIFF-040](diff/040-follow-tail-http-overflow.md)、[DIFF-048](diff/048-http-binary-overflow.md)。
 - 集合新建、命名、搜索、保存覆盖、删除及历史回填；请求所有字段、选项和必要响应快照完整持久化。
 - cURL 导入/导出是文本解析/生成，支持范围逐项列明；**绝不执行粘贴命令**，未知参数不能悄悄丢失认证/正文。
 - 验收：本地服务器核对 method/query/body/重复参数/headers/cookies、重定向、超时、取消、超限响应；重启集合恢复；无网不能显示成功示例。
@@ -200,7 +200,7 @@ JSON 文本编辑保留大整数与小数字面量；不能先转 Double 再声�
 
 布局：左命令结果、右功能区；IPv4 ↔ Long、ping、DNS/地址解析、WHOIS、本机地址。
 
-- 输出可选择/复制，命令流式展示可停止；主机名与参数以 argv 传递。
+- 输出可选择/复制，命令流式展示可停止并默认跟尾（上翻暂停）；主机名与参数以 argv 传递。见 [DIFF-040](diff/040-follow-tail-http-overflow.md)。
 - IPv4 0/最大值/越界/非法段正确；IPv6 在 DNS/本机地址结果保留，不强行进入 IPv4 数值转换。
 - 命令/WHOIS 服务不存在或离线时显示真实原因，不填示例 IP。
 - 验收：localhost、受控 DNS、本机地址、停止 ping、无网/超时/非法主机名与中文系统输出。命令经 argv 启动，DNS 用 `InetAddress`，子进程编码见 [DIFF-015](diff/015-net-process-charset.md)。
@@ -306,7 +306,7 @@ Tab：翻译、单词本、历史；源/目标语言、Google/Bing、交换、�
 
 ### F22 调色板
 
-布局：主色/对比色、主题/标准色、格式、取色、运算和收藏/历史。
+布局：主色/对比色、主题/标准色、格式、取色、运算和收藏/历史。内容宽 < 1440 时复制/收藏/收藏夹/历史收入「更多」，见 [DIFF-045](diff/045-reformat-color-overflow.md)。
 
 - HEX 大/小写及 RGB，当前 7 主题、10 标准色以 `colorTools.ts` 为依据。
 - 运算五种：invert、intersect、add、difference、average；语义按函数逐通道实现，保留边界截断规则。
@@ -316,7 +316,7 @@ Tab：翻译、单词本、历史；源/目标语言、Google/Bing、交换、�
 
 ### F23 图片助手
 
-布局：顶部完整操作、左图片库、中画布、底部缩放；列表折叠、多选批量。
+布局：顶部完整操作、左图片库、中画布、底部缩放；列表折叠、多选批量。内容宽 < 1440 时剪贴板/Base64/SVG/压缩/水印/历史/分离收入「更多」，见 [DIFF-044](diff/044-window-copy-image-git.md)。
 
 - 文件、剪贴板、Base64 导入导出、截图/区域截取；缩略图、名称/像素/大小、重命名/删除、复制/保存/批量导出、缩放/适配。
 - 压缩和水印真实生成；水印文字/透明度/颜色/位置/字体尺寸/倾斜，保留原件或覆盖的输出方式清楚区分。
@@ -353,17 +353,17 @@ Tab：系统、CPU、内存、存储、网络；结构化字段/表格、刷新�
 
 | 分类 | 字段/行为 |
 | --- | --- |
-| general | 中文/英文/日文、自动检查/下载更新、启动最大化、关闭 ask/hide/quit、托盘 |
-| appearance | modern/quiet/hero/smartisan/miui-v5/claude 六风格、system/light/dark、六强调色、字体/字号、统一背景 |
-| layout | 最近、紧凑、分隔线、隐藏标题、classic/card/grouped、自定义组/隐藏工具、面板尺寸 |
+| general | 中文/英文/日文、自动检查/下载更新（真实生效，见 [DIFF-027](diff/027-update-channel-open-installer.md)）、启动最大化、关闭 ask/hide/quit、托盘 |
+| appearance | modern/quiet/hero/smartisan/miui-v5/claude 六风格、system/light/dark、yellow/coral/blue/green/red/purple 六强调色、字体/字号、统一背景。设置页分组/分段/色板见 [DIFF-051](diff/051-settings-chrome-overflow.md)；工作区/侧栏风格底见 [DIFF-052](diff/052-json-inspector-screencapture-chrome.md) |
+| layout | 最近、紧凑、分隔线、隐藏标题、classic/card/grouped、自定义组/隐藏工具、面板尺寸。自定义分组按内置组开关勾选、空组/缺名提示、删除确认，弹层保存才写入，见 [DIFF-053](diff/053-custom-group-switches.md)、[DIFF-055](diff/055-custom-group-dialog.md) |
 | editor | SQL 方言、JSON/随手记字体字号、软换行；适用操作实际读取这些设置 |
 | network | 代理开关/地址/端口/用户名/密码、HTTP/翻译超时 |
-| data | 实际数据路径、打开目录、备份/恢复 zip（见 [DIFF-022](diff/022-backup-zip-manifest.md)）；跨产品显式导入未做 |
-| vault | 随手记目录、Git 用户名/remote（本轮可存）；自动提交/拉取、token、JSON 路径与忽略规则未做。Git 对话框见 [DIFF-025](diff/025-git-cli-local-checkpoint.md) |
+| data | 实际数据路径、打开目录、备份/恢复 zip（见 [DIFF-022](diff/022-backup-zip-manifest.md)）；跨产品 Electron/Java/目录导入见 [DIFF-029](diff/029-frontmatter-vault-git-import.md) |
+| vault | 随手记/JSON 目录、Git 用户名/remote/token、自动提交空闲/失焦秒数、自动 pull 分钟、gitignore 隐藏。Git 对话框与定时器见 [DIFF-025](diff/025-git-cli-local-checkpoint.md)、[DIFF-028](diff/028-git-remote-askpass.md)、[DIFF-029](diff/029-frontmatter-vault-git-import.md) |
 | runtime | Java/Groovy/Python/Node 路径、检测、草稿/参数/工作目录 |
 | tools | QR 尺寸/纠错、随机长度、导出目录、默认翻译器与语言 |
 | shortcuts | 搜索/设置键绑定、冲突检查、完整平台快捷键帮助 |
-| about | Compose 产品名/版本、更新状态/下载校验、版本说明、许可和帮助 |
+| about | Compose 产品名/版本、更新检查/说明/下载校验/打开安装包、许可和帮助。自动安装未做，见 [DIFF-027](diff/027-update-channel-open-installer.md) |
 
 默认值：中文、system、modern、blue、UI 13、编辑器 14、classic、最近隐藏、软换行、关闭 ask、托盘开启（不可用时提示）、HTTP 30000 ms、翻译 15000 ms、QR 300/M、随机长度 16。Vault 自动行为先配置库再生效，不能对未选择目录启动后台 Git。
 
@@ -372,11 +372,11 @@ Tab：系统、CPU、内存、存储、网络；结构化字段/表格、刷新�
 - 通用历史按工具最多 200 条；支持搜索/详情/恢复输入选项/删除/清空。HTTP 和翻译专用历史单独定义，不误用全库 200 条裁剪。
 - Regex/Cron/颜色收藏真实持久化，命名/分组/查询/恢复/删除按源页面清单实现；HTTP 集合和单词本不混入通用收藏。
 - 历史不得默认存储私钥、密码、认证 Header；保留行为需有产品内明确选择和遮蔽策略，作为 Compose 隐私改进记录。
-- 搜索本地名称/ID/关键词，完整键盘流程；导航隐藏或窗口分离不影响可搜索性。
+- 搜索本地名称/ID/关键词，完整键盘流程；导航隐藏或窗口分离不影响可搜索性。侧栏搜索按钮与命令盘 chrome 见 [DIFF-056](diff/056-command-palette-sidebar-search.md)；应用内遮罩见 [DIFF-057](diff/057-in-app-overlay-dialogs.md)。
 
 ### A03 桌面、存储、备份、Git、更新
 
-全部遵循 [数据、平台与发布](data-platform-release.md)。这些不额外计入 25 工具，但缺少它们不能把项目标成完整产品。Git 本轮为 Vault 本地检查点（CLI status/init/commit/log），不含 pull/push 与更新通道，见 [DIFF-025](diff/025-git-cli-local-checkpoint.md)。
+Git 本轮含 Vault 本地检查点、远程 pull/push/丢弃/冲突与空闲/失焦自动检查点、自动 pull，见 [DIFF-025](diff/025-git-cli-local-checkpoint.md)、[DIFF-028](diff/028-git-remote-askpass.md)、[DIFF-029](diff/029-frontmatter-vault-git-import.md)。提交差异可切换该提交全部文件，见 [DIFF-044](diff/044-window-copy-image-git.md)。更新通道见 [DIFF-027](diff/027-update-channel-open-installer.md)。更换显示器恢复窗口时夹紧可操作标题区，见 [DIFF-044](diff/044-window-copy-image-git.md)。
 
 ## 4. 兼容样本格式
 

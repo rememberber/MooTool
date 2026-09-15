@@ -5,6 +5,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -45,13 +46,16 @@ import com.rememberber.mootool.next.compose.domain.CronEngine
 import com.rememberber.mootool.next.compose.domain.CronException
 import com.rememberber.mootool.next.compose.domain.CronFields
 import com.rememberber.mootool.next.compose.domain.TimeEngine
-import com.rememberber.mootool.next.compose.model.HistoryRecord
 import com.rememberber.mootool.next.compose.model.ToolId
 import com.rememberber.mootool.next.compose.sessions.CronSession
 import com.rememberber.mootool.next.compose.storage.CronFavorite
+import com.rememberber.mootool.next.compose.ui.components.HistoryBrowser
 import com.rememberber.mootool.next.compose.ui.components.MooButton
 import com.rememberber.mootool.next.compose.ui.components.MooTextField
+import com.rememberber.mootool.next.compose.ui.components.OverflowAction
+import com.rememberber.mootool.next.compose.ui.components.OverflowActionCluster
 import com.rememberber.mootool.next.compose.ui.theme.MooTheme
+import com.rememberber.mootool.next.compose.ui.workbench.LayoutPolicy
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.swing.Swing
@@ -63,7 +67,6 @@ import java.awt.datatransfer.StringSelection
 fun CronScreen(container: AppContainer, detached: Boolean) {
     val session = remember { container.sessionManager.cronSession() }
     val revision by container.sessionManager.revision.collectAsState()
-    var historyItems by remember { mutableStateOf(emptyList<HistoryRecord>()) }
     var favorites by remember { mutableStateOf(container.cronFavorites.list()) }
     val colors = MooTheme.colors
     val language = container.settings.collectAsState().value.general.language
@@ -77,26 +80,29 @@ fun CronScreen(container: AppContainer, detached: Boolean) {
         session.description = runCatching { CronEngine.describe(session.expression, language) }.getOrDefault("")
         refresh()
     }
-    LaunchedEffect(session.historyOpen, revision) {
-        if (session.historyOpen) historyItems = container.history.list(ToolId.Cron.id)
-    }
     LaunchedEffect(session.favoritesOpen, revision) {
         if (session.favoritesOpen) favorites = container.cronFavorites.list()
     }
 
-    Column(Modifier.fillMaxSize().background(colors.workspace)) {
+    BoxWithConstraints(Modifier.fillMaxSize().background(colors.workspace)) {
+        val overflow = LayoutPolicy.overflowToolbar(maxWidth.value)
+        Column(Modifier.fillMaxSize()) {
         Row(
-            modifier = Modifier.fillMaxWidth().height(46.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.toolbar).background(colors.toolbarBrush()).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(container.t("cron.title"), color = colors.textPrimary, fontSize = 16.sp)
             Spacer(Modifier.weight(1f))
-            MooButton(container.t("favorite.title"), onClick = { session.favoritesOpen = true; refresh() })
-            MooButton(container.t("common.action.history"), onClick = { session.historyOpen = true; refresh() })
-            if (!detached) {
-                MooButton(container.t("app.tool.detach"), onClick = { container.sessionManager.detach(ToolId.Cron) })
-            }
+            OverflowActionCluster(
+                overflow = overflow,
+                moreLabel = container.t("json.action.overflow"),
+                actions = buildList {
+                    add(OverflowAction(container.t("favorite.title")) { session.favoritesOpen = true; refresh() })
+                    add(OverflowAction(container.t("common.action.history")) { session.historyOpen = true; refresh() })
+                    if (!detached) add(OverflowAction(container.t("app.tool.detach")) { container.sessionManager.detach(ToolId.Cron) })
+                }
+            )
         }
         Row(Modifier.weight(1f).padding(12.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
             Column(Modifier.weight(1.1f).fillMaxHeight().verticalScroll(rememberScrollState()), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -169,17 +175,31 @@ fun CronScreen(container: AppContainer, detached: Boolean) {
             }
         }
         Row(
-            modifier = Modifier.fillMaxWidth().height(26.dp).background(colors.toolbar).padding(horizontal = 12.dp),
+            modifier = Modifier.fillMaxWidth().height(MooTheme.dimens.statusBar).background(colors.toolbar).padding(horizontal = 12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(session.error.ifEmpty { session.notice }, color = if (session.error.isNotEmpty()) colors.danger else colors.textSecondary, fontSize = 12.sp)
             Spacer(Modifier.weight(1f))
             if (detached) Text("detached", color = colors.textSecondary, fontSize = 12.sp)
         }
+        }
     }
 
     if (session.historyOpen) {
-        CronHistoryDialog(container, session, historyItems) { refresh() }
+        HistoryBrowser(
+            container = container,
+            toolId = ToolId.Cron.id,
+            title = container.t("common.action.history"),
+            onRestore = { item ->
+                applyExpression(session, item.input)
+                session.runs = item.output.split('\n').filter { it.isNotBlank() }
+                if (item.options.isNotBlank()) session.zone = item.options
+                session.historyOpen = false
+                session.notice = container.t("json.notice.restored")
+                refresh()
+            },
+            onDismiss = { session.historyOpen = false; refresh() }
+        )
     }
     if (session.favoritesOpen) {
         CronFavoritesDialog(container, session, favorites) {
@@ -263,61 +283,26 @@ private fun copyText(value: String) {
 }
 
 @Composable
-private fun CronHistoryDialog(
-    container: AppContainer,
-    session: CronSession,
-    items: List<HistoryRecord>,
-    onChanged: () -> Unit
-) {
-    Dialog(onDismissRequest = { session.historyOpen = false; onChanged() }) {
-        Column(
-            Modifier.width(520.dp).height(420.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
-            Text(container.t("common.action.history"), color = MooTheme.colors.textPrimary)
-            if (items.isEmpty()) {
-                Text(container.t("json.history.empty"), color = MooTheme.colors.textSecondary)
-            } else {
-                LazyColumn(Modifier.weight(1f)) {
-                    items(items) { item ->
-                        Column(Modifier.fillMaxWidth().clickable {
-                            applyExpression(session, item.input)
-                            session.runs = item.output.split('\n').filter { it.isNotBlank() }
-                            if (item.options.isNotBlank()) session.zone = item.options
-                            session.historyOpen = false
-                            session.notice = container.t("json.notice.restored")
-                            onChanged()
-                        }.padding(8.dp)) {
-                            Text(item.summary, color = MooTheme.colors.textPrimary, fontSize = 13.sp)
-                            Text(item.input, color = MooTheme.colors.textSecondary, fontSize = 12.sp)
-                        }
-                    }
-                }
-            }
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                MooButton(container.t("common.clear"), onClick = {
-                    container.history.clear(ToolId.Cron.id)
-                    onChanged()
-                })
-                MooButton(container.t("common.close"), onClick = { session.historyOpen = false; onChanged() })
-            }
-        }
-    }
-}
-
-@Composable
 private fun CronFavoritesDialog(
     container: AppContainer,
     session: CronSession,
     items: List<CronFavorite>,
     onChanged: () -> Unit
 ) {
+    var query by remember { mutableStateOf("") }
+    val visible = remember(items, query) { container.cronFavorites.list(query) }
     Dialog(onDismissRequest = { session.favoritesOpen = false; onChanged() }) {
         Column(
-            Modifier.width(520.dp).height(420.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
+            Modifier.width(560.dp).height(460.dp).background(MooTheme.colors.workspace, RoundedCornerShape(12.dp)).padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Text(container.t("favorite.title"), color = MooTheme.colors.textPrimary)
+            MooTextField(
+                query,
+                { query = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = container.t("favorite.queryPlaceholder")
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
                 MooTextField(
                     session.favoriteName,
@@ -325,20 +310,26 @@ private fun CronFavoritesDialog(
                     modifier = Modifier.weight(1f),
                     placeholder = container.t("favorite.namePlaceholder")
                 )
+                MooTextField(
+                    session.favoriteGroup,
+                    { session.favoriteGroup = it; onChanged() },
+                    modifier = Modifier.weight(1f),
+                    placeholder = container.t("favorite.groupPlaceholder")
+                )
                 MooButton(container.t("favorite.add"), primary = true, onClick = {
                     if (session.expression.isNotBlank()) {
-                        container.cronFavorites.add(session.favoriteName, session.expression)
+                        container.cronFavorites.add(session.favoriteName, session.expression, session.favoriteGroup)
                         session.favoriteName = ""
                         session.notice = container.t("favorite.saved")
                         onChanged()
                     }
                 })
             }
-            if (items.isEmpty()) {
-                Text(container.t("favorite.empty"), color = MooTheme.colors.textSecondary)
+            if (visible.isEmpty()) {
+                Text(container.t("favorite.empty"), color = MooTheme.colors.textSecondary, modifier = Modifier.weight(1f))
             } else {
                 LazyColumn(Modifier.weight(1f)) {
-                    items(items) { item ->
+                    items(visible) { item ->
                         Row(Modifier.fillMaxWidth().padding(vertical = 4.dp), verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f).clickable {
                                 applyExpression(session, item.expression)
@@ -346,6 +337,9 @@ private fun CronFavoritesDialog(
                                 onChanged()
                             }) {
                                 Text(item.name, color = MooTheme.colors.textPrimary, fontSize = 13.sp)
+                                if (item.group.isNotBlank()) {
+                                    Text(item.group, color = MooTheme.colors.accent, fontSize = 11.sp)
+                                }
                                 Text(item.expression, color = MooTheme.colors.textSecondary, fontSize = 12.sp)
                             }
                             MooButton(container.t("common.delete"), onClick = {
