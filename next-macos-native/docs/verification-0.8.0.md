@@ -7,7 +7,7 @@
 | 命令 | 结果 | 说明 |
 | --- | --- | --- |
 | `./scripts/check-core.sh` | 59 组，0 失败 | 含 SQLite 导入（HTTP/Host/翻译/收藏/历史/草稿/`t_quick_note`/`t_json_beauty`） |
-| `./scripts/smoke.sh` | 通过 | 附件、随手记、JSON、文档库选区/滚动、86 张截图、重启持久化 |
+| `./scripts/smoke.sh` | 通过（偶发需复跑） | 附件、随手记、JSON、格式化、文档库选区/滚动、86 张截图、重启持久化；与 SwiftPM 并发时格式化验收可能需等待更久 |
 
 最近一次 smoke 全绿：**2026-09-16** — 关闭主窗口 `closeBehavior` 合入后复跑通过（约 8.4 min）；同日 `t_quick_note` / `t_json_beauty`、托盘与 `t_func_content` 亦全绿。
 
