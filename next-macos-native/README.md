@@ -2,7 +2,7 @@
 
 `next-macos-native` 是独立的 macOS 产品线，使用 SwiftUI、AppKit 和系统框架实现。它沿用 `next` Electron 版的 26 个工具入口、分组导航和编辑工作区，并采用系统侧边栏、统一工具栏、原生菜单、深浅色和独立工具窗口。
 
-当前版本为 **0.8.0**：文本对比改为与 Electron 对应的双编辑器工作区，支持字符与行高亮、统一补丁、忽略空白、差异导航、同步滚动、交换、复制和历史恢复；窄窗口采用两行工具栏。详见 [文本对比工作区与边界](docs/text-diff-workspace.md)。0.7.0 的文本 / 文件格式化工作区继续保留；设置支持从 Electron 合并工作台与 SQLite 迁移；可选菜单栏托盘提供取色/截图等快捷入口。验收记录见 [verification-0.8.0.md](docs/verification-0.8.0.md)；从 Electron/Java 合并数据见 [数据迁移说明](docs/data-migration.md)；其余工具见 [功能对齐清单](docs/parity.md)。
+当前版本为 **0.8.0**：文本对比改为与 Electron 对应的双编辑器工作区，支持字符与行高亮、统一补丁、忽略空白、差异导航、同步滚动、交换、复制和历史恢复；窄窗口采用两行工具栏。详见 [文本对比工作区与边界](docs/text-diff-workspace.md)。0.7.0 的文本 / 文件格式化工作区继续保留；设置支持从 Electron 合并工作台与 SQLite/磁盘迁移；**界面语言**（简中 / 英语 / 日语）覆盖侧栏、工作台与多数工具主操作；可选菜单栏托盘提供取色/截图等快捷入口。验收记录见 [verification-0.8.0.md](docs/verification-0.8.0.md)；从 Electron/Java 合并数据见 [数据迁移说明](docs/data-migration.md)；其余工具见 [功能对齐清单](docs/parity.md)。
 
 功能和布局以 `next` Electron 版为基准：开发前对照对应页面与测试，保留功能入口、面板顺序及操作语义，再使用原生控件适配 macOS。这项约束已记录在 [AGENTS.md](AGENTS.md)。
 
