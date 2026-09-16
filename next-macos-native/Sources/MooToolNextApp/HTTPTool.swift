@@ -13,17 +13,21 @@ struct HTTPTool: View {
     @State private var formattedSource = ""
     @State private var sheet: RequestSheet?
     private enum RequestSheet: String, Identifiable { case curl, library, save; var id: String { rawValue } }
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
+    private func locf(_ key: String, _ arguments: CVarArg...) -> String {
+        String(format: AppLocalization.string(key, language: language), arguments: arguments)
+    }
     private func option<Value>(_ keyPath: WritableKeyPath<HTTPOptions, Value>) -> Binding<Value> {
         Binding(get: { (draft.http ?? HTTPOptions())[keyPath: keyPath] }, set: { value in var options = draft.http ?? HTTPOptions(); options[keyPath: keyPath] = value; draft.http = options })
     }
     var body: some View {
         ToolPage(tool: Catalog.tool("http"), draft: draft) {
-            Picker("方法", selection: $draft.mode) { ForEach(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"], id: \.self) { Text($0) } }.labelsHidden().frame(width: 96)
+            Picker(loc("http.method"), selection: $draft.mode) { ForEach(["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD", "OPTIONS"], id: \.self) { Text($0) } }.labelsHidden().frame(width: 96)
             TextField("https://example.com/api", text: $draft.option).textFieldStyle(.roundedBorder).frame(minWidth: 180).onSubmit(send)
             PrimaryButton(title: AppLocalization.string("tool.send", language: language), symbol: "paperplane.fill", action: send)
             Menu {
                 Button(AppLocalization.string("http.importCurl", language: language)) { sheet = .curl }
-                Button(AppLocalization.string("http.copyCurl", language: language)) { do { FilePanels.copy(try CurlCommand.export(draft.record)); draft.status = "已复制 cURL" } catch { draft.error = error.localizedDescription } }
+                Button(loc("http.copyCurl")) { do { FilePanels.copy(try CurlCommand.export(draft.record)); draft.status = loc("http.status.copiedCurl") } catch { draft.error = error.localizedDescription } }
                 Divider()
                 Button(AppLocalization.string("http.saveToCollection", language: language)) { sheet = .save }
                 Button(AppLocalization.string("http.openCollection", language: language)) { sheet = .library }
@@ -59,31 +63,31 @@ struct HTTPTool: View {
         }
         .sheet(item: $sheet) { item in
             switch item {
-            case .curl: CurlImportSheet { imported in draft.apply(imported); requestTab = imported.input.isEmpty ? .params : .body; draft.status = "已导入 cURL，请检查后发送" }
-            case .library: HTTPRequestLibrary { draft.apply($0) }.environment(store)
-            case .save: SaveHTTPRequestSheet(draft: draft.record).environment(store)
+            case .curl: CurlImportSheet { imported in draft.apply(imported); requestTab = imported.input.isEmpty ? .params : .body; draft.status = loc("http.status.importedCurl") }.environment(\.appLanguage, language)
+            case .library: HTTPRequestLibrary { draft.apply($0) }.environment(store).environment(\.appLanguage, language)
+            case .save: SaveHTTPRequestSheet(draft: draft.record).environment(store).environment(\.appLanguage, language)
             }
         }
     }
     private var requestPane: some View {
         VStack(spacing: 10) {
             HStack { Text(AppLocalization.string("http.request", language: language)).font(.headline); Spacer(); Button(AppLocalization.string("http.importCurlShort", language: language)) { sheet = .curl }.controlSize(.small) }
-            Picker("请求内容", selection: $requestTab) { ForEach(HTTPRequestTab.allCases) { tab in Text(tab.title(language: language)).tag(tab) } }.pickerStyle(.segmented).labelsHidden()
+            Picker(loc("http.requestSections"), selection: $requestTab) { ForEach(HTTPRequestTab.allCases) { tab in Text(tab.title(language: language)).tag(tab) } }.pickerStyle(.segmented).labelsHidden()
             Group {
                 switch requestTab {
-                case .params: HTTPFieldsEditor(fields: option(\.params), description: "参数追加到 URL，保留已有参数与重复键。", keyHint: "参数名")
-                case .cookies: HTTPFieldsEditor(fields: option(\.cookies), description: "仅发送启用的 Cookie；每次请求使用独立会话。", keyHint: "Cookie 名")
-                case .headers: EditorPane(title: "请求头 · Name: Value", text: $draft.secondary)
+                case .params: HTTPFieldsEditor(fields: option(\.params), descriptionKey: "http.params.description", keyHintKey: "http.params.name")
+                case .cookies: HTTPFieldsEditor(fields: option(\.cookies), descriptionKey: "http.cookies.description", keyHintKey: "http.cookies.name")
+                case .headers: EditorPane(title: loc("http.headers.editorTitle"), text: $draft.secondary)
                 case .body:
                     VStack(spacing: 10) {
-                        Picker("正文类型", selection: option(\.bodyKind)) { ForEach(HTTPBodyKind.allCases, id: \.self) { Text($0.title).tag($0) } }
-                        if ["GET", "HEAD"].contains(draft.mode) { Text("\(draft.mode) 不发送正文；可在“参数”中编辑查询条件。").font(.caption).foregroundStyle(.secondary) }
+                        Picker(loc("http.bodyKindLabel"), selection: option(\.bodyKind)) { ForEach(HTTPBodyKind.allCases, id: \.self) { Text($0.title(language: language)).tag($0) } }
+                        if ["GET", "HEAD"].contains(draft.mode) { Text(locf("http.getNoBody", draft.mode)).font(.caption).foregroundStyle(.secondary) }
                         Group {
                             switch draft.http?.bodyKind ?? .raw {
-                            case .none: ContentUnavailableView("无请求正文", systemImage: "doc", description: Text("更换正文类型可编辑数据。"))
-                            case .form: HTTPFieldsEditor(fields: option(\.form), description: "以 application/x-www-form-urlencoded 编码发送。", keyHint: "字段名")
+                            case .none: ContentUnavailableView(loc("http.body.none.title"), systemImage: "doc", description: Text(loc("http.body.none.description")))
+                            case .form: HTTPFieldsEditor(fields: option(\.form), descriptionKey: "http.form.description", keyHintKey: "http.form.name")
                             case .multipart: HTTPMultipartEditor(parts: option(\.multipart))
-                            case .raw, .json: EditorPane(title: "请求正文", text: $draft.input, syntax: draft.http?.bodyKind == .json)
+                            case .raw, .json: EditorPane(title: loc("http.body.editorTitle"), text: $draft.input, syntax: draft.http?.bodyKind == .json)
                             }
                         }.disabled(["GET", "HEAD"].contains(draft.mode))
                     }
@@ -101,7 +105,7 @@ struct HTTPTool: View {
                 }
             }.frame(height: 22)
             HStack(spacing: 8) {
-                Picker("响应内容", selection: $responseTab) { ForEach(HTTPResponseTab.allCases) { tab in Text(tab.title(language: language)).tag(tab) } }.pickerStyle(.segmented).labelsHidden()
+                Picker(loc("http.responseSections"), selection: $responseTab) { ForEach(HTTPResponseTab.allCases) { tab in Text(tab.title(language: language)).tag(tab) } }.pickerStyle(.segmented).labelsHidden()
                 if responseTab == .body { Toggle(isOn: $pretty) { Image(systemName: "text.alignleft") }.toggleStyle(.button).help(AppLocalization.string("http.prettyJson", language: language)) }
             }
             EditorPane(title: responseTab.title(language: language), text: .constant(responseText), editable: false, syntax: responseTab == .body)
@@ -120,7 +124,7 @@ struct HTTPTool: View {
         do {
             let snapshot = draft.record
             let request = try NetworkServices.request(snapshot)
-            draft.busy = true; draft.error = nil; draft.status = "正在请求…"
+            draft.busy = true; draft.error = nil; draft.status = loc("http.status.requesting")
             draft.httpTask = Task {
                 defer { draft.busy = false; draft.httpTask = nil }
                 do {
@@ -131,7 +135,7 @@ struct HTTPTool: View {
                     var completed = snapshot; completed.output = response.body; completed.httpResult = response.metadata
                     store.record("http", snapshot: completed)
                 } catch {
-                    if Task.isCancelled { draft.status = "请求已取消" } else { draft.error = error.localizedDescription }
+                    if Task.isCancelled { draft.status = loc("http.status.cancelled") } else { draft.error = error.localizedDescription }
                 }
             }
         } catch { draft.error = error.localizedDescription }
@@ -140,36 +144,41 @@ struct HTTPTool: View {
 
 struct HTTPMultipartEditor: View {
     @Binding var parts: [HTTPMultipartPart]
+    @Environment(\.appLanguage) private var language
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
+    private func locf(_ key: String, _ arguments: CVarArg...) -> String {
+        String(format: AppLocalization.string(key, language: language), arguments: arguments)
+    }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("以 multipart/form-data 发送文本字段或本地文件；每个文件不超过 10 MB。").font(.caption).foregroundStyle(.secondary)
+            Text(loc("http.multipart.description")).font(.caption).foregroundStyle(.secondary)
             ScrollView {
                 LazyVStack(spacing: 8) {
                     ForEach($parts) { $part in
                         VStack(alignment: .leading, spacing: 6) {
                             HStack(spacing: 7) {
-                                Toggle("启用", isOn: $part.enabled).labelsHidden().toggleStyle(.checkbox)
-                                TextField("字段名", text: $part.name).accessibilityLabel("字段名")
-                                Picker("类型", selection: $part.isFile) { Text("文本").tag(false); Text("文件").tag(true) }.labelsHidden().frame(width: 72)
+                                Toggle(loc("http.enabled"), isOn: $part.enabled).labelsHidden().toggleStyle(.checkbox)
+                                TextField(loc("http.multipart.fieldName"), text: $part.name).accessibilityLabel(loc("http.multipart.fieldName"))
+                                Picker(loc("http.multipart.type"), selection: $part.isFile) { Text(loc("http.multipart.typeText")).tag(false); Text(loc("http.multipart.typeFile")).tag(true) }.labelsHidden().frame(width: 72)
                                 Button { parts.removeAll { $0.id == part.id } } label: { Image(systemName: "minus.circle") }.buttonStyle(.borderless)
                             }
                             if part.isFile {
                                 HStack {
-                                    Text(part.filePath.isEmpty ? "未选择文件" : (part.filePath as NSString).lastPathComponent).lineLimit(1).foregroundStyle(part.filePath.isEmpty ? .secondary : .primary)
+                                    Text(part.filePath.isEmpty ? loc("http.multipart.noFile") : (part.filePath as NSString).lastPathComponent).lineLimit(1).foregroundStyle(part.filePath.isEmpty ? .secondary : .primary)
                                     Spacer()
-                                    Button("选择文件…") { chooseFile(for: $part) }
+                                    Button(loc("http.multipart.chooseFile")) { chooseFile(for: $part) }
                                 }.font(.system(size: 12, design: .monospaced))
                             } else {
-                                TextField("文本值", text: $part.value).textFieldStyle(.roundedBorder).font(.system(size: 12, design: .monospaced))
+                                TextField(loc("http.multipart.textValue"), text: $part.value).textFieldStyle(.roundedBorder).font(.system(size: 12, design: .monospaced))
                             }
                         }.padding(8).background(.quaternary.opacity(0.25), in: RoundedRectangle(cornerRadius: 8))
                     }
                 }.padding(1)
             }
             HStack {
-                Button { parts.append(HTTPMultipartPart()) } label: { Label("添加字段", systemImage: "plus") }.disabled(parts.count >= 1000)
+                Button { parts.append(HTTPMultipartPart()) } label: { Label(loc("http.multipart.addField"), systemImage: "plus") }.disabled(parts.count >= 1000)
                 Spacer()
-                Text("\(HTTPMultipartBuilder.active(parts).count) 项启用").foregroundStyle(.secondary)
+                Text(locf("http.activeCount", HTTPMultipartBuilder.active(parts).count)).foregroundStyle(.secondary)
             }.font(.caption)
         }.padding(13).background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 9)).overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(.quaternary))
     }
@@ -188,24 +197,29 @@ struct HTTPMultipartEditor: View {
 
 struct HTTPFieldsEditor: View {
     @Binding var fields: [HTTPField]
-    let description: String
-    let keyHint: String
+    let descriptionKey: String
+    let keyHintKey: String
+    @Environment(\.appLanguage) private var language
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
+    private func locf(_ key: String, _ arguments: CVarArg...) -> String {
+        String(format: AppLocalization.string(key, language: language), arguments: arguments)
+    }
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text(description).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
+            Text(loc(descriptionKey)).font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             ScrollView {
                 LazyVStack(spacing: 8) {
                     ForEach($fields) { $field in
                         HStack(spacing: 7) {
-                            Toggle("启用", isOn: $field.enabled).labelsHidden().toggleStyle(.checkbox)
-                            TextField(keyHint, text: $field.name).accessibilityLabel(keyHint)
-                            TextField("值", text: $field.value).accessibilityLabel("值")
-                            Button { fields.removeAll { $0.id == field.id } } label: { Image(systemName: "minus.circle") }.buttonStyle(.borderless).help("删除此行")
+                            Toggle(loc("http.enabled"), isOn: $field.enabled).labelsHidden().toggleStyle(.checkbox)
+                            TextField(loc(keyHintKey), text: $field.name).accessibilityLabel(loc(keyHintKey))
+                            TextField(loc("http.value"), text: $field.value).accessibilityLabel(loc("http.value"))
+                            Button { fields.removeAll { $0.id == field.id } } label: { Image(systemName: "minus.circle") }.buttonStyle(.borderless).help(loc("http.deleteRow"))
                         }.textFieldStyle(.roundedBorder).font(.system(size: 12, design: .monospaced))
                     }
                 }.padding(1)
             }
-            HStack { Button { fields.append(HTTPField()) } label: { Label("添加一行", systemImage: "plus") }.disabled(fields.count >= 1000); Spacer(); Text("\(HTTPFields.active(fields).count) 项启用").foregroundStyle(.secondary) }.font(.caption)
+            HStack { Button { fields.append(HTTPField()) } label: { Label(loc("http.addRow"), systemImage: "plus") }.disabled(fields.count >= 1000); Spacer(); Text(locf("http.activeCount", HTTPFields.active(fields).count)).foregroundStyle(.secondary) }.font(.caption)
         }.padding(13).background(Color(nsColor: .textBackgroundColor), in: RoundedRectangle(cornerRadius: 9)).overlay(RoundedRectangle(cornerRadius: 9).strokeBorder(.quaternary))
     }
 }
@@ -213,15 +227,17 @@ struct HTTPFieldsEditor: View {
 private struct CurlImportSheet: View {
     let onImport: (DraftRecord) -> Void
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.appLanguage) private var language
     @State private var command = ""
     @State private var error: String?
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Text("导入 cURL").font(.title2.bold())
-            Text("粘贴从浏览器或终端复制的请求，导入后可继续编辑。支持单引号、双引号和反斜杠续行。").foregroundStyle(.secondary)
+            Text(loc("http.importCurl")).font(.title2.bold())
+            Text(loc("http.curlImport.help")).foregroundStyle(.secondary)
             EditorPane(title: "cURL", text: $command)
             if let error { Text(error).font(.caption).foregroundStyle(.red).textSelection(.enabled) }
-            HStack { Button("取消") { dismiss() }.keyboardShortcut(.cancelAction); Spacer(); Button("导入") { do { let value = try CurlCommand.parse(command); onImport(value); dismiss() } catch { self.error = error.localizedDescription } }.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction).disabled(command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
+            HStack { Button(loc("common.cancel")) { dismiss() }.keyboardShortcut(.cancelAction); Spacer(); Button(loc("tool.import")) { do { let value = try CurlCommand.parse(command); onImport(value); dismiss() } catch { self.error = error.localizedDescription } }.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction).disabled(command.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
         }.padding(24).frame(width: 660, height: 460)
     }
 }
@@ -230,21 +246,26 @@ private struct SaveHTTPRequestSheet: View {
     let draft: DraftRecord
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.appLanguage) private var language
     @State private var name = ""
-    @State private var collection = "我的请求"
+    @State private var collection = ""
     @State private var replaceID: UUID?
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
     private var existing: SavedHTTPRequest? { store.httpRequests.first { $0.name == name.trimmingCharacters(in: .whitespacesAndNewlines) && $0.collection == normalizedCollection } }
-    private var normalizedCollection: String { collection.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? "我的请求" : collection.trimmingCharacters(in: .whitespacesAndNewlines) }
+    private var normalizedCollection: String { collection.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ? loc("http.collection.default") : collection.trimmingCharacters(in: .whitespacesAndNewlines) }
     var body: some View {
         VStack(alignment: .leading, spacing: 18) {
-            Text("保存请求").font(.title2.bold())
-            TextField("请求名称", text: $name)
-            HStack { TextField("集合名称", text: $collection); Menu { ForEach(Array(Set(store.httpRequests.map(\.collection))).sorted(), id: \.self) { value in Button(value) { collection = value } } } label: { Image(systemName: "folder") } }
-            Text("保存方法、URL、参数、Cookie、正文和当前响应。").font(.caption).foregroundStyle(.secondary)
-            HStack { Button("取消") { dismiss() }.keyboardShortcut(.cancelAction); Spacer(); Button(existing == nil ? "保存" : "替换同名请求") { if let existing { replaceID = existing.id } else { save() } }.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction).disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
+            Text(loc("http.save.title")).font(.title2.bold())
+            TextField(loc("http.save.name"), text: $name)
+            HStack { TextField(loc("http.save.collection"), text: $collection); Menu { ForEach(Array(Set(store.httpRequests.map(\.collection))).sorted(), id: \.self) { value in Button(value) { collection = value } } } label: { Image(systemName: "folder") } }
+            Text(loc("http.save.hint")).font(.caption).foregroundStyle(.secondary)
+            HStack { Button(loc("common.cancel")) { dismiss() }.keyboardShortcut(.cancelAction); Spacer(); Button(existing == nil ? loc("tool.save") : loc("http.save.replaceButton")) { if let existing { replaceID = existing.id } else { save() } }.buttonStyle(.borderedProminent).keyboardShortcut(.defaultAction).disabled(name.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty) }
         }.textFieldStyle(.roundedBorder).padding(24).frame(width: 420)
-        .onAppear { name = URL(string: draft.option)?.host ?? "未命名请求" }
-        .confirmationDialog("替换同一集合中的同名请求？", isPresented: Binding(get: { replaceID != nil }, set: { if !$0 { replaceID = nil } }), presenting: replaceID) { id in Button("替换", role: .destructive) { save(replacing: id) } }
+        .onAppear {
+            if collection.isEmpty { collection = loc("http.collection.default") }
+            if name.isEmpty { name = URL(string: draft.option)?.host ?? loc("http.untitled") }
+        }
+        .confirmationDialog(loc("http.replace.confirm"), isPresented: Binding(get: { replaceID != nil }, set: { if !$0 { replaceID = nil } }), presenting: replaceID) { id in Button(loc("common.replace"), role: .destructive) { save(replacing: id) } }
     }
     private func save(replacing id: UUID? = nil) {
         var value = SavedHTTPRequest(name: name.trimmingCharacters(in: .whitespacesAndNewlines), collection: normalizedCollection, draft: draft)
@@ -258,13 +279,15 @@ private struct HTTPRequestLibrary: View {
     let onOpen: (DraftRecord) -> Void
     @Environment(AppStore.self) private var store
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.appLanguage) private var language
     @State private var search = ""
     @State private var deleting: UUID?
+    private func loc(_ key: String) -> String { AppLocalization.string(key, language: language) }
     private var matches: [SavedHTTPRequest] { store.httpRequests.filter { search.isEmpty || [$0.name, $0.collection, $0.draft.option].contains { $0.localizedCaseInsensitiveContains(search) } } }
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            HStack { Text("请求集合").font(.title2.bold()); Spacer(); Button("完成") { dismiss() }.keyboardShortcut(.cancelAction) }
-            TextField("搜索名称、集合或 URL", text: $search).textFieldStyle(.roundedBorder)
+            HStack { Text(loc("http.collection")).font(.title2.bold()); Spacer(); Button(loc("common.done")) { dismiss() }.keyboardShortcut(.cancelAction) }
+            TextField(loc("http.library.search"), text: $search).textFieldStyle(.roundedBorder)
             List {
                 ForEach(Array(Set(matches.map(\.collection))).sorted(), id: \.self) { collection in
                     Section(collection) {
@@ -273,14 +296,14 @@ private struct HTTPRequestLibrary: View {
                                 Text(item.draft.mode.isEmpty ? "GET" : item.draft.mode).font(.system(.caption, design: .monospaced).bold()).foregroundStyle(.tint).frame(width: 54)
                                 VStack(alignment: .leading, spacing: 4) { Text(item.name).fontWeight(.medium); Text(item.draft.option).font(.caption).foregroundStyle(.secondary).lineLimit(1) }
                                 Spacer()
-                                Button("打开") { onOpen(item.draft); dismiss() }
-                                Button { deleting = item.id } label: { Image(systemName: "trash") }.help("删除请求")
+                                Button(loc("http.library.open")) { onOpen(item.draft); dismiss() }
+                                Button { deleting = item.id } label: { Image(systemName: "trash") }.help(loc("http.library.deleteHelp"))
                             }.padding(.vertical, 5)
                         }
                     }
                 }
-            }.overlay { if matches.isEmpty { ContentUnavailableView("暂无请求", systemImage: "folder", description: Text(search.isEmpty ? "编辑请求后，点击保存添加到集合。" : "没有匹配的请求。")) } }
+            }.overlay { if matches.isEmpty { ContentUnavailableView(loc("http.library.emptyTitle"), systemImage: "folder", description: Text(search.isEmpty ? loc("http.library.empty") : loc("http.library.emptySearch"))) } }
         }.padding(22).frame(width: 700, height: 480)
-        .confirmationDialog("删除这份保存的请求？", isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }), presenting: deleting) { id in Button("删除", role: .destructive) { store.httpRequests.removeAll { $0.id == id }; store.saveNow(); deleting = nil } }
+        .confirmationDialog(loc("http.library.deleteConfirm"), isPresented: Binding(get: { deleting != nil }, set: { if !$0 { deleting = nil } }), presenting: deleting) { id in Button(loc("common.delete"), role: .destructive) { store.httpRequests.removeAll { $0.id == id }; store.saveNow(); deleting = nil } }
     }
 }

@@ -13,6 +13,12 @@ enum HTTPRequestTab: String, CaseIterable, Identifiable {
     }
 }
 
+extension HTTPBodyKind {
+    func title(language: AppLanguage) -> String {
+        AppLocalization.string("http.bodyKind.\(rawValue)", language: language)
+    }
+}
+
 enum HTTPResponseTab: String, CaseIterable, Identifiable {
     case body, headers, cookies
     var id: String { rawValue }
